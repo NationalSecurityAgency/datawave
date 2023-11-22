@@ -152,7 +152,7 @@ public class QuerySpan {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append(super.toString()).append(" sources:").append(getSourceCount()).append(" next:").append(getNextCount()).append(" seek:").append(getSeekCount())
-                        .append(" yield:").append(getYield());
+                        .append(" evaluated:").append(getEvaluatedCount()).append(" rejected:").append(getRejectedCount()).append(" yield:").append(getYield());
         return sb.toString();
     }
 

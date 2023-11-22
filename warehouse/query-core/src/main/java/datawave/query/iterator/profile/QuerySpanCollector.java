@@ -55,7 +55,7 @@ public class QuerySpanCollector {
                 combinedQuerySpan.setNext(this.nextCount.getAndSet(0));
                 combinedQuerySpan.setSeek(this.seekCount.getAndSet(0));
                 combinedQuerySpan.setEvaluatedCount(this.evaluatedCount.getAndSet(0));
-                combinedQuerySpan.setEvaluatedCount(this.rejectedCount.getAndSet(0));
+                combinedQuerySpan.setRejectedCount(this.rejectedCount.getAndSet(0));
                 combinedQuerySpan.setYield(this.yield.getAndSet(false));
                 combinedQuerySpan.setSourceCount(this.sourceCount.getAndSet(0));
                 combinedQuerySpan.setStageTimers(this.stageTimers);

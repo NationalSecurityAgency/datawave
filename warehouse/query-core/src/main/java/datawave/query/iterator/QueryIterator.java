@@ -207,10 +207,6 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
 
     protected RangeProvider rangeProvider;
 
-    protected static long evaluatedCount = 0;
-
-    protected static long rejectedCount = 0;
-
     public QueryIterator() {}
 
     public QueryIterator(QueryIterator other, IteratorEnvironment env) {
@@ -713,25 +709,19 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             private T next;
 
             protected T computeNext() {
-                rejectedCount = 0;
-                evaluatedCount = 0;
                 while (unfiltered.hasNext()) {
                     T element = unfiltered.next();
                     if (predicate.apply(element)) {
                         if (trackingSpan != null) {
-                            evaluatedCount++;
-                            trackingSpan.evaluatedIncrement(evaluatedCount);
-                            trackingSpan.rejectedIncrement(rejectedCount);
+                            trackingSpan.evaluatedIncrement(1);
                         } else {
                             System.out.println("=========== trackingSpan is null ===========");
                         }
                         return element;
                     } else {
                         if (trackingSpan != null) {
-                            evaluatedCount++;
-                            rejectedCount++;
-                            trackingSpan.evaluatedIncrement(evaluatedCount);
-                            trackingSpan.rejectedIncrement(rejectedCount);
+                            trackingSpan.evaluatedIncrement(1);
+                            trackingSpan.rejectedIncrement(1);
                         }
                     }
                 }
@@ -865,7 +855,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         documents = mapDocument(deepSourceCopy, documents, compositeMetadata);
 
         // apply any configured post processing
-        documents = getPostProcessingChain(documents);
+        documents = getPostProcessingChain(documents, trackingSpan);
         if (gatherTimingDetails()) {
             documents = new EvaluationTrackingIterator(QuerySpan.Stage.PostProcessing, trackingSpan, documents);
         }
@@ -1006,7 +996,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
 
                 final Iterator<Tuple3<Key,Document,DatawaveJexlContext>> itrWithDatawaveJexlContext = Iterators.transform(itrWithContext, contextCreator);
                 Iterator<Tuple3<Key,Document,DatawaveJexlContext>> matchedDocuments = statelessFilter(itrWithDatawaveJexlContext, jexlEvaluationFunction,
-                                new QuerySpan(getStatsdClient()));
+                                trackingSpan);
                 if (log.isTraceEnabled()) {
                     log.trace("arithmetic:" + arithmetic + " range:" + getDocumentRange(documentSource) + ", thread:" + Thread.currentThread());
                 }

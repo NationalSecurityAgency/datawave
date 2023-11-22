@@ -294,6 +294,12 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
             if (updatedQueryMetric.getSeekCount() != storedQueryMetric.getSeekCount()) {
                 fields.put("SEEK_COUNT", Long.toString(storedQueryMetric.getSeekCount()));
             }
+            if (updatedQueryMetric.getEvaluatedCount() != storedQueryMetric.getEvaluatedCount()) {
+                fields.put("EVALUATED_COUNT", Long.toString(storedQueryMetric.getEvaluatedCount()));
+            }
+            if (updatedQueryMetric.getRejectedCount() != storedQueryMetric.getRejectedCount()) {
+                fields.put("REJECTED_COUNT", Long.toString(storedQueryMetric.getRejectedCount()));
+            }
             if (updatedQueryMetric.getYieldCount() != storedQueryMetric.getYieldCount()) {
                 fields.put("YIELD_COUNT", Long.toString(storedQueryMetric.getYieldCount()));
             }
