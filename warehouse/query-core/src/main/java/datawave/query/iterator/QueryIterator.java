@@ -1585,11 +1585,11 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     }
 
     protected GroupingIterator getGroupingIteratorInstance(Iterator<Entry<Key,Document>> in) {
-        if (groupingIterator == null && getGroupFields() != null && !getGroupFields().isEmpty()) {
+        if (groupingIterator == null && getGroupFields() != null && getGroupFields().hasGroupByFields()) {
             synchronized (getGroupFields()) {
                 if (groupingIterator == null) {
                     groupingIterator = new GroupingIterator(in, MarkingFunctionsFactory.createMarkingFunctions(), getGroupFields(), this.groupFieldsBatchSize,
-                                    this.yield, this.getResultTimeout());
+                                    this.yield);
                 }
             }
         }
