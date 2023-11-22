@@ -8,6 +8,15 @@ spring:
           destination: queryMetricChannel
           producer:
             requiredGroups: queryMetricService
+            errorChannelEnabled: true
     # NOTE: When defining your functions, be sure to include busConsumer, or else spring cloud bus will not work
     function:
       definition: queryMetricSource;busConsumer
+
+# To send metrics via REST, uncomment the following
+#datawave:
+#  query:
+#    metric:
+#      client:
+#        host: metrics
+#        transport: HTTPS

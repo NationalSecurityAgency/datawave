@@ -7,12 +7,16 @@ spring:
   cloud:
     stream:
       bindings:
+        queryMetricSource-out-0:
+          destination: queryMetricChannel
+          producer:
+            errorChannelEnabled: true
         queryMetricSink-in-0:
           destination: queryMetricChannel
           group: queryMetricService
     # NOTE: When defining your functions, be sure to include busConsumer, or else spring cloud bus will not work
     function:
-      definition: queryMetricSink;busConsumer
+      definition: queryMetricSource;queryMetricSink;busConsumer
 
 warehouse-cluster:
   accumulo:
@@ -64,6 +68,7 @@ datawave:
         queryPool: "pool1"
       timely:
         enabled: false
+      confirmAckTimeoutMillis: 30000
 
   # this should be consolidated into a metadata application profile
   metadata:
