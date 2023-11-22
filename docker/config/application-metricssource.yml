@@ -13,10 +13,11 @@ spring:
     function:
       definition: queryMetricSource;busConsumer
 
+datawave:
+  query:
+    metric:
+      client:
+        confirmAckTimeoutMillis: 30000
 # To send metrics via REST, uncomment the following
-#datawave:
-#  query:
-#    metric:
-#      client:
 #        host: metrics
 #        transport: HTTPS
