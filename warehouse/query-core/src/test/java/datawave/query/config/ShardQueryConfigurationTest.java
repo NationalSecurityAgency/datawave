@@ -123,6 +123,8 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("maxIndexScanTimeMillis", 100000L);
         defaultValues.put("parseTldUids", false);
         updatedValues.put("parseTldUids", true);
+        defaultValues.put("ignoreNonExistentFields", false);
+        updatedValues.put("ignoreNonExistentFields", true);
         defaultValues.put("collapseUids", false);
         updatedValues.put("collapseUids", true);
         defaultValues.put("collapseUidsThreshold", -1);

@@ -873,8 +873,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             config.setQueryTree(timedReduce(timers, "Reduce Query After ANYFIELD Expansions", config.getQueryTree()));
         }
 
-        if (!disableTestNonExistentFields) {
+        if (!disableTestNonExistentFields && (!config.getIgnoreNonExistentFields())) {
             timedTestForNonExistentFields(timers, config.getQueryTree(), config, metadataHelper, queryModel, settings);
+        } else {
+            log.debug("Skipping check for nonExistentFields..");
         }
 
         // apply the node transform rules
