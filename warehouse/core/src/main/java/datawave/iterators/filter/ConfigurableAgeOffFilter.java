@@ -8,12 +8,14 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.TreeMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.accumulo.core.client.PluginEnvironment;
+import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.Filter;
@@ -136,8 +138,6 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
 
     protected IteratorEnvironment myEnv;
 
-    private PluginEnvironment pluginEnv;
-
     // Adding the ability to disable the filter checks in the case of a system-initialized major compaction for example.
     // The thought is that we force compactions where we want the data to aged off.
     // The system-initialized compactions are on data just imported in which case they are not expected to remove much.
@@ -200,7 +200,6 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
     public SortedKeyValueIterator<Key,Value> deepCopy(IteratorEnvironment env) {
 
         myEnv = env;
-        pluginEnv = env == null ? null : env.getPluginEnv();
         return ((ConfigurableAgeOffFilter) super.deepCopy(env)).initialize(this);
     }
 
@@ -314,7 +313,7 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
         super.init(source, options, env);
 
         myEnv = env;
-        pluginEnv = env == null ? null : env.getPluginEnv();
+        disabled = shouldDisableForNonFullCompaction(options, env) || shouldDisableForNonUserCompaction(options, env);
 
         Preconditions.checkNotNull(options, "Configuration filename and " + "the default ttl must be set for the ConfigurableAgeOffFilter");
 
@@ -325,6 +324,82 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
         initialize(options.get(AgeOffConfigParams.TTL), options.get(AgeOffConfigParams.TTL_UNITS), options.get(AgeOffConfigParams.TTL_SHORT_CIRCUIT),
                         sessionScanStart, options.get(AgeOffConfigParams.FILTER_CONFIG));
 
+    }
+
+    /**
+     * enabled if any of the following are true:
+     * <ul>
+     * <li>we're not configured to disable non-full majcs</li>
+     * <li>this is not a major compaction</li>
+     * <li>we're doing a full majc compaction</li>
+     * </ul>
+     * @param options
+     * @param env
+     * @return true only if we should disable filtering
+     */
+    private boolean shouldDisableForNonFullCompaction(Map<String, String> options, IteratorEnvironment env) {
+        if (!validatePropertyIsBoolean(options, AgeOffConfigParams.DISABLE_ON_NON_FULL_MAJC)) {
+            throw new IllegalArgumentException("Invalid for " + AgeOffConfigParams.DISABLE_ON_NON_FULL_MAJC + ": " + options.get(AgeOffConfigParams.DISABLE_ON_NON_FULL_MAJC));
+        }
+
+        // if the configuration property is missing, we should apply the filter
+        if (!options.containsKey(AgeOffConfigParams.DISABLE_ON_NON_FULL_MAJC)) {
+            return false;
+        }
+
+        // if the property is set to false, we should apply the filter
+        if (!Boolean.parseBoolean(options.get(AgeOffConfigParams.DISABLE_ON_NON_FULL_MAJC))) {
+            return false;
+        }
+
+        // if this isn't a major compaction, we should apply the filter
+        if (env == null || !env.getIteratorScope().equals(IteratorUtil.IteratorScope.majc)) {
+            return false;
+        }
+
+        if (env.isFullMajorCompaction()) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * enabled if any of the following are true:
+     * <ul>
+     * <li>we're not configured to disable non-user majcs</li>
+     * <li>this is not a major compaction</li>
+     * <li>we're doing a user majc compaction</li>
+     * </ul>
+     * @param options
+     * @param env
+     * @return true only if we should disable filtering
+     */
+    private boolean shouldDisableForNonUserCompaction(Map<String, String> options, IteratorEnvironment env) {
+        if (!validatePropertyIsBoolean(options, AgeOffConfigParams.ONLY_ON_USER_COMPACTION)) {
+            throw new IllegalArgumentException("Invalid for " + AgeOffConfigParams.ONLY_ON_USER_COMPACTION + ": " + options.get(AgeOffConfigParams.ONLY_ON_USER_COMPACTION));
+        }
+
+        // if the configuration property is missing, we should apply the filter
+        if (!options.containsKey(AgeOffConfigParams.ONLY_ON_USER_COMPACTION)) {
+            return false;
+        }
+
+        // if the property is set to false, we should apply the filter
+        if (!Boolean.parseBoolean(options.get(AgeOffConfigParams.ONLY_ON_USER_COMPACTION))) {
+            return false;
+        }
+
+        // if this isn't a major compaction, we should apply the filter
+        if (env == null || !env.getIteratorScope().equals(IteratorUtil.IteratorScope.majc)) {
+            return false;
+        }
+
+        if (env.isUserCompaction()) {
+            return false;
+        }
+
+        return true;
     }
 
     /**
@@ -388,10 +463,12 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
     }
 
     private long getLongProperty(final String prop, final long defaultValue) {
-        if (pluginEnv != null && pluginEnv.getConfiguration() != null) {
-            String propValue = pluginEnv.getConfiguration().get(prop);
-            if (propValue != null) {
-                return Long.parseLong(propValue);
+        if (this.myEnv != null && this.myEnv.getConfig()!= null) {
+            AccumuloConfiguration conf = this.myEnv.getConfig();
+            Map<String, String> properties = new TreeMap<>();
+            conf.getProperties(properties, p -> Objects.equals(prop, p));
+            if (properties.containsKey(prop)) {
+                return Long.parseLong(properties.get(prop));
             }
         }
         return defaultValue;
@@ -431,6 +508,8 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
                         + AgeOffTtlUnits.MINUTES + ", " + AgeOffTtlUnits.SECONDS + ", or " + AgeOffTtlUnits.MILLISECONDS + "[default = d])");
         options.put(AgeOffConfigParams.TTL_SHORT_CIRCUIT, "Interval after which no data is aged off allowing this filter to bypass calling the filters");
         options.put(AgeOffConfigParams.FILTER_CONFIG, "URL to the age off filter configuration file.");
+        options.put(AgeOffConfigParams.ONLY_ON_USER_COMPACTION,
+                "If set to 'true' then filters will only be used for user-initiated major compactions and not system initiated ones. [default = false]");
         return new IteratorOptions("cfgAgeoff", "ConfigurableAgeOffFilter removes entries with timestamps more than <ttl> milliseconds old", options, null);
     }
 
@@ -462,11 +541,26 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
         }
 
         String ttlUnits = options.get(AgeOffConfigParams.TTL_UNITS);
+
+        if (!validatePropertyIsBoolean(options, AgeOffConfigParams.ONLY_ON_USER_COMPACTION)) {
+            return false;
+        }
+
         // @formatter:off
         List<String> allUnits = Arrays.asList(
             AgeOffTtlUnits.DAYS, AgeOffTtlUnits.HOURS, AgeOffTtlUnits.MINUTES, AgeOffTtlUnits.SECONDS, AgeOffTtlUnits.MILLISECONDS);
         // @formatter:on
         return (ttlUnits != null) && allUnits.contains(ttlUnits);
+    }
+
+    private boolean validatePropertyIsBoolean(Map<String, String> options, String propertyName) {
+        if (options.containsKey(propertyName)) {
+            String propertyValue = options.get(propertyName);
+            if (!"true".equals(propertyValue) && !"false".equals(propertyValue)) {
+                log.error(propertyName + " was present, but not a valid boolean." + " Value was: " + propertyValue);
+            }
+        }
+        return true;
     }
 
     /**

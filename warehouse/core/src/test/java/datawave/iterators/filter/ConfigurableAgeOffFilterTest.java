@@ -64,7 +64,6 @@ public class ConfigurableAgeOffFilterTest extends EasyMockSupport {
         replay(env, pluginEnv);
     }
 
-
     @Test
     public void testAcceptKeyValue_OnlyTtlNoInnerFilters() throws Exception {
         ConfigurableAgeOffFilter filter = new ConfigurableAgeOffFilter();
