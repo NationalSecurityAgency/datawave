@@ -96,12 +96,10 @@ export PATH=${HADOOP_HOME}/bin:$PATH
 DW_HADOOP_CMD_START="( cd ${HADOOP_HOME}/sbin && ./start-dfs.sh && ./start-yarn.sh && mapred --daemon start historyserver )"
 DW_HADOOP_CMD_STOP="( cd ${HADOOP_HOME}/sbin && mapred --daemon stop historyserver && ./stop-yarn.sh && ./stop-dfs.sh )"
 DW_HADOOP_CMD_FIND_ALL_PIDS="pgrep -d ' ' -f 'proc_datanode|proc_namenode|proc_secondarynamenode|proc_nodemanager|proc_resourcemanager|mapreduce.v2.hs.JobHistoryServer'"
-DW_HADOOP_CMD_FIND_ALL_PIDS_COUNT="pgrep -f 'proc_datanode|proc_namenode|proc_secondarynamenode|proc_nodemanager|proc_resourcemanager|mapreduce.v2.hs.JobHistoryServer' | wc -l"
-
 
 function hadoopIsRunning() {
-    DW_HADOOP_PID_COUNT="$(eval "${DW_HADOOP_CMD_FIND_ALL_PIDS_COUNT}")"
-    [ "${DW_HADOOP_PID_COUNT}" -eq 5 ] && return 0 || return 1
+    local pidArray=( $(hadoopPidList) )
+    [[ ${#pidArray[@]} -eq 5 ]] && return 0 || return 1
 }
 
 function hadoopStart() {

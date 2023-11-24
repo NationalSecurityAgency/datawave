@@ -109,11 +109,10 @@ DW_ZOOKEEPER_CMD_FIND_ALL_PIDS="ps -ef | grep 'zookeeper.server.quorum.QuorumPee
 DW_ACCUMULO_CMD_START="( cd ${ACCUMULO_HOME}/bin && ./accumulo-cluster start )"
 DW_ACCUMULO_CMD_STOP="( cd ${ACCUMULO_HOME}/bin && ./accumulo-cluster stop )"
 DW_ACCUMULO_CMD_FIND_ALL_PIDS="pgrep -d ' ' -f 'o.start.Main manager|o.start.Main tserver|o.start.Main monitor|o.start.Main gc|o.start.Main tracer'"
-DW_ACCUMULO_CMD_FIND_ALL_PIDS_COUNT="pgrep -f 'o.start.Main manager|o.start.Main tserver|o.start.Main monitor|o.start.Main gc' | wc -l"
 
 function accumuloIsRunning() {
-    DW_ACCUMULO_PID_COUNT="$(eval "${DW_ACCUMULO_CMD_FIND_ALL_PIDS_COUNT}")"
-    [ "${DW_ACCUMULO_PID_COUNT}" -eq 4 ] && return 0 || return 1
+    local pidArray=( $(accumuloPidList) )
+    [[ ${#pidArray[@]} -eq 5 ]] && return 0 || return 1
 }
 
 function accumuloStart() {
