@@ -73,7 +73,7 @@ if [[ ${TOTAL} > 0 ]]; then
   SHUTDOWN_PORT=24100
   for ((LOADER = 0; LOADER < ${#MAP_LOADER_HDFS_NAME_NODES[@]}; LOADER = $((LOADER + 1)))); do
     currentLoaders =$(ps -eaf | grep [b]ulkIngestMap | grep ${MAP_LOADER_HDFS_NAME_NODES[$LOADER]} | cut -d" " -f1-7)
-    echo "current loaders running: " $currentLoaders
+    echo "active loaders still running on " ${MAP_LOADER_HDFS_NAME_NODES[$LOADER]} ": " $currentLoaders
     FILES_STUCK_LOADING=$($INGEST_HADOOP_HOME/bin/hadoop fs -ls "${MAP_LOADER_HDFS_NAME_NODES[$LOADER]}$BASE_WORK_DIR/*/job.loading" | awk '{print $NF}')
     if [[ ! -z $FILES_STUCK_LOADING && -z "$currentLoaders" ]]; then
       echo "About to reset stuck files, no active loaders detected on ${MAP_LOADER_HDFS_NAME_NODES[$LOADER]}"
