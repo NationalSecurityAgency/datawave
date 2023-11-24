@@ -129,6 +129,7 @@ function hadoopStatus() {
         local _pid
         local _opt=pid
 
+        DW_HADOOP_PID_LIST="$(eval "${DW_HADOOP_CMD_FIND_ALL_PIDS}")"
         local -r _pids=${DW_HADOOP_PID_LIST// /|}
         echo "pids: ${DW_HADOOP_PID_LIST}"
         for _arg in $(jps -l | egrep "${_pids}"); do
