@@ -333,13 +333,15 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
      * <li>this is not a major compaction</li>
      * <li>we're doing a full majc compaction</li>
      * </ul>
+     *
      * @param options
      * @param env
      * @return true only if we should disable filtering
      */
-    private boolean shouldDisableForNonFullCompaction(Map<String, String> options, IteratorEnvironment env) {
+    private boolean shouldDisableForNonFullCompaction(Map<String,String> options, IteratorEnvironment env) {
         if (!validatePropertyIsBoolean(options, AgeOffConfigParams.DISABLE_ON_NON_FULL_MAJC)) {
-            throw new IllegalArgumentException("Invalid for " + AgeOffConfigParams.DISABLE_ON_NON_FULL_MAJC + ": " + options.get(AgeOffConfigParams.DISABLE_ON_NON_FULL_MAJC));
+            throw new IllegalArgumentException(
+                            "Invalid for " + AgeOffConfigParams.DISABLE_ON_NON_FULL_MAJC + ": " + options.get(AgeOffConfigParams.DISABLE_ON_NON_FULL_MAJC));
         }
 
         // if the configuration property is missing, we should apply the filter
@@ -371,13 +373,15 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
      * <li>this is not a major compaction</li>
      * <li>we're doing a user majc compaction</li>
      * </ul>
+     *
      * @param options
      * @param env
      * @return true only if we should disable filtering
      */
-    private boolean shouldDisableForNonUserCompaction(Map<String, String> options, IteratorEnvironment env) {
+    private boolean shouldDisableForNonUserCompaction(Map<String,String> options, IteratorEnvironment env) {
         if (!validatePropertyIsBoolean(options, AgeOffConfigParams.ONLY_ON_USER_COMPACTION)) {
-            throw new IllegalArgumentException("Invalid for " + AgeOffConfigParams.ONLY_ON_USER_COMPACTION + ": " + options.get(AgeOffConfigParams.ONLY_ON_USER_COMPACTION));
+            throw new IllegalArgumentException(
+                            "Invalid for " + AgeOffConfigParams.ONLY_ON_USER_COMPACTION + ": " + options.get(AgeOffConfigParams.ONLY_ON_USER_COMPACTION));
         }
 
         // if the configuration property is missing, we should apply the filter
@@ -463,9 +467,9 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
     }
 
     private long getLongProperty(final String prop, final long defaultValue) {
-        if (this.myEnv != null && this.myEnv.getConfig()!= null) {
+        if (this.myEnv != null && this.myEnv.getConfig() != null) {
             AccumuloConfiguration conf = this.myEnv.getConfig();
-            Map<String, String> properties = new TreeMap<>();
+            Map<String,String> properties = new TreeMap<>();
             conf.getProperties(properties, p -> Objects.equals(prop, p));
             if (properties.containsKey(prop)) {
                 return Long.parseLong(properties.get(prop));
@@ -509,7 +513,7 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
         options.put(AgeOffConfigParams.TTL_SHORT_CIRCUIT, "Interval after which no data is aged off allowing this filter to bypass calling the filters");
         options.put(AgeOffConfigParams.FILTER_CONFIG, "URL to the age off filter configuration file.");
         options.put(AgeOffConfigParams.ONLY_ON_USER_COMPACTION,
-                "If set to 'true' then filters will only be used for user-initiated major compactions and not system initiated ones. [default = false]");
+                        "If set to 'true' then filters will only be used for user-initiated major compactions and not system initiated ones. [default = false]");
         return new IteratorOptions("cfgAgeoff", "ConfigurableAgeOffFilter removes entries with timestamps more than <ttl> milliseconds old", options, null);
     }
 
@@ -553,7 +557,7 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
         return (ttlUnits != null) && allUnits.contains(ttlUnits);
     }
 
-    private boolean validatePropertyIsBoolean(Map<String, String> options, String propertyName) {
+    private boolean validatePropertyIsBoolean(Map<String,String> options, String propertyName) {
         if (options.containsKey(propertyName)) {
             String propertyValue = options.get(propertyName);
             if (!"true".equals(propertyValue) && !"false".equals(propertyValue)) {
