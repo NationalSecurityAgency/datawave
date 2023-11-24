@@ -60,8 +60,35 @@ public class ConfigurableAgeOffFilterTest extends EasyMockSupport {
         // These two are only for the disabled test
         expect(env.getIteratorScope()).andReturn(IteratorUtil.IteratorScope.majc).anyTimes();
         expect(env.isFullMajorCompaction()).andReturn(false).anyTimes();
+        expect(env.isUserCompaction()).andReturn(false).anyTimes();
 
         replay(env, pluginEnv);
+    }
+
+    @Test
+    public void testAcceptKeyValue_OnlyUserMajc() throws Exception {
+        ConfigurableAgeOffFilter filter = new ConfigurableAgeOffFilter();
+        Map<String,String> options = getOptionsMap(30, AgeOffTtlUnits.DAYS);
+        options.put(AgeOffConfigParams.ONLY_ON_USER_COMPACTION, "true");
+
+        filter.init(source, options, env);
+
+        assertThat(filter.accept(new Key(), VALUE), is(true));
+        // 1970 is older than 30 days, but filter is disable so should be true
+        assertThat(filter.accept(getKey(0), VALUE), is(true));
+    }
+
+    @Test
+    public void testAcceptKeyValue_DisabledFullMajc() throws Exception {
+        ConfigurableAgeOffFilter filter = new ConfigurableAgeOffFilter();
+        Map<String,String> options = getOptionsMap(30, AgeOffTtlUnits.DAYS);
+        options.put(AgeOffConfigParams.DISABLE_ON_NON_FULL_MAJC, "true");
+
+        filter.init(source, options, env);
+
+        assertThat(filter.accept(new Key(), VALUE), is(true));
+        // 1970 is older than 30 days, but filter is disable so should be true
+        assertThat(filter.accept(getKey(0), VALUE), is(true));
     }
 
     @Test
