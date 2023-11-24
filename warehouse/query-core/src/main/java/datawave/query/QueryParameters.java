@@ -194,6 +194,8 @@ public class QueryParameters {
 
     public static final String DATE_INDEX_TIME_TRAVEL = "date.index.time.travel";
 
+    public static final String IGNORE_NONEXISTENT_FIELDS = "ignore.nonexistent.fields";
+
     /**
      * Used to specify a SHARDS_AND_DAYS hint within the options function.
      */
