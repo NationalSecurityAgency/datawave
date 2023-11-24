@@ -292,15 +292,6 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
     }
 
     /**
-     * return true if this is a system initiated majc (a majc that is not a full major compaction)
-     *
-     * @param env
-     */
-    private boolean isSystemInitiatedMajC(IteratorEnvironment env) {
-        return (env != null && env.getIteratorScope().equals(IteratorUtil.IteratorScope.majc) && !env.isFullMajorCompaction());
-    }
-
-    /**
      * Used to initialize the default parameters used by this implementation of {@code Filter}, as well as the sub-filters specified in the configuration file.
      *
      * @param options
