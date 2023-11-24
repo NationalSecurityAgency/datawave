@@ -1,11 +1,11 @@
-shard	[B@57c8b24d
-shard	[B@39320a41
-shard	[B@43f4ebd
-shard	[B@584a5c78
-shard	[B@79fcf790
-shard1	[B@79fcf790
+shard	ZGF0YXdhdmU=
+shard	dGVzdA==
+shard	YmFzZTY0
+shard	YXVzdGlu
+shard	d2Fz
+shard1	d2Fz
 shard1
-someTableName	[B@57c8b24d
-someTableName	[B@39320a41
-someTableName	[B@43f4ebd
-someTableName	[B@79fcf790
+someTableName	ZGF0YXdhdmU=
+someTableName	dGVzdA==
+someTableName	YmFzZTY0
+someTableName	d2Fz

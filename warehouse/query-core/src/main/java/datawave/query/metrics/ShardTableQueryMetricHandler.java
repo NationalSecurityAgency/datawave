@@ -7,6 +7,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -34,7 +35,6 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections4.map.LRUMap;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateUtils;
@@ -164,8 +164,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
 
         // encode the password because that's how the AccumuloRecordWriter
         String accumuloPassword = conf.get("AccumuloRecordWriter.password");
-        byte[] encodedAccumuloPassword = Base64.encodeBase64(accumuloPassword.getBytes());
-        conf.set("AccumuloRecordWriter.password", new String(encodedAccumuloPassword));
+        conf.set("AccumuloRecordWriter.password", Base64.getEncoder().encodeToString(accumuloPassword.getBytes()));
         markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
     }
 

@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.StringReader;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -24,7 +25,6 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.jexl2.JexlException;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ParseException;
@@ -630,7 +630,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             } catch (IOException ex) {
                 log.error("Some error encoding the prefilters...", ex);
             }
-            retVal = new String(Base64.encodeBase64(baos.toByteArray()));
+            retVal = Base64.getEncoder().encodeToString(baos.toByteArray());
         }
 
         return retVal;

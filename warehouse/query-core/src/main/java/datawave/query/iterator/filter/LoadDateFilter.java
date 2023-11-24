@@ -3,6 +3,7 @@ package datawave.query.iterator.filter;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
+import java.util.Base64;
 import java.util.Map;
 
 import org.apache.accumulo.core.data.Key;
@@ -10,7 +11,6 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.commons.codec.binary.Base64;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 
@@ -25,7 +25,7 @@ public class LoadDateFilter extends DateTypeFilter {
     protected Range columnRange = null;
 
     private static Range decodeRange(String e) throws IOException {
-        ByteArrayInputStream b = new ByteArrayInputStream(Base64.decodeBase64(e.getBytes()));
+        ByteArrayInputStream b = new ByteArrayInputStream(Base64.getDecoder().decode(e));
         DataInputStream in = new DataInputStream(b);
         Range range = new Range();
         try {
