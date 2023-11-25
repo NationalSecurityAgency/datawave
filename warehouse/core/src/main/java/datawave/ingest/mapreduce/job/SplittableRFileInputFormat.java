@@ -8,6 +8,8 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.file.FileOperations;
 import org.apache.accumulo.core.file.FileSKVIterator;
 import org.apache.accumulo.core.file.FileSKVWriter;
+import org.apache.accumulo.core.file.blockfile.impl.CachableBlockFile;
+import org.apache.accumulo.core.file.rfile.RFile;
 import org.apache.accumulo.core.file.rfile.RFileOperations;
 import org.apache.accumulo.core.spi.crypto.CryptoEnvironment;
 import org.apache.accumulo.core.spi.crypto.CryptoService;
@@ -72,20 +74,43 @@ public class SplittableRFileInputFormat extends RFileInputFormat {
             throw new IllegalArgumentException(rfile + " does not exist");
         }
 
-        FileOperations ops = RFileOperations.getInstance();
-        String file = rfile.toString();
         CryptoService cs = CryptoFactoryLoader.getServiceForClient(CryptoEnvironment.Scope.TABLE, config.getPropsWithPrefix(TABLE_CRYPTO_PREFIX.name()));
-        FileSKVIterator iter = ops.newIndexReaderBuilder().forFile(file, fs, config, cs).withTableConfiguration(DefaultConfiguration.getInstance()).build();
+        CachableBlockFile.CachableBuilder cb = new CachableBlockFile.CachableBuilder().fsPath(fs, rfile).conf(config).cryptoService(cs);
+        RFile.Reader rfileReader = new RFile.Reader(cb);
 
+        // get the first and last keys to bound the blocks while creating splits
+        Key firstKey = rfileReader.getFirstKey();
+        Key lastKey = rfileReader.getLastKey();
+
+        // use the index blocks to create the splits
+        FileSKVIterator iter = rfileReader.getIndex();
+
+        // track the last split key to since multiple splits with the same split key MUST be in the same block
+        Key lastSplit = firstKey;
         List<InputSplit> splits = new ArrayList<>();
         int blkCount = 0;
+        int splitBlocks = 0;
+
+
+        Key top = null;
         while (iter.hasTop()) {
-            splits.add(new RFileSplit(fileSplit, blkCount++, 1));
+            splitBlocks++;
+            top = iter.getTopKey();
+
+            if (!top.equals(lastSplit)) {
+                splits.add(new RFileSplit(fileSplit, blkCount, splitBlocks));
+                blkCount += splitBlocks;
+                lastSplit = iter.getTopKey();
+                splitBlocks = 0;
+            }
             iter.next();
         }
 
-        // add the last split
-        splits.add(new RFileSplit(fileSplit, blkCount, 1));
+        // if there is a gap between the last index key top key and the lastKey in the file or there hasn't been a split created yet
+        if (top.equals(lastKey) || splits.isEmpty()) {
+            // add the last split
+            splits.add(new RFileSplit(fileSplit, blkCount, splitBlocks + 1));
+        }
 
         return splits;
     }
@@ -103,13 +128,13 @@ public class SplittableRFileInputFormat extends RFileInputFormat {
         FileSystem fs = rfile.getFileSystem(config);
 
         if (!fs.exists(rfile)) {
-            throw new IllegalArgumentException(rfile.toString() + " does not exist");
+            throw new IllegalArgumentException(rfile + " does not exist");
         }
 
-        FileOperations ops = RFileOperations.getInstance();
-        String file = rfile.toString();
         CryptoService cs = CryptoFactoryLoader.getServiceForClient(CryptoEnvironment.Scope.TABLE, config.getPropsWithPrefix(TABLE_CRYPTO_PREFIX.name()));
-        FileSKVIterator iter = ops.newIndexReaderBuilder().forFile(file, fs, config, cs).withTableConfiguration(DefaultConfiguration.getInstance()).build();
+        CachableBlockFile.CachableBuilder cb = new CachableBlockFile.CachableBuilder().fsPath(fs, rfile).conf(config).cryptoService(cs);
+        RFile.Reader rfileReader = new RFile.Reader(cb);
+        FileSKVIterator iter = rfileReader.getIndex();
 
         Key start = null;
         int blkCount = 1;
@@ -132,7 +157,6 @@ public class SplittableRFileInputFormat extends RFileInputFormat {
             iter.next();
             blkCount++;
         }
-        iter.close();
 
         if (blkCount < numIndexBlocks) {
             throw new EOFException("end index " + startIndexBlock + numIndexBlocks + " beyond end of file");
@@ -143,10 +167,9 @@ public class SplittableRFileInputFormat extends RFileInputFormat {
             end = iter.getTopKey();
         }
 
-        FileSKVIterator reader = ops.newReaderBuilder().forFile(file, fs, config, cs).withTableConfiguration(DefaultConfiguration.getInstance()).build();
-        reader.seek(new Range(start, true, end, false), Collections.EMPTY_SET, false);
+        rfileReader.seek(new Range(start, true, end, false), Collections.EMPTY_SET, false);
 
-        return reader;
+        return rfileReader;
     }
 
     public static void main(String[] args) throws IOException, InterruptedException {
@@ -220,6 +243,9 @@ public class SplittableRFileInputFormat extends RFileInputFormat {
         out.close();
     }
 
+    // For a file with N blocks
+    // startBlock 0 - beginning of the file to the first block
+    // startBlock N - last block to the end
     public static class RFileSplit extends InputSplit {
         private final FileSplit fileSplit;
         private final int startBlock;
