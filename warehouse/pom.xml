@@ -338,7 +338,7 @@
             <dependency>
                 <groupId>org.codehaus.jackson</groupId>
                 <artifactId>jackson-mapper-asl</artifactId>
-                <version>1.9.13</version>
+                <version>${version.jackson-mapper-asl}</version>
             </dependency>
             <dependency>
                 <groupId>org.fusesource.jdbm</groupId>
@@ -358,7 +358,7 @@
             <dependency>
                 <groupId>org.json</groupId>
                 <artifactId>json</artifactId>
-                <version>20080701</version>
+                <version>20231013</version>
             </dependency>
             <dependency>
                 <groupId>org.mortbay.jetty</groupId>
@@ -373,7 +373,7 @@
             <dependency>
                 <groupId>org.python</groupId>
                 <artifactId>jython</artifactId>
-                <version>2.5.2b2-callable</version>
+                <version>2.7.2b2</version>
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>

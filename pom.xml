@@ -42,7 +42,7 @@
         <version.arquillian>1.4.1.Final</version.arquillian>
         <version.arquillian-weld-ee-embedded>1.0.0.Final</version.arquillian-weld-ee-embedded>
         <version.assertj>3.20.2</version.assertj>
-        <version.avro>1.8.2</version.avro>
+        <version.avro>1.11.3</version.avro>
         <version.caffeine>3.1.0</version.caffeine>
         <version.commons-beanutils>1.9.4</version.commons-beanutils>
         <version.commons-cli>1.4</version.commons-cli>
@@ -50,7 +50,7 @@
         <version.commons-collections>3.2.2</version.commons-collections>
         <version.commons-collections4>4.3</version.commons-collections4>
         <version.commons-configuration>1.10</version.commons-configuration>
-        <version.commons-configuration2>2.7</version.commons-configuration2>
+        <version.commons-configuration2>2.8.0</version.commons-configuration2>
         <version.commons-io>2.6</version.commons-io>
         <version.commons-jexl3>3.3</version.commons-jexl3>
         <version.commons-lang>2.6</version.commons-lang>
@@ -61,12 +61,13 @@
         <version.deltaspike>1.9.0</version.deltaspike>
         <version.easymock>4.0.2</version.easymock>
         <version.eclipse.emf>2.15.0</version.eclipse.emf>
-        <version.geoserver>2.22.1</version.geoserver>
+        <version.geoserver>2.22.5</version.geoserver>
         <version.geotools>28.1</version.geotools>
         <version.geowave>1.2.0</version.geowave>
         <version.google-guava>31.1-jre</version.google-guava>
         <version.googlecode-findbugs>2.0.3</version.googlecode-findbugs>
         <version.googlecode-json-simple>1.1.1</version.googlecode-json-simple>
+        <version.guava>32.0.0-android</version.guava>
         <version.hadoop>3.3.5</version.hadoop>
         <version.hadoop-shaded>1.1.1</version.hadoop-shaded>
         <version.httpcomponents-httpclient>4.5.13</version.httpcomponents-httpclient>
@@ -74,6 +75,7 @@
         <version.in-memory-accumulo>3.0.1</version.in-memory-accumulo>
         <version.infinispan>9.4.21.Final</version.infinispan>
         <version.jackson>2.10.0.pr1</version.jackson>
+        <version.jackson-mapper-asl>1.9.13</version.jackson-mapper-asl>
         <version.javassist>3.24.0-GA</version.javassist>
         <version.javastatsd>3.1.0</version.javastatsd>
         <version.javax-validation>2.0.1.Final</version.javax-validation>
@@ -104,12 +106,12 @@
         <version.microservice.type-utils>2.0.1</version.microservice.type-utils>
         <version.minlog>1.2</version.minlog>
         <version.mockito>2.23.0</version.mockito>
-        <version.mysql-connector>8.0.16</version.mysql-connector>
+        <version.mysql-connector>8.0.28</version.mysql-connector>
         <version.netty>4.1.42.Final</version.netty>
         <version.objenesis>2.1</version.objenesis>
         <version.picketbox>5.0.3.Final</version.picketbox>
         <version.powermock>2.0.9</version.powermock>
-        <version.protobuf>3.7.1</version.protobuf>
+        <version.protobuf>3.16.3</version.protobuf>
         <version.protostuff>1.6.2</version.protostuff>
         <version.slf4j>1.7.36</version.slf4j>
         <version.spotify-dns>3.1.5</version.spotify-dns>
@@ -123,10 +125,10 @@
         <!-- Different version of weld for tests since the Arquillian embedded EE container needs an older version. -->
         <version.weld-test>2.3.5.Final</version.weld-test>
         <version.wildfly>17.0.1.Final</version.wildfly>
-        <version.woodstox-core>5.0.3</version.woodstox-core>
+        <version.woodstox-core>5.4.0</version.woodstox-core>
         <version.woodstox-stax2>3.1.4</version.woodstox-stax2>
         <version.xerces>2.12.2</version.xerces>
-        <version.zookeeper>3.8.1</version.zookeeper>
+        <version.zookeeper>3.8.3</version.zookeeper>
         <!-- Unless a version is duplicated multiple times, just place the version on the dependency in dependencyManagement. -->
     </properties>
     <dependencyManagement>
