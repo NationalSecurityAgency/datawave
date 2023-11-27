@@ -25,6 +25,27 @@ import datawave.query.iterator.Util.Transformer;
 
 /**
  * Performs a merge join of the child iterators. It is expected that all child iterators return values in sorted order.
+ * <p>
+ * A brief explanation of the AndIterator lexicon
+ * <ol>
+ * <li>includes: a positive single term or a union of positive terms</li> For example: <code>A or (A &amp;&amp; B)</code>
+ * <li>excludes: a negated single term</li> For example: <code>!A</code>
+ * <li>contextIncludes: a union with a mixture of positive and negative terms</li> For example: <code>(A || !B) or (A || (!B &amp;&amp; !C))</code>
+ * <li>contextExcludes: a union of all negated terms</li> For example: <code>(!A || !B) or (!A || (!B &amp;&amp; !C))</code>
+ * </ol>
+ * <p>
+ * Context is required to fully evaluate a negated term. Thus, an AndIterator requires context if there are no include iterators.
+ * <p>
+ * Iterators whose underlying source is exhausted are tracked so that the AndIterator can apply short circuit logic in special cases. An include that is
+ * exhausted signals the end of this intersection, while an exclude that is exhausted is always considered true.
+ * <p>
+ * 'Expired' iterators are a special case. In most cases an iterator has a distinct top element that acts as the key in the various 'head maps'. In the case of
+ * a union with a negative term it's difficult to determine the true top key. Consider the following case: "(A or !B)".
+ * <p>
+ * The A-term maps to elements [1, 2, 8, 9] while the negated B-term maps to element [1, 5, 9].
+ * <p>
+ * When a move is issued to element 4 the "(A or !B)" iterator does not have a top key. Element 4 matches via the negation, but the next top element for the
+ * positive A-term is 8. Thus, the iterator is marked as 'expired' and given special handling on subsequent move calls.
  */
 public class AndIterator<T extends Comparable<T>> implements SeekableIterator, NestedIterator<T> {
     private static final Logger log = Logger.getLogger(AndIterator.class);

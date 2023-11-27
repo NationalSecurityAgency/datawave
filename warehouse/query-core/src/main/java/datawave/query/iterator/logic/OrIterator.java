@@ -23,10 +23,27 @@ import datawave.query.iterator.Util;
 import datawave.query.iterator.Util.Transformer;
 
 /**
- * Performs a deduping merge of iterators.
- *
- * @param <T>
- *            type cast
+ * Performs a de-duping merge of iterators.
+ * <p>
+ * A brief explanation of the OrIterator lexicon
+ * <ol>
+ * <li>includes: a positive single term, an intersection of positive terms, or an intersection of both positive and negative terms</li> For example:
+ * <code>A, (A &amp;&amp; B), or (A &amp;&amp; !B)</code>
+ * <li>contextIncludes: an intersection of unions that contain positive and negative terms</li> For example: <code>(A || !B) &amp;&amp; (C || !D)</code>
+ * <li>contextExcludes: a negative term or an intersection of negative terms</li> For example: <code>!A or (!A &amp;&amp; !B)</code>
+ * </ol>
+ * Context is required to fully evaluate a negated term. Thus, the OrIterator requires context if ANY iterator in the union requires context.
+ * <p>
+ * Iterators whose underlying source is exhausted are tracked so that the OrIterator can apply short circuit logic in special cases. An exclude that is
+ * exhausted means that this union always matches.
+ * <p>
+ * 'Expired' iterators are a special case. In most cases an iterator has a distinct top element that acts as a key in the various 'head maps'. In the case of an
+ * intersection of negated terms it is difficult to determine the true top key. Consider the following case: "(!A and !B)".
+ * <p>
+ * Both the A-term and the B-term map to elements [1, 2, 8, 9]
+ * <p>
+ * When a move is issued to element 5 the intersection matches via negation. The underlying sources both map to element 8, but the intersection just matched
+ * against element 5. This iterator is now in an 'expired' state and will receive special handling on subsequent move calls.
  */
 public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
 

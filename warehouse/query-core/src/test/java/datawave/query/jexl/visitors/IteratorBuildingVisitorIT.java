@@ -19,8 +19,8 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ParseException;
 import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Sets;
@@ -159,7 +159,7 @@ class IteratorBuildingVisitorIT {
         String query = "A == '1' || (!(B == '2') && !(B == '3'))";
         NestedIterator<Key> root = visit(query);
         assertNotNull(root);
-        // and = not built because it would be an effective top level intersection
+        // and = not built because it would be an effective top level negation
         // or = single include for A term
     }
 
@@ -174,6 +174,16 @@ class IteratorBuildingVisitorIT {
         // root intersection = include + context include
         // union = include + context exclude
         // nested intersection = excludes
+    }
+
+    @Test
+    void testEngineerUnionWithContextInclude() {
+        String query = "A == '1' && (B == '2' || ((C == '3' || !(D == '4')) && (E == '5' || !(F == '6'))))";
+        NestedIterator<Key> root = visit(query);
+        assertNotNull(root);
+        // A term ensures there is a top level intersection
+        // B term is one half of the union where we hope to engineer a context includes
+        // The intersection is (C || !D) && (E || !F) and that *should* require context
     }
 
     @Test
