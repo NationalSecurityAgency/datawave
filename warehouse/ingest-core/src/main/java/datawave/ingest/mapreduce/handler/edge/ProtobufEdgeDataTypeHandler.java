@@ -94,11 +94,11 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
 
     private static final String EDGE_DEFAULT_DATA_TYPE = "default";
 
-    public static final String EDGE_TABLE_BLACKLIST_VALUES = ".protobufedge.table.blacklist.values";
-    public static final String EDGE_TABLE_BLACKLIST_FIELDS = ".protobufedge.table.blacklist.fields";
+    public static final String EDGE_TABLE_DISALLOWLIST_VALUES = ".protobufedge.table.disallowlist.values";
+    public static final String EDGE_TABLE_DISALLOWLIST_FIELDS = ".protobufedge.table.disallowlist.fields";
 
     public static final String EDGE_TABLE_METADATA_ENABLE = "protobufedge.table.metadata.enable";
-    public static final String EDGE_TABLE_BLACKIST_ENABLE = "protobufedge.table.blacklist.enable";
+    public static final String EDGE_TABLE_DISALLOWLIST_ENABLE = "protobufedge.table.disallowlist.enable";
 
     public static final String EDGE_SPRING_CONFIG = "protobufedge.spring.config";
 
@@ -125,9 +125,9 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
 
     private Map<String,Map<String,String>> edgeTypeLookup = new HashMap<>();
 
-    private Map<String,Set<String>> blacklistFieldLookup = new HashMap<>();
-    private Map<String,Set<String>> blacklistValueLookup = new HashMap<>();
-    private boolean enableBlacklist = false;
+    private Map<String,Set<String>> disallowlistFieldLookup = new HashMap<>();
+    private Map<String,Set<String>> disallowlistValueLookup = new HashMap<>();
+    private boolean enableDisallowlist = false;
 
     private boolean evaluatePreconditions = false;
     private boolean includeAllEdges;
@@ -183,7 +183,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         this.useStatsLogBloomFilter = conf.getBoolean(EDGE_STATS_LOG_USE_BLOOM, false);
         this.metadataTableName = ConfigurationHelper.isNull(conf, METADATA_TABLE_NAME, String.class);
 
-        this.enableBlacklist = ConfigurationHelper.isNull(conf, EDGE_TABLE_BLACKIST_ENABLE, Boolean.class);
+        this.enableDisallowlist = ConfigurationHelper.isNull(conf, EDGE_TABLE_DISALLOWLIST_ENABLE, Boolean.class);
         this.enableMetadata = ConfigurationHelper.isNull(conf, EDGE_TABLE_METADATA_ENABLE, Boolean.class);
 
         setUpFailurePolicy = FailurePolicy.valueOf(conf.get(EDGE_SETUP_FAILURE_POLICY));
@@ -277,14 +277,14 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
                 }
             }
 
-            if (ctx.containsBean(entry.getKey() + EDGE_TABLE_BLACKLIST_VALUES)) {
-                Set<String> values = (HashSet<String>) ctx.getBean(entry.getKey() + EDGE_TABLE_BLACKLIST_VALUES);
-                blacklistValueLookup.put(entry.getKey(), new HashSet<>(values));
+            if (ctx.containsBean(entry.getKey() + EDGE_TABLE_DISALLOWLIST_VALUES)) {
+                Set<String> values = (HashSet<String>) ctx.getBean(entry.getKey() + EDGE_TABLE_DISALLOWLIST_VALUES);
+                disallowlistValueLookup.put(entry.getKey(), new HashSet<>(values));
             }
 
-            if (ctx.containsBean(entry.getKey() + EDGE_TABLE_BLACKLIST_FIELDS)) {
-                Set<String> fields = (HashSet<String>) ctx.getBean(entry.getKey() + EDGE_TABLE_BLACKLIST_FIELDS);
-                blacklistFieldLookup.put(entry.getKey(), new HashSet<>(fields));
+            if (ctx.containsBean(entry.getKey() + EDGE_TABLE_DISALLOWLIST_FIELDS)) {
+                Set<String> fields = (HashSet<String>) ctx.getBean(entry.getKey() + EDGE_TABLE_DISALLOWLIST_FIELDS);
+                disallowlistFieldLookup.put(entry.getKey(), new HashSet<>(fields));
             }
 
         }
@@ -315,38 +315,38 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         }
         registry.remove(EDGE_DEFAULT_DATA_TYPE);
 
-        // loop through edge definitions and collect any ones that have blacklisted fields
-        if (this.enableBlacklist) {
-            Map<String,Set<EdgeDefinition>> blacklistedEdges = new HashMap<>();
+        // loop through edge definitions and collect any ones that have disallowlisted fields
+        if (this.enableDisallowlist) {
+            Map<String,Set<EdgeDefinition>> disallowlistedEdges = new HashMap<>();
             for (String dType : edges.keySet()) {
-                if (!blacklistedEdges.containsKey(dType)) {
-                    blacklistedEdges.put(dType, new HashSet<>());
+                if (!disallowlistedEdges.containsKey(dType)) {
+                    disallowlistedEdges.put(dType, new HashSet<>());
                 }
                 for (EdgeDefinition edgeDef : edges.get(dType).getEdges()) {
-                    if (isBlacklistField(dType, edgeDef.getSourceFieldName()) || isBlacklistField(dType, edgeDef.getSinkFieldName())) {
-                        blacklistedEdges.get(dType).add(edgeDef);
-                        log.warn("Removing Edge Definition due to blacklisted Field: DataType: " + dType + " Definition: " + edgeDef.getSourceFieldName() + "-"
-                                        + edgeDef.getSinkFieldName());
+                    if (isDisallowlistField(dType, edgeDef.getSourceFieldName()) || isDisallowlistField(dType, edgeDef.getSinkFieldName())) {
+                        disallowlistedEdges.get(dType).add(edgeDef);
+                        log.warn("Removing Edge Definition due to disallowlisted Field: DataType: " + dType + " Definition: " + edgeDef.getSourceFieldName()
+                                        + "-" + edgeDef.getSinkFieldName());
                     } else if (edgeDef.isEnrichmentEdge()) {
-                        if (isBlacklistField(dType, edgeDef.getEnrichmentField())) {
-                            blacklistedEdges.get(dType).add(edgeDef);
+                        if (isDisallowlistField(dType, edgeDef.getEnrichmentField())) {
+                            disallowlistedEdges.get(dType).add(edgeDef);
                         }
                     }
                 }
             }
-            // remove the blacklistedEdges
-            int blacklistedFieldCount = 0;
-            for (String dType : blacklistedEdges.keySet()) {
-                for (EdgeDefinition edgeDef : blacklistedEdges.get(dType)) {
+            // remove the disallowlistedEdges
+            int disallowlistedFieldCount = 0;
+            for (String dType : disallowlistedEdges.keySet()) {
+                for (EdgeDefinition edgeDef : disallowlistedEdges.get(dType)) {
                     edges.get(dType).getEdges().remove(edgeDef);
-                    blacklistedFieldCount++;
+                    disallowlistedFieldCount++;
                 }
             }
-            if (blacklistedFieldCount > 0) {
-                log.info("Removed " + blacklistedFieldCount + " edge definitions because they contain blacklisted fields.");
+            if (disallowlistedFieldCount > 0) {
+                log.info("Removed " + disallowlistedFieldCount + " edge definitions because they contain disallowlisted fields.");
             }
         } else {
-            log.info("Blacklisting of edges is disabled.");
+            log.info("disallowlisting of edges is disabled.");
         }
 
         log.info("Found edge definitions for " + edges.keySet().size() + " data types.");
@@ -429,30 +429,30 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         this.edges = edges;
     }
 
-    public Map<String,Set<String>> getBlacklistFieldLookup() {
-        return blacklistFieldLookup;
+    public Map<String,Set<String>> getDisallowlistFieldLookup() {
+        return disallowlistFieldLookup;
     }
 
-    public Map<String,Set<String>> getBlacklistValueLookup() {
-        return blacklistValueLookup;
+    public Map<String,Set<String>> getDisallowlistValueLookup() {
+        return disallowlistValueLookup;
     }
 
-    private boolean isBlacklistField(String dataType, String fieldName) {
-        if (blacklistFieldLookup.containsKey(dataType)) {
-            return this.blacklistFieldLookup.get(dataType).contains(fieldName);
-        } else if (blacklistFieldLookup.containsKey(EDGE_DEFAULT_DATA_TYPE)) {
-            // perhaps there is no blacklist, which is fine
-            return this.blacklistFieldLookup.get(EDGE_DEFAULT_DATA_TYPE).contains(fieldName);
+    private boolean isDisallowlistField(String dataType, String fieldName) {
+        if (disallowlistFieldLookup.containsKey(dataType)) {
+            return this.disallowlistFieldLookup.get(dataType).contains(fieldName);
+        } else if (disallowlistFieldLookup.containsKey(EDGE_DEFAULT_DATA_TYPE)) {
+            // perhaps there is no disallowlist, which is fine
+            return this.disallowlistFieldLookup.get(EDGE_DEFAULT_DATA_TYPE).contains(fieldName);
         }
         return false;
     }
 
-    private boolean isBlacklistValue(String dataType, String fieldValue) {
-        if (blacklistValueLookup.containsKey(dataType)) {
-            return this.blacklistValueLookup.get(dataType).contains(fieldValue);
-        } else if (blacklistValueLookup.containsKey(EDGE_DEFAULT_DATA_TYPE)) {
-            // perhaps there is no blacklist, which is fine
-            return this.blacklistValueLookup.get(EDGE_DEFAULT_DATA_TYPE).contains(fieldValue);
+    private boolean isdisallowlistValue(String dataType, String fieldValue) {
+        if (disallowlistValueLookup.containsKey(dataType)) {
+            return this.disallowlistValueLookup.get(dataType).contains(fieldValue);
+        } else if (disallowlistValueLookup.containsKey(EDGE_DEFAULT_DATA_TYPE)) {
+            // perhaps there is no disallowlist, which is fine
+            return this.disallowlistValueLookup.get(EDGE_DEFAULT_DATA_TYPE).contains(fieldValue);
         }
         return false;
     }
@@ -896,9 +896,9 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
             }
         }
 
-        // check value blacklist
-        if (this.enableBlacklist && isBlacklistValue(typeName, edgeDataBundle.getSource().getValue(ValueType.INDEXED))
-                        || isBlacklistValue(typeName, edgeDataBundle.getSink().getValue(ValueType.INDEXED))) {
+        // check value disallowlist
+        if (this.enableDisallowlist && isdisallowlistValue(typeName, edgeDataBundle.getSource().getValue(ValueType.INDEXED))
+                        || isdisallowlistValue(typeName, edgeDataBundle.getSink().getValue(ValueType.INDEXED))) {
             return null;
         }
 

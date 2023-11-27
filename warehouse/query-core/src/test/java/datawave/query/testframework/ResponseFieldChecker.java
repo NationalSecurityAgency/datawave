@@ -50,7 +50,7 @@ public class ResponseFieldChecker implements QueryLogicTestHarness.DocumentCheck
 
         for (final String field : this.missing) {
             final Attribute val = doc.get(field);
-            Assert.assertNull("blacklisted return field(" + field + ") from " + doc, val);
+            Assert.assertNull("disallowlisted return field(" + field + ") from " + doc, val);
         }
     }
 }

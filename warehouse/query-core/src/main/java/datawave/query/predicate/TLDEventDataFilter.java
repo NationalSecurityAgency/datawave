@@ -40,9 +40,9 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
     private final long maxFieldsBeforeSeek;
     private final long maxKeysBeforeSeek;
 
-    // track whitelist/blacklist if specified
-    private List<String> sortedWhitelist = null;
-    private List<String> sortedBlacklist = null;
+    // track allowlist/disallowlist if specified
+    private List<String> sortedAllowlist = null;
+    private List<String> sortedDisallowlist = null;
 
     // track query fields (must be sorted)
     protected List<String> queryFields;
@@ -130,8 +130,8 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
         super(other);
         maxFieldsBeforeSeek = other.maxFieldsBeforeSeek;
         maxKeysBeforeSeek = other.maxKeysBeforeSeek;
-        sortedWhitelist = other.sortedWhitelist;
-        sortedBlacklist = other.sortedBlacklist;
+        sortedAllowlist = other.sortedAllowlist;
+        sortedDisallowlist = other.sortedDisallowlist;
         queryFields = other.queryFields;
         lastField = other.lastField;
         fieldCount = other.fieldCount;
@@ -203,11 +203,10 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
      * field if limits are enabled. Otherwise all TLD Key's will be kept. For a non-TLD the Key will only be kept if it is a nonEvent field which will be used
      * for query evaluation (apply()==true)
      *
-     * @see datawave.query.predicate.Filter#keep(Key)
-     *
      * @param k
      *            a key
      * @return true to keep, false otherwise
+     * @see datawave.query.predicate.Filter#keep(Key)
      */
     @Override
     public boolean keep(Key k) {
@@ -374,7 +373,7 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
     }
 
     /**
-     * Look in the query fields only, regardless of whitelist or blacklist configuration
+     * Look in the query fields only, regardless of allowlist or disallowlist configuration
      *
      * @param current
      *            the current key
@@ -393,14 +392,14 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
         }
 
         final String fieldName = lastParseInfo.getField();
-        // generate a whitelist seek only on the query fields, without using any previous state
-        range = getWhitelistSeek(current, fieldName, endKey, endKeyInclusive, queryFields, -1);
+        // generate an allowlist seek only on the query fields, without using any previous state
+        range = getAllowlistSeek(current, fieldName, endKey, endKeyInclusive, queryFields, -1);
 
         return range;
     }
 
     /**
-     * As long as a seek should not be bypassed, generate either a whitelist or blacklist range
+     * As long as a seek should not be bypassed, generate either a allowlist or disallowlist range
      *
      * @param current
      *            the current key
@@ -419,17 +418,17 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
         }
 
         final String fieldName = lastParseInfo.getField();
-        // first handle seek due to a field limit, then use the white/block lists if necessary
+        // first handle seek due to a field limit, then use the allow/disallow lists if necessary
         if (isFieldLimit(fieldName)) {
             range = getFieldSeek(current, fieldName, endKey, endKeyInclusive);
         }
 
         // if it wasn't a field limit seek then do a normal seek
         if (range == null) {
-            if (sortedWhitelist != null) {
-                range = getWhitelistSeek(current, fieldName, endKey, endKeyInclusive);
-            } else if (sortedBlacklist != null) {
-                range = getBlacklistSeek(current, fieldName, endKey, endKeyInclusive);
+            if (sortedAllowlist != null) {
+                range = getAllowlistSeek(current, fieldName, endKey, endKeyInclusive);
+            } else if (sortedDisallowlist != null) {
+                range = getDisallowlistSeek(current, fieldName, endKey, endKeyInclusive);
             }
         }
 
@@ -455,7 +454,7 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
     }
 
     /**
-     * Seek using the main sorted whitelist and lastListSeekIndex
+     * Seek using the main sorted allowlist and lastListSeekIndex
      *
      * @param current
      *            the current key
@@ -466,14 +465,14 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
      * @param endKeyInclusive
      *            the range end inclusive flag
      * @return the new range to be seek()
-     * @see #getWhitelistSeek(Key, String, Key, boolean, List, int) getWhitelistSeek
+     * @see #getAllowlistSeek(Key, String, Key, boolean, List, int) getAllowlistSeek
      */
-    private Range getWhitelistSeek(Key current, String fieldName, Key endKey, boolean endKeyInclusive) {
-        return getWhitelistSeek(current, fieldName, endKey, endKeyInclusive, sortedWhitelist, lastListSeekIndex);
+    private Range getAllowlistSeek(Key current, String fieldName, Key endKey, boolean endKeyInclusive) {
+        return getAllowlistSeek(current, fieldName, endKey, endKeyInclusive, sortedAllowlist, lastListSeekIndex);
     }
 
     /**
-     * Moving through the whitelist from the lastHit index create a start key for the next acceptable field/uid
+     * Moving through the allowlist from the lastHit index create a start key for the next acceptable field/uid
      *
      * @param current
      *            the current key
@@ -483,17 +482,17 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
      *            the range endKey
      * @param endKeyInclusive
      *            the range end inclusive flag
-     * @param sortedWhitelist
-     *            the sortedWhitelist to use
+     * @param sortedAllowlist
+     *            the sortedAllowlist to use
      * @param lastHit
-     *            the starting index to search the whitelist
+     *            the starting index to search the allowlist
      * @return the new range can be used to seek to the next key, bypassing irrelevant keys
      */
-    private Range getWhitelistSeek(Key current, String fieldName, Key endKey, boolean endKeyInclusive, List<String> sortedWhitelist, int lastHit) {
+    private Range getAllowlistSeek(Key current, String fieldName, Key endKey, boolean endKeyInclusive, List<String> sortedAllowlist, int lastHit) {
         Range range = null;
 
-        for (int i = lastHit + 1; i < sortedWhitelist.size(); i++) {
-            String nextField = sortedWhitelist.get(i);
+        for (int i = lastHit + 1; i < sortedAllowlist.size(); i++) {
+            String nextField = sortedAllowlist.get(i);
 
             if (fieldName.compareTo(nextField) == 0) {
                 // do not generate a seek range if the iterator is still within
@@ -506,7 +505,7 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
                 range = new Range(startKey, true, endKey, endKeyInclusive);
                 lastListSeekIndex = i;
                 break;
-            } else if (i + 1 == sortedWhitelist.size()) {
+            } else if (i + 1 == sortedAllowlist.size()) {
                 // roll to the next uid and reset the lastSeekIndex
                 range = getRolloverRange(current, endKey, endKeyInclusive);
                 lastListSeekIndex = -1;
@@ -514,7 +513,7 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
             }
         }
 
-        // none of the fields in the whitelist come after the current field
+        // none of the fields in the allowlist come after the current field
         if (range == null) {
             // roll to the next uid
             range = getRolloverRange(current, endKey, endKeyInclusive);
@@ -551,7 +550,6 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
     }
 
     /**
-     *
      * @param end
      *            the end key
      * @param endInclusive
@@ -562,23 +560,23 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
         return new Range(end, false, end.followingKey(PartialKey.ROW_COLFAM_COLQUAL_COLVIS_TIME), false);
     }
 
-    private Range getBlacklistSeek(Key current, String fieldName, Key endKey, boolean endKeyInclusive) {
+    private Range getDisallowlistSeek(Key current, String fieldName, Key endKey, boolean endKeyInclusive) {
         Range range = null;
 
         // test for if the seek wrapped to a new uid
-        if (lastListSeekIndex > 0 && fieldName.compareTo(sortedBlacklist.get(lastListSeekIndex)) < 0) {
+        if (lastListSeekIndex > 0 && fieldName.compareTo(sortedDisallowlist.get(lastListSeekIndex)) < 0) {
             // reset, the current field is less than the last one
             lastListSeekIndex = -1;
         }
 
-        for (int i = lastListSeekIndex + 1; i < sortedBlacklist.size(); i++) {
-            String nextField = sortedBlacklist.get(i);
+        for (int i = lastListSeekIndex + 1; i < sortedDisallowlist.size(); i++) {
+            String nextField = sortedDisallowlist.get(i);
             int compare = fieldName.compareTo(nextField);
             if (compare == 0) {
-                // blacklisted
+                // disallowlisted
                 Key startKey = new Key(current.getRow(), current.getColumnFamily(), new Text(fieldName + Constants.MAX_UNICODE_STRING));
                 if (startKey.compareTo(endKey) < 0) {
-                    // seek past the blacklist
+                    // seek past the disallowlist
                     range = new Range(startKey, false, endKey, endKeyInclusive);
                 } else {
                     // seek to the end of the range
@@ -662,53 +660,53 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
     }
 
     /**
-     * Ensure that if using a whitelist that all the queryFields are on it and that if using a blacklist none of the queryFields are on it. The whitelist and
-     * blacklist sets will be modified
+     * Ensure that if using a allowlist that all the queryFields are on it and that if using a disallowlist none of the queryFields are on it. The allowlist and
+     * disallowlist sets will be modified
      *
-     * @param whitelist
-     *            the list of whitelist queryFields or null if not using a whitelist
-     * @param blacklist
-     *            the list of blacklist queryFields or null if not using a blacklist
+     * @param allowlist
+     *            the list of allowlist queryFields or null if not using an allowlist
+     * @param disallowlist
+     *            the list of disallowlist queryFields or null if not using a disallowlist
      */
-    private void updateLists(Set<String> whitelist, Set<String> blacklist) {
-        if (whitelist != null && !whitelist.isEmpty()) {
-            // always add the target queryFields into the whitelist in case it is missing
+    private void updateLists(Set<String> allowlist, Set<String> disallowlist) {
+        if (allowlist != null && !allowlist.isEmpty()) {
+            // always add the target queryFields into the allowlist in case it is missing
             for (String field : queryFields) {
-                if (!whitelist.contains(field)) {
-                    whitelist.add(field);
+                if (!allowlist.contains(field)) {
+                    allowlist.add(field);
                 }
             }
         }
 
-        if (blacklist != null && !blacklist.isEmpty()) {
-            // ensure that none of the required queryFields are on the blacklist
+        if (disallowlist != null && !disallowlist.isEmpty()) {
+            // ensure that none of the required queryFields are on the disallowlist
             for (String field : queryFields) {
-                if (blacklist.contains(field)) {
-                    blacklist.remove(field);
+                if (disallowlist.contains(field)) {
+                    disallowlist.remove(field);
                 }
             }
         }
     }
 
     /**
-     * Set the sortedWHitelist and sortedBlacklist from the queryFields modified versions and sort them
+     * Set the sortedAllowlist and sortedDisallowlist from the queryFields modified versions and sort them
      *
-     * @param whitelist
-     *            the whitelist modified by queryFields
-     * @param blacklist
-     *            the blacklist modified by queryFields
+     * @param allowlist
+     *            the allowlist modified by queryFields
+     * @param disallowlist
+     *            the disallowlist modified by queryFields
      */
-    private void setSortedLists(Set<String> whitelist, Set<String> blacklist) {
-        if (whitelist != null && !whitelist.isEmpty()) {
-            sortedWhitelist = new ArrayList<>(whitelist);
-            Collections.sort(sortedWhitelist);
-            sortedWhitelist = Collections.unmodifiableList(sortedWhitelist);
+    private void setSortedLists(Set<String> allowlist, Set<String> disallowlist) {
+        if (allowlist != null && !allowlist.isEmpty()) {
+            sortedAllowlist = new ArrayList<>(allowlist);
+            Collections.sort(sortedAllowlist);
+            sortedAllowlist = Collections.unmodifiableList(sortedAllowlist);
         }
 
-        if (blacklist != null && !blacklist.isEmpty()) {
-            sortedBlacklist = new ArrayList<>(blacklist);
-            Collections.sort(sortedBlacklist);
-            sortedBlacklist = Collections.unmodifiableList(sortedBlacklist);
+        if (disallowlist != null && !disallowlist.isEmpty()) {
+            sortedDisallowlist = new ArrayList<>(disallowlist);
+            Collections.sort(sortedDisallowlist);
+            sortedDisallowlist = Collections.unmodifiableList(sortedDisallowlist);
         }
     }
 
@@ -756,13 +754,13 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
     }
 
     /**
-     * Test a field against the whitelist and blacklist
+     * Test a field against the allowlist and disallowlist
      *
      * @param field
      *            the field to test
      * @param isTld
      *            set to true if the key is from a tld, false otherwise
-     * @return true if the field should be kept based on the whitelist/blacklist, false otherwise
+     * @return true if the field should be kept based on the allowlist/disallowlist, false otherwise
      */
     private boolean keep(String field, boolean isTld) {
         if (isFieldLimit(field)) {
@@ -770,10 +768,10 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
         }
 
         if (isTld) {
-            if (sortedWhitelist != null) {
-                return sortedWhitelist.contains(field);
-            } else if (sortedBlacklist != null) {
-                return !sortedBlacklist.contains(field);
+            if (sortedAllowlist != null) {
+                return sortedAllowlist.contains(field);
+            } else if (sortedDisallowlist != null) {
+                return !sortedDisallowlist.contains(field);
             } else {
                 // neither is specified, keep by default
                 return true;

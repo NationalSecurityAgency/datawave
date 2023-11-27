@@ -201,8 +201,8 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         Multimap<Integer,String> fieldLimits = HashMultimap.create();
         fieldLimits.put(1, Constants.ANY_FIELD);
 
-        Set<String> blacklist = new HashSet<>();
-        blacklist.add("FIELD3");
+        Set<String> disallowlist = new HashSet<>();
+        disallowlist.add("FIELD3");
 
         ASTJexlScript query = JexlASTHelper.parseJexlQuery("FIELD2 == 'bar'");
 
@@ -211,7 +211,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         // expected key structure
         Key key = new Key("row", "datatype" + Constants.NULL + "123.345.456", "FIELD1" + Constants.NULL_BYTE_STRING + "value");
         Map<String,ExpressionFilter> expressionFilters = getExpressionFilters(query, new AttributeFactory(mockTypeMetadata));
-        filter = new TLDEventDataFilter(query, Collections.singleton("FIELD2"), expressionFilters, null, blacklist, 1, -1, fieldLimits, "LIMIT_FIELD",
+        filter = new TLDEventDataFilter(query, Collections.singleton("FIELD2"), expressionFilters, null, disallowlist, 1, -1, fieldLimits, "LIMIT_FIELD",
                         Collections.emptySet());
 
         assertTrue(filter.keep(key));
@@ -567,8 +567,8 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         Multimap<Integer,String> fieldLimits = HashMultimap.create();
         fieldLimits.put(1, Constants.ANY_FIELD);
 
-        Set<String> blacklist = new HashSet<>();
-        blacklist.add("FIELD3");
+        Set<String> disallowlist = new HashSet<>();
+        disallowlist.add("FIELD3");
 
         ASTJexlScript query = JexlASTHelper.parseJexlQuery("FIELD2 == 'bar'");
 
@@ -579,12 +579,12 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
 
         replayAll();
 
-        // blacklisted tld key to initialize doc
+        // disallowlisted tld key to initialize doc
         Key rootKey = new Key("row", "datatype" + Constants.NULL + "123.345.456", "FIELD3" + Constants.NULL_BYTE_STRING + "value");
         // child key that would normally not be kept
         Key key = new Key("row", "datatype" + Constants.NULL + "123.345.456.1", "FIELD2" + Constants.NULL_BYTE_STRING + "bar");
         Map<String,ExpressionFilter> expressionFilters = getExpressionFilters(query, new AttributeFactory(mockTypeMetadata));
-        filter = new TLDEventDataFilter(query, Collections.singleton("FIELD2"), expressionFilters, null, blacklist, 1, -1, fieldLimits, "LIMIT_FIELD",
+        filter = new TLDEventDataFilter(query, Collections.singleton("FIELD2"), expressionFilters, null, disallowlist, 1, -1, fieldLimits, "LIMIT_FIELD",
                         nonEventFields);
 
         // set the parse info correctly
