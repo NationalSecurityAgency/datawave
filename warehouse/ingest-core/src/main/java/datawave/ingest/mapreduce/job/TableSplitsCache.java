@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -26,7 +27,7 @@ import org.apache.accumulo.core.clientImpl.ClientContext;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.dataImpl.KeyExtent;
 import org.apache.accumulo.core.metadata.MetadataServicer;
-import org.apache.commons.codec.binary.Base64;
+import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -253,13 +254,13 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
 
     private void writeSplits(PrintStream out, String table, List<Text> splits) {
         for (Text split : splits) {
-            out.println(table + this.delimiter + new String(Base64.encodeBase64(split.getBytes())));
+            out.println(table + this.delimiter + Base64.getEncoder().encodeToString(split.getBytes()));
         }
     }
 
     private void writeLocations(PrintStream out, String table, List<Text> splits, Map<Text,String> splitLocations) {
         for (Text split : splits) {
-            out.println(table + this.delimiter + new String(Base64.encodeBase64(split.getBytes())) + "\t" + splitLocations.get(split));
+            out.println(table + this.delimiter + Base64.getEncoder().encodeToString((split.getBytes())) + "\t" + splitLocations.get(split));
         }
     }
 
@@ -377,7 +378,7 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
                 this.splits.put(tableName, Collections.unmodifiableList(tmpSplits));
             }
             if (parts.length >= 2) {
-                Text split = new Text(Base64.decodeBase64(parts[1]));
+                Text split = new Text(Base64.getDecoder().decode(parts[1]));
                 tmpSplits.add(split);
                 if (parts.length == 3) {
                     tmpSplitLocations.put(split, dedup(locationDedup, parts[2]));

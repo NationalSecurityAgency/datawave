@@ -7,7 +7,7 @@ import static datawave.query.jexl.JexlASTHelper.jexlFeatures;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
-import java.io.StringReader;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -28,7 +28,6 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.jexl3.JexlException;
 import org.apache.commons.jexl3.JexlFeatures;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
@@ -674,7 +673,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements 
             } catch (IOException ex) {
                 log.error("Some error encoding the prefilters...", ex);
             }
-            retVal = new String(Base64.encodeBase64(baos.toByteArray()));
+            retVal = Base64.getEncoder().encodeToString(baos.toByteArray());
         }
 
         return retVal;

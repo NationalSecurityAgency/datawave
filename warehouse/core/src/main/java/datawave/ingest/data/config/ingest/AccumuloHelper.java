@@ -1,11 +1,11 @@
 package datawave.ingest.data.config.ingest;
 
+import java.util.Base64;
 import java.util.Properties;
 
 import org.apache.accumulo.core.client.Accumulo;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
-import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.conf.Configuration;
 
 import datawave.ingest.data.config.ConfigurationHelper;
@@ -30,7 +30,7 @@ public class AccumuloHelper {
 
     public void setup(Configuration config) throws IllegalArgumentException {
         username = ConfigurationHelper.isNull(config, USERNAME, String.class);
-        byte[] pw = Base64.decodeBase64(ConfigurationHelper.isNull(config, PASSWORD, String.class).getBytes());
+        byte[] pw = Base64.getDecoder().decode(ConfigurationHelper.isNull(config, PASSWORD, String.class));
         password = new PasswordToken(pw);
         instanceName = ConfigurationHelper.isNull(config, INSTANCE_NAME, String.class);
         zooKeepers = ConfigurationHelper.isNull(config, ZOOKEEPERS, String.class);
@@ -68,7 +68,7 @@ public class AccumuloHelper {
     }
 
     public static void setPassword(Configuration conf, byte[] password) {
-        conf.set(PASSWORD, new String(Base64.encodeBase64(password)));
+        conf.set(PASSWORD, Base64.getEncoder().encodeToString(password));
     }
 
     public static void setInstanceName(Configuration conf, String instanceName) {
@@ -84,7 +84,7 @@ public class AccumuloHelper {
     }
 
     public static byte[] getPassword(Configuration conf) {
-        return Base64.decodeBase64(ConfigurationHelper.isNull(conf, PASSWORD, String.class).getBytes());
+        return Base64.getDecoder().decode(ConfigurationHelper.isNull(conf, PASSWORD, String.class));
     }
 
     public static String getInstanceName(Configuration conf) {

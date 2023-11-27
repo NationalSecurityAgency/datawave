@@ -7,6 +7,7 @@ import java.net.InetAddress;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -58,7 +59,6 @@ import org.apache.accumulo.core.singletons.SingletonReservation;
 import org.apache.accumulo.core.util.Pair;
 import org.apache.accumulo.core.util.format.DefaultFormatter;
 import org.apache.accumulo.core.util.threads.Threads;
-import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
@@ -225,7 +225,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
             Path file = new Path(work, conf.get("mapreduce.job.name") + System.currentTimeMillis() + ".pw");
             conf.set(PASSWORD_PATH, file.toString());
             fs = FileSystem.get(file.toUri(), conf);
-            byte[] encodedPw = Base64.encodeBase64(passwd);
+            byte[] encodedPw = Base64.getEncoder().encode(passwd);
             try (FSDataOutputStream fos = fs.create(file, false)) {
                 fs.setPermission(file, new FsPermission(FsAction.ALL, FsAction.NONE, FsAction.NONE));
                 fs.deleteOnExit(file);
@@ -402,9 +402,9 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
             if (column.getFirst() == null)
                 throw new IllegalArgumentException("Column family can not be null");
 
-            String col = new String(Base64.encodeBase64(TextUtil.getBytes(column.getFirst())));
+            String col = Base64.getEncoder().encodeToString(TextUtil.getBytes(column.getFirst()));
             if (column.getSecond() != null)
-                col += ":" + new String(Base64.encodeBase64(TextUtil.getBytes(column.getSecond())));
+                col += ":" + Base64.getEncoder().encodeToString(TextUtil.getBytes(column.getSecond()));
             columnStrings.add(col);
         }
         conf.setStrings(COLUMNS, columnStrings.toArray(new String[columnStrings.size()]));
@@ -581,8 +581,8 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
         Set<Pair<Text,Text>> columns = new HashSet<>();
         for (String col : conf.getStringCollection(COLUMNS)) {
             int idx = col.indexOf(":");
-            Text cf = new Text(idx < 0 ? Base64.decodeBase64(col.getBytes()) : Base64.decodeBase64(col.substring(0, idx).getBytes()));
-            Text cq = idx < 0 ? null : new Text(Base64.decodeBase64(col.substring(idx + 1).getBytes()));
+            Text cf = new Text(idx < 0 ? Base64.getDecoder().decode(col) : Base64.getDecoder().decode(col.substring(0, idx)));
+            Text cq = idx < 0 ? null : new Text(Base64.getDecoder().decode(col.substring(idx + 1)));
             columns.add(new Pair<>(cf, cq));
         }
         return columns;
@@ -683,7 +683,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
                 byte[] encodedPassword = new byte[length];
                 fdis.read(encodedPassword);
 
-                return Base64.decodeBase64(encodedPassword);
+                return Base64.getDecoder().decode(encodedPassword);
             }
         } else {
             String passwd = conf.get(PASSWORD);

@@ -2,6 +2,7 @@ package datawave.query.metrics;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -23,7 +24,6 @@ import org.apache.accumulo.core.data.ColumnUpdate;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.TabletId;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.RecordWriter;
@@ -314,7 +314,7 @@ public class AccumuloRecordWriter extends RecordWriter<Text,Mutation> {
      * @return the password
      */
     protected static byte[] getPassword(Configuration conf) {
-        byte[] bytes = Base64.decodeBase64(conf.get(PASSWORD, "").getBytes());
+        byte[] bytes = Base64.getDecoder().decode(conf.get(PASSWORD, ""));
         String pw = new String(bytes);
         pw = EnvProvider.resolve(pw);
         return pw.getBytes(StandardCharsets.UTF_8);
