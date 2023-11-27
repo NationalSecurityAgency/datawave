@@ -129,9 +129,9 @@ public class TLDQueryIterator extends QueryIterator {
             Map<String,ExpressionFilter> expressionFilters = getExpressionFilters(script, attributeFactory);
 
             // setup an evaluation filter to avoid loading every single child key into the event
-            this.evaluationFilter = new TLDEventDataFilter(script, getAllFields(), expressionFilters, useWhiteListedFields ? whiteListedFields : null,
-                            useBlackListedFields ? blackListedFields : null, getEventFieldSeek(), getEventNextSeek(),
-                            limitFieldsPreQueryEvaluation ? limitFieldsMap : Collections.emptyMap(), limitFieldsField, getNonEventFields());
+            this.evaluationFilter = new TLDEventDataFilter(script, getAllFields(), expressionFilters, useAllowListedFields ? allowListedFields : null,
+                            useDisallowListedFields ? disallowListedFields : null, getEventFieldSeek(), getEventNextSeek(),
+                            limitFieldsPreQueryEvaluation ? limitFieldsMap : HashMultimap.create(), limitFieldsField, getNonEventFields());
         }
         return this.evaluationFilter != null ? evaluationFilter.clone() : null;
     }

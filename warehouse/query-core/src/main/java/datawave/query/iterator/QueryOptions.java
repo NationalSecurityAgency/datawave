@@ -296,7 +296,7 @@ public class QueryOptions implements OptionDescriber {
     protected Set<String> allowListedFields = new HashSet<>();
     protected boolean useDisallowListedFields = false;
     protected Set<String> disallowListedFields = new HashSet<>();
-    protected Map<String,Integer> limitFieldsMap = new HashMap<>();
+    protected Multimap<Integer,String> limitFieldsMap = HashMultimap.create();
     protected Set<Set<String>> matchingFieldSets = new HashSet<>();
     protected boolean limitFieldsPreQueryEvaluation = false;
     protected String limitFieldsField = null;
