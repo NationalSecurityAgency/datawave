@@ -45,9 +45,6 @@ import datawave.webservice.common.logging.ThreadConfigurableLogger;
 /**
  * Specialization of the Helper type that validates the configuration for Ingest purposes. These helper classes also have the logic to parse the field names and
  * fields values from the datatypes that they represent.
- *
- *
- *
  */
 public abstract class BaseIngestHelper extends AbstractIngestHelper implements CompositeIngest, VirtualIngest {
     /**
@@ -63,9 +60,9 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
 
     /**
      * Configuration parameter to specify which fields should NOT be indexed, implying that all other event fields should be indexed. This parameter supports
-     * multiple datatypes, so a valid value would be something like {@code <type>.data.category.index.blacklist}.
+     * multiple datatypes, so a valid value would be something like {@code <type>.data.category.index.disallowlist}.
      */
-    public static final String BLACKLIST_INDEX_FIELDS = ".data.category.index.blacklist";
+    public static final String DISALLOWLIST_INDEX_FIELDS = ".data.category.index.disallowlist";
 
     /**
      * Configuration parameter to specify the fields that should be indexed in reverse This parameter supports multiple datatypes, so a valid value would be
@@ -75,9 +72,9 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
 
     /**
      * Configuration parameter to specify which fields should NOT be reverse indexed, implying that all other event fields should be reverse indexed. This
-     * parameter supports multiple datatypes, so a valid value would be something like {@code <type>.data.category.index.reverse.blacklist}.
+     * parameter supports multiple datatypes, so a valid value would be something like {@code <type>.data.category.index.reverse.disallowlist}.
      */
-    public static final String BLACKLIST_REVERSE_INDEX_FIELDS = ".data.category.index.reverse.blacklist";
+    public static final String DISALLOWLIST_REVERSE_INDEX_FIELDS = ".data.category.index.reverse.disallowlist";
 
     /**
      * Configuration parameter to specify the name of the normalizer that should be used for this datatype. This parameter supports multiple datatypes, so valid
@@ -162,14 +159,14 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     protected Map<String,Pattern> normalizedPatterns = Maps.newHashMap();
 
     protected Set<String> allIndexFields = Sets.newTreeSet(); // the indexed
-                                                              // fields across
-                                                              // all types
+    // fields across
+    // all types
     protected Set<String> allReverseIndexFields = Sets.newTreeSet(); // the
-                                                                     // indexed
-                                                                     // fields
-                                                                     // across
-                                                                     // all
-                                                                     // types
+    // indexed
+    // fields
+    // across
+    // all
+    // types
 
     private CompositeIngest compositeIngest;
     private VirtualIngest virtualIngest;
@@ -223,11 +220,11 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
                         .valueOf(config.get(this.getType().typeName() + DEFAULT_FAILED_NORMALIZATION_POLICY, defaultFailedFieldPolicy.name()));
         failedNormalizationField = config.get(this.getType().typeName() + FAILED_NORMALIZATION_FIELD, failedNormalizationField);
 
-        // Ensure that we have only a whitelist or a blacklist of fields to
+        // Ensure that we have only an allowlist or a disallowedlist of fields to
         // index
-        if (config.get(this.getType().typeName() + BLACKLIST_INDEX_FIELDS) != null && config.get(this.getType().typeName() + INDEX_FIELDS) != null) {
-            throw new RuntimeException("Configuration contains BlackList and Whitelist for indexed fields, " + "it specifies both.  Type: "
-                            + this.getType().typeName() + ", parameters: " + config.get(this.getType().typeName() + BLACKLIST_INDEX_FIELDS) + " and "
+        if (config.get(this.getType().typeName() + DISALLOWLIST_INDEX_FIELDS) != null && config.get(this.getType().typeName() + INDEX_FIELDS) != null) {
+            throw new RuntimeException("Configuration contains Disallowlist and Allowlist for indexed fields, " + "it specifies both.  Type: "
+                            + this.getType().typeName() + ", parameters: " + config.get(this.getType().typeName() + DISALLOWLIST_INDEX_FIELDS) + " and "
                             + config.get(this.getType().typeName() + INDEX_FIELDS));
         }
 
@@ -243,15 +240,15 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
         }
 
         // Process the indexed fields
-        if (config.get(this.getType().typeName() + BLACKLIST_INDEX_FIELDS) != null) {
+        if (config.get(this.getType().typeName() + DISALLOWLIST_INDEX_FIELDS) != null) {
             if (log.isDebugEnabled()) {
-                log.debug("Blacklist specified for: " + this.getType().typeName() + BLACKLIST_INDEX_FIELDS);
+                log.debug("Disallowlist specified for: " + this.getType().typeName() + DISALLOWLIST_INDEX_FIELDS);
             }
-            super.setHasIndexBlacklist(true);
-            configProperty = BLACKLIST_INDEX_FIELDS;
+            super.setHasIndexDisallowlist(true);
+            configProperty = DISALLOWLIST_INDEX_FIELDS;
         } else if (config.get(this.getType().typeName() + INDEX_FIELDS) != null) {
             log.debug("IndexedFields specified.");
-            super.setHasIndexBlacklist(false);
+            super.setHasIndexDisallowlist(false);
             configProperty = INDEX_FIELDS;
         }
 
@@ -259,7 +256,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
         if (fieldConfigHelper != null) {
             log.info("Using field config helper for " + this.getType().typeName());
         } else if (configProperty == null) {
-            log.warn("No index fields or blacklist fields specified, not generating index fields for " + this.getType().typeName());
+            log.warn("No index fields or disallowlist fields specified, not generating index fields for " + this.getType().typeName());
         } else {
             this.indexedFields = Sets.newHashSet();
             Collection<String> indexedStrings = config.getStringCollection(this.getType().typeName() + configProperty);
@@ -273,37 +270,37 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
             }
         }
 
-        // Ensure that we have only a whitelist or a blacklist of fields to
+        // Ensure that we have only an allowlist or a disallowlist of fields to
         // reverse index
-        if (config.get(this.getType().typeName() + BLACKLIST_REVERSE_INDEX_FIELDS) != null
+        if (config.get(this.getType().typeName() + DISALLOWLIST_REVERSE_INDEX_FIELDS) != null
                         && config.get(this.getType().typeName() + REVERSE_INDEX_FIELDS) != null) {
-            throw new RuntimeException("Configuration contains BlackList and Whitelist for indexed fields, it specifies both.  Type: "
-                            + this.getType().typeName() + ", parameters: " + config.get(this.getType().typeName() + BLACKLIST_REVERSE_INDEX_FIELDS) + "  "
+            throw new RuntimeException("Configuration contains Disallowlist and Allowlist for indexed fields, it specifies both.  Type: "
+                            + this.getType().typeName() + ", parameters: " + config.get(this.getType().typeName() + DISALLOWLIST_REVERSE_INDEX_FIELDS) + "  "
                             + config.get(this.getType().typeName() + REVERSE_INDEX_FIELDS));
         }
 
         configProperty = null;
 
         // Process the reverse index fields
-        if (config.get(this.getType().typeName() + BLACKLIST_REVERSE_INDEX_FIELDS) != null) {
+        if (config.get(this.getType().typeName() + DISALLOWLIST_REVERSE_INDEX_FIELDS) != null) {
             if (log.isDebugEnabled()) {
-                log.debug("Blacklist specified for: " + this.getType().typeName() + BLACKLIST_REVERSE_INDEX_FIELDS);
+                log.debug("Disallowlist specified for: " + this.getType().typeName() + DISALLOWLIST_REVERSE_INDEX_FIELDS);
             }
 
-            this.setHasReverseIndexBlacklist(true);
+            this.setHasReverseIndexDisallowlist(true);
 
-            configProperty = BLACKLIST_REVERSE_INDEX_FIELDS;
+            configProperty = DISALLOWLIST_REVERSE_INDEX_FIELDS;
         } else if (config.get(this.getType().typeName() + REVERSE_INDEX_FIELDS) != null) {
             if (log.isDebugEnabled()) {
                 log.debug("Reverse Index specified.for: " + this.getType().typeName() + REVERSE_INDEX_FIELDS);
             }
-            this.setHasReverseIndexBlacklist(false);
+            this.setHasReverseIndexDisallowlist(false);
             configProperty = REVERSE_INDEX_FIELDS;
         }
 
         // Load the proper list of fields to (not) reverse index
         if (configProperty == null) {
-            log.warn("No reverse index fields or blacklist reverse index fields specified, not generating reverse index fields for "
+            log.warn("No reverse index fields or disallowlist reverse index fields specified, not generating reverse index fields for "
                             + this.getType().typeName());
         } else {
             reverseIndexedFields = Sets.newHashSet();
@@ -847,7 +844,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
         if (fieldConfigHelper != null) {
             return fieldConfigHelper.isIndexedField(fieldName);
         }
-        return this.hasIndexBlacklist() ? !isIndexed(fieldName) : isIndexed(fieldName);
+        return this.hasIndexDisallowlist() ? !isIndexed(fieldName) : isIndexed(fieldName);
     }
 
     private boolean isIndexed(String fieldName) {
@@ -877,7 +874,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
             return fieldConfigHelper.isReverseIndexedField(fieldName);
         }
 
-        return super.hasReverseIndexBlacklist() ? !this.isReverseIndexed(fieldName) : this.isReverseIndexed(fieldName);
+        return super.hasReverseIndexDisallowlist() ? !this.isReverseIndexed(fieldName) : this.isReverseIndexed(fieldName);
     }
 
     private boolean isReverseIndexed(String fieldName) {
