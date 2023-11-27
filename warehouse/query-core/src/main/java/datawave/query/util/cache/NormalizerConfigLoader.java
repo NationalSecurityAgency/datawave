@@ -9,12 +9,12 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.Map.Entry;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
-import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
 
@@ -36,7 +36,7 @@ public class NormalizerConfigLoader extends Loader<String,Multimap<String,Type<?
     public NormalizerConfigLoader(final Configuration conf, String configItem) throws IOException {
         String configValue = conf.get(configItem);
         if (null != configValue) {
-            ByteArrayInputStream byteStream = new ByteArrayInputStream(Base64.decodeBase64(configValue));
+            ByteArrayInputStream byteStream = new ByteArrayInputStream(Base64.getDecoder().decode(configValue));
             GZIPInputStream gzipStream = new GZIPInputStream(byteStream);
             DataInputStream dataIn = new DataInputStream(gzipStream);
             readFields(dataIn);
@@ -90,7 +90,7 @@ public class NormalizerConfigLoader extends Loader<String,Multimap<String,Type<?
 
             dataOut.close();
 
-            return new String(Base64.encodeBase64(byteStream.toByteArray()));
+            return Base64.getEncoder().encodeToString(byteStream.toByteArray());
         } catch (IOException e) {
             log.error(e);
         }

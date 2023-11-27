@@ -24,7 +24,7 @@ abc	dw==
 abc	eA==
 abc	eQ==
 abc	eg==
-someTableName	[B@57c8b24d
-someTableName	[B@39320a41
-someTableName	[B@43f4ebd
-someTableName	[B@79fcf790
+someTableName	B0E=
+someTableName	B0D=
+someTableName	B1o=
+someTableName	CA==

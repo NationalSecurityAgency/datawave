@@ -1,8 +1,8 @@
 package datawave.ingest.util;
 
+import java.util.Base64;
 import java.util.Date;
 
-import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.util.GenericOptionsParser;
@@ -85,7 +85,7 @@ public class GenerateEdgeKeyVersionCache {
         // Set up accumulo connection configuration
         conf.set(AccumuloHelper.USERNAME, username);
         conf.set(AccumuloHelper.INSTANCE_NAME, instanceName);
-        conf.set(AccumuloHelper.PASSWORD, Base64.encodeBase64String(password));
+        conf.set(AccumuloHelper.PASSWORD, Base64.getEncoder().encodeToString(password));
         conf.set(AccumuloHelper.ZOOKEEPERS, zookeepers);
 
         conf.set(EdgeKeyVersioningCache.METADATA_TABLE_NAME, tableName);
