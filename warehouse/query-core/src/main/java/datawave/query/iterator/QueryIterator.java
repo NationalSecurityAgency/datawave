@@ -702,7 +702,6 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
      * @return an iterator to elements that satisfy the predicate
      */
     public static <T> UnmodifiableIterator<T> statelessFilter(final Iterator<T> unfiltered, final Predicate<? super T> predicate, QuerySpan trackingSpan) {
-        System.out.println("======================================================");
         checkNotNull(unfiltered);
         checkNotNull(predicate);
         return new UnmodifiableIterator<T>() {
@@ -714,8 +713,6 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                     if (predicate.apply(element)) {
                         if (trackingSpan != null) {
                             trackingSpan.evaluatedIncrement(1);
-                        } else {
-                            System.out.println("=========== trackingSpan is null ===========");
                         }
                         return element;
                     } else {

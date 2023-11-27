@@ -93,10 +93,6 @@ public class QuerySpan {
         return nextCount;
     }
 
-    public void resetEvaluated() {
-        evaluated = 0;
-    }
-
     public void evaluatedIncrement(long evaluatedCount) {
         evaluated += evaluatedCount;
         System.out.println("Evaluated Count: " + evaluated);
@@ -109,10 +105,6 @@ public class QuerySpan {
         }
         System.out.println("Evaluated Count: " + evaluatedCount);
         return evaluatedCount;
-    }
-
-    public void resetRejected() {
-        rejected = 0;
     }
 
     public void rejectedIncrement(long rejectedCount) {
@@ -198,7 +190,6 @@ public class QuerySpan {
     }
 
     public void reset() {
-        System.out.println("RESET RESET RESET RESET RESET RESET");
         for (QuerySpan source : sources) {
             source.reset();
         }
