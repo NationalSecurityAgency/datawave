@@ -36,13 +36,14 @@ public class MultiTableRangePartitionerTest {
     @Test
     public void testGoodSplitsFile() throws IOException, URISyntaxException {
         mockContextForLocalCacheFile(createUrl("trimmed_splits.txt"));
-        Assert.assertEquals(5, getPartition());
+        // prefix the key with z and assert that the partition falls into the last split (5)
+        Assert.assertEquals(5, getPartition("23432"));
     }
 
     @Test(expected = RuntimeException.class)
     public void testEmptySplitsThrowsException() throws IOException, URISyntaxException {
         mockContextForLocalCacheFile(createUrl("trimmed_empty_splits.txt"));
-        getPartition();
+        getPartition("23432");
     }
 
     @Test(expected = RuntimeException.class)
@@ -56,7 +57,7 @@ public class MultiTableRangePartitionerTest {
             }
         });
 
-        getPartition();
+        getPartition("23432");
     }
 
     private URL createUrl(String fileName) {
@@ -72,9 +73,9 @@ public class MultiTableRangePartitionerTest {
         });
     }
 
-    private int getPartition() {
+    private int getPartition(String key) {
         MultiTableRangePartitioner partitioner = new MultiTableRangePartitioner();
         partitioner.setConf(new Configuration());
-        return partitioner.getPartition(new BulkIngestKey(new Text(TABLE_NAME), new Key("23432")), new Value("fdsafdsa".getBytes()), 100);
+        return partitioner.getPartition(new BulkIngestKey(new Text(TABLE_NAME), new Key(key)), new Value("fdsafdsa".getBytes()), 100);
     }
 }

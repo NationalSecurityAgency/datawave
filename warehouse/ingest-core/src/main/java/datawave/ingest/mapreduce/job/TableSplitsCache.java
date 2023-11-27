@@ -6,6 +6,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -17,7 +18,6 @@ import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.TableOperations;
-import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -157,7 +157,7 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
                     splitsPerTable.put(table, splits.size());
                     log.info("Writing " + splits.size() + " splits.");
                     for (Text split : splits) {
-                        out.println(table + this.delimiter + new String(Base64.encodeBase64(split.getBytes())));
+                        out.println(table + this.delimiter + new String(Base64.getEncoder().encode(split.getBytes())));
                     }
                 }
                 if (null != getFileStatus() && exceedsMaxSplitsDeviation(splitsPerTable)) {
@@ -227,7 +227,7 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
                 this.splits.put(tableName, splits);
             }
             if (parts.length > 1) {
-                splits.add(new Text(Base64.decodeBase64(parts[1].getBytes())));
+                splits.add(new Text(Base64.getDecoder().decode(parts[1].getBytes())));
             }
         }
         in.close();

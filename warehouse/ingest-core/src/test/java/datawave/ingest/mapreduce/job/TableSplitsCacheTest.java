@@ -5,12 +5,12 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.accumulo.core.fate.zookeeper.ZooCache;
-import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -192,7 +192,7 @@ public class TableSplitsCacheTest {
 
         mockConfiguration.put(AccumuloHelper.USERNAME, USER_NAME);
         mockConfiguration.put(AccumuloHelper.INSTANCE_NAME, HOST_NAME);
-        mockConfiguration.put(AccumuloHelper.PASSWORD, Base64.encodeBase64String(PASSWORD.getBytes()));
+        mockConfiguration.put(AccumuloHelper.PASSWORD, Base64.getEncoder().encodeToString(PASSWORD.getBytes()));
         mockConfiguration.put(AccumuloHelper.ZOOKEEPERS, HOST_NAME);
         mockConfiguration.put(FileSystem.FS_DEFAULT_NAME_KEY, "file:///");
 

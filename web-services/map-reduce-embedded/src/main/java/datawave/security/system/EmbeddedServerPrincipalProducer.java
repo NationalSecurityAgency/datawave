@@ -3,14 +3,13 @@ package datawave.security.system;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.util.Base64;
 
 import javax.annotation.Priority;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Alternative;
 import javax.enterprise.inject.Produces;
 import javax.interceptor.Interceptor;
-
-import org.apache.commons.codec.binary.Base64;
 
 import datawave.security.authorization.DatawavePrincipal;
 
@@ -39,7 +38,7 @@ public class EmbeddedServerPrincipalProducer {
         if (encodedServerPrincipal == null) {
             throw new IllegalStateException("System property server.principal must be set to a serialized, base64 encoded principal.");
         }
-        byte[] decodedServerPrincipal = Base64.decodeBase64(encodedServerPrincipal);
+        byte[] decodedServerPrincipal = Base64.getDecoder().decode(encodedServerPrincipal);
 
         try (ByteArrayInputStream bais = new ByteArrayInputStream(decodedServerPrincipal); ObjectInputStream ois = new ObjectInputStream(bais)) {
             serverPrincipal = (DatawavePrincipal) ois.readObject();
