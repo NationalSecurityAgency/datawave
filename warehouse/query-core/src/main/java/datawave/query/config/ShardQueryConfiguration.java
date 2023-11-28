@@ -224,7 +224,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private List<IndexHole> indexHoles = new ArrayList<>();
     // Limit fields returned per event
     private Set<String> projectFields = Collections.emptySet();
-    private Set<String> blacklistedFields = new HashSet<>(0);
+    private Set<String> disallowlistedFields = new HashSet<>(0);
     private Set<String> indexedFields = Sets.newHashSet();
     private Set<String> reverseIndexedFields = Sets.newHashSet();
     private Set<String> normalizedFields = Sets.newHashSet();
@@ -267,6 +267,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private String limitFieldsField = null;
     private boolean hitList = false;
     private boolean dateIndexTimeTravel = false;
+    private boolean ignoreNonExistentFields = false;
     // Cap (or fail if failOutsideValidDateRange) the begin date with this value (subtracted from Now). 0 or less disables this feature.
     private long beginDateCap = -1;
     private boolean failOutsideValidDateRange = true;
@@ -511,6 +512,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setIndexTableName(other.getIndexTableName());
         this.setReverseIndexTableName(other.getReverseIndexTableName());
         this.setMetadataTableName(other.getMetadataTableName());
+        this.setIgnoreNonExistentFields(other.getIgnoreNonExistentFields());
         this.setDateIndexTableName(other.getDateIndexTableName());
         this.setIndexStatsTableName(other.getIndexStatsTableName());
         this.setDefaultDateTypeName(other.getDefaultDateTypeName());
@@ -537,7 +539,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setDatatypeFilter(null == other.getDatatypeFilter() ? null : Sets.newHashSet(other.getDatatypeFilter()));
         this.setIndexHoles(null == other.getIndexHoles() ? null : Lists.newArrayList(other.getIndexHoles()));
         this.setProjectFields(null == other.getProjectFields() ? null : Sets.newHashSet(other.getProjectFields()));
-        this.setBlacklistedFields(null == other.getBlacklistedFields() ? null : Sets.newHashSet(other.getBlacklistedFields()));
+        this.setDisallowlistedFields(null == other.getDisallowlistedFields() ? null : Sets.newHashSet(other.getDisallowlistedFields()));
         this.setIndexedFields(null == other.getIndexedFields() ? null : Sets.newHashSet(other.getIndexedFields()));
         this.setReverseIndexedFields(null == other.getReverseIndexedFields() ? null : Sets.newHashSet(other.getReverseIndexedFields()));
         this.setNormalizedFields(null == other.getNormalizedFields() ? null : Sets.newHashSet(other.getNormalizedFields()));
@@ -898,17 +900,16 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         return StringUtils.join(this.getProjectFields(), Constants.PARAM_VALUE_SEP);
     }
 
-    public Set<String> getBlacklistedFields() {
-        return blacklistedFields;
+    public Set<String> getDisallowlistedFields() {
+        return disallowlistedFields;
     }
 
-    public void setBlacklistedFields(Set<String> blacklistedFields) {
-        this.blacklistedFields = deconstruct(blacklistedFields);
+    public void setDisallowlistedFields(Set<String> disallowlistedFields) {
+        this.disallowlistedFields = deconstruct(disallowlistedFields);
     }
 
-    @JsonIgnore
-    public String getBlacklistedFieldsAsString() {
-        return StringUtils.join(this.getBlacklistedFields(), Constants.PARAM_VALUE_SEP);
+    public String getDisallowlistedFieldsAsString() {
+        return StringUtils.join(this.getDisallowlistedFields(), Constants.PARAM_VALUE_SEP);
     }
 
     public Boolean getUseEnrichers() {
@@ -1646,6 +1647,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setDateIndexTimeTravel(boolean dateIndexTimeTravel) {
         this.dateIndexTimeTravel = dateIndexTimeTravel;
+    }
+
+    public boolean getIgnoreNonExistentFields() {
+        return ignoreNonExistentFields;
+    }
+
+    public void setIgnoreNonExistentFields(boolean ignoreNonExistentFields) {
+        this.ignoreNonExistentFields = ignoreNonExistentFields;
     }
 
     public long getBeginDateCap() {

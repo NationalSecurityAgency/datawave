@@ -43,7 +43,7 @@ public class QueryParameters {
     /**
      * ??
      */
-    public static final String BLACKLISTED_FIELDS = "blacklisted.fields";
+    public static final String DISALLOWLISTED_FIELDS = "disallowlisted.fields";
 
     /**
      * The list of fields to return
@@ -193,6 +193,8 @@ public class QueryParameters {
     public static final String RAW_TYPES = "raw.types";
 
     public static final String DATE_INDEX_TIME_TRAVEL = "date.index.time.travel";
+
+    public static final String IGNORE_NONEXISTENT_FIELDS = "ignore.nonexistent.fields";
 
     /**
      * Used to specify a SHARDS_AND_DAYS hint within the options function.
