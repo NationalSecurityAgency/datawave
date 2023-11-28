@@ -13,11 +13,15 @@
 
     <bean id="QueryMetricsWriterConfiguration" class="datawave.webservice.query.metric.QueryMetricsWriterConfiguration">
 
+        <property name="useRemoteService" value="${querymetric.remoteservice.enabled}" />
         <property name="timelyHost" value="${timely.host}" />
         <property name="timelyPort" value="${timely.udp.port}" />
+        <property name="batchSize" value="100" />
+        <property name="maxQueueSize" value="100000" />
+        <property name="maxLatencyMs" value="5000" />
+        <property name="maxShutdownMs" value="30000" />
         <property name="timelyMetricTags">
             ${query.metrics.timelyMetricTags}
         </property>
-        <property name="useRemoteService" value="${querymetric.remoteservice.enabled}" />
     </bean>
 </beans>

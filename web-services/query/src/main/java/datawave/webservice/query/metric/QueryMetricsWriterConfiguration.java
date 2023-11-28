@@ -8,6 +8,9 @@ public class QueryMetricsWriterConfiguration {
     private String timelyHost = null;
     private int timelyPort = 0;
     private int batchSize = 100;
+    private int maxQueueSize = 100000;
+    private long maxLatencyMs = 5000;
+    private long maxShutdownMs = 30000;
     private Set<String> timelyMetricTags = new HashSet<>();
     private boolean useRemoteService = false;
 
@@ -33,6 +36,30 @@ public class QueryMetricsWriterConfiguration {
 
     public void setBatchSize(int batchSize) {
         this.batchSize = batchSize;
+    }
+
+    public void setMaxQueueSize(int maxQueueSize) {
+        this.maxQueueSize = maxQueueSize;
+    }
+
+    public int getMaxQueueSize() {
+        return maxQueueSize;
+    }
+
+    public void setMaxLatencyMs(long maxLatencyMs) {
+        this.maxLatencyMs = maxLatencyMs;
+    }
+
+    public long getMaxLatencyMs() {
+        return maxLatencyMs;
+    }
+
+    public void setMaxShutdownMs(long maxShutdownMs) {
+        this.maxShutdownMs = maxShutdownMs;
+    }
+
+    public long getMaxShutdownMs() {
+        return maxShutdownMs;
     }
 
     public Set<String> getTimelyMetricTags() {
