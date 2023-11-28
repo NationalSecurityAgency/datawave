@@ -37,8 +37,6 @@ done
 LIBJARS=`echo $CLASSPATH | sed 's/:/,/g'`
 
 DATE=`date "+%Y%m%d%H%M%S"`
-# specifying no partitioning argument will default to the MultiTableRangePartitioner
-PART_ARG=
 INPUT_FILES=$1
 REDUCERS=$2
 WORKDIR=$3
