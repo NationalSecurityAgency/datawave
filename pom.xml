@@ -89,7 +89,7 @@
         <version.microservice.audit-api>3.0.0</version.microservice.audit-api>
         <version.microservice.authorization-api>3.0.0</version.microservice.authorization-api>
         <version.microservice.base-rest-responses>3.0.0</version.microservice.base-rest-responses>
-        <version.microservice.common-utils>2.0.0</version.microservice.common-utils>
+        <version.microservice.common-utils>7-use-thread-safe-date-package</version.microservice.common-utils>
         <version.microservice.dictionary-api>3.0.0</version.microservice.dictionary-api>
         <version.microservice.metadata-utils>3.0.0</version.microservice.metadata-utils>
         <version.microservice.metrics-reporter>2.0.0</version.microservice.metrics-reporter>
