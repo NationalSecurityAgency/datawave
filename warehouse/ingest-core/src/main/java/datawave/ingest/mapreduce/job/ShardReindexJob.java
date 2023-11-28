@@ -12,7 +12,9 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
@@ -132,6 +134,10 @@ public class ShardReindexJob implements Tool {
         // these are required for the partitioner
         // split.work.dir must be set or this won't work
         // job.output.table.names must be set or this won't work
+        if (configuration.get("split.work.dir") == null || configuration.get("job.output.table.names") == null) {
+            throw new IllegalStateException("split.work.dir and job.output.table.names must be configured");
+        }
+
         ShardedTableMapFile.setupFile(configuration);
 
         // setup the output format
@@ -266,6 +272,7 @@ public class ShardReindexJob implements Tool {
         private final Value EMPTY_VALUE = new Value();
 
         private TypeRegistry typeRegistry;
+        private Map<String,IngestHelperInterface> datatypeHelperCache;
         private boolean cleanupShard;
 
         private Text shardTable;
@@ -289,6 +296,8 @@ public class ShardReindexJob implements Tool {
             this.reverseIndexTable = new Text(config.get(ShardedDataTypeHandler.SHARD_GRIDX_TNAME, "shardReverseIndex"));
 
             this.propagateDeletes = config.getBoolean("propagateDeletes", false);
+
+            this.datatypeHelperCache = new HashMap<>();
         }
 
         @Override
@@ -336,19 +345,29 @@ public class ShardReindexJob implements Tool {
             }
 
             // get the type from the registry or create it if not already created. There is a cache inside the Type class
-            Type type = null;
             IngestHelperInterface helper = null;
-            try {
+
+            // check the cache
+            helper = datatypeHelperCache.get(dataType);
+            if (helper == null) {
                 for (Type registeredType : typeRegistry.values()) {
                     if (registeredType.outputName().equals(dataType)) {
-                        type = registeredType;
-                        break;
+                        try {
+                            log.info("creating type: " + registeredType.typeName() + " for datatype " + dataType);
+                            Type type = registeredType;
+                            // try to create the type
+                            helper = type.getIngestHelper(context.getConfiguration());
+                            break;
+                        } catch (Exception e) {
+                            log.debug("failed to create type " + registeredType.typeName() + " skipping", e);
+                        }
+                        if (helper != null) {
+                            // put it in the cache
+                            datatypeHelperCache.put(dataType, helper);
+                            break;
+                        }
                     }
                 }
-                helper = type.getIngestHelper(context.getConfiguration());
-            } catch (Exception e) {
-                log.debug(key);
-                throw (e);
             }
 
             if (helper == null) {
@@ -383,6 +402,7 @@ public class ShardReindexJob implements Tool {
                 BulkIngestKey bik = new BulkIngestKey(indexTable, globalIndexKey);
                 context.write(bik, UID_VALUE);
                 indexed = true;
+                context.getCounter("index", field).increment(1l);
             }
 
             // test if the field should have a reverse global index built for it and write to context
@@ -402,6 +422,7 @@ public class ShardReindexJob implements Tool {
                 BulkIngestKey bik = new BulkIngestKey(reverseIndexTable, globalReverseIndexKey);
                 context.write(bik, UID_VALUE);
                 indexed = true;
+                context.getCounter("reverse index", field).increment(1l);
             }
 
             if (!indexed && cleanupShard) {
@@ -410,7 +431,7 @@ public class ShardReindexJob implements Tool {
                 deleteKey.setDeleted(true);
                 BulkIngestKey bik = new BulkIngestKey(shardTable, deleteKey);
                 context.write(bik, EMPTY_VALUE);
-                context.getCounter("cleanup", "fi").increment(1l);
+                context.getCounter("shard cleanup", "fi").increment(1l);
             }
 
             // report progress to prevent timeouts
