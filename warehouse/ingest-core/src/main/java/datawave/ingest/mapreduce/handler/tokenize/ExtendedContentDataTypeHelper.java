@@ -68,9 +68,9 @@ public class ExtendedContentDataTypeHelper extends DataTypeHelperImpl {
 
         String SESSION_METADATA_PROPAGATION_ENABLED = ".session.metadata.propagation.enabled";
 
-        String SESSION_METADATA_PROPAGATION_BLACKLIST = ".session.metadata.propagation.blacklist";
+        String SESSION_METADATA_PROPAGATION_DISALLOWLIST = ".session.metadata.propagation.disallowlist";
 
-        String SESSION_METADATA_PROPAGATION_WHITELIST = ".session.metadata.propagation.whitelist";
+        String SESSION_METADATA_PROPAGATION_ALLOWLIST = ".session.metadata.propagation.allowlist";
         /**
          * Parameter to specify the fields that are multivalued
          */
@@ -80,7 +80,7 @@ public class ExtendedContentDataTypeHelper extends DataTypeHelperImpl {
          */
         String MULTI_VALUED_SEPARATOR = CSVHelper.MULTI_VALUED_SEPARATOR;
         /**
-         * Parameter to specify the a threshold on the number of fields in a multi-valued field
+         * Parameter to specify the threshold on the number of fields in a multi-valued field
          */
         String MULTI_VALUED_THRESHOLD = CSVHelper.MULTI_VALUED_THRESHOLD;
         /**
@@ -139,8 +139,8 @@ public class ExtendedContentDataTypeHelper extends DataTypeHelperImpl {
     private Map<String,String> eventSecurityMarkingFieldDomainMap = new HashMap<>();
     private List<EventValidator> validators = null;
     private boolean sessionMetadataPropagationEnabled = false;
-    private Set<String> sessionMetadataPropagationBlacklist = new HashSet<>();
-    private Set<String> sessionMetadataPropagationWhitelist = new HashSet<>();
+    private Set<String> sessionMetadataPropagationDisallowlist = new HashSet<>();
+    private Set<String> sessionMetadataPropagationAllowlist = new HashSet<>();
     private Map<String,String> multiValuedFields = new HashMap<>();
     private String multiValueSeparator = null;
     private int multiFieldSizeThreshold = -1;
@@ -222,12 +222,12 @@ public class ExtendedContentDataTypeHelper extends DataTypeHelperImpl {
         sessionMetadataPropagationEnabled = conf.getBoolean(this.getType().typeName() + Properties.SESSION_METADATA_PROPAGATION_ENABLED,
                         sessionMetadataPropagationEnabled);
 
-        for (String field : conf.getStrings(this.getType().typeName() + Properties.SESSION_METADATA_PROPAGATION_BLACKLIST, new String[0])) {
-            this.sessionMetadataPropagationBlacklist.add(field.trim());
+        for (String field : conf.getStrings(this.getType().typeName() + Properties.SESSION_METADATA_PROPAGATION_DISALLOWLIST, new String[0])) {
+            this.sessionMetadataPropagationDisallowlist.add(field.trim());
         }
 
-        for (String field : conf.getStrings(this.getType().typeName() + Properties.SESSION_METADATA_PROPAGATION_WHITELIST, new String[0])) {
-            this.sessionMetadataPropagationWhitelist.add(field.trim());
+        for (String field : conf.getStrings(this.getType().typeName() + Properties.SESSION_METADATA_PROPAGATION_ALLOWLIST, new String[0])) {
+            this.sessionMetadataPropagationAllowlist.add(field.trim());
         }
 
         // Get the list of security marking field names
@@ -251,10 +251,10 @@ public class ExtendedContentDataTypeHelper extends DataTypeHelperImpl {
 
     public boolean sessionMetadataShouldPropagate(String field, Collection<Object> value) {
         if (this.sessionMetadataPropagationEnabled) {
-            if (!this.sessionMetadataPropagationBlacklist.isEmpty()) {
-                return !this.sessionMetadataPropagationBlacklist.contains(field);
-            } else if (!this.sessionMetadataPropagationWhitelist.isEmpty()) {
-                return this.sessionMetadataPropagationWhitelist.contains(field);
+            if (!this.sessionMetadataPropagationDisallowlist.isEmpty()) {
+                return !this.sessionMetadataPropagationDisallowlist.contains(field);
+            } else if (!this.sessionMetadataPropagationAllowlist.isEmpty()) {
+                return this.sessionMetadataPropagationAllowlist.contains(field);
             }
 
             return true;
