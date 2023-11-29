@@ -66,7 +66,7 @@ public class DatawavePrincipalLoginModule extends AbstractServerLoginModule {
     private boolean trustedHeaderLogin;
     private boolean jwtHeaderLogin;
 
-    private String blacklistUserRole = null;
+    private String disallowlistUserRole = null;
 
     /**
      * Required roles are a set of roles such that each entity in a proxy chain must have at least one of the required roles. If that is not the case, then the
@@ -125,9 +125,9 @@ public class DatawavePrincipalLoginModule extends AbstractServerLoginModule {
         if (option != null)
             jwtHeaderLogin = Boolean.valueOf(option);
 
-        blacklistUserRole = (String) options.get("blacklistUserRole");
-        if (blacklistUserRole != null && "".equals(blacklistUserRole.trim()))
-            blacklistUserRole = null;
+        disallowlistUserRole = (String) options.get("disallowlistUserRole");
+        if (disallowlistUserRole != null && "".equals(disallowlistUserRole.trim()))
+            disallowlistUserRole = null;
 
         option = (String) options.get("requiredRoles");
         if (option != null) {
@@ -340,12 +340,12 @@ public class DatawavePrincipalLoginModule extends AbstractServerLoginModule {
                 }
             }
 
-            if (blacklistUserRole != null && loginOk && identity != null) {
+            if (disallowlistUserRole != null && loginOk && identity != null) {
                 DatawavePrincipal principal = (DatawavePrincipal) getIdentity();
 
-                if (principal.getProxiedUsers().stream().anyMatch(u -> u.getRoles().contains(blacklistUserRole))) {
+                if (principal.getProxiedUsers().stream().anyMatch(u -> u.getRoles().contains(disallowlistUserRole))) {
                     loginOk = false; // this is critical as it is what the parent class uses to actually deny login
-                    String message = "Login denied for " + principal.getUserDN() + " due to membership in the deny-access group " + blacklistUserRole;
+                    String message = "Login denied for " + principal.getUserDN() + " due to membership in the deny-access group " + disallowlistUserRole;
                     log.debug(message);
                     throw new AccountLockedException(message);
                 }

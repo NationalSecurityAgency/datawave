@@ -37,8 +37,10 @@
     <property>
         <name>data.name</name>
         <value>myjson</value>
-        <description>This is the name of the datatype, which distinguishes it from other types for the purposes of ingest
-            processing and perhaps even for dataflow/transport concerns. As such, this can be used to denote a subtype of
+        <description>This is the name of the datatype, which distinguishes it from other types for the purposes of
+            ingest
+            processing and perhaps even for dataflow/transport concerns. As such, this can be used to denote a subtype
+            of
             some common data format, like CSV files for example, which could originate from any number of sources
         </description>
     </property>
@@ -66,7 +68,9 @@
 
     <property>
         <name>myjson.handler.classes</name>
-        <value>datawave.ingest.json.mr.handler.ContentJsonColumnBasedHandler,datawave.ingest.mapreduce.handler.facet.FacetHandler</value>
+        <value>
+            datawave.ingest.json.mr.handler.ContentJsonColumnBasedHandler,datawave.ingest.mapreduce.handler.facet.FacetHandler
+        </value>
         <description>List of classes that should process each event</description>
     </property>
 
@@ -79,7 +83,8 @@
     <property>
         <name>myjson.data.separator</name>
         <value>,</value>
-        <description>This is the separator to use for delimited text, and between configuration file parameters with multiple values.
+        <description>This is the separator to use for delimited text, and between configuration file parameters with
+            multiple values.
         </description>
     </property>
 
@@ -87,20 +92,24 @@
         <name>myjson.data.header</name>
         <value>ID,NAME,PREMIERED,RUNTIME,STATUS,SUMMARY,OFFICIALSITE,LANGUAGE,GENRES,WEIGHT,URL,TYPE</value>
         <description>Known metadata fields that may be expected to appear in every json document. Often, these may be
-            "required" fields, and/or fields that you want to use for policy enforcement, quality assurance, etc</description>
+            "required" fields, and/or fields that you want to use for policy enforcement, quality assurance, etc
+        </description>
     </property>
 
     <property>
         <name>myjson.data.process.extra.fields</name>
         <value>true</value>
         <description>If true, "extra" fields within the json tree (ie, those outside the defined "header") should be
-            processed. Otherwise, everything outside the header will be ignored unless explicitly whitelisted</description>
+            processed. Otherwise, everything outside the header will be ignored unless explicitly allowlisted
+        </description>
     </property>
 
     <property>
         <name>tvmaze.trim.field.group</name>
         <value>true</value>
-        <description>If true, nested field groups will be trimmed to remove parent offsets, e.g. PARENT1_1.PARENT2_1 becomes PARENT1_PARENT2</description>
+        <description>If true, nested field groups will be trimmed to remove parent offsets, e.g. PARENT1_1.PARENT2_1
+            becomes PARENT1_PARENT2
+        </description>
     </property>
 
     <property>
@@ -109,89 +118,90 @@
         <description>The classes datawave.ingest.json.mr.input.JsonRecordReader and
             datawave.ingest.json.config.helper.JsonIngestHelper support 4 different json-flattening modes:
 
-        (1) 'SIMPLE' mode:
+            (1) 'SIMPLE' mode:
 
-               Ignores nested objects. Only retrieves root-level primitives, including primitives within root-level arrays.
-               Array primitives will be represented as multi-valued keys in the resulting map. If your json is flat already,
-               or if you wish to ignore nested objects for whatever reason, this mode should suffice.  If you require
-               complete tree traversal, see NORMAL and GROUPED modes.
+            Ignores nested objects. Only retrieves root-level primitives, including primitives within root-level arrays.
+            Array primitives will be represented as multi-valued keys in the resulting map. If your json is flat
+            already,
+            or if you wish to ignore nested objects for whatever reason, this mode should suffice. If you require
+            complete tree traversal, see NORMAL and GROUPED modes.
 
-               PROs:
+            PROs:
 
-               A good choice if all of your incoming json is flat. Least amount overhead in terms of json parsing
+            A good choice if all of your incoming json is flat. Least amount overhead in terms of json parsing
 
-               CONs:
+            CONs:
 
-               A bad choice if you need to ingest json schemas where items of interest are nested
+            A bad choice if you need to ingest json schemas where items of interest are nested
 
-        (2) 'NORMAL' mode:
+            (2) 'NORMAL' mode:
 
-               Traverses the entire Json tree, unlike SIMPLE mode. Given a nested 'fieldname' property @ level 4 in the
-               tree and path delimiter value of '_', the flattened result would take the form:
+            Traverses the entire Json tree, unlike SIMPLE mode. Given a nested 'fieldname' property @ level 4 in the
+            tree and path delimiter value of '_', the flattened result would take the form:
 
-               GREATGRANDPARENT_GRANDPARENT_PARENT_FIELDNAME = Value
+            GREATGRANDPARENT_GRANDPARENT_PARENT_FIELDNAME = Value
 
-               At query time, the full identifier is used as the search term
+            At query time, the full identifier is used as the search term
 
-               PROs:
+            PROs:
 
-               The field names users will employ in queries match the structure of the underlying raw data, so
-               DataWave's data element dictionary tends to be self-explanatory and intuitive for end users
+            The field names users will employ in queries match the structure of the underlying raw data, so
+            DataWave's data element dictionary tends to be self-explanatory and intuitive for end users
 
-               CONs:
+            CONs:
 
-               Can lead to very long field names, especially for deeply nested json schemas. Also, if users will
-               need the ability to easily disambiguate json elements at query time based their original position within
-               the json tree, then 'NORMAL' mode will be problematic, since no context information is retained
+            Can lead to very long field names, especially for deeply nested json schemas. Also, if users will
+            need the ability to easily disambiguate json elements at query time based their original position within
+            the json tree, then 'NORMAL' mode will be problematic, since no context information is retained
 
-        (3) 'GROUPED' mode:
+            (3) 'GROUPED' mode:
 
-               Full parse as with NORMAL mode, but instead we append the hierarchical context onto 'FIELDNAME' as a
-               dot-delimited suffix, with additional information to identify the ordinal position or occurrence at each
-               level...
+            Full parse as with NORMAL mode, but instead we append the hierarchical context onto 'FIELDNAME' as a
+            dot-delimited suffix, with additional information to identify the ordinal position or occurrence at each
+            level...
 
-               E.g., FIELDNAME.greatgrandparent_0.grandparent_1.parent_3.fieldname_0 = Value
+            E.g., FIELDNAME.greatgrandparent_0.grandparent_1.parent_3.fieldname_0 = Value
 
-               ...where '_#' denotes the specific occurrence of the element within the given level of the hierarchy.
+            ...where '_#' denotes the specific occurrence of the element within the given level of the hierarchy.
 
-               At query time, only the 'FIELDNAME' identifier is used as the search term. If FIELDNAME happens to be
-               a repeated field within the JSON document and users will need the ability to disambiguate them at query
-               time, DataWave provides filtering functions to support that...
+            At query time, only the 'FIELDNAME' identifier is used as the search term. If FIELDNAME happens to be
+            a repeated field within the JSON document and users will need the ability to disambiguate them at query
+            time, DataWave provides filtering functions to support that...
 
-               See datawave-quickstart/bin/services/datawave/test-web/tests/EventQueryJsonGrouped.test for examples
+            See datawave-quickstart/bin/services/datawave/test-web/tests/EventQueryJsonGrouped.test for examples
 
-               PROs:
+            PROs:
 
-               Allows users to query with the shortest, ie most compact, field names possible. Also tends to
-               keep the overall size in bytes of the data dictionary and forward/reverse indices to a minimum,
-               since only the 'FIELDNAME' portion of the key is stored in those places; only the 'shard' table
-               retains the full context which is used only for filtering purposes as needed
+            Allows users to query with the shortest, ie most compact, field names possible. Also tends to
+            keep the overall size in bytes of the data dictionary and forward/reverse indices to a minimum,
+            since only the 'FIELDNAME' portion of the key is stored in those places; only the 'shard' table
+            retains the full context which is used only for filtering purposes as needed
 
-               CONs:
+            CONs:
 
-               Since the data dictionary only knows about the 'FIELDNAME' portion of the names, users may lose
-               sight of the underlying structure and semantics of the raw data for query purposes. That may lead
-               to confusion, particularly if the repository will store data from mutliple distinct sources and those
-               sources differ in format/structure yet have 'FIELDNAME' elements in common.
+            Since the data dictionary only knows about the 'FIELDNAME' portion of the names, users may lose
+            sight of the underlying structure and semantics of the raw data for query purposes. That may lead
+            to confusion, particularly if the repository will store data from mutliple distinct sources and those
+            sources differ in format/structure yet have 'FIELDNAME' elements in common.
 
-        (4) 'GROUPED_AND_NORMAL' mode:
+            (4) 'GROUPED_AND_NORMAL' mode:
 
-                Retains the fully-qualified 'NORMAL' mode field name as the prefix, and appends the full context suffix
-                as defined by 'GROUPED' mode above, for mximum flexibility
+            Retains the fully-qualified 'NORMAL' mode field name as the prefix, and appends the full context suffix
+            as defined by 'GROUPED' mode above, for mximum flexibility
 
-                E.g., GRANDPARENT_PARENT_FIELDNAME.grandparent_0.parent_2.fieldname_0
+            E.g., GRANDPARENT_PARENT_FIELDNAME.grandparent_0.parent_2.fieldname_0
 
-                PROs:
+            PROs:
 
-                As with 'NORMAL' mode, the data dictionary elements and index entries will reflect the structure of
-                the incoming json, which may be more intuitive for users, alleviating confusion around field name
-                semantics, etc. Also allows users to easily disambiguate values from different parts of the json's
-                hierarchical structure, if needed
+            As with 'NORMAL' mode, the data dictionary elements and index entries will reflect the structure of
+            the incoming json, which may be more intuitive for users, alleviating confusion around field name
+            semantics, etc. Also allows users to easily disambiguate values from different parts of the json's
+            hierarchical structure, if needed
 
-                CONs:
+            CONs:
 
-                Requires the most storage in bytes for fieldname storage in the shard table, since the path information
-                is replicated in the suffix along with the ordinal context
+            Requires the most storage in bytes for fieldname storage in the shard table, since the path information
+            is replicated in the suffix along with the ordinal context
 
         </description>
     </property>
@@ -207,7 +217,9 @@
     <property>
         <name>myjson.data.category.marking.default</name>
         <value>PRIVATE|(BAR&amp;FOO)</value>
-        <description>ColumnVisibility expression to be applied to each field, when the raw data is known to provide none</description>
+        <description>ColumnVisibility expression to be applied to each field, when the raw data is known to provide
+            none
+        </description>
     </property>
 
     <property>
@@ -217,9 +229,9 @@
     </property>
 
     <!--<property>-->
-        <!--<name>myjson.data.category.date</name>-->
-        <!--<value>PREMIERED</value>-->
-        <!--<description>Known date field to be used, if found, for the shard row id. Otherwise, current date will be used</description>-->
+    <!--<name>myjson.data.category.date</name>-->
+    <!--<value>PREMIERED</value>-->
+    <!--<description>Known date field to be used, if found, for the shard row id. Otherwise, current date will be used</description>-->
     <!--</property>-->
 
     <property>
@@ -232,7 +244,9 @@
 
     <property>
         <name>myjson.data.category.index</name>
-        <value>NAME,ID,ID,EXTERNALS_THETVDB,EXTERNALS_TVRAGE,EXTERNALS_IMDB,EMBEDDED_CAST_CHARACTER_NAME,EMBEDDED_CAST_PERSON_NAME,EMBEDDED_CAST_PERSON_ID,GENRES,NETWORK_NAME,OFFICIALSITE,TYPE,STATUS,RUNTIME,URL</value>
+        <value>
+            NAME,ID,ID,EXTERNALS_THETVDB,EXTERNALS_TVRAGE,EXTERNALS_IMDB,EMBEDDED_CAST_CHARACTER_NAME,EMBEDDED_CAST_PERSON_NAME,EMBEDDED_CAST_PERSON_ID,GENRES,NETWORK_NAME,OFFICIALSITE,TYPE,STATUS,RUNTIME,URL
+        </value>
         <description>List of known fields to index</description>
     </property>
 
@@ -246,19 +260,23 @@
         <name>myjson.data.category.token.fieldname.designator</name>
         <value>_TOKEN</value>
         <description>Field name suffix to be applied to field names that are tokenized.
-            See *.data.category.index.tokenize.whitelist</description>
+            See *.data.category.index.tokenize.allowlist
+        </description>
     </property>
 
     <property>
-        <name>myjson.data.category.index.tokenize.whitelist</name>
+        <name>myjson.data.category.index.tokenize.allowlist</name>
         <value>SUMMARY,NETWORK_NAME,NAME,EMBEDDED_CAST_CHARACTER_NAME,EMBEDDED_CAST_PERSON_NAME</value>
         <description>These are the fields to tokenize and index.</description>
     </property>
 
     <property>
         <name>myjson.data.category.index.only</name>
-        <value>SUMMARY_TOKEN,NETWORK_NAME_TOKEN,NAME_TOKEN,EMBEDDED_CAST_CHARACTER_NAME_TOKEN,EMBEDDED_CAST_PERSON_NAME_TOKEN</value>
-        <description>Fields that will exist only in the global index. Will not be stored as part of the event/document</description>
+        <value>
+            SUMMARY_TOKEN,NETWORK_NAME_TOKEN,NAME_TOKEN,EMBEDDED_CAST_CHARACTER_NAME_TOKEN,EMBEDDED_CAST_PERSON_NAME_TOKEN
+        </value>
+        <description>Fields that will exist only in the global index. Will not be stored as part of the event/document
+        </description>
     </property>
 
     <!-- Field Normalization -->
@@ -267,7 +285,8 @@
         <name>myjson.data.default.normalization.failure.policy</name>
         <value>FAIL</value>
         <description>For field normalization failures: DROP, LEAVE, FAIL.
-            FAIL will cause the entire record to be dropped and written to the error schema in Accumulo</description>
+            FAIL will cause the entire record to be dropped and written to the error schema in Accumulo
+        </description>
     </property>
 
     <property>
