@@ -2,6 +2,7 @@ package datawave.query.jexl.visitors;
 
 import com.google.common.collect.Sets;
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.visitors.QueryFieldMetadataVisitor.FieldMetadata;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ParseException;
 import org.junit.Test;
@@ -23,11 +24,12 @@ public class QueryFieldMetadataVisitorTest {
         String query = "FOO == 'bar'";
         applyVisitor(query);
 
-        assertFalse(visitor.isFieldContentFunction("FOO"));
-        assertFalse(visitor.isFieldFilterFunction("FOO"));
-        assertFalse(visitor.isFieldQueryFunction("FOO"));
-        assertFalse(visitor.isFieldGeoFunction("FOO"));
-        assertFalse(visitor.isFieldRegexTerm("FOO"));
+        FieldMetadata fieldMetadata = visitor.getFieldMetadata();
+        assertFalse(fieldMetadata.isFieldContentFunction("FOO"));
+        assertFalse(fieldMetadata.isFieldFilterFunction("FOO"));
+        assertFalse(fieldMetadata.isFieldQueryFunction("FOO"));
+        assertFalse(fieldMetadata.isFieldGeoFunction("FOO"));
+        assertFalse(fieldMetadata.isFieldRegexTerm("FOO"));
     }
 
     @Test
@@ -120,57 +122,63 @@ public class QueryFieldMetadataVisitorTest {
     }
 
     private void assertFieldIsContentFunction(String field) {
-        assertTrue(visitor.isFieldContentFunction(field));
-        assertFalse(visitor.isFieldFilterFunction(field));
-        assertFalse(visitor.isFieldQueryFunction(field));
-        assertFalse(visitor.isFieldGeoFunction(field));
-        assertFalse(visitor.isFieldGroupingFunction(field));
-        assertFalse(visitor.isFieldRegexTerm(field));
+        FieldMetadata fieldMetadata = visitor.getFieldMetadata();
+        assertTrue(fieldMetadata.isFieldContentFunction(field));
+        assertFalse(fieldMetadata.isFieldFilterFunction(field));
+        assertFalse(fieldMetadata.isFieldQueryFunction(field));
+        assertFalse(fieldMetadata.isFieldGeoFunction(field));
+        assertFalse(fieldMetadata.isFieldGroupingFunction(field));
+        assertFalse(fieldMetadata.isFieldRegexTerm(field));
     }
 
     private void assertFieldIsFilterFunction(String field) {
-        assertFalse(visitor.isFieldContentFunction(field));
-        assertTrue(visitor.isFieldFilterFunction(field));
-        assertFalse(visitor.isFieldQueryFunction(field));
-        assertFalse(visitor.isFieldGeoFunction(field));
-        assertFalse(visitor.isFieldGroupingFunction(field));
-        assertFalse(visitor.isFieldRegexTerm(field));
+        FieldMetadata fieldMetadata = visitor.getFieldMetadata();
+        assertFalse(fieldMetadata.isFieldContentFunction(field));
+        assertTrue(fieldMetadata.isFieldFilterFunction(field));
+        assertFalse(fieldMetadata.isFieldQueryFunction(field));
+        assertFalse(fieldMetadata.isFieldGeoFunction(field));
+        assertFalse(fieldMetadata.isFieldGroupingFunction(field));
+        assertFalse(fieldMetadata.isFieldRegexTerm(field));
     }
 
     private void assertFieldIsQueryFunction(String field) {
-        assertFalse(visitor.isFieldContentFunction(field));
-        assertFalse(visitor.isFieldFilterFunction(field));
-        assertTrue(visitor.isFieldQueryFunction(field));
-        assertFalse(visitor.isFieldGeoFunction(field));
-        assertFalse(visitor.isFieldGroupingFunction(field));
-        assertFalse(visitor.isFieldRegexTerm(field));
+        FieldMetadata fieldMetadata = visitor.getFieldMetadata();
+        assertFalse(fieldMetadata.isFieldContentFunction(field));
+        assertFalse(fieldMetadata.isFieldFilterFunction(field));
+        assertTrue(fieldMetadata.isFieldQueryFunction(field));
+        assertFalse(fieldMetadata.isFieldGeoFunction(field));
+        assertFalse(fieldMetadata.isFieldGroupingFunction(field));
+        assertFalse(fieldMetadata.isFieldRegexTerm(field));
     }
 
     private void assertFieldIsGeoFunction(String field) {
-        assertFalse(visitor.isFieldContentFunction(field));
-        assertFalse(visitor.isFieldFilterFunction(field));
-        assertFalse(visitor.isFieldQueryFunction(field));
-        assertTrue(visitor.isFieldGeoFunction(field));
-        assertFalse(visitor.isFieldGroupingFunction(field));
-        assertFalse(visitor.isFieldRegexTerm(field));
+        FieldMetadata fieldMetadata = visitor.getFieldMetadata();
+        assertFalse(fieldMetadata.isFieldContentFunction(field));
+        assertFalse(fieldMetadata.isFieldFilterFunction(field));
+        assertFalse(fieldMetadata.isFieldQueryFunction(field));
+        assertTrue(fieldMetadata.isFieldGeoFunction(field));
+        assertFalse(fieldMetadata.isFieldGroupingFunction(field));
+        assertFalse(fieldMetadata.isFieldRegexTerm(field));
     }
 
     private void assertFieldIsGroupingFunction(String field) {
-        assertFalse(visitor.isFieldContentFunction(field));
-        assertFalse(visitor.isFieldFilterFunction(field));
-        assertFalse(visitor.isFieldQueryFunction(field));
-        assertFalse(visitor.isFieldGeoFunction(field));
-        assertTrue(visitor.isFieldGroupingFunction(field));
-        assertFalse(visitor.isFieldRegexTerm(field));
+        FieldMetadata fieldMetadata = visitor.getFieldMetadata();
+        assertFalse(fieldMetadata.isFieldContentFunction(field));
+        assertFalse(fieldMetadata.isFieldFilterFunction(field));
+        assertFalse(fieldMetadata.isFieldQueryFunction(field));
+        assertFalse(fieldMetadata.isFieldGeoFunction(field));
+        assertTrue(fieldMetadata.isFieldGroupingFunction(field));
+        assertFalse(fieldMetadata.isFieldRegexTerm(field));
     }
 
     private void assertFieldIsRegex(String field) {
-        assertFalse(visitor.isFieldContentFunction(field));
-        assertFalse(visitor.isFieldFilterFunction(field));
-        assertFalse(visitor.isFieldQueryFunction(field));
-        assertFalse(visitor.isFieldGeoFunction(field));
-        assertFalse(visitor.isFieldGroupingFunction(field));
-        assertTrue(visitor.isFieldRegexTerm(field));
+        FieldMetadata fieldMetadata = visitor.getFieldMetadata();
+        assertFalse(fieldMetadata.isFieldContentFunction(field));
+        assertFalse(fieldMetadata.isFieldFilterFunction(field));
+        assertFalse(fieldMetadata.isFieldQueryFunction(field));
+        assertFalse(fieldMetadata.isFieldGeoFunction(field));
+        assertFalse(fieldMetadata.isFieldGroupingFunction(field));
+        assertTrue(fieldMetadata.isFieldRegexTerm(field));
     }
 
 }

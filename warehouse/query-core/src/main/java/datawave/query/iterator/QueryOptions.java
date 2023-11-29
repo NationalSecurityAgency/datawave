@@ -100,6 +100,8 @@ import datawave.query.util.sortedset.FileSortedSet;
 import datawave.util.StringUtils;
 import datawave.util.UniversalSet;
 
+import static datawave.query.jexl.visitors.QueryFieldMetadataVisitor.*;
+
 /**
  * QueryOptions are set on the iterators.
  * <p>
@@ -440,7 +442,7 @@ public class QueryOptions implements OptionDescriber {
     private int docAggregationThresholdMs = -1;
     private int tfAggregationThresholdMs = -1;
     private boolean useNewAggregators;
-    private QueryFieldMetadataVisitor fieldMetadataVisitor;
+    private FieldMetadata fieldMetadata;
 
     public void deepCopy(QueryOptions other) {
         this.options = other.options;
@@ -1442,13 +1444,14 @@ public class QueryOptions implements OptionDescriber {
 
         if (options.containsKey(USE_NEW_AGGREGATORS)) {
             this.useNewAggregators = Boolean.parseBoolean(options.getOrDefault(USE_NEW_AGGREGATORS, Boolean.FALSE.toString()));
-            this.fieldMetadataVisitor = new QueryFieldMetadataVisitor(indexedFields, indexOnlyFields, termFrequencyFields);
+            QueryFieldMetadataVisitor fieldMetadataVisitor = new QueryFieldMetadataVisitor(indexedFields, indexOnlyFields, termFrequencyFields);
 
             try {
                 ASTJexlScript script = JexlASTHelper.parseAndFlattenJexlQuery(query);
                 script.jjtAccept(fieldMetadataVisitor, null);
+                this.fieldMetadata = fieldMetadataVisitor.getFieldMetadata();
             } catch (ParseException e) {
-                throw new DatawaveFatalQueryException("Failed to parse query while building aggregators", e);
+                throw new DatawaveFatalQueryException("Failed to parse query while building FieldMetadata", e);
             }
         }
 
@@ -2214,6 +2217,10 @@ public class QueryOptions implements OptionDescriber {
 
     public void setUseNewAggregators(boolean useNewAggregators) {
         this.useNewAggregators = useNewAggregators;
+    }
+
+    public FieldMetadata getFieldMetadata() {
+        return fieldMetadata;
     }
 
     /**

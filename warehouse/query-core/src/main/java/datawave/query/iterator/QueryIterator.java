@@ -1702,7 +1702,8 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 fiAggregator = new FiAggregator()
                                 .withFieldsToKeep(getAllIndexOnlyFields())
                                 .withQueryFilter(getEvaluationFilter())
-                                .withMaxNextCount(getEventNextSeek());
+                                .withMaxNextCount(getEventNextSeek())
+                                .withFieldMetadata(getFieldMetadata());
                 //  @formatter:on
             } else {
                 fiAggregator = new IdentityAggregator(getAllIndexOnlyFields(), getEvaluationFilter(), getEventNextSeek());

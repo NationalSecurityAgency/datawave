@@ -5,6 +5,7 @@ import java.util.AbstractMap;
 import java.util.Collection;
 import java.util.Set;
 
+import datawave.query.jexl.visitors.QueryFieldMetadataVisitor.FieldMetadata;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -33,6 +34,7 @@ public class FiAggregator implements FieldIndexAggregator {
     private int maxNextCount = -1;
     protected Set<String> fieldsToKeep;
     protected EventDataQueryFilter filter;
+    protected FieldMetadata fieldMetadata;
 
     protected final FieldIndexKey parser = new FieldIndexKey();
     protected final FieldIndexKey tkParser = new FieldIndexKey();
@@ -55,6 +57,11 @@ public class FiAggregator implements FieldIndexAggregator {
 
     public FiAggregator withQueryFilter(EventDataQueryFilter filter) {
         this.filter = filter;
+        return this;
+    }
+
+    public FiAggregator withFieldMetadata(FieldMetadata fieldMetadata) {
+        this.fieldMetadata = fieldMetadata;
         return this;
     }
 

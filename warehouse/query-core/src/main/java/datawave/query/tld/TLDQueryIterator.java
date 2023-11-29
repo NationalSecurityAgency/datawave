@@ -107,7 +107,8 @@ public class TLDQueryIterator extends QueryIterator {
                 fiAggregator = new TLDFiAggregator()
                                 .withFieldsToKeep(getNonEventFields())
                                 .withQueryFilter(getFIEvaluationFilter())
-                                .withMaxNextCount(getFiNextSeek());
+                                .withMaxNextCount(getFiNextSeek())
+                                .withFieldMetadata(getFieldMetadata());
                 //  @formatter:on
             } else {
                 fiAggregator = new TLDFieldIndexAggregator(getNonEventFields(), getFIEvaluationFilter(), getFiNextSeek());

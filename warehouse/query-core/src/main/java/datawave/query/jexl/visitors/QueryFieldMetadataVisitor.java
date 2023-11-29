@@ -14,6 +14,7 @@ import org.apache.commons.jexl2.parser.ASTNRNode;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.log4j.Logger;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -40,97 +41,40 @@ public class QueryFieldMetadataVisitor extends BaseVisitor {
 
     private static final Logger log = Logger.getLogger(QueryFieldMetadataVisitor.class);
 
-    private final Set<String> indexedFields;
-    private final Set<String> indexOnlyFields;
-    private final Set<String> tokenizedFields;
-
-    private final Set<String> contentFunctionFields = new HashSet<>();
-    private final Set<String> filterFunctionFields = new HashSet<>();
-    private final Set<String> queryFunctionFields = new HashSet<>();
-    private final Set<String> geoFunctionFields = new HashSet<>();
-    private final Set<String> groupingFunctionFields = new HashSet<>();
-    private final Set<String> regexFields = new HashSet<>();
+    private final FieldMetadata fieldMetadata;
 
     public QueryFieldMetadataVisitor(Set<String> indexedFields, Set<String> indexOnlyFields, Set<String> tokenizedFields) {
-        this.indexedFields = indexedFields;
-        this.indexOnlyFields = indexOnlyFields;
-        this.tokenizedFields = tokenizedFields;
+        this.fieldMetadata = new FieldMetadata(indexedFields, indexOnlyFields, tokenizedFields);
     }
 
-    // base methods
-
-    public boolean isFieldIndexed(String field) {
-        return indexedFields.contains(field);
+    public FieldMetadata getFieldMetadata() {
+        return fieldMetadata;
     }
 
-    public boolean isFieldIndexOnly(String field) {
-        return indexOnlyFields.contains(field);
-    }
-
-    public boolean isFieldTokenized(String field) {
-        return tokenizedFields.contains(field);
-    }
-
-    public boolean isFieldAnyFunction(String field) {
-        //  @formatter:off
-        return contentFunctionFields.contains(field) ||
-                        filterFunctionFields.contains(field) ||
-                        queryFunctionFields.contains(field) ||
-                        geoFunctionFields.contains(field) ||
-                        groupingFunctionFields.contains(field);
-        //  @formatter:off
-    }
-
-    public boolean isFieldContentFunction(String field){
-        return contentFunctionFields.contains(field);
-    }
-
-    public boolean isFieldFilterFunction(String field){
-        return filterFunctionFields.contains(field);
-    }
-
-    public boolean isFieldQueryFunction(String field){
-        return queryFunctionFields.contains(field);
-    }
-
-    public boolean isFieldGeoFunction(String field){
-        return geoFunctionFields.contains(field);
-    }
-
-    public boolean isFieldGroupingFunction(String field) {
-        return groupingFunctionFields.contains(field);
-    }
-
-    public boolean isFieldRegexTerm(String field){
-        return regexFields.contains(field);
-    }
-
-    //  visitor methods
-
-    //  leaf nodes that we care about
+    // leaf nodes that we care about
 
     @Override
     public Object visit(ASTERNode node, Object data) {
-        regexFields.add(parseSingleField(node));
+        fieldMetadata.addRegexField(parseSingleField(node));
         return data;
     }
 
     @Override
     public Object visit(ASTNRNode node, Object data) {
-        regexFields.add(parseSingleField(node));
+        fieldMetadata.addRegexField(parseSingleField(node));
         return data;
     }
 
-    //  the fun one
+    // the fun one
     @Override
     public Object visit(ASTFunctionNode node, Object data) {
         parseFieldsForFunction(node);
         return data;
     }
 
-    //  helper methods
+    // helper methods
 
-    private String parseSingleField(JexlNode node){
+    private String parseSingleField(JexlNode node) {
         return JexlASTHelper.getIdentifier(node);
     }
 
@@ -139,35 +83,129 @@ public class QueryFieldMetadataVisitor extends BaseVisitor {
 
         switch (visitor.namespace()) {
             case CONTENT_FUNCTION_NAMESPACE:
-                //  all content function fields are added
+                // all content function fields are added
                 ContentJexlArgumentDescriptor contentDescriptor = new ContentFunctionsDescriptor().getArgumentDescriptor(node);
-                contentFunctionFields.addAll(contentDescriptor.fieldsAndTerms(Collections.emptySet(), Collections.emptySet(), Collections.emptySet(), null)[0]);
+                fieldMetadata.addContentFunctionFields(
+                                contentDescriptor.fieldsAndTerms(Collections.emptySet(), Collections.emptySet(), Collections.emptySet(), null)[0]);
                 break;
             case EVAL_PHASE_FUNCTION_NAMESPACE:
-                //  might be able to exclude certain evaluation phase functions from this step
-                EvaluationPhaseFilterJexlArgumentDescriptor evaluationDescriptor = (EvaluationPhaseFilterJexlArgumentDescriptor) new EvaluationPhaseFilterFunctionsDescriptor().getArgumentDescriptor(node);
+                // might be able to exclude certain evaluation phase functions from this step
+                EvaluationPhaseFilterJexlArgumentDescriptor evaluationDescriptor = (EvaluationPhaseFilterJexlArgumentDescriptor) new EvaluationPhaseFilterFunctionsDescriptor()
+                                .getArgumentDescriptor(node);
                 Set<String> evaluationFields = evaluationDescriptor.fields(null, Collections.emptySet());
-                filterFunctionFields.addAll(evaluationFields);
+                fieldMetadata.addFilterFunctionFields(evaluationFields);
                 break;
             case GEOWAVE_FUNCTION_NAMESPACE:
                 GeoWaveJexlArgumentDescriptor geoDescriptor = (GeoWaveJexlArgumentDescriptor) new GeoWaveFunctionsDescriptor().getArgumentDescriptor(node);
                 Set<String> geoFields = geoDescriptor.fields(null, Collections.emptySet());
-                geoFunctionFields.addAll(geoFields);
+                fieldMetadata.addGeoFunctionFields(geoFields);
                 break;
             case GROUPING_REQUIRED_FUNCTION_NAMESPACE:
-                GroupingRequiredFilterJexlArgumentDescriptor groupingDescriptor = (GroupingRequiredFilterJexlArgumentDescriptor) new GroupingRequiredFilterFunctionsDescriptor().getArgumentDescriptor(node);
+                GroupingRequiredFilterJexlArgumentDescriptor groupingDescriptor = (GroupingRequiredFilterJexlArgumentDescriptor) new GroupingRequiredFilterFunctionsDescriptor()
+                                .getArgumentDescriptor(node);
                 Set<String> groupingFields = groupingDescriptor.fields(null, Collections.emptySet());
-                groupingFunctionFields.addAll(groupingFields);
+                fieldMetadata.addGroupingFunctionFields(groupingFields);
                 break;
             case QueryFunctions.QUERY_FUNCTION_NAMESPACE:
                 QueryJexlArgumentDescriptor queryDescriptor = (QueryJexlArgumentDescriptor) new QueryFunctionsDescriptor().getArgumentDescriptor(node);
                 Set<String> queryFields = queryDescriptor.fields(null, Collections.emptySet());
-                queryFunctionFields.addAll(queryFields);
+                fieldMetadata.addQueryFunctionFields(queryFields);
                 break;
             default:
-                //  do nothing
+                // do nothing
                 log.warn("Unhandled function namespace: " + visitor.namespace());
         }
     }
 
+    /**
+     * Object that contains field metadata information
+     */
+    public static class FieldMetadata {
+        private final Set<String> indexedFields;
+        private final Set<String> indexOnlyFields;
+        private final Set<String> tokenizedFields;
+
+        private final Set<String> contentFunctionFields = new HashSet<>();
+        private final Set<String> filterFunctionFields = new HashSet<>();
+        private final Set<String> queryFunctionFields = new HashSet<>();
+        private final Set<String> geoFunctionFields = new HashSet<>();
+        private final Set<String> groupingFunctionFields = new HashSet<>();
+        private final Set<String> regexFields = new HashSet<>();
+
+        public FieldMetadata(Set<String> indexedFields, Set<String> indexOnlyFields, Set<String> tokenizedFields) {
+            this.indexedFields = indexedFields;
+            this.indexOnlyFields = indexOnlyFields;
+            this.tokenizedFields = tokenizedFields;
+        }
+
+        public boolean isFieldIndexed(String field) {
+            return indexedFields.contains(field);
+        }
+
+        public boolean isFieldIndexOnly(String field) {
+            return indexOnlyFields.contains(field);
+        }
+
+        public boolean isFieldTokenized(String field) {
+            return tokenizedFields.contains(field);
+        }
+
+        public boolean isFieldAnyFunction(String field) {
+            //  @formatter:off
+            return contentFunctionFields.contains(field) ||
+                            filterFunctionFields.contains(field) ||
+                            queryFunctionFields.contains(field) ||
+                            geoFunctionFields.contains(field) ||
+                            groupingFunctionFields.contains(field);
+            //  @formatter:off
+        }
+
+        public boolean isFieldContentFunction(String field){
+            return contentFunctionFields.contains(field);
+        }
+
+        public boolean isFieldFilterFunction(String field){
+            return filterFunctionFields.contains(field);
+        }
+
+        public boolean isFieldQueryFunction(String field){
+            return queryFunctionFields.contains(field);
+        }
+
+        public boolean isFieldGeoFunction(String field){
+            return geoFunctionFields.contains(field);
+        }
+
+        public boolean isFieldGroupingFunction(String field) {
+            return groupingFunctionFields.contains(field);
+        }
+
+        public boolean isFieldRegexTerm(String field){
+            return regexFields.contains(field);
+        }
+
+        public void addRegexField(String field){
+            this.regexFields.add(field);
+        }
+
+        public void addContentFunctionFields(Collection<String> fields){
+            this.contentFunctionFields.addAll(fields);
+        }
+
+        public void addFilterFunctionFields(Collection<String> fields){
+            this.filterFunctionFields.addAll(fields);
+        }
+
+        public void addGeoFunctionFields(Collection<String> fields){
+            this.geoFunctionFields.addAll(fields);
+        }
+
+        public void addGroupingFunctionFields(Collection<String> fields){
+            this.groupingFunctionFields.addAll(fields);
+        }
+
+        public void addQueryFunctionFields(Collection<String> fields){
+            this.queryFunctionFields.addAll(fields);
+        }
+    }
 }
