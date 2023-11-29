@@ -1,8 +1,9 @@
 package datawave.ingest.data.config.ingest;
 
+import org.junit.Test;
+
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
-import org.junit.Test;
 
 public class CSVIngestHelperTest {
     @Test
