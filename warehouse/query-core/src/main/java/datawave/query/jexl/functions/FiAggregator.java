@@ -39,6 +39,9 @@ public class FiAggregator implements FieldIndexAggregator {
     protected final FieldIndexKey parser = new FieldIndexKey();
     protected final FieldIndexKey tkParser = new FieldIndexKey();
 
+    protected Range range;
+    protected Collection<ByteSequence> columnFamilies;
+
     public FiAggregator() {
         // empty constructor
     }
@@ -65,6 +68,15 @@ public class FiAggregator implements FieldIndexAggregator {
         return this;
     }
 
+    /**
+     * This method is only used by the {@link datawave.query.iterator.logic.DocumentAggregatingIterator}, or Ivarator
+     *
+     * @param itr
+     *            the iterator
+     * @return a document key
+     * @throws IOException
+     *             if something goes wrong
+     */
     @Override
     public Key apply(SortedKeyValueIterator<Key,Value> itr) throws IOException {
         Key key = itr.getTopKey();
@@ -148,15 +160,19 @@ public class FiAggregator implements FieldIndexAggregator {
             boolean toKeep = fieldKeep && filterKeep;
             attr.setToKeep(toKeep);
 
-            // This could be broken out into different cases.
-            // EQ implies always keep
-            // RE implies always evaluate
             // Anything that is being kept has to be added to the doc to be returned, if we aren't keeping only add to the doc if necessary for evaluation
             if (toKeep || (filter == null || filter.apply(new AbstractMap.SimpleEntry<>(tk, null)))) {
                 doc.put(parser.getField(), attr);
             }
 
-            itr.next();
+            // Ivarators use the DocumentAggregatingIterator which will not set the range
+            if (range != null && fieldMetadata != null && !fieldMetadata.isFieldContentFunction(parser.getField())) {
+                Key startKey = getNextParentKey(tk, parser);
+                Range seekRange = new Range(startKey, false, range.getEndKey(), true);
+                itr.seek(seekRange, columnFamilies, true);
+            } else {
+                itr.next();
+            }
             tk = (itr.hasTop() ? itr.getTopKey() : null);
         }
 
@@ -205,11 +221,35 @@ public class FiAggregator implements FieldIndexAggregator {
         return new Range(startKey, false, range.getEndKey(), range.isEndKeyInclusive());
     }
 
+    /**
+     * Get the next parent key by appending a null byte to the root uid
+     *
+     * @param k
+     *            the current key
+     * @return key used to seek to the next parent
+     */
+    public Key getNextParentKey(Key k, KeyParser parser) {
+        Text cq = new Text(parser.getValue() + '\u0000' + parser.getDatatype() + '\u0000' + parser.getUid() + '\uffff');
+        return new Key(k.getRow(), k.getColumnFamily(), cq);
+    }
+
     protected DocumentKey getRecordId(KeyParser parser) {
         Text cf = new Text(parser.getDatatype() + '\u0000' + parser.getUid());
         ColumnVisibility cv = ColumnVisibilityCache.get(parser.getKey().getColumnVisibilityData());
         long ts = parser.getKey().getTimestamp();
         Key key = new Key(parser.getKey().getRow(), cf, EMPTY_TEXT, cv, ts);
         return new DocumentKey(key, false);
+    }
+
+    public void setSeekRange(Range range) {
+        this.range = range;
+    }
+
+    public void setColumnFamilies(Collection<ByteSequence> columnFamilies) {
+        this.columnFamilies = columnFamilies;
+    }
+
+    public FieldMetadata getFieldMetadata() {
+        return this.fieldMetadata;
     }
 }

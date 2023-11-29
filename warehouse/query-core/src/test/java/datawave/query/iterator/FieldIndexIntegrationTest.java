@@ -1,5 +1,6 @@
 package datawave.query.iterator;
 
+import static datawave.query.jexl.visitors.QueryFieldMetadataVisitor.FieldMetadata;
 import static datawave.util.TableName.SHARD;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -84,6 +85,20 @@ public class FieldIndexIntegrationTest {
             put("TLD_FIELD_A", 6);
             put("TLD_FIELD_B", 26);
             put("TLD_FIELD_C", 8);
+            put("FIELD_X", 2);
+            put("FIELD_Y", 2);
+            put("FIELD_Z", 2);
+        }
+    };
+
+    private final Map<String,Integer> fieldTldDocumentSeekingCounts = new HashMap<>() {
+        {
+            put("FIELD_A", 2);
+            put("FIELD_B", 2);
+            put("FIELD_C", 2);
+            put("TLD_FIELD_A", 2);
+            put("TLD_FIELD_B", 2);
+            put("TLD_FIELD_C", 2);
             put("FIELD_X", 2);
             put("FIELD_Y", 2);
             put("FIELD_Z", 2);
@@ -587,16 +602,18 @@ public class FieldIndexIntegrationTest {
 
     @Test
     public void testFiAggregator_aggregateDocuments_withSeeking() throws Exception {
+        FieldMetadata fieldMetadata = new FieldMetadata(allFields, allFields, allFields);
         FiAggregator aggregator = new FiAggregator();
         aggregator.withMaxNextCount(1);
+        aggregator.withFieldMetadata(fieldMetadata);
 
         driveDocumentAggregation(aggregator, "FIELD_A", 2);
         driveDocumentAggregation(aggregator, "FIELD_B", 3);
         driveDocumentAggregation(aggregator, "FIELD_C", 4);
 
-        driveDocumentAggregation(aggregator, "TLD_FIELD_A", 9);
-        driveDocumentAggregation(aggregator, "TLD_FIELD_B", 13);
-        driveDocumentAggregation(aggregator, "TLD_FIELD_C", 12);
+        driveDocumentAggregation(aggregator, "TLD_FIELD_A", 3); // was 9
+        driveDocumentAggregation(aggregator, "TLD_FIELD_B", 1); // was 13
+        driveDocumentAggregation(aggregator, "TLD_FIELD_C", 3); // was 12
 
         driveDocumentAggregation(aggregator, "FIELD_X", 1);
         driveDocumentAggregation(aggregator, "FIELD_Y", 1);
@@ -694,14 +711,16 @@ public class FieldIndexIntegrationTest {
 
     @Test
     public void testTLDFiAggregator_aggregateDocuments_withSeeking() throws Exception {
+        FieldMetadata fieldMetadata = new FieldMetadata(allFields, allFields, allFields);
         TLDFiAggregator aggregator = new TLDFiAggregator();
         aggregator.withMaxNextCount(1);
+        aggregator.withFieldMetadata(fieldMetadata);
 
         driveDocumentAggregation(aggregator, "FIELD_A", 2);
         driveDocumentAggregation(aggregator, "FIELD_B", 3);
         driveDocumentAggregation(aggregator, "FIELD_C", 4);
 
-        driveDocumentAggregation(aggregator, "TLD_FIELD_A", 3);
+        driveDocumentAggregation(aggregator, "TLD_FIELD_A", 3); // was 6
         driveDocumentAggregation(aggregator, "TLD_FIELD_B", 1);
         driveDocumentAggregation(aggregator, "TLD_FIELD_C", 3);
 
@@ -755,9 +774,7 @@ public class FieldIndexIntegrationTest {
      * @throws Exception
      *             if something goes wrong
      */
-    private SortedKeyValueIterator<Key,Value> createIteratorForField(String field) throws Exception {
-        Range range = createRangeForField(field);
-
+    private SortedKeyValueIterator<Key,Value> createIteratorForRange(Range range) throws Exception {
         Scanner scanner = client.createScanner(SHARD);
         scanner.setRange(range);
         Iterator<Map.Entry<Key,Value>> iter = scanner.iterator();
@@ -808,7 +825,8 @@ public class FieldIndexIntegrationTest {
         int uidCount = 0;
         Set<String> uids = new HashSet<>();
 
-        SortedKeyValueIterator<Key,Value> iter = createIteratorForField(field);
+        Range range = createRangeForField(field);
+        SortedKeyValueIterator<Key,Value> iter = createIteratorForRange(range);
         while (iter.hasTop()) {
             Key k = iter.getTopKey();
 
@@ -864,7 +882,8 @@ public class FieldIndexIntegrationTest {
         int uidCount = 0;
         Set<String> uids = new HashSet<>();
 
-        SortedKeyValueIterator<Key,Value> iter = createIteratorForField(field);
+        Range range = createRangeForField(field);
+        SortedKeyValueIterator<Key,Value> iter = createIteratorForRange(range);
         while (iter.hasTop()) {
             Key k = aggregator.apply(iter);
 
@@ -899,7 +918,14 @@ public class FieldIndexIntegrationTest {
     private void driveDocumentAggregation(FieldIndexAggregator aggregator, String field, int expectedUidCount) throws Exception {
         int uidCount = 0;
 
-        SortedKeyValueIterator<Key,Value> iter = createIteratorForField(field);
+        Range range = createRangeForField(field);
+        if (aggregator instanceof FiAggregator) {
+            FiAggregator fiAgg = (FiAggregator) aggregator;
+            fiAgg.setSeekRange(range);
+            fiAgg.setColumnFamilies(Collections.emptySet());
+        }
+
+        SortedKeyValueIterator<Key,Value> iter = createIteratorForRange(range);
         while (iter.hasTop()) {
             Document d = new Document();
             Key k = aggregator.apply(iter, d, attributeFactory);
@@ -930,7 +956,7 @@ public class FieldIndexIntegrationTest {
         Set<String> uids = new HashSet<>();
 
         Range range = createRangeForField(field);
-        SortedKeyValueIterator<Key,Value> iter = createIteratorForField(field);
+        SortedKeyValueIterator<Key,Value> iter = createIteratorForRange(range);
         while (iter.hasTop()) {
             Key k = aggregator.apply(iter, range, Collections.emptySet(), true);
             assertTopKeyForField(field, k);
@@ -949,7 +975,9 @@ public class FieldIndexIntegrationTest {
     }
 
     private void assertDocumentSize(FieldIndexAggregator aggregator, String field, Document d) {
-        if (aggregator instanceof TLDFieldIndexAggregator || aggregator instanceof TLDFiAggregator) {
+        if (aggregator instanceof TLDFiAggregator && ((TLDFiAggregator) aggregator).getFieldMetadata() != null) {
+            assertEquals(fieldTldDocumentSeekingCounts.get(field).intValue(), d.size());
+        } else if (aggregator instanceof TLDFieldIndexAggregator || aggregator instanceof TLDFiAggregator) {
             assertEquals(fieldTldDocumentCounts.get(field).intValue(), d.size());
         } else {
             assertEquals(fieldDocumentCounts.get(field).intValue(), d.size());

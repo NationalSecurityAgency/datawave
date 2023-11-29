@@ -55,14 +55,15 @@ public class TLDFiAggregator extends FiAggregator {
                 d.put(Document.DOCKEY_FIELD_NAME, getRecordId(parser));
             }
 
-            // all non-event fields are aggregated into a document
-            // in certain cases an aggregator could aggregate a single value and then
-            // skip to the next document
-            // ======
-            // for example: an equality term that is not part of an evaluation phase function
-
-            itr.next();
-            tk = itr.hasTop() ? itr.getTopKey() : null;
+            if (range != null && fieldMetadata != null && !fieldMetadata.isFieldContentFunction(parser.getField())) {
+                // for non-event fields that are not part of a content function, perform a seeking aggregation
+                Key startKey = getNextParentKey(tk, parser);
+                Range seekRange = new Range(startKey, false, range.getEndKey(), true);
+                itr.seek(seekRange, columnFamilies, true);
+            } else {
+                itr.next();
+            }
+            tk = (itr.hasTop() ? itr.getTopKey() : null);
         }
         return k;
     }
