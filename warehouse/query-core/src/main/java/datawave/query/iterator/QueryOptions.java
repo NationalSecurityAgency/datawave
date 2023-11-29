@@ -1340,7 +1340,7 @@ public class QueryOptions implements OptionDescriber {
         }
 
         // if we never actually set an allow or deny list, then no need to project results
-        this.projectResults = this.useBlackListedFields || this.useWhiteListedFields;
+        this.projectResults = this.useDisallowListedFields || this.useAllowListedFields;
 
         this.evaluationFilter = null;
         this.getDocumentKey = GetStartKey.instance();
