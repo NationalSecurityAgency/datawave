@@ -50,6 +50,7 @@ import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.ingest.data.config.ingest.IngestHelperInterface;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.ingest.mapreduce.job.reduce.BulkIngestKeyAggregatingReducer;
+import datawave.ingest.mapreduce.partition.MultiTableRangePartitioner;
 import datawave.ingest.protobuf.Uid;
 import datawave.util.StringUtils;
 
@@ -309,18 +310,24 @@ public class ShardReindexJob implements Tool {
             // 3. Get the data type. The data type is used to get the correct IngestHelperInterface which is used to make decisions regarding how a field is
             // indexed. This may vary from data type to data type
 
+            // this is required for the partitioner, see EventMapper
+            MultiTableRangePartitioner.setContext(context);
+
             // ensure the key is an fi
             final byte[] cf = key.getColumnFamilyData().getBackingArray();
-            if (WritableComparator.compareBytes(cf, 0, 3, FI_START_BYTES, 0, FI_START_BYTES.length) != 0) {
+            final int fiBaseLength = FI_START_BYTES.length;
+            if (cf.length <= fiBaseLength || WritableComparator.compareBytes(cf, 0, fiBaseLength, FI_START_BYTES, 0, fiBaseLength) != 0) {
                 // increment count of non-fi key
                 context.getCounter("key types", "non-fi").increment(1l);
                 return;
             }
 
             // check if it's the same target field as the last one
-            if (lastFiBytes == null || WritableComparator.compareBytes(cf, 4, cf.length - 4, lastFiBytes, 4, lastFiBytes.length - 4) != 0) {
+            final int fiBaseOffset = fiBaseLength + 1;
+            if (lastFiBytes == null || WritableComparator.compareBytes(cf, fiBaseOffset, cf.length - fiBaseOffset, lastFiBytes, fiBaseOffset,
+                            lastFiBytes.length - fiBaseOffset) != 0) {
                 // get the field from the cf
-                field = new String(cf, 3, cf.length - 3);
+                field = new String(cf, fiBaseLength, cf.length - fiBaseLength);
                 lastFiBytes = cf;
             }
 
@@ -465,7 +472,8 @@ public class ShardReindexJob implements Tool {
         private String table = "shard";
 
         // alternatively accept RFileInputFormat
-        @Parameter(names = "--inputFiles", description = "When set these files will be used for the job", required = false)
+        @Parameter(names = "--inputFiles", description = "When set these files will be used for the job. Should be comma delimited hdfs glob strings",
+                        required = false)
         private String inputFiles;
 
         @Parameter(names = "--sourceHdfs", description = "HDFS for --inputFiles", required = true)
@@ -489,7 +497,7 @@ public class ShardReindexJob implements Tool {
         @Parameter(names = "--reducers", description = "number of reducers to use", required = true)
         private int reducers;
 
-        @Parameter(names = "--outputDir", description = "output directory", required = true)
+        @Parameter(names = "--outputDir", description = "output directory that must not already exist", required = true)
         private String outputDir;
 
         @Parameter(names = "--destHdfs", description = "HDFS for --outputDir", required = true)
