@@ -168,7 +168,7 @@ public class EventDataQueryExpressionVisitorTest {
     }
 
     @Test
-    public void testExpressionFilterSingleWhitelist() {
+    public void testExpressionFilterSingleAllowlist() {
         ExpressionFilter f = new ExpressionFilter(attrFactory, "FOO");
         f.addFieldValue("bar");
 
@@ -184,7 +184,7 @@ public class EventDataQueryExpressionVisitorTest {
     }
 
     @Test
-    public void testExpressionFilterMultiWhitelist() {
+    public void testExpressionFilterMultiAllowlist() {
         ExpressionFilter f = new ExpressionFilter(attrFactory, "FOO");
         f.addFieldValue("bar");
         f.addFieldValue("baz");
@@ -851,7 +851,7 @@ public class EventDataQueryExpressionVisitorTest {
         assertTrue(filter.get("BAR").apply(n2));
         assertFalse(filter.get("BAR").apply(n3));
 
-        // confusion - the filter is for FOO, but the values match - a whitelist should fail.
+        // confusion - the filter is for FOO, but the values match - a Allowlist should fail.
         assertFalse(filter.get("BAR").apply(p2));
     }
 

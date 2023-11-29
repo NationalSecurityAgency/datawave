@@ -129,8 +129,8 @@ public class TokenizationHelper {
     public static final String EMAIL_DOMAIN_TOKENS = ".email.domain.word.tokens.enabled";
     private boolean emailDomainTokensEnabled = true;
 
-    public static final String TERM_TYPE_BLACKLIST = ".term.type.blacklist";
-    private String[] termTypeBlacklist = new String[0];
+    public static final String TERM_TYPE_DISALLOWLIST = ".term.type.disallowlist";
+    private String[] termTypeDisallowlist = new String[0];
 
     public static final String INTERFIELD_POSITION_INCREMENT = ".token.interfield.position.increment";
     private int interFieldPositionIncrement = 10;
@@ -152,7 +152,7 @@ public class TokenizationHelper {
         urlWordTokensEnabled = conf.getBoolean(helper.getType().typeName() + URL_WORD_TOKENS, urlWordTokensEnabled);
         emailWordTokensEnabled = conf.getBoolean(helper.getType().typeName() + EMAIL_WORD_TOKENS, emailWordTokensEnabled);
         emailDomainTokensEnabled = conf.getBoolean(helper.getType().typeName() + EMAIL_DOMAIN_TOKENS, emailDomainTokensEnabled);
-        termTypeBlacklist = conf.getStrings(helper.getType().typeName() + TERM_TYPE_BLACKLIST, termTypeBlacklist);
+        termTypeDisallowlist = conf.getStrings(helper.getType().typeName() + TERM_TYPE_DISALLOWLIST, termTypeDisallowlist);
         verboseShardCounters = conf.getBoolean(helper.getType().typeName() + VERBOSE_SHARDS, verboseShardCounters);
         verboseTermIndexCounters = conf.getBoolean(helper.getType().typeName() + VERBOSE_TERM_INDEX, verboseTermIndexCounters);
         verboseTermSizeCounters = conf.getBoolean(helper.getType().typeName() + VERBOSE_TERM_SIZE, verboseTermSizeCounters);
@@ -243,8 +243,8 @@ public class TokenizationHelper {
         return tokenOffsetCacheMaxSize;
     }
 
-    public String[] getTermTypeBlacklist() {
-        return termTypeBlacklist;
+    public String[] getTermTypeDisallowlist() {
+        return termTypeDisallowlist;
     }
 
     public boolean isTermWordTokensEnabled() {
