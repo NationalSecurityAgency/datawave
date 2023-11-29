@@ -11,6 +11,7 @@ import java.util.TreeSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
@@ -18,6 +19,7 @@ import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.annotation.Resource;
+import javax.annotation.security.PermitAll;
 import javax.annotation.security.RunAs;
 import javax.ejb.LocalBean;
 import javax.ejb.Lock;
@@ -28,12 +30,6 @@ import javax.enterprise.concurrent.ManagedThreadFactory;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.inject.Inject;
-import javax.jms.ConnectionFactory;
-import javax.jms.JMSConsumer;
-import javax.jms.JMSContext;
-import javax.jms.Message;
-import javax.jms.ObjectMessage;
-import javax.jms.Queue;
 
 import org.apache.commons.collections4.map.LRUMap;
 import org.apache.commons.lang.StringUtils;
@@ -54,6 +50,7 @@ import datawave.webservice.result.VoidResponse;
 @RunAs("InternalUser")
 @Startup
 @Singleton
+@PermitAll
 @LocalBean
 @Lock(LockType.READ)
 @Exclude(ifProjectStage = DatawaveEmbeddedProjectStageHolder.DatawaveEmbedded.class)
@@ -64,12 +61,6 @@ public class QueryMetricsWriter {
     @Resource(mappedName = "java:jboss/ee/concurrency/factory/default")
     private ManagedThreadFactory managedThreadFactory;
 
-    @Resource(mappedName = "java:jboss/DefaultJMSConnectionFactory")
-    private ConnectionFactory connectionFactory;
-
-    @Resource(mappedName = "java:/queue/QueryMetrics")
-    private Queue dest;
-
     @Inject
     private QueryMetricHandler<? extends BaseQueryMetric> queryMetricHandler;
 
@@ -78,7 +69,7 @@ public class QueryMetricsWriter {
 
     @Inject
     @SpringBean(name = "QueryMetricsWriterConfiguration", refreshable = true)
-    private QueryMetricsWriterConfiguration queryMetricsWriterConfiguration;
+    private QueryMetricsWriterConfiguration writerConfig;
 
     private UdpClient timelyClient = null;
     private Map<String,Long> lastPageMetricMap;
@@ -87,30 +78,42 @@ public class QueryMetricsWriter {
     private Future future = null;
     private volatile boolean shuttingDown = false;
     private List<FailureRecord> failedMetrics = new ArrayList<>();
+    private LinkedBlockingQueue<QueryMetricHolder> blockingQueue;
 
     @PostConstruct
     private void init() {
         // noinspection unchecked
         lastPageMetricMap = new LRUMap(1000);
         timelyClient = createUdpClient();
+        blockingQueue = new LinkedBlockingQueue(writerConfig.getMaxQueueSize());
         ExecutorService executorService = Executors.newSingleThreadExecutor(managedThreadFactory);
-        this.future = executorService.submit(new MetricProcessor());
+        future = executorService.submit(new MetricProcessor());
     }
 
     @PreDestroy
     public void shutdown() {
         // try to ensure that the task running on the managed thread exits before shutdown
+        long start = System.currentTimeMillis();
         this.shuttingDown = true;
         try {
-            this.future.get(5000, TimeUnit.SECONDS);
+            this.future.get(writerConfig.getMaxShutdownMs(), TimeUnit.MILLISECONDS);
         } catch (Exception e) {
 
         }
+
+        long remainingMs = writerConfig.getMaxShutdownMs() - (System.currentTimeMillis() - start);
+        while (!blockingQueue.isEmpty() && failedMetrics.isEmpty() && remainingMs > 0) {
+            List<QueryMetricHolder> metricHolderList = getMetricsFromQueue(100, Math.min(5000, remainingMs));
+            log.info(String.format("writing %d metric updates while shutting down", metricHolderList.size()));
+            processQueryMetrics(metricHolderList);
+            remainingMs = writerConfig.getMaxShutdownMs() - (System.currentTimeMillis() - start);
+        }
+        log.info(String.format("shut down with %d metric updates in queue and %d failed metric updates", blockingQueue.size(), failedMetrics.size()));
     }
 
     private UdpClient createUdpClient() {
-        if (queryMetricsWriterConfiguration != null && StringUtils.isNotBlank(queryMetricsWriterConfiguration.getTimelyHost())) {
-            return new UdpClient(queryMetricsWriterConfiguration.getTimelyHost(), queryMetricsWriterConfiguration.getTimelyPort());
+        if (writerConfig != null && StringUtils.isNotBlank(writerConfig.getTimelyHost())) {
+            return new UdpClient(writerConfig.getTimelyHost(), writerConfig.getTimelyPort());
         } else {
             return null;
         }
@@ -123,42 +126,37 @@ public class QueryMetricsWriter {
         }
     }
 
-    private List<QueryMetricHolder> getMetricsFromQueue(JMSContext jmsContext) {
-        List metricHolderList = new ArrayList<>();
-        long start = System.currentTimeMillis();
-        try (JMSConsumer consumer = jmsContext.createConsumer(dest)) {
-            Message message;
-            do {
-                message = consumer.receive(500);
-                if (message != null) {
-                    try {
-                        if (message instanceof ObjectMessage) {
-                            ObjectMessage objectMessage = (ObjectMessage) message;
-                            Object o = objectMessage.getObject();
-                            QueryMetricHolder queryMetricHolder = null;
-                            if (o instanceof QueryMetricHolder) {
-                                queryMetricHolder = (QueryMetricHolder) o;
-                            } else if (o instanceof QueryMetricMessage) {
-                                queryMetricHolder = ((QueryMetricMessage) o).getMetricHolder();
-                            } else {
-                                log.error("message of type " + message.getClass().getCanonicalName() + " not expected");
-                            }
-                            if (queryMetricHolder != null) {
-                                metricHolderList.add(queryMetricHolder);
-                            }
-                        }
-                    } catch (Exception e) {
-                        log.error(e.getMessage() + " messageID:" + message.getJMSMessageID());
-                        continue;
-                    }
+    public void addMetricToQueue(QueryMetricHolder queryMetricHolder) {
+        try {
+            if (shuttingDown) {
+                log.error(String.format("shutting down - dropping metric for queryId %s", queryMetricHolder.getQueryMetric().getQueryId()));
+            } else if (!blockingQueue.offer(queryMetricHolder)) {
+                if (queryMetricHolder.getQueryMetric().getLifecycle().compareTo(Lifecycle.INITIALIZED) <= 0) {
+                    String queryId = queryMetricHolder.getQueryMetric().getQueryId();
+                    log.error(String.format("metric queue limit reached (%d/%d), dropping metric for queryId %s", blockingQueue.size(),
+                                    writerConfig.getMaxQueueSize(), queryId));
                 }
-                // break out of loop when batchSize is met or at least every minute
-                if (metricHolderList.size() >= queryMetricsWriterConfiguration.getBatchSize() || (System.currentTimeMillis() - start) > 60000) {
-                    break;
-                }
-            } while (message != null);
+            }
         } catch (Exception e) {
             log.error(e.getMessage(), e);
+        }
+    }
+
+    private List<QueryMetricHolder> getMetricsFromQueue(int batchSize, long maxLatency) {
+        List metricHolderList = new ArrayList<>();
+        long start = System.currentTimeMillis();
+        while (metricHolderList.size() < batchSize && (System.currentTimeMillis() - start) < maxLatency) {
+            try {
+                QueryMetricHolder holder = blockingQueue.poll(100, TimeUnit.MILLISECONDS);
+                if (holder != null) {
+                    metricHolderList.add(holder);
+                }
+            } catch (InterruptedException e) {
+
+            }
+        }
+        if (metricHolderList.size() > 0 || blockingQueue.size() > 0) {
+            log.debug(String.format("retrieved %d metric updates from queue, %d remaining", metricHolderList.size(), blockingQueue.size()));
         }
         return metricHolderList;
     }
@@ -210,27 +208,15 @@ public class QueryMetricsWriter {
     private class MetricProcessor implements Runnable {
         @Override
         public void run() {
-            // create JMSContext inside the ManagedThread so that the
-            // session is active when we use it to create a consumer
-            JMSContext jmsContext = connectionFactory.createContext(JMSContext.AUTO_ACKNOWLEDGE);
-            boolean useRemoteService = queryMetricsWriterConfiguration.getUseRemoteService();
             while (!shuttingDown) {
                 try {
                     // only process metrics if they are being successfully written
                     if (failedMetrics.isEmpty()) {
-                        List<QueryMetricHolder> metricQueue = getMetricsFromQueue(jmsContext);
-                        if (metricQueue.isEmpty()) {
-                            Thread.sleep(5000);
-                        } else {
-                            if (useRemoteService) {
-                                processQueryMetricsWithRemoteService(metricQueue);
-                            } else {
-                                processQueryMetricsWithHandler(metricQueue);
-                            }
-                        }
+                        processQueryMetrics(getMetricsFromQueue(writerConfig.getBatchSize(), writerConfig.getMaxLatencyMs()));
                     } else {
-                        boolean success = writeFailedMetrics();
-                        if (!success) {
+                        if (!writeFailedMetrics()) {
+                            log.error(String.format("Unable to write %d previously failed metrics, not reading from blockingQueue size %d",
+                                            failedMetrics.size(), blockingQueue.size()));
                             // prevent a tight loop where we keep failing to write failedMetrics
                             Thread.sleep(60000);
                         }
@@ -242,44 +228,55 @@ public class QueryMetricsWriter {
         }
     }
 
-    private void processQueryMetricsWithRemoteService(List<QueryMetricHolder> metricHolderQueue) {
-        List<BaseQueryMetric> metricQueue = metricHolderQueue.stream().map(QueryMetricHolder::getQueryMetric).collect(Collectors.toList());
-        if (!metricQueue.isEmpty()) {
+    private void processQueryMetrics(List<QueryMetricHolder> metricHolderList) {
+        if (!metricHolderList.isEmpty()) {
+            if (writerConfig.getUseRemoteService()) {
+                processQueryMetricsWithRemoteService(metricHolderList);
+            } else {
+                processQueryMetricsWithHandler(metricHolderList);
+            }
+        }
+    }
+
+    private void processQueryMetricsWithRemoteService(List<QueryMetricHolder> metricHolderList) {
+        List<BaseQueryMetric> metricList = metricHolderList.stream().map(QueryMetricHolder::getQueryMetric).collect(Collectors.toList());
+        if (!metricList.isEmpty()) {
             try {
-                writeMetricsToRemoteService(metricQueue);
-                log.debug("wrote " + metricQueue.size() + " query metric updates to the RemoteQueryMetricService");
+                writeMetricsToRemoteService(metricList);
+                log.debug(String.format("wrote %d metric updates to RemoteQueryMetricService", metricList.size()));
             } catch (Exception e) {
-                log.error(metricQueue.size() + " metrics failed write to RemoteQueryMetricService as a batch, will retry individually - " + e.getMessage(), e);
-                metricQueue.forEach(m -> {
+                log.error(String.format("%d metric updates failed write to RemoteQueryMetricService as a batch, will retry individually - %s",
+                                metricList.size(), e.getMessage()), e);
+                metricList.forEach(m -> {
                     failedMetrics.add(new FailureRecord(m, false));
                 });
             }
         }
     }
 
-    private void processQueryMetricsWithHandler(List<QueryMetricHolder> metricQueue) {
+    private void processQueryMetricsWithHandler(List<QueryMetricHolder> metricHolderList) {
         List<QueryMetricHolder> currentFailures = new ArrayList<>();
         AtomicBoolean anySuccess = new AtomicBoolean(false);
         try {
-            if (!metricQueue.isEmpty()) {
-                currentFailures.addAll(writeMetricsToHandler(queryMetricHandler, metricQueue));
-                log.debug("wrote " + (metricQueue.size() - currentFailures.size()) + " query metric updates to queryMetricHandler");
-                anySuccess.set(currentFailures.size() < metricQueue.size());
+            if (!metricHolderList.isEmpty()) {
+                currentFailures.addAll(writeMetricsToHandler(queryMetricHandler, metricHolderList));
+                log.debug(String.format("wrote %d metric updates to QueryMetricHandler", (metricHolderList.size() - currentFailures.size())));
+                anySuccess.set(currentFailures.size() < metricHolderList.size());
             }
         } catch (Exception e) {
             log.error(e.getMessage(), e);
-            currentFailures.addAll(metricQueue);
+            currentFailures.addAll(metricHolderList);
         } finally {
-            if (!metricQueue.isEmpty()) {
+            if (!metricHolderList.isEmpty()) {
                 if (!currentFailures.isEmpty()) {
-                    log.error(currentFailures.size() + " metrics failed write to queryMetricHandler, will retry individually");
+                    log.error(String.format("%d metric updates failed write to QueryMetricHandler, will retry individually", currentFailures.size()));
                     currentFailures.stream().forEach(queryMetricHolder -> {
                         this.failedMetrics.add(new FailureRecord(queryMetricHolder, anySuccess.get()));
                     });
                 }
                 if (!anySuccess.get()) {
                     // error during write or flush, create a new handler so that we can re-try next time
-                    log.error("error writing " + metricQueue.size() + " query metric updates - creating new queryMetricHandler");
+                    log.error(String.format("error writing %d metric updates - creating new QueryMetricHandler", metricHolderList.size()));
                     queryMetricHandler.reload();
                 }
             }
@@ -291,7 +288,7 @@ public class QueryMetricsWriter {
         int successful = 0;
         while (itr.hasNext()) {
             FailureRecord f = itr.next();
-            if (queryMetricsWriterConfiguration.getUseRemoteService()) {
+            if (writerConfig.getUseRemoteService()) {
                 try {
                     writeMetricsToRemoteService(Collections.singletonList(f.getMetric()));
                     itr.remove();
@@ -307,7 +304,8 @@ public class QueryMetricsWriter {
                 }
             }
         }
-        log.debug("writeFailedMetrics: success:" + successful + " failures:" + failedMetrics.size());
+        String destination = writerConfig.getUseRemoteService() ? "RemoteQueryMetricService" : "QueryMetricHandler";
+        log.debug(String.format("wrote %d previously failed metric updates to %s with %d failures", successful, destination, failedMetrics.size()));
         boolean anySuccessful = successful > 0;
         processFailedMetricList(anySuccessful);
         return failedMetrics.isEmpty() || anySuccessful;
@@ -337,14 +335,15 @@ public class QueryMetricsWriter {
                 discardForTimeMetrics.add(queryId);
                 discardForTimeCount++;
             } else {
-                log.trace("failures individual/total:" + iFailures + "/" + tFailures + " for metric update " + queryId);
+                log.trace(String.format("failures individual/total: %d/%d for metric update %s", iFailures, tFailures, queryId));
             }
         }
         if (discardForFailureCount > 0) {
-            log.error("Discarding " + discardForFailureCount + " updates from queries " + discardForFailureMetrics + " for repeated failures");
+            log.error(String.format("discarding %d metric updates from %s for repeated failures", discardForFailureCount, discardForFailureMetrics));
         }
         if (discardForTimeCount > 0) {
-            log.error("Discarding " + discardForTimeCount + " updates from queries " + discardForTimeMetrics + " for exceeding max time in failure queue");
+            log.error(String.format("discarding %d metric updates from %s for exceeding max time in failure queue", discardForTimeCount,
+                            discardForTimeMetrics));
         }
     }
 
@@ -370,7 +369,7 @@ public class QueryMetricsWriter {
                         log.error(e.getMessage(), e);
                     }
                 } catch (Exception e) {
-                    log.error("query metric update failed: " + e.getMessage());
+                    log.error(String.format("metric update write to QueryMetricHandler failed: %s", e.getMessage()));
                     failedMetrics.add(metricHolder);
                 }
             }
@@ -388,7 +387,7 @@ public class QueryMetricsWriter {
                 long createDate = queryMetric.getCreateDate().getTime();
 
                 StringBuilder tagSb = new StringBuilder();
-                Set<String> configuredMetricTags = queryMetricsWriterConfiguration.getTimelyMetricTags();
+                Set<String> configuredMetricTags = writerConfig.getTimelyMetricTags();
                 for (String fieldName : configuredMetricTags) {
                     String fieldValue = metricValues.get(fieldName);
                     if (!StringUtils.isBlank(fieldValue)) {
@@ -420,9 +419,10 @@ public class QueryMetricsWriter {
                                 callTime = pm.getReturnTime();
                             }
                             if (pm.getPagesize() > 0) {
-                                timelyClient.write("put dw.query.metrics.PAGE_METRIC.calltime " + requestTime + " " + callTime + " " + tagSb);
+                                timelyClient.write(String.format("put dw.query.metrics.PAGE_METRIC.calltime %d %d %s", requestTime, callTime, tagSb));
                                 String callTimePerRecord = df.format((double) callTime / pm.getPagesize());
-                                timelyClient.write("put dw.query.metrics.PAGE_METRIC.calltimeperrecord " + requestTime + " " + callTimePerRecord + " " + tagSb);
+                                timelyClient.write(String.format("put dw.query.metrics.PAGE_METRIC.calltimeperrecord %d %s %s", requestTime, callTimePerRecord,
+                                                tagSb));
                             }
                             lastPageMetricMap.put(queryId, pm.getPageNumber());
 
@@ -432,10 +432,10 @@ public class QueryMetricsWriter {
 
                 if (lifecycle.equals(Lifecycle.CLOSED) || lifecycle.equals(Lifecycle.CANCELLED)) {
                     // write ELAPSED_TIME
-                    timelyClient.write("put dw.query.metrics.ELAPSED_TIME " + createDate + " " + queryMetric.getElapsedTime() + " " + tagSb);
+                    timelyClient.write(String.format("put dw.query.metrics.ELAPSED_TIME %d %d %s", createDate, queryMetric.getElapsedTime(), tagSb));
 
                     // write NUM_RESULTS
-                    timelyClient.write("put dw.query.metrics.NUM_RESULTS " + createDate + " " + queryMetric.getNumResults() + " " + tagSb);
+                    timelyClient.write(String.format("put dw.query.metrics.NUM_RESULTS %d %d %s", createDate, queryMetric.getNumResults(), tagSb));
 
                     // clean up last page map
                     lastPageMetricMap.remove(queryId);
@@ -447,10 +447,10 @@ public class QueryMetricsWriter {
                     if (createTime == -1) {
                         createTime = queryMetric.getSetupTime();
                     }
-                    timelyClient.write("put dw.query.metrics.CREATE_TIME " + createDate + " " + createTime + " " + tagSb);
+                    timelyClient.write(String.format("put dw.query.metrics.CREATE_TIME %d %d %s", createDate, createTime, tagSb));
 
                     // write a COUNT value of 1 so that we can count total queries
-                    timelyClient.write("put dw.query.metrics.COUNT " + createDate + " 1 " + tagSb);
+                    timelyClient.write(String.format("put dw.query.metrics.COUNT %d 1 %s", createDate, tagSb));
                 }
 
             } catch (Exception e) {
