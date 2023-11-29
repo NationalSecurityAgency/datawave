@@ -5,7 +5,6 @@ import java.util.AbstractMap;
 import java.util.Collection;
 import java.util.Set;
 
-import datawave.query.jexl.visitors.QueryFieldMetadataVisitor.FieldMetadata;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -22,6 +21,7 @@ import datawave.query.attributes.DocumentKey;
 import datawave.query.data.parsers.FieldIndexKey;
 import datawave.query.data.parsers.KeyParser;
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.visitors.QueryFieldMetadataVisitor.FieldMetadata;
 import datawave.query.predicate.EventDataQueryFilter;
 
 /**

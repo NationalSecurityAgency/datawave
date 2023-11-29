@@ -1,24 +1,5 @@
 package datawave.query.jexl.visitors;
 
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.functions.ContentFunctionsDescriptor;
-import datawave.query.jexl.functions.EvaluationPhaseFilterFunctionsDescriptor;
-import datawave.query.jexl.functions.FunctionJexlNodeVisitor;
-import datawave.query.jexl.functions.GeoWaveFunctionsDescriptor;
-import datawave.query.jexl.functions.GroupingRequiredFilterFunctionsDescriptor;
-import datawave.query.jexl.functions.QueryFunctions;
-import datawave.query.jexl.functions.QueryFunctionsDescriptor;
-import org.apache.commons.jexl2.parser.ASTERNode;
-import org.apache.commons.jexl2.parser.ASTFunctionNode;
-import org.apache.commons.jexl2.parser.ASTNRNode;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.log4j.Logger;
-
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
-
 import static datawave.query.jexl.functions.ContentFunctions.CONTENT_FUNCTION_NAMESPACE;
 import static datawave.query.jexl.functions.ContentFunctionsDescriptor.ContentJexlArgumentDescriptor;
 import static datawave.query.jexl.functions.EvaluationPhaseFilterFunctions.EVAL_PHASE_FUNCTION_NAMESPACE;
@@ -28,6 +9,26 @@ import static datawave.query.jexl.functions.GeoWaveFunctionsDescriptor.GeoWaveJe
 import static datawave.query.jexl.functions.GroupingRequiredFilterFunctions.GROUPING_REQUIRED_FUNCTION_NAMESPACE;
 import static datawave.query.jexl.functions.GroupingRequiredFilterFunctionsDescriptor.GroupingRequiredFilterJexlArgumentDescriptor;
 import static datawave.query.jexl.functions.QueryFunctionsDescriptor.QueryJexlArgumentDescriptor;
+
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+
+import org.apache.commons.jexl2.parser.ASTERNode;
+import org.apache.commons.jexl2.parser.ASTFunctionNode;
+import org.apache.commons.jexl2.parser.ASTNRNode;
+import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.log4j.Logger;
+
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.functions.ContentFunctionsDescriptor;
+import datawave.query.jexl.functions.EvaluationPhaseFilterFunctionsDescriptor;
+import datawave.query.jexl.functions.FunctionJexlNodeVisitor;
+import datawave.query.jexl.functions.GeoWaveFunctionsDescriptor;
+import datawave.query.jexl.functions.GroupingRequiredFilterFunctionsDescriptor;
+import datawave.query.jexl.functions.QueryFunctions;
+import datawave.query.jexl.functions.QueryFunctionsDescriptor;
 
 /**
  * Visitor that answers several basic questions about fields in a query plan

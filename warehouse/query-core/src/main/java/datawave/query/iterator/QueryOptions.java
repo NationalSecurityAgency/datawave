@@ -1,5 +1,7 @@
 package datawave.query.iterator;
 
+import static datawave.query.jexl.visitors.QueryFieldMetadataVisitor.FieldMetadata;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
@@ -26,9 +28,6 @@ import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
-import datawave.query.exceptions.DatawaveFatalQueryException;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.visitors.QueryFieldMetadataVisitor;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
@@ -72,6 +71,7 @@ import datawave.query.attributes.ExcerptFields;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.common.grouping.GroupFields;
 import datawave.query.composite.CompositeMetadata;
+import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.function.ConfiguredFunction;
 import datawave.query.function.DocumentPermutation;
 import datawave.query.function.Equality;
@@ -87,8 +87,10 @@ import datawave.query.iterator.logic.IndexIterator;
 import datawave.query.iterator.logic.TermFrequencyExcerptIterator;
 import datawave.query.jexl.DefaultArithmetic;
 import datawave.query.jexl.HitListArithmetic;
+import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.FieldIndexAggregator;
 import datawave.query.jexl.functions.IdentityAggregator;
+import datawave.query.jexl.visitors.QueryFieldMetadataVisitor;
 import datawave.query.predicate.ConfiguredPredicate;
 import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.predicate.TimeFilter;
@@ -99,8 +101,6 @@ import datawave.query.util.TypeMetadata;
 import datawave.query.util.sortedset.FileSortedSet;
 import datawave.util.StringUtils;
 import datawave.util.UniversalSet;
-
-import static datawave.query.jexl.visitors.QueryFieldMetadataVisitor.*;
 
 /**
  * QueryOptions are set on the iterators.
@@ -385,7 +385,7 @@ public class QueryOptions implements OptionDescriber {
 
     protected boolean termFrequenciesRequired = false;
     protected Set<String> termFrequencyFields = Collections.emptySet();
-    protected Set<String> contentExpansionFields;
+    protected Set<String> contentExpansionFields = Collections.emptySet();
 
     protected boolean compressResults = false;
 
@@ -1430,8 +1430,7 @@ public class QueryOptions implements OptionDescriber {
         if (options.containsKey(INDEX_ONLY_FIELDS)) {
             this.indexOnlyFields = buildFieldSetFromString(options.get(INDEX_ONLY_FIELDS));
         } else if (!this.fullTableScanOnly) {
-            log.error("A list of index only fields must be provided when running an optimized query");
-            return false;
+            log.warn("A list of index only fields must be provided when running an optimized query");
         }
 
         if (options.containsKey(TERM_FREQUENCY_FIELDS)) {

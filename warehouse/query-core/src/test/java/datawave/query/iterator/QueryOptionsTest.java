@@ -12,7 +12,6 @@ import static datawave.query.iterator.QueryOptions.TF_NEXT_SEEK;
 import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
-import java.lang.reflect.InaccessibleObjectException;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Collections;
@@ -35,6 +34,7 @@ import datawave.query.function.Equality;
 import datawave.query.function.PrefixEquality;
 import datawave.query.iterator.filter.EntryKeyIdentity;
 import datawave.query.iterator.filter.FieldIndexKeyDataTypeFilter;
+import datawave.query.jexl.functions.FiAggregator;
 
 public class QueryOptionsTest {
 
@@ -224,12 +224,13 @@ public class QueryOptionsTest {
 
     @Test
     public void testDataTypeFilter() {
-        Map<String,String> opts = Maps.newHashMap();
-        opts.put(QueryOptions.DATATYPE_FILTER, "foo,bar,meow");
-        opts.put(QueryOptions.DISABLE_EVALUATION, "true");
-        QueryOptions qopts = new QueryOptions();
-        qopts.validateOptions(opts);
-        Assert.assertTrue(qopts.getFieldIndexKeyDataTypeFilter() instanceof FieldIndexKeyDataTypeFilter);
+        Map<String,String> otherOptions = Maps.newHashMap();
+        otherOptions.put(QueryOptions.INDEX_ONLY_FIELDS, "");
+        otherOptions.put(QueryOptions.DATATYPE_FILTER, "foo,bar,meow");
+        otherOptions.put(QueryOptions.DISABLE_EVALUATION, "true");
+        QueryOptions options = new QueryOptions();
+        options.validateOptions(otherOptions);
+        Assert.assertTrue(options.getFieldIndexKeyDataTypeFilter() instanceof FieldIndexKeyDataTypeFilter);
     }
 
     @Test
