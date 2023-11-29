@@ -13,7 +13,7 @@ import datawave.ingest.json.util.JsonObjectFlattener.FlattenMode;
 
 /**
  * <p>
- * DataTypeHelper for json data. Extends CSVHelper to enable "header" field and "extra" field configuration options, whitelist/blacklist options, and many
+ * DataTypeHelper for json data. Extends CSVHelper to enable "header" field and "extra" field configuration options, allowlist/disallowlist options, and many
  * others, most of which can be used to affect behavior of json parsing, if needed
  */
 public class JsonDataTypeHelper extends CSVHelper {
@@ -57,32 +57,32 @@ public class JsonDataTypeHelper extends CSVHelper {
 
     public JsonObjectFlattener newFlattener() {
 
-        // Set flattener's whitelist and blacklist according to current state of the helper
+        // Set flattener's allowlist and disallowlist according to current state of the helper
 
-        Set<String> whitelistFields;
-        Set<String> blacklistFields;
+        Set<String> allowlistFields;
+        Set<String> disallowlistFields;
 
         if (this.getHeader() != null && this.getHeader().length > 0 && !this.processExtraFields()) {
             // In this case, 'header' fields are enabled and the client doesn't want to process any non-header
-            // fields. This forces our whitelist to include the header fields themselves...
-            whitelistFields = new HashSet<>(Arrays.asList(this.getHeader()));
-            // Add to that any fields explicitly configured to be whitelisted
-            if (null != this.getFieldWhitelist()) {
-                whitelistFields.addAll(this.getFieldWhitelist());
+            // fields. This forces our allowlist to include the header fields themselves...
+            allowlistFields = new HashSet<>(Arrays.asList(this.getHeader()));
+            // Add to that any fields explicitly configured to be allowlisted
+            if (null != this.getFieldAllowlist()) {
+                allowlistFields.addAll(this.getFieldAllowlist());
             }
-        } else if (null != this.getFieldWhitelist()) {
-            whitelistFields = this.getFieldWhitelist();
+        } else if (null != this.getFieldAllowlist()) {
+            allowlistFields = this.getFieldAllowlist();
         } else {
-            whitelistFields = Collections.EMPTY_SET;
+            allowlistFields = Collections.EMPTY_SET;
         }
 
-        if (null != this.getFieldBlacklist()) {
-            blacklistFields = this.getFieldBlacklist();
+        if (null != this.getFieldDisallowlist()) {
+            disallowlistFields = this.getFieldDisallowlist();
         } else {
-            blacklistFields = Collections.EMPTY_SET;
+            disallowlistFields = Collections.EMPTY_SET;
         }
 
-        return new JsonIngestFlattener.Builder().jsonDataTypeHelper(this).mapKeyWhitelist(whitelistFields).mapKeyBlacklist(blacklistFields)
+        return new JsonIngestFlattener.Builder().jsonDataTypeHelper(this).mapKeyAllowlist(allowlistFields).mapKeyDisallowlist(disallowlistFields)
                         .flattenMode(getJsonObjectFlattenMode()).addArrayIndexToFieldName(false).build();
     }
 }
