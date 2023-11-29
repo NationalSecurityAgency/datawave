@@ -26,6 +26,9 @@ import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
+import datawave.query.exceptions.DatawaveFatalQueryException;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.visitors.QueryFieldMetadataVisitor;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
@@ -34,6 +37,8 @@ import org.apache.accumulo.core.iterators.OptionDescriber;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.jexl2.JexlArithmetic;
+import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
@@ -435,6 +440,7 @@ public class QueryOptions implements OptionDescriber {
     private int docAggregationThresholdMs = -1;
     private int tfAggregationThresholdMs = -1;
     private boolean useNewAggregators;
+    private QueryFieldMetadataVisitor fieldMetadataVisitor;
 
     public void deepCopy(QueryOptions other) {
         this.options = other.options;
@@ -1413,8 +1419,37 @@ public class QueryOptions implements OptionDescriber {
             this.tfAggregationThresholdMs = Integer.parseInt(options.get(TERM_FREQUENCY_AGGREGATION_THRESHOLD_MS));
         }
 
+        // parse field sets prior to building aggregators
+
+        if (options.containsKey(INDEXED_FIELDS)) {
+            this.indexedFields = buildFieldSetFromString(options.get(INDEXED_FIELDS));
+        }
+
+        if (options.containsKey(INDEX_ONLY_FIELDS)) {
+            this.indexOnlyFields = buildFieldSetFromString(options.get(INDEX_ONLY_FIELDS));
+        } else if (!this.fullTableScanOnly) {
+            log.error("A list of index only fields must be provided when running an optimized query");
+            return false;
+        }
+
+        if (options.containsKey(TERM_FREQUENCY_FIELDS)) {
+            this.termFrequencyFields = buildFieldSetFromString(options.get(TERM_FREQUENCY_FIELDS));
+        }
+
+        if (options.containsKey(CONTENT_EXPANSION_FIELDS)) {
+            this.contentExpansionFields = buildFieldSetFromString(options.get(CONTENT_EXPANSION_FIELDS));
+        }
+
         if (options.containsKey(USE_NEW_AGGREGATORS)) {
             this.useNewAggregators = Boolean.parseBoolean(options.getOrDefault(USE_NEW_AGGREGATORS, Boolean.FALSE.toString()));
+            this.fieldMetadataVisitor = new QueryFieldMetadataVisitor(indexedFields, indexOnlyFields, termFrequencyFields);
+
+            try {
+                ASTJexlScript script = JexlASTHelper.parseAndFlattenJexlQuery(query);
+                script.jjtAccept(fieldMetadataVisitor, null);
+            } catch (ParseException e) {
+                throw new DatawaveFatalQueryException("Failed to parse query while building aggregators", e);
+            }
         }
 
         if (options.containsKey(DATATYPE_FILTER)) {
@@ -1437,17 +1472,6 @@ public class QueryOptions implements OptionDescriber {
         } else {
             this.fieldIndexKeyDataTypeFilter = KeyIdentity.Function;
             this.eventEntryKeyDataTypeFilter = KeyIdentity.Function;
-        }
-
-        if (options.containsKey(INDEX_ONLY_FIELDS)) {
-            this.indexOnlyFields = buildFieldSetFromString(options.get(INDEX_ONLY_FIELDS));
-        } else if (!this.fullTableScanOnly) {
-            log.error("A list of index only fields must be provided when running an optimized query");
-            return false;
-        }
-
-        if (options.containsKey(INDEXED_FIELDS)) {
-            this.indexedFields = buildFieldSetFromString(options.get(INDEXED_FIELDS));
         }
 
         if (options.containsKey(IGNORE_COLUMN_FAMILIES)) {
@@ -1665,8 +1689,6 @@ public class QueryOptions implements OptionDescriber {
         if (options.containsKey(TERM_FREQUENCIES_REQUIRED)) {
             this.setTermFrequenciesRequired(Boolean.parseBoolean(options.get(TERM_FREQUENCIES_REQUIRED)));
         }
-        this.setTermFrequencyFields(parseTermFrequencyFields(options));
-        this.setContentExpansionFields(parseContentExpansionFields(options));
 
         if (options.containsKey(BATCHED_QUERY)) {
             this.batchedQueries = Integer.parseInt(options.get(BATCHED_QUERY));
@@ -2038,21 +2060,8 @@ public class QueryOptions implements OptionDescriber {
         this.termFrequencyFields = termFrequencyFields;
     }
 
-    public Set<String> parseContentExpansionFields(Map<String,String> options) {
-        String val = options.get(CONTENT_EXPANSION_FIELDS);
-        if (val == null) {
-            return Collections.emptySet();
-        } else {
-            return ImmutableSet.copyOf(Splitter.on(',').trimResults().split(val));
-        }
-    }
-
     public Set<String> getContentExpansionFields() {
         return contentExpansionFields;
-    }
-
-    public void setContentExpansionFields(Set<String> contentExpansionFields) {
-        this.contentExpansionFields = contentExpansionFields;
     }
 
     public int getMaxEvaluationPipelines() {

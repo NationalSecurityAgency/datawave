@@ -31,9 +31,9 @@ import static datawave.query.jexl.functions.QueryFunctionsDescriptor.QueryJexlAr
 /**
  * Visitor that answers several basic questions about fields in a query plan
  * <ul>
- *     <li>is a field indexed, index-only, or tokenized?</li>
- *     <li>is a field part of a function such a content, filter, grouping or query function?</li>
- *     <li>is a field found in regex terms?</li>
+ * <li>is a field indexed, index-only, or tokenized?</li>
+ * <li>is a field part of a function such a content, filter, grouping or query function?</li>
+ * <li>is a field found in regex terms?</li>
  * </ul>
  */
 public class QueryFieldMetadataVisitor extends BaseVisitor {
@@ -57,18 +57,28 @@ public class QueryFieldMetadataVisitor extends BaseVisitor {
         this.tokenizedFields = tokenizedFields;
     }
 
-    //  base methods
+    // base methods
 
-    public boolean isFieldIndexed(String field){
+    public boolean isFieldIndexed(String field) {
         return indexedFields.contains(field);
     }
 
-    public boolean isFieldIndexOnly(String field){
+    public boolean isFieldIndexOnly(String field) {
         return indexOnlyFields.contains(field);
     }
 
-    public boolean isFieldTokenized(String field){
+    public boolean isFieldTokenized(String field) {
         return tokenizedFields.contains(field);
+    }
+
+    public boolean isFieldAnyFunction(String field) {
+        //  @formatter:off
+        return contentFunctionFields.contains(field) ||
+                        filterFunctionFields.contains(field) ||
+                        queryFunctionFields.contains(field) ||
+                        geoFunctionFields.contains(field) ||
+                        groupingFunctionFields.contains(field);
+        //  @formatter:off
     }
 
     public boolean isFieldContentFunction(String field){

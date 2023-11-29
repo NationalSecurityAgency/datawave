@@ -99,7 +99,7 @@ public class QueryFieldMetadataVisitorTest {
         };
         //  @formatter:on
 
-        for(String query : queries){
+        for (String query : queries) {
             applyVisitor(query);
             assertFieldIsGroupingFunction("FOO");
         }
