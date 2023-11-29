@@ -22,26 +22,23 @@ import org.slf4j.LoggerFactory;
 
 //@formatter:off
 /**
- * This class is used to configure a date based volume chooser for sharded tables. To configure, this relies on a few
- * accumulo properties being set on the table. Those properties are:
+ * This class is used to configure a date based volume chooser for sharded tables. To configure, this relies on a few accumulo properties being set on the
+ * table. Those properties are:
  *
- * 1.{@link Property#TABLE_ARBITRARY_PROP_PREFIX}.{@value TIER_NAMES_SUFFIX}
- * 2. Some number of properties following the pattern {@link Property#TABLE_ARBITRARY_PROP_PREFIX}{@value PROPERTY_PREFIX}.&lt;tierName&gt;.{@value VOLUME_SUFFIX}
- * 3. The same number of properties following the pattern {@link Property#TABLE_ARBITRARY_PROP_PREFIX}{@value PROPERTY_PREFIX}.&lt;tierName&gt;.{@value DAYS_BACK_SUFFIX}
+ * 1.{@link Property#TABLE_ARBITRARY_PROP_PREFIX}.{@value TIER_NAMES_SUFFIX} 2. Some number of properties following the pattern
+ * {@link Property#TABLE_ARBITRARY_PROP_PREFIX}{@value PROPERTY_PREFIX}.&lt;tierName&gt;.{@value VOLUME_SUFFIX} 3. The same number of properties following the
+ * pattern {@link Property#TABLE_ARBITRARY_PROP_PREFIX}{@value PROPERTY_PREFIX}.&lt;tierName&gt;.{@value DAYS_BACK_SUFFIX}
  *
  * The volume chooser will compute the number of days back for the current endRow and choose from the volumes with the next highest daysBack setting.
  *
- * EG:
- * Properties Set:
- *  1. {@link Property#TABLE_ARBITRARY_PROP_PREFIX}.{@value TIER_NAMES_SUFFIX} = new,old
- *  2. {@link Property#TABLE_ARBITRARY_PROP_PREFIX}{@value PROPERTY_PREFIX}.new.{@value VOLUME_SUFFIX} = newData
- *  2. {@link Property#TABLE_ARBITRARY_PROP_PREFIX}{@value PROPERTY_PREFIX}.new.{@value DAYS_BACK_SUFFIX} = 0
- *  3. {@link Property#TABLE_ARBITRARY_PROP_PREFIX}{@value PROPERTY_PREFIX}.old.{@value VOLUME_SUFFIX} = oldData
- *  4. {@link Property#TABLE_ARBITRARY_PROP_PREFIX}{@value PROPERTY_PREFIX}.old.{@value DAYS_BACK_SUFFIX} = 125
+ * EG: Properties Set: 1. {@link Property#TABLE_ARBITRARY_PROP_PREFIX}.{@value TIER_NAMES_SUFFIX} = new,old 2.
+ * {@link Property#TABLE_ARBITRARY_PROP_PREFIX}{@value PROPERTY_PREFIX}.new.{@value VOLUME_SUFFIX} = newData 2.
+ * {@link Property#TABLE_ARBITRARY_PROP_PREFIX}{@value PROPERTY_PREFIX}.new.{@value DAYS_BACK_SUFFIX} = 0 3.
+ * {@link Property#TABLE_ARBITRARY_PROP_PREFIX}{@value PROPERTY_PREFIX}.old.{@value VOLUME_SUFFIX} = oldData 4.
+ * {@link Property#TABLE_ARBITRARY_PROP_PREFIX}{@value PROPERTY_PREFIX}.old.{@value DAYS_BACK_SUFFIX} = 125
  *
- *  Data dated in the future will be treated as newData
- *  Data that is 124 days old or newer will be written to newData
- *  Data that is 125 days or older will be written to oldData
+ * Data dated in the future will be treated as newData Data that is 124 days old or newer will be written to newData Data that is 125 days or older will be
+ * written to oldData
  *
  */
 //@formatter:on

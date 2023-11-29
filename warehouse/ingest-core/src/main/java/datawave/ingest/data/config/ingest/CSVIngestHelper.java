@@ -40,10 +40,9 @@ public class CSVIngestHelper extends ContentBaseIngestHelper {
     /**
      * Allow classes extending this class to modify the StrTokenizer being used.
      *
-     * @return the tokenizer to be used
-     *
      * @param tokenizer
      *            The StrTokenizer that will be used on each Event
+     * @return the tokenizer to be used
      */
     protected StrTokenizer configureTokenizer(StrTokenizer tokenizer) {
         return tokenizer;
@@ -133,7 +132,10 @@ public class CSVIngestHelper extends ContentBaseIngestHelper {
      *            the field value
      */
     protected void processExtraField(Multimap<String,String> fields, String fieldValue) {
-        int equalsIndex = fieldValue.indexOf('=');
+        int equalsIndex = -1;
+        if (fieldValue != null) {
+            equalsIndex = fieldValue.indexOf('=');
+        }
         if (equalsIndex > 0) {
             String fieldName = fieldValue.substring(0, equalsIndex);
 
@@ -163,7 +165,7 @@ public class CSVIngestHelper extends ContentBaseIngestHelper {
         if (fieldValue != null) {
             if (helper.isMultiValuedField(fieldName)) {
                 // Value can be multiple parts, need to break on semi-colon
-                String singleFieldName = helper.usingMultiValuedFieldsBlacklist() ? fieldName : helper.getMultiValuedFields().get(fieldName);
+                String singleFieldName = helper.usingMultiValuedFieldsDisallowlist() ? fieldName : helper.getMultiValuedFields().get(fieldName);
                 int limit = helper.getMultiFieldSizeThreshold();
                 int count = 0;
                 for (String value : StringUtils.splitIterable(fieldValue, helper.getEscapeSafeMultiValueSeparatorPattern())) {
@@ -244,25 +246,25 @@ public class CSVIngestHelper extends ContentBaseIngestHelper {
     }
 
     /**
-     * Test whether the field should be kept by checking against the blacklist and whitelist. Presence in the blacklist takes precedence over presence on the
-     * whitelist.
+     * Test whether the field should be kept by checking against the disallowlist and allowlist. Presence in the disallowlist takes precedence over presence on
+     * the allowlist.
      *
      * @param fieldName
      *            the field name
      * @return whether field should be kept or not
      */
     protected boolean keepField(String fieldName) {
-        final Set<String> blacklist = helper.getFieldBlacklist();
-        final Set<String> whitelist = helper.getFieldWhitelist();
+        final Set<String> disallowlist = helper.getFieldDisallowlist();
+        final Set<String> allowlist = helper.getFieldAllowlist();
 
-        if (blacklist != null && blacklist.contains(fieldName)) {
-            return false; // drop the field that is in the blacklist.
-        } // else keep the non-blacklisted field.
+        if (disallowlist != null && disallowlist.contains(fieldName)) {
+            return false; // drop the field that is in the disallowlist.
+        } // else keep the non-disallowlisted field.
 
-        if (whitelist != null) { // whitelist exists
-            if (!whitelist.contains(fieldName)) {
-                return false; // drop the field not in the whitelist.
-            } // else keep the whitelisted field.
+        if (allowlist != null) { // allowlist exists
+            if (!allowlist.contains(fieldName)) {
+                return false; // drop the field not in the allowlist.
+            } // else keep the allowlisted field.
         } // else keep field.
 
         return true;
