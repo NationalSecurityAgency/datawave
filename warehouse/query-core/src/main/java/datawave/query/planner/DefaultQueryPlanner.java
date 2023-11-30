@@ -566,10 +566,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      *            the IteratorSetting
      */
     private void configureExcerpts(ShardQueryConfiguration config, IteratorSetting cfg) {
-        if (config.isTermFrequenciesRequired()) {
-            addOption(cfg, QueryOptions.EXCERPT_FIELDS, config.getExcerptFields().toString(), true);
-            addOption(cfg, QueryOptions.EXCERPT_ITERATOR, config.getExcerptIterator().getName(), false);
-        }
+        addOption(cfg, QueryOptions.EXCERPT_FIELDS, config.getExcerptFields().toString(), true);
+        addOption(cfg, QueryOptions.EXCERPT_ITERATOR, config.getExcerptIterator().getName(), false);
     }
 
     /*
