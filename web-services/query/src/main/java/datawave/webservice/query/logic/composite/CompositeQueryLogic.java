@@ -131,7 +131,8 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
                 Object last = new Object();
                 if (this.getMaxResults() <= 0)
                     this.setMaxResults(Long.MAX_VALUE);
-                while ((null != last) && !interrupted && transformIterator.hasNext() && (resultCount < this.getMaxResults())) {
+                // allow us to get 1 more than maxResults so that the RunningQuery can detect the MAX_RESULTS condition.
+                while ((null != last) && !interrupted && transformIterator.hasNext() && (resultCount <= this.getMaxResults())) {
                     try {
                         last = transformIterator.next();
                         if (null != last) {
@@ -168,7 +169,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
                 }
                 success = true;
             } catch (Exception e) {
-                throw new CompositeLogicException("Failed to retrieve results", Collections.singletonMap(getLogicName(), e));
+                throw new CompositeLogicException("Failed to retrieve results", getLogicName(), e);
             } finally {
                 if (success) {
                     completionLatch.countDown();
