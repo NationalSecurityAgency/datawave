@@ -1,5 +1,12 @@
 package datawave.query.attributes;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
+import com.google.common.collect.Multimap;
+import datawave.query.Constants;
+import datawave.query.jexl.JexlASTHelper;
+import org.apache.commons.lang3.StringUtils;
+
 import java.io.Serializable;
 import java.util.Iterator;
 import java.util.Map;
@@ -7,15 +14,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
-
-import org.apache.commons.lang3.StringUtils;
-
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonValue;
-import com.google.common.collect.Multimap;
-
-import datawave.query.Constants;
-import datawave.query.jexl.JexlASTHelper;
 
 /**
  * Represents a set of fields that have been specified within an #EXCERPT_FIELDS function, as well as their corresponding target offsets that should be used to
@@ -49,6 +47,10 @@ public class ExcerptFields implements Serializable {
         }
         // Strip whitespaces.
         string = StringUtils.deleteWhitespace(string);
+
+        // Strip hit call out
+        string = StringUtils.remove(string, "[");
+        string = StringUtils.remove(string, "]");
 
         if (string.isEmpty()) {
             return new ExcerptFields();
