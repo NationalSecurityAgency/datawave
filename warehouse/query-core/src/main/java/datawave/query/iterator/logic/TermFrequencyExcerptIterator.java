@@ -1,17 +1,9 @@
 package datawave.query.iterator.logic;
 
-import java.io.IOException;
-import java.nio.charset.CharacterCodingException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.SortedSet;
-import java.util.TreeSet;
-import java.util.stream.Collectors;
-
+import com.google.common.base.Joiner;
+import com.google.protobuf.InvalidProtocolBufferException;
+import datawave.ingest.protobuf.TermWeight;
+import datawave.query.Constants;
 import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
@@ -23,11 +15,17 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
-import com.google.common.base.Joiner;
-import com.google.protobuf.InvalidProtocolBufferException;
-
-import datawave.ingest.protobuf.TermWeight;
-import datawave.query.Constants;
+import java.io.IOException;
+import java.nio.charset.CharacterCodingException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 /**
  * This iterator is intended to scan the term frequencies for a specified document, field, and offset range. The result will be excerpts for the field specified
@@ -82,7 +80,7 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
         if (map.containsKey(FIELD_NAME)) {
             if (map.get(FIELD_NAME).isEmpty()) {
                 throw new IllegalArgumentException("Empty field name property: " + FIELD_NAME);
-            }
+            } 
         } else {
             throw new IllegalArgumentException("Missing field name property: " + FIELD_NAME);
         }
@@ -292,7 +290,7 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
                                 terms[index] = new ArrayList<>();
                             }
                             // use this value
-                            terms[index].add(fieldAndValue[1]);
+                            terms[index].add("[" + fieldAndValue[1] + "]");
                         }
                     }
                 } catch (InvalidProtocolBufferException e) {
@@ -479,7 +477,7 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("TermFrequencyContextIterator: ");
+        sb.append("TermFrequencyExcerptIterator: ");
         sb.append(this.fieldName);
         sb.append(", ");
         sb.append(this.startOffset);

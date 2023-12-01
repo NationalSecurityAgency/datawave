@@ -1,24 +1,15 @@
 package datawave.query.transformer;
 
-import static org.easymock.EasyMock.and;
-import static org.easymock.EasyMock.anyObject;
-import static org.easymock.EasyMock.capture;
-import static org.easymock.EasyMock.eq;
-import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.isA;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-
-import java.io.IOException;
-import java.util.AbstractMap;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-
+import datawave.ingest.protobuf.TermWeight;
+import datawave.query.Constants;
+import datawave.query.attributes.Attribute;
+import datawave.query.attributes.Attributes;
+import datawave.query.attributes.Content;
+import datawave.query.attributes.Document;
+import datawave.query.attributes.ExcerptFields;
+import datawave.query.function.JexlEvaluation;
+import datawave.query.iterator.logic.TermFrequencyExcerptIterator;
+import datawave.query.postprocessing.tf.PhraseIndexes;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
@@ -33,16 +24,24 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import datawave.ingest.protobuf.TermWeight;
-import datawave.query.Constants;
-import datawave.query.attributes.Attribute;
-import datawave.query.attributes.Attributes;
-import datawave.query.attributes.Content;
-import datawave.query.attributes.Document;
-import datawave.query.attributes.ExcerptFields;
-import datawave.query.function.JexlEvaluation;
-import datawave.query.iterator.logic.TermFrequencyExcerptIterator;
-import datawave.query.postprocessing.tf.PhraseIndexes;
+import java.io.IOException;
+import java.util.AbstractMap;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import static org.easymock.EasyMock.and;
+import static org.easymock.EasyMock.anyObject;
+import static org.easymock.EasyMock.capture;
+import static org.easymock.EasyMock.eq;
+import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.isA;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(EasyMockRunner.class)
 public class ExcerptTransformTest extends EasyMockSupport {
@@ -154,7 +153,7 @@ public class ExcerptTransformTest extends EasyMockSupport {
         assertEquals(2, arg.size());
         Set<String> excerpts = arg.getAttributes().stream().map(a -> a.getData().toString()).collect(Collectors.toSet());
         // both excerpts should be returned
-        assertTrue(excerpts.contains("and the word from bird"));
+        assertTrue(excerpts.contains("and the [word] from bird"));
         assertTrue(excerpts.contains("the quick brown fox jumped over the lazy dog"));
     }
 
@@ -190,7 +189,7 @@ public class ExcerptTransformTest extends EasyMockSupport {
         assertEquals(1, arg.size());
         String excerpt = arg.getAttributes().iterator().next().getData().toString();
         // only one excerpt should return
-        assertEquals("and the quick brown fox jumped over the lazy dog", excerpt);
+        assertEquals("and the [quick brown] fox jumped over the lazy dog", excerpt);
     }
 
     /**
@@ -230,7 +229,7 @@ public class ExcerptTransformTest extends EasyMockSupport {
         Set<String> excerpts = arg.getAttributes().stream().map(a -> a.getData().toString()).collect(Collectors.toSet());
         // all excerpts should be returned
         assertTrue(excerpts.contains("Jack and Jill jumped over the"));
-        assertTrue(excerpts.contains("the brown chicken layed an egg and the quick brown fox jumped over the lazy dog"));
+        assertTrue(excerpts.contains("the brown chicken layed an egg and the [quick brown] fox jumped over the lazy dog"));
     }
 
     /**
@@ -288,7 +287,7 @@ public class ExcerptTransformTest extends EasyMockSupport {
         assertEquals(1, arg.size());
         Set<String> excerpts = arg.getAttributes().stream().map(a -> a.getData().toString()).collect(Collectors.toSet());
         // both excerpts should be returned
-        assertTrue(excerpts.contains("and the word from bird"));
+        assertTrue(excerpts.contains("and the [word] from bird"));
     }
 
     private void initTransform() {
