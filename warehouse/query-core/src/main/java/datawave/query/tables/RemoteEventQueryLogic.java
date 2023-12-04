@@ -24,8 +24,10 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
 
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
@@ -37,6 +39,8 @@ import java.util.Set;
 public class RemoteEventQueryLogic extends BaseQueryLogic<EventBase> implements RemoteQueryLogic<EventBase> {
     
     protected static final Logger log = ThreadConfigurableLogger.getLogger(RemoteEventQueryLogic.class);
+    
+    public static final String QUERY_ID = "queryId";
     
     private RemoteQueryConfiguration config;
     
@@ -96,8 +100,14 @@ public class RemoteEventQueryLogic extends BaseQueryLogic<EventBase> implements 
     
     @Override
     public GenericQueryConfiguration initialize(Connector connection, Query settings, Set<Authorizations> auths) throws Exception {
-        GenericResponse<String> createResponse = remoteQueryService.createQuery(getRemoteQueryLogic(), settings.toMap(), getCallerObject());
+        Map<String,List<String>> parms = settings.toMap();
+        // we need to ensure that the remote query request includes the local query id for tracking purposes via query metrics.
+        if (!parms.containsKey(QUERY_ID) && settings.getId() != null) {
+            parms.put(QUERY_ID, Collections.singletonList(settings.getId().toString()));
+        }
+        GenericResponse<String> createResponse = remoteQueryService.createQuery(getRemoteQueryLogic(), parms, getCallerObject());
         setRemoteId(createResponse.getResult());
+        log.info("Local query " + settings.getId() + " maps to remote query " + getRemoteId());
         return getConfig();
     }
     

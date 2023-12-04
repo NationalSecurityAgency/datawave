@@ -45,4 +45,9 @@ public class AuthorizationsPredicate implements Predicate<Authorizations> {
     public void setVisibility(String visibility) {
         setVisibility(new ColumnVisibility(visibility));
     }
+    
+    @Override
+    public String toString() {
+        return "(auths =~ " + visibility + ')';
+    }
 }
