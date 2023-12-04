@@ -57,4 +57,9 @@ public class QueryParameterPredicate implements Predicate<Query> {
     public void setValue(String value) {
         this.value = value;
     }
+
+    @Override
+    public String toString() {
+        return "(parameter " + parameter + " == " + value + ')';
+    }
 }

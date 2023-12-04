@@ -69,5 +69,10 @@ public class ProxiedAuthorizationsPredicate implements Predicate<List<Authorizat
     public void setVisibility(String visibility) {
         authsTest.setVisibility(visibility);
     }
-    
+
+    @Override
+    public String toString() {
+        return matchType.name() + ' ' + authsTest;
+    }
+
 }
