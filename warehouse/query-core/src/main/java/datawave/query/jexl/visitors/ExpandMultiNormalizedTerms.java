@@ -4,6 +4,7 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -26,6 +27,7 @@ import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.JexlNodes;
 import org.apache.commons.jexl2.parser.LenientExpression;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
+import org.apache.commons.jexl2.parser.StrictExpression;
 import org.apache.log4j.Logger;
 
 import com.google.common.base.Preconditions;
@@ -34,6 +36,8 @@ import com.google.common.collect.Sets;
 
 import datawave.data.normalizer.IpAddressNormalizer;
 import datawave.data.type.IpAddressType;
+import datawave.data.type.ListType;
+import datawave.data.type.OneToManyNormalizerType;
 import datawave.data.type.Type;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
@@ -154,10 +158,15 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
             return node;
         }
 
-        // if we found a lenient expression, then pass it through
+        // if we found a strict or lenient expression, then pass it through
+        boolean strict = false;
         boolean lenient = false;
         JexlNode originalSource = null;
-        if (marker.isType(LenientExpression.class)) {
+        if (marker.isType(StrictExpression.class)) {
+            strict = true;
+            data = marker;
+            originalSource = copy(marker.getSource());
+        } else if (marker.isType(LenientExpression.class)) {
             lenient = true;
             data = marker;
             originalSource = copy(marker.getSource());
@@ -171,13 +180,13 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
             returnNode = (JexlNode) (super.visit(node, data));
         }
 
-        // if we had a lenient marker, then unwrap it and handle all dropped
-        if (lenient) {
+        // if we have a strict or lenient marker, then unwrap it and handle all dropped
+        if (strict || lenient) {
             QueryPropertyMarker.Instance newMarker = QueryPropertyMarker.findInstance(returnNode);
             returnNode = newMarker.getSource();
 
-            // now we need to check if everything was dropped in which case we return the original node source eval only
-            if (isAllDropped(returnNode)) {
+            // if everything was dropped and we are strict, then wrap the original node with eval only
+            if (strict && isAllDropped(returnNode)) {
                 returnNode = ASTEvaluationOnly.create(originalSource);
             }
         }
@@ -273,8 +282,18 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
             final String fieldName = op.deconstructIdentifier();
             final Object literal = op.getLiteralValue();
 
-            boolean lenient = !config.getStrictFields().contains(fieldName) && (config.getLenientFields().contains(fieldName)
-                            || (data instanceof QueryPropertyMarker.Instance && ((QueryPropertyMarker.Instance) data).isType(LenientExpression.class)));
+            // Determine whether this was explicitly marked as strict.
+            boolean strict = config.getStrictFields().contains(fieldName)
+                            || (data instanceof QueryPropertyMarker.Instance && ((QueryPropertyMarker.Instance) data).isType(StrictExpression.class));
+            // Determine whether this was explicitly marked as lenient.
+            boolean lenient = config.getLenientFields().contains(fieldName)
+                            || (data instanceof QueryPropertyMarker.Instance && ((QueryPropertyMarker.Instance) data).isType(LenientExpression.class));
+
+            if (strict && lenient) {
+                log.warn("Field " + fieldName + " marked both as strict and lenient.  Applying neither");
+                strict = false;
+                lenient = false;
+            }
 
             // Get all the indexed or normalized dataTypes for the field name
             Set<Type<?>> dataTypes = Sets.newHashSet(config.getQueryFieldsDatatypes().get(fieldName));
@@ -290,14 +309,33 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
                     // Build up a set of normalized terms using each normalizer
                     for (Type<?> normalizer : dataTypes) {
                         try {
-                            String normTerm = ((node instanceof ASTNRNode || node instanceof ASTERNode) ? normalizer.normalizeRegex(term)
-                                            : normalizer.normalize(term));
-                            if (!normalizedTerms.contains(normTerm)) {
-                                if (log.isDebugEnabled()) {
-                                    log.debug("normalizedTerm = " + normTerm);
+                            if (normalizer instanceof OneToManyNormalizerType && ((OneToManyNormalizerType<?>) normalizer).expandAtQueryTime()) {
+                                List<String> normTerms = ((OneToManyNormalizerType<?>) normalizer).normalizeToMany(term);
+                                if (normTerms.size() == 1) {
+                                    String normTerm = normTerms.iterator().next();
+                                    normalizedTerms.add(normTerm);
+                                    normalizedNodes.add(JexlNodeFactory.buildUntypedNode(node, fieldName, normTerm));
+                                } else {
+                                    List<JexlNode> normalizedOneToManyNodes = Lists.newArrayList();
+                                    Iterator<String> iter = normTerms.iterator();
+                                    while (iter.hasNext()) {
+                                        normalizedOneToManyNodes.add(JexlNodeFactory.buildUntypedNode(node, fieldName, iter.next()));
+                                    }
+
+                                    JexlNode oneToManyNode = JexlNodeFactory.createAndNode(normalizedOneToManyNodes);
+                                    normalizedNodes.add(oneToManyNode);
                                 }
-                                normalizedTerms.add(normTerm);
-                                normalizedNodes.add(JexlNodeFactory.buildUntypedNode(node, fieldName, normTerm));
+
+                            } else {
+                                String normTerm = ((node instanceof ASTNRNode || node instanceof ASTERNode) ? normalizer.normalizeRegex(term)
+                                                : normalizer.normalize(term));
+                                if (!normalizedTerms.contains(normTerm)) {
+                                    if (log.isDebugEnabled()) {
+                                        log.debug("normalizedTerm = " + normTerm);
+                                    }
+                                    normalizedTerms.add(normTerm);
+                                    normalizedNodes.add(JexlNodeFactory.buildUntypedNode(node, fieldName, normTerm));
+                                }
                             }
                         } catch (IpAddressNormalizer.Exception ipex) {
                             if (!(node instanceof ASTNRNode || node instanceof ASTERNode)) {
@@ -338,9 +376,10 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
                     // determine if we are marking this term as dropped or evaluation only
                     boolean droppedExpression = false;
                     boolean evaluationOnly = false;
+                    boolean isRegex = (node instanceof ASTNRNode || node instanceof ASTERNode);
                     if (failedNormalization) {
-                        // if we are not being lenient then add the original term into the mix and make it eval only
-                        if (!lenient) {
+                        // if we are being strict then add the original term into the mix and make it eval only
+                        if (strict) {
                             if (!normalizedTerms.contains(term)) {
                                 normalizedTerms.add(term);
                                 normalizedNodes.add(JexlNodeFactory.buildUntypedNode(node, fieldName, term));
@@ -348,12 +387,23 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
                             evaluationOnly = true;
                         }
                         // else if we are being lenient and we have no successful normalizations, then drop the original term
-                        else if (normalizedNodes.isEmpty()) {
-                            if (!normalizedTerms.contains(term)) {
+                        else if (lenient) {
+                            if (normalizedNodes.isEmpty()) {
                                 normalizedTerms.add(term);
                                 normalizedNodes.add(JexlNodeFactory.buildUntypedNode(node, fieldName, term));
+                                droppedExpression = true;
                             }
-                            droppedExpression = true;
+                        }
+                        // else we use the original methodology which is to keep the original term
+                        // and push it down to evaluation only IFF a regex
+                        else {
+                            if (isRegex) {
+                                if (!normalizedTerms.contains(term)) {
+                                    normalizedTerms.add(term);
+                                    normalizedNodes.add(JexlNodeFactory.buildUntypedNode(node, fieldName, term));
+                                }
+                                evaluationOnly = true;
+                            }
                         }
                     }
 
@@ -377,7 +427,7 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
                     if (evaluationOnly) {
                         nodeToReturn = ASTEvaluationOnly.create(nodeToReturn);
                     } else if (droppedExpression) {
-                        nodeToReturn = DroppedExpression.create(nodeToReturn, "Normalizations failed and lenient");
+                        nodeToReturn = DroppedExpression.create(nodeToReturn, "Normalizations failed and not strict");
                     }
 
                 } catch (Exception e) {

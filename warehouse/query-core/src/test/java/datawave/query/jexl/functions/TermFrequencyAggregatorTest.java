@@ -2,6 +2,8 @@ package datawave.query.jexl.functions;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
@@ -20,6 +22,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 
 import datawave.query.Constants;
 import datawave.query.attributes.AttributeFactory;
@@ -28,6 +31,7 @@ import datawave.query.data.parsers.DatawaveKey;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.predicate.EventDataQueryFieldFilter;
 import datawave.query.predicate.EventDataQueryFilter;
+import datawave.query.predicate.Projection;
 import datawave.query.util.TypeMetadata;
 
 public class TermFrequencyAggregatorTest {
@@ -53,23 +57,20 @@ public class TermFrequencyAggregatorTest {
         Set<String> keepFields = new HashSet<>();
         keepFields.add("FIELD2");
 
-        EventDataQueryFilter filter = new EventDataQueryFieldFilter();
-        Set<String> blacklist = new HashSet<>();
-        blacklist.add("FIELD1");
-        ((EventDataQueryFieldFilter) filter).setExcludes(blacklist);
+        EventDataQueryFilter filter = new EventDataQueryFieldFilter(Sets.newHashSet("FIELD1"), Projection.ProjectionType.EXCLUDES);
 
         aggregator = new TermFrequencyAggregator(keepFields, filter, -1);
         Key result = aggregator.apply(itr, doc, attributeFactory);
 
         // test result key
-        assertTrue(result == null);
+        assertNull(result);
 
         // test that the doc is empty
-        assertTrue(doc.size() == 0);
+        assertEquals(0, doc.size());
 
         // test that the iterator is in the correct position
         assertTrue(itr.hasTop());
-        assertTrue(itr.getTopKey().equals(getTF("123", "NEXT_DOC_FIELD", "VALUE1", "dataType1", "124.345.456", 10)));
+        assertEquals(itr.getTopKey(), getTF("123", "NEXT_DOC_FIELD", "VALUE1", "dataType1", "124.345.456", 10));
     }
 
     @Test
@@ -92,21 +93,21 @@ public class TermFrequencyAggregatorTest {
         Key result = aggregator.apply(itr, doc, attributeFactory);
 
         // test result key
-        assertTrue(result != null);
+        assertNotNull(result);
         DatawaveKey parsedResult = new DatawaveKey(result);
-        assertTrue(parsedResult.getDataType().equals("dataType1"));
-        assertTrue(parsedResult.getUid().equals("123.345.456"));
-        assertTrue(parsedResult.getFieldName().equals("FIELD1"));
-        assertTrue(parsedResult.getFieldValue().equals("VALUE1"));
+        assertEquals("dataType1", parsedResult.getDataType());
+        assertEquals("123.345.456", parsedResult.getUid());
+        assertEquals("FIELD1", parsedResult.getFieldName());
+        assertEquals("VALUE1", parsedResult.getFieldValue());
 
         // test that the doc is empty
-        assertTrue(doc.size() == 2);
-        assertTrue(doc.get("RECORD_ID").getData().equals("123/dataType1/123.345.456"));
-        assertTrue(doc.get("FIELD1").getData().toString().equals("VALUE1"));
+        assertEquals(2, doc.size());
+        assertEquals("123/dataType1/123.345.456", doc.get("RECORD_ID").getData());
+        assertEquals("VALUE1", doc.get("FIELD1").getData().toString());
 
         // test that the iterator is in the correct position
         assertTrue(itr.hasTop());
-        assertTrue(itr.getTopKey().equals(getTF("123", "NEXT_DOC_FIELD", "VALUE1", "dataType1", "124.345.456", 10)));
+        assertEquals(itr.getTopKey(), getTF("123", "NEXT_DOC_FIELD", "VALUE1", "dataType1", "124.345.456", 10));
     }
 
     @Test
@@ -129,14 +130,14 @@ public class TermFrequencyAggregatorTest {
         Key result = aggregator.apply(itr, doc, attributeFactory);
 
         // test result key
-        assertTrue(result == null);
+        assertNull(result);
 
         // test that the doc is empty
-        assertTrue(doc.size() == 0);
+        assertEquals(0, doc.size());
 
         // test that the iterator is in the correct position
         assertTrue(itr.hasTop());
-        assertTrue(itr.getTopKey().equals(getTF("123", "NEXT_DOC_FIELD", "VALUE1", "dataType1", "124.345.456", 10)));
+        assertEquals(itr.getTopKey(), getTF("123", "NEXT_DOC_FIELD", "VALUE1", "dataType1", "124.345.456", 10));
     }
 
     @Test

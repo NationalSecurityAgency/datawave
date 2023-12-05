@@ -1,5 +1,7 @@
 package datawave.query.tld;
 
+import static datawave.query.jexl.visitors.EventDataQueryExpressionVisitor.getExpressionFilters;
+
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.Collection;
@@ -21,6 +23,7 @@ import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 
+import datawave.query.attributes.AttributeFactory;
 import datawave.query.attributes.Document;
 import datawave.query.function.Equality;
 import datawave.query.function.RangeProvider;
@@ -31,8 +34,8 @@ import datawave.query.iterator.QueryIterator;
 import datawave.query.iterator.SourcedOptions;
 import datawave.query.iterator.logic.IndexIterator;
 import datawave.query.jexl.functions.FieldIndexAggregator;
+import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor.ExpressionFilter;
 import datawave.query.jexl.visitors.IteratorBuildingVisitor;
-import datawave.query.planner.SeekingQueryPlanner;
 import datawave.query.postprocessing.tf.TFFactory;
 import datawave.query.postprocessing.tf.TermFrequencyConfig;
 import datawave.query.predicate.ChainableEventDataQueryFilter;
@@ -75,15 +78,6 @@ public class TLDQueryIterator extends QueryIterator {
     public void init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env) throws IOException {
         if (log.isTraceEnabled()) {
             log.trace("TLDQueryIterator init()");
-        }
-
-        // extract SeekingQueryPlanner fields if available
-        if (options.get(SeekingQueryPlanner.MAX_FIELD_HITS_BEFORE_SEEK) != null) {
-            maxFieldHitsBeforeSeek = Integer.parseInt(options.get(SeekingQueryPlanner.MAX_FIELD_HITS_BEFORE_SEEK));
-        }
-
-        if (options.get(SeekingQueryPlanner.MAX_KEYS_BEFORE_SEEK) != null) {
-            maxKeysBeforeSeek = Integer.parseInt(options.get(SeekingQueryPlanner.MAX_KEYS_BEFORE_SEEK));
         }
 
         super.init(source, options, env);
@@ -129,9 +123,13 @@ public class TLDQueryIterator extends QueryIterator {
     @Override
     public EventDataQueryFilter getEvaluationFilter() {
         if (this.evaluationFilter == null && script != null) {
+
+            AttributeFactory attributeFactory = new AttributeFactory(typeMetadata);
+            Map<String,ExpressionFilter> expressionFilters = getExpressionFilters(script, attributeFactory);
+
             // setup an evaluation filter to avoid loading every single child key into the event
-            this.evaluationFilter = new TLDEventDataFilter(script, getAllFields(), typeMetadata, useWhiteListedFields ? whiteListedFields : null,
-                            useBlackListedFields ? blackListedFields : null, getEventFieldSeek(), getEventNextSeek(),
+            this.evaluationFilter = new TLDEventDataFilter(script, getAllFields(), expressionFilters, useAllowListedFields ? allowListedFields : null,
+                            useDisallowListedFields ? disallowListedFields : null, getEventFieldSeek(), getEventNextSeek(),
                             limitFieldsPreQueryEvaluation ? limitFieldsMap : Collections.emptyMap(), limitFieldsField, getNonEventFields());
         }
         return this.evaluationFilter != null ? evaluationFilter.clone() : null;

@@ -120,6 +120,7 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
     @Test
     public void testNotEqual() throws Exception {
         log.info("------  testNotEqual  ------");
+
         for (final TestCities city : TestCities.values()) {
             String cityPhrase = " != " + "'" + city.name() + "'";
             String query = Constants.ANY_FIELD + cityPhrase;

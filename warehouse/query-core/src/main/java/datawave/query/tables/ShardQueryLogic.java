@@ -48,6 +48,7 @@ import datawave.query.QueryParameters;
 import datawave.query.attributes.ExcerptFields;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.cardinality.CardinalityConfiguration;
+import datawave.query.common.grouping.GroupFields;
 import datawave.query.config.IndexHole;
 import datawave.query.config.Profile;
 import datawave.query.config.ShardQueryConfiguration;
@@ -112,13 +113,13 @@ import datawave.webservice.query.result.event.ResponseObjectFactory;
  *                   querying the metadata table. Depending on the conjunctions in the query (or, and, not) and the
  *                   eventFields that are indexed, the query may be sent down the optimized path or the full scan path.
  * </pre>
- *
+ * <p>
  * We are not supporting all of the operators that JEXL supports at this time. We are supporting the following operators:
  *
  * <pre>
  *  ==, !=, &gt;, &ge;, &lt;, &le;, =~, !~, and the reserved word 'null'
  * </pre>
- *
+ * <p>
  * Custom functions can be created and registered with the Jexl engine. The functions can be used in the queries in conjunction with other supported operators.
  * A sample function has been created, called between, and is bound to the 'f' namespace. An example using this function is : "f:between(LATITUDE,60.0, 70.0)"
  *
@@ -265,6 +266,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
                             + (this.getSettings() == null ? "empty" : this.getSettings().getId()) + ')');
         this.config.setExpandFields(true);
         this.config.setExpandValues(true);
+        this.config.setGeneratePlanOnly(false);
         initialize(config, client, settings, auths);
         return config;
     }
@@ -426,17 +428,17 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
 
         validateConfiguration(config);
 
-        if (getCardinalityConfiguration() != null && (!config.getBlacklistedFields().isEmpty() || !config.getProjectFields().isEmpty())) {
+        if (getCardinalityConfiguration() != null && (!config.getDisallowlistedFields().isEmpty() || !config.getProjectFields().isEmpty())) {
             // Ensure that fields used for resultCardinalities are returned. They will be removed in the DocumentTransformer.
-            // Modify the projectFields and blacklistFields only for this stage, then return to the original values.
+            // Modify the projectFields and disallowlistFields only for this stage, then return to the original values.
             // Not advisable to create a copy of the config object due to the embedded timers.
-            Set<String> originalBlacklistedFields = new HashSet<>(config.getBlacklistedFields());
+            Set<String> originalDisallowlistedFields = new HashSet<>(config.getDisallowlistedFields());
             Set<String> originalProjectFields = new HashSet<>(config.getProjectFields());
 
-            // either projectFields or blacklistedFields can be used, but not both
+            // either projectFields or disallowlistedFields can be used, but not both
             // this will be caught when loadQueryParameters is called
-            if (!config.getBlacklistedFields().isEmpty()) {
-                config.setBlacklistedFields(getCardinalityConfiguration().getRevisedBlacklistFields(queryModel, originalBlacklistedFields));
+            if (!config.getDisallowlistedFields().isEmpty()) {
+                config.setDisallowlistedFields(getCardinalityConfiguration().getRevisedDisallowlistFields(queryModel, originalDisallowlistedFields));
             }
             if (!config.getProjectFields().isEmpty()) {
                 config.setProjectFields(getCardinalityConfiguration().getRevisedProjectFields(queryModel, originalProjectFields));
@@ -444,7 +446,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
 
             this.queries = getQueryPlanner().process(config, jexlQueryString, settings, this.getScannerFactory());
 
-            config.setBlacklistedFields(originalBlacklistedFields);
+            config.setDisallowlistedFields(originalDisallowlistedFields);
             config.setProjectFields(originalProjectFields);
         } else {
             this.queries = getQueryPlanner().process(config, jexlQueryString, settings, this.getScannerFactory());
@@ -611,7 +613,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     }
 
     public boolean isLongRunningQuery() {
-        return !getConfig().getGroupFields().isEmpty();
+        return getConfig().getGroupFields().hasGroupByFields();
     }
 
     /**
@@ -620,7 +622,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     private void addConfigBasedTransformers() {
         if (getConfig() != null) {
             ((DocumentTransformer) this.transformerInstance).setProjectFields(getConfig().getProjectFields());
-            ((DocumentTransformer) this.transformerInstance).setBlacklistedFields(getConfig().getBlacklistedFields());
+            ((DocumentTransformer) this.transformerInstance).setDisallowlistedFields(getConfig().getDisallowlistedFields());
 
             if (getConfig().getUniqueFields() != null && !getConfig().getUniqueFields().isEmpty()) {
                 DocumentTransform alreadyExists = ((DocumentTransformer) this.transformerInstance).containsTransform(UniqueTransform.class);
@@ -631,13 +633,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
                 }
             }
 
-            if (getConfig().getGroupFields() != null && !getConfig().getGroupFields().isEmpty()) {
+            GroupFields groupFields = getGroupByFields();
+            if (groupFields != null && groupFields.hasGroupByFields()) {
                 DocumentTransform alreadyExists = ((DocumentTransformer) this.transformerInstance).containsTransform(GroupingTransform.class);
                 if (alreadyExists != null) {
-                    ((GroupingTransform) alreadyExists).updateConfig(getConfig().getGroupFields(), getQueryModel());
+                    ((GroupingTransform) alreadyExists).updateConfig(groupFields);
                 } else {
-                    ((DocumentTransformer) this.transformerInstance).addTransform(new GroupingTransform(getQueryModel(), getConfig().getGroupFields(),
-                                    this.markingFunctions, this.getQueryExecutionForPageTimeout()));
+                    ((DocumentTransformer) this.transformerInstance)
+                                    .addTransform(new GroupingTransform(groupFields, this.markingFunctions, this.getQueryExecutionForPageTimeout()));
                 }
             }
         }
@@ -734,21 +737,21 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             }
         }
 
-        // Get the list of blacklisted fields. May be null.
-        String tBlacklistedFields = settings.findParameter(QueryParameters.BLACKLISTED_FIELDS).getParameterValue().trim();
-        if (StringUtils.isNotBlank(tBlacklistedFields)) {
-            List<String> blacklistedFieldsList = Arrays.asList(StringUtils.split(tBlacklistedFields, Constants.PARAM_VALUE_SEP));
+        // Get the list of disallowlisted fields. May be null.
+        String tDisallowlistedFields = settings.findParameter(QueryParameters.DISALLOWLISTED_FIELDS).getParameterValue().trim();
+        if (StringUtils.isNotBlank(tDisallowlistedFields)) {
+            List<String> disallowlistedFieldsList = Arrays.asList(StringUtils.split(tDisallowlistedFields, Constants.PARAM_VALUE_SEP));
 
-            // Only set the blacklisted fields if we were actually given some
-            if (!blacklistedFieldsList.isEmpty()) {
+            // Only set the disallowlisted fields if we were actually given some
+            if (!disallowlistedFieldsList.isEmpty()) {
                 if (!config.getProjectFields().isEmpty()) {
-                    throw new QueryException("Whitelist and blacklist projection options are mutually exclusive");
+                    throw new QueryException("Allowlist and disallowlist projection options are mutually exclusive");
                 }
 
-                config.setBlacklistedFields(new HashSet<>(blacklistedFieldsList));
+                config.setDisallowlistedFields(new HashSet<>(disallowlistedFieldsList));
 
                 if (log.isDebugEnabled()) {
-                    log.debug("Blacklisted fields: " + tBlacklistedFields);
+                    log.debug("Disallowlisted fields: " + tDisallowlistedFields);
                 }
             }
         }
@@ -789,15 +792,49 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         }
 
         // Get the GROUP_FIELDS parameter if given
-        String groupFields = settings.findParameter(QueryParameters.GROUP_FIELDS).getParameterValue().trim();
-        if (StringUtils.isNotBlank(groupFields)) {
-            List<String> groupFieldsList = Arrays.asList(StringUtils.split(groupFields, Constants.PARAM_VALUE_SEP));
+        String groupFieldsParam = settings.findParameter(QueryParameters.GROUP_FIELDS).getParameterValue().trim();
+        if (StringUtils.isNotBlank(groupFieldsParam)) {
+            String[] groupFields = StringUtils.split(groupFieldsParam, Constants.PARAM_VALUE_SEP);
 
-            // Only set the group fields if we were actually given some
-            if (!groupFieldsList.isEmpty()) {
-                this.setGroupFields(new HashSet<>(groupFieldsList));
-                config.setGroupFields(new HashSet<>(groupFieldsList));
-                config.setProjectFields(new HashSet<>(groupFieldsList));
+            // Only set the group fields if we were actually given some.
+            if (groupFields.length > 0) {
+                GroupFields groupByFields = config.getGroupFields();
+                groupByFields.setGroupByFields(Sets.newHashSet(groupFields));
+
+                // Update the sum fields if given.
+                String sumFieldsParam = settings.findParameter(QueryParameters.SUM_FIELDS).getParameterValue().trim();
+                if (StringUtils.isNotBlank(sumFieldsParam)) {
+                    groupByFields.setSumFields(Sets.newHashSet(StringUtils.split(sumFieldsParam, Constants.PARAM_VALUE_SEP)));
+                }
+
+                // Update the count fields if given.
+                String countFieldsParam = settings.findParameter(QueryParameters.COUNT_FIELDS).getParameterValue().trim();
+                if (StringUtils.isNotBlank(countFieldsParam)) {
+                    groupByFields.setCountFields(Sets.newHashSet(StringUtils.split(countFieldsParam, Constants.PARAM_VALUE_SEP)));
+                }
+
+                // Update the average fields if given.
+                String averageFieldsParam = settings.findParameter(QueryParameters.AVERAGE_FIELDS).getParameterValue().trim();
+                if (StringUtils.isNotBlank(averageFieldsParam)) {
+                    groupByFields.setAverageFields(Sets.newHashSet(StringUtils.split(averageFieldsParam, Constants.PARAM_VALUE_SEP)));
+                }
+
+                // Update the min fields if given.
+                String minFieldsParam = settings.findParameter(QueryParameters.MIN_FIELDS).getParameterValue().trim();
+                if (StringUtils.isNotBlank(averageFieldsParam)) {
+                    groupByFields.setMinFields(Sets.newHashSet(StringUtils.split(minFieldsParam, Constants.PARAM_VALUE_SEP)));
+                }
+
+                // Update the max fields if given.
+                String maxFieldsParam = settings.findParameter(QueryParameters.MAX_FIELDS).getParameterValue().trim();
+                if (StringUtils.isNotBlank(averageFieldsParam)) {
+                    groupByFields.setMaxFields(Sets.newHashSet(StringUtils.split(maxFieldsParam, Constants.PARAM_VALUE_SEP)));
+                }
+
+                // Update the config and the projection fields.
+                this.setGroupByFields(groupByFields);
+                config.setGroupFields(groupByFields);
+                config.setProjectFields(groupByFields.getProjectionFields());
             }
         }
 
@@ -914,6 +951,11 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         String parameterModelName = settings.findParameter(QueryParameters.PARAMETER_MODEL_NAME).getParameterValue().trim();
         if (StringUtils.isNotBlank(parameterModelName)) {
             this.setModelName(parameterModelName);
+        }
+
+        String ignoreNonExist = settings.findParameter(QueryParameters.IGNORE_NONEXISTENT_FIELDS).getParameterValue().trim();
+        if (StringUtils.isNotBlank(ignoreNonExist)) {
+            config.setIgnoreNonExistentFields(Boolean.valueOf(ignoreNonExist));
         }
 
         config.setModelName(this.getModelName());
@@ -1266,12 +1308,12 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         getConfig().setHierarchyFieldOptions(options);
     }
 
-    public Set<String> getBlacklistedFields() {
-        return getConfig().getBlacklistedFields();
+    public Set<String> getDisallowlistedFields() {
+        return getConfig().getDisallowlistedFields();
     }
 
-    public void setBlacklistedFields(Set<String> blacklistedFields) {
-        getConfig().setBlacklistedFields(blacklistedFields);
+    public void setdisallowlistedFields(Set<String> disallowlistedFields) {
+        getConfig().setDisallowlistedFields(disallowlistedFields);
     }
 
     public Set<String> getLimitFields() {
@@ -1306,11 +1348,11 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         getConfig().setLimitFieldsField(limitFieldsField);
     }
 
-    public Set<String> getGroupFields() {
+    public GroupFields getGroupByFields() {
         return getConfig().getGroupFields();
     }
 
-    public void setGroupFields(Set<String> groupFields) {
+    public void setGroupByFields(GroupFields groupFields) {
         getConfig().setGroupFields(groupFields);
     }
 
@@ -1422,8 +1464,8 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         getConfig().setTfNextSeek(tfNextSeek);
     }
 
-    public String getBlacklistedFieldsString() {
-        return getConfig().getBlacklistedFieldsAsString();
+    public String getdisallowlistedFieldsString() {
+        return getConfig().getDisallowlistedFieldsAsString();
     }
 
     public boolean getIncludeGroupingContext() {
@@ -2079,7 +2121,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         optionalParams.add(QueryParameters.PARAMETER_MODEL_TABLE_NAME);
         optionalParams.add(QueryParameters.DATATYPE_FILTER_SET);
         optionalParams.add(QueryParameters.RETURN_FIELDS);
-        optionalParams.add(QueryParameters.BLACKLISTED_FIELDS);
+        optionalParams.add(QueryParameters.DISALLOWLISTED_FIELDS);
         optionalParams.add(QueryParameters.FILTER_MASKED_VALUES);
         optionalParams.add(QueryParameters.INCLUDE_DATATYPE_AS_FIELD);
         optionalParams.add(QueryParameters.INCLUDE_GROUPING_CONTEXT);
@@ -2099,6 +2141,11 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         optionalParams.add(datawave.webservice.query.QueryParameters.QUERY_PAGETIMEOUT);
         optionalParams.add(datawave.webservice.query.QueryParameters.QUERY_EXPIRATION);
         optionalParams.add(datawave.webservice.query.QueryParameters.QUERY_MAX_RESULTS_OVERRIDE);
+        optionalParams.add(QueryParameters.SUM_FIELDS);
+        optionalParams.add(QueryParameters.MAX_FIELDS);
+        optionalParams.add(QueryParameters.MIN_FIELDS);
+        optionalParams.add(QueryParameters.COUNT_FIELDS);
+        optionalParams.add(QueryParameters.AVERAGE_FIELDS);
         return optionalParams;
     }
 
@@ -2191,12 +2238,36 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         this.getConfig().setEnforceUniqueTermsWithinExpressions(enforceUniqueTermsWithinExpressions);
     }
 
+    public boolean getPruneQueryByIngestTypes() {
+        return getConfig().getPruneQueryByIngestTypes();
+    }
+
+    public void setPruneQueryByIngestTypes(boolean pruneQueryByIngestTypes) {
+        getConfig().setPruneQueryByIngestTypes(pruneQueryByIngestTypes);
+    }
+
     public boolean getReduceQueryFields() {
         return this.getConfig().getReduceQueryFields();
     }
 
     public void setReduceQueryFields(boolean reduceQueryFields) {
         this.getConfig().setReduceQueryFields(reduceQueryFields);
+    }
+
+    public boolean getReduceTypeMetadata() {
+        return getConfig().getReduceTypeMetadata();
+    }
+
+    public void setReduceTypeMetadata(boolean reduceTypeMetadata) {
+        getConfig().setReduceTypeMetadata(reduceTypeMetadata);
+    }
+
+    public boolean getReduceTypeMetadataPerShard() {
+        return getConfig().getReduceTypeMetadataPerShard();
+    }
+
+    public void setReduceTypeMetadataPerShard(boolean reduceTypeMetadataPerShard) {
+        getConfig().setReduceTypeMetadataPerShard(reduceTypeMetadataPerShard);
     }
 
     public long getMaxIndexScanTimeMillis() {
@@ -2581,5 +2652,13 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
 
     public void setTfAggregationThresholdMs(int tfAggregationThresholdMs) {
         getConfig().setTfAggregationThresholdMs(tfAggregationThresholdMs);
+    }
+
+    public boolean getPruneQueryOptions() {
+        return getConfig().getPruneQueryOptions();
+    }
+
+    public void setPruneQueryOptions(boolean pruneQueryOptions) {
+        getConfig().setPruneQueryOptions(pruneQueryOptions);
     }
 }

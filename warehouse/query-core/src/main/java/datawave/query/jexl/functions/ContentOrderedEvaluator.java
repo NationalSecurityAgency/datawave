@@ -255,14 +255,18 @@ public class ContentOrderedEvaluator extends ContentFunctionEvaluator {
             } else {
                 // nope
 
-                // Establish the end offset of the phrase.
-                endOffset = second.first().termWeightPosition.getOffset();
-                // Record the phrase offsets to fetch excerpts later if desired.
-                termOffsetMap.addPhraseIndexTriplet(field, eventId, startOffset, endOffset);
-                if (log.isTraceEnabled()) {
-                    log.trace("Adding phrase indexes [" + startOffset + "," + endOffset + "] for field " + field + " for event " + eventId
-                                    + " to jexl context");
+                // Only record the phrase index if this is a targeted excerpt field.
+                if (termOffsetMap.shouldRecordPhraseIndex(field)) {
+                    // Establish the end offset of the phrase.
+                    endOffset = second.first().termWeightPosition.getOffset();
+                    // Record the phrase offsets to fetch excerpts later if desired.
+                    termOffsetMap.addPhraseIndexTriplet(field, eventId, startOffset, endOffset);
+                    if (log.isTraceEnabled()) {
+                        log.trace("Adding phrase indexes [" + startOffset + "," + endOffset + "] for field " + field + " for event " + eventId
+                                        + " to jexl context");
+                    }
                 }
+
                 return true;
             }
         }

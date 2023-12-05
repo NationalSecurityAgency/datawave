@@ -29,6 +29,7 @@ import javax.net.ssl.KeyManager;
 import javax.net.ssl.X509KeyManager;
 import javax.security.auth.Subject;
 import javax.security.auth.login.AccountLockedException;
+import javax.security.auth.login.CredentialException;
 import javax.security.auth.login.FailedLoginException;
 
 import org.easymock.EasyMockRunner;
@@ -53,13 +54,12 @@ import datawave.security.authorization.DatawaveUserService;
 import datawave.security.authorization.JWTTokenHandler;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.util.DnUtils;
-import datawave.security.util.DnUtils.NpeUtils;
 import datawave.security.util.MockCallbackHandler;
 import datawave.security.util.MockDatawaveCertVerifier;
 
 @RunWith(EasyMockRunner.class)
 public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
-    private static final String BLACKLIST_ROLE = "BLACKLIST_ROLE";
+    private static final String DISALLOWLIST_ROLE = "DISALLOWLIST_ROLE";
     @TestSubject
     private DatawavePrincipalLoginModule datawaveLoginModule = new TestDatawavePrincipalLoginModule();
     @Mock(type = STRICT)
@@ -79,8 +79,7 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
 
     @Before
     public void setUp() throws Exception {
-        System.setProperty(NpeUtils.NPE_OU_PROPERTY, "iamnotaperson");
-
+        System.setProperty(DnUtils.NPE_OU_PROPERTY, "iamnotaperson");
         MockDatawaveCertVerifier.issuerSupported = true;
         MockDatawaveCertVerifier.verify = true;
 
@@ -148,8 +147,9 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
         options.put("verifier", MockDatawaveCertVerifier.class.getName());
         options.put("passwordStacking", "useFirstPass");
         options.put("ocspLevel", "required");
-        options.put("blacklistUserRole", BLACKLIST_ROLE);
-        options.put("requiredRoles", "AuthorizedUser:AuthorizedServer:OtherRequiredRole");
+        options.put("disallowlistUserRole", DISALLOWLIST_ROLE);
+        options.put("requiredRoles", "AuthorizedUser:AuthorizedServer:AuthorizedQueryServer:OtherRequiredRole");
+        options.put("directRoles", "AuthorizedQueryServer:AuthorizedServer");
 
         Whitebox.setInternalState(datawaveLoginModule, DatawaveUserService.class, datawaveUserService);
         Whitebox.setInternalState(datawaveLoginModule, JSSESecurityDomain.class, securityDomain);
@@ -271,6 +271,167 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
         verifyAll();
     }
 
+    @Test(expected = CredentialException.class)
+    public void testProxiedEntitiesLoginNoRole() throws Exception {
+        // Call Chain is U -> S1 -> S2. S2 will have no role. This test case tests
+        // the case of no role for the terminal service. This should fail with
+        // CredentialException thrown.
+        String issuerDN = DnUtils.normalizeDN(testServerCert.getIssuerDN().getName());
+        String serverDN = DnUtils.normalizeDN("CN=testServer.example.com, OU=iamnotaperson, OU=acme");
+        SubjectIssuerDNPair server1 = SubjectIssuerDNPair.of(serverDN, issuerDN);
+        String otherServerDN = DnUtils.normalizeDN("CN=otherServer.example.com, OU=iamnotaperson, OU=acme");
+        SubjectIssuerDNPair server2 = SubjectIssuerDNPair.of(otherServerDN, issuerDN);
+        String proxiedSubjects = "<" + userDN.subjectDN() + "><" + otherServerDN + ">";
+        String proxiedIssuers = "<" + userDN.issuerDN() + "><" + issuerDN + ">";
+        DatawaveCredential datawaveCredential = new DatawaveCredential(testServerCert, proxiedSubjects, proxiedIssuers);
+        callbackHandler.name = datawaveCredential.getUserName();
+        callbackHandler.credential = datawaveCredential;
+
+        List<String> s1Roles = Arrays.asList("AuthorizedServer");
+
+        DatawaveUser s1 = new DatawaveUser(server1, UserType.SERVER, null, s1Roles, null, System.currentTimeMillis());
+        DatawaveUser s2 = new DatawaveUser(server2, UserType.SERVER, null, null, null, System.currentTimeMillis());
+        DatawavePrincipal expected = new DatawavePrincipal(Lists.newArrayList(defaultPrincipal.getPrimaryUser(), s1, s2));
+
+        expect(securityDomain.getKeyStore()).andReturn(serverKeystore);
+        expect(securityDomain.getTrustStore()).andReturn(truststore);
+        expect(datawaveUserService.lookup(datawaveCredential.getEntities())).andReturn(expected.getProxiedUsers());
+
+        replayAll();
+        boolean success = datawaveLoginModule.login();
+        assertFalse("Login should fail, but succeeded.", success);
+        assertEquals(userDN, expected.getUserDN());
+
+        verifyAll();
+    }
+
+    @Test(expected = CredentialException.class)
+    public void testDirectRolesFailServer() throws Exception {
+        /**
+         * Chain is User -> S1 -> S2. S2 is terminal server. Verified that s2 does not have the appropriate authorized role for terminal server (directRole).
+         * This will fail the check in the #DatawavePrincipalLoginModule.login() This will prevent the chain from accessing any endpoint which requires
+         * authorized roles
+         */
+
+        String issuerDN = DnUtils.normalizeDN(testServerCert.getIssuerDN().getName());
+        String serverDN = DnUtils.normalizeDN("CN=testServer.example.com, OU=iamnotaperson, OU=acme");
+        SubjectIssuerDNPair server1 = SubjectIssuerDNPair.of(serverDN, issuerDN);
+        String otherServerDN = DnUtils.normalizeDN("CN=otherServer.example.com, OU=iamnotaperson, OU=acme");
+        SubjectIssuerDNPair server2 = SubjectIssuerDNPair.of(otherServerDN, issuerDN);
+        String proxiedSubjects = "<" + userDN.subjectDN() + "><" + otherServerDN + ">";
+        String proxiedIssuers = "<" + userDN.issuerDN() + "><" + issuerDN + ">";
+        DatawaveCredential datawaveCredential = new DatawaveCredential(testServerCert, proxiedSubjects, proxiedIssuers);
+        callbackHandler.name = datawaveCredential.getUserName();
+        callbackHandler.credential = datawaveCredential;
+
+        List<String> userRoles = Arrays.asList("Role1", "AuthorizedUser");
+        List<String> s1Roles = Arrays.asList("Role2", "AuthorizedServer");
+        List<String> s2Roles = Arrays.asList("Role3", "OtherRequiredRole");
+
+        DatawaveUser user = new DatawaveUser(userDN, UserType.USER, null, userRoles, null, System.currentTimeMillis());
+        DatawaveUser s1 = new DatawaveUser(server1, UserType.SERVER, null, s1Roles, null, System.currentTimeMillis());
+        DatawaveUser s2 = new DatawaveUser(server2, UserType.SERVER, null, s2Roles, null, System.currentTimeMillis());
+
+        /**
+         * s2 has OtherRequiredRole is an auhtorizedRole, but not a directRole so this will fail the check in #DatawavePrincipalLoginModule.login() so chain
+         * User -> S1 -> S2 will fail
+         */
+
+        DatawavePrincipal expected = new DatawavePrincipal(Lists.newArrayList(user, s1, s2));
+
+        expect(securityDomain.getKeyStore()).andReturn(serverKeystore);
+        expect(securityDomain.getTrustStore()).andReturn(truststore);
+        expect(datawaveUserService.lookup(datawaveCredential.getEntities())).andReturn(expected.getProxiedUsers());
+
+        replayAll();
+
+        boolean success = datawaveLoginModule.login();
+        assertFalse("Login should fail, but succeeded.", success);
+
+        verifyAll();
+    }
+
+    @Test
+    public void testDirectRolesSuccesServer() throws Exception {
+        /**
+         * Chain is User -> S1 -> S2. S2 is terminal server. Verified that s2 does have the appropriate authorized role for terminal server. This will pass the
+         * check in #DatawavePrincipalLoginModule.login(). This will allow the chain from accessing any endpoint which requires authorized roles
+         */
+
+        String issuerDN = DnUtils.normalizeDN(testServerCert.getIssuerDN().getName());
+        String serverDN = DnUtils.normalizeDN("CN=testServer.example.com, OU=iamnotaperson, OU=acme");
+        SubjectIssuerDNPair server1 = SubjectIssuerDNPair.of(serverDN, issuerDN);
+        String otherServerDN = DnUtils.normalizeDN("CN=otherServer.example.com, OU=iamnotaperson, OU=acme");
+        SubjectIssuerDNPair server2 = SubjectIssuerDNPair.of(otherServerDN, issuerDN);
+        String proxiedSubjects = "<" + userDN.subjectDN() + "><" + otherServerDN + ">";
+        String proxiedIssuers = "<" + userDN.issuerDN() + "><" + issuerDN + ">";
+        DatawaveCredential datawaveCredential = new DatawaveCredential(testServerCert, proxiedSubjects, proxiedIssuers);
+        callbackHandler.name = datawaveCredential.getUserName();
+        callbackHandler.credential = datawaveCredential;
+
+        List<String> userRoles = Arrays.asList("Role1", "AuthorizedUser");
+        List<String> s1Roles = Arrays.asList("Role3", "OtherRequiredRole");
+        List<String> s2Roles = Arrays.asList("Role2", "AuthorizedServer");
+
+        DatawaveUser user = new DatawaveUser(userDN, UserType.USER, null, userRoles, null, System.currentTimeMillis());
+        DatawaveUser s1 = new DatawaveUser(server1, UserType.SERVER, null, s1Roles, null, System.currentTimeMillis());
+        DatawaveUser s2 = new DatawaveUser(server2, UserType.SERVER, null, s2Roles, null, System.currentTimeMillis());
+
+        /**
+         * s2 has AuthorizedServer role which is a directRole s1 has OtherRequiredRole which is not a directRole. This is the chain we want to make sure passes.
+         * so this will pass the check in #DatawavePrincipalLoginModule.login() so chain User -> S1 -> S2 will pass
+         */
+
+        DatawavePrincipal expected = new DatawavePrincipal(Lists.newArrayList(user, s1, s2));
+
+        expect(securityDomain.getKeyStore()).andReturn(serverKeystore);
+        expect(securityDomain.getTrustStore()).andReturn(truststore);
+        expect(datawaveUserService.lookup(datawaveCredential.getEntities())).andReturn(expected.getProxiedUsers());
+
+        replayAll();
+
+        boolean success = datawaveLoginModule.login();
+        assertTrue("Login did not succeed.", success);
+
+        verifyAll();
+    }
+
+    @Test
+    public void testDirectRolesSuccesUser() throws Exception {
+        /**
+         * Chain is just User. This will not get hit by the terminal server check as it only runs on UserType.SERVER
+         *
+         */
+
+        String issuerDN = DnUtils.normalizeDN(testServerCert.getIssuerDN().getName());
+        String serverDN = DnUtils.normalizeDN("CN=testServer.example.com, OU=iamnotaperson, OU=acme");
+        SubjectIssuerDNPair server1 = SubjectIssuerDNPair.of(serverDN, issuerDN);
+        String otherServerDN = DnUtils.normalizeDN("CN=otherServer.example.com, OU=iamnotaperson, OU=acme");
+        SubjectIssuerDNPair server2 = SubjectIssuerDNPair.of(otherServerDN, issuerDN);
+        String proxiedSubjects = "<" + userDN.subjectDN() + "><" + otherServerDN + ">";
+        String proxiedIssuers = "<" + userDN.issuerDN() + "><" + issuerDN + ">";
+        DatawaveCredential datawaveCredential = new DatawaveCredential(testServerCert, proxiedSubjects, proxiedIssuers);
+        callbackHandler.name = datawaveCredential.getUserName();
+        callbackHandler.credential = datawaveCredential;
+
+        List<String> userRoles = Arrays.asList("Role1", "AuthorizedUser");
+
+        DatawaveUser user = new DatawaveUser(userDN, UserType.USER, null, userRoles, null, System.currentTimeMillis());
+
+        DatawavePrincipal expected = new DatawavePrincipal(Lists.newArrayList(user));
+
+        expect(securityDomain.getKeyStore()).andReturn(serverKeystore);
+        expect(securityDomain.getTrustStore()).andReturn(truststore);
+        expect(datawaveUserService.lookup(datawaveCredential.getEntities())).andReturn(expected.getProxiedUsers());
+
+        replayAll();
+
+        boolean success = datawaveLoginModule.login();
+        assertTrue("Login did not succeed.", success);
+
+        verifyAll();
+    }
+
     @Test
     public void testGetRoleSetsFiltersRequiredRoles() throws Exception {
         // Proxied entities has the original user DN, plus it came through a server and
@@ -289,12 +450,15 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
         callbackHandler.credential = datawaveCredential;
 
         List<String> userRoles = Arrays.asList("Role1", "AuthorizedUser");
-        List<String> s1Roles = Collections.singletonList("Role2");
-        List<String> s2Roles = Arrays.asList("Role3", "AuthorizedServer");
+        List<String> s1Roles = Arrays.asList("Role3", "AuthorizedServer");
+        List<String> s2Roles = Arrays.asList("Role2");
 
         DatawaveUser user = new DatawaveUser(userDN, UserType.USER, null, userRoles, null, System.currentTimeMillis());
         DatawaveUser s1 = new DatawaveUser(server1, UserType.SERVER, null, s1Roles, null, System.currentTimeMillis());
         DatawaveUser s2 = new DatawaveUser(server2, UserType.SERVER, null, s2Roles, null, System.currentTimeMillis());
+        /**
+         * changed order of roles for the servers so this test will pass the directRole check
+         */
         DatawavePrincipal expected = new DatawavePrincipal(Lists.newArrayList(user, s2, s1));
 
         expect(securityDomain.getKeyStore()).andReturn(serverKeystore);
@@ -317,12 +481,12 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
     }
 
     @Test(expected = AccountLockedException.class)
-    public void testBlacklistedUser() throws Exception {
+    public void testDisallowlistedUser() throws Exception {
         DatawaveCredential datawaveCredential = new DatawaveCredential(testUserCert, null, null);
         callbackHandler.name = datawaveCredential.getUserName();
         callbackHandler.credential = datawaveCredential;
 
-        List<String> roles = Collections.singletonList(BLACKLIST_ROLE);
+        List<String> roles = Collections.singletonList(DISALLOWLIST_ROLE);
         DatawaveUser user = new DatawaveUser(userDN, UserType.USER, null, roles, null, System.currentTimeMillis());
         DatawavePrincipal expected = new DatawavePrincipal(Lists.newArrayList(user));
 
@@ -339,7 +503,7 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
     }
 
     @Test(expected = AccountLockedException.class)
-    public void testBlacklistedProxiedUser() throws Exception {
+    public void testDisallowlistedProxiedUser() throws Exception {
         // Proxied entities has the original user DN, plus it came through a server and
         // the request is being made by a second server. Make sure that the resulting
         // principal has all 3 server DNs in its list, and the user DN is not one of the
@@ -355,12 +519,12 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
         callbackHandler.name = datawaveCredential.getUserName();
         callbackHandler.credential = datawaveCredential;
 
-        List<String> blacklistRoles = Arrays.asList(BLACKLIST_ROLE, "TEST_ROLE");
+        List<String> disallowlistRoles = Arrays.asList(DISALLOWLIST_ROLE, "TEST_ROLE");
         List<String> otherRoles = Collections.singletonList("TEST_ROLE");
 
         DatawaveUser user = new DatawaveUser(userDN, UserType.USER, null, otherRoles, null, System.currentTimeMillis());
         DatawaveUser s1 = new DatawaveUser(server1, UserType.SERVER, null, otherRoles, null, System.currentTimeMillis());
-        DatawaveUser s2 = new DatawaveUser(server2, UserType.SERVER, null, blacklistRoles, null, System.currentTimeMillis());
+        DatawaveUser s2 = new DatawaveUser(server2, UserType.SERVER, null, disallowlistRoles, null, System.currentTimeMillis());
 
         DatawavePrincipal expected = new DatawavePrincipal(Lists.newArrayList(user, s2, s1));
 
@@ -393,7 +557,12 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
         callbackHandler.name = datawaveCredential.getUserName();
         callbackHandler.credential = datawaveCredential;
 
-        DatawaveUser s1 = new DatawaveUser(server1, UserType.SERVER, null, null, null, System.currentTimeMillis());
+        /**
+         * Need to add an directRole for s1 to allow the login check to pass
+         */
+        List<String> s1Roles = Arrays.asList("AuthorizedServer");
+
+        DatawaveUser s1 = new DatawaveUser(server1, UserType.SERVER, null, s1Roles, null, System.currentTimeMillis());
         DatawaveUser s2 = new DatawaveUser(server2, UserType.SERVER, null, null, null, System.currentTimeMillis());
         DatawavePrincipal expected = new DatawavePrincipal(Lists.newArrayList(defaultPrincipal.getPrimaryUser(), s2, s1));
 

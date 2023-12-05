@@ -55,9 +55,7 @@ public class ContentQueryTable extends BaseQueryLogic<Entry<Key,Value>> {
     private static final String ALL = "\u10FFFF";
 
     private int queryThreads = 100;
-
     ScannerFactory scannerFactory;
-
     String viewName = null;
 
     public ContentQueryTable() {
@@ -183,12 +181,17 @@ public class ContentQueryTable extends BaseQueryLogic<Entry<Key,Value>> {
             if (!term.isEmpty()) {
                 // Get the next value
                 int fieldSeparation = term.indexOf(':');
-                final String value;
+                final String valueIdentifier;
                 if (fieldSeparation > 0) {
-                    value = term.substring(fieldSeparation + 1);
+                    valueIdentifier = term.substring(fieldSeparation + 1);
                 } else {
-                    value = term;
+                    valueIdentifier = term;
                 }
+
+                // Remove the identifier if present - we won't use it here, but will extract them from the query
+                // later in the ContentQueryTransformer
+                int idSeparation = valueIdentifier.indexOf("!");
+                final String value = idSeparation > 0 ? valueIdentifier.substring(0, idSeparation) : valueIdentifier;
 
                 // Validate the value
                 final String[] parts = value.split("/");

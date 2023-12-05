@@ -410,11 +410,11 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
         long maxResults = getMaxResults();
 
         Map<String,Long> systemFromLimits = getSystemFromResultLimits();
-        QueryImpl.Parameter systemFromParam = settings.findParameter("systemFrom");
+        String systemFromParam = settings.getSystemFrom();
         if (systemFromLimits != null && systemFromParam != null) {
             // this findParameter implementation never returns null, it will return a parameter with an empty string
             // as the value if the parameter is not present.
-            maxResults = systemFromLimits.getOrDefault(systemFromParam.getParameterValue(), maxResults);
+            maxResults = systemFromLimits.getOrDefault(systemFromParam, maxResults);
         }
 
         Map<String,Long> dnResultLimits = getDnResultLimits();

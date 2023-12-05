@@ -148,6 +148,7 @@ function datawaveWebStart() {
           echo
           info "Documentation: https://localhost:8443/DataWave/doc"
           info "Data Dictionary: https://localhost:8443/DataWave/DataDictionary"
+          info "NOTE: DataDictionary will need to be deployed separately via the microservices modules in order to function."
           echo
           return 0
        fi
