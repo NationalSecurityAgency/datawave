@@ -148,9 +148,9 @@
         <value></value>
     </property>
  
-	<!-- default is to treat all fields as multivalued, this is the blacklist -->
+	<!-- default is to treat all fields as multivalued, this is the disallowlist -->
     <property>
-        <name>mycsv.data.fields.multivalued.blacklist</name>
+        <name>mycsv.data.fields.multivalued.disallowlist</name>
         <value>RAW_TEXT_BLOB</value>
     </property>
 
@@ -189,27 +189,27 @@
     </property>
 
     <property>
-        <name>mycsv.data.category.index.blacklist</name>
+        <name>mycsv.data.category.index.disallowlist</name>
         <value>FIELDNAME1_WE_DONT_WANT_INDEXED</value>
         <description>These are the fields to *not* index</description>
     </property>
 
     <property>
-        <name>mycsv.data.category.index.reverse.blacklist</name>
+        <name>mycsv.data.category.index.reverse.disallowlist</name>
         <value>FIELDNAME1_WE_DONT_WANT_INDEXED,SECURITY_MARKING,EVENT_DATE,PROCESSING_DATE</value>
-        <description>These are the fields to *not* reverse index. Contains the same fields from *.index.blacklist and date, time, numeric, or hash-based fields</description>
+        <description>These are the fields to *not* reverse index. Contains the same fields from *.index.disallowlist and date, time, numeric, or hash-based fields</description>
     </property>
 
     <property>
-        <name>mycsv.data.category.index.tokenize.blacklist</name>
+        <name>mycsv.data.category.index.tokenize.disallowlist</name>
         <value>FIELDNAME1_WE_DONT_WANT_INDEXED,FIELDNAME1_NOT_TO_TOKENIZE,UUID,PARENT_UUID,SECURITY_MARKING,EVENT_DATE,PROCESSING_DATE,EVENT_ID</value>
         <description>These are the fields to *not* tokenize and index.</description>
     </property>
     
     <property>
-        <name>mycsv.data.category.index.reverse.tokenize.blacklist</name>
+        <name>mycsv.data.category.index.reverse.tokenize.disallowlist</name>
         <value>FIELDNAME1_WE_DONT_WANT_INDEXED,FIELDNAME1_NOT_TO_TOKENIZE,UUID,PARENT_UUID,SECURITY_MARKING,EVENT_DATE,PROCESSING_DATE,EVENT_ID</value>
-        <description>These are the fields to *not* tokenize and index. Contains the same fields from *.index.blacklist and date, time, numeric, or hash-based fields</description>
+        <description>These are the fields to *not* tokenize and index. Contains the same fields from *.index.disallowlist and date, time, numeric, or hash-based fields</description>
     </property>
     
     <property>

@@ -4,7 +4,6 @@ import static org.apache.commons.jexl2.parser.JexlNodes.children;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -40,15 +39,15 @@ import datawave.webservice.query.exception.DatawaveErrorCode;
  * Once an edge query has been parsed into a jexl tree this class is run to traverse the nodes of the tree gathering up necessary information to use to build
  * the accumulo ranges and the normalized query that will be sent to the EdgeFilterIterator for further evaluation <br>
  * <br>
- *
+ * <p>
  * The high level design of how the parsing works is as follows: There are two data structures that are built during the traversal to keep track of information.
  * Once the traversal is complete and the data structures are built they are sent to the VisitationContext which then builds the ranges and normalized query and
  * gets returned.<br>
  * <br>
- *
+ * <p>
  * All data is expected to be passed up since this is a depth first search nothing will be passed down<br>
  * <br>
- *
+ * <p>
  * The two data structures used:<br>
  * 1) IdentityContext<br>
  * This class stores 3 things:<br>
@@ -56,22 +55,22 @@ import datawave.webservice.query.exception.DatawaveErrorCode;
  * Operation: eg equals, equals regex, not equals, and not regex<br>
  * Literal: eg 'search term'<br>
  * <br>
- *
+ * <p>
  * During the Traversal lists of IdentityContexts are built. A list of IdentityContexts must all have the same Identity. For example you can only have a list of
  * IdentityContexts with all SOURCE identities or all TYPE identities. Once a list of IdentityContexts is finished being built it is stored in a QueryContext
  * The only exception is for exclusion expressions (!= !~) and functions.<br>
  * <br>
- *
+ * <p>
  * 2) QueryContext<br>
  * This class stores a list of IdentityContexts for each supported search term. (Eg 1 list of IdentityContexts for source or edge type ect...) Once a list has
  * been set it cannot be changed/modified/added to<br>
  * <br>
- *
+ * <p>
  * During the Traversal lists of QueryContexts are built. Once traversal is over we must have 1 or more QueryContexts which are then used to build the
  * ranges/normalized query.<br>
  * <br>
- *
- *
+ * <p>
+ * <p>
  * The 3 basic rules that are enforced are:<br>
  * for equivalence expressions (== =~)<br>
  * 1) cant and like identifiers<br>
@@ -79,16 +78,16 @@ import datawave.webservice.query.exception.DatawaveErrorCode;
  * for exclude expressions (!= !~)<br>
  * 3) only use and<br>
  * <br>
- *
+ * <p>
  * There are two basic types of queries that are allowed/expected to be run:<br>
  * <br>
- *
+ * <p>
  * {@code (SOURCE == 's1' || SOURCE == 's2'|| SOURCE == ...) && (SINK == 't1' || SINK == 't2' || ...)}<br>
  * <br>
- *
+ * <p>
  * or<br>
  * <br>
- *
+ * <p>
  * {@code (SOURCE == 's1' && SINK == 's2') || (SOURCE == 's2 && SINK == 's2) || ...}<br>
  * <br>
  */
@@ -257,14 +256,14 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
 
     /**
      * Or node should have exactly two children This or node's only function is to combine the lists returned by its children.
-     *
+     * <p>
      * The Children can return lists of type IdentityContext or QueryContext both children must return the same type of lists else its an improper query ex:
      * Both children return lists of IdentityContexts where the identity is source Both children return lists of QueryContexts
-     *
+     * <p>
      * There is one exception where a QueryContext list and a IdentityContext list could be returned by the children in which case the returned IdentityContext
      * list is immediately packaged into a new QueryContext and is then combined with the returned other QueryContext list Happens with a query like this:
      * {@code (SOURCE == 'source1' && SINK == 'sink') || (SOURCE == 'source2')}
-     *
+     * <p>
      * Or node will return either a list of IdentityContexts or QueryContexts
      *
      * @param node
@@ -400,7 +399,7 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
     /**
      * Equals node (==) should have exactly two children (reference nodes) one child will have the identifier eg: SOURCE ... the other child will have the
      * string literal eg: 'searchTerm'
-     *
+     * <p>
      * Returns a list of 1 or more IdentityContexts
      *
      * @param node
@@ -418,7 +417,7 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
     /**
      * Equals node (=~) should have exactly two children (reference nodes) one child will have the identifier eg: SOURCE ... the other child will have the
      * string literal eg: 'searchTerm'
-     *
+     * <p>
      * Returns a list of 1 or more IdentityContexts
      *
      * @param node
@@ -582,7 +581,7 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
     /**
      * This method creates a new VisitationContext object to be returned and loads the final list of queryContexts which are then used to build the ranges and
      * normalized query One of the main purposes of this method is to create the normalized query that is used to filter column families from ranges. This is a
-     * problem when there are multiple query contexts because the whitelist will exclude certain column family values, which will affect what gets returned by
+     * problem when there are multiple query contexts because the allowlist will exclude certain column family values, which will affect what gets returned by
      * the query. This is addressed by the columnFamilyAreDifferent boolean which is passed down to populateQuery()
      *
      * @param queryContexts
@@ -608,7 +607,7 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
         }
 
         // If there are multiple query contexts, and their column families are not the same, we will pass down a boolean
-        // so that the whitelist will not get updated to improve column family filtering against ranges
+        // so that the allowlist will not get updated to improve column family filtering against ranges
 
         if (queryContexts.size() > 1) {
             int i;
@@ -645,7 +644,7 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
             }
             // boolean for source and sink inclusion for normalized query
             // boolean to include column family terms to the normalized query
-            // boolean to create white list for column family terms
+            // boolean to create allowlist for column family terms
             vContext.updateQueryStrings(qContext, includeSource, includeSink, includColumnFamilyTerms, !columnFamilyAreDifferent);
             if (!includColumnFamilyTerms) {
                 vContext.buildColumnFamilyList(qContext, includeStats);
