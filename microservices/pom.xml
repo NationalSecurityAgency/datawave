@@ -11,6 +11,7 @@
     <packaging>pom</packaging>
     <name>${project.artifactId}</name>
     <modules>
+        <module>configcheck</module>
         <module>services</module>
         <module>starters</module>
     </modules>
