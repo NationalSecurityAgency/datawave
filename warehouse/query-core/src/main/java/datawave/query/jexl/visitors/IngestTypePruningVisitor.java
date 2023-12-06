@@ -241,7 +241,6 @@ public class IngestTypePruningVisitor extends BaseVisitor {
         Set<String> dts = (Set<String>) visit(source, data);
 
         if (source.jjtGetParent() == null) {
-            pruneNodeFromParent(source);
             pruneNodeFromParent(node);
         }
 
