@@ -35,6 +35,7 @@ import com.google.common.cache.CacheBuilder;
 
 import datawave.core.iterators.filesystem.FileSystemCache;
 import datawave.microservice.querymetric.BaseQueryMetric;
+import datawave.microservice.querymetric.RangeCounts;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.InvalidQueryException;
@@ -78,7 +79,6 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
 
     private int shardRangeCount = 0;
     private int documentRangeCount = 0;
-
     private ShardQueryConfiguration config;
     private BaseQueryMetric metric;
     protected MetadataHelper metadataHelper;
@@ -364,7 +364,10 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                         updateRangeCounts(range);
                     }
                     if (metric != null) {
-                        metric.addSubPlan(newQuery, new int[] {shardRangeCount, documentRangeCount});
+                        RangeCounts ranges = new RangeCounts();
+                        ranges.setDocumentRangeCount(documentRangeCount);
+                        ranges.setShardRangeCount(shardRangeCount);
+                        metric.addSubPlan(newQuery, ranges);
                     }
 
                 } catch (ParseException e) {

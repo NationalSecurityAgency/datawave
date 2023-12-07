@@ -23,6 +23,7 @@ import datawave.ingest.data.config.ingest.TermFrequencyIngestHelperInterface;
 import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.BaseQueryMetric.PageMetric;
 import datawave.microservice.querymetric.BaseQueryMetric.Prediction;
+import datawave.microservice.querymetric.RangeCounts;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
@@ -135,10 +136,11 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
             if (updatedQueryMetric.getPlan() != null) {
                 fields.put("PLAN", updatedQueryMetric.getPlan());
             }
-            Map<String,int[]> subPlans = updatedQueryMetric.getSubPlans();
+            Map<String,RangeCounts> subPlans = updatedQueryMetric.getSubPlans();
             if (subPlans != null && !subPlans.isEmpty()) {
-                for (Map.Entry<String,int[]> entry : subPlans.entrySet()) {
-                    fields.put("SUBPLAN", entry.getKey() + " : " + Arrays.toString(entry.getValue()));
+                for (Map.Entry<String,RangeCounts> entry : subPlans.entrySet()) {
+                    fields.put("SUBPLAN",
+                                    entry.getKey() + " : [" + entry.getValue().getDocumentRangeCount() + ", " + entry.getValue().getShardRangeCount() + "]");
                 }
             }
             if (updatedQueryMetric.getQueryId() != null) {

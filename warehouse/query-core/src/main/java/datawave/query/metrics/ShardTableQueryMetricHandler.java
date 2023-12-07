@@ -83,6 +83,7 @@ import datawave.microservice.querymetric.QueryMetricListResponse;
 import datawave.microservice.querymetric.QueryMetricsDetailListResponse;
 import datawave.microservice.querymetric.QueryMetricsSubplanResponse;
 import datawave.microservice.querymetric.QueryMetricsSummaryResponse;
+import datawave.microservice.querymetric.RangeCounts;
 import datawave.query.QueryParameters;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.jexl.visitors.JexlFormattedStringBuildingVisitor;
@@ -526,7 +527,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
         return JexlFormattedStringBuildingVisitor.formatMetrics(queryMetrics);
     }
 
-    private QueryImpl setupQuery(String user, String queryId, DatawavePrincipal datawavePrincipal, String blacklistedFields) {
+    private QueryImpl setupQuery(String user, String queryId, DatawavePrincipal datawavePrincipal, String disallowlistedFields) {
         Collection<? extends Collection<String>> authorizations = datawavePrincipal.getAuthorizations();
         Date end = new Date();
         Date begin = DateUtils.setYears(end, 2000);
@@ -545,8 +546,8 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
         query.setUserDN(datawavePrincipal.getShortName());
         query.setOwner(datawavePrincipal.getShortName());
         query.setId(UUID.randomUUID());
-        query.setParameters(ImmutableMap.of(QueryOptions.INCLUDE_GROUPING_CONTEXT, "true");
-        query.addParameter(QueryParameters.BLACKLISTED_FIELDS, blacklistedFields);
+        query.setParameters(ImmutableMap.of(QueryOptions.INCLUDE_GROUPING_CONTEXT, "true"));
+        query.addParameter(QueryParameters.DISALLOWLISTED_FIELDS, disallowlistedFields);
 
         return query;
     }
@@ -598,7 +599,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             List<FieldBase> field = event.getFields();
             m.setMarkings(event.getMarkings());
             TreeMap<Long,PageMetric> pageMetrics = Maps.newTreeMap();
-            Map<String,int[]> subplans = new HashMap<>();
+            Map<String,RangeCounts> subplans = new HashMap<>();
 
             boolean createDateSet = false;
             for (FieldBase f : field) {
@@ -624,15 +625,12 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
                     } else if (fieldName.equals("PLAN")) {
                         m.setPlan(fieldValue);
                     } else if (fieldName.equals("SUBPLAN")) {
-                        String[] arr = fieldValue.split(" : ", 2);
-                        int[] rangeCounts = new int[2];
-                        int index = 0;
-                        for (String count : arr[1].substring(1, arr[1].length() - 1).split(", ")) {
-                            rangeCounts[index] = Integer.parseInt(count);
-                            index++;
-                        }
-                        if (arr.length == 2) {
-                            subplans.put(arr[0], rangeCounts);
+                        if (fieldValue != null) {
+                            String[] arr = fieldValue.split(" : ", 2);
+                            if (arr.length == 2) {
+                                RangeCounts rangeCounts = getRangeCounts(arr);
+                                subplans.put(arr[0], rangeCounts);
+                            }
                         }
                     } else if (fieldName.equals("QUERY_LOGIC")) {
                         m.setQueryLogic(fieldValue);
@@ -763,6 +761,20 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             log.warn("Unexpected error creating query metric. Returning null", e);
             return null;
         }
+    }
+
+    private static RangeCounts getRangeCounts(String[] arr) {
+        RangeCounts ranges = new RangeCounts();
+        int index = 0;
+        for (String count : arr[1].substring(1, arr[1].length() - 1).split(", ")) {
+            if (index == 0) {
+                ranges.setDocumentRangeCount(Integer.parseInt(count));
+            } else if (index == 1) {
+                ranges.setShardRangeCount(Integer.parseInt(count));
+            }
+            index++;
+        }
+        return ranges;
     }
 
     protected void createAndConfigureTablesIfNecessary(String[] tableNames, TableOperations tops, Configuration conf)
