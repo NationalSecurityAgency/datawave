@@ -1,15 +1,24 @@
 package datawave.query.transformer;
 
-import datawave.ingest.protobuf.TermWeight;
-import datawave.query.Constants;
-import datawave.query.attributes.Attribute;
-import datawave.query.attributes.Attributes;
-import datawave.query.attributes.Content;
-import datawave.query.attributes.Document;
-import datawave.query.attributes.ExcerptFields;
-import datawave.query.function.JexlEvaluation;
-import datawave.query.iterator.logic.TermFrequencyExcerptIterator;
-import datawave.query.postprocessing.tf.PhraseIndexes;
+import static org.easymock.EasyMock.and;
+import static org.easymock.EasyMock.anyObject;
+import static org.easymock.EasyMock.capture;
+import static org.easymock.EasyMock.eq;
+import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.isA;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
+import java.io.IOException;
+import java.util.AbstractMap;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
@@ -24,24 +33,16 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
-import java.util.AbstractMap;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import static org.easymock.EasyMock.and;
-import static org.easymock.EasyMock.anyObject;
-import static org.easymock.EasyMock.capture;
-import static org.easymock.EasyMock.eq;
-import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.isA;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import datawave.ingest.protobuf.TermWeight;
+import datawave.query.Constants;
+import datawave.query.attributes.Attribute;
+import datawave.query.attributes.Attributes;
+import datawave.query.attributes.Content;
+import datawave.query.attributes.Document;
+import datawave.query.attributes.ExcerptFields;
+import datawave.query.function.JexlEvaluation;
+import datawave.query.iterator.logic.TermFrequencyExcerptIterator;
+import datawave.query.postprocessing.tf.PhraseIndexes;
 
 @RunWith(EasyMockRunner.class)
 public class ExcerptTransformTest extends EasyMockSupport {
@@ -388,6 +389,7 @@ public class ExcerptTransformTest extends EasyMockSupport {
         options.put(TermFrequencyExcerptIterator.START_OFFSET, String.valueOf(start));
         // for the options, the end offset is exclusive so add 1
         options.put(TermFrequencyExcerptIterator.END_OFFSET, String.valueOf(end + 1));
+        options.put(TermFrequencyExcerptIterator.HIT_CALLOUT, String.valueOf(true));
         return options;
     }
 }
