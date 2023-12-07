@@ -26,6 +26,7 @@ import datawave.util.time.DateHelper;
 import datawave.webservice.common.audit.AuditParameters;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.webservice.common.exception.NoResultsException;
+import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryParameters;
 import datawave.webservice.query.QueryParametersImpl;
 import datawave.webservice.query.QueryPersistence;
@@ -347,7 +348,7 @@ public class LookupUUIDUtil {
             // Override the extraneous query details
             String logicName = queryParameters.getFirst(QueryParameters.QUERY_LOGIC_NAME);
             String queryAuths = queryParameters.getFirst(QueryParameters.QUERY_AUTHORIZATIONS);
-            String userAuths = getAuths(logicName, queryAuths, principal);
+            String userAuths = getAuths(logicName, queryParameters, queryAuths, principal);
             if (queryParameters.containsKey(QueryParameters.QUERY_AUTHORIZATIONS)) {
                 queryParameters.remove(QueryParameters.QUERY_AUTHORIZATIONS);
             }
@@ -418,7 +419,7 @@ public class LookupUUIDUtil {
         return response;
     }
     
-    private String getAuths(String logicName, String queryAuths, Principal principal) {
+    private String getAuths(String logicName, MultivaluedMap<String,String> queryParameters, String queryAuths, Principal principal) {
         String userAuths;
         try {
             QueryLogic<?> logic = queryLogicFactory.getQueryLogic(logicName, principal);
@@ -569,7 +570,7 @@ public class LookupUUIDUtil {
         String sid = principal.getName();
         
         // Initialize the reusable query input
-        final String userAuths = getAuths(CONTENT_QUERY, null, principal);
+        final String userAuths = getAuths(CONTENT_QUERY, criteria.getQueryParameters(), null, principal);
         final String queryName = sid + '-' + UUID.randomUUID();
         final Date endDate = new Date();
         final Date expireDate = new Date(endDate.getTime() + 1000 * 60 * 60);

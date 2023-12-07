@@ -417,11 +417,11 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      * @return A user operations interface implementation. Null if NA (i.e. the local principal is sufficient)
      */
     UserOperations getUserOperations();
-
+    
     /**
-     * This is to be used prior to requesting user operations for a logic that is not yet initialized.
-     * The main use case is for the FilteredQueryLogic to allow it to filter this call as well.
-     * Most query logics will not implement this.
+     * This is to be used prior to requesting user operations for a logic that is not yet initialized. The main use case is for the FilteredQueryLogic to allow
+     * it to filter this call as well. Most query logics will not implement this.
+     * 
      * @param settings
      * @param userAuthorizations
      */
