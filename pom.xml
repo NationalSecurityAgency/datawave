@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>gov.nsa.datawave</groupId>
     <artifactId>datawave-parent</artifactId>
-    <version>5.6.0-SNAPSHOT</version>
+    <version>6.4.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>DataWave</name>
     <description>DataWave is a Java-based ingest and query framework that leverages Apache Accumulo to provide fast, secure access to your data.</description>
@@ -16,12 +16,14 @@
     </licenses>
     <modules>
         <module>common-test</module>
+        <module>core</module>
         <module>web-services</module>
         <module>warehouse</module>
     </modules>
     <scm>
         <connection>scm:git:https://github.com/NationalSecurityAgency/datawave.git</connection>
         <developerConnection>scm:git:git@github.com:NationalSecurityAgency/datawave.git</developerConnection>
+        <tag>HEAD</tag>
         <url>https://github.com/NationalSecurityAgency/datawave</url>
     </scm>
     <properties>
@@ -29,7 +31,7 @@
         <maven.compiler.target>11</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <surefire.forkCount>1C</surefire.forkCount>
-        <version.accumulo>2.1.0</version.accumulo>
+        <version.accumulo>2.1.1</version.accumulo>
         <version.arquillian>1.4.1.Final</version.arquillian>
         <version.arquillian-weld-ee-embedded>1.0.0.Final</version.arquillian-weld-ee-embedded>
         <version.assertj>3.20.2</version.assertj>
@@ -51,17 +53,18 @@
         <version.curator>5.2.0</version.curator>
         <version.deltaspike>1.9.0</version.deltaspike>
         <version.easymock>4.0.2</version.easymock>
+        <version.eclipse.emf>2.15.0</version.eclipse.emf>
         <version.geoserver>2.22.1</version.geoserver>
         <version.geotools>28.1</version.geotools>
         <version.geowave>1.2.0</version.geowave>
         <version.google-guava>31.1-jre</version.google-guava>
         <version.googlecode-findbugs>2.0.3</version.googlecode-findbugs>
         <version.googlecode-json-simple>1.1.1</version.googlecode-json-simple>
-        <version.hadoop>3.3.3</version.hadoop>
+        <version.hadoop>3.3.5</version.hadoop>
         <version.hadoop-shaded>1.1.1</version.hadoop-shaded>
         <version.httpcomponents-httpclient>4.5.13</version.httpcomponents-httpclient>
         <version.httpcomponents-httpcore>4.4.8</version.httpcomponents-httpcore>
-        <version.in-memory-accumulo>2.1.0</version.in-memory-accumulo>
+        <version.in-memory-accumulo>3.0.1</version.in-memory-accumulo>
         <version.infinispan>9.4.21.Final</version.infinispan>
         <version.jackson>2.10.0.pr1</version.jackson>
         <version.javassist>3.24.0-GA</version.javassist>
@@ -79,19 +82,21 @@
         <version.kryonet>2.20</version.kryonet>
         <version.log4j2>2.17.2</version.log4j2>
         <version.lucene>7.5.0</version.lucene>
+        <version.maven-install-plugin>2.5.2</version.maven-install-plugin>
         <version.metrics-cdi>1.6.0</version.metrics-cdi>
-        <version.microservice.accumulo-api>2.1.0</version.microservice.accumulo-api>
-        <version.microservice.accumulo-utils>2.1.1</version.microservice.accumulo-utils>
-        <version.microservice.audit-api>2.1.0</version.microservice.audit-api>
-        <version.microservice.authorization-api>2.1.0</version.microservice.authorization-api>
-        <version.microservice.base-rest-responses>2.1.0</version.microservice.base-rest-responses>
-        <version.microservice.common-utils>1.1</version.microservice.common-utils>
-        <version.microservice.dictionary-api>2.1.0</version.microservice.dictionary-api>
-        <version.microservice.metadata-utils>2.1.1</version.microservice.metadata-utils>
-        <version.microservice.metrics-reporter>1.3</version.microservice.metrics-reporter>
-        <version.microservice.query-metric-api>1.5.7</version.microservice.query-metric-api>
-        <version.microservice.type-utils>1.14</version.microservice.type-utils>
+        <version.microservice.accumulo-api>3.0.0</version.microservice.accumulo-api>
+        <version.microservice.accumulo-utils>3.0.1</version.microservice.accumulo-utils>
+        <version.microservice.audit-api>3.0.0</version.microservice.audit-api>
+        <version.microservice.authorization-api>3.0.0</version.microservice.authorization-api>
+        <version.microservice.base-rest-responses>3.0.0</version.microservice.base-rest-responses>
+        <version.microservice.common-utils>2.0.0</version.microservice.common-utils>
+        <version.microservice.dictionary-api>3.0.0</version.microservice.dictionary-api>
+        <version.microservice.metadata-utils>3.0.0</version.microservice.metadata-utils>
+        <version.microservice.metrics-reporter>2.0.0</version.microservice.metrics-reporter>
+        <version.microservice.query-metric-api>3.0.0</version.microservice.query-metric-api>
+        <version.microservice.type-utils>2.0.1</version.microservice.type-utils>
         <version.minlog>1.2</version.minlog>
+        <version.mockito>2.23.0</version.mockito>
         <version.mysql-connector>8.0.16</version.mysql-connector>
         <version.netty>4.1.42.Final</version.netty>
         <version.objenesis>2.1</version.objenesis>
@@ -116,7 +121,6 @@
         <version.xerces>2.12.2</version.xerces>
         <version.zookeeper>3.8.1</version.zookeeper>
         <!-- Unless a version is duplicated multiple times, just place the version on the dependency in dependencyManagement. -->
-        <!-- <runOrder>random</runOrder> -->
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -300,7 +304,7 @@
                 </exclusions>
             </dependency>
             <dependency>
-                <groupId>gov.nsa.datawave.contrib</groupId>
+                <groupId>gov.nsa.datawave</groupId>
                 <artifactId>datawave-in-memory-accumulo</artifactId>
                 <version>${version.in-memory-accumulo}</version>
                 <exclusions>
@@ -398,6 +402,10 @@
                     <exclusion>
                         <groupId>org.slf4j</groupId>
                         <artifactId>slf4j-log4j12</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-reload4j</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -655,6 +663,16 @@
             </dependency>
             <dependency>
                 <groupId>org.apache.hadoop</groupId>
+                <artifactId>hadoop-client-api</artifactId>
+                <version>${version.hadoop}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.hadoop</groupId>
+                <artifactId>hadoop-client-runtime</artifactId>
+                <version>${version.hadoop}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.hadoop</groupId>
                 <artifactId>hadoop-common</artifactId>
                 <version>${version.hadoop}</version>
                 <exclusions>
@@ -785,6 +803,21 @@
                 <groupId>org.apache.zookeeper</groupId>
                 <artifactId>zookeeper</artifactId>
                 <version>${version.zookeeper}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.emf</groupId>
+                <artifactId>org.eclipse.emf.common</artifactId>
+                <version>${version.eclipse.emf}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.emf</groupId>
+                <artifactId>org.eclipse.emf.ecore</artifactId>
+                <version>${version.eclipse.emf}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.emf</groupId>
+                <artifactId>org.eclipse.emf.ecore.xmi</artifactId>
+                <version>${version.eclipse.emf}</version>
             </dependency>
             <dependency>
                 <groupId>org.geoserver</groupId>
@@ -938,10 +971,6 @@
                     <exclusion>
                         <groupId>org.apache.commons</groupId>
                         <artifactId>commons-lang3</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.eclipse.emf</groupId>
-                        <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -1111,6 +1140,12 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-core</artifactId>
+                <version>${version.mockito}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
                 <groupId>org.powermock</groupId>
                 <artifactId>powermock-api-easymock</artifactId>
                 <version>${version.powermock}</version>
@@ -1131,28 +1166,6 @@
         </dependencies>
     </dependencyManagement>
     <repositories>
-        <!--
-        <repository>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-            <id>todo-public</id>
-            <url>https://todo/nexus/content/groups/public</url>
-        </repository>
-        <repository>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-            <id>todo-public-snapshots</id>
-            <url>https://todo/nexus/content/groups/public-snapshots</url>
-        </repository>
-        -->
         <repository>
             <!--
                 This repository is a temporary work-around until we can public artifacts to maven central.
@@ -1277,12 +1290,33 @@
                 </plugin>
                 <plugin>
                     <groupId>net.revelc.code</groupId>
-                    <artifactId>formatter-maven-plugin</artifactId>
-                    <version>0.5.2</version>
+                    <artifactId>impsort-maven-plugin</artifactId>
+                    <version>1.9.0</version>
                     <configuration>
+                        <groups>java.,javax.,org.,com.</groups>
+                        <staticGroups>java,*</staticGroups>
+                        <excludes>
+                            <exclude>**/thrift/*.java</exclude>
+                        </excludes>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <id>sort-imports</id>
+                            <goals>
+                                <goal>sort</goal>
+                            </goals>
+                            <phase>process-sources</phase>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>net.revelc.code.formatter</groupId>
+                    <artifactId>formatter-maven-plugin</artifactId>
+                    <version>2.18.0</version>
+                    <configuration>
+                        <removeTrailingWhitespace>true</removeTrailingWhitespace>
                         <configFile>eclipse/Eclipse-Datawave-Codestyle.xml</configFile>
                         <lineEnding>LF</lineEnding>
-                        <overrideConfigCompilerVersion>true</overrideConfigCompilerVersion>
                         <compilerSource>${maven.compiler.source}</compilerSource>
                         <compilerCompliance>${maven.compiler.source}</compilerCompliance>
                         <compilerTargetPlatform>${maven.compiler.target}</compilerTargetPlatform>
@@ -1362,7 +1396,6 @@
                     <version>3.8.1</version>
                     <configuration>
                         <encoding>UTF-8</encoding>
-                        <optimize>true</optimize>
                         <showDeprecation>true</showDeprecation>
                         <showWarnings>true</showWarnings>
                         <source>${maven.compiler.source}</source>
@@ -1461,6 +1494,11 @@
                             </goals>
                         </execution>
                     </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-install-plugin</artifactId>
+                    <version>${version.maven-install-plugin}</version>
                 </plugin>
                 <plugin>
                     <artifactId>maven-jar-plugin</artifactId>
@@ -1657,7 +1695,47 @@
                     </plugin>
                     <plugin>
                         <groupId>net.revelc.code</groupId>
+                        <artifactId>impsort-maven-plugin</artifactId>
+                    </plugin>
+                    <plugin>
+                        <groupId>net.revelc.code.formatter</groupId>
                         <artifactId>formatter-maven-plugin</artifactId>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-enforcer-plugin</artifactId>
+                        <version>3.3.0</version>
+                        <dependencies>
+                            <dependency>
+                                <groupId>de.skuzzle.enforcer</groupId>
+                                <artifactId>restrict-imports-enforcer-rule</artifactId>
+                                <version>2.3.1</version>
+                            </dependency>
+                        </dependencies>
+                        <executions>
+                            <execution>
+                                <id>prevent-star-imports</id>
+                                <goals>
+                                    <goal>enforce</goal>
+                                </goals>
+                                <!-- put an explanatory ID here -->
+                                <phase>process-sources</phase>
+                                <configuration>
+                                    <rules>
+                                        <RestrictImports>
+                                            <!-- This should be able to catch ALL starred imports, regardless of package or junit version. -->
+                                            <reason>Please remove starred (datawave.* etc) patterns before attempting build.</reason>
+                                            <bannedImport>**.'*'</bannedImport>
+                                        </RestrictImports>
+                                        <RestrictImports>
+                                            <!-- This should be able to catch ALL starred imports, regardless of package or junit version. -->
+                                            <reason>Please remove junit.framework imports before attempting to build.</reason>
+                                            <bannedImport>junit.framework.**</bannedImport>
+                                        </RestrictImports>
+                                    </rules>
+                                </configuration>
+                            </execution>
+                        </executions>
                     </plugin>
                 </plugins>
             </build>
@@ -1700,7 +1778,7 @@
                                 <phase>package</phase>
                                 <configuration>
                                     <encoding>UTF-8</encoding>
-                                    <destDir>${project.build.directory}/apidocs</destDir>
+                                    <outputDirectory>${project.build.directory}/apidocs</outputDirectory>
                                     <additionalJOption>-J-Xmx768m</additionalJOption>
                                     <tags>
                                         <tag>
@@ -1765,6 +1843,17 @@
                     </plugin>
                 </plugins>
             </build>
+        </profile>
+        <profile>
+            <id>microservices</id>
+            <activation>
+                <property>
+                    <name>!skipMicroservices</name>
+                </property>
+            </activation>
+            <modules>
+                <module>microservices</module>
+            </modules>
         </profile>
         <profile>
             <id>dev</id>
@@ -1899,9 +1988,8 @@
                                         </pluginExecution>
                                         <pluginExecution>
                                             <pluginExecutionFilter>
-                                                <groupId>net.revelc.code</groupId>
+                                                <groupId>net.revelc.code.formatter</groupId>
                                                 <artifactId>formatter-maven-plugin</artifactId>
-                                                <versionRange>[0.5.0,)</versionRange>
                                                 <goals>
                                                     <goal>format</goal>
                                                 </goals>
@@ -1985,6 +2073,71 @@
                     <plugin>
                         <groupId>com.github.spotbugs</groupId>
                         <artifactId>spotbugs-maven-plugin</artifactId>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>sortimport</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>net.revelc.code</groupId>
+                        <artifactId>impsort-maven-plugin</artifactId>
+                        <version>1.9.0</version>
+                        <configuration>
+                            <groups>java.,javax.,org.,com.</groups>
+                            <staticGroups>java,*</staticGroups>
+                            <excludes>
+                                <exclude>**/thrift/*.java</exclude>
+                            </excludes>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>sort-imports</id>
+                                <goals>
+                                    <goal>sort</goal>
+                                    <!-- runs at process-sources phase by default -->
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>checkVersion</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-enforcer-plugin</artifactId>
+                        <version>3.3.0</version>
+                        <executions>
+                            <execution>
+                                <id>enforce-versions</id>
+                                <goals>
+                                    <goal>enforce</goal>
+                                </goals>
+                                <configuration>
+                                    <rules>
+                                        <dependencyConvergence>
+                                            <excludes>
+                                                <exclude>tech.units:indriya</exclude>
+                                                <exclude>org.apache.commons:*</exclude>
+                                                <exclude>si.uom:si-quantity</exclude>
+                                                <exclude>commons-net:commons-net</exclude>
+                                                <exclude>io.dropwizard.metrics:metrics-core</exclude>
+                                                <exclude>com.google.inject:*</exclude>
+                                                <exclude>com.google.inject.extensions:*</exclude>
+                                                <exclude>com.google.code.gson:gson</exclude>
+                                                <exclude>org.apache.zookeeper:zookeeper-jute</exclude>
+                                            </excludes>
+                                        </dependencyConvergence>
+                                    </rules>
+                                </configuration>
+                            </execution>
+                        </executions>
                     </plugin>
                 </plugins>
             </build>

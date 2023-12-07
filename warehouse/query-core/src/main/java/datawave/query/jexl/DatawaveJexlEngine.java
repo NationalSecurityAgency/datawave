@@ -12,29 +12,29 @@ import org.apache.commons.logging.Log;
 
 /**
  * Extension of the JexlEngine.
- * 
+ *
  */
 public class DatawaveJexlEngine extends JexlEngine {
-    
+
     public DatawaveJexlEngine() {
         super();
         setDebug(false);
         registerFunctions();
     }
-    
+
     public DatawaveJexlEngine(Uberspect anUberspect, JexlArithmetic anArithmetic, Map<String,Object> theFunctions, Log log) {
         super(anUberspect, anArithmetic, theFunctions, log);
     }
-    
+
     private void registerFunctions() {
         this.setFunctions(ArithmeticJexlEngines.functions());
     }
-    
+
     @Override
     protected Interpreter createInterpreter(JexlContext context, boolean strictFlag, boolean silentFlag) {
         return new DatawaveInterpreter(this, context, strictFlag, silentFlag);
     }
-    
+
     public ASTJexlScript parse(CharSequence expression) {
         return super.parse(expression, null, null);
     }

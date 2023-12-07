@@ -11,7 +11,7 @@ import org.apache.hadoop.io.WritableComparable;
 public interface SourcedFunction<A,B> extends com.google.common.base.Function<A,B> {
     /**
      * Initializes the iterator. Data should not be read from the source in this method.
-     * 
+     *
      * @param source
      *            <code>SortedKeyValueIterator</code> source to read data from.
      * @param options

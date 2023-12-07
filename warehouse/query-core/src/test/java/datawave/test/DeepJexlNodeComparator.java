@@ -1,10 +1,11 @@
 package datawave.test;
 
-import datawave.query.jexl.visitors.PrintingVisitor;
-import datawave.query.jexl.visitors.TreeEqualityVisitor;
+import java.util.Comparator;
+
 import org.apache.commons.jexl2.parser.JexlNode;
 
-import java.util.Comparator;
+import datawave.query.jexl.visitors.PrintingVisitor;
+import datawave.query.jexl.visitors.TreeEqualityVisitor;
 
 /**
  * Performs a full comparison of two nodes. This comparator is intended to be used by classes such as {@link JexlNodeIterableAssert} and
@@ -12,9 +13,9 @@ import java.util.Comparator;
  * This comparator should be used only for equality checks, and should not be used for any order-dependent assertions.
  */
 public class DeepJexlNodeComparator implements Comparator<JexlNode> {
-    
+
     private static final ShallowJexlNodeComparator SHALLOW_COMPARATOR = new ShallowJexlNodeComparator();
-    
+
     @Override
     public int compare(JexlNode first, JexlNode second) {
         // Perform shallow comparisons first of the nodes and their parents to find any immediate differences before performing a deeper comparison.

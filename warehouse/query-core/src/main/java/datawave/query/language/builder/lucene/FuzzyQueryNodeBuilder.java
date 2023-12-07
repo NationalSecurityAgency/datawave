@@ -16,7 +16,6 @@ package datawave.query.language.builder.lucene;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 import org.apache.lucene.queryparser.flexible.core.QueryNodeException;
 import org.apache.lucene.queryparser.flexible.core.builders.QueryBuilder;
 import org.apache.lucene.queryparser.flexible.core.nodes.FuzzyQueryNode;
@@ -28,9 +27,9 @@ import org.apache.lucene.search.FuzzyQuery;
  */
 @Deprecated
 public class FuzzyQueryNodeBuilder implements QueryBuilder {
-    
+
     public FuzzyQuery build(QueryNode queryNode) throws QueryNodeException {
         throw new UnsupportedOperationException(getClass().getName() + " not implemented");
     }
-    
+
 }

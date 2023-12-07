@@ -1,13 +1,12 @@
 package datawave.query.jexl.visitors;
 
-import datawave.microservice.querymetric.QueryMetric;
-import datawave.query.exceptions.DatawaveFatalQueryException;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.nodes.BoundedRange;
-import datawave.query.jexl.nodes.QueryPropertyMarker;
-import datawave.webservice.query.QueryImpl.Parameter;
-import datawave.webservice.query.exception.DatawaveErrorCode;
-import datawave.webservice.query.exception.QueryException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Scanner;
+import java.util.Set;
+import java.util.TreeSet;
+
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ASTOrNode;
@@ -16,12 +15,14 @@ import org.apache.commons.jexl2.parser.ASTReferenceExpression;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParseException;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Scanner;
-import java.util.Set;
-import java.util.TreeSet;
+import datawave.microservice.querymetric.BaseQueryMetric;
+import datawave.query.exceptions.DatawaveFatalQueryException;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.nodes.BoundedRange;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
+import datawave.webservice.query.QueryImpl.Parameter;
+import datawave.webservice.query.exception.DatawaveErrorCode;
+import datawave.webservice.query.exception.QueryException;
 
 /**
  * A Jexl visitor which builds an equivalent Jexl query in a formatted manner. Formatted meaning parenthesis are added on one line, and children are added on a
@@ -29,19 +30,19 @@ import java.util.TreeSet;
  */
 public class JexlFormattedStringBuildingVisitor extends JexlStringBuildingVisitor {
     protected static final String NEWLINE = System.getProperty("line.separator");
-    
+
     public JexlFormattedStringBuildingVisitor() {
         super(false);
     }
-    
+
     public JexlFormattedStringBuildingVisitor(boolean sortDedupeChildren) {
         super(sortDedupeChildren);
     }
-    
+
     /**
      * Given a query String separated into lines consisting of expressions, open parenthesis, and closing parenthesis, format the string to be indented properly
      * (add necessary number of tab characters to each line). This is called after all the nodes have been visited to finalize the formatting of the query.
-     * 
+     *
      * @param query
      *            a query
      * @return the final formatted String
@@ -49,7 +50,7 @@ public class JexlFormattedStringBuildingVisitor extends JexlStringBuildingVisito
     private static String formatBuiltQuery(String query) {
         String res = "";
         int numTabs = 0;
-        
+
         String[] lines = query.split(NEWLINE);
         // Go through all the lines
         for (String line : lines) {
@@ -77,13 +78,13 @@ public class JexlFormattedStringBuildingVisitor extends JexlStringBuildingVisito
                 res += line;
             }
         }
-        
+
         return res;
     }
-    
+
     /**
      * Returns true if str contains only ch characters (1 or more). False otherwise.
-     * 
+     *
      * @param str
      *            the str
      * @param ch
@@ -93,10 +94,10 @@ public class JexlFormattedStringBuildingVisitor extends JexlStringBuildingVisito
     private static boolean containsOnly(String str, char ch) {
         return str.matches("^[" + ch + "]+$");
     }
-    
+
     /**
      * Returns true if a string contains only closing parenthesis (1 or more) followed by the and or or operator
-     * 
+     *
      * @param str
      *            the str
      * @return boolean
@@ -104,12 +105,12 @@ public class JexlFormattedStringBuildingVisitor extends JexlStringBuildingVisito
     private static boolean closeParensFollowedByAndOr(String str) {
         return str.matches("^([)]+ (&&|\\|\\|) )$");
     }
-    
+
     /**
      * Determines whether a JexlNode should be formatted on multiple lines or not. If this node is a bounded marker node OR if this node is a marker node which
      * has a child bounded marker node OR if this node is a marker node with a single term as a child, then return false (should all be one line). Otherwise,
      * return true.
-     * 
+     *
      * @param node
      *            a node
      * @return boolean
@@ -121,13 +122,13 @@ public class JexlFormattedStringBuildingVisitor extends JexlStringBuildingVisito
         boolean childHasBoundedRange = false;
         // Whether or not this node is a marker node which has a child bounded marker node
         boolean markerWithSingleTerm = false;
-        
+
         for (int i = 0; i < numChildren; i++) {
             if (QueryPropertyMarker.findInstance(node.jjtGetChild(i)).isType(BoundedRange.class)) {
                 childHasBoundedRange = true;
             }
         }
-        
+
         if (numChildren == 2) {
             if (QueryPropertyMarker.findInstance(node).isAnyType() && node.jjtGetChild(1) instanceof ASTReference
                             && node.jjtGetChild(1).jjtGetChild(0) instanceof ASTReferenceExpression
@@ -136,7 +137,7 @@ public class JexlFormattedStringBuildingVisitor extends JexlStringBuildingVisito
                 markerWithSingleTerm = true;
             }
         }
-        
+
         // If this node is a bounded marker node OR if this node is a marker node which has a child bounded marker node
         // OR if this node is a marker node with a single term as a child, then
         // we don't want to add any new lines on this visit or on visits to this nodes children
@@ -144,13 +145,13 @@ public class JexlFormattedStringBuildingVisitor extends JexlStringBuildingVisito
                         || markerWithSingleTerm) {
             needNewLines = false;
         }
-        
+
         return needNewLines;
     }
-    
+
     /**
      * Build a String that is the equivalent JEXL query.
-     * 
+     *
      * @param script
      *            An ASTJexlScript
      * @param sortDedupeChildren
@@ -160,33 +161,33 @@ public class JexlFormattedStringBuildingVisitor extends JexlStringBuildingVisito
      */
     public static String buildQuery(JexlNode script, boolean sortDedupeChildren) {
         JexlFormattedStringBuildingVisitor visitor = new JexlFormattedStringBuildingVisitor(sortDedupeChildren);
-        
+
         String s = null;
         try {
             StringBuilder sb = (StringBuilder) script.jjtAccept(visitor, new StringBuilder());
-            
+
             s = sb.toString();
-            
+
             try {
                 JexlASTHelper.parseJexlQuery(s);
             } catch (ParseException e) {
                 log.error("Could not parse JEXL AST after performing transformations to run the query", e);
-                
+
                 for (String line : PrintingVisitor.formattedQueryStringList(script)) {
                     log.error(line);
                 }
                 log.error("");
-                
+
                 QueryException qe = new QueryException(DatawaveErrorCode.QUERY_EXECUTION_ERROR, e);
                 throw new DatawaveFatalQueryException(qe);
             }
         } catch (StackOverflowError e) {
-            
+
             throw e;
         }
         return formatBuiltQuery(s);
     }
-    
+
     /**
      * Build a String that is the equivalent JEXL query.
      *
@@ -197,10 +198,10 @@ public class JexlFormattedStringBuildingVisitor extends JexlStringBuildingVisito
     public static String buildQuery(JexlNode script) {
         return buildQuery(script, false);
     }
-    
+
     /**
      * Build a String that is the equivalent JEXL query.
-     * 
+     *
      * @param script
      *            An ASTJexlScript
      * @param sortDedupeChildren
@@ -210,19 +211,19 @@ public class JexlFormattedStringBuildingVisitor extends JexlStringBuildingVisito
      */
     public static String buildQueryWithoutParse(JexlNode script, boolean sortDedupeChildren) {
         JexlFormattedStringBuildingVisitor visitor = new JexlFormattedStringBuildingVisitor(sortDedupeChildren);
-        
+
         String s = null;
         try {
             StringBuilder sb = (StringBuilder) script.jjtAccept(visitor, new StringBuilder());
-            
+
             s = sb.toString();
         } catch (StackOverflowError e) {
-            
+
             throw e;
         }
         return formatBuiltQuery(s);
     }
-    
+
     /**
      * Build a String that is the equivalent JEXL query.
      *
@@ -233,19 +234,19 @@ public class JexlFormattedStringBuildingVisitor extends JexlStringBuildingVisito
     public static String buildQueryWithoutParse(JexlNode script) {
         return buildQueryWithoutParse(script, false);
     }
-    
+
     @Override
     public Object visit(ASTOrNode node, Object data) {
         StringBuilder sb = (StringBuilder) data;
         int numChildren = node.jjtGetNumChildren();
         JexlNode parent = node.jjtGetParent();
         boolean wrapIt = false;
-        
+
         if (!(parent instanceof ASTReferenceExpression || parent instanceof ASTJexlScript || parent instanceof ASTOrNode || numChildren == 0)) {
             wrapIt = true;
             sb.append("(");
         }
-        
+
         Collection<String> childStrings = (sortDedupeChildren) ? new TreeSet<>() : new ArrayList<>(numChildren);
         StringBuilder childSB = new StringBuilder();
         for (int i = 0; i < numChildren; i++) {
@@ -254,13 +255,13 @@ public class JexlFormattedStringBuildingVisitor extends JexlStringBuildingVisito
             childSB.setLength(0);
         }
         sb.append(String.join(" || " + NEWLINE, childStrings));
-        
+
         if (wrapIt)
             sb.append(")");
-        
+
         return data;
     }
-    
+
     @Override
     public Object visit(ASTAndNode node, Object data) {
         StringBuilder sb = (StringBuilder) data;
@@ -268,12 +269,12 @@ public class JexlFormattedStringBuildingVisitor extends JexlStringBuildingVisito
         int numChildren = node.jjtGetNumChildren();
         JexlNode parent = node.jjtGetParent();
         boolean wrapIt = false;
-        
+
         if (!(parent instanceof ASTReferenceExpression || parent instanceof ASTJexlScript || parent instanceof ASTAndNode || numChildren == 0)) {
             wrapIt = true;
             sb.append("(");
         }
-        
+
         Collection<String> childStrings = (sortDedupeChildren) ? new TreeSet<>() : new ArrayList<>(numChildren);
         Collection<String> childStringsFormatted = (sortDedupeChildren) ? new TreeSet<>() : new ArrayList<>(numChildren);
         StringBuilder childSB = new StringBuilder();
@@ -287,24 +288,24 @@ public class JexlFormattedStringBuildingVisitor extends JexlStringBuildingVisito
             childStringsFormatted.add(needNewLines ? childString : childString.replace(NEWLINE, ""));
         }
         sb.append(String.join(" && " + (needNewLines ? NEWLINE : ""), childStringsFormatted));
-        
+
         if (wrapIt)
             sb.append(")");
-        
+
         return data;
     }
-    
+
     @Override
     public Object visit(ASTReferenceExpression node, Object data) {
         JexlNode child = node.jjtGetChild(0);
         boolean needNewLines = false;
-        
+
         if ((child instanceof ASTAndNode || child instanceof ASTOrNode) && needNewLines(child)) {
             needNewLines = true;
         }
         StringBuilder sb = (StringBuilder) data;
         sb.append("(" + (needNewLines ? NEWLINE : ""));
-        
+
         int lastsize = sb.length();
         node.childrenAccept(this, sb);
         if (sb.length() == lastsize) {
@@ -314,15 +315,14 @@ public class JexlFormattedStringBuildingVisitor extends JexlStringBuildingVisito
         }
         return sb;
     }
-    
-    public static List<QueryMetric> formatMetrics(List<QueryMetric> metrics) {
-        List<QueryMetric> updatedMetrics = new ArrayList<QueryMetric>();
-        
+
+    public static <T extends BaseQueryMetric> List<T> formatMetrics(List<T> metrics) {
+        List<T> updatedMetrics = new ArrayList<>();
         // For each metric, update the query to be formatted (if applicable) and update
         // the plan to be formatted
-        for (QueryMetric metric : metrics) {
+        for (BaseQueryMetric metric : metrics) {
             JexlNode queryNode = null, planNode = null;
-            QueryMetric updatedMetric = new QueryMetric(metric);
+            T updatedMetric = (T) metric.duplicate();
             String query = updatedMetric.getQuery();
             String plan = updatedMetric.getPlan();
             // If it is a JEXL query, set the query to be formatted
@@ -332,7 +332,7 @@ public class JexlFormattedStringBuildingVisitor extends JexlStringBuildingVisito
                     updatedMetric.setQuery(buildQuery(queryNode));
                 } catch (ParseException e) {
                     log.error("Could not parse JEXL AST after performing transformations to run the query", e);
-                    
+
                     if (log.isTraceEnabled()) {
                         log.trace(PrintingVisitor.formattedQueryString(queryNode));
                     }
@@ -345,7 +345,7 @@ public class JexlFormattedStringBuildingVisitor extends JexlStringBuildingVisito
                     updatedMetric.setPlan(buildQuery(planNode));
                 } catch (ParseException e) {
                     log.error("Could not parse JEXL AST after performing transformations to run the query", e);
-                    
+
                     if (log.isTraceEnabled()) {
                         log.trace(PrintingVisitor.formattedQueryString(planNode));
                     }
@@ -353,17 +353,17 @@ public class JexlFormattedStringBuildingVisitor extends JexlStringBuildingVisito
             }
             updatedMetrics.add(updatedMetric);
         }
-        
+
         return updatedMetrics;
     }
-    
+
     private static boolean isJexlQuery(Set<Parameter> params) {
         return params.stream().anyMatch(p -> p.getParameterName().equals("query.syntax") && p.getParameterValue().equals("JEXL"));
     }
-    
+
     public static void main(String args[]) {
         String query;
-        
+
         if (args.length != 1) {
             Scanner scanner = new Scanner(System.in);
             query = scanner.nextLine();

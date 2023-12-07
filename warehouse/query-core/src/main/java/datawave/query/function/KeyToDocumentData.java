@@ -1,18 +1,19 @@
 package datawave.query.function;
 
-import com.google.common.base.Function;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import datawave.data.hash.UID;
-import datawave.data.hash.UIDConstants;
-import datawave.query.attributes.Document;
-import datawave.query.exceptions.DatawaveFatalQueryException;
-import datawave.query.iterator.QueryOptions;
-import datawave.query.iterator.aggregation.DocumentData;
-import datawave.query.predicate.EventDataQueryFilter;
-import datawave.query.util.Tuple3;
-import datawave.webservice.query.exception.DatawaveErrorCode;
-import datawave.webservice.query.exception.QueryException;
+import static datawave.query.Constants.EMPTY_VALUE;
+
+import java.io.IOException;
+import java.lang.ref.WeakReference;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+
 import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
@@ -27,64 +28,64 @@ import org.apache.commons.lang.mutable.MutableInt;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
-import java.io.IOException;
-import java.lang.ref.WeakReference;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
+import com.google.common.base.Function;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
-import static datawave.query.Constants.EMPTY_VALUE;
+import datawave.data.hash.UID;
+import datawave.data.hash.UIDConstants;
+import datawave.query.attributes.Document;
+import datawave.query.exceptions.DatawaveFatalQueryException;
+import datawave.query.iterator.QueryOptions;
+import datawave.query.iterator.aggregation.DocumentData;
+import datawave.query.predicate.EventDataQueryFilter;
+import datawave.query.util.Tuple3;
+import datawave.webservice.query.exception.DatawaveErrorCode;
+import datawave.webservice.query.exception.QueryException;
 
 /**
  * This class aggregates all event data for a given 'document key'.
  */
 public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<DocumentData,Document>> {
-    
+
     private static final Logger log = Logger.getLogger(KeyToDocumentData.class);
-    
+
     protected SortedKeyValueIterator<Key,Value> source;
-    
+
     private static final ByteSequence EMPTY_BYTE_SEQUENCE = new ArrayByteSequence(new byte[] {});
-    
+
     protected static final Collection<ByteSequence> columnFamilies = Lists.newArrayList(new ArrayByteSequence("tf"), new ArrayByteSequence("d"));
     protected static final boolean inclusive = false;
-    
+
     private final DescendantCountFunction countFunction;
-    
+
     protected Equality equality;
-    
+
     private final EventDataQueryFilter filter;
-    
+
     // default implementation
     protected RangeProvider rangeProvider = new DocumentRangeProvider();
-    
+
     private boolean includeParent = false;
 
-    //  track aggregation threshold and the time
+    // track aggregation threshold and the time
     private long aggregationStart;
     private long aggregationStop;
     private int aggregationThreshold;
 
-    
     public KeyToDocumentData(SortedKeyValueIterator<Key,Value> source) {
         this(source, new PrefixEquality(PartialKey.ROW_COLFAM), false, false);
     }
-    
+
     public KeyToDocumentData(SortedKeyValueIterator<Key,Value> source, Equality equality, boolean includeChildCount, boolean includeParent) {
         this(source, equality, null, includeChildCount, includeParent);
     }
-    
+
     public KeyToDocumentData(SortedKeyValueIterator<Key,Value> source, Equality equality, EventDataQueryFilter filter, boolean includeChildCount,
                     boolean includeParent) {
         this(source, null, null, equality, filter, includeChildCount, includeParent);
     }
-    
+
     public KeyToDocumentData(final SortedKeyValueIterator<Key,Value> source, final IteratorEnvironment env, final Map<String,String> options,
                     final Equality equality, final EventDataQueryFilter filter, boolean includeChildCount, boolean includeParent) {
         // Initialize primary instance variables
@@ -92,7 +93,7 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
         this.equality = equality;
         this.filter = filter;
         this.includeParent = includeParent;
-        
+
         // Conditionally create and initialize the child count function
         if (includeChildCount) {
             this.countFunction = new DescendantCountFunction();
@@ -108,7 +109,7 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
             this.countFunction = null;
         }
     }
-    
+
     /**
      * Builder-style method for setting a non-default implementation of a {@link RangeProvider}
      *
@@ -123,14 +124,16 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
 
     /**
      * Builder-style method for setting the aggregation threshold
-     * @param aggregationThreshold a time in milliseconds
+     *
+     * @param aggregationThreshold
+     *            a time in milliseconds
      * @return this object
      */
-    public KeyToDocumentData withAggregationThreshold(int aggregationThreshold){
+    public KeyToDocumentData withAggregationThreshold(int aggregationThreshold) {
         this.aggregationThreshold = aggregationThreshold;
         return this;
     }
-    
+
     /**
      * Append hierarchy fields, including parent and descendant counts, based on the specified range and key
      *
@@ -147,7 +150,7 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
     public List<Entry<Key,Value>> appendHierarchyFields(final List<Entry<Key,Value>> documentAttributes, final Range range, final Key key) throws IOException {
         return appendHierarchyFields(documentAttributes, key, range, countFunction, includeParent);
     }
-    
+
     @Override
     public Entry<DocumentData,Document> apply(Entry<Key,Document> from) {
         // We want to ensure that we have a non-empty colqual
@@ -156,14 +159,14 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
         }
 
         Range keyRange = rangeProvider.getRange(from.getKey());
-        
+
         try {
             logStart();
             source.seek(keyRange, columnFamilies, inclusive);
-            
+
             if (log.isDebugEnabled())
                 log.debug(source.hasTop() + " Key range is " + keyRange);
-            
+
             final List<Entry<Key,Value>> attrs; // Assign only once for
             // efficiency
             final Set<Key> docKeys = new HashSet<>();
@@ -182,7 +185,7 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
             throw new DatawaveFatalQueryException(qe);
         }
     }
-    
+
     /**
      * Given a Key pointing to the start of a document to aggregate, construct a list of attributes, adding the names of the attributes to the specified set of
      * "docKeys".
@@ -200,7 +203,7 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
     public List<Entry<Key,Value>> collectDocumentAttributes(final Key documentStartKey, final Set<Key> docKeys, final Range keyRange) throws IOException {
         return collectAttributesForDocumentKey(documentStartKey, source, equality, filter, docKeys, keyRange);
     }
-    
+
     /**
      * Given a Key pointing to the start of an document to aggregate, construct a Range that should encapsulate the "document" to be aggregated together. Also
      * checks to see if data was found for the constructed Range before returning.
@@ -223,26 +226,26 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
      */
     private static List<Entry<Key,Value>> collectAttributesForDocumentKey(Key documentStartKey, SortedKeyValueIterator<Key,Value> source, Equality equality,
                     EventDataQueryFilter filter, Set<Key> docKeys, Range keyRange) throws IOException {
-        
+
         // set up the document key we are filtering for on the EventDataQueryFilter
         if (filter != null) {
             filter.startNewDocument(documentStartKey);
         }
-        
+
         final List<Entry<Key,Value>> documentAttributes;
         if (null == documentStartKey) {
             documentAttributes = Collections.emptyList();
         } else {
             documentAttributes = new ArrayList<>(256);
             WeakReference<Key> docAttrKey = new WeakReference<>(source.getTopKey());
-            
+
             while (docAttrKey != null) {
                 boolean seeked = false;
                 if (equality.partOf(documentStartKey, docAttrKey.get())) {
                     if (filter == null || filter.keep(docAttrKey.get())) {
                         docKeys.add(getDocKey(docAttrKey.get()));
                     }
-                    
+
                     if (filter == null || filter.apply(Maps.immutableEntry(docAttrKey.get(), StringUtils.EMPTY))) {
                         documentAttributes.add(Maps.immutableEntry(docAttrKey.get(), source.getTopValue()));
                     } else {
@@ -258,18 +261,18 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
                         }
                     }
                 }
-                
+
                 // only call next if this wasn't a fresh seek()
                 if (!seeked) {
                     source.next();
                 }
-                
+
                 if (source.hasTop()) {
                     docAttrKey = new WeakReference<>(source.getTopKey());
                 } else {
                     docAttrKey = null;
                 }
-                
+
             }
         }
         if (log.isTraceEnabled()) {
@@ -277,19 +280,20 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
         }
         return documentAttributes;
     }
-    
+
     // map the key to the dockey (only shard, datatype, uid)
     public static Key getDocKey(Key key) {
         final ByteSequence row = key.getRowData();
         final ByteSequence cf = key.getColumnFamilyData();
         final ByteSequence cv = key.getColumnVisibilityData();
-        return new Key(row.getBackingArray(), row.offset(), row.length(), cf.getBackingArray(), cf.offset(), cf.length(), EMPTY_BYTE_SEQUENCE.getBackingArray(), EMPTY_BYTE_SEQUENCE.offset(), EMPTY_BYTE_SEQUENCE.length(), cv.getBackingArray(), cv.offset(), cv.length(), key.getTimestamp());
+        return new Key(row.getBackingArray(), row.offset(), row.length(), cf.getBackingArray(), cf.offset(), cf.length(), EMPTY_BYTE_SEQUENCE.getBackingArray(),
+                        EMPTY_BYTE_SEQUENCE.offset(), EMPTY_BYTE_SEQUENCE.length(), cv.getBackingArray(), cv.offset(), cv.length(), key.getTimestamp());
     }
-    
+
     private static List<Entry<Key,Value>> appendHierarchyFields(List<Entry<Key,Value>> documentAttributes, Key key, Range seekRange,
                     DescendantCountFunction function, boolean includeParent) {
         if ((null != function) || includeParent) {
-            
+
             // get the minimal timestamp and majority visibility from the
             // attributes
             Map<String,MutableInt> visibilityCounts = new HashMap<>();
@@ -314,16 +318,16 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
                     count = visibilityCount.getValue().intValue();
                 }
             }
-            
+
             // parse out the datatype and uid
             String cf = key.getColumnFamily().toString();
             int index = cf.indexOf('\0');
             String uidString = cf.substring(index + 1);
             UID uid = UID.parse(uidString);
-            
+
             // Conditionally include the count(s) of descendants
             applyDescendantCounts(function, seekRange, key, documentAttributes, visibility, minTimestamp);
-            
+
             // include the parent uid
             if (includeParent && uid.getExtra() != null && !uid.getExtra().equals("")) {
                 String parentUid = uidString.substring(0, uidString.lastIndexOf(UIDConstants.DEFAULT_SEPARATOR));
@@ -332,10 +336,10 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
                 documentAttributes.add(Maps.immutableEntry(parentUidKey, EMPTY_VALUE));
             }
         }
-        
+
         return documentAttributes;
     }
-    
+
     private static int applyDescendantCounts(final DescendantCountFunction function, final Range range, final Key key,
                     final List<Entry<Key,Value>> documentAttributes, final String visibility, long timestamp) {
         int basicChildCount = 0;
@@ -344,12 +348,12 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
             // document attributes
             final Tuple3<Range,Key,List<Entry<Key,Value>>> tuple = new Tuple3<>(range, key, documentAttributes);
             final DescendantCount count = function.apply(tuple);
-            
+
             // No need to do any more work if there aren't any descendants
             if ((null != count) && count.hasDescendants()) {
                 // Extract the basic, first-generation count
                 basicChildCount = count.getFirstGenerationCount();
-                
+
                 // Get any generated keys, apply any specified visibility, and
                 // add to the document attributes
                 final List<Key> keys = count.getKeys();
@@ -361,7 +365,7 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
                     } else {
                         appliedVis = new Text();
                     }
-                    
+
                     // Conditionally adjust visibility and timestamp
                     for (final Key childCountKey : keys) {
                         final Text appliedRow = childCountKey.getRow();
@@ -373,14 +377,14 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
                         if (timestamp <= 0) {
                             timestamp = childCountKey.getTimestamp();
                         }
-                        
+
                         final Key appliedKey = new Key(appliedRow, appliedCf, appliedCq, appliedVis, timestamp);
                         documentAttributes.add(Maps.immutableEntry(appliedKey, EMPTY_VALUE));
                     }
                 }
             }
         }
-        
+
         return basicChildCount;
     }
 
@@ -399,7 +403,8 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
      * <p>
      * Logs the total aggregation time if the {@link #aggregationThreshold} is exceeded.
      *
-     * @param k the aggregation range's start key
+     * @param k
+     *            the aggregation range's start key
      */
     private void logStop(Key k) {
         if (aggregationThreshold == -1) {
@@ -409,7 +414,8 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
         aggregationStop = System.currentTimeMillis();
 
         if (aggregationThreshold > 0 && (aggregationStop - aggregationStart) > aggregationThreshold) {
-            log.warn("time to aggregate document " + k.getRow() + " " + k.getColumnFamily().toString().replace("\0", "0x00") + " was " + (aggregationStop - aggregationStart));
+            log.warn("time to aggregate document " + k.getRow() + " " + k.getColumnFamily().toString().replace("\0", "0x00") + " was "
+                            + (aggregationStop - aggregationStart));
         }
     }
 }

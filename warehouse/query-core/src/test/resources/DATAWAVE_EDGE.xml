@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Model xmlns="http://webservice.datawave/v1" name="DATAWAVE_EDGE">
+<Model xmlns="http://webservice.datawave.nsa/v1" name="DATAWAVE_EDGE">
     <!-- 
          NOTE:
         

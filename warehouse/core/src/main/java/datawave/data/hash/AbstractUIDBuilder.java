@@ -14,14 +14,14 @@ import org.apache.log4j.Logger;
 
 /**
  * Abstract implementation of the UIDBuilder
- * 
+ *
  * @param <UID_TYPE>
  *            - type of the AbstractUIDBuilder
  */
 public abstract class AbstractUIDBuilder<UID_TYPE extends UID> implements UIDBuilder<UID_TYPE> {
-    
+
     private static final Logger LOGGER = Logger.getLogger(AbstractUIDBuilder.class);
-    
+
     @Override
     public void configure(final Configuration config, final Option... options) {
         if (null != config) {
@@ -45,12 +45,12 @@ public abstract class AbstractUIDBuilder<UID_TYPE extends UID> implements UIDBui
                         } else {
                             value = null;
                         }
-                        
+
                         // Check for null
                         if (null != value) {
                             // Put the key and value into the map
                             uidOptions.put(key, option);
-                            
+
                             // Stop looping if we've got everything we need
                             if (uidOptions.size() >= 4) {
                                 break;
@@ -63,17 +63,17 @@ public abstract class AbstractUIDBuilder<UID_TYPE extends UID> implements UIDBui
             } else {
                 uidOptions = Collections.emptyMap();
             }
-            
+
             // Configure with the UID-specific options
             configure(config, uidOptions);
         }
     }
-    
+
     /*
      * Validate and configure UID properties
-     * 
+     *
      * @param config Hadoop configuration
-     * 
+     *
      * @param options the UID-specific configuration options
      */
     private void configure(final Configuration config, final Map<String,Option> options) {
@@ -99,7 +99,7 @@ public abstract class AbstractUIDBuilder<UID_TYPE extends UID> implements UIDBui
             LOGGER.warn(message, new IllegalArgumentException("Unrecognized UID type: " + invalidType));
         }
         config.set(CONFIG_UID_TYPE_KEY, uidType, this.getClass().getName());
-        
+
         // Configure Snowflake machine ID
         if (SnowflakeUID.class.getSimpleName().equals(uidType)) {
             int machineId = SnowflakeUIDBuilder.newMachineId(options);
@@ -118,7 +118,7 @@ public abstract class AbstractUIDBuilder<UID_TYPE extends UID> implements UIDBui
             }
         }
     }
-    
+
     @SuppressWarnings({"unchecked", "static-access"})
     @Override
     public UID_TYPE newId(final UID template, final String... extras) {
@@ -135,7 +135,7 @@ public abstract class AbstractUIDBuilder<UID_TYPE extends UID> implements UIDBui
         } else {
             validatedTemplate = null;
         }
-        
+
         // Return the validated template
         final UID_TYPE returnable;
         if (validatedTemplate instanceof HashUID) {
@@ -145,7 +145,7 @@ public abstract class AbstractUIDBuilder<UID_TYPE extends UID> implements UIDBui
         } else {
             returnable = (UID_TYPE) validatedTemplate;
         }
-        
+
         return returnable;
     }
 }

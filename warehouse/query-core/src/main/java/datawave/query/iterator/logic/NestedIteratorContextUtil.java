@@ -1,18 +1,19 @@
 package datawave.query.iterator.logic;
 
-import com.google.common.collect.TreeMultimap;
-import datawave.query.iterator.NestedIterator;
-import datawave.query.iterator.Util;
-
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import com.google.common.collect.TreeMultimap;
+
+import datawave.query.iterator.NestedIterator;
+import datawave.query.iterator.Util;
 
 /**
  * Class contains utilities for use on iterators that require context for evaluation
  */
 public class NestedIteratorContextUtil {
-    
+
     /**
      * Given a context for evaluation, get all contextRequiredIterators that need to be moved based upon the current head/null maps. Any contextRequiredIterator
      * with a headMap entry less than context or which has an entry in the nullHeadMap needs to be moved. If the iterator hasn't been used at all it will be
@@ -34,9 +35,9 @@ public class NestedIteratorContextUtil {
      */
     private static <T> Set<NestedIterator<T>> getIteratorsToMove(T context, List<NestedIterator<T>> contextRequiredIterators,
                     TreeMultimap<T,NestedIterator<T>> headMap, TreeMultimap<T,NestedIterator<T>> nullHeadMap) {
-        
+
         Set<NestedIterator<T>> sourcesToMove = new HashSet<>();
-        
+
         // find all the sources that have never been moved
         for (NestedIterator<T> source : contextRequiredIterators) {
             if (!headMap.values().contains(source) && !nullHeadMap.values().contains(source)) {
@@ -50,25 +51,25 @@ public class NestedIteratorContextUtil {
         }
         // take all previously seen keys that are less than context and move them again
         Set<T> keysToMove = headMap.keySet().headSet(context);
-        
+
         // find and remove these sources, note that they have now been removed from the headMap nothing should return early until they are re-added
         for (T key : keysToMove) {
             sourcesToMove.addAll(headMap.removeAll(key));
         }
-        
+
         // take all the nullHead map that need to be moved as well
         Set<T> nullKeysToMove = nullHeadMap.keySet().headSet(context);
         for (T key : nullKeysToMove) {
             sourcesToMove.addAll(nullHeadMap.removeAll(key));
         }
-        
+
         return sourcesToMove;
     }
-    
+
     /**
      * Process moves against the set of sources. Set the context and move each. Will update the headMap with new references except for null responses. A null
      * response indicates that the iterator had no key's left when moving to context
-     * 
+     *
      * @param context
      *            the context to be used
      * @param sourcesToMove
@@ -95,10 +96,10 @@ public class NestedIteratorContextUtil {
                 headMap.put(transformed, contextRequiredIterator);
             }
         }
-        
+
         return nullSources;
     }
-    
+
     /**
      * Intersect the List of context required NestedIterator with the context and return the highest T of the intersection or null if no intersection is
      * possible
@@ -122,7 +123,7 @@ public class NestedIteratorContextUtil {
                     TreeMultimap<T,NestedIterator<T>> nullHeadMap, Util.Transformer<T> transformer) {
         return applyContext(context, contextRequiredIterators, headMap, nullHeadMap, transformer, false);
     }
-    
+
     /**
      * Union the context with the contextRequiredIterators and return the lowest T of the intersection or null if no union is possible
      *
@@ -145,7 +146,7 @@ public class NestedIteratorContextUtil {
                     TreeMultimap<T,NestedIterator<T>> nullHeadMap, Util.Transformer<T> transformer) {
         return applyContext(context, contextRequiredIterators, headMap, nullHeadMap, transformer, true);
     }
-    
+
     /**
      * Apply a context to a List of contextRequiredIterators as either a union or intersection, taking into account previous state of the headmap and
      * nullHeadMap
@@ -172,16 +173,16 @@ public class NestedIteratorContextUtil {
         if (context == null) {
             return null;
         }
-        
+
         // no union with nothing
         if (headMap == null) {
             return null;
         }
-        
+
         Set<NestedIterator<T>> sourcesToMove = getIteratorsToMove(context, contextRequiredIterators, headMap, nullHeadMap);
         // null iterators from previous passes should always be moved again
         Set<NestedIterator<T>> nullSources = processMoves(context, sourcesToMove, headMap, transformer);
-        
+
         T headMapKey;
         if (union) {
             // union
@@ -190,20 +191,20 @@ public class NestedIteratorContextUtil {
             // intersection
             headMapKey = headMap.isEmpty() ? null : headMap.keySet().last();
         }
-        
+
         // grab any existing null heads that match the context (not requiring a move due to already being there)
         nullSources.addAll(nullHeadMap.get(context));
-        
+
         // check for nulls first, since a null source means that the move on the iterator yielded no matches
         if (nullSources.size() > 0) {
             // add them to the nullHeads with the current key
             nullHeadMap.putAll(context, nullSources);
-            
+
             if (union && nullSources.size() == sourcesToMove.size() || !union) {
                 return null;
             }
         }
-        
+
         // valid headMapKey to return
         return headMapKey;
     }

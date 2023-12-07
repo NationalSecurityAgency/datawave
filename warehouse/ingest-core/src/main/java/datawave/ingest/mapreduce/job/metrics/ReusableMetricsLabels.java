@@ -7,9 +7,9 @@ import java.util.TreeMap;
  * A thread-safe, reusable map for metrics labels. Useful for M/R jobs.
  */
 public class ReusableMetricsLabels {
-    
+
     private ThreadLocal<Map<String,String>> threadLocalMap = ThreadLocal.withInitial(TreeMap::new);
-    
+
     /**
      * Add a new label
      *
@@ -21,14 +21,14 @@ public class ReusableMetricsLabels {
     public void put(String name, String value) {
         get().put(name, value);
     }
-    
+
     /**
      * Clear all labels.
      */
     public void clear() {
-        get().clear();
+        threadLocalMap.remove();
     }
-    
+
     /**
      * @return all of the current labels on this thread
      */

@@ -1,25 +1,24 @@
 package datawave.ingest.mapreduce.handler.dateindex;
 
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.BitSet;
 import java.util.Calendar;
 import java.util.Date;
 
-import java.text.SimpleDateFormat;
-
 /**
- * 
+ *
  */
 public class DateIndexUtil {
-    
+
     public static final String EVENT_DATE_TYPE = "EVENT";
     public static final String LOADED_DATE_TYPE = "LOADED";
     public static final String ACTIVITY_DATE_TYPE = "ACTIVITY";
     public static final ThreadLocal<SimpleDateFormat> format = ThreadLocal.withInitial(() -> new SimpleDateFormat("yyyyMMdd"));
-    
+
     /**
      * Format the date into yyyyMMdd
-     * 
+     *
      * @param date
      *            then date to be formatted
      * @return the string representation in yyyyMMdd format
@@ -27,10 +26,10 @@ public class DateIndexUtil {
     public static String format(Date date) {
         return format.get().format(date);
     }
-    
+
     /**
      * Get the date with time set to 00:00:00
-     * 
+     *
      * @param dateStr
      *            string representation of the date
      * @return the date
@@ -40,10 +39,10 @@ public class DateIndexUtil {
     public static Date getBeginDate(String dateStr) throws ParseException {
         return format.get().parse(dateStr);
     }
-    
+
     /**
      * Get the date with time set to 23:59:59
-     * 
+     *
      * @param dateStr
      *            string representation of the date
      * @return the date
@@ -59,10 +58,10 @@ public class DateIndexUtil {
         cal.set(Calendar.MILLISECOND, 999);
         return cal.getTime();
     }
-    
+
     /**
      * Given a specific shard, return the bit array with the shard'th bit set.
-     * 
+     *
      * @param shard
      *            the shard
      * @return a BitSet with the shard'th bit set
@@ -72,10 +71,10 @@ public class DateIndexUtil {
         bits.set(shard);
         return bits;
     }
-    
+
     /**
      * Merge to bit sets into one. This will actually modify bits1 or bits2, depending which one is larger.
-     * 
+     *
      * @param bits1
      *            the first bit set
      * @param bits2
@@ -92,5 +91,5 @@ public class DateIndexUtil {
         bits1.or(bits2);
         return bits1;
     }
-    
+
 }

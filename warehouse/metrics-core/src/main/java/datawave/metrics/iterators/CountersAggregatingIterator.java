@@ -1,7 +1,10 @@
 package datawave.metrics.iterators;
 
-import com.google.common.io.ByteArrayDataOutput;
-import com.google.common.io.ByteStreams;
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.util.Collection;
+import java.util.Map;
+
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -13,10 +16,8 @@ import org.apache.accumulo.core.iterators.WrappingIterator;
 import org.apache.hadoop.mapreduce.Counters;
 import org.apache.log4j.Logger;
 
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.util.Collection;
-import java.util.Map;
+import com.google.common.io.ByteArrayDataOutput;
+import com.google.common.io.ByteStreams;
 
 /**
  *
@@ -27,7 +28,7 @@ public class CountersAggregatingIterator extends WrappingIterator implements Opt
     private long maxRecordCount = -1;
     private Key topKey;
     private Value topValue;
-    
+
     @Override
     public void init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env) throws IOException {
         super.init(source, options, env);
@@ -40,32 +41,32 @@ public class CountersAggregatingIterator extends WrappingIterator implements Opt
             }
         }
     }
-    
+
     @Override
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
         super.seek(range, columnFamilies, inclusive);
         findTop();
     }
-    
+
     @Override
     public Key getTopKey() {
         if (topKey == null)
             return super.getTopKey();
         return topKey;
     }
-    
+
     @Override
     public Value getTopValue() {
         if (topKey == null)
             return super.getTopValue();
         return topValue;
     }
-    
+
     @Override
     public boolean hasTop() {
         return topKey != null || super.hasTop();
     }
-    
+
     @Override
     public void next() throws IOException {
         if (topKey != null) {
@@ -74,10 +75,10 @@ public class CountersAggregatingIterator extends WrappingIterator implements Opt
         } else {
             super.next();
         }
-        
+
         findTop();
     }
-    
+
     private void findTop() throws IOException {
         // Iterate over the source until we exhaust it and/or reach the maximum number of records to aggregate.
         // While iterating, build up a combined counters from all the values we see along the way. Return that
@@ -101,12 +102,12 @@ public class CountersAggregatingIterator extends WrappingIterator implements Opt
                 if (log.isTraceEnabled())
                     log.trace("Exception reading value for key " + workKey + ": " + e.getMessage(), e.getCause());
             }
-            
+
             super.next();
         }
         if (recordCount > 0) {
             topKey = workKey;
-            
+
             try {
                 ByteArrayDataOutput bad = ByteStreams.newDataOutput();
                 counters.write(bad);
@@ -116,7 +117,7 @@ public class CountersAggregatingIterator extends WrappingIterator implements Opt
             }
         }
     }
-    
+
     @Override
     public SortedKeyValueIterator<Key,Value> deepCopy(IteratorEnvironment env) {
         CountersAggregatingIterator copy;
@@ -126,12 +127,12 @@ public class CountersAggregatingIterator extends WrappingIterator implements Opt
             // Shouldn't happen so just throw as a runtime exception
             throw new RuntimeException(e);
         }
-        
+
         copy.setSource(getSource().deepCopy(env));
         copy.maxRecordCount = maxRecordCount;
         return copy;
     }
-    
+
     @Override
     public IteratorOptions describeOptions() {
         IteratorOptions io = new IteratorOptions("countersAgg", getClass().getSimpleName() + " aggregates Hadoop Counters objects in the value together", null,
@@ -140,7 +141,7 @@ public class CountersAggregatingIterator extends WrappingIterator implements Opt
                         "Indicates the max number of values to aggregate together before returning a value (-1, the default, is unlimited)");
         return io;
     }
-    
+
     @Override
     public boolean validateOptions(Map<String,String> options) {
         boolean valid = (options == null || options.isEmpty());
