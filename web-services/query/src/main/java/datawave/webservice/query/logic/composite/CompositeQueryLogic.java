@@ -224,6 +224,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
         if (userOperations != null) {
             principal = userOperations.getRemoteUser(principal);
         }
+        logic.preInitialize(settings, AuthorizationsUtil.buildAuthorizations(Collections.singleton(requestedAuths)));
         if (logic.getUserOperations() != null) {
             queryPrincipal = logic.getUserOperations().getRemoteUser(queryPrincipal);
         }
@@ -510,7 +511,14 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
     public void setQueryLogics(Map<String,QueryLogic<?>> queryLogics) {
         this.queryLogics = new TreeMap<>(queryLogics);
     }
-    
+
+    @Override
+    public void preInitialize(Query settings, Set<Authorizations> queryAuths) {
+        for (QueryLogic logic : getUninitializedLogics().values()) {
+            logic.preInitialize(settings, queryAuths);
+        }
+    }
+
     public UserOperations getUserOperations() {
         // if any of the underlying logics have a non-null user operations, then
         // we need to return an instance that combines auths across the underlying

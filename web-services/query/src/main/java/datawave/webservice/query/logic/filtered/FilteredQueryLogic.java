@@ -45,7 +45,15 @@ public class FilteredQueryLogic extends DelegatingQueryLogic implements QueryLog
     public interface QueryLogicFilter {
         boolean canRunQuery(Query settings, Set<Authorizations> auths);
     }
-    
+
+    @Override
+    public void preInitialize(Query settings, Set<Authorizations> userAuthorizations) {
+        // setup the filter
+        if (canRunQuery(settings, userAuthorizations)) {
+            super.preInitialize(settings, userAuthorizations);
+        }
+    }
+
     public boolean canRunQuery(Query settings, Set<Authorizations> runtimeQueryAuthorizations) {
         if (!filtered) {
             if (!filter.canRunQuery(settings, runtimeQueryAuthorizations)) {
