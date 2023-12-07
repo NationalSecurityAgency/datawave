@@ -1,11 +1,13 @@
 package datawave.query.transformer;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -51,6 +53,8 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
     private final ExcerptFields excerptFields;
     private final IteratorEnvironment env;
     private final SortedKeyValueIterator<Key,Value> source;
+
+    private final List<String> hitTerms = new ArrayList<>();
 
     public ExcerptTransform(ExcerptFields excerptFields, IteratorEnvironment env, SortedKeyValueIterator<Key,Value> source) {
         this(excerptFields, env, source, new TermFrequencyExcerptIterator());
@@ -105,7 +109,7 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
             phraseIndexes = PhraseIndexes.from(content.getContent());
             allPhraseIndexes.addAll(phraseIndexes);
         }
-        // now lets find all of the terms for excerpt fields and add them to the list
+        // now lets find all the terms for excerpt fields and add them to the list
         if (document.containsKey(JexlEvaluation.HIT_TERM_FIELD)) {
             Attributes hitList = (Attributes) document.get(JexlEvaluation.HIT_TERM_FIELD);
             // for each hit term
@@ -121,6 +125,8 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
                         allPhraseIndexes.addIndexTriplet(String.valueOf(hitTuple.getFieldName()), keyToEventId(attr.getMetadata()), pos.getLowOffset(),
                                         pos.getOffset());
                     }
+                    // save the hit term for later callout
+                    hitTerms.add((String) hitTuple.getValue());
                 }
             }
         }
@@ -309,6 +315,8 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
         excerptIteratorOptions.put(TermFrequencyExcerptIterator.FIELD_NAME, field);
         excerptIteratorOptions.put(TermFrequencyExcerptIterator.START_OFFSET, String.valueOf(start));
         excerptIteratorOptions.put(TermFrequencyExcerptIterator.END_OFFSET, String.valueOf(end));
+        excerptIteratorOptions.put(TermFrequencyExcerptIterator.HIT_CALLOUT, "true");
+        excerptIteratorOptions.put(TermFrequencyExcerptIterator.HIT_CALLOUT_TERMS, hitTerms.toString());
         try {
             excerptIterator.init(source, excerptIteratorOptions, env);
             excerptIterator.seek(range, Collections.emptyList(), false);
