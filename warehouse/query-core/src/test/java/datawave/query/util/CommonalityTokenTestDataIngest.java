@@ -15,6 +15,8 @@ import org.apache.hadoop.io.Text;
 import datawave.data.ColumnFamilyConstants;
 import datawave.data.hash.UID;
 import datawave.data.type.LcNoDiacriticsType;
+import datawave.data.type.NumberListType;
+import datawave.data.type.NumberType;
 import datawave.data.type.Type;
 import datawave.ingest.protobuf.Uid;
 import datawave.query.QueryTestTableHelper;
@@ -31,6 +33,8 @@ public class CommonalityTokenTestDataIngest {
     }
 
     private static final Type<?> lcNoDiacriticsType = new LcNoDiacriticsType();
+    private static final Type<?> numericListType = new NumberListType();
+    private static final Type<?> numberType = new NumberType();
 
     protected static final String datatype = "test";
     protected static final String date = "20130101";
@@ -61,6 +65,7 @@ public class CommonalityTokenTestDataIngest {
 
             mutation.put(datatype + "\u0000" + myUID, "CAT.PET.0" + "\u0000" + "tabby", columnVisibility, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + myUID, "CANINE.PET.0" + "\u0000" + "beagle", columnVisibility, timeStamp, emptyValue);
+
             mutation.put(datatype + "\u0000" + myUID, "FISH.PET.0" + "\u0000" + "beta", columnVisibility, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + myUID, "BIRD.PET.0" + "\u0000" + "parakeet", columnVisibility, timeStamp, emptyValue);
 
@@ -78,6 +83,7 @@ public class CommonalityTokenTestDataIngest {
             mutation.put(datatype + "\u0000" + myUID, "CANINE.PET.3" + "\u0000" + "dachshund", columnVisibility, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + myUID, "FISH.PET.3" + "\u0000" + "guppy", columnVisibility, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + myUID, "BIRD.PET.3" + "\u0000" + "budgie", columnVisibility, timeStamp, emptyValue);
+            mutation.put(datatype + "\u0000" + myUID, "SIZE.CANINE.3" + "\u0000" + "20,12.5", columnVisibility, timeStamp, emptyValue);
 
             mutation.put(datatype + "\u0000" + myUID, "CAT.PET.12" + "\u0000" + "himalayan", columnVisibility, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + myUID, "CANINE.PET.12" + "\u0000" + "bernese", columnVisibility, timeStamp, emptyValue);
@@ -86,6 +92,7 @@ public class CommonalityTokenTestDataIngest {
 
             mutation.put(datatype + "\u0000" + myUID, "CAT.PET.13" + "\u0000" + "ragdoll", columnVisibility, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + myUID, "CANINE.PET.13" + "\u0000" + "shepherd", columnVisibility, timeStamp, emptyValue);
+
             mutation.put(datatype + "\u0000" + myUID, "FISH.PET.13" + "\u0000" + "tetra", columnVisibility, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + myUID, "BIRD.PET.13" + "\u0000" + "lovebird", columnVisibility, timeStamp, emptyValue);
 
@@ -98,6 +105,7 @@ public class CommonalityTokenTestDataIngest {
             mutation.put(datatype + "\u0000" + myUID, "CANINE.WILD.1" + "\u0000" + "coyote", columnVisibility, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + myUID, "FISH.WILD.1" + "\u0000" + "tuna", columnVisibility, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + myUID, "BIRD.WILD.1" + "\u0000" + "hawk", columnVisibility, timeStamp, emptyValue);
+            mutation.put(datatype + "\u0000" + myUID, "SIZE.CANINE.WILD.1" + "\u0000" + "90,26.5", columnVisibility, timeStamp, emptyValue);
 
             mutation.put(datatype + "\u0000" + myUID, "CAT.WILD.2" + "\u0000" + "leopard", columnVisibility, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + myUID, "CANINE.WILD.2" + "\u0000" + "fox", columnVisibility, timeStamp, emptyValue);
@@ -214,6 +222,22 @@ public class CommonalityTokenTestDataIngest {
             bw.addMutation(mutation);
             mutation = new Mutation(lcNoDiacriticsType.normalize("dingo"));
             mutation.put("CANINE", shard + "\u0000" + datatype, columnVisibility, timeStamp,
+                            range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(myUID));
+            bw.addMutation(mutation);
+            mutation = new Mutation((numberType.normalize("90")));
+            mutation.put("SIZE", shard + "\u0000" + datatype, columnVisibility, timeStamp,
+                            range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(myUID));
+            bw.addMutation(mutation);
+            mutation = new Mutation(numberType.normalize("26.5"));
+            mutation.put("SIZE", shard + "\u0000" + datatype, columnVisibility, timeStamp,
+                            range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(myUID));
+            bw.addMutation(mutation);
+            mutation = new Mutation((numberType.normalize("20")));
+            mutation.put("SIZE", shard + "\u0000" + datatype, columnVisibility, timeStamp,
+                            range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(myUID));
+            bw.addMutation(mutation);
+            mutation = new Mutation(numberType.normalize("12.5"));
+            mutation.put("SIZE", shard + "\u0000" + datatype, columnVisibility, timeStamp,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(myUID));
             bw.addMutation(mutation);
 
@@ -340,6 +364,10 @@ public class CommonalityTokenTestDataIngest {
                             emptyValue);
             mutation.put("fi\u0000" + "CANINE", lcNoDiacriticsType.normalize("dingo") + "\u0000" + datatype + "\u0000" + myUID, columnVisibility, timeStamp,
                             emptyValue);
+            mutation.put("fi\u0000" + "SIZE", numberType.normalize("90") + "\u0000" + datatype + "\u0000" + myUID, columnVisibility, timeStamp, emptyValue);
+            mutation.put("fi\u0000" + "SIZE", numberType.normalize("26.5") + "\u0000" + datatype + "\u0000" + myUID, columnVisibility, timeStamp, emptyValue);
+            mutation.put("fi\u0000" + "SIZE", numberType.normalize("20") + "\u0000" + datatype + "\u0000" + myUID, columnVisibility, timeStamp, emptyValue);
+            mutation.put("fi\u0000" + "SIZE", numberType.normalize("12.5") + "\u0000" + datatype + "\u0000" + myUID, columnVisibility, timeStamp, emptyValue);
 
             // fish
             mutation.put("fi\u0000" + "FISH", lcNoDiacriticsType.normalize("beta") + "\u0000" + datatype + "\u0000" + myUID, columnVisibility, timeStamp,
@@ -401,6 +429,13 @@ public class CommonalityTokenTestDataIngest {
             mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
             mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype), emptyValue);
             mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), emptyValue);
+            bw.addMutation(mutation);
+
+            mutation = new Mutation("SIZE");
+            mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
+            mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
+            mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype), emptyValue);
+            mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + numericListType.getClass().getName()), emptyValue);
             bw.addMutation(mutation);
 
             mutation = new Mutation("BIRD");

@@ -229,7 +229,7 @@ public abstract class TestLimitReturnedGroupsToHitTermGroups {
 
         // definitely should NOT include group 3
         Set<String> goodResults = Sets.newHashSet("CANINE.PET.13:shepherd", "CAT.PET.13:ragdoll", "FISH.PET.13:tetra", "BIRD.PET.13:lovebird",
-                        "REPTILE.PET.1:snake", "DOG.WILD.1:coyote");
+                        "REPTILE.PET.1:snake", "DOG.WILD.1:coyote", "SIZE.CANINE.3:20,12.5", "SIZE.CANINE.WILD.1:90,26.5");
 
         runTestQuery(queryString, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
     }
@@ -318,7 +318,8 @@ public abstract class TestLimitReturnedGroupsToHitTermGroups {
         Set<String> goodResults = Sets.newHashSet("BIRD:parakeet", "CANINE:beagle", "CANINE:coyote", "CANINE:basset", "CANINE:shepherd", "CANINE:bernese",
                         "FISH:tuna", "CAT:tabby", "CAT:tom", "FISH:swordtail", "FISH:angelfish", "CAT:siamese", "FISH:goldfish", "CAT:himalayan", "CAT:leopard",
                         "CAT:cougar", "CAT:calico", "CAT:tiger", "FISH:tetra", "FISH:mackerel", "FISH:shark", "CAT:puma", "CAT:ragdoll", "FISH:beta",
-                        "FISH:guppy", "FISH:salmon", "REPTILE:snake", "DOG:coyote", "CAT:sphynx", "CANINE:doberman");
+
+                        "FISH:guppy", "FISH:salmon", "REPTILE:snake", "DOG:coyote" , "SIZE:20,12.5", "SIZE:90,26.5", "CAT:sphynx", "CANINE:doberman");
 
         runTestQuery(queryString, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
     }
@@ -336,7 +337,8 @@ public abstract class TestLimitReturnedGroupsToHitTermGroups {
         Set<String> goodResults = Sets.newHashSet("CANINE:beagle", "CANINE:coyote", "CANINE:basset", "CANINE:shepherd", "CANINE:bernese", "FISH:tuna",
                         "CAT:tabby", "CAT:tom", "FISH:swordtail", "FISH:angelfish", "CAT:siamese", "FISH:goldfish", "CAT:himalayan", "CAT:leopard",
                         "CAT:cougar", "CAT:calico", "CAT:tiger", "FISH:tetra", "FISH:mackerel", "FISH:shark", "CAT:puma", "CAT:ragdoll", "FISH:beta",
-                        "FISH:guppy", "FISH:salmon", "REPTILE:snake", "CAT:sphynx", "CANINE:doberman");
+
+                        "FISH:guppy", "FISH:salmon", "REPTILE:snake", "SIZE:20,12.5", "SIZE:90,26.5", "CAT:sphynx", "CANINE:doberman");
 
         runTestQuery(queryString, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
     }
@@ -356,8 +358,9 @@ public abstract class TestLimitReturnedGroupsToHitTermGroups {
                         "BIRD.WILD.1:hawk", "FISH.PET.12:swordtail", "CAT.PET.13:ragdoll", "FISH.WILD.0:shark", "CAT.PET.1:calico", "FISH.PET.0:beta",
                         "CAT.WILD.1:tiger", "FISH.PET.2:angelfish", "CAT.PET.0:tabby", "FISH.WILD.2:mackerel", "FISH.PET.13:tetra", "FISH.PET.1:goldfish",
                         "FISH.PET.3:guppy", "CAT.PET.12:himalayan", "FISH.WILD.1:tuna", "FISH.WILD.3:salmon", "CAT.WILD.3:puma", "CAT.WILD.2:leopard",
-                        "CAT.PET.3:siamese", "CAT.WILD.0:cougar", "CAT.PET.2:tom", "REPTILE.PET.1:snake", "DOG.WILD.1:coyote", "CAT.PET.50:sphynx",
-                        "CANINE.PET.50:doberman");
+
+                        "CAT.PET.3:siamese", "CAT.WILD.0:cougar", "CAT.PET.2:tom", "REPTILE.PET.1:snake", "DOG.WILD.1:coyote", "SIZE.CANINE.3:20,12.5",
+                        "SIZE.CANINE.WILD.1:90,26.5", "CAT.PET.50:sphynx", "CANINE.PET.50:doberman");
 
         runTestQuery(queryString, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
     }
@@ -377,8 +380,9 @@ public abstract class TestLimitReturnedGroupsToHitTermGroups {
                         "BIRD.WILD.1:hawk", "FISH.PET.12:swordtail", "CAT.PET.13:ragdoll", "FISH.WILD.0:shark", "CAT.PET.1:calico", "FISH.PET.0:beta",
                         "CAT.WILD.1:tiger", "FISH.PET.2:angelfish", "CAT.PET.0:tabby", "FISH.WILD.2:mackerel", "FISH.PET.13:tetra", "FISH.PET.1:goldfish",
                         "FISH.PET.3:guppy", "CAT.PET.12:himalayan", "FISH.WILD.1:tuna", "FISH.WILD.3:salmon", "CAT.WILD.3:puma", "CAT.WILD.2:leopard",
-                        "CAT.PET.3:siamese", "CAT.WILD.0:cougar", "CAT.PET.2:tom", "REPTILE.PET.1:snake", "DOG.WILD.1:coyote", "CAT.PET.50:sphynx",
-                        "CANINE.PET.50:doberman");
+
+                        "CAT.PET.3:siamese", "CAT.WILD.0:cougar", "CAT.PET.2:tom", "REPTILE.PET.1:snake", "DOG.WILD.1:coyote", "SIZE.CANINE.3:20,12.5",
+                        "SIZE.CANINE.WILD.1:90,26.5", "CAT.PET.50:sphynx", "CANINE.PET.50:doberman");
 
         runTestQuery(queryString, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
     }
