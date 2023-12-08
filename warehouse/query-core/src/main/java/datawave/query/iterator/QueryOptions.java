@@ -1308,11 +1308,10 @@ public class QueryOptions implements OptionDescriber {
             setFullTableScanOnly(false);
         }
 
-        if (options.containsKey(TRACK_SIZES) && options.get(TRACK_SIZES) != null) {
-            setTrackSizes(Boolean.parseBoolean(options.get(TRACK_SIZES)));
-        } else {
-            setTrackSizes(true);
-        }
+        /*
+         * if (options.containsKey(TRACK_SIZES) && options.get(TRACK_SIZES) != null) { setTrackSizes(Boolean.parseBoolean(options.get(TRACK_SIZES))); } else {
+         * setTrackSizes(true); }
+         */
 
         if (options.containsKey(PROJECTION_FIELDS)) {
             this.projectResults = true;
