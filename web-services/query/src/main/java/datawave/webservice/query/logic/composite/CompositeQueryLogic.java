@@ -3,6 +3,7 @@ package datawave.webservice.query.logic.composite;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -225,6 +226,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
         if (userOperations != null) {
             principal = userOperations.getRemoteUser(principal);
         }
+        logic.preInitialize(settings, AuthorizationsUtil.buildAuthorizations(Collections.singleton(requestedAuths)));
         if (logic.getUserOperations() != null) {
             queryPrincipal = logic.getUserOperations().getRemoteUser(queryPrincipal);
         }
@@ -503,6 +505,13 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
     
     public void setQueryLogics(Map<String,QueryLogic<?>> queryLogics) {
         this.queryLogics = new TreeMap<>(queryLogics);
+    }
+    
+    @Override
+    public void preInitialize(Query settings, Set<Authorizations> queryAuths) {
+        for (QueryLogic logic : getUninitializedLogics().values()) {
+            logic.preInitialize(settings, queryAuths);
+        }
     }
     
     public UserOperations getUserOperations() {
