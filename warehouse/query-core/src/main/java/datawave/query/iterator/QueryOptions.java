@@ -1227,6 +1227,8 @@ public class QueryOptions implements OptionDescriber {
         // we don't aren't performing any Jexl evaluation
         if (options.containsKey(DISABLE_EVALUATION)) {
             this.disableEvaluation = Boolean.parseBoolean(options.get(DISABLE_EVALUATION));
+        } else {
+            this.disableEvaluation = false;
         }
 
         if (options.containsKey(DISABLE_FIELD_INDEX_EVAL)) {
@@ -1299,6 +1301,8 @@ public class QueryOptions implements OptionDescriber {
         // Boolean: should each attribute maintain a ColumnVisibility.
         if (options.containsKey(REDUCED_RESPONSE)) {
             setReducedResponse(Boolean.parseBoolean(options.get(REDUCED_RESPONSE)));
+        } else {
+            setReducedResponse(false);
         }
 
         if (options.containsKey(FULL_TABLE_SCAN_ONLY)) {
@@ -1350,6 +1354,8 @@ public class QueryOptions implements OptionDescriber {
 
         if (options.containsKey(FILTER_MASKED_VALUES)) {
             this.filterMaskedValues = Boolean.parseBoolean(options.get(FILTER_MASKED_VALUES));
+        } else {
+            this.filterMaskedValues = true;
         }
 
         if (options.containsKey(INCLUDE_DATATYPE)) {
@@ -1643,6 +1649,8 @@ public class QueryOptions implements OptionDescriber {
 
         if (options.containsKey(COMPRESS_SERVER_SIDE_RESULTS)) {
             this.setCompressResults(Boolean.parseBoolean(options.get(COMPRESS_SERVER_SIDE_RESULTS)));
+        } else {
+            this.setCompressResults(true);
         }
 
         if (options.containsKey(MAX_EVALUATION_PIPELINES)) {
@@ -1699,6 +1707,8 @@ public class QueryOptions implements OptionDescriber {
 
         if (options.containsKey(SORTED_UIDS)) {
             this.sortedUIDs = Boolean.parseBoolean(options.get(SORTED_UIDS));
+        } else {
+            this.sortedUIDs = true;
         }
 
         if (options.containsKey(DEBUG_MULTITHREADED_SOURCES)) {
