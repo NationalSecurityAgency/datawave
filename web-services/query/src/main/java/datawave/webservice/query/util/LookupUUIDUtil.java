@@ -421,10 +421,12 @@ public class LookupUUIDUtil {
     
     private Query createSettings(MultivaluedMap<String,String> queryParameters) {
         Query query = responseObjectFactory.getQueryImpl();
-        query.setOptionalQueryParameters(queryParameters);
-        for (String key : queryParameters.keySet()) {
-            if (queryParameters.get(key).size() == 1) {
-                query.addParameter(key, queryParameters.get(key).get(0));
+        if (queryParameters != null) {
+            query.setOptionalQueryParameters(queryParameters);
+            for (String key : queryParameters.keySet()) {
+                if (queryParameters.get(key).size() == 1) {
+                    query.addParameter(key, queryParameters.get(key).get(0));
+                }
             }
         }
         return query;
