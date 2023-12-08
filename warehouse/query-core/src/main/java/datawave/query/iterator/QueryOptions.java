@@ -122,7 +122,7 @@ public class QueryOptions implements OptionDescriber {
     public static final String METADATA_TABLE_NAME = "model.table.name";
 
     public static final String REDUCED_RESPONSE = "reduced.response";
-    public static final String FULL_TABLE_SCAN_ONLY = "full.table.scan.only";
+    public static final String FULL_TABLE_SCAN_ONLY = "is.full.table.scan";
 
     public static final String PROJECTION_FIELDS = "projection.fields";
     public static final String DISALLOWLISTED_FIELDS = "disallowlisted.fields";
@@ -1304,10 +1304,14 @@ public class QueryOptions implements OptionDescriber {
 
         if (options.containsKey(FULL_TABLE_SCAN_ONLY)) {
             setFullTableScanOnly(Boolean.parseBoolean(options.get(FULL_TABLE_SCAN_ONLY)));
+        } else {
+            setFullTableScanOnly(false);
         }
 
         if (options.containsKey(TRACK_SIZES) && options.get(TRACK_SIZES) != null) {
             setTrackSizes(Boolean.parseBoolean(options.get(TRACK_SIZES)));
+        } else {
+            setTrackSizes(true);
         }
 
         if (options.containsKey(PROJECTION_FIELDS)) {

@@ -551,7 +551,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         addOption(cfg, QueryOptions.QUERY, newQueryString, false);
         addOption(cfg, QueryOptions.QUERY_ID, config.getQuery().getId().toString(), false);
         addOption(cfg, QueryOptions.FULL_TABLE_SCAN_ONLY, Boolean.toString(isFullTable), false);
-        addOption(cfg, QueryOptions.TRACK_SIZES, Boolean.toString(config.isTrackSizes()), false);
+        addOption(cfg, QueryOptions.TRACK_SIZES, Boolean.toString(true), false);
         addOption(cfg, QueryOptions.ACTIVE_QUERY_LOG_NAME, config.getActiveQueryLogName(), false);
         // Set the start and end dates
         configureTypeMappings(config, cfg, metadataHelper, getCompressOptionMappings());
