@@ -131,7 +131,6 @@ public class QueryOptions implements OptionDescriber {
     public static final String COMPOSITE_FIELDS = "composite.fields";
     public static final String COMPOSITE_METADATA = "composite.metadata";
     public static final String COMPOSITE_SEEK_THRESHOLD = "composite.seek.threshold";
-    public static final String CONTAINS_COMPOSITE_TERMS = "composite.terms";
     public static final String IGNORE_COLUMN_FAMILIES = "ignore.column.families";
     public static final String INCLUDE_GROUPING_CONTEXT = "include.grouping.context";
     public static final String DOCUMENT_PERMUTATION_CLASSES = "document.permutation.classes";

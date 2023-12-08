@@ -2466,7 +2466,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         addOption(cfg, QueryOptions.DISABLE_EVALUATION, Boolean.toString(config.isDisableEvaluation()), false);
         addOption(cfg, QueryOptions.DISABLE_DOCUMENTS_WITHOUT_EVENTS, Boolean.toString(config.isDisableIndexOnlyDocuments()), false);
         addOption(cfg, QueryOptions.CONTAINS_INDEX_ONLY_TERMS, Boolean.toString(config.isContainsIndexOnlyTerms()), false);
-        addOption(cfg, QueryOptions.CONTAINS_COMPOSITE_TERMS, Boolean.toString(false), false);
         addOption(cfg, QueryOptions.ALLOW_FIELD_INDEX_EVALUATION, Boolean.toString(config.isAllowFieldIndexEvaluation()), false);
         addOption(cfg, QueryOptions.ALLOW_TERM_FREQUENCY_LOOKUP, Boolean.toString(config.isAllowTermFrequencyLookup()), false);
         addOption(cfg, QueryOptions.COMPRESS_SERVER_SIDE_RESULTS, Boolean.toString(config.isCompressServerSideResults()), false);
