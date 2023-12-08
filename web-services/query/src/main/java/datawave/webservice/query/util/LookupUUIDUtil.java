@@ -419,10 +419,27 @@ public class LookupUUIDUtil {
         return response;
     }
     
+    private Query createSettings(MultivaluedMap<String,String> queryParameters) {
+        Query query = responseObjectFactory.getQueryImpl();
+        query.setOptionalQueryParameters(queryParameters);
+        for (String key : queryParameters.keySet()) {
+            if (queryParameters.get(key).size() == 1) {
+                query.addParameter(key, queryParameters.get(key).get(0));
+            }
+        }
+        return query;
+    }
+    
     private String getAuths(String logicName, MultivaluedMap<String,String> queryParameters, String queryAuths, Principal principal) {
         String userAuths;
         try {
             QueryLogic<?> logic = queryLogicFactory.getQueryLogic(logicName, principal);
+            Query settings = createSettings(queryParameters);
+            if (queryAuths == null) {
+                logic.preInitialize(settings, AuthorizationsUtil.buildAuthorizations(null));
+            } else {
+                logic.preInitialize(settings, AuthorizationsUtil.buildAuthorizations(Collections.singleton(AuthorizationsUtil.splitAuths(queryAuths))));
+            }
             // the query principal is our local principal unless the query logic has a different user operations
             DatawavePrincipal queryPrincipal = (logic.getUserOperations() == null) ? (DatawavePrincipal) principal : logic.getUserOperations().getRemoteUser(
                             (DatawavePrincipal) principal);
