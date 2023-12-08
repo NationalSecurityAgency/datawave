@@ -355,4 +355,9 @@ public abstract class DelegatingQueryLogic implements QueryLogic<Object> {
     public UserOperations getUserOperations() {
         return delegate.getUserOperations();
     }
+    
+    @Override
+    public void preInitialize(Query settings, Set<Authorizations> queryAuths) {
+        delegate.preInitialize(settings, queryAuths);
+    }
 }
