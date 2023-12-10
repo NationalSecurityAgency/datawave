@@ -1447,7 +1447,6 @@
                     <version>3.8.1</version>
                     <configuration>
                         <encoding>UTF-8</encoding>
-                        <optimize>true</optimize>
                         <showDeprecation>true</showDeprecation>
                         <showWarnings>true</showWarnings>
                         <source>${maven.compiler.source}</source>
@@ -1830,7 +1829,7 @@
                                 <phase>package</phase>
                                 <configuration>
                                     <encoding>UTF-8</encoding>
-                                    <destDir>${project.build.directory}/apidocs</destDir>
+                                    <outputDirectory>${project.build.directory}/apidocs</outputDirectory>
                                     <additionalJOption>-J-Xmx768m</additionalJOption>
                                     <tags>
                                         <tag>

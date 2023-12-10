@@ -102,10 +102,6 @@
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
-            <artifactId>metadata-utils</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>gov.nsa.datawave.microservice</groupId>
             <artifactId>query-metric-api</artifactId>
         </dependency>
         <dependency>

@@ -68,6 +68,7 @@ echo "$(date): Predicting query"
 echo "$(date): Predicting query" > querySummary.txt
 curl -s -D headers_0.txt -k -E ${TMP_PEM} \
     -H "Accept: application/xml" \
+    -H "Pool: $POOL" \
     --data-urlencode "begin=19660908 000000.000" \
     --data-urlencode "end=20161002 235959.999" \
     --data-urlencode "columnVisibility=PUBLIC" \
@@ -76,7 +77,6 @@ curl -s -D headers_0.txt -k -E ${TMP_PEM} \
     --data-urlencode "auths=PUBLIC,PRIVATE,BAR,FOO" \
     --data-urlencode "systemFrom=$SYSTEM_FROM" \
     --data-urlencode "queryName=Developer Test Query" \
-    --data-urlencode "pool=$POOL" \
     ${DATAWAVE_ENDPOINT}/EventQuery/predict -o predictResponse.txt -w '%{http_code}\n' >> querySummary.txt
 
 QUERY_PREDICTION=$(get_query_prediction < predictResponse.txt)

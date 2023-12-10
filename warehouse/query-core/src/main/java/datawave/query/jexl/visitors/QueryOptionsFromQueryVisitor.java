@@ -59,7 +59,8 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
                     UniqueFunction.UNIQUE_BY_MINUTE_FUNCTION, UniqueFunction.UNIQUE_BY_TENTH_OF_HOUR_FUNCTION, UniqueFunction.UNIQUE_BY_MONTH_FUNCTION,
                     UniqueFunction.UNIQUE_BY_SECOND_FUNCTION, UniqueFunction.UNIQUE_BY_MILLISECOND_FUNCTION, UniqueFunction.UNIQUE_BY_YEAR_FUNCTION,
                     QueryFunctions.GROUPBY_FUNCTION, QueryFunctions.EXCERPT_FIELDS_FUNCTION, QueryFunctions.NO_EXPANSION,
-                    QueryFunctions.LENIENT_FIELDS_FUNCTION, QueryFunctions.STRICT_FIELDS_FUNCTION);
+                    QueryFunctions.LENIENT_FIELDS_FUNCTION, QueryFunctions.STRICT_FIELDS_FUNCTION, QueryFunctions.SUM, QueryFunctions.MIN, QueryFunctions.MAX,
+                    QueryFunctions.AVERAGE, QueryFunctions.COUNT);
 
     @SuppressWarnings("unchecked")
     public static <T extends JexlNode> T collect(T node, Object data) {
@@ -262,6 +263,36 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
                     List<String> optionsList = new ArrayList<>();
                     this.visit(node, optionsList);
                     updateFieldsOption(optionsMap, QueryParameters.STRICT_FIELDS, optionsList);
+                    return null;
+                }
+                case QueryFunctions.SUM: {
+                    List<String> options = new ArrayList<>();
+                    this.visit(node, options);
+                    optionsMap.put(QueryParameters.SUM_FIELDS, JOINER.join(options));
+                    return null;
+                }
+                case QueryFunctions.MAX: {
+                    List<String> options = new ArrayList<>();
+                    this.visit(node, options);
+                    optionsMap.put(QueryParameters.MAX_FIELDS, JOINER.join(options));
+                    return null;
+                }
+                case QueryFunctions.MIN: {
+                    List<String> options = new ArrayList<>();
+                    this.visit(node, options);
+                    optionsMap.put(QueryParameters.MIN_FIELDS, JOINER.join(options));
+                    return null;
+                }
+                case QueryFunctions.AVERAGE: {
+                    List<String> options = new ArrayList<>();
+                    this.visit(node, options);
+                    optionsMap.put(QueryParameters.AVERAGE_FIELDS, JOINER.join(options));
+                    return null;
+                }
+                case QueryFunctions.COUNT: {
+                    List<String> options = new ArrayList<>();
+                    this.visit(node, options);
+                    optionsMap.put(QueryParameters.COUNT_FIELDS, JOINER.join(options));
                     return null;
                 }
             }

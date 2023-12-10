@@ -10,7 +10,7 @@ import datawave.core.query.logic.BaseQueryLogic;
 import datawave.core.query.logic.lookup.LookupQueryLogic;
 
 public class LookupUIDQueryLogic<T> extends LookupQueryLogic<T> {
-    private static final String UID_TERM_SEPARATOR = " ";
+    public static final String UID_TERM_SEPARATOR = " ";
     private static final String EVENT_FIELD = "event";
 
     public LookupUIDQueryLogic(BaseQueryLogic<T> delegateQueryLogic) {

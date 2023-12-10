@@ -115,6 +115,7 @@ echo "$(date): Submitting oozie query" >> querySummary.txt
 
 curl -s -D headers_1.txt -k -E ${TMP_PEM} \
     -H "Accept: application/xml" \
+    -H "Pool: $POOL" \
     --data-urlencode "workFlow=OozieJob" \
     --data-urlencode "columnVisibility=PUBLIC" \
     ${DATAWAVE_ENDPOINT}/mapreduce/oozieSubmit -o submitResponse.xml -w '%{http_code}\n' >> querySummary.txt

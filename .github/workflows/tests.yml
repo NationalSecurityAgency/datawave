@@ -8,7 +8,7 @@ on:
     - 'release/version*'
     - 'feature/accumulo-2.0'
     - 'feature/hadoop3'
-    - 'feature/queryMicroservicesAccumulo2.1'
+    - 'feature/queryMicroservices'
   pull_request:
     paths-ignore: ['*.md', 'CODEOWNERS', 'LICENSE']
   workflow_dispatch:

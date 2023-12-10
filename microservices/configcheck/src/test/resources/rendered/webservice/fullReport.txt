@@ -1,0 +1,674 @@
+Placeholders (key: ${placeholder})
+----------------------------------------
+doc.beans.BaseEventQuery.accumuloPassword: ${accumulo.user.password}
+doc.beans.BaseEventQuery.baseIteratorPriority: ${beq.baseIteratorPriority}
+doc.beans.BaseEventQuery.collapseUids: ${query.collapse.uids}
+doc.beans.BaseEventQuery.collapseUidsThreshold: ${query.collapse.uids.threshold}
+doc.beans.BaseEventQuery.dateIndexTableName: ${date.index.table.name}
+doc.beans.BaseEventQuery.dateIndexThreads: ${date.index.threads}
+doc.beans.BaseEventQuery.defaultDateTypeName: ${default.date.type.name}
+doc.beans.BaseEventQuery.disableIndexOnlyDocuments: ${disable.index.only.documents}
+doc.beans.BaseEventQuery.evaluationOnlyFields: ${evaluation.only.fields}
+doc.beans.BaseEventQuery.finalMaxTermThreshold: ${beq.finalMaxTermThreshold}
+doc.beans.BaseEventQuery.fullTableScanEnabled: ${beq.fullTableScanEnabled}
+doc.beans.BaseEventQuery.hdfsSiteConfigURLs: ${hdfs.site.config.urls}
+doc.beans.BaseEventQuery.includeHierarchyFields: ${include.hierarchy.fields}
+doc.beans.BaseEventQuery.indexLookupThreads: ${index.query.threads}
+doc.beans.BaseEventQuery.indexOnlyFilterFunctionsEnabled: ${enable.index.only.filter.functions}
+doc.beans.BaseEventQuery.indexTableName: ${index.table.name}
+doc.beans.BaseEventQuery.initialMaxTermThreshold: ${beq.initialMaxTermThreshold}
+doc.beans.BaseEventQuery.ivaratorCacheScanTimeoutMinutes: ${query.max.call.time.minutes}
+doc.beans.BaseEventQuery.ivaratorFstHdfsBaseURIs: ${ivarator.fst.hdfs.base.uris}
+doc.beans.BaseEventQuery.ivaratorMaxOpenFiles: ${beq.maxIvaratorOpenFiles}
+doc.beans.BaseEventQuery.maxDepthThreshold: ${beq.maxDepthThreshold}
+doc.beans.BaseEventQuery.maxEvaluationPipelines: ${beq.evaluationPipelines}
+doc.beans.BaseEventQuery.maxFieldIndexRangeSplit: ${beq.fieldIndexRangeSplit}
+doc.beans.BaseEventQuery.maxIndexScanTimeMillis: ${query.max.index.scan.ms}
+doc.beans.BaseEventQuery.maxIvaratorSources: ${beq.maxIvaratorSources}
+doc.beans.BaseEventQuery.maxOrExpansionFstThreshold: ${beq.orExpansionFstThreshold}
+doc.beans.BaseEventQuery.maxOrExpansionThreshold: ${beq.orExpansionThreshold}
+doc.beans.BaseEventQuery.maxOrRangeThreshold: ${beq.orRangeThreshold}
+doc.beans.BaseEventQuery.maxPipelineCachedResults: ${beq.pipelineCachedResults}
+doc.beans.BaseEventQuery.maxResults: ${event.query.max.results}
+doc.beans.BaseEventQuery.maxUnfieldedExpansionThreshold: ${beq.unfieldedExpansionThreshold}
+doc.beans.BaseEventQuery.maxValueExpansionThreshold: ${beq.valueExpansionThreshold}
+doc.beans.BaseEventQuery.metadataTableName: ${metadata.table.name}
+doc.beans.BaseEventQuery.modelTableName: ${metadata.table.name}
+doc.beans.BaseEventQuery.queryThreads: ${shard.query.threads}
+doc.beans.BaseEventQuery.reverseIndexTableName: ${rindex.table.name}
+doc.beans.BaseEventQuery.shardsPerDayThreshold: ${beq.shardsPerDayThreshold}
+doc.beans.BaseEventQuery.tableName: ${shard.table.name}
+doc.beans.BaseEventQuery.useFilters: ${event.query.filters.enabled}
+doc.beans.BaseEventQuery.zookeeperConfig: ${ivarator.zookeeper.hosts}
+doc.beans.BaseModelEventQuery.modelTableName: ${metadata.table.name}
+doc.beans.ContentQuery.tableName: ${shard.table.name}
+doc.beans.DiscoveryQuery.indexTableName: ${index.table.name}
+doc.beans.DiscoveryQuery.metadataTableName: ${metadata.table.name}
+doc.beans.DiscoveryQuery.modelTableName: ${metadata.table.name}
+doc.beans.DiscoveryQuery.reverseIndexTableName: ${rindex.table.name}
+doc.beans.DiscoveryQuery.tableName: ${index.table.name}
+doc.beans.EdgeEventQuery.modelTableName: ${metadata.table.name}
+doc.beans.ErrorCountQuery.indexTableName: ${error.index.table.name}
+doc.beans.ErrorCountQuery.metadataTableName: ${error.metadata.table.name}
+doc.beans.ErrorCountQuery.reverseIndexTableName: ${error.rindex.table.name}
+doc.beans.ErrorCountQuery.tableName: ${error.shard.table.name}
+doc.beans.ErrorDiscoveryQuery.indexTableName: ${error.index.table.name}
+doc.beans.ErrorDiscoveryQuery.metadataTableName: ${error.metadata.table.name}
+doc.beans.ErrorDiscoveryQuery.modelTableName: ${metadata.table.name}
+doc.beans.ErrorDiscoveryQuery.reverseIndexTableName: ${error.rindex.table.name}
+doc.beans.ErrorDiscoveryQuery.tableName: ${error.index.table.name}
+doc.beans.ErrorEventQuery.indexTableName: ${error.index.table.name}
+doc.beans.ErrorEventQuery.metadataTableName: ${error.metadata.table.name}
+doc.beans.ErrorEventQuery.reverseIndexTableName: ${error.rindex.table.name}
+doc.beans.ErrorEventQuery.tableName: ${error.shard.table.name}
+doc.beans.ErrorFieldIndexCountQuery.indexTableName: ${error.index.table.name}
+doc.beans.ErrorFieldIndexCountQuery.metadataTableName: ${error.metadata.table.name}
+doc.beans.ErrorFieldIndexCountQuery.modelTableName: ${metadata.table.name}
+doc.beans.ErrorFieldIndexCountQuery.queryThreads: ${shard.query.threads}
+doc.beans.ErrorFieldIndexCountQuery.reverseIndexTableName: ${error.rindex.table.name}
+doc.beans.ErrorFieldIndexCountQuery.tableName: ${error.shard.table.name}
+doc.beans.FacetedQuery.facetHashTableName: ${table.name.facet.hashes}
+doc.beans.FacetedQuery.facetMetadataTableName: ${table.name.facet.metadata}
+doc.beans.FacetedQuery.facetTableName: ${table.name.facet}
+doc.beans.FieldIndexCountQuery.indexTableName: ${index.table.name}
+doc.beans.FieldIndexCountQuery.metadataTableName: ${metadata.table.name}
+doc.beans.FieldIndexCountQuery.modelTableName: ${metadata.table.name}
+doc.beans.FieldIndexCountQuery.queryThreads: ${shard.query.threads}
+doc.beans.FieldIndexCountQuery.reverseIndexTableName: ${rindex.table.name}
+doc.beans.FieldIndexCountQuery.tableName: ${shard.table.name}
+doc.beans.HitHighlights.finalMaxTermThreshold: ${beq.finalMaxTermThreshold}
+doc.beans.HitHighlights.hdfsSiteConfigURLs: ${hdfs.site.config.urls}
+doc.beans.HitHighlights.indexTableName: ${index.table.name}
+doc.beans.HitHighlights.initialMaxTermThreshold: ${beq.initialMaxTermThreshold}
+doc.beans.HitHighlights.ivaratorCacheScanTimeoutMinutes: ${query.max.call.time.minutes}
+doc.beans.HitHighlights.ivaratorFstHdfsBaseURIs: ${ivarator.fst.hdfs.base.uris}
+doc.beans.HitHighlights.ivaratorMaxOpenFiles: ${beq.maxIvaratorOpenFiles}
+doc.beans.HitHighlights.maxDepthThreshold: ${beq.maxDepthThreshold}
+doc.beans.HitHighlights.maxEvaluationPipelines: ${beq.evaluationPipelines}
+doc.beans.HitHighlights.maxFieldIndexRangeSplit: ${beq.fieldIndexRangeSplit}
+doc.beans.HitHighlights.maxOrExpansionFstThreshold: ${beq.orExpansionFstThreshold}
+doc.beans.HitHighlights.maxOrExpansionThreshold: ${beq.orExpansionThreshold}
+doc.beans.HitHighlights.maxOrRangeIvarators: ${beq.maxOrRangeIvarators}
+doc.beans.HitHighlights.maxOrRangeThreshold: ${beq.orRangeThreshold}
+doc.beans.HitHighlights.maxPipelineCachedResults: ${beq.pipelineCachedResults}
+doc.beans.HitHighlights.maxRangesPerRangeIvarator: ${beq.maxRangesPerRangeIvarator}
+doc.beans.HitHighlights.maxUnfieldedExpansionThreshold: ${beq.unfieldedExpansionThreshold}
+doc.beans.HitHighlights.maxValueExpansionThreshold: ${beq.valueExpansionThreshold}
+doc.beans.HitHighlights.metadataTableName: ${metadata.table.name}
+doc.beans.HitHighlights.queryThreads: ${index.query.threads}
+doc.beans.HitHighlights.reverseIndexTableName: ${rindex.table.name}
+doc.beans.HitHighlights.shardsPerDayThreshold: ${beq.shardsPerDayThreshold}
+doc.beans.HitHighlights.tableName: ${shard.table.name}
+doc.beans.HitHighlights.zookeeperConfig: ${ivarator.zookeeper.hosts}
+doc.beans.IdTranslatorConfiguration.beginDate: ${lookup.uuid.beginDate}
+doc.beans.LookupUUIDConfiguration.beginDate: ${lookup.uuid.beginDate}
+doc.beans.LuceneUUIDEventQuery.queryLogics.ErrorEventQuery.indexTableName: ${error.index.table.name}
+doc.beans.LuceneUUIDEventQuery.queryLogics.ErrorEventQuery.metadataTableName: ${error.metadata.table.name}
+doc.beans.LuceneUUIDEventQuery.queryLogics.ErrorEventQuery.reverseIndexTableName: ${error.rindex.table.name}
+doc.beans.LuceneUUIDEventQuery.queryLogics.ErrorEventQuery.tableName: ${error.shard.table.name}
+doc.beans.QueryLogicFactoryConfiguration.maxPageSize: ${query.max.page.size}
+doc.beans.QueryLogicFactoryConfiguration.pageByteTrigger: ${query.page.byte.trigger}
+doc.beans.QueryMetricsQuery.dateIndexTableName: ${querymetrics.dateindex.table.name}
+doc.beans.QueryMetricsQuery.indexTableName: ${querymetrics.index.table.name}
+doc.beans.QueryMetricsQuery.metadataTableName: ${querymetrics.metadata.table.name}
+doc.beans.QueryMetricsQuery.modelTableName: ${querymetrics.metadata.table.name}
+doc.beans.QueryMetricsQuery.reverseIndexTableName: ${querymetrics.rindex.table.name}
+doc.beans.QueryMetricsQuery.tableName: ${querymetrics.shard.table.name}
+doc.beans.RemoteEventQuery.maxResults: ${event.query.max.results}
+doc.beans.RemoteEventQuery.tableName: ${shard.table.name}
+doc.beans.TermFrequencyQuery.tableName: ${shard.table.name}
+
+Values (key: value)
+----------------------------------------
+doc.beans.AstValidator.validateFlatten: true
+doc.beans.AstValidator.validateJunctions: true
+doc.beans.AstValidator.validateLineage: true
+doc.beans.AstValidator.validateQueryPropertyMarkers: true
+doc.beans.AstValidator.validateReferenceExpressions: true
+doc.beans.BaseEventQuery.accumuloPassword: "${accumulo.user.password}"
+doc.beans.BaseEventQuery.auditType: "NONE"
+doc.beans.BaseEventQuery.baseIteratorPriority: 100
+doc.beans.BaseEventQuery.collapseUids: false
+doc.beans.BaseEventQuery.collapseUidsThreshold: -1
+doc.beans.BaseEventQuery.collectQueryMetrics: true
+doc.beans.BaseEventQuery.contentFieldNames: "CONTENT"
+doc.beans.BaseEventQuery.dateIndexTableName: "${table.name.dateIndex}"
+doc.beans.BaseEventQuery.dateIndexThreads: 20
+doc.beans.BaseEventQuery.defaultDateTypeName: "EVENT"
+doc.beans.BaseEventQuery.disableIndexOnlyDocuments: false
+doc.beans.BaseEventQuery.docAggregationThresholdMs: -1
+doc.beans.BaseEventQuery.enricherClassNames: "datawave.query.enrich.DatawaveTermFrequencyEnricher"
+doc.beans.BaseEventQuery.evaluationOnlyFields: ""
+doc.beans.BaseEventQuery.eventPerDayThreshold: 40000
+doc.beans.BaseEventQuery.finalMaxTermThreshold: 2000
+doc.beans.BaseEventQuery.fullTableScanEnabled: false
+doc.beans.BaseEventQuery.hdfsSiteConfigURLs: "file:///etc/hadoop/conf/core-site.xml,file:///etc/hadoop/conf/hdfs-site.xml"
+doc.beans.BaseEventQuery.includeDataTypeAsField: false
+doc.beans.BaseEventQuery.includeHierarchyFields: false
+doc.beans.BaseEventQuery.indexLookupThreads: 100
+doc.beans.BaseEventQuery.indexOnlyFilterFunctionsEnabled: false
+doc.beans.BaseEventQuery.indexTableName: "${table.name.shardIndex}"
+doc.beans.BaseEventQuery.initialMaxTermThreshold: 2000
+doc.beans.BaseEventQuery.ivaratorCacheBufferSize: 10000
+doc.beans.BaseEventQuery.ivaratorCacheScanPersistThreshold: 100000
+doc.beans.BaseEventQuery.ivaratorCacheScanTimeoutMinutes: 60
+doc.beans.BaseEventQuery.ivaratorFstHdfsBaseURIs: "hdfs:///IvaratorCache"
+doc.beans.BaseEventQuery.ivaratorMaxOpenFiles: 100
+doc.beans.BaseEventQuery.lazySetMechanismEnabled: false
+doc.beans.BaseEventQuery.logTimingDetails: false
+doc.beans.BaseEventQuery.logicDescription: "Retrieve sharded events/documents, leveraging the global index tables as needed"
+doc.beans.BaseEventQuery.maxDepthThreshold: 2000
+doc.beans.BaseEventQuery.maxEvaluationPipelines: 16
+doc.beans.BaseEventQuery.maxFieldIndexRangeSplit: 16
+doc.beans.BaseEventQuery.maxIndexScanTimeMillis: 3.1536E10
+doc.beans.BaseEventQuery.maxIvaratorSources: 20
+doc.beans.BaseEventQuery.maxOrExpansionFstThreshold: 750
+doc.beans.BaseEventQuery.maxOrExpansionThreshold: 500
+doc.beans.BaseEventQuery.maxOrRangeThreshold: 10
+doc.beans.BaseEventQuery.maxPipelineCachedResults: 16
+doc.beans.BaseEventQuery.maxResults: -1
+doc.beans.BaseEventQuery.maxUnfieldedExpansionThreshold: 50
+doc.beans.BaseEventQuery.maxValueExpansionThreshold: 50
+doc.beans.BaseEventQuery.metadataTableName: "${table.name.metadata}"
+doc.beans.BaseEventQuery.minimumSelectivity: 0.2
+doc.beans.BaseEventQuery.modelName: "DATAWAVE"
+doc.beans.BaseEventQuery.modelTableName: "${table.name.metadata}"
+doc.beans.BaseEventQuery.querySyntaxParsers.JEXL: null
+doc.beans.BaseEventQuery.queryThreads: 100
+doc.beans.BaseEventQuery.realmSuffixExclusionPatterns: "<.*>$"
+doc.beans.BaseEventQuery.reverseIndexTableName: "${table.name.shardReverseIndex}"
+doc.beans.BaseEventQuery.sendTimingToStatsd: false
+doc.beans.BaseEventQuery.shardsPerDayThreshold: 20
+doc.beans.BaseEventQuery.statsdHost: "localhost"
+doc.beans.BaseEventQuery.statsdPort: 8125
+doc.beans.BaseEventQuery.tableName: "${table.name.shard}"
+doc.beans.BaseEventQuery.tfAggregationThresholdMs: -1
+doc.beans.BaseEventQuery.useEnrichers: true
+doc.beans.BaseEventQuery.useFilters: false
+doc.beans.BaseEventQuery.zookeeperConfig: ""
+doc.beans.BaseModelEventQuery.modelName: "DATAWAVE"
+doc.beans.BaseModelEventQuery.modelTableName: "${table.name.metadata}"
+doc.beans.ContentQuery.auditType: "NONE"
+doc.beans.ContentQuery.logicDescription: "Query that returns a document given the document identifier"
+doc.beans.ContentQuery.maxResults: -1
+doc.beans.ContentQuery.maxWork: -1
+doc.beans.ContentQuery.tableName: "${table.name.shard}"
+doc.beans.CountQuery.logicDescription: "Retrieve event/document counts based on your search criteria"
+doc.beans.DefaultQueryPlanner.compressOptionMappings: true
+doc.beans.DefaultQueryPlanner[0]: 2611
+doc.beans.DefaultQueryPlanner[1]: true
+doc.beans.DiscoveryQuery.allowLeadingWildcard: true
+doc.beans.DiscoveryQuery.auditType: "NONE"
+doc.beans.DiscoveryQuery.fullTableScanEnabled: false
+doc.beans.DiscoveryQuery.indexTableName: "${table.name.shardIndex}"
+doc.beans.DiscoveryQuery.logicDescription: "Discovery query that returns information from the index about the supplied term(s)"
+doc.beans.DiscoveryQuery.maxResults: -1
+doc.beans.DiscoveryQuery.maxWork: -1
+doc.beans.DiscoveryQuery.metadataTableName: "${table.name.metadata}"
+doc.beans.DiscoveryQuery.modelName: "DATAWAVE"
+doc.beans.DiscoveryQuery.modelTableName: "${table.name.metadata}"
+doc.beans.DiscoveryQuery.reverseIndexTableName: "${table.name.shardReverseIndex}"
+doc.beans.DiscoveryQuery.tableName: "${table.name.shardIndex}"
+doc.beans.EdgeEventQuery.edgeModelName: "DATAWAVE_EDGE"
+doc.beans.EdgeEventQuery.logicDescription: "Use results of an EdgeQuery to obtain events/documents that created the given edge"
+doc.beans.EdgeEventQuery.modelTableName: "${table.name.metadata}"
+doc.beans.ErrorCountQuery.indexTableName: "${table.name.errors.shardIndex}"
+doc.beans.ErrorCountQuery.logicDescription: "Retrieve counts of errored events based on your search criteria"
+doc.beans.ErrorCountQuery.metadataTableName: "${table.name.errors.metadata}"
+doc.beans.ErrorCountQuery.reverseIndexTableName: "${table.name.errors.shardReverseIndex}"
+doc.beans.ErrorCountQuery.tableName: "${table.name.errors.shard}"
+doc.beans.ErrorDiscoveryQuery.allowLeadingWildcard: true
+doc.beans.ErrorDiscoveryQuery.auditType: "NONE"
+doc.beans.ErrorDiscoveryQuery.fullTableScanEnabled: false
+doc.beans.ErrorDiscoveryQuery.indexTableName: "${table.name.errors.shardIndex}"
+doc.beans.ErrorDiscoveryQuery.logicDescription: "Discovery query that returns information from the ingest errors index about the supplied term(s)"
+doc.beans.ErrorDiscoveryQuery.maxResults: -1
+doc.beans.ErrorDiscoveryQuery.maxWork: -1
+doc.beans.ErrorDiscoveryQuery.metadataTableName: "${table.name.errors.metadata}"
+doc.beans.ErrorDiscoveryQuery.modelName: "DATAWAVE"
+doc.beans.ErrorDiscoveryQuery.modelTableName: "${table.name.metadata}"
+doc.beans.ErrorDiscoveryQuery.reverseIndexTableName: "${table.name.errors.shardReverseIndex}"
+doc.beans.ErrorDiscoveryQuery.tableName: "${table.name.errors.shardIndex}"
+doc.beans.ErrorEventQuery.dateIndexTableName: ""
+doc.beans.ErrorEventQuery.includeHierarchyFields: false
+doc.beans.ErrorEventQuery.indexTableName: "${table.name.errors.shardIndex}"
+doc.beans.ErrorEventQuery.logicDescription: "Retrieve events/documents that encountered one or more errors during ingest"
+doc.beans.ErrorEventQuery.metadataTableName: "${table.name.errors.metadata}"
+doc.beans.ErrorEventQuery.reverseIndexTableName: "${table.name.errors.shardReverseIndex}"
+doc.beans.ErrorEventQuery.tableName: "${table.name.errors.shard}"
+doc.beans.ErrorFieldIndexCountQuery.auditType: "NONE"
+doc.beans.ErrorFieldIndexCountQuery.indexTableName: "${table.name.errors.shardIndex}"
+doc.beans.ErrorFieldIndexCountQuery.logicDescription: "FieldIndex count query (experimental)"
+doc.beans.ErrorFieldIndexCountQuery.maxResults: -1
+doc.beans.ErrorFieldIndexCountQuery.maxUniqueValues: 20000
+doc.beans.ErrorFieldIndexCountQuery.maxWork: -1
+doc.beans.ErrorFieldIndexCountQuery.metadataTableName: "${table.name.errors.metadata}"
+doc.beans.ErrorFieldIndexCountQuery.modelName: "DATAWAVE"
+doc.beans.ErrorFieldIndexCountQuery.modelTableName: "${table.name.metadata}"
+doc.beans.ErrorFieldIndexCountQuery.queryThreads: 100
+doc.beans.ErrorFieldIndexCountQuery.reverseIndexTableName: "${table.name.errors.shardReverseIndex}"
+doc.beans.ErrorFieldIndexCountQuery.tableName: "${table.name.errors.shard}"
+doc.beans.EventQuery.logicDescription: "Query the sharded event/document schema, leveraging the global index tables as needed"
+doc.beans.FacetedQuery.auditType: "NONE"
+doc.beans.FacetedQuery.facetHashTableName: "datawave.facetHashes"
+doc.beans.FacetedQuery.facetMetadataTableName: "datawave.facetMetadata"
+doc.beans.FacetedQuery.facetTableName: "datawave.facets"
+doc.beans.FacetedQuery.facetedSearchType: "FIELD_VALUE_FACETS"
+doc.beans.FacetedQuery.fullTableScanEnabled: false
+doc.beans.FacetedQuery.logicDescription: "Faceted search over indexed fields, returning aggregate counts for field values"
+doc.beans.FacetedQuery.maximumFacetGrouping: 200
+doc.beans.FacetedQuery.minimumFacet: 1
+doc.beans.FacetedQuery.querySyntaxParsers.JEXL: null
+doc.beans.FacetedQuery.streaming: true
+doc.beans.FieldIndexCountQuery.auditType: "NONE"
+doc.beans.FieldIndexCountQuery.indexTableName: "${table.name.shardIndex}"
+doc.beans.FieldIndexCountQuery.logicDescription: "Indexed Fields Only:  Given FIELDNAME returns counts for each unique value. Given FIELDNAME:FIELDVALUE returns count for only that value."
+doc.beans.FieldIndexCountQuery.maxResults: -1
+doc.beans.FieldIndexCountQuery.maxUniqueValues: 20000
+doc.beans.FieldIndexCountQuery.maxWork: -1
+doc.beans.FieldIndexCountQuery.metadataTableName: "${table.name.metadata}"
+doc.beans.FieldIndexCountQuery.modelName: "DATAWAVE"
+doc.beans.FieldIndexCountQuery.modelTableName: "${table.name.metadata}"
+doc.beans.FieldIndexCountQuery.queryThreads: 100
+doc.beans.FieldIndexCountQuery.reverseIndexTableName: "${table.name.shardReverseIndex}"
+doc.beans.FieldIndexCountQuery.tableName: "${table.name.shard}"
+doc.beans.HitHighlights.auditType: "NONE"
+doc.beans.HitHighlights.eventPerDayThreshold: 40000
+doc.beans.HitHighlights.finalMaxTermThreshold: 2000
+doc.beans.HitHighlights.fullTableScanEnabled: false
+doc.beans.HitHighlights.hdfsSiteConfigURLs: "file:///etc/hadoop/conf/core-site.xml,file:///etc/hadoop/conf/hdfs-site.xml"
+doc.beans.HitHighlights.includeDataTypeAsField: false
+doc.beans.HitHighlights.includeGroupingContext: false
+doc.beans.HitHighlights.indexTableName: "${table.name.shardIndex}"
+doc.beans.HitHighlights.initialMaxTermThreshold: 2000
+doc.beans.HitHighlights.ivaratorCacheBufferSize: 10000
+doc.beans.HitHighlights.ivaratorCacheScanPersistThreshold: 100000
+doc.beans.HitHighlights.ivaratorCacheScanTimeoutMinutes: 60
+doc.beans.HitHighlights.ivaratorFstHdfsBaseURIs: "hdfs:///IvaratorCache"
+doc.beans.HitHighlights.ivaratorMaxOpenFiles: 100
+doc.beans.HitHighlights.logicDescription: "Fast boolean query over indexed fields, only returning fields queried on"
+doc.beans.HitHighlights.maxDepthThreshold: 2000
+doc.beans.HitHighlights.maxEvaluationPipelines: 16
+doc.beans.HitHighlights.maxFieldIndexRangeSplit: 16
+doc.beans.HitHighlights.maxOrExpansionFstThreshold: 750
+doc.beans.HitHighlights.maxOrExpansionThreshold: 500
+doc.beans.HitHighlights.maxOrRangeIvarators: 10
+doc.beans.HitHighlights.maxOrRangeThreshold: 10
+doc.beans.HitHighlights.maxPipelineCachedResults: 16
+doc.beans.HitHighlights.maxRangesPerRangeIvarator: 5
+doc.beans.HitHighlights.maxUnfieldedExpansionThreshold: 50
+doc.beans.HitHighlights.maxValueExpansionThreshold: 50
+doc.beans.HitHighlights.metadataTableName: "${table.name.metadata}"
+doc.beans.HitHighlights.minimumSelectivity: 0.2
+doc.beans.HitHighlights.querySyntaxParsers.JEXL: null
+doc.beans.HitHighlights.queryThreads: 100
+doc.beans.HitHighlights.reverseIndexTableName: "${table.name.shardReverseIndex}"
+doc.beans.HitHighlights.shardsPerDayThreshold: 20
+doc.beans.HitHighlights.tableName: "${table.name.shard}"
+doc.beans.HitHighlights.useEnrichers: false
+doc.beans.HitHighlights.zookeeperConfig: ""
+doc.beans.IdTranslatorConfiguration.beginDate: 20100101
+doc.beans.IdTranslatorConfiguration.columnVisibility: ""
+doc.beans.IndexStatsQuery.auditType: "NONE"
+doc.beans.IndexStatsQuery.selectorExtractor: null
+doc.beans.LookupUUIDConfiguration.beginDate: 20100101
+doc.beans.LookupUUIDConfiguration.columnVisibility: ""
+doc.beans.LuceneUUIDEventQuery.auditType: "NONE"
+doc.beans.LuceneUUIDEventQuery.logicDescription: "Composite query logic that retrieves records from the event and error tables, based on known UUID fields, ie, those configured via UUIDTypeList in QueryLogicFactory.xml"
+doc.beans.LuceneUUIDEventQuery.queryLogics.ErrorEventQuery.auditType: "NONE"
+doc.beans.LuceneUUIDEventQuery.queryLogics.ErrorEventQuery.connPoolName: "UUID"
+doc.beans.LuceneUUIDEventQuery.queryLogics.ErrorEventQuery.dateIndexTableName: ""
+doc.beans.LuceneUUIDEventQuery.queryLogics.ErrorEventQuery.indexTableName: "${table.name.errors.shardIndex}"
+doc.beans.LuceneUUIDEventQuery.queryLogics.ErrorEventQuery.logicDescription: "Lucene query for event/document UUIDs for events that encountered errors at ingest time"
+doc.beans.LuceneUUIDEventQuery.queryLogics.ErrorEventQuery.mandatoryQuerySyntax: "LUCENE-UUID"
+doc.beans.LuceneUUIDEventQuery.queryLogics.ErrorEventQuery.metadataTableName: "${table.name.errors.metadata}"
+doc.beans.LuceneUUIDEventQuery.queryLogics.ErrorEventQuery.reverseIndexTableName: "${table.name.errors.shardReverseIndex}"
+doc.beans.LuceneUUIDEventQuery.queryLogics.ErrorEventQuery.tableName: "${table.name.errors.shard}"
+doc.beans.LuceneUUIDEventQuery.queryLogics.EventQuery.auditType: "NONE"
+doc.beans.LuceneUUIDEventQuery.queryLogics.EventQuery.connPoolName: "UUID"
+doc.beans.LuceneUUIDEventQuery.queryLogics.EventQuery.logicDescription: "Lucene query for event/document UUIDs"
+doc.beans.LuceneUUIDEventQuery.queryLogics.EventQuery.mandatoryQuerySyntax: "LUCENE-UUID"
+doc.beans.LuceneUUIDEventQuery.selectorExtractor: null
+doc.beans.MyRemoteUserOps.queryServiceHost: "localhost"
+doc.beans.MyRemoteUserOps.queryServicePort: 8443
+doc.beans.MyRemoteUserOps.queryServiceScheme: "https"
+doc.beans.MyRemoteUserOps.queryServiceURI: "/DataWave/Security/User/"
+doc.beans.QueryLogicFactoryConfiguration.maxPageSize: 10000
+doc.beans.QueryLogicFactoryConfiguration.pageByteTrigger: 0
+doc.beans.QueryMetricsQuery.auditType: "NONE"
+doc.beans.QueryMetricsQuery.dateIndexTableName: "${table.name.queryMetrics.dateIndex}"
+doc.beans.QueryMetricsQuery.includeHierarchyFields: false
+doc.beans.QueryMetricsQuery.indexTableName: "${table.name.queryMetrics.shardIndex}"
+doc.beans.QueryMetricsQuery.logicDescription: "Retrieve query metrics based on the given search term(s)"
+doc.beans.QueryMetricsQuery.metadataTableName: "${table.name.queryMetrics.metadata}"
+doc.beans.QueryMetricsQuery.modelName: "NONE"
+doc.beans.QueryMetricsQuery.modelTableName: "${table.name.queryMetrics.metadata}"
+doc.beans.QueryMetricsQuery.reverseIndexTableName: "${table.name.queryMetrics.shardReverseIndex}"
+doc.beans.QueryMetricsQuery.tableName: "${table.name.queryMetrics.shard}"
+doc.beans.RemoteEventQuery.auditType: "NONE"
+doc.beans.RemoteEventQuery.checkpointable: false
+doc.beans.RemoteEventQuery.logicDescription: "Retrieve sharded events/documents, leveraging the global index tables as needed"
+doc.beans.RemoteEventQuery.maxResults: -1
+doc.beans.RemoteEventQuery.remoteQueryLogic: "EventQuery"
+doc.beans.RemoteEventQuery.tableName: "${table.name.shard}"
+doc.beans.RemoteQueryService.queryServiceHost: "query"
+doc.beans.RemoteQueryService.queryServicePort: 8443
+doc.beans.RemoteQueryService.queryServiceScheme: "https"
+doc.beans.RemoteQueryService.queryServiceURI: "/query/v1/"
+doc.beans.TLDEventQuery.collapseUids: false
+doc.beans.TLDEventQuery.indexFilteringClassNames: "datawave.query.function.NormalizedVersionPredicate"
+doc.beans.TermFrequencyQuery.auditType: "NONE"
+doc.beans.TermFrequencyQuery.logicDescription: "Query that returns data from the term frequency query table"
+doc.beans.TermFrequencyQuery.maxResults: -1
+doc.beans.TermFrequencyQuery.maxWork: -1
+doc.beans.TermFrequencyQuery.tableName: "${table.name.shard}"
+doc.beans.TimedVisitorManager.debugEnabled: false
+doc.beans.TimedVisitorManager.validateAst: false
+doc.beans.TokenizedLuceneToJexlQueryParser.tokenizeUnfieldedQueries: true
+doc.beans.skipTokenizeFields: "DOMETA"
+doc.beans.tokenizeFields: "CONTENT"
+
+Refs (key: ref)
+----------------------------------------
+doc.beans.BaseEventQuery.dateIndexHelperFactory: dateIndexHelperFactory
+doc.beans.BaseEventQuery.eventQueryDataDecoratorTransformer: EventQueryDataDecoratorTransformer
+doc.beans.BaseEventQuery.filterOptions: BaseEventQueryFilterOptions
+doc.beans.BaseEventQuery.hierarchyFieldOptions: BaseEventQueryHierarchyFieldOptions
+doc.beans.BaseEventQuery.ivaratorCacheDirConfigs: IvaratorCacheDirConfigs
+doc.beans.BaseEventQuery.metadataHelperFactory: metadataHelperFactory
+doc.beans.BaseEventQuery.queryPlanner: DefaultQueryPlanner
+doc.beans.BaseEventQuery.selectorExtractor: DatawaveSelectorExtractor
+doc.beans.DatawaveSelectorExtractor.luceneToJexlQueryParser: LuceneToJexlQueryParser
+doc.beans.DefaultQueryPlanner.queryModelProviderFactory: queryModelProviderFactory
+doc.beans.DefaultQueryPlanner.visitorManager: TimedVisitorManager
+doc.beans.DiscoveryQuery.metadataHelperFactory: metadataHelperFactory
+doc.beans.DiscoveryQuery.selectorExtractor: DatawaveSelectorExtractor
+doc.beans.EdgeEventQuery.edgeDictionaryProvider: edgeDictionaryProvider
+doc.beans.EdgeEventQuery.edgeQueryModel: edgeEventQueryModel
+doc.beans.ErrorDiscoveryQuery.metadataHelperFactory: metadataHelperFactory
+doc.beans.ErrorDiscoveryQuery.selectorExtractor: DatawaveSelectorExtractor
+doc.beans.ErrorFieldIndexCountQuery.metadataHelperFactory: metadataHelperFactory
+doc.beans.ErrorFieldIndexCountQuery.selectorExtractor: DatawaveSelectorExtractor
+doc.beans.FieldIndexCountQuery.metadataHelperFactory: metadataHelperFactory
+doc.beans.FieldIndexCountQuery.selectorExtractor: DatawaveSelectorExtractor
+doc.beans.HitHighlights.ivaratorCacheDirConfigs: IvaratorCacheDirConfigs
+doc.beans.HitHighlights.metadataHelperFactory: metadataHelperFactory
+doc.beans.HitHighlights.selectorExtractor: DatawaveSelectorExtractor
+doc.beans.IdTranslatorConfiguration.uuidTypes: UUIDTypeList
+doc.beans.LookupUUIDConfiguration.uuidTypes: UUIDTypeList
+doc.beans.LuceneToJexlQueryParser.allowedFunctions: allowedQueryFunctions
+doc.beans.LuceneToJexlQueryParser.skipTokenizeUnfieldedFields: skipTokenizeFields
+doc.beans.LuceneToJexlUUIDQueryParser.allowedFunctions: allowedQueryFunctions
+doc.beans.LuceneToJexlUUIDQueryParser.uuidTypes: UUIDTypeList
+doc.beans.MyRemoteUserOps.responseObjectFactory: responseObjectFactory
+doc.beans.QueryMetricsQuery.metadataHelperFactory: metadataHelperFactory
+doc.beans.RemoteEventQuery.remoteQueryService: RemoteQueryService
+doc.beans.RemoteEventQuery.selectorExtractor: DatawaveSelectorExtractor
+doc.beans.RemoteEventQuery.userOperations: MyRemoteUserOps
+doc.beans.RemoteQueryService.responseObjectFactory: responseObjectFactory
+doc.beans.TimedVisitorManager.validator: AstValidator
+doc.beans.TokenizedLuceneToJexlQueryParser.allowedFunctions: allowedQueryFunctions
+doc.beans.TokenizedLuceneToJexlQueryParser.skipTokenizeUnfieldedFields: skipTokenizeFields
+doc.beans.TokenizedLuceneToJexlQueryParser.tokenizedFields: tokenizeFields
+doc.beans.allowedQueryFunctions.parser: LuceneToJexlQueryParser
+doc.beans.baseQueryLogic.markingFunctions: markingFunctions
+doc.beans.baseQueryLogic.responseObjectFactory: responseObjectFactory
+doc.beans.queryLogicFactory.queryLogicFactoryConfiguration: QueryLogicFactoryConfiguration
+
+Effective Properties (name=value)
+----------------------------------------
+shard.table.name=${table.name.shard}
+event.query.max.results=-1
+accumulo.user.password=${accumulo.user.password}
+shard.table.name=${table.name.shard}
+date.index.table.name=${table.name.dateIndex}
+default.date.type.name=EVENT
+metadata.table.name=${table.name.metadata}
+index.table.name=${table.name.shardIndex}
+rindex.table.name=${table.name.shardReverseIndex}
+event.query.max.results=-1
+shard.query.threads=100
+index.query.threads=100
+date.index.threads=20
+beq.fullTableScanEnabled=false
+disable.index.only.documents=false
+enable.index.only.filter.functions=false
+include.hierarchy.fields=false
+beq.baseIteratorPriority=100
+query.max.index.scan.ms=31536000000
+query.collapse.uids=false
+query.collapse.uids.threshold=-1
+event.query.filters.enabled=false
+beq.shardsPerDayThreshold=20
+beq.initialMaxTermThreshold=2000
+beq.finalMaxTermThreshold=2000
+beq.maxDepthThreshold=2000
+beq.unfieldedExpansionThreshold=50
+beq.valueExpansionThreshold=50
+beq.orExpansionThreshold=500
+beq.orRangeThreshold=10
+beq.orExpansionFstThreshold=750
+beq.fieldIndexRangeSplit=16
+beq.maxIvaratorSources=20
+beq.evaluationPipelines=16
+beq.pipelineCachedResults=16
+hdfs.site.config.urls=file\:///etc/hadoop/conf/core-site.xml,file\:///etc/hadoop/conf/hdfs-site.xml
+ivarator.zookeeper.hosts=
+ivarator.fst.hdfs.base.uris=hdfs\:///IvaratorCache
+beq.maxIvaratorOpenFiles=100
+query.max.call.time.minutes=60
+metadata.table.name=${table.name.metadata}
+evaluation.only.fields=
+metadata.table.name=${table.name.metadata}
+lookup.uuid.beginDate=20100101
+lookup.uuid.beginDate=20100101
+query.max.page.size=10000
+query.page.byte.trigger=0
+shard.table.name=${table.name.shard}
+index.table.name=${table.name.shardIndex}
+rindex.table.name=${table.name.shardReverseIndex}
+metadata.table.name=${table.name.metadata}
+shard.query.threads=100
+metadata.table.name=${table.name.metadata}
+shard.table.name=${table.name.shard}
+shard.table.name=${table.name.shard}
+error.shard.table.name=${table.name.errors.shard}
+error.index.table.name=${table.name.errors.shardIndex}
+error.rindex.table.name=${table.name.errors.shardReverseIndex}
+error.metadata.table.name=${table.name.errors.metadata}
+shard.query.threads=100
+metadata.table.name=${table.name.metadata}
+error.shard.table.name=${table.name.errors.shard}
+error.metadata.table.name=${table.name.errors.metadata}
+error.index.table.name=${table.name.errors.shardIndex}
+error.rindex.table.name=${table.name.errors.shardReverseIndex}
+error.shard.table.name=${table.name.errors.shard}
+error.metadata.table.name=${table.name.errors.metadata}
+error.index.table.name=${table.name.errors.shardIndex}
+error.rindex.table.name=${table.name.errors.shardReverseIndex}
+querymetrics.metadata.table.name=${table.name.queryMetrics.metadata}
+querymetrics.shard.table.name=${table.name.queryMetrics.shard}
+querymetrics.dateindex.table.name=${table.name.queryMetrics.dateIndex}
+querymetrics.metadata.table.name=${table.name.queryMetrics.metadata}
+querymetrics.index.table.name=${table.name.queryMetrics.shardIndex}
+querymetrics.rindex.table.name=${table.name.queryMetrics.shardReverseIndex}
+index.table.name=${table.name.shardIndex}
+index.table.name=${table.name.shardIndex}
+rindex.table.name=${table.name.shardReverseIndex}
+metadata.table.name=${table.name.metadata}
+metadata.table.name=${table.name.metadata}
+error.index.table.name=${table.name.errors.shardIndex}
+error.index.table.name=${table.name.errors.shardIndex}
+error.rindex.table.name=${table.name.errors.shardReverseIndex}
+metadata.table.name=${table.name.metadata}
+error.metadata.table.name=${table.name.errors.metadata}
+error.shard.table.name=${table.name.errors.shard}
+error.metadata.table.name=${table.name.errors.metadata}
+error.index.table.name=${table.name.errors.shardIndex}
+error.rindex.table.name=${table.name.errors.shardReverseIndex}
+table.name.facet=datawave.facets
+table.name.facet.metadata=datawave.facetMetadata
+table.name.facet.hashes=datawave.facetHashes
+shard.table.name=${table.name.shard}
+metadata.table.name=${table.name.metadata}
+index.table.name=${table.name.shardIndex}
+rindex.table.name=${table.name.shardReverseIndex}
+index.query.threads=100
+beq.shardsPerDayThreshold=20
+beq.initialMaxTermThreshold=2000
+beq.finalMaxTermThreshold=2000
+beq.maxDepthThreshold=2000
+beq.unfieldedExpansionThreshold=50
+beq.valueExpansionThreshold=50
+beq.orExpansionThreshold=500
+beq.orRangeThreshold=10
+beq.maxRangesPerRangeIvarator=5
+beq.maxOrRangeIvarators=10
+beq.orExpansionFstThreshold=750
+beq.fieldIndexRangeSplit=16
+beq.evaluationPipelines=16
+beq.pipelineCachedResults=16
+hdfs.site.config.urls=file\:///etc/hadoop/conf/core-site.xml,file\:///etc/hadoop/conf/hdfs-site.xml
+ivarator.zookeeper.hosts=
+ivarator.fst.hdfs.base.uris=hdfs\:///IvaratorCache
+beq.maxIvaratorOpenFiles=100
+query.max.call.time.minutes=60
+metadata.table.name=${table.name.metadata}
+
+Effective Yml
+----------------------------------------
+shard:
+  table:
+    name: "${table.name.shard}"
+  query:
+    threads: "100"
+event:
+  query:
+    max:
+      results: "-1"
+    filters:
+      enabled: "false"
+accumulo:
+  user:
+    password: "${accumulo.user.password}"
+date:
+  index:
+    table:
+      name: "${table.name.dateIndex}"
+    threads: "20"
+default:
+  date:
+    type:
+      name: "EVENT"
+metadata:
+  table:
+    name: "${table.name.metadata}"
+index:
+  table:
+    name: "${table.name.shardIndex}"
+  query:
+    threads: "100"
+rindex:
+  table:
+    name: "${table.name.shardReverseIndex}"
+beq:
+  fullTableScanEnabled: "false"
+  baseIteratorPriority: "100"
+  shardsPerDayThreshold: "20"
+  initialMaxTermThreshold: "2000"
+  finalMaxTermThreshold: "2000"
+  maxDepthThreshold: "2000"
+  unfieldedExpansionThreshold: "50"
+  valueExpansionThreshold: "50"
+  orExpansionThreshold: "500"
+  orRangeThreshold: "10"
+  orExpansionFstThreshold: "750"
+  fieldIndexRangeSplit: "16"
+  maxIvaratorSources: "20"
+  evaluationPipelines: "16"
+  pipelineCachedResults: "16"
+  maxIvaratorOpenFiles: "100"
+  maxRangesPerRangeIvarator: "5"
+  maxOrRangeIvarators: "10"
+disable:
+  index:
+    only:
+      documents: "false"
+enable:
+  index:
+    only:
+      filter:
+        functions: "false"
+include:
+  hierarchy:
+    fields: "false"
+query:
+  max:
+    index:
+      scan:
+        ms: "31536000000"
+    call:
+      time:
+        minutes: "60"
+    page:
+      size: "10000"
+  collapse:
+    uids: "false"
+    '[uids.threshold]': "-1"
+    threshold: "-1"
+  page:
+    byte:
+      trigger: "0"
+hdfs:
+  site:
+    config:
+      urls: "file:///etc/hadoop/conf/core-site.xml,file:///etc/hadoop/conf/hdfs-site.xml"
+ivarator:
+  zookeeper:
+    hosts: ""
+  fst:
+    hdfs:
+      base:
+        uris: "hdfs:///IvaratorCache"
+evaluation:
+  only:
+    fields: ""
+lookup:
+  uuid:
+    beginDate: "20100101"
+error:
+  shard:
+    table:
+      name: "${table.name.errors.shard}"
+  index:
+    table:
+      name: "${table.name.errors.shardIndex}"
+  rindex:
+    table:
+      name: "${table.name.errors.shardReverseIndex}"
+  metadata:
+    table:
+      name: "${table.name.errors.metadata}"
+querymetrics:
+  metadata:
+    table:
+      name: "${table.name.queryMetrics.metadata}"
+  shard:
+    table:
+      name: "${table.name.queryMetrics.shard}"
+  dateindex:
+    table:
+      name: "${table.name.queryMetrics.dateIndex}"
+  index:
+    table:
+      name: "${table.name.queryMetrics.shardIndex}"
+  rindex:
+    table:
+      name: "${table.name.queryMetrics.shardReverseIndex}"
+table:
+  name:
+    facet: "datawave.facets"
+    '[facet.metadata]': "datawave.facetMetadata"
+    metadata: "datawave.facetMetadata"
+    '[facet.hashes]': "datawave.facetHashes"
+    hashes: "datawave.facetHashes"

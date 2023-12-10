@@ -82,6 +82,7 @@ echo "$(date): Running streaming query"
 echo "$(date): Running streaming query" > querySummary.txt
 curl -s -D headers_0.txt -k -E ${TMP_PEM} \
     -H "Accept: application/xml" \
+    -H "Pool: $POOL" \
     --data-urlencode "begin=19660908 000000.000" \
     --data-urlencode "end=20161002 235959.999" \
     --data-urlencode "columnVisibility=PUBLIC" \
@@ -91,7 +92,6 @@ curl -s -D headers_0.txt -k -E ${TMP_PEM} \
     --data-urlencode "systemFrom=$SYSTEM_FROM" \
     --data-urlencode "queryName=Developer Test Streaming Query" \
     --data-urlencode "pagesize=10" \
-    --data-urlencode "pool=$POOL" \
     ${DATAWAVE_ENDPOINT}/EventQuery/createAndExecute -o streamingResponse.xml -w '%{http_code}\n' >> querySummary.txt
 
 QUERY_ID=$(get_query_id < streamingResponse.xml)

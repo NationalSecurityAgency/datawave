@@ -46,6 +46,7 @@ import datawave.query.DocumentSerialization.ReturnType;
 import datawave.query.QueryParameters;
 import datawave.query.attributes.ExcerptFields;
 import datawave.query.attributes.UniqueFields;
+import datawave.query.common.grouping.GroupFields;
 import datawave.query.function.DocumentPermutation;
 import datawave.query.iterator.QueryIterator;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
@@ -102,6 +103,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private int collapseUidsThreshold = -1;
     // Should this query dedupe terms within ANDs and ORs
     private boolean enforceUniqueTermsWithinExpressions = false;
+    // should this query attempt to prune terms via their ingest types
+    private boolean pruneQueryByIngestTypes = false;
     // should this query reduce the set of fields prior to serialization
     private boolean reduceQueryFields = false;
     private boolean reduceTypeMetadata = false;
@@ -267,6 +270,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private String limitFieldsField = null;
     private boolean hitList = false;
     private boolean dateIndexTimeTravel = false;
+    private boolean ignoreNonExistentFields = false;
     // Cap (or fail if failOutsideValidDateRange) the begin date with this value (subtracted from Now). 0 or less disables this feature.
     private long beginDateCap = -1;
     private boolean failOutsideValidDateRange = true;
@@ -360,10 +364,12 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private boolean compressServerSideResults = false;
     private boolean indexOnlyFilterFunctionsEnabled = false;
     private boolean compositeFilterFunctionsEnabled = false;
-
+    /**
+     * The fields to group by and aggregate.
+     */
+    private GroupFields groupFields = new GroupFields();
     private int groupFieldsBatchSize;
     private boolean accrueStats = false;
-    private Set<String> groupFields = new HashSet<>(0);
     private UniqueFields uniqueFields = new UniqueFields();
     private boolean cacheModel = false;
     /**
@@ -481,6 +487,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setCollapseUids(other.getCollapseUids());
         this.setCollapseUidsThreshold(other.getCollapseUidsThreshold());
         this.setEnforceUniqueTermsWithinExpressions(other.getEnforceUniqueTermsWithinExpressions());
+        this.setPruneQueryByIngestTypes(other.getPruneQueryByIngestTypes());
         this.setReduceQueryFields(other.getReduceQueryFields());
         this.setReduceTypeMetadata(other.getReduceTypeMetadata());
         this.setReduceTypeMetadataPerShard(other.getReduceTypeMetadataPerShard());
@@ -513,6 +520,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setIndexTableName(other.getIndexTableName());
         this.setReverseIndexTableName(other.getReverseIndexTableName());
         this.setMetadataTableName(other.getMetadataTableName());
+        this.setIgnoreNonExistentFields(other.getIgnoreNonExistentFields());
         this.setDateIndexTableName(other.getDateIndexTableName());
         this.setIndexStatsTableName(other.getIndexStatsTableName());
         this.setDefaultDateTypeName(other.getDefaultDateTypeName());
@@ -627,7 +635,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setCompositeFilterFunctionsEnabled(other.isCompositeFilterFunctionsEnabled());
         this.setGroupFieldsBatchSize(other.getGroupFieldsBatchSize());
         this.setAccrueStats(other.getAccrueStats());
-        this.setGroupFields(null == other.getGroupFields() ? null : Sets.newHashSet(other.getGroupFields()));
         this.setUniqueFields(UniqueFields.copyOf(other.getUniqueFields()));
         this.setCacheModel(other.getCacheModel());
         this.setTrackSizes(other.isTrackSizes());
@@ -657,6 +664,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setLazySetMechanismEnabled(other.isLazySetMechanismEnabled());
         this.setDocAggregationThresholdMs(other.getDocAggregationThresholdMs());
         this.setTfAggregationThresholdMs(other.getTfAggregationThresholdMs());
+        this.setGroupFields(GroupFields.copyOf(other.getGroupFields()));
         this.setPruneQueryOptions(other.getPruneQueryOptions());
     }
 
@@ -1694,6 +1702,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.dateIndexTimeTravel = dateIndexTimeTravel;
     }
 
+    public boolean getIgnoreNonExistentFields() {
+        return ignoreNonExistentFields;
+    }
+
+    public void setIgnoreNonExistentFields(boolean ignoreNonExistentFields) {
+        this.ignoreNonExistentFields = ignoreNonExistentFields;
+    }
+
     public long getBeginDateCap() {
         return beginDateCap;
     }
@@ -1708,18 +1724,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setFailOutsideValidDateRange(boolean failOutsideValidDateRange) {
         this.failOutsideValidDateRange = failOutsideValidDateRange;
-    }
-
-    public Set<String> getGroupFields() {
-        return groupFields;
-    }
-
-    public void setGroupFields(Set<String> groupFields) {
-        this.groupFields = deconstruct(groupFields);
-    }
-
-    public String getGroupFieldsAsString() {
-        return StringUtils.join(this.getGroupFields(), Constants.PARAM_VALUE_SEP);
     }
 
     public int getGroupFieldsBatchSize() {
@@ -2100,6 +2104,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setEnforceUniqueTermsWithinExpressions(boolean enforceUniqueTermsWithinExpressions) {
         this.enforceUniqueTermsWithinExpressions = enforceUniqueTermsWithinExpressions;
+    }
+
+    public boolean getPruneQueryByIngestTypes() {
+        return pruneQueryByIngestTypes;
+    }
+
+    public void setPruneQueryByIngestTypes(boolean pruneQueryByIngestTypes) {
+        this.pruneQueryByIngestTypes = pruneQueryByIngestTypes;
     }
 
     public boolean getReduceQueryFields() {
@@ -2549,6 +2561,18 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setTfAggregationThresholdMs(int tfAggregationThresholdMs) {
         this.tfAggregationThresholdMs = tfAggregationThresholdMs;
+    }
+
+    public GroupFields getGroupFields() {
+        return groupFields;
+    }
+
+    public void setGroupFields(GroupFields groupFields) {
+        this.groupFields = groupFields;
+        // Make sure the fields are deconstructed by this point.
+        if (this.groupFields != null) {
+            this.groupFields.deconstructIdentifiers();
+        }
     }
 
     public boolean getPruneQueryOptions() {

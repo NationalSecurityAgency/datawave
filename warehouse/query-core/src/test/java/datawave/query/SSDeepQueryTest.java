@@ -2,6 +2,7 @@ package datawave.query;
 
 import static org.junit.Assert.fail;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -57,6 +58,8 @@ public class SSDeepQueryTest {
     public static String[] TEST_SSDEEPS = {"12288:002r/VG4GjeZHkwuPikQ7lKH5p5H9x1beZHkwulizQ1lK55pGxlXTd8zbW:002LVG4GjeZEXi37l6Br1beZEdic1lmu",
             "6144:02C3nq73v1kHGhs6y7ppFj93NRW6/ftZTgC6e8o4toHZmk6ZxoXb0ns:02C4cGCLjj9Swfj9koHEk6/Fns",
             "3072:02irbxzGAFYDMxud7fKg3dXVmbOn5u46Kjnz/G8VYrs123D6pIJLIOSP:02MKlWQ7Sg3d4bO968rm7JO",
+            "3072:03jscyaGAFYDMxud7fKg3dXVmbOn5u46Kjnz/G8VYrs123D6pIJLIOSP:03NLmXR7Sg3d4bO968rm7JO",
+            "3072:03jscyaZZZZZYYYYXXXWWdXVmbOn5u46KjnzWWWXXXXYYYYYYZZZZZZZ:03NLmXR7ZZZYYXW9WXYYZZZ",
             "48:1aBhsiUw69/UXX0x0qzNkVkydf2klA8a7Z35:155w69MXAlNkmkWTF5", "196608:wEEE+EEEEE0LEEEEEEEEEEREEEEhEEETEEEEEWUEEEJEEEEcEEEEEEEE3EEEEEEN:",
             "1536:0YgNvw/OmgPgiQeI+25Nh6+RS5Qa8LmbyfAiIRgizy1cBx76UKYbD+iD/RYgNvw6:", "12288:222222222222222222222222222222222:"};
 
@@ -135,17 +138,6 @@ public class SSDeepQueryTest {
         logSSDeepTestData(tableName);
     }
 
-    private static void logSSDeepTestData(String tableName) throws TableNotFoundException {
-        Scanner scanner = accumuloClient.createScanner(tableName, auths);
-        Iterator<Map.Entry<Key,Value>> iterator = scanner.iterator();
-        log.debug("*************** " + tableName + " ********************");
-        while (iterator.hasNext()) {
-            Map.Entry<Key,Value> entry = iterator.next();
-            log.debug(entry);
-        }
-        scanner.close();
-    }
-
     @Before
     public void setUpQuery() {
         logic = new SSDeepSimilarityQueryLogic();
@@ -162,37 +154,64 @@ public class SSDeepQueryTest {
     }
 
     @Test
-    public void testSingleQuery() throws Exception {
-        String query = "CHECKSUM_SSDEEP:" + TEST_SSDEEPS[2];
-        EventQueryResponseBase response = runSSDeepQuery(query);
-        List<EventBase> events = response.getEvents();
-        int eventCount = events.size();
-
-        Map<String,String> observedFields = new HashMap<>();
-        if (eventCount > 0) {
-            for (EventBase e : events) {
-                List<FieldBase> fields = e.getFields();
-                for (FieldBase f : fields) {
-                    observedFields.put(f.getName(), f.getValueString());
-                }
-            }
-        }
-
-        Assert.assertFalse("Observed fields was unexpectedly empty", observedFields.isEmpty());
-        Assert.assertEquals("65.0", observedFields.remove("MATCH_SCORE"));
-        Assert.assertEquals("1", observedFields.remove("MATCH_RANK"));
-        Assert.assertEquals("3072:02irbxzGAFYDMxud7fKg3dXVmbOn5u46Kjnz/G8VYrs123D6pIJLIOSP:02MKlWQ7Sg3d4bO968rm7JO", observedFields.remove("QUERY_SSDEEP"));
-        Assert.assertEquals("3072:02irbxzGAFYDMxud7fKg3dXVmbOn5u46Kjnz/G8VYrs123D6pIJLIOSP:02MKlWQ7Sg3d4bO968rm7JO", observedFields.remove("MATCHING_SSDEEP"));
-        Assert.assertTrue("Observed unexpected field(s): " + observedFields, observedFields.isEmpty());
-        Assert.assertEquals(1, eventCount);
+    /** Test that a single query ssdeep with no match score threshold returns the expected results */
+    public void testSingleQueryNoMinScore() throws Exception {
+        runSingleQuery(false);
     }
 
-    public EventQueryResponseBase runSSDeepQuery(String query) throws Exception {
+    @Test
+    /** Test that a single query ssdeep with a min score threshold returns the expected results */
+    public void testSingleQueryMinScore() throws Exception {
+        runSingleQuery(true);
+    }
+
+    private static void logSSDeepTestData(String tableName) throws TableNotFoundException {
+        Scanner scanner = accumuloClient.createScanner(tableName, auths);
+        Iterator<Map.Entry<Key,Value>> iterator = scanner.iterator();
+        log.debug("*************** " + tableName + " ********************");
+        while (iterator.hasNext()) {
+            Map.Entry<Key,Value> entry = iterator.next();
+            log.debug(entry);
+        }
+        scanner.close();
+    }
+
+    public void runSingleQuery(boolean applyMinScoreThreshold) throws Exception {
+        String query = "CHECKSUM_SSDEEP:" + TEST_SSDEEPS[2];
+
+        final int minScoreThreshold = applyMinScoreThreshold ? 65 : 0;
+        final int expectedEventCount = applyMinScoreThreshold ? 2 : 3;
+
+        EventQueryResponseBase response = runSSDeepQuery(query, minScoreThreshold);
+        List<EventBase> events = response.getEvents();
+        int eventCount = events.size();
+        Map<String,Map<String,String>> observedEvents = extractObservedEvents(events);
+
+        Assert.assertEquals(expectedEventCount, eventCount);
+
+        // find the fields for the self match example.
+        assertMatch(TEST_SSDEEPS[2], TEST_SSDEEPS[2], "65.0", "1", "100", observedEvents);
+
+        // find and validate the fields for the partial match example.
+        assertMatch(TEST_SSDEEPS[2], TEST_SSDEEPS[3], "51.0", "2", "96", observedEvents);
+
+        if (applyMinScoreThreshold)
+            assertNoMatch(TEST_SSDEEPS[2], TEST_SSDEEPS[3], observedEvents);
+        else
+            assertMatch(TEST_SSDEEPS[2], TEST_SSDEEPS[4], "9.0", "3", "63", observedEvents);
+    }
+
+    public EventQueryResponseBase runSSDeepQuery(String query, int minScoreThreshold) throws Exception {
+
         QueryImpl q = new QueryImpl();
         q.setQuery(query);
         q.setId(UUID.randomUUID());
         q.setPagesize(Integer.MAX_VALUE);
         q.setQueryAuthorizations(auths.toString());
+
+        if (minScoreThreshold > 0) {
+            q.addParameter(SSDeepSimilarityQueryTransformer.MIN_SSDEEP_SCORE_PARAMETER, String.valueOf(minScoreThreshold));
+        }
 
         RunningQuery runner = new RunningQuery(accumuloClient, AccumuloConnectionFactory.Priority.NORMAL, this.logic, q, "", principal,
                         new QueryMetricFactoryImpl());
@@ -201,5 +220,77 @@ public class SSDeepQueryTest {
         EventQueryResponseBase response = (EventQueryResponseBase) transformer.createResponse(runner.next());
 
         return response;
+    }
+
+    /** Extract the events from a set of results into an easy to manage data structure for validation */
+    public Map<String,Map<String,String>> extractObservedEvents(List<EventBase> events) {
+        int eventCount = events.size();
+        Map<String,Map<String,String>> observedEvents = new HashMap<>();
+        if (eventCount > 0) {
+            for (EventBase e : events) {
+                Map<String,String> observedFields = new HashMap<>();
+                String querySsdeep = "UNKNOWN_QUERY";
+                String matchingSsdeep = "UNKNOWN_MATCH";
+
+                List<FieldBase> fields = e.getFields();
+                for (FieldBase f : fields) {
+                    if (f.getName().equals("QUERY_SSDEEP")) {
+                        querySsdeep = f.getValueString();
+                    }
+                    if (f.getName().equals("MATCHING_SSDEEP")) {
+                        matchingSsdeep = f.getValueString();
+                    }
+                    observedFields.put(f.getName(), f.getValueString());
+                }
+
+                String eventKey = querySsdeep + "#" + matchingSsdeep;
+                observedEvents.put(eventKey, observedFields);
+            }
+        }
+        return observedEvents;
+    }
+
+    /**
+     * assert that a match exists between the specified query and matching ssdeep and that the match has the expected properties
+     *
+     * @param querySsdeep
+     *            the query ssdeep we expect to find in the match results
+     * @param matchingSsdeep
+     *            the matching ssdeep we expect to find in the match results.
+     * @param matchScore
+     *            the base match score
+     * @param matchRank
+     *            the match rank
+     * @param weightedScore
+     *            the weighted match score.
+     * @param observedEvents
+     *            the map of observed events, created by extractObservedEvents on the event list obtained from query execution.
+     */
+    public static void assertMatch(String querySsdeep, String matchingSsdeep, String matchScore, String matchRank, String weightedScore,
+                    Map<String,Map<String,String>> observedEvents) {
+        final Map<String,String> observedFields = observedEvents.get(querySsdeep + "#" + matchingSsdeep);
+        Assert.assertNotNull("Observed fields was null", observedFields);
+        Assert.assertFalse("Observed fields was unexpectedly empty", observedFields.isEmpty());
+        Assert.assertEquals(matchScore, observedFields.remove("MATCH_SCORE"));
+        Assert.assertEquals(weightedScore, observedFields.remove("WEIGHTED_SCORE"));
+        Assert.assertEquals(querySsdeep, observedFields.remove("QUERY_SSDEEP"));
+        Assert.assertEquals(matchingSsdeep, observedFields.remove("MATCHING_SSDEEP"));
+        Assert.assertTrue("Observed unexpected field(s) in full match: " + observedFields, observedFields.isEmpty());
+    }
+
+    /**
+     * Assert that the results do not contain a match between the specified query and matching ssdeep
+     *
+     * @param querySsdeep
+     *            the query ssdeep we do not expect to find in the match results
+     * @param matchingSsdeep
+     *            the matching ssdeep we do not expect to find i nthe match results
+     * @param observedEvents
+     *            the map of the observed events, created by extractObservedEvents on the event list obtained from query exeuction.
+     */
+    public static void assertNoMatch(String querySsdeep, String matchingSsdeep, Map<String,Map<String,String>> observedEvents) {
+        final Map<String,String> observedFields = observedEvents.get(querySsdeep + "#" + matchingSsdeep);
+        Assert.assertTrue("Observed fields was not empty", observedFields.isEmpty());
+
     }
 }

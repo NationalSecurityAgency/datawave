@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.jexl3.JexlBuilder;
 import org.apache.commons.jexl3.JexlContext;
 import org.apache.commons.jexl3.JexlExpression;
 import org.apache.commons.jexl3.MapContext;
@@ -65,7 +66,7 @@ public class QueryJexl {
 
     private static final Logger log = Logger.getLogger(QueryJexl.class);
 
-    private static final Engine jEngine = new Engine();
+    private static final Engine jEngine = new Engine(new JexlBuilder().strict(false));
     private final RawDataManager manager;
     private final Date startDate;
     private final Date endDate;

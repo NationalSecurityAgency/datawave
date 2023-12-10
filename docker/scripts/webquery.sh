@@ -94,6 +94,7 @@ SYSTEM_FROM=$(hostname)
 
 HEALTH_CODE=`curl -s -D headers_$i.txt -q -k -E ${TMP_PEM} \
     -H "Accept: application/xml" \
+    -H "Pool: $POOL" \
     ${HEALTH_ENDPOINT} -o healthResponse.xml -w '%{http_code}\n'`
 if [[ "$HEALTH_CODE" != 200 ]]; then
     echo "For this to work, the webserver must be running in the quickstart docker image."
@@ -111,6 +112,7 @@ echo "$(date): Creating query"
 echo "$(date): Creating query" > querySummary.txt
 curl -s -D headers_0.txt -k -E ${TMP_PEM} \
     -H "Accept: application/xml" \
+    -H "Pool: $POOL" \
     --data-urlencode "begin=19660908 000000.000" \
     --data-urlencode "end=20161002 235959.999" \
     --data-urlencode "columnVisibility=PUBLIC" \
@@ -120,7 +122,6 @@ curl -s -D headers_0.txt -k -E ${TMP_PEM} \
     --data-urlencode "systemFrom=$SYSTEM_FROM" \
     --data-urlencode "queryName=Developer Test Query" \
     --data-urlencode "pagesize=10" \
-    --data-urlencode "pool=$POOL" \
     ${DATAWAVE_ENDPOINT}/RemoteEventQuery/create -o createResponse.xml -w '%{http_code}\n' >> querySummary.txt
 
 i=1
@@ -140,6 +141,7 @@ while [ $i -gt 0 ] && [ $i -lt $MAX_PAGES ]; do
     echo "$(date): Requesting page $i for $QUERY_ID" >> querySummary.txt
     curl -s -D headers_$i.txt -q -k -E ${TMP_PEM} \
         -H "Accept: application/xml" \
+    -H "Pool: $POOL" \
         ${DATAWAVE_ENDPOINT}/$QUERY_ID/next -o nextResponse_$i.xml -w '%{http_code}\n' >> querySummary.txt
 
     CONTINUE=`grep 'HTTP/2 200' headers_$i.txt`
@@ -168,6 +170,7 @@ echo "$(date): Closing $QUERY_ID" >> querySummary.txt
 # close the query
 curl -s -q -k -X POST -E ${TMP_PEM} \
     -H "Accept: application/xml" \
+    -H "Pool: $POOL" \
     ${DATAWAVE_ENDPOINT}/$QUERY_ID/close -o closeResponse.xml -w '%{http_code}\n' >> querySummary.txt
 
 cd ../
