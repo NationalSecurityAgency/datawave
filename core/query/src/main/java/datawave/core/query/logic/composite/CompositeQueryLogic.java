@@ -2,7 +2,6 @@ package datawave.core.query.logic.composite;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -127,7 +126,8 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
                 Object last = new Object();
                 if (this.getMaxResults() <= 0)
                     this.setMaxResults(Long.MAX_VALUE);
-                while ((null != last) && !interrupted && transformIterator.hasNext() && (resultCount < this.getMaxResults())) {
+                // allow us to get 1 more than maxResults so that the RunningQuery can detect the MAX_RESULTS condition.
+                while ((null != last) && !interrupted && transformIterator.hasNext() && (resultCount <= this.getMaxResults())) {
                     try {
                         last = transformIterator.next();
                         if (null != last) {
@@ -164,7 +164,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
                 }
                 success = true;
             } catch (Exception e) {
-                throw new CompositeLogicException("Failed to retrieve results", Collections.singletonMap(getLogicName(), e));
+                throw new CompositeLogicException("Failed to retrieve results", getLogicName(), e);
             } finally {
                 if (success) {
                     completionLatch.countDown();
@@ -314,11 +314,11 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
             if (log.isDebugEnabled()) {
                 log.debug("CompositeQuery initialized with the following queryLogics: ");
                 for (Entry<String,QueryLogic<?>> entry : getInitializedLogics().entrySet()) {
-                    log.debug("\nLogicName: " + entry.getKey() + ", tableName: " + entry.getValue().getTableName());
+                    log.debug("LogicName: " + entry.getKey() + ", tableName: " + entry.getValue().getTableName());
                 }
                 if (isShortCircuitExecution()) {
                     for (Entry<String,QueryLogic<?>> entry : getUninitializedLogics().entrySet()) {
-                        log.debug("\npending LogicName: " + entry.getKey() + ", tableName: " + entry.getValue().getTableName());
+                        log.debug("Pending LogicName: " + entry.getKey() + ", tableName: " + entry.getValue().getTableName());
                     }
                 }
             }

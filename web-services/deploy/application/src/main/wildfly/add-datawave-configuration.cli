@@ -179,7 +179,6 @@ module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.ap
 #
 jms-topic add --topic-address=AccumuloTableCache --entries=topic/AccumuloTableCache
 jms-queue add --queue-address=AccumuloTableCacheDLQ --entries=queue/AccumuloTableCache.DLQ
-jms-queue add --queue-address=QueryMetricsQueue --entries=queue/QueryMetrics
 #/subsystem=messaging-activemq/server=default/:write-attribute(name=security-domain,value=datawave)
 /subsystem=messaging-activemq/server=default/pooled-connection-factory=activemq-ra/:write-attribute(name=max-pool-size,value=${hornetq.datasource.max.pool.size})
 /subsystem=messaging-activemq/server=default/:write-attribute(name=cluster-user,value="${hornetq.cluster.username}")

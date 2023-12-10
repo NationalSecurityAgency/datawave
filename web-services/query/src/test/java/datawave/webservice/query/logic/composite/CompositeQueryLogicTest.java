@@ -50,6 +50,7 @@ import datawave.security.authorization.UserOperations;
 import datawave.security.util.DnUtils;
 import datawave.user.AuthorizationsListBase;
 import datawave.user.DefaultAuthorizationsList;
+import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.result.EdgeQueryResponseBase;
 import datawave.webservice.query.result.edge.EdgeBase;
 import datawave.webservice.result.BaseQueryResponse;
@@ -695,6 +696,47 @@ public class CompositeQueryLogicTest {
         c.getTransformer(settings);
     }
 
+    @Test
+    public void testInitializeAllFailQueryExceptionCause() throws Exception {
+
+        Map<String,QueryLogic<?>> logics = new HashMap<>();
+        logics.put("TestQueryLogic", new TestQueryLogic() {
+            @Override
+            public GenericQueryConfiguration initialize(AccumuloClient connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations)
+                            throws Exception {
+                throw new Exception("initialize failed");
+            }
+        });
+
+        logics.put("TestQueryLogic2", new TestQueryLogic2() {
+            @Override
+            public GenericQueryConfiguration initialize(AccumuloClient connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations)
+                            throws Exception {
+                throw new RuntimeException(new QueryException("query initialize failed"));
+            }
+        });
+
+        QueryImpl settings = new QueryImpl();
+        settings.setPagesize(100);
+        settings.setQueryAuthorizations(auths.toString());
+        settings.setQuery("FOO == 'BAR'");
+        settings.setParameters(new HashSet<>());
+        settings.setId(UUID.randomUUID());
+
+        CompositeQueryLogic c = new CompositeQueryLogic();
+        c.setAllMustInitialize(true);
+        c.setQueryLogics(logics);
+
+        c.setCurrentUser(principal);
+        try {
+            c.initialize(null, settings, Collections.singleton(auths));
+
+            c.getTransformer(settings);
+        } catch (CompositeLogicException e) {
+            Assert.assertEquals("query initialize failed", e.getCause().getCause().getMessage());
+        }
+    }
+
     @Test(expected = RuntimeException.class)
     public void testInitializeWithDifferentResponseTypes() throws Exception {
 
@@ -1150,8 +1192,8 @@ public class CompositeQueryLogicTest {
 
         CompositeQueryLogic c = new CompositeQueryLogic();
         // max.results.override is set to -1 when it is not passed in as it is an optional parameter
-        logic1.setMaxResults(1);
-        logic2.setMaxResults(4);
+        logic1.setMaxResults(2); // it can return 4, so this will cap it at 3 (1 more than max)
+        logic2.setMaxResults(1); // it cat return 4, so this will cap it at 2 (1 more than max)
         /**
          * RunningQuery.setupConnection()
          */

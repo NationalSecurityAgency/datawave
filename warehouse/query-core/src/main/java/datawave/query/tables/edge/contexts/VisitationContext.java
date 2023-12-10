@@ -18,11 +18,11 @@ import datawave.query.parser.JavaRegexAnalyzer;
 /**
  * This class is used to store and build 3 things for an edge query. 1) The normalized edge relationship query 2) The normalized stats edge query 3) The
  * Accumulo ranges
- *
+ * <p>
  * Since relationship edges and stats edges are structured differently its difficult to write a single query that correctly evaluates against both. (Ex stats
  * edges don't have SINKs, they only have 1 EDGE_RELATIONSHIP and 1 EDGE_ATTRIBUTE1) So two query strings are created from the original query, one to be used
  * when evaluating relationship edges and one to be used when evaluating stats edges.
- *
+ * <p>
  * Further more the original query must be run through a set of normalizers so that the query can correctly get results from the table without having to worry
  * about capitalization or other formatting details.
  */
@@ -74,9 +74,9 @@ public class VisitationContext implements EdgeContext {
     /**
      * Builds two query strings for relationship and stats edges Only include SOURCE if there is a regex SOURCE Only include SINKs if there is a regex SOURCE or
      * SINK Always include everything else Edge type, relationship ,...
-     *
+     * <p>
      * includingSources and includingSinks are used to remember if a previous qContext had a regex for SOURCE and SINK, if so then we have to include SOURCEs
-     * and SINKs for ever Query context regardless of weather or not they all have regex's.
+     * and SINKs for every Query context regardless of weather or not they all have regex's.
      *
      * @param qContext
      *            query context
@@ -86,21 +86,20 @@ public class VisitationContext implements EdgeContext {
      *            flag to include the sinks
      * @param includeSources
      *            flag to include sources
-     * @param updateWhitelist
-     *            flag to update whitelist
+     * @param updateAllowlist
+     *            flag to update allowlist
      */
     public void updateQueryStrings(QueryContext qContext, boolean includeSources, boolean includeSinks, boolean includColumnFamilyTerms,
-                    boolean updateWhitelist) {
+                    boolean updateAllowlist) {
         StringBuilder trimmedQuery = new StringBuilder();
         StringBuilder trimmedStatsQuery = new StringBuilder();
-        int numTermsAdded = 0;
         trimmedQuery.append("(");
         if (includeStats) {
             trimmedStatsQuery.append("(");
         }
 
         qContext.buildStrings(trimmedQuery, trimmedStatsQuery, includeStats, includeSources, includeSinks, preFilterValues, includColumnFamilyTerms,
-                        updateWhitelist, fields);
+                        updateAllowlist, fields);
         trimmedQuery.append(")");
         if (includeStats) {
             trimmedStatsQuery.append(")");
@@ -162,11 +161,11 @@ public class VisitationContext implements EdgeContext {
     /**
      * Builds an Accumulo edge table range for a given SOURCE. Gets the leading string literal and makes a range between the leading string literal and the Max
      * Unicode String Constant.
-     *
+     * <p>
      * Note: if not including stats edges then we can speed things up by setting the start key equal to the SOURCE + the null char, ONLY IF IT IS NOT A REGEX
      * EXPRESSION Also Note: with regex expressions we need to have the end of the end key set to the max unicode value but if it is just an equals expression
      * then the end key should end in unicode 1 that way we don't pick up extra sources
-     *
+     * <p>
      * Use this method when there is either no sink or the source is a regex expression
      *
      * @param source
@@ -183,7 +182,7 @@ public class VisitationContext implements EdgeContext {
 
     /**
      * Builds an Accumulo edge table range for a given SOURCE and SINK. The SOURCE is assumed to not be a regex expression.
-     *
+     * <p>
      * If including stats edges then only build range for the SOURCE and the SOURCE+SINK, no stats edges for SINK will be returned.
      *
      * @param source
@@ -210,11 +209,11 @@ public class VisitationContext implements EdgeContext {
     /**
      * Gets the leading literal from the search term stored in an IdentityContext. The leading literal is set of characters that are not a regex expression (.*
      * /d /w /s ...)
-     *
+     * <p>
      * If the whole search term is a literal (eg like with an == expression) then the whole string is returned
-     *
+     * <p>
      * If there is no leading literal then the empty String is returned
-     *
+     * <p>
      * The leading wildCardAllowed parameter says if leading wild cards are allowed in the search term (leading wild cards are not allowed with SOURCE
      * expressions but allowed with every thing else)
      *
