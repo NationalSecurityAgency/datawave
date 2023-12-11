@@ -6,7 +6,7 @@ import java.nio.file.Path;
 public class FileUtils {
     public static final String WORKING_DIR = "working.dir";
     public static final String workingDir = System.getProperty(WORKING_DIR);
-
+    
     public static Path getFilePath(String file) {
         Path path = null;
         if (file != null) {
@@ -20,14 +20,14 @@ public class FileUtils {
         }
         return path;
     }
-
+    
     public static Path getFilePath(String parent, String file) {
         Path path = null;
         Path parentPath = getFilePath(parent);
         if (parentPath != null) {
             path = parentPath.resolve(file);
         }
-        if (path == null || !path.toFile().exists()){
+        if (path == null || !path.toFile().exists()) {
             path = getFilePath(file);
         }
         return path;

@@ -1,17 +1,9 @@
 package datawave.microservice.configcheck;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.w3c.dom.Document;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
+import static com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature.SPLIT_LINES;
+import static com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature.WRITE_DOC_START_MARKER;
+import static datawave.microservice.configcheck.util.XmlRenderUtils.valueToObject;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -24,9 +16,19 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature.SPLIT_LINES;
-import static com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature.WRITE_DOC_START_MARKER;
-import static datawave.microservice.configcheck.util.XmlRenderUtils.valueToObject;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.w3c.dom.Document;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 
 public class XmlPropertyAnalyzer {
     private static Logger log = LoggerFactory.getLogger(XmlPropertyAnalyzer.class);
@@ -53,56 +55,56 @@ public class XmlPropertyAnalyzer {
     private static final String TEXT = "#text";
     private static final String COMMENT = "#comment";
     private static final String CONTEXT_PROPERTY_PLACEHOLDER = "context:property-placeholder";
-
+    
     private static final String PLACEHOLDER_PREFIX = "${";
     private static final String PLACEHOLDER_SUFFIX = "}";
-
+    
     private static final String KEY_COMPONENT_SEPARATOR = ".";
-
+    
     private String xmlContent;
     private Properties properties;
-    private Map<String, String> propertyPlaceholderByKey = new LinkedHashMap<>();
-    private Map<String, Object> propertyValueByKey = new LinkedHashMap<>();
-    private Map<String, String> propertyRefByKey = new LinkedHashMap<>();
-
+    private Map<String,String> propertyPlaceholderByKey = new LinkedHashMap<>();
+    private Map<String,Object> propertyValueByKey = new LinkedHashMap<>();
+    private Map<String,String> propertyRefByKey = new LinkedHashMap<>();
+    
     public XmlPropertyAnalyzer(String xmlContent, Properties properties) {
         this.xmlContent = xmlContent;
         this.properties = properties;
         analyzeProperties();
     }
-
+    
     private void analyzeProperties() {
         try {
             // find all of the placeholders and values in the original xml, and figure out what their key is
             DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
             Document doc = builder.parse(new ByteArrayInputStream(xmlContent.getBytes(StandardCharsets.UTF_8)));
             doc.normalize();
-
+            
             LinkedList<Node> nodeStack = new LinkedList<>();
             LinkedList<Node> parentStack = new LinkedList<>();
             LinkedList<String> keyComponents = new LinkedList<>();
-
+            
             // the document node is the root
             parentStack.push(doc);
             keyComponents.add(DOC);
-
+            
             // add the initial nodes to the stack
             NodeList nodeList = doc.getChildNodes();
-            for (int i = nodeList.getLength()-1; i >= 0; i--) {
+            for (int i = nodeList.getLength() - 1; i >= 0; i--) {
                 nodeStack.push(nodeList.item(i));
             }
-
+            
             // work through the xml document until all nodes have been processed
             while (!nodeStack.isEmpty()) {
                 Node node = nodeStack.pop();
                 String nodeName = node.getNodeName();
-
+                
                 // perform upkeep on the parent stack and key components
                 while (node.getParentNode() != parentStack.peek()) {
                     parentStack.pop();
                     keyComponents.removeLast();
                 }
-
+                
                 if (nodeName.equals(BEANS)) {
                     addChildren(node, BEANS, nodeStack, parentStack, keyComponents);
                 } else if (nodeName.equals(BEAN)) {
@@ -117,7 +119,7 @@ public class XmlPropertyAnalyzer {
                             String value = getPropertyValue(node);
                             if (value.startsWith(PLACEHOLDER_PREFIX)) {
                                 propertyPlaceholderByKey.put(key, value);
-                                propertyValueByKey.put(key, properties.get(value.substring(2, value.length()-1)));
+                                propertyValueByKey.put(key, properties.get(value.substring(2, value.length() - 1)));
                             } else {
                                 propertyValueByKey.put(key, valueToObject(value));
                             }
@@ -135,23 +137,23 @@ public class XmlPropertyAnalyzer {
                     String key = createKey(keyComponents);
                     Object value = node.getTextContent();
                     String placeholder = null;
-
-                    if (((String)value).startsWith(PLACEHOLDER_PREFIX)) {
-                        placeholder = (String)value;
-                        value = properties.getProperty(placeholder.substring(2, placeholder.length()-1));
+                    
+                    if (((String) value).startsWith(PLACEHOLDER_PREFIX)) {
+                        placeholder = (String) value;
+                        value = properties.getProperty(placeholder.substring(2, placeholder.length() - 1));
                     }
-
+                    
                     value = valueToObject(value);
-
+                    
                     String indexedKey = null;
-                    if (keyComponents.getLast().equals(CONSTRUCTOR_ARG)){
+                    if (keyComponents.getLast().equals(CONSTRUCTOR_ARG)) {
                         int index = 0;
                         do {
                             indexedKey = key + "[" + index + "]";
                             index++;
                         } while (propertyPlaceholderByKey.containsKey(indexedKey) || propertyValueByKey.containsKey(indexedKey));
                     }
-
+                    
                     key = indexedKey != null ? indexedKey : key;
                     if (placeholder != null) {
                         propertyPlaceholderByKey.put(key, placeholder);
@@ -161,7 +163,8 @@ public class XmlPropertyAnalyzer {
                     addChildren(node, getBeanId(node), nodeStack, parentStack, keyComponents);
                 } else if (nodeName.equals(NULL)) {
                     propertyValueByKey.put(createKey(keyComponents), null);
-                } else if (nodeName.equals(LOOKUP_METHOD) || nodeName.equals(TEXT) || nodeName.equals(COMMENT) || nodeName.equals(CONTEXT_PROPERTY_PLACEHOLDER)) {
+                } else if (nodeName.equals(LOOKUP_METHOD) || nodeName.equals(TEXT) || nodeName.equals(COMMENT)
+                                || nodeName.equals(CONTEXT_PROPERTY_PLACEHOLDER)) {
                     // do nothing
                 } else {
                     log.warn("Ignoring unknown node name: {}", nodeName);
@@ -171,7 +174,7 @@ public class XmlPropertyAnalyzer {
             log.error("Encountered exception while analyzing xml", e);
         }
     }
-
+    
     private void addChildren(Node node, String keyComponent, LinkedList<Node> nodeStack, LinkedList<Node> parentStack, LinkedList<String> keyComponents) {
         if (node.hasChildNodes()) {
             // add the children to the stack
@@ -179,33 +182,33 @@ public class XmlPropertyAnalyzer {
             for (int i = children.getLength() - 1; i >= 0; i--) {
                 nodeStack.push(children.item(i));
             }
-
+            
             // add the parent node info
             parentStack.push(node);
             keyComponents.add(keyComponent);
         }
     }
-
+    
     private String getBeanId(Node node) {
         return getAttributeByName(node, ID);
     }
-
+    
     private String getEntryKey(Node node) {
         return getAttributeByName(node, KEY);
     }
-
+    
     private String getPropertyName(Node node) {
         return getAttributeByName(node, NAME);
     }
-
+    
     private String getPropertyValue(Node node) {
         return getAttributeByName(node, VALUE);
     }
-
+    
     private String getPropertyRef(Node node) {
         return getAttributeByName(node, REF);
     }
-
+    
     private String getAttributeByName(Node node, String name) {
         String beanId = IGNORED_KEY;
         if (node.hasAttributes()) {
@@ -217,15 +220,16 @@ public class XmlPropertyAnalyzer {
         }
         return beanId;
     }
-
+    
     private String createKey(List<String> keyComponents) {
         return createKey(keyComponents, null);
     }
+    
     private String createKey(List<String> keyComponents, String suffix) {
         StringBuilder key = new StringBuilder();
         for (String keyComponent : keyComponents) {
             if (!keyComponent.equals(IGNORED_KEY) && !keyComponent.equals(CONSTRUCTOR_ARG)) {
-                if (key.length() > 0){
+                if (key.length() > 0) {
                     key.append(KEY_COMPONENT_SEPARATOR);
                 }
                 key.append(keyComponent);
@@ -236,7 +240,7 @@ public class XmlPropertyAnalyzer {
         }
         return key.toString();
     }
-
+    
     public String getKeyedValues() {
         StringBuilder sb = new StringBuilder();
         // @formatter:off
@@ -252,10 +256,10 @@ public class XmlPropertyAnalyzer {
         // @formatter:on
         return sb.toString();
     }
-
+    
     public String getReport() {
         StringBuilder sb = new StringBuilder();
-
+        
         sb.append("Placeholders (key: ${placeholder})\n");
         sb.append("----------------------------------------\n");
         // @formatter:off
@@ -264,12 +268,12 @@ public class XmlPropertyAnalyzer {
                 .forEach(key -> sb.append(key).append(": ").append(propertyPlaceholderByKey.get(key)).append("\n"));
         // @formatter:on
         sb.append("\n");
-
+        
         sb.append("Values (key: value)\n");
         sb.append("----------------------------------------\n");
         sb.append(getKeyedValues());
         sb.append("\n");
-
+        
         sb.append("Refs (key: ref)\n");
         sb.append("----------------------------------------\n");
         // @formatter:off
@@ -278,22 +282,22 @@ public class XmlPropertyAnalyzer {
                 .forEach(key -> sb.append(key).append(": ").append(propertyRefByKey.get(key)).append("\n"));
         // @formatter:on
         sb.append("\n");
-
+        
         // Note: We could just add all of the properties to a single properties object,
         // but if we do that, they will be printed in a random order, so we add one at a time
         sb.append("Effective Properties (name=value)\n");
         sb.append("----------------------------------------\n");
         sb.append(createEffectiveProperties());
         sb.append("\n");
-
+        
         sb.append("Effective Yml\n");
         sb.append("----------------------------------------\n");
         sb.append(createEffectiveYaml());
         sb.append("\n");
-
+        
         return sb.toString();
     }
-
+    
     private String createEffectiveProperties() {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         Properties properties = new Properties();
@@ -313,19 +317,19 @@ public class XmlPropertyAnalyzer {
         }
         return baos.toString().replaceAll("#.*\n", "");
     }
-
+    
     private String createEffectiveYaml() {
-        Map<String, Object> ymlMap = new LinkedHashMap<>();
-        Set<String> propKeys = propertyPlaceholderByKey.values().stream().map(x -> x.substring(2, x.length()-1)).collect(Collectors.toSet());
+        Map<String,Object> ymlMap = new LinkedHashMap<>();
+        Set<String> propKeys = propertyPlaceholderByKey.values().stream().map(x -> x.substring(2, x.length() - 1)).collect(Collectors.toSet());
         for (String key : propertyValueByKey.keySet()) {
             Object value = propertyValueByKey.get(key);
             key = propertyPlaceholderByKey.get(key);
             if (key != null) {
                 key = key.substring(2, key.length() - 1);
-                Map<String, Object> curMap = ymlMap;
+                Map<String,Object> curMap = ymlMap;
                 String[] keyParts = key.split("\\.");
                 for (int i = 0; i < keyParts.length; i++) {
-                    final String partialKey = createPartialKey(keyParts, 0, i+1);
+                    final String partialKey = createPartialKey(keyParts, 0, i + 1);
                     if (i == keyParts.length - 1) {
                         curMap.put(keyParts[i], value);
                     }
@@ -334,12 +338,12 @@ public class XmlPropertyAnalyzer {
                         String finalKey = "[" + createPartialKey(keyParts, i, keyParts.length) + "]";
                         curMap.put(finalKey, value);
                     } else {
-                        curMap = (LinkedHashMap<String, Object>) curMap.computeIfAbsent(keyParts[i], (k) -> new LinkedHashMap<String, Object>());
+                        curMap = (LinkedHashMap<String,Object>) curMap.computeIfAbsent(keyParts[i], (k) -> new LinkedHashMap<String,Object>());
                     }
                 }
             }
         }
-
+        
         String yml = null;
         try {
             YAMLFactory yamlFactory = new YAMLFactory();
@@ -351,7 +355,7 @@ public class XmlPropertyAnalyzer {
         }
         return yml.trim();
     }
-
+    
     private String createPartialKey(String[] keyComponents, int start, int stop) {
         StringBuilder sb = new StringBuilder();
         for (int i = start; i < stop; i++) {
@@ -362,18 +366,16 @@ public class XmlPropertyAnalyzer {
         }
         return sb.toString();
     }
-
-
-
-    public Map<String, String> getPropertyPlaceholderByKey() {
+    
+    public Map<String,String> getPropertyPlaceholderByKey() {
         return propertyPlaceholderByKey;
     }
-
-    public Map<String, Object> getPropertyValueByKey() {
+    
+    public Map<String,Object> getPropertyValueByKey() {
         return propertyValueByKey;
     }
-
-    public Map<String, String> getPropertyRefByKey() {
+    
+    public Map<String,String> getPropertyRefByKey() {
         return propertyRefByKey;
     }
 }
