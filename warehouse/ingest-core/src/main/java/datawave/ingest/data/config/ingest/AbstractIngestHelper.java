@@ -15,9 +15,6 @@ import datawave.ingest.data.config.MaskedFieldHelper;
 /**
  * Specialization of the Helper type that validates the configuration for Ingest purposes. These helper classes also have the logic to parse the field names and
  * fields values from the datatypes that they represent.
- *
- *
- *
  */
 public abstract class AbstractIngestHelper extends DataTypeHelperImpl implements IngestHelperInterface {
     private static final Logger log = Logger.getLogger(AbstractIngestHelper.class);
@@ -29,8 +26,8 @@ public abstract class AbstractIngestHelper extends DataTypeHelperImpl implements
     /* Map of field names to normalizers, null key is the default normalizer */
     protected MaskedFieldHelper mfHelper = null;
     protected Set<String> shardExclusions = new HashSet<>();
-    protected boolean hasIndexBlacklist = false;
-    protected boolean hasReverseIndexBlacklist = false;
+    protected boolean hasIndexDisallowlist = false;
+    protected boolean hasReverseIndexDisallowlist = false;
 
     public boolean getReplaceMalformedUTF8() {
         return replaceMalformedUTF8;
@@ -99,7 +96,6 @@ public abstract class AbstractIngestHelper extends DataTypeHelperImpl implements
     }
 
     /**
-     *
      * @return true if EmbeddedHelper is an instance of MaskedFieldHelper
      */
     public boolean isEmbeddedHelperMaskedFieldHelper() {
@@ -107,7 +103,6 @@ public abstract class AbstractIngestHelper extends DataTypeHelperImpl implements
     }
 
     /**
-     *
      * @return EmbeddedHelper as a MaskedFieldHelper object
      */
     public MaskedFieldHelper getEmbeddedHelperAsMaskedFieldHelper() {
@@ -127,20 +122,20 @@ public abstract class AbstractIngestHelper extends DataTypeHelperImpl implements
         return shardExclusions.contains(fieldName);
     }
 
-    protected void setHasIndexBlacklist(boolean hasIndexBlacklist) {
-        this.hasIndexBlacklist = hasIndexBlacklist;
+    protected void setHasIndexDisallowlist(boolean hasIndexDisallowlist) {
+        this.hasIndexDisallowlist = hasIndexDisallowlist;
     }
 
-    protected boolean hasIndexBlacklist() {
-        return this.hasIndexBlacklist;
+    protected boolean hasIndexDisallowlist() {
+        return this.hasIndexDisallowlist;
     }
 
-    protected boolean hasReverseIndexBlacklist() {
-        return this.hasReverseIndexBlacklist;
+    protected boolean hasReverseIndexDisallowlist() {
+        return this.hasReverseIndexDisallowlist;
     }
 
-    protected void setHasReverseIndexBlacklist(boolean hasReverseIndexBlacklist) {
-        this.hasReverseIndexBlacklist = hasReverseIndexBlacklist;
+    protected void setHasReverseIndexDisallowlist(boolean hasReverseIndexDisallowlist) {
+        this.hasReverseIndexDisallowlist = hasReverseIndexDisallowlist;
     }
 
     public void upperCaseSetEntries(Set<String> input, String warnMessage) {
@@ -167,7 +162,6 @@ public abstract class AbstractIngestHelper extends DataTypeHelperImpl implements
      * @return the normalized field values
      * @throws NormalizationException
      *             if there is an issue with the normalization process
-     *
      */
     protected Set<String> normalizeFieldValue(final String fieldName, final String fieldValue) throws NormalizationException {
         final Collection<Type<?>> dataTypes = getDataTypes(fieldName);
