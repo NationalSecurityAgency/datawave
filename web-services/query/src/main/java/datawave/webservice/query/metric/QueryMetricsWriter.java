@@ -47,6 +47,12 @@ import datawave.util.timely.UdpClient;
 import datawave.webservice.query.exception.QueryExceptionType;
 import datawave.webservice.result.VoidResponse;
 
+/**
+ * QueryMetricsWriter gets query metric updates from the QueryMetricsBean via a LinkedBlockingQueue. This creates thread separation so that the process of
+ * updating query metrics does not slow down the thread that is executing a user's query. QueryMetricsWriter can forward the query metric update to either an
+ * embedded ShardTableQueryMetricHandler which writes to Accumulo or to a RemoteQueryMetricService which sends to the query metric service (which buffers and
+ * coalesces the updates and then writes them to Accumulo). When sending to the RemoteQueryMetricService, it can be configured with multiple threads.
+ */
 @RunAs("InternalUser")
 @Startup
 @Singleton
@@ -93,6 +99,10 @@ public class QueryMetricsWriter {
         }
     }
 
+    /**
+     * Shutdown the queue to prevent any more metrics from being added while the MetricProcessor instances continue handling query metric updates. When the
+     * queue is empty or maxShutDownMs has elapsed, then shutdown the metric processor threads.
+     */
     @PreDestroy
     public void shutdown() {
         // try to ensure that the task running on the managed thread exits before shutdown
@@ -118,6 +128,11 @@ public class QueryMetricsWriter {
         log.info(String.format("shut down with %d metric updates in queue", blockingQueue.size()));
     }
 
+    /**
+     * Create UdpClient on startup or refresh
+     *
+     * @return udpClient
+     */
     private UdpClient createUdpClient() {
         if (writerConfig != null && StringUtils.isNotBlank(writerConfig.getTimelyHost())) {
             return new UdpClient(writerConfig.getTimelyHost(), writerConfig.getTimelyPort());
@@ -126,13 +141,28 @@ public class QueryMetricsWriter {
         }
     }
 
-    public void onRefresh(@Observes RefreshEvent event, BeanManager bm) {
+    /**
+     * On refresh.
+     *
+     * @param event
+     *            the event
+     * @param beanManager
+     *            the beanManager
+     */
+    public void onRefresh(@Observes RefreshEvent event, BeanManager beanManager) {
         // protect timelyClient from being used in sendMetricsToTimely while re-creating the client
         synchronized (this) {
             timelyClient = createUdpClient();
         }
     }
 
+    /**
+     * Called from QueryMetricsBean to add a query metric update holder to the queue. If we are shutting down, log that the updates are being dropped If the
+     * queue is full, log (at a reduced rate) that the updates are being dropped
+     *
+     * @param queryMetricHolder
+     *            the query metric holder
+     */
     public void addMetricToQueue(QueryMetricHolder queryMetricHolder) {
         try {
             if (shutDownQueue) {
@@ -149,6 +179,13 @@ public class QueryMetricsWriter {
         }
     }
 
+    /**
+     * Poll the blocking queue for new query metric updates until the number of updates reached batchSize or maxLatency is reached.
+     *
+     * @param batchSize
+     * @param maxLatency
+     * @return
+     */
     private List<QueryMetricHolder> getMetricsFromQueue(int batchSize, long maxLatency) {
         List metricHolderList = new ArrayList<>();
         long start = System.currentTimeMillis();
@@ -174,16 +211,39 @@ public class QueryMetricsWriter {
         private long totalFailures;
         private long failuresWhenOthersSucceeded;
 
+        /**
+         * FailureRecord tracks the number and type of failures to send the query metric update so we can make decisions on whether to retry sending or drop the
+         * query metric update.
+         *
+         *
+         * @param metric
+         *            the metric
+         * @param anySuccess
+         *            the any success
+         */
         public FailureRecord(BaseQueryMetric metric, boolean anySuccess) {
             this(new QueryMetricHolder(null, metric), anySuccess);
         }
 
+        /**
+         * Instantiates a new Failure record.
+         *
+         * @param queryMetricHolder
+         *            the query metric holder
+         * @param anySuccess
+         *            the any success
+         */
         public FailureRecord(QueryMetricHolder queryMetricHolder, boolean anySuccess) {
             this.queryMetricHolder = queryMetricHolder;
             this.totalFailures = 1;
             this.failuresWhenOthersSucceeded = anySuccess ? 1 : 0;
         }
 
+        /**
+         * Gets metric.
+         *
+         * @return the metric
+         */
         public BaseQueryMetric getMetric() {
             return queryMetricHolder.getQueryMetric();
         }
@@ -192,6 +252,12 @@ public class QueryMetricsWriter {
             return queryMetricHolder;
         }
 
+        /**
+         * Increment failures while tracking if other query metric updates succeded or if this is a generalized failure.
+         *
+         * @param anySuccess
+         *            the any success
+         */
         public void incrementFailures(boolean anySuccess) {
             totalFailures++;
             if (anySuccess) {
@@ -207,6 +273,11 @@ public class QueryMetricsWriter {
             return failuresWhenOthersSucceeded;
         }
 
+        /**
+         * How long has it been since the query metric update first failed.
+         *
+         * @return the age
+         */
         public long getAge() {
             return System.currentTimeMillis() - created;
         }
@@ -247,6 +318,11 @@ public class QueryMetricsWriter {
             }
         }
 
+        /**
+         * Process query metric updates using either the RemoteQueryMetricService or the ShardTableQueryMetricHandler
+         *
+         * @param metricHolderList
+         */
         private void processQueryMetrics(List<QueryMetricHolder> metricHolderList) {
             if (!metricHolderList.isEmpty()) {
                 if (writerConfig.getUseRemoteService()) {
@@ -257,6 +333,11 @@ public class QueryMetricsWriter {
             }
         }
 
+        /**
+         * Process query metric updates using the RemoteQueryMetricService
+         *
+         * @param metricHolderList
+         */
         private void processQueryMetricsWithRemoteService(List<QueryMetricHolder> metricHolderList) {
             List<BaseQueryMetric> metricList = metricHolderList.stream().map(QueryMetricHolder::getQueryMetric).collect(Collectors.toList());
             if (!metricList.isEmpty()) {
@@ -273,6 +354,11 @@ public class QueryMetricsWriter {
             }
         }
 
+        /**
+         * Process query metric updates using the ShardTableQueryMetricHandler
+         *
+         * @param metricHolderList
+         */
         private void processQueryMetricsWithHandler(List<QueryMetricHolder> metricHolderList) {
             List<QueryMetricHolder> currentFailures = new ArrayList<>();
             AtomicBoolean anySuccess = new AtomicBoolean(false);
@@ -302,6 +388,12 @@ public class QueryMetricsWriter {
             }
         }
 
+        /**
+         * Attempt to send metrics that previously failed to send
+         *
+         * @param failedMetrics
+         * @return
+         */
         private boolean writeFailedMetrics(List<FailureRecord> failedMetrics) {
             Iterator<FailureRecord> itr = failedMetrics.iterator();
             int successful = 0;
@@ -330,6 +422,11 @@ public class QueryMetricsWriter {
             return failedMetrics.isEmpty() || anySuccessful;
         }
 
+        /**
+         * Determine if we should discard failed query metric updates or keep retrying
+         *
+         * @param anySuccessful
+         */
         private void processFailedMetricList(boolean anySuccessful) {
             long discardForFailureCount = 0;
             Set<String> discardForFailureMetrics = new TreeSet<>();
@@ -366,6 +463,12 @@ public class QueryMetricsWriter {
             }
         }
 
+        /**
+         * Wraps the sending of query metric updates to the RemoteQueryMetricService Failure is indicated by throwing an Exception
+         *
+         * @param updatedMetrics
+         * @throws Exception
+         */
         private void writeMetricsToRemoteService(List<BaseQueryMetric> updatedMetrics) throws Exception {
             if (!updatedMetrics.isEmpty()) {
                 VoidResponse response = remoteQueryMetricService.updateMetrics(updatedMetrics);
@@ -376,6 +479,13 @@ public class QueryMetricsWriter {
             }
         }
 
+        /**
+         * Wraps the sending of query metric updates to the ShardTableQueryMetricHandler Failure is indicated by returning a list of failed query metric updates
+         *
+         * @param queryMetricHandler
+         * @param metricQueue
+         * @return
+         */
         private List<QueryMetricHolder> writeMetricsToHandler(QueryMetricHandler queryMetricHandler, List<QueryMetricHolder> metricQueue) {
             List<QueryMetricHolder> failedMetrics = new ArrayList<>();
             if (!metricQueue.isEmpty()) {
@@ -396,6 +506,12 @@ public class QueryMetricsWriter {
             return failedMetrics;
         }
 
+        /**
+         * Send query metric update metrics to Timely. This is only done for the path that uses the ShardTableQueryMetricHandler because the query metric
+         * service handles this for the path that uses the RemoteQueryMetricService
+         *
+         * @param queryMetric
+         */
         private synchronized void sendMetricsToTimely(BaseQueryMetric queryMetric) {
 
             if (timelyClient != null && queryMetric.getQueryType().equalsIgnoreCase("RunningQuery")) {
