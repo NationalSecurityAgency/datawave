@@ -1,5 +1,3 @@
-# FIRST: /home/jwomear/projects/datawave-clean/microservices/configcheck/src/test/resources/rendered/microservice/analysis.txt
-# SECOND: /home/jwomear/projects/datawave-clean/microservices/configcheck/src/test/resources/rendered/webservice/analysis.txt
 <<<<<<< FIRST
 =======
 doc.beans.AstValidator.validateJunctions: true

@@ -42,7 +42,7 @@ public class ConfigCheckApplicationTest {
         
         String expectedOutput = Files.readString(Path.of(resourcesAbsolutePath, "rendered/microservice/QueryLogicFactory.xml"), StandardCharsets.UTF_8);
         
-        assertEquals(expectedOutput.trim(), output.trim());
+        assertEquals(expectedOutput, output);
     }
     
     @Test
@@ -62,7 +62,7 @@ public class ConfigCheckApplicationTest {
         
         String expectedOutput = Files.readString(Path.of(resourcesAbsolutePath, "rendered/webservice/QueryLogicFactory.xml"), StandardCharsets.UTF_8);
         
-        assertEquals(expectedOutput.trim(), output.trim());
+        assertEquals(expectedOutput, output);
     }
     
     @Test
@@ -82,7 +82,7 @@ public class ConfigCheckApplicationTest {
         
         String expectedOutput = Files.readString(Path.of(resourcesAbsolutePath, "rendered/microservice/analysis.txt"), StandardCharsets.UTF_8);
         
-        assertEquals(expectedOutput.trim(), output.trim());
+        assertEquals(expectedOutput, output);
     }
     
     @Test
@@ -102,7 +102,7 @@ public class ConfigCheckApplicationTest {
         
         String expectedOutput = Files.readString(Path.of(resourcesAbsolutePath, "rendered/webservice/analysis.txt"), StandardCharsets.UTF_8);
         
-        assertEquals(expectedOutput.trim(), output.trim());
+        assertEquals(expectedOutput, output);
     }
     
     @Test
@@ -123,7 +123,7 @@ public class ConfigCheckApplicationTest {
         
         String expectedOutput = Files.readString(Path.of(resourcesAbsolutePath, "rendered/microservice/fullReport.txt"), StandardCharsets.UTF_8);
         
-        assertEquals(expectedOutput.trim(), output.trim());
+        assertEquals(expectedOutput, output);
     }
     
     @Test
@@ -144,7 +144,7 @@ public class ConfigCheckApplicationTest {
         
         String expectedOutput = Files.readString(Path.of(resourcesAbsolutePath, "rendered/webservice/fullReport.txt"), StandardCharsets.UTF_8);
         
-        assertEquals(expectedOutput.trim(), output.trim());
+        assertEquals(expectedOutput, output);
     }
     
     @Test
@@ -163,6 +163,6 @@ public class ConfigCheckApplicationTest {
         
         String expectedOutput = Files.readString(Path.of(resourcesAbsolutePath, "rendered/comparison.diff"), StandardCharsets.UTF_8);
         
-        assertEquals(expectedOutput.trim(), output.trim());
+        assertEquals(expectedOutput, output.substring(output.indexOf("\n", output.indexOf("\n") + 1) + 1));
     }
 }

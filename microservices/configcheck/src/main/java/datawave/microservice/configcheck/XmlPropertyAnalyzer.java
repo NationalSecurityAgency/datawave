@@ -315,7 +315,7 @@ public class XmlPropertyAnalyzer {
                 }
             }
         }
-        return baos.toString().replaceAll("#.*\n", "");
+        return baos.toString(StandardCharsets.UTF_8).replaceAll("#.*\n", "");
     }
     
     private String createEffectiveYaml() {
