@@ -402,17 +402,17 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
         validateConfiguration(config);
 
-        if (getCardinalityConfiguration() != null && (!config.getBlacklistedFields().isEmpty() || !config.getProjectFields().isEmpty())) {
+        if (getCardinalityConfiguration() != null && (!config.getDisallowlistedFields().isEmpty() || !config.getProjectFields().isEmpty())) {
             // Ensure that fields used for resultCardinalities are returned. They will be removed in the DocumentTransformer.
-            // Modify the projectFields and blacklistFields only for this stage, then return to the original values.
+            // Modify the projectFields and disallowlistFields only for this stage, then return to the original values.
             // Not advisable to create a copy of the config object due to the embedded timers.
-            Set<String> originalBlacklistedFields = new HashSet<>(config.getBlacklistedFields());
+            Set<String> originalDisallowlistedFields = new HashSet<>(config.getDisallowlistedFields());
             Set<String> originalProjectFields = new HashSet<>(config.getProjectFields());
 
-            // either projectFields or blacklistedFields can be used, but not both
+            // either projectFields or disallowlistedFields can be used, but not both
             // this will be caught when loadQueryParameters is called
-            if (!config.getBlacklistedFields().isEmpty()) {
-                config.setBlacklistedFields(getCardinalityConfiguration().getRevisedBlacklistFields(queryModel, originalBlacklistedFields));
+            if (!config.getDisallowlistedFields().isEmpty()) {
+                config.setDisallowlistedFields(getCardinalityConfiguration().getRevisedDisallowlistFields(queryModel, originalDisallowlistedFields));
             }
             if (!config.getProjectFields().isEmpty()) {
                 config.setProjectFields(getCardinalityConfiguration().getRevisedProjectFields(queryModel, originalProjectFields));
@@ -420,7 +420,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
             setQueries(getQueryPlanner().process(config, jexlQueryString, settings, this.getScannerFactory()));
 
-            config.setBlacklistedFields(originalBlacklistedFields);
+            config.setDisallowlistedFields(originalDisallowlistedFields);
             config.setProjectFields(originalProjectFields);
         } else {
             setQueries(getQueryPlanner().process(config, jexlQueryString, settings, this.getScannerFactory()));
@@ -638,7 +638,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
     private void addConfigBasedTransformers() {
         if (getConfig() != null) {
             ((DocumentTransformer) this.transformerInstance).setProjectFields(getConfig().getProjectFields());
-            ((DocumentTransformer) this.transformerInstance).setBlacklistedFields(getConfig().getBlacklistedFields());
+            ((DocumentTransformer) this.transformerInstance).setDisallowlistedFields(getConfig().getDisallowlistedFields());
 
             if (getConfig().getUniqueFields() != null && !getConfig().getUniqueFields().isEmpty()) {
                 DocumentTransform alreadyExists = ((DocumentTransformer) this.transformerInstance).containsTransform(UniqueTransform.class);
@@ -753,21 +753,21 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
             }
         }
 
-        // Get the list of blacklisted fields. May be null.
-        String tBlacklistedFields = settings.findParameter(QueryParameters.BLACKLISTED_FIELDS).getParameterValue().trim();
-        if (StringUtils.isNotBlank(tBlacklistedFields)) {
-            List<String> blacklistedFieldsList = Arrays.asList(StringUtils.split(tBlacklistedFields, Constants.PARAM_VALUE_SEP));
+        // Get the list of disallowlisted fields. May be null.
+        String tDisallowlistedFields = settings.findParameter(QueryParameters.DISALLOWLISTED_FIELDS).getParameterValue().trim();
+        if (StringUtils.isNotBlank(tDisallowlistedFields)) {
+            List<String> disallowlistedFieldsList = Arrays.asList(StringUtils.split(tDisallowlistedFields, Constants.PARAM_VALUE_SEP));
 
-            // Only set the blacklisted fields if we were actually given some
-            if (!blacklistedFieldsList.isEmpty()) {
+            // Only set the disallowlisted fields if we were actually given some
+            if (!disallowlistedFieldsList.isEmpty()) {
                 if (!config.getProjectFields().isEmpty()) {
-                    throw new QueryException("Whitelist and blacklist projection options are mutually exclusive");
+                    throw new QueryException("Allowlist and disallowlist projection options are mutually exclusive");
                 }
 
-                config.setBlacklistedFields(new HashSet<>(blacklistedFieldsList));
+                config.setDisallowlistedFields(new HashSet<>(disallowlistedFieldsList));
 
                 if (log.isDebugEnabled()) {
-                    log.debug("Blacklisted fields: " + tBlacklistedFields);
+                    log.debug("Disallowlisted fields: " + tDisallowlistedFields);
                 }
             }
         }
@@ -1324,12 +1324,12 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         getConfig().setHierarchyFieldOptions(options);
     }
 
-    public Set<String> getBlacklistedFields() {
-        return getConfig().getBlacklistedFields();
+    public Set<String> getDisallowlistedFields() {
+        return getConfig().getDisallowlistedFields();
     }
 
-    public void setBlacklistedFields(Set<String> blacklistedFields) {
-        getConfig().setBlacklistedFields(blacklistedFields);
+    public void setdisallowlistedFields(Set<String> disallowlistedFields) {
+        getConfig().setDisallowlistedFields(disallowlistedFields);
     }
 
     public Set<String> getLimitFields() {
@@ -1480,8 +1480,8 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         getConfig().setTfNextSeek(tfNextSeek);
     }
 
-    public String getBlacklistedFieldsString() {
-        return getConfig().getBlacklistedFieldsAsString();
+    public String getdisallowlistedFieldsString() {
+        return getConfig().getDisallowlistedFieldsAsString();
     }
 
     public boolean getIncludeGroupingContext() {
@@ -2133,7 +2133,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         optionalParams.add(QueryParameters.PARAMETER_MODEL_TABLE_NAME);
         optionalParams.add(QueryParameters.DATATYPE_FILTER_SET);
         optionalParams.add(QueryParameters.RETURN_FIELDS);
-        optionalParams.add(QueryParameters.BLACKLISTED_FIELDS);
+        optionalParams.add(QueryParameters.DISALLOWLISTED_FIELDS);
         optionalParams.add(QueryParameters.FILTER_MASKED_VALUES);
         optionalParams.add(QueryParameters.INCLUDE_DATATYPE_AS_FIELD);
         optionalParams.add(QueryParameters.INCLUDE_GROUPING_CONTEXT);

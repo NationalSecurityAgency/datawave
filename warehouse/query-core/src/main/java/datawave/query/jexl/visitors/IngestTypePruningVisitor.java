@@ -235,8 +235,7 @@ public class IngestTypePruningVisitor extends BaseVisitor {
         JexlNode source = node.jjtGetChild(1);
         Set<String> dts = (Set<String>) visit(source, data);
 
-        if (source.jjtGetNumChildren() == 0) {
-            pruneNodeFromParent(source);
+        if (source.jjtGetParent() == null) {
             pruneNodeFromParent(node);
         }
 

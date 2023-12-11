@@ -1,6 +1,9 @@
 package datawave.query.tld;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
@@ -12,6 +15,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeMap;
 
+import org.apache.accumulo.core.data.ArrayByteSequence;
+import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
@@ -72,14 +77,14 @@ public class TLDTermFrequencyAggregatorTest {
         Key result = aggregator.apply(itr, doc, attributeFactory);
 
         // test result key
-        assertTrue(result == null);
+        assertNull(result);
 
         // test that the doc is empty
-        assertTrue(doc.size() == 0);
+        assertEquals(0, doc.size());
 
         // test that the iterator is in the correct position
         assertTrue(itr.hasTop());
-        assertTrue(itr.getTopKey().equals(getTF("123", "NEXT_DOC_FIELD", "VALUE1", "dataType1", "124.345.456", 10)));
+        assertEquals(itr.getTopKey(), getTF("123", "NEXT_DOC_FIELD", "VALUE1", "dataType1", "124.345.456", 10));
     }
 
     @Test
@@ -115,17 +120,17 @@ public class TLDTermFrequencyAggregatorTest {
         Key result = aggregator.apply(itr, doc, attributeFactory);
 
         // test result key
-        assertTrue(result != null);
+        assertNotNull(result);
         DatawaveKey parsedResult = new DatawaveKey(result);
-        assertTrue(parsedResult.getDataType().equals("dataType1"));
-        assertTrue(parsedResult.getUid().equals("123.345.456"));
-        assertTrue(parsedResult.getFieldName(), parsedResult.getFieldName().equals("FIELD1"));
-        assertTrue(parsedResult.getFieldValue().equals("VALUE1"));
+        assertEquals("dataType1", parsedResult.getDataType());
+        assertEquals("123.345.456", parsedResult.getUid());
+        assertEquals(parsedResult.getFieldName(), "FIELD1", parsedResult.getFieldName());
+        assertEquals("VALUE1", parsedResult.getFieldValue());
 
         // test that the doc is empty
-        assertTrue(doc.size() == 5);
-        assertTrue(doc.get("RECORD_ID").getData().equals("123/dataType1/123.345.456"));
-        assertTrue(((Set<TypeAttribute>) doc.get("FIELD1").getData()).size() == 2);
+        assertEquals(5, doc.size());
+        assertEquals("123/dataType1/123.345.456", doc.get("RECORD_ID").getData());
+        assertEquals(2, ((Set<TypeAttribute>) doc.get("FIELD1").getData()).size());
         Iterator<TypeAttribute> i = ((Set<TypeAttribute>) doc.get("FIELD1").getData()).iterator();
         List<String> expected = new ArrayList<>();
         expected.add("VALUE1");
@@ -135,8 +140,8 @@ public class TLDTermFrequencyAggregatorTest {
             assertTrue(ta.isToKeep());
             assertTrue(expected.remove(ta.getData().toString()));
         }
-        assertTrue(expected.size() == 0);
-        assertTrue(((Set<TypeAttribute>) doc.get("FIELD2").getData()).size() == 2);
+        assertEquals(0, expected.size());
+        assertEquals(2, ((Set<TypeAttribute>) doc.get("FIELD2").getData()).size());
         i = ((Set<TypeAttribute>) doc.get("FIELD2").getData()).iterator();
         expected = new ArrayList<>();
         expected.add("VALUE2");
@@ -146,11 +151,11 @@ public class TLDTermFrequencyAggregatorTest {
             assertTrue(ta.isToKeep());
             assertTrue(expected.remove(ta.getData().toString()));
         }
-        assertTrue(expected.size() == 0);
+        assertEquals(0, expected.size());
 
         // test that the iterator is in the correct position
         assertTrue(itr.hasTop());
-        assertTrue(itr.getTopKey().equals(getTF("123", "NEXT_DOC_FIELD", "VALUE1", "dataType1", "123.345.457", 10)));
+        assertEquals(itr.getTopKey(), getTF("123", "NEXT_DOC_FIELD", "VALUE1", "dataType1", "123.345.457", 10));
     }
 
     @Test
@@ -174,14 +179,14 @@ public class TLDTermFrequencyAggregatorTest {
         Key result = aggregator.apply(itr, doc, attributeFactory);
 
         // test result key
-        assertTrue(result == null);
+        assertNull(result);
 
         // test that the doc is empty
-        assertTrue(doc.size() == 0);
+        assertEquals(0, doc.size());
 
         // test that the iterator is in the correct position
         assertTrue(itr.hasTop());
-        assertTrue(itr.getTopKey().equals(getTF("123", "NEXT_DOC_FIELD", "VALUE1", "dataType1", "124.345.456", 10)));
+        assertEquals(itr.getTopKey(), getTF("123", "NEXT_DOC_FIELD", "VALUE1", "dataType1", "124.345.456", 10));
     }
 
     @Test
@@ -199,7 +204,7 @@ public class TLDTermFrequencyAggregatorTest {
         Key result2 = aggregator.apply(itr, new Range(), null, false);
 
         assertFalse(itr.hasTop());
-        assertTrue(result.equals(result2));
+        assertEquals(result, result2);
     }
 
     @Test
@@ -216,14 +221,14 @@ public class TLDTermFrequencyAggregatorTest {
         Key result = aggregator.apply(itr);
 
         assertTrue(itr.hasTop());
-        assertTrue(itr.getTopKey().getRow().toString().equals("1234"));
+        assertEquals("1234", itr.getTopKey().getRow().toString());
 
         itr.seek(new Range(), null, true);
         Key result2 = aggregator.apply(itr, new Range(), null, false);
 
         assertTrue(itr.hasTop());
-        assertTrue(itr.getTopKey().getRow().toString().equals("1234"));
-        assertTrue(result.equals(result2));
+        assertEquals("1234", itr.getTopKey().getRow().toString());
+        assertEquals(result, result2);
 
         // test a change to the datatype
         treeMap = Maps.newTreeMap();
@@ -236,8 +241,8 @@ public class TLDTermFrequencyAggregatorTest {
         result2 = aggregator.apply(itr, new Range(), null, false);
 
         assertTrue(itr.hasTop());
-        assertTrue(itr.getTopKey().getTimestamp() == 7);
-        assertTrue(result.equals(result2));
+        assertEquals(7, itr.getTopKey().getTimestamp());
+        assertEquals(result, result2);
 
         // test a change to the uid
         treeMap = Maps.newTreeMap();
@@ -252,8 +257,8 @@ public class TLDTermFrequencyAggregatorTest {
         result2 = aggregator.apply(itr, new Range(), null, false);
 
         assertTrue(itr.hasTop());
-        assertTrue(itr.getTopKey().getTimestamp() == 6);
-        assertTrue(result.equals(result2));
+        assertEquals(6, itr.getTopKey().getTimestamp());
+        assertEquals(result, result2);
 
         treeMap = Maps.newTreeMap();
         treeMap.put(getTF("123", "FIELD1", "VALUE1", "dataType1", "123.345.456", 10), new Value());
@@ -262,13 +267,24 @@ public class TLDTermFrequencyAggregatorTest {
         result2 = aggregator.apply(itr, new Range(), null, false);
 
         assertFalse(itr.hasTop());
-        assertTrue(result.equals(result2));
+        assertEquals(result, result2);
     }
 
     private Key getTF(String row, String field, String value, String dataType, String uid, long timestamp) {
         // CQ = dataType\0UID\0Normalized field value\0Field name
         return new Key(row, "tf", dataType + Constants.NULL_BYTE_STRING + uid + Constants.NULL_BYTE_STRING + value + Constants.NULL_BYTE_STRING + field,
                         timestamp);
+    }
+
+    @Test
+    public void testParsePointer() {
+        Key tldTfKey = new Key("row", "tf", "datatype\0parent.document.id\0value\0FIELD");
+        Key childTfKey = new Key("row", "tf", "datatype\0parent.document.id.child.grandchild\0value\0FIELD");
+
+        ByteSequence expected = new ArrayByteSequence("datatype\0parent.document.id".getBytes());
+
+        assertEquals(expected, aggregator.parsePointer(tldTfKey.getColumnQualifierData()));
+        assertEquals(expected, aggregator.parsePointer(childTfKey.getColumnQualifierData()));
     }
 
 }

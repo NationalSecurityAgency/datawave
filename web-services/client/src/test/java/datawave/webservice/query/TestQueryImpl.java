@@ -16,7 +16,7 @@ public class TestQueryImpl {
 
     public static final String QUERY_SYNTAX = "query.syntax";
     public static final String NON_EVENT_KEY_PREFIXES = "non.event.key.prefixes";
-    public static final String BLACKLISTED_FIELDS = "blacklisted.fields";
+    public static final String DISALLOWLISTED_FIELDS = "disallowlisted.fields";
     public static final String RETURN_FIELDS = "return.fields";
     public static final String INCLUDE_DATATYPE_AS_FIELD = "include.datatype.as.field";
 
@@ -42,7 +42,7 @@ public class TestQueryImpl {
         Set<Parameter> parameters = new HashSet<Parameter>();
         parameters.add(new Parameter(QUERY_SYNTAX, "LUCENE"));
         parameters.add(new Parameter(NON_EVENT_KEY_PREFIXES, "value2"));
-        parameters.add(new Parameter(BLACKLISTED_FIELDS, "value3"));
+        parameters.add(new Parameter(DISALLOWLISTED_FIELDS, "value3"));
         parameters.add(new Parameter(RETURN_FIELDS, "value4"));
         parameters.add(new Parameter(INCLUDE_DATATYPE_AS_FIELD, "value5"));
         q.setParameters(parameters);

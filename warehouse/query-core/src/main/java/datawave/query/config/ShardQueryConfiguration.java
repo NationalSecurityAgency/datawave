@@ -227,7 +227,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private List<IndexHole> indexHoles = new ArrayList<>();
     // Limit fields returned per event
     private Set<String> projectFields = Collections.emptySet();
-    private Set<String> blacklistedFields = new HashSet<>(0);
+    private Set<String> disallowlistedFields = new HashSet<>(0);
     private Set<String> indexedFields = Sets.newHashSet();
     private Set<String> reverseIndexedFields = Sets.newHashSet();
     private Set<String> normalizedFields = Sets.newHashSet();
@@ -548,7 +548,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                         : (other.getDatatypeFilter() instanceof UniversalSet) ? UniversalSet.instance() : Sets.newHashSet(other.getDatatypeFilter()));
         this.setIndexHoles(null == other.getIndexHoles() ? null : Lists.newArrayList(other.getIndexHoles()));
         this.setProjectFields(null == other.getProjectFields() ? null : Sets.newHashSet(other.getProjectFields()));
-        this.setBlacklistedFields(null == other.getBlacklistedFields() ? null : Sets.newHashSet(other.getBlacklistedFields()));
+        this.setDisallowlistedFields(null == other.getDisallowlistedFields() ? null : Sets.newHashSet(other.getDisallowlistedFields()));
         this.setIndexedFields(null == other.getIndexedFields() ? null : Sets.newHashSet(other.getIndexedFields()));
         this.setReverseIndexedFields(null == other.getReverseIndexedFields() ? null : Sets.newHashSet(other.getReverseIndexedFields()));
         this.setNormalizedFields(null == other.getNormalizedFields() ? null : Sets.newHashSet(other.getNormalizedFields()));
@@ -979,16 +979,16 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         return StringUtils.join(this.getProjectFields(), Constants.PARAM_VALUE_SEP);
     }
 
-    public Set<String> getBlacklistedFields() {
-        return blacklistedFields;
+    public Set<String> getDisallowlistedFields() {
+        return disallowlistedFields;
     }
 
-    public void setBlacklistedFields(Set<String> blacklistedFields) {
-        this.blacklistedFields = deconstruct(blacklistedFields);
+    public void setDisallowlistedFields(Set<String> disallowlistedFields) {
+        this.disallowlistedFields = deconstruct(disallowlistedFields);
     }
 
-    public String getBlacklistedFieldsAsString() {
-        return StringUtils.join(this.getBlacklistedFields(), Constants.PARAM_VALUE_SEP);
+    public String getDisallowlistedFieldsAsString() {
+        return StringUtils.join(this.getDisallowlistedFields(), Constants.PARAM_VALUE_SEP);
     }
 
     public Boolean getUseEnrichers() {
@@ -2668,7 +2668,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                         && Objects.equals(getNonEventKeyPrefixes(), that.getNonEventKeyPrefixes())
                         && Objects.equals(getUnevaluatedFields(), that.getUnevaluatedFields()) && Objects.equals(getDatatypeFilter(), that.getDatatypeFilter())
                         && Objects.equals(getIndexHoles(), that.getIndexHoles()) && Objects.equals(getProjectFields(), that.getProjectFields())
-                        && Objects.equals(getBlacklistedFields(), that.getBlacklistedFields()) && Objects.equals(getIndexedFields(), that.getIndexedFields())
+                        && Objects.equals(getDisallowlistedFields(), that.getDisallowlistedFields())
+                        && Objects.equals(getIndexedFields(), that.getIndexedFields())
                         && Objects.equals(getReverseIndexedFields(), that.getReverseIndexedFields())
                         && Objects.equals(getNormalizedFields(), that.getNormalizedFields()) && Objects.equals(getDataTypes(), that.getDataTypes())
                         && Objects.equals(getQueryFieldsDatatypes(), that.getQueryFieldsDatatypes())
@@ -2708,7 +2709,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                         isCleanupShardsAndDaysQueryHints(), getNumQueryThreads(), numLookupThreads, getNumDateIndexThreads(), getMaxDocScanTimeout(),
                         getCollapseDatePercentThreshold(), getFullTableScanEnabled(), getRealmSuffixExclusionPatterns(), getDefaultType(), getShardDateFormat(),
                         getUseEnrichers(), getEnricherClassNames(), getUseFilters(), getFilterClassNames(), getIndexFilteringClassNames(),
-                        getNonEventKeyPrefixes(), getUnevaluatedFields(), getDatatypeFilter(), getIndexHoles(), getProjectFields(), getBlacklistedFields(),
+                        getNonEventKeyPrefixes(), getUnevaluatedFields(), getDatatypeFilter(), getIndexHoles(), getProjectFields(), getDisallowlistedFields(),
                         getIndexedFields(), getReverseIndexedFields(), getNormalizedFields(), getDataTypes(), getQueryFieldsDatatypes(),
                         getNormalizedFieldsDatatypes(), getFieldToDiscreteIndexTypes(), getCompositeToFieldMap(), getCompositeTransitionDates(),
                         getCompositeFieldSeparators(), getEvaluationOnlyFields(), isSortedUIDs(), getQueryTermFrequencyFields(), isTermFrequenciesRequired(),

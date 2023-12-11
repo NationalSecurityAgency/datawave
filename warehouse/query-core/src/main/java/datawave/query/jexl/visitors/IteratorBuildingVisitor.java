@@ -125,7 +125,6 @@ import datawave.webservice.query.exception.QueryException;
  * A visitor that builds a tree of iterators. The main points are at ASTAndNodes and ASTOrNodes, where the code will build AndIterators and OrIterators,
  * respectively. This will automatically roll up binary representations of subtrees into a generic n-ary tree because there isn't a true mapping between JEXL
  * AST trees and iterator trees. A JEXL tree can have subtrees rooted at an ASTNotNode whereas an iterator tree cannot.
- *
  */
 public class IteratorBuildingVisitor extends BaseVisitor {
     private static final Logger log = Logger.getLogger(IteratorBuildingVisitor.class);
@@ -697,7 +696,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         if (data == null) {
             // Make this EQNode the root
             if (!includeReferences.contains(builder.getField()) && excludeReferences.contains(builder.getField())) {
-                throw new IllegalStateException(builder.getField() + " is a blacklisted reference.");
+                throw new IllegalStateException(builder.getField() + " is a disallowlisted reference.");
             } else if (builder.getField() != null) {
                 root = builder.build();
 
@@ -962,7 +961,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         if (data == null) {
             // Make this EQNode the root
             if (!includeReferences.contains(builder.getField()) && excludeReferences.contains(builder.getField())) {
-                throw new IllegalStateException(builder.getField() + " is a blacklisted reference.");
+                throw new IllegalStateException(builder.getField() + " is a disallowlisted reference.");
             } else {
                 root = builder.build();
 
@@ -1405,7 +1404,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         if (data == null) {
             // Make this EQNode the root
             if (!includeReferences.contains(builder.getField()) && excludeReferences.contains(builder.getField())) {
-                throw new IllegalStateException(builder.getField() + " is a blacklisted reference.");
+                throw new IllegalStateException(builder.getField() + " is a disallowlisted reference.");
             } else {
                 root = builder.build();
 

@@ -456,6 +456,23 @@ public class IngestTypePruningVisitorTest {
         test(query, query);
     }
 
+    @Test
+    void testPruneNestedMarker() {
+        TypeMetadata metadata = new TypeMetadata();
+        metadata.put("A", "ingestType1", LcType.class.getTypeName());
+        metadata.put("A", "ingestType2", LcType.class.getTypeName());
+        metadata.put("B", "ingestType1", LcType.class.getTypeName());
+        metadata.put("B", "ingestType2", LcType.class.getTypeName());
+        metadata.put("B", "ingestType3", LcType.class.getTypeName());
+        metadata.put("B", "ingestType4", LcType.class.getTypeName());
+        metadata.put("C", "ingestType3", LcType.class.getTypeName());
+        metadata.put("C", "ingestType4", LcType.class.getTypeName());
+
+        String query = "A == '1' && (((_Delayed_ = true) && (B =~ 'b.*')) || ((_Delayed_ = true) && (C =~ 'c.*')))";
+        String expected = "A == '1' && (((_Delayed_ = true) && (B =~ 'b.*')))";
+        test(query, expected, typeMetadata);
+    }
+
     private void test(String query, String expected) {
         test(query, expected, typeMetadata);
     }

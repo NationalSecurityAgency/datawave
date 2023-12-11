@@ -46,6 +46,8 @@ public class RemoteEventQueryLogic extends BaseQueryLogic<EventBase> implements 
 
     protected static final Logger log = ThreadConfigurableLogger.getLogger(RemoteEventQueryLogic.class);
 
+    public static final String QUERY_ID = "queryId";
+
     private RemoteQueryConfiguration config;
 
     private RemoteQueryService remoteQueryService;
@@ -102,8 +104,14 @@ public class RemoteEventQueryLogic extends BaseQueryLogic<EventBase> implements 
     public GenericQueryConfiguration initialize(AccumuloClient connection, Query settings, Set<Authorizations> auths) throws Exception {
         // @TODO: If this is a checkpointable query, then we may need to set the page size down to 1
 
+        Map<String,List<String>> parms = settings.toMap();
+        // we need to ensure that the remote query request includes the local query id for tracking purposes via query metrics.
+        if (!parms.containsKey(QUERY_ID) && settings.getId() != null) {
+            parms.put(QUERY_ID, Collections.singletonList(settings.getId().toString()));
+        }
         GenericResponse<String> createResponse = remoteQueryService.createQuery(getRemoteQueryLogic(), settings.toMap(), currentUser);
         setRemoteId(createResponse.getResult());
+        log.info("Local query " + settings.getId() + " maps to remote query " + getRemoteId());
         return getConfig();
     }
 

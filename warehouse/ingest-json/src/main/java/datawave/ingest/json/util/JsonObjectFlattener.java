@@ -15,7 +15,6 @@ import com.google.gson.JsonObject;
  * See {@link FlattenMode} enum values for information on supported behaviors
  * <p>
  * See {@link JsonObjectFlattener.Builder} methods for other config options
- *
  */
 public interface JsonObjectFlattener {
 
@@ -103,7 +102,7 @@ public interface JsonObjectFlattener {
      * {@link Multimap} instance
      *
      * <p>
-     * It's the resulting normalized key that {@link JsonObjectFlattener} implementations should use to compare against blacklist and whitelist sets, with
+     * It's the resulting normalized key that {@link JsonObjectFlattener} implementations should use to compare against disallowlist and allowlist sets, with
      * normalization applied as close to the actual {@link Multimap#put(Object, Object)} operation as possible
      */
     interface MapKeyValueNormalizer {
@@ -205,22 +204,22 @@ public interface JsonObjectFlattener {
         Builder<T> pathDelimiter(String pathDelimiter) throws NullPointerException;
 
         /**
-         * Only map keys matching those in whitelist will be added to the flattened map. If used in conjunction with blacklist, blacklist takes precedence
+         * Only map keys matching those in allowlist will be added to the flattened map. If used in conjunction with disallowlist, disallowlist takes precedence
          *
-         * @param mapKeyWhitelist
-         *            whitelisted keys
+         * @param mapKeyAllowlist
+         *            allowlisted keys
          * @return builder instance
          */
-        Builder<T> mapKeyWhitelist(Set<String> mapKeyWhitelist);
+        Builder<T> mapKeyAllowlist(Set<String> mapKeyAllowlist);
 
         /**
-         * Map keys within blacklist will be excluded from the flattened map. If used in conjunction with whitelist, blacklist takes precedence
+         * Map keys within disallowlist will be excluded from the flattened map. If used in conjunction with allowlist, disallowlist takes precedence
          *
-         * @param mapKeyBlacklist
-         *            blacklisted keys
+         * @param mapKeyDisallowlist
+         *            disallowlisted keys
          * @return builder instance
          */
-        Builder<T> mapKeyBlacklist(Set<String> mapKeyBlacklist);
+        Builder<T> mapKeyDisallowlist(Set<String> mapKeyDisallowlist);
 
         /**
          * <p>
@@ -252,7 +251,7 @@ public interface JsonObjectFlattener {
         /**
          * <p>
          * Sets the {@link MapKeyValueNormalizer} to be applied to flattened keys just prior to {@link Multimap#put(Object, Object)} and also prior to
-         * whitelist/blacklist checks. That is, create your whitelist and blacklist sets based on your ideal, "normalized" key structure
+         * allowlist/disallowlist checks. That is, create your allowlist and disallowlist sets based on your ideal, "normalized" key structure
          *
          * @param normalizer
          *            normalizer instance

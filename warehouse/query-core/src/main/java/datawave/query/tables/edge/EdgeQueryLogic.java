@@ -200,7 +200,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements 
             }
             if (prefilterValues != null) {
                 String value = serializePrefilter();
-                edgeIteratorSetting.addOption(EdgeFilterIterator.PREFILTER_WHITELIST, value);
+                edgeIteratorSetting.addOption(EdgeFilterIterator.PREFILTER_ALLOWLIST, value);
             }
 
             if (includeStats) {
@@ -371,9 +371,9 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements 
      *
      * @param queryString
      *            jexl string for the query
+     * @return QueryData
      * @throws ParseException
      *             for issues with parsing
-     * @return QueryData
      */
     protected Set<Range> configureRanges(String queryString) throws ParseException {
         queryString = EdgeQueryLogic.fixQueryString(queryString);
@@ -621,7 +621,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements 
      * @param dateFilterType
      *            type of filtering (EVENT, LOAD, ACTIVITY, ACTIVITY_LOAD, ANY, ANY_LOAD)
      * @return created iterators
-     *
+     *         <p>
      *         There can now be one or more edges with matching keys other than a date type distinction in the column qualifier. Old-style edges have no date
      *         type marking but always used event date. New-style edges may indicate an event date-based edge, both, or activity date-based edge. Hence, based
      *         on whether the query is for event date-based edges or activity date-based edges the appropriate types of edges must be returned. Additionally,
