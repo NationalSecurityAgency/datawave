@@ -27,11 +27,11 @@ import com.fasterxml.jackson.databind.ObjectReader;
 import datawave.configuration.RefreshableScope;
 import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.BaseQueryMetricListResponse;
+import datawave.microservice.querymetric.QueryGeometryResponse;
 import datawave.microservice.querymetric.QueryMetricsSummaryResponse;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.system.CallerPrincipal;
 import datawave.webservice.common.remote.RemoteHttpService;
-import datawave.webservice.query.map.QueryGeometryResponse;
 import datawave.webservice.result.VoidResponse;
 
 /**

@@ -17,6 +17,8 @@ import org.apache.log4j.Logger;
 
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.microservice.querymetric.BaseQueryMetric;
+import datawave.microservice.querymetric.QueryGeometry;
+import datawave.microservice.querymetric.QueryGeometryResponse;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.GeoFeatureVisitor;
 import datawave.query.language.parser.ParseException;
@@ -24,9 +26,7 @@ import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.metrics.ShardTableQueryMetricHandler;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.map.QueryGeometry;
 import datawave.webservice.query.map.QueryGeometryHandler;
-import datawave.webservice.query.map.QueryGeometryResponse;
 
 /**
  * This class is used to extract query geometries from the query metrics in an effort to provide those geometries for subsequent display to the user.
