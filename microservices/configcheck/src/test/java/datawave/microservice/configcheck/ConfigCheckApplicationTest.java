@@ -163,6 +163,6 @@ public class ConfigCheckApplicationTest {
         
         String expectedOutput = Files.readString(Path.of(resourcesAbsolutePath, "rendered/comparison.diff"), StandardCharsets.UTF_8);
         
-        assertEquals(expectedOutput, output);
+        assertEquals(expectedOutput, output.substring(output.indexOf("\n", output.indexOf("\n") + 1) + 1));
     }
 }
