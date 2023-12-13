@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.webservices</groupId>
         <artifactId>datawave-ws-parent</artifactId>
-        <version>6.4.0-SNAPSHOT</version>
+        <version>6.4.0</version>
     </parent>
     <artifactId>datawave-ws-map-reduce-status</artifactId>
     <packaging>ejb</packaging>
