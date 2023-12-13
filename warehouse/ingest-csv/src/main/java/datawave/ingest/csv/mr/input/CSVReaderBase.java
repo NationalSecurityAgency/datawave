@@ -24,35 +24,53 @@ import datawave.ingest.input.reader.LongLineEventRecordReader;
  * RecordReader that reads events from "Comma"-Separated-Value formats. Here the "Comma" can be any separator.
  */
 public class CSVReaderBase extends LongLineEventRecordReader implements EventRecordReader {
-    /** Logging mechanism for CSVReader. */
+    /**
+     * Logging mechanism for CSVReader.
+     */
     private static final Logger log = LoggerFactory.getLogger(CSVReaderBase.class);
 
-    /** Tracks the current record count. */
+    /**
+     * Tracks the current record count.
+     */
     protected long counter;
 
-    /** The last time the input file was changed. */
+    /**
+     * The last time the input file was changed.
+     */
     protected long fileModificationTime;
 
-    /** Tracks the amount of data processed. */
+    /**
+     * Tracks the amount of data processed.
+     */
     private long processedSize;
 
-    /** The size of the InputSplit * 4. */
+    /**
+     * The size of the InputSplit * 4.
+     */
     private long totalSize;
 
-    /** Primary DataTypeHelper for CSV records. */
+    /**
+     * Primary DataTypeHelper for CSV records.
+     */
     private CSVHelper csvHelper;
 
-    /** Splits raw input records Strings according to the configured separator. */
+    /**
+     * Splits raw input records Strings according to the configured separator.
+     */
     private StrTokenizer _tokenizer;
 
-    /** Super class returns the position in bytes in the file as the key. This returns the record number. */
+    /**
+     * Super class returns the position in bytes in the file as the key. This returns the record number.
+     */
     @Override
     public LongWritable getCurrentKey() {
         key.set(counter);
         return key;
     }
 
-    /** Points the RecordReader to the next record. */
+    /**
+     * Points the RecordReader to the next record.
+     */
     @Override
     public boolean nextKeyValue() throws IOException {
         if (counter == 0 && csvHelper.skipHeaderRow())
@@ -119,7 +137,9 @@ public class CSVReaderBase extends LongLineEventRecordReader implements EventRec
         return new CSVHelper();
     }
 
-    /** @return a populated Event object from the current key and value in this RecordReader. */
+    /**
+     * @return a populated Event object from the current key and value in this RecordReader.
+     */
     @Override
     public RawRecordContainer getEvent() {
         for (final String uidOverrideField : uidOverrideFields.keySet()) {
@@ -189,7 +209,9 @@ public class CSVReaderBase extends LongLineEventRecordReader implements EventRec
         return event;
     }
 
-    /** Decorate the event with additional info post field processing but prior to event validation */
+    /**
+     * Decorate the event with additional info post field processing but prior to event validation
+     */
     protected void decorateEvent() { /* default is noop */}
 
     @Override
@@ -266,8 +288,8 @@ public class CSVReaderBase extends LongLineEventRecordReader implements EventRec
             // Value can be multiple parts, need to break on semi-colon
             final String[] values = fieldValue.split(csvHelper.getEscapeSafeMultiValueSeparatorPattern());
 
-            // Can be renamed if specified in multivalued fields, but not if using blacklist
-            if (!csvHelper.usingMultiValuedFieldsBlacklist()) {
+            // Can be renamed if specified in multivalued fields, but not if using disallowlist
+            if (!csvHelper.usingMultiValuedFieldsDisallowlist()) {
                 fieldName = csvHelper.getMultiValuedFields().get(fieldName);
             }
 
