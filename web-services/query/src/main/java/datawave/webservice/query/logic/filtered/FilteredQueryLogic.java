@@ -9,6 +9,7 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.log4j.Logger;
 
+import datawave.microservice.authorization.util.AuthorizationsUtil;
 import datawave.security.authorization.UserOperations;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
@@ -45,14 +46,6 @@ public class FilteredQueryLogic extends DelegatingQueryLogic implements QueryLog
 
     public interface QueryLogicFilter {
         boolean canRunQuery(Query settings, Set<Authorizations> auths);
-    }
-
-    @Override
-    public void preInitialize(Query settings, Set<Authorizations> userAuthorizations) {
-        // setup the filter
-        if (canRunQuery(settings, userAuthorizations)) {
-            super.preInitialize(settings, userAuthorizations);
-        }
     }
 
     public boolean canRunQuery(Query settings, Set<Authorizations> runtimeQueryAuthorizations) {
@@ -131,9 +124,13 @@ public class FilteredQueryLogic extends DelegatingQueryLogic implements QueryLog
     }
 
     @Override
-    public UserOperations getUserOperations() {
-        if (!isFiltered()) {
-            return super.getUserOperations();
+    public UserOperations getUserOperations(Query settings) {
+        Set<Authorizations> auths = AuthorizationsUtil.buildAuthorizations(null);
+        if (settings != null && settings.getQueryAuthorizations() != null) {
+            auths = AuthorizationsUtil.buildAuthorizations(Collections.singleton(AuthorizationsUtil.splitAuths(settings.getQueryAuthorizations())));
+        }
+        if (canRunQuery(settings, auths)) {
+            return super.getUserOperations(settings);
         } else {
             return null;
         }

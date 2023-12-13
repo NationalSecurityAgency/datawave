@@ -293,8 +293,7 @@ public class QueryExecutorBeanTest {
         EasyMock.expect(logic.getCollectQueryMetrics()).andReturn(Boolean.FALSE);
         EasyMock.expect(logic.getResultLimit(q)).andReturn(-1L);
         EasyMock.expect(logic.getMaxResults()).andReturn(-1L);
-        logic.preInitialize(q, WSAuthorizationsUtil.buildAuthorizations(Collections.singleton(Sets.newHashSet("PUBLIC", "PRIVATE"))));
-        EasyMock.expect(logic.getUserOperations()).andReturn(null);
+        EasyMock.expect(logic.getUserOperations(q)).andReturn(null);
         PowerMock.replayAll();
 
         bean.defineQuery(queryLogicName, p);
@@ -701,8 +700,7 @@ public class QueryExecutorBeanTest {
         EasyMock.expect(logic.getConnPoolName()).andReturn("connPool1");
         EasyMock.expect(logic.getResultLimit(eq(q))).andReturn(-1L).anyTimes();
         EasyMock.expect(logic.getMaxResults()).andReturn(-1L).anyTimes();
-        logic.preInitialize(q, WSAuthorizationsUtil.buildAuthorizations(Collections.singleton(Sets.newHashSet("PUBLIC", "PRIVATE"))));
-        EasyMock.expect(logic.getUserOperations()).andReturn(null);
+        EasyMock.expect(logic.getUserOperations(q)).andReturn(null);
 
         EasyMock.expect(connectionRequestBean.cancelConnectionRequest(q.getId().toString(), principal)).andReturn(false).anyTimes();
         connectionFactory.returnClient(EasyMock.isA(AccumuloClient.class));

@@ -123,13 +123,8 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         this.connectionPriority = priority;
         this.settings = settings;
         // the query principal is our local principal unless the query logic has a different user operations
-        if (methodAuths != null) {
-            logic.preInitialize(settings, WSAuthorizationsUtil.buildAuthorizations(Collections.singleton(WSAuthorizationsUtil.splitAuths(methodAuths))));
-        } else {
-            logic.preInitialize(settings, WSAuthorizationsUtil.buildAuthorizations(null));
-        }
-        DatawavePrincipal queryPrincipal = (logic.getUserOperations() == null) ? (DatawavePrincipal) principal
-                        : logic.getUserOperations().getRemoteUser((DatawavePrincipal) principal);
+        DatawavePrincipal queryPrincipal = (logic.getUserOperations(settings) == null) ? (DatawavePrincipal) principal
+                        : logic.getUserOperations(settings).getRemoteUser((DatawavePrincipal) principal);
         // the overall principal (the one with combined auths across remote user operations) is our own user operations (probably the UserOperationsBean)
         DatawavePrincipal overallPrincipal = (userOperations == null) ? (DatawavePrincipal) principal
                         : userOperations.getRemoteUser((DatawavePrincipal) principal);

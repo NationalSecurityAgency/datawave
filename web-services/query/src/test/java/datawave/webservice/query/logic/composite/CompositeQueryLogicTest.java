@@ -261,7 +261,7 @@ public class CompositeQueryLogicTest {
         }
 
         @Override
-        public UserOperations getUserOperations() {
+        public UserOperations getUserOperations(Query settings) {
             return userOperations;
         }
 

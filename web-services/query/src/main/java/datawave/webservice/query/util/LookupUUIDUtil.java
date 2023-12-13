@@ -448,14 +448,9 @@ public class LookupUUIDUtil {
         try {
             QueryLogic<?> logic = queryLogicFactory.getQueryLogic(logicName, principal);
             Query settings = createSettings(queryParameters);
-            if (queryAuths == null) {
-                logic.preInitialize(settings, WSAuthorizationsUtil.buildAuthorizations(null));
-            } else {
-                logic.preInitialize(settings, WSAuthorizationsUtil.buildAuthorizations(Collections.singleton(WSAuthorizationsUtil.splitAuths(queryAuths))));
-            }
             // the query principal is our local principal unless the query logic has a different user operations
-            DatawavePrincipal queryPrincipal = (logic.getUserOperations() == null) ? (DatawavePrincipal) principal
-                            : logic.getUserOperations().getRemoteUser((DatawavePrincipal) principal);
+            DatawavePrincipal queryPrincipal = (logic.getUserOperations(settings) == null) ? (DatawavePrincipal) principal
+                            : logic.getUserOperations(settings).getRemoteUser((DatawavePrincipal) principal);
             // the overall principal (the one with combined auths across remote user operations) is our own user operations (probably the UserOperationsBean)
             DatawavePrincipal overallPrincipal = (userOperations == null) ? (DatawavePrincipal) principal
                             : userOperations.getRemoteUser((DatawavePrincipal) principal);

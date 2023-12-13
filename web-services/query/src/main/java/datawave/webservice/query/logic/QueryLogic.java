@@ -430,18 +430,10 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      * Normally this simply returns null as the query logic simply uses the user within the local system. However sometimes we may have a query that goes off
      * system and hence needs to use a different set of auths when downgrading.
      *
+     * @param settings
+     *            Query settings that can be used to filter the user operations (see FilteredQueryLogic)
+     *
      * @return A user operations interface implementation. Null if NA (i.e. the local principal is sufficient)
      */
-    UserOperations getUserOperations();
-
-    /**
-     * This is to be used prior to requesting user operations for a logic that is not yet initialized. The main use case is for the FilteredQueryLogic to allow
-     * it to filter this call as well. Most query logics will not implement this.
-     *
-     * @param settings
-     * @param userAuthorizations
-     */
-    default void preInitialize(Query settings, Set<Authorizations> userAuthorizations) {
-        // noop
-    }
+    UserOperations getUserOperations(Query settings);
 }
