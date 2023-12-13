@@ -43,7 +43,7 @@ public class QueryParameters {
     /**
      * ??
      */
-    public static final String BLACKLISTED_FIELDS = "blacklisted.fields";
+    public static final String DISALLOWLISTED_FIELDS = "disallowlisted.fields";
 
     /**
      * The list of fields to return
@@ -142,7 +142,36 @@ public class QueryParameters {
      */
     public static final String MATCHING_FIELD_SETS = "matching.field.sets";
 
+    /**
+     * Used to specify fields to perform a group-by with.
+     */
     public static final String GROUP_FIELDS = "group.fields";
+
+    /**
+     * Used to specify the fields for which a sum should be calculated in groups resulting from a group-by operation.
+     */
+    public static final String SUM_FIELDS = "sum.fields";
+
+    /**
+     * Used to specify the fields for which the max should be found in groups resulting from a group-by operation.
+     */
+    public static final String MAX_FIELDS = "max.fields";
+
+    /**
+     * Used to specify the fields for which the min should be found in groups resulting from a group-by operation.
+     */
+    public static final String MIN_FIELDS = "min.fields";
+
+    /**
+     * Used to specify the fields for which a count should be calculated in groups resulting from a group-by operation.
+     */
+    public static final String COUNT_FIELDS = "count.fields";
+
+    /**
+     * Used to specify the fields for which an average should be calculated in groups resulting from a group-by operation.
+     */
+    public static final String AVERAGE_FIELDS = "average.fields";
+
     public static final String GROUP_FIELDS_BATCH_SIZE = "group.fields.batch.size";
     public static final String UNIQUE_FIELDS = "unique.fields";
 
@@ -164,6 +193,8 @@ public class QueryParameters {
     public static final String RAW_TYPES = "raw.types";
 
     public static final String DATE_INDEX_TIME_TRAVEL = "date.index.time.travel";
+
+    public static final String IGNORE_NONEXISTENT_FIELDS = "ignore.nonexistent.fields";
 
     /**
      * Used to specify a SHARDS_AND_DAYS hint within the options function.

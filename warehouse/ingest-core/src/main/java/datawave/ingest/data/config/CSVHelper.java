@@ -43,22 +43,22 @@ public class CSVHelper extends DataTypeHelperImpl {
     /**
      * Parameter to explicitly specify a subset of fields that should be added to the event, all others are dropped.
      */
-    public static final String FIELD_WHITELIST = ".data.field.whitelist";
+    public static final String FIELD_ALLOWLIST = ".data.field.allowlist";
 
     /**
      * Parameter to explicitly specify a subset of fields that should be removed from the event, all others are kept.
      */
-    public static final String FIELD_BLACKLIST = ".data.field.blacklist";
+    public static final String FIELD_DISALLOWLIST = ".data.field.disallowlist";
 
     /**
-     * Parameter to specify the fields that are multivalued (whitelist)
+     * Parameter to specify the fields that are multivalued (allowlist)
      */
     public static final String MULTI_VALUED_FIELDS = ".data.fields.multivalued";
 
     /**
-     * Parameter to specify the fields that are not multivalued (blacklist)
+     * Parameter to specify the fields that are not multivalued (disallowlist)
      */
-    public static final String MULTI_VALUED_FIELDS_BLACKLIST = ".data.fields.multivalued.blacklist";
+    public static final String MULTI_VALUED_FIELDS_DISALLOWLIST = ".data.fields.multivalued.disallowlist";
 
     /**
      * Parameter to specify the separator for multivalued fields (default is ';');
@@ -115,10 +115,14 @@ public class CSVHelper extends DataTypeHelperImpl {
      */
     public static final String THRESHOLD_FIELD_REPLACEMENT = ".data.threshold.replacement";
 
-    /** Partial configuration key for specifying CSV fields that a record must have. */
+    /**
+     * Partial configuration key for specifying CSV fields that a record must have.
+     */
     public static final String REQUIRED_FIELDS = ".data.fields.required";
 
-    /** Pattern used to prevent matching escaped multivalue field separators when splitting multivalued fields */
+    /**
+     * Pattern used to prevent matching escaped multivalue field separators when splitting multivalued fields
+     */
     public static final String BACKSLASH_ESCAPE_LOOKBEHIND_PATTERN = "(?<!\\\\)";
 
     public enum ThresholdAction {
@@ -130,8 +134,8 @@ public class CSVHelper extends DataTypeHelperImpl {
     private boolean skipHeaderRow = false;
     private boolean processExtraFields = false;
     private Map<String,String> multiValuedFields = new HashMap<>();
-    private Map<String,String> multiValuedFieldsBlacklist = new HashMap<>();
-    private boolean hasMultiValuedFieldsBlacklist = false;
+    private Map<String,String> multiValuedFieldsDisallowlist = new HashMap<>();
+    private boolean hasMultiValuedFieldsDisallowlist = false;
     private String multiValueSeparator = null;
     private int fieldSizeThreshold = Integer.MAX_VALUE;
     private int multiFieldSizeThreshold = Integer.MAX_VALUE;
@@ -143,13 +147,17 @@ public class CSVHelper extends DataTypeHelperImpl {
     private String multiValuedThresholdReplacement = "(too many)";
     private String multiValuedTruncateField = "TRUNCATED_MULTI_VALUED_FIELD";
     private String multiValuedDropField = "DROPPED_MULTI_VALUED_FIELD";
-    private Set<String> fieldBlacklist = null;
-    private Set<String> fieldWhitelist = null;
+    private Set<String> fieldDisallowlist = null;
+    private Set<String> fieldAllowlist = null;
 
-    /** The Set of field names that a record must have to be valid. */
+    /**
+     * The Set of field names that a record must have to be valid.
+     */
     private Set<String> _requiredFields = null;
 
-    /** Whether or not this CSV-based data format has required fields. */
+    /**
+     * Whether or not this CSV-based data format has required fields.
+     */
     private boolean _hasReqFields;
 
     @Override
@@ -171,16 +179,16 @@ public class CSVHelper extends DataTypeHelperImpl {
         // Get the process extra fields property
         this.processExtraFields = config.getBoolean(this.getType().typeName() + PROCESS_EXTRA_FIELDS, false);
 
-        // Get the whitelist of event fields to keep.
-        Collection<String> cw = config.getStringCollection(this.getType().typeName() + FIELD_WHITELIST);
+        // Get the allowlist of event fields to keep.
+        Collection<String> cw = config.getStringCollection(this.getType().typeName() + FIELD_ALLOWLIST);
         if (cw != null && !cw.isEmpty()) {
-            this.fieldWhitelist = new HashSet<>(cw);
+            this.fieldAllowlist = new HashSet<>(cw);
         }
 
-        // Get the blacklist of event fields to drop.
-        Collection<String> cb = config.getStringCollection(this.getType().typeName() + FIELD_BLACKLIST);
+        // Get the disallowlist of event fields to drop.
+        Collection<String> cb = config.getStringCollection(this.getType().typeName() + FIELD_DISALLOWLIST);
         if (cb != null && !cb.isEmpty()) {
-            this.fieldBlacklist = new HashSet<>(cw);
+            this.fieldDisallowlist = new HashSet<>(cw);
         }
 
         final Collection<String> reqFields = config.getStringCollection(getType().typeName() + REQUIRED_FIELDS);
@@ -196,21 +204,21 @@ public class CSVHelper extends DataTypeHelperImpl {
                             + PROCESS_EXTRA_FIELDS + " are " + "configured to 'false', either or both must be 'true'");
         }
 
-        // Get the multi-valued fields blacklist configuration
-        if (config.get(this.getType().typeName() + MULTI_VALUED_FIELDS_BLACKLIST) != null) {
-            for (String field : config.getStrings(this.getType().typeName() + MULTI_VALUED_FIELDS_BLACKLIST, new String[0])) {
+        // Get the multi-valued fields disallowlist configuration
+        if (config.get(this.getType().typeName() + MULTI_VALUED_FIELDS_DISALLOWLIST) != null) {
+            for (String field : config.getStrings(this.getType().typeName() + MULTI_VALUED_FIELDS_DISALLOWLIST, new String[0])) {
                 int index = field.indexOf(':');
                 if (index > 0) {
-                    multiValuedFieldsBlacklist.put(field.substring(0, index), field.substring(index + 1));
+                    multiValuedFieldsDisallowlist.put(field.substring(0, index), field.substring(index + 1));
                 } else {
-                    multiValuedFieldsBlacklist.put(field, field);
+                    multiValuedFieldsDisallowlist.put(field, field);
                 }
             }
-            hasMultiValuedFieldsBlacklist = true;
+            hasMultiValuedFieldsDisallowlist = true;
         }
 
         // Get the multi-valued fields configuration
-        if (!hasMultiValuedFieldsBlacklist) {
+        if (!hasMultiValuedFieldsDisallowlist) {
             for (String field : config.getStrings(this.getType().typeName() + MULTI_VALUED_FIELDS, new String[0])) {
                 int index = field.indexOf(':');
                 if (index > 0) {
@@ -266,7 +274,6 @@ public class CSVHelper extends DataTypeHelperImpl {
     }
 
     /**
-     *
      * @return datatype specific field separator
      */
     public String getSeparator() {
@@ -285,16 +292,16 @@ public class CSVHelper extends DataTypeHelperImpl {
         return multiValuedFields;
     }
 
-    public Map<String,String> getMultiValuedFieldsBlacklist() {
-        return multiValuedFieldsBlacklist;
+    public Map<String,String> getMultiValuedFieldsDisallowlist() {
+        return multiValuedFieldsDisallowlist;
     }
 
-    public boolean usingMultiValuedFieldsBlacklist() {
-        return hasMultiValuedFieldsBlacklist;
+    public boolean usingMultiValuedFieldsDisallowlist() {
+        return hasMultiValuedFieldsDisallowlist;
     }
 
     public boolean isMultiValuedField(String fieldName) {
-        return hasMultiValuedFieldsBlacklist ? !multiValuedFieldsBlacklist.containsKey(fieldName) : multiValuedFields.containsKey(fieldName);
+        return hasMultiValuedFieldsDisallowlist ? !multiValuedFieldsDisallowlist.containsKey(fieldName) : multiValuedFields.containsKey(fieldName);
     }
 
     public String getMultiValueSeparator() {
@@ -302,7 +309,6 @@ public class CSVHelper extends DataTypeHelperImpl {
     }
 
     /**
-     *
      * @return a pattern based on the multivalueseparator value that will not match that value preceeded by a '\\' (backslash) character. Useful as an argument
      *         to the String.split(..) function or similar methods
      */
@@ -350,12 +356,12 @@ public class CSVHelper extends DataTypeHelperImpl {
         return multiValuedDropField;
     }
 
-    public Set<String> getFieldBlacklist() {
-        return fieldBlacklist;
+    public Set<String> getFieldDisallowlist() {
+        return fieldDisallowlist;
     }
 
-    public Set<String> getFieldWhitelist() {
-        return fieldWhitelist;
+    public Set<String> getFieldAllowlist() {
+        return fieldAllowlist;
     }
 
     /**
