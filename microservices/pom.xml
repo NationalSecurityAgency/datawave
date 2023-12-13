@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave</groupId>
         <artifactId>datawave-parent</artifactId>
-        <version>6.4.0</version>
+        <version>6.4.1-SNAPSHOT</version>
     </parent>
     <groupId>gov.nsa.datawave.microservice</groupId>
     <artifactId>datawave-microservice-build-parent</artifactId>
