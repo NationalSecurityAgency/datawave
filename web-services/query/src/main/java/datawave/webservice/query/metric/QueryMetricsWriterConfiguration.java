@@ -8,11 +8,12 @@ public class QueryMetricsWriterConfiguration {
     private String timelyHost = null;
     private int timelyPort = 0;
     private int batchSize = 100;
-    private int maxQueueSize = 100000;
+    private int maxQueueSize = 250000;
     private long maxLatencyMs = 5000;
     private long maxShutdownMs = 30000;
     private Set<String> timelyMetricTags = new HashSet<>();
     private boolean useRemoteService = false;
+    private int remoteProcessorThreads = 4;
 
     public String getTimelyHost() {
         return timelyHost;
@@ -76,5 +77,13 @@ public class QueryMetricsWriterConfiguration {
 
     public void setUseRemoteService(boolean useRemoteService) {
         this.useRemoteService = useRemoteService;
+    }
+
+    public int getRemoteProcessorThreads() {
+        return remoteProcessorThreads;
+    }
+
+    public void setRemoteProcessorThreads(int remoteProcessorThreads) {
+        this.remoteProcessorThreads = remoteProcessorThreads;
     }
 }
