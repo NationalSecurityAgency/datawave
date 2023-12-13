@@ -14,7 +14,7 @@ on:
 env:
   JAVA_VERSION: '11'
   JAVA_DISTRIBUTION: 'zulu' #This is the default on v1 of the action for 1.8
-  MAVEN_OPTS: "-Djansi.force=true -Dhttps.protocols=TLSv1.2 -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN -Djava.awt.headless=true"
+  MAVEN_OPTS: "-Djansi.force=true -Dhttps.protocols=TLSv1.2 -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN -Djava.awt.headless=true -XX:ThreadStackSize=1m"
 
 jobs:
   # Runs the pom sorter and code formatter to ensure that the code
@@ -32,11 +32,11 @@ jobs:
       with:
         distribution: ${{env.JAVA_DISTRIBUTION}}
         java-version: ${{env.JAVA_VERSION}}
-        maven-version: 3.8.7
+        maven-version: 3.9.5
         cache: 'maven'
     - name: Format code
       run: |
-        mvn -V -B -e -ntp "-Dstyle.color=always" clean formatter:format sortpom:sort impsort:sort -Pautoformat
+        mvn -V -B -e -ntp "-Dstyle.color=always" clean formatter:format sortpom:sort impsort:sort -Dmaven.build.cache.enabled=false -Pautoformat
         git status
         git diff-index --quiet HEAD || (echo "Modified files found. Creating new commit with formatting fixes" && echo "diffs_found=true" >> "$GITHUB_ENV")
     - name: Commit Changes
@@ -61,11 +61,11 @@ jobs:
       with:
         distribution: ${{env.JAVA_DISTRIBUTION}}
         java-version: ${{env.JAVA_VERSION}}
-        maven-version: 3.8.7
+        maven-version: 3.9.5
         cache: 'maven'
     - name: Build and Run Unit Tests
       run: |
-        RUN_TESTS="mvn -V -B -e -ntp "-Dstyle.color=always" -Pdev,examples,assemble,spotbugs -Ddeploy -Ddist -T1C clean verify"
+        RUN_TESTS="mvn -V -B -e -ntp "-Dstyle.color=always" -Pdev,examples,assemble,spotbugs -Dmaven.build.cache.enabled=false -Ddeploy -Ddist -T1C clean verify"
         $RUN_TESTS \
           || { echo "***** TESTS FAILED. Attempting retry."; $RUN_TESTS; } \
           || { echo "***** TESTS FAILED. Attempting final retry."; $RUN_TESTS; }
@@ -98,11 +98,11 @@ jobs:
   #           ${{ runner.os }}-maven-
   #     - name: Build Project
   #       run: |
-  #         BUILD="mvn -V -B -e -Pdev,examples,assemble,spotbugs -DskipServices -Ddeploy -Ddist -T1C -pl "-:config-service" clean install -DskipTests"
+  #         BUILD="mvn -V -B -e -Pdev,examples,assemble,spotbugs -Dmaven.build.cache.enabled=false -DskipServices -Ddeploy -Ddist -T1C -pl "-:config-service" clean install -DskipTests"
   #         $BUILD
   #     - name: Run Microservice Unit Tests
   #       run: |
-  #         RUN_TESTS="mvn -V -B -e verify"
+  #         RUN_TESTS="mvn -V -B -e -Dmaven.build.cache.enabled=false verify"
   #         cd microservices
   #         $RUN_TESTS \
   #           || { echo "***** TESTS FAILED. Attempting retry."; $RUN_TESTS; } \
@@ -118,7 +118,7 @@ jobs:
       with:
         distribution: ${{env.JAVA_DISTRIBUTION}}
         java-version: ${{env.JAVA_VERSION}}
-        maven-version: 3.8.7
+        maven-version: 3.9.5
         cache: 'maven'
     # Allow us to use the "--squash" option below
     - name: Turn on Docker experimental features and move Docker data root
@@ -133,10 +133,10 @@ jobs:
     # Builds the quickstart docker image and run the query tests
     - name: Quickstart Query Tests
       env:
-        DW_DATAWAVE_BUILD_COMMAND: "mvn -B -V -e -ntp -Dstyle.color=always -Pdev -Ddeploy -Dtar -DskipTests clean package"
+        DW_DATAWAVE_BUILD_COMMAND: "mvn -B -V -e -ntp -Dstyle.color=always -Dmaven.build.cache.enabled=false -Pdev -Ddeploy -Dtar -DskipTests clean package"
         DOCKER_BUILD_OPTS: "--squash --force-rm"
       run: |
-        TAG=$(mvn -q -N -Dexec.executable='echo' -Dexec.args='${project.version}' exec:exec)
+        TAG=$(mvn -q -N -Dmaven.build.cache.enabled=false -Dexec.executable='echo' -Dexec.args='${project.version}' exec:exec)
         contrib/datawave-quickstart/docker/docker-build.sh ${TAG} --docker-opts "${DOCKER_BUILD_OPTS}"
 
     # Here's an example of how you'd deploy the image to the github package registry.
@@ -150,7 +150,7 @@ jobs:
     #     IMAGE_NAME: "datawave/quickstart"
     #   run: |
     #     # Set up env vars
-    #     TAG=$(mvn -q -N -Dexec.executable='echo' -Dexec.args='${project.version}' exec:exec)
+    #     TAG=$(mvn -q -N -Dmaven.build.cache.enabled=false -Dexec.executable='echo' -Dexec.args='${project.version}' exec:exec)
     #     REMOTE_IMAGE_NAME="${IMAGE_REGISTRY}/${IMAGE_USERNAME}/${IMAGE_NAME}"
     #     # Log in to the package registry
     #     echo ${{ secrets.GITHUB_TOKEN }} | docker login docker.pkg.github.com --username ${GITHUB_ACTOR} --password-stdin

@@ -28,6 +28,7 @@ import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Document;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.FullTableScansDisallowedException;
+import datawave.query.exceptions.InvalidQueryException;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.BaseShardIdRange;
@@ -94,6 +95,56 @@ public class MiscQueryTest extends AbstractFunctionalQuery {
         String query = Constants.ANY_FIELD + phrase;
         String expect = this.dataManager.convertAnyField(phrase);
         runTest(query, expect);
+    }
+
+    @Test(expected = InvalidQueryException.class)
+    public void testFieldIgnoreParam1() throws Exception {
+        log.info("------  testFieldIgnoreParam1  ------");
+        // setting event per day does not alter results
+        this.logic.setEventPerDayThreshold(1);
+        String phrase = RE_OP + "'.*a'" + "&& FOO == bar2";
+        String query = Constants.ANY_FIELD + phrase + "&& FOO == bar2";
+        String expect = this.dataManager.convertAnyField(phrase);
+
+        Map<String,String> options = new HashMap<>();
+
+        // this will throw an exception due to the nonexistent fields not being ignored.
+        options.put(QueryParameters.IGNORE_NONEXISTENT_FIELDS, "false");
+
+        runTest(query, expect, options);
+    }
+
+    @Test
+    public void testFieldIgnoreParam2() throws Exception {
+        log.info("------  testFieldIgnoreParam2  ------");
+        // setting event per day does not alter results
+        this.logic.setEventPerDayThreshold(1);
+        String phrase = RE_OP + "'.*a'" + "&& FOO == bar2";
+        String query = Constants.ANY_FIELD + phrase + "&& FOO == bar2";
+        String expect = this.dataManager.convertAnyField(phrase);
+
+        Map<String,String> options = new HashMap<>();
+
+        // this should allow the query to run successfully.
+        options.put(QueryParameters.IGNORE_NONEXISTENT_FIELDS, "true");
+
+        runTest(query, expect, options);
+    }
+
+    @Test
+    public void testFieldIgnoreParam3() throws Exception {
+        log.info("------  testFieldIgnoreParam3  ------");
+        // setting event per day does not alter results
+        this.logic.setEventPerDayThreshold(1);
+        String phrase = RE_OP + "'.*a' && STATE == 'sta'";
+        String query = Constants.ANY_FIELD + phrase + "&& STATE == 'sta'";
+        String expect = this.dataManager.convertAnyField(phrase);
+
+        Map<String,String> options = new HashMap<>();
+
+        options.put(QueryParameters.IGNORE_NONEXISTENT_FIELDS, "false");
+
+        runTest(query, expect, options);
     }
 
     @Test
