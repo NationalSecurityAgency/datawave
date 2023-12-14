@@ -4,26 +4,36 @@
 # This script is intended to be non-interactive and suitable for crond or other automation.
 #
 # The script will automatically generate (and optionally commit & push) _posts/release entries for
-# the gh-pages branch, i.e., for newly tagged DW releases that are discovered on DW_GITHUB_REMOTE_URL.
+# the gh-pages branch as "Latest Project News", i.e., for newly tagged DW releases that are discovered
+# on DW_GITHUB_REMOTE_URL (see Prerequisites below) .
+#
 # Currently, we look for new 3.x, 5.x and 6.x updates, for Accumulo 1.10.x- and 2.1.x-compatible DW releases.
+# See TRACKED_DW_VERSIONS variable below.
 #
 # Usage:
 #   <script-name> [--push, -p] [--verbose, -v] [--help, -h]
 #
-# Use of '--push (-p)' option will attempt to commit and push changes to DW_GITHUB_REMOTE_URL
+# Use of '--push (-p)' option will attempt to locally commit and then push
+# changes to the gh-pages branch at the configured DW_GITHUB_REMOTE_URL
 #
 # Prerequisites:
 #   (1) DW_GITHUB_REMOTE_URL must be defined in the user's environment
+#       E.g.,
+#       export DW_GITHUB_REMOTE_URL="https://username:userOAuthToken@github.com/NationalSecurityAgency/datawave.git"
+#
+#       NOTE: 'username' and associated 'userOAuthToken' will need to have write
+#              privs on the repo in order for --push (-p) to be successful
+#
 #   (2) The git executable must be on the user's PATH
 #
 
-# Major versions of DW that we want to publish to the gh-pages site
+# Major versions of DW that we want to track for publishing to the gh-pages site.
+# To start/stop publishing news updates about a particular version, just add/remove it to/from the array 
 declare -a -r TRACKED_DW_VERSIONS=( 3 5 6 )
 
 readonly TMP_DW_DIR=$(mktemp -d /tmp/$( basename $0 )_datawave_XXXXXXX)
 readonly TMP_GHPAGES_DIR=$(mktemp -d /tmp/$( basename $0 )_ghpages_XXXXXXX)
 readonly POSTS_DIR=${TMP_GHPAGES_DIR}/_posts/release
-
 
 declare -i _new_release_count=0
 
