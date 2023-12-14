@@ -1,32 +1,7 @@
 package datawave.query.transformer;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Objects;
-import java.util.Set;
-
-import javax.annotation.Nullable;
-
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.PartialKey;
-import org.apache.accumulo.core.data.Range;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.IteratorEnvironment;
-import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.log4j.Logger;
-import org.javatuples.Triplet;
-
 import com.google.common.collect.Iterators;
 import com.google.protobuf.InvalidProtocolBufferException;
-
 import datawave.common.util.ArgumentChecker;
 import datawave.ingest.protobuf.TermWeight;
 import datawave.ingest.protobuf.TermWeightPosition;
@@ -40,6 +15,28 @@ import datawave.query.attributes.ValueTuple;
 import datawave.query.function.JexlEvaluation;
 import datawave.query.iterator.logic.TermFrequencyExcerptIterator;
 import datawave.query.postprocessing.tf.PhraseIndexes;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.PartialKey;
+import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.IteratorEnvironment;
+import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.log4j.Logger;
+import org.javatuples.Triplet;
+
+import javax.annotation.Nullable;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Objects;
+import java.util.Set;
 
 public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform {
 
@@ -54,7 +51,7 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
     private final IteratorEnvironment env;
     private final SortedKeyValueIterator<Key,Value> source;
 
-    private final List<String> hitTerms = new ArrayList<>();
+    private final List<String> hitTermValues = new ArrayList<>();
 
     public ExcerptTransform(ExcerptFields excerptFields, IteratorEnvironment env, SortedKeyValueIterator<Key,Value> source) {
         this(excerptFields, env, source, new TermFrequencyExcerptIterator());
@@ -126,7 +123,8 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
                                         pos.getOffset());
                     }
                     // save the hit term for later callout
-                    hitTerms.add((String) hitTuple.getValue());
+                    // pull HIT_TERM_FIELD and pull value from that???
+                    hitTermValues.add((String) hitTuple.getValue());
                 }
             }
         }
@@ -284,7 +282,7 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
                 Key endKey = startKey.followingKey(PartialKey.ROW_COLFAM);
                 Range range = new Range(startKey, true, endKey, false);
 
-                String excerpt = getExcerpt(field, start, end, range);
+                String excerpt = getExcerpt(field, start, end, range, hitTermValues);
                 // Only retain non-blank excerpts.
                 if (excerpt != null && !excerpt.isEmpty()) {
                     excerpts.add(new Excerpt(startKey, excerpt));
@@ -311,12 +309,10 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
      *            the range to use when seeking
      * @return the excerpt
      */
-    private String getExcerpt(String field, int start, int end, Range range) {
+    private String getExcerpt(String field, int start, int end, Range range, List<String> hitTermValues) {
         excerptIteratorOptions.put(TermFrequencyExcerptIterator.FIELD_NAME, field);
         excerptIteratorOptions.put(TermFrequencyExcerptIterator.START_OFFSET, String.valueOf(start));
         excerptIteratorOptions.put(TermFrequencyExcerptIterator.END_OFFSET, String.valueOf(end));
-        excerptIteratorOptions.put(TermFrequencyExcerptIterator.HIT_CALLOUT, "true");
-        excerptIteratorOptions.put(TermFrequencyExcerptIterator.HIT_CALLOUT_TERMS, hitTerms.toString());
         try {
             excerptIterator.init(source, excerptIteratorOptions, env);
             excerptIterator.seek(range, Collections.emptyList(), false);
@@ -325,7 +321,15 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
                 String[] parts = topKey.getColumnQualifier().toString().split(Constants.NULL);
                 // The column qualifier is expected to be field\0phrase.
                 if (parts.length == 2) {
-                    return parts[1];
+                    List<String> hitPhrase = new ArrayList<>();
+                    for (String phrasePart: parts[1].split(Constants.SPACE)) {
+                        if (hitTermValues.contains(phrasePart)) {
+                            hitPhrase.add("[" + phrasePart + "]");
+                        } else {
+                            hitPhrase.add(phrasePart);
+                        }
+                    }
+                    return String.join(" ", hitPhrase);
                 } else {
                     log.warn(TermFrequencyExcerptIterator.class.getSimpleName() + " returned top key with incorrectly-formatted column qualifier in key: "
                                     + topKey + " when scanning for excerpt [" + start + "," + end + "] for field " + field + " within range " + range);

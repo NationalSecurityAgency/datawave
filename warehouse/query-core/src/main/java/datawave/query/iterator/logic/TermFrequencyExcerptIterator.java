@@ -1,17 +1,9 @@
 package datawave.query.iterator.logic;
 
-import java.io.IOException;
-import java.nio.charset.CharacterCodingException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.SortedSet;
-import java.util.TreeSet;
-import java.util.stream.Collectors;
-
+import com.google.common.base.Joiner;
+import com.google.protobuf.InvalidProtocolBufferException;
+import datawave.ingest.protobuf.TermWeight;
+import datawave.query.Constants;
 import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
@@ -23,11 +15,17 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
-import com.google.common.base.Joiner;
-import com.google.protobuf.InvalidProtocolBufferException;
-
-import datawave.ingest.protobuf.TermWeight;
-import datawave.query.Constants;
+import java.io.IOException;
+import java.nio.charset.CharacterCodingException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 /**
  * This iterator is intended to scan the term frequencies for a specified document, field, and offset range. The result will be excerpts for the field specified
@@ -43,11 +41,6 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
     public static final String START_OFFSET = "start.offset";
     // The end offset option
     public static final String END_OFFSET = "end.offset";
-    // The hit term callout option
-    public static final String HIT_CALLOUT = "hit.callout";
-    // The hit term value(s) to be called out
-    public static final String HIT_CALLOUT_TERMS = "hit.callout.terms";
-
     // the underlying source
     protected SortedKeyValueIterator<Key,Value> source;
 
@@ -71,11 +64,6 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
     // the top value
     protected Value tv;
 
-    private boolean hitCallout;
-
-    // the hit term(s) to be called out
-    private String hitTerms;
-
     @Override
     public IteratorOptions describeOptions() {
         IteratorOptions options = new IteratorOptions(TermFrequencyExcerptIterator.class.getSimpleName(),
@@ -83,8 +71,6 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
         options.addNamedOption(FIELD_NAME, "The token field name for which to get excerpts (required)");
         options.addNamedOption(START_OFFSET, "The start offset for the excerpt (inclusive) (required)");
         options.addNamedOption(END_OFFSET, "The end offset for the excerpt (exclusive) (required)");
-        options.addNamedOption(HIT_CALLOUT, "The option for whether or not to call out hit terms (required)");
-        options.addNamedOption(HIT_CALLOUT_TERMS, "The hit term(s) to be called out (not required)");
         return options;
     }
 
@@ -123,14 +109,6 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
             throw new IllegalArgumentException("Missing end offset property: " + END_OFFSET);
         }
 
-        if (map.containsKey(HIT_CALLOUT)) {
-            if (map.get(HIT_CALLOUT).isEmpty()) {
-                throw new IllegalArgumentException("Empty hit callout property: " + HIT_CALLOUT);
-            }
-        } else {
-            throw new IllegalArgumentException("Missing hit callout property: " + HIT_CALLOUT);
-        }
-
         return true;
     }
 
@@ -145,8 +123,6 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
         it.startOffset = startOffset;
         it.endOffset = endOffset;
         it.fieldName = fieldName;
-        it.hitCallout = hitCallout;
-        it.hitTerms = hitTerms;
         it.source = source.deepCopy(env);
         return it;
     }
@@ -157,8 +133,6 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
         this.startOffset = Integer.parseInt(options.get(START_OFFSET));
         this.endOffset = Integer.parseInt(options.get(END_OFFSET));
         this.fieldName = options.get(FIELD_NAME);
-        this.hitCallout = Boolean.parseBoolean(options.get(HIT_CALLOUT));
-        this.hitTerms = options.get(HIT_CALLOUT_TERMS);
     }
 
     @Override
@@ -342,7 +316,7 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
     protected String generatePhrase(List<String>[] terms) {
         String[] largestTerms = new String[terms.length];
         for (int i = 0; i < terms.length; i++) {
-            largestTerms[i] = getLongestTerm(terms[i], hitCallout, hitTerms);
+            largestTerms[i] = getLongestTerm(terms[i]);
         }
 
         return joiner.join(largestTerms);
@@ -355,13 +329,11 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
      *            the terms to create a phrase
      * @return the longest term (null if empty or null list)
      */
-    protected String getLongestTerm(List<String> terms, boolean hitCallout, String hitTerms) {
+    protected String getLongestTerm(List<String> terms) {
         if (terms == null || terms.isEmpty()) {
             return null;
         } else {
-            String term = terms.stream().max(Comparator.comparingInt(String::length)).get();
-
-            return hitCallout && term.equals(hitTerms) ? "[" + term + "]" : term;
+            return terms.stream().max(Comparator.comparingInt(String::length)).get();
         }
     }
 
