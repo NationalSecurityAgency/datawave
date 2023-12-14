@@ -45,20 +45,20 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
     public static final String PHRASE_INDEXES_ATTRIBUTE = "PHRASE_INDEXES_ATTRIBUTE";
     public static final String HIT_EXCERPT = "HIT_EXCERPT";
 
-    private final Map<String,String> excerptIteratorOptions = new HashMap<>();
-    private final SortedKeyValueIterator<Key,Value> excerptIterator;
+    private final Map<String, String> excerptIteratorOptions = new HashMap<>();
+    private final SortedKeyValueIterator<Key, Value> excerptIterator;
     private final ExcerptFields excerptFields;
     private final IteratorEnvironment env;
-    private final SortedKeyValueIterator<Key,Value> source;
+    private final SortedKeyValueIterator<Key, Value> source;
 
-    private final List<String> hitTermValues = new ArrayList<>();
+    private String hitTermValues = "";
 
-    public ExcerptTransform(ExcerptFields excerptFields, IteratorEnvironment env, SortedKeyValueIterator<Key,Value> source) {
+    public ExcerptTransform(ExcerptFields excerptFields, IteratorEnvironment env, SortedKeyValueIterator<Key, Value> source) {
         this(excerptFields, env, source, new TermFrequencyExcerptIterator());
     }
 
-    public ExcerptTransform(ExcerptFields excerptFields, IteratorEnvironment env, SortedKeyValueIterator<Key,Value> source,
-                    SortedKeyValueIterator<Key,Value> excerptIterator) {
+    public ExcerptTransform(ExcerptFields excerptFields, IteratorEnvironment env, SortedKeyValueIterator<Key, Value> source,
+                            SortedKeyValueIterator<Key, Value> excerptIterator) {
         ArgumentChecker.notNull(excerptFields);
         this.excerptFields = excerptFields;
         this.env = env;
@@ -68,7 +68,7 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
 
     @Nullable
     @Override
-    public Entry<Key,Document> apply(@Nullable Entry<Key,Document> entry) {
+    public Entry<Key, Document> apply(@Nullable Entry<Key, Document> entry) {
         if (entry != null) {
             Document document = entry.getValue();
             // Do not bother adding excerpts to transient documents.
@@ -93,8 +93,7 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
     /**
      * Retrieve the phrase indexes from the {@value #PHRASE_INDEXES_ATTRIBUTE} attribute in the document.
      *
-     * @param document
-     *            the document
+     * @param document the document
      * @return the phrase indexes
      */
     private PhraseIndexes getPhraseIndexes(Document document) {
@@ -120,11 +119,10 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
                         // add the term as a phrase as defined in the term weight position. Note that this will collapse with any overlapping phrases already in
                         // the list.
                         allPhraseIndexes.addIndexTriplet(String.valueOf(hitTuple.getFieldName()), keyToEventId(attr.getMetadata()), pos.getLowOffset(),
-                                        pos.getOffset());
+                                pos.getOffset());
                     }
                     // save the hit term for later callout
-                    // pull HIT_TERM_FIELD and pull value from that???
-                    hitTermValues.add((String) hitTuple.getValue());
+                    hitTermValues = (String) hitTuple.getValue();
                 }
             }
         }
@@ -136,10 +134,8 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
      * Get the term weight position (offset) for the specified hit term. This will return an offset overlapping a phrase in the existing phrase index map first.
      * Otherwise the first position will be returned.
      *
-     * @param hitTuple
-     *            The hit term tuple
-     * @param phraseIndexes
-     *            The phrase indexes
+     * @param hitTuple      The hit term tuple
+     * @param phraseIndexes The phrase indexes
      * @return The TermWeightPosition for the given hit term
      */
     private TermWeightPosition getOffset(ValueTuple hitTuple, PhraseIndexes phraseIndexes) {
@@ -154,7 +150,7 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
 
         // get the key at which we would find the term frequencies
         Key tfKey = new Key(docKey.getRow().toString(), Constants.TERM_FREQUENCY_COLUMN_FAMILY.toString(),
-                        docKey.getColumnFamily().toString() + '\u0000' + hitTuple.getValue() + '\u0000' + hitTuple.getFieldName());
+                docKey.getColumnFamily().toString() + '\u0000' + hitTuple.getValue() + '\u0000' + hitTuple.getFieldName());
         Range range = new Range(tfKey, tfKey.followingKey(PartialKey.ROW_COLFAM_COLQUAL));
         try {
             // seek directly to that key
@@ -191,8 +187,7 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
     /**
      * Given a hit term attribute, return a ValueTuple representation which will give us the field and value parsed out.
      *
-     * @param source
-     *            a hit term attribute
+     * @param source a hit term attribute
      * @return A ValueTuple representation of the document hit-term attribute
      */
     private ValueTuple attributeToHitTuple(Attribute<?> source) {
@@ -206,10 +201,8 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
     /**
      * Add the excerpts to the document as part of {@value #HIT_EXCERPT}.
      *
-     * @param excerpts
-     *            the excerpts to add
-     * @param document
-     *            the document
+     * @param excerpts the excerpts to add
+     * @param document the document
      */
     private void addExcerptsToDocument(Set<Excerpt> excerpts, Document document) {
         Attributes attributes = new Attributes(true);
@@ -223,8 +216,7 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
     /**
      * Given an event ID, return the document Key
      *
-     * @param eventId
-     *            eventId string
+     * @param eventId eventId string
      * @return the document Key
      */
     private Key eventIdToKey(String eventId) {
@@ -241,8 +233,7 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
     /**
      * Given a document key, return the eventId
      *
-     * @param docKey
-     *            document key
+     * @param docKey document key
      * @return the event id (shard\x00dt\x00uid)
      */
     private String keyToEventId(Key docKey) {
@@ -255,8 +246,7 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
     /**
      * Get the excerpts.
      *
-     * @param phraseIndexes
-     *            the pre-identified phrase offsets
+     * @param phraseIndexes the pre-identified phrase offsets
      * @return the excerpts
      */
     private Set<Excerpt> getExcerpts(PhraseIndexes phraseIndexes) {
@@ -268,8 +258,8 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
         // Fetch the excerpts.
         Set<Excerpt> excerpts = new HashSet<>();
         for (String field : phraseIndexes.getFields()) {
-            Collection<Triplet<String,Integer,Integer>> indexes = phraseIndexes.getIndices(field);
-            for (Triplet<String,Integer,Integer> indexPair : indexes) {
+            Collection<Triplet<String, Integer, Integer>> indexes = phraseIndexes.getIndices(field);
+            for (Triplet<String, Integer, Integer> indexPair : indexes) {
                 String eventId = indexPair.getValue0();
                 int start = indexPair.getValue1();
                 int end = indexPair.getValue2();
@@ -299,17 +289,13 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
     /**
      * Get the excerpt for the specified field.
      *
-     * @param field
-     *            the field
-     * @param start
-     *            the start index of the excerpt
-     * @param end
-     *            the end index of the excerpt
-     * @param range
-     *            the range to use when seeking
+     * @param field the field
+     * @param start the start index of the excerpt
+     * @param end   the end index of the excerpt
+     * @param range the range to use when seeking
      * @return the excerpt
      */
-    private String getExcerpt(String field, int start, int end, Range range, List<String> hitTermValues) {
+    private String getExcerpt(String field, int start, int end, Range range, String hitTermValues) {
         excerptIteratorOptions.put(TermFrequencyExcerptIterator.FIELD_NAME, field);
         excerptIteratorOptions.put(TermFrequencyExcerptIterator.START_OFFSET, String.valueOf(start));
         excerptIteratorOptions.put(TermFrequencyExcerptIterator.END_OFFSET, String.valueOf(end));
@@ -321,18 +307,10 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
                 String[] parts = topKey.getColumnQualifier().toString().split(Constants.NULL);
                 // The column qualifier is expected to be field\0phrase.
                 if (parts.length == 2) {
-                    List<String> hitPhrase = new ArrayList<>();
-                    for (String phrasePart: parts[1].split(Constants.SPACE)) {
-                        if (hitTermValues.contains(phrasePart)) {
-                            hitPhrase.add("[" + phrasePart + "]");
-                        } else {
-                            hitPhrase.add(phrasePart);
-                        }
-                    }
-                    return String.join(" ", hitPhrase);
+                    return getHitPhrase(hitTermValues, parts);
                 } else {
                     log.warn(TermFrequencyExcerptIterator.class.getSimpleName() + " returned top key with incorrectly-formatted column qualifier in key: "
-                                    + topKey + " when scanning for excerpt [" + start + "," + end + "] for field " + field + " within range " + range);
+                            + topKey + " when scanning for excerpt [" + start + "," + end + "] for field " + field + " within range " + range);
                     return null;
                 }
             } else {
@@ -343,23 +321,48 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
         }
     }
 
+    private static String getHitPhrase(String hitTermValues, String[] phraseParts) {
+        List<String> hitPhrase = new ArrayList<>();
+        String[] hitTermValuesParts = hitTermValues.split(Constants.SPACE);
+        if (hitTermValuesParts.length > 1) {
+            for (String phrasePart : phraseParts[1].split(Constants.SPACE)) {
+                if (phrasePart.equals(hitTermValuesParts[0])) {
+                    hitPhrase.add("[" + phrasePart);
+                } else if (phrasePart.equals(hitTermValuesParts[hitTermValuesParts.length - 1])) {
+                    hitPhrase.add(phrasePart + "]");
+                } else {
+                    hitPhrase.add(phrasePart);
+                }
+            }
+        } else {
+            for (String phrasePart : phraseParts[1].split(Constants.SPACE)) {
+                // check if we have a multi value term
+                if (hitTermValues.contains(phrasePart)) {
+                    hitPhrase.add("[" + phrasePart + "]");
+                } else {
+                    hitPhrase.add(phrasePart);
+                }
+            }
+        }
+        return String.join(" ", hitPhrase);
+    }
+
     /**
      * Returned a filtered {@link PhraseIndexes} that only contains the fields for which excerpts are desired, with the indexes offset by the specified excerpt
      * offset.
      *
-     * @param phraseIndexes
-     *            the original phrase indexes
+     * @param phraseIndexes the original phrase indexes
      * @return the filtered, offset phrase indexes
      */
     private PhraseIndexes getOffsetPhraseIndexes(PhraseIndexes phraseIndexes) {
         PhraseIndexes offsetPhraseIndexes = new PhraseIndexes();
         for (String field : excerptFields.getFields()) {
             // Filter out phrases that are not in desired fields.
-            Collection<Triplet<String,Integer,Integer>> indexes = phraseIndexes.getIndices(field);
+            Collection<Triplet<String, Integer, Integer>> indexes = phraseIndexes.getIndices(field);
             if (indexes != null) {
                 int offset = excerptFields.getOffset(field);
                 // Ensure the offset is modified to encompass the target excerpt range.
-                for (Triplet<String,Integer,Integer> indexPair : indexes) {
+                for (Triplet<String, Integer, Integer> indexPair : indexes) {
                     String eventId = indexPair.getValue0();
                     int start = indexPair.getValue1() <= offset ? 0 : indexPair.getValue1() - offset;
                     int end = indexPair.getValue2() + offset + 1; // Add 1 here to offset the non-inclusive end of the range that will be used when scanning.
@@ -373,11 +376,10 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
     /**
      * Add phrase excerpts to the documents from the given iterator.
      *
-     * @param in
-     *            the iterator source
+     * @param in the iterator source
      * @return an iterator that will supply the enriched documents
      */
-    public Iterator<Entry<Key,Document>> getIterator(final Iterator<Entry<Key,Document>> in) {
+    public Iterator<Entry<Key, Document>> getIterator(final Iterator<Entry<Key, Document>> in) {
         return Iterators.transform(in, this);
     }
 
