@@ -1,5 +1,14 @@
 package datawave.query.jexl.visitors;
 
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.BOUNDED_RANGE;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DELAYED;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DROPPED;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EVALUATION_ONLY;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_OR;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_TERM;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.INDEX_HOLE;
+
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -9,62 +18,55 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.commons.jexl2.parser.ASTAdditiveNode;
-import org.apache.commons.jexl2.parser.ASTAdditiveOperator;
-import org.apache.commons.jexl2.parser.ASTAmbiguous;
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTArrayAccess;
-import org.apache.commons.jexl2.parser.ASTArrayLiteral;
-import org.apache.commons.jexl2.parser.ASTAssignment;
-import org.apache.commons.jexl2.parser.ASTBitwiseAndNode;
-import org.apache.commons.jexl2.parser.ASTBitwiseComplNode;
-import org.apache.commons.jexl2.parser.ASTBitwiseOrNode;
-import org.apache.commons.jexl2.parser.ASTBitwiseXorNode;
-import org.apache.commons.jexl2.parser.ASTBlock;
-import org.apache.commons.jexl2.parser.ASTConstructorNode;
-import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
-import org.apache.commons.jexl2.parser.ASTDivNode;
-import org.apache.commons.jexl2.parser.ASTEQNode;
-import org.apache.commons.jexl2.parser.ASTERNode;
-import org.apache.commons.jexl2.parser.ASTEmptyFunction;
-import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
-import org.apache.commons.jexl2.parser.ASTFalseNode;
-import org.apache.commons.jexl2.parser.ASTFloatLiteral;
-import org.apache.commons.jexl2.parser.ASTForeachStatement;
-import org.apache.commons.jexl2.parser.ASTFunctionNode;
-import org.apache.commons.jexl2.parser.ASTGENode;
-import org.apache.commons.jexl2.parser.ASTGTNode;
-import org.apache.commons.jexl2.parser.ASTIdentifier;
-import org.apache.commons.jexl2.parser.ASTIfStatement;
-import org.apache.commons.jexl2.parser.ASTIntegerLiteral;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ASTLENode;
-import org.apache.commons.jexl2.parser.ASTLTNode;
-import org.apache.commons.jexl2.parser.ASTMapEntry;
-import org.apache.commons.jexl2.parser.ASTMapLiteral;
-import org.apache.commons.jexl2.parser.ASTMethodNode;
-import org.apache.commons.jexl2.parser.ASTModNode;
-import org.apache.commons.jexl2.parser.ASTMulNode;
-import org.apache.commons.jexl2.parser.ASTNENode;
-import org.apache.commons.jexl2.parser.ASTNRNode;
-import org.apache.commons.jexl2.parser.ASTNotNode;
-import org.apache.commons.jexl2.parser.ASTNullLiteral;
-import org.apache.commons.jexl2.parser.ASTNumberLiteral;
-import org.apache.commons.jexl2.parser.ASTOrNode;
-import org.apache.commons.jexl2.parser.ASTReference;
-import org.apache.commons.jexl2.parser.ASTReferenceExpression;
-import org.apache.commons.jexl2.parser.ASTReturnStatement;
-import org.apache.commons.jexl2.parser.ASTSizeFunction;
-import org.apache.commons.jexl2.parser.ASTSizeMethod;
-import org.apache.commons.jexl2.parser.ASTStringLiteral;
-import org.apache.commons.jexl2.parser.ASTTernaryNode;
-import org.apache.commons.jexl2.parser.ASTTrueNode;
-import org.apache.commons.jexl2.parser.ASTUnaryMinusNode;
-import org.apache.commons.jexl2.parser.ASTVar;
-import org.apache.commons.jexl2.parser.ASTWhileStatement;
-import org.apache.commons.jexl2.parser.DroppedExpression;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.SimpleNode;
+import org.apache.commons.jexl3.parser.ASTAddNode;
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTArrayAccess;
+import org.apache.commons.jexl3.parser.ASTArrayLiteral;
+import org.apache.commons.jexl3.parser.ASTAssignment;
+import org.apache.commons.jexl3.parser.ASTBitwiseAndNode;
+import org.apache.commons.jexl3.parser.ASTBitwiseComplNode;
+import org.apache.commons.jexl3.parser.ASTBitwiseOrNode;
+import org.apache.commons.jexl3.parser.ASTBitwiseXorNode;
+import org.apache.commons.jexl3.parser.ASTBlock;
+import org.apache.commons.jexl3.parser.ASTConstructorNode;
+import org.apache.commons.jexl3.parser.ASTDivNode;
+import org.apache.commons.jexl3.parser.ASTEQNode;
+import org.apache.commons.jexl3.parser.ASTERNode;
+import org.apache.commons.jexl3.parser.ASTEmptyFunction;
+import org.apache.commons.jexl3.parser.ASTFalseNode;
+import org.apache.commons.jexl3.parser.ASTForeachStatement;
+import org.apache.commons.jexl3.parser.ASTFunctionNode;
+import org.apache.commons.jexl3.parser.ASTGENode;
+import org.apache.commons.jexl3.parser.ASTGTNode;
+import org.apache.commons.jexl3.parser.ASTIdentifier;
+import org.apache.commons.jexl3.parser.ASTIfStatement;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTLENode;
+import org.apache.commons.jexl3.parser.ASTLTNode;
+import org.apache.commons.jexl3.parser.ASTMapEntry;
+import org.apache.commons.jexl3.parser.ASTMapLiteral;
+import org.apache.commons.jexl3.parser.ASTMethodNode;
+import org.apache.commons.jexl3.parser.ASTModNode;
+import org.apache.commons.jexl3.parser.ASTMulNode;
+import org.apache.commons.jexl3.parser.ASTNENode;
+import org.apache.commons.jexl3.parser.ASTNRNode;
+import org.apache.commons.jexl3.parser.ASTNotNode;
+import org.apache.commons.jexl3.parser.ASTNullLiteral;
+import org.apache.commons.jexl3.parser.ASTNumberLiteral;
+import org.apache.commons.jexl3.parser.ASTOrNode;
+import org.apache.commons.jexl3.parser.ASTReference;
+import org.apache.commons.jexl3.parser.ASTReferenceExpression;
+import org.apache.commons.jexl3.parser.ASTReturnStatement;
+import org.apache.commons.jexl3.parser.ASTSizeFunction;
+import org.apache.commons.jexl3.parser.ASTStringLiteral;
+import org.apache.commons.jexl3.parser.ASTSubNode;
+import org.apache.commons.jexl3.parser.ASTTernaryNode;
+import org.apache.commons.jexl3.parser.ASTTrueNode;
+import org.apache.commons.jexl3.parser.ASTUnaryMinusNode;
+import org.apache.commons.jexl3.parser.ASTVar;
+import org.apache.commons.jexl3.parser.ASTWhileStatement;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -74,11 +76,6 @@ import com.google.common.collect.Multimap;
 import datawave.query.Constants;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.nodes.BoundedRange;
-import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.util.MetadataHelper;
 
@@ -717,55 +714,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
 
     @Override
     public Object visit(ASTReference node, Object data) {
-        STATE state;
-        QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(node);
-        // until we implement an ivarator that can handle an ExceededTermThreshold node, and ensure that the JexlContext gets
-        // _ANYFIELD_ values, then we cannot execute these nodes
-        if (instance.isType(ExceededTermThresholdMarkerJexlNode.class)) {
-            state = STATE.NON_EXECUTABLE;
-            if (output != null) {
-                output.writeLine(data, node, "( Exceeded Term Threshold )", state, true);
-            }
-        }
-        // if an ivarator then return true, else check out children
-        else if (instance.isAnyTypeOf(ExceededValueThresholdMarkerJexlNode.class, ExceededOrThresholdMarkerJexlNode.class)) {
-            state = STATE.EXECUTABLE;
-            if (output != null) {
-                output.writeLine(data, node, "( Exceeded Or / Value Threshold )", state, true);
-            }
-        }
-        // if ignored expression, then ignore it
-        else if (instance.isAnyTypeOf(DroppedExpression.class)) {
-            state = STATE.IGNORABLE;
-        }
-        // if a delayed predicate, then this is not-executable against the index by choice
-        else if (instance.isAnyTypeOf(ASTDelayedPredicate.class, ASTEvaluationOnly.class)) {
-            if (isNoFieldOnly(node)) {
-                state = STATE.IGNORABLE;
-            } else if (instance.isType(ASTEvaluationOnly.class) && isNonEvent(node)) {
-                state = STATE.ERROR;
-            } else {
-                state = STATE.NON_EXECUTABLE;
-            }
-            if (output != null) {
-                output.writeLine(data, node, "( delayed/eval only predicate )", state, true);
-            }
-        }
-        // if we got to a bounded range, then this was expanded and is not executable against the index
-        else if (instance.isType(BoundedRange.class)) {
-            state = STATE.NON_EXECUTABLE;
-            if (output != null) {
-                output.writeLine(data, node, "( bounded range )", state, true);
-            }
-        } else if (instance.isType(IndexHoleMarkerJexlNode.class)) {
-            state = STATE.NON_EXECUTABLE;
-            if (output != null) {
-                output.writeLine(data, node, "( index hole )", state, true);
-            }
-        } else {
-            state = allOrNone(node, data);
-        }
-        return state;
+        return allOrNone(node, data);
     }
 
     @Override
@@ -826,7 +775,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     private boolean isUnOrNoFielded(JexlNode node) {
         List<ASTIdentifier> identifiers = JexlASTHelper.getIdentifiers(node);
         for (ASTIdentifier identifier : identifiers) {
-            if (identifier.image.equals(Constants.ANY_FIELD) || identifier.image.equals(Constants.NO_FIELD)) {
+            if (identifier.getName().equals(Constants.ANY_FIELD) || identifier.getName().equals(Constants.NO_FIELD)) {
                 return true;
             }
         }
@@ -836,7 +785,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     private boolean isUnindexed(JexlNode node) {
         List<ASTIdentifier> identifiers = JexlASTHelper.getIdentifiers(node);
         for (ASTIdentifier identifier : identifiers) {
-            if (!(identifier.image.equals(Constants.ANY_FIELD) || identifier.image.equals(Constants.NO_FIELD))) {
+            if (!(identifier.getName().equals(Constants.ANY_FIELD) || identifier.getName().equals(Constants.NO_FIELD))) {
                 if (this.indexedFields == null) {
                     if (config.getIndexedFields() != null && !config.getIndexedFields().isEmpty()) {
                         this.indexedFields = config.getIndexedFields();
@@ -1017,22 +966,59 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     @Override
     public Object visit(ASTAndNode node, Object data) {
         STATE state;
-        if (isNegated(data)) {
-            // a negated AND should be treated like an OR for executability
-            state = allOrNone(node, data);
-        } else {
-            // at least one child must be executable for an AND expression to be executable, and none of the other nodes should be partially executable
-            // all children must be executable for an OR expression to be executable
-            state = allOrSome(node, data);
+        QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(node);
+        // until we implement an ivarator that can handle an ExceededTermThreshold node, and ensure that the JexlContext gets
+        // _ANYFIELD_ values, then we cannot execute these nodes
+        if (instance.isType(EXCEEDED_TERM)) {
+            state = STATE.NON_EXECUTABLE;
+            if (output != null) {
+                output.writeLine(data, node, "( Exceeded Term Threshold )", state, true);
+            }
         }
-        return state;
-    }
-
-    @Override
-    public Object visit(SimpleNode node, Object data) {
-        STATE state = STATE.IGNORABLE;
-        if (output != null) {
-            output.writeLine(data, node.toString(), state, true);
+        // if an ivarator then return true, else check out children
+        else if (instance.isAnyTypeOf(EXCEEDED_VALUE, EXCEEDED_OR)) {
+            state = STATE.EXECUTABLE;
+            if (output != null) {
+                output.writeLine(data, node, "( Exceeded Or / Value Threshold )", state, true);
+            }
+        }
+        // if ignored expression, then ignore it
+        else if (instance.isAnyTypeOf(DROPPED)) {
+            state = STATE.IGNORABLE;
+        }
+        // if a delayed predicate, then this is not-executable against the index by choice
+        else if (instance.isAnyTypeOf(DELAYED, EVALUATION_ONLY)) {
+            if (isNoFieldOnly(node)) {
+                state = STATE.IGNORABLE;
+            } else if (instance.isType(EVALUATION_ONLY) && isNonEvent(node)) {
+                state = STATE.ERROR;
+            } else {
+                state = STATE.NON_EXECUTABLE;
+            }
+            if (output != null) {
+                output.writeLine(data, node, "( delayed/eval only predicate )", state, true);
+            }
+        }
+        // if we got to a bounded range, then this was expanded and is not executable against the index
+        else if (instance.isType(BOUNDED_RANGE)) {
+            state = STATE.NON_EXECUTABLE;
+            if (output != null) {
+                output.writeLine(data, node, "( bounded range )", state, true);
+            }
+        } else if (instance.isType(INDEX_HOLE)) {
+            state = STATE.NON_EXECUTABLE;
+            if (output != null) {
+                output.writeLine(data, node, "( index hole )", state, true);
+            }
+        } else {
+            if (isNegated(data)) {
+                // a negated AND should be treated like an OR for executability
+                state = allOrNone(node, data);
+            } else {
+                // at least one child must be executable for an AND expression to be executable, and none of the other nodes should be partially executable
+                // all children must be executable for an OR expression to be executable
+                state = allOrSome(node, data);
+            }
         }
         return state;
     }
@@ -1042,15 +1028,6 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         STATE state = STATE.IGNORABLE;
         if (output != null) {
             output.writeNode(data, node, state, true);
-        }
-        return state;
-    }
-
-    @Override
-    public Object visit(ASTAmbiguous node, Object data) {
-        STATE state = STATE.IGNORABLE;
-        if (output != null) {
-            output.writeLine(data, node, state, true);
         }
         return state;
     }
@@ -1128,7 +1105,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     }
 
     @Override
-    public Object visit(ASTAdditiveNode node, Object data) {
+    public Object visit(ASTAddNode node, Object data) {
         STATE state = STATE.IGNORABLE;
         if (output != null) {
             output.writeNode(data, node, state, true);
@@ -1137,7 +1114,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     }
 
     @Override
-    public Object visit(ASTAdditiveOperator node, Object data) {
+    public Object visit(ASTSubNode node, Object data) {
         STATE state = STATE.IGNORABLE;
         if (output != null) {
             output.writeNode(data, node, state, true);
@@ -1194,7 +1171,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     public Object visit(ASTIdentifier node, Object data) {
         STATE state = STATE.IGNORABLE;
         if (output != null) {
-            output.writeLine(data, node, ":" + node.image, state, true);
+            output.writeLine(data, node, ":" + node.getName(), state, true);
         }
         return state;
     }
@@ -1227,30 +1204,10 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     }
 
     @Override
-    @SuppressWarnings("deprecation")
-    public Object visit(ASTIntegerLiteral node, Object data) {
-        STATE state = STATE.IGNORABLE;
-        if (output != null) {
-            output.writeNode(data, node, state, true);
-        }
-        return state;
-    }
-
-    @Override
-    @SuppressWarnings("deprecation")
-    public Object visit(ASTFloatLiteral node, Object data) {
-        STATE state = STATE.IGNORABLE;
-        if (output != null) {
-            output.writeNode(data, node, state, true);
-        }
-        return state;
-    }
-
-    @Override
     public Object visit(ASTStringLiteral node, Object data) {
         STATE state = STATE.IGNORABLE;
         if (output != null) {
-            output.writeLine(data, node, ":" + node.image, state, true);
+            output.writeLine(data, node, ":" + node.getLiteral(), state, true);
         }
         return state;
     }
@@ -1304,16 +1261,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     public Object visit(ASTMethodNode node, Object data) {
         STATE state = STATE.NON_EXECUTABLE;
         if (output != null) {
-            output.writeLine(data, node, ":" + node.image, state, true);
-        }
-        return state;
-    }
-
-    @Override
-    public Object visit(ASTSizeMethod node, Object data) {
-        STATE state = STATE.NON_EXECUTABLE;
-        if (output != null) {
-            output.writeLine(data, node, state, true);
+            output.writeLine(data, node, ":" + JexlNodes.getImage(node), state, true);
         }
         return state;
     }
@@ -1358,7 +1306,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     public Object visit(ASTNumberLiteral node, Object data) {
         STATE state = STATE.IGNORABLE;
         if (output != null) {
-            output.writeLine(data, node, ":" + node.image, state, true);
+            output.writeLine(data, node, ":" + node.getLiteral(), state, true);
         }
         return state;
     }

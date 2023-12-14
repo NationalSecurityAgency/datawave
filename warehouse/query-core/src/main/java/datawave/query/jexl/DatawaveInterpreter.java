@@ -1,5 +1,8 @@
 package datawave.query.jexl;
 
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DROPPED;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_OR;
+
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -15,27 +18,25 @@ import java.util.SortedSet;
 
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.commons.jexl2.Interpreter;
-import org.apache.commons.jexl2.JexlContext;
-import org.apache.commons.jexl2.JexlEngine;
-import org.apache.commons.jexl2.JexlException;
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTAssignment;
-import org.apache.commons.jexl2.parser.ASTEQNode;
-import org.apache.commons.jexl2.parser.ASTERNode;
-import org.apache.commons.jexl2.parser.ASTFunctionNode;
-import org.apache.commons.jexl2.parser.ASTGENode;
-import org.apache.commons.jexl2.parser.ASTGTNode;
-import org.apache.commons.jexl2.parser.ASTIdentifier;
-import org.apache.commons.jexl2.parser.ASTLENode;
-import org.apache.commons.jexl2.parser.ASTLTNode;
-import org.apache.commons.jexl2.parser.ASTMethodNode;
-import org.apache.commons.jexl2.parser.ASTOrNode;
-import org.apache.commons.jexl2.parser.ASTReference;
-import org.apache.commons.jexl2.parser.ASTReferenceExpression;
-import org.apache.commons.jexl2.parser.ASTSizeMethod;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.JexlNodes;
+import org.apache.commons.jexl3.JexlContext;
+import org.apache.commons.jexl3.JexlException;
+import org.apache.commons.jexl3.JexlOptions;
+import org.apache.commons.jexl3.internal.Engine;
+import org.apache.commons.jexl3.internal.Frame;
+import org.apache.commons.jexl3.internal.Interpreter;
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTEQNode;
+import org.apache.commons.jexl3.parser.ASTERNode;
+import org.apache.commons.jexl3.parser.ASTFunctionNode;
+import org.apache.commons.jexl3.parser.ASTGENode;
+import org.apache.commons.jexl3.parser.ASTGTNode;
+import org.apache.commons.jexl3.parser.ASTIdentifier;
+import org.apache.commons.jexl3.parser.ASTLENode;
+import org.apache.commons.jexl3.parser.ASTLTNode;
+import org.apache.commons.jexl3.parser.ASTMethodNode;
+import org.apache.commons.jexl3.parser.ASTOrNode;
+import org.apache.commons.jexl3.parser.ASTReferenceExpression;
+import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
 import org.apache.lucene.util.fst.FST;
@@ -51,7 +52,7 @@ import datawave.query.attributes.ValueTuple;
 import datawave.query.collections.FunctionalSet;
 import datawave.query.jexl.functions.ContentFunctionsDescriptor;
 import datawave.query.jexl.functions.QueryFunctions;
-import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.ExceededOr;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 
@@ -73,8 +74,8 @@ public class DatawaveInterpreter extends Interpreter {
 
     private static final Logger log = Logger.getLogger(DatawaveInterpreter.class);
 
-    public DatawaveInterpreter(JexlEngine jexl, JexlContext aContext, boolean strictFlag, boolean silentFlag) {
-        super(jexl, aContext, strictFlag, silentFlag);
+    public DatawaveInterpreter(Engine jexl, JexlOptions opts, JexlContext aContext, Frame eFrame) {
+        super(jexl, opts, aContext, eFrame);
         resultMap = Maps.newHashMap();
     }
 
@@ -141,14 +142,18 @@ public class DatawaveInterpreter extends Interpreter {
     /**
      * Triggered when variable can not be resolved.
      *
-     * @param xjexl
-     *            the JexlException ("undefined variable " + variable)
-     * @return throws JexlException if strict, null otherwise
+     * @param node
+     *            the node where the error originated from
+     * @param var
+     *            the variable name
+     * @param undef
+     *            whether the variable is undefined or null
+     * @return
      */
     @Override
-    protected Object unknownVariable(JexlException xjexl) {
-        if (strict) {
-            throw xjexl;
+    protected Object unsolvableVariable(JexlNode node, String var, boolean undef) {
+        if (options.isStrict()) {
+            throw new JexlException.Variable(node, var, undef);
         }
         // do not warn
         return null;
@@ -157,13 +162,20 @@ public class DatawaveInterpreter extends Interpreter {
     /**
      * Triggered when method, function or constructor invocation fails.
      *
-     * @param xjexl
-     *            the JexlException wrapping the original error
-     * @return throws JexlException
+     * @param node
+     *            the node triggering the exception
+     * @param methodName
+     *            the method/function name
+     * @param xany
+     *            the cause
+     * @return
      */
     @Override
-    protected Object invocationFailed(JexlException xjexl) {
-        throw xjexl;
+    protected JexlException invocationException(JexlNode node, String methodName, Throwable xany) {
+        if (xany instanceof JexlException) {
+            throw (JexlException) xany;
+        }
+        throw super.invocationException(node, methodName, xany);
     }
 
     @Override
@@ -188,24 +200,6 @@ public class DatawaveInterpreter extends Interpreter {
         result = super.visit(node, data);
         resultMap.put(nodeString, result);
         return result;
-    }
-
-    /**
-     * unused because hasSiblings should cover every case with the size method, plus other methods
-     *
-     * @param node
-     *            a node
-     * @return if we have a size method sibling
-     */
-    private boolean hasSizeMethodSibling(ASTFunctionNode node) {
-        JexlNode parent = node.jjtGetParent();
-        for (int i = 0; i < parent.jjtGetNumChildren(); i++) {
-            JexlNode kid = parent.jjtGetChild(i);
-            if (kid instanceof ASTSizeMethod) {
-                return true;
-            }
-        }
-        return false;
     }
 
     public Object visit(ASTMethodNode node, Object data) {
@@ -253,7 +247,7 @@ public class DatawaveInterpreter extends Interpreter {
             }
         } else {
             // We are likely within a normal union and can short circuit
-            while (!arithmetic.toBoolean(result) && !children.isEmpty()) {
+            while ((result == null || !arithmetic.toBoolean(result)) && !children.isEmpty()) {
                 // Child nodes were put onto the stack left to right. PollLast to evaluate left to right.
                 result = interpretOr(children.pollLast().jjtAccept(this, data), result);
             }
@@ -331,7 +325,7 @@ public class DatawaveInterpreter extends Interpreter {
     }
 
     private JexlNode dereference(JexlNode node) {
-        while (node.jjtGetNumChildren() == 1 && (node instanceof ASTReferenceExpression || node instanceof ASTReference)) {
+        while (node.jjtGetNumChildren() == 1 && node instanceof ASTReferenceExpression) {
             node = node.jjtGetChild(0);
         }
         return node;
@@ -361,8 +355,8 @@ public class DatawaveInterpreter extends Interpreter {
                 JexlNode leftIdentifier = dereference(left.jjtGetChild(0));
                 JexlNode rightIdentifier = dereference(right.jjtGetChild(0));
                 if (leftIdentifier instanceof ASTIdentifier && rightIdentifier instanceof ASTIdentifier) {
-                    String fieldName = leftIdentifier.image;
-                    if (fieldName.equals(rightIdentifier.image)) {
+                    String fieldName = ((ASTIdentifier) leftIdentifier).getName();
+                    if (fieldName.equals(((ASTIdentifier) rightIdentifier).getName())) {
                         Object fieldValue = leftIdentifier.jjtAccept(this, null);
                         Object leftValue = left.jjtGetChild(1).jjtAccept(this, null);
                         boolean leftInclusive = left instanceof ASTGENode;
@@ -473,9 +467,12 @@ public class DatawaveInterpreter extends Interpreter {
 
     public Object visit(ASTAndNode node, Object data) {
 
+        QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(node);
         // we could have arrived here after the node was dereferenced
-        if (QueryPropertyMarker.findInstance(node).isType(ExceededOrThresholdMarkerJexlNode.class)) {
+        if (instance.isType(EXCEEDED_OR)) {
             return visitExceededOrThresholdMarker(node);
+        } else if (instance.isType(DROPPED)) {
+            return null;
         }
 
         // check for the special case of a range (conjunction of a G/GE and a L/LE node) and reinterpret as a function
@@ -486,8 +483,8 @@ public class DatawaveInterpreter extends Interpreter {
 
         // holds all values for intersection
         FunctionalSet functionalSet = null;
-        for (JexlNode child : JexlNodes.children(node)) {
-
+        for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+            JexlNode child = node.jjtGetChild(i);
             Object o = child.jjtAccept(this, data);
             // null return means there was no actual evaluation
             if (o == null) {
@@ -519,23 +516,6 @@ public class DatawaveInterpreter extends Interpreter {
         return functionalSet;
     }
 
-    @Override
-    public Object visit(ASTAssignment node, Object data) {
-        // evaluate the assignment to populate the context
-        super.visit(node, data);
-        // return null because we do not want assignments to affect value of the expression
-        return null;
-    }
-
-    /** {@inheritDoc} */
-    public Object visit(ASTSizeMethod node, Object data) {
-        if (data != null) {
-            return super.visit(node, data);
-        } else {
-            return Integer.valueOf(0);
-        }
-    }
-
     /**
      * a function node that has siblings has a method paired with it, like the size method in includeRegex(foo,bar).size() It must return its collection of
      * results for the other method to use, instead of a boolean indicating that there were results
@@ -560,34 +540,24 @@ public class DatawaveInterpreter extends Interpreter {
         return false;
     }
 
-    @Override
-    public Object visit(ASTReference node, Object data) {
-        if (QueryPropertyMarker.findInstance(node).isType(ExceededOrThresholdMarkerJexlNode.class)) {
-            return visitExceededOrThresholdMarker(node);
-        } else {
-            return super.visit(node, data);
-        }
-    }
-
     private Object visitExceededOrThresholdMarker(JexlNode node) {
-        String id = ExceededOrThresholdMarkerJexlNode.getId(node);
-        String field = ExceededOrThresholdMarkerJexlNode.getField(node);
+        ExceededOr exceededOr = new ExceededOr(node);
 
         Set<String> evalValues = null;
         FST evalFst = null;
         SortedSet<Range> evalRanges = null;
 
         // if the context isn't cached, load it now
-        if (!getContext().has(id)) {
+        if (!context.has(exceededOr.getId())) {
             try {
-                ExceededOrThresholdMarkerJexlNode.ExceededOrParams params = ExceededOrThresholdMarkerJexlNode.getParameters(node);
-                if (params != null) {
-                    if (params.getRanges() != null && !params.getRanges().isEmpty()) {
-                        getContext().set(id, params.getSortedAccumuloRanges());
-                    } else if (params.getValues() != null && !params.getValues().isEmpty()) {
-                        getContext().set(id, params.getValues());
-                    } else if (params.getFstURI() != null) {
-                        getContext().set(id, DatawaveFieldIndexListIteratorJexl.FSTManager.get(new Path(new URI(params.getFstURI()))));
+                if (exceededOr.getParams() != null) {
+                    if (exceededOr.getParams().getRanges() != null && !exceededOr.getParams().getRanges().isEmpty()) {
+                        context.set(exceededOr.getId(), exceededOr.getParams().getSortedAccumuloRanges());
+                    } else if (exceededOr.getParams().getValues() != null && !exceededOr.getParams().getValues().isEmpty()) {
+                        context.set(exceededOr.getId(), exceededOr.getParams().getValues());
+                    } else if (exceededOr.getParams().getFstURI() != null) {
+                        context.set(exceededOr.getId(),
+                                        DatawaveFieldIndexListIteratorJexl.FSTManager.get(new Path(new URI(exceededOr.getParams().getFstURI()))));
                     }
                 }
             } catch (IOException | URISyntaxException e) {
@@ -596,7 +566,7 @@ public class DatawaveInterpreter extends Interpreter {
         }
 
         // determine what we're dealing with
-        Object contextObj = getContext().get(id);
+        Object contextObj = context.get(exceededOr.getId());
         if (contextObj instanceof FST) {
             evalFst = (FST) contextObj;
         } else if (contextObj instanceof Set) {
@@ -612,7 +582,7 @@ public class DatawaveInterpreter extends Interpreter {
 
         // get all of the values for this field from the context
         Collection<?> contextValues;
-        Object fieldValue = getContext().get(field);
+        Object fieldValue = context.get(exceededOr.getField());
         if (!(fieldValue instanceof Collection)) {
             contextValues = Collections.singletonList(fieldValue);
         } else {

@@ -45,7 +45,7 @@
         <version.commons-configuration>1.10</version.commons-configuration>
         <version.commons-configuration2>2.7</version.commons-configuration2>
         <version.commons-io>2.6</version.commons-io>
-        <version.commons-jexl>2.1.1</version.commons-jexl>
+        <version.commons-jexl3>3.3</version.commons-jexl3>
         <version.commons-lang>2.6</version.commons-lang>
         <version.commons-logging>1.2</version.commons-logging>
         <version.commons-pool>1.6</version.commons-pool>
@@ -593,8 +593,8 @@
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
-                <artifactId>commons-jexl</artifactId>
-                <version>${version.commons-jexl}</version>
+                <artifactId>commons-jexl3</artifactId>
+                <version>${version.commons-jexl3}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>

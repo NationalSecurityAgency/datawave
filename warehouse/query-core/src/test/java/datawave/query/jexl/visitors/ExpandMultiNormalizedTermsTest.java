@@ -1,16 +1,21 @@
 package datawave.query.jexl.visitors;
 
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DELAYED;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EVALUATION_ONLY;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_OR;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_TERM;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.INDEX_HOLE;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.LENIENT;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.STRICT;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
-import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
-import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.LenientExpression;
-import org.apache.commons.jexl2.parser.ParseException;
-import org.apache.commons.jexl2.parser.StrictExpression;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ParseException;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -29,10 +34,6 @@ import datawave.data.type.TrimLeadingZerosType;
 import datawave.data.type.Type;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
 import datawave.query.util.MockMetadataHelper;
 import datawave.test.JexlNodeAssert;
 
@@ -512,15 +513,14 @@ public class ExpandMultiNormalizedTermsTest {
 
         config.setQueryFieldsDatatypes(dataTypes);
 
-        List<String> markers = Arrays.asList(new String[] {IndexHoleMarkerJexlNode.label(), ASTDelayedPredicate.label(), ASTEvaluationOnly.label(),
-                ExceededOrThresholdMarkerJexlNode.label()});
+        List<String> markers = Arrays.asList(new String[] {INDEX_HOLE.getLabel(), DELAYED.getLabel(), EVALUATION_ONLY.getLabel(), EXCEEDED_OR.getLabel()});
         for (String marker : markers) {
             String original = "((" + marker + " = true) && (FOO == 'Bar'))";
             String expected = "((" + marker + " = true) && (FOO == 'bar'))";
             expandTerms(original, expected);
         }
 
-        markers = Arrays.asList(new String[] {ExceededTermThresholdMarkerJexlNode.label(), ExceededValueThresholdMarkerJexlNode.label()});
+        markers = Arrays.asList(new String[] {EXCEEDED_TERM.getLabel(), EXCEEDED_VALUE.getLabel()});
         for (String marker : markers) {
             String original = "((" + marker + " = true) && (FOO == 'Bar'))";
             String expected = "((" + marker + " = true) && (FOO == 'Bar'))";
@@ -539,7 +539,7 @@ public class ExpandMultiNormalizedTermsTest {
 
         config.setQueryFieldsDatatypes(dataTypes);
 
-        String original = "((" + LenientExpression.label() + " = true) && (FOO == 'Bar'))";
+        String original = "((" + LENIENT + " = true) && (FOO == 'Bar'))";
         String expected = "(FOO == 'bar')";
         expandTerms(original, expected);
     }
@@ -554,7 +554,7 @@ public class ExpandMultiNormalizedTermsTest {
 
         config.setQueryFieldsDatatypes(dataTypes);
 
-        String original = "((" + LenientExpression.label() + " = true) && (FOO == 'Bar'))";
+        String original = "((" + LENIENT + " = true) && (FOO == 'Bar'))";
         String expected = "FOO == 'Bar'";
         expandTerms(original, expected);
     }
@@ -571,12 +571,12 @@ public class ExpandMultiNormalizedTermsTest {
         config.setQueryFieldsDatatypes(dataTypes);
 
         // this tests for the successful normalization as a simple number can be normalized as a regex
-        String original = "((" + LenientExpression.label() + " = true) && (FOO =~ '32'))";
+        String original = "((" + LENIENT + " = true) && (FOO =~ '32'))";
         String expected = "(FOO =~ '32' || FOO =~ '\\Q+bE3.2\\E')";
         expandTerms(original, expected);
 
         // in this case the numeric normalization fails, so keep only the text normalization
-        original = "((" + LenientExpression.label() + " = true) && (FOO =~ '3.*2'))";
+        original = "((" + LENIENT + " = true) && (FOO =~ '3.*2'))";
         expected = "(FOO =~ '3.*2')";
         expandTerms(original, expected);
     }
@@ -593,7 +593,7 @@ public class ExpandMultiNormalizedTermsTest {
         config.setQueryFieldsDatatypes(dataTypes);
 
         // this tests for the successful normalization as a simple number can be normalized as a regex
-        String original = "((" + LenientExpression.label() + " = true) && (FOO == 'ab32'))";
+        String original = "((" + LENIENT + " = true) && (FOO == 'ab32'))";
         String expected = "(_Drop_ = true) && ((_Reason_ = 'Normalizations failed and not strict') && (_Query_ = 'FOO == \\'ab32\\''))";
         expandTerms(original, expected);
     }
@@ -628,7 +628,7 @@ public class ExpandMultiNormalizedTermsTest {
         config.setQueryFieldsDatatypes(dataTypes);
 
         // this tests for the successful normalization as a simple number can be normalized as a regex
-        String original = "((" + StrictExpression.label() + " = true) && (FOO == 'ab32'))";
+        String original = "((" + STRICT + " = true) && (FOO == 'ab32'))";
         String expected = "(_Eval_ = true) && (FOO == 'ab32')";
         expandTerms(original, expected);
     }

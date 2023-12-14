@@ -1,5 +1,8 @@
 package datawave.query.jexl.visitors;
 
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_OR;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
+
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -11,7 +14,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedSet;
 import java.util.TimeZone;
+import java.util.TreeSet;
 import java.util.UUID;
 
 import javax.inject.Inject;
@@ -20,13 +25,13 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ASTOrNode;
-import org.apache.commons.jexl2.parser.ASTReference;
-import org.apache.commons.jexl2.parser.ASTReferenceExpression;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.ParserTreeConstants;
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTOrNode;
+import org.apache.commons.jexl3.parser.ASTReference;
+import org.apache.commons.jexl3.parser.ASTReferenceExpression;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
 import org.easymock.EasyMock;
 import org.jboss.arquillian.container.test.api.Deployment;
@@ -59,8 +64,8 @@ import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.ExceededOr;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
@@ -524,7 +529,7 @@ public abstract class ExecutableExpansionVisitorTest {
 
             // find an orNode in the tree
             ExecutableExpansionVisitor visitor = new ExecutableExpansionVisitor(config, helper);
-            Object data = visitor.visit(queryTree.jjtGetChild(0), null);
+            Object data = queryTree.jjtGetChild(0).childrenAccept(visitor, null);
 
             EasyMock.verify(config, helper);
 
@@ -554,7 +559,7 @@ public abstract class ExecutableExpansionVisitorTest {
             // find an orNode in the tree
             ExecutableExpansionVisitor visitor = new ExecutableExpansionVisitor(config, helper);
             ASTJexlScript rebuilt = TreeFlatteningRebuildingVisitor.flatten(queryTree);
-            visitor.visit(rebuilt.jjtGetChild(0), null);
+            rebuilt.jjtGetChild(0).jjtAccept(visitor, null);
 
             EasyMock.verify(config, helper);
 
@@ -585,7 +590,7 @@ public abstract class ExecutableExpansionVisitorTest {
             // find an orNode in the tree
             ExecutableExpansionVisitor visitor = new ExecutableExpansionVisitor(config, helper);
             ASTJexlScript rebuilt = TreeFlatteningRebuildingVisitor.flatten(queryTree);
-            visitor.visit(rebuilt.jjtGetChild(0), null);
+            rebuilt.jjtGetChild(0).jjtAccept(visitor, null);
 
             EasyMock.verify(config, helper);
 
@@ -604,7 +609,7 @@ public abstract class ExecutableExpansionVisitorTest {
 
         for (ASTJexlScript queryTree : Arrays.asList(origQueryTree, derefQueryTree)) {
             // update the generated queryTree to have an ExceededThreshold marker
-            JexlNode child = new ExceededValueThresholdMarkerJexlNode(queryTree.jjtGetChild(0).jjtGetChild(0));
+            JexlNode child = QueryPropertyMarker.create(queryTree.jjtGetChild(0).jjtGetChild(0), EXCEEDED_VALUE);
             // unlink the old node
             queryTree.jjtGetChild(0).jjtGetChild(0).jjtSetParent(null);
             // overwrite the old UUID==capone with the ExceededThreshold marker
@@ -648,18 +653,18 @@ public abstract class ExecutableExpansionVisitorTest {
         ASTJexlScript derefQueryTree = (ASTJexlScript) DereferencingVisitor.dereference(origQueryTree);
 
         // update the generated queryTree to have an ExceededThreshold marker for BIRTH_DATE
-        JexlNode child = new ExceededValueThresholdMarkerJexlNode(origQueryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).jjtGetChild(0).jjtGetChild(1));
+        JexlNode child = QueryPropertyMarker.create(origQueryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).jjtGetChild(1), EXCEEDED_VALUE);
         // unlink the old node
-        origQueryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).jjtGetChild(0).jjtGetChild(1).jjtSetParent(null);
+        origQueryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).jjtGetChild(1).jjtSetParent(null);
         // overwrite the old BIRTH_DATE==123 with the ExceededThreshold marker
-        origQueryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).jjtGetChild(0).jjtAddChild(child, 1);
+        origQueryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).jjtAddChild(child, 1);
 
         // update the generated queryTree to have an ExceededThreshold marker for BIRTH_DATE
-        child = new ExceededValueThresholdMarkerJexlNode(derefQueryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).jjtGetChild(1));
+        child = QueryPropertyMarker.create(derefQueryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(1), EXCEEDED_VALUE);
         // unlink the old node
-        derefQueryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).jjtGetChild(1).jjtSetParent(null);
+        derefQueryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(1).jjtSetParent(null);
         // overwrite the old BIRTH_DATE==123 with the ExceededThreshold marker
-        derefQueryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).jjtAddChild(child, 1);
+        derefQueryTree.jjtGetChild(0).jjtGetChild(1).jjtAddChild(child, 1);
 
         for (ASTJexlScript queryTree : Arrays.asList(origQueryTree, derefQueryTree)) {
             ShardQueryConfiguration config = EasyMock.createMock(ShardQueryConfiguration.class);
@@ -702,21 +707,21 @@ public abstract class ExecutableExpansionVisitorTest {
         ASTJexlScript derefQueryTree = (ASTJexlScript) DereferencingVisitor.dereference(origQueryTree);
 
         // update the generated queryTree to have an ExceededOrThreshold marker for BIRTH_DATE
-        Set<String> birthdates = new HashSet<>();
+        SortedSet<String> birthdates = new TreeSet<>();
         birthdates.add("123");
         birthdates.add("234");
         birthdates.add("345");
-        JexlNode child = ExceededOrThresholdMarkerJexlNode.createFromValues("BIRTH_DATE", birthdates);
+        JexlNode child = QueryPropertyMarker.create(new ExceededOr("BIRTH_DATE", birthdates).getJexlNode(), EXCEEDED_OR);
 
         // unlink the old node
-        origQueryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).jjtGetChild(0).jjtGetChild(1).jjtSetParent(null);
+        origQueryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).jjtGetChild(1).jjtSetParent(null);
         // overwrite the old BIRTH_DATE==123 with the ExceededThreshold marker
-        origQueryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).jjtGetChild(0).jjtAddChild(child, 1);
+        origQueryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).jjtAddChild(child, 1);
 
         // unlink the old node
-        derefQueryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).jjtGetChild(1).jjtSetParent(null);
+        derefQueryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(1).jjtSetParent(null);
         // overwrite the old BIRTH_DATE==123 with the ExceededThreshold marker
-        derefQueryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).jjtAddChild(child, 1);
+        derefQueryTree.jjtGetChild(0).jjtGetChild(1).jjtAddChild(child, 1);
 
         for (ASTJexlScript queryTree : Arrays.asList(origQueryTree, derefQueryTree)) {
             ShardQueryConfiguration config = EasyMock.createMock(ShardQueryConfiguration.class);
@@ -788,7 +793,7 @@ public abstract class ExecutableExpansionVisitorTest {
             } else {
                 // included ExceededValueThresholdMarker before
                 Assert.assertTrue(JexlStringBuildingVisitor.buildQuery(queryTree), JexlStringBuildingVisitor.buildQuery(queryTree).equals(
-                                "UUID == 'capone' && ((_List_ = true) && ((id = 'some-bogus-id') && (field = 'QUOTE') && (params = '{\"values\":[\"a\",\"b\",\"c\"]}')))"));
+                                "UUID == 'capone' && (_List_ = true) && (id = 'some-bogus-id') && (field = 'QUOTE') && (params = '{\"values\":[\"a\",\"b\",\"c\"]}')"));
             }
 
             // starts off executable
@@ -893,14 +898,15 @@ public abstract class ExecutableExpansionVisitorTest {
 
         for (ASTJexlScript queryTree : Arrays.asList(origQueryTree, derefQueryTree)) {
             // grab the reference to the QUOTE=='kind' eqnode
-            JexlNode quoteNode = queryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).jjtGetChild(0).jjtGetChild(0);
+            JexlNode quoteNode = queryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).jjtGetChild(0);
+            JexlNode origOrNode = queryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0);
             ASTOrNode newOr = new ASTOrNode(ParserTreeConstants.JJTORNODE);
             newOr.jjtAddChild(quoteNode, 0);
             quoteNode.jjtSetParent(newOr);
 
             // attach the new or node
-            queryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).jjtAddChild(newOr, 0);
-            newOr.jjtSetParent(queryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0));
+            origOrNode.jjtGetParent().jjtAddChild(newOr, 0);
+            newOr.jjtSetParent(origOrNode.jjtGetParent());
 
             ShardQueryConfiguration config = EasyMock.createMock(ShardQueryConfiguration.class);
             MetadataHelper helper = EasyMock.createMock(MetadataHelper.class);
@@ -935,14 +941,19 @@ public abstract class ExecutableExpansionVisitorTest {
 
         for (ASTJexlScript queryTree : Arrays.asList(origQueryTree, derefQueryTree)) {
             // grab the reference to the QUOTE=='kind' eqnode
-            JexlNode quoteNode = queryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).jjtGetChild(0).jjtGetChild(0);
+            JexlNode quoteNode;
+            if (queryTree == origQueryTree) {
+                quoteNode = queryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).jjtGetChild(0);
+            } else {
+                quoteNode = queryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0);
+            }
             ASTOrNode newOr = new ASTOrNode(ParserTreeConstants.JJTORNODE);
             newOr.jjtAddChild(quoteNode, 0);
             quoteNode.jjtSetParent(newOr);
 
             // attach the new or node
-            queryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).jjtAddChild(newOr, 0);
-            newOr.jjtSetParent(queryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0));
+            queryTree.jjtGetChild(0).jjtGetChild(1).jjtAddChild(newOr, 0);
+            newOr.jjtSetParent(queryTree.jjtGetChild(0).jjtGetChild(1));
 
             ShardQueryConfiguration config = EasyMock.createMock(ShardQueryConfiguration.class);
             MetadataHelper helper = EasyMock.createMock(MetadataHelper.class);

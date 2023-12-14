@@ -1,5 +1,7 @@
 package datawave.query.jexl;
 
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.LENIENT;
 import static datawave.query.jexl.visitors.RebuildingVisitor.copy;
 
 import java.math.BigDecimal;
@@ -12,41 +14,42 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.commons.jexl2.parser.ASTAdditiveNode;
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTAssignment;
-import org.apache.commons.jexl2.parser.ASTBitwiseAndNode;
-import org.apache.commons.jexl2.parser.ASTBitwiseComplNode;
-import org.apache.commons.jexl2.parser.ASTBitwiseOrNode;
-import org.apache.commons.jexl2.parser.ASTBitwiseXorNode;
-import org.apache.commons.jexl2.parser.ASTDivNode;
-import org.apache.commons.jexl2.parser.ASTEQNode;
-import org.apache.commons.jexl2.parser.ASTERNode;
-import org.apache.commons.jexl2.parser.ASTEmptyFunction;
-import org.apache.commons.jexl2.parser.ASTFalseNode;
-import org.apache.commons.jexl2.parser.ASTFunctionNode;
-import org.apache.commons.jexl2.parser.ASTGENode;
-import org.apache.commons.jexl2.parser.ASTGTNode;
-import org.apache.commons.jexl2.parser.ASTIdentifier;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ASTLENode;
-import org.apache.commons.jexl2.parser.ASTLTNode;
-import org.apache.commons.jexl2.parser.ASTMethodNode;
-import org.apache.commons.jexl2.parser.ASTModNode;
-import org.apache.commons.jexl2.parser.ASTMulNode;
-import org.apache.commons.jexl2.parser.ASTNENode;
-import org.apache.commons.jexl2.parser.ASTNRNode;
-import org.apache.commons.jexl2.parser.ASTNotNode;
-import org.apache.commons.jexl2.parser.ASTNullLiteral;
-import org.apache.commons.jexl2.parser.ASTNumberLiteral;
-import org.apache.commons.jexl2.parser.ASTOrNode;
-import org.apache.commons.jexl2.parser.ASTReference;
-import org.apache.commons.jexl2.parser.ASTReferenceExpression;
-import org.apache.commons.jexl2.parser.ASTStringLiteral;
-import org.apache.commons.jexl2.parser.ASTTrueNode;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.JexlNodes;
-import org.apache.commons.jexl2.parser.ParserTreeConstants;
+import org.apache.commons.jexl3.parser.ASTAddNode;
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTArguments;
+import org.apache.commons.jexl3.parser.ASTAssignment;
+import org.apache.commons.jexl3.parser.ASTBitwiseAndNode;
+import org.apache.commons.jexl3.parser.ASTBitwiseComplNode;
+import org.apache.commons.jexl3.parser.ASTBitwiseOrNode;
+import org.apache.commons.jexl3.parser.ASTBitwiseXorNode;
+import org.apache.commons.jexl3.parser.ASTEQNode;
+import org.apache.commons.jexl3.parser.ASTERNode;
+import org.apache.commons.jexl3.parser.ASTEmptyFunction;
+import org.apache.commons.jexl3.parser.ASTFalseNode;
+import org.apache.commons.jexl3.parser.ASTFunctionNode;
+import org.apache.commons.jexl3.parser.ASTGENode;
+import org.apache.commons.jexl3.parser.ASTGTNode;
+import org.apache.commons.jexl3.parser.ASTIdentifier;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTLENode;
+import org.apache.commons.jexl3.parser.ASTLTNode;
+import org.apache.commons.jexl3.parser.ASTMethodNode;
+import org.apache.commons.jexl3.parser.ASTMulNode;
+import org.apache.commons.jexl3.parser.ASTNENode;
+import org.apache.commons.jexl3.parser.ASTNRNode;
+import org.apache.commons.jexl3.parser.ASTNamespaceIdentifier;
+import org.apache.commons.jexl3.parser.ASTNotNode;
+import org.apache.commons.jexl3.parser.ASTNullLiteral;
+import org.apache.commons.jexl3.parser.ASTNumberLiteral;
+import org.apache.commons.jexl3.parser.ASTOrNode;
+import org.apache.commons.jexl3.parser.ASTReference;
+import org.apache.commons.jexl3.parser.ASTReferenceExpression;
+import org.apache.commons.jexl3.parser.ASTStringLiteral;
+import org.apache.commons.jexl3.parser.ASTSubNode;
+import org.apache.commons.jexl3.parser.ASTTrueNode;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNodes;
+import org.apache.commons.jexl3.parser.ParserTreeConstants;
 
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -56,8 +59,6 @@ import datawave.query.Constants;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.lookups.IndexLookupMap;
 import datawave.query.jexl.lookups.ValueSet;
-import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
@@ -159,7 +160,7 @@ public class JexlNodeFactory {
                 } else {
                     junction = new ASTAndNode(ParserTreeConstants.JJTANDNODE);
                 }
-                return JexlNodes.children(junction, children.toArray(new JexlNode[0]));
+                return JexlNodes.setChildren(junction, children.toArray(new JexlNode[0]));
         }
     }
 
@@ -190,8 +191,8 @@ public class JexlNodeFactory {
             // If not expanding values replace the original node's '_ANYFIELD_' with the specified field
             JexlNode child = copy(original);
             for (ASTIdentifier identifier : JexlASTHelper.getIdentifiers(child)) {
-                if (identifier.image.equals(Constants.ANY_FIELD)) {
-                    identifier.image = field;
+                if (identifier.getName().equals(Constants.ANY_FIELD)) {
+                    JexlNodes.setIdentifier(identifier, field);
                 }
             }
             return child;
@@ -204,9 +205,9 @@ public class JexlNodeFactory {
             // create a set of nodes wrapping each pattern
             List<String> patterns = new ArrayList<>(fieldsToValues.getPatterns() == null ? new ArrayList<>() : fieldsToValues.getPatterns());
             if (patterns.isEmpty()) {
-                return new ExceededValueThresholdMarkerJexlNode(buildUntypedNode(copy(original), field));
+                return QueryPropertyMarker.create(buildUntypedNode(copy(original), field), EXCEEDED_VALUE);
             } else if (patterns.size() == 1) {
-                return new ExceededValueThresholdMarkerJexlNode(buildUntypedNode(copy(original), field, patterns.get(0)));
+                return QueryPropertyMarker.create(buildUntypedNode(copy(original), field, patterns.get(0)), EXCEEDED_VALUE);
             } else {
 
                 JexlNode junction;
@@ -219,7 +220,7 @@ public class JexlNodeFactory {
                 }
 
                 for (String pattern : patterns) {
-                    JexlNode child = new ExceededValueThresholdMarkerJexlNode(buildUntypedNode(copy(original), field, pattern));
+                    JexlNode child = QueryPropertyMarker.create(buildUntypedNode(copy(original), field, pattern), EXCEEDED_VALUE);
                     children.add(child);
                 }
 
@@ -229,7 +230,7 @@ public class JexlNodeFactory {
                     case 1:
                         return children.get(0);
                     default:
-                        return JexlNodes.children(junction, children.toArray(new JexlNode[0]));
+                        return JexlNodes.setChildren(junction, children.toArray(new JexlNode[0]));
                 }
             }
 
@@ -261,9 +262,76 @@ public class JexlNodeFactory {
                 case 1:
                     return children.get(0);
                 default:
-                    return JexlNodes.children(junction, children.toArray(new JexlNode[0]));
+                    return JexlNodes.setChildren(junction, children.toArray(new JexlNode[0]));
             }
         }
+    }
+
+    /**
+     * This method is currently only used from the QueryModelVisitor to expand a binary node into multiple pairs. If one side contains the lenient marker, then
+     * that will be extended around the binary node.
+     *
+     * @param containerType
+     * @param node
+     * @param pairs
+     * @return The container of binary nodes based on the specified node type
+     */
+    public static JexlNode createNodeTreeFromPairs(ContainerType containerType, JexlNode node, Set<List<JexlNode>> pairs) {
+        if (1 == pairs.size()) {
+            List<JexlNode> pair = pairs.iterator().next();
+
+            if (2 != pair.size()) {
+                throw new UnsupportedOperationException("Cannot construct a node from a non-binary pair: " + pair);
+            }
+
+            return buildUntypedBinaryNode(node, pair.get(0), pair.get(1));
+        }
+
+        JexlNode parentNode = (containerType.equals(ContainerType.OR_NODE) ? new ASTOrNode(ParserTreeConstants.JJTORNODE)
+                        : new ASTAndNode(ParserTreeConstants.JJTANDNODE));
+
+        int i = 0;
+        JexlNodes.ensureCapacity(parentNode, pairs.size());
+        for (List<JexlNode> pair : pairs) {
+            if (2 != pair.size()) {
+                throw new UnsupportedOperationException("Cannot construct a node from a non-binary pair: " + pair);
+            }
+
+            JexlNode leftNode = pair.get(0);
+            JexlNode rightNode = pair.get(1);
+            QueryPropertyMarker.Instance leftType = QueryPropertyMarker.findInstance(leftNode);
+            QueryPropertyMarker.Instance rightType = QueryPropertyMarker.findInstance(rightNode);
+            boolean lenient = false;
+            if (leftType.isType(LENIENT)) {
+                lenient = true;
+                leftNode = leftType.getSource();
+            }
+            if (rightType.isType(LENIENT)) {
+                lenient = true;
+                rightNode = rightType.getSource();
+            }
+            JexlNode child = buildUntypedBinaryNode(node, leftNode, rightNode);
+            if (lenient) {
+                child = QueryPropertyMarker.create(child, LENIENT);
+            }
+            parentNode.jjtAddChild(child, i);
+
+            // We want to override the default parent that would be set by
+            // buildUntypedNode because we're attaching this to an OR
+            child.jjtSetParent(parentNode);
+
+            i++;
+        }
+
+        // If we have more than one element in the new node, wrap it in
+        // parentheses
+        JexlNode wrapped = wrap(parentNode);
+
+        // Set the parent pointer
+        wrapped.jjtSetParent(node.jjtGetParent());
+
+        return wrapped;
+
     }
 
     public static JexlNode createNodeTreeFromFieldNames(ContainerType containerType, JexlNode node, Object literal, Collection<String> fieldNames) {
@@ -393,17 +461,6 @@ public class JexlNodeFactory {
      * @return a jexl node
      */
     public static JexlNode createAndNode(Iterable<? extends JexlNode> children) {
-        return wrapChildren(new ASTAndNode(ParserTreeConstants.JJTANDNODE), children);
-    }
-
-    /**
-     * Wrap collection of JexlNodes into an ASTAndNode
-     *
-     * @param children
-     *            collection of nodes
-     * @return a jexl node
-     */
-    public static JexlNode createUnwrappedAndNode(Iterable<? extends JexlNode> children) {
         return setChildren(new ASTAndNode(ParserTreeConstants.JJTANDNODE), children);
     }
 
@@ -415,42 +472,7 @@ public class JexlNodeFactory {
      * @return a jexl node
      */
     public static JexlNode createOrNode(Iterable<? extends JexlNode> children) {
-        return wrapChildren(new ASTOrNode(ParserTreeConstants.JJTORNODE), children);
-    }
-
-    /**
-     * Wrap a collection of JexlNodes into an ASTOrNode
-     *
-     * @param children
-     *            collection of nodes
-     * @return a jexl node
-     */
-    public static JexlNode createUnwrappedOrNode(Iterable<? extends JexlNode> children) {
         return setChildren(new ASTOrNode(ParserTreeConstants.JJTORNODE), children);
-    }
-
-    /**
-     * Add the children JexlNodes to the parent JexlNode, correctly setting parent pointers, parenthesis, and reference nodes.
-     *
-     * @param parent
-     *            the parent node
-     * @param children
-     *            collection of nodes
-     * @return a jexl node
-     */
-    public static JexlNode wrapChildren(JexlNode parent, Iterable<? extends JexlNode> children) {
-        parent = setChildren(parent, children);
-
-        JexlNode grandParent = parent.jjtGetParent();
-
-        // If we have more than one element in the new node, wrap it in
-        // parentheses
-        JexlNode wrapped = wrap(parent);
-
-        // Set the parent pointer
-        wrapped.jjtSetParent(grandParent);
-
-        return wrapped;
     }
 
     /**
@@ -485,16 +507,11 @@ public class JexlNodeFactory {
      */
     public static JexlNode wrap(JexlNode toWrap) {
         if ((toWrap instanceof ASTAndNode || toWrap instanceof ASTOrNode) && toWrap.jjtGetNumChildren() > 1) {
-            ASTReference reference = new ASTReference(ParserTreeConstants.JJTREFERENCE);
-            ASTReferenceExpression parens = new ASTReferenceExpression(ParserTreeConstants.JJTREFERENCEEXPRESSION);
-
+            ASTReferenceExpression parens = JexlNodes.makeRefExp();
             parens.jjtAddChild(toWrap, 0);
             toWrap.jjtSetParent(parens);
 
-            reference.jjtAddChild(parens, 0);
-            parens.jjtSetParent(reference);
-
-            return reference;
+            return parens;
         }
 
         return toWrap;
@@ -520,48 +537,14 @@ public class JexlNodeFactory {
     }
 
     public static JexlNode buildUntypedBinaryNode(JexlNode original, JexlNode left, JexlNode right) {
-        if (left instanceof ASTIdentifier && right instanceof ASTIdentifier) {
-            return buildUntypedDblIdentifierNode(shallowCopy(original), left, right);
+        JexlNode copy = shallowCopy(original);
+        copy.jjtAddChild(left, 0);
+        copy.jjtAddChild(right, 1);
 
-        } else if (left instanceof ASTIdentifier && JexlASTHelper.isLiteral(right)) {
-            // Every instance of JexlNode.Literal is also a JexlNode
-            return buildUntypedNewNode(shallowCopy(original), (ASTIdentifier) left, right);
+        left.jjtSetParent(copy);
+        right.jjtSetParent(copy);
 
-        } else if (JexlASTHelper.isLiteral(left) && right instanceof ASTIdentifier) {
-            // Every instance of JexlNode.Literal is also a JexlNode
-            return buildUntypedNewNode(shallowCopy(original), left, (ASTIdentifier) right);
-
-        } else if (JexlASTHelper.isLiteral(left) && JexlASTHelper.isLiteral(right)) {
-            // Every instance of JexlNode.Literal is also a JexlNode
-            return buildUntypedDblLiteralNode(shallowCopy(original), left, right);
-
-        } else if (left instanceof ASTReference && JexlASTHelper.isLiteral(right)) {
-            return buildUntypedDblLiteralNode(shallowCopy(original), left, right);
-        } else if (right instanceof ASTReference && JexlASTHelper.isLiteral(left)) {
-            return buildUntypedDblLiteralNode(shallowCopy(original), left, right);
-        } else if (left instanceof ASTAdditiveNode && JexlASTHelper.isLiteral(right)) {
-            return buildUntypedDblLiteralNode(shallowCopy(original), left, right);
-
-        } else if (left instanceof ASTReference && right instanceof ASTReference) {
-            return buildUntypedDblIdentifierNode(shallowCopy(original), left, right);
-
-        } else if (left instanceof ASTReference && right instanceof ASTIdentifier) {
-            return buildUntypedDblIdentifierNode(shallowCopy(original), left, right);
-
-        } else if (left instanceof ASTMulNode || right instanceof ASTMulNode) {
-            return copy(original);
-        } else if (left instanceof ASTAdditiveNode || right instanceof ASTAdditiveNode) {
-            return copy(original);
-
-        } else if (left instanceof ASTModNode || right instanceof ASTModNode) {
-            return copy(original);
-
-        } else if (left instanceof ASTDivNode && JexlASTHelper.isLiteral(right)) {
-            return buildUntypedDblLiteralNode(shallowCopy(original), left, right);
-
-        }
-
-        throw new UnsupportedOperationException("Could not create a node from the given children: " + left + ", " + right);
+        return copy;
     }
 
     public static JexlNode buildUntypedNode(JexlNode original, String fieldName, Object fieldValue) {
@@ -621,21 +604,21 @@ public class JexlNodeFactory {
     public static JexlNode buildUntypedNewLiteralNode(JexlNode original, String fieldName, String fieldValue) {
 
         if (original instanceof ASTEQNode) {
-            return buildNewLiteralNode(original, fieldName, fieldValue);
+            return buildNewLiteralNode(original, fieldValue);
         } else if (original instanceof ASTNENode) {
-            return buildNewLiteralNode(original, fieldName, fieldValue);
+            return buildNewLiteralNode(original, fieldValue);
         } else if (original instanceof ASTERNode) {
-            return buildNewLiteralNode(original, fieldName, fieldValue);
+            return buildNewLiteralNode(original, fieldValue);
         } else if (original instanceof ASTNRNode) {
-            return buildNewLiteralNode(original, fieldName, fieldValue);
+            return buildNewLiteralNode(original, fieldValue);
         } else if (original instanceof ASTGTNode) {
-            return buildNewLiteralNode(original, fieldName, fieldValue);
+            return buildNewLiteralNode(original, fieldValue);
         } else if (original instanceof ASTGENode) {
-            return buildNewLiteralNode(original, fieldName, fieldValue);
+            return buildNewLiteralNode(original, fieldValue);
         } else if (original instanceof ASTLTNode) {
-            return buildNewLiteralNode(original, fieldName, fieldValue);
+            return buildNewLiteralNode(original, fieldValue);
         } else if (original instanceof ASTLENode) {
-            return buildNewLiteralNode(original, fieldName, fieldValue);
+            return buildNewLiteralNode(original, fieldValue);
         } else {
             throw new UnsupportedOperationException("Cannot handle " + original);
         }
@@ -643,9 +626,10 @@ public class JexlNodeFactory {
 
     public static JexlNode buildUntypedNode(JexlNode original, String fieldName) {
         // required to handle ranges that could not be expanded
-        if (original instanceof ASTAndNode || original instanceof ASTOrNode || original instanceof ASTReferenceExpression || original instanceof ASTReference
-                        || original instanceof ASTAssignment || original instanceof ASTIdentifier || original instanceof ASTTrueNode) {
+        if (original instanceof ASTAndNode || original instanceof ASTOrNode || original instanceof ASTReferenceExpression || original instanceof ASTAssignment
+                        || original instanceof ASTIdentifier || original instanceof ASTTrueNode) {
             JexlNode newNode = shallowCopy(original);
+            newNode.jjtSetParent(original.jjtGetParent());
             for (int i = 0; i < original.jjtGetNumChildren(); i++) {
                 JexlNode newChild = buildUntypedNode(original.jjtGetChild(i), fieldName);
                 newNode.jjtAddChild(newChild, i);
@@ -716,21 +700,21 @@ public class JexlNodeFactory {
 
     public static JexlNode buildUntypedNewLiteralNode(JexlNode original, String fieldName, Number fieldValue) {
         if (original instanceof ASTEQNode) {
-            return buildNewLiteralNode(original, fieldName, fieldValue);
+            return buildNewLiteralNode(original, fieldValue);
         } else if (original instanceof ASTNENode) {
-            return buildNewLiteralNode(original, fieldName, fieldValue);
+            return buildNewLiteralNode(original, fieldValue);
         } else if (original instanceof ASTERNode) {
-            return buildNewLiteralNode(original, fieldName, fieldValue);
+            return buildNewLiteralNode(original, fieldValue);
         } else if (original instanceof ASTNRNode) {
-            return buildNewLiteralNode(original, fieldName, fieldValue);
+            return buildNewLiteralNode(original, fieldValue);
         } else if (original instanceof ASTGTNode) {
-            return buildNewLiteralNode(original, fieldName, fieldValue);
+            return buildNewLiteralNode(original, fieldValue);
         } else if (original instanceof ASTGENode) {
-            return buildNewLiteralNode(original, fieldName, fieldValue);
+            return buildNewLiteralNode(original, fieldValue);
         } else if (original instanceof ASTLTNode) {
-            return buildNewLiteralNode(original, fieldName, fieldValue);
+            return buildNewLiteralNode(original, fieldValue);
         } else if (original instanceof ASTLENode) {
-            return buildNewLiteralNode(original, fieldName, fieldValue);
+            return buildNewLiteralNode(original, fieldValue);
         } else {
             throw new UnsupportedOperationException("Cannot handle " + original);
         }
@@ -804,7 +788,7 @@ public class JexlNodeFactory {
         } else if (ASTGTNode.class.isAssignableFrom(clz)) {
             copy = new ASTGTNode(ParserTreeConstants.JJTGTNODE);
         } else if (ASTIdentifier.class.isAssignableFrom(clz)) {
-            copy = new ASTIdentifier(ParserTreeConstants.JJTIDENTIFIER);
+            copy = JexlNodes.makeIdentifier();
         } else if (ASTLENode.class.isAssignableFrom(clz)) {
             copy = new ASTLENode(ParserTreeConstants.JJTLENODE);
         } else if (ASTLTNode.class.isAssignableFrom(clz)) {
@@ -818,21 +802,23 @@ public class JexlNodeFactory {
         } else if (ASTNullLiteral.class.isAssignableFrom(clz)) {
             copy = new ASTNullLiteral(ParserTreeConstants.JJTNULLLITERAL);
         } else if (ASTNumberLiteral.class.isAssignableFrom(clz)) {
-            copy = new ASTNumberLiteral(ParserTreeConstants.JJTNUMBERLITERAL);
+            copy = JexlNodes.makeNumberLiteral();
             JexlNodes.setLiteral((ASTNumberLiteral) copy, ((ASTNumberLiteral) original).getLiteral());
         } else if (ASTOrNode.class.isAssignableFrom(clz)) {
             copy = new ASTOrNode(ParserTreeConstants.JJTORNODE);
         } else if (ASTStringLiteral.class.isAssignableFrom(clz)) {
-            copy = new ASTStringLiteral(ParserTreeConstants.JJTSTRINGLITERAL);
+            copy = JexlNodes.makeStringLiteral();
             JexlNodes.setLiteral((ASTStringLiteral) copy, ((ASTStringLiteral) original).getLiteral());
         } else if (ASTTrueNode.class.isAssignableFrom(clz)) {
             copy = new ASTTrueNode(ParserTreeConstants.JJTTRUENODE);
         } else if (ASTReferenceExpression.class.isAssignableFrom(clz)) {
-            copy = new ASTReferenceExpression(ParserTreeConstants.JJTREFERENCEEXPRESSION);
+            copy = JexlNodes.makeRefExp();
         } else if (ASTReference.class.isAssignableFrom(clz)) {
             copy = new ASTReference(ParserTreeConstants.JJTREFERENCE);
-        } else if (ASTAdditiveNode.class.isAssignableFrom(clz)) {
-            copy = new ASTAdditiveNode(ParserTreeConstants.JJTADDITIVENODE);
+        } else if (ASTAddNode.class.isAssignableFrom(clz)) {
+            copy = new ASTAddNode(ParserTreeConstants.JJTADDNODE);
+        } else if (ASTSubNode.class.isAssignableFrom(clz)) {
+            copy = new ASTSubNode(ParserTreeConstants.JJTSUBNODE);
         } else if (ASTMethodNode.class.isAssignableFrom(clz)) {
             copy = new ASTMethodNode(ParserTreeConstants.JJTMETHODNODE);
         } else if (ASTFunctionNode.class.isAssignableFrom(clz)) {
@@ -846,7 +832,7 @@ public class JexlNodeFactory {
         }
 
         copy.jjtSetParent(original.jjtGetParent());
-        copy.image = original.image;
+        JexlNodes.copyImage(original, copy);
         return copy;
     }
 
@@ -888,43 +874,27 @@ public class JexlNodeFactory {
         return buildUntypedNewNode(newNode, buildIdentifier(fieldName), fieldValue);
     }
 
-    public static JexlNode buildNewLiteralNode(JexlNode original, String fieldName, Number fieldValue) {
-        ASTReference literalReference = new ASTReference(ParserTreeConstants.JJTREFERENCE);
-        ASTNumberLiteral literal = getLiteral(fieldValue);
-        literalReference.jjtAddChild(literal, 0);
-        literal.jjtSetParent(literalReference);
-
-        // we don't know whether the left or right side is the literal to replace. find it.
-        if (original.jjtGetChild(0) instanceof ASTReference && original.jjtGetChild(0).jjtGetChild(0) instanceof ASTIdentifier) {
-            original.jjtAddChild(literalReference, 1); // replace the original reference/literal (on left) with new reference/literal
-        }
-        if (original.jjtGetChild(1) instanceof ASTReference && original.jjtGetChild(1).jjtGetChild(0) instanceof ASTIdentifier) {
-            original.jjtAddChild(literalReference, 0); // replace the original reference/literal (on right) with new reference/literal
-        }
-
-        literalReference.jjtSetParent(original);
-
+    public static JexlNode buildNewLiteralNode(JexlNode original, Number fieldValue) {
+        replaceLiteralNode(original, getLiteral(fieldValue));
         return original;
     }
 
-    public static JexlNode buildNewLiteralNode(JexlNode original, String fieldName, String fieldValue) {
-        ASTReference literalReference = new ASTReference(ParserTreeConstants.JJTREFERENCE);
-
-        ASTStringLiteral literal = getLiteral(fieldValue);
-        literalReference.jjtAddChild(literal, 0);
-        literal.jjtSetParent(literalReference);
-
-        // we don't know whether the left or right side is the literal to replace. find it.
-        if (original.jjtGetChild(0) instanceof ASTReference && original.jjtGetChild(0).jjtGetChild(0) instanceof ASTIdentifier) {
-            original.jjtAddChild(literalReference, 1); // replace the original reference/literal (on left) with new reference/literal
-        }
-        if (original.jjtGetChild(1) instanceof ASTReference && original.jjtGetChild(1).jjtGetChild(0) instanceof ASTIdentifier) {
-            original.jjtAddChild(literalReference, 0); // replace the original reference/literal (on right) with new reference/literal
-        }
-
-        literalReference.jjtSetParent(original);
-
+    public static JexlNode buildNewLiteralNode(JexlNode original, String fieldValue) {
+        replaceLiteralNode(original, getLiteral(fieldValue));
         return original;
+    }
+
+    public static void replaceLiteralNode(JexlNode original, JexlNode literalNode) {
+        // is the literal the first or second child?
+        if (JexlASTHelper.getLiteral(original.jjtGetChild(0)) != null) {
+            // if it's the first child, replace the first
+            original.jjtAddChild(literalNode, 0);
+        } else {
+            // if it's the second child, replace the second
+            original.jjtAddChild(literalNode, 1);
+        }
+
+        literalNode.jjtSetParent(original);
     }
 
     /**
@@ -1371,7 +1341,7 @@ public class JexlNodeFactory {
             return createOrNode(list);
         } else {
             JexlNode newNode = JexlNodeFactory.shallowCopy(original);
-            return buildUntypedNewNode(newNode, buildIdentifier(node.image), fieldValue);
+            return buildUntypedNewNode(newNode, buildIdentifier(String.valueOf(JexlNodes.getImage(node))), fieldValue);
         }
     }
 
@@ -1426,7 +1396,7 @@ public class JexlNodeFactory {
         if (!list.isEmpty()) {
             return createOrNode(list);
         } else {
-            return buildUntypedNewNode(newNode, buildIdentifier(node.image), fieldValue);
+            return buildUntypedNewNode(newNode, buildIdentifier(String.valueOf(JexlNodes.getImage(node))), fieldValue);
         }
     }
 
@@ -1444,28 +1414,32 @@ public class JexlNodeFactory {
      * @return a new node
      */
     public static JexlNode buildFunctionNode(String namespace, String function, String field, Object... args) {
-        ASTFunctionNode newNode = new ASTFunctionNode(ParserTreeConstants.JJTFUNCTIONNODE);
-        JexlNodes.ensureCapacity(newNode, args.length + 3);
+        ASTFunctionNode functionNode = new ASTFunctionNode(ParserTreeConstants.JJTFUNCTIONNODE);
+
+        ASTNamespaceIdentifier namespaceNode = new ASTNamespaceIdentifier(ParserTreeConstants.JJTNAMESPACEIDENTIFIER);
+        namespaceNode.setNamespace(namespace, function);
+        functionNode.jjtAddChild(namespaceNode, 0);
+        namespaceNode.jjtSetParent(functionNode);
+
+        ASTArguments argsNode = new ASTArguments(ParserTreeConstants.JJTARGUMENTS);
+        functionNode.jjtAddChild(argsNode, 1);
+        argsNode.jjtSetParent(functionNode);
+
         int childIndex = 0;
-        ASTIdentifier nsNode = new ASTIdentifier(ParserTreeConstants.JJTIDENTIFIER);
-        nsNode.image = namespace;
-        newNode.jjtAddChild(nsNode, childIndex++);
-        nsNode.jjtSetParent(newNode);
-        ASTIdentifier functionNode = new ASTIdentifier(ParserTreeConstants.JJTIDENTIFIER);
-        functionNode.image = function;
-        newNode.jjtAddChild(functionNode, childIndex++);
-        functionNode.jjtSetParent(newNode);
-        ASTIdentifier fieldNode = new ASTIdentifier(ParserTreeConstants.JJTIDENTIFIER);
-        fieldNode.image = field;
-        newNode.jjtAddChild(fieldNode, childIndex++);
-        fieldNode.jjtSetParent(newNode);
-        for (int i = 0; i < args.length; i++) {
-            ASTStringLiteral literal = new ASTStringLiteral(ParserTreeConstants.JJTSTRINGLITERAL);
-            literal.image = args[i].toString();
-            newNode.jjtAddChild(JexlNodeFactory.wrap(literal), childIndex);
-            newNode.jjtGetChild(childIndex++).jjtSetParent(newNode);
+
+        ASTIdentifier fieldNode = JexlNodes.makeIdentifierWithImage(field);
+        argsNode.jjtAddChild(fieldNode, childIndex++);
+        fieldNode.jjtSetParent(argsNode);
+
+        for (Object arg : args) {
+            ASTStringLiteral literal = JexlNodes.makeStringLiteral();
+            JexlNodes.setLiteral(literal, arg.toString());
+            literal.jjtSetParent(argsNode);
+
+            argsNode.jjtAddChild(JexlNodeFactory.wrap(literal), childIndex++);
         }
-        return JexlNodeFactory.wrap(newNode);
+
+        return functionNode;
     }
 
     /**
@@ -1480,9 +1454,8 @@ public class JexlNodeFactory {
      * @return a untyped new node
      */
     protected static JexlNode buildUntypedNewNode(JexlNode newNode, ASTIdentifier fieldName, String fieldValue) {
-        ASTStringLiteral literal = new ASTStringLiteral(ParserTreeConstants.JJTSTRINGLITERAL);
-        literal.image = fieldValue;
-
+        ASTStringLiteral literal = JexlNodes.makeStringLiteral();
+        JexlNodes.setLiteral(literal, fieldValue);
         return buildUntypedNewNode(newNode, fieldName, literal);
     }
 
@@ -1498,14 +1471,9 @@ public class JexlNodeFactory {
      * @return a jexl node
      */
     protected static JexlNode buildUntypedNewNode(JexlNode newNode, ASTIdentifier fieldName, Number fieldValue) {
-        ASTNumberLiteral literal = new ASTNumberLiteral(ParserTreeConstants.JJTNUMBERLITERAL);
-        literal.image = fieldValue.toString();
+        ASTNumberLiteral literal = JexlNodes.makeNumberLiteral();
 
-        if (NATURAL_NUMBERS.contains(fieldValue.getClass())) {
-            literal.setNatural(fieldValue.toString());
-        } else if (REAL_NUMBERS.contains(fieldValue.getClass())) {
-            literal.setReal(fieldValue.toString());
-        } else {
+        if (!JexlNodes.setLiteral(literal, fieldValue)) {
             QueryException qe = new QueryException(DatawaveErrorCode.ASTNUMBERLITERAL_TYPE_ASCERTAIN_ERROR, MessageFormat.format("{0}", literal));
             throw new DatawaveFatalQueryException(qe);
         }
@@ -1514,14 +1482,9 @@ public class JexlNodeFactory {
     }
 
     private static ASTNumberLiteral getLiteral(Number fieldValue) {
-        ASTNumberLiteral literal = new ASTNumberLiteral(ParserTreeConstants.JJTNUMBERLITERAL);
-        literal.image = fieldValue.toString();
+        ASTNumberLiteral literal = JexlNodes.makeNumberLiteral();
 
-        if (NATURAL_NUMBERS.contains(fieldValue.getClass())) {
-            literal.setNatural(fieldValue.toString());
-        } else if (REAL_NUMBERS.contains(fieldValue.getClass())) {
-            literal.setReal(fieldValue.toString());
-        } else {
+        if (!JexlNodes.setLiteral(literal, fieldValue)) {
             QueryException qe = new QueryException(DatawaveErrorCode.ASTNUMBERLITERAL_TYPE_ASCERTAIN_ERROR, MessageFormat.format("{0}", literal));
             throw new DatawaveFatalQueryException(qe);
         }
@@ -1529,8 +1492,8 @@ public class JexlNodeFactory {
     }
 
     private static ASTStringLiteral getLiteral(String fieldValue) {
-        ASTStringLiteral literal = new ASTStringLiteral(ParserTreeConstants.JJTSTRINGLITERAL);
-        literal.image = fieldValue;
+        ASTStringLiteral literal = JexlNodes.makeStringLiteral();
+        JexlNodes.setLiteral(literal, fieldValue);
         return literal;
     }
 
@@ -1546,92 +1509,11 @@ public class JexlNodeFactory {
      * @return a jexl node
      */
     protected static JexlNode buildUntypedNewNode(JexlNode newNode, ASTIdentifier identifier, JexlNode literal) {
-        ASTReference literalReference = new ASTReference(ParserTreeConstants.JJTREFERENCE),
-                        identifierReference = new ASTReference(ParserTreeConstants.JJTREFERENCE);
-
-        literalReference.jjtAddChild(literal, 0);
-        literal.jjtSetParent(literalReference);
-
-        identifierReference.jjtAddChild(identifier, 0);
-        identifier.jjtSetParent(identifierReference);
-
-        newNode.jjtAddChild(identifierReference, 0);
-        newNode.jjtAddChild(literalReference, 1);
-
-        identifierReference.jjtSetParent(newNode);
-        literalReference.jjtSetParent(newNode);
-
-        return newNode;
-    }
-
-    protected static JexlNode buildUntypedNewNode(JexlNode newNode, JexlNode literal, ASTIdentifier identifier) {
-        ASTReference literalReference = new ASTReference(ParserTreeConstants.JJTREFERENCE),
-                        identifierReference = new ASTReference(ParserTreeConstants.JJTREFERENCE);
-
-        literalReference.jjtAddChild(literal, 0);
-        literal.jjtSetParent(literalReference);
-
-        identifierReference.jjtAddChild(identifier, 0);
-        identifier.jjtSetParent(identifierReference);
-
-        newNode.jjtAddChild(literalReference, 0);
-        newNode.jjtAddChild(identifierReference, 1);
-
-        identifierReference.jjtSetParent(newNode);
-        literalReference.jjtSetParent(newNode);
-
-        return newNode;
-    }
-
-    /**
-     * Like {@link #buildUntypedNewNode(JexlNode, ASTIdentifier, String)} except it does not wrap {@code literal} in an {@link ASTReference}
-     *
-     * @param newNode
-     *            the new node
-     * @param identifier
-     *            the field name identifier
-     * @param literal
-     *            the node literal
-     * @return a jexl node
-     */
-    protected static JexlNode buildUntypedNewLiteralNode(JexlNode newNode, ASTIdentifier identifier, JexlNode literal) {
-        ASTReference identifierReference = new ASTReference(ParserTreeConstants.JJTREFERENCE);
-        identifierReference.jjtAddChild(identifier, 0);
-        identifier.jjtSetParent(identifierReference);
-
-        newNode.jjtAddChild(identifierReference, 0);
+        newNode.jjtAddChild(identifier, 0);
         newNode.jjtAddChild(literal, 1);
 
-        identifierReference.jjtSetParent(newNode);
+        identifier.jjtSetParent(newNode);
         literal.jjtSetParent(newNode);
-
-        return newNode;
-    }
-
-    protected static JexlNode buildUntypedDblIdentifierNode(JexlNode newNode, JexlNode identifier1, JexlNode identifier2) {
-        ASTReference identifierReference1 = new ASTReference(ParserTreeConstants.JJTREFERENCE);
-        identifierReference1.jjtAddChild(identifier1, 0);
-        identifier1.jjtSetParent(identifierReference1);
-
-        ASTReference identifierReference2 = new ASTReference(ParserTreeConstants.JJTREFERENCE);
-        identifierReference2.jjtAddChild(identifier2, 0);
-        identifier2.jjtSetParent(identifierReference2);
-
-        newNode.jjtAddChild(identifierReference1, 0);
-        newNode.jjtAddChild(identifierReference2, 1);
-
-        identifierReference1.jjtSetParent(newNode);
-        identifierReference2.jjtSetParent(newNode);
-
-        return newNode;
-    }
-
-    protected static JexlNode buildUntypedDblLiteralNode(JexlNode newNode, JexlNode literal1, JexlNode literal2) {
-        newNode.jjtAddChild(literal1, 0);
-        newNode.jjtAddChild(literal2, 1);
-
-        literal1.jjtSetParent(newNode);
-        literal2.jjtSetParent(newNode);
 
         return newNode;
     }
@@ -1667,7 +1549,7 @@ public class JexlNodeFactory {
             literalNode = new ASTFalseNode(ParserTreeConstants.JJTFALSENODE);
         }
 
-        return buildUntypedNewLiteralNode(copy, identifier, literalNode);
+        return buildUntypedNewNode(copy, identifier, literalNode);
     }
 
     public static JexlNode buildNullNode(JexlNode original, ASTIdentifier identifier) {
@@ -1696,16 +1578,13 @@ public class JexlNodeFactory {
 
         ASTNullLiteral literalNode = new ASTNullLiteral(ParserTreeConstants.JJTNULLLITERAL);
 
-        return buildUntypedNewLiteralNode(copy, identifier, literalNode);
+        return buildUntypedNewNode(copy, identifier, literalNode);
     }
 
     public static ASTIdentifier buildIdentifier(String fieldName) {
-        ASTIdentifier identifier = new ASTIdentifier(ParserTreeConstants.JJTIDENTIFIER);
         // When the fieldName starts with an invalid character, add the prefix
         // onto it
-        identifier.image = JexlASTHelper.rebuildIdentifier(fieldName);
-
-        return identifier;
+        return JexlNodes.makeIdentifierWithImage(JexlASTHelper.rebuildIdentifier(fieldName));
     }
 
     /**
@@ -1716,61 +1595,15 @@ public class JexlNodeFactory {
      * @return a jexl node
      */
     public static JexlNode createExpression(JexlNode child) {
-        if (child instanceof ASTReference && child.jjtGetChild(0) instanceof ASTReferenceExpression) {
-            return child;
-        }
-
-        ASTReference ref = new ASTReference(ParserTreeConstants.JJTREFERENCE);
-        ref.jjtSetParent(child.jjtGetParent());
-
         if (child instanceof ASTReferenceExpression) {
-            child.jjtSetParent(ref);
-            ref.jjtAddChild(child, 0);
+            return child;
         } else {
-            ASTReferenceExpression exp = new ASTReferenceExpression(ParserTreeConstants.JJTREFERENCEEXPRESSION);
-
+            ASTReferenceExpression exp = JexlNodes.makeRefExp();
             child.jjtSetParent(exp);
             exp.jjtAddChild(child, 0);
 
-            exp.jjtSetParent(ref);
-            ref.jjtAddChild(exp, 0);
+            return exp;
         }
-
-        return ref;
-    }
-
-    /**
-     * Creates a reference expression fro a child node
-     *
-     * @param childContainer
-     *            the child container node
-     * @param wrappingContainer
-     *            the wrapping container
-     * @return a jexl node
-     */
-    public static JexlNode createExpression(JexlNode childContainer, JexlNode wrappingContainer) {
-
-        ASTReference ref = new ASTReference(ParserTreeConstants.JJTREFERENCE);
-
-        ASTReferenceExpression exp = new ASTReferenceExpression(ParserTreeConstants.JJTREFERENCEEXPRESSION);
-
-        for (int i = 0; i < childContainer.jjtGetNumChildren(); i++) {
-            JexlNode child = childContainer.jjtGetChild(i);
-            child.jjtSetParent(ref);
-            exp.jjtAddChild(child, i);
-            i++;
-        }
-
-        exp.jjtSetParent(ref);
-        ref.jjtAddChild(exp, 0);
-
-        JexlNode newWrapper = shallowCopy(wrappingContainer);
-
-        ref.jjtSetParent(newWrapper);
-
-        newWrapper.jjtAddChild(ref, 0);
-
-        return newWrapper;
     }
 
     /**
@@ -1785,15 +1618,9 @@ public class JexlNodeFactory {
     public static ASTAssignment createAssignment(String name, boolean value) {
         ASTAssignment assignNode = new ASTAssignment(ParserTreeConstants.JJTASSIGNMENT);
 
-        ASTReference refNode2 = new ASTReference(ParserTreeConstants.JJTREFERENCE);
-        refNode2.jjtSetParent(assignNode);
-        assignNode.jjtAddChild(refNode2, 0);
-
-        ASTIdentifier idNode = new ASTIdentifier(ParserTreeConstants.JJTIDENTIFIER);
-        idNode.image = name;
-        idNode.jjtSetParent(refNode2);
-        refNode2.jjtAddChild(idNode, 0);
-
+        ASTIdentifier idNode = JexlNodes.makeIdentifierWithImage(name);
+        idNode.jjtSetParent(assignNode);
+        assignNode.jjtAddChild(idNode, 0);
         if (value) {
             ASTTrueNode trueNode = new ASTTrueNode(ParserTreeConstants.JJTTRUENODE);
             trueNode.jjtSetParent(assignNode);
@@ -1819,18 +1646,13 @@ public class JexlNodeFactory {
     public static ASTAssignment createAssignment(String name, String value) {
         ASTAssignment assignNode = new ASTAssignment(ParserTreeConstants.JJTASSIGNMENT);
 
-        ASTReference refNode2 = new ASTReference(ParserTreeConstants.JJTREFERENCE);
-        refNode2.jjtSetParent(assignNode);
-        assignNode.jjtAddChild(refNode2, 0);
+        ASTIdentifier idNode = JexlNodes.makeIdentifierWithImage(name);
+        idNode.jjtSetParent(assignNode);
+        assignNode.jjtAddChild(idNode, 0);
 
-        ASTIdentifier idNode = new ASTIdentifier(ParserTreeConstants.JJTIDENTIFIER);
-        idNode.image = name;
-        idNode.jjtSetParent(refNode2);
-        refNode2.jjtAddChild(idNode, 0);
-
-        ASTStringLiteral literalNode = new ASTStringLiteral(ParserTreeConstants.JJTSTRINGLITERAL);
+        ASTStringLiteral literalNode = JexlNodes.makeStringLiteral();
         literalNode.jjtSetParent(assignNode);
-        literalNode.image = value;
+        JexlNodes.setLiteral(literalNode, value);
         assignNode.jjtAddChild(literalNode, 1);
 
         return assignNode;

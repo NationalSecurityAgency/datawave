@@ -1,15 +1,13 @@
 package datawave.query.discovery;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTEQNode;
-import org.apache.commons.jexl2.parser.ASTERNode;
-import org.apache.commons.jexl2.parser.ASTNumberLiteral;
-import org.apache.commons.jexl2.parser.ASTStringLiteral;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.JexlNodes;
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTEQNode;
+import org.apache.commons.jexl3.parser.ASTERNode;
+import org.apache.commons.jexl3.parser.ASTIdentifier;
+import org.apache.commons.jexl3.parser.ASTNumberLiteral;
+import org.apache.commons.jexl3.parser.ASTStringLiteral;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.HashMultimap;
@@ -44,17 +42,17 @@ public class FindLiteralsAndPatternsVisitor extends BaseVisitor {
 
     @Override
     public Object visit(ASTStringLiteral node, Object data) {
-        // strings are always wrapped in a reference node, so the op is the gparent
-        JexlNode op = node.jjtGetParent().jjtGetParent();
+        // strings are NEVER wrapped in a reference node, so the op is the parent
+        JexlNode op = node.jjtGetParent();
         if (op instanceof ASTEQNode) {
-            JexlNode field = JexlNodes.otherChild(op, node.jjtGetParent()).jjtGetChild(0);
+            JexlNode field = JexlNodes.otherChild(op, node);
             if (log.isTraceEnabled()) {
-                log.trace("Found field " + JexlASTHelper.deconstructIdentifier(field.image) + "==" + node.getLiteral());
+                log.trace("Found field " + JexlASTHelper.deconstructIdentifier(((ASTIdentifier) field).getName()) + "==" + node.getLiteral());
             }
-            values.addLiteral(node.getLiteral(), JexlASTHelper.deconstructIdentifier(field.image));
+            values.addLiteral(node.getLiteral(), JexlASTHelper.deconstructIdentifier(((ASTIdentifier) field).getName()));
         } else if (op instanceof ASTERNode) {
-            JexlNode field = JexlNodes.otherChild(op, node.jjtGetParent()).jjtGetChild(0);
-            values.addPattern(node.getLiteral(), JexlASTHelper.deconstructIdentifier(field.image));
+            JexlNode field = JexlNodes.otherChild(op, node);
+            values.addPattern(node.getLiteral(), JexlASTHelper.deconstructIdentifier(((ASTIdentifier) field).getName()));
         }
         return null;
     }
@@ -63,8 +61,8 @@ public class FindLiteralsAndPatternsVisitor extends BaseVisitor {
     public Object visit(ASTNumberLiteral node, Object data) {
         JexlNode op = node.jjtGetParent();
         if (op instanceof ASTEQNode) {
-            JexlNode field = JexlNodes.otherChild(op, node).jjtGetChild(0);
-            values.addLiteral(node.getLiteral().toString(), JexlASTHelper.deconstructIdentifier(field.image));
+            JexlNode field = JexlNodes.otherChild(op, node);
+            values.addLiteral(node.getLiteral().toString(), JexlASTHelper.deconstructIdentifier(((ASTIdentifier) field).getName()));
         }
         return null;
     }

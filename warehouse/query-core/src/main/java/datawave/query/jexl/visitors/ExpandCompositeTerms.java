@@ -1,6 +1,8 @@
 package datawave.query.jexl.visitors;
 
-import static org.apache.commons.jexl2.parser.JexlNodes.children;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.BOUNDED_RANGE;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DELAYED;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EVALUATION_ONLY;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -15,23 +17,20 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
-import org.apache.commons.jexl2.parser.ASTEQNode;
-import org.apache.commons.jexl2.parser.ASTERNode;
-import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
-import org.apache.commons.jexl2.parser.ASTFunctionNode;
-import org.apache.commons.jexl2.parser.ASTGENode;
-import org.apache.commons.jexl2.parser.ASTGTNode;
-import org.apache.commons.jexl2.parser.ASTLENode;
-import org.apache.commons.jexl2.parser.ASTLTNode;
-import org.apache.commons.jexl2.parser.ASTNENode;
-import org.apache.commons.jexl2.parser.ASTNRNode;
-import org.apache.commons.jexl2.parser.ASTNotNode;
-import org.apache.commons.jexl2.parser.ASTOrNode;
-import org.apache.commons.jexl2.parser.ASTReference;
-import org.apache.commons.jexl2.parser.ASTReferenceExpression;
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTEQNode;
+import org.apache.commons.jexl3.parser.ASTERNode;
+import org.apache.commons.jexl3.parser.ASTFunctionNode;
+import org.apache.commons.jexl3.parser.ASTGENode;
+import org.apache.commons.jexl3.parser.ASTGTNode;
+import org.apache.commons.jexl3.parser.ASTLENode;
+import org.apache.commons.jexl3.parser.ASTLTNode;
+import org.apache.commons.jexl3.parser.ASTNENode;
+import org.apache.commons.jexl3.parser.ASTNRNode;
+import org.apache.commons.jexl3.parser.ASTNotNode;
+import org.apache.commons.jexl3.parser.ASTOrNode;
+import org.apache.commons.jexl3.parser.ASTReferenceExpression;
+import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.log4j.Logger;
 
 import com.google.common.base.Preconditions;
@@ -52,7 +51,6 @@ import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.LiteralRange;
-import datawave.query.jexl.nodes.BoundedRange;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.exception.DatawaveErrorCode;
@@ -131,7 +129,8 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
         // iterate over the children and attempt to create composites
         List<JexlNode> unmodifiedNodes = new ArrayList<>();
         List<JexlNode> modifiedNodes = new ArrayList<>();
-        for (JexlNode child : children(node)) {
+        for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+            JexlNode child = node.jjtGetChild(i);
             ExpandData eData = new ExpandData();
 
             // add the anded leaf nodes from our ancestors
@@ -175,68 +174,72 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
      */
     @Override
     public Object visit(ASTAndNode node, Object data) {
-        ExpandData parentData = (ExpandData) data;
-
-        // only process delayed and bounded range predicates
-        if (QueryPropertyMarker.findInstance(node).isAnyTypeExcept(ASTDelayedPredicate.class, BoundedRange.class)) {
+        if (QueryPropertyMarker.findInstance(node).isAnyTypeExcept(DELAYED, BOUNDED_RANGE)) {
             return copy(node);
-        }
+        } else {
+            ExpandData parentData = (ExpandData) data;
 
-        // if we only have one child, just pass through
-        // this shouldn't ever really happen, but it could
-        if (node.jjtGetNumChildren() == 1)
-            return super.visit(node, data);
-
-        // first, find all leaf nodes
-        // note: an 'and' node defining a range over a single term is considered a leaf node for our purposes
-        List<JexlNode> nonLeafNodes = new ArrayList<>();
-        Multimap<String,JexlNode> leafNodes = getLeafNodes(node, nonLeafNodes);
-
-        // if this is a 'leaf' range node, check to see if a composite can be made
-        if (leafNodes.size() == 1 && leafNodes.containsValue(node)) {
-            // attempt to build a composite
-            return visitLeafNode(node, parentData);
-        }
-        // otherwise, process the 'and' node as usual
-        else {
-
-            Multimap<String,JexlNode> usedLeafNodes = LinkedHashMultimap.create();
-
-            // process the non-leaf nodes first
-            List<JexlNode> processedNonLeafNodes = processNonLeafNodes(parentData, nonLeafNodes, leafNodes, usedLeafNodes);
-
-            // remove the used nodes from the leaf and anded nodes
-            leafNodes.values().removeAll(usedLeafNodes.values());
-            parentData.andedNodes.values().removeAll(parentData.usedAndedNodes.values());
-
-            // next, process the remaining leaf nodes
-            List<JexlNode> processedLeafNodes = processUnusedLeafNodes(parentData, leafNodes, usedLeafNodes);
-
-            // again, remove the used nodes from the leaf and anded nodes
-            leafNodes.values().removeAll(usedLeafNodes.values());
-            parentData.andedNodes.values().removeAll(parentData.usedAndedNodes.values());
-
-            // rebuild the node if composites are found
-            if (parentData.foundComposite) {
-                List<JexlNode> processedNodes = new ArrayList<>();
-                processedNodes.addAll(processedLeafNodes);
-                processedNodes.addAll(processedNonLeafNodes);
-
-                // rebuild the node
-                JexlNode rebuiltNode = createUnwrappedAndNode(processedNodes);
-
-                // distribute the used nodes into the rebuilt node
-                if (!usedLeafNodes.values().isEmpty()) {
-                    // first we need to trim the used nodes to eliminate any wrapping nodes
-                    // i.e. reference, reference expression, or single child and/or nodes
-                    List<JexlNode> leafNodesToDistribute = usedLeafNodes.values().stream().map(this::getLeafNode).collect(Collectors.toList());
-                    rebuiltNode = DistributeAndedNodes.distributeAndedNode(rebuiltNode, leafNodesToDistribute, jexlNodeToCompMap);
-                }
-
-                return rebuiltNode;
+            // only process delayed and bounded range predicates
+            if (QueryPropertyMarker.findInstance(node).isAnyTypeExcept(DELAYED, BOUNDED_RANGE)) {
+                return copy(node);
             }
 
-            return copy(node);
+            // if we only have one child, just pass through
+            // this shouldn't ever really happen, but it could
+            if (node.jjtGetNumChildren() == 1)
+                return super.visit(node, data);
+
+            // first, find all leaf nodes
+            // note: an 'and' node defining a range over a single term is considered a leaf node for our purposes
+            List<JexlNode> nonLeafNodes = new ArrayList<>();
+            Multimap<String,JexlNode> leafNodes = getLeafNodes(node, nonLeafNodes);
+
+            // if this is a 'leaf' range node, check to see if a composite can be made
+            if (leafNodes.size() == 1 && leafNodes.containsValue(node)) {
+                // attempt to build a composite
+                return visitLeafNode(node, parentData);
+            }
+            // otherwise, process the 'and' node as usual
+            else {
+
+                Multimap<String,JexlNode> usedLeafNodes = LinkedHashMultimap.create();
+
+                // process the non-leaf nodes first
+                List<JexlNode> processedNonLeafNodes = processNonLeafNodes(parentData, nonLeafNodes, leafNodes, usedLeafNodes);
+
+                // remove the used nodes from the leaf and anded nodes
+                leafNodes.values().removeAll(usedLeafNodes.values());
+                parentData.andedNodes.values().removeAll(parentData.usedAndedNodes.values());
+
+                // next, process the remaining leaf nodes
+                List<JexlNode> processedLeafNodes = processUnusedLeafNodes(parentData, leafNodes, usedLeafNodes);
+
+                // again, remove the used nodes from the leaf and anded nodes
+                leafNodes.values().removeAll(usedLeafNodes.values());
+                parentData.andedNodes.values().removeAll(parentData.usedAndedNodes.values());
+
+                // rebuild the node if composites are found
+                if (parentData.foundComposite) {
+                    List<JexlNode> processedNodes = new ArrayList<>();
+                    processedNodes.addAll(processedLeafNodes);
+                    processedNodes.addAll(processedNonLeafNodes);
+
+                    // rebuild the node
+                    JexlNode rebuiltNode = createUnwrappedAndNode(processedNodes);
+
+                    // distribute the used nodes into the rebuilt node
+                    if (!usedLeafNodes.values().isEmpty()) {
+                        // first we need to trim the used nodes to eliminate any wrapping nodes
+                        // i.e. reference, reference expression, or single child and/or nodes
+                        List<JexlNode> leafNodesToDistribute = usedLeafNodes.values().stream().map(this::getLeafNode).collect(Collectors.toList());
+                        rebuiltNode = DistributeAndedNodes.distributeAndedNode(rebuiltNode, leafNodesToDistribute, jexlNodeToCompMap);
+                    }
+
+                    return rebuiltNode;
+                }
+
+                return copy(node);
+            }
         }
     }
 
@@ -295,18 +298,8 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
 
     // only descend into delayed predicates or bounded ranges
     @Override
-    public Object visit(ASTReference node, Object data) {
-        if (QueryPropertyMarker.findInstance(node).isAnyTypeExcept(ASTDelayedPredicate.class, BoundedRange.class)) {
-            return copy(node);
-        }
-
-        return super.visit(node, data);
-    }
-
-    // only descend into delayed predicates or bounded ranges
-    @Override
     public Object visit(ASTReferenceExpression node, Object data) {
-        if (QueryPropertyMarker.findInstance(node).isAnyTypeExcept(ASTDelayedPredicate.class, BoundedRange.class)) {
+        if (QueryPropertyMarker.findInstance(node).isAnyTypeExcept(DELAYED, BOUNDED_RANGE)) {
             return copy(node);
         }
 
@@ -519,15 +512,17 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
         if (finalNodes.size() > 1) {
             finalNode = createUnwrappedAndNode(finalNodes);
             if (composite.getJexlNodeList().size() > 1) {
-                JexlNode delayedNode = ASTEvaluationOnly.create(createUnwrappedAndNode(
-                                composite.getJexlNodeList().stream().map(node -> JexlNodeFactory.wrap(copy(node))).collect(Collectors.toList())));
+                JexlNode delayedNode = QueryPropertyMarker.create(createUnwrappedAndNode(
+                                composite.getJexlNodeList().stream().map(node -> JexlNodeFactory.wrap(copy(node))).collect(Collectors.toList())),
+                                EVALUATION_ONLY);
                 finalNode = createUnwrappedAndNode(Arrays.asList(JexlNodeFactory.wrap(finalNode), delayedNode));
             }
         } else {
             finalNode = finalNodes.get(0);
             if (composite.getJexlNodeList().size() > 1 && !(finalNode instanceof ASTEQNode)) {
-                JexlNode delayedNode = ASTEvaluationOnly.create(createUnwrappedAndNode(
-                                composite.getJexlNodeList().stream().map(node -> JexlNodeFactory.wrap(copy(node))).collect(Collectors.toList())));
+                JexlNode delayedNode = QueryPropertyMarker.create(createUnwrappedAndNode(
+                                composite.getJexlNodeList().stream().map(node -> JexlNodeFactory.wrap(copy(node))).collect(Collectors.toList())),
+                                EVALUATION_ONLY);
                 finalNode = createUnwrappedAndNode(Arrays.asList(finalNode, delayedNode));
             }
         }
@@ -916,7 +911,8 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
         }
 
         if (childrenLeafNodes.isEmpty()) {
-            for (JexlNode child : children(rootNode)) {
+            for (int i = 0; i < rootNode.jjtGetNumChildren(); i++) {
+                JexlNode child = rootNode.jjtGetChild(i);
                 JexlNode leafKid = getLeafNode(child);
                 if (leafKid != null) {
                     String kidFieldName;
@@ -943,10 +939,6 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
      * @return The found leaf node, or null
      */
     private JexlNode getLeafNode(JexlNode node) {
-        if (node instanceof ASTReference) {
-            return getLeafNode((ASTReference) node);
-        }
-
         if (node instanceof ASTReferenceExpression) {
             return getLeafNode((ASTReferenceExpression) node);
         }
@@ -970,28 +962,9 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
      *            The node whose children we will check
      * @return The found leaf node, or null
      */
-    private JexlNode getLeafNode(ASTReference node) {
-        // ignore marked nodes
-        if (node.jjtGetNumChildren() == 1 && !QueryPropertyMarker.findInstance(node).isAnyTypeExcept(BoundedRange.class)) {
-            JexlNode kid = node.jjtGetChild(0);
-            if (kid instanceof ASTReferenceExpression) {
-                return getLeafNode((ASTReferenceExpression) kid);
-            }
-        }
-        return null;
-    }
-
-    /**
-     * This method is used to find leaf nodes. Reference, ReferenceExpression, and 'and' or 'or' nodes with a single child are passed through in search of the
-     * actual leaf node.
-     *
-     * @param node
-     *            The node whose children we will check
-     * @return The found leaf node, or null
-     */
     private JexlNode getLeafNode(ASTReferenceExpression node) {
         // ignore marked nodes
-        if (node != null && node.jjtGetNumChildren() == 1 && !QueryPropertyMarker.findInstance(node).isAnyTypeExcept(BoundedRange.class)) {
+        if (node != null && node.jjtGetNumChildren() == 1 && !QueryPropertyMarker.findInstance(node).isAnyTypeExcept(BOUNDED_RANGE)) {
             JexlNode kid = node.jjtGetChild(0);
             if (kid instanceof ASTAndNode) {
                 return getLeafNode((ASTAndNode) kid);
@@ -1016,10 +989,10 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
     private JexlNode getLeafNode(ASTAndNode node) {
         // ignore marked nodes
         QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(node);
-        if (!instance.isAnyType() || instance.isType(BoundedRange.class)) {
+        if (!instance.isAnyType() || instance.isType(BOUNDED_RANGE)) {
             if (node.jjtGetNumChildren() == 1) {
                 return getLeafNode(node.jjtGetChild(0));
-            } else if (instance.isType(BoundedRange.class)) {
+            } else if (instance.isType(BOUNDED_RANGE)) {
                 return node;
             }
         }
@@ -1039,9 +1012,9 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
             if (jexlNodes.size() == 1)
                 return jexlNodes.stream().findFirst().get();
             else {
-                JexlNode andNode = JexlNodeFactory.createUnwrappedAndNode(jexlNodes);
+                JexlNode andNode = JexlNodeFactory.createAndNode(jexlNodes);
                 if (JexlASTHelper.findRange().notMarked().isRange(andNode))
-                    return BoundedRange.create(andNode);
+                    return QueryPropertyMarker.create(andNode, BOUNDED_RANGE);
                 else
                     return andNode;
             }
@@ -1062,7 +1035,7 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
             if (jexlNodes.size() == 1)
                 return jexlNodes.stream().findFirst().get();
             else
-                return JexlNodeFactory.createUnwrappedOrNode(jexlNodes);
+                return JexlNodeFactory.createOrNode(jexlNodes);
         }
         return null;
     }
@@ -1143,8 +1116,9 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
         public Object visit(ASTOrNode node, Object data) {
             DistAndData parentData = (DistAndData) data;
 
-            if (initialNode == null || initialNode instanceof ASTReference || initialNode instanceof ASTReferenceExpression)
+            if (initialNode == null || initialNode instanceof ASTReferenceExpression) {
                 initialNode = node;
+            }
 
             // if this node is one of the anded nodes, or a composite
             // comprised of one of the anded nodes, halt recursion
@@ -1166,7 +1140,8 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
             List<JexlNode> nodesMissingEverything = new ArrayList<>();
             List<JexlNode> nodesWithEverything = new ArrayList<>();
             Map<JexlNode,List<JexlNode>> nodesMissingSomething = new LinkedHashMap<>();
-            for (JexlNode child : children(node)) {
+            for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+                JexlNode child = node.jjtGetChild(i);
                 DistAndData foundData = new DistAndData();
                 JexlNode processedChild = (JexlNode) child.jjtAccept(this, foundData);
 
@@ -1234,8 +1209,9 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
         public Object visit(ASTAndNode node, Object data) {
             DistAndData parentData = (DistAndData) data;
 
-            if (initialNode == null || initialNode instanceof ASTReference || initialNode instanceof ASTReferenceExpression)
+            if (initialNode == null || initialNode instanceof ASTReferenceExpression) {
                 initialNode = node;
+            }
 
             // if this node is one of the anded nodes, or a composite
             // comprised of one of the anded nodes, halt recursion
@@ -1253,10 +1229,9 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
 
             // check each child node to see how many of the desired andedNodes are present
             List<JexlNode> rebuiltChildren = new ArrayList<>();
-            for (JexlNode child : children(node)) {
+            for (int i = 0; i < node.jjtGetNumChildren(); i++) {
                 DistAndData foundData = new DistAndData();
-                rebuiltChildren.add((JexlNode) child.jjtAccept(this, foundData));
-
+                rebuiltChildren.add((JexlNode) node.jjtGetChild(i).jjtAccept(this, foundData));
                 parentData.usedAndedNodes.addAll(foundData.usedAndedNodes);
             }
 
@@ -1331,12 +1306,6 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
         }
 
         @Override
-        public Object visit(ASTReference node, Object data) {
-            visitInternal(node, data);
-            return super.visit(node, data);
-        }
-
-        @Override
         public Object visit(ASTReferenceExpression node, Object data) {
             visitInternal(node, data);
             return super.visit(node, data);
@@ -1358,7 +1327,7 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
         }
 
         private void visitInternal(JexlNode node, Object data) {
-            if (initialNode == null || initialNode instanceof ASTReference || initialNode instanceof ASTReferenceExpression)
+            if (initialNode == null || initialNode instanceof ASTReferenceExpression)
                 initialNode = node;
 
             DistAndData parentData = (DistAndData) data;

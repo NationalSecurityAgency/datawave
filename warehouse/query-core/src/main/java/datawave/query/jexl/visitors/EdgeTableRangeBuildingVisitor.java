@@ -1,7 +1,5 @@
 package datawave.query.jexl.visitors;
 
-import static org.apache.commons.jexl2.parser.JexlNodes.children;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -9,18 +7,20 @@ import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTEQNode;
-import org.apache.commons.jexl2.parser.ASTERNode;
-import org.apache.commons.jexl2.parser.ASTFunctionNode;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ASTNENode;
-import org.apache.commons.jexl2.parser.ASTNRNode;
-import org.apache.commons.jexl2.parser.ASTOrNode;
-import org.apache.commons.jexl2.parser.ASTReference;
-import org.apache.commons.jexl2.parser.ASTReferenceExpression;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.SimpleNode;
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTArguments;
+import org.apache.commons.jexl3.parser.ASTEQNode;
+import org.apache.commons.jexl3.parser.ASTERNode;
+import org.apache.commons.jexl3.parser.ASTFunctionNode;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTNENode;
+import org.apache.commons.jexl3.parser.ASTNRNode;
+import org.apache.commons.jexl3.parser.ASTNamespaceIdentifier;
+import org.apache.commons.jexl3.parser.ASTOrNode;
+import org.apache.commons.jexl3.parser.ASTReference;
+import org.apache.commons.jexl3.parser.ASTReferenceExpression;
+import org.apache.commons.jexl3.parser.JexlNodes;
+import org.apache.commons.jexl3.parser.SimpleNode;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.Sets;
@@ -175,8 +175,8 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
 
         // run the visitor against all of the children
         List<List<? extends EdgeContext>> childContexts = new ArrayList<>(node.jjtGetNumChildren());
-        for (JexlNode child : children(node)) {
-            childContexts.add((List<? extends EdgeContext>) child.jjtAccept(this, null));
+        for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+            childContexts.add((List<? extends EdgeContext>) node.jjtGetChild(i).jjtAccept(this, null));
         }
 
         if (childContexts.isEmpty()) {
@@ -281,8 +281,8 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
 
         // run the visitor against all of the children
         List<List<? extends EdgeContext>> childContexts = new ArrayList<>(node.jjtGetNumChildren());
-        for (JexlNode child : children(node)) {
-            childContexts.add((List<? extends EdgeContext>) child.jjtAccept(this, null));
+        for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+            childContexts.add((List<? extends EdgeContext>) node.jjtGetChild(i).jjtAccept(this, null));
         }
 
         if (childContexts.isEmpty()) {
@@ -458,8 +458,8 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
             throw new IllegalArgumentException("Problem parsing query");
         }
 
-        String identifier = getIdentity(node.jjtGetChild(0));
-        String literal = getLiteral(node.jjtGetChild(1));
+        String identifier = String.valueOf(JexlNodes.getImage(node.jjtGetChild(0)));
+        String literal = String.valueOf(JexlNodes.getImage(node.jjtGetChild(1)));
         List<IdentityContext> contexts = new ArrayList<>();
 
         if (identifier.equals(EDGE_SOURCE) || identifier.equals(EDGE_SINK) || identifier.equals(EDGE_ATTRIBUTE3) || identifier.equals(EDGE_ATTRIBUTE2)) {
@@ -498,39 +498,6 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
     }
 
     /**
-     * Gets the Identity of an expression eg. SOURCE
-     *
-     * @param referenceNode
-     *            a reference node
-     * @return the identity
-     */
-    private String getIdentity(SimpleNode referenceNode) {
-
-        if (referenceNode.jjtGetNumChildren() != 1) {
-            log.error("Reference node (identity) had unexpected number of children: " + referenceNode.jjtGetNumChildren());
-            throw new IllegalArgumentException("Problem parsing query");
-        }
-
-        return referenceNode.jjtGetChild(0).image.toUpperCase();
-    }
-
-    /**
-     * Gets the string literal
-     *
-     * @param referenceNode
-     *            reference node
-     * @return string literal
-     */
-    private String getLiteral(SimpleNode referenceNode) {
-        if (referenceNode.jjtGetNumChildren() != 1) {
-            log.error("Reference node (literal) had unexpected number of children: " + referenceNode.jjtGetNumChildren());
-            throw new IllegalArgumentException("Problem parsing query");
-        }
-
-        return referenceNode.jjtGetChild(0).image;
-    }
-
-    /**
      * Used only for the Edge'Source'QueryLogic Basically function support was an afterthought only to support old code in the existing Edge'Source'QueryLogic A
      * list with a single Identity context is returned in the following format: Identity = FUNCTION Opperator = FUNCTION LITER = "{function string}" //eg
      * source.has_all(SINK, "t1", "t2", ...)
@@ -549,23 +516,25 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
 
         StringBuilder sb = new StringBuilder();
 
-        for (int i = 0; i < node.jjtGetNumChildren(); i++) {
-            if (0 == i) {
-                sb.append(node.jjtGetChild(i).image);
-            } else if (1 == i) {
-                if (!allowedFunctions.contains(node.jjtGetChild(i).image.toLowerCase())) {
-                    BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.FUNCTION_NOT_FOUND,
-                                    node.jjtGetChild(i).image + " not supported function for EdgeQuery");
-                    throw new UnsupportedOperationException(qe);
-                }
-                sb.append(":");
-                sb.append(node.jjtGetChild(i).image);
-            } else if (2 == i) {
+        ASTNamespaceIdentifier namespaceNode = (ASTNamespaceIdentifier) node.jjtGetChild(0);
+        if (!allowedFunctions.contains(namespaceNode.getName().toLowerCase())) {
+            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.FUNCTION_NOT_FOUND,
+                            namespaceNode.getName() + " not supported function for EdgeQuery");
+            throw new UnsupportedOperationException(qe);
+        }
+
+        sb.append(namespaceNode.getNamespace());
+        sb.append(":");
+        sb.append(namespaceNode.getName());
+
+        ASTArguments argsNode = (ASTArguments) node.jjtGetChild(1);
+        for (int i = 0; i < argsNode.jjtGetNumChildren(); i++) {
+            if (i == 0) {
                 sb.append("(");
-                sb.append(getLiteral(node.jjtGetChild(i)));
-            } else if (2 < i) {
+                sb.append(JexlNodes.getImage(argsNode.jjtGetChild(i)));
+            } else {
                 sb.append(", ");
-                sb.append("'" + getLiteral(node.jjtGetChild(i)).toLowerCase() + "'");
+                sb.append("'").append(String.valueOf(JexlNodes.getImage(argsNode.jjtGetChild(i))).toLowerCase()).append("'");
             }
         }
 

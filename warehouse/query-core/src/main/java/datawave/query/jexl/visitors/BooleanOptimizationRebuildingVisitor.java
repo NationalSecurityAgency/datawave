@@ -1,12 +1,13 @@
 package datawave.query.jexl.visitors;
 
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ASTOrNode;
-import org.apache.commons.jexl2.parser.ASTReference;
-import org.apache.commons.jexl2.parser.ASTReferenceExpression;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.ParserTreeConstants;
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTOrNode;
+import org.apache.commons.jexl3.parser.ASTReference;
+import org.apache.commons.jexl3.parser.ASTReferenceExpression;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNodes;
+import org.apache.commons.jexl3.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
 
 import datawave.query.util.Tuple2;
@@ -33,7 +34,7 @@ public class BooleanOptimizationRebuildingVisitor extends RebuildingVisitor {
         node = (ASTAndNode) copy(node);
         if (hasChildOr(node)) {
             ASTOrNode orNode = new ASTOrNode(ParserTreeConstants.JJTORNODE);
-            orNode.image = node.image;
+            JexlNodes.copyImage(node, orNode);
 
             return optimizeTree(node, orNode, data);
         } else {
@@ -45,11 +46,11 @@ public class BooleanOptimizationRebuildingVisitor extends RebuildingVisitor {
     private JexlNode optimizeTree(JexlNode currentNode, JexlNode newNode, Object data) {
         if ((currentNode instanceof ASTAndNode) && hasChildOr(currentNode)) {
             ASTAndNode andNode = new ASTAndNode(ParserTreeConstants.JJTANDNODE);
-            andNode.image = currentNode.image;
+            JexlNodes.copyImage(currentNode, andNode);
             andNode.jjtSetParent(currentNode.jjtGetParent());
 
             ASTOrNode orNode = new ASTOrNode(ParserTreeConstants.JJTORNODE);
-            orNode.image = currentNode.image;
+            JexlNodes.copyImage(currentNode, orNode);
             orNode.jjtSetParent(currentNode.jjtGetParent());
 
             Tuple2<JexlNode,JexlNode> nodes = prune(currentNode, andNode, orNode);

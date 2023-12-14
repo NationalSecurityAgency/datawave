@@ -1,5 +1,7 @@
 package datawave.query.jexl.functions;
 
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.BOUNDED_RANGE;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -12,12 +14,13 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.commons.jexl2.parser.ASTEQNode;
-import org.apache.commons.jexl2.parser.ASTFunctionNode;
-import org.apache.commons.jexl2.parser.ASTGENode;
-import org.apache.commons.jexl2.parser.ASTLENode;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.ParserTreeConstants;
+import org.apache.commons.jexl3.parser.ASTEQNode;
+import org.apache.commons.jexl3.parser.ASTFunctionNode;
+import org.apache.commons.jexl3.parser.ASTGENode;
+import org.apache.commons.jexl3.parser.ASTLENode;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNodes;
+import org.apache.commons.jexl3.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
 import org.locationtech.geowave.core.geotime.util.GeometryUtils;
 import org.locationtech.geowave.core.index.ByteArrayRange;
@@ -44,7 +47,7 @@ import datawave.query.jexl.ArithmeticJexlEngines;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
-import datawave.query.jexl.nodes.BoundedRange;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.GeoWaveUtils;
@@ -83,7 +86,7 @@ public class GeoWaveFunctionsDescriptor implements JexlFunctionArgumentDescripto
         public JexlNode getIndexQuery(ShardQueryConfiguration config, MetadataHelper helper, DateIndexHelper dateIndexHelper, Set<String> datatypeFilter) {
             int maxEnvelopes = Math.max(1, config.getGeoWaveMaxEnvelopes());
             if (isSpatialRelationship(name)) {
-                Geometry geom = AbstractGeometryNormalizer.parseGeometry(args.get(1).image);
+                Geometry geom = AbstractGeometryNormalizer.parseGeometry(String.valueOf(JexlNodes.getImage(args.get(1))));
                 List<Envelope> envelopes = getSeparateEnvelopes(geom, maxEnvelopes);
                 if (!envelopes.isEmpty()) {
 
@@ -130,15 +133,15 @@ public class GeoWaveFunctionsDescriptor implements JexlFunctionArgumentDescripto
                 List<JexlNode> list = Lists.newArrayList();
                 for (int i = 0; i < node.jjtGetNumChildren(); i++) {
                     JexlNode kid = node.jjtGetChild(i);
-                    if (kid.image != null) {
-                        list.add(getIndexNode(kid.image, geometry, env, config, helper));
+                    if (JexlNodes.getImage(kid) != null) {
+                        list.add(getIndexNode(String.valueOf(JexlNodes.getImage(kid)), geometry, env, config, helper));
                     }
                 }
                 if (!list.isEmpty()) {
                     return JexlNodeFactory.createOrNode(list);
                 }
-            } else if (node.image != null) {
-                return getIndexNode(node.image, geometry, env, config, helper);
+            } else if (JexlNodes.getImage(node) != null) {
+                return getIndexNode(String.valueOf(JexlNodes.getImage(node)), geometry, env, config, helper);
             }
             return node;
         }
@@ -148,15 +151,15 @@ public class GeoWaveFunctionsDescriptor implements JexlFunctionArgumentDescripto
                 List<JexlNode> list = Lists.newArrayList();
                 for (int i = 0; i < node.jjtGetNumChildren(); i++) {
                     JexlNode kid = node.jjtGetChild(i);
-                    if (kid.image != null) {
-                        list.add(getIndexNode(kid.image, geometry, envs, config, helper));
+                    if (JexlNodes.getImage(kid) != null) {
+                        list.add(getIndexNode(String.valueOf(JexlNodes.getImage(kid)), geometry, envs, config, helper));
                     }
                 }
                 if (!list.isEmpty()) {
                     return JexlNodeFactory.createOrNode(list);
                 }
-            } else if (node.image != null) {
-                return getIndexNode(node.image, geometry, envs, config, helper);
+            } else if (JexlNodes.getImage(node) != null) {
+                return getIndexNode(String.valueOf(JexlNodes.getImage(node)), geometry, envs, config, helper);
             }
             return node;
         }
@@ -289,7 +292,7 @@ public class GeoWaveFunctionsDescriptor implements JexlFunctionArgumentDescripto
         }
 
         public String getWkt() {
-            return args.get(1).image;
+            return String.valueOf(JexlNodes.getImage(args.get(1)));
         }
     }
 
@@ -300,9 +303,9 @@ public class GeoWaveFunctionsDescriptor implements JexlFunctionArgumentDescripto
 
         Class<?> functionClass = (Class<?>) ArithmeticJexlEngines.functions().get(fvis.namespace());
 
-        if (!GeoWaveFunctions.GEOWAVE_FUNCTION_NAMESPACE.equals(node.jjtGetChild(0).image))
-            throw new IllegalArgumentException("Calling " + this.getClass().getSimpleName() + ".getJexlNodeDescriptor with an unexpected namespace of "
-                            + node.jjtGetChild(0).image);
+        if (!GeoWaveFunctions.GEOWAVE_FUNCTION_NAMESPACE.equals(fvis.namespace()))
+            throw new IllegalArgumentException(
+                            "Calling " + this.getClass().getSimpleName() + ".getJexlNodeDescriptor with an unexpected namespace of " + fvis.namespace());
         if (!functionClass.equals(GeoWaveFunctions.class))
             throw new IllegalArgumentException(
                             "Calling " + this.getClass().getSimpleName() + ".getJexlNodeDescriptor with node for a function in " + functionClass);
@@ -364,7 +367,7 @@ public class GeoWaveFunctionsDescriptor implements JexlFunctionArgumentDescripto
                 JexlNode leNode = JexlNodeFactory.buildNode(new ASTLENode(ParserTreeConstants.JJTLENODE), fieldName,
                                 AbstractGeometryNormalizer.getEncodedStringFromIndexBytes(input.getEnd()));
                 // now link em up
-                return BoundedRange.create(JexlNodeFactory.createAndNode(Arrays.asList(geNode, leNode)));
+                return QueryPropertyMarker.create(JexlNodeFactory.createAndNode(Arrays.asList(geNode, leNode)), BOUNDED_RANGE);
             }
         }
 

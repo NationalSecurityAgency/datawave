@@ -1,22 +1,22 @@
 package datawave.query.jexl.visitors;
 
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.BOUNDED_RANGE;
+
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTFunctionNode;
-import org.apache.commons.jexl2.parser.ASTNENode;
-import org.apache.commons.jexl2.parser.ASTNRNode;
-import org.apache.commons.jexl2.parser.ASTNotNode;
-import org.apache.commons.jexl2.parser.ASTOrNode;
-import org.apache.commons.jexl2.parser.ASTReference;
-import org.apache.commons.jexl2.parser.ASTReferenceExpression;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.JexlNodes;
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTFunctionNode;
+import org.apache.commons.jexl3.parser.ASTNENode;
+import org.apache.commons.jexl3.parser.ASTNRNode;
+import org.apache.commons.jexl3.parser.ASTNotNode;
+import org.apache.commons.jexl3.parser.ASTOrNode;
+import org.apache.commons.jexl3.parser.ASTReferenceExpression;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNodes;
 
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
-import datawave.query.jexl.nodes.BoundedRange;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 
 /**
@@ -118,7 +118,7 @@ public class PushdownNegationVisitor extends BaseVisitor {
                 QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(node);
                 if (instance.isAnyType()) {
                     // do not propagate inside an ivarator marker or bounded range
-                    if (instance.isIvarator() || instance.isType(BoundedRange.class)) {
+                    if (instance.isIvarator() || instance.isType(BOUNDED_RANGE)) {
                         // don't propagate inside
                         return data;
                     }
@@ -152,7 +152,8 @@ public class PushdownNegationVisitor extends BaseVisitor {
 
             if (state.isNegated()) {
                 // replace this node with an EQ node
-                JexlNode eqNode = JexlNodeFactory.buildEQNode(JexlASTHelper.getIdentifier(node), JexlASTHelper.getLiteral(node).image);
+                JexlNode eqNode = JexlNodeFactory.buildEQNode(JexlASTHelper.getIdentifier(node),
+                                String.valueOf(JexlNodes.getImage(JexlASTHelper.getLiteral(node))));
 
                 JexlNodes.swap(node.jjtGetParent(), node, eqNode);
                 state.setNegated(false);
@@ -171,7 +172,8 @@ public class PushdownNegationVisitor extends BaseVisitor {
 
             if (state.isNegated()) {
                 // replace this node with an ER node
-                JexlNode eqNode = JexlNodeFactory.buildERNode(JexlASTHelper.getIdentifier(node), JexlASTHelper.getLiteral(node).image);
+                JexlNode eqNode = JexlNodeFactory.buildERNode(JexlASTHelper.getIdentifier(node),
+                                String.valueOf(JexlNodes.getImage(JexlASTHelper.getLiteral(node))));
 
                 JexlNodes.swap(node.jjtGetParent(), node, eqNode);
                 state.setNegated(false);
@@ -259,14 +261,13 @@ public class PushdownNegationVisitor extends BaseVisitor {
                 return child;
             }
 
-            // check for and remove full node chain of 'NotNode - Ref - RefExpr'
-            JexlNode grandChild = child.jjtGetChild(0);
-            if (grandChild.jjtGetNumChildren() > 0) {
-                JexlNode greatGrandChild = grandChild.jjtGetChild(0);
-                if (child instanceof ASTReference && grandChild instanceof ASTReferenceExpression) {
-                    JexlNodes.swap(toDrop.jjtGetParent(), toDrop, greatGrandChild);
+            // check for and remove full node chain of 'NotNode - RefExpr'
+            if (child.jjtGetNumChildren() > 0) {
+                JexlNode grandChild = child.jjtGetChild(0);
+                if (child instanceof ASTReferenceExpression) {
+                    JexlNodes.swap(toDrop.jjtGetParent(), toDrop, grandChild);
                     state.setNegated(false);
-                    return greatGrandChild;
+                    return grandChild;
                 }
             }
 
