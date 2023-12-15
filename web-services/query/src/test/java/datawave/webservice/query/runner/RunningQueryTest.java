@@ -28,6 +28,8 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.google.common.collect.Sets;
+
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
@@ -37,6 +39,7 @@ import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUser.UserType;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.util.DnUtils;
+import datawave.security.util.WSAuthorizationsUtil;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
@@ -115,6 +118,7 @@ public class RunningQueryTest {
         expect(logic.isLongRunningQuery()).andReturn(false);
         expect(logic.getResultLimit(settings)).andReturn(-1L);
         expect(logic.getMaxResults()).andReturn(-1L);
+        logic.preInitialize(settings, WSAuthorizationsUtil.buildAuthorizations(null));
         expect(logic.getUserOperations()).andReturn(null);
         replay(logic);
 
@@ -137,6 +141,7 @@ public class RunningQueryTest {
         expect(logic.isLongRunningQuery()).andReturn(false);
         expect(logic.getResultLimit(settings)).andReturn(-1L);
         expect(logic.getMaxResults()).andReturn(-1L);
+        logic.preInitialize(settings, WSAuthorizationsUtil.buildAuthorizations(null));
         expect(logic.getUserOperations()).andReturn(null);
         replay(logic);
 
@@ -158,6 +163,7 @@ public class RunningQueryTest {
         Authorizations expected = new Authorizations(auths);
 
         expect(logic.getCollectQueryMetrics()).andReturn(false);
+        logic.preInitialize(settings, WSAuthorizationsUtil.buildAuthorizations(Collections.singleton(Sets.newHashSet("A", "B", "C"))));
         expect(logic.getUserOperations()).andReturn(null);
         replay(logic);
 
