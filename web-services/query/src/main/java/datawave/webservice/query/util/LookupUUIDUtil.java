@@ -26,6 +26,7 @@ import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import datawave.core.query.logic.QueryLogic;
 import datawave.core.query.logic.QueryLogicFactory;
 import datawave.microservice.query.DefaultQueryParameters;
+import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryParameters;
 import datawave.microservice.query.QueryPersistence;
 import datawave.query.data.UUIDType;
@@ -358,7 +359,7 @@ public class LookupUUIDUtil {
             // Override the extraneous query details
             String logicName = queryParameters.getFirst(QueryParameters.QUERY_LOGIC_NAME);
             String queryAuths = queryParameters.getFirst(QueryParameters.QUERY_AUTHORIZATIONS);
-            String userAuths = getAuths(logicName, queryAuths, principal);
+            String userAuths = getAuths(logicName, queryParameters, queryAuths, principal);
             if (queryParameters.containsKey(QueryParameters.QUERY_AUTHORIZATIONS)) {
                 queryParameters.remove(QueryParameters.QUERY_AUTHORIZATIONS);
             }
@@ -429,10 +430,29 @@ public class LookupUUIDUtil {
         return response;
     }
 
-    private String getAuths(String logicName, String queryAuths, Principal principal) {
+    private Query createSettings(Map<String,List<String>> queryParameters) {
+        Query query = responseObjectFactory.getQueryImpl();
+        if (queryParameters != null) {
+            query.setOptionalQueryParameters(queryParameters);
+            for (String key : queryParameters.keySet()) {
+                if (queryParameters.get(key).size() == 1) {
+                    query.addParameter(key, queryParameters.get(key).get(0));
+                }
+            }
+        }
+        return query;
+    }
+
+    private String getAuths(String logicName, Map<String,List<String>> queryParameters, String queryAuths, Principal principal) {
         String userAuths;
         try {
             QueryLogic<?> logic = queryLogicFactory.getQueryLogic(logicName, (DatawavePrincipal) principal);
+            Query settings = createSettings(queryParameters);
+            if (queryAuths == null) {
+                logic.preInitialize(settings, WSAuthorizationsUtil.buildAuthorizations(null));
+            } else {
+                logic.preInitialize(settings, WSAuthorizationsUtil.buildAuthorizations(Collections.singleton(WSAuthorizationsUtil.splitAuths(queryAuths))));
+            }
             // the query principal is our local principal unless the query logic has a different user operations
             DatawavePrincipal queryPrincipal = (DatawavePrincipal) ((logic.getUserOperations() == null) ? principal
                             : logic.getUserOperations().getRemoteUser((DatawavePrincipal) principal));
@@ -584,7 +604,7 @@ public class LookupUUIDUtil {
         String sid = principal.getName();
 
         // Initialize the reusable query input
-        final String userAuths = getAuths(CONTENT_QUERY, null, principal);
+        final String userAuths = getAuths(CONTENT_QUERY, criteria.getQueryParameters(), null, principal);
         final String queryName = sid + '-' + UUID.randomUUID();
         final Date endDate = new Date();
         final Date expireDate = new Date(endDate.getTime() + 1000 * 60 * 60);

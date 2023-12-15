@@ -2,6 +2,7 @@ package datawave.core.query.logic.composite;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -219,6 +220,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
         if (userOperations != null) {
             currentUser = userOperations.getRemoteUser(currentUser);
         }
+        logic.preInitialize(settings, AuthorizationsUtil.buildAuthorizations(Collections.singleton(requestedAuths)));
         if (logic.getUserOperations() != null) {
             queryUser = logic.getUserOperations().getRemoteUser(queryUser);
         }
@@ -513,6 +515,13 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
 
     public void setQueryLogics(Map<String,QueryLogic<?>> queryLogics) {
         this.queryLogics = new TreeMap<>(queryLogics);
+    }
+
+    @Override
+    public void preInitialize(Query settings, Set<Authorizations> queryAuths) {
+        for (QueryLogic logic : getUninitializedLogics().values()) {
+            logic.preInitialize(settings, queryAuths);
+        }
     }
 
     public UserOperations getUserOperations() {

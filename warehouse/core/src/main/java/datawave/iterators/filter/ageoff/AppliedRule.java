@@ -97,7 +97,7 @@ public abstract class AppliedRule implements FilterRule {
      * @see datawave.iterators.filter.ageoff.FilterRule#deepCopy(datawave.iterators.filter.ageoff.AgeOffPeriod)
      */
     @Override
-    public FilterRule deepCopy(AgeOffPeriod period) {
+    public FilterRule deepCopy(AgeOffPeriod period, IteratorEnvironment iterEnv) {
         AppliedRule newFilter;
         try {
             newFilter = (AppliedRule) super.getClass().getDeclaredConstructor().newInstance();
@@ -113,15 +113,11 @@ public abstract class AppliedRule implements FilterRule {
         return null;
     }
 
-    public FilterRule decorate(Object decorator) {
-        return this;
-    }
-
     /**
      * @param scanStart
      * @return
      */
-    public FilterRule deepCopy(long scanStart) {
+    public FilterRule deepCopy(long scanStart, IteratorEnvironment iterEnv) {
         AppliedRule newFilter;
         try {
             newFilter = (AppliedRule) super.getClass().newInstance();

@@ -479,7 +479,7 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
                 for (FilterRule rule : rules) {
                     // NOTE: this propagates the anchor time (scanStart) to all of the applied rules
                     // This is used to calculate the AgeOffPeriod for all of the rules
-                    filterList.add((AppliedRule) rule.deepCopy(this.scanStart));
+                    filterList.add((AppliedRule) rule.deepCopy(this.scanStart, myEnv));
                 }
             }
 
