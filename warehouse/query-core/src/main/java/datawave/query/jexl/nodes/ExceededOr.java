@@ -25,7 +25,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
 
 public class ExceededOr {
     private static final Logger log = ThreadConfigurableLogger.getLogger(ExceededOr.class);
