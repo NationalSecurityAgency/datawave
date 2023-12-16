@@ -33,14 +33,12 @@ public interface FilterRule {
      */
     boolean accept(SortedKeyValueIterator<Key,Value> iter);
 
-    FilterRule decorate(Object decoratedObject);
-
-    FilterRule deepCopy(AgeOffPeriod period);
+    FilterRule deepCopy(AgeOffPeriod period, IteratorEnvironment iterEnv);
 
     /**
      * @param scanStart
      * @return
      */
-    FilterRule deepCopy(long scanStart);
+    FilterRule deepCopy(long scanStart, IteratorEnvironment iterEnv);
 
 }
