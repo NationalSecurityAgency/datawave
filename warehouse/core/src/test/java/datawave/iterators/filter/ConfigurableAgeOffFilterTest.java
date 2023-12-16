@@ -253,7 +253,7 @@ public class ConfigurableAgeOffFilterTest extends EasyMockSupport {
         inner.init(filterOpts);
         Collection<AppliedRule> list = new ArrayList<>();
         // need to do this because otherwise will use 0 as the anchor time
-        AppliedRule copyWithCorrectTimestamp = (AppliedRule) inner.deepCopy(System.currentTimeMillis());
+        AppliedRule copyWithCorrectTimestamp = (AppliedRule) inner.deepCopy(System.currentTimeMillis(), env);
         list.add(copyWithCorrectTimestamp);
         return list;
     }

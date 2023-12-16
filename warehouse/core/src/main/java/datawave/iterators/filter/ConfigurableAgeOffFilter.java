@@ -481,7 +481,7 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
                 for (FilterRule rule : rules) {
                     // NOTE: this propagates the anchor time (scanStart) to all of the applied rules
                     // This is used to calculate the AgeOffPeriod for all of the rules
-                    filterList.add((AppliedRule) rule.deepCopy(this.scanStart));
+                    filterList.add((AppliedRule) rule.deepCopy(this.scanStart, myEnv));
                 }
             }
 
@@ -553,6 +553,7 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
             String propertyValue = options.get(propertyName);
             if (!"true".equals(propertyValue) && !"false".equals(propertyValue)) {
                 log.error(propertyName + " was present, but not a valid boolean." + " Value was: " + propertyValue);
+                return false;
             }
         }
         return true;
