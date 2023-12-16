@@ -87,7 +87,6 @@ public class XMLFieldConfigHelperTest {
 
     private String readFile(String path) {
         StringBuilder sb = new StringBuilder();
-
         InputStream istream = getClass().getClassLoader().getResourceAsStream(path);
         try (Scanner scanner = new Scanner(istream)) {
             while (scanner.hasNext()) {
@@ -229,11 +228,11 @@ public class XMLFieldConfigHelperTest {
     }
 
     @Test
-    public void testFieldConfigHelperWhitelist() throws Exception {
-        InputStream in = ClassLoader.getSystemResourceAsStream("datawave/ingest/test-field-whitelist.xml");
+    public void testFieldConfigHelperAllowlist() throws Exception {
+        InputStream in = ClassLoader.getSystemResourceAsStream("datawave/ingest/test-field-allowlist.xml");
         XMLFieldConfigHelper helper = new XMLFieldConfigHelper(in, ingestHelper);
 
-        // this is whitelist behavior
+        // this is allowlist behavior
         assertFalse(helper.isNoMatchStored());
         assertFalse(helper.isNoMatchIndexed());
         assertFalse(helper.isNoMatchReverseIndexed());
@@ -316,11 +315,11 @@ public class XMLFieldConfigHelperTest {
     }
 
     @Test
-    public void testFieldConfigHelperBlacklist() throws Exception {
-        InputStream in = ClassLoader.getSystemResourceAsStream("datawave/ingest/test-field-blacklist.xml");
+    public void testFieldConfigHelperDisallowlist() throws Exception {
+        InputStream in = ClassLoader.getSystemResourceAsStream("datawave/ingest/test-field-disallowlist.xml");
         XMLFieldConfigHelper helper = new XMLFieldConfigHelper(in, ingestHelper);
 
-        // this is blacklist behavior
+        // this is disallowlist behavior
         assertTrue(helper.isNoMatchStored());
         assertTrue(helper.isNoMatchIndexed());
         assertTrue(helper.isNoMatchReverseIndexed());
