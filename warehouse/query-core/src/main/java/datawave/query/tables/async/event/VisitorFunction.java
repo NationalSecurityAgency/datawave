@@ -476,11 +476,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
      *            the iterator settings
      */
     protected void pruneQueryOptions(ASTJexlScript script, IteratorSetting settings) {
-
-        if (config.isTermFrequenciesRequired() && TermOffsetPopulator.getContentFunctions(script).isEmpty()) {
-            settings.removeOption(QueryOptions.EXCERPT_FIELDS);
-            settings.removeOption(QueryOptions.EXCERPT_ITERATOR);
-        }
+        // stub for now
     }
 
     // push down large fielded lists. Assumes that the hdfs query cache uri and

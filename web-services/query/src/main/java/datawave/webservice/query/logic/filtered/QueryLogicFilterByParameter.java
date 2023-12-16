@@ -54,4 +54,9 @@ public class QueryLogicFilterByParameter extends QueryParameterPredicate impleme
     public void setNegated(boolean negated) {
         this.negated = negated;
     }
+
+    @Override
+    public String toString() {
+        return '(' + super.toString() + " == " + !negated + ')';
+    }
 }
