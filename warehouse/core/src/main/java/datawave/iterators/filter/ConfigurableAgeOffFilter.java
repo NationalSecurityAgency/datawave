@@ -553,6 +553,7 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
             String propertyValue = options.get(propertyName);
             if (!"true".equals(propertyValue) && !"false".equals(propertyValue)) {
                 log.error(propertyName + " was present, but not a valid boolean." + " Value was: " + propertyValue);
+                return false;
             }
         }
         return true;
