@@ -8,7 +8,6 @@ import static datawave.query.jexl.functions.ContentFunctions.CONTENT_WITHIN_FUNC
 import static datawave.query.jexl.functions.ContentFunctions.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME;
 
 import java.text.MessageFormat;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;

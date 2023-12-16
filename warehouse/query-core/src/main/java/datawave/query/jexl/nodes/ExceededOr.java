@@ -1,7 +1,5 @@
 package datawave.query.jexl.nodes;
 
-import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_OR;
-
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -27,6 +25,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
+import datawave.webservice.common.logging.ThreadConfigurableLogger;
 
 public class ExceededOr {
     private static final Logger log = ThreadConfigurableLogger.getLogger(ExceededOr.class);

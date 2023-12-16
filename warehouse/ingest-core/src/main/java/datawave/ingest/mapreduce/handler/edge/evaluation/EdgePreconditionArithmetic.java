@@ -88,6 +88,7 @@ public class EdgePreconditionArithmetic extends JexlArithmetic {
 
     @Override
     public Boolean contains(Object container, Object value) {
+
         if (value == null && container == null) {
             // if both are null L == R
             return true;

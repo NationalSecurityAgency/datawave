@@ -42,7 +42,6 @@ import com.google.common.collect.Sets;
 import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.data.normalizer.IpAddressNormalizer;
 import datawave.data.type.IpAddressType;
-import datawave.data.type.ListType;
 import datawave.data.type.OneToManyNormalizerType;
 import datawave.data.type.Type;
 import datawave.query.config.ShardQueryConfiguration;

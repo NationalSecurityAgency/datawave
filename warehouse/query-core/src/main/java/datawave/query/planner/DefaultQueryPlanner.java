@@ -2041,7 +2041,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     /*
      * (non-Javadoc)
      *
-     * @see PushDownPlanner#rewriteQuery( org.apache .commons.jexl3.parser.ASTJexlScript)
+     * @see PushDownPlanner#rewriteQuery( org.apache.commons.jexl3.parser.ASTJexlScript)
      */
     @Override
     public ASTJexlScript applyRules(final ASTJexlScript queryTree, ScannerFactory scannerFactory, MetadataHelper metadataHelper,

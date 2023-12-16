@@ -27,9 +27,9 @@ public class DefaultArithmetic extends DatawaveArithmetic {
      * This method differs from the parent in that we are not calling String.matches() because it does not match on a newline. Instead we are handling this
      * case.
      *
-     * @param value
-     *            first value
      * @param container
+     *            first value
+     * @param value
      *            second value
      * @return test result.
      */

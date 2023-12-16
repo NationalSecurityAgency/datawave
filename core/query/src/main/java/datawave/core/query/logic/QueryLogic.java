@@ -441,6 +441,17 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      */
     UserOperations getUserOperations();
 
+    /**
+     * This is to be used prior to requesting user operations for a logic that is not yet initialized. The main use case is for the FilteredQueryLogic to allow
+     * it to filter this call as well. Most query logics will not implement this.
+     *
+     * @param settings
+     * @param userAuthorizations
+     */
+    default void preInitialize(Query settings, Set<Authorizations> userAuthorizations) {
+        // noop
+    }
+
     ProxiedUserDetails getCurrentUser();
 
     void setCurrentUser(ProxiedUserDetails currentUser);
