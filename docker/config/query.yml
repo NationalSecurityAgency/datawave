@@ -39,7 +39,8 @@ datawave:
       shortCircuitCheckTimeUnit: MINUTES
       shortCircuitTimeout: 55
       shortCircuitTimeoutUnit: MINUTES
-      maxLongRunningImeoutRetries: 2
+      longRunningQueryTimeout: 24
+      longRunningQueryTimeoutUnit: HOURS
     monitor:
       monitorInterval: 30
       monitorIntervalTimeUnit: SECONDS

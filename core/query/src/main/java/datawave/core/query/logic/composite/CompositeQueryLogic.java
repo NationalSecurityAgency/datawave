@@ -220,7 +220,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
         if (userOperations != null) {
             currentUser = userOperations.getRemoteUser(currentUser);
         }
-        logic.preInitialize(settings, WSAuthorizationsUtil.buildAuthorizations(Collections.singleton(requestedAuths)));
+        logic.preInitialize(settings, AuthorizationsUtil.buildAuthorizations(Collections.singleton(requestedAuths)));
         if (logic.getUserOperations() != null) {
             queryUser = logic.getUserOperations().getRemoteUser(queryUser);
         }

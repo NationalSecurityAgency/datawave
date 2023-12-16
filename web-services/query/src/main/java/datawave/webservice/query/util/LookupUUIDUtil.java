@@ -26,6 +26,7 @@ import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import datawave.core.query.logic.QueryLogic;
 import datawave.core.query.logic.QueryLogicFactory;
 import datawave.microservice.query.DefaultQueryParameters;
+import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryParameters;
 import datawave.microservice.query.QueryPersistence;
 import datawave.query.data.UUIDType;
@@ -429,7 +430,7 @@ public class LookupUUIDUtil {
         return response;
     }
 
-    private Query createSettings(MultivaluedMap<String,String> queryParameters) {
+    private Query createSettings(Map<String,List<String>> queryParameters) {
         Query query = responseObjectFactory.getQueryImpl();
         if (queryParameters != null) {
             query.setOptionalQueryParameters(queryParameters);
@@ -442,10 +443,10 @@ public class LookupUUIDUtil {
         return query;
     }
 
-    private String getAuths(String logicName, MultivaluedMap<String,String> queryParameters, String queryAuths, Principal principal) {
+    private String getAuths(String logicName, Map<String,List<String>> queryParameters, String queryAuths, Principal principal) {
         String userAuths;
         try {
-            QueryLogic<?> logic = queryLogicFactory.getQueryLogic(logicName, principal);
+            QueryLogic<?> logic = queryLogicFactory.getQueryLogic(logicName, (DatawavePrincipal) principal);
             Query settings = createSettings(queryParameters);
             if (queryAuths == null) {
                 logic.preInitialize(settings, WSAuthorizationsUtil.buildAuthorizations(null));
