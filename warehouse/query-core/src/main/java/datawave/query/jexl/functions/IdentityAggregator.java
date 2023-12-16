@@ -2,12 +2,9 @@ package datawave.query.jexl.functions;
 
 import java.io.IOException;
 import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -135,28 +132,16 @@ public class IdentityAggregator extends SeekingAggregator implements FieldIndexA
                         && (filter == null || filter.keep(topKey));
     }
 
-    protected boolean addToDoc(Key topKey, Tuple2<String,String> fieldNameValue, boolean toKeep) {
-        return true;
-    }
-
     protected ByteSequence parseFieldNameValue(ByteSequence cf, ByteSequence cq) {
         return TLD.parseFieldAndValueFromFI(cf, cq);
     }
 
     protected List<Tuple2<String,String>> parserFieldNameValue(Key topKey) {
-        return Arrays.asList(new Tuple2<>(topKey.getColumnFamily().toString().substring(3), parseValue(topKey.getColumnQualifier().toString())));
+        return List.of(new Tuple2<>(topKey.getColumnFamily().toString().substring(3), parseValue(topKey.getColumnQualifier().toString())));
     }
 
-    private static final ArrayByteSequence EMPTY_BYTES = new ArrayByteSequence(new byte[0]);
-
     protected ByteSequence parsePointer(ByteSequence qualifier) {
-        ArrayList<Integer> deezNulls = TLD.lastInstancesOf(0, qualifier, 2);
-        // we want the last two tokens for the datatype and uid
-        if (deezNulls.size() == 2) {
-            final int start = deezNulls.get(1) + 1, stop = qualifier.length();
-            return qualifier.subSequence(start, stop);
-        }
-        return EMPTY_BYTES;
+        return TLD.parseDatatypeUidFromFI(qualifier);
     }
 
     protected String parseValue(String qualifier) {

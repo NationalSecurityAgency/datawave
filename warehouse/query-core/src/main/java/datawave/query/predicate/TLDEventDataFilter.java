@@ -175,7 +175,7 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
     }
 
     private boolean apply(Entry<Key,String> input, boolean update) {
-        // if a TLD, then accept em all, other wise defer to the query field
+        // if a TLD, then accept em all, otherwise defer to the query field
         // filter
         Key current = input.getKey();
         lastParseInfo = getParseInfo(current);
@@ -200,7 +200,7 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
 
     /**
      * Determine if a Key should be kept. If a Key is a part of the TLD it will always be kept as long as we have not exceeded the key count limit for that
-     * field if limits are enabled. Otherwise all TLD Key's will be kept. For a non-TLD the Key will only be kept if it is a nonEvent field which will be used
+     * field if limits are enabled. Otherwise, all TLD Key's will be kept. For a non-TLD the Key will only be kept if it is a nonEvent field which will be used
      * for query evaluation (apply()==true)
      *
      * @param k
@@ -212,9 +212,8 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
     public boolean keep(Key k) {
         // only keep the data from the top level document with fields that matter
         lastParseInfo = getParseInfo(k);
-        boolean root = lastParseInfo.isRoot();
 
-        if (root) {
+        if (lastParseInfo.isRoot()) {
             return k.getColumnQualifier().getLength() == 0 || keepField(k, false, true);
         } else {
             return nonEventFields.contains(lastParseInfo.getField()) && keepField(k, false, false) && apply(k, false);
@@ -259,25 +258,23 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
     }
 
     protected String getUid(Key k) {
-        String uid;
         String cf = k.getColumnFamily().toString();
         if (cf.equals(Constants.TERM_FREQUENCY_COLUMN_FAMILY.toString())) {
             String cq = k.getColumnQualifier().toString();
             int start = cq.indexOf('\0') + 1;
-            uid = cq.substring(start, cq.indexOf('\0', start));
+            return cq.substring(start, cq.indexOf('\0', start));
         } else if (cf.startsWith("fi\0")) {
             String cq = k.getColumnQualifier().toString();
-            uid = cq.substring(cq.lastIndexOf('\0') + 1);
+            return cq.substring(cq.lastIndexOf('\0') + 1);
         } else {
-            uid = cf.substring(cf.lastIndexOf('\0') + 1);
+            return cf.substring(cf.lastIndexOf('\0') + 1);
         }
-        return uid;
     }
 
     private boolean isEventKey(Key k) {
         ByteSequence cf = k.getColumnFamilyData();
-        return !(WritableComparator.compareBytes(cf.getBackingArray(), 0, 2, FI_CF, 0, 2) == 0)
-                        && !(WritableComparator.compareBytes(cf.getBackingArray(), 0, 2, TF_CF, 0, 2) == 00);
+        return (WritableComparator.compareBytes(cf.getBackingArray(), 0, 2, FI_CF, 0, 2) != 0)
+                        && (WritableComparator.compareBytes(cf.getBackingArray(), 0, 2, TF_CF, 0, 2) != 0);
     }
 
     public static boolean isRootPointer(Key k) {
@@ -360,16 +357,13 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
      */
     @Override
     public Range getSeekRange(Key current, Key endKey, boolean endKeyInclusive) {
-        Range range;
         lastParseInfo = getParseInfo(current);
         if (lastParseInfo.isRoot()) {
-            range = getListSeek(current, endKey, endKeyInclusive);
+            return getListSeek(current, endKey, endKeyInclusive);
         } else {
             // only look in children for query related fields
-            range = getQueryFieldRange(current, endKey, endKeyInclusive);
+            return getQueryFieldRange(current, endKey, endKeyInclusive);
         }
-
-        return range;
     }
 
     /**
@@ -384,18 +378,12 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
      * @return the new range or null if a seek should not be performed
      */
     protected Range getQueryFieldRange(Key current, Key endKey, boolean endKeyInclusive) {
-        Range range = null;
-
         // short circuit the seek if the threshold for seeking hasn't been met or it is disabled
         if (bypassSeek()) {
-            return range;
+            return null;
         }
-
-        final String fieldName = lastParseInfo.getField();
         // generate an allowlist seek only on the query fields, without using any previous state
-        range = getAllowlistSeek(current, fieldName, endKey, endKeyInclusive, queryFields, -1);
-
-        return range;
+        return getAllowlistSeek(current, lastParseInfo.getField(), endKey, endKeyInclusive, queryFields, -1);
     }
 
     /**
@@ -410,29 +398,25 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
      * @return if a seek should be performed return a non-null range, otherwise return null
      */
     protected Range getListSeek(Key current, Key endKey, boolean endKeyInclusive) {
-        Range range = null;
-
         // short circuit the seek if the threshold for seeking hasn't been met or it is disabled
         if (bypassSeek()) {
-            return range;
+            return null;
         }
 
         final String fieldName = lastParseInfo.getField();
         // first handle seek due to a field limit, then use the allow/disallow lists if necessary
         if (isFieldLimit(fieldName)) {
-            range = getFieldSeek(current, fieldName, endKey, endKeyInclusive);
+            return getFieldSeek(current, fieldName, endKey, endKeyInclusive);
         }
 
         // if it wasn't a field limit seek then do a normal seek
-        if (range == null) {
-            if (sortedAllowlist != null) {
-                range = getAllowlistSeek(current, fieldName, endKey, endKeyInclusive);
-            } else if (sortedDisallowlist != null) {
-                range = getDisallowlistSeek(current, fieldName, endKey, endKeyInclusive);
-            }
+        if (sortedAllowlist != null) {
+            return getAllowlistSeek(current, fieldName, endKey, endKeyInclusive);
+        } else if (sortedDisallowlist != null) {
+            return getDisallowlistSeek(current, fieldName, endKey, endKeyInclusive);
         }
 
-        return range;
+        return null;
     }
 
     /**
@@ -632,11 +616,9 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
      */
     private Set<String> extractIdentifiersFromScript(ASTJexlScript script) {
         Set<String> ids = new HashSet<>();
-        String field;
         List<ASTIdentifier> identifiers = JexlASTHelper.getIdentifiers(script);
         for (ASTIdentifier identifier : identifiers) {
-            field = JexlASTHelper.deconstructIdentifier(identifier);
-            ids.add(field);
+            ids.add(JexlASTHelper.deconstructIdentifier(identifier));
         }
         return ids;
     }
@@ -654,7 +636,7 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
         Set<String> identifiers = extractIdentifiersFromScript(script);
         fields = Sets.intersection(fields, identifiers);
 
-        queryFields = Lists.newArrayList(fields);
+        queryFields = new ArrayList<>(fields);
         Collections.sort(queryFields);
         queryFields = Collections.unmodifiableList(queryFields);
     }
@@ -670,20 +652,14 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
      */
     private void updateLists(Set<String> allowlist, Set<String> disallowlist) {
         if (allowlist != null && !allowlist.isEmpty()) {
-            // always add the target queryFields into the allowlist in case it is missing
-            for (String field : queryFields) {
-                if (!allowlist.contains(field)) {
-                    allowlist.add(field);
-                }
-            }
+            // always add the target queryFields into the whitelist in case it is missing
+            allowlist.addAll(queryFields);
         }
 
         if (disallowlist != null && !disallowlist.isEmpty()) {
             // ensure that none of the required queryFields are on the disallowlist
             for (String field : queryFields) {
-                if (disallowlist.contains(field)) {
-                    disallowlist.remove(field);
-                }
+                disallowlist.remove(field);
             }
         }
     }
@@ -792,24 +768,21 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
         ByteSequence cf = current.getColumnFamilyData();
 
         if (WritableComparator.compareBytes(cf.getBackingArray(), 0, 2, FI_CF, 0, 2) == 0) {
-            ArrayList<Integer> nullIndexes = TLD.instancesOf(0, cf, 1);
-            final int startFn = nullIndexes.get(0) + 1;
-            final int stopFn = cf.length();
+            int index = TLD.findFirstNull(cf) + 1;
 
-            byte[] fn = new byte[stopFn - startFn];
-
-            System.arraycopy(cf.getBackingArray(), startFn + cf.offset(), fn, 0, stopFn - startFn);
+            int size = cf.length() - index;
+            byte[] fn = new byte[size];
+            System.arraycopy(cf.getBackingArray(), index + cf.offset(), fn, 0, size);
 
             return JexlASTHelper.deconstructIdentifier(new String(fn));
         } else if (WritableComparator.compareBytes(cf.getBackingArray(), 0, 2, TF_CF, 0, 2) == 0) {
             ByteSequence cq = current.getColumnQualifierData();
-            ArrayList<Integer> nullIndexes = TLD.lastInstancesOf(0, cq, 1);
-            final int startFn = nullIndexes.get(0) + 1;
-            final int stopFn = cq.length();
 
-            byte[] fn = new byte[stopFn - startFn];
+            int index = TLD.findFirstNullReverse(cq) + 1;
 
-            System.arraycopy(cq.getBackingArray(), startFn + cq.offset(), fn, 0, stopFn - startFn);
+            int size = cq.length() - index;
+            byte[] fn = new byte[size];
+            System.arraycopy(cq.getBackingArray(), index + cq.offset(), fn, 0, size);
 
             return JexlASTHelper.deconstructIdentifier(new String(fn));
         } else {
@@ -817,11 +790,7 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
             final int length = cq.length;
             int stopIndex = -1;
             for (int i = 0; i < length - 1; i++) {
-                if (cq[i] == 0x00) {
-                    stopIndex = i;
-                    break;
-                } else if (cq[i] == 0x2E) {
-                    // test for '.' used in grouping notation
+                if (cq[i] == 0x00 || cq[i] == 0x2E) {
                     stopIndex = i;
                     break;
                 }

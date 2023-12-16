@@ -304,7 +304,6 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         replayAll();
 
         Key key1 = new Key("row", "column", "FIELD1" + Constants.NULL_BYTE_STRING + "value");
-        Key key2 = new Key("row", "column", "FIELD2" + Constants.NULL_BYTE_STRING + "value");
         Map<String,ExpressionFilter> expressionFilters = getExpressionFilters(mockScript, new AttributeFactory(mockTypeMetadata));
         filter = new TLDEventDataFilter(mockScript, Collections.singleton("FIELD"), expressionFilters, null, null, 3, -1, fieldLimits, "LIMIT_FIELD",
                         Collections.emptySet());
@@ -498,7 +497,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         ASTJexlScript newScript = FunctionIndexQueryExpansionVisitor.expandFunctions(config, helper, helper2, script);
 
         Map<String,ExpressionFilter> expressionFilters = getExpressionFilters(newScript, new AttributeFactory(mockTypeMetadata));
-        filter = new TLDEventDataFilter(newScript, Sets.newHashSet("FOO", "BAR"), expressionFilters, null, null, -1, 1);
+        filter = new TLDEventDataFilter(newScript, Set.of("FOO", "BAR"), expressionFilters, null, null, -1, 1);
 
         assertTrue(filter.queryFields.contains("FOO"));
         assertTrue(filter.queryFields.contains("BAR"));
@@ -518,7 +517,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         ASTJexlScript newScript = FunctionIndexQueryExpansionVisitor.expandFunctions(config, helper, helper2, script);
 
         Map<String,ExpressionFilter> expressionFilters = getExpressionFilters(mockScript, new AttributeFactory(mockTypeMetadata));
-        filter = new TLDEventDataFilter(newScript, Sets.newHashSet("FOO", "BAR"), expressionFilters, null, null, -1, 1);
+        filter = new TLDEventDataFilter(newScript, Set.of("FOO", "BAR"), expressionFilters, null, null, -1, 1);
 
         assertTrue(filter.queryFields.contains("FOO"));
     }
@@ -537,7 +536,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         ASTJexlScript newScript = FunctionIndexQueryExpansionVisitor.expandFunctions(config, helper, helper2, script);
 
         Map<String,ExpressionFilter> expressionFilters = getExpressionFilters(newScript, new AttributeFactory(mockTypeMetadata));
-        filter = new TLDEventDataFilter(newScript, Sets.newHashSet("FOO", "BAR"), expressionFilters, null, null, -1, 1);
+        filter = new TLDEventDataFilter(newScript, Set.of("FOO", "BAR"), expressionFilters, null, null, -1, 1);
 
         assertTrue(filter.queryFields.contains("BAR"));
     }
@@ -556,7 +555,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         ASTJexlScript newScript = FunctionIndexQueryExpansionVisitor.expandFunctions(config, helper, helper2, script);
 
         Map<String,ExpressionFilter> expressionFilters = getExpressionFilters(newScript, new AttributeFactory(mockTypeMetadata));
-        filter = new TLDEventDataFilter(newScript, Sets.newHashSet("FOO", "BAR"), expressionFilters, null, null, -1, 1);
+        filter = new TLDEventDataFilter(newScript, Set.of("FOO", "BAR"), expressionFilters, null, null, -1, 1);
 
         assertTrue(filter.queryFields.contains("BAR"));
         assertTrue(filter.queryFields.contains("FOO"));
@@ -634,7 +633,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         replayAll();
 
         Map<String,ExpressionFilter> expressionFilters = getExpressionFilters(script, new AttributeFactory(mockTypeMetadata));
-        filter = new TLDEventDataFilter(script, Sets.newHashSet("FOO", "FOO2"), expressionFilters, null, null, -1, -1);
+        filter = new TLDEventDataFilter(script, Set.of("FOO", "FOO2"), expressionFilters, null, null, -1, -1);
 
         // asserts that 'termOffsetMap' is not considered a query field
         // asserts that malformed field 'Foo2' is not considered a query field
@@ -650,7 +649,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         replayAll();
 
         Map<String,ExpressionFilter> expressionFilters = getExpressionFilters(script, new AttributeFactory(mockTypeMetadata));
-        filter = new TLDEventDataFilter(script, Sets.newHashSet("FOO", "FOO2"), expressionFilters, null, null, 1, 1);
+        filter = new TLDEventDataFilter(script, Set.of("FOO", "FOO2"), expressionFilters, null, null, 1, 1);
 
         Key k1 = new Key("row", "datatype\u0000d8zay2.-3pnndm.-anolok", "FOO\0bar");
         Key k2 = new Key("row", "datatype\u0000d8zay2.-3pnndm.-anolok.1", "FOO2\0value1");
