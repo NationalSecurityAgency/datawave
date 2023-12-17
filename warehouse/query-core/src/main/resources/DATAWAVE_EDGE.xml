@@ -13,7 +13,7 @@
         <Mapping fieldName="SOURCE" modelFieldName="VERTEXA" direction="FORWARD" indexOnly="false" columnVisibility="PUBLIC"/>
         
         <Mapping fieldName="SINK" modelFieldName="VERTEXB" direction="REVERSE" indexOnly="false" columnVisibility="PUBLIC"/>
-        <Mapping fieldName="SINK" modelFieldName="VERTEXB" direction="FORWARD" indexOnly="false columnVisibility="PUBLIC""/>
+        <Mapping fieldName="SINK" modelFieldName="VERTEXB" direction="FORWARD" indexOnly="false" columnVisibility="PUBLIC"/>
         
         <Mapping fieldName="RELATION" modelFieldName="RELATION" direction="REVERSE" indexOnly="false" columnVisibility="PUBLIC"/>
         <Mapping fieldName="RELATION" modelFieldName="RELATION" direction="FORWARD" indexOnly="false" columnVisibility="PUBLIC"/>
