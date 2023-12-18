@@ -501,6 +501,9 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
                         + AgeOffTtlUnits.MINUTES + ", " + AgeOffTtlUnits.SECONDS + ", or " + AgeOffTtlUnits.MILLISECONDS + "[default = d])");
         options.put(AgeOffConfigParams.TTL_SHORT_CIRCUIT, "Interval after which no data is aged off allowing this filter to bypass calling the filters");
         options.put(AgeOffConfigParams.FILTER_CONFIG, "URL to the age off filter configuration file.");
+        options.put(AgeOffConfigParams.DISABLE_ON_NON_FULL_MAJC,
+                        "If set to 'true', then filters will be disabled for system-initialized full major compactions (non-full majc).  Deprecated.  Use "
+                                        + AgeOffConfigParams.ONLY_ON_USER_COMPACTION);
         options.put(AgeOffConfigParams.ONLY_ON_USER_COMPACTION,
                         "If set to 'true' then filters will only be used for user-initiated major compactions and not system initiated ones. [default = false]");
         return new IteratorOptions("cfgAgeoff", "ConfigurableAgeOffFilter removes entries with timestamps more than <ttl> milliseconds old", options, null);
