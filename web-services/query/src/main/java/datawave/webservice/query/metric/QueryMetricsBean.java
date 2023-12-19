@@ -9,6 +9,7 @@ import javax.annotation.Resource;
 import javax.annotation.security.DeclareRoles;
 import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
+import javax.ejb.DependsOn;
 import javax.ejb.EJBContext;
 import javax.ejb.LocalBean;
 import javax.ejb.Stateless;
@@ -18,8 +19,6 @@ import javax.ejb.TransactionManagement;
 import javax.ejb.TransactionManagementType;
 import javax.inject.Inject;
 import javax.interceptor.Interceptors;
-import javax.jms.Destination;
-import javax.jms.JMSContext;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -57,16 +56,13 @@ import datawave.webservice.query.map.QueryGeometryResponse;
 @DeclareRoles({"AuthorizedUser", "AuthorizedQueryServer", "InternalUser", "Administrator", "MetricsAdministrator"})
 @Stateless
 @LocalBean
+@DependsOn("QueryMetricsWriter")
 @TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED)
 @TransactionManagement(TransactionManagementType.BEAN)
 @Exclude(ifProjectStage = DatawaveEmbeddedProjectStageHolder.DatawaveEmbedded.class)
 public class QueryMetricsBean {
 
     private static final Logger log = Logger.getLogger(QueryMetricsBean.class);
-    @Inject
-    private JMSContext jmsContext;
-    @Resource(mappedName = "java:/queue/QueryMetrics")
-    private Destination dest;
     @Resource
     private EJBContext ctx;
     @Inject
@@ -81,6 +77,8 @@ public class QueryMetricsBean {
     @Inject
     @SpringBean(name = "QueryMetricsWriterConfiguration", refreshable = true)
     private QueryMetricsWriterConfiguration queryMetricsWriterConfiguration;
+    @Inject
+    private QueryMetricsWriter queryMetricsWriter;
 
     /*
      * @PermitAll is necessary because this method is called indirectly from the @PreDestroy method of the QueryExpirationBean and the QueryExpirationBean's
@@ -93,7 +91,9 @@ public class QueryMetricsBean {
 
         try {
             metric.setLastUpdated(new Date());
-            sendQueryMetric(dp, metric);
+            // Must duplicate the metric here to produce a snapshot of the metric as
+            // it is subject to change when another action is performed on the query
+            queryMetricsWriter.addMetricToQueue(new QueryMetricHolder(dp, metric.duplicate()));
             // PageMetrics now know their own page numbers
             // this should keep large queries from blowing up the queue
             // Leave the last page on the list so that interceptors can update it.
@@ -355,13 +355,5 @@ public class QueryMetricsBean {
             dp = (DatawavePrincipal) p;
         }
         return dp;
-    }
-
-    public void sendQueryMetric(DatawavePrincipal principal, BaseQueryMetric queryMetric) throws Exception {
-
-        QueryMetricHolder queryMetricHolder = new QueryMetricHolder(principal, queryMetric);
-        QueryMetricMessage msg = new QueryMetricMessage(queryMetricHolder);
-
-        jmsContext.createProducer().send(dest, msg);
     }
 }
