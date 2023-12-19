@@ -446,7 +446,7 @@ public class LookupUUIDUtil {
             log.debug("Final query parameters: " + parms);
             query.setOptionalQueryParameters(parms);
             for (String key : parms.keySet()) {
-                if (queryParameters.get(key).size() == 1) {
+                if (parms.get(key).size() == 1) {
                     query.addParameter(key, parms.getFirst(key));
                 }
             }
