@@ -628,8 +628,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
                         if (fieldValue != null) {
                             String[] arr = fieldValue.split(" : ", 2);
                             if (arr.length == 2) {
-                                RangeCounts rangeCounts = getRangeCounts(arr);
-                                subplans.put(arr[0], rangeCounts);
+                                subplans.put(arr[0], getRangeCounts(arr[1]));
                             }
                         }
                     } else if (fieldName.equals("QUERY_LOGIC")) {
@@ -763,10 +762,10 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
         }
     }
 
-    private static RangeCounts getRangeCounts(String[] arr) {
+    private static RangeCounts getRangeCounts(String s) {
         RangeCounts ranges = new RangeCounts();
         int index = 0;
-        for (String count : arr[1].substring(1, arr[1].length() - 1).split(", ")) {
+        for (String count : StringUtils.split(s, ",")) {
             if (index == 0) {
                 ranges.setDocumentRangeCount(Integer.parseInt(count));
             } else if (index == 1) {
