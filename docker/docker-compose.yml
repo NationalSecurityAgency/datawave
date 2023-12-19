@@ -1,0 +1,351 @@
+version: '2.2'
+volumes:
+  quickstart_data:
+  hadoop_conf:
+
+services:
+  quickstart:
+    profiles:
+      - quickstart
+    command: ["datawave-bootstrap.sh", "--web"]
+    image: datawave/quickstart-compose:6.5.0-SNAPSHOT
+    environment:
+      - DW_CONTAINER_HOST=quickstart
+      - DW_DATAWAVE_WEB_JAVA_OPTS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:8787 -Duser.timezone=GMT -Dfile.encoding=UTF-8 -Djava.net.preferIPv4Stack=true
+    ports:
+      # resource manager web ui
+      - "8088:8088"
+      # resource manager
+      - "8032:8032"
+      # node manager web ui
+      - "8042:8042"
+      # namenode server
+      - "9000:9000"
+      # namenode web ui
+      - "9870:9870"
+      # datanode web ui
+      - "9864:9864"
+      # jobhistory web ui
+      - "8021:8021"
+      # accumulo monitor
+      - "9995:9995"
+      # web server
+      - "8443:8443"
+      # web server debug port
+      - "8787:8787"
+    extra_hosts:
+      - "${DW_HOSTNAME}:${DW_HOST_IP}"
+      - "${DW_HOST_FQDN}:${DW_HOST_IP}"
+    volumes:
+      - hadoop_conf:/opt/datawave/contrib/datawave-quickstart/hadoop/client/conf
+      - quickstart_data:/opt/datawave/contrib/datawave-quickstart/data
+      - ./logs:/logs
+    networks:
+      - demo
+    healthcheck:
+      test: ["CMD-SHELL", "! accumuloStatus | grep DW-WARN > /dev/null"]
+
+  consul:
+    image: consul:1.15.4
+    hostname: localhost
+    environment:
+      - 'CONSUL_LOCAL_CONFIG={"log_level": "trace", "datacenter": "demo_dc", "disable_update_check": true, "enable_agent_tls_for_checks": true, "addresses": {"https": "0.0.0.0"}, "ports": {"https": 8501, "grpc_tls": 8503}, "tls": {"defaults": {"key_file": "/etc/pki/testServer.key", "cert_file": "/etc/pki/testServer.crt", "ca_file": "/etc/pki/testCA.pem", "verify_outgoing": true}, "internal_rpc": {"verify_server_hostname": false}}}'
+      - CONSUL_BIND_INTERFACE=eth0
+    # defined as host:container
+    ports:
+      - "8400"
+      - "8500:8500"
+      - "8501:8501"
+      - "8503:8503"
+      - "53"
+    volumes:
+      - ${PKI_DIR:-./pki}:/etc/pki:ro
+    networks:
+      - demo
+
+  rabbitmq:
+    image: rabbitmq:3.12.4-alpine
+    volumes:
+      - ${RABBITMQ_CONFIG_DIR:-./rabbitmq-config}:/etc/rabbitmq
+      - ./logs:/logs
+    environment:
+      - TCP_PORTS=15672, 5672
+      - RABBITMQ_ERLANG_COOKIE="mycookie"
+    ports:
+      - "15672:15672"
+    networks:
+      - demo
+    depends_on:
+      consul:
+        condition: service_started
+
+  configuration:
+    entrypoint: [ "java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005","-jar","app.jar" ]
+    image: datawave/config-service:3.0.1-SNAPSHOT
+    command:
+      - --spring.output.ansi.enabled=ALWAYS
+      - --spring.profiles.active=consul,native,open_actuator
+      - --spring.cloud.consul.host=consul
+      - --spring.cloud.config.server.native.searchLocations=file:///microservice-config
+    environment:
+      - 'KEYSTORE_LOCATION=file:///etc/pki/testServer.p12'
+      - KEYSTORE_PASSWORD=ChangeIt
+      - KEY_ALIAS=certificate
+    ports:
+      - "8888:8888"
+      - "5005:5005"
+    volumes:
+      - ${CONFIG_DIR:-./config}:/microservice-config:ro
+      - ${PKI_DIR:-./pki}:/etc/pki:ro
+      - ./logs:/logs
+    networks:
+      - demo
+    depends_on:
+      rabbitmq:
+        condition: service_started
+
+  cache:
+    entrypoint: [ "java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005","-jar","app.jar" ]
+    image: datawave/hazelcast-service:3.0.1-SNAPSHOT
+    scale: 1
+    command:
+      - --spring.profiles.active=consul,compose,remoteauth
+      - --spring.output.ansi.enabled=ALWAYS
+      - --spring.cloud.consul.host=consul
+      - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${random.value}
+    ports:
+      - "5701-5703"
+      - "8080"
+      - "8843:8443"
+      - "5006:5005"
+    volumes:
+      - ${PKI_DIR:-./pki}:/etc/pki:ro
+      - ./logs:/logs
+    networks:
+      - demo
+    healthcheck:
+      test: curl -f http://localhost:8080/cache/mgmt/health
+      interval: 10s
+      timeout: 1s
+      start_period: 45s
+      retries: 3
+    depends_on:
+      configuration:
+        condition: service_started
+
+  authorization:
+    entrypoint: [ "java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005","-jar","app.jar" ]
+    image: datawave/authorization-service:3.0.1-SNAPSHOT
+    command:
+      - --spring.output.ansi.enabled=ALWAYS
+      - --spring.profiles.active=consul,mock,compose
+      - --spring.cloud.consul.host=consul
+      - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${random.value}
+    ports:
+      - "8080"
+      - "8343:8443"
+      - "5007:5005"
+    volumes:
+      - ${PKI_DIR:-./pki}:/etc/pki:ro
+      - ./logs:/logs
+    networks:
+      - demo
+    healthcheck:
+      test: curl -f http://localhost:8080/authorization/mgmt/health
+      interval: 10s
+      timeout: 1s
+      start_period: 20s
+      retries: 3
+    depends_on:
+      cache:
+        condition: service_healthy
+
+  accumulo:
+    profiles:
+      - accumulo
+      - full
+    entrypoint: [ "java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005","-jar","app.jar" ]
+    image: datawave/accumulo-service:3.0.1-SNAPSHOT
+    command:
+      - --spring.output.ansi.enabled=ALWAYS
+      - --spring.profiles.active=consul,compose,remoteauth
+      - --spring.cloud.consul.host=consul
+      - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${random.value}
+    environment:
+      - AUDIT_SERVER_URL=http://audit:8080/audit
+      - ZOOKEEPER_HOST=${DW_ZOOKEEPER_HOST}
+    # This mapping is required to enable the metrics service to communicate
+    # with host-deployed services like hadoop, zookeeper, and accumulo.
+    # These values are set locally in .env via bootstrap.sh
+    extra_hosts:
+      - "${DW_HOSTNAME}:${DW_HOST_IP}"
+      - "${DW_HOST_FQDN}:${DW_HOST_IP}"
+    ports:
+      - "9143:8443"
+      - "5008:5005"
+    volumes:
+      - ${PKI_DIR:-./pki}:/etc/pki:ro
+      - ./logs:/logs
+    networks:
+      - demo
+    healthcheck:
+      test: curl -f http://localhost:8080/accumulo/mgmt/health
+      interval: 10s
+      timeout: 1s
+      start_period: 45s
+      retries: 3
+    depends_on:
+      authorization:
+        condition: service_healthy
+
+  audit:
+    entrypoint: [ "java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005","-jar","app.jar" ]
+    image: datawave/audit-service:3.0.2-SNAPSHOT
+    command:
+      - --spring.output.ansi.enabled=ALWAYS
+      - --spring.profiles.active=consul,compose,remoteauth
+      - --spring.cloud.consul.host=consul
+      - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${random.value}
+    environment:
+      - ZOOKEEPER_HOST=${DW_ZOOKEEPER_HOST}
+    # This mapping is required to enable the audit service to communicate
+    # with host-deployed services like hadoop, zookeeper, and accumulo.
+    # These values are set locally in .env via bootstrap.sh
+    extra_hosts:
+      - "${DW_HOSTNAME}:${DW_HOST_IP}"
+      - "${DW_HOST_FQDN}:${DW_HOST_IP}"
+    ports:
+      - "8080"
+      - "9043:8443"
+      - "5009:5005"
+    volumes:
+      - ${PKI_DIR:-./pki}:/etc/pki:ro
+      - ./logs:/logs
+    networks:
+      - demo
+    healthcheck:
+      test: curl -f http://localhost:8080/audit/mgmt/health
+      interval: 10s
+      timeout: 1s
+      start_period: 30s
+      retries: 3
+    depends_on:
+      authorization:
+        condition: service_healthy
+
+  metrics:
+    entrypoint: ["java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005","-jar","app.jar"]
+    image: datawave/query-metric-service:3.0.7-SNAPSHOT
+    command:
+      - --spring.output.ansi.enabled=ALWAYS
+      - --spring.profiles.active=consul,compose,remoteauth
+      - --spring.cloud.consul.host=consul
+      - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${random.value}
+    environment:
+      - ZOOKEEPER_HOST=${DW_ZOOKEEPER_HOST}
+    # This mapping is required to enable the metrics service to communicate
+    # with host-deployed services like hadoop, zookeeper, and accumulo.
+    # These values are set locally in .env via bootstrap.sh
+    extra_hosts:
+      - "${DW_HOSTNAME}:${DW_HOST_IP}"
+      - "${DW_HOST_FQDN}:${DW_HOST_IP}"
+    ports:
+      - "8180:8080"
+      - "8543:8443"
+      - "5010:5005"
+    volumes:
+      - ${PKI_DIR:-./pki}:/etc/pki:ro
+      - ./logs:/logs
+    networks:
+      - demo
+    healthcheck:
+      test: curl -f http://localhost:8080/querymetric/mgmt/health
+      interval: 10s
+      timeout: 1s
+      start_period: 45s
+      retries: 3
+    depends_on:
+      authorization:
+        condition: service_healthy
+
+  dictionary:
+#    profiles:
+#      - dictionary
+#      - full
+    entrypoint: [ "java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005","-jar","app.jar" ]
+    image: datawave/dictionary-service:3.0.1-SNAPSHOT
+    command:
+      - --spring.output.ansi.enabled=ALWAYS
+      - --spring.profiles.active=consul,compose,remoteauth
+      - --spring.cloud.consul.host=consul
+      - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${random.value}
+    environment:
+      - ZOOKEEPER_HOST=${DW_ZOOKEEPER_HOST}
+    # This mapping is required to enable the metrics service to communicate
+    # with host-deployed services like hadoop, zookeeper, and accumulo.
+    # These values are set locally in .env via bootstrap.sh
+    extra_hosts:
+      - "${DW_HOSTNAME}:${DW_HOST_IP}"
+      - "${DW_HOST_FQDN}:${DW_HOST_IP}"
+    ports:
+      - "8280:8080"
+      - "8643:8443"
+      - "5011:5005"
+    volumes:
+      - ${PKI_DIR:-./pki}:/etc/pki:ro
+      - ./logs:/logs
+    networks:
+      - demo
+    healthcheck:
+      test: curl -f http://localhost:8080/dictionary/mgmt/health
+    depends_on:
+      authorization:
+        condition: service_healthy
+
+  # If you use the management center, you can connect to the hazelcast cache as follows:
+  # In your browser connect to https://localhost:9243/
+  # Enable 'dev' mode
+  # Click 'Add Cluster Config'
+  # Enter the following for the cache service:
+  #  - Cluster Name: cache
+  #  - Cluster Config: Enabled
+  #  - Member Addresses: cache
+  # Enter the following for the query metric service:
+  #  - Cluster Name: metrics
+  #  - Cluster Config: Enabled
+  #  - Member Addresses: metrics
+  # Use the console to view the cache contents
+  #  - Select the 'cache' cluster
+  #  - Select 'Console' under the 'CLUSTER' navigation entry
+  #  - Run the following commands to list all entries in the 'datawaveUsers' map:
+  #    - ns datawaveUsers
+  #    - m.entries
+  management-center:
+    profiles:
+      - management
+      - full
+    image: hazelcast/management-center:5.1.2
+    environment:
+      - |-
+        JAVA_OPTS=
+        -Dhazelcast.mc.healthCheck.enable=true
+        -Dhazelcast.mc.tls.enabled=true
+        -Dhazelcast.mc.tls.keyStore=/etc/pki/testServer.p12
+        -Dhazelcast.mc.tls.keyStorePassword=ChangeIt
+        -Dhazelcast.mc.tls.trustStore=/etc/pki/testCA.p12
+        -Dhazelcast.mc.tls.trustStorePassword=ChangeIt
+    ports:
+      - "8081"
+      - "9243:8443"
+    volumes:
+      - ${PKI_DIR:-./pki}:/etc/pki:ro
+    networks:
+      - demo
+    healthcheck:
+      test: wget -q http://localhost:8081/health -O /dev/null || exit 1
+    depends_on:
+      cache:
+        condition: service_healthy
+
+networks:
+  demo:

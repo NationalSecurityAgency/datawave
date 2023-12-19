@@ -586,6 +586,8 @@
 
     <bean id="HitHighlights" parent="baseQueryLogic" scope="prototype"  class="datawave.query.tables.IndexQueryLogic">
         <property name="tableName" value="${shard.table.name}" />
+        <property name="dateIndexTableName" value="${date.index.table.name}" />
+        <property name="dateIndexHelperFactory" ref="dateIndexHelperFactory" />
         <property name="metadataTableName" value="${metadata.table.name}" />
         <property name="metadataHelperFactory" ref="metadataHelperFactory" />
         <property name="indexTableName" value="${index.table.name}" />

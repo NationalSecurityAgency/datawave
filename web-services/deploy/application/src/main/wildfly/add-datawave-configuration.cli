@@ -116,6 +116,20 @@ module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.ap
 /system-property=dw.remoteDatawaveUserService.host:add(value=${security.remoteuserservice.host})
 /system-property=dw.remoteDatawaveUserService.port:add(value=${security.remoteuserservice.port})
 
+# Audit microservice config
+/system-property=dw.audit.use.remoteauditservice:add(value=${auditing.use.remoteauditservice})
+/system-property=dw.remoteDatawaveAuditService.useSrvDnsLookup:add(value=${auditing.remoteauditservice.srv.lookup.enabled})
+/system-property=dw.remoteDatawaveAuditService.srvDnsServers:add(value=${auditing.remoteauditservice.srv.lookup.servers})
+/system-property=dw.remoteDatawaveAuditService.srvDnsPort:add(value=${auditing.remoteauditservice.srv.lookup.port})
+/system-property=dw.remoteDatawaveAuditService.scheme:add(value=${auditing.remoteauditservice.scheme})
+/system-property=dw.remoteDatawaveAuditService.host:add(value=${auditing.remoteauditservice.host})
+/system-property=dw.remoteDatawaveAuditService.port:add(value=${auditing.remoteauditservice.port})
+
+# Dictionary microservice config
+/system-property=dw.remoteDictionary.scheme:add(value=${dictionary.remoteservice.scheme})
+/system-property=dw.remoteDictionary.host:add(value=${dictionary.remoteservice.host})
+/system-property=dw.remoteDictionary.port:add(value=${dictionary.remoteservice.port})
+
 # Accumulo microservice config
 /system-property=dw.remoteAccumuloService.useSrvDnsLookup:add(value=${accumulo.remoteservice.srv.lookup.enabled})
 /system-property=dw.remoteAccumuloService.srvDnsServers:add(value=${accumulo.remoteservice.srv.lookup.servers})
