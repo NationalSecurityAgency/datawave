@@ -24,6 +24,8 @@ public class MetadataTableConfigHelper extends AbstractTableConfigHelper {
         if (tableName != null) {
             for (IteratorScope scope : IteratorScope.values()) {
                 setFrequencyCombiner(tops, scope.name());
+                setIndexCombiner(tops, scope.name());
+                setReverseIndexCombiner(tops, scope.name());
                 setCombinerForCountMetadata(tops, scope.name());
                 setCombinerForEdgeMetadata(tops, scope.name());
             }
@@ -31,7 +33,7 @@ public class MetadataTableConfigHelper extends AbstractTableConfigHelper {
 
     }
 
-    // add the EdgeMetadataCombiner to the edge column
+    // Add the EdgeMetadataCombiner to the edge column.
     private String setCombinerForEdgeMetadata(TableOperations tops, String scopeName)
                     throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
         String stem = String.format("%s%s.%s", Property.TABLE_ITERATOR_PREFIX, scopeName, "EdgeMetadataCombiner");
@@ -40,7 +42,7 @@ public class MetadataTableConfigHelper extends AbstractTableConfigHelper {
         return stem;
     }
 
-    // add the CountMetadataCombiner to the count column
+    // Add the CountMetadataCombiner to the count column.
     private String setCombinerForCountMetadata(TableOperations tops, String scopeName)
                     throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
         String stem = String.format("%s%s.%s", Property.TABLE_ITERATOR_PREFIX, scopeName, "CountMetadataCombiner");
@@ -49,11 +51,31 @@ public class MetadataTableConfigHelper extends AbstractTableConfigHelper {
         return stem;
     }
 
-    // add the EdgeMetadataCombiner to the edge column
+    // Add the SummingCombiner to the frequency column.
     private String setFrequencyCombiner(TableOperations tops, String scopeName) throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
         String stem = String.format("%s%s.%s", Property.TABLE_ITERATOR_PREFIX, scopeName, "FrequencyCombiner");
         setPropertyIfNecessary(tableName, stem, "10," + SummingCombiner.class.getName(), tops, log);
         setPropertyIfNecessary(tableName, stem + ".opt.columns", ColumnFamilyConstants.COLF_F.toString(), tops, log);
+        setPropertyIfNecessary(tableName, stem + ".opt.type", "VARLEN", tops, log);
+        return stem;
+    }
+
+    // Add the SummingCombiner to the indexed column.
+    private String setIndexCombiner(TableOperations tops, String scopeName) throws AccumuloException, TableNotFoundException, AccumuloSecurityException {
+        String stem = String.format("%s%s.%s", Property.TABLE_ITERATOR_PREFIX, scopeName, "IndexCombiner");
+        setPropertyIfNecessary(tableName, stem, "11," + SummingCombiner.class.getName(), tops, log);
+        setPropertyIfNecessary(tableName, stem + ".opt.columns", ColumnFamilyConstants.COLF_I.toString(), tops, log);
+        setPropertyIfNecessary(tableName, stem + ".opt.lossy", "true", tops, log);
+        setPropertyIfNecessary(tableName, stem + ".opt.type", "VARLEN", tops, log);
+        return stem;
+    }
+
+    // Add the SummingCombiner to the reverse indexed column.
+    private String setReverseIndexCombiner(TableOperations tops, String scopeName) throws AccumuloException, TableNotFoundException, AccumuloSecurityException {
+        String stem = String.format("%s%s.%s", Property.TABLE_ITERATOR_PREFIX, scopeName, "ReverseIndexCombiner");
+        setPropertyIfNecessary(tableName, stem, "12," + SummingCombiner.class.getName(), tops, log);
+        setPropertyIfNecessary(tableName, stem + ".opt.columns", ColumnFamilyConstants.COLF_I.toString(), tops, log);
+        setPropertyIfNecessary(tableName, stem + ".opt.lossy", "true", tops, log);
         setPropertyIfNecessary(tableName, stem + ".opt.type", "VARLEN", tops, log);
         return stem;
     }
