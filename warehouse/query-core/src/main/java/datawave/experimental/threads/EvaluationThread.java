@@ -69,7 +69,7 @@ public class EvaluationThread implements Runnable {
                 long applyDuration = System.currentTimeMillis();
                 boolean matched = evaluation.apply(tuple);
                 applyDuration = System.currentTimeMillis() - applyDuration;
-                log.info("apply duration: " + applyDuration);
+                log.trace("apply duration: " + applyDuration);
                 totalApply += applyDuration;
 
                 if (matched) {
@@ -106,7 +106,7 @@ public class EvaluationThread implements Runnable {
             }
         }
         offerDuration = System.currentTimeMillis() - offerDuration;
-        log.info("offer duration: " + offerDuration);
+        log.trace("offer duration: " + offerDuration);
         totalOfferDuration += offerDuration;
     }
 }

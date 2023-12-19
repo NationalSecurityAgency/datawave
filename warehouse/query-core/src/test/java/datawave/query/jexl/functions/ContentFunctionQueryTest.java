@@ -324,8 +324,10 @@ public class ContentFunctionQueryTest {
 
         Iterator iter = getResultsIterator(queryString, logic, optionalParams);
         List<DefaultEvent> events = new ArrayList<>();
-        while (iter.hasNext())
+        while (iter.hasNext()) {
             events.add((DefaultEvent) iter.next());
+        }
+        logic.close();
         return events;
     }
 

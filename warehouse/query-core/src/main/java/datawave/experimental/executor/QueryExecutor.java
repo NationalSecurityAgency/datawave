@@ -23,7 +23,6 @@ import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.log4j.Logger;
 
-import datawave.experimental.QueryTermVisitor;
 import datawave.experimental.fi.ParallelUidScanner;
 import datawave.experimental.fi.SerialUidScanner;
 import datawave.experimental.fi.UidScanner;
@@ -33,6 +32,8 @@ import datawave.experimental.scanner.tf.TermFrequencyConfiguredScanner;
 import datawave.experimental.scanner.tf.TermFrequencyScanner;
 import datawave.experimental.scanner.tf.TermFrequencySequentialScanner;
 import datawave.experimental.threads.EvaluationThread;
+import datawave.experimental.util.ScanStats;
+import datawave.experimental.visitor.QueryTermVisitor;
 import datawave.query.Constants;
 import datawave.query.attributes.AttributeFactory;
 import datawave.query.attributes.Document;
@@ -64,8 +65,6 @@ public class QueryExecutor implements Runnable {
 
     private final QueryExecutorOptions options;
 
-    Set<JexlNode> terms;
-
     private final Set<String> nonEventFields = new HashSet<>();
 
     private final PreNormalizedAttributeFactory preNormalizedAttributeFactory;
@@ -91,8 +90,11 @@ public class QueryExecutor implements Runnable {
     private final int numEvaluationThreads = 1;
     private final ExecutorService evaluationThreadPool = Executors.newFixedThreadPool(numEvaluationThreads);
 
+    private ScanStats stats;
+    private ScanStats globalStats;
+
     public QueryExecutor(QueryExecutorOptions options, MetadataHelper metadataHelper, BlockingQueue<Entry<Key,Value>> results, ExecutorService uidThreadPool,
-                    ExecutorService documentThreadPool) {
+                    ExecutorService documentThreadPool, ScanStats globalStats) {
         setupTime = System.currentTimeMillis();
 
         this.options = options;
@@ -111,13 +113,17 @@ public class QueryExecutor implements Runnable {
         this.uidThreadPool = uidThreadPool;
         this.documentThreadPool = documentThreadPool;
 
-        this.terms = QueryTermVisitor.parse(options.getScript());
-
         this.fiScanner = getFieldIndexScanner();
         this.eventScanner = getEventScanner();
         this.tfScanner = getTfScanner();
 
         this.shard = options.getRange().getStartKey().getRow().toString();
+
+        if (options.isStatsEnabled()) {
+            this.globalStats = globalStats;
+            this.stats = new ScanStats();
+        }
+
         setupTime = System.currentTimeMillis() - setupTime;
     }
 
@@ -171,6 +177,9 @@ public class QueryExecutor implements Runnable {
                     } catch (InterruptedException e) {
                         throw new RuntimeException(e);
                     }
+                }
+                if (stats != null) {
+                    stats.incrementDocumentsEvaluated();
                 }
             });
             futures.add(future);
@@ -230,7 +239,13 @@ public class QueryExecutor implements Runnable {
         long duration = System.currentTimeMillis() - start;
         log.info("setup time: " + setupTime);
         log.info("query executor for " + shard + " executed in " + duration + " ms, docs evaluated: " + uids.size() + ", docs returned " + returned);
-        // TODO -- log stats here
+
+        if (stats != null) {
+            stats.logStats(log);
+            if (globalStats != null) {
+                globalStats.merge(stats);
+            }
+        }
     }
 
     /**
@@ -248,6 +263,10 @@ public class QueryExecutor implements Runnable {
                 e.printStackTrace();
                 throw new RuntimeException(e);
             }
+        }
+
+        if (stats != null) {
+            stats.incrementDocumentsReturned();
         }
     }
 
@@ -275,6 +294,7 @@ public class QueryExecutor implements Runnable {
         Set<String> indexOnlyFields = checkQueryForIndexOnlyFields();
         if (!indexOnlyFields.isEmpty()) {
             // fetch index only fields from the FieldIndex
+            Set<JexlNode> terms = QueryTermVisitor.parse(options.getScript());
             fiScanner.fetchIndexOnlyFields(d, shard, dtUid, indexOnlyFields, terms);
         }
 
@@ -315,6 +335,10 @@ public class QueryExecutor implements Runnable {
             }
         }
         return queryTermFrequencyFields;
+    }
+
+    public ScanStats getStats() {
+        return stats;
     }
 
     /**

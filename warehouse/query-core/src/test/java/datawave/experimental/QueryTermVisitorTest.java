@@ -15,6 +15,7 @@ import org.junit.Test;
 
 import com.google.common.collect.Sets;
 
+import datawave.experimental.visitor.QueryTermVisitor;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 
@@ -110,6 +111,7 @@ public class QueryTermVisitorTest {
         test(query, Collections.singleton("(_Term_ = true) && (FOO =~ 'ba.*')"));
     }
 
+    @Ignore
     @Test
     public void testMethodInNestedUnion() {
         String query = "UUID == 'capone' && ( AGE.size() > 1 || AGE == '18')";

@@ -15,6 +15,7 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.Multimap;
@@ -77,6 +78,7 @@ public class TermFrequencyConfiguredScanner extends AbstractTermFrequencyScanner
 
             scanner.addScanIterator(setting);
             scanner.setRange(createRange(shard, uid));
+            scanner.fetchColumnFamily(new Text("tf"));
 
             Map<String,TermFrequencyList> termOffsetMap = new HashMap<>();
             TermWeightPosition.Builder position = new TermWeightPosition.Builder();
@@ -112,8 +114,8 @@ public class TermFrequencyConfiguredScanner extends AbstractTermFrequencyScanner
     }
 
     private Range createRange(String shard, String uid) {
-        Key start = new Key(shard, "tf", uid);
-        Key stop = start.followingKey(PartialKey.ROW_COLFAM);
+        Key start = new Key(shard, "tf", uid + '\0');
+        Key stop = new Key(shard, "tf", uid + '\1');
         return new Range(start, true, stop, false);
     }
 

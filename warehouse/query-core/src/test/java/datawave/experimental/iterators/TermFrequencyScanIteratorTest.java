@@ -98,8 +98,8 @@ class TermFrequencyScanIteratorTest {
     }
 
     private Range getRange(String uid) {
-        Key start = new Key("20201212_0", "tf", "dt\0" + uid);
-        Key stop = start.followingKey(PartialKey.ROW_COLFAM);
+        Key start = new Key("20201212_0", "tf", "dt\0" + uid + "\0");
+        Key stop = new Key("20201212_0", "tf", "dt\0" + uid + "\1");
         return new Range(start, true, stop, false);
     }
 }

@@ -23,8 +23,8 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.TreeMultimap;
 import com.google.protobuf.InvalidProtocolBufferException;
 
-import datawave.experimental.QueryTermVisitor;
 import datawave.experimental.util.ScanStats;
+import datawave.experimental.visitor.QueryTermVisitor;
 import datawave.ingest.protobuf.TermWeight;
 import datawave.ingest.protobuf.TermWeightPosition;
 import datawave.query.Constants;
@@ -154,8 +154,6 @@ public class TermFrequencySequentialScanner extends AbstractTermFrequencyScanner
 
                 // need to add fragment to the document for the case of a non-indexed, tokenized field
                 d.put(field, new Content(value, entry.getKey(), true));
-
-                scanStats.incrementNextTermFrequency();
             }
         } catch (TableNotFoundException | InvalidProtocolBufferException e) {
             e.printStackTrace();

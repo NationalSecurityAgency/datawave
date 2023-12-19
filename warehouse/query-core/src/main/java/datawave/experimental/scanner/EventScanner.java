@@ -54,7 +54,6 @@ public class EventScanner {
                 field = parser.getField();
                 attr = attributeFactory.create(parser.getField(), parser.getValue(), entry.getKey(), true);
                 d.put(field, attr);
-                scanStats.incrementNextDocumentAggregation();
             }
         } catch (Exception e) {
             e.printStackTrace();

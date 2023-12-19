@@ -37,7 +37,7 @@ public class FieldIndexScanIterator implements SortedKeyValueIterator<Key,Value>
     private IteratorEnvironment env;
 
     private Key tk;
-    private Value tv = new Value();
+    private final Value tv = new Value();
 
     private final FieldIndexKey parser = new FieldIndexKey();
     private TreeMultimap<String,String> fieldValues;
@@ -118,9 +118,9 @@ public class FieldIndexScanIterator implements SortedKeyValueIterator<Key,Value>
 
     @Override
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
-        seekRange = computeRange(range);
+        this.seekRange = computeRange(range);
         this.columnFamilies = columnFamilies;
-        source.seek(seekRange, columnFamilies, inclusive);
+        this.source.seek(seekRange, columnFamilies, inclusive);
         next();
     }
 

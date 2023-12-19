@@ -27,6 +27,9 @@ import datawave.query.attributes.Document;
 import datawave.query.data.parsers.FieldIndexKey;
 import datawave.query.jexl.JexlASTHelper;
 
+/**
+ * Outstanding work: datatype filtering/optimization
+ */
 public class FieldIndexScanner {
 
     private static final Logger log = Logger.getLogger(FieldIndexScanner.class);
@@ -113,7 +116,6 @@ public class FieldIndexScanner {
                 value = parser.getValue();
                 attr = preNormalizedAttributeFactory.create(field, value, entry.getKey(), parser.getDatatype(), true, false);
                 d.put(field, attr);
-                scanStats.incrementNextFieldIndex();
             }
         } catch (Exception e) {
             e.printStackTrace();

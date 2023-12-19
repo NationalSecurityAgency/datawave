@@ -70,6 +70,12 @@ class QueryExecutorTest {
     }
 
     @Test
+    void testSimpleRegex() {
+        String query = "FIRST_NAME =~ 'al.*'";
+        test(query, util.getAliceUids());
+    }
+
+    @Test
     void testContentPhrase() {
         String query = "content:phrase(TOK, termOffsetMap, 'the', 'message') && TOK == 'the' && TOK == 'message'";
         test(query, new TreeSet<>(List.of("-cjkuoi.9y3aaa.qlnjxw", "-chnv91.hvt1xa.adw8fk", "g744x6.-d6xbm0.-9bgxtu")));
@@ -101,19 +107,45 @@ class QueryExecutorTest {
         // default options
         test(expectedUids, options);
 
+        // uid parallel scan
+        options.setUidParallelScan(true);
+        test(expectedUids, options);
+        options.setUidParallelScan(false);
+
+        // uid sequential scan
+        options.setUidSequentialScan(true);
+        test(expectedUids, options);
+        options.setUidSequentialScan(false);
+
+        // parallel event scan
+        options.setDocumentParallelScan(true);
+        test(expectedUids, options);
+        options.setDocumentParallelScan(false);
+
+        // sequential event scan
+        options.setDocumentSequentialScan(true);
+        test(expectedUids, options);
+        options.setDocumentSequentialScan(false);
+
         // tf configured scan
-        options.setTfSequentialScan(false);
         options.setTfConfiguredScan(true);
         test(expectedUids, options);
 
         // tf configured scan with seeking
         options.setTfSeekingConfiguredScan(true);
         test(expectedUids, options);
+
+        // expected optimal default settings
+        options.setUidParallelScan(true);
+        // parallel doc
+        options.setTfConfiguredScan(true);
+        options.setTfSeekingConfiguredScan(true);
+        test(expectedUids, options);
     }
 
     private void test(Set<String> expectedUids, QueryExecutorOptions options) {
         ArrayBlockingQueue<Entry<Key,Value>> results = new ArrayBlockingQueue<>(100);
-        QueryExecutor executor = new QueryExecutor(options, null, results, uidThreadPool, documentThreadPool);
+        QueryExecutor executor = new QueryExecutor(options, null, results, uidThreadPool, documentThreadPool, null);
         Future<?> future = executorService.submit(executor);
         while (!(future.isDone() || future.isCancelled())) {
             try {

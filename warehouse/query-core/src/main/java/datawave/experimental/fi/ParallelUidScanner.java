@@ -14,9 +14,9 @@ import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.log4j.Logger;
 
-import datawave.experimental.QueryTermVisitor;
 import datawave.experimental.intersect.UidIntersection;
 import datawave.experimental.intersect.UidIntersectionStrategy;
+import datawave.experimental.visitor.QueryTermVisitor;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 

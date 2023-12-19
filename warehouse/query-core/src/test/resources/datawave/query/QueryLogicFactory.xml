@@ -258,9 +258,18 @@
     </bean>
 
     <bean id="DefaultQueryExecutorOptions" scope="prototype" class="datawave.experimental.executor.QueryExecutorOptions">
+        <!--   controls how document uids are found     -->
+        <property name="uidParallelScan" value="false"/>
+        <property name="uidSequentialScan" value="false"/>
+        <!--   controls how documents are aggregated     -->
+        <property name="documentParallelScan" value="false"/>
+        <property name="documentSequentialScan" value="false"/>
+        <!--   controls how tfs are aggregated     -->
         <property name="tfSequentialScan" value="false"/>
         <property name="tfConfiguredScan" value="false"/>
         <property name="tfSeekingConfiguredScan" value="false"/>
+        <!--   should stats be gathered/logged     -->
+        <property name="statsEnabled" value="false"/>
     </bean>
 
     <bean id="TLDEventQuery" scope="prototype" parent="BaseEventQuery" class="datawave.query.tables.TLDQueryLogic">

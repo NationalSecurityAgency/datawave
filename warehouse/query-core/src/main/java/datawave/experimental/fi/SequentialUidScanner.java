@@ -23,10 +23,10 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.TreeMultimap;
 
-import datawave.experimental.QueryTermVisitor;
 import datawave.experimental.intersect.UidIntersection;
 import datawave.experimental.intersect.UidIntersectionStrategy;
 import datawave.experimental.iterators.FieldIndexScanIterator;
+import datawave.experimental.visitor.QueryTermVisitor;
 import datawave.query.data.parsers.FieldIndexKey;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;

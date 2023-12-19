@@ -26,6 +26,7 @@ import com.google.common.util.concurrent.MoreExecutors;
 
 import datawave.experimental.executor.QueryExecutor;
 import datawave.experimental.executor.QueryExecutorFactory;
+import datawave.experimental.util.ScanStats;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.tables.stats.ScanSessionStats;
@@ -72,6 +73,8 @@ public class RemoteScheduler extends Scheduler implements FutureCallback<QueryEx
     private ExecutorService uidThreadPool; // for getting uids
     private ExecutorService documentThreadPool; // for aggregating documents
 
+    private ScanStats stats = new ScanStats();
+
     /**
      * This scheduler requires knowledge of the query's ShardQueryConfiguration
      *
@@ -104,7 +107,7 @@ public class RemoteScheduler extends Scheduler implements FutureCallback<QueryEx
         documentThreadPool = new ThreadPoolExecutor(threads, threads, 1L, TimeUnit.MINUTES, new LinkedBlockingQueue<>());
         documentThreadPool = MoreExecutors.listeningDecorator(documentThreadPool);
 
-        QueryExecutorFactory executorFactory = new QueryExecutorFactory(config, metadataHelper, results, uidThreadPool, documentThreadPool);
+        QueryExecutorFactory executorFactory = new QueryExecutorFactory(config, metadataHelper, results, uidThreadPool, documentThreadPool, stats);
 
         QueryPlanThreadExceptionHandler queryPlanExceptionHandler = new QueryPlanThreadExceptionHandler(this);
         RemoteSchedulerThreadFactory queryPlanThreadFactory = new RemoteSchedulerThreadFactory("QueryPlanThreadFactory", queryPlanExceptionHandler);
@@ -116,7 +119,6 @@ public class RemoteScheduler extends Scheduler implements FutureCallback<QueryEx
                         this);
         ListenableFuture<QueryPlanIterator> f = (ListenableFuture<QueryPlanIterator>) queryPlanThreadPool.submit(queryPlanIterator);
         Futures.addCallback(f, queryPlanCallback, queryPlanThreadPool);
-
     }
 
     /**
@@ -133,6 +135,10 @@ public class RemoteScheduler extends Scheduler implements FutureCallback<QueryEx
         executorThreadPool.shutdownNow();
         documentThreadPool.shutdownNow();
         uidThreadPool.shutdownNow();
+        if (stats != null) {
+            log.info("=== Remote Scheduler Scan Stats ===");
+            stats.logStats(log);
+        }
     }
 
     /**

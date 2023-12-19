@@ -50,6 +50,8 @@ public class QueryExecutorOptions {
     // use a custom TF iterator to perform server-side filtering with a seeking scan
     private boolean tfSeekingConfiguredScan = false;
 
+    private boolean statsEnabled = true;
+
     private Range range;
     private String query;
     private ASTJexlScript script;
@@ -211,16 +213,32 @@ public class QueryExecutorOptions {
         return uidParallelScan;
     }
 
+    public void setUidParallelScan(boolean uidParallelScan) {
+        this.uidParallelScan = uidParallelScan;
+    }
+
     public boolean isUidSequentialScan() {
         return uidSequentialScan;
+    }
+
+    public void setUidSequentialScan(boolean uidSequentialScan) {
+        this.uidSequentialScan = uidSequentialScan;
     }
 
     public boolean isDocumentParallelScan() {
         return documentParallelScan;
     }
 
+    public void setDocumentParallelScan(boolean documentParallelScan) {
+        this.documentParallelScan = documentParallelScan;
+    }
+
     public boolean isDocumentSequentialScan() {
         return documentSequentialScan;
+    }
+
+    public void setDocumentSequentialScan(boolean documentSequentialScan) {
+        this.documentSequentialScan = documentSequentialScan;
     }
 
     public boolean isTfConfiguredScan() {
@@ -269,5 +287,13 @@ public class QueryExecutorOptions {
 
     public void setTfSeekingConfiguredScan(boolean tfSeekingConfiguredScan) {
         this.tfSeekingConfiguredScan = tfSeekingConfiguredScan;
+    }
+
+    public boolean isStatsEnabled() {
+        return statsEnabled;
+    }
+
+    public void setStatsEnabled(boolean statsEnabled) {
+        this.statsEnabled = statsEnabled;
     }
 }

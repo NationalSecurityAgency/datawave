@@ -1,13 +1,10 @@
 package datawave.experimental.fi;
 
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import org.junit.BeforeClass;
-
-import com.google.common.collect.Sets;
 
 import datawave.experimental.util.AccumuloUtil;
 import datawave.util.TableName;
@@ -23,6 +20,7 @@ public class ParallelUidScannerTest extends UidScannerTest {
         util.loadData();
     }
 
+    @Override
     protected void test(String query, Set<String> expected) {
         ParallelUidScanner scan = new ParallelUidScanner(fieldIndexPool, util.getClient(), util.getAuths(), TableName.SHARD, "scanId");
         test(scan, query, expected);

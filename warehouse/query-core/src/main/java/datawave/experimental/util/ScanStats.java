@@ -2,48 +2,60 @@ package datawave.experimental.util;
 
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.apache.log4j.Logger;
+
+/**
+ * Scan stats provide some insight into how the {@link datawave.experimental.executor.QueryExecutor} performs across several categories
+ * <p>
+ * Low level iterator stats
+ * <ul>
+ * <li>next count</li>
+ * <li>seek count</li>
+ * <li>keys traversed</li>
+ * <li>keys returned</li>
+ * </ul>
+ * <p>
+ * Document stats
+ * <ul>
+ * <li>documents evaluated</li>
+ * <li>documents returned</li>
+ * </ul>
+ * <p>
+ * Shard Stats
+ * <ul>
+ * <li>Number of shards searched</li>
+ * <li>Number of shards with zero results</li>
+ * <li>Min/Max/Avg documents considered per shard</li>
+ * <li>Min/Max/Avg documents evaluated per shard</li>
+ * <li>Min/Max/Avg documents returned per shard</li>
+ * </ul>
+ * <p>
+ * Timing Stats
+ * <ul>
+ * <li>field index, time to find candidate documents</li>
+ * <li>index only, time to aggregate index-only fields</li>
+ * <li>event, time to aggregate event data</li>
+ * <li>tf, time to aggregate term offsets</li>
+ * <li>potentially other stats like evaluation time, offer time, etc</li>
+ * </ul>
+ *
+ */
 public class ScanStats {
 
-    // next counts
-    private final AtomicLong nextFieldIndex = new AtomicLong();
-    private final AtomicLong nextDocumentAggregation = new AtomicLong();
-    private final AtomicLong nextTermFrequency = new AtomicLong();
-
-    // the number of candidate uids found in the field index
-    private final AtomicLong uidsTotal = new AtomicLong();
     private final AtomicLong documentsEvaluated = new AtomicLong(); // documents seen
     private final AtomicLong documentsReturned = new AtomicLong(); // documents matched
+
+    private final AtomicLong shardsSearched = new AtomicLong(); // shards searched
 
     public ScanStats() {
         // empty constructor
     }
 
     public ScanStats merge(ScanStats other) {
-        this.nextFieldIndex.addAndGet(other.nextFieldIndex.get());
-        this.nextDocumentAggregation.addAndGet(other.nextDocumentAggregation.get());
-        this.nextTermFrequency.addAndGet(other.nextTermFrequency.get());
-
-        this.uidsTotal.addAndGet(other.uidsTotal.get());
         this.documentsEvaluated.addAndGet(other.documentsEvaluated.get());
         this.documentsReturned.addAndGet(other.documentsReturned.get());
-
+        this.shardsSearched.addAndGet(1L);
         return this;
-    }
-
-    public void incrementNextFieldIndex() {
-        nextFieldIndex.getAndIncrement();
-    }
-
-    public void incrementNextDocumentAggregation() {
-        nextDocumentAggregation.getAndIncrement();
-    }
-
-    public void incrementNextTermFrequency() {
-        nextTermFrequency.getAndIncrement();
-    }
-
-    public void incrementUidsTotal(long delta) {
-        uidsTotal.getAndAdd(delta);
     }
 
     public void incrementDocumentsEvaluated() {
@@ -51,20 +63,17 @@ public class ScanStats {
     }
 
     public void incrementDocumentsReturned() {
-        documentsEvaluated.getAndIncrement();
+        documentsReturned.getAndIncrement();
     }
 
-    public Long getNextTotal() {
-        return nextFieldIndex.get() + nextDocumentAggregation.get() + nextTermFrequency.get();
+    public void logStats(Logger log) {
+        log.info("docs.evaluated: " + documentsEvaluated.get());
+        log.info("docs.returned: " + documentsReturned.get());
+        log.info("shards.searched: " + shardsSearched.get());
     }
 
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("next.fi: ").append(nextFieldIndex.get()).append('\n');
-        sb.append("next.doc: ").append(nextDocumentAggregation.get()).append('\n');
-        sb.append("next.tf: ").append(nextTermFrequency.get()).append('\n');
-        sb.append("next.total: ").append(getNextTotal()).append('\n');
-        sb.append("uids.total: ").append(uidsTotal.get()).append('\n');
         sb.append("docs.evaluated: ").append(documentsEvaluated.get()).append('\n');
         sb.append("docs.returned: ").append(documentsReturned.get()).append('\n');
         return sb.toString();

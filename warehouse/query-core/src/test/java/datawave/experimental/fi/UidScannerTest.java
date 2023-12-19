@@ -23,8 +23,8 @@ import com.google.common.collect.Sets;
 
 import datawave.data.type.NumberType;
 import datawave.data.type.Type;
-import datawave.experimental.QueryTermVisitor;
 import datawave.experimental.util.AccumuloUtil;
+import datawave.experimental.visitor.QueryTermVisitor;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.util.TableName;
 
