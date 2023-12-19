@@ -433,7 +433,9 @@ public class LookupUUIDUtil {
         Query query = responseObjectFactory.getQueryImpl();
         if (queryParameters != null) {
             MultivaluedMap<String,String> parms = new MultivaluedMapImpl<>();
-            parms.putAll(defaultOptionalParams);
+            if (defaultOptionalParams != null) {
+                parms.putAll(defaultOptionalParams);
+            }
             String params = queryParameters.getFirst(QueryParameters.QUERY_PARAMS);
             if (params != null) {
                 for (QueryImpl.Parameter pm : QueryUtil.parseParameters(params)) {
