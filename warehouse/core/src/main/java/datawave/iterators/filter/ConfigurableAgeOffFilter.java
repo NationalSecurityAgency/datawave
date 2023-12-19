@@ -138,6 +138,8 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
 
     protected IteratorEnvironment myEnv;
 
+    private PluginEnvironment pluginEnv;
+
     // Adding the ability to disable the filter checks in the case of a system-initialized major compaction for example.
     // The thought is that we force compactions where we want the data to aged off.
     // The system-initialized compactions are on data just imported in which case they are not expected to remove much.
@@ -200,6 +202,7 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
     public SortedKeyValueIterator<Key,Value> deepCopy(IteratorEnvironment env) {
 
         myEnv = env;
+        pluginEnv = env == null ? null : env.getPluginEnv();
         return ((ConfigurableAgeOffFilter) super.deepCopy(env)).initialize(this);
     }
 
@@ -304,6 +307,7 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
         super.init(source, options, env);
 
         myEnv = env;
+        pluginEnv = env == null ? null : env.getPluginEnv();
         disabled = shouldDisableForNonFullCompaction(options, env) || shouldDisableForNonUserCompaction(options, env);
 
         Preconditions.checkNotNull(options, "Configuration filename and " + "the default ttl must be set for the ConfigurableAgeOffFilter");
@@ -458,12 +462,10 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
     }
 
     private long getLongProperty(final String prop, final long defaultValue) {
-        if (this.myEnv != null && this.myEnv.getConfig() != null) {
-            AccumuloConfiguration conf = this.myEnv.getConfig();
-            Map<String,String> properties = new TreeMap<>();
-            conf.getProperties(properties, p -> Objects.equals(prop, p));
-            if (properties.containsKey(prop)) {
-                return Long.parseLong(properties.get(prop));
+        if (pluginEnv != null && pluginEnv.getConfiguration() != null) {
+            String propValue = pluginEnv.getConfiguration().get(prop);
+            if (propValue != null) {
+                return Long.parseLong(propValue);
             }
         }
         return defaultValue;
