@@ -27,6 +27,7 @@ import datawave.webservice.common.audit.AuditParameters;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.webservice.common.exception.NoResultsException;
 import datawave.webservice.query.Query;
+import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.QueryParameters;
 import datawave.webservice.query.QueryParametersImpl;
 import datawave.webservice.query.QueryPersistence;
@@ -427,20 +428,33 @@ public class LookupUUIDUtil {
         return response;
     }
     
-    private Query createSettings(MultivaluedMap<String,String> queryParameters) {
+    public Query createSettings(MultivaluedMap<String,String> queryParameters) {
+        log.debug("Initial query parameters: " + queryParameters);
         Query query = responseObjectFactory.getQueryImpl();
         if (queryParameters != null) {
-            query.setOptionalQueryParameters(queryParameters);
-            for (String key : queryParameters.keySet()) {
-                if (queryParameters.get(key).size() == 1) {
-                    query.addParameter(key, queryParameters.get(key).get(0));
+            MultivaluedMap<String,String> expandedQueryParameters = new MultivaluedMapImpl<>();
+            if (defaultOptionalParams != null) {
+                expandedQueryParameters.putAll(defaultOptionalParams);
+            }
+            String delimitedParams = queryParameters.getFirst(QueryParameters.QUERY_PARAMS);
+            if (delimitedParams != null) {
+                for (QueryImpl.Parameter pm : QueryUtil.parseParameters(delimitedParams)) {
+                    expandedQueryParameters.putSingle(pm.getParameterName(), pm.getParameterValue());
+                }
+            }
+            expandedQueryParameters.putAll(queryParameters);
+            log.debug("Final query parameters: " + expandedQueryParameters);
+            query.setOptionalQueryParameters(expandedQueryParameters);
+            for (String key : expandedQueryParameters.keySet()) {
+                if (expandedQueryParameters.get(key).size() == 1) {
+                    query.addParameter(key, expandedQueryParameters.getFirst(key));
                 }
             }
         }
         return query;
     }
     
-    private String getAuths(String logicName, MultivaluedMap<String,String> queryParameters, String queryAuths, Principal principal) {
+    public String getAuths(String logicName, MultivaluedMap<String,String> queryParameters, String queryAuths, Principal principal) {
         String userAuths;
         try {
             QueryLogic<?> logic = queryLogicFactory.getQueryLogic(logicName, principal);
@@ -601,7 +615,6 @@ public class LookupUUIDUtil {
         String sid = principal.getName();
         
         // Initialize the reusable query input
-        final String userAuths = getAuths(CONTENT_QUERY, criteria.getQueryParameters(), null, principal);
         final String queryName = sid + '-' + UUID.randomUUID();
         final Date endDate = new Date();
         final Date expireDate = new Date(endDate.getTime() + 1000 * 60 * 60);
@@ -616,7 +629,8 @@ public class LookupUUIDUtil {
         } else {
             validatedCriteria = criteria;
         }
-        
+        final String userAuths = getAuths(CONTENT_QUERY, validatedCriteria.getQueryParameters(), null, principal);
+
         // Perform the lookup
         boolean allEventMockResponse = (uuidQueryResponse instanceof AllEventMockResponse);
         try {
