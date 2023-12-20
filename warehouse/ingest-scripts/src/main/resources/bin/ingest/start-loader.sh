@@ -1,9 +1,9 @@
 #!/bin/bash
 
-if [[ $(uname) == "Darwin" ]]; then
-  THIS_SCRIPT=$(python -c 'import os,sys;print os.path.realpath(sys.argv[1])' $0)
+if [[ `uname` == "Darwin" ]]; then
+  THIS_SCRIPT=`python -c 'import os,sys;print os.path.realpath(sys.argv[1])' $0`
 else
-  THIS_SCRIPT=$(readlink -f $0)
+  THIS_SCRIPT=`readlink -f $0`
 fi
 
 THIS_DIR="${THIS_SCRIPT%/*}"
@@ -80,12 +80,12 @@ if [[ ${TOTAL} > 0 ]]; then
     currentLoaders =$(ps -eaf | grep [b]ulkIngestMap | grep ${MAP_LOADER_HDFS_NAME_NODES[$LOADER]} | cut -d" " -f1-7)
     echo "currentLoaders is: " $currentLoaders
     FILES_STUCK_LOADING=$(${INGEST_HADOOP_HOME}/bin/hadoop fs -ls "${MAP_LOADER_HDFS_NAME_NODES[$LOADER]}$BASE_WORK_DIR/*/job.loading" | awk '{print $NF}')
-    if [[ ! -z $FILES_STUCK_LOADING && -z "$currentLoaders" ]]; then
+    if [[ ! -z $FILES_STUCK_LOADING && -z $currentLoaders ]]; then
       echo "About to reset stuck files, no active loaders detected on ${MAP_LOADER_HDFS_NAME_NODES[$LOADER]}"
       echo "FILES_STUCK_LOADING: " $FILES_STUCK_LOADING
       for stuckFile in $FILES_STUCK_LOADING; do
         echo "Resetting ${stuckFile} to ${stuckfile%.loading}.complete"
-        moving=$($INGEST_HADOOP_HOME/bin/hadoop fs -mv $stuckFile ${stuckFile%.loading}.complete 2>&1)
+        moving=$(${INGEST_HADOOP_HOME}/bin/hadoop fs -mv $stuckFile ${stuckFile%.loading}.complete 2>&1)
         if [[ ! -z $moving ]]; then
           echo "Error resetting file: $moving . Manually check for orphans."
         fi
