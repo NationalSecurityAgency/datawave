@@ -2,6 +2,7 @@ package org.apache.commons.jexl2.parser;
 
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import com.google.common.base.Preconditions;
@@ -101,6 +102,17 @@ public class JexlNodes {
         return node;
     }
 
+    /**
+     * Creates a child array from {children} which is then set as the children of the {node}.
+     *
+     * @param node
+     * @param children
+     * @return
+     */
+    public static <T extends JexlNode> T children(T node, Collection<JexlNode> children) {
+        return children(node, children.toArray(new JexlNode[0]));
+    }
+    
     /**
      * Wraps any node in a reference node. This is useful for getting rid of the boilerplate associated with wrapping an {ASTStringLiteral}.
      *
