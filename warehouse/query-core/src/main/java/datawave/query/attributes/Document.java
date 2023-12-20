@@ -49,6 +49,9 @@ public class Document extends AttributeBag<Document> implements Serializable {
 
     private int _count = 0;
     long _bytes = 0;
+    private static final long ONE_HUNDRED_M = 1024L * 1000 * 100;
+    private static final long ONE_M = 1024L * 1000;
+    private static final long FIVE_HUNDRED_K = 1024L * 500;
     TreeMap<String,Attribute<? extends Comparable<?>>> dict;
 
     /**
@@ -61,7 +64,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
      */
     private boolean intermediateResult;
 
-    private static final long ONE_DAY_MS = 1000l * 60 * 60 * 24;
+    private static final long ONE_DAY_MS = 1000L * 60 * 60 * 24;
 
     public MarkingFunctions getMarkingFunctions() {
         return MarkingFunctions.Factory.createMarkingFunctions();
@@ -194,19 +197,20 @@ public class Document extends AttributeBag<Document> implements Serializable {
     public void debugDocumentSize(Key docKey) {
         long bytes = sizeInBytes();
         // if more than 100M, then error
-        if (bytes > (1024l * 1000 * 100)) {
+        if (bytes > (ONE_HUNDRED_M)) {
             log.error("Document " + docKey + "; size = " + size() + "; bytes = " + bytes);
         }
         // if more than 10M, then warn
-        else if (bytes > (1024l * 1000 * 10)) {
-            log.warn("Document " + docKey + "; size = " + size() + "; bytes = " + bytes);
-        }
+        // else if (bytes > (1024l * 1000 * 10)) {
+        // log.warn("Document " + docKey + "; size = " + size() + "; bytes = " + bytes);
+        // }
+
         // if more than 1M, then info
-        else if (bytes > (1024l * 1000)) {
+        else if (bytes > (ONE_M)) {
             log.info("Document " + docKey + "; size = " + size() + "; bytes = " + bytes);
         }
         // if more than 500K, then debug
-        else if (bytes > (1024l * 500) && log.isDebugEnabled()) {
+        else if (bytes > (FIVE_HUNDRED_K) && log.isDebugEnabled()) {
             log.debug("Document " + docKey + "; size = " + size() + "; bytes = " + bytes);
         }
         // trace everything

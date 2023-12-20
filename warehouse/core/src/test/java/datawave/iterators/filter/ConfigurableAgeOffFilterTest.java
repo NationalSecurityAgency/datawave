@@ -15,6 +15,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.accumulo.core.client.PluginEnvironment;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.conf.DefaultConfiguration;
 import org.apache.accumulo.core.data.Key;
@@ -22,6 +23,7 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.IteratorUtil;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.accumulo.core.util.ConfigurationImpl;
 import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
 import org.easymock.Mock;
@@ -42,17 +44,38 @@ public class ConfigurableAgeOffFilterTest extends EasyMockSupport {
     @Mock
     private IteratorEnvironment env;
     @Mock
+    private PluginEnvironment pluginEnv;
+    @Mock
     private SortedKeyValueIterator<Key,Value> source;
 
     private AccumuloConfiguration conf = DefaultConfiguration.getInstance();
 
     @Before
     public void setUp() throws Exception {
+        expect(pluginEnv.getConfiguration()).andReturn(new ConfigurationImpl(conf)).anyTimes();
+
         expect(env.getConfig()).andReturn(conf).anyTimes();
+        expect(env.getPluginEnv()).andReturn(pluginEnv).anyTimes();
+
         // These two are only for the disabled test
         expect(env.getIteratorScope()).andReturn(IteratorUtil.IteratorScope.majc).anyTimes();
         expect(env.isFullMajorCompaction()).andReturn(false).anyTimes();
-        replay(env);
+        expect(env.isUserCompaction()).andReturn(false).anyTimes();
+
+        replay(env, pluginEnv);
+    }
+
+    @Test
+    public void testAcceptKeyValue_OnlyUserMajc() throws Exception {
+        ConfigurableAgeOffFilter filter = new ConfigurableAgeOffFilter();
+        Map<String,String> options = getOptionsMap(30, AgeOffTtlUnits.DAYS);
+        options.put(AgeOffConfigParams.ONLY_ON_USER_COMPACTION, "true");
+
+        filter.init(source, options, env);
+
+        assertThat(filter.accept(new Key(), VALUE), is(true));
+        // 1970 is older than 30 days, but filter is disable so should be true
+        assertThat(filter.accept(getKey(0), VALUE), is(true));
     }
 
     @Test
@@ -230,7 +253,7 @@ public class ConfigurableAgeOffFilterTest extends EasyMockSupport {
         inner.init(filterOpts);
         Collection<AppliedRule> list = new ArrayList<>();
         // need to do this because otherwise will use 0 as the anchor time
-        AppliedRule copyWithCorrectTimestamp = (AppliedRule) inner.deepCopy(System.currentTimeMillis());
+        AppliedRule copyWithCorrectTimestamp = (AppliedRule) inner.deepCopy(System.currentTimeMillis(), env);
         list.add(copyWithCorrectTimestamp);
         return list;
     }

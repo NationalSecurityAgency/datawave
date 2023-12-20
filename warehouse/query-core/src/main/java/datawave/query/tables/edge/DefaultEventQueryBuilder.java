@@ -15,9 +15,9 @@ import datawave.edge.model.EdgeModelAware;
 import datawave.edge.model.EdgeModelAware.Fields.FieldKey;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
-import datawave.webservice.results.edgedictionary.EdgeDictionaryBase;
-import datawave.webservice.results.edgedictionary.EventField;
-import datawave.webservice.results.edgedictionary.MetadataBase;
+import datawave.webservice.dictionary.edge.EdgeDictionaryBase;
+import datawave.webservice.dictionary.edge.EventField;
+import datawave.webservice.dictionary.edge.MetadataBase;
 
 public class DefaultEventQueryBuilder {
     private static final Logger log = LoggerFactory.getLogger(DefaultEventQueryBuilder.class);

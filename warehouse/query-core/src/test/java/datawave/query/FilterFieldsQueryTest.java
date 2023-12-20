@@ -14,17 +14,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
 
-import datawave.helpers.PrintUtility;
-import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.function.Aggregation;
-import datawave.query.function.DocumentProjection;
-import datawave.query.iterator.QueryIterator;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetup;
@@ -41,7 +35,7 @@ import datawave.query.testframework.ResponseFieldChecker;
 
 /**
  * Performs query test where specific returned fields are specified setting the {@link QueryParameters#RETURN_FIELDS} and
- * {@link QueryParameters#BLACKLISTED_FIELDS} parameter.
+ * {@link QueryParameters#DISALLOWLISTED_FIELDS} parameter.
  */
 public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
 
@@ -217,8 +211,8 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
     }
 
     @Test
-    public void testBlackListMultiValueIncluded() throws Exception {
-        log.info("------  testBlackListMultiValueIncluded  ------");
+    public void testDisallowListMultiValueIncluded() throws Exception {
+        log.info("------  testDisallowListMultiValueIncluded  ------");
 
         String cont = "'europe'";
         String state = "'mississippi'";
@@ -235,8 +229,8 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
     }
 
     @Test
-    public void testBlackListMultiValueExcluded() throws Exception {
-        log.info("------  testBlackListMultiValueExcluded  ------");
+    public void testDisallowListMultiValueExcluded() throws Exception {
+        log.info("------  testDisallowListMultiValueExcluded  ------");
 
         String cont = "'europe'";
         String state = "'mississippi'";
@@ -253,8 +247,8 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
     }
 
     @Test
-    public void testEqCityAndEqContinentBlackList() throws Exception {
-        log.info("------  testEqCityAndEqContinentBlackList  ------");
+    public void testEqCityAndEqContinentDisallowList() throws Exception {
+        log.info("------  testEqCityAndEqContinentDisallowList  ------");
 
         String state = "'ohio'";
         String mizzu = "'missouri'";
@@ -268,8 +262,8 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
     }
 
     @Test
-    public void testRegexBlacklist() throws Exception {
-        log.info("------  testRegexBlacklist  ------");
+    public void testRegexDisallowlist() throws Exception {
+        log.info("------  testRegexDisallowlist  ------");
 
         String regex = "'miss.*'";
         for (final TestCities city : TestCities.values()) {
@@ -281,8 +275,8 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
     }
 
     @Test
-    public void testRegexWhitelist() throws Exception {
-        log.info("------  testRegexWhitelist  ------");
+    public void testRegexAllowlist() throws Exception {
+        log.info("------  testRegexAllowlist  ------");
 
         String regex = "'miss.*'";
         for (final TestCities city : TestCities.values()) {
@@ -294,8 +288,8 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
     }
 
     @Test
-    public void testEqCityAndEqContinentBlackListWithHitList() throws Exception {
-        log.info("------  testEqCityAndEqContinentBlackListWithHitList  ------");
+    public void testEqCityAndEqContinentDisallowListWithHitList() throws Exception {
+        log.info("------  testEqCityAndEqContinentDisallowListWithHitList  ------");
 
         String cont = "'europe'";
         String state = "'missouri'";
@@ -309,8 +303,8 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
     }
 
     @Test
-    public void testWhiteListWithMultiValueIncluded() throws Exception {
-        log.info("------  testWhiteListWithMultiValueIncluded  ------");
+    public void testAllowlistWithMultiValueIncluded() throws Exception {
+        log.info("------  testAllowlistWithMultiValueIncluded  ------");
 
         String cont = "'north america'";
         for (final TestCities city : TestCities.values()) {
@@ -325,8 +319,8 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
     }
 
     @Test
-    public void testWhiteListWithMultiValueExcluded() throws Exception {
-        log.info("------  testWhiteListWithMultiValueExcluded  ------");
+    public void testAllowlistWithMultiValueExcluded() throws Exception {
+        log.info("------  testAllowlistWithMultiValueExcluded  ------");
 
         String cont = "'north america'";
         for (final TestCities city : TestCities.values()) {
@@ -353,21 +347,21 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
     // ============================================
     // private methods
 
-    private void runTest(final String query, final String expectQuery, final boolean whiteList, final boolean hitList) throws Exception {
+    private void runTest(final String query, final String expectQuery, final boolean allowlist, final boolean hitList) throws Exception {
         Date[] startEndDate = this.dataManager.getShardStartEndDate();
-        final Set<String> fields = CityField.getRandomReturnFields(whiteList);
-        runTest(query, expectQuery, startEndDate[0], startEndDate[1], whiteList, hitList, fields);
+        final Set<String> fields = CityField.getRandomReturnFields(allowlist);
+        runTest(query, expectQuery, startEndDate[0], startEndDate[1], allowlist, hitList, fields);
     }
 
-    private void runTest(final String query, final boolean whiteList, final boolean hitList) throws Exception {
+    private void runTest(final String query, final boolean allowlist, final boolean hitList) throws Exception {
         Date[] startEndDate = this.dataManager.getShardStartEndDate();
-        final Set<String> fields = CityField.getRandomReturnFields(whiteList);
-        runTest(query, query, startEndDate[0], startEndDate[1], whiteList, hitList, fields);
+        final Set<String> fields = CityField.getRandomReturnFields(allowlist);
+        runTest(query, query, startEndDate[0], startEndDate[1], allowlist, hitList, fields);
     }
 
-    private void runTest(final String query, final boolean whiteList, final boolean hitList, Set<String> fields) throws Exception {
+    private void runTest(final String query, final boolean allowlist, final boolean hitList, Set<String> fields) throws Exception {
         Date[] startEndDate = this.dataManager.getShardStartEndDate();
-        runTest(query, query, startEndDate[0], startEndDate[1], whiteList, hitList, fields);
+        runTest(query, query, startEndDate[0], startEndDate[1], allowlist, hitList, fields);
     }
 
     /**
@@ -381,16 +375,16 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
      *            start date of query
      * @param endDate
      *            end date of query
-     * @param whiteList
-     *            true to return specific fields; false to specify blacklist fields
+     * @param Allowlist
+     *            true to return specific fields; false to specify disallowlist fields
      * @param hitList
      *            when true the option {@link QueryParameters#HIT_LIST} is set to true
      * @param fields
-     *            return fields or blacklist fields
+     *            return fields or disallowlist fields
      * @throws Exception
      *             something failed - go figure it out
      */
-    private void runTest(final String query, final String expectQuery, final Date startDate, final Date endDate, final boolean whiteList, final boolean hitList,
+    private void runTest(final String query, final String expectQuery, final Date startDate, final Date endDate, final boolean Allowlist, final boolean hitList,
                     final Set<String> fields) throws Exception {
         QueryJexl jexl = new QueryJexl(expectQuery, this.dataManager, startDate, endDate);
         final Set<Map<String,String>> allData = jexl.evaluate();
@@ -405,13 +399,13 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
         final List<QueryLogicTestHarness.DocumentChecker> queryChecker = new ArrayList<>();
         if (fields.isEmpty()) {
             queryChecker.add(new ResponseFieldChecker(otherFields, fields));
-        } else if (whiteList) {
-            // NOTE CityField.EVENT_ID MUST be included in whitelisted fields
+        } else if (Allowlist) {
+            // NOTE CityField.EVENT_ID MUST be included in allowlisted fields
             options.put(QueryParameters.RETURN_FIELDS, queryFields);
             queryChecker.add(new ResponseFieldChecker(fields, otherFields));
         } else {
-            // NOTE CityField.EVENT_ID CANNOT be included in blacklisted fields
-            options.put(QueryParameters.BLACKLISTED_FIELDS, queryFields);
+            // NOTE CityField.EVENT_ID CANNOT be included in disallowlisted fields
+            options.put(QueryParameters.DISALLOWLISTED_FIELDS, queryFields);
             queryChecker.add(new ResponseFieldChecker(otherFields, fields));
         }
         if (hitList) {

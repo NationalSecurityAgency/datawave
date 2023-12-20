@@ -13,10 +13,13 @@ import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 
+import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.HashMultimap;
+import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 
+import datawave.edge.util.EdgeValue;
 import datawave.ingest.config.RawRecordContainerImpl;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.config.NormalizedContentInterface;
@@ -32,7 +35,8 @@ public class EdgeHandlerTestUtil {
     public static final Text edgeTableName = new Text(TableName.EDGE);
     public static final String NB = "\u0000";
 
-    public static Set<String> edgeKeyResults = new HashSet<>();
+    public static ListMultimap<String,String[]> edgeKeyResults = ArrayListMultimap.create();
+    public static ListMultimap<String,String> edgeValueResults = ArrayListMultimap.create();
 
     private static Logger log = Logger.getLogger(EdgeHandlerTestUtil.class);
 
@@ -65,6 +69,7 @@ public class EdgeHandlerTestUtil {
                 for (Map.Entry<BulkIngestKey,Value> entry : contextWriter.getCache().entries()) {
                     if (entry.getKey().getTableName().equals(edgeTableName)) {
                         edgeKeys.add(entry.getKey().getKey());
+                        edgeValueResults.put(entry.getKey().getKey().getRow().toString().replaceAll(NB, "%00;"), EdgeValue.decode(entry.getValue()).toString());
                     }
                     if (!entry.getKey().getTableName().equals(edgeTableName) || entry.getKey().getKey().isDeleted() == edgeDeleteMode) {
                         if (countMap.containsKey(entry.getKey().getTableName())) {
@@ -84,7 +89,11 @@ public class EdgeHandlerTestUtil {
 
         // check edge keys
         for (Key k : edgeKeys) {
-            edgeKeyResults.add(k.getRow().toString().replaceAll(NB, "%00;"));
+
+            String[] tempArr = {k.getColumnFamily().toString().replaceAll(NB, "%00;"), k.getColumnQualifier().toString().replaceAll(NB, "%00;"),
+                    k.getColumnVisibility().toString(), String.valueOf(k.getTimestamp())};
+            edgeKeyResults.put(k.getRow().toString().replaceAll(NB, "%00;"), tempArr);
+
             keyPrint.add("edge key: " + k.getRow().toString().replaceAll(NB, "%00;") + " ::: " + k.getColumnFamily().toString().replaceAll(NB, "%00;") + " ::: "
                             + k.getColumnQualifier().toString().replaceAll(NB, "%00;") + " ::: " + k.getColumnVisibility() + " ::: " + k.getTimestamp()
                             + " ::: " + k.isDeleted() + "\n");

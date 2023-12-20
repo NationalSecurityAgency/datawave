@@ -54,13 +54,12 @@ import datawave.security.authorization.DatawaveUserService;
 import datawave.security.authorization.JWTTokenHandler;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.util.DnUtils;
-import datawave.security.util.DnUtils.NpeUtils;
 import datawave.security.util.MockCallbackHandler;
 import datawave.security.util.MockDatawaveCertVerifier;
 
 @RunWith(EasyMockRunner.class)
 public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
-    private static final String BLACKLIST_ROLE = "BLACKLIST_ROLE";
+    private static final String DISALLOWLIST_ROLE = "DISALLOWLIST_ROLE";
     @TestSubject
     private DatawavePrincipalLoginModule datawaveLoginModule = new TestDatawavePrincipalLoginModule();
     @Mock(type = STRICT)
@@ -80,8 +79,7 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
 
     @Before
     public void setUp() throws Exception {
-        System.setProperty(NpeUtils.NPE_OU_PROPERTY, "iamnotaperson");
-
+        System.setProperty(DnUtils.NPE_OU_PROPERTY, "iamnotaperson");
         MockDatawaveCertVerifier.issuerSupported = true;
         MockDatawaveCertVerifier.verify = true;
 
@@ -149,7 +147,7 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
         options.put("verifier", MockDatawaveCertVerifier.class.getName());
         options.put("passwordStacking", "useFirstPass");
         options.put("ocspLevel", "required");
-        options.put("blacklistUserRole", BLACKLIST_ROLE);
+        options.put("disallowlistUserRole", DISALLOWLIST_ROLE);
         options.put("requiredRoles", "AuthorizedUser:AuthorizedServer:AuthorizedQueryServer:OtherRequiredRole");
         options.put("directRoles", "AuthorizedQueryServer:AuthorizedServer");
 
@@ -483,12 +481,12 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
     }
 
     @Test(expected = AccountLockedException.class)
-    public void testBlacklistedUser() throws Exception {
+    public void testDisallowlistedUser() throws Exception {
         DatawaveCredential datawaveCredential = new DatawaveCredential(testUserCert, null, null);
         callbackHandler.name = datawaveCredential.getUserName();
         callbackHandler.credential = datawaveCredential;
 
-        List<String> roles = Collections.singletonList(BLACKLIST_ROLE);
+        List<String> roles = Collections.singletonList(DISALLOWLIST_ROLE);
         DatawaveUser user = new DatawaveUser(userDN, UserType.USER, null, roles, null, System.currentTimeMillis());
         DatawavePrincipal expected = new DatawavePrincipal(Lists.newArrayList(user));
 
@@ -505,7 +503,7 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
     }
 
     @Test(expected = AccountLockedException.class)
-    public void testBlacklistedProxiedUser() throws Exception {
+    public void testDisallowlistedProxiedUser() throws Exception {
         // Proxied entities has the original user DN, plus it came through a server and
         // the request is being made by a second server. Make sure that the resulting
         // principal has all 3 server DNs in its list, and the user DN is not one of the
@@ -521,12 +519,12 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
         callbackHandler.name = datawaveCredential.getUserName();
         callbackHandler.credential = datawaveCredential;
 
-        List<String> blacklistRoles = Arrays.asList(BLACKLIST_ROLE, "TEST_ROLE");
+        List<String> disallowlistRoles = Arrays.asList(DISALLOWLIST_ROLE, "TEST_ROLE");
         List<String> otherRoles = Collections.singletonList("TEST_ROLE");
 
         DatawaveUser user = new DatawaveUser(userDN, UserType.USER, null, otherRoles, null, System.currentTimeMillis());
         DatawaveUser s1 = new DatawaveUser(server1, UserType.SERVER, null, otherRoles, null, System.currentTimeMillis());
-        DatawaveUser s2 = new DatawaveUser(server2, UserType.SERVER, null, blacklistRoles, null, System.currentTimeMillis());
+        DatawaveUser s2 = new DatawaveUser(server2, UserType.SERVER, null, disallowlistRoles, null, System.currentTimeMillis());
 
         DatawavePrincipal expected = new DatawavePrincipal(Lists.newArrayList(user, s2, s1));
 

@@ -2,37 +2,31 @@ package datawave.query.iterator;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
-import java.math.BigDecimal;
 import java.util.AbstractMap;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.iterators.YieldCallback;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.slf4j.Logger;
-import org.springframework.util.Assert;
 
-import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Multimap;
 
-import datawave.data.type.NumberType;
 import datawave.marking.MarkingFunctions;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.TypeAttribute;
-import datawave.query.common.grouping.GroupingUtil;
-import datawave.query.common.grouping.GroupingUtil.GroupCountingHashMap;
-import datawave.query.common.grouping.GroupingUtil.GroupingTypeAttribute;
-import datawave.query.jexl.JexlASTHelper;
+import datawave.query.common.grouping.DocumentGrouper;
+import datawave.query.common.grouping.Group;
+import datawave.query.common.grouping.GroupFields;
+import datawave.query.common.grouping.GroupingUtils;
+import datawave.query.common.grouping.Groups;
 
 /**
  * Because the t-server may tear down and start a new iterator at any time after a next() call, there can be no saved state in this class. For that reason, each
@@ -43,22 +37,14 @@ public class GroupingIterator implements Iterator<Map.Entry<Key,Document>> {
     private static final Logger log = getLogger(GroupingIterator.class);
 
     /**
-     * the fields (user provided) to group by
+     * The fields to group and aggregate by.
      */
-    private final Set<String> groupFieldsSet;
+    private final GroupFields groupFields;
 
     /**
-     * A map of TypeAttribute collection keys to integer counts This map uses a special key type that ignores the metadata (with visibilities) in its hashCode
-     * and equals methods
+     * The groups. This is updated each time
      */
-    private GroupCountingHashMap countingMap;
-
-    /**
-     * holds the aggregated column visibilities for each grouped event
-     */
-    private Multimap<Collection<GroupingTypeAttribute<?>>,ColumnVisibility> fieldVisibilities = HashMultimap.create();
-
-    private final GroupingUtil groupingUtil = new GroupingUtil();
+    private final Groups groups;
 
     /**
      * list of keys that have been read, in order to keep track of where we left off when a new iterator is created
@@ -73,27 +59,16 @@ public class GroupingIterator implements Iterator<Map.Entry<Key,Document>> {
 
     private final Iterator<Map.Entry<Key,Document>> previousIterators;
 
-    private final LinkedList<Document> documents = new LinkedList<>();
-
     Map.Entry<Key,Document> next;
 
-    /**
-     * Length of time in milliseconds that a client will wait for a results to be returned. If a result is not collected before the timeout, a key with an
-     * "intermediate" document will be returned.
-     */
-    private final long resultTimeout;
-
-    public GroupingIterator(Iterator<Map.Entry<Key,Document>> previousIterators, MarkingFunctions markingFunctions, Collection<String> groupFieldsSet,
-                    int groupFieldsBatchSize, YieldCallback<Key> yieldCallback, long resultTimeout) {
+    public GroupingIterator(Iterator<Map.Entry<Key,Document>> previousIterators, MarkingFunctions markingFunctions, GroupFields groupFields,
+                    int groupFieldsBatchSize, YieldCallback<Key> yieldCallback) {
         this.previousIterators = previousIterators;
         this.markingFunctions = markingFunctions;
-        this.groupFieldsSet = groupFieldsSet.stream().map(JexlASTHelper::deconstructIdentifier).collect(Collectors.toSet());
+        this.groupFields = groupFields;
         this.groupFieldsBatchSize = groupFieldsBatchSize;
         this.yieldCallback = yieldCallback;
-
-        this.countingMap = new GroupCountingHashMap(this.markingFunctions);
-
-        this.resultTimeout = resultTimeout;
+        this.groups = new Groups();
     }
 
     @Override
@@ -103,15 +78,12 @@ public class GroupingIterator implements Iterator<Map.Entry<Key,Document>> {
                 Map.Entry<Key,Document> entry = previousIterators.next();
                 if (entry != null) {
                     log.trace("t-server get list key counts for: {}", entry);
-
                     keys.add(entry.getKey());
-                    GroupingUtil.GroupingInfo groupingInfo = groupingUtil.getGroupingInfo(entry, groupFieldsSet, this.countingMap);
-                    this.countingMap = groupingInfo.getCountsMap();
-                    this.fieldVisibilities = groupingInfo.getFieldVisibilities();
+                    DocumentGrouper.group(entry, groupFields, groups);
                 }
             } else if (yieldCallback != null && yieldCallback.hasYielded()) {
                 log.trace("hasNext is false because yield was called");
-                if (countingMap != null && !countingMap.isEmpty()) {
+                if (!groups.isEmpty()) {
                     // reset the yield and use its key in the flattened document prepared below
                     keys.add(yieldCallback.getPositionAndReset());
                 }
@@ -122,36 +94,14 @@ public class GroupingIterator implements Iterator<Map.Entry<Key,Document>> {
             }
         }
 
+        LinkedList<Document> documents = new LinkedList<>();
         Document document = null;
         next = null;
 
-        if (countingMap != null && !countingMap.isEmpty()) {
-
-            log.trace("hasNext() will use the countingMap: {}", countingMap);
-
-            for (Collection<GroupingTypeAttribute<?>> entry : countingMap.keySet()) {
-                log.trace("from countingMap, got entry: {}", entry);
-                ColumnVisibility columnVisibility;
-                try {
-                    columnVisibility = groupingUtil.combine(fieldVisibilities.get(entry), markingFunctions);
-                } catch (Exception e) {
-                    throw new IllegalStateException("Unable to merge column visibilities: " + fieldVisibilities.get(entry), e);
-                }
-                // grab a key from those saved during getListKeyCounts
-                Assert.notEmpty(keys, "no available keys for grouping results");
-                // use the last (most recent) key so a new iterator will know where to start
-                Key docKey = keys.get(keys.size() - 1);
-                Document d = new Document(docKey, true);
-                d.setColumnVisibility(columnVisibility);
-
-                entry.forEach(base -> d.put(base.getMetadata().getRow().toString(), base));
-                NumberType type = new NumberType();
-                type.setDelegate(new BigDecimal(countingMap.get(entry)));
-                TypeAttribute<BigDecimal> attr = new TypeAttribute<>(type, new Key("count"), true);
-                d.put("COUNT", attr);
-                documents.add(d);
+        if (!groups.isEmpty()) {
+            for (Group group : groups.getGroups()) {
+                documents.add(GroupingUtils.createDocument(group, keys, markingFunctions, GroupingUtils.AverageAggregatorWriteFormat.NUMERATOR_AND_DIVISOR));
             }
-            // flatten to just one document
             document = flatten(documents);
         }
 
@@ -165,7 +115,7 @@ public class GroupingIterator implements Iterator<Map.Entry<Key,Document>> {
             }
             next = Maps.immutableEntry(key, document);
             log.trace("hasNext {}", next);
-            countingMap.clear();
+            groups.clear();
             return true;
         }
 
@@ -229,30 +179,30 @@ public class GroupingIterator implements Iterator<Map.Entry<Key,Document>> {
      * @return a flattened document
      */
     private Document flatten(List<Document> documents) {
-        log.trace("flatten {}", documents);
-        Document theDocument = new Document(documents.get(documents.size() - 1).getMetadata(), true);
+        log.trace("Flattening {}", documents);
+
+        Document flattened = new Document(documents.get(documents.size() - 1).getMetadata(), true);
+
         int context = 0;
         Set<ColumnVisibility> visibilities = new HashSet<>();
         for (Document document : documents) {
             log.trace("document: {}", document);
             for (Map.Entry<String,Attribute<? extends Comparable<?>>> entry : document.entrySet()) {
-                String name = entry.getKey();
                 visibilities.add(entry.getValue().getColumnVisibility());
-
+                // Add a copy of each attribute to the flattened document with the context appended to the key, e.g. AGE becomes AGE.0.
                 Attribute<? extends Comparable<?>> attribute = entry.getValue();
                 attribute.setColumnVisibility(entry.getValue().getColumnVisibility());
-                // call copy() on the GroupingTypeAttribute to get a plain TypeAttribute
-                // instead of a GroupingTypeAttribute that is package protected and won't serialize
-                theDocument.put(name + "." + Integer.toHexString(context).toUpperCase(), (TypeAttribute) attribute.copy(), true, false);
+                // Call copy() on the GroupingTypeAttribute to get a plain TypeAttribute instead of a GroupingTypeAttribute that is package protected and won't
+                // serialize.
+                flattened.put(entry.getKey() + "." + Integer.toHexString(context).toUpperCase(), (TypeAttribute) attribute.copy(), true, false);
             }
+            // Increment the context by one.
             context++;
         }
-        ColumnVisibility combinedVisibility = groupingUtil.combine(visibilities, markingFunctions);
-        log.trace("combined visibilities: {} to {}", visibilities, combinedVisibility);
-        theDocument.setColumnVisibility(combinedVisibility);
-        // documents.clear();
-        log.trace("flattened document: {}", theDocument);
-        return theDocument;
-    }
 
+        // Set the flattened document's visibility to the combined visibilities of each document.
+        flattened.setColumnVisibility(GroupingUtils.combineVisibilities(visibilities, markingFunctions, false));
+        log.trace("flattened document: {}", flattened);
+        return flattened;
+    }
 }
