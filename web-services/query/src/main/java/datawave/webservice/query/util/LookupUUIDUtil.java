@@ -428,33 +428,33 @@ public class LookupUUIDUtil {
         return response;
     }
     
-    private Query createSettings(MultivaluedMap<String,String> queryParameters) {
+    public Query createSettings(MultivaluedMap<String,String> queryParameters) {
         log.debug("Initial query parameters: " + queryParameters);
         Query query = responseObjectFactory.getQueryImpl();
         if (queryParameters != null) {
-            MultivaluedMap<String,String> optionalQueryParameters = new MultivaluedMapImpl<>();
+            MultivaluedMap<String,String> expandedQueryParameters = new MultivaluedMapImpl<>();
             if (defaultOptionalParams != null) {
-                optionalQueryParameters.putAll(defaultOptionalParams);
+                expandedQueryParameters.putAll(defaultOptionalParams);
             }
             String delimitedParams = queryParameters.getFirst(QueryParameters.QUERY_PARAMS);
             if (delimitedParams != null) {
                 for (QueryImpl.Parameter pm : QueryUtil.parseParameters(delimitedParams)) {
-                    optionalQueryParameters.putSingle(pm.getParameterName(), pm.getParameterValue());
+                    expandedQueryParameters.putSingle(pm.getParameterName(), pm.getParameterValue());
                 }
             }
-            optionalQueryParameters.putAll(queryParameters);
-            log.debug("Final query parameters: " + optionalQueryParameters);
-            query.setOptionalQueryParameters(optionalQueryParameters);
-            for (String key : optionalQueryParameters.keySet()) {
-                if (optionalQueryParameters.get(key).size() == 1) {
-                    query.addParameter(key, optionalQueryParameters.getFirst(key));
+            expandedQueryParameters.putAll(queryParameters);
+            log.debug("Final query parameters: " + expandedQueryParameters);
+            query.setOptionalQueryParameters(expandedQueryParameters);
+            for (String key : expandedQueryParameters.keySet()) {
+                if (expandedQueryParameters.get(key).size() == 1) {
+                    query.addParameter(key, expandedQueryParameters.getFirst(key));
                 }
             }
         }
         return query;
     }
     
-    private String getAuths(String logicName, MultivaluedMap<String,String> queryParameters, String queryAuths, Principal principal) {
+    public String getAuths(String logicName, MultivaluedMap<String,String> queryParameters, String queryAuths, Principal principal) {
         String userAuths;
         try {
             QueryLogic<?> logic = queryLogicFactory.getQueryLogic(logicName, principal);
