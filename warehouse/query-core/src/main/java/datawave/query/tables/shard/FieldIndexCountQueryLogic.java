@@ -15,22 +15,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
 
-import datawave.data.type.Type;
-import datawave.marking.MarkingFunctions;
-import datawave.query.QueryParameters;
-import datawave.query.iterators.FieldIndexCountingIterator;
-import datawave.query.Constants;
-import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.tables.ShardQueryLogic;
-import datawave.query.tables.ScannerFactory;
-import datawave.query.transformer.FieldIndexCountQueryTransformer;
-import datawave.query.util.MetadataHelper;
-import datawave.util.StringUtils;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
-import datawave.webservice.query.exception.QueryException;
-import datawave.webservice.query.logic.QueryLogicTransformer;
-
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.IteratorSetting;
@@ -45,12 +29,28 @@ import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
+import datawave.data.type.Type;
+import datawave.marking.MarkingFunctions;
+import datawave.query.Constants;
+import datawave.query.QueryParameters;
+import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.iterators.FieldIndexCountingIterator;
+import datawave.query.tables.ScannerFactory;
+import datawave.query.tables.ShardQueryLogic;
+import datawave.query.transformer.FieldIndexCountQueryTransformer;
+import datawave.query.util.MetadataHelper;
+import datawave.util.StringUtils;
+import datawave.webservice.query.Query;
+import datawave.webservice.query.configuration.GenericQueryConfiguration;
+import datawave.webservice.query.exception.QueryException;
+import datawave.webservice.query.logic.QueryLogicTransformer;
+
 /**
  * Given a date range, FieldName(s), FieldValue(s), DataType(s) pull keys directly using FieldIndexIterator and count them as specified.
- * 
+ *
  */
 public class FieldIndexCountQueryLogic extends ShardQueryLogic {
-    
+
     private static final Logger logger = Logger.getLogger(FieldIndexCountQueryLogic.class);
     private static final String DATA_FORMAT = "yyyyMMdd";
     private Collection<String> fieldNames;
@@ -59,16 +59,16 @@ public class FieldIndexCountQueryLogic extends ShardQueryLogic {
     private boolean uniqueByVisibility = false;
     protected Long maxUniqueValues = 20000L;
     protected Collection<Range> ranges;
-    
+
     public FieldIndexCountQueryLogic() {}
-    
+
     @Override
     public GenericQueryConfiguration initialize(AccumuloClient client, Query settings, Set<Authorizations> auths) throws Exception {
-        
+
         if (logger.isTraceEnabled()) {
             logger.trace("initialize");
         }
-        
+
         this.scannerFactory = new ScannerFactory(client);
         MetadataHelper metadataHelper = prepareMetadataHelper(client, this.getMetadataTableName(), auths);
         String modelName = this.getModelName();
@@ -82,26 +82,26 @@ public class FieldIndexCountQueryLogic extends ShardQueryLogic {
                         && !settings.findParameter(QueryParameters.PARAMETER_MODEL_TABLE_NAME).getParameterValue().trim().isEmpty()) {
             modelTableName = settings.findParameter(QueryParameters.PARAMETER_MODEL_TABLE_NAME).getParameterValue().trim();
         }
-        
+
         if (null != modelName && null == modelTableName) {
             throw new IllegalArgumentException(QueryParameters.PARAMETER_MODEL_NAME + " has been specified but " + QueryParameters.PARAMETER_MODEL_TABLE_NAME
                             + " is missing. Both are required to use a model");
         }
-        
+
         if (null != modelName && null != modelTableName) {
             this.queryModel = metadataHelper.getQueryModel(modelTableName, modelName, this.getUnevaluatedFields());
         }
-        
+
         // I'm using this config object in a pinch, we should probably create a custom one.
         ShardQueryConfiguration config = ShardQueryConfiguration.create(this, settings);
         config.setClient(client);
         config.setAuthorizations(auths);
-        
+
         // the following throw IllegalArgumentExceptions if validation fails.
         parseQuery(config, settings);
         configDate(config, settings);
         configTypeFilter(config, settings);
-        
+
         Set<String> normalizedFieldValues = null;
         Iterator<String> fieldNameIter = fieldNames.iterator();
         while (fieldNameIter.hasNext()) {
@@ -135,14 +135,14 @@ public class FieldIndexCountQueryLogic extends ShardQueryLogic {
             }
         }
         this.fieldValues = normalizedFieldValues;
-        
+
         if (this.fieldNames.isEmpty()) {
             throw new IllegalArgumentException("Need at least 1 indexed field to query with.");
         }
-        
+
         // Generate & set the query ranges
         this.ranges = generateRanges(config);
-        
+
         // Find out if we need to list unique data types.
         if (null != settings.findParameter(Constants.UNIQ_DATATYPE)) {
             this.uniqueByDataType = Boolean.parseBoolean(settings.findParameter(Constants.UNIQ_DATATYPE).getParameterValue());
@@ -150,7 +150,7 @@ public class FieldIndexCountQueryLogic extends ShardQueryLogic {
                 logger.trace("uniqueByDataType: " + uniqueByDataType);
             }
         }
-        
+
         // Find out if we need to list unique visibilities.
         if (null != settings.findParameter(Constants.UNIQ_VISIBILITY)) {
             this.uniqueByVisibility = Boolean.parseBoolean(settings.findParameter(Constants.UNIQ_VISIBILITY).getParameterValue());
@@ -158,7 +158,7 @@ public class FieldIndexCountQueryLogic extends ShardQueryLogic {
                 logger.trace("uniqueByVisibility: " + uniqueByVisibility);
             }
         }
-        
+
         if (logger.isTraceEnabled()) {
             logger.trace("FieldNames: ");
             for (String f : this.fieldNames) {
@@ -177,28 +177,28 @@ public class FieldIndexCountQueryLogic extends ShardQueryLogic {
         }
         return config;
     }
-    
+
     @Override
     public FieldIndexCountQueryLogic clone() {
         return new FieldIndexCountQueryLogic(this);
     }
-    
+
     public FieldIndexCountQueryLogic(FieldIndexCountQueryLogic other) {
         super(other);
         this.maxUniqueValues = other.getMaxUniqueValues();
     }
-    
+
     public Long getMaxUniqueValues() {
         return maxUniqueValues;
     }
-    
+
     public void setMaxUniqueValues(Long maxUniqueValues) {
         this.maxUniqueValues = maxUniqueValues;
     }
-    
+
     /**
      * Create the batch scanner and set the iterator options / stack.
-     * 
+     *
      * @param genericConfig
      *            configuration object
      * @throws Exception
@@ -212,44 +212,44 @@ public class FieldIndexCountQueryLogic extends ShardQueryLogic {
         if (!ShardQueryConfiguration.class.isAssignableFrom(genericConfig.getClass())) {
             throw new QueryException("Did not receive a ShardQueryConfiguration instance!!");
         }
-        
+
         ShardQueryConfiguration config = (ShardQueryConfiguration) genericConfig;
-        
+
         // Ensure we have all of the information needed to run a query
         if (!config.canRunQuery()) {
             logger.warn("The given query '" + config.getQueryString() + "' could not be run, most likely due to not matching any records in the global index.");
-            
+
             // Stub out an iterator to correctly present "no results"
             this.iterator = new Iterator<Map.Entry<Key,Value>>() {
                 @Override
                 public boolean hasNext() {
                     return false;
                 }
-                
+
                 @Override
                 public Map.Entry<Key,Value> next() {
                     return null;
                 }
-                
+
                 @Override
                 public void remove() {}
             };
-            
+
             this.scanner = null;
             return;
         }
-        
+
         try {
             if (logger.isTraceEnabled()) {
                 logger.trace("configuring batch scanner and iterators.");
             }
-            
+
             BatchScanner bs = getScannerFactory().newScanner(config.getShardTableName(), config.getAuthorizations(), config.getNumQueryThreads(),
                             config.getQuery());
             bs.setRanges(this.ranges);
             // The stack we want to use
             // 21 FieldIndexCountingIterator
-            
+
             // FieldIndexCountingIterator setup
             IteratorSetting cfg;
             cfg = new IteratorSetting(config.getBaseIteratorPriority() + 21, "countingIter", FieldIndexCountingIterator.class);
@@ -262,16 +262,16 @@ public class FieldIndexCountQueryLogic extends ShardQueryLogic {
             cfg.addOption(FieldIndexCountingIterator.START_TIME, sdf.format(config.getBeginDate()));
             cfg.addOption(FieldIndexCountingIterator.STOP_TIME, sdf.format(config.getEndDate()));
             cfg.addOption(FieldIndexCountingIterator.UNIQ_BY_DATA_TYPE, Boolean.toString(this.uniqueByDataType));
-            
+
             bs.addScanIterator(cfg);
-            
+
             this.iterator = bs.iterator();
             this.scanner = bs;
         } catch (TableNotFoundException e) {
             logger.error("The table '" + config.getShardTableName() + "' does not exist", e);
         }
     }
-    
+
     private static String join(Collection<String> values, String sep) {
         StringBuilder b = new StringBuilder();
         for (String val : values) {
@@ -280,11 +280,11 @@ public class FieldIndexCountQueryLogic extends ShardQueryLogic {
         b.deleteCharAt(b.length() - 1);
         return b.toString();
     }
-    
+
     public SimpleDateFormat getDateFormatter() {
         return new SimpleDateFormat(DATA_FORMAT);
     }
-    
+
     private void parseQuery(ShardQueryConfiguration config, Query settings) {
         if (logger.isTraceEnabled()) {
             logger.trace("parseQuery");
@@ -292,7 +292,7 @@ public class FieldIndexCountQueryLogic extends ShardQueryLogic {
         String query = settings.getQuery();
         String fieldName;
         String fieldValue = null;
-        
+
         if (null == query) {
             throw new IllegalArgumentException("Query cannot be null");
         } else {
@@ -321,14 +321,14 @@ public class FieldIndexCountQueryLogic extends ShardQueryLogic {
         if (null == this.fieldNames || this.fieldNames.isEmpty()) {
             throw new IllegalArgumentException("Do not have valid field name to query on.");
         }
-        
+
         // Limits to one field value. In the future we should expand this query
         // logic to do multiple since the underlying iterator can do it.
         if (null != fieldValue && !fieldValue.isEmpty()) {
             this.fieldValues = Collections.singletonList(fieldValue);
         }
     }
-    
+
     private void configDate(ShardQueryConfiguration config, Query settings) {
         final Date beginDate = settings.getBeginDate();
         if (null == beginDate) {
@@ -336,49 +336,49 @@ public class FieldIndexCountQueryLogic extends ShardQueryLogic {
         } else {
             config.setBeginDate(beginDate);
         }
-        
+
         final Date endDate = settings.getEndDate();
         if (null == endDate) {
             throw new IllegalArgumentException("End date cannot be null");
         } else {
             config.setEndDate(endDate);
         }
-        
+
         if (logger.isTraceEnabled()) {
             logger.trace("beginDate: " + beginDate + " , endDate: " + endDate);
         }
     }
-    
+
     private void configTypeFilter(ShardQueryConfiguration config, Query settings) {
         // Get the datatype set if specified
         if (null == settings.findParameter(QueryParameters.DATATYPE_FILTER_SET)) {
             config.setDatatypeFilter(new HashSet<>());
             return;
         }
-        
+
         String typeList = settings.findParameter(QueryParameters.DATATYPE_FILTER_SET).getParameterValue();
         HashSet<String> typeFilter;
         if (null != typeList && !typeList.isEmpty()) {
             typeFilter = new HashSet<>();
             typeFilter.addAll(Arrays.asList(StringUtils.split(typeList, Constants.PARAM_VALUE_SEP)));
-            
+
             if (!typeFilter.isEmpty()) {
                 config.setDatatypeFilter(typeFilter);
-                
+
                 if (logger.isDebugEnabled()) {
                     logger.debug("Type Filter: " + typeFilter);
                 }
             }
         }
     }
-    
+
     public Collection<Range> generateRanges(ShardQueryConfiguration config) {
         Calendar beginCal = Calendar.getInstance();
         Calendar endCal = Calendar.getInstance();
         beginCal.setTime(config.getBeginDate());
         endCal.setTime(config.getEndDate());
         String shardStart = this.getDateFormatter().format(beginCal.getTime());
-        
+
         // Add an extra day to the range since the date formatter truncates it.
         // we want the ending key to be the next day.
         Calendar cal = Calendar.getInstance();
@@ -389,24 +389,24 @@ public class FieldIndexCountQueryLogic extends ShardQueryLogic {
             endCal.add(Calendar.DATE, 1);
             shardEnd = this.getDateFormatter().format(endCal.getTime());
         }
-        
+
         Range range = new Range(new Key(new Text(shardStart)), true, new Key(shardEnd), true);
         if (logger.isTraceEnabled()) {
             logger.trace("generateRanges: " + range);
         }
         return Collections.singletonList(range);
     }
-    
+
     @Override
     public QueryLogicTransformer getTransformer(Query settings) {
         return new FieldIndexCountQueryTransformer(this, settings, this.markingFunctions, this.responseObjectFactory);
     }
-    
+
     @Override
     public TransformIterator getTransformIterator(Query settings) {
         return new MyCountAggregatingIterator(this.iterator(), getTransformer(settings), this.maxUniqueValues);
     }
-    
+
     public Map buildSummary(Iterator iter, long maxValues) {
         if (logger.isTraceEnabled()) {
             logger.trace("buildSummary");
@@ -417,23 +417,23 @@ public class FieldIndexCountQueryLogic extends ShardQueryLogic {
         String mapKey;
         while (iter.hasNext()) {
             Object input = iter.next();
-            
+
             if (input instanceof Entry<?,?>) {
                 @SuppressWarnings("unchecked")
                 Entry<Key,Value> entry = (Entry<Key,Value>) input;
-                
+
                 if (entry.getKey() == null && entry.getValue() == null) {
                     break;
                 }
-                
+
                 if (null == entry.getKey() || null == entry.getValue()) {
                     throw new IllegalArgumentException("Null key or value. Key:" + entry.getKey() + ", Value: " + entry.getValue());
                 }
-                
+
                 Key key = entry.getKey();
                 Value val = entry.getValue();
                 mapKeyBuilder.delete(0, mapKeyBuilder.length());
-                
+
                 // build out the map key
                 cf = key.getColumnFamily().toString().substring(3); // strip off fi\x00
                 if (queryModel != null) {
@@ -446,11 +446,11 @@ public class FieldIndexCountQueryLogic extends ShardQueryLogic {
                 } else {
                     mapKeyBuilder.append(cf);
                 }
-                
+
                 mapKeyBuilder.append(Constants.NULL_BYTE_STRING);
                 mapKeyBuilder.append(key.getColumnQualifier());
                 mapKey = mapKeyBuilder.toString();
-                
+
                 // if we are over our threshold for unique values skip it.
                 if (!summary.containsKey(mapKey) && summary.size() == maxValues) {
                     if (logger.isTraceEnabled()) {
@@ -458,7 +458,7 @@ public class FieldIndexCountQueryLogic extends ShardQueryLogic {
                     }
                     continue;
                 }
-                
+
                 Tuple tuple = summary.containsKey(mapKey) ? summary.get(mapKey) : new Tuple(super.getMarkingFunctions());
                 tuple.aggregate(key, val);
                 summary.put(mapKey, tuple);
@@ -471,18 +471,18 @@ public class FieldIndexCountQueryLogic extends ShardQueryLogic {
         }
         return summary;
     }
-    
+
     public static class Tuple {
-        
+
         private final MarkingFunctions tupleMarkingFunctions;
         private long count = 0L;
         private long maxTimestamp = 0L;
         Set<Text> uniqueVisibilities = new HashSet<>();
-        
+
         public Tuple(MarkingFunctions mf) {
             tupleMarkingFunctions = mf;
         }
-        
+
         public void aggregate(Key key, Value val) {
             uniqueVisibilities.add(key.getColumnVisibility());
             count += Long.parseLong(new String(val.get()));
@@ -490,15 +490,15 @@ public class FieldIndexCountQueryLogic extends ShardQueryLogic {
                 maxTimestamp = key.getTimestamp();
             }
         }
-        
+
         public long getCount() {
             return count;
         }
-        
+
         public long getMaxTimestamp() {
             return maxTimestamp;
         }
-        
+
         public ColumnVisibility getColumnVisibility() {
             try {
                 Set<ColumnVisibility> columnVisibilities = new HashSet<>();
@@ -506,27 +506,27 @@ public class FieldIndexCountQueryLogic extends ShardQueryLogic {
                     columnVisibilities.add(new ColumnVisibility(t));
                 }
                 return tupleMarkingFunctions.combine(columnVisibilities);
-                
+
             } catch (MarkingFunctions.Exception e) {
                 logger.error("Could not create combined column visibility for the count", e);
                 return null;
             }
         }
     }
-    
+
     public class MyCountAggregatingIterator extends TransformIterator {
-        
+
         private boolean firstTime = true;
         private Iterator<Entry<Key,Value>> bsIter;
         private long maxValues;
         private Iterator iter; // iterator over the map object we create.
-        
+
         public MyCountAggregatingIterator(Iterator<Entry<Key,Value>> iterator, Transformer transformer, long maxValues) {
             super(iterator, transformer);
             this.bsIter = iterator;
             this.maxValues = maxValues;
         }
-        
+
         @Override
         public boolean hasNext() {
             if (firstTime) {
@@ -536,13 +536,13 @@ public class FieldIndexCountQueryLogic extends ShardQueryLogic {
             }
             return iter.hasNext();
         }
-        
+
         @Override
         public Object next() {
             return getTransformer().transform(iter.next());
         }
     }
-    
+
     @Override
     public Set<String> getOptionalQueryParameters() {
         Set<String> optionalParams = new TreeSet<>(super.getOptionalQueryParameters());
@@ -551,5 +551,5 @@ public class FieldIndexCountQueryLogic extends ShardQueryLogic {
         optionalParams.add(QueryParameters.DATATYPE_FILTER_SET);
         return optionalParams;
     }
-    
+
 }

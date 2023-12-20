@@ -1,6 +1,8 @@
 package datawave.common.util.concurrent;
 
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -13,35 +15,33 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import org.junit.Test;
 
 public class BoundedBlockingQueueTest {
-    
+
     @Test
     public void testQueueBounds() throws Exception {
         BoundedBlockingQueue<String> bbq = new BoundedBlockingQueue<>(5, new LinkedList<>());
-        
+
         bbq.put("one");
         bbq.put("two");
         bbq.put("three");
         bbq.put("four");
         bbq.put("five");
-        
+
         try {
             assertFalse(bbq.add("dropped data"));
         } catch (IllegalStateException e) {
             assertEquals("Queue full", e.getLocalizedMessage());
         }
         assertEquals(5, bbq.size());
-        
+
         assertFalse(bbq.offer("more dropped data"));
         assertEquals(5, bbq.size());
-        
+
         assertFalse(bbq.offer("more dropped data", 100, TimeUnit.MILLISECONDS));
         assertEquals(5, bbq.size());
-        
+
         Thread.currentThread().interrupt();
         try {
             bbq.put("even more dropped data");
@@ -50,17 +50,17 @@ public class BoundedBlockingQueueTest {
         }
         assertEquals(5, bbq.size());
     }
-    
+
     @Test
     public void testConcurrencyLargeQueue() throws Exception {
         testConcurrencyInternal(100, 10, 10, 60);
     }
-    
+
     @Test
     public void testConcurrencySmallQueue() throws Exception {
         testConcurrencyInternal(20, 10, 10, 60);
     }
-    
+
     /**
      * This test creates a thread for each major queue operation (i.e. add, offer, offer w/timeout, put, poll, poll w/timeout, take, remove) and an additional
      * thread for the size and remaining capacity operations.
@@ -80,10 +80,10 @@ public class BoundedBlockingQueueTest {
                     throws Exception {
         final BoundedBlockingQueue<String> bbq = new BoundedBlockingQueue<>(maxCapacity, new PriorityQueue<>());
         final List<Runnable> runnables = new ArrayList<>();
-        
+
         for (int i = 0; i < numInitialEntries; i++)
             bbq.add("initial " + i);
-        
+
         // adds 10 entries
         runnables.add(() -> {
             int i = 0;
@@ -99,7 +99,7 @@ public class BoundedBlockingQueueTest {
                 assertEquals(entriesPerOperation, i);
             }
         });
-        
+
         // adds 10 entries
         runnables.add(() -> {
             int i = 0;
@@ -111,7 +111,7 @@ public class BoundedBlockingQueueTest {
                 assertEquals(entriesPerOperation, i);
             }
         });
-        
+
         // adds 10 entries
         runnables.add(() -> {
             int i = 0;
@@ -125,7 +125,7 @@ public class BoundedBlockingQueueTest {
                 assertEquals(entriesPerOperation, i);
             }
         });
-        
+
         // adds 10 entries
         runnables.add(() -> {
             int i = 0;
@@ -138,7 +138,7 @@ public class BoundedBlockingQueueTest {
                 assertEquals(entriesPerOperation, i);
             }
         });
-        
+
         // removes 10 entries
         runnables.add(() -> {
             int i = 0;
@@ -150,7 +150,7 @@ public class BoundedBlockingQueueTest {
                 assertEquals(entriesPerOperation, i);
             }
         });
-        
+
         // removes 10 entries
         runnables.add(() -> {
             int i = 0;
@@ -164,7 +164,7 @@ public class BoundedBlockingQueueTest {
                 assertEquals(entriesPerOperation, i);
             }
         });
-        
+
         // removes 10 entries
         runnables.add(() -> {
             int i = 0;
@@ -178,7 +178,7 @@ public class BoundedBlockingQueueTest {
                 assertEquals(entriesPerOperation, i);
             }
         });
-        
+
         // removes 10 entries
         runnables.add(() -> {
             int i = 0;
@@ -192,7 +192,7 @@ public class BoundedBlockingQueueTest {
                 assertEquals(entriesPerOperation, i);
             }
         });
-        
+
         // performs additional operations while reading and writing to the queue
         runnables.add(() -> {
             int i = 0;
@@ -207,25 +207,25 @@ public class BoundedBlockingQueueTest {
                 assertEquals(entriesPerOperation, i);
             }
         });
-        
+
         assertConcurrent("BoundedBlockingQueue concurrency test", runnables, maxTimeoutSeconds);
-        
+
         Iterator<String> iter = bbq.iterator();
         int numLeft = 0;
         while (iter.hasNext()) {
             iter.next();
             numLeft++;
         }
-        
+
         assertEquals(numInitialEntries, numLeft);
-        
+
         List<String> drain = new ArrayList<>();
         bbq.drainTo(drain);
-        
+
         assertEquals(numInitialEntries, drain.size());
         assertEquals(0, bbq.size());
     }
-    
+
     /**
      * This is a helper method which will allow us to run all of our threads simultaneously, thus increasing the chance that we will encounter a concurrency
      * problem if there is one.

@@ -17,18 +17,18 @@ import org.slf4j.LoggerFactory;
 public class RefreshableScopeExtension implements Extension {
     private Logger log = LoggerFactory.getLogger(getClass());
     private RefreshableScopeContext refreshableScopeContext;
-    
+
     @SuppressWarnings("unused")
     void beforeBeanDiscovery(@Observes BeforeBeanDiscovery bbd, BeanManager bm) {
         bbd.addScope(RefreshableScope.class, true, false);
     }
-    
+
     @SuppressWarnings("unused")
     void afterBeanDiscovery(@Observes AfterBeanDiscovery abd, BeanManager bm) {
         refreshableScopeContext = new RefreshableScopeContext();
         abd.addContext(refreshableScopeContext);
     }
-    
+
     @SuppressWarnings("unused")
     void onRefresh(@Observes RefreshEvent event, BeanManager bm) {
         if (refreshableScopeContext != null) {

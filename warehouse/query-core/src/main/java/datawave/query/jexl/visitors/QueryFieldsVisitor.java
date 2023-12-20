@@ -1,11 +1,9 @@
 package datawave.query.jexl.visitors;
 
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
-import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
-import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.QueryPropertyMarker;
-import datawave.query.util.MetadataHelper;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+
 import org.apache.commons.jexl2.parser.ASTAdditiveNode;
 import org.apache.commons.jexl2.parser.ASTAdditiveOperator;
 import org.apache.commons.jexl2.parser.ASTAmbiguous;
@@ -56,17 +54,20 @@ import org.apache.commons.jexl2.parser.ASTWhileStatement;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParseException;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
+import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
+import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
+import datawave.query.util.MetadataHelper;
 
 /**
  * Return a set of all fields present in the query
  */
 public class QueryFieldsVisitor extends BaseVisitor {
-    
+
     private final MetadataHelper helper;
-    
+
     public static Set<String> parseQueryFields(String query, MetadataHelper helper) {
         try {
             ASTJexlScript script = JexlASTHelper.parseAndFlattenJexlQuery(query);
@@ -76,74 +77,74 @@ public class QueryFieldsVisitor extends BaseVisitor {
         }
         return Collections.emptySet();
     }
-    
+
     public static Set<String> parseQueryFields(ASTJexlScript script, MetadataHelper helper) {
         QueryFieldsVisitor visitor = new QueryFieldsVisitor(helper);
         return (Set<String>) script.jjtAccept(visitor, new HashSet<>());
     }
-    
+
     public QueryFieldsVisitor(MetadataHelper helper) {
         this.helper = helper;
     }
-    
+
     private Object parseSingleField(JexlNode node, Object data) {
         String field = JexlASTHelper.getIdentifier(node);
         ((Set<String>) data).add(field);
         return data;
     }
-    
+
     @Override
     public Object visit(ASTAssignment node, Object data) {
         node.childrenAccept(this, data);
         return data;
     }
-    
+
     @Override
     public Object visit(ASTEQNode node, Object data) {
         return parseSingleField(node, data);
     }
-    
+
     @Override
     public Object visit(ASTNENode node, Object data) {
         return parseSingleField(node, data);
     }
-    
+
     @Override
     public Object visit(ASTLTNode node, Object data) {
         return parseSingleField(node, data);
     }
-    
+
     @Override
     public Object visit(ASTGTNode node, Object data) {
         return parseSingleField(node, data);
     }
-    
+
     @Override
     public Object visit(ASTLENode node, Object data) {
         return parseSingleField(node, data);
     }
-    
+
     @Override
     public Object visit(ASTGENode node, Object data) {
         return parseSingleField(node, data);
     }
-    
+
     @Override
     public Object visit(ASTERNode node, Object data) {
         return parseSingleField(node, data);
     }
-    
+
     @Override
     public Object visit(ASTNRNode node, Object data) {
         return parseSingleField(node, data);
     }
-    
+
     @Override
     public Object visit(ASTIdentifier node, Object data) {
         node.childrenAccept(this, data);
         return data;
     }
-    
+
     /**
      * Have to handle JexlArg, GeoFunctions, and GeoWaveFunctions
      *
@@ -160,7 +161,7 @@ public class QueryFieldsVisitor extends BaseVisitor {
         ((Set<String>) data).addAll(fields);
         return data;
     }
-    
+
     @Override
     public Object visit(ASTReference node, Object data) {
         // Special handling for node with json-encoded params
@@ -172,177 +173,177 @@ public class QueryFieldsVisitor extends BaseVisitor {
             }
             return data;
         }
-        
+
         return super.visit(node, data);
     }
-    
+
     // Short circuits
-    
+
     @Override
     public Object visit(ASTBlock node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTAmbiguous node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTIfStatement node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTWhileStatement node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTForeachStatement node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTTernaryNode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTBitwiseOrNode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTBitwiseXorNode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTBitwiseAndNode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTAdditiveNode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTAdditiveOperator node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTMulNode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTDivNode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTModNode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTUnaryMinusNode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTBitwiseComplNode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTNullLiteral node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTTrueNode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTFalseNode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTIntegerLiteral node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTFloatLiteral node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTStringLiteral node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTArrayLiteral node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTMapLiteral node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTMapEntry node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTEmptyFunction node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTSizeFunction node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTMethodNode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTSizeMethod node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTConstructorNode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTArrayAccess node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTReturnStatement node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTVar node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTNumberLiteral node, Object data) {
         return data;

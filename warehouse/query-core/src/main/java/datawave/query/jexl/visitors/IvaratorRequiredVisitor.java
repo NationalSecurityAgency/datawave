@@ -1,42 +1,30 @@
 package datawave.query.jexl.visitors;
 
+import org.apache.commons.jexl2.parser.ASTAndNode;
+import org.apache.commons.jexl2.parser.JexlNode;
+
 import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTEQNode;
-import org.apache.commons.jexl2.parser.ASTERNode;
-import org.apache.commons.jexl2.parser.ASTFunctionNode;
-import org.apache.commons.jexl2.parser.ASTGENode;
-import org.apache.commons.jexl2.parser.ASTGTNode;
-import org.apache.commons.jexl2.parser.ASTLENode;
-import org.apache.commons.jexl2.parser.ASTLTNode;
-import org.apache.commons.jexl2.parser.ASTNENode;
-import org.apache.commons.jexl2.parser.ASTNRNode;
-import org.apache.commons.jexl2.parser.ASTNotNode;
-import org.apache.commons.jexl2.parser.ASTOrNode;
-import org.apache.commons.jexl2.parser.ASTReference;
-import org.apache.commons.jexl2.parser.ASTReferenceExpression;
-import org.apache.commons.jexl2.parser.JexlNode;
 
 /**
  * A visitor that checks the query tree to determine if the query requires an ivarator (ExceededValue or ExceededOr)
+ *
  */
-public class IvaratorRequiredVisitor extends ShortCircuitBaseVisitor {
-    
+public class IvaratorRequiredVisitor extends BaseVisitor {
+
     private boolean ivaratorRequired = false;
-    
+
     public boolean isIvaratorRequired() {
         return ivaratorRequired;
     }
-    
+
     public static boolean isIvaratorRequired(JexlNode node) {
         IvaratorRequiredVisitor visitor = new IvaratorRequiredVisitor();
         node.jjtAccept(visitor, null);
         return visitor.isIvaratorRequired();
     }
-    
-    // We always want to descend into these nodes
+
     @Override
     public Object visit(ASTAndNode and, Object data) {
         QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(and);

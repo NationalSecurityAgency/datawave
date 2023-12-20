@@ -1,24 +1,5 @@
 package datawave.query.transformer;
 
-import com.google.common.base.Predicate;
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
-import com.google.common.hash.BloomFilter;
-import com.google.common.hash.Funnel;
-import com.google.common.hash.PrimitiveSink;
-import datawave.query.attributes.Attribute;
-import datawave.query.attributes.Attributes;
-import datawave.query.attributes.Document;
-import datawave.query.attributes.UniqueFields;
-import datawave.query.iterator.profile.FinalDocumentTrackingIterator;
-import datawave.query.model.QueryModel;
-import datawave.query.tables.ShardQueryLogic;
-import datawave.webservice.query.logic.BaseQueryLogic;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
-import org.apache.log4j.Logger;
-
-import javax.annotation.Nullable;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -31,18 +12,40 @@ import java.util.Map.Entry;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
+import javax.annotation.Nullable;
+
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Value;
+import org.apache.log4j.Logger;
+
+import com.google.common.base.Predicate;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
+import com.google.common.hash.BloomFilter;
+import com.google.common.hash.Funnel;
+import com.google.common.hash.PrimitiveSink;
+
+import datawave.query.attributes.Attribute;
+import datawave.query.attributes.Attributes;
+import datawave.query.attributes.Document;
+import datawave.query.attributes.UniqueFields;
+import datawave.query.iterator.profile.FinalDocumentTrackingIterator;
+import datawave.query.model.QueryModel;
+import datawave.query.tables.ShardQueryLogic;
+import datawave.webservice.query.logic.BaseQueryLogic;
+
 /**
  * This iterator will filter documents based on uniqueness across a set of configured fields. Only the first instance of an event with a unique set of those
  * fields will be returned. This transform is thread safe.
  */
 public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform {
-    
+
     private static final Logger log = Logger.getLogger(UniqueTransform.class);
-    
+
     private BloomFilter<byte[]> bloom;
     private UniqueFields uniqueFields;
     private Multimap<String,String> modelMapping;
-    
+
     public UniqueTransform(UniqueFields uniqueFields) {
         this.uniqueFields = uniqueFields;
         this.uniqueFields.deconstructIdentifierFields();
@@ -51,7 +54,7 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
             log.trace("unique fields: " + this.uniqueFields.getFields());
         }
     }
-    
+
     /**
      * Create a new {@link UniqueTransform} that will capture the reverse field mapping defined within the model being used by the logic (if present).
      *
@@ -71,7 +74,7 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
             }
         }
     }
-    
+
     public void updateConfig(UniqueFields uniqueFields, QueryModel model) {
         if (this.uniqueFields != uniqueFields) {
             uniqueFields.deconstructIdentifierFields();
@@ -92,7 +95,7 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
             }
         }
     }
-    
+
     /**
      * Get a predicate that will apply this transform.
      *
@@ -101,7 +104,7 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
     public Predicate<Entry<Key,Document>> getUniquePredicate() {
         return input -> UniqueTransform.this.apply(input) != null;
     }
-    
+
     /**
      * Apply uniqueness to a document.
      *
@@ -116,7 +119,7 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
             if (FinalDocumentTrackingIterator.isFinalDocumentKey(keyDocumentEntry.getKey())) {
                 return keyDocumentEntry;
             }
-            
+
             try {
                 if (isDuplicate(keyDocumentEntry.getValue())) {
                     keyDocumentEntry = null;
@@ -127,7 +130,7 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
         }
         return keyDocumentEntry;
     }
-    
+
     /**
      * Determine if a document is unique per the fields specified. If we have seen this set of fields and values before, then it is not unique.
      *
@@ -147,7 +150,7 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
         }
         return false;
     }
-    
+
     /**
      * Get a sequence of bytes that uniquely identifies this document using the configured unique fields.
      *
@@ -164,10 +167,10 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
         outputSortedFieldValues(document, output);
         return bytes.toByteArray();
     }
-    
+
     /**
      * Take the fields from the document configured for the unique transform and output them to the data output stream.
-     * 
+     *
      * @param document
      *            a document
      * @param output
@@ -192,10 +195,10 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
         dumpValues(count, lastField, values, output);
         output.flush();
     }
-    
+
     /**
      * Dump a list of values, sorted, to the data output stream
-     * 
+     *
      * @param count
      *            value count
      * @param field
@@ -221,7 +224,7 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
         }
         return count;
     }
-    
+
     // Return the set of values for the provided attribute.
     private void addValues(final String field, Attribute<?> attribute, List<String> values) {
         if (attribute instanceof Attributes) {
@@ -233,13 +236,13 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
             values.add(uniqueFields.transformValue(field, String.valueOf(attribute.getData())));
         }
     }
-    
+
     // Return the query-specified field that the provided document matches, if one exists, or otherwise return null.
     private String getUniqueField(String documentField) {
         String baseDocumentField = getFieldWithoutGrouping(documentField);
         return uniqueFields.getFields().stream().filter((field) -> isMatchingField(baseDocumentField, field)).findFirst().orElse(null);
     }
-    
+
     // Return the provided field with any grouping context removed.
     private String getFieldWithoutGrouping(String field) {
         int index = field.indexOf('.');
@@ -249,7 +252,7 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
             return field.substring(0, index);
         }
     }
-    
+
     // Return whether or not the provided document field is considered a case-insensitive match for the provided field, applying reverse model mappings if
     // configured.
     private boolean isMatchingField(String baseField, String field) {
@@ -257,11 +260,11 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
         field = field.toUpperCase();
         return field.equals(baseField) || (modelMapping != null && modelMapping.get(field).contains(baseField));
     }
-    
+
     public static class ByteFunnel implements Funnel<byte[]>, Serializable {
-        
+
         private static final long serialVersionUID = -2126172579955897986L;
-        
+
         @Override
         public void funnel(byte[] from, PrimitiveSink into) {
             into.putBytes(from);

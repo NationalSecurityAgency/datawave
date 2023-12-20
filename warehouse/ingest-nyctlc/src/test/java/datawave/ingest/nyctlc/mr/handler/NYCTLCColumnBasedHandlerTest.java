@@ -1,14 +1,9 @@
 package datawave.ingest.nyctlc.mr.handler;
 
-import datawave.ingest.csv.mr.handler.ColumnBasedHandlerTestUtil;
-import datawave.ingest.data.RawRecordContainer;
-import datawave.ingest.data.TypeRegistry;
-import datawave.ingest.mapreduce.handler.shard.AbstractColumnBasedHandler;
-import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
-import datawave.ingest.nyctlc.NYCTLCHelper;
-import datawave.ingest.nyctlc.NYCTLCIngestHelper;
-import datawave.ingest.nyctlc.NYCTLCReader;
-import datawave.util.TableName;
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.util.TimeZone;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.InputSplit;
@@ -21,21 +16,27 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.util.TimeZone;
+import datawave.ingest.csv.mr.handler.ColumnBasedHandlerTestUtil;
+import datawave.ingest.data.RawRecordContainer;
+import datawave.ingest.data.TypeRegistry;
+import datawave.ingest.mapreduce.handler.shard.AbstractColumnBasedHandler;
+import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
+import datawave.ingest.nyctlc.NYCTLCHelper;
+import datawave.ingest.nyctlc.NYCTLCIngestHelper;
+import datawave.ingest.nyctlc.NYCTLCReader;
+import datawave.util.TableName;
 
 public class NYCTLCColumnBasedHandlerTest {
-    
+
     private Configuration conf;
     private static Logger log = Logger.getLogger(NYCTLCColumnBasedHandlerTest.class);
-    
+
     @BeforeClass
     public static void setupSystemSettings() throws Exception {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         System.setProperty("file.encoding", "UTF8");
     }
-    
+
     private NYCTLCReader getNYCTLCRecordReader(String file) throws IOException, URISyntaxException {
         InputSplit split = ColumnBasedHandlerTestUtil.getSplit(file);
         TaskAttemptContext ctx = new TaskAttemptContextImpl(conf, new TaskAttemptID());
@@ -46,7 +47,7 @@ public class NYCTLCColumnBasedHandlerTest {
         reader.initialize(split, ctx);
         return reader;
     }
-    
+
     @Before
     public void setup() {
         TypeRegistry.reset();
@@ -56,7 +57,7 @@ public class NYCTLCColumnBasedHandlerTest {
         conf.set(ShardedDataTypeHandler.SHARD_GIDX_TNAME, TableName.SHARD_INDEX);
         conf.set(ShardedDataTypeHandler.SHARD_GRIDX_TNAME, TableName.SHARD_RINDEX);
     }
-    
+
     @Test
     public void testNyctlc01() throws Exception {
         log.debug("---testNyctlc01---");
@@ -66,19 +67,19 @@ public class NYCTLCColumnBasedHandlerTest {
         TypeRegistry.getInstance(conf);
         NYCTLCHelper helper = new NYCTLCHelper();
         helper.setup(conf);
-        
+
         // Set up the IngestHelper
         NYCTLCIngestHelper ingestHelper = new NYCTLCIngestHelper();
         ingestHelper.setup(conf);
-        
+
         // Set up the ColumnBasedHandler
         TaskAttemptContext context = new TaskAttemptContextImpl(conf, new TaskAttemptID());
         AbstractColumnBasedHandler<Text> abstractHandler = new AbstractColumnBasedHandler<>();
         abstractHandler.setup(context);
-        
+
         // Set up the Reader
         NYCTLCReader reader = getNYCTLCRecordReader("/input/nyctlc.csv");
-        
+
         // ----------------------------------------------------------------------
         // EVENT 1
         Assert.assertTrue("First Record did not read properly?", reader.nextKeyValue());
@@ -87,7 +88,7 @@ public class NYCTLCColumnBasedHandlerTest {
         Assert.assertTrue("Event 1 has parsing errors", event.getErrors().isEmpty());
         System.out.println("================================= EVENT 1 =================================");
         ColumnBasedHandlerTestUtil.processEvent(abstractHandler, null, event, 66, 33, 0, 0, false);
-        
+
         // ----------------------------------------------------------------------
         // EVENT 2
         Assert.assertTrue("Second Record did not read properly?", reader.nextKeyValue());
@@ -96,7 +97,7 @@ public class NYCTLCColumnBasedHandlerTest {
         Assert.assertTrue("Event 2 has parsing errors", event.getErrors().isEmpty());
         System.out.println("================================= EVENT 2 =================================");
         ColumnBasedHandlerTestUtil.processEvent(abstractHandler, null, event, 63, 27, 0, 0, false);
-        
+
         // ----------------------------------------------------------------------
         // EVENT 3
         Assert.assertTrue("Third Record did not read properly?", reader.nextKeyValue());
@@ -105,7 +106,7 @@ public class NYCTLCColumnBasedHandlerTest {
         Assert.assertTrue("Event 3 has parsing errors", event.getErrors().isEmpty());
         System.out.println("================================= EVENT 3 =================================");
         ColumnBasedHandlerTestUtil.processEvent(abstractHandler, null, event, 74, 39, 0, 0, false);
-        
+
         reader.close();
     }
 }

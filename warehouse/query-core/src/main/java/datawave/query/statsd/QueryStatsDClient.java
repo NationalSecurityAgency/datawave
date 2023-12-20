@@ -1,5 +1,13 @@
 package datawave.query.statsd;
 
+import java.nio.charset.Charset;
+import java.text.NumberFormat;
+import java.util.Locale;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import org.apache.log4j.Logger;
+
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
@@ -7,27 +15,19 @@ import com.timgroup.statsd.ConvenienceMethodProvidingStatsDClient;
 import com.timgroup.statsd.NonBlockingUdpSender;
 import com.timgroup.statsd.StatsDClientErrorHandler;
 import com.timgroup.statsd.StatsDClientException;
-import java.nio.charset.Charset;
-import java.text.NumberFormat;
-import java.util.Locale;
-
-import org.apache.log4j.Logger;
-
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * A client that can be used to record live query metrics. This client will cache results and will periodically send them with a specified max cache size.
  */
 public class QueryStatsDClient extends ConvenienceMethodProvidingStatsDClient {
     private static final Logger log = Logger.getLogger(QueryStatsDClient.class);
-    
+
     // the statsd configuration
     private final String queryId;
     private final String host;
     private final int port;
     private final int maxCacheSize;
-    
+
     // thread safe caches
     private final AtomicInteger nextCalls = new AtomicInteger(0);
     private final AtomicInteger seekCalls = new AtomicInteger(0);
@@ -35,16 +35,16 @@ public class QueryStatsDClient extends ConvenienceMethodProvidingStatsDClient {
     private final AtomicInteger sources = new AtomicInteger(0);
     private final Multimap<String,Long> timings;
     private final String prefix;
-    
+
     private static final Charset STATS_D_ENCODING = Charset.forName("UTF-8");
-    
+
     private static final StatsDClientErrorHandler NO_OP_HANDLER = e -> { /* No-op */};
-    
+
     // the client
     private static NonBlockingUdpSender client = null;
     // this monitor controls when the client is being used
     private static final Object clientMonitor = new Object();
-    
+
     public QueryStatsDClient(String queryId, String host, int port, int maxCacheSize) {
         this.queryId = queryId;
         this.host = host;
@@ -54,10 +54,10 @@ public class QueryStatsDClient extends ConvenienceMethodProvidingStatsDClient {
         this.timings = Multimaps.synchronizedMultimap(temp);
         this.prefix = queryId + ".dwquery.";
     }
-    
+
     /**
      * Get the client, creating it if needed. This should only be called when the clientMonitor has been acquired.
-     * 
+     *
      * @return the client
      */
     private NonBlockingUdpSender client() {
@@ -77,10 +77,10 @@ public class QueryStatsDClient extends ConvenienceMethodProvidingStatsDClient {
         }
         return this.client;
     }
-    
+
     /**
      * Flush the stats to the stats d client.
-     * 
+     *
      * @return true if there were any stats to flush.
      */
     private boolean flushStats() {
@@ -126,46 +126,46 @@ public class QueryStatsDClient extends ConvenienceMethodProvidingStatsDClient {
         }
         return flushed;
     }
-    
+
     private void flushAsNeeded() {
         if (getSize() > maxCacheSize) {
             flushStats();
         }
     }
-    
+
     public void flush() {
         flushStats();
     }
-    
+
     public void next() {
         nextCalls.incrementAndGet();
         flushAsNeeded();
     }
-    
+
     public void seek() {
         seekCalls.incrementAndGet();
         flushAsNeeded();
     }
-    
+
     public void yield() {
         yieldCalls.incrementAndGet();
         flushAsNeeded();
     }
-    
+
     public void addSource() {
         sources.incrementAndGet();
         flushAsNeeded();
     }
-    
+
     public void timing(String call, long time) {
         timings.put(call, time);
         flushAsNeeded();
     }
-    
+
     public int getSize() {
         return nextCalls.get() + seekCalls.get() + yieldCalls.get() + sources.get() + timings.size();
     }
-    
+
     /**
      * Cleanly shut down this StatsD client. This method may throw an exception if the socket cannot be closed.
      */
@@ -180,7 +180,7 @@ public class QueryStatsDClient extends ConvenienceMethodProvidingStatsDClient {
             }
         }
     }
-    
+
     /**
      * Adjusts the specified counter by a given delta.
      *
@@ -200,7 +200,7 @@ public class QueryStatsDClient extends ConvenienceMethodProvidingStatsDClient {
     public void count(String aspect, long delta, double sampleRate) {
         send(messageFor(aspect, Long.toString(delta), "c", sampleRate));
     }
-    
+
     /**
      * Records the latest fixed value for the specified named gauge.
      *
@@ -217,22 +217,22 @@ public class QueryStatsDClient extends ConvenienceMethodProvidingStatsDClient {
     public void recordGaugeValue(String aspect, long value) {
         recordGaugeCommon(aspect, Long.toString(value), value < 0, false);
     }
-    
+
     @Override
     public void recordGaugeValue(String aspect, double value) {
         recordGaugeCommon(aspect, stringValueOf(value), value < 0, false);
     }
-    
+
     @Override
     public void recordGaugeDelta(String aspect, long value) {
         recordGaugeCommon(aspect, Long.toString(value), value < 0, true);
     }
-    
+
     @Override
     public void recordGaugeDelta(String aspect, double value) {
         recordGaugeCommon(aspect, stringValueOf(value), value < 0, true);
     }
-    
+
     private void recordGaugeCommon(String aspect, String value, boolean negative, boolean delta) {
         final StringBuilder message = new StringBuilder();
         if (!delta && negative) {
@@ -241,7 +241,7 @@ public class QueryStatsDClient extends ConvenienceMethodProvidingStatsDClient {
         message.append(messageFor(aspect, (delta && !negative) ? ("+" + value) : value, "g"));
         send(message.toString());
     }
-    
+
     /**
      * StatsD supports counting unique occurrences of events between flushes, Call this method to records an occurrence of the specified named event.
      *
@@ -258,7 +258,7 @@ public class QueryStatsDClient extends ConvenienceMethodProvidingStatsDClient {
     public void recordSetEvent(String aspect, String eventName) {
         send(messageFor(aspect, eventName, "s"));
     }
-    
+
     /**
      * Records an execution time in milliseconds for the specified named operation.
      *
@@ -275,27 +275,27 @@ public class QueryStatsDClient extends ConvenienceMethodProvidingStatsDClient {
     public void recordExecutionTime(String aspect, long timeInMs, double sampleRate) {
         send(messageFor(aspect, Long.toString(timeInMs), "ms", sampleRate));
     }
-    
+
     private String messageFor(String aspect, String value, String type) {
         return messageFor(aspect, value, type, 1.0);
     }
-    
+
     private String messageFor(String aspect, String value, String type, double sampleRate) {
         final String message = prefix + aspect + ':' + value + '|' + type;
         return (sampleRate == 1.0) ? message : (message + "|@" + stringValueOf(sampleRate));
     }
-    
+
     private void send(final String message) {
         synchronized (this.clientMonitor) {
             client().send(message);
         }
     }
-    
+
     private String stringValueOf(double value) {
         NumberFormat formatter = NumberFormat.getInstance(Locale.US);
         formatter.setGroupingUsed(false);
         formatter.setMaximumFractionDigits(19);
         return formatter.format(value);
     }
-    
+
 }

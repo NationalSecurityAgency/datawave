@@ -1,12 +1,5 @@
 package datawave.webservice.query;
 
-import com.google.common.base.Preconditions;
-import com.google.common.base.Splitter;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.time.DateUtils;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
-
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
@@ -16,12 +9,20 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.time.DateUtils;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+
+import com.google.common.base.Preconditions;
+import com.google.common.base.Splitter;
+
 public class QueryParametersImpl implements QueryParameters {
-    
-    private static final List<String> KNOWN_PARAMS = Arrays
-                    .asList(QUERY_STRING, QUERY_NAME, QUERY_PERSISTENCE, QUERY_PAGESIZE, QUERY_PAGETIMEOUT, QUERY_AUTHORIZATIONS, QUERY_EXPIRATION,
-                                    QUERY_TRACE, QUERY_BEGIN, QUERY_END, QUERY_VISIBILITY, QUERY_LOGIC_NAME, QUERY_MAX_RESULTS_OVERRIDE);
-    
+
+    private static final List<String> KNOWN_PARAMS = Arrays.asList(QUERY_STRING, QUERY_NAME, QUERY_PERSISTENCE, QUERY_PAGESIZE, QUERY_PAGETIMEOUT,
+                    QUERY_AUTHORIZATIONS, QUERY_EXPIRATION, QUERY_TRACE, QUERY_BEGIN, QUERY_END, QUERY_VISIBILITY, QUERY_LOGIC_NAME, QUERY_MAX_RESULTS_OVERRIDE,
+                    QUERY_SYSTEM_FROM);
+
     protected String query;
     protected String queryName;
     protected QueryPersistence persistenceMode;
@@ -36,12 +37,13 @@ public class QueryParametersImpl implements QueryParameters {
     protected Date endDate;
     protected String visibility;
     protected String logicName;
+    protected String systemFrom;
     protected Map<String,List<String>> requestHeaders;
-    
+
     public QueryParametersImpl() {
         clear();
     }
-    
+
     /**
      * Configure internal variables via the incoming parameter map, performing validation of values.
      *
@@ -117,11 +119,13 @@ public class QueryParametersImpl implements QueryParameters {
                 this.visibility = values.get(0);
             } else if (QUERY_LOGIC_NAME.equals(param)) {
                 this.logicName = values.get(0);
+            } else if (QUERY_SYSTEM_FROM.equals(param)) {
+                this.systemFrom = values.get(0);
             } else {
                 throw new IllegalArgumentException("Unknown condition.");
             }
         }
-        
+
         try {
             Preconditions.checkNotNull(this.query, "QueryParameter 'query' cannot be null");
             Preconditions.checkNotNull(this.queryName, "QueryParameter 'queryName' cannot be null");
@@ -133,16 +137,16 @@ public class QueryParametersImpl implements QueryParameters {
             throw new IllegalArgumentException("Missing one or more required QueryParameters", e);
         }
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (this == o)
             return true;
         if (o == null || getClass() != o.getClass())
             return false;
-        
+
         QueryParametersImpl that = (QueryParametersImpl) o;
-        
+
         if (pagesize != that.pagesize)
             return false;
         if (pageTimeout != that.pageTimeout)
@@ -175,9 +179,11 @@ public class QueryParametersImpl implements QueryParameters {
             return false;
         if (requestHeaders != null ? !requestHeaders.equals(that.requestHeaders) : that.requestHeaders != null)
             return false;
+        if (systemFrom != null ? !systemFrom.equals(that.systemFrom) : that.systemFrom != null)
+            return false;
         return true;
     }
-    
+
     @Override
     public int hashCode() {
         int result = query.hashCode();
@@ -196,36 +202,37 @@ public class QueryParametersImpl implements QueryParameters {
         result = 31 * result + (visibility != null ? visibility.hashCode() : 0);
         result = 31 * result + (logicName != null ? logicName.hashCode() : 0);
         result = 31 * result + (requestHeaders != null ? requestHeaders.hashCode() : 0);
+        result = 31 * result + (systemFrom != null ? systemFrom.hashCode() : 0);
         return result;
     }
-    
+
     public static synchronized String formatDate(Date d) throws ParseException {
         String formatPattern = "yyyyMMdd HHmmss.SSS";
         SimpleDateFormat formatter = new SimpleDateFormat(formatPattern);
         formatter.setLenient(false);
         return formatter.format(d);
     }
-    
+
     protected static final String defaultStartTime = "000000";
     protected static final String defaultStartMillisec = "000";
     protected static final String defaultEndTime = "235959";
     protected static final String defaultEndMillisec = "999";
     protected static final String formatPattern = "yyyyMMdd HHmmss.SSS";
     private static final SimpleDateFormat dateFormat;
-    
+
     static {
         dateFormat = new SimpleDateFormat(formatPattern);
         dateFormat.setLenient(false);
     }
-    
+
     public static Date parseStartDate(String s) throws ParseException {
         return parseDate(s, defaultStartTime, defaultStartMillisec);
     }
-    
+
     public static Date parseEndDate(String s) throws ParseException {
         return parseDate(s, defaultEndTime, defaultEndMillisec);
     }
-    
+
     public static synchronized Date parseDate(String s, String defaultTime, String defaultMillisec) throws ParseException {
         Date d;
         ParseException e = null;
@@ -237,11 +244,11 @@ public class QueryParametersImpl implements QueryParameters {
                 if (StringUtils.isNotBlank(defaultTime) && !str.contains(" ")) {
                     str = str + " " + defaultTime;
                 }
-                
+
                 if (StringUtils.isNotBlank(defaultMillisec) && !str.contains(".")) {
                     str = str + "." + defaultMillisec;
                 }
-                
+
                 try {
                     d = QueryParametersImpl.dateFormat.parse(str);
                     // if any time value in HHmmss was set either by default or by the user
@@ -256,15 +263,16 @@ public class QueryParametersImpl implements QueryParameters {
         }
         return d;
     }
-    
+
     /**
      * Convenience method to generate a {@code Map<String,List<String>>} from the specified arguments. If an argument is null, it's associated parameter name
      * (key) will not be added to the map, which is why Integer and Boolean wrappers are used for greater flexibility.
-     * 
+     *
      * The 'parameters' argument will not be parsed, so its internal elements will not be placed into the map. If non-null, the 'parameters' value will be
      * mapped directly to the QUERY_PARAMS key.
-     * 
-     * No attempt is made to determine whether or not the given arguments constitute a valid query. If validation is desired, see the {@link validate} method
+     *
+     * No attempt is made to determine whether or not the given arguments constitute a valid query. If validation is desired, see the {@link #validate(Map)}
+     * method
      *
      * @param queryLogicName
      *            - name of QueryLogic to use
@@ -298,8 +306,8 @@ public class QueryParametersImpl implements QueryParameters {
      */
     public static Map<String,List<String>> paramsToMap(String queryLogicName, String query, String queryName, String queryVisibility, Date beginDate,
                     Date endDate, String queryAuthorizations, Date expirationDate, Integer pagesize, Integer pageTimeout, Long maxResultsOverride,
-                    QueryPersistence persistenceMode, String parameters, Boolean trace) throws ParseException {
-        
+                    QueryPersistence persistenceMode, String systemFrom, String parameters, Boolean trace) throws ParseException {
+
         MultiValueMap<String,String> p = new LinkedMultiValueMap<>();
         if (queryLogicName != null) {
             p.set(QueryParameters.QUERY_LOGIC_NAME, queryLogicName);
@@ -342,158 +350,171 @@ public class QueryParametersImpl implements QueryParameters {
         if (trace != null) {
             p.set(QueryParameters.QUERY_TRACE, trace.toString());
         }
+        if (systemFrom != null) {
+            p.set(QueryParameters.QUERY_SYSTEM_FROM, systemFrom);
+        }
         if (parameters != null) {
             p.set(QueryParameters.QUERY_PARAMS, parameters);
         }
-        
+
         return p;
     }
-    
+
     @Override
     public String getQuery() {
         return query;
     }
-    
+
     @Override
     public void setQuery(String query) {
         this.query = query;
     }
-    
+
     @Override
     public String getQueryName() {
         return queryName;
     }
-    
+
     @Override
     public void setQueryName(String queryName) {
         this.queryName = queryName;
     }
-    
+
     @Override
     public QueryPersistence getPersistenceMode() {
         return persistenceMode;
     }
-    
+
     @Override
     public void setPersistenceMode(QueryPersistence persistenceMode) {
         this.persistenceMode = persistenceMode;
     }
-    
+
     @Override
     public int getPagesize() {
         return pagesize;
     }
-    
+
     @Override
     public void setPagesize(int pagesize) {
         this.pagesize = pagesize;
     }
-    
+
     @Override
     public int getPageTimeout() {
         return pageTimeout;
     }
-    
+
     @Override
     public void setPageTimeout(int pageTimeout) {
         this.pageTimeout = pageTimeout;
     }
-    
+
     @Override
     public long getMaxResultsOverride() {
         return maxResultsOverride;
     }
-    
+
     @Override
     public void setMaxResultsOverride(long maxResultsOverride) {
         this.maxResultsOverride = maxResultsOverride;
     }
-    
+
     @Override
     public boolean isMaxResultsOverridden() {
         return this.isMaxResultsOverridden;
     }
-    
+
     @Override
     public String getAuths() {
         return auths;
     }
-    
+
     @Override
     public void setAuths(String auths) {
         this.auths = auths;
     }
-    
+
     @Override
     public Date getExpirationDate() {
         return expirationDate;
     }
-    
+
     @Override
     public void setExpirationDate(Date expirationDate) {
         this.expirationDate = expirationDate;
     }
-    
+
     @Override
     public boolean isTrace() {
         return trace;
     }
-    
+
     @Override
     public void setTrace(boolean trace) {
         this.trace = trace;
     }
-    
+
     @Override
     public Date getBeginDate() {
         return beginDate;
     }
-    
+
     @Override
     public Date getEndDate() {
         return endDate;
     }
-    
+
     @Override
     public void setBeginDate(Date beginDate) {
         this.beginDate = beginDate;
     }
-    
+
     @Override
     public void setEndDate(Date endDate) {
         this.endDate = endDate;
     }
-    
+
     @Override
     public String getVisibility() {
         return visibility;
     }
-    
+
     @Override
     public void setVisibility(String visibility) {
         this.visibility = visibility;
     }
-    
+
     @Override
     public String getLogicName() {
         return logicName;
     }
-    
+
     @Override
     public void setLogicName(String logicName) {
         this.logicName = logicName;
     }
-    
+
+    @Override
+    public String getSystemFrom() {
+        return systemFrom;
+    }
+
+    @Override
+    public void setSystemFrom(String systemFrom) {
+        this.systemFrom = systemFrom;
+    }
+
     @Override
     public Map<String,List<String>> getRequestHeaders() {
         return requestHeaders;
     }
-    
+
     @Override
     public void setRequestHeaders(Map<String,List<String>> requestHeaders) {
         this.requestHeaders = requestHeaders;
     }
-    
+
     @Override
     public Map<String,List<String>> getUnknownParameters(Map<String,List<String>> allQueryParameters) {
         Map<String,List<String>> p = new LinkedHashMap<>();
@@ -504,7 +525,7 @@ public class QueryParametersImpl implements QueryParameters {
         }
         return p;
     }
-    
+
     @Override
     public void clear() {
         this.query = null;
@@ -521,5 +542,6 @@ public class QueryParametersImpl implements QueryParameters {
         this.visibility = null;
         this.logicName = null;
         this.requestHeaders = null;
+        this.systemFrom = null;
     }
 }

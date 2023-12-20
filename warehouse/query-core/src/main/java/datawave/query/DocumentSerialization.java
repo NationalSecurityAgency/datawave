@@ -10,13 +10,13 @@ import java.util.zip.DeflaterOutputStream;
 import java.util.zip.Inflater;
 import java.util.zip.InflaterInputStream;
 
-import datawave.query.function.deserializer.DocumentDeserializer;
-import datawave.query.function.serializer.KryoDocumentSerializer;
 import datawave.query.exceptions.InvalidDocumentHeader;
 import datawave.query.exceptions.NoSuchDeserializerException;
+import datawave.query.function.deserializer.DocumentDeserializer;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.function.deserializer.WritableDocumentDeserializer;
 import datawave.query.function.serializer.DocumentSerializer;
+import datawave.query.function.serializer.KryoDocumentSerializer;
 import datawave.query.function.serializer.WritableDocumentSerializer;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl.Parameter;
@@ -29,20 +29,20 @@ import datawave.webservice.query.exception.QueryException;
  *
  */
 public class DocumentSerialization {
-    
+
     public enum ReturnType {
         writable, kryo, tostring, noop
     }
-    
+
     public static final ReturnType DEFAULT_RETURN_TYPE = ReturnType.kryo;
-    
+
     private static final int DOC_MAGIC = 0x8b2f;
-    
+
     public static final byte NONE = 0;
     public static final byte GZIP = 1;
-    
+
     public static final int ZLIB_NUMBER = 2;
-    
+
     /**
      * If a user-supplied ReturnType is specified, use it; otherwise, use the default ReturnType of {@link #DEFAULT_RETURN_TYPE}
      *
@@ -55,14 +55,14 @@ public class DocumentSerialization {
         if (null != returnType && !org.apache.commons.lang.StringUtils.isBlank(returnType.getParameterValue())) {
             return ReturnType.valueOf(returnType.getParameterValue());
         }
-        
+
         return DEFAULT_RETURN_TYPE;
     }
-    
+
     public static DocumentDeserializer getDocumentDeserializer(Query settings) throws NoSuchDeserializerException {
         return getDocumentDeserializer(getReturnType(settings));
     }
-    
+
     public static DocumentDeserializer getDocumentDeserializer(ReturnType rt) throws NoSuchDeserializerException {
         if (ReturnType.kryo.equals(rt)) {
             return new KryoDocumentDeserializer();
@@ -73,11 +73,11 @@ public class DocumentSerialization {
             throw new NoSuchDeserializerException(qe);
         }
     }
-    
+
     public static DocumentSerializer getDocumentSerializer(Query settings) throws NoSuchDeserializerException {
         return getDocumentSerializer(getReturnType(settings));
     }
-    
+
     public static DocumentSerializer getDocumentSerializer(ReturnType rt) throws NoSuchDeserializerException {
         if (ReturnType.kryo.equals(rt)) {
             return new KryoDocumentSerializer();
@@ -88,24 +88,24 @@ public class DocumentSerialization {
             throw new NoSuchDeserializerException(qe);
         }
     }
-    
+
     public static byte[] getHeader() {
         return getHeader(NONE);
     }
-    
+
     public static byte[] getHeader(int compression) {
-        
+
         return new byte[] {(byte) DOC_MAGIC, // Magic number (short)
                 (byte) (DOC_MAGIC >> 8), // Magic number (short)
                 (byte) compression};
     }
-    
+
     public static byte[] writeBody(byte[] data, int compression) throws InvalidDocumentHeader {
         if (NONE == compression) {
             return data;
         } else if (GZIP == compression) {
             ByteArrayOutputStream bytes = new ByteArrayOutputStream(data.length);
-            
+
             try {
                 Deflater deflater = new Deflater(ZLIB_NUMBER);
                 DeflaterOutputStream deflate = new DeflaterOutputStream(bytes, deflater, 1024);
@@ -121,24 +121,24 @@ public class DocumentSerialization {
             throw new InvalidDocumentHeader(qe);
         }
     }
-    
+
     public static InputStream consumeHeader(byte[] data) throws InvalidDocumentHeader {
         if (null == data || 3 > data.length) {
-            QueryException qe = new QueryException(DatawaveErrorCode.DATA_INVALID_ERROR, MessageFormat.format("Length: {0}",
-                            (null != data ? data.length : null)));
+            QueryException qe = new QueryException(DatawaveErrorCode.DATA_INVALID_ERROR,
+                            MessageFormat.format("Length: {0}", (null != data ? data.length : null)));
             throw new InvalidDocumentHeader(qe);
         }
-        
+
         ByteArrayInputStream bais = new ByteArrayInputStream(data);
         int magic = readUShort(bais);
-        
+
         if (DOC_MAGIC != magic) {
             NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.EXPECTED_HEADER_NOT_FOUND);
             throw new InvalidDocumentHeader(qe);
         }
-        
+
         int compression = readUByte(bais);
-        
+
         if (NONE == compression) {
             return new ByteArrayInputStream(data, 3, data.length - 3);
         } else if (GZIP == compression) {
@@ -149,7 +149,7 @@ public class DocumentSerialization {
             throw new InvalidDocumentHeader(qe);
         }
     }
-    
+
     /*
      * Reads unsigned short in Intel byte order.
      */
@@ -157,26 +157,26 @@ public class DocumentSerialization {
         int b = readUByte(in);
         return (readUByte(in) << 8) | b;
     }
-    
+
     /*
      * Reads unsigned byte.
      */
     private static int readUByte(InputStream in) throws InvalidDocumentHeader {
         int b;
-        
+
         try {
             b = in.read();
         } catch (IOException e) {
             QueryException qe = new QueryException(DatawaveErrorCode.BUFFER_READ_ERROR, e);
             throw new InvalidDocumentHeader(qe);
         }
-        
+
         if (b == -1) {
             QueryException qe = new QueryException(DatawaveErrorCode.INVALID_BYTE);
             throw new InvalidDocumentHeader(qe);
         }
-        
+
         return b;
     }
-    
+
 }
