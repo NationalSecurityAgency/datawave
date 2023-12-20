@@ -165,7 +165,7 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
         if (data == null) {
             // Make this EQNode the root
             if (!includeReferences.contains(builder.getField()) && excludeReferences.contains(builder.getField())) {
-                throw new IllegalStateException(builder.getField() + " is a blacklisted reference.");
+                throw new IllegalStateException(builder.getField() + " is a disallowlisted reference.");
             } else {
                 root = builder.build();
 

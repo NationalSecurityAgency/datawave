@@ -17,7 +17,6 @@ import com.google.common.collect.Maps;
 import datawave.iterators.filter.ageoff.AgeOffPeriod;
 import datawave.iterators.filter.ageoff.AppliedRule;
 import datawave.iterators.filter.ageoff.FilterOptions;
-import datawave.iterators.filter.ageoff.FilterRule;
 import datawave.query.Constants;
 import datawave.query.iterator.QueryIterator;
 import datawave.query.iterator.QueryOptions;
@@ -36,8 +35,6 @@ public class JexlRule extends AppliedRule {
     protected boolean isApplied;
 
     private HashMap<String,String> iterOptions;
-
-    protected IteratorEnvironment environment;
 
     private static final Logger log = Logger.getLogger(JexlRule.class);
 
@@ -70,15 +67,6 @@ public class JexlRule extends AppliedRule {
         iterOptions.put(QueryOptions.CONTAINS_INDEX_ONLY_TERMS, "false");
     }
 
-    @Override
-    public FilterRule decorate(Object decorate) {
-        if (decorate instanceof IteratorEnvironment) {
-            this.environment = (IteratorEnvironment) decorate;
-        }
-
-        return this;
-    }
-
     /*
      * (non-Javadoc)
      *
@@ -101,7 +89,7 @@ public class JexlRule extends AppliedRule {
             if (queryIter == null) {
                 queryIter = new QueryIterator();
                 try {
-                    queryIter.init(iter.deepCopy(environment), iterOptions, environment);
+                    queryIter.init(iter.deepCopy(iterEnv), iterOptions, iterEnv);
                 } catch (IOException e) {
                     log.debug("Failed to initialize queryIter with provided query", e);
                     return false;

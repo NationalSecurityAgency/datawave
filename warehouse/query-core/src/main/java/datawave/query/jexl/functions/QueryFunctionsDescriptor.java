@@ -284,6 +284,11 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
             case QueryFunctions.NO_EXPANSION:
             case QueryFunctions.LENIENT_FIELDS_FUNCTION:
             case QueryFunctions.STRICT_FIELDS_FUNCTION:
+            case QueryFunctions.SUM:
+            case QueryFunctions.COUNT:
+            case QueryFunctions.MIN:
+            case QueryFunctions.MAX:
+            case QueryFunctions.AVERAGE:
                 if (numArgs == 0) {
                     throw new IllegalArgumentException("Expected at least one argument to the " + name + " function");
                 }
