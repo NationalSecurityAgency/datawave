@@ -432,22 +432,22 @@ public class LookupUUIDUtil {
         log.debug("Initial query parameters: " + queryParameters);
         Query query = responseObjectFactory.getQueryImpl();
         if (queryParameters != null) {
-            MultivaluedMap<String,String> parms = new MultivaluedMapImpl<>();
+            MultivaluedMap<String,String> optionalQueryParameters = new MultivaluedMapImpl<>();
             if (defaultOptionalParams != null) {
-                parms.putAll(defaultOptionalParams);
+                optionalQueryParameters.putAll(defaultOptionalParams);
             }
-            String params = queryParameters.getFirst(QueryParameters.QUERY_PARAMS);
-            if (params != null) {
-                for (QueryImpl.Parameter pm : QueryUtil.parseParameters(params)) {
-                    parms.putSingle(pm.getParameterName(), pm.getParameterValue());
+            String delimitedParams = queryParameters.getFirst(QueryParameters.QUERY_PARAMS);
+            if (delimitedParams != null) {
+                for (QueryImpl.Parameter pm : QueryUtil.parseParameters(delimitedParams)) {
+                    optionalQueryParameters.putSingle(pm.getParameterName(), pm.getParameterValue());
                 }
             }
-            parms.putAll(queryParameters);
-            log.debug("Final query parameters: " + parms);
-            query.setOptionalQueryParameters(parms);
-            for (String key : parms.keySet()) {
-                if (parms.get(key).size() == 1) {
-                    query.addParameter(key, parms.getFirst(key));
+            optionalQueryParameters.putAll(queryParameters);
+            log.debug("Final query parameters: " + optionalQueryParameters);
+            query.setOptionalQueryParameters(optionalQueryParameters);
+            for (String key : optionalQueryParameters.keySet()) {
+                if (optionalQueryParameters.get(key).size() == 1) {
+                    query.addParameter(key, optionalQueryParameters.getFirst(key));
                 }
             }
         }
