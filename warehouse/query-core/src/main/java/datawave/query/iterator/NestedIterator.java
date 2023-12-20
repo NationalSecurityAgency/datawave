@@ -77,4 +77,12 @@ public interface NestedIterator<T> extends Iterator<T> {
      *            non-null context for evaluation
      */
     void setContext(T context);
+
+    /**
+     * This information is required for safely dropping terms from an intersection in the AndIterator
+     *
+     * @return true if the field is non-event
+     */
+    boolean isNonEventField();
+
 }

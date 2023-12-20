@@ -197,4 +197,14 @@ public class EventDataScanNestedIterator implements NestedIterator<Key>, Seekabl
     public void setContext(Key context) {
         // no-op
     }
+
+    /**
+     * By definition this iterator only scans event keys
+     *
+     * @return false
+     */
+    @Override
+    public boolean isNonEventField() {
+        return false;
+    }
 }

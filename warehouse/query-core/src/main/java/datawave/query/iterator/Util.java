@@ -142,4 +142,33 @@ public class Util {
         return d;
     }
 
+    /**
+     * For cases when you have a mix of includes and context includes within a junction
+     *
+     * @param includes
+     *            iterators
+     * @param contextIncludes
+     *            iterators that require context to evaluate
+     * @return A document
+     */
+    public static <T> Document buildNewDocument(TreeMultimap<T,NestedIterator<T>> includes, TreeMultimap<T,NestedIterator<T>> contextIncludes, T lowest) {
+        Document d = new Document();
+        if (includes != null) {
+            for (NestedIterator<T> include : includes.get(lowest)) {
+                d.putAll(include.document().getDictionary().entrySet().iterator(), false);
+            }
+        }
+
+        if (contextIncludes != null) {
+            // context includes may not map to the lowest provided key
+            for (NestedIterator<T> contextInclude : contextIncludes.get(lowest)) {
+                Document doc = contextInclude.document();
+                if (doc != null) {
+                    d.putAll(doc.getDictionary().entrySet().iterator(), false);
+                }
+            }
+        }
+        return d;
+    }
+
 }
