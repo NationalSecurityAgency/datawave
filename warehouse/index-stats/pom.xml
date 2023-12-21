@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave</groupId>
         <artifactId>datawave-warehouse-parent</artifactId>
-        <version>5.2.17</version>
+        <version>5.2.18-SNAPSHOT</version>
     </parent>
     <artifactId>datawave-index-stats</artifactId>
     <packaging>jar</packaging>
