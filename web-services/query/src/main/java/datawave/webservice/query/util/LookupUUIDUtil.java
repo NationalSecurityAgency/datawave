@@ -460,7 +460,7 @@ public class LookupUUIDUtil {
             QueryLogic<?> logic = queryLogicFactory.getQueryLogic(logicName, principal);
             Query settings = createSettings(queryParameters);
             if (queryAuths == null) {
-                logic.preInitialize(settings, AuthorizationsUtil.buildAuthorizations(null));
+                logic.preInitialize(settings, AuthorizationsUtil.buildAuthorizations(((DatawavePrincipal)principal).getAuthorizations()));
             } else {
                 logic.preInitialize(settings, AuthorizationsUtil.buildAuthorizations(Collections.singleton(AuthorizationsUtil.splitAuths(queryAuths))));
             }
