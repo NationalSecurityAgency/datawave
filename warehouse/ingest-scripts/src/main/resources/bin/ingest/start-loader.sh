@@ -84,7 +84,7 @@ if [[ ${TOTAL} > 0 ]]; then
       echo "About to reset stuck files, no active loaders detected on ${MAP_LOADER_HDFS_NAME_NODES[$LOADER]}"
       echo "FILES_STUCK_LOADING: " $FILES_STUCK_LOADING
       for stuckFile in $FILES_STUCK_LOADING; do
-        echo "Resetting ${stuckFile} to ${stuckfile%.loading}.complete"
+        echo "Resetting ${stuckFile} to ${stuckFile%.loading}.complete"
         moving=$(${INGEST_HADOOP_HOME}/bin/hadoop fs -mv $stuckFile ${stuckFile%.loading}.complete 2>&1)
         if [[ ! -z $moving ]]; then
           echo "Error resetting file: $moving . Manually check for orphans."
@@ -114,10 +114,10 @@ if [[ ${TOTAL} > 0 ]]; then
 
   done
   # Run an extra map loader, if defined.
-  # This may be used as a safeguard in case the name node is not in the main map loader property.
+  # This may be used as a safeguard in case the warehouse name node is not in the main map loader property.
   # It can also help with transitioning to different loader settings.
   if [[ -z ${EXTRA_MAP_LOADER} ]]; then
-    echo "No extra map file loader configured"
+    echo "No extra map file loader configured."
   elif [[ ${EXTRA_MAP} == 0 ]]; then
     echo "Extra map loader already running."
   else
