@@ -40,17 +40,12 @@ public class TestFilter extends AppliedRule {
     }
 
     @Override
-    public FilterRule decorate(Object decoratedObject) {
+    public FilterRule deepCopy(AgeOffPeriod period, IteratorEnvironment iterEnv) {
         return null;
     }
 
     @Override
-    public FilterRule deepCopy(AgeOffPeriod period) {
-        return null;
-    }
-
-    @Override
-    public FilterRule deepCopy(long scanStart) {
+    public FilterRule deepCopy(long scanStart, IteratorEnvironment iterEnv) {
         return this;
     }
 }
