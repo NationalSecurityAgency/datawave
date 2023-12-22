@@ -658,6 +658,7 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
                         break;
                     case 16:
                         message.systemFrom = input.readString();
+                        break;
                     default:
                         input.handleUnknownField(number, this);
                         break;
