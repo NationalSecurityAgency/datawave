@@ -7,6 +7,7 @@ import java.io.ObjectOutputStream;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -48,6 +49,7 @@ import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.configuration.QueryData;
 import datawave.core.query.logic.QueryLogic;
 import datawave.core.query.logic.QueryLogicFactory;
+import datawave.microservice.authorization.util.AuthorizationsUtil;
 import datawave.microservice.mapreduce.bulkresults.map.SerializationFormat;
 import datawave.microservice.query.Query;
 import datawave.mr.bulk.BulkInputFormat;
@@ -354,6 +356,12 @@ public class BulkResultsJobConfiguration extends MapReduceJobConfiguration imple
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
             client = connectionFactory.getClient(userDN, proxyServers, logic.getConnectionPriority(), trackingMap);
 
+            if (q.getQueryAuthorizations() == null) {
+                logic.preInitialize(q, AuthorizationsUtil.buildAuthorizations(null));
+            } else {
+                logic.preInitialize(q,
+                                AuthorizationsUtil.buildAuthorizations(Collections.singleton(AuthorizationsUtil.splitAuths(q.getQueryAuthorizations()))));
+            }
             // Merge user auths with the auths that they use in the Query
             // the query principal is our local principal unless the query logic has a different user operations
             DatawavePrincipal queryPrincipal = (DatawavePrincipal) ((logic.getUserOperations() == null) ? principal
