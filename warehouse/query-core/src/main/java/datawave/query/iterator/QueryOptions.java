@@ -258,6 +258,8 @@ public class QueryOptions implements OptionDescriber {
 
     public static final String EXCERPT_FIELDS = "excerpt.fields";
 
+    public static final String EXCERPT_FIELDS_NO_HIT_CALLOUT = "excerpt.fields.no.hit.callout";
+
     public static final String EXCERPT_ITERATOR = "excerpt.iterator.class";
 
     // field and next thresholds before a seek is issued
@@ -420,6 +422,8 @@ public class QueryOptions implements OptionDescriber {
 
     protected ExcerptFields excerptFields;
 
+    protected boolean excerptFieldsNoHitCallout;
+
     protected Class<? extends SortedKeyValueIterator<Key,Value>> excerptIterator = TermFrequencyExcerptIterator.class;
 
     // off by default, controls when to issue a seek
@@ -533,6 +537,7 @@ public class QueryOptions implements OptionDescriber {
         this.trackSizes = other.trackSizes;
         this.activeQueryLogName = other.activeQueryLogName;
         this.excerptFields = other.excerptFields;
+        this.excerptFieldsNoHitCallout = other.excerptFieldsNoHitCallout;
         this.excerptIterator = other.excerptIterator;
 
         this.fiFieldSeek = other.fiFieldSeek;
@@ -1104,6 +1109,14 @@ public class QueryOptions implements OptionDescriber {
         this.excerptFields = excerptFields;
     }
 
+    public boolean getExcerptFieldsNoHitCallout() {
+        return excerptFieldsNoHitCallout;
+    }
+
+    public void setExcerptFieldsNoHitCallout(boolean excerptFieldsNoHitCallout) {
+        this.excerptFieldsNoHitCallout = excerptFieldsNoHitCallout;
+    }
+
     public Class<? extends SortedKeyValueIterator<Key,Value>> getExcerptIterator() {
         return excerptIterator;
     }
@@ -1204,6 +1217,7 @@ public class QueryOptions implements OptionDescriber {
         options.put(ACTIVE_QUERY_LOG_NAME, "If not provided or set to '" + ActiveQueryLog.DEFAULT_NAME
                         + "', will use the default shared Active Query Log instance. If provided otherwise, uses a separate distinct Active Query Log that will include the unique name in log messages.");
         options.put(EXCERPT_FIELDS, "excerpt fields");
+        options.put(EXCERPT_FIELDS_NO_HIT_CALLOUT, "excerpt fields no hit callout");
         options.put(EXCERPT_ITERATOR, "excerpt iterator class (default datawave.query.iterator.logic.TermFrequencyExcerptIterator");
         options.put(FI_FIELD_SEEK, "The number of fields traversed by a Field Index data filter or aggregator before a seek is issued");
         options.put(FI_NEXT_SEEK, "The number of next calls made by a Field Index data filter or aggregator before a seek is issued");
@@ -1709,6 +1723,10 @@ public class QueryOptions implements OptionDescriber {
 
         if (options.containsKey(EXCERPT_FIELDS)) {
             setExcerptFields(ExcerptFields.from(options.get(EXCERPT_FIELDS)));
+        }
+
+        if (options.containsKey(EXCERPT_FIELDS_NO_HIT_CALLOUT)) {
+            setExcerptFieldsNoHitCallout(Boolean.parseBoolean(options.get(EXCERPT_FIELDS_NO_HIT_CALLOUT)));
         }
 
         if (options.containsKey(EXCERPT_ITERATOR)) {
