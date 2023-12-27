@@ -1249,6 +1249,8 @@ public class QueryOptions implements OptionDescriber {
 
         if (options.containsKey(DISABLE_DOCUMENTS_WITHOUT_EVENTS)) {
             this.disableIndexOnlyDocuments = Boolean.parseBoolean(options.get(DISABLE_DOCUMENTS_WITHOUT_EVENTS));
+        } else {
+            this.disableIndexOnlyDocuments = false;
         }
 
         // If we're not provided a query, we may not be performing any
@@ -1296,6 +1298,8 @@ public class QueryOptions implements OptionDescriber {
         // Currently writable, kryo or toString
         if (options.containsKey(Constants.RETURN_TYPE)) {
             setReturnType(DocumentSerialization.ReturnType.valueOf(options.get(Constants.RETURN_TYPE)));
+        } else {
+            setReturnType(DocumentSerialization.DEFAULT_RETURN_TYPE);
         }
 
         // Boolean: should each attribute maintain a ColumnVisibility.
@@ -1371,6 +1375,8 @@ public class QueryOptions implements OptionDescriber {
 
         if (options.containsKey(COLLECT_TIMING_DETAILS)) {
             this.collectTimingDetails = Boolean.parseBoolean(options.get(COLLECT_TIMING_DETAILS));
+        } else {
+            // this.collectTimingDetails = true;
         }
 
         if (options.containsKey(STATSD_HOST_COLON_PORT)) {
@@ -1478,6 +1484,8 @@ public class QueryOptions implements OptionDescriber {
 
         if (options.containsKey(INCLUDE_GROUPING_CONTEXT)) {
             this.setIncludeGroupingContext(Boolean.parseBoolean(options.get(INCLUDE_GROUPING_CONTEXT)));
+        } else {
+            this.setIncludeGroupingContext(false);
         }
 
         if (options.containsKey(DOCUMENT_PERMUTATION_CLASSES)) {
