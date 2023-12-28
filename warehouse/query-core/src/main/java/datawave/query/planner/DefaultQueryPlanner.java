@@ -178,56 +178,15 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
     public static final String EXCEED_TERM_EXPANSION_ERROR = "Query failed because it exceeded the query term expansion threshold";
 
-    protected boolean limitScanners = false;
-
-    /**
-     * Allows developers to disable bounded lookup of ranges and regexes. This will be optimized in future releases.
-     */
-    protected boolean disableBoundedLookup = false;
-
-    /**
-     * Allows developers to disable any field lookups
-     */
-    protected boolean disableAnyFieldLookup = false;
-
-    /**
-     * Allows developers to disable expansion of composite fields
-     */
-    protected boolean disableCompositeFields = false;
-
-    /**
-     * Disables the test for non existent fields.
-     */
-    protected boolean disableTestNonExistentFields = false;
-
-    /**
-     * Disables Whindex (value-specific) field mappings for GeoWave functions.
-     *
-     * @see WhindexVisitor
-     */
-    protected boolean disableWhindexFieldMappings = false;
-
-    /**
-     * Disables the index expansion function
-     */
-    protected boolean disableExpandIndexFunction = false;
-
-    /**
-     * Allows developers to cache data types
-     */
-    protected boolean cacheDataTypes = false;
-
     /**
      * The max number of child nodes that we will print with the PrintingVisitor. If trace is enabled, all nodes will be printed.
      */
     public static int maxChildNodesToPrint = 10;
 
-    private final long maxRangesPerQueryPiece;
-
-    private static Cache<String,Set<String>> allFieldTypeMap = CacheBuilder.newBuilder().maximumSize(100).concurrencyLevel(100)
+    private static final Cache<String,Set<String>> allFieldTypeMap = CacheBuilder.newBuilder().maximumSize(100).concurrencyLevel(100)
                     .expireAfterAccess(24, TimeUnit.HOURS).build();
 
-    private static Cache<String,Multimap<String,Type<?>>> dataTypeMap = CacheBuilder.newBuilder().maximumSize(100).concurrencyLevel(100)
+    private static final Cache<String,Multimap<String,Type<?>>> dataTypeMap = CacheBuilder.newBuilder().maximumSize(100).concurrencyLevel(100)
                     .expireAfterAccess(24, TimeUnit.HOURS).build();
 
     private static Multimap<String,Type<?>> queryFieldsAsDataTypeMap;
@@ -243,7 +202,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
     // A set of node plans. Basically these are transforms that will be applied to nodes. One example use is to
     // force certain regex patterns to be pushed down to evaluation
-    private List<NodeTransformRule> transformRules = Lists.newArrayList();
+    private final List<NodeTransformRule> transformRules = Lists.newArrayList();
 
     protected Class<? extends SortedKeyValueIterator<Key,Value>> queryIteratorClazz = QueryIterator.class;
 
@@ -253,84 +212,66 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
     protected DateIndexHelper dateIndexHelper = null;
 
-    protected boolean compressMappings;
-
-    protected boolean buildQueryModel = true;
-
-    protected boolean preloadOptions = false;
-
     protected String rangeStreamClass = RangeStream.class.getCanonicalName();
 
     protected ExecutorService builderThread = null;
 
     protected Future<IteratorSetting> settingFuture = null;
 
-    protected long maxRangeWaitMillis = 125;
-
-    /**
-     * threshold for pushing down ranges to be all shard specific if we exceed a certain number of terms.
-     */
-    protected long pushdownThreshold = 500;
-
-    /**
-     * Maximum number of sources to open per query.
-     */
-    protected long sourceLimit = -1;
-
     protected QueryModelProvider.Factory queryModelProviderFactory = new MetadataHelperQueryModelProvider.Factory();
-
-    /**
-     * Should the ExecutableExpansionVisitor be run
-     */
-    protected boolean executableExpansion = true;
-
-    /**
-     * Control if automated logical query reduction should be done
-     */
-    protected boolean reduceQuery = true;
-
-    /**
-     * Control if when applying logical query reduction the pruned query should be shown via an assignment node in the resulting query. There may be a
-     * performance impact.
-     */
-    protected boolean showReducedQueryPrune = true;
 
     // handles boilerplate operations that surround a visitor's execution (e.g., timers, logging, validating)
     private TimedVisitorManager visitorManager = new TimedVisitorManager();
 
     public DefaultQueryPlanner() {
-        this(Long.MAX_VALUE);
+        if (options == null) {
+            options = new QueryPlannerOptions();
+        }
+        options.setMaxRangesPerQueryPiece(Long.MAX_VALUE);
+        options.setLimitScanners(true);
     }
 
+    /**
+     * @deprecated
+     * @param _maxRangesPerQueryPiece
+     *            max ranges per query piece
+     */
+    @Deprecated(since = "6.5.0", forRemoval = true)
     public DefaultQueryPlanner(long _maxRangesPerQueryPiece) {
         this(_maxRangesPerQueryPiece, true);
     }
 
+    /**
+     * @deprecated
+     * @param maxRangesPerQueryPiece
+     *            max ranges per query piece
+     * @param limitScanners
+     *            configuration flag for global index lookups
+     */
+    @Deprecated(since = "6.5.0", forRemoval = true)
     public DefaultQueryPlanner(long maxRangesPerQueryPiece, boolean limitScanners) {
-        this.maxRangesPerQueryPiece = maxRangesPerQueryPiece;
-        setLimitScanners(limitScanners);
+        if (options == null) {
+            // required because of bean creation order of operations
+            options = new QueryPlannerOptions();
+        }
+        options.setMaxRangesPerQueryPiece(maxRangesPerQueryPiece);
+        options.setLimitScanners(limitScanners);
     }
 
     protected DefaultQueryPlanner(DefaultQueryPlanner other) {
-        this(other.maxRangesPerQueryPiece, other.limitScanners);
-        setRangeStreamClass(other.getRangeStreamClass());
-        setCacheDataTypes(other.getCacheDataTypes());
-        setDisableAnyFieldLookup(other.disableAnyFieldLookup);
-        setDisableBoundedLookup(other.disableBoundedLookup);
-        setDisableCompositeFields(other.disableCompositeFields);
-        setDisableTestNonExistentFields(other.disableTestNonExistentFields);
-        setDisableExpandIndexFunction(other.disableExpandIndexFunction);
-        rules.addAll(other.rules);
-        queryIteratorClazz = other.queryIteratorClazz;
-        setMetadataHelper(other.getMetadataHelper());
-        setDateIndexHelper(other.getDateIndexHelper());
-        setCompressOptionMappings(other.getCompressOptionMappings());
-        buildQueryModel = other.buildQueryModel;
-        preloadOptions = other.preloadOptions;
-        rangeStreamClass = other.rangeStreamClass;
-        setSourceLimit(other.sourceLimit);
-        setPushdownThreshold(other.getPushdownThreshold());
-        setVisitorManager(other.getVisitorManager());
+        this(other.getOptions().getMaxRangesPerQueryPiece(), other.getOptions().isLimitScanners());
+        this.options = other.options;
+        this.rules.addAll(other.rules);
+        this.transformRules.addAll(other.transformRules);
+        this.plannedScript = other.plannedScript;
+        this.builderThread = other.builderThread;
+        this.rangeStreamClass = other.rangeStreamClass;
+        this.queryIteratorClazz = other.queryIteratorClazz;
+        this.metadataHelper = other.metadataHelper;
+        this.dateIndexHelper = other.dateIndexHelper;
+        this.settingFuture = other.settingFuture;
+        this.queryModelProviderFactory = other.queryModelProviderFactory;
+        this.visitorManager = other.visitorManager;
     }
 
     public void setMetadataHelper(final MetadataHelper metadataHelper) {
@@ -404,7 +345,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
         IteratorSetting cfg = null;
 
-        if (preloadOptions) {
+        if (options.isPreloadOptions()) {
             cfg = getQueryIterator(metadataHelper, config, settings, "", false, true);
         }
 
@@ -501,9 +442,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                     .setOriginal(queryData)
                     .setQueryTree(config.getQueryTree())
                     .setRanges(queryRanges.first())
-                    .setMaxRanges(maxRangesPerQueryPiece())
+                    .setMaxRanges(options.getMaxRangesPerQueryPiece())
                     .setSettings(settings)
-                    .setMaxRangeWaitMillis(maxRangeWaitMillis)
+                    .setMaxRangeWaitMillis(options.getMaxRangeWaitMillis())
                     .setQueryPlanComparators(queryPlanComparators)
                     .setNumRangesToBuffer(config.getNumRangesToBuffer())
                     .setRangeBufferTimeoutMillis(config.getRangeBufferTimeoutMillis())
@@ -538,7 +479,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         addOption(cfg, QueryOptions.TRACK_SIZES, Boolean.toString(config.isTrackSizes()), false);
         addOption(cfg, QueryOptions.ACTIVE_QUERY_LOG_NAME, config.getActiveQueryLogName(), false);
         // Set the start and end dates
-        configureTypeMappings(config, cfg, metadataHelper, getCompressOptionMappings());
+        configureTypeMappings(config, cfg, metadataHelper, options.isCompressMappings());
     }
 
     /**
@@ -787,11 +728,11 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             config.setQueryTree(timedEnforceUniqueDisjunctionsWithinExpressions(timers, config.getQueryTree()));
         }
 
-        if (disableBoundedLookup) {
+        if (options.isDisableBoundedLookup()) {
             // protection mechanism. If we disable bounded ranges and have a
             // LT,GT or ER node, we should expand it
             if (BoundedRangeDetectionVisitor.mustExpandBoundedRange(config, metadataHelper, config.getQueryTree())) {
-                disableBoundedLookup = false;
+                options.setDisableBoundedLookup(false);
             }
         }
 
@@ -799,7 +740,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
         // ExpandCompositeTerms was here
 
-        if (!indexOnlyFields.isEmpty() && !disableBoundedLookup) {
+        if (!indexOnlyFields.isEmpty() && !options.isDisableBoundedLookup()) {
 
             // Figure out if the query contained any index only terms so we know
             // if we have to force it down the field-index path with event-specific
@@ -815,7 +756,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         // if any exist, populate the shard query config with these fields
         timedCheckForTokenizedFields(timers, "Check for term frequency (tokenized) fields", config, metadataHelper);
 
-        if (reduceQuery) {
+        if (options.isReduceQuery()) {
             config.setQueryTree(timedReduce(timers, "Reduce Query Final", config.getQueryTree()));
         }
 
@@ -828,12 +769,12 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
         TraceStopwatch stopwatch = null;
 
-        if (!disableWhindexFieldMappings) {
+        if (!options.isDisableWhindexFieldMappings()) {
             // apply the value-specific field mappings for GeoWave functions
             config.setQueryTree(timedApplyWhindexFieldMappings(timers, config.getQueryTree(), config, metadataHelper, settings));
         }
 
-        if (!disableExpandIndexFunction) {
+        if (!options.isDisableExpandIndexFunctions()) {
             // expand the index queries for the functions
             config.setQueryTree(timedExpandIndexQueriesForFunctions(timers, config.getQueryTree(), config, metadataHelper));
         }
@@ -849,15 +790,15 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         // returned.
         // If the max regex expansion is reached for a term, then it will be
         // left as a regex
-        if (!disableAnyFieldLookup) {
+        if (!options.isDisableAnyFieldLookup()) {
             config.setQueryTree(timedExpandAnyFieldRegexNodes(timers, config.getQueryTree(), config, metadataHelper, scannerFactory, settings.getQuery()));
         }
 
-        if (reduceQuery) {
+        if (options.isReduceQuery()) {
             config.setQueryTree(timedReduce(timers, "Reduce Query After ANYFIELD Expansions", config.getQueryTree()));
         }
 
-        if (!disableTestNonExistentFields && (!config.getIgnoreNonExistentFields())) {
+        if (!options.isDisableTestNonExistentFields() && (!config.getIgnoreNonExistentFields())) {
             timedTestForNonExistentFields(timers, config.getQueryTree(), config, metadataHelper, queryModel, settings);
         } else {
             log.debug("Skipping check for nonExistentFields..");
@@ -883,7 +824,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         Set<String> indexedFields = null;
         Set<String> indexOnlyFields = null;
         Set<String> nonEventFields = null;
-        if (config.getMinSelectivity() > 0 || !disableBoundedLookup) {
+        if (config.getMinSelectivity() > 0 || !options.isDisableBoundedLookup()) {
             try {
                 indexedFields = metadataHelper.getIndexedFields(config.getDatatypeFilter());
                 indexOnlyFields = metadataHelper.getIndexOnlyFields(config.getDatatypeFilter());
@@ -905,11 +846,11 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
         config.setQueryTree(timedForceFieldToFieldComparison(timers, config.getQueryTree()));
 
-        if (!disableCompositeFields) {
+        if (!options.isDisableCompositeFields()) {
             config.setQueryTree(timedExpandCompositeFields(timers, config.getQueryTree(), config));
         }
 
-        if (!disableBoundedLookup) {
+        if (!options.isDisableBoundedLookup()) {
             stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Expand bounded query ranges (total)");
 
             // Expand any bounded ranges into a conjunction of discrete terms
@@ -934,7 +875,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 // properly if we run GeoWavePruningVisitor after QueryPruningVisitor.
                 config.setQueryTree(timedPruneGeoWaveTerms(timers, config.getQueryTree(), metadataHelper));
 
-                if (reduceQuery) {
+                if (options.isReduceQuery()) {
                     config.setQueryTree(timedReduce(timers, "Reduce Query After Range Expansion", config.getQueryTree()));
                 }
 
@@ -943,7 +884,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                     config.setQueryTree(timedPushFunctions(timers, config.getQueryTree(), config, metadataHelper));
                 }
 
-                if (executableExpansion) {
+                if (options.isExecutableExpansion()) {
                     config.setQueryTree(timedExecutableExpansion(timers, config.getQueryTree(), config, metadataHelper));
                 }
 
@@ -996,7 +937,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         TraceStopwatch stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - " + stage);
         try {
             Multimap<String,Type<?>> fieldToDatatypeMap = null;
-            if (cacheDataTypes) {
+            if (options.isCacheDataTypes()) {
                 fieldToDatatypeMap = dataTypeMap.getIfPresent(String.valueOf(config.getDatatypeFilter().hashCode()));
             }
 
@@ -1020,7 +961,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             } else {
                 fieldToDatatypeMap = configureIndexedAndNormalizedFields(metadataHelper, config, script);
 
-                if (cacheDataTypes) {
+                if (options.isCacheDataTypes()) {
                     loadDataTypeMetadata(null, null, null, null, true);
 
                     dataTypeMap.put(String.valueOf(config.getDatatypeFilter().hashCode()), metadataHelper.getFieldsToDatatypes(config.getDatatypeFilter()));
@@ -1351,7 +1292,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     protected ASTJexlScript timedReduce(QueryStopwatch timers, String timerStage, final ASTJexlScript script) throws DatawaveQueryException {
 
         // only show pruned sections of the tree's via assignments if debug to reduce runtime when possible
-        return visitorManager.timedVisit(timers, timerStage, () -> (ASTJexlScript) QueryPruningVisitor.reduce(script, showReducedQueryPrune));
+        return visitorManager.timedVisit(timers, timerStage, () -> (ASTJexlScript) QueryPruningVisitor.reduce(script, options.isShowReducedQueryPrune()));
     }
 
     protected void timedTestForNonExistentFields(QueryStopwatch timers, final ASTJexlScript script, ShardQueryConfiguration config,
@@ -1610,9 +1551,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             }
         }
 
-        if (reduceQuery) {
+        if (options.isReduceQuery()) {
             // only show pruned sections of the tree's via assignments if debug to reduce runtime when possible
-            config.setQueryTree((ASTJexlScript) QueryPruningVisitor.reduce(config.getQueryTree(), showReducedQueryPrune));
+            config.setQueryTree((ASTJexlScript) QueryPruningVisitor.reduce(config.getQueryTree(), options.isShowReducedQueryPrune()));
 
             if (log.isDebugEnabled()) {
                 logQuery(config.getQueryTree(), "Query after range expansion reduction again:");
@@ -1777,12 +1718,12 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         Set<String> allFields = null;
         try {
             String dataTypeHash = String.valueOf(dataTypes.hashCode());
-            if (cacheDataTypes) {
+            if (options.isCacheDataTypes()) {
                 allFields = allFieldTypeMap.getIfPresent(dataTypeHash);
             }
             if (null == allFields) {
                 allFields = metadataHelper.getAllFields(dataTypes);
-                if (cacheDataTypes)
+                if (options.isCacheDataTypes())
                     allFieldTypeMap.put(dataTypeHash, allFields);
             }
 
@@ -2061,8 +2002,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             addOption(cfg, Constants.RETURN_TYPE, config.getReturnType().toString(), false);
             addOption(cfg, QueryOptions.FULL_TABLE_SCAN_ONLY, Boolean.toString(isFullTable), false);
 
-            if (sourceLimit > 0) {
-                addOption(cfg, QueryOptions.LIMIT_SOURCES, Long.toString(sourceLimit), false);
+            if (options.getSourceLimit() > 0) {
+                addOption(cfg, QueryOptions.LIMIT_SOURCES, Long.toString(options.getSourceLimit()), false);
             }
             if (config.getCollectTimingDetails()) {
                 addOption(cfg, QueryOptions.COLLECT_TIMING_DETAILS, Boolean.toString(true), false);
@@ -2103,7 +2044,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
             addOption(cfg, QueryOptions.SORTED_UIDS, Boolean.toString(config.isSortedUIDs()), false);
 
-            configureTypeMappings(config, cfg, metadataHelper, getCompressOptionMappings());
+            configureTypeMappings(config, cfg, metadataHelper, options.isCompressMappings());
             configureAdditionalOptions(config, cfg);
 
             loadFields(cfg, config, isPreload);
@@ -2558,9 +2499,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
             // count the terms
             int termCount = TermCountingVisitor.countTerms(queryTree);
-            if (termCount >= pushdownThreshold) {
+            if (termCount >= options.getPushdownThreshold()) {
                 if (log.isTraceEnabled()) {
-                    log.trace("pushing down query because it has " + termCount + " when our max is " + pushdownThreshold);
+                    log.trace("pushing down query because it has " + termCount + " when our max is " + options.getPushdownThreshold());
                 }
                 config.setCollapseUids(true);
             }
@@ -2649,7 +2590,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             RangeStream stream = rstream.getConstructor(ShardQueryConfiguration.class, ScannerFactory.class, MetadataHelper.class).newInstance(config,
                             scannerFactory, metadataHelper);
 
-            return stream.setUidIntersector(uidIntersector).setLimitScanners(limitScanners).setCreateUidsIteratorClass(createUidsIteratorClass);
+            return stream.setUidIntersector(uidIntersector).setLimitScanners(options.isLimitScanners()).setCreateUidsIteratorClass(createUidsIteratorClass);
 
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException
                         | NoSuchMethodException | SecurityException e) {
@@ -2657,20 +2598,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         }
     }
 
-    public boolean isLimitScanners() {
-        return limitScanners;
-    }
-
-    public final void setLimitScanners(boolean limitScanners) {
-        this.limitScanners = limitScanners;
-    }
-
     public void setSourceLimit(long sourcesPerScan) {
-        this.sourceLimit = sourcesPerScan;
-    }
-
-    public long getSourceLimit() {
-        return sourceLimit;
+        getOptions().setSourceLimit(sourcesPerScan);
     }
 
     /**
@@ -2681,27 +2610,19 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      *            setting for disabling bounded lookup
      */
     public final void setDisableBoundedLookup(boolean disableBoundedLookup) {
-        this.disableBoundedLookup = disableBoundedLookup;
+        getOptions().setDisableBoundedLookup(disableBoundedLookup);
     }
 
     public final void setDisableAnyFieldLookup(boolean disableAnyFieldLookup) {
-        this.disableAnyFieldLookup = disableAnyFieldLookup;
-    }
-
-    public boolean getDisableCompositeFields() {
-        return disableCompositeFields;
+        getOptions().setDisableAnyFieldLookup(disableAnyFieldLookup);
     }
 
     public final void setDisableCompositeFields(boolean disableCompositeFields) {
-        this.disableCompositeFields = disableCompositeFields;
-    }
-
-    public boolean getCacheDataTypes() {
-        return cacheDataTypes;
+        getOptions().setDisableCompositeFields(disableCompositeFields);
     }
 
     public void setCacheDataTypes(boolean cacheDataTypes) {
-        this.cacheDataTypes = cacheDataTypes;
+        getOptions().setCacheDataTypes(cacheDataTypes);
     }
 
     private Multimap<String,String> invertMultimap(Map<String,String> multi) {
@@ -2735,22 +2656,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         return sortedUIDs;
     }
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see QueryPlanner#maxRangesPerQueryPiece()
-     */
-    @Override
-    public long maxRangesPerQueryPiece() {
-        return this.maxRangesPerQueryPiece;
-    }
-
     public void setCompressOptionMappings(boolean compressMappings) {
-        this.compressMappings = compressMappings;
-    }
-
-    public boolean getCompressOptionMappings() {
-        return compressMappings;
+        getOptions().setCompressMappings(compressMappings);
     }
 
     /*
@@ -2844,27 +2751,15 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     }
 
     public void setDisableTestNonExistentFields(boolean disableTestNonExistentFields) {
-        this.disableTestNonExistentFields = disableTestNonExistentFields;
-    }
-
-    public boolean getDisableTestNonExistentFields() {
-        return disableTestNonExistentFields;
+        getOptions().setDisableTestNonExistentFields(disableTestNonExistentFields);
     }
 
     public void setDisableWhindexFieldMappings(boolean disableWhindexFieldMappings) {
-        this.disableWhindexFieldMappings = disableWhindexFieldMappings;
-    }
-
-    public boolean getDisableWhindexFieldMappings() {
-        return disableWhindexFieldMappings;
+        getOptions().setDisableExpandIndexFunctions(disableWhindexFieldMappings);
     }
 
     public void setDisableExpandIndexFunction(boolean disableExpandIndexFunction) {
-        this.disableExpandIndexFunction = disableExpandIndexFunction;
-    }
-
-    public boolean getDisableExpandIndexFunction() {
-        return disableExpandIndexFunction;
+        getOptions().setDisableExpandIndexFunctions(disableExpandIndexFunction);
     }
 
     /*
@@ -2888,11 +2783,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     }
 
     public void setPreloadOptions(boolean preloadOptions) {
-        this.preloadOptions = preloadOptions;
-    }
-
-    public boolean getPreloadOptions() {
-        return preloadOptions;
+        getOptions().setPreloadOptions(preloadOptions);
     }
 
     @Override
@@ -2901,43 +2792,31 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     }
 
     public void setMaxRangeWaitMillis(long maxRangeWaitMillis) {
-        this.maxRangeWaitMillis = maxRangeWaitMillis;
-    }
-
-    public long getMaxRangeWaitMillis() {
-        return maxRangeWaitMillis;
+        getOptions().setMaxRangeWaitMillis(maxRangeWaitMillis);
     }
 
     public void setPushdownThreshold(long pushdownThreshold) {
-        this.pushdownThreshold = pushdownThreshold;
+        getOptions().setPushdownThreshold(pushdownThreshold);
     }
 
     public long getPushdownThreshold() {
-        return pushdownThreshold;
+        return getOptions().getPushdownThreshold();
     }
 
     public boolean getExecutableExpansion() {
-        return executableExpansion;
+        return getOptions().isExecutableExpansion();
     }
 
     public void setExecutableExpansion(boolean executableExpansion) {
-        this.executableExpansion = executableExpansion;
+        getOptions().setExecutableExpansion(executableExpansion);
     }
 
     public void setReduceQuery(boolean reduceQuery) {
-        this.reduceQuery = reduceQuery;
-    }
-
-    public boolean isReduceQuery() {
-        return reduceQuery;
+        getOptions().setReduceQuery(reduceQuery);
     }
 
     public void setShowReducedQueryPrune(boolean showReducedQueryPrune) {
-        this.showReducedQueryPrune = showReducedQueryPrune;
-    }
-
-    public boolean isShowReducedQueryPrune() {
-        return showReducedQueryPrune;
+        getOptions().setShowReducedQueryPrune(showReducedQueryPrune);
     }
 
     public TimedVisitorManager getVisitorManager() {

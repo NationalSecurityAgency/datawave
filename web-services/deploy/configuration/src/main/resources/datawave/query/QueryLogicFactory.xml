@@ -110,6 +110,14 @@
             <value>true</value>
         </constructor-arg>
         <!--<lookup-method name="getQueryModelProvider" bean="metadataHelperQueryModelProvider" />-->
+        <property name="options" ref="DefaultQueryPlannerOptions" />
+    </bean>
+
+    <bean id="DefaultQueryPlannerOptions" scope="prototype" class="datawave.query.planner.QueryPlannerOptions" >
+        <property name="limitScanners" value="false" />
+        <property name="disableBoundedLookup" value="false" />
+        <property name="disableAnyFieldLookup" value="false" />
+        <property name="disableCompositeFields" value="false" />
     </bean>
 
     <bean id="queryModelProviderFactory" class="datawave.query.planner.QueryModelProvider.Factory" >

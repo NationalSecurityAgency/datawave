@@ -323,9 +323,34 @@
         </bean>
     </util:list>
 
-    <bean id="DefaultQueryPlanner" scope="prototype" class="datawave.query.planner.DefaultQueryPlanner" >
-        <property name="transformRules" ref="transformRuleList" />
+    <bean id="DefaultQueryPlanner" scope="prototype" class="datawave.query.planner.DefaultQueryPlanner">
+        <property name="transformRules" ref="transformRuleList"/>
         <property name="visitorManager" ref="TimedVisitorManager"/>
+        <property name="options" ref="DefaultQueryPlannerOptions"/>
+    </bean>
+
+    <bean id="DefaultQueryPlannerOptions" scope="prototype" class="datawave.query.planner.QueryPlannerOptions">
+        <property name="limitScanners" value="true"/>
+        <property name="disableBoundedLookup" value="false"/>
+        <property name="disableAnyFieldLookup" value="false"/>
+        <property name="disableCompositeFields" value="false"/>
+        <property name="disableTestNonExistentFields" value="false"/>
+        <property name="disableWhindexFieldMappings" value="false"/>
+        <property name="disableExpandIndexFunctions" value="false"/>
+        <!--   range bundler options     -->
+        <property name="docsToCombineForEvaluation" value="-1"/>
+        <property name="docSpecificOverride" value="false"/>
+        <property name="maxRangesPerQueryPiece" value="10"/>
+        <property name="maxRangeWaitMillis" value="125"/>
+        <!--   misc. options     -->
+        <property name="cacheDataTypes" value="false"/>
+        <property name="compressMappings" value="false"/>
+        <property name="preloadOptions" value="false"/>
+        <property name="pushdownThreshold" value="500"/>
+        <property name="sourceLimit" value="-1"/>
+        <property name="executableExpansion" value="true"/>
+        <property name="reduceQuery" value="true"/>
+        <property name="showReducedQueryPrune" value="true"/>
     </bean>
 
     <bean id="TimedVisitorManager" scope="prototype" class="datawave.query.planner.TimedVisitorManager">
