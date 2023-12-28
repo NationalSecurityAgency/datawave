@@ -1298,8 +1298,6 @@ public class QueryOptions implements OptionDescriber {
         // Currently writable, kryo or toString
         if (options.containsKey(Constants.RETURN_TYPE)) {
             setReturnType(DocumentSerialization.ReturnType.valueOf(options.get(Constants.RETURN_TYPE)));
-        } else {
-            setReturnType(DocumentSerialization.DEFAULT_RETURN_TYPE);
         }
 
         // Boolean: should each attribute maintain a ColumnVisibility.
@@ -1375,8 +1373,6 @@ public class QueryOptions implements OptionDescriber {
 
         if (options.containsKey(COLLECT_TIMING_DETAILS)) {
             this.collectTimingDetails = Boolean.parseBoolean(options.get(COLLECT_TIMING_DETAILS));
-        } else {
-            // this.collectTimingDetails = true;
         }
 
         if (options.containsKey(STATSD_HOST_COLON_PORT)) {
