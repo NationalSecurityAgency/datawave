@@ -202,7 +202,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
     // A set of node plans. Basically these are transforms that will be applied to nodes. One example use is to
     // force certain regex patterns to be pushed down to evaluation
-    private final List<NodeTransformRule> transformRules = Lists.newArrayList();
+    private List<NodeTransformRule> transformRules = Lists.newArrayList();
 
     protected Class<? extends SortedKeyValueIterator<Key,Value>> queryIteratorClazz = QueryIterator.class;
 
@@ -233,12 +233,16 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
     /**
      * @deprecated
-     * @param _maxRangesPerQueryPiece
+     * @param maxRangesPerQueryPiece
      *            max ranges per query piece
      */
     @Deprecated(since = "6.5.0", forRemoval = true)
-    public DefaultQueryPlanner(long _maxRangesPerQueryPiece) {
-        this(_maxRangesPerQueryPiece, true);
+    public DefaultQueryPlanner(long maxRangesPerQueryPiece) {
+        if (options == null) {
+            options = new QueryPlannerOptions();
+        }
+        options.setMaxRangesPerQueryPiece(maxRangesPerQueryPiece);
+        options.setLimitScanners(true);
     }
 
     /**
@@ -251,15 +255,19 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     @Deprecated(since = "6.5.0", forRemoval = true)
     public DefaultQueryPlanner(long maxRangesPerQueryPiece, boolean limitScanners) {
         if (options == null) {
-            // required because of bean creation order of operations
             options = new QueryPlannerOptions();
         }
         options.setMaxRangesPerQueryPiece(maxRangesPerQueryPiece);
         options.setLimitScanners(limitScanners);
     }
 
+    /**
+     * Copy constructor
+     *
+     * @param other
+     *            another DefaultQueryPlanner
+     */
     protected DefaultQueryPlanner(DefaultQueryPlanner other) {
-        this(other.getOptions().getMaxRangesPerQueryPiece(), other.getOptions().isLimitScanners());
         this.options = other.options;
         this.rules.addAll(other.rules);
         this.transformRules.addAll(other.transformRules);
@@ -269,6 +277,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         this.queryIteratorClazz = other.queryIteratorClazz;
         this.metadataHelper = other.metadataHelper;
         this.dateIndexHelper = other.dateIndexHelper;
+        this.options = other.options;
+        this.createUidsIteratorClass = other.createUidsIteratorClass;
+        this.uidIntersector = other.uidIntersector;
+        this.rules = other.rules;
         this.settingFuture = other.settingFuture;
         this.queryModelProviderFactory = other.queryModelProviderFactory;
         this.visitorManager = other.visitorManager;
@@ -422,7 +434,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             if (config.isSortGeoWaveQueryRanges()) {
                 List<String> geoFields = new ArrayList<>();
                 for (String fieldName : config.getIndexedFields()) {
-                    for (Type type : config.getQueryFieldsDatatypes().get(fieldName)) {
+                    for (Type<?> type : config.getQueryFieldsDatatypes().get(fieldName)) {
                         if (type instanceof AbstractGeometryType) {
                             geoFields.add(fieldName);
                             break;
