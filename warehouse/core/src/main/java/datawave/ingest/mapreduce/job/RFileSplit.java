@@ -21,7 +21,7 @@ public class RFileSplit extends FileSplit {
         top = new Key();
     }
 
-    public RFileSplit(Path path, long fileStart, long fileLength, String[] hosts, int startBlock, int numBlocks, Key top) {
+    public RFileSplit(Path path, long fileStart, long fileLength, String[] hosts, long startBlock, long numBlocks, Key top) {
         super(path, fileStart, fileLength, hosts);
         this.startBlock = startBlock;
         this.numBlocks = numBlocks;
@@ -30,6 +30,10 @@ public class RFileSplit extends FileSplit {
 
     public long getStartBlock() {
         return startBlock;
+    }
+
+    public long getNumBlocks() {
+        return numBlocks;
     }
 
     public Key getTopKey() {
@@ -45,11 +49,6 @@ public class RFileSplit extends FileSplit {
      */
     public Range getSeekRange(Key start, Key end) {
         return new Range(start, true, end, false);
-    }
-
-    @Override
-    public long getLength() {
-        return numBlocks;
     }
 
     @Override
