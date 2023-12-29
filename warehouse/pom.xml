@@ -43,7 +43,7 @@
         <!-- <runOrder>random</runOrder> -->
         <runOrder>filesystem</runOrder>
         <!-- default value -->
-        <tests.to.skip />
+        <tests.to.skip/>
         <!-- default value - override on command-line to skip tests -->
         <version.basis-rlp>7.5.0</version.basis-rlp>
         <version.dropwizard-metrics>3.2.6</version.dropwizard-metrics>

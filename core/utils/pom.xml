@@ -10,7 +10,7 @@
     <artifactId>datawave-utils-parent</artifactId>
     <packaging>pom</packaging>
     <name>${project.artifactId}</name>
-    <modules />
+    <modules/>
     <profiles>
         <profile>
             <id>submodule-accumulo-utils</id>

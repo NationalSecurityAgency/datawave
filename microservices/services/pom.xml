@@ -9,7 +9,7 @@
     <artifactId>datawave-microservice-service-build-parent</artifactId>
     <packaging>pom</packaging>
     <name>${project.artifactId}</name>
-    <modules />
+    <modules/>
     <profiles>
         <profile>
             <id>submodule-service-accumulo</id>

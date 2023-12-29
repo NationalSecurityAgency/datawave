@@ -599,7 +599,7 @@
                                         <exclude>log4j:log4j</exclude>
                                         <exclude>org.slf4j:slf4j-log4j12</exclude>
                                     </excludes>
-                                    <includes />
+                                    <includes/>
                                 </bannedDependencies>
                             </rules>
                             <fail>true</fail>
