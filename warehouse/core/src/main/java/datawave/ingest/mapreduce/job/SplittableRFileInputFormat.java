@@ -51,6 +51,8 @@ public class SplittableRFileInputFormat extends RFileInputFormat {
 
         List<InputSplit> rfileSplits = new ArrayList<>();
         log.info("getting splits for job");
+        int minBlocksPerSplit = config.getInt(MIN_BLOCKS_PER_SPLIT, 1);
+        log.info("Blocks per split: " + minBlocksPerSplit);
         // get the configured directories/files
         for (InputSplit inputSplit : super.getSplits(job)) {
             if (!(inputSplit instanceof FileSplit)) {
@@ -59,7 +61,6 @@ public class SplittableRFileInputFormat extends RFileInputFormat {
 
             // for each file get the index blocks
             FileSplit fileSplit = (FileSplit) inputSplit;
-            log.info("creating splits for: " + fileSplit);
             rfileSplits.addAll(getSplits(config, fileSplit));
         }
         log.info("total splits: " + rfileSplits.size());
@@ -78,16 +79,7 @@ public class SplittableRFileInputFormat extends RFileInputFormat {
      */
     public static List<InputSplit> getSplits(Configuration config, FileSplit fileSplit) throws IOException {
         log.info("getting splits for: " + fileSplit);
-        Path rfile = fileSplit.getPath();
-        FileSystem fs = rfile.getFileSystem(config);
-
-        if (!fs.exists(rfile)) {
-            throw new IllegalArgumentException(rfile + " does not exist");
-        }
-
-        CryptoService cs = CryptoFactoryLoader.getServiceForClient(CryptoEnvironment.Scope.TABLE, config.getPropsWithPrefix(TABLE_CRYPTO_PREFIX.name()));
-        CachableBlockFile.CachableBuilder cb = new CachableBlockFile.CachableBuilder().fsPath(fs, rfile).conf(config).cryptoService(cs);
-        RFile.Reader rfileReader = new RFile.Reader(cb);
+        RFile.Reader rfileReader = SplittableRFileRecordReader.getRFileReader(config, fileSplit.getPath());
 
         // get the first and last keys to bound the blocks while creating splits
         Key firstKey = rfileReader.getFirstKey();
@@ -99,11 +91,10 @@ public class SplittableRFileInputFormat extends RFileInputFormat {
         // track the last split key to since multiple splits with the same split key MUST be in the same block
         Key lastSplit = firstKey;
         List<InputSplit> splits = new ArrayList<>();
-        int blkCount = 0;
-        int splitBlocks = 0;
+        long blkCount = 0;
+        long splitBlocks = 0;
 
         int minBlocksPerSplit = config.getInt(MIN_BLOCKS_PER_SPLIT, 1);
-        log.info("Blocks per split: " + minBlocksPerSplit);
 
         Key top = null;
         while (iter.hasTop()) {
@@ -114,24 +105,15 @@ public class SplittableRFileInputFormat extends RFileInputFormat {
                 splits.add(new RFileSplit(fileSplit.getPath(), fileSplit.getStart(), fileSplit.getLength(), fileSplit.getLocations(), blkCount, splitBlocks,
                                 top));
                 blkCount += splitBlocks;
-                lastSplit = iter.getTopKey();
+                lastSplit = top;
                 splitBlocks = 0;
             }
             iter.next();
         }
 
-        // if there is a gap between the last index key top key and the lastKey in the file or there hasn't been a split created yet
-        if (top.equals(lastKey) || splits.isEmpty()) {
-            // add the last split
-            splits.add(new RFileSplit(fileSplit.getPath(), fileSplit.getStart(), fileSplit.getLength(), fileSplit.getLocations(), blkCount, splitBlocks + 1,
-                            top));
-        }
+        // add the last split
+        splits.add(new RFileSplit(fileSplit.getPath(), fileSplit.getStart(), fileSplit.getLength(), fileSplit.getLocations(), blkCount, splitBlocks + 1, top));
 
         return splits;
-    }
-
-    // get the splits for the rfile
-    public static List<InputSplit> getSplits(Configuration config, Path rfile) throws IOException {
-        return getSplits(config, new FileSplit(rfile, 0, 0, new String[0]));
     }
 }

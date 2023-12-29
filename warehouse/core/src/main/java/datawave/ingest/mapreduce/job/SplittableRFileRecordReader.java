@@ -30,6 +30,18 @@ public class SplittableRFileRecordReader extends RFileRecordReader {
         }
     }
 
+    public static RFile.Reader getRFileReader(Configuration config, Path rfile) throws IOException {
+        FileSystem fs = rfile.getFileSystem(config);
+
+        if (!fs.exists(rfile)) {
+            throw new IllegalArgumentException(rfile + " does not exist");
+        }
+
+        CryptoService cs = CryptoFactoryLoader.getServiceForClient(CryptoEnvironment.Scope.TABLE, config.getPropsWithPrefix(TABLE_CRYPTO_PREFIX.name()));
+        CachableBlockFile.CachableBuilder cb = new CachableBlockFile.CachableBuilder().fsPath(fs, rfile).conf(config).cryptoService(cs);
+        return new RFile.Reader(cb);
+    }
+
     /**
      * Open an rfile specified by the split, create an iterator to read the region of the rfile configured in the split by reading the rfile index blocks.
      * Delegate to the split to get the seek range.
@@ -42,17 +54,9 @@ public class SplittableRFileRecordReader extends RFileRecordReader {
     public static FileSKVIterator getIterator(Configuration config, RFileSplit split) throws IOException {
         Path rfile = split.getPath();
         long startIndexBlock = split.getStartBlock();
-        long numIndexBlocks = split.getLength();
+        long numIndexBlocks = split.getNumBlocks();
 
-        FileSystem fs = rfile.getFileSystem(config);
-
-        if (!fs.exists(rfile)) {
-            throw new IllegalArgumentException(rfile + " does not exist");
-        }
-
-        CryptoService cs = CryptoFactoryLoader.getServiceForClient(CryptoEnvironment.Scope.TABLE, config.getPropsWithPrefix(TABLE_CRYPTO_PREFIX.name()));
-        CachableBlockFile.CachableBuilder cb = new CachableBlockFile.CachableBuilder().fsPath(fs, rfile).conf(config).cryptoService(cs);
-        RFile.Reader rfileReader = new RFile.Reader(cb);
+        RFile.Reader rfileReader = getRFileReader(config, rfile);
         FileSKVIterator iter = rfileReader.getIndex();
 
         Key start = null;
