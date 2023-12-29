@@ -92,7 +92,7 @@ public class SplittableRFileRecordReader extends RFileRecordReader {
 
         Range seekRange = split.getSeekRange(start, end);
 
-        rfileReader.seek(seekRange, Collections.EMPTY_SET, false);
+        rfileReader.seek(seekRange, Collections.emptySet(), false);
 
         return rfileReader;
     }
