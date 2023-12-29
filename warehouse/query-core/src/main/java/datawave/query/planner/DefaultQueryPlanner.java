@@ -172,6 +172,47 @@ import datawave.webservice.query.exception.NotFoundQueryException;
 import datawave.webservice.query.exception.PreConditionFailedQueryException;
 import datawave.webservice.query.exception.QueryException;
 
+/**
+ * The DefaultQueryPlanner modifies a query in a series of steps that are divided into several logical stages
+ * <p>
+ * Parse and Validate Query
+ * <ol>
+ * <li>query is parsed into a jexl tree</li>
+ * <li>regexes are validated</li>
+ * <li>literals are validated</li>
+ * <li>date range is validated</li>
+ * <li>bounded ranges are validated</li>
+ * <li>rules are applied</li>
+ * <li>negations are rewritten</li>
+ * <li>fields are upper cased</li>
+ * </ol>
+ * Expand and Optimize Query
+ * <ol>
+ * <li>the QueryModel is applied</li>
+ * <li>index-only include/exclude functions are rewritten to be regex equals/not equals nodes</li>
+ * <li>validate no index-only fields in filter functions</li>
+ * <li>rewrite null/isNull functions</li>
+ * <li>prune null/isNull terms when possible</li>
+ * <li>enforce unique terms and subtrees</li>
+ * <li>functions are expanded to include their index queries</li>
+ * <li>node transform rules applied</li>
+ * <li>ANYFIELD terms are expanded</li>
+ * <li>terms are expanded according to normalization</li>
+ * <li>composite terms are expanded</li>
+ * <li>regexes are expanded into discrete terms, if possible</li>
+ * <li>bounded ranges are expanded into discrete terms, if possible</li>
+ * <li>GeoWave terms are expanded, if possible</li>
+ * <li>Query is written for executability, if possible</li>
+ * <li>Terms are pruned by datatype</li>
+ * </ol>
+ * Finally, there is the {@link datawave.query.tables.async.event.VisitorFunction} which acts as a "just in time" QueryPlanner for the per-tablet query plans.
+ * The global index search may prune a query so another round of checks is required.
+ * <ol>
+ * <li>Executability check</li>
+ * <li>Large fielded lists are pushed into list ivarators</li>
+ * <li>Term and Depth threshold are validated</li>
+ * </ol>
+ */
 public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
     private static final Logger log = ThreadConfigurableLogger.getLogger(DefaultQueryPlanner.class);
@@ -458,9 +499,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                     .setSettings(settings)
                     .setMaxRangeWaitMillis(options.getMaxRangeWaitMillis())
                     .setQueryPlanComparators(queryPlanComparators)
-                    .setNumRangesToBuffer(config.getNumRangesToBuffer())
-                    .setRangeBufferTimeoutMillis(config.getRangeBufferTimeoutMillis())
-                    .setRangeBufferPollMillis(config.getRangeBufferPollMillis())
+                    .setNumRangesToBuffer(options.getNumRangesToBuffer())
+                    .setRangeBufferTimeoutMillis(options.getRangeBufferTimeoutMillis())
+                    .setRangeBufferPollMillis(options.getRangeBufferPollMillis())
                     .build();
             // @formatter:on
         } else {

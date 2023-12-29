@@ -2,10 +2,15 @@ package datawave.query.planner;
 
 /**
  * Options that control how a query is planned.
+ * <p>
+ * The QueryPlannerOptions exist as an internal, injectable variable in the {@link DefaultQueryPlanner}.
+ * <p>
+ * Any QueryLogic that extends {@link datawave.query.tables.ShardQueryLogic} may reference its own QueryPlannerOptions that gets set on the QueryPlanner. In
+ * this way multiple distinct query logics may reference distinct "planning profiles".
  */
 public class QueryPlannerOptions {
 
-    private boolean limitScanners;
+    private boolean limitScanners = true;
     private boolean disableBoundedLookup;
     private boolean disableAnyFieldLookup;
     private boolean disableCompositeFields;
@@ -16,6 +21,13 @@ public class QueryPlannerOptions {
     // threaded range bundler options here
     private long maxRangesPerQueryPiece;
     private long maxRangeWaitMillis = 125L;
+    // how many ranges should the threaded range bundler buffer before the first range is returned to the caller
+    private int numRangesToBuffer = 0;
+    // how long ranges are allowed to buffer before the first range is returned to the caller
+    private long rangeBufferTimeoutMillis = 0L;
+    // determines the poll interval when buffering ranges in the threaded range bundler
+    private long rangeBufferPollMillis = 100L;
+
     // misc options
     private boolean cacheDataTypes;
     private boolean compressMappings;
@@ -50,6 +62,9 @@ public class QueryPlannerOptions {
         // range bundler options
         this.maxRangesPerQueryPiece = other.maxRangesPerQueryPiece;
         this.maxRangeWaitMillis = other.maxRangeWaitMillis;
+        this.numRangesToBuffer = other.numRangesToBuffer;
+        this.rangeBufferTimeoutMillis = other.rangeBufferTimeoutMillis;
+        this.rangeBufferPollMillis = other.rangeBufferPollMillis;
         // misc options
         this.cacheDataTypes = other.cacheDataTypes;
         this.compressMappings = other.compressMappings;
@@ -195,5 +210,29 @@ public class QueryPlannerOptions {
 
     public void setShowReducedQueryPrune(boolean showReducedQueryPrune) {
         this.showReducedQueryPrune = showReducedQueryPrune;
+    }
+
+    public int getNumRangesToBuffer() {
+        return numRangesToBuffer;
+    }
+
+    public void setNumRangesToBuffer(int numRangesToBuffer) {
+        this.numRangesToBuffer = numRangesToBuffer;
+    }
+
+    public long getRangeBufferTimeoutMillis() {
+        return rangeBufferTimeoutMillis;
+    }
+
+    public void setRangeBufferTimeoutMillis(long rangeBufferTimeoutMillis) {
+        this.rangeBufferTimeoutMillis = rangeBufferTimeoutMillis;
+    }
+
+    public long getRangeBufferPollMillis() {
+        return rangeBufferPollMillis;
+    }
+
+    public void setRangeBufferPollMillis(long rangeBufferPollMillis) {
+        this.rangeBufferPollMillis = rangeBufferPollMillis;
     }
 }
