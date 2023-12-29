@@ -42,9 +42,23 @@ sed s%${BEFORE}%${AFTER}% job-cache-env.sh > job-cache-env.tmp
 
 date
 
+function no_ctrlc() {
+  let count++
+  echo
+  if [[ $count == 1 ]]; then
+    echo "Are you sure you want to stop the load-job-cache.sh process? Giving you a warning."
+  fi
+  else
+    echo "Second SIGTERM received, dipping out"
+    rm -r -f "$tmpdir"
+    exit $?
+  fi
+}
+
 # prepare a directory with links to all of the files/directories to put into the jobcache
 tmpdir=`mktemp -d $MKTEMP_OPTS`
-trap 'rm -r -f "$tmpdir"; exit $?' INT TERM EXIT
+trap 'rm -r -f "$tmpdir"; exit $?' INT EXIT
+trap no_ctrlc TERM
 for f in ${CLASSPATH//:/ }; do
     if [ -e $f ]; then
         fname=${f/*\//}
