@@ -1474,7 +1474,10 @@
                                     <bannedDependencies>
                                         <excludes>
                                             <exclude>log4j:log4j</exclude>
+                                            <exclude>ch.qos.reload4j:reload4j</exclude>
                                             <exclude>org.slf4j:slf4j-log4j12</exclude>
+                                            <exclude>org.slf4j:slf4j-reload4j</exclude>
+                                            <exclude>joda-time:joda-time</exclude>
                                         </excludes>
                                     </bannedDependencies>
                                 </rules>

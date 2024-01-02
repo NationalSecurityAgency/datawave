@@ -51,10 +51,6 @@
                     <artifactId>hadoop-common</artifactId>
                 </exclusion>
                 <exclusion>
-                    <groupId>org.apache.hadoop</groupId>
-                    <artifactId>hadoop-mapreduce-client-core</artifactId>
-                </exclusion>
-                <exclusion>
                     <groupId>gov.nsa.datawave.microservice</groupId>
                     <artifactId>type-utils</artifactId>
                 </exclusion>

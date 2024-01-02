@@ -46,10 +46,6 @@
             <version>${project.version}</version>
             <exclusions>
                 <exclusion>
-                    <groupId>org.apache.hadoop</groupId>
-                    <artifactId>hadoop-mapreduce-client-common</artifactId>
-                </exclusion>
-                <exclusion>
                     <groupId>org.apache.accumulo</groupId>
                     <artifactId>accumulo-core</artifactId>
                 </exclusion>
