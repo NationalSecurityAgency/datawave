@@ -22,17 +22,27 @@ import datawave.query.jexl.JexlASTHelper;
  * Visitor that removes conjunction children of OR nodes that are made redundant by virtue of distributed equivalency. For example:
  *
  * <pre>
- * {@code (A && B) || A --> A}
+ * {@code
+ * (A && B) || A-- > A
+ * }
  * {@code ((A && C) && B) || (A && C) --> (A && C)}
- * {@code ((A || B) && C) || A || B --> A || B}
- * {@code (A && B && C) || A --> A}
+ * {@code
+ * ((A || B) && C) || A || B-- > A || B
+ * }
+ * {@code
+ * (A && B && C) || A-- > A
+ * }
  * </pre>
  *
  * The following cases will not be affected:
  *
  * <pre>
- * {@code (A && B) || C}
- * {@code ((A || B) && C) || A}
+ * {@code
+ * (A && B) || C
+ * }
+ * {@code
+ * ((A || B) && C) || A
+ * }
  * </pre>
  *
  * This visitor returns a copy of the original query tree, and flattens the copy via {@link TreeFlatteningRebuildingVisitor}.

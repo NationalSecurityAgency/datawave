@@ -1194,7 +1194,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         if (fieldIndexSatisfiesQuery) {
             final KeyToDocumentData docMapper = new KeyToDocumentData(deepSourceCopy, this.myEnvironment, this.documentOptions, getEquality(),
                             getEvaluationFilter(), this.includeHierarchyFields, this.includeHierarchyFields).withRangeProvider(getRangeProvider())
-                                            .withAggregationThreshold(getDocAggregationThresholdMs());
+                            .withAggregationThreshold(getDocAggregationThresholdMs());
 
             Iterator<Tuple2<Key,Document>> mappedDocuments = Iterators.transform(documents,
                             new GetDocument(docMapper,
