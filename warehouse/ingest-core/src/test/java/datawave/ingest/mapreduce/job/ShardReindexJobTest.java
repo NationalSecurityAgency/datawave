@@ -9,6 +9,7 @@ import static datawave.ingest.mapreduce.job.ShardReindexJob.FI_START;
 
 import java.io.IOException;
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
@@ -49,10 +50,11 @@ public class ShardReindexJobTest extends EasyMockSupport {
     private Mapper.Context context;
     private RecordWriter mockWriter;
     private StatusReporter statusReporter;
+    private SimpleDateFormat sdf;
 
     @Before
     public void setup() {
-
+        sdf = new SimpleDateFormat("yyyyMMdd");
         job = new ShardReindexJob();
 
         // clear and reset the type registry
@@ -463,17 +465,19 @@ public class ShardReindexJobTest extends EasyMockSupport {
         calendar.set(Calendar.MILLISECOND, 0);
         long floorTime = calendar.getTimeInMillis();
 
-        Key event = new Key("20231229_2", "samplecsv" + '\u0000' + "1.2.3", "FIELDB" + '\u0000' + "my field value", timestamp);
+        String shard = sdf.format(calendar.getTime());
 
-        Key fiKey = new Key("20231229_2", "fi" + '\u0000' + "FIELDB", "my field value" + '\u0000' + "samplecsv" + '\u0000' + "1.2.3", timestamp);
+        Key event = new Key(shard + "_2", "samplecsv" + '\u0000' + "1.2.3", "FIELDB" + '\u0000' + "my field value", timestamp);
+
+        Key fiKey = new Key(shard + "_2", "fi" + '\u0000' + "FIELDB", "my field value" + '\u0000' + "samplecsv" + '\u0000' + "1.2.3", timestamp);
         BulkIngestKey fiBik = new BulkIngestKey(new Text("shard"), fiKey);
         mockWriter.write(EasyMock.and(EasyMock.isA(BulkIngestKey.class), EasyMock.eq(fiBik)), EasyMock.isA(Value.class));
 
-        Key indexKey = new Key("my field value", "FIELDB", "20231229_2" + '\u0000' + "samplecsv", floorTime);
+        Key indexKey = new Key("my field value", "FIELDB", shard + "_2" + '\u0000' + "samplecsv", floorTime);
         BulkIngestKey giBik = new BulkIngestKey(new Text("shardIndex"), indexKey);
         mockWriter.write(EasyMock.and(EasyMock.isA(BulkIngestKey.class), EasyMock.eq(giBik)), EasyMock.isA(Value.class));
 
-        Key revKey = new Key("eulav dleif ym", "FIELDB", "20231229_2" + '\u0000' + "samplecsv", floorTime);
+        Key revKey = new Key("eulav dleif ym", "FIELDB", shard + "_2" + '\u0000' + "samplecsv", floorTime);
         BulkIngestKey griBik = new BulkIngestKey(new Text("shardReverseIndex"), revKey);
         mockWriter.write(EasyMock.and(EasyMock.isA(BulkIngestKey.class), EasyMock.eq(griBik)), EasyMock.isA(Value.class));
 
@@ -512,24 +516,26 @@ public class ShardReindexJobTest extends EasyMockSupport {
         calendar.set(Calendar.MILLISECOND, 0);
         long floorTime = calendar.getTimeInMillis();
 
-        Key event = new Key("20231229_2", "samplecsv" + '\u0000' + "1.2.3", "FIELDB" + '\u0000' + "my field value", timestamp);
+        String shard = sdf.format(calendar.getTime());
 
-        Key fiKey = new Key("20231229_2", "fi" + '\u0000' + "FIELDB", "my field value" + '\u0000' + "samplecsv" + '\u0000' + "1.2.3", timestamp);
+        Key event = new Key(shard + "_2", "samplecsv" + '\u0000' + "1.2.3", "FIELDB" + '\u0000' + "my field value", timestamp);
+
+        Key fiKey = new Key(shard + "_2", "fi" + '\u0000' + "FIELDB", "my field value" + '\u0000' + "samplecsv" + '\u0000' + "1.2.3", timestamp);
         BulkIngestKey fiBik = new BulkIngestKey(new Text("shard"), fiKey);
         mockWriter.write(EasyMock.and(EasyMock.isA(BulkIngestKey.class), EasyMock.eq(fiBik)), EasyMock.isA(Value.class));
 
-        Key indexKey = new Key("my field value", "FIELDB", "20231229_2" + '\u0000' + "samplecsv", floorTime);
+        Key indexKey = new Key("my field value", "FIELDB", shard + "_2" + '\u0000' + "samplecsv", floorTime);
         BulkIngestKey giBik = new BulkIngestKey(new Text("shardIndex"), indexKey);
         mockWriter.write(EasyMock.and(EasyMock.isA(BulkIngestKey.class), EasyMock.eq(giBik)), EasyMock.isA(Value.class));
 
-        Key revKey = new Key("eulav dleif ym", "FIELDB", "20231229_2" + '\u0000' + "samplecsv", floorTime);
+        Key revKey = new Key("eulav dleif ym", "FIELDB", shard + "_2" + '\u0000' + "samplecsv", floorTime);
         BulkIngestKey griBik = new BulkIngestKey(new Text("shardReverseIndex"), revKey);
         mockWriter.write(EasyMock.and(EasyMock.isA(BulkIngestKey.class), EasyMock.eq(griBik)), EasyMock.isA(Value.class));
 
         // tokens
-        Capture<Value> myTokenInfo = expectTokens("20231229_2", "samplecsv", "1.2.3", timestamp, floorTime, "FIELDB", "my");
-        Capture<Value> fieldTokenInfo = expectTokens("20231229_2", "samplecsv", "1.2.3", timestamp, floorTime, "FIELDB", "field");
-        Capture<Value> valueTokenInfo = expectTokens("20231229_2", "samplecsv", "1.2.3", timestamp, floorTime, "FIELDB", "value");
+        Capture<Value> myTokenInfo = expectTokens(shard + "_2", "samplecsv", "1.2.3", timestamp, floorTime, "FIELDB", "my");
+        Capture<Value> fieldTokenInfo = expectTokens(shard + "_2", "samplecsv", "1.2.3", timestamp, floorTime, "FIELDB", "field");
+        Capture<Value> valueTokenInfo = expectTokens(shard + "_2", "samplecsv", "1.2.3", timestamp, floorTime, "FIELDB", "value");
 
         replayAll();
 
