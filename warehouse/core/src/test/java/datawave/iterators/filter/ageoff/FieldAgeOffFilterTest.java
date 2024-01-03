@@ -66,6 +66,11 @@ public class FieldAgeOffFilterTest {
         }
 
         @Override
+        public boolean isUserCompaction() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         public void registerSideChannel(SortedKeyValueIterator<Key,Value> sortedKeyValueIterator) {
             throw new UnsupportedOperationException();
         }
