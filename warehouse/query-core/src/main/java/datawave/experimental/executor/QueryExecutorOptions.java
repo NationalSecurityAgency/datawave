@@ -5,8 +5,10 @@ import static datawave.query.iterator.QueryOptions.GROUP_FIELDS;
 import static datawave.query.iterator.QueryOptions.GROUP_FIELDS_BATCH_SIZE;
 import static datawave.query.iterator.QueryOptions.LIMIT_FIELDS;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -22,8 +24,10 @@ import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 
+import datawave.query.Constants;
 import datawave.query.common.grouping.GroupFields;
 import datawave.query.exceptions.DatawaveFatalQueryException;
+import datawave.query.function.JexlEvaluation;
 import datawave.query.function.LimitFields;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.jexl.JexlASTHelper;
@@ -36,17 +40,19 @@ import datawave.webservice.query.configuration.QueryData;
 public class QueryExecutorOptions {
 
     // these are really execution options
-    private boolean uidParallelScan = false;
+    private boolean uidParallelScan = true;
     private boolean uidSequentialScan = false;
 
-    private boolean documentParallelScan = false;
-    private boolean documentSequentialScan = false;
     // there is a parallel batch scan that runs the document aggregating iterator in parallel
-
+    private boolean documentParallelScan = false; // dead option, fetch document done in parallel
     // the default if no other options are configured, a sequence of remote scans
+    private boolean documentSequentialScan = false; // dead option, fetch document done in parallel
+    // enable limited key filtering when aggregating documents
+    private boolean configuredDocumentScan = false;
+
     private boolean tfSequentialScan = false;
     // uses a custom TF iterator to perform server-side filtering
-    private boolean tfConfiguredScan = false;
+    private boolean tfConfiguredScan = true;
     // use a custom TF iterator to perform server-side filtering with a seeking scan
     private boolean tfSeekingConfiguredScan = false;
 
@@ -69,6 +75,9 @@ public class QueryExecutorOptions {
     private Map<String,Integer> limitFieldsMap = new HashMap<>();
 
     private boolean isFullTableScan;
+
+    private Set<String> includeFields;
+    private Set<String> excludeFields;
 
     // options from ShardQueryConfig
     private String tableName;
@@ -156,6 +165,20 @@ public class QueryExecutorOptions {
             if (isFullTableScan) {
                 throw new IllegalStateException("QueryExecutor does not support full table scans");
             }
+        }
+
+        // RETURN_FIELDS should be used here. HIT_TERM should be added already.
+        if (options.containsKey(QueryOptions.PROJECTION_FIELDS)) {
+            String option = options.get(QueryOptions.PROJECTION_FIELDS);
+            includeFields = new HashSet<>(Arrays.asList(StringUtils.split(option, ',')));
+            if (!includeFields.isEmpty()) {
+                includeFields.add(JexlEvaluation.HIT_TERM_FIELD);
+            }
+        }
+
+        if (options.containsKey(QueryOptions.DISALLOWLISTED_FIELDS)) {
+            String option = options.get(QueryOptions.DISALLOWLISTED_FIELDS);
+            excludeFields = new HashSet<>(Arrays.asList(StringUtils.split(option, ',')));
         }
     }
 
@@ -295,5 +318,29 @@ public class QueryExecutorOptions {
 
     public void setStatsEnabled(boolean statsEnabled) {
         this.statsEnabled = statsEnabled;
+    }
+
+    public Set<String> getIncludeFields() {
+        return includeFields;
+    }
+
+    public void setIncludeFields(Set<String> includeFields) {
+        this.includeFields = includeFields;
+    }
+
+    public Set<String> getExcludeFields() {
+        return excludeFields;
+    }
+
+    public void setExcludeFields(Set<String> excludeFields) {
+        this.excludeFields = excludeFields;
+    }
+
+    public boolean isConfiguredDocumentScan() {
+        return configuredDocumentScan;
+    }
+
+    public void setConfiguredDocumentScan(boolean configuredDocumentScan) {
+        this.configuredDocumentScan = configuredDocumentScan;
     }
 }

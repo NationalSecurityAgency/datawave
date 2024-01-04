@@ -12,6 +12,7 @@ import org.apache.accumulo.core.data.Range;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import datawave.experimental.scanner.event.DefaultEventScanner;
 import datawave.experimental.util.AccumuloUtil;
 import datawave.query.attributes.AttributeFactory;
 import datawave.query.attributes.Document;
@@ -19,7 +20,7 @@ import datawave.query.util.MetadataHelper;
 import datawave.query.util.TypeMetadata;
 import datawave.util.TableName;
 
-class EventScannerTest {
+class DefaultEventScannerTest {
 
     protected static AccumuloUtil util;
     protected static MetadataHelper metadataHelper;
@@ -28,7 +29,7 @@ class EventScannerTest {
     @BeforeAll
     public static void setup() throws Exception {
         util = new AccumuloUtil();
-        util.create(EventScannerTest.class.getSimpleName());
+        util.create(DefaultEventScannerTest.class.getSimpleName());
         util.loadData();
 
         metadataHelper = util.getMetadataHelper();
@@ -42,7 +43,7 @@ class EventScannerTest {
     }
 
     private void test(Set<String> uids) {
-        EventScanner scanner = getEventScanner();
+        DefaultEventScanner scanner = getEventScanner();
         Range range = getRange();
         Set<String> expectedUids = transformUids(uids);
         Set<String> foundUids = new HashSet<>();
@@ -54,8 +55,8 @@ class EventScannerTest {
         assertEquals(expectedUids, foundUids);
     }
 
-    private EventScanner getEventScanner() {
-        return new EventScanner(TableName.SHARD, util.getAuths(), util.getClient(), new AttributeFactory(typeMetadata));
+    private DefaultEventScanner getEventScanner() {
+        return new DefaultEventScanner(TableName.SHARD, util.getAuths(), util.getClient(), new AttributeFactory(typeMetadata));
     }
 
     private Range getRange() {

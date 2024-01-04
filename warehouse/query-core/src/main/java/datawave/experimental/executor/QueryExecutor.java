@@ -26,8 +26,10 @@ import org.apache.log4j.Logger;
 import datawave.experimental.fi.ParallelUidScanner;
 import datawave.experimental.fi.SerialUidScanner;
 import datawave.experimental.fi.UidScanner;
-import datawave.experimental.scanner.EventScanner;
 import datawave.experimental.scanner.FieldIndexScanner;
+import datawave.experimental.scanner.event.ConfiguredEventScanner;
+import datawave.experimental.scanner.event.DefaultEventScanner;
+import datawave.experimental.scanner.event.EventScanner;
 import datawave.experimental.scanner.tf.TermFrequencyConfiguredScanner;
 import datawave.experimental.scanner.tf.TermFrequencyScanner;
 import datawave.experimental.scanner.tf.TermFrequencySequentialScanner;
@@ -132,7 +134,15 @@ public class QueryExecutor implements Runnable {
     }
 
     private EventScanner getEventScanner() {
-        return new EventScanner(tableName, auths, client, attributeFactory);
+        if (options.isConfiguredDocumentScan()) {
+            ConfiguredEventScanner scanner = new ConfiguredEventScanner(tableName, auths, client, attributeFactory);
+            scanner.setIncludeFields(options.getIncludeFields());
+            scanner.setExcludeFields(options.getExcludeFields());
+            scanner.setTypeMetadata(options.getTypeMetadata());
+            return scanner;
+        } else {
+            return new DefaultEventScanner(tableName, auths, client, attributeFactory);
+        }
     }
 
     /**

@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.ByteArrayInputStream;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
@@ -44,18 +45,27 @@ class DocumentScanIteratorTest {
     void testAliceUids() {
         Set<String> uids = util.getAliceUids();
         test(uids);
+        testSingleIds(uids);
     }
 
     @Test
     void testEveUids() {
         Set<String> uids = util.getEveUids();
         test(uids);
+        testSingleIds(uids);
     }
 
     @Test
     void testOberonUids() {
         Set<String> uids = util.getOberonUids();
         test(uids);
+        testSingleIds(uids);
+    }
+
+    private void testSingleIds(Set<String> uids) {
+        for (String uid : uids) {
+            test(Collections.singleton(uid));
+        }
     }
 
     private void test(Set<String> uids) {
@@ -66,6 +76,8 @@ class DocumentScanIteratorTest {
             IteratorSetting setting = new IteratorSetting(100, DocumentScanIterator.class);
             setting.addOption(DocumentScanIterator.UID_OPT, Joiner.on(',').join(sortedUids));
             setting.addOption(DocumentScanIterator.TYPE_METADATA, serializedTypeMetadata);
+            setting.addOption(DocumentScanIterator.INCLUDE_FIELDS, "FIRST_NAME,EVENT_ONLY");
+            setting.addOption(DocumentScanIterator.EXCLUDE_FIELDS, "MSG_SIZE");
 
             AccumuloClient client = util.getClient();
             try (Scanner scanner = client.createScanner(TableName.SHARD, util.getAuths())) {

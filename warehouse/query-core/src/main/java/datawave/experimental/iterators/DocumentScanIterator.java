@@ -3,7 +3,9 @@ package datawave.experimental.iterators;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeSet;
 
 import org.apache.accumulo.core.data.ByteSequence;
@@ -15,8 +17,6 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
-
-import com.esotericsoftware.kryo.Kryo;
 
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.AttributeFactory;
@@ -36,6 +36,9 @@ public class DocumentScanIterator implements SortedKeyValueIterator<Key,Value> {
     private static final Logger log = ThreadConfigurableLogger.getLogger(DocumentScanIterator.class);
     public static final String UID_OPT = "uid.opt";
     public static final String TYPE_METADATA = "type.metadata";
+    public static final String INCLUDE_FIELDS = "include.fields";
+    public static final String EXCLUDE_FIELDS = "exclude.fields";
+
     private TreeSet<String> uids;
     private String lastUid = null;
 
@@ -52,6 +55,9 @@ public class DocumentScanIterator implements SortedKeyValueIterator<Key,Value> {
     private AttributeFactory attributeFactory;
     private String shard;
     private Document document;
+
+    private Set<String> includeFields = null;
+    private Set<String> excludeFields = null;
     private final KryoDocumentSerializer serializer = new KryoDocumentSerializer();
 
     @Override
@@ -67,6 +73,16 @@ public class DocumentScanIterator implements SortedKeyValueIterator<Key,Value> {
         if (options.containsKey(TYPE_METADATA)) {
             String typeMetadataOpt = options.get(TYPE_METADATA);
             this.attributeFactory = new AttributeFactory(new TypeMetadata(typeMetadataOpt));
+        }
+
+        if (options.containsKey(INCLUDE_FIELDS)) {
+            String includeFieldsOpt = options.get(INCLUDE_FIELDS);
+            this.includeFields = new HashSet<>(Arrays.asList(StringUtils.split(includeFieldsOpt, ',')));
+        }
+
+        if (options.containsKey(EXCLUDE_FIELDS)) {
+            String excludeFieldsOpt = options.get(EXCLUDE_FIELDS);
+            this.excludeFields = new HashSet<>(Arrays.asList(StringUtils.split(excludeFieldsOpt, ',')));
         }
     }
 
@@ -102,8 +118,14 @@ public class DocumentScanIterator implements SortedKeyValueIterator<Key,Value> {
             key = source.getTopKey();
             parser.parse(key);
             if (lastUid.equals(parser.getDatatype() + '\0' + parser.getUid())) {
-                attr = attributeFactory.create(parser.getField(), parser.getValue(), key, true);
-                d.put(parser.getField(), attr);
+
+                // simple include/exclude filter
+                if ((includeFields == null || includeFields.contains(parser.getField()))
+                                && (excludeFields == null || !excludeFields.contains(parser.getField()))) {
+                    attr = attributeFactory.create(parser.getField(), parser.getValue(), key, true);
+                    d.put(parser.getField(), attr);
+                }
+
                 source.next();
             } else {
                 // found a key for a new document

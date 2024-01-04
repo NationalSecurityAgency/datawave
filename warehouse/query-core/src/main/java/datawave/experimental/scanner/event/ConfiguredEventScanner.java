@@ -1,8 +1,11 @@
-package datawave.experimental.scanner;
+package datawave.experimental.scanner.event;
 
+import java.io.ByteArrayInputStream;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
@@ -12,58 +15,66 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
+import com.google.common.base.Joiner;
+
+import datawave.experimental.iterators.DocumentScanIterator;
 import datawave.experimental.util.ScanStats;
-import datawave.query.attributes.Attribute;
 import datawave.query.attributes.AttributeFactory;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.DocumentKey;
-import datawave.query.data.parsers.EventKey;
+import datawave.query.function.deserializer.KryoDocumentDeserializer;
+import datawave.query.util.TypeMetadata;
 
-public class EventScanner {
-    private static final Logger log = Logger.getLogger(EventScanner.class);
+public class ConfiguredEventScanner extends AbstractEventScanner {
+    private static final Logger log = Logger.getLogger(ConfiguredEventScanner.class);
 
-    protected AccumuloClient client;
-    protected Authorizations auths;
-    protected String tableName;
-    protected String scanId;
+    private Set<String> includeFields;
+    private Set<String> excludeFields;
+    private TypeMetadata typeMetadata;
 
-    private final AttributeFactory attributeFactory;
     private final ScanStats scanStats = new ScanStats();
 
-    public EventScanner(String tableName, Authorizations auths, AccumuloClient client, AttributeFactory attributeFactory) {
-        this.tableName = tableName;
-        this.auths = auths;
-        this.client = client;
-        this.attributeFactory = attributeFactory;
+    public ConfiguredEventScanner(String tableName, Authorizations auths, AccumuloClient client, AttributeFactory attributeFactory) {
+        super(tableName, auths, client, attributeFactory);
     }
 
     public Document fetchDocument(Range range, String datatypeUid) {
         long start = System.currentTimeMillis();
         Document d = new Document();
-        EventKey parser = new EventKey();
         try (Scanner scanner = client.createScanner(tableName, auths)) {
             Range documentRange = rebuildRange(range, datatypeUid);
             scanner.setRange(documentRange);
             // this may break tld
             // scanner.fetchColumnFamily(new Text(datatypeUid)); // uid is actually datatype\0uid
 
-            String field;
-            Attribute<?> attr;
-            for (Map.Entry<Key,Value> entry : scanner) {
-                parser.parse(entry.getKey());
-                field = parser.getField();
-                attr = attributeFactory.create(parser.getField(), parser.getValue(), entry.getKey(), true);
-                d.put(field, attr);
+            IteratorSetting setting = new IteratorSetting(100, DocumentScanIterator.class);
+            setting.addOption(DocumentScanIterator.UID_OPT, datatypeUid);
+            if (includeFields != null && !includeFields.isEmpty()) {
+                setting.addOption(DocumentScanIterator.INCLUDE_FIELDS, Joiner.on(',').join(includeFields));
             }
+            if (excludeFields != null && !excludeFields.isEmpty()) {
+                setting.addOption(DocumentScanIterator.EXCLUDE_FIELDS, Joiner.on(',').join(excludeFields));
+            }
+            setting.addOption(DocumentScanIterator.TYPE_METADATA, typeMetadata.toString());
+
+            scanner.addScanIterator(setting);
+
+            Map.Entry<Key,Value> entry = scanner.iterator().next();
+
+            KryoDocumentDeserializer deser = new KryoDocumentDeserializer();
+            d = deser.deserialize(new ByteArrayInputStream(entry.getValue().get()));
         } catch (Exception e) {
             e.printStackTrace();
             log.error("exception while fetching document " + datatypeUid + ", error was: " + e.getMessage());
         }
+
+        // add the record id
         try {
             d.put(Document.DOCKEY_FIELD_NAME, new DocumentKey(new Key(range.getStartKey().getRow(), new Text(datatypeUid)), true));
         } catch (Exception e) {
             e.printStackTrace();
         }
+
         log.info("time to fetch event " + datatypeUid + " was " + (System.currentTimeMillis() - start) + " ms");
         return d;
     }
@@ -75,11 +86,23 @@ public class EventScanner {
      *            the range
      * @param datatypeUid
      *            a datatype and uid
-     * @return
+     * @return a document range
      */
     private Range rebuildRange(Range range, String datatypeUid) {
         Key start = new Key(range.getStartKey().getRow(), new Text(datatypeUid));
         Key end = start.followingKey(PartialKey.ROW_COLFAM); // TODO -- switch on tld
         return new Range(start, true, end, false);
+    }
+
+    public void setIncludeFields(Set<String> includeFields) {
+        this.includeFields = includeFields;
+    }
+
+    public void setExcludeFields(Set<String> excludeFields) {
+        this.excludeFields = excludeFields;
+    }
+
+    public void setTypeMetadata(TypeMetadata typeMetadata) {
+        this.typeMetadata = typeMetadata;
     }
 }

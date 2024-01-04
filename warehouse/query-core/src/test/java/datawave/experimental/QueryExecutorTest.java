@@ -127,6 +127,11 @@ class QueryExecutorTest {
         test(expectedUids, options);
         options.setDocumentSequentialScan(false);
 
+        // configured event scan, no parallel or sequential scan
+        options.setConfiguredDocumentScan(true);
+        test(expectedUids, options);
+        options.setConfiguredDocumentScan(false);
+
         // tf configured scan
         options.setTfConfiguredScan(true);
         test(expectedUids, options);
@@ -191,6 +196,8 @@ class QueryExecutorTest {
             setting.addOption(QueryOptions.INDEX_ONLY_FIELDS, Joiner.on(',').join(helper.getIndexOnlyFields(Collections.emptySet())));
             setting.addOption(QueryOptions.TERM_FREQUENCY_FIELDS, Joiner.on(',').join(helper.getTermFrequencyFields(Collections.emptySet())));
             setting.addOption(QueryOptions.TYPE_METADATA, helper.getTypeMetadata().toString());
+            setting.addOption(QueryOptions.PROJECTION_FIELDS, "FIRST_NAME,EVENT_ONLY");
+            setting.addOption(QueryOptions.DISALLOWLISTED_FIELDS, "MSG_SIZE");
         } catch (Exception e) {
             fail("failed to load iterator settings for test");
         }

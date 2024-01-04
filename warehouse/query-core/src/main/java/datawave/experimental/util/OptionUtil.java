@@ -1,9 +1,9 @@
 package datawave.experimental.util;
 
+import java.util.List;
+
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
-
-import java.util.List;
 
 /**
  * Simple util for serializing and deserializing iterator options
