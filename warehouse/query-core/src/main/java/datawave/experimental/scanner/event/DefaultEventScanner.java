@@ -1,6 +1,7 @@
 package datawave.experimental.scanner.event;
 
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.Scanner;
@@ -25,6 +26,10 @@ import datawave.query.data.parsers.EventKey;
 public class DefaultEventScanner extends AbstractEventScanner {
     private static final Logger log = Logger.getLogger(DefaultEventScanner.class);
 
+    private boolean logStats;
+
+    private Set<String> includeFields = null;
+    private Set<String> excludeFields = null;
     private final ScanStats scanStats = new ScanStats();
 
     public DefaultEventScanner(String tableName, Authorizations auths, AccumuloClient client, AttributeFactory attributeFactory) {
@@ -56,20 +61,31 @@ public class DefaultEventScanner extends AbstractEventScanner {
             for (Map.Entry<Key,Value> entry : scanner) {
                 parser.parse(entry.getKey());
                 field = parser.getField();
-                attr = attributeFactory.create(parser.getField(), parser.getValue(), entry.getKey(), true);
-                d.put(field, attr);
+                if ((includeFields == null || includeFields.contains(field)) && (excludeFields == null || !excludeFields.contains(field))) {
+                    attr = attributeFactory.create(parser.getField(), parser.getValue(), entry.getKey(), true);
+                    d.put(field, attr);
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
             log.error("exception while fetching document " + datatypeUid + ", error was: " + e.getMessage());
         }
         try {
+            // TODO -- this needs to aggregate the classification
             d.put(Document.DOCKEY_FIELD_NAME, new DocumentKey(new Key(range.getStartKey().getRow(), new Text(datatypeUid)), true));
         } catch (Exception e) {
             e.printStackTrace();
         }
-        log.info("time to fetch event " + datatypeUid + " was " + (System.currentTimeMillis() - start) + " ms");
+
+        if (logStats) {
+            log.info("time to fetch event " + datatypeUid + " was " + (System.currentTimeMillis() - start) + " ms");
+        }
         return d;
+    }
+
+    @Override
+    public void setLogStats(boolean logStats) {
+        this.logStats = logStats;
     }
 
     /**
@@ -79,11 +95,20 @@ public class DefaultEventScanner extends AbstractEventScanner {
      *            the range
      * @param datatypeUid
      *            a datatype and uid
-     * @return
+     * @return a scan range for a document
      */
     private Range rebuildRange(Range range, String datatypeUid) {
+        // TODO -- build exact range using first/last field if include fields is set
         Key start = new Key(range.getStartKey().getRow(), new Text(datatypeUid));
         Key end = start.followingKey(PartialKey.ROW_COLFAM); // TODO -- switch on tld
         return new Range(start, true, end, false);
+    }
+
+    public void setIncludeFields(Set<String> includeFields) {
+        this.includeFields = includeFields;
+    }
+
+    public void setExcludeFields(Set<String> excludeFields) {
+        this.excludeFields = excludeFields;
     }
 }

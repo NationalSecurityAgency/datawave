@@ -10,4 +10,6 @@ import datawave.query.attributes.Document;
 public interface EventScanner {
 
     Document fetchDocument(Range range, String datatypeUid);
+
+    void setLogStats(boolean logStats);
 }

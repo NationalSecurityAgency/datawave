@@ -6,12 +6,14 @@ import java.util.concurrent.Executors;
 
 import org.junit.BeforeClass;
 
+import com.google.common.util.concurrent.MoreExecutors;
+
 import datawave.experimental.util.AccumuloUtil;
 import datawave.util.TableName;
 
 public class ParallelUidScannerTest extends UidScannerTest {
 
-    private final ExecutorService fieldIndexPool = Executors.newFixedThreadPool(5);
+    private final ExecutorService fieldIndexPool = MoreExecutors.listeningDecorator(Executors.newFixedThreadPool(5));
 
     @BeforeClass
     public static void setup() throws Exception {

@@ -32,7 +32,10 @@ public class ConfiguredEventScanner extends AbstractEventScanner {
     private Set<String> excludeFields;
     private TypeMetadata typeMetadata;
 
+    private boolean logStats;
+
     private final ScanStats scanStats = new ScanStats();
+    private final KryoDocumentDeserializer deser = new KryoDocumentDeserializer();
 
     public ConfiguredEventScanner(String tableName, Authorizations auths, AccumuloClient client, AttributeFactory attributeFactory) {
         super(tableName, auths, client, attributeFactory);
@@ -61,8 +64,9 @@ public class ConfiguredEventScanner extends AbstractEventScanner {
 
             Map.Entry<Key,Value> entry = scanner.iterator().next();
 
-            KryoDocumentDeserializer deser = new KryoDocumentDeserializer();
-            d = deser.deserialize(new ByteArrayInputStream(entry.getValue().get()));
+            synchronized (deser) {
+                d = deser.deserialize(new ByteArrayInputStream(entry.getValue().get()));
+            }
         } catch (Exception e) {
             e.printStackTrace();
             log.error("exception while fetching document " + datatypeUid + ", error was: " + e.getMessage());
@@ -75,8 +79,15 @@ public class ConfiguredEventScanner extends AbstractEventScanner {
             e.printStackTrace();
         }
 
-        log.info("time to fetch event " + datatypeUid + " was " + (System.currentTimeMillis() - start) + " ms");
+        if (logStats) {
+            log.info("time to fetch event " + datatypeUid + " was " + (System.currentTimeMillis() - start) + " ms");
+        }
         return d;
+    }
+
+    @Override
+    public void setLogStats(boolean logStats) {
+        this.logStats = logStats;
     }
 
     /**

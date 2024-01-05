@@ -24,7 +24,6 @@ import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 
-import datawave.query.Constants;
 import datawave.query.common.grouping.GroupFields;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.function.JexlEvaluation;
@@ -43,10 +42,6 @@ public class QueryExecutorOptions {
     private boolean uidParallelScan = true;
     private boolean uidSequentialScan = false;
 
-    // there is a parallel batch scan that runs the document aggregating iterator in parallel
-    private boolean documentParallelScan = false; // dead option, fetch document done in parallel
-    // the default if no other options are configured, a sequence of remote scans
-    private boolean documentSequentialScan = false; // dead option, fetch document done in parallel
     // enable limited key filtering when aggregating documents
     private boolean configuredDocumentScan = false;
 
@@ -56,7 +51,12 @@ public class QueryExecutorOptions {
     // use a custom TF iterator to perform server-side filtering with a seeking scan
     private boolean tfSeekingConfiguredScan = false;
 
-    private boolean statsEnabled = true;
+    // record and aggregate shard stats
+    private boolean statsEnabled = false;
+    // log summary stats for each stage (FI, Event, TF)
+    private boolean logStageSummaryStats = false;
+    // log summary stats for each shard
+    private boolean logShardSummaryStats = false;
 
     private Range range;
     private String query;
@@ -72,9 +72,7 @@ public class QueryExecutorOptions {
     private int groupFieldsBatchSize = Integer.MAX_VALUE;
 
     private LimitFields limitFields = null;
-    private Map<String,Integer> limitFieldsMap = new HashMap<>();
-
-    private boolean isFullTableScan;
+    private final Map<String,Integer> limitFieldsMap = new HashMap<>();
 
     private Set<String> includeFields;
     private Set<String> excludeFields;
@@ -95,6 +93,7 @@ public class QueryExecutorOptions {
      *            a QueryData
      */
     public void configureViaQueryData(QueryData data) {
+        boolean isFullTableScan;
         if (data.getRanges().size() != 1) {
             throw new IllegalStateException("QueryExecutor operates on one range at a time, was provided: " + data.getRanges().size() + " ranges");
         }
@@ -248,22 +247,6 @@ public class QueryExecutorOptions {
         this.uidSequentialScan = uidSequentialScan;
     }
 
-    public boolean isDocumentParallelScan() {
-        return documentParallelScan;
-    }
-
-    public void setDocumentParallelScan(boolean documentParallelScan) {
-        this.documentParallelScan = documentParallelScan;
-    }
-
-    public boolean isDocumentSequentialScan() {
-        return documentSequentialScan;
-    }
-
-    public void setDocumentSequentialScan(boolean documentSequentialScan) {
-        this.documentSequentialScan = documentSequentialScan;
-    }
-
     public boolean isTfConfiguredScan() {
         return tfConfiguredScan;
     }
@@ -342,5 +325,21 @@ public class QueryExecutorOptions {
 
     public void setConfiguredDocumentScan(boolean configuredDocumentScan) {
         this.configuredDocumentScan = configuredDocumentScan;
+    }
+
+    public boolean isLogStageSummaryStats() {
+        return logStageSummaryStats;
+    }
+
+    public void setLogStageSummaryStats(boolean logStageSummaryStats) {
+        this.logStageSummaryStats = logStageSummaryStats;
+    }
+
+    public boolean isLogShardSummaryStats() {
+        return logShardSummaryStats;
+    }
+
+    public void setLogShardSummaryStats(boolean logShardSummaryStats) {
+        this.logShardSummaryStats = logShardSummaryStats;
     }
 }

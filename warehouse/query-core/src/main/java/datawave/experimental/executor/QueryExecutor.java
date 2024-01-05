@@ -23,6 +23,8 @@ import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.log4j.Logger;
 
+import com.google.common.collect.Sets;
+
 import datawave.experimental.fi.ParallelUidScanner;
 import datawave.experimental.fi.SerialUidScanner;
 import datawave.experimental.fi.UidScanner;
@@ -42,6 +44,7 @@ import datawave.query.attributes.Document;
 import datawave.query.attributes.PreNormalizedAttributeFactory;
 import datawave.query.function.serializer.KryoDocumentSerializer;
 import datawave.query.jexl.DatawaveJexlContext;
+import datawave.query.jexl.JexlASTHelper;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.Tuple3;
 
@@ -67,8 +70,6 @@ public class QueryExecutor implements Runnable {
 
     private final QueryExecutorOptions options;
 
-    private final Set<String> nonEventFields = new HashSet<>();
-
     private final PreNormalizedAttributeFactory preNormalizedAttributeFactory;
     private final AttributeFactory attributeFactory;
 
@@ -84,7 +85,9 @@ public class QueryExecutor implements Runnable {
     private final FieldIndexScanner fiScanner;
     private final EventScanner eventScanner;
     private final TermFrequencyScanner tfScanner;
-
+    private final Set<String> indexOnlyFields;
+    private final Set<JexlNode> terms;
+    private final Set<String> tfFields;
     private final String shard;
 
     private long setupTime;
@@ -119,6 +122,12 @@ public class QueryExecutor implements Runnable {
         this.eventScanner = getEventScanner();
         this.tfScanner = getTfScanner();
 
+        //  up front check for index only and term frequency fields
+        Set<String> queryFields = JexlASTHelper.getIdentifierNames(options.getScript());
+        this.indexOnlyFields = Sets.intersection(queryFields, options.getIndexOnlyFields());
+        this.tfFields = Sets.intersection(queryFields, options.getTermFrequencyFields());
+        this.terms = QueryTermVisitor.parse(options.getScript());
+
         this.shard = options.getRange().getStartKey().getRow().toString();
 
         if (options.isStatsEnabled()) {
@@ -134,15 +143,21 @@ public class QueryExecutor implements Runnable {
     }
 
     private EventScanner getEventScanner() {
+        EventScanner scanner;
         if (options.isConfiguredDocumentScan()) {
-            ConfiguredEventScanner scanner = new ConfiguredEventScanner(tableName, auths, client, attributeFactory);
-            scanner.setIncludeFields(options.getIncludeFields());
-            scanner.setExcludeFields(options.getExcludeFields());
-            scanner.setTypeMetadata(options.getTypeMetadata());
+            scanner = new ConfiguredEventScanner(tableName, auths, client, attributeFactory);
+            ((ConfiguredEventScanner) scanner).setIncludeFields(options.getIncludeFields());
+            ((ConfiguredEventScanner) scanner).setExcludeFields(options.getExcludeFields());
+            ((ConfiguredEventScanner) scanner).setTypeMetadata(options.getTypeMetadata());
             return scanner;
         } else {
-            return new DefaultEventScanner(tableName, auths, client, attributeFactory);
+            scanner = new DefaultEventScanner(tableName, auths, client, attributeFactory);
+            ((DefaultEventScanner) scanner).setIncludeFields(options.getIncludeFields());
+            ((DefaultEventScanner) scanner).setExcludeFields(options.getExcludeFields());
+
         }
+        scanner.setLogStats(options.isLogStageSummaryStats());
+        return scanner;
     }
 
     /**
@@ -167,11 +182,9 @@ public class QueryExecutor implements Runnable {
     @Override
     public void run() {
         long start = System.currentTimeMillis();
-        log.info("query executor start");
 
         // 1. find document keys
         Set<String> uids = getDocumentUids(options.getScript());
-        log.info("found " + uids.size() + " uids");
 
         // 2. aggregate documents
         long aggregationStart = System.currentTimeMillis();
@@ -196,7 +209,7 @@ public class QueryExecutor implements Runnable {
         }
 
         // this thread provides wall clock timing for how long it takes to aggregate all documents
-        AggregationThread aggregationThread = new AggregationThread(aggregating, futures, aggregationStart, shard);
+        AggregationThread aggregationThread = new AggregationThread(aggregating, futures, aggregationStart, shard, options.isLogStageSummaryStats());
         uidThreadPool.execute(aggregationThread);
 
         // setup an evaluation thread
@@ -243,15 +256,25 @@ public class QueryExecutor implements Runnable {
                 e.printStackTrace();
             }
         }
-        postProcessingTime = System.currentTimeMillis() - postProcessingTime;
-        log.info("time to post-process documents was: " + postProcessingTime + " ms");
 
-        long duration = System.currentTimeMillis() - start;
-        log.info("setup time: " + setupTime);
-        log.info("query executor for " + shard + " executed in " + duration + " ms, docs evaluated: " + uids.size() + ", docs returned " + returned);
+        if (options.isLogStageSummaryStats() || options.isLogShardSummaryStats()) {
+            long stop = System.currentTimeMillis();
+            postProcessingTime = stop - postProcessingTime;
+            long duration = stop - start;
+
+            if (options.isLogStageSummaryStats()) {
+                log.info("time to post-process documents was: " + postProcessingTime + " ms");
+                log.info("setup time: " + setupTime);
+            }
+
+            if (options.isLogShardSummaryStats()) {
+                log.info("query executor for " + shard + " executed in " + duration + " ms, docs evaluated: " + uids.size() + ", docs returned " + returned);
+            }
+        }
 
         if (stats != null) {
-            stats.logStats(log);
+            stats.incrementShardsSearched();
+            stats.logMinimizedStats(log);
             if (globalStats != null) {
                 globalStats.merge(stats);
             }
@@ -292,6 +315,7 @@ public class QueryExecutor implements Runnable {
         } else {
             scanner = new SerialUidScanner(client, auths, tableName, "scanId");
         }
+        scanner.setLogStats(options.isLogStageSummaryStats());
         return scanner;
     }
 
@@ -301,17 +325,16 @@ public class QueryExecutor implements Runnable {
         Document d = eventScanner.fetchDocument(options.getRange(), dtUid);
 
         // 2. Need to check for index only fields
-        Set<String> indexOnlyFields = checkQueryForIndexOnlyFields();
         if (!indexOnlyFields.isEmpty()) {
             // fetch index only fields from the FieldIndex
-            Set<JexlNode> terms = QueryTermVisitor.parse(options.getScript());
             fiScanner.fetchIndexOnlyFields(d, shard, dtUid, indexOnlyFields, terms);
         }
 
         DatawaveJexlContext context = new DatawaveJexlContext();
 
         // 3. Fetch any term frequency fields, if they exist
-        Set<String> tfFields = checkQueryForTermFrequencyFields();
+        // do this up front
+
         if (!tfFields.isEmpty()) {
             tfScanner.setTermFrequencyFields(tfFields);
             Map<String,Object> offsets = tfScanner.fetchOffsets(options.getScript(), d, shard, dtUid);
@@ -321,30 +344,11 @@ public class QueryExecutor implements Runnable {
             d.visit(new HashSet<>(), context);
         }
 
-        long elapsed = System.currentTimeMillis() - start;
-        log.info("time to aggregate single document " + dtUid + " was " + elapsed + " ms");
+        if (options.isLogStageSummaryStats()) {
+            long elapsed = System.currentTimeMillis() - start;
+            log.info("time to aggregate single document " + dtUid + " was " + elapsed + " ms");
+        }
         return new Tuple3<>(new Key(options.getRange().getStartKey().getRow().toString(), dtUid), d, context);
-    }
-
-    private Set<String> checkQueryForIndexOnlyFields() {
-        Set<String> queryIndexOnlyFields = new HashSet<>();
-        for (String indexOnlyField : options.getIndexOnlyFields()) {
-            if (options.getQuery().contains(indexOnlyField)) {
-                queryIndexOnlyFields.add(indexOnlyField);
-            }
-        }
-
-        return queryIndexOnlyFields;
-    }
-
-    private Set<String> checkQueryForTermFrequencyFields() {
-        Set<String> queryTermFrequencyFields = new HashSet<>();
-        for (String termFrequencyField : options.getTermFrequencyFields()) {
-            if (options.getQuery().contains(termFrequencyField)) {
-                queryTermFrequencyFields.add(termFrequencyField);
-            }
-        }
-        return queryTermFrequencyFields;
     }
 
     public ScanStats getStats() {
@@ -360,13 +364,15 @@ public class QueryExecutor implements Runnable {
         private final List<Future<?>> futures;
         private final long start;
         private final String shard;
+        private final boolean logStats;
         private final int documentCount;
 
-        public AggregationThread(AtomicBoolean aggregating, List<Future<?>> futures, long start, String shard) {
+        public AggregationThread(AtomicBoolean aggregating, List<Future<?>> futures, long start, String shard, boolean logStats) {
             this.aggregating = aggregating;
             this.futures = futures;
             this.start = start;
             this.shard = shard;
+            this.logStats = logStats;
             this.documentCount = futures.size();
         }
 
@@ -383,8 +389,8 @@ public class QueryExecutor implements Runnable {
                 completed.clear();
             }
             aggregating.set(false);
-            long elapsed = System.currentTimeMillis() - start;
-            if (documentCount > 0) {
+            if (logStats && documentCount > 0) {
+                long elapsed = System.currentTimeMillis() - start;
                 log.info("time to aggregate all documents for shard " + shard + ": " + documentCount + " in " + elapsed + " ms (" + (elapsed / documentCount)
                                 + " ms per doc)");
             }

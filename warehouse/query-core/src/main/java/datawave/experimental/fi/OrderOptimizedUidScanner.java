@@ -2,17 +2,10 @@ package datawave.experimental.fi;
 
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
 
 import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.client.Scanner;
-import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Range;
-import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.jexl2.parser.ASTAdditiveNode;
 import org.apache.commons.jexl2.parser.ASTAdditiveOperator;
@@ -69,7 +62,6 @@ import org.apache.commons.jexl2.parser.SimpleNode;
 
 import com.google.common.collect.Sets;
 
-import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.order.OrderByCostVisitor;
 
 /**
@@ -98,6 +90,11 @@ public class OrderOptimizedUidScanner extends AbstractUidScanner implements Pars
 
         ASTJexlScript orderedScript = OrderByCostVisitor.order(script);
         return (Set<String>) orderedScript.jjtAccept(this, null);
+    }
+
+    @Override
+    public void setLogStats(boolean logStats) {
+        // no op
     }
 
     @Override

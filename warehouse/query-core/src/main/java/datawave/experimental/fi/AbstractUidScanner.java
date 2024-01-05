@@ -11,6 +11,7 @@ public abstract class AbstractUidScanner implements UidScanner {
     protected Authorizations auths;
     protected String tableName;
     protected String scanId;
+    protected boolean logStats;
 
     protected FieldIndexRangeBuilder rangeBuilder = new FieldIndexRangeBuilder();
 

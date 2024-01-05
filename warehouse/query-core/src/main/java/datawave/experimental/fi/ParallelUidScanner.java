@@ -14,6 +14,11 @@ import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.log4j.Logger;
 
+import com.google.common.base.Throwables;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+
 import datawave.experimental.intersect.UidIntersection;
 import datawave.experimental.intersect.UidIntersectionStrategy;
 import datawave.experimental.visitor.QueryTermVisitor;
@@ -37,7 +42,6 @@ public class ParallelUidScanner extends SerialUidScanner {
     @Override
     public Set<String> scan(ASTJexlScript script, String row, Set<String> indexedFields) {
         Set<JexlNode> terms = QueryTermVisitor.parse(script);
-        log.info("scanning uids for " + terms.size() + " terms");
         long elapsed = System.currentTimeMillis();
         Map<String,Set<String>> nodesToUids = new HashMap<>();
         Set<Future<?>> submitted = new HashSet<>();
@@ -51,15 +55,10 @@ public class ParallelUidScanner extends SerialUidScanner {
             }
 
             if (indexedFields.contains(field)) {
-                Future<?> f = uidThreadPool.submit(() -> {
-                    String key = JexlStringBuildingVisitor.buildQueryWithoutParse(term);
-                    Thread.currentThread().setName(scanId + " fi lookup " + key);
-                    Set<String> uids = scanFieldIndexForTerm(row, field, term);
-                    synchronized (nodesToUids) {
-                        nodesToUids.put(key, uids);
-                    }
-                });
-                submitted.add(f);
+                TermScan scan = new TermScan(this, log, nodesToUids, row, field, term);
+                ListenableFuture<TermScan> future = (ListenableFuture<TermScan>) uidThreadPool.submit(scan);
+                Futures.addCallback(future, scan, uidThreadPool);
+                submitted.add(future);
             }
         }
 
@@ -83,12 +82,58 @@ public class ParallelUidScanner extends SerialUidScanner {
             // TODO -- can also handle the case where terms return
             // and we discover the query will never find a hit.
         }
-
         submitted.clear();
 
-        elapsed = System.currentTimeMillis() - elapsed;
-        log.info("scanned field index for " + max + "/" + terms.size() + " indexed fields in " + elapsed + " ms");
+        if (logStats) {
+            elapsed = System.currentTimeMillis() - elapsed;
+            log.info("scanned field index for " + max + "/" + terms.size() + " indexed fields in " + elapsed + " ms");
+        }
+
         UidIntersectionStrategy intersector = new UidIntersection();
         return intersector.intersect(script, nodesToUids);
+    }
+
+    public String getScanId() {
+        return scanId;
+    }
+
+    static class TermScan implements Runnable, FutureCallback<TermScan> {
+
+        private final ParallelUidScanner scanner;
+        private final Logger log;
+        private final Map<String,Set<String>> nodesToUids;
+        private final String row;
+        private final String field;
+        private final JexlNode term;
+
+        public TermScan(ParallelUidScanner scanner, Logger log, Map<String,Set<String>> nodesToUids, String row, String field, JexlNode term) {
+            this.scanner = scanner;
+            this.log = log;
+            this.nodesToUids = nodesToUids;
+            this.row = row;
+            this.field = field;
+            this.term = term;
+        }
+
+        @Override
+        public void run() {
+            String key = JexlStringBuildingVisitor.buildQueryWithoutParse(term);
+            Thread.currentThread().setName(scanner.getScanId() + " fi lookup " + key);
+            Set<String> uids = scanner.scanFieldIndexForTerm(row, field, term);
+            synchronized (nodesToUids) {
+                nodesToUids.put(key, uids);
+            }
+        }
+
+        @Override
+        public void onSuccess(TermScan result) {
+            // log.info("TermScan: success");
+        }
+
+        @Override
+        public void onFailure(Throwable t) {
+            log.info("TermScan: failure");
+            Throwables.throwIfUnchecked(t);
+        }
     }
 }

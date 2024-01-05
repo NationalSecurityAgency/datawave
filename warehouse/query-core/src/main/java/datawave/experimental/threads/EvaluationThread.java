@@ -55,7 +55,7 @@ public class EvaluationThread implements Runnable {
 
     @Override
     public void run() {
-        log.info("evaluation thread start");
+        log.trace("evaluation thread start");
         long totalApply = 0L;
         long totalOffer = 0L;
         long totalThreadRunTime = System.currentTimeMillis();
@@ -82,7 +82,7 @@ public class EvaluationThread implements Runnable {
         }
         totalThreadRunTime = System.currentTimeMillis() - totalThreadRunTime;
 
-        log.info("Evaluation Thread runtime[total: " + totalThreadRunTime + ", apply: " + totalApply + ", offer: " + totalOffer + "]");
+        log.trace("Evaluation Thread runtime[total: " + totalThreadRunTime + ", apply: " + totalApply + ", offer: " + totalOffer + "]");
         evaluating.set(false);
     }
 

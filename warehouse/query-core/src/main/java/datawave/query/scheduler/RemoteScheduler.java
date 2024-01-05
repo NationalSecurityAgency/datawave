@@ -26,6 +26,9 @@ import com.google.common.util.concurrent.MoreExecutors;
 
 import datawave.experimental.executor.QueryExecutor;
 import datawave.experimental.executor.QueryExecutorFactory;
+import datawave.experimental.threads.DocumentUncaughtExceptionHandler;
+import datawave.experimental.threads.NamedThreadFactory;
+import datawave.experimental.threads.UidUncaughtExceptionHandler;
 import datawave.experimental.util.ScanStats;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.tables.ScannerFactory;
@@ -52,7 +55,6 @@ import datawave.webservice.query.configuration.QueryData;
  * <ul>
  * <li>grouping functions</li>
  * <li>Ivarators (queries that anchor on a regex backed by file system)</li>
- * <li>Bounded Ranges</li>
  * <li>Full Table Scans</li>
  * <li>Queries which require a {@link datawave.query.config.Profile}</li>
  * <li>TLD queries are not supported</li>
@@ -82,34 +84,38 @@ public class RemoteScheduler extends Scheduler implements FutureCallback<QueryEx
      *            an instance of {@link ShardQueryConfiguration}
      */
     public RemoteScheduler(ShardQueryConfiguration config, MetadataHelperFactory metadataHelperFactory) {
-        this.results = new LinkedBlockingQueue<>();
+        results = new LinkedBlockingQueue<>();
 
         MetadataHelper metadataHelper = metadataHelperFactory.createMetadataHelper(config.getClient(), config.getMetadataTableName(),
                         config.getAuthorizations());
 
-        this.pullingPlans.set(true);
-        this.pullingResults.set(true);
+        pullingPlans.set(true);
+        pullingResults.set(true);
 
         // configure query executor exception handler, thread factory, and executor service
-        RemoteSchedulerExceptionHandler handler = new RemoteSchedulerExceptionHandler(this);
+        RemoteSchedulerExceptionHandler handler = new RemoteSchedulerExceptionHandler();
         RemoteSchedulerThreadFactory queryExecutorThreadFactory = new RemoteSchedulerThreadFactory("QueryExecutorThreadFactory", handler);
 
         int threads = config.getNumQueryThreads();
-        this.executorThreadPool = new ThreadPoolExecutor(threads, threads, 60, TimeUnit.MINUTES, new LinkedBlockingQueue<>(), queryExecutorThreadFactory);
-        this.executorThreadPool = MoreExecutors.listeningDecorator(executorThreadPool);
+        executorThreadPool = new ThreadPoolExecutor(1, threads, 60L, TimeUnit.MINUTES, new LinkedBlockingQueue<>(), queryExecutorThreadFactory);
+        executorThreadPool = MoreExecutors.listeningDecorator(executorThreadPool);
         log.info("created executor thread pool with " + threads + " threads");
 
         // executor for finding uids in the FI
-        uidThreadPool = new ThreadPoolExecutor(threads, threads, 1L, TimeUnit.MINUTES, new LinkedBlockingQueue<>());
+        UidUncaughtExceptionHandler uidHandler = new UidUncaughtExceptionHandler();
+        NamedThreadFactory uidThreadFactory = new NamedThreadFactory("UidThreadFactory", uidHandler);
+        uidThreadPool = new ThreadPoolExecutor(1, threads, 1L, TimeUnit.MINUTES, new LinkedBlockingQueue<>(), uidThreadFactory);
         uidThreadPool = MoreExecutors.listeningDecorator(uidThreadPool);
 
         // executor for document aggregation
-        documentThreadPool = new ThreadPoolExecutor(threads, threads, 1L, TimeUnit.MINUTES, new LinkedBlockingQueue<>());
+        DocumentUncaughtExceptionHandler docHandler = new DocumentUncaughtExceptionHandler();
+        NamedThreadFactory docThreadFactory = new NamedThreadFactory("DocThreadFactory", docHandler);
+        documentThreadPool = new ThreadPoolExecutor(1, threads, 1L, TimeUnit.MINUTES, new LinkedBlockingQueue<>(), docThreadFactory);
         documentThreadPool = MoreExecutors.listeningDecorator(documentThreadPool);
 
         QueryExecutorFactory executorFactory = new QueryExecutorFactory(config, metadataHelper, results, uidThreadPool, documentThreadPool, stats);
 
-        QueryPlanThreadExceptionHandler queryPlanExceptionHandler = new QueryPlanThreadExceptionHandler(this);
+        QueryPlanThreadExceptionHandler queryPlanExceptionHandler = new QueryPlanThreadExceptionHandler();
         RemoteSchedulerThreadFactory queryPlanThreadFactory = new RemoteSchedulerThreadFactory("QueryPlanThreadFactory", queryPlanExceptionHandler);
         queryPlanThreadPool = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(), queryPlanThreadFactory);
         queryPlanThreadPool = MoreExecutors.listeningDecorator(queryPlanThreadPool);
@@ -280,10 +286,9 @@ public class RemoteScheduler extends Scheduler implements FutureCallback<QueryEx
     // todo update this
     static class RemoteSchedulerExceptionHandler implements Thread.UncaughtExceptionHandler {
         private static final Logger log = ThreadConfigurableLogger.getLogger(RemoteSchedulerExceptionHandler.class);
-        private final RemoteScheduler scheduler;
 
-        public RemoteSchedulerExceptionHandler(RemoteScheduler scheduler) {
-            this.scheduler = scheduler;
+        public RemoteSchedulerExceptionHandler() {
+
         }
 
         @Override
@@ -296,11 +301,8 @@ public class RemoteScheduler extends Scheduler implements FutureCallback<QueryEx
     static class QueryPlanThreadExceptionHandler implements Thread.UncaughtExceptionHandler {
 
         private static final Logger log = ThreadConfigurableLogger.getLogger(QueryPlanThreadExceptionHandler.class);
-        private final RemoteScheduler scheduler;
 
-        public QueryPlanThreadExceptionHandler(RemoteScheduler scheduler) {
-            this.scheduler = scheduler;
-        }
+        public QueryPlanThreadExceptionHandler() {}
 
         @Override
         public void uncaughtException(Thread t, Throwable e) {

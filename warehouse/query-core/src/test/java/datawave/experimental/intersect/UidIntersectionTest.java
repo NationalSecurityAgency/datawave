@@ -23,24 +23,24 @@ public class UidIntersectionTest {
     private static Map<String,Set<String>> nodesToUids;
 
     // first five
-    private static Set<String> uids0 = Sets.newHashSet("uid0", "uid1", "uid2", "uid3", "uid4");
+    private static final Set<String> uids0 = Sets.newHashSet("uid0", "uid1", "uid2", "uid3", "uid4");
     // evens
-    private static Set<String> uids1 = Sets.newHashSet("uid0", "uid2", "uid4", "uid6", "uid8");
+    private static final Set<String> uids1 = Sets.newHashSet("uid0", "uid2", "uid4", "uid6", "uid8");
     // odds
-    private static Set<String> uids2 = Sets.newHashSet("uid1", "uid3", "uid5", "uid7", "uid9");
+    private static final Set<String> uids2 = Sets.newHashSet("uid1", "uid3", "uid5", "uid7", "uid9");
     // primes
-    private static Set<String> uids3 = Sets.newHashSet("uid2", "uid3", "uid5", "uid7");
+    private static final Set<String> uids3 = Sets.newHashSet("uid2", "uid3", "uid5", "uid7");
     // last five
-    private static Set<String> uids4 = Sets.newHashSet("uid5", "uid6", "uid7", "uid8", "uid9");
+    private static final Set<String> uids4 = Sets.newHashSet("uid5", "uid6", "uid7", "uid8", "uid9");
 
-    private static Set<String> allUids = Sets.newHashSet("uid0", "uid1", "uid2", "uid3", "uid4", "uid5", "uid6", "uid7", "uid8", "uid9");
+    private static final Set<String> allUids = Sets.newHashSet("uid0", "uid1", "uid2", "uid3", "uid4", "uid5", "uid6", "uid7", "uid8", "uid9");
 
-    private static Set<String> ltUids = Sets.newHashSet("uid0", "uid1", "uid2", "uid3", "uid4", "uid5", "uid6");
-    private static Set<String> leUids = Sets.newHashSet("uid0", "uid1", "uid2", "uid3", "uid4", "uid5", "uid6", "uid7");
-    private static Set<String> gtUids = Sets.newHashSet("uid4", "uid5", "uid6", "uid7", "uid8", "uid9");
-    private static Set<String> geUids = Sets.newHashSet("uid3", "uid4", "uid5", "uid6", "uid7", "uid8", "uid9");
+    private static final Set<String> ltUids = Sets.newHashSet("uid0", "uid1", "uid2", "uid3", "uid4", "uid5", "uid6");
+    private static final Set<String> leUids = Sets.newHashSet("uid0", "uid1", "uid2", "uid3", "uid4", "uid5", "uid6", "uid7");
+    private static final Set<String> gtUids = Sets.newHashSet("uid4", "uid5", "uid6", "uid7", "uid8", "uid9");
+    private static final Set<String> geUids = Sets.newHashSet("uid3", "uid4", "uid5", "uid6", "uid7", "uid8", "uid9");
 
-    private static Set<String> gtltUids = Sets.newHashSet("uid4", "uid5", "uid6");
+    private static final Set<String> gtltUids = Sets.newHashSet("uid4", "uid5", "uid6");
 
     @BeforeClass
     public static void setup() {
@@ -62,7 +62,7 @@ public class UidIntersectionTest {
         nodesToUids.put("FOO !~ 'abc.*'", uids0); // RegexNotEqual, first five
 
         // bounded ranges
-        nodesToUids.put("FOO > '3' && FOO < '7'", gtltUids); // bounded range (GT LT)
+        nodesToUids.put("(_Bounded_ = true) && (FOO > '3' && FOO < '7')", gtltUids); // bounded range (GT LT)
 
         // filter functions
         nodesToUids.put("filter:includeRegex(FOO,'.*abc.*')", allUids);

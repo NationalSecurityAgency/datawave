@@ -21,4 +21,12 @@ public interface UidScanner {
      * @return a set of uids that satisfy the query
      */
     Set<String> scan(ASTJexlScript script, String row, Set<String> indexedFields);
+
+    /**
+     * Should this scanner log summary stats
+     *
+     * @param logStats
+     *            flag for logging
+     */
+    void setLogStats(boolean logStats);
 }

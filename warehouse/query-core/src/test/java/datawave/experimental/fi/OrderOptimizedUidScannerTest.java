@@ -3,10 +3,10 @@ package datawave.experimental.fi;
 import java.util.Set;
 
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 
 import datawave.experimental.util.AccumuloUtil;
 import datawave.util.TableName;
-import org.junit.Ignore;
 
 public class OrderOptimizedUidScannerTest {
     // extends UidScannerTest {

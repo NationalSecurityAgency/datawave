@@ -98,9 +98,8 @@ public class QueryTermVisitor extends BaseVisitor {
                 throw new IllegalStateException("QueryPropertyMarker has a null source for node: " + JexlStringBuildingVisitor.buildQueryWithoutParse(node));
             }
 
-            // bounded ranges get added as a full node
-
             if (instance.isType(BoundedRange.class)) {
+                // add full node so QueryPropertyMarker can detect a bounded range
                 leaves.add(node);
                 return data;
             } else if (instance.isAnyTypeOf(

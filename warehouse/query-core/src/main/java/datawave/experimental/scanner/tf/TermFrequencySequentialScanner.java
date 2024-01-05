@@ -131,7 +131,11 @@ public class TermFrequencySequentialScanner extends AbstractTermFrequencyScanner
         // put term offset map
         Map<String,Object> map = new HashMap<>();
         map.put(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, new TermOffsetMap(termOffsetMap));
-        log.info("time to fetch " + tfTerms.size() + " term frequency fields for document " + uid + " was " + (System.currentTimeMillis() - start) + " ms");
+
+        if (logStats) {
+            log.info("time to fetch " + tfTerms.size() + " term frequency fields for document " + uid + " was " + (System.currentTimeMillis() - start) + " ms");
+        }
+
         return map;
     }
 

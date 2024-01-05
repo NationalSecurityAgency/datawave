@@ -15,6 +15,7 @@ public abstract class AbstractTermFrequencyScanner implements TermFrequencyScann
     protected String tableName;
     protected String scanId;
     protected Set<String> termFrequencyFields;
+    protected boolean logStats;
 
     protected AbstractTermFrequencyScanner(AccumuloClient client, Authorizations auths, String tableName, String scanId) {
         this.client = client;
@@ -23,7 +24,13 @@ public abstract class AbstractTermFrequencyScanner implements TermFrequencyScann
         this.scanId = scanId;
     }
 
+    @Override
     public void setTermFrequencyFields(Set<String> termFrequencyFields) {
         this.termFrequencyFields = termFrequencyFields;
+    }
+
+    @Override
+    public void setLogStats(boolean logStats) {
+        this.logStats = logStats;
     }
 }

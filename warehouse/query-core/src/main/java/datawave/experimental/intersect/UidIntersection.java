@@ -74,9 +74,9 @@ import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 
 /**
  * Simple post-order traversal of a Jexl query tree
- *
+ * <p>
  * A node that is not found in the nodes to uids map was never looked up in the field index.
- *
+ * <p>
  * A visit method may return a set of uids, an empty set, or null. A null return value indicates that a node should be skipped for the purpose of intersecting
  */
 public class UidIntersection extends BaseVisitor implements UidIntersectionStrategy {

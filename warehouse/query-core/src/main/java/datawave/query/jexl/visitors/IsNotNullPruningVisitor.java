@@ -78,7 +78,7 @@ import datawave.webservice.common.logging.ThreadConfigurableLogger;
  * <li><code>!(FOO == null) &amp;&amp; FOO == 'bar'</code></li>
  * <li><code>!(FOO == null) &amp;&amp; (FOO == 'bar' || FOO == 'baz')</code></li>
  * <li><code>!(FOO == null) &amp;&amp; FOO =~ 'ba.*'</code></li>
- * <li><code>!(FOO == null) &amp;&amp; filter:regexInclude(FOO, 'ba.*')</code></li>
+ * <li><code>!(FOO == null) &amp;&amp; filter:includeRegex(FOO, 'ba.*')</code></li>
  * </ul>
  * <p>
  * In addition to reducing the number of nodes in the query, this pruning also stops negations from pushing into large subtrees. For example,

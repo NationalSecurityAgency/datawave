@@ -134,6 +134,7 @@ public class DocumentScanIterator implements SortedKeyValueIterator<Key,Value> {
         }
 
         if (d != null) {
+            // TODO -- record id needs to have the rolled up classification
             d.put(Document.DOCKEY_FIELD_NAME, new DocumentKey(new Key(shard, lastUid), true));
         }
 

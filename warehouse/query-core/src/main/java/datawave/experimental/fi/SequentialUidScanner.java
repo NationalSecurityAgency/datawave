@@ -31,6 +31,9 @@ import datawave.query.data.parsers.FieldIndexKey;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 
+/**
+ * Remote scan
+ */
 public class SequentialUidScanner extends AbstractUidScanner {
 
     private static final Logger log = Logger.getLogger(SequentialUidScanner.class);
@@ -81,6 +84,11 @@ public class SequentialUidScanner extends AbstractUidScanner {
         } catch (TableNotFoundException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public void setLogStats(boolean logStats) {
+        // no op
     }
 
     private TreeMultimap<String,String> termsToMap(Set<JexlNode> terms, Set<String> indexedFields) {

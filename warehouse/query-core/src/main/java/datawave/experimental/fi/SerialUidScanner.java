@@ -41,7 +41,6 @@ public class SerialUidScanner extends AbstractUidScanner {
     @Override
     public Set<String> scan(ASTJexlScript script, String row, Set<String> indexedFields) {
         Set<JexlNode> terms = QueryTermVisitor.parse(script);
-        log.info("scanning uids for " + terms.size() + " terms");
         long elapsed = System.currentTimeMillis();
         int count = 0;
         Map<String,Set<String>> nodesToUids = new HashMap<>();
@@ -73,10 +72,19 @@ public class SerialUidScanner extends AbstractUidScanner {
                 log.info("Field " + field + " is not indexed, do not look for it in the field index");
             }
         }
-        elapsed = System.currentTimeMillis() - elapsed;
-        log.info("scanned field index for " + count + "/" + terms.size() + " indexed terms in " + elapsed + " ms");
+
+        if (logStats) {
+            elapsed = System.currentTimeMillis() - elapsed;
+            log.info("scanned field index for " + count + "/" + terms.size() + " indexed terms in " + elapsed + " ms");
+        }
+
         UidIntersectionStrategy intersector = new UidIntersection();
         return intersector.intersect(script, nodesToUids);
+    }
+
+    @Override
+    public void setLogStats(boolean logStats) {
+        this.logStats = logStats;
     }
 
     /**
@@ -107,6 +115,7 @@ public class SerialUidScanner extends AbstractUidScanner {
             }
         } catch (Exception e) {
             e.printStackTrace();
+            log.error(e);
         }
         return uids;
     }

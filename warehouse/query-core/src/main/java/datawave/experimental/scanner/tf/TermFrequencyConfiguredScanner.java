@@ -3,14 +3,12 @@ package datawave.experimental.scanner.tf;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
@@ -104,8 +102,11 @@ public class TermFrequencyConfiguredScanner extends AbstractTermFrequencyScanner
 
             Map<String,Object> map = new HashMap<>();
             map.put(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, new TermOffsetMap(termOffsetMap));
-            log.info("time to fetch " + sortedTerms.size() + " term frequency fields for document " + uid + " was " + (System.currentTimeMillis() - start)
-                            + " ms");
+
+            if (logStats) {
+                long elapsed = System.currentTimeMillis() - start;
+                log.info("time to fetch " + sortedTerms.size() + " term frequency fields for document " + uid + " was " + elapsed + " ms");
+            }
             return map;
 
         } catch (TableNotFoundException e) {

@@ -44,6 +44,8 @@ public class FieldIndexScanner {
 
     private final AttributeFactory preNormalizedAttributeFactory; // pre normalized
 
+    private boolean logStats;
+
     private final ScanStats scanStats = new ScanStats();
 
     public FieldIndexScanner(AccumuloClient client, Authorizations auths, String tableName, String scanId, AttributeFactory attributeFactory) {
@@ -121,7 +123,10 @@ public class FieldIndexScanner {
             e.printStackTrace();
             throw new RuntimeException("Error fetching field index entries for doc range");
         }
-        log.info("time to fetch " + ranges.size() + " index-only fields for document " + uid + " was " + (System.currentTimeMillis() - start) + " ms");
+
+        if (logStats) {
+            log.info("time to fetch " + ranges.size() + " index-only fields for document " + uid + " was " + (System.currentTimeMillis() - start) + " ms");
+        }
     }
 
     /**
@@ -167,5 +172,9 @@ public class FieldIndexScanner {
         parser.parse(key);
         return preNormalizedAttributeFactory.create(parser.getField(), parser.getValue(), key, parser.getDatatype(), true, false);
         // return new Content(value, docKey, true);
+    }
+
+    public void setLogStats(boolean logStats) {
+        this.logStats = logStats;
     }
 }

@@ -54,7 +54,7 @@ public class ScanStats {
     public ScanStats merge(ScanStats other) {
         this.documentsEvaluated.addAndGet(other.documentsEvaluated.get());
         this.documentsReturned.addAndGet(other.documentsReturned.get());
-        this.shardsSearched.addAndGet(1L);
+        this.shardsSearched.addAndGet(other.shardsSearched.get());
         return this;
     }
 
@@ -64,6 +64,14 @@ public class ScanStats {
 
     public void incrementDocumentsReturned() {
         documentsReturned.getAndIncrement();
+    }
+
+    public void incrementShardsSearched() {
+        shardsSearched.getAndIncrement();
+    }
+
+    public void logMinimizedStats(Logger log) {
+        log.info("docs.evaluated: " + documentsEvaluated.get() + " docs.returned: " + documentsReturned.get() + " shards.searched: " + shardsSearched.get());
     }
 
     public void logStats(Logger log) {
@@ -76,6 +84,7 @@ public class ScanStats {
         StringBuilder sb = new StringBuilder();
         sb.append("docs.evaluated: ").append(documentsEvaluated.get()).append('\n');
         sb.append("docs.returned: ").append(documentsReturned.get()).append('\n');
+        sb.append("shards.searched: ").append(shardsSearched.get());
         return sb.toString();
     }
 
