@@ -22,9 +22,10 @@ public class FixNegativeNumbersVisitor extends RebuildingVisitor {
             ASTNumberLiteral node = (ASTNumberLiteral) astumn.jjtGetChild(0);
             ASTNumberLiteral newNode = JexlNodes.makeNumberLiteral();
             Number value = negate(node.getLiteral());
-            if (!JexlNodes.setLiteral(newNode, value)) {
+            if (value == null) {
                 throw new IllegalArgumentException("Could not ascertain type of ASTNumberLiteral: " + node);
             }
+            JexlNodes.setLiteral(newNode, value);
             newNode.jjtSetParent(node.jjtGetParent());
             return newNode;
         } else {
@@ -34,7 +35,11 @@ public class FixNegativeNumbersVisitor extends RebuildingVisitor {
 
     private Number negate(Number number) {
         Number negated = null;
-        if (number instanceof Integer) {
+        if (number instanceof Byte) {
+            negated = -number.byteValue();
+        } else if (number instanceof Short) {
+            negated = -number.shortValue();
+        } else if (number instanceof Integer) {
             negated = -number.intValue();
         } else if (number instanceof Long) {
             negated = -number.longValue();
