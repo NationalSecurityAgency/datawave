@@ -110,11 +110,6 @@ public class NodeTransformVisitor extends RebuildingVisitor {
     }
 
     @Override
-    public Object visit(ASTReference node, Object data) {
-        return applyTransforms(super.visit(node, data));
-    }
-
-    @Override
     public Object visit(ASTReferenceExpression node, Object data) {
         return applyTransforms(super.visit(node, data));
     }
