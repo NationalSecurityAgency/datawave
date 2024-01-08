@@ -126,7 +126,7 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
         } else {
             // If there are multiple children, return a new junction with the children.
             JexlNode copy = creator.get();
-            JexlNodes.copyImage(node, copy);
+            JexlNodes.copyIdentifierOrLiteral(node, copy);
             JexlNodes.setChildren(copy, children.toArray(new JexlNode[0]));
             return copy;
         }
@@ -356,7 +356,7 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
     @Override
     public Object visit(ASTIdentifier node, Object data) {
         // Check if the current node is a child of the f:options function.
-        if (!RESERVED.contains(JexlNodes.getImage(node))) {
+        if (!RESERVED.contains(JexlNodes.getIdentifierOrLiteral(node))) {
             addImageToListData(node, data);
         }
         return super.visit(node, data);
@@ -367,7 +367,7 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
     private void addImageToListData(JexlNode node, Object data) {
         if (data instanceof List) {
             List list = (List) data;
-            list.add(JexlNodes.getImage(node));
+            list.add(JexlNodes.getIdentifierOrLiteral(node));
         }
     }
 

@@ -46,8 +46,8 @@ public class JexlNodeAssert extends AbstractAssert<JexlNodeAssert,JexlNode> {
      */
     public JexlNodeAssert hasNullImage() {
         isNotNull();
-        if (JexlNodes.getImage(actual) != null) {
-            failWithMessage("Expected image to be null, but was %s", JexlNodes.getImage(actual));
+        if (JexlNodes.getIdentifierOrLiteral(actual) != null) {
+            failWithMessage("Expected image to be null, but was %s", JexlNodes.getIdentifierOrLiteral(actual));
         }
         return this;
     }
@@ -59,7 +59,7 @@ public class JexlNodeAssert extends AbstractAssert<JexlNodeAssert,JexlNode> {
      */
     public JexlNodeAssert hasNonNullImage() {
         isNotNull();
-        if (JexlNodes.getImage(actual) == null) {
+        if (JexlNodes.getIdentifierOrLiteral(actual) == null) {
             failWithMessage("Expected image to not be null");
         }
         return this;
@@ -74,8 +74,8 @@ public class JexlNodeAssert extends AbstractAssert<JexlNodeAssert,JexlNode> {
      */
     public JexlNodeAssert hasImage(String image) {
         isNotNull();
-        if (!Objects.equals(String.valueOf(JexlNodes.getImage(actual)), image)) {
-            failWithMessage("Expected image to be %s but was %s", image, JexlNodes.getImage(actual));
+        if (!Objects.equals(JexlNodes.getIdentifierOrLiteralAsString(actual), image)) {
+            failWithMessage("Expected image to be %s but was %s", image, JexlNodes.getIdentifierOrLiteral(actual));
         }
         return this;
     }

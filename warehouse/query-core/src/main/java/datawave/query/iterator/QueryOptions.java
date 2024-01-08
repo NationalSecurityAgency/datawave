@@ -73,6 +73,10 @@ import datawave.query.function.Equality;
 import datawave.query.function.GetStartKey;
 import datawave.query.function.JexlEvaluation;
 import datawave.query.function.PrefixEquality;
+import datawave.query.function.serializer.DocumentSerializer;
+import datawave.query.function.serializer.KryoDocumentSerializer;
+import datawave.query.function.serializer.ToStringDocumentSerializer;
+import datawave.query.function.serializer.WritableDocumentSerializer;
 import datawave.query.iterator.filter.EventKeyDataTypeFilter;
 import datawave.query.iterator.filter.FieldIndexKeyDataTypeFilter;
 import datawave.query.iterator.filter.KeyIdentity;
@@ -98,7 +102,7 @@ import datawave.util.UniversalSet;
 /**
  * QueryOptions are set on the iterators.
  * <p>
- * Some options are passed through from the QueryParemeters.
+ * Some options are passed through from the QueryParameters.
  */
 public class QueryOptions implements OptionDescriber {
     private static final Logger log = Logger.getLogger(QueryOptions.class);
@@ -258,6 +262,8 @@ public class QueryOptions implements OptionDescriber {
 
     public static final String EXCERPT_FIELDS = "excerpt.fields";
 
+    public static final String EXCERPT_FIELDS_NO_HIT_CALLOUT = "excerpt.fields.no.hit.callout";
+
     public static final String EXCERPT_ITERATOR = "excerpt.iterator.class";
 
     // field and next thresholds before a seek is issued
@@ -286,6 +292,8 @@ public class QueryOptions implements OptionDescriber {
     protected CompositeMetadata compositeMetadata = null;
     protected int compositeSeekThreshold = 10;
     protected DocumentSerialization.ReturnType returnType = DocumentSerialization.ReturnType.kryo;
+    private DocumentSerializer documentSerializer;
+
     protected boolean reducedResponse = false;
     protected boolean fullTableScanOnly = false;
     protected JexlArithmetic arithmetic = new DefaultArithmetic();
@@ -420,6 +428,8 @@ public class QueryOptions implements OptionDescriber {
 
     protected ExcerptFields excerptFields;
 
+    protected boolean excerptFieldsNoHitCallout;
+
     protected Class<? extends SortedKeyValueIterator<Key,Value>> excerptIterator = TermFrequencyExcerptIterator.class;
 
     // off by default, controls when to issue a seek
@@ -533,6 +543,7 @@ public class QueryOptions implements OptionDescriber {
         this.trackSizes = other.trackSizes;
         this.activeQueryLogName = other.activeQueryLogName;
         this.excerptFields = other.excerptFields;
+        this.excerptFieldsNoHitCallout = other.excerptFieldsNoHitCallout;
         this.excerptIterator = other.excerptIterator;
 
         this.fiFieldSeek = other.fiFieldSeek;
@@ -630,6 +641,35 @@ public class QueryOptions implements OptionDescriber {
 
     public void setReturnType(DocumentSerialization.ReturnType returnType) {
         this.returnType = returnType;
+    }
+
+    /**
+     * Get the document serializer. If no serializer exists, create one based on the return type
+     *
+     * @return the document serializer
+     */
+    public DocumentSerializer getDocumentSerializer() {
+        if (documentSerializer == null) {
+            switch (returnType) {
+                case kryo:
+                    documentSerializer = new KryoDocumentSerializer(isReducedResponse(), isCompressResults());
+                    break;
+                case writable:
+                    documentSerializer = new WritableDocumentSerializer(isReducedResponse());
+                    break;
+                case tostring:
+                    documentSerializer = new ToStringDocumentSerializer(isReducedResponse());
+                    break;
+                case noop:
+                default:
+                    throw new IllegalArgumentException("Unknown return type of: " + returnType);
+            }
+        }
+        return documentSerializer;
+    }
+
+    public void setDocumentSerializer(DocumentSerializer documentSerializer) {
+        this.documentSerializer = documentSerializer;
     }
 
     public boolean isReducedResponse() {
@@ -1104,6 +1144,14 @@ public class QueryOptions implements OptionDescriber {
         this.excerptFields = excerptFields;
     }
 
+    public boolean getExcerptFieldsNoHitCallout() {
+        return excerptFieldsNoHitCallout;
+    }
+
+    public void setExcerptFieldsNoHitCallout(boolean excerptFieldsNoHitCallout) {
+        this.excerptFieldsNoHitCallout = excerptFieldsNoHitCallout;
+    }
+
     public Class<? extends SortedKeyValueIterator<Key,Value>> getExcerptIterator() {
         return excerptIterator;
     }
@@ -1204,6 +1252,7 @@ public class QueryOptions implements OptionDescriber {
         options.put(ACTIVE_QUERY_LOG_NAME, "If not provided or set to '" + ActiveQueryLog.DEFAULT_NAME
                         + "', will use the default shared Active Query Log instance. If provided otherwise, uses a separate distinct Active Query Log that will include the unique name in log messages.");
         options.put(EXCERPT_FIELDS, "excerpt fields");
+        options.put(EXCERPT_FIELDS_NO_HIT_CALLOUT, "excerpt fields no hit callout");
         options.put(EXCERPT_ITERATOR, "excerpt iterator class (default datawave.query.iterator.logic.TermFrequencyExcerptIterator");
         options.put(FI_FIELD_SEEK, "The number of fields traversed by a Field Index data filter or aggregator before a seek is issued");
         options.put(FI_NEXT_SEEK, "The number of next calls made by a Field Index data filter or aggregator before a seek is issued");
@@ -1709,6 +1758,10 @@ public class QueryOptions implements OptionDescriber {
 
         if (options.containsKey(EXCERPT_FIELDS)) {
             setExcerptFields(ExcerptFields.from(options.get(EXCERPT_FIELDS)));
+        }
+
+        if (options.containsKey(EXCERPT_FIELDS_NO_HIT_CALLOUT)) {
+            setExcerptFieldsNoHitCallout(Boolean.parseBoolean(options.get(EXCERPT_FIELDS_NO_HIT_CALLOUT)));
         }
 
         if (options.containsKey(EXCERPT_ITERATOR)) {

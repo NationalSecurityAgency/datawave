@@ -88,7 +88,7 @@ public class UniqueExpressionTermsVisitor extends RebuildingVisitor {
         } else {
             // If two or more children remain, return a copy with the unique children.
             JexlNode copy = JexlNodes.newInstanceOfType(node);
-            JexlNodes.copyImage(node, copy);
+            JexlNodes.copyIdentifierOrLiteral(node, copy);
             copy.jjtSetParent(node.jjtGetParent());
             JexlNodes.setChildren(copy, uniqueChildren.toArray(new JexlNode[0]));
             return copy;

@@ -274,7 +274,12 @@ public class JexlNodes {
         identifierAccess.setIdentifier(value);
     }
 
-    public static Object getImage(JexlNode node) {
+    public static String getIdentifierOrLiteralAsString(JexlNode node) {
+        Object identifierOrLiteral = getIdentifierOrLiteral(node);
+        return (identifierOrLiteral != null) ? String.valueOf(identifierOrLiteral) : null;
+    }
+
+    public static Object getIdentifierOrLiteral(JexlNode node) {
         Object value = null;
         if (node instanceof ASTIdentifier) {
             value = ((ASTIdentifier) node).getName();
@@ -286,7 +291,7 @@ public class JexlNodes {
         return value;
     }
 
-    public static boolean setImage(JexlNode node, Object value) {
+    public static boolean setIdentifierOrLiteral(JexlNode node, Object value) {
         boolean success = false;
         if (node instanceof ASTIdentifier && value instanceof String) {
             JexlNodes.setIdentifier((ASTIdentifier) node, (String) value);
@@ -298,8 +303,8 @@ public class JexlNodes {
         return success;
     }
 
-    public static boolean copyImage(JexlNode original, JexlNode copy) {
-        return setImage(copy, getImage(original));
+    public static boolean copyIdentifierOrLiteral(JexlNode original, JexlNode copy) {
+        return setIdentifierOrLiteral(copy, getIdentifierOrLiteral(original));
     }
 
     /**
@@ -329,7 +334,7 @@ public class JexlNodes {
         return new ASTStringLiteral(ParserTreeConstants.JJTSTRINGLITERAL);
     }
 
-    public static ASTIdentifier makeIdentifierWithImage(String identifier) {
+    public static ASTIdentifier makeIdentifier(String identifier) {
         ASTIdentifier id = makeIdentifier();
         id.setSymbol(identifier);
         return id;

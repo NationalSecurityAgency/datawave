@@ -84,7 +84,7 @@ public class DisjunctionEliminationVisitor extends RebuildingVisitor {
             } else if (children.size() < node.jjtGetNumChildren()) {
                 // If there were some redundant children, but more than one relevant child, return a new AND node with the relevant children.
                 JexlNode copy = new ASTAndNode(JJTANDNODE);
-                JexlNodes.copyImage(node, copy);
+                JexlNodes.copyIdentifierOrLiteral(node, copy);
                 JexlNodes.setChildren(copy, children.toArray(new JexlNode[0]));
                 return copy;
             } else {

@@ -108,7 +108,7 @@ public class PushFunctionsIntoExceededValueRanges extends RebuildingVisitor {
         } else {
             // we have a cross section, so for each of those fields, push the functions into the exceeded value threshold along side of the range
             ASTAndNode newNode = newInstanceOfType(node);
-            JexlNodes.copyImage(node, newNode);
+            JexlNodes.copyIdentifierOrLiteral(node, newNode);
             for (String field : fields) {
                 boolean copyFunction = exceededValueRangeNodes.get(field).size() > 1;
                 for (JexlNode range : exceededValueRangeNodes.removeAll(field)) {

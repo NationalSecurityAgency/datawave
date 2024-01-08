@@ -155,7 +155,7 @@ public class SetMembershipVisitor extends BaseVisitor {
         if (config.isLazySetMechanismEnabled()) {
             // Only tag index-only fields within filter functions.
             if (!isTagged(node) && parentFilterFunction(node)) {
-                JexlNodes.setImage(node, JexlNodes.getImage(node) + INDEX_ONLY_FUNCTION_SUFFIX);
+                JexlNodes.setIdentifierOrLiteral(node, JexlNodes.getIdentifierOrLiteral(node) + INDEX_ONLY_FUNCTION_SUFFIX);
             }
         } else {
             // Otherwise, throw a fatal exception.
@@ -173,7 +173,7 @@ public class SetMembershipVisitor extends BaseVisitor {
      * @return true if the node has a tagged field, or false otherwise
      */
     private boolean isTagged(ASTIdentifier node) {
-        return isTagged(String.valueOf(JexlNodes.getImage(node)));
+        return isTagged(JexlNodes.getIdentifierOrLiteralAsString(node));
     }
 
     /**

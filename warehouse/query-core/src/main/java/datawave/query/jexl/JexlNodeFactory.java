@@ -832,7 +832,7 @@ public class JexlNodeFactory {
         }
 
         copy.jjtSetParent(original.jjtGetParent());
-        JexlNodes.copyImage(original, copy);
+        JexlNodes.copyIdentifierOrLiteral(original, copy);
         return copy;
     }
 
@@ -1341,7 +1341,7 @@ public class JexlNodeFactory {
             return createOrNode(list);
         } else {
             JexlNode newNode = JexlNodeFactory.shallowCopy(original);
-            return buildUntypedNewNode(newNode, buildIdentifier(String.valueOf(JexlNodes.getImage(node))), fieldValue);
+            return buildUntypedNewNode(newNode, buildIdentifier(JexlNodes.getIdentifierOrLiteralAsString(node)), fieldValue);
         }
     }
 
@@ -1396,7 +1396,7 @@ public class JexlNodeFactory {
         if (!list.isEmpty()) {
             return createOrNode(list);
         } else {
-            return buildUntypedNewNode(newNode, buildIdentifier(String.valueOf(JexlNodes.getImage(node))), fieldValue);
+            return buildUntypedNewNode(newNode, buildIdentifier(JexlNodes.getIdentifierOrLiteralAsString(node)), fieldValue);
         }
     }
 
@@ -1427,7 +1427,7 @@ public class JexlNodeFactory {
 
         int childIndex = 0;
 
-        ASTIdentifier fieldNode = JexlNodes.makeIdentifierWithImage(field);
+        ASTIdentifier fieldNode = JexlNodes.makeIdentifier(field);
         argsNode.jjtAddChild(fieldNode, childIndex++);
         fieldNode.jjtSetParent(argsNode);
 
@@ -1584,7 +1584,7 @@ public class JexlNodeFactory {
     public static ASTIdentifier buildIdentifier(String fieldName) {
         // When the fieldName starts with an invalid character, add the prefix
         // onto it
-        return JexlNodes.makeIdentifierWithImage(JexlASTHelper.rebuildIdentifier(fieldName));
+        return JexlNodes.makeIdentifier(JexlASTHelper.rebuildIdentifier(fieldName));
     }
 
     /**
@@ -1618,7 +1618,7 @@ public class JexlNodeFactory {
     public static ASTAssignment createAssignment(String name, boolean value) {
         ASTAssignment assignNode = new ASTAssignment(ParserTreeConstants.JJTASSIGNMENT);
 
-        ASTIdentifier idNode = JexlNodes.makeIdentifierWithImage(name);
+        ASTIdentifier idNode = JexlNodes.makeIdentifier(name);
         idNode.jjtSetParent(assignNode);
         assignNode.jjtAddChild(idNode, 0);
         if (value) {
@@ -1646,7 +1646,7 @@ public class JexlNodeFactory {
     public static ASTAssignment createAssignment(String name, String value) {
         ASTAssignment assignNode = new ASTAssignment(ParserTreeConstants.JJTASSIGNMENT);
 
-        ASTIdentifier idNode = JexlNodes.makeIdentifierWithImage(name);
+        ASTIdentifier idNode = JexlNodes.makeIdentifier(name);
         idNode.jjtSetParent(assignNode);
         assignNode.jjtAddChild(idNode, 0);
 

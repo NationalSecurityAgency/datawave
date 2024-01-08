@@ -591,7 +591,7 @@ public class QueryModelVisitor extends RebuildingVisitor {
                 return super.visit(node, data);
             }
             for (String alias : aliases) {
-                ASTIdentifier newKid = JexlNodes.makeIdentifierWithImage(JexlASTHelper.rebuildIdentifier(alias));
+                ASTIdentifier newKid = JexlNodes.makeIdentifier(JexlASTHelper.rebuildIdentifier(alias));
                 nodes.add(newKid);
             }
             if (nodes.size() == 1) {

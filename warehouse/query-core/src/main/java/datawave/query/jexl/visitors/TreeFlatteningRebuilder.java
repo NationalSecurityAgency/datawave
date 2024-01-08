@@ -260,7 +260,7 @@ public class TreeFlatteningRebuilder {
             newNode = RebuildingVisitor.copy(node);
         } else {
             newNode = JexlNodes.newInstanceOfType(node);
-            JexlNodes.copyImage(node, newNode);
+            JexlNodes.copyIdentifierOrLiteral(node, newNode);
             JexlNodes.ensureCapacity(newNode, node.jjtGetNumChildren());
 
             for (int i = 0; i < node.jjtGetNumChildren(); i++) {

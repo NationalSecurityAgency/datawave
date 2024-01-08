@@ -27,7 +27,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
-import datawave.query.DocumentSerialization.ReturnType;
 import datawave.query.attributes.Document;
 import datawave.query.function.Aggregation;
 import datawave.query.function.AttributeToCardinality;
@@ -36,9 +35,6 @@ import datawave.query.function.DocumentCountCardinality;
 import datawave.query.function.JexlEvaluation;
 import datawave.query.function.KeyToDocumentData;
 import datawave.query.function.MinimumEstimation;
-import datawave.query.function.serializer.KryoDocumentSerializer;
-import datawave.query.function.serializer.ToStringDocumentSerializer;
-import datawave.query.function.serializer.WritableDocumentSerializer;
 import datawave.query.iterator.AccumuloTreeIterable;
 import datawave.query.iterator.FieldIndexOnlyQueryIterator;
 import datawave.query.iterator.aggregation.DocumentData;
@@ -253,31 +249,9 @@ public class DynamicFacetIterator extends FieldIndexOnlyQueryIterator {
         // minimize the list of facets that are returned.
         fieldIndexDocuments = Iterators.transform(fieldIndexDocuments, new MinimumEstimation(configuration.getMinimumFacetCount()));
 
-        if (this.getReturnType() == ReturnType.kryo) {
-            // Serialize the Document using Kryo
-            this.serializedDocuments = Iterators.transform(fieldIndexDocuments, new KryoDocumentSerializer(isReducedResponse(), isCompressResults()));
-        } else if (this.getReturnType() == ReturnType.writable) {
-            // Use the Writable interface to serialize the Document
-            this.serializedDocuments = Iterators.transform(fieldIndexDocuments, new WritableDocumentSerializer(isReducedResponse()));
-        } else if (this.getReturnType() == ReturnType.tostring) {
-            // Just return a toString() representation of the document
-            this.serializedDocuments = Iterators.transform(fieldIndexDocuments, new ToStringDocumentSerializer(isReducedResponse()));
-        } else {
-            throw new IllegalArgumentException("Unknown return type of: " + this.getReturnType());
-        }
+        documentIterator = fieldIndexDocuments;
 
-        // Determine if we have items to return
-        if (this.serializedDocuments.hasNext()) {
-            Entry<Key,Value> entry = this.serializedDocuments.next();
-
-            this.key = entry.getKey();
-            this.value = entry.getValue();
-
-            entry = null;
-        } else {
-            this.key = null;
-            this.value = null;
-        }
+        prepareKeyValue();
     }
 
     protected Iterator<Entry<Key,Document>> summarize(Iterator<Entry<Key,Document>> fieldIndexDocuments) {

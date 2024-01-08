@@ -1261,7 +1261,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     public Object visit(ASTMethodNode node, Object data) {
         STATE state = STATE.NON_EXECUTABLE;
         if (output != null) {
-            output.writeLine(data, node, ":" + JexlNodes.getImage(node), state, true);
+            output.writeLine(data, node, ":" + JexlNodes.getIdentifierOrLiteral(node), state, true);
         }
         return state;
     }

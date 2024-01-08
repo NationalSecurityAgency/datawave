@@ -232,8 +232,8 @@ public class TreeEqualityVisitor extends ParserVisitor {
      */
     private Comparison compareImages(SimpleNode first, SimpleNode second) {
         if (first instanceof JexlNode) {
-            String firstImage = String.valueOf(JexlNodes.getImage((JexlNode) first));
-            String secondImage = String.valueOf(JexlNodes.getImage((JexlNode) second));
+            String firstImage = JexlNodes.getIdentifierOrLiteralAsString((JexlNode) first);
+            String secondImage = JexlNodes.getIdentifierOrLiteralAsString((JexlNode) second);
             if (!Objects.equals(firstImage, secondImage)) {
                 return Comparison.notEqual("Node images differ: " + firstImage + " vs " + secondImage);
             }

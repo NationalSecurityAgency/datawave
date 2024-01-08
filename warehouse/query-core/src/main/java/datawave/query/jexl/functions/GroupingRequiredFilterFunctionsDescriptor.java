@@ -79,7 +79,7 @@ public class GroupingRequiredFilterFunctionsDescriptor implements JexlFunctionAr
                         if (f == null) {
                             filterMap.put(fieldName, f = new EventDataQueryExpressionVisitor.ExpressionFilter(attributeFactory, fieldName));
                         }
-                        f.addFieldPattern(String.valueOf(JexlNodes.getImage(valueNode)));
+                        f.addFieldPattern(JexlNodes.getIdentifierOrLiteralAsString(valueNode));
                     }
                 }
             }

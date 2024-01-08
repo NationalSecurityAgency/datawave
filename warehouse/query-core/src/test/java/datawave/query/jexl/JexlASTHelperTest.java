@@ -579,8 +579,9 @@ public class JexlASTHelperTest {
         String reinterpretedQuery = JexlStringBuildingVisitor.buildQuery(newNode);
         assertEquals("CITY =~ 'ci\\\\\\\\\\\\ty\\.blah'", interpretedQuery);
         assertEquals(reinterpretedQuery, interpretedQuery);
-        assertEquals("ci\\\\\\\\\\\\ty\\.blah", JexlNodes.getImage(node.jjtGetChild(0).jjtGetChild(1)));
-        assertEquals(JexlNodes.getImage(node.jjtGetChild(0).jjtGetChild(1)), JexlNodes.getImage(newNode.jjtGetChild(0).jjtGetChild(1)));
+        assertEquals("ci\\\\\\\\\\\\ty\\.blah", JexlNodes.getIdentifierOrLiteral(node.jjtGetChild(0).jjtGetChild(1)));
+        assertEquals(JexlNodes.getIdentifierOrLiteral(node.jjtGetChild(0).jjtGetChild(1)),
+                        JexlNodes.getIdentifierOrLiteral(newNode.jjtGetChild(0).jjtGetChild(1)));
     }
 
     // This test is here to ensure that we can freely convert between a jexl tree and
@@ -598,8 +599,9 @@ public class JexlASTHelperTest {
         // note: while this is different from the original query, it produces the same string literal
         assertEquals("CITY == 'ci\\\\\\\\\\\\ty\\\\.blah'", interpretedQuery);
         assertEquals(reinterpretedQuery, interpretedQuery);
-        assertEquals("ci\\\\\\ty\\.blah", JexlNodes.getImage(node.jjtGetChild(0).jjtGetChild(1)));
-        assertEquals(JexlNodes.getImage(node.jjtGetChild(0).jjtGetChild(1)), JexlNodes.getImage(newNode.jjtGetChild(0).jjtGetChild(1)));
+        assertEquals("ci\\\\\\ty\\.blah", JexlNodes.getIdentifierOrLiteral(node.jjtGetChild(0).jjtGetChild(1)));
+        assertEquals(JexlNodes.getIdentifierOrLiteral(node.jjtGetChild(0).jjtGetChild(1)),
+                        JexlNodes.getIdentifierOrLiteral(newNode.jjtGetChild(0).jjtGetChild(1)));
     }
 
     // This is similar to the last test, but shows the usage of an explicit, escaped backslash before '.blah'
@@ -615,8 +617,9 @@ public class JexlASTHelperTest {
         // note: while this is different from the original query, it produces the same string literal
         assertEquals("CITY == 'ci\\\\\\\\\\\\ty\\\\.blah'", interpretedQuery);
         assertEquals(reinterpretedQuery, interpretedQuery);
-        assertEquals("ci\\\\\\ty\\.blah", JexlNodes.getImage(node.jjtGetChild(0).jjtGetChild(1)));
-        assertEquals(JexlNodes.getImage(node.jjtGetChild(0).jjtGetChild(1)), JexlNodes.getImage(newNode.jjtGetChild(0).jjtGetChild(1)));
+        assertEquals("ci\\\\\\ty\\.blah", JexlNodes.getIdentifierOrLiteral(node.jjtGetChild(0).jjtGetChild(1)));
+        assertEquals(JexlNodes.getIdentifierOrLiteral(node.jjtGetChild(0).jjtGetChild(1)),
+                        JexlNodes.getIdentifierOrLiteral(newNode.jjtGetChild(0).jjtGetChild(1)));
     }
 
     // This test ensures that the literal value of a regex node preserves the full number of backslashes as present in the query.
@@ -628,7 +631,7 @@ public class JexlASTHelperTest {
         String query = "CITY =~ 'ci\\\\\\\\\\\\ty\\\\.bl\\'ah'";
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
         String interpretedQuery = JexlStringBuildingVisitor.buildQueryWithoutParse(node);
-        assertEquals("ci\\\\\\\\\\\\ty\\\\.bl'ah", JexlNodes.getImage(node.jjtGetChild(0).jjtGetChild(1)));
+        assertEquals("ci\\\\\\\\\\\\ty\\\\.bl'ah", JexlNodes.getIdentifierOrLiteral(node.jjtGetChild(0).jjtGetChild(1)));
         assertEquals(query, interpretedQuery);
     }
 
@@ -640,7 +643,7 @@ public class JexlASTHelperTest {
         String query = "CITY =~ 'ci\\\\\\\\\\\\ty\\\\.bl\\\\\\'ah'";
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
         String interpretedQuery = JexlStringBuildingVisitor.buildQueryWithoutParse(node);
-        assertEquals("ci\\\\\\\\\\\\ty\\\\.bl\\\\'ah", JexlNodes.getImage(node.jjtGetChild(0).jjtGetChild(1)));
+        assertEquals("ci\\\\\\\\\\\\ty\\\\.bl\\\\'ah", JexlNodes.getIdentifierOrLiteral(node.jjtGetChild(0).jjtGetChild(1)));
         assertEquals(query, interpretedQuery);
     }
 
@@ -653,7 +656,7 @@ public class JexlASTHelperTest {
         String query = "CITY == 'ci\\\\\\\\\\\\ty\\\\.bl\\'ah'";
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
         String interpretedQuery = JexlStringBuildingVisitor.buildQueryWithoutParse(node);
-        assertEquals("ci\\\\\\ty\\.bl'ah", JexlNodes.getImage(node.jjtGetChild(0).jjtGetChild(1)));
+        assertEquals("ci\\\\\\ty\\.bl'ah", JexlNodes.getIdentifierOrLiteral(node.jjtGetChild(0).jjtGetChild(1)));
         assertEquals(query, interpretedQuery);
     }
 
@@ -665,7 +668,7 @@ public class JexlASTHelperTest {
         String query = "CITY == 'ci\\\\\\\\\\\\ty\\\\.bl\\\\\\'ah'";
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
         String interpretedQuery = JexlStringBuildingVisitor.buildQueryWithoutParse(node);
-        assertEquals("ci\\\\\\ty\\.bl\\'ah", JexlNodes.getImage(node.jjtGetChild(0).jjtGetChild(1)));
+        assertEquals("ci\\\\\\ty\\.bl\\'ah", JexlNodes.getIdentifierOrLiteral(node.jjtGetChild(0).jjtGetChild(1)));
         assertEquals(query, interpretedQuery);
     }
 

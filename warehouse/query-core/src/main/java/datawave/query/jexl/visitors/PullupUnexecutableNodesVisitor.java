@@ -163,61 +163,55 @@ public class PullupUnexecutableNodesVisitor extends BaseVisitor {
             // TODO we should use some cost/index stats info
 
             // determine if we have any executable children
-            if (!ExecutableDeterminationVisitor.isExecutable(node, config, indexedFields, indexOnlyFields, nonEventFields, forFieldIndex, null, helper)) {
+            boolean executable = containsChild(node, ExecutableDeterminationVisitor.STATE.EXECUTABLE);
 
-                boolean executable = containsChild(node, ExecutableDeterminationVisitor.STATE.EXECUTABLE);
+            // TODO: this will basically eliminate any work we have done based on cost to delayed
+            // contained predicates. However cost got us into a non-executable situation in the first
+            // place so now we are looking for anything we can do to make this query executable.
 
-                // TODO: this will basically eliminate any work we have done based on cost to delayed
-                // contained predicates. However cost got us into a non-executable situation in the first
-                // place so now we are looking for anything we can do to make this query executable.
-
-                // first flip the error states regardless of the executable state
-                for (int i = 0; i < node.jjtGetNumChildren(); i++) {
-                    JexlNode child = node.jjtGetChild(i);
-                    ExecutableDeterminationVisitor.STATE state = ExecutableDeterminationVisitor.getState(child, config, indexedFields, indexOnlyFields,
-                                    nonEventFields, forFieldIndex, null, helper);
-                    if (state == ExecutableDeterminationVisitor.STATE.ERROR) {
-                        child.jjtAccept(this, data);
-                        state = ExecutableDeterminationVisitor.getState(child, config, indexedFields, indexOnlyFields, nonEventFields, forFieldIndex, null,
-                                        helper);
-                    }
-                    if (state == ExecutableDeterminationVisitor.STATE.EXECUTABLE) {
-                        executable = true;
-                    }
+            // first flip the error states regardless of the executable state
+            for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+                JexlNode child = node.jjtGetChild(i);
+                ExecutableDeterminationVisitor.STATE state = ExecutableDeterminationVisitor.getState(child, config, indexedFields, indexOnlyFields,
+                                nonEventFields, forFieldIndex, null, helper);
+                if (state == ExecutableDeterminationVisitor.STATE.ERROR) {
+                    child.jjtAccept(this, data);
+                    state = ExecutableDeterminationVisitor.getState(child, config, indexedFields, indexOnlyFields, nonEventFields, forFieldIndex, null, helper);
                 }
-
-                // then try flipping the partial states
-                for (int i = 0; i < node.jjtGetNumChildren() && !executable; i++) {
-                    JexlNode child = node.jjtGetChild(i);
-                    ExecutableDeterminationVisitor.STATE state = ExecutableDeterminationVisitor.getState(child, config, indexedFields, indexOnlyFields,
-                                    nonEventFields, forFieldIndex, null, helper);
-                    if (state == ExecutableDeterminationVisitor.STATE.PARTIAL) {
-                        child.jjtAccept(this, data);
-                        state = ExecutableDeterminationVisitor.getState(child, config, indexedFields, indexOnlyFields, nonEventFields, forFieldIndex, null,
-                                        helper);
-                    }
-                    if (state == ExecutableDeterminationVisitor.STATE.EXECUTABLE) {
-                        executable = true;
-                    }
+                if (state == ExecutableDeterminationVisitor.STATE.EXECUTABLE) {
+                    executable = true;
                 }
-
-                // if no executable nodes found, then flip any non-executable nodes
-                for (int i = 0; i < node.jjtGetNumChildren() && !executable; i++) {
-                    JexlNode child = node.jjtGetChild(i);
-                    ExecutableDeterminationVisitor.STATE state = ExecutableDeterminationVisitor.getState(child, config, indexedFields, indexOnlyFields,
-                                    nonEventFields, forFieldIndex, null, helper);
-                    if (state == ExecutableDeterminationVisitor.STATE.NON_EXECUTABLE) {
-                        child.jjtAccept(this, data);
-                        state = ExecutableDeterminationVisitor.getState(child, config, indexedFields, indexOnlyFields, nonEventFields, forFieldIndex, null,
-                                        helper);
-                    }
-                    if (state == ExecutableDeterminationVisitor.STATE.EXECUTABLE) {
-                        executable = true;
-                    }
-                }
-
-                super.visit(node, data);
             }
+
+            // then try flipping the partial states
+            for (int i = 0; i < node.jjtGetNumChildren() && !executable; i++) {
+                JexlNode child = node.jjtGetChild(i);
+                ExecutableDeterminationVisitor.STATE state = ExecutableDeterminationVisitor.getState(child, config, indexedFields, indexOnlyFields,
+                                nonEventFields, forFieldIndex, null, helper);
+                if (state == ExecutableDeterminationVisitor.STATE.PARTIAL) {
+                    child.jjtAccept(this, data);
+                    state = ExecutableDeterminationVisitor.getState(child, config, indexedFields, indexOnlyFields, nonEventFields, forFieldIndex, null, helper);
+                }
+                if (state == ExecutableDeterminationVisitor.STATE.EXECUTABLE) {
+                    executable = true;
+                }
+            }
+
+            // if no executable nodes found, then flip any non-executable nodes
+            for (int i = 0; i < node.jjtGetNumChildren() && !executable; i++) {
+                JexlNode child = node.jjtGetChild(i);
+                ExecutableDeterminationVisitor.STATE state = ExecutableDeterminationVisitor.getState(child, config, indexedFields, indexOnlyFields,
+                                nonEventFields, forFieldIndex, null, helper);
+                if (state == ExecutableDeterminationVisitor.STATE.NON_EXECUTABLE) {
+                    child.jjtAccept(this, data);
+                    state = ExecutableDeterminationVisitor.getState(child, config, indexedFields, indexOnlyFields, nonEventFields, forFieldIndex, null, helper);
+                }
+                if (state == ExecutableDeterminationVisitor.STATE.EXECUTABLE) {
+                    executable = true;
+                }
+            }
+
+            super.visit(node, data);
         }
 
         return node;

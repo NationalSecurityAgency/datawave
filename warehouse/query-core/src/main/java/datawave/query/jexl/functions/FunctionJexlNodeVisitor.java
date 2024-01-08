@@ -10,6 +10,7 @@ import org.apache.commons.jexl3.parser.ASTNamespaceIdentifier;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
 
+import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.BaseVisitor;
 
 /**
@@ -48,7 +49,7 @@ public class FunctionJexlNodeVisitor extends BaseVisitor {
             ASTArguments argsNode = (ASTArguments) node.jjtGetChild(1);
             JexlNode[] args = new JexlNode[argsNode.jjtGetNumChildren()];
             for (int i = 0; i < argsNode.jjtGetNumChildren(); i++) {
-                args[i] = argsNode.jjtGetChild(i);
+                args[i] = JexlASTHelper.dereference(argsNode.jjtGetChild(i));
             }
 
             this.args = Collections.unmodifiableList(Arrays.asList(args));
