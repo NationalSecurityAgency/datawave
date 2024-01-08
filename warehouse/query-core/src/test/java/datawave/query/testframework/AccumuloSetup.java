@@ -42,9 +42,11 @@ import org.junit.rules.ExternalResource;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -67,6 +69,7 @@ public class AccumuloSetup extends ExternalResource {
     private Set<String> shardIds;
     private FileType fileFormat;
     private Authorizations auths = AbstractDataTypeConfig.getTestAuths();
+    private final List<AbstractAccumuloSetupHelper> setupHelpers = new ArrayList<>();
 
     public AccumuloSetup() {
         this(false);
@@ -124,7 +127,11 @@ public class AccumuloSetup extends ExternalResource {
         }
         return file.delete();
     }
-    
+
+    public void addSetupHelper(AbstractAccumuloSetupHelper helper) {
+        setupHelpers.add(helper);
+    }
+
     public void setData(FileType fileFormat, DataTypeHadoopConfig config) {
         setData(fileFormat, Collections.singletonList(config));
     }
@@ -194,12 +201,11 @@ public class AccumuloSetup extends ExternalResource {
         PrintUtility.printTable(client, auths, TableName.SHARD);
         PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
         PrintUtility.printTable(client, auths, TableName.SHARD_RINDEX);
-        
-        // TODO: elsewhere?
-        PrintUtility.printTable(client, auths, QueryTestTableHelper.FACET_TABLE_NAME);
-        PrintUtility.printTable(client, auths, QueryTestTableHelper.FACET_METADATA_TABLE_NAME);
-        PrintUtility.printTable(client, auths, QueryTestTableHelper.FACET_HASH_TABLE_NAME);
-        
+
+        for (AbstractAccumuloSetupHelper helpers: setupHelpers) {
+            helpers.printTables(client, auths);
+        }
+
         return client;
     }
     

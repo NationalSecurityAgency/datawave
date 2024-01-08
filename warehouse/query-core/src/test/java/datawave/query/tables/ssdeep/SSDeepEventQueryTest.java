@@ -1,4 +1,4 @@
-package datawave.query;
+package datawave.query.tables.ssdeep;
 
 public class SSDeepEventQueryTest {
 }

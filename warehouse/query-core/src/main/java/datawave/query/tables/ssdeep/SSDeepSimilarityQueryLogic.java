@@ -1,4 +1,4 @@
-package datawave.query.tables;
+package datawave.query.tables.ssdeep;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -7,6 +7,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
+import datawave.query.tables.ScannerFactory;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.ScannerBase;

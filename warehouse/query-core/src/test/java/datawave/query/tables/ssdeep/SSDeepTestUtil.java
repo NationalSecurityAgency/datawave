@@ -1,4 +1,4 @@
-package datawave.query;
+package datawave.query.tables.ssdeep;
 
 import datawave.query.util.Tuple2;
 import datawave.query.util.ssdeep.BucketAccumuloKeyGenerator;
@@ -14,7 +14,6 @@ import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.log4j.Logger;
 
 import java.util.Iterator;
-import java.util.Locale;
 import java.util.stream.Stream;
 
 import static org.junit.Assert.fail;

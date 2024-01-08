@@ -1,14 +1,14 @@
-package datawave.query.testframework;
+package datawave.query.tables.ssdeep;
 
 import datawave.data.normalizer.Normalizer;
-import datawave.data.type.GeoType;
-import datawave.data.type.LcNoDiacriticsType;
-import datawave.data.type.NumberType;
 import datawave.ingest.csv.config.helper.ExtendedCSVHelper;
 import datawave.ingest.data.config.CSVHelper;
-import datawave.ingest.data.config.ingest.BaseIngestHelper;
 import datawave.ingest.input.reader.EventRecordReader;
 import datawave.marking.MarkingFunctions;
+import datawave.query.testframework.AbstractDataTypeConfig;
+import datawave.query.testframework.FieldConfig;
+import datawave.query.testframework.RawDataManager;
+import datawave.query.testframework.RawMetaData;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
 
@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * Contains all of the relevant data needed to configure the SSDeep data type.
+ * Contains all the relevant data needed to configure the SSDeep data type.
  */
 public class SSDeepDataType extends AbstractDataTypeConfig {
 
@@ -63,9 +63,9 @@ public class SSDeepDataType extends AbstractDataTypeConfig {
     /**
      * Defines the data fields for cities datatype.
      */
+    @SuppressWarnings("SpellCheckingInspection")
     public enum SSDeepField {
         // order is important, should match the order in the csv files
-        START_DATE(Normalizer.DATE_NORMALIZER),
         PROCESSING_DATE(Normalizer.LC_NO_DIACRITICS_NORMALIZER),
         EVENT_ID(Normalizer.LC_NO_DIACRITICS_NORMALIZER),
         LANGUAGE(Normalizer.LC_NO_DIACRITICS_NORMALIZER),
@@ -83,19 +83,19 @@ public class SSDeepDataType extends AbstractDataTypeConfig {
         IMAGEHEIGHT(Normalizer.NUMBER_NORMALIZER),
         IMAGEWIDTH(Normalizer.NUMBER_NORMALIZER),
         PARENT_FILETYPE(Normalizer.LC_NO_DIACRITICS_NORMALIZER),
-        ACCESS_CONTROLS(Normalizer.LC_NO_DIACRITICS_NORMALIZER)
+        ACCESS_CONTROLS(Normalizer.LC_NO_DIACRITICS_NORMALIZER);
 
         private static final List<String> Headers;
 
         static {
-            Headers = Stream.of(SSDeepField.values()).map(e -> e.name()).collect(Collectors.toList());
+            Headers = Stream.of(SSDeepField.values()).map(Enum::name).collect(Collectors.toList());
         }
 
         /**
          * Retrieves the enumeration that matches the specified field.
          *
          * @param field
-         *            string representation of the field as returned by {@link #name}
+         *            string representation of the field.
          * @return enumeration value
          * @throws AssertionError
          *             field does not match any of the enumeration values
@@ -114,7 +114,7 @@ public class SSDeepDataType extends AbstractDataTypeConfig {
             return Headers;
         }
 
-        private static final Map<String,RawMetaData> fieldMetadata;
+        private static final Map<String, RawMetaData> fieldMetadata;
         static {
             fieldMetadata = new HashMap<>();
             for (SSDeepField field : SSDeepField.values()) {
@@ -187,9 +187,9 @@ public class SSDeepDataType extends AbstractDataTypeConfig {
     }
 
     /**
-     * Creates a cities datatype entry with all of the key/value configuration settings.
+     * Creates a ssdeep datatype entry with all the key/value configuration settings.
      *
-     * @param city
+     * @param ssdeep
      *            entry for ingest containing datatype and ingest file
      * @param config
      *            hadoop field configuration
@@ -198,15 +198,15 @@ public class SSDeepDataType extends AbstractDataTypeConfig {
      * @throws URISyntaxException
      *             unable to resolve ingest file
      */
-    public SSDeepDataType(final CityEntry city, final FieldConfig config) throws IOException, URISyntaxException {
-        this(city.getDataType(), city.getIngestFile(), config);
+    public SSDeepDataType(final SSDeepEntry ssdeep, final FieldConfig config) throws IOException, URISyntaxException {
+        this(ssdeep.getDataType(), ssdeep.getIngestFile(), config);
     }
 
     /**
-     * Constructor for city/ingest files that are not defined in the class {@link CityEntry}.
+     * Constructor for ssdeep ingest files that are not defined in the class {@link SSDeepEntry}.
      *
-     * @param city
-     *            name of the city datatype
+     * @param ssdeep
+     *            name of the ssdeep datatype
      * @param ingestFile
      *            ingest file path
      * @param config
@@ -216,29 +216,27 @@ public class SSDeepDataType extends AbstractDataTypeConfig {
      * @throws URISyntaxException
      *             invalid test data file
      */
-    public SSDeepDataType(final String city, final String ingestFile, final FieldConfig config) throws IOException, URISyntaxException {
-        super(city, ingestFile, config, ssdeepManager);
+    public SSDeepDataType(final String ssdeep, final String ingestFile, final FieldConfig config) throws IOException, URISyntaxException {
+        super(ssdeep, ingestFile, config, ssdeepManager);
         
         // NOTE: see super for default settings
         // set datatype settings
-        this.hConf.set(this.dataType + "." + SSDeepField.NUM.name() + BaseIngestHelper.FIELD_TYPE, NumberType.class.getName());
-        this.hConf.set(this.dataType + EventRecordReader.Properties.EVENT_DATE_FIELD_NAME, SSDeepField.START_DATE.name());
-        this.hConf.set(this.dataType + EventRecordReader.Properties.EVENT_DATE_FIELD_FORMAT, DATE_FIELD_FORMAT);
+        //this.hConf.set(this.dataType + "." + SSDeepField.NU.name() + BaseIngestHelper.FIELD_TYPE, NumberType.class.getName());
+        this.hConf.set(this.dataType + EventRecordReader.Properties.EVENT_DATE_FIELD_NAME, SSDeepField.PROCESSING_DATE.name());
+        this.hConf.set(this.dataType + EventRecordReader.Properties.EVENT_DATE_FIELD_FORMAT, SSDEEP_DATE_FIELD_FORMAT);
         
         this.hConf.set(this.dataType + ExtendedCSVHelper.Properties.EVENT_ID_FIELD_NAME, SSDeepField.EVENT_ID.name());
         
         // fields
         this.hConf.set(this.dataType + CSVHelper.DATA_HEADER, String.join(",", SSDeepField.headers()));
-        
-        // the CODE field type needs to be set for the index hole tests
-        this.hConf.set(this.dataType + "." + SSDeepField.CODE.name() + BaseIngestHelper.FIELD_TYPE, LcNoDiacriticsType.class.getName());
-        
-        this.hConf.set(this.dataType + "." + SSDeepField.GEO.name() + BaseIngestHelper.FIELD_TYPE, GeoType.class.getName());
-        
+        this.hConf.set(this.dataType + CSVHelper.PROCESS_EXTRA_FIELDS, "true");
+
         log.debug(this.toString());
     }
-    
-    private static final String[] AUTH_VALUES = new String[] {"Euro", "NA"};
+
+    private static final String SSDEEP_DATE_FIELD_FORMAT = "yyyy-MM-dd hh:mm:ss";
+
+    private static final String[] AUTH_VALUES = new String[] {"A","B","C","D","E","F","G","H"};
     private static final Authorizations TEST_AUTHS = new Authorizations(AUTH_VALUES);
     private static final Authorizations EXPANSION_AUTHS = new Authorizations("ct-a", "b-ct", "not-b-ct");
     
@@ -252,7 +250,8 @@ public class SSDeepDataType extends AbstractDataTypeConfig {
     
     @Override
     public String getSecurityMarkingFieldNames() {
-        return SSDeepField.ACCESS.name();
+        // TODO: fix markings
+        return "";
     }
     
     @Override

@@ -1,7 +1,10 @@
-package datawave.query.testframework;
+package datawave.query.tables.ssdeep;
 
 import au.com.bytecode.opencsv.CSVReader;
-import datawave.query.testframework.SSDeepDataType.SSDeepField;
+import datawave.query.tables.ssdeep.SSDeepDataType.SSDeepField;
+import datawave.query.testframework.AbstractDataManager;
+import datawave.query.testframework.BaseRawData;
+import datawave.query.testframework.RawData;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 
@@ -27,7 +30,7 @@ public class SSDeepDataManager extends AbstractDataManager {
     private static final Logger log = Logger.getLogger(SSDeepDataManager.class);
 
     public SSDeepDataManager() {
-        super(SSDeepField.EVENT_ID.name(), SSDeepField.START_DATE.name(), SSDeepField.getFieldsMetadata());
+        super(SSDeepField.EVENT_ID.name(), SSDeepField.PROCESSING_DATE.name(), SSDeepField.getFieldsMetadata());
     }
     
     @Override
@@ -44,7 +47,7 @@ public class SSDeepDataManager extends AbstractDataManager {
             }
             this.rawData.put(datatype, ssdeepData);
             this.rawDataIndex.put(datatype, indexes);
-            log.info("city test data(" + file + ") count(" + count + ")");
+            log.info("ssdeep test data(" + file + ") count(" + count + ")");
         }
     }
     
@@ -57,7 +60,7 @@ public class SSDeepDataManager extends AbstractDataManager {
         final Set<RawData> data = new HashSet<>(this.rawData.size());
         final Set<String> shards = this.shardValues.getShardRange(start, end);
         for (final RawData raw : rawData) {
-            String id = raw.getValue(SSDeepField.START_DATE.name());
+            String id = raw.getValue(SSDeepField.PROCESSING_DATE.name());
             if (shards.contains(id)) {
                 data.add(raw);
             }

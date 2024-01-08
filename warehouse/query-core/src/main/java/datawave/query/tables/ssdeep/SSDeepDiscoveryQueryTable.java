@@ -1,5 +1,6 @@
-package datawave.query.tables.chained;
+package datawave.query.tables.ssdeep;
 
+import datawave.query.tables.chained.ChainedQueryTable;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.logic.QueryLogicTransformer;

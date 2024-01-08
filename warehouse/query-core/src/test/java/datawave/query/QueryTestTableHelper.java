@@ -8,6 +8,7 @@ import datawave.ingest.table.config.MetadataTableConfigHelper;
 import datawave.ingest.table.config.ShardTableConfigHelper;
 import datawave.ingest.table.config.TableConfigHelper;
 import datawave.query.tables.ShardQueryLogic;
+import datawave.query.tables.facets.FacetedQuerySetupHelper;
 import datawave.util.TableName;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
@@ -39,12 +40,7 @@ public final class QueryTestTableHelper {
     public static final String METADATA_TABLE_NAME = "metadata";
     public static final String SHARD_DICT_INDEX_NAME = "shardTermDictionary";
     public static final String MODEL_TABLE_NAME = "DatawaveMetadata";
-    
-    // TODO: elsewhere?
-    public static final String FACET_TABLE_NAME = "facet";
-    public static final String FACET_HASH_TABLE_NAME = "facetHash";
-    public static final String FACET_METADATA_TABLE_NAME = "facetMetadata";
-    
+
     private static final BatchWriterConfig bwCfg = new BatchWriterConfig().setMaxLatency(1, TimeUnit.SECONDS).setMaxMemory(1000L).setMaxWriteThreads(1);
     
     public final AccumuloClient client;
@@ -85,9 +81,9 @@ public final class QueryTestTableHelper {
             dumpTable(MODEL_TABLE_NAME, auths);
             
             // TODO: elsewhere?
-            dumpTable(FACET_TABLE_NAME, auths);
-            dumpTable(FACET_HASH_TABLE_NAME, auths);
-            dumpTable(FACET_METADATA_TABLE_NAME, auths);
+            dumpTable(FacetedQuerySetupHelper.FACET_TABLE_NAME, auths);
+            dumpTable(FacetedQuerySetupHelper.FACET_HASH_TABLE_NAME, auths);
+            dumpTable(FacetedQuerySetupHelper.FACET_METADATA_TABLE_NAME, auths);
             
         } catch (TableNotFoundException e) {
             // should not happen
@@ -119,9 +115,9 @@ public final class QueryTestTableHelper {
         deleteAndCreateTable(tops, MODEL_TABLE_NAME);
         
         // TODO: move these elsewhere?
-        deleteAndCreateTable(tops, FACET_TABLE_NAME);
-        deleteAndCreateTable(tops, FACET_HASH_TABLE_NAME);
-        deleteAndCreateTable(tops, FACET_METADATA_TABLE_NAME);
+        deleteAndCreateTable(tops, FacetedQuerySetupHelper.FACET_TABLE_NAME);
+        deleteAndCreateTable(tops, FacetedQuerySetupHelper.FACET_HASH_TABLE_NAME);
+        deleteAndCreateTable(tops, FacetedQuerySetupHelper.FACET_METADATA_TABLE_NAME);
         
     }
     
@@ -153,9 +149,9 @@ public final class QueryTestTableHelper {
         configureAShardRelatedTable(writer, new ShardTableConfigHelper(), ShardedDataTypeHandler.SHARD_DINDX_NAME, SHARD_DICT_INDEX_NAME);
         
         // TODO: move this elsewhere?
-        configureAShardRelatedTable(writer, new FacetTableConfigHelper(), FacetHandler.FACET_TABLE_NAME, FACET_TABLE_NAME);
-        configureAShardRelatedTable(writer, new FacetTableConfigHelper(), FacetHandler.FACET_METADATA_TABLE_NAME, FACET_METADATA_TABLE_NAME);
-        configureAShardRelatedTable(writer, new FacetTableConfigHelper(), FacetHandler.FACET_HASH_TABLE_NAME, FACET_HASH_TABLE_NAME);
+        configureAShardRelatedTable(writer, new FacetTableConfigHelper(), FacetHandler.FACET_TABLE_NAME, FacetedQuerySetupHelper.FACET_TABLE_NAME);
+        configureAShardRelatedTable(writer, new FacetTableConfigHelper(), FacetHandler.FACET_METADATA_TABLE_NAME, FacetedQuerySetupHelper.FACET_METADATA_TABLE_NAME);
+        configureAShardRelatedTable(writer, new FacetTableConfigHelper(), FacetHandler.FACET_HASH_TABLE_NAME, FacetedQuerySetupHelper.FACET_HASH_TABLE_NAME);
         
         // todo - configure the other tables...
     }

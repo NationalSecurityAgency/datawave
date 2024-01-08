@@ -19,7 +19,6 @@ import datawave.query.testframework.FileType;
 import datawave.query.testframework.GenericCityFields;
 import datawave.query.testframework.QueryLogicTestHarness;
 import datawave.query.testframework.QueryLogicTestHarness.DocumentChecker;
-import datawave.query.testframework.cardata.CarsDataType;
 import datawave.query.util.DateIndexHelperFactory;
 import datawave.query.util.MetadataHelperFactory;
 import datawave.security.authorization.DatawavePrincipal;
@@ -72,7 +71,8 @@ public class FacetedQueryLogicTest extends AbstractFunctionalQuery {
         dataTypes.add(new FacetedCitiesDataType(CitiesDataType.CityEntry.london, generic));
         dataTypes.add(new FacetedCitiesDataType(CitiesDataType.CityEntry.paris, generic));
         dataTypes.add(new FacetedCitiesDataType(CitiesDataType.CityEntry.rome, generic));
-        
+
+        accumuloSetup.addSetupHelper(new FacetedQuerySetupHelper());
         accumuloSetup.setData(FileType.CSV, dataTypes);
         accumuloSetup.setAuthorizations(CitiesDataType.getTestAuths());
         client = accumuloSetup.loadTables(log, TEARDOWN.EVERY_OTHER, INTERRUPT.NEVER);
@@ -88,9 +88,9 @@ public class FacetedQueryLogicTest extends AbstractFunctionalQuery {
         FacetedQueryLogic facetLogic = new FacetedQueryLogic();
         facetLogic.setFacetedSearchType(FacetedSearchType.FIELD_VALUE_FACETS);
         
-        facetLogic.setFacetTableName(QueryTestTableHelper.FACET_TABLE_NAME);
-        facetLogic.setFacetMetadataTableName(QueryTestTableHelper.FACET_METADATA_TABLE_NAME);
-        facetLogic.setFacetHashTableName(QueryTestTableHelper.FACET_HASH_TABLE_NAME);
+        facetLogic.setFacetTableName(FacetedQuerySetupHelper.FACET_TABLE_NAME);
+        facetLogic.setFacetMetadataTableName(FacetedQuerySetupHelper.FACET_METADATA_TABLE_NAME);
+        facetLogic.setFacetHashTableName(FacetedQuerySetupHelper.FACET_HASH_TABLE_NAME);
         
         facetLogic.setMaximumFacetGrouping(200);
         facetLogic.setMinimumFacet(1);

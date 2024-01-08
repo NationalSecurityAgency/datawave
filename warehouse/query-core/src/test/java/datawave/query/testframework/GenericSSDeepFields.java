@@ -1,6 +1,6 @@
 package datawave.query.testframework;
 
-import datawave.query.testframework.SSDeepDataType.SSDeepField;
+import datawave.query.tables.ssdeep.SSDeepDataType;
 
 import java.util.Arrays;
 import java.util.Collection;

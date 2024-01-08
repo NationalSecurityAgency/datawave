@@ -1,4 +1,4 @@
-package datawave.query;
+package datawave.query.tables.ssdeep;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -27,7 +27,6 @@ import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.marking.MarkingFunctions;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
-import datawave.query.tables.SSDeepSimilarityQueryLogic;
 import datawave.query.testframework.AbstractDataTypeConfig;
 import datawave.query.transformer.SSDeepSimilarityQueryTransformer;
 import datawave.security.authorization.DatawavePrincipal;
@@ -41,10 +40,10 @@ import datawave.webservice.query.result.event.FieldBase;
 import datawave.webservice.query.runner.RunningQuery;
 import datawave.webservice.result.EventQueryResponseBase;
 
-import static datawave.query.SSDeepTestUtil.BUCKET_COUNT;
-import static datawave.query.SSDeepTestUtil.BUCKET_ENCODING_BASE;
-import static datawave.query.SSDeepTestUtil.BUCKET_ENCODING_LENGTH;
-import static datawave.query.SSDeepTestUtil.TEST_SSDEEPS;
+import static datawave.query.tables.ssdeep.SSDeepTestUtil.BUCKET_COUNT;
+import static datawave.query.tables.ssdeep.SSDeepTestUtil.BUCKET_ENCODING_BASE;
+import static datawave.query.tables.ssdeep.SSDeepTestUtil.BUCKET_ENCODING_LENGTH;
+import static datawave.query.tables.ssdeep.SSDeepTestUtil.TEST_SSDEEPS;
 
 public class SSDeepSimilarityQueryTest {
 
