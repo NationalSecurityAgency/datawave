@@ -14,6 +14,7 @@ import java.util.Set;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.KeyValue;
 import org.apache.accumulo.core.data.Value;
+import org.apache.commons.jexl3.JexlBuilder;
 import org.apache.commons.jexl3.JexlContext;
 import org.apache.commons.jexl3.JexlEngine;
 import org.apache.commons.jexl3.JexlScript;
@@ -302,7 +303,7 @@ public class EventErrorSummary implements Cloneable, JexlContext {
         }
         if (matches && jexlQuery != null) {
             // Get a JexlEngine initialized with the correct JexlArithmetic for this Document
-            JexlEngine engine = new Engine();
+            JexlEngine engine = new Engine(new JexlBuilder().strict(false));
 
             // Evaluate the JexlContext against the Script
             JexlScript script = engine.createScript(jexlQuery);

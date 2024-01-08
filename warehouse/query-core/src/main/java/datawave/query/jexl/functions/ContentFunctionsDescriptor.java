@@ -259,7 +259,7 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
 
                     // we override the zones if the first argument is a string
                     if (firstArg instanceof ASTStringLiteral) {
-                        fields = Collections.singleton(String.valueOf(JexlNodes.getImage(firstArg)));
+                        fields = Collections.singleton(JexlNodes.getIdentifierOrLiteralAsString(firstArg));
                         termOffsetMap = args.next();
                     } else {
                         JexlNode nextArg = args.peek();
@@ -336,7 +336,7 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
 
                     // we override the zones if the first argument is a string or identifier
                     if (arg instanceof ASTStringLiteral) {
-                        fields = Collections.singleton(String.valueOf(JexlNodes.getImage(arg)));
+                        fields = Collections.singleton(JexlNodes.getIdentifierOrLiteralAsString(arg));
                         arg = args.next();
                     } else if (!JexlASTHelper.getIdentifiers(arg).isEmpty()) {
                         if (oredFields != null && arg instanceof ASTAndNode) {

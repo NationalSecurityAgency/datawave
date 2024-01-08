@@ -90,11 +90,13 @@ public class EvaluationPhaseFilterFunctionsDescriptor implements JexlFunctionArg
             try {
                 List<JexlNode> arguments = functionMetadata.args();
                 JexlNode node0 = arguments.get(0);
-                final String beginArg = String.valueOf(arguments.size() == 5 ? JexlNodes.getImage(arguments.get(2)) : JexlNodes.getImage(arguments.get(1)));
-                final String endArg = String.valueOf(arguments.size() == 5 ? JexlNodes.getImage(arguments.get(3)) : JexlNodes.getImage(arguments.get(2)));
+                final String beginArg = arguments.size() == 5 ? JexlNodes.getIdentifierOrLiteralAsString(arguments.get(2))
+                                : JexlNodes.getIdentifierOrLiteralAsString(arguments.get(1));
+                final String endArg = arguments.size() == 5 ? JexlNodes.getIdentifierOrLiteralAsString(arguments.get(3))
+                                : JexlNodes.getIdentifierOrLiteralAsString(arguments.get(2));
                 Date begin, end = null;
                 if (arguments.size() >= 4) {
-                    String formatArg = String.valueOf(JexlNodes.getImage(arguments.get(arguments.size() - 1)));
+                    String formatArg = JexlNodes.getIdentifierOrLiteralAsString(arguments.get(arguments.size() - 1));
                     DateFormat formatter = EvaluationPhaseFilterFunctions.newSimpleDateFormat(formatArg);
                     begin = new Date(EvaluationPhaseFilterFunctions.getTime(beginArg, formatter));
                     end = new Date(EvaluationPhaseFilterFunctions.getTime(endArg, formatter));

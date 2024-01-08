@@ -153,7 +153,7 @@ public class PushdownNegationVisitor extends BaseVisitor {
             if (state.isNegated()) {
                 // replace this node with an EQ node
                 JexlNode eqNode = JexlNodeFactory.buildEQNode(JexlASTHelper.getIdentifier(node),
-                                String.valueOf(JexlNodes.getImage(JexlASTHelper.getLiteral(node))));
+                                JexlNodes.getIdentifierOrLiteralAsString(JexlASTHelper.getLiteral(node)));
 
                 JexlNodes.swap(node.jjtGetParent(), node, eqNode);
                 state.setNegated(false);
@@ -173,7 +173,7 @@ public class PushdownNegationVisitor extends BaseVisitor {
             if (state.isNegated()) {
                 // replace this node with an ER node
                 JexlNode eqNode = JexlNodeFactory.buildERNode(JexlASTHelper.getIdentifier(node),
-                                String.valueOf(JexlNodes.getImage(JexlASTHelper.getLiteral(node))));
+                                JexlNodes.getIdentifierOrLiteralAsString(JexlASTHelper.getLiteral(node)));
 
                 JexlNodes.swap(node.jjtGetParent(), node, eqNode);
                 state.setNegated(false);

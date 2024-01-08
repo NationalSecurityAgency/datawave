@@ -53,11 +53,11 @@ public class FunctionReferenceVisitorTest {
         assertEquals(5, f.args().size());
 
         Iterator<JexlNode> iter = f.args().iterator();
-        assertEquals("x1", JexlNodes.getImage(iter.next()));
-        assertEquals("x2", JexlNodes.getImage(iter.next()));
-        assertEquals("x3", JexlNodes.getImage(iter.next()));
-        assertEquals("x4", JexlNodes.getImage(iter.next()));
-        assertEquals("x5", JexlNodes.getImage(iter.next()));
+        assertEquals("x1", JexlNodes.getIdentifierOrLiteral(iter.next()));
+        assertEquals("x2", JexlNodes.getIdentifierOrLiteral(iter.next()));
+        assertEquals("x3", JexlNodes.getIdentifierOrLiteral(iter.next()));
+        assertEquals("x4", JexlNodes.getIdentifierOrLiteral(iter.next()));
+        assertEquals("x5", JexlNodes.getIdentifierOrLiteral(iter.next()));
         assertFalse(iter.hasNext());
     }
 
@@ -384,13 +384,13 @@ public class FunctionReferenceVisitorTest {
             JexlNode node = iter.next();
             if (node instanceof ASTUnaryMinusNode) {
                 node = node.jjtGetChild(0);
-                assertEquals(arg, String.valueOf(JexlNodes.getImage(node)));
+                assertEquals(arg, JexlNodes.getIdentifierOrLiteralAsString(node));
             } else if (node instanceof ASTOrNode) {
                 // don't both with recursively extracting all identifiers, just compare strings
                 assertEquals(arg, JexlStringBuildingVisitor.buildQueryWithoutParse(node));
             } else {
                 node = JexlASTHelper.dereference(node);
-                assertEquals(arg, String.valueOf(JexlNodes.getImage(node)));
+                assertEquals(arg, JexlNodes.getIdentifierOrLiteralAsString(node));
             }
         }
     }

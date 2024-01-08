@@ -32,7 +32,7 @@ public class RegexReplacementTransformRule implements NodeTransformRule {
     public JexlNode apply(JexlNode node, ShardQueryConfiguration config, MetadataHelper helper) {
         if (node instanceof ASTERNode || node instanceof ASTNRNode) {
             JexlNode literal = JexlASTHelper.getLiteral(node);
-            JexlNodes.setImage(literal, processPattern(String.valueOf(JexlNodes.getImage(literal))));
+            JexlNodes.setIdentifierOrLiteral(literal, processPattern(JexlNodes.getIdentifierOrLiteralAsString(literal)));
         } else if (node instanceof ASTFunctionNode) {
             FunctionJexlNodeVisitor functionMetadata = new FunctionJexlNodeVisitor();
             node.jjtAccept(functionMetadata, null);
@@ -40,7 +40,7 @@ public class RegexReplacementTransformRule implements NodeTransformRule {
                             && EvaluationPhaseFilterFunctionsDescriptor.EvaluationPhaseFilterJexlArgumentDescriptor.regexFunctions
                                             .contains(functionMetadata.name())) {
                 JexlNode literal = JexlASTHelper.getLiteral(functionMetadata.args().get(1));
-                JexlNodes.setImage(literal, processPattern(String.valueOf(JexlNodes.getImage(literal))));
+                JexlNodes.setIdentifierOrLiteral(literal, processPattern(JexlNodes.getIdentifierOrLiteralAsString(literal)));
             }
         }
         return node;

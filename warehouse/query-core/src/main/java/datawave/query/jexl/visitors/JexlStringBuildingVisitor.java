@@ -1,5 +1,6 @@
 package datawave.query.jexl.visitors;
 
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Set;
@@ -20,6 +21,7 @@ import org.apache.commons.jexl3.parser.ASTIdentifierAccess;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ASTLENode;
 import org.apache.commons.jexl3.parser.ASTLTNode;
+import org.apache.commons.jexl3.parser.ASTMethodNode;
 import org.apache.commons.jexl3.parser.ASTModNode;
 import org.apache.commons.jexl3.parser.ASTMulNode;
 import org.apache.commons.jexl3.parser.ASTNENode;
@@ -471,9 +473,22 @@ public class JexlStringBuildingVisitor extends BaseVisitor {
         return sb;
     }
 
+    @Override
+    public Object visit(ASTMethodNode node, Object data) {
+        if (node.jjtGetNumChildren() > 0 && node.jjtGetChild(0) instanceof ASTIdentifierAccess) {
+            ASTIdentifierAccess methodNameNode = (ASTIdentifierAccess) node.jjtGetChild(0);
+            if (!allowedMethods.contains(methodNameNode.getName())) {
+                QueryException qe = new QueryException(DatawaveErrorCode.METHOD_COMPOSITION_ERROR, MessageFormat.format("{0}", methodNameNode.getName()));
+                throw new DatawaveFatalQueryException(qe);
+            }
+        }
+
+        return node.childrenAccept(this, data);
+    }
+
     public Object visit(ASTNumberLiteral node, Object data) {
         StringBuilder sb = (StringBuilder) data;
-        sb.append(JexlNodes.getImage(node));
+        sb.append(JexlNodes.getIdentifierOrLiteral(node));
         node.childrenAccept(this, sb);
         return sb;
     }

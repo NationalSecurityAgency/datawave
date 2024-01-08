@@ -202,11 +202,31 @@ public class DatawaveInterpreter extends Interpreter {
         return result;
     }
 
-    public Object visit(ASTMethodNode node, Object data) {
-        if (data == null) {
-            data = new FunctionalSet(); // an empty set
+    public Object visit(ASTIdentifier node, Object data) {
+        Object result = super.visit(node, data);
+        if (result == null && hasMethodSibling(node)) {
+            result = new FunctionalSet(); // an empty set
         }
-        return super.visit(node, data);
+        return result;
+    }
+
+    public boolean hasMethodSibling(JexlNode node) {
+        boolean methodFound = false;
+        if (node.jjtGetParent() != null && node.jjtGetParent().jjtGetNumChildren() > 1) {
+            JexlNode parent = node.jjtGetParent();
+            boolean foundSelf = false;
+            for (int i = 0; i < parent.jjtGetNumChildren(); i++) {
+                if (foundSelf) {
+                    if (parent.jjtGetChild(i) instanceof ASTMethodNode) {
+                        methodFound = true;
+                        break;
+                    }
+                } else {
+                    foundSelf = parent.jjtGetChild(i) == node;
+                }
+            }
+        }
+        return methodFound;
     }
 
     public Object visit(ASTOrNode node, Object data) {

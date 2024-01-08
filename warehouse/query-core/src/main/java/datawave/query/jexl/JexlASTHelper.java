@@ -358,7 +358,7 @@ public class JexlASTHelper {
                 return null;
             }
         } else if (node instanceof ASTIdentifier && node.jjtGetNumChildren() == 0) {
-            return deconstructIdentifier(String.valueOf(JexlNodes.getImage(node)), deconstruct);
+            return deconstructIdentifier(JexlNodes.getIdentifierOrLiteralAsString(node), deconstruct);
         }
 
         NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.IDENTIFIER_MISSING);
@@ -1392,7 +1392,7 @@ public class JexlASTHelper {
                 return false;
             }
         } else if (one instanceof ASTIdentifier) {
-            if (!JexlNodes.getImage(one).equals(JexlNodes.getImage(two))) {
+            if (!JexlNodes.getIdentifierOrLiteral(one).equals(JexlNodes.getIdentifierOrLiteral(two))) {
                 return false;
             }
         }
@@ -1456,7 +1456,7 @@ public class JexlASTHelper {
     }
 
     public static ASTStringLiteral normalizeLiteral(JexlNode literal, Type<?> normalizer) {
-        String normalizedImg = normalizer.normalize(String.valueOf(JexlNodes.getImage(literal)));
+        String normalizedImg = normalizer.normalize(JexlNodes.getIdentifierOrLiteralAsString(literal));
         ASTStringLiteral normalizedLiteral = JexlNodes.makeStringLiteral();
         JexlNodes.setLiteral(normalizedLiteral, normalizedImg);
         return normalizedLiteral;

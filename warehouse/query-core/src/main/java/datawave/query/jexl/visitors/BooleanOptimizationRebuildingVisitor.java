@@ -34,7 +34,7 @@ public class BooleanOptimizationRebuildingVisitor extends RebuildingVisitor {
         node = (ASTAndNode) copy(node);
         if (hasChildOr(node)) {
             ASTOrNode orNode = new ASTOrNode(ParserTreeConstants.JJTORNODE);
-            JexlNodes.copyImage(node, orNode);
+            JexlNodes.copyIdentifierOrLiteral(node, orNode);
 
             return optimizeTree(node, orNode, data);
         } else {
@@ -46,11 +46,11 @@ public class BooleanOptimizationRebuildingVisitor extends RebuildingVisitor {
     private JexlNode optimizeTree(JexlNode currentNode, JexlNode newNode, Object data) {
         if ((currentNode instanceof ASTAndNode) && hasChildOr(currentNode)) {
             ASTAndNode andNode = new ASTAndNode(ParserTreeConstants.JJTANDNODE);
-            JexlNodes.copyImage(currentNode, andNode);
+            JexlNodes.copyIdentifierOrLiteral(currentNode, andNode);
             andNode.jjtSetParent(currentNode.jjtGetParent());
 
             ASTOrNode orNode = new ASTOrNode(ParserTreeConstants.JJTORNODE);
-            JexlNodes.copyImage(currentNode, orNode);
+            JexlNodes.copyIdentifierOrLiteral(currentNode, orNode);
             orNode.jjtSetParent(currentNode.jjtGetParent());
 
             Tuple2<JexlNode,JexlNode> nodes = prune(currentNode, andNode, orNode);

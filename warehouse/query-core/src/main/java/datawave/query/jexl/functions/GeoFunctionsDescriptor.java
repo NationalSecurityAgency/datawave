@@ -93,8 +93,8 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
 
                 // three arguments is the form within_bounding_box(fieldName, lowerLeft, upperRight)
                 if (args.size() == 3) {
-                    double[] ll = geoNormalizer.parseLatLon(String.valueOf(JexlNodes.getImage(args.get(1))));
-                    double[] ur = geoNormalizer.parseLatLon(String.valueOf(JexlNodes.getImage(args.get(2))));
+                    double[] ll = geoNormalizer.parseLatLon(JexlNodes.getIdentifierOrLiteralAsString(args.get(1)));
+                    double[] ur = geoNormalizer.parseLatLon(JexlNodes.getIdentifierOrLiteralAsString(args.get(2)));
                     // is the lower left longitude greater than the upper right longitude?
                     // if so, we have crossed the anti-meridian and should split
                     Geometry geom;
@@ -116,10 +116,10 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
                     double minLat, maxLat, minLon, maxLon;
 
                     try {
-                        minLat = GeoNormalizer.parseLatOrLon(String.valueOf(JexlNodes.getImage(args.get(3))));
-                        maxLat = GeoNormalizer.parseLatOrLon(String.valueOf(JexlNodes.getImage(args.get(5))));
-                        minLon = GeoNormalizer.parseLatOrLon(String.valueOf(JexlNodes.getImage(args.get(2))));
-                        maxLon = GeoNormalizer.parseLatOrLon(String.valueOf(JexlNodes.getImage(args.get(4))));
+                        minLat = GeoNormalizer.parseLatOrLon(JexlNodes.getIdentifierOrLiteralAsString(args.get(3)));
+                        maxLat = GeoNormalizer.parseLatOrLon(JexlNodes.getIdentifierOrLiteralAsString(args.get(5)));
+                        minLon = GeoNormalizer.parseLatOrLon(JexlNodes.getIdentifierOrLiteralAsString(args.get(2)));
+                        maxLon = GeoNormalizer.parseLatOrLon(JexlNodes.getIdentifierOrLiteralAsString(args.get(4)));
                     } catch (ParseException e) {
                         throw new IllegalArgumentException(e);
                     }
@@ -165,7 +165,7 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
                 }
             } else if (name.equals(WITHIN_CIRCLE)) {
 
-                String center = String.valueOf(JexlNodes.getImage(args.get(1)));
+                String center = JexlNodes.getIdentifierOrLiteralAsString(args.get(1));
                 GeoType gn = new GeoType();
 
                 if (!GeoNormalizer.isNormalized(center)) {
@@ -186,9 +186,9 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
 
                 double radius;
                 try {
-                    radius = GeoNormalizer.parseDouble(String.valueOf(JexlNodes.getImage(args.get(2))));
+                    radius = GeoNormalizer.parseDouble(JexlNodes.getIdentifierOrLiteralAsString(args.get(2)));
                 } catch (ParseException pe) {
-                    throw new IllegalArgumentException("Unable to parse radius " + JexlNodes.getImage(args.get(2)), pe);
+                    throw new IllegalArgumentException("Unable to parse radius " + JexlNodes.getIdentifierOrLiteral(args.get(2)), pe);
                 }
                 double lat = c.getLatitude();
                 double lon = c.getLongitude();
@@ -203,12 +203,12 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
             if (node.jjtGetNumChildren() > 1) {
                 for (int i = 0; i < node.jjtGetNumChildren(); i++) {
                     JexlNode kid = JexlASTHelper.dereference(node.jjtGetChild(i));
-                    if (JexlNodes.getImage(kid) != null) {
-                        fieldNames.add(String.valueOf(JexlNodes.getImage(kid)));
+                    if (JexlNodes.getIdentifierOrLiteral(kid) != null) {
+                        fieldNames.add(JexlNodes.getIdentifierOrLiteralAsString(kid));
                     }
                 }
             } else {
-                fieldNames.add(String.valueOf(JexlNodes.getImage(node)));
+                fieldNames.add(JexlNodes.getIdentifierOrLiteralAsString(node));
             }
             return fieldNames;
         }
@@ -315,8 +315,8 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
             if (name.equals(WITHIN_BOUNDING_BOX)) {
                 if (args.size() == 3) {
                     GeoNormalizer geoNormalizer = ((GeoNormalizer) Normalizer.GEO_NORMALIZER);
-                    double[] ll = geoNormalizer.parseLatLon(String.valueOf(JexlNodes.getImage(args.get(1))));
-                    double[] ur = geoNormalizer.parseLatLon(String.valueOf(JexlNodes.getImage(args.get(2))));
+                    double[] ll = geoNormalizer.parseLatLon(JexlNodes.getIdentifierOrLiteralAsString(args.get(1)));
+                    double[] ur = geoNormalizer.parseLatLon(JexlNodes.getIdentifierOrLiteralAsString(args.get(2)));
 
                     // is the lower left longitude greater than the upper right longitude?
                     // if so, we have crossed the anti-meridian and should split
@@ -329,10 +329,10 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
                     double minLat, maxLat, minLon, maxLon;
 
                     try {
-                        minLat = GeoNormalizer.parseLatOrLon(String.valueOf(JexlNodes.getImage(args.get(3))));
-                        maxLat = GeoNormalizer.parseLatOrLon(String.valueOf(JexlNodes.getImage(args.get(5))));
-                        minLon = GeoNormalizer.parseLatOrLon(String.valueOf(JexlNodes.getImage(args.get(2))));
-                        maxLon = GeoNormalizer.parseLatOrLon(String.valueOf(JexlNodes.getImage(args.get(4))));
+                        minLat = GeoNormalizer.parseLatOrLon(JexlNodes.getIdentifierOrLiteralAsString(args.get(3)));
+                        maxLat = GeoNormalizer.parseLatOrLon(JexlNodes.getIdentifierOrLiteralAsString(args.get(5)));
+                        minLon = GeoNormalizer.parseLatOrLon(JexlNodes.getIdentifierOrLiteralAsString(args.get(2)));
+                        maxLon = GeoNormalizer.parseLatOrLon(JexlNodes.getIdentifierOrLiteralAsString(args.get(4)));
                     } catch (ParseException e) {
                         throw new IllegalArgumentException(e);
                     }
@@ -347,11 +347,11 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
                     }
                 }
             } else if (name.equals(WITHIN_CIRCLE)) {
-                String center = String.valueOf(JexlNodes.getImage(args.get(1)));
+                String center = JexlNodes.getIdentifierOrLiteralAsString(args.get(1));
 
                 try {
                     GeoPoint c = GeoPoint.decodeZRef(new GeoType().normalize(center));
-                    double radius = GeoNormalizer.parseDouble(String.valueOf(JexlNodes.getImage(args.get(2))));
+                    double radius = GeoNormalizer.parseDouble(JexlNodes.getIdentifierOrLiteralAsString(args.get(2)));
 
                     wkt = createCircle(c.getLongitude(), c.getLatitude(), radius).toText();
                 } catch (IllegalArgumentException | OutOfRangeException | ParseException e) {
@@ -389,11 +389,11 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
                         if (geoWaveNode != null) {
 
                             String geoFields = getFieldParam(otherFields);
-                            String arg1 = "'" + JexlNodes.getImage(args.get(1)) + "'";
+                            String arg1 = "'" + JexlNodes.getIdentifierOrLiteral(args.get(1)) + "'";
 
                             // handle the case where the second argument may be a numeric literal (pt/radius query)
-                            String arg2 = (args.get(2) instanceof ASTNumberLiteral) ? String.valueOf(JexlNodes.getImage(args.get(2)))
-                                            : "'" + JexlNodes.getImage(args.get(2)) + "'";
+                            String arg2 = (args.get(2) instanceof ASTNumberLiteral) ? JexlNodes.getIdentifierOrLiteralAsString(args.get(2))
+                                            : "'" + JexlNodes.getIdentifierOrLiteral(args.get(2)) + "'";
 
                             // if there are other fields, recreate the geo function node
                             if (!otherFields.isEmpty()) {

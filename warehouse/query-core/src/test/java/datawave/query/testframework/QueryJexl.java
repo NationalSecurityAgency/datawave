@@ -176,7 +176,7 @@ public class QueryJexl {
                 if (child instanceof ASTIdentifier) {
                     ASTIdentifier id = (ASTIdentifier) child;
                     // change identifier to lower case
-                    JexlNodes.setIdentifier(id, String.valueOf(JexlNodes.getImage(id)).toLowerCase());
+                    JexlNodes.setIdentifier(id, JexlNodes.getIdentifierOrLiteralAsString(id).toLowerCase());
 
                     // check for string or numeric literal on node stack
                     SimpleNode entry = nodes.removeFirst();
@@ -198,7 +198,7 @@ public class QueryJexl {
                     if (entry instanceof ASTIdentifier) {
                         // exp is "field OP value"
                         SimpleNode opNode = nodes.removeFirst();
-                        normalizeField(String.valueOf(JexlNodes.getImage((JexlNode) entry)), (JexlNode) child, opNode);
+                        normalizeField(JexlNodes.getIdentifierOrLiteralAsString((JexlNode) entry), (JexlNode) child, opNode);
                     } else {
                         // push entry back on stack and add literal
                         nodes.addFirst(entry);
@@ -215,17 +215,17 @@ public class QueryJexl {
         if (null != norm) {
             if (norm instanceof NumberNormalizer) {
                 try {
-                    Integer.parseInt(String.valueOf(JexlNodes.getImage(value)));
+                    Integer.parseInt(JexlNodes.getIdentifierOrLiteralAsString(value));
                 } catch (NumberFormatException nfe) {
-                    throw new AssertionError("invalid integer(" + JexlNodes.getImage(value) + ")", nfe);
+                    throw new AssertionError("invalid integer(" + JexlNodes.getIdentifierOrLiteral(value) + ")", nfe);
                 }
             } else {
                 // normalize all other values
                 // check for regex nodes
                 if (opNode instanceof ASTERNode || opNode instanceof ASTNRNode) {
-                    JexlNodes.setImage(value, norm.normalizeRegex(String.valueOf(JexlNodes.getImage(value))));
+                    JexlNodes.setIdentifierOrLiteral(value, norm.normalizeRegex(JexlNodes.getIdentifierOrLiteralAsString(value)));
                 } else {
-                    JexlNodes.setImage(value, norm.normalize(String.valueOf(JexlNodes.getImage(value))));
+                    JexlNodes.setIdentifierOrLiteral(value, norm.normalize(JexlNodes.getIdentifierOrLiteralAsString(value)));
                 }
             }
         }

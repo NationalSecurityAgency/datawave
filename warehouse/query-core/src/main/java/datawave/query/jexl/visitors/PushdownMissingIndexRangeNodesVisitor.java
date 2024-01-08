@@ -88,7 +88,7 @@ public class PushdownMissingIndexRangeNodesVisitor extends RebuildingVisitor {
                 return delayBoundedIndexHole(range, node, data);
             } else {
                 JexlNode andNode = JexlNodes.newInstanceOfType(node);
-                JexlNodes.copyImage(node, andNode);
+                JexlNodes.copyIdentifierOrLiteral(node, andNode);
                 andNode.jjtSetParent(node.jjtGetParent());
 
                 // We have no bounded range to replace, just proceed as normal

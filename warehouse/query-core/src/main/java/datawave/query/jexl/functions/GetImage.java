@@ -7,6 +7,6 @@ import com.google.common.base.Function;
 
 class GetImage implements Function<JexlNode,String> {
     public String apply(JexlNode node) {
-        return String.valueOf(JexlNodes.getImage(node));
+        return JexlNodes.getIdentifierOrLiteralAsString(node);
     }
 }

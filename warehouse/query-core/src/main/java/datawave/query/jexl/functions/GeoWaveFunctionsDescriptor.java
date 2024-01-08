@@ -86,7 +86,7 @@ public class GeoWaveFunctionsDescriptor implements JexlFunctionArgumentDescripto
         public JexlNode getIndexQuery(ShardQueryConfiguration config, MetadataHelper helper, DateIndexHelper dateIndexHelper, Set<String> datatypeFilter) {
             int maxEnvelopes = Math.max(1, config.getGeoWaveMaxEnvelopes());
             if (isSpatialRelationship(name)) {
-                Geometry geom = AbstractGeometryNormalizer.parseGeometry(String.valueOf(JexlNodes.getImage(args.get(1))));
+                Geometry geom = AbstractGeometryNormalizer.parseGeometry(JexlNodes.getIdentifierOrLiteralAsString(args.get(1)));
                 List<Envelope> envelopes = getSeparateEnvelopes(geom, maxEnvelopes);
                 if (!envelopes.isEmpty()) {
 
@@ -133,15 +133,15 @@ public class GeoWaveFunctionsDescriptor implements JexlFunctionArgumentDescripto
                 List<JexlNode> list = Lists.newArrayList();
                 for (int i = 0; i < node.jjtGetNumChildren(); i++) {
                     JexlNode kid = node.jjtGetChild(i);
-                    if (JexlNodes.getImage(kid) != null) {
-                        list.add(getIndexNode(String.valueOf(JexlNodes.getImage(kid)), geometry, env, config, helper));
+                    if (JexlNodes.getIdentifierOrLiteralAsString(kid) != null) {
+                        list.add(getIndexNode(JexlNodes.getIdentifierOrLiteralAsString(kid), geometry, env, config, helper));
                     }
                 }
                 if (!list.isEmpty()) {
                     return JexlNodeFactory.createOrNode(list);
                 }
-            } else if (JexlNodes.getImage(node) != null) {
-                return getIndexNode(String.valueOf(JexlNodes.getImage(node)), geometry, env, config, helper);
+            } else if (JexlNodes.getIdentifierOrLiteralAsString(node) != null) {
+                return getIndexNode(JexlNodes.getIdentifierOrLiteralAsString(node), geometry, env, config, helper);
             }
             return node;
         }
@@ -151,15 +151,15 @@ public class GeoWaveFunctionsDescriptor implements JexlFunctionArgumentDescripto
                 List<JexlNode> list = Lists.newArrayList();
                 for (int i = 0; i < node.jjtGetNumChildren(); i++) {
                     JexlNode kid = node.jjtGetChild(i);
-                    if (JexlNodes.getImage(kid) != null) {
-                        list.add(getIndexNode(String.valueOf(JexlNodes.getImage(kid)), geometry, envs, config, helper));
+                    if (JexlNodes.getIdentifierOrLiteralAsString(kid) != null) {
+                        list.add(getIndexNode(JexlNodes.getIdentifierOrLiteralAsString(kid), geometry, envs, config, helper));
                     }
                 }
                 if (!list.isEmpty()) {
                     return JexlNodeFactory.createOrNode(list);
                 }
-            } else if (JexlNodes.getImage(node) != null) {
-                return getIndexNode(String.valueOf(JexlNodes.getImage(node)), geometry, envs, config, helper);
+            } else if (JexlNodes.getIdentifierOrLiteralAsString(node) != null) {
+                return getIndexNode(JexlNodes.getIdentifierOrLiteralAsString(node), geometry, envs, config, helper);
             }
             return node;
         }
@@ -292,7 +292,7 @@ public class GeoWaveFunctionsDescriptor implements JexlFunctionArgumentDescripto
         }
 
         public String getWkt() {
-            return String.valueOf(JexlNodes.getImage(args.get(1)));
+            return JexlNodes.getIdentifierOrLiteralAsString(args.get(1));
         }
     }
 

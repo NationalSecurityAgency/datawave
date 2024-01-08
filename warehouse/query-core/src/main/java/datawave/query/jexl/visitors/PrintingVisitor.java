@@ -491,7 +491,7 @@ public class PrintingVisitor extends ParserVisitor {
     }
 
     public Object visit(ASTIdentifier node, Object data) {
-        output.writeLine(data + node.toString() + ":" + JexlNodes.getImage(node));
+        output.writeLine(data + node.toString() + ":" + JexlNodes.getIdentifierOrLiteral(node));
         childrenAccept(node, this, data + PREFIX);
         return null;
     }
@@ -515,7 +515,7 @@ public class PrintingVisitor extends ParserVisitor {
     }
 
     public Object visit(ASTStringLiteral node, Object data) {
-        output.writeLine(data + node.toString() + ":" + JexlNodes.getImage(node));
+        output.writeLine(data + node.toString() + ":" + JexlNodes.getIdentifierOrLiteral(node));
         childrenAccept(node, this, data + PREFIX);
         return null;
     }

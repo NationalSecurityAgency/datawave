@@ -140,8 +140,8 @@ public class FunctionNormalizationRebuildingVisitor extends RebuildingVisitor {
             if (comparison == 0) {
                 comparison = n1.jjtGetNumChildren() - n2.jjtGetNumChildren();
                 if (comparison == 0) {
-                    Object n1Image = JexlNodes.getImage(n1);
-                    Object n2Image = JexlNodes.getImage(n2);
+                    Object n1Image = JexlNodes.getIdentifierOrLiteral(n1);
+                    Object n2Image = JexlNodes.getIdentifierOrLiteral(n2);
                     comparison = (n1Image == null ? (n2Image == null ? 0 : -1)
                                     : (n2Image == null ? 1 : String.valueOf(n1Image).compareTo(String.valueOf(n2Image))));
                     if (comparison == 0) {
@@ -250,7 +250,7 @@ public class FunctionNormalizationRebuildingVisitor extends RebuildingVisitor {
     @Override
     public Object visit(ASTArguments node, Object data) {
         ASTArguments newNode = newInstanceOfType(node);
-        JexlNodes.copyImage(node, newNode);
+        JexlNodes.copyIdentifierOrLiteral(node, newNode);
         ArrayList<JexlNode> children = newArrayList();
         for (int i = 0; i < node.jjtGetNumChildren(); i++) {
             JexlNode copiedChild = (JexlNode) node.jjtGetChild(i).jjtAccept(this, i);

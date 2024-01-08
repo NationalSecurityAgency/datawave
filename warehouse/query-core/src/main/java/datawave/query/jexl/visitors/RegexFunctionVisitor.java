@@ -65,7 +65,7 @@ public class RegexFunctionVisitor extends FunctionIndexQueryExpansionVisitor {
             List<JexlNode> children = new ArrayList<>(identifiers.size());
 
             for (ASTIdentifier identifier : identifiers) {
-                JexlNode regexNode = buildRegexNode(identifier, functionMetadata.name(), String.valueOf(JexlNodes.getImage(arguments.get(1))));
+                JexlNode regexNode = buildRegexNode(identifier, functionMetadata.name(), JexlNodes.getIdentifierOrLiteralAsString(arguments.get(1)));
                 if (regexNode != null) {
                     children.add(regexNode);
                 }

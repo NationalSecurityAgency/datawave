@@ -46,7 +46,7 @@ class WhindexTerm {
 
         if (fieldNames.size() == 1) {
             for (ASTIdentifier identifier : identifiers) {
-                JexlNodes.replaceChild(identifier.jjtGetParent(), identifier, JexlNodes.makeIdentifierWithImage(newFieldName));
+                JexlNodes.replaceChild(identifier.jjtGetParent(), identifier, JexlNodes.makeIdentifier(newFieldName));
             }
         } else {
             throw new RuntimeException("Cannot create a Whindex term using multiple identifiers.");

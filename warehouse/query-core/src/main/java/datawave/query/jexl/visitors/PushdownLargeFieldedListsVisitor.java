@@ -114,7 +114,7 @@ public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
     @Override
     public Object visit(ASTOrNode node, Object data) {
         ASTOrNode newNode = newInstanceOfType(node);
-        JexlNodes.copyImage(node, newNode);
+        JexlNodes.copyIdentifierOrLiteral(node, newNode);
         Multimap<String,JexlNode> eqNodesByField = LinkedListMultimap.create();
         Multimap<String,JexlNode> rangeNodesByField = LinkedListMultimap.create();
         List<JexlNode> otherNodes = new ArrayList<>();

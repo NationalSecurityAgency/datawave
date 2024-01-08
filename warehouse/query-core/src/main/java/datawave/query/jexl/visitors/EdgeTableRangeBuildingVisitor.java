@@ -458,8 +458,8 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
             throw new IllegalArgumentException("Problem parsing query");
         }
 
-        String identifier = String.valueOf(JexlNodes.getImage(node.jjtGetChild(0)));
-        String literal = String.valueOf(JexlNodes.getImage(node.jjtGetChild(1)));
+        String identifier = JexlNodes.getIdentifierOrLiteralAsString(node.jjtGetChild(0)).toUpperCase();
+        String literal = JexlNodes.getIdentifierOrLiteralAsString(node.jjtGetChild(1));
         List<IdentityContext> contexts = new ArrayList<>();
 
         if (identifier.equals(EDGE_SOURCE) || identifier.equals(EDGE_SINK) || identifier.equals(EDGE_ATTRIBUTE3) || identifier.equals(EDGE_ATTRIBUTE2)) {
@@ -531,10 +531,10 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
         for (int i = 0; i < argsNode.jjtGetNumChildren(); i++) {
             if (i == 0) {
                 sb.append("(");
-                sb.append(JexlNodes.getImage(argsNode.jjtGetChild(i)));
+                sb.append(JexlNodes.getIdentifierOrLiteral(argsNode.jjtGetChild(i)));
             } else {
                 sb.append(", ");
-                sb.append("'").append(String.valueOf(JexlNodes.getImage(argsNode.jjtGetChild(i))).toLowerCase()).append("'");
+                sb.append("'").append(JexlNodes.getIdentifierOrLiteralAsString(argsNode.jjtGetChild(i)).toLowerCase()).append("'");
             }
         }
 
