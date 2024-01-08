@@ -47,12 +47,12 @@ public class FindLiteralsAndPatternsVisitor extends BaseVisitor {
         if (op instanceof ASTEQNode) {
             JexlNode field = JexlNodes.otherChild(op, node);
             if (log.isTraceEnabled()) {
-                log.trace("Found field " + JexlASTHelper.deconstructIdentifier(((ASTIdentifier) field).getName()) + "==" + node.getLiteral());
+                log.trace("Found field " + JexlASTHelper.deconstructIdentifier(JexlNodes.getIdentifierOrLiteralAsString(field)) + "==" + node.getLiteral());
             }
-            values.addLiteral(node.getLiteral(), JexlASTHelper.deconstructIdentifier(((ASTIdentifier) field).getName()));
+            values.addLiteral(node.getLiteral(), JexlASTHelper.deconstructIdentifier(JexlNodes.getIdentifierOrLiteralAsString(field)));
         } else if (op instanceof ASTERNode) {
             JexlNode field = JexlNodes.otherChild(op, node);
-            values.addPattern(node.getLiteral(), JexlASTHelper.deconstructIdentifier(((ASTIdentifier) field).getName()));
+            values.addPattern(node.getLiteral(), JexlASTHelper.deconstructIdentifier(JexlNodes.getIdentifierOrLiteralAsString(field)));
         }
         return null;
     }
