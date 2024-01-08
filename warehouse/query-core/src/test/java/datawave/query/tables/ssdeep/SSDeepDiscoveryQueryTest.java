@@ -1,6 +1,7 @@
 package datawave.query.tables.ssdeep;
 
 import datawave.helpers.PrintUtility;
+import datawave.query.RebuildingScannerTestHelper;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.DataTypeHadoopConfig;
@@ -33,8 +34,10 @@ public class SSDeepDiscoveryQueryTest extends AbstractFunctionalQuery {
         FieldConfig generic = new GenericSSDeepFields();
         dataTypes.add(new SSDeepDataType(SSDeepDataType.SSDeepEntry.ssdeep, generic));
 
+        SSDeepQueryTestTableHelper ssDeepQueryTestTableHelper = new SSDeepQueryTestTableHelper(SSDeepDiscoveryQueryTest.class.getName(), log, RebuildingScannerTestHelper.TEARDOWN.EVERY_OTHER, RebuildingScannerTestHelper.INTERRUPT.NEVER);
+        accumuloSetup.addSetupHelper(ssDeepQueryTestTableHelper);
         accumuloSetup.setData(FileType.CSV, dataTypes);
-        client = accumuloSetup.loadTables(log);
+        client = accumuloSetup.loadTables(ssDeepQueryTestTableHelper);
     }
 
     public SSDeepDiscoveryQueryTest() {

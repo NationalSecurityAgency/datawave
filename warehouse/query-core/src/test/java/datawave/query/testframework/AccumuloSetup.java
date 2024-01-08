@@ -164,18 +164,41 @@ public class AccumuloSetup extends ExternalResource {
                     TableExistsException, TableNotFoundException, URISyntaxException {
         return loadTables(parentLog, RebuildingScannerTestHelper.TEARDOWN.EVERY_OTHER, RebuildingScannerTestHelper.INTERRUPT.EVERY_OTHER);
     }
-    
+
     /**
      * Creates the Accumulo shard ids and ingests the data into the tables. Uses a CSV file for loading test data.
      *
      * @param parentLog
      *            log of parent
      * @return connector to Accumulo
-     * @throws AccumuloException
-     *             , AccumuloSecurityException, IOException, InterruptedException, TableExistsException, TableNotFoundException Accumulo error conditions
+     * @throws AccumuloException Accumulo error conditions
+     * @throws AccumuloSecurityException Accumulo error conditions
+     * @throws IOException Accumulo error conditions
+     * @throws InterruptedException Accumulo error conditions
+     * @throws TableExistsException Accumulo error conditions
+     * @throws TableNotFoundException Accumulo error conditions
      */
     public AccumuloClient loadTables(final Logger parentLog, final RebuildingScannerTestHelper.TEARDOWN teardown,
-                    RebuildingScannerTestHelper.INTERRUPT interrupt) throws AccumuloException, AccumuloSecurityException, IOException, InterruptedException,
+                                     RebuildingScannerTestHelper.INTERRUPT interrupt) throws AccumuloException, AccumuloSecurityException, IOException, InterruptedException,
+            TableExistsException, TableNotFoundException, URISyntaxException {
+        final QueryTestTableHelper tableHelper = new QueryTestTableHelper(this.getClass().getName(), parentLog, teardown, interrupt);
+        return this.loadTables(tableHelper);
+    }
+
+
+    /**
+     * Creates the Accumulo shard ids and ingests the data into the tables. Uses a CSV file for loading test data.
+     *
+     * @param tableHelper the table helper to use
+     * @return connector to Accumulo
+     * @throws AccumuloException Accumulo error conditions
+     * @throws AccumuloSecurityException Accumulo error conditions
+     * @throws IOException Accumulo error conditions
+     * @throws InterruptedException Accumulo error conditions
+     * @throws TableExistsException Accumulo error conditions
+     * @throws TableNotFoundException Accumulo error conditions
+     */
+    public AccumuloClient loadTables(final QueryTestTableHelper tableHelper) throws AccumuloException, AccumuloSecurityException, IOException, InterruptedException,
                     TableExistsException, TableNotFoundException, URISyntaxException {
         log.debug("------------- loadTables -------------");
         
@@ -184,7 +207,6 @@ public class AccumuloSetup extends ExternalResource {
             Assert.assertFalse("data types have not been specified", this.dataTypes.isEmpty());
         }
         
-        QueryTestTableHelper tableHelper = new QueryTestTableHelper(AccumuloSetup.class.getName(), parentLog, teardown, interrupt);
         final AccumuloClient client = tableHelper.client;
         tableHelper.configureTables(this.recordWriter);
         
