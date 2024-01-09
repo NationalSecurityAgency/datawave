@@ -7,7 +7,6 @@ import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.FileType;
-import datawave.query.testframework.GenericSSDeepFields;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.BeforeClass;
@@ -31,7 +30,7 @@ public class SSDeepDiscoveryQueryTest extends AbstractFunctionalQuery {
         printLog.setLevel(Level.DEBUG);
 
         Collection<DataTypeHadoopConfig> dataTypes = new ArrayList<>();
-        FieldConfig generic = new GenericSSDeepFields();
+        FieldConfig generic = new SSDeepFields();
         dataTypes.add(new SSDeepDataType(SSDeepDataType.SSDeepEntry.ssdeep, generic));
 
         SSDeepQueryTestTableHelper ssDeepQueryTestTableHelper = new SSDeepQueryTestTableHelper(SSDeepDiscoveryQueryTest.class.getName(), log, RebuildingScannerTestHelper.TEARDOWN.EVERY_OTHER, RebuildingScannerTestHelper.INTERRUPT.NEVER);

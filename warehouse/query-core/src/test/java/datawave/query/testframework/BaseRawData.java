@@ -81,7 +81,8 @@ public abstract class BaseRawData implements RawData {
         // add each header event
         final List<String> hdrs = getHeaders();
         // ensure headers match field input
-        Assert.assertEquals(hdrs.size(), fields.length);
+        // TODO: removed this because we have cases where we want to simulate procesing 'extra' fields.
+        //Assert.assertEquals(hdrs.size(), fields.length);
         
         for (int n = 0; n < hdrs.size(); n++) {
             String header = hdrs.get(n);

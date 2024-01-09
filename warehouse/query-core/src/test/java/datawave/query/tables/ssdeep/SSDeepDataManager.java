@@ -75,7 +75,7 @@ public class SSDeepDataManager extends AbstractDataManager {
     private static class SSDeepRawData extends BaseRawData {
         SSDeepRawData(final String datatype, final String fields[]) {
             super(datatype, fields, SSDeepField.headers(), SSDeepField.getFieldsMetadata());
-            Assert.assertEquals("ssdeep ingest data field count is invalid", SSDeepField.headers().size(), fields.length);
+            //Assert.assertEquals("ssdeep ingest data field count is invalid", SSDeepField.headers().size(), fields.length);
         }
     }
 }

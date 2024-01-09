@@ -40,25 +40,25 @@ public class SSDeepIndexHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTy
 
     public static final String SSDEEP_INDEX_TABLE_NAME = "ssdeepIndex.table.name";
     public static final String SSDEEP_INDEX_TABLE_LOADER_PRIORITY = "ssdeepIndex.table.loader.priority";
-    public static final String SSDEEP_FIELD_SET = "ssdeepIndex.fields";
+    public static final String SSDEEP_FIELD_SET = ".ssdeepIndex.fields";
 
-    public static final String SSDEEP_BUCKET_COUNT = "ssdeepIndex.bucket.count";
+    public static final String SSDEEP_BUCKET_COUNT = ".ssdeepIndex.bucket.count";
 
     public static final int DEFAULT_SSDEEP_BUCKET_COUNT = BucketAccumuloKeyGenerator.DEFAULT_BUCKET_COUNT;
 
-    public static final String SSDEEP_BUCKET_ENCODING_BASE = "ssdeepIndex.bucket.encoding.base";
+    public static final String SSDEEP_BUCKET_ENCODING_BASE = ".ssdeepIndex.bucket.encoding.base";
 
     public static final int DEFAULT_SSDEEP_BUCKET_ENCODING_BASE = BucketAccumuloKeyGenerator.DEFAULT_BUCKET_ENCODING_BASE;
 
-    public static final String SSDEEP_BUCKET_ENCODING_LENGTH = "ssdeepIndex.bucket.encoding.length";
+    public static final String SSDEEP_BUCKET_ENCODING_LENGTH = ".ssdeepIndex.bucket.encoding.length";
 
     public static final int DEFAULT_SSDEEP_BUCKET_ENCODING_LENGTH = BucketAccumuloKeyGenerator.DEFAULT_BUCKET_ENCODING_LENGTH;
 
-    public static final String SSDEEP_INDEX_NGRAM_SIZE = "ssdeepIndex.ngram.size.min";
+    public static final String SSDEEP_INDEX_NGRAM_SIZE = ".ssdeepIndex.ngram.size.min";
 
     public static final int DEFAULT_SSDEEP_INDEX_NGRAM_SIZE = 7;
 
-    public static final String SSDEEP_MIN_HASH_SIZE = "ssdeepIndex.chunk.size.min";
+    public static final String SSDEEP_MIN_HASH_SIZE = ".ssdeepIndex.chunk.size.min";
 
     public static final int DEFAULT_SSDEEP_MIN_HASH_SIZE = 3;
 
@@ -86,11 +86,11 @@ public class SSDeepIndexHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTy
         TypeRegistry.getInstance(conf);
         Type type = TypeRegistry.getType(t);
 
-        int bucketCount = conf.getInt(SSDEEP_BUCKET_COUNT, DEFAULT_SSDEEP_BUCKET_COUNT);
-        int bucketEncodingBase = conf.getInt(SSDEEP_BUCKET_ENCODING_BASE, DEFAULT_SSDEEP_BUCKET_ENCODING_BASE);
-        int bucketEncodingLength = conf.getInt(SSDEEP_BUCKET_ENCODING_LENGTH, DEFAULT_SSDEEP_BUCKET_ENCODING_LENGTH);
-        int ngramSize = conf.getInt(SSDEEP_INDEX_NGRAM_SIZE, DEFAULT_SSDEEP_INDEX_NGRAM_SIZE);
-        int minHashSize = conf.getInt(SSDEEP_MIN_HASH_SIZE, DEFAULT_SSDEEP_MIN_HASH_SIZE);
+        int bucketCount = conf.getInt(type.typeName() + SSDEEP_BUCKET_COUNT, DEFAULT_SSDEEP_BUCKET_COUNT);
+        int bucketEncodingBase = conf.getInt(type.typeName() + SSDEEP_BUCKET_ENCODING_BASE, DEFAULT_SSDEEP_BUCKET_ENCODING_BASE);
+        int bucketEncodingLength = conf.getInt(type.typeName() + SSDEEP_BUCKET_ENCODING_LENGTH, DEFAULT_SSDEEP_BUCKET_ENCODING_LENGTH);
+        int ngramSize = conf.getInt(type.typeName() + SSDEEP_INDEX_NGRAM_SIZE, DEFAULT_SSDEEP_INDEX_NGRAM_SIZE);
+        int minHashSize = conf.getInt(type.typeName() + SSDEEP_MIN_HASH_SIZE, DEFAULT_SSDEEP_MIN_HASH_SIZE);
 
         accumuloKeyGenerator = new BucketAccumuloKeyGenerator(bucketCount, bucketEncodingBase, bucketEncodingLength);
         nGramGenerator = new NGramByteHashGenerator(ngramSize, bucketCount, minHashSize);
@@ -146,18 +146,19 @@ public class SSDeepIndexHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTy
 
         final Set<String> eventFieldSet = fields.keySet();
         long countWritten = 0;
+        final Multimap<BulkIngestKey,Value> results = ArrayListMultimap.create();
 
         for (String ssdeepFieldName: ssdeepFieldNames) {
             if (!eventFieldSet.contains(ssdeepFieldName))
                 continue;
 
-            final Multimap<BulkIngestKey,Value> results = ArrayListMultimap.create();
 
             for (NormalizedContentInterface ssdeepTypes: fields.get(ssdeepFieldName)) {
                 countWritten += generateSSDeepIndexEntries(ssdeepTypes.getEventFieldValue(), results);
             }
         }
 
+        contextWriter.write(results, context);
         return countWritten;
     }
 

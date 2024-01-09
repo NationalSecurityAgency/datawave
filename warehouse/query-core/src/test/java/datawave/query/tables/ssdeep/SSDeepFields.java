@@ -1,6 +1,6 @@
-package datawave.query.testframework;
+package datawave.query.tables.ssdeep;
 
-import datawave.query.tables.ssdeep.SSDeepDataType;
+import datawave.query.testframework.AbstractFields;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -18,9 +18,9 @@ import java.util.Set;
  * <li>virtual fields: none</li>
  * </ul>
  */
-public class GenericSSDeepFields extends AbstractFields {
+public class SSDeepFields extends AbstractFields {
 
-    private static final Collection<String> index = Arrays.asList(SSDeepDataType.SSDeepField.MD5.name(), SSDeepDataType.SSDeepField.CHECKSUM_SSDEEP.name());
+    private static final Collection<String> index = Arrays.asList("CHECKSUM_SSDEEP", SSDeepDataType.SSDeepField.EVENT_ID.name(), SSDeepDataType.SSDeepField.MD5.name());
     private static final Collection<String> indexOnly = new HashSet<>();
     private static final Collection<String> reverse = new HashSet<>();
     private static final Collection<String> multivalue = Arrays.asList();
@@ -28,7 +28,7 @@ public class GenericSSDeepFields extends AbstractFields {
     private static final Collection<Set<String>> composite = new HashSet<>();
     private static final Collection<Set<String>> virtual = new HashSet<>();
 
-    public GenericSSDeepFields() {
+    public SSDeepFields() {
         super(index, indexOnly, reverse, multivalue, composite, virtual);
     }
     

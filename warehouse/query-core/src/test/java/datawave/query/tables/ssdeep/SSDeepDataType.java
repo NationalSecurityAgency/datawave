@@ -2,8 +2,11 @@ package datawave.query.tables.ssdeep;
 
 import datawave.data.normalizer.Normalizer;
 import datawave.ingest.csv.config.helper.ExtendedCSVHelper;
+import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.data.config.CSVHelper;
 import datawave.ingest.input.reader.EventRecordReader;
+import datawave.ingest.mapreduce.handler.shard.AbstractColumnBasedHandler;
+import datawave.ingest.mapreduce.handler.ssdeep.SSDeepIndexHandler;
 import datawave.marking.MarkingFunctions;
 import datawave.query.testframework.AbstractDataTypeConfig;
 import datawave.query.testframework.FieldConfig;
@@ -76,14 +79,14 @@ public class SSDeepDataType extends AbstractDataTypeConfig {
         SHA1(Normalizer.LC_NO_DIACRITICS_NORMALIZER),
         SHA256(Normalizer.LC_NO_DIACRITICS_NORMALIZER),
         EVENT_DATE(Normalizer.LC_NO_DIACRITICS_NORMALIZER),
-        SECURITY_MARKING(Normalizer.LC_NO_DIACRITICS_NORMALIZER),
-        FILE_DATE(Normalizer.LC_NO_DIACRITICS_NORMALIZER),
-        FILE_NAME(Normalizer.LC_NO_DIACRITICS_NORMALIZER),
-        CHECKSUM_SSDEEP(Normalizer.NOOP_NORMALIZER),
-        IMAGEHEIGHT(Normalizer.NUMBER_NORMALIZER),
-        IMAGEWIDTH(Normalizer.NUMBER_NORMALIZER),
-        PARENT_FILETYPE(Normalizer.LC_NO_DIACRITICS_NORMALIZER),
-        ACCESS_CONTROLS(Normalizer.LC_NO_DIACRITICS_NORMALIZER);
+        SECURITY_MARKING(Normalizer.LC_NO_DIACRITICS_NORMALIZER);
+        //FILE_DATE(Normalizer.LC_NO_DIACRITICS_NORMALIZER),
+        //FILE_NAME(Normalizer.LC_NO_DIACRITICS_NORMALIZER),
+        //CHECKSUM_SSDEEP(Normalizer.NOOP_NORMALIZER),
+        //IMAGEHEIGHT(Normalizer.NUMBER_NORMALIZER),
+        //IMAGEWIDTH(Normalizer.NUMBER_NORMALIZER),
+        //PARENT_FILETYPE(Normalizer.LC_NO_DIACRITICS_NORMALIZER),
+        //ACCESS_CONTROLS(Normalizer.LC_NO_DIACRITICS_NORMALIZER);
 
         private static final List<String> Headers;
 
@@ -231,6 +234,11 @@ public class SSDeepDataType extends AbstractDataTypeConfig {
         this.hConf.set(this.dataType + CSVHelper.DATA_HEADER, String.join(",", SSDeepField.headers()));
         this.hConf.set(this.dataType + CSVHelper.PROCESS_EXTRA_FIELDS, "true");
 
+        // ssdeep index handler
+        this.hConf.set(this.dataType + TypeRegistry.HANDLER_CLASSES, String.join(",", AbstractColumnBasedHandler.class.getName(), SSDeepIndexHandler.class.getName()));
+        this.hConf.set(this.dataType + SSDeepIndexHandler.SSDEEP_FIELD_SET, "CHECKSUM_SSDEEP");
+
+        this.hConf.set(SSDeepIndexHandler.SSDEEP_INDEX_TABLE_NAME, SSDeepQueryTestTableHelper.SSDEEP_INDEX_TABLE_NAME);
         log.debug(this.toString());
     }
 

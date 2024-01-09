@@ -35,6 +35,7 @@ public class SSDeepQueryTestTableHelper extends QueryTestTableHelper {
 
     @Override
     public void printTables(Authorizations auths) throws TableNotFoundException {
+        super.printTables(auths);
         PrintUtility.printTable(client, auths, SSDEEP_INDEX_TABLE_NAME);
     }
 
