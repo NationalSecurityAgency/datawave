@@ -48,6 +48,7 @@ public class DefaultEventScanner extends AbstractEventScanner {
     @Override
     public Document fetchDocument(Range range, String datatypeUid) {
         long start = System.currentTimeMillis();
+        Key key = null;
         Document d = new Document();
         EventKey parser = new EventKey();
         try (Scanner scanner = client.createScanner(tableName, auths)) {
@@ -60,9 +61,14 @@ public class DefaultEventScanner extends AbstractEventScanner {
             Attribute<?> attr;
             for (Map.Entry<Key,Value> entry : scanner) {
                 parser.parse(entry.getKey());
+                if (key == null) {
+                    key = parser.getKey();
+                }
                 field = parser.getField();
                 if ((includeFields == null || includeFields.contains(field)) && (excludeFields == null || !excludeFields.contains(field))) {
                     attr = attributeFactory.create(parser.getField(), parser.getValue(), entry.getKey(), true);
+                    attr.setToKeep(includeFields == null || includeFields.contains(field));
+                    attr.setFromIndex(false);
                     d.put(field, attr);
                 }
             }
@@ -72,7 +78,9 @@ public class DefaultEventScanner extends AbstractEventScanner {
         }
         try {
             // TODO -- this needs to aggregate the classification
-            d.put(Document.DOCKEY_FIELD_NAME, new DocumentKey(new Key(range.getStartKey().getRow(), new Text(datatypeUid)), true));
+            Key docKey = new Key(key.getRow(), new Text(parser.getDatatype() + '\u0000' + parser.getUid()), new Text(), key.getColumnVisibility(),
+                            key.getTimestamp());
+            d.put(Document.DOCKEY_FIELD_NAME, new DocumentKey(docKey, true));
         } catch (Exception e) {
             e.printStackTrace();
         }

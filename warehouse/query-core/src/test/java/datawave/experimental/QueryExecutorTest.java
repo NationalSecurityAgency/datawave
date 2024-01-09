@@ -12,9 +12,7 @@ import java.util.TreeSet;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -22,7 +20,6 @@ import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
-import org.jboss.weld.executor.SingleThreadExecutorServices;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -36,9 +33,8 @@ import com.google.common.util.concurrent.MoreExecutors;
 
 import datawave.experimental.executor.QueryExecutor;
 import datawave.experimental.executor.QueryExecutorOptions;
-import datawave.experimental.threads.DocumentUncaughtExceptionHandler;
 import datawave.experimental.threads.NamedThreadFactory;
-import datawave.experimental.threads.UidUncaughtExceptionHandler;
+import datawave.experimental.threads.NamedUncaughtExceptionHandler;
 import datawave.experimental.util.AccumuloUtil;
 import datawave.marking.MarkingFunctionsFactory;
 import datawave.query.attributes.Attribute;
@@ -185,17 +181,22 @@ class QueryExecutorTest {
 
         final int threads = 5;
         // mirror remote scheduler threading setup
-        UidUncaughtExceptionHandler uidHandler = new UidUncaughtExceptionHandler();
+        NamedUncaughtExceptionHandler uidHandler = new NamedUncaughtExceptionHandler("UidPool");
         NamedThreadFactory uidThreadFactory = new NamedThreadFactory("UidThreadFactory", uidHandler);
         ExecutorService uidThreadPool = new ThreadPoolExecutor(threads, threads, 1L, TimeUnit.MINUTES, new LinkedBlockingQueue<>(), uidThreadFactory);
         uidThreadPool = MoreExecutors.listeningDecorator(uidThreadPool);
 
-        DocumentUncaughtExceptionHandler docHandler = new DocumentUncaughtExceptionHandler();
+        NamedUncaughtExceptionHandler eventHandler = new NamedUncaughtExceptionHandler("EventPool");
+        NamedThreadFactory eventThreadFactory = new NamedThreadFactory("EventThreadFactory", eventHandler);
+        ExecutorService eventThreadPool = new ThreadPoolExecutor(threads, threads, 1L, TimeUnit.MINUTES, new LinkedBlockingQueue<>(), eventThreadFactory);
+        eventThreadPool = MoreExecutors.listeningDecorator(eventThreadPool);
+
+        NamedUncaughtExceptionHandler docHandler = new NamedUncaughtExceptionHandler("DocumentPool");
         NamedThreadFactory docThreadFactory = new NamedThreadFactory("DocThreadFactory", docHandler);
         ExecutorService documentThreadPool = new ThreadPoolExecutor(threads, threads, 1L, TimeUnit.MINUTES, new LinkedBlockingQueue<>(), docThreadFactory);
         documentThreadPool = MoreExecutors.listeningDecorator(documentThreadPool);
 
-        QueryExecutor executor = new QueryExecutor(options, null, results, uidThreadPool, documentThreadPool, null);
+        QueryExecutor executor = new QueryExecutor(options, null, results, uidThreadPool, eventThreadPool, documentThreadPool, null);
         ListenableFuture<QueryExecutor> future = (ListenableFuture<QueryExecutor>) executorService.submit(executor);
         Futures.addCallback(future, new QueryExecutorCallback(), executorService);
         while (!(future.isDone() || future.isCancelled())) {

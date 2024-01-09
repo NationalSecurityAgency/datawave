@@ -106,12 +106,14 @@ public class DocumentScanIterator implements SortedKeyValueIterator<Key,Value> {
     }
 
     private Document aggregateDocument() throws IOException {
+        Key key = null;
         Document d = null;
         Attribute<?> attr;
-        Key key;
 
         if (source.hasTop()) {
             d = new Document();
+        } else {
+            return null;
         }
 
         while (source.hasTop()) {
@@ -123,6 +125,8 @@ public class DocumentScanIterator implements SortedKeyValueIterator<Key,Value> {
                 if ((includeFields == null || includeFields.contains(parser.getField()))
                                 && (excludeFields == null || !excludeFields.contains(parser.getField()))) {
                     attr = attributeFactory.create(parser.getField(), parser.getValue(), key, true);
+                    attr.setToKeep(includeFields == null || includeFields.contains(parser.getField()));
+                    attr.setFromIndex(false);
                     d.put(parser.getField(), attr);
                 }
 
@@ -133,9 +137,9 @@ public class DocumentScanIterator implements SortedKeyValueIterator<Key,Value> {
             }
         }
 
-        if (d != null) {
-            // TODO -- record id needs to have the rolled up classification
-            d.put(Document.DOCKEY_FIELD_NAME, new DocumentKey(new Key(shard, lastUid), true));
+        if (key != null) {
+            Key docKey = new Key(key.getRow(), new Text(lastUid), new Text(), key.getColumnVisibility(), key.getTimestamp());
+            d.put(Document.DOCKEY_FIELD_NAME, new DocumentKey(docKey, true));
         }
 
         return d;

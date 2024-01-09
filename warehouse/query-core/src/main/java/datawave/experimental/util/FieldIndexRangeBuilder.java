@@ -21,6 +21,14 @@ import datawave.query.parser.JavaRegexAnalyzer;
 public class FieldIndexRangeBuilder {
 
     public Range rangeFromTerm(String shard, JexlNode node) {
+        return rangeFromTerm(shard, node, null, null);
+    }
+
+    public Range rangeFromTerm(String shard, JexlNode node, String firstDtUid) {
+        return rangeFromTerm(shard, node, firstDtUid, null);
+    }
+
+    public Range rangeFromTerm(String shard, JexlNode node, String firstDtUid, String lastDtUid) {
         if (node instanceof ASTAndNode) {
             // probably have a bounded range
             if (QueryPropertyMarker.findInstance(node).isType(BoundedRange.class)) {
@@ -30,7 +38,7 @@ public class FieldIndexRangeBuilder {
         } else if (node instanceof ASTERNode || node instanceof ASTNRNode) {
             return buildRegexRange(shard, node);
         } else {
-            return buildNormalRange(shard, node);
+            return buildNormalRange(shard, node, firstDtUid, lastDtUid);
         }
     }
 
@@ -88,12 +96,23 @@ public class FieldIndexRangeBuilder {
      *            a JexlNode representing the field and value
      * @return a range used to scan the field index
      */
-    private Range buildNormalRange(String shard, JexlNode node) {
+    private Range buildNormalRange(String shard, JexlNode node, String firstDtUid, String lastDtUid) {
         String field = JexlASTHelper.getIdentifier(node);
         String value = (String) JexlASTHelper.getLiteralValue(node);
 
-        Key startKey = new Key(shard, "fi\0" + field, value + "\0");
-        Key endKey = new Key(shard, "fi\0" + field, value + "\1");
+        Key startKey;
+        if (firstDtUid == null) {
+            startKey = new Key(shard, "fi\0" + field, value + "\0");
+        } else {
+            startKey = new Key(shard, "fi\0" + field, value + "\0" + firstDtUid);
+        }
+
+        Key endKey;
+        if (lastDtUid == null) {
+            endKey = new Key(shard, "fi\0" + field, value + "\1");
+        } else {
+            endKey = new Key(shard, "fi\0" + field, value + "\0" + lastDtUid); // in TLD this needs to be max value
+        }
         return new Range(startKey, true, endKey, false);
     }
 }

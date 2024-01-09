@@ -1,8 +1,11 @@
 package datawave.experimental.scanner.event;
 
 import java.io.ByteArrayInputStream;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.IteratorSetting;
@@ -28,7 +31,7 @@ import datawave.query.util.TypeMetadata;
 public class ConfiguredEventScanner extends AbstractEventScanner {
     private static final Logger log = Logger.getLogger(ConfiguredEventScanner.class);
 
-    private Set<String> includeFields;
+    private SortedSet<String> includeFields;
     private Set<String> excludeFields;
     private TypeMetadata typeMetadata;
 
@@ -85,6 +88,44 @@ public class ConfiguredEventScanner extends AbstractEventScanner {
         return d;
     }
 
+    public Iterator<Document> fetchDocuments(Range range, SortedSet<String> uids) {
+        Scanner scanner;
+        try {
+            scanner = client.createScanner(tableName, auths);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to lookup " + uids.size() + " uids");
+        }
+        Range documentRange = rebuildRange(range, uids);
+        scanner.setRange(documentRange);
+
+        IteratorSetting setting = new IteratorSetting(100, DocumentScanIterator.class);
+        setting.addOption(DocumentScanIterator.UID_OPT, Joiner.on(',').join(uids));
+        if (includeFields != null && !includeFields.isEmpty()) {
+            setting.addOption(DocumentScanIterator.INCLUDE_FIELDS, Joiner.on(',').join(includeFields));
+        }
+        if (excludeFields != null && !excludeFields.isEmpty()) {
+            setting.addOption(DocumentScanIterator.EXCLUDE_FIELDS, Joiner.on(',').join(excludeFields));
+        }
+        setting.addOption(DocumentScanIterator.TYPE_METADATA, typeMetadata.toString());
+
+        scanner.addScanIterator(setting);
+
+        Iterator<Map.Entry<Key,Value>> scanIter = scanner.iterator();
+
+        return new Iterator<>() {
+            @Override
+            public boolean hasNext() {
+                return scanIter.hasNext();
+            }
+
+            @Override
+            public Document next() {
+                Map.Entry<Key,Value> entry = scanIter.next();
+                return deser.deserialize(new ByteArrayInputStream(entry.getValue().get()));
+            }
+        };
+    }
+
     @Override
     public void setLogStats(boolean logStats) {
         this.logStats = logStats;
@@ -100,13 +141,25 @@ public class ConfiguredEventScanner extends AbstractEventScanner {
      * @return a document range
      */
     private Range rebuildRange(Range range, String datatypeUid) {
-        Key start = new Key(range.getStartKey().getRow(), new Text(datatypeUid));
+        Key start;
+        if (includeFields.isEmpty()) {
+            start = new Key(range.getStartKey().getRow(), new Text(datatypeUid));
+        } else {
+            // can build the first key to include the first return field
+            start = new Key(range.getStartKey().getRow(), new Text(datatypeUid), new Text(includeFields.first() + '\u0000'));
+        }
         Key end = start.followingKey(PartialKey.ROW_COLFAM); // TODO -- switch on tld
         return new Range(start, true, end, false);
     }
 
+    private Range rebuildRange(Range range, SortedSet<String> datatypeUids) {
+        Key start = new Key(range.getStartKey().getRow(), new Text(datatypeUids.first()));
+        Key end = new Key(range.getStartKey().getRow(), new Text(datatypeUids.last() + '\u0000'));
+        return new Range(start, true, end, false);
+    }
+
     public void setIncludeFields(Set<String> includeFields) {
-        this.includeFields = includeFields;
+        this.includeFields = new TreeSet<>(includeFields);
     }
 
     public void setExcludeFields(Set<String> excludeFields) {

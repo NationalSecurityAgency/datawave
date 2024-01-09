@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
+import datawave.query.predicate.TimeFilter;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.data.Key;
@@ -111,7 +112,9 @@ public class SerialUidScanner extends AbstractUidScanner {
             }
 
             for (Map.Entry<Key,Value> entry : scanner) {
-                uids.add(dtUidFromKey(entry.getKey()));
+                if (timeFilter.apply(entry.getKey())) {
+                    uids.add(dtUidFromKey(entry.getKey()));
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();

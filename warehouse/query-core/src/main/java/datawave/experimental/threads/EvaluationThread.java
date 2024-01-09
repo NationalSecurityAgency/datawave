@@ -9,6 +9,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.accumulo.core.data.Key;
 import org.apache.log4j.Logger;
 
+import com.google.common.base.Throwables;
+import com.google.common.util.concurrent.FutureCallback;
+
+import datawave.experimental.util.ScanStats;
 import datawave.query.attributes.Document;
 import datawave.query.function.JexlEvaluation;
 import datawave.query.jexl.DatawaveJexlContext;
@@ -18,7 +22,7 @@ import datawave.query.util.Tuple3;
 /**
  * Evaluates a query against a context and pushes any matching documents to a result queue
  */
-public class EvaluationThread implements Runnable {
+public class EvaluationThread implements Runnable, FutureCallback<EvaluationThread> {
 
     private static final Logger log = Logger.getLogger(EvaluationThread.class);
 
@@ -27,6 +31,8 @@ public class EvaluationThread implements Runnable {
     private final AtomicBoolean evaluating;
     private final LinkedBlockingQueue<Tuple3<Key,Document,DatawaveJexlContext>> candidateQueue;
     private final LinkedBlockingQueue<Entry<Key,Document>> documentQueue;
+
+    private final ScanStats stats;
 
     /**
      *
@@ -44,13 +50,15 @@ public class EvaluationThread implements Runnable {
                     AtomicBoolean evaluating,
                     AtomicBoolean aggregating,
                     LinkedBlockingQueue<Tuple3<Key,Document,DatawaveJexlContext>> candidateQueue,
-                    LinkedBlockingQueue<Entry<Key,Document>> documentQueue){
+                    LinkedBlockingQueue<Entry<Key,Document>> documentQueue,
+                    ScanStats stats){
         //  @formatter:on
         this.query = query;
         this.evaluating = evaluating;
         this.aggregating = aggregating;
         this.candidateQueue = candidateQueue;
         this.documentQueue = documentQueue;
+        this.stats = stats;
     }
 
     @Override
@@ -62,22 +70,27 @@ public class EvaluationThread implements Runnable {
         JexlEvaluation evaluation = new JexlEvaluation(query, new HitListArithmetic());
         while (!candidateQueue.isEmpty() || aggregating.get()) {
             try {
-                Tuple3<Key,Document,DatawaveJexlContext> tuple = candidateQueue.poll(1, TimeUnit.MILLISECONDS);
+                Tuple3<Key,Document,DatawaveJexlContext> tuple = candidateQueue.poll(250, TimeUnit.MICROSECONDS);
                 if (tuple == null) {
                     continue;
                 }
+
                 long applyDuration = System.currentTimeMillis();
                 boolean matched = evaluation.apply(tuple);
                 applyDuration = System.currentTimeMillis() - applyDuration;
-                log.trace("apply duration: " + applyDuration);
                 totalApply += applyDuration;
+
+                if (stats != null) {
+                    stats.incrementDocumentsEvaluated();
+                }
 
                 if (matched) {
                     Entry<Key,Document> result = new AbstractMap.SimpleEntry<>(tuple.first(), tuple.second());
                     offerResult(result, totalOffer);
                 }
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                log.error(e);
+                throw new RuntimeException(e);
             }
         }
         totalThreadRunTime = System.currentTimeMillis() - totalThreadRunTime;
@@ -99,7 +112,7 @@ public class EvaluationThread implements Runnable {
         long offerDuration = System.currentTimeMillis();
         while (!accepted) {
             try {
-                accepted = documentQueue.offer(result, 1, TimeUnit.MILLISECONDS);
+                accepted = documentQueue.offer(result, 250, TimeUnit.MICROSECONDS);
             } catch (InterruptedException e) {
                 e.printStackTrace();
                 throw new RuntimeException(e);
@@ -108,5 +121,17 @@ public class EvaluationThread implements Runnable {
         offerDuration = System.currentTimeMillis() - offerDuration;
         log.trace("offer duration: " + offerDuration);
         totalOfferDuration += offerDuration;
+    }
+
+    @Override
+    public void onSuccess(EvaluationThread result) {
+        // do nothing
+        int i = 0;
+    }
+
+    @Override
+    public void onFailure(Throwable t) {
+        log.error(t);
+        Throwables.propagateIfPossible(t, RuntimeException.class);
     }
 }

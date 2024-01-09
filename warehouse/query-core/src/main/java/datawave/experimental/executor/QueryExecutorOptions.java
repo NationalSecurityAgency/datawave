@@ -52,7 +52,7 @@ public class QueryExecutorOptions {
     private boolean tfSeekingConfiguredScan = false;
 
     // record and aggregate shard stats
-    private boolean statsEnabled = false;
+    private boolean statsEnabled = true;
     // log summary stats for each stage (FI, Event, TF)
     private boolean logStageSummaryStats = false;
     // log summary stats for each shard
@@ -76,6 +76,9 @@ public class QueryExecutorOptions {
 
     private Set<String> includeFields;
     private Set<String> excludeFields;
+
+    private long startTime = -1;
+    private long endTime = -1;
 
     // options from ShardQueryConfig
     private String tableName;
@@ -178,6 +181,14 @@ public class QueryExecutorOptions {
         if (options.containsKey(QueryOptions.DISALLOWLISTED_FIELDS)) {
             String option = options.get(QueryOptions.DISALLOWLISTED_FIELDS);
             excludeFields = new HashSet<>(Arrays.asList(StringUtils.split(option, ',')));
+        }
+
+        if (options.containsKey(QueryOptions.START_TIME)) {
+            this.startTime = Long.parseLong(options.get(QueryOptions.START_TIME));
+        }
+
+        if (options.containsKey(QueryOptions.END_TIME)) {
+            this.endTime = Long.parseLong(options.get(QueryOptions.END_TIME));
         }
     }
 
@@ -341,5 +352,21 @@ public class QueryExecutorOptions {
 
     public void setLogShardSummaryStats(boolean logShardSummaryStats) {
         this.logShardSummaryStats = logShardSummaryStats;
+    }
+
+    public long getStartTime() {
+        return startTime;
+    }
+
+    public void setStartTime(Long startTime) {
+        this.startTime = startTime;
+    }
+
+    public long getEndTime() {
+        return endTime;
+    }
+
+    public void setEndTime(Long endTime) {
+        this.endTime = endTime;
     }
 }

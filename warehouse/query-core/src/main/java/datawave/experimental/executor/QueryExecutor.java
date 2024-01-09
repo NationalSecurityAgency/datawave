@@ -1,7 +1,6 @@
 package datawave.experimental.executor;
 
 import java.util.AbstractMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -15,6 +14,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import datawave.query.predicate.TimeFilter;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -24,6 +24,9 @@ import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.Sets;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
 
 import datawave.experimental.fi.ParallelUidScanner;
 import datawave.experimental.fi.SerialUidScanner;
@@ -35,10 +38,12 @@ import datawave.experimental.scanner.event.EventScanner;
 import datawave.experimental.scanner.tf.TermFrequencyConfiguredScanner;
 import datawave.experimental.scanner.tf.TermFrequencyScanner;
 import datawave.experimental.scanner.tf.TermFrequencySequentialScanner;
+import datawave.experimental.threads.EnrichmentThread;
 import datawave.experimental.threads.EvaluationThread;
+import datawave.experimental.threads.EventAggregationThread;
+import datawave.experimental.threads.FutureCompleteThread;
 import datawave.experimental.util.ScanStats;
 import datawave.experimental.visitor.QueryTermVisitor;
-import datawave.query.Constants;
 import datawave.query.attributes.AttributeFactory;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.PreNormalizedAttributeFactory;
@@ -73,11 +78,14 @@ public class QueryExecutor implements Runnable {
     private final PreNormalizedAttributeFactory preNormalizedAttributeFactory;
     private final AttributeFactory attributeFactory;
 
+    private final LinkedBlockingQueue<String> uidQueue;
+    private final LinkedBlockingQueue<Document> eventQueue;
     private final LinkedBlockingQueue<Tuple3<Key,Document,DatawaveJexlContext>> candidateQueue;
     private final LinkedBlockingQueue<Entry<Key,Document>> documentQueue;
     private final BlockingQueue<Entry<Key,Value>> resultQueue;
 
     private final ExecutorService uidThreadPool;
+    private final ExecutorService eventThreadPool;
     private final ExecutorService documentThreadPool;
 
     private final KryoDocumentSerializer serializer = new KryoDocumentSerializer();
@@ -92,14 +100,17 @@ public class QueryExecutor implements Runnable {
 
     private long setupTime;
 
+    private final int numEventThreads = 2;
     private final int numEvaluationThreads = 1;
-    private final ExecutorService evaluationThreadPool = Executors.newFixedThreadPool(numEvaluationThreads);
+
+    //
+    private ExecutorService workerThreads;
 
     private ScanStats stats;
     private ScanStats globalStats;
 
     public QueryExecutor(QueryExecutorOptions options, MetadataHelper metadataHelper, BlockingQueue<Entry<Key,Value>> results, ExecutorService uidThreadPool,
-                    ExecutorService documentThreadPool, ScanStats globalStats) {
+                    ExecutorService eventThreadPool, ExecutorService documentThreadPool, ScanStats globalStats) {
         setupTime = System.currentTimeMillis();
 
         this.options = options;
@@ -111,24 +122,31 @@ public class QueryExecutor implements Runnable {
         this.preNormalizedAttributeFactory = new PreNormalizedAttributeFactory(options.getTypeMetadata());
         this.attributeFactory = new AttributeFactory(options.getTypeMetadata());
 
+        this.uidQueue = new LinkedBlockingQueue<>(); // unbounded
+        this.eventQueue = new LinkedBlockingQueue<>(50);
         this.candidateQueue = new LinkedBlockingQueue<>(50);
         this.documentQueue = new LinkedBlockingQueue<>(50);
         this.resultQueue = results;
 
         this.uidThreadPool = uidThreadPool;
+        this.eventThreadPool = eventThreadPool;
         this.documentThreadPool = documentThreadPool;
 
         this.fiScanner = getFieldIndexScanner();
         this.eventScanner = getEventScanner();
         this.tfScanner = getTfScanner();
 
-        //  up front check for index only and term frequency fields
+        // up front check for index only and term frequency fields
         Set<String> queryFields = JexlASTHelper.getIdentifierNames(options.getScript());
         this.indexOnlyFields = Sets.intersection(queryFields, options.getIndexOnlyFields());
         this.tfFields = Sets.intersection(queryFields, options.getTermFrequencyFields());
         this.terms = QueryTermVisitor.parse(options.getScript());
 
         this.shard = options.getRange().getStartKey().getRow().toString();
+
+        // local thread pool that handles event aggregation
+        this.workerThreads = Executors.newFixedThreadPool(numEventThreads + numEvaluationThreads + 1);
+        this.workerThreads = MoreExecutors.listeningDecorator(workerThreads);
 
         if (options.isStatsEnabled()) {
             this.globalStats = globalStats;
@@ -176,6 +194,7 @@ public class QueryExecutor implements Runnable {
             scanner = new TermFrequencySequentialScanner(client, auths, tableName, "scanId");
         }
         scanner.setTermFrequencyFields(options.getTermFrequencyFields());
+        scanner.setLogStats(options.isLogStageSummaryStats());
         return scanner;
     }
 
@@ -185,37 +204,33 @@ public class QueryExecutor implements Runnable {
 
         // 1. find document keys
         Set<String> uids = getDocumentUids(options.getScript());
+        uidQueue.addAll(uids);
 
-        // 2. aggregate documents
+        // 2. Fire up event aggregation thread
         long aggregationStart = System.currentTimeMillis();
-        AtomicBoolean aggregating = new AtomicBoolean(true);
+        AtomicBoolean scanningEvents = new AtomicBoolean(true);
         List<Future<?>> futures = new LinkedList<>();
-        for (String uid : uids) {
-            Future<?> future = documentThreadPool.submit(() -> {
-                Tuple3<Key,Document,DatawaveJexlContext> tuple = fetchDocument(uid);
-                boolean accepted = false;
-                while (!accepted) {
-                    try {
-                        accepted = candidateQueue.offer(tuple, 1, TimeUnit.MILLISECONDS);
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-                if (stats != null) {
-                    stats.incrementDocumentsEvaluated();
-                }
-            });
+        for (int i = 0; i < numEventThreads; i++) {
+            EventAggregationThread eventThread = new EventAggregationThread(uidQueue, eventQueue, eventScanner, options.getRange());
+            ListenableFuture<EventAggregationThread> future = (ListenableFuture<EventAggregationThread>) eventThreadPool.submit(eventThread);
+            Futures.addCallback(future, eventThread, eventThreadPool);
             futures.add(future);
         }
 
-        // this thread provides wall clock timing for how long it takes to aggregate all documents
-        AggregationThread aggregationThread = new AggregationThread(aggregating, futures, aggregationStart, shard, options.isLogStageSummaryStats());
-        uidThreadPool.execute(aggregationThread);
+        FutureCompleteThread completeThread = new FutureCompleteThread(scanningEvents, futures);
+        ListenableFuture<FutureCompleteThread> future = (ListenableFuture<FutureCompleteThread>) workerThreads.submit(completeThread);
+        Futures.addCallback(future, completeThread, workerThreads);
+
+        AtomicBoolean enrichingEvents = new AtomicBoolean(true);
+        documentThreadPool.execute(new EnrichmentThread(eventQueue, candidateQueue, fiScanner, tfScanner, shard, indexOnlyFields, tfFields, terms,
+                        options.getScript(), scanningEvents, enrichingEvents, aggregationStart, options.isLogStageSummaryStats()));
 
         // setup an evaluation thread
         AtomicBoolean evaluating = new AtomicBoolean(true);
         for (int i = 0; i < numEvaluationThreads; i++) {
-            evaluationThreadPool.submit(new EvaluationThread(options.getQuery(), evaluating, aggregating, candidateQueue, documentQueue));
+            EvaluationThread evaluationThread = new EvaluationThread(options.getQuery(), evaluating, enrichingEvents, candidateQueue, documentQueue, stats);
+            ListenableFuture<EvaluationThread> f = (ListenableFuture<EvaluationThread>) workerThreads.submit(evaluationThread);
+            Futures.addCallback(f, evaluationThread, workerThreads);
         }
 
         // 4. apply post evaluation transforms such as reduceToKeep, grouping, unique, etc
@@ -234,12 +249,12 @@ public class QueryExecutor implements Runnable {
 
         long postProcessingTime = System.currentTimeMillis();
         int returned = 0;
-        while (aggregating.get() || evaluating.get() || !documentQueue.isEmpty()) {
+        while (enrichingEvents.get() || evaluating.get() || !documentQueue.isEmpty()) {
             try {
                 // TODO
                 // 1. increase timeout, observe test pause
                 // 2. swap queue for linked blocking queue, observer no pause
-                Entry<Key,Document> entry = documentQueue.poll(1, TimeUnit.MILLISECONDS);
+                Entry<Key,Document> entry = documentQueue.poll(250, TimeUnit.MICROSECONDS);
                 if (entry == null) {
                     continue;
                 }
@@ -291,7 +306,7 @@ public class QueryExecutor implements Runnable {
         boolean accepted = false;
         while (!accepted) {
             try {
-                accepted = resultQueue.offer(result, 1, TimeUnit.MILLISECONDS);
+                accepted = resultQueue.offer(result, 250, TimeUnit.MICROSECONDS);
             } catch (InterruptedException e) {
                 e.printStackTrace();
                 throw new RuntimeException(e);
@@ -316,84 +331,15 @@ public class QueryExecutor implements Runnable {
             scanner = new SerialUidScanner(client, auths, tableName, "scanId");
         }
         scanner.setLogStats(options.isLogStageSummaryStats());
+
+        if (options.getStartTime() != -1 && options.getEndTime() != -1) {
+            TimeFilter timeFilter = new TimeFilter(options.getStartTime(), options.getEndTime());
+            scanner.withTimeFilter(timeFilter);
+        }
         return scanner;
-    }
-
-    private Tuple3<Key,Document,DatawaveJexlContext> fetchDocument(String dtUid) {
-        long start = System.currentTimeMillis();
-        // 1. Simply fetch the document.
-        Document d = eventScanner.fetchDocument(options.getRange(), dtUid);
-
-        // 2. Need to check for index only fields
-        if (!indexOnlyFields.isEmpty()) {
-            // fetch index only fields from the FieldIndex
-            fiScanner.fetchIndexOnlyFields(d, shard, dtUid, indexOnlyFields, terms);
-        }
-
-        DatawaveJexlContext context = new DatawaveJexlContext();
-
-        // 3. Fetch any term frequency fields, if they exist
-        // do this up front
-
-        if (!tfFields.isEmpty()) {
-            tfScanner.setTermFrequencyFields(tfFields);
-            Map<String,Object> offsets = tfScanner.fetchOffsets(options.getScript(), d, shard, dtUid);
-            d.visit(new HashSet<>(), context);
-            context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, offsets.get(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME));
-        } else {
-            d.visit(new HashSet<>(), context);
-        }
-
-        if (options.isLogStageSummaryStats()) {
-            long elapsed = System.currentTimeMillis() - start;
-            log.info("time to aggregate single document " + dtUid + " was " + elapsed + " ms");
-        }
-        return new Tuple3<>(new Key(options.getRange().getStartKey().getRow().toString(), dtUid), d, context);
     }
 
     public ScanStats getStats() {
         return stats;
-    }
-
-    /**
-     * Simple threads that watches a list a futures and updates a boolean when all futures are complete
-     */
-    public static class AggregationThread implements Runnable {
-
-        private final AtomicBoolean aggregating;
-        private final List<Future<?>> futures;
-        private final long start;
-        private final String shard;
-        private final boolean logStats;
-        private final int documentCount;
-
-        public AggregationThread(AtomicBoolean aggregating, List<Future<?>> futures, long start, String shard, boolean logStats) {
-            this.aggregating = aggregating;
-            this.futures = futures;
-            this.start = start;
-            this.shard = shard;
-            this.logStats = logStats;
-            this.documentCount = futures.size();
-        }
-
-        @Override
-        public void run() {
-            List<Future<?>> completed = new LinkedList<>();
-            while (!futures.isEmpty()) {
-                for (Future<?> future : futures) {
-                    if (future.isDone() || future.isCancelled()) {
-                        completed.add(future);
-                    }
-                }
-                futures.removeAll(completed);
-                completed.clear();
-            }
-            aggregating.set(false);
-            if (logStats && documentCount > 0) {
-                long elapsed = System.currentTimeMillis() - start;
-                log.info("time to aggregate all documents for shard " + shard + ": " + documentCount + " in " + elapsed + " ms (" + (elapsed / documentCount)
-                                + " ms per doc)");
-            }
-        }
     }
 }

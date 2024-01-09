@@ -89,7 +89,7 @@ public class FieldIndexScanner {
         SortedSet<Range> ranges = new TreeSet<>();
         for (JexlNode node : filtered) {
             if (node instanceof ASTERNode || node instanceof ASTNRNode) {
-                throw new IllegalStateException("");
+                throw new IllegalStateException("Cannot fetch index-only regex term");
             }
 
             String field = JexlASTHelper.getIdentifier(node);
@@ -117,6 +117,7 @@ public class FieldIndexScanner {
                 field = parser.getField();
                 value = parser.getValue();
                 attr = preNormalizedAttributeFactory.create(field, value, entry.getKey(), parser.getDatatype(), true, false);
+                attr.setFromIndex(true);
                 d.put(field, attr);
             }
         } catch (Exception e) {
@@ -152,26 +153,6 @@ public class FieldIndexScanner {
             endKey = startKey.followingKey(PartialKey.ROW_COLFAM_COLQUAL);
         }
         return new Range(startKey, true, endKey, true);
-    }
-
-    /**
-     * Transform a field index key into an attribute
-     *
-     * @param key
-     *            a field index key like shard:fi\x00field:value\x00dt\x00uid
-     * @return an attribute
-     */
-    private Attribute<?> fiKeyToAttribute(Key key) {
-        String cq = key.getColumnQualifier().toString();
-        int nullIndex = cq.indexOf(NULL_CHAR);
-        String value = cq.substring(0, nullIndex);
-        String dtUid = cq.substring(nullIndex + 1);
-        Key docKey = new Key(key.getRow(), new Text(dtUid));
-
-        FieldIndexKey parser = new FieldIndexKey();
-        parser.parse(key);
-        return preNormalizedAttributeFactory.create(parser.getField(), parser.getValue(), key, parser.getDatatype(), true, false);
-        // return new Content(value, docKey, true);
     }
 
     public void setLogStats(boolean logStats) {

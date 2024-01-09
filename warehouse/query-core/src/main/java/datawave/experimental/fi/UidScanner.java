@@ -2,6 +2,7 @@ package datawave.experimental.fi;
 
 import java.util.Set;
 
+import datawave.query.predicate.TimeFilter;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 
 /**
@@ -21,6 +22,14 @@ public interface UidScanner {
      * @return a set of uids that satisfy the query
      */
     Set<String> scan(ASTJexlScript script, String row, Set<String> indexedFields);
+
+    /**
+     * TimeFilter used to filter keys when the date range is intra-day
+     *
+     * @param timeFilter
+     *            a time filter
+     */
+    void withTimeFilter(TimeFilter timeFilter);
 
     /**
      * Should this scanner log summary stats

@@ -2,10 +2,20 @@ package datawave.experimental.fi;
 
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
+import datawave.query.jexl.JexlASTHelper;
 import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.accumulo.core.client.Scanner;
+import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.jexl2.parser.ASTAdditiveNode;
 import org.apache.commons.jexl2.parser.ASTAdditiveOperator;
@@ -156,6 +166,126 @@ public class OrderOptimizedUidScanner extends AbstractUidScanner implements Pars
         return data;
     }
 
+    private SortedSet<String> visitJunction(JexlNode node, Object data) {
+        SortedSet<String> uids = null;
+        if (data instanceof Set) {
+            uids = (SortedSet<String>) data;
+        }
+
+        boolean parentIsAnd = isParentIntersection(node);
+        boolean nodeIsAnd = node instanceof ASTAndNode;
+
+        SortedSet<String> ourUids = null;
+
+        // simple leaves first
+        List<JexlNode> leaves = new LinkedList<>();
+        for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+            JexlNode child = node.jjtGetChild(i);
+            if (isLeaf(child)) {
+                leaves.add(child);
+            }
+        }
+
+        scanForLeaves(leaves, uids, ourUids, parentIsAnd, nodeIsAnd);
+
+        // complex leaves next
+
+        return ourUids;
+    }
+
+    private boolean isParentIntersection(JexlNode node) {
+        while (node.jjtGetParent() != null) {
+            node = node.jjtGetParent();
+            if (node instanceof ASTAndNode) {
+                return true;
+            } else if (node instanceof ASTOrNode) {
+                return false;
+            }
+        }
+        return false;
+    }
+
+    private boolean isLeaf(JexlNode node) {
+        return !isJunction(node);
+    }
+
+    private boolean isJunction(JexlNode node) {
+        JexlNode deref = JexlASTHelper.dereference(node);
+        //  @formatter:off
+        return deref instanceof ASTAndNode ||
+                        deref instanceof ASTOrNode ||
+                        deref instanceof ASTReference ||
+                        deref instanceof ASTReferenceExpression ||
+                        deref instanceof ASTNotNode;
+        //  @formatter:on
+    }
+
+    private SortedSet<String> scanForLeaves(List<JexlNode> leaves, SortedSet<String> parentUids, SortedSet<String> ourUids, boolean parentIsAnd,
+                    boolean nodeIsAnd) {
+        for (JexlNode leaf : leaves) {
+            SortedSet<String> leafUids;
+            if (parentIsAnd && parentUids != null) {
+                leafUids = scanForLeaf(leaf, parentUids.first(), parentUids.last());
+            } else if (nodeIsAnd && ourUids != null) {
+                leafUids = scanForLeaf(leaf, ourUids.first(), ourUids.last());
+            } else {
+                leafUids = scanForLeaf(leaf);
+            }
+
+            if (ourUids == null) {
+                ourUids = leafUids;
+            } else if (nodeIsAnd) {
+                ourUids.retainAll(leafUids); // retain all is effectively an intersection
+            } else {
+                ourUids.addAll(leafUids);
+            }
+        }
+
+        return new TreeSet<>();
+    }
+
+    private SortedSet<String> scanForLeaf(JexlNode node) {
+
+        SortedSet<String> uids = new TreeSet<>();
+        Range range = rangeBuilder.rangeFromTerm(row, node);
+
+        try (Scanner scanner = client.createScanner(tableName, auths)) {
+            scanner.setRange(range);
+
+            for (Map.Entry<Key,Value> entry : scanner) {
+                uids.add(dtUidFromKey(entry.getKey()));
+            }
+        } catch (TableNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+
+        return uids;
+    }
+
+    // assumes single datatype
+    private SortedSet<String> scanForLeaf(JexlNode node, String startUid, String stopUid) {
+        SortedSet<String> uids = new TreeSet<>();
+        Range range = rangeBuilder.rangeFromTerm(row, node, startUid, stopUid);
+
+        try (Scanner scanner = client.createScanner(tableName, auths)) {
+            scanner.setRange(range);
+
+            for (Map.Entry<Key,Value> entry : scanner) {
+                uids.add(dtUidFromKey(entry.getKey()));
+            }
+        } catch (TableNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+
+        return uids;
+    }
+
+    private String dtUidFromKey(Key key) {
+        String cq = key.getColumnQualifier().toString();
+        int index = cq.indexOf('\u0000');
+        return cq.substring(index + 1);
+    }
+
     @Override
     public Object visit(ASTNotNode node, Object data) {
         node.childrenAccept(this, data);
@@ -205,19 +335,6 @@ public class OrderOptimizedUidScanner extends AbstractUidScanner implements Pars
     @Override
     public Object visit(SimpleNode node, Object data) {
         return null;
-    }
-
-    /**
-     * Extract the datatype and uid from the field index key
-     *
-     * @param key
-     *            a field index key
-     * @return the datatype and uid
-     */
-    private String dtUidFromKey(Key key) {
-        String cq = key.getColumnQualifier().toString();
-        int index = cq.indexOf('\u0000');
-        return cq.substring(index + 1);
     }
 
     // short circuits

@@ -1,6 +1,7 @@
 package datawave.query.jexl.visitors.order;
 
 import java.util.Arrays;
+import java.util.Map;
 
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
@@ -59,6 +60,14 @@ public class OrderByCostVisitor extends BaseVisitor {
      * @return a query tree ordered by arbitrary cost
      */
     public static ASTJexlScript order(ASTJexlScript script) {
+        // At this point the query iterator has a binary tree. Flatten first so children of the
+        // same logical expression are easier to order.
+        script = TreeFlatteningRebuilder.flatten(script);
+
+        return (ASTJexlScript) script.jjtAccept(new OrderByCostVisitor(), null);
+    }
+
+    public static ASTJexlScript order(ASTJexlScript script, Map<String,Long> counts) {
         // At this point the query iterator has a binary tree. Flatten first so children of the
         // same logical expression are easier to order.
         script = TreeFlatteningRebuilder.flatten(script);

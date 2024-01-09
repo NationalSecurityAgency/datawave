@@ -22,15 +22,17 @@ public class QueryExecutorFactory {
     private final MetadataHelper metadataHelper;
     private final BlockingQueue<Entry<Key,Value>> results;
     private final ExecutorService uidThreadPool;
+    private final ExecutorService eventThreadPool;
     private final ExecutorService documentThreadPool;
     private final ScanStats stats;
 
     public QueryExecutorFactory(ShardQueryConfiguration config, MetadataHelper metadataHelper, LinkedBlockingQueue<Entry<Key,Value>> results,
-                    ExecutorService uidThreadPool, ExecutorService documentThreadPool, ScanStats stats) {
+                    ExecutorService uidThreadPool, ExecutorService eventThreadPool, ExecutorService documentThreadPool, ScanStats stats) {
         this.config = config;
         this.metadataHelper = metadataHelper;
         this.results = results;
         this.uidThreadPool = uidThreadPool;
+        this.eventThreadPool = eventThreadPool;
         this.documentThreadPool = documentThreadPool;
         this.stats = stats;
     }
@@ -41,6 +43,6 @@ public class QueryExecutorFactory {
         options.setTableName(config.getShardTableName());
         options.setAuths(config.getAuthorizations().iterator().next());
         options.setClient(config.getClient());
-        return new QueryExecutor(options, metadataHelper, results, uidThreadPool, documentThreadPool, stats);
+        return new QueryExecutor(options, metadataHelper, results, uidThreadPool, eventThreadPool, documentThreadPool, stats);
     }
 }

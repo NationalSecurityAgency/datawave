@@ -1,5 +1,6 @@
 package datawave.experimental.fi;
 
+import datawave.query.predicate.TimeFilter;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 
@@ -12,6 +13,7 @@ public abstract class AbstractUidScanner implements UidScanner {
     protected String tableName;
     protected String scanId;
     protected boolean logStats;
+    protected TimeFilter timeFilter = TimeFilter.alwaysTrue();
 
     protected FieldIndexRangeBuilder rangeBuilder = new FieldIndexRangeBuilder();
 
@@ -20,5 +22,10 @@ public abstract class AbstractUidScanner implements UidScanner {
         this.auths = auths;
         this.tableName = tableName;
         this.scanId = scanId;
+    }
+
+    @Override
+    public void withTimeFilter(TimeFilter timeFilter) {
+        this.timeFilter = timeFilter;
     }
 }
