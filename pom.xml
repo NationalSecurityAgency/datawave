@@ -1350,7 +1350,7 @@
                     <!-- This was added to ensure project only uses public API -->
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-checkstyle-plugin</artifactId>
-                    <version>3.3.1</version>
+                    <version>3.1.0</version>
                     <configuration>
                         <configLocation>checkstyle.xml</configLocation>
                         <failsOnError>false</failsOnError>
@@ -1640,6 +1640,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
+                <version>3.3.1</version>
             </plugin>
             <?SORTPOM IGNORE?>
             <!--
@@ -1648,9 +1649,9 @@
                 want the sortpom plugin to change the order of declaration.
             -->
             <plugin>
-                <groupId>org.commonjava.maven.plugins</groupId>
+                <groupId>com.github.hazendaz.maven</groupId>
                 <artifactId>directory-maven-plugin</artifactId>
-                <version>1.0</version>
+                <version>1.1.0</version>
                 <executions>
                     <execution>
                         <id>directories</id>
