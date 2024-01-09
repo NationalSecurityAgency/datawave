@@ -1,15 +1,19 @@
+Values (key: value)
+----------------------------------------
 <<<<<<< FIRST
 =======
+doc.beans.AstValidator.validateFlatten: true
 doc.beans.AstValidator.validateJunctions: true
 doc.beans.AstValidator.validateLineage: true
 doc.beans.AstValidator.validateQueryPropertyMarkers: true
 doc.beans.AstValidator.validateReferenceExpressions: true
-doc.beans.BaseEventQuery.accumuloPassword: "${accumulo.user.password}"
 >>>>>>> SECOND
 <<<<<<< FIRST
+doc.beans.BaseEventQuery.accumuloPassword: "${warehouse.accumulo.password}"
 doc.beans.BaseEventQuery.auditType: "ACTIVE"
 doc.beans.BaseEventQuery.baseIteratorPriority: "${warehouse.defaults.baseIteratorPriority}"
 =======
+doc.beans.BaseEventQuery.accumuloPassword: "${accumulo.user.password}"
 doc.beans.BaseEventQuery.auditType: "NONE"
 doc.beans.BaseEventQuery.baseIteratorPriority: 100
 >>>>>>> SECOND
@@ -605,9 +609,9 @@ doc.beans.TermFrequencyQuery.tableName: "${table.name.shard}"
 doc.beans.TimedVisitorManager.debugEnabled: false
 doc.beans.TimedVisitorManager.validateAst: false
 >>>>>>> SECOND
+doc.beans.TokenizedLuceneToJexlQueryParser.tokenizeUnfieldedQueries: true
 <<<<<<< FIRST
-doc.beans.TokenizedLuceneToJexlQueryParser.tokenizeUnfieldedQueries: true
-
 =======
-doc.beans.TokenizedLuceneToJexlQueryParser.tokenizeUnfieldedQueries: true
+doc.beans.skipTokenizeFields: "DOMETA"
+doc.beans.tokenizeFields: "CONTENT"
 >>>>>>> SECOND

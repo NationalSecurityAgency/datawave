@@ -250,7 +250,7 @@
                         </goals>
                         <configuration>
                             <executable>true</executable>
-                            <mainClass>datawave.microservice.config.ConfigCheckApplication</mainClass>
+                            <mainClass>datawave.microservice.configcheck.ConfigCheckApplication</mainClass>
                             <embeddedLaunchScriptProperties>
                                 <inlinedConfScript>${basedir}/src/main/resources/launch.conf</inlinedConfScript>
                             </embeddedLaunchScriptProperties>

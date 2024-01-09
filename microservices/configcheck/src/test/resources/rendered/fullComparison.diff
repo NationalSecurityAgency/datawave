@@ -1,35 +1,98 @@
 Placeholders (key: ${placeholder})
 ----------------------------------------
+<<<<<<< FIRST
 doc.beans.BaseEventQuery.accumuloPassword: ${datawave.query.logic.logics.BaseEventQuery.accumuloPassword}
+=======
+doc.beans.BaseEventQuery.accumuloPassword: ${accumulo.user.password}
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.BaseEventQuery.auditType: ${datawave.query.logic.logics.BaseEventQuery.auditType}
+=======
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.BaseEventQuery.baseIteratorPriority: ${datawave.query.logic.logics.BaseEventQuery.baseIteratorPriority}
+=======
+doc.beans.BaseEventQuery.baseIteratorPriority: ${beq.baseIteratorPriority}
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.BaseEventQuery.checkpointable: ${datawave.query.logic.logics.BaseEventQuery.checkpointable}
+=======
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.BaseEventQuery.collapseUids: ${datawave.query.logic.logics.BaseEventQuery.collapseUids}
 doc.beans.BaseEventQuery.collapseUidsThreshold: ${datawave.query.logic.logics.BaseEventQuery.collapseUidsThreshold}
+=======
+doc.beans.BaseEventQuery.collapseUids: ${query.collapse.uids}
+doc.beans.BaseEventQuery.collapseUidsThreshold: ${query.collapse.uids.threshold}
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.BaseEventQuery.collectQueryMetrics: ${datawave.query.logic.logics.BaseEventQuery.collectQueryMetrics}
+=======
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.BaseEventQuery.dateIndexTableName: ${datawave.query.logic.logics.BaseEventQuery.dateIndexTableName}
 doc.beans.BaseEventQuery.dateIndexThreads: ${datawave.query.logic.logics.BaseEventQuery.dateIndexThreads}
 doc.beans.BaseEventQuery.defaultDateTypeName: ${datawave.query.logic.logics.BaseEventQuery.defaultDateTypeName}
 doc.beans.BaseEventQuery.disableIndexOnlyDocuments: ${datawave.query.logic.logics.BaseEventQuery.disableIndexOnlyDocuments}
 doc.beans.BaseEventQuery.evaluationOnlyFields: ${datawave.query.logic.logics.BaseEventQuery.evaluationOnlyFields}
+=======
+doc.beans.BaseEventQuery.dateIndexTableName: ${date.index.table.name}
+doc.beans.BaseEventQuery.dateIndexThreads: ${date.index.threads}
+doc.beans.BaseEventQuery.defaultDateTypeName: ${default.date.type.name}
+doc.beans.BaseEventQuery.disableIndexOnlyDocuments: ${disable.index.only.documents}
+doc.beans.BaseEventQuery.evaluationOnlyFields: ${evaluation.only.fields}
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.BaseEventQuery.eventPerDayThreshold: ${datawave.query.logic.logics.BaseEventQuery.eventPerDayThreshold}
+=======
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.BaseEventQuery.finalMaxTermThreshold: ${datawave.query.logic.logics.BaseEventQuery.finalMaxTermThreshold}
 doc.beans.BaseEventQuery.fullTableScanEnabled: ${datawave.query.logic.logics.BaseEventQuery.fullTableScanEnabled}
 doc.beans.BaseEventQuery.hdfsSiteConfigURLs: ${datawave.query.logic.logics.BaseEventQuery.hdfsSiteConfigURLs}
+=======
+doc.beans.BaseEventQuery.finalMaxTermThreshold: ${beq.finalMaxTermThreshold}
+doc.beans.BaseEventQuery.fullTableScanEnabled: ${beq.fullTableScanEnabled}
+doc.beans.BaseEventQuery.hdfsSiteConfigURLs: ${hdfs.site.config.urls}
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.BaseEventQuery.includeDataTypeAsField: ${datawave.query.logic.logics.BaseEventQuery.includeDataTypeAsField}
+=======
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.BaseEventQuery.includeHierarchyFields: ${datawave.query.logic.logics.BaseEventQuery.includeHierarchyFields}
 doc.beans.BaseEventQuery.indexLookupThreads: ${datawave.query.logic.logics.BaseEventQuery.indexLookupThreads}
 doc.beans.BaseEventQuery.indexOnlyFilterFunctionsEnabled: ${datawave.query.logic.logics.BaseEventQuery.indexOnlyFilterFunctionsEnabled}
 doc.beans.BaseEventQuery.indexTableName: ${datawave.query.logic.logics.BaseEventQuery.indexTableName}
 doc.beans.BaseEventQuery.initialMaxTermThreshold: ${datawave.query.logic.logics.BaseEventQuery.initialMaxTermThreshold}
+=======
+doc.beans.BaseEventQuery.includeHierarchyFields: ${include.hierarchy.fields}
+doc.beans.BaseEventQuery.indexLookupThreads: ${index.query.threads}
+doc.beans.BaseEventQuery.indexOnlyFilterFunctionsEnabled: ${enable.index.only.filter.functions}
+doc.beans.BaseEventQuery.indexTableName: ${index.table.name}
+doc.beans.BaseEventQuery.initialMaxTermThreshold: ${beq.initialMaxTermThreshold}
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.BaseEventQuery.ivaratorCacheBufferSize: ${datawave.query.logic.logics.BaseEventQuery.ivaratorCacheBufferSize}
 doc.beans.BaseEventQuery.ivaratorCacheScanPersistThreshold: ${datawave.query.logic.logics.BaseEventQuery.ivaratorCacheScanPersistThreshold}
+=======
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.BaseEventQuery.ivaratorCacheScanTimeoutMinutes: ${datawave.query.logic.logics.BaseEventQuery.ivaratorCacheScanTimeoutMinutes}
 doc.beans.BaseEventQuery.ivaratorFstHdfsBaseURIs: ${datawave.query.logic.logics.BaseEventQuery.ivaratorFstHdfsBaseURIs}
 doc.beans.BaseEventQuery.ivaratorMaxOpenFiles: ${datawave.query.logic.logics.BaseEventQuery.ivaratorMaxOpenFiles}
+=======
+doc.beans.BaseEventQuery.ivaratorCacheScanTimeoutMinutes: ${query.max.call.time.minutes}
+doc.beans.BaseEventQuery.ivaratorFstHdfsBaseURIs: ${ivarator.fst.hdfs.base.uris}
+doc.beans.BaseEventQuery.ivaratorMaxOpenFiles: ${beq.maxIvaratorOpenFiles}
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.BaseEventQuery.logTimingDetails: ${datawave.query.logic.logics.BaseEventQuery.logTimingDetails}
 doc.beans.BaseEventQuery.logicDescription: ${datawave.query.logic.logics.BaseEventQuery.logicDescription}
 doc.beans.BaseEventQuery.maxConcurrentTasks: ${datawave.query.logic.logics.BaseEventQuery.maxConcurrentTasks}
+=======
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.BaseEventQuery.maxDepthThreshold: ${datawave.query.logic.logics.BaseEventQuery.maxDepthThreshold}
 doc.beans.BaseEventQuery.maxEvaluationPipelines: ${datawave.query.logic.logics.BaseEventQuery.maxEvaluationPipelines}
 doc.beans.BaseEventQuery.maxFieldIndexRangeSplit: ${datawave.query.logic.logics.BaseEventQuery.maxFieldIndexRangeSplit}
@@ -43,91 +106,264 @@ doc.beans.BaseEventQuery.maxResults: ${datawave.query.logic.logics.BaseEventQuer
 doc.beans.BaseEventQuery.maxUnfieldedExpansionThreshold: ${datawave.query.logic.logics.BaseEventQuery.maxUnfieldedExpansionThreshold}
 doc.beans.BaseEventQuery.maxValueExpansionThreshold: ${datawave.query.logic.logics.BaseEventQuery.maxValueExpansionThreshold}
 doc.beans.BaseEventQuery.metadataTableName: ${datawave.query.logic.logics.BaseEventQuery.metadataTableName}
+=======
+doc.beans.BaseEventQuery.maxDepthThreshold: ${beq.maxDepthThreshold}
+doc.beans.BaseEventQuery.maxEvaluationPipelines: ${beq.evaluationPipelines}
+doc.beans.BaseEventQuery.maxFieldIndexRangeSplit: ${beq.fieldIndexRangeSplit}
+doc.beans.BaseEventQuery.maxIndexScanTimeMillis: ${query.max.index.scan.ms}
+doc.beans.BaseEventQuery.maxIvaratorSources: ${beq.maxIvaratorSources}
+doc.beans.BaseEventQuery.maxOrExpansionFstThreshold: ${beq.orExpansionFstThreshold}
+doc.beans.BaseEventQuery.maxOrExpansionThreshold: ${beq.orExpansionThreshold}
+doc.beans.BaseEventQuery.maxOrRangeThreshold: ${beq.orRangeThreshold}
+doc.beans.BaseEventQuery.maxPipelineCachedResults: ${beq.pipelineCachedResults}
+doc.beans.BaseEventQuery.maxResults: ${event.query.max.results}
+doc.beans.BaseEventQuery.maxUnfieldedExpansionThreshold: ${beq.unfieldedExpansionThreshold}
+doc.beans.BaseEventQuery.maxValueExpansionThreshold: ${beq.valueExpansionThreshold}
+doc.beans.BaseEventQuery.metadataTableName: ${metadata.table.name}
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.BaseEventQuery.minimumSelectivity: ${datawave.query.logic.logics.BaseEventQuery.minimumSelectivity}
 doc.beans.BaseEventQuery.modelName: ${datawave.query.logic.logics.BaseEventQuery.modelName}
+=======
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.BaseEventQuery.modelTableName: ${datawave.query.logic.logics.BaseEventQuery.modelTableName}
 doc.beans.BaseEventQuery.queryThreads: ${datawave.query.logic.logics.BaseEventQuery.queryThreads}
 doc.beans.BaseEventQuery.reverseIndexTableName: ${datawave.query.logic.logics.BaseEventQuery.reverseIndexTableName}
+=======
+doc.beans.BaseEventQuery.modelTableName: ${metadata.table.name}
+doc.beans.BaseEventQuery.queryThreads: ${shard.query.threads}
+doc.beans.BaseEventQuery.reverseIndexTableName: ${rindex.table.name}
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.BaseEventQuery.sendTimingToStatsd: ${datawave.query.logic.logics.BaseEventQuery.sendTimingToStatsd}
+=======
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.BaseEventQuery.shardsPerDayThreshold: ${datawave.query.logic.logics.BaseEventQuery.shardsPerDayThreshold}
+=======
+doc.beans.BaseEventQuery.shardsPerDayThreshold: ${beq.shardsPerDayThreshold}
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.BaseEventQuery.statsdHost: ${datawave.query.logic.logics.BaseEventQuery.statsdHost}
 doc.beans.BaseEventQuery.statsdPort: ${datawave.query.logic.logics.BaseEventQuery.statsdPort}
+=======
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.BaseEventQuery.tableName: ${datawave.query.logic.logics.BaseEventQuery.tableName}
+=======
+doc.beans.BaseEventQuery.tableName: ${shard.table.name}
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.BaseEventQuery.useEnrichers: ${datawave.query.logic.logics.BaseEventQuery.useEnrichers}
+=======
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.BaseEventQuery.useFilters: ${datawave.query.logic.logics.BaseEventQuery.useFilters}
 doc.beans.BaseEventQuery.zookeeperConfig: ${datawave.query.logic.logics.BaseEventQuery.zookeeperConfig}
+=======
+doc.beans.BaseEventQuery.useFilters: ${event.query.filters.enabled}
+doc.beans.BaseEventQuery.zookeeperConfig: ${ivarator.zookeeper.hosts}
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.ContentQuery.auditType: ${datawave.query.logic.logics.ContentQuery.auditType}
 doc.beans.ContentQuery.checkpointable: ${datawave.query.logic.logics.ContentQuery.checkpointable}
 doc.beans.ContentQuery.logicDescription: ${datawave.query.logic.logics.ContentQuery.logicDescription}
 doc.beans.ContentQuery.maxResults: ${datawave.query.logic.logics.ContentQuery.maxResults}
 doc.beans.ContentQuery.maxWork: ${datawave.query.logic.logics.ContentQuery.maxWork}
+=======
+doc.beans.BaseModelEventQuery.modelTableName: ${metadata.table.name}
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.ContentQuery.tableName: ${datawave.query.logic.logics.ContentQuery.tableName}
+=======
+doc.beans.ContentQuery.tableName: ${shard.table.name}
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.CountQuery.checkpointable: ${datawave.query.logic.logics.CountQuery.checkpointable}
 doc.beans.CountQuery.logicDescription: ${datawave.query.logic.logics.CountQuery.logicDescription}
 doc.beans.DiscoveryQuery.allowLeadingWildcard: ${datawave.query.logic.logics.DiscoveryQuery.allowLeadingWildcard}
 doc.beans.DiscoveryQuery.auditType: ${datawave.query.logic.logics.DiscoveryQuery.auditType}
 doc.beans.DiscoveryQuery.checkpointable: ${datawave.query.logic.logics.DiscoveryQuery.checkpointable}
 doc.beans.DiscoveryQuery.fullTableScanEnabled: ${datawave.query.logic.logics.DiscoveryQuery.fullTableScanEnabled}
+=======
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.DiscoveryQuery.indexTableName: ${datawave.query.logic.logics.DiscoveryQuery.indexTableName}
+=======
+doc.beans.DiscoveryQuery.indexTableName: ${index.table.name}
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.DiscoveryQuery.logicDescription: ${datawave.query.logic.logics.DiscoveryQuery.logicDescription}
 doc.beans.DiscoveryQuery.maxResults: ${datawave.query.logic.logics.DiscoveryQuery.maxResults}
 doc.beans.DiscoveryQuery.maxWork: ${datawave.query.logic.logics.DiscoveryQuery.maxWork}
+=======
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.DiscoveryQuery.metadataTableName: ${datawave.query.logic.logics.DiscoveryQuery.metadataTableName}
+=======
+doc.beans.DiscoveryQuery.metadataTableName: ${metadata.table.name}
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.DiscoveryQuery.modelName: ${datawave.query.logic.logics.DiscoveryQuery.modelName}
+=======
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.DiscoveryQuery.modelTableName: ${datawave.query.logic.logics.DiscoveryQuery.modelTableName}
 doc.beans.DiscoveryQuery.reverseIndexTableName: ${datawave.query.logic.logics.DiscoveryQuery.reverseIndexTableName}
 doc.beans.DiscoveryQuery.tableName: ${datawave.query.logic.logics.DiscoveryQuery.tableName}
+=======
+doc.beans.DiscoveryQuery.modelTableName: ${metadata.table.name}
+doc.beans.DiscoveryQuery.reverseIndexTableName: ${rindex.table.name}
+doc.beans.DiscoveryQuery.tableName: ${index.table.name}
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.EdgeEventQuery.checkpointable: ${datawave.query.logic.logics.EdgeEventQuery.checkpointable}
 doc.beans.EdgeEventQuery.edgeModelName: ${datawave.query.logic.logics.EdgeEventQuery.edgeModelName}
 doc.beans.EdgeEventQuery.logicDescription: ${datawave.query.logic.logics.EdgeEventQuery.logicDescription}
+=======
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.EdgeEventQuery.modelTableName: ${datawave.query.logic.logics.EdgeEventQuery.modelTableName}
+=======
+doc.beans.EdgeEventQuery.modelTableName: ${metadata.table.name}
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.ErrorCountQuery.checkpointable: ${datawave.query.logic.logics.ErrorCountQuery.checkpointable}
+=======
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.ErrorCountQuery.indexTableName: ${datawave.query.logic.logics.ErrorCountQuery.indexTableName}
+=======
+doc.beans.ErrorCountQuery.indexTableName: ${error.index.table.name}
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.ErrorCountQuery.logicDescription: ${datawave.query.logic.logics.ErrorCountQuery.logicDescription}
+=======
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.ErrorCountQuery.metadataTableName: ${datawave.query.logic.logics.ErrorCountQuery.metadataTableName}
 doc.beans.ErrorCountQuery.reverseIndexTableName: ${datawave.query.logic.logics.ErrorCountQuery.indexTableName}
 doc.beans.ErrorCountQuery.tableName: ${datawave.query.logic.logics.ErrorCountQuery.tableName}
+=======
+doc.beans.ErrorCountQuery.metadataTableName: ${error.metadata.table.name}
+doc.beans.ErrorCountQuery.reverseIndexTableName: ${error.rindex.table.name}
+doc.beans.ErrorCountQuery.tableName: ${error.shard.table.name}
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.ErrorDiscoveryQuery.allowLeadingWildcard: ${datawave.query.logic.logics.ErrorDiscoveryQuery.allowLeadingWildcard}
 doc.beans.ErrorDiscoveryQuery.auditType: ${datawave.query.logic.logics.ErrorDiscoveryQuery.auditType}
 doc.beans.ErrorDiscoveryQuery.checkpointable: ${datawave.query.logic.logics.ErrorDiscoveryQuery.checkpointable}
 doc.beans.ErrorDiscoveryQuery.fullTableScanEnabled: ${datawave.query.logic.logics.ErrorDiscoveryQuery.fullTableScanEnabled}
+=======
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.ErrorDiscoveryQuery.indexTableName: ${datawave.query.logic.logics.ErrorDiscoveryQuery.indexTableName}
+=======
+doc.beans.ErrorDiscoveryQuery.indexTableName: ${error.index.table.name}
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.ErrorDiscoveryQuery.logicDescription: ${datawave.query.logic.logics.ErrorDiscoveryQuery.logicDescription}
 doc.beans.ErrorDiscoveryQuery.maxResults: ${datawave.query.logic.logics.ErrorDiscoveryQuery.maxResults}
 doc.beans.ErrorDiscoveryQuery.maxWork: ${datawave.query.logic.logics.ErrorDiscoveryQuery.maxWork}
+=======
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.ErrorDiscoveryQuery.metadataTableName: ${datawave.query.logic.logics.ErrorDiscoveryQuery.metadataTableName}
+=======
+doc.beans.ErrorDiscoveryQuery.metadataTableName: ${error.metadata.table.name}
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.ErrorDiscoveryQuery.modelName: ${datawave.query.logic.logics.ErrorDiscoveryQuery.modelName}
+=======
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.ErrorDiscoveryQuery.modelTableName: ${datawave.query.logic.logics.ErrorDiscoveryQuery.modelTableName}
 doc.beans.ErrorDiscoveryQuery.reverseIndexTableName: ${datawave.query.logic.logics.ErrorDiscoveryQuery.reverseIndexTableName}
 doc.beans.ErrorDiscoveryQuery.tableName: ${datawave.query.logic.logics.ErrorDiscoveryQuery.tableName}
+=======
+doc.beans.ErrorDiscoveryQuery.modelTableName: ${metadata.table.name}
+doc.beans.ErrorDiscoveryQuery.reverseIndexTableName: ${error.rindex.table.name}
+doc.beans.ErrorDiscoveryQuery.tableName: ${error.index.table.name}
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.ErrorEventQuery.checkpointable: ${datawave.query.logic.logics.ErrorEventQuery.checkpointable}
 doc.beans.ErrorEventQuery.dateIndexTableName: ${datawave.query.logic.logics.ErrorEventQuery.dateIndexTableName}
 doc.beans.ErrorEventQuery.includeHierarchyFields: ${datawave.query.logic.logics.ErrorEventQuery.includeHierarchyFields}
+=======
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.ErrorEventQuery.indexTableName: ${datawave.query.logic.logics.ErrorEventQuery.indexTableName}
+=======
+doc.beans.ErrorEventQuery.indexTableName: ${error.index.table.name}
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.ErrorEventQuery.logicDescription: ${datawave.query.logic.logics.ErrorEventQuery.logicDescription}
+=======
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.ErrorEventQuery.metadataTableName: ${datawave.query.logic.logics.ErrorEventQuery.metadataTableName}
 doc.beans.ErrorEventQuery.reverseIndexTableName: ${datawave.query.logic.logics.ErrorEventQuery.reverseIndexTableName}
 doc.beans.ErrorEventQuery.tableName: ${datawave.query.logic.logics.ErrorEventQuery.tableName}
+=======
+doc.beans.ErrorEventQuery.metadataTableName: ${error.metadata.table.name}
+doc.beans.ErrorEventQuery.reverseIndexTableName: ${error.rindex.table.name}
+doc.beans.ErrorEventQuery.tableName: ${error.shard.table.name}
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.ErrorFieldIndexCountQuery.auditType: ${datawave.query.logic.logics.ErrorFieldIndexCountQuery.auditType}
 doc.beans.ErrorFieldIndexCountQuery.checkpointable: ${datawave.query.logic.logics.ErrorFieldIndexCountQuery.checkpointable}
+=======
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.ErrorFieldIndexCountQuery.indexTableName: ${datawave.query.logic.logics.ErrorFieldIndexCountQuery.indexTableName}
+=======
+doc.beans.ErrorFieldIndexCountQuery.indexTableName: ${error.index.table.name}
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.ErrorFieldIndexCountQuery.logicDescription: ${datawave.query.logic.logics.ErrorFieldIndexCountQuery.logicDescription}
 doc.beans.ErrorFieldIndexCountQuery.maxResults: ${datawave.query.logic.logics.ErrorFieldIndexCountQuery.maxResults}
 doc.beans.ErrorFieldIndexCountQuery.maxUniqueValues: ${datawave.query.logic.logics.ErrorFieldIndexCountQuery.maxUniqueValues}
 doc.beans.ErrorFieldIndexCountQuery.maxWork: ${datawave.query.logic.logics.ErrorFieldIndexCountQuery.maxWork}
+=======
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.ErrorFieldIndexCountQuery.metadataTableName: ${datawave.query.logic.logics.ErrorFieldIndexCountQuery.metadataTableName}
+=======
+doc.beans.ErrorFieldIndexCountQuery.metadataTableName: ${error.metadata.table.name}
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.ErrorFieldIndexCountQuery.modelName: ${datawave.query.logic.logics.ErrorFieldIndexCountQuery.modelName}
+=======
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.ErrorFieldIndexCountQuery.modelTableName: ${datawave.query.logic.logics.ErrorFieldIndexCountQuery.modelTableName}
 doc.beans.ErrorFieldIndexCountQuery.queryThreads: ${datawave.query.logic.logics.ErrorFieldIndexCountQuery.queryThreads}
 doc.beans.ErrorFieldIndexCountQuery.reverseIndexTableName: ${datawave.query.logic.logics.ErrorFieldIndexCountQuery.reverseIndexTableName}
 doc.beans.ErrorFieldIndexCountQuery.tableName: ${datawave.query.logic.logics.ErrorFieldIndexCountQuery.tableName}
+=======
+doc.beans.ErrorFieldIndexCountQuery.modelTableName: ${metadata.table.name}
+doc.beans.ErrorFieldIndexCountQuery.queryThreads: ${shard.query.threads}
+doc.beans.ErrorFieldIndexCountQuery.reverseIndexTableName: ${error.rindex.table.name}
+doc.beans.ErrorFieldIndexCountQuery.tableName: ${error.shard.table.name}
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.EventQuery.checkpointable: ${datawave.query.logic.logics.EventQuery.checkpointable}
 doc.beans.EventQuery.logicDescription: ${datawave.query.logic.logics.EventQuery.logicDescription}
 doc.beans.FacetedQuery.auditType: ${datawave.query.logic.logics.FacetedQuery.auditType}
 doc.beans.FacetedQuery.checkpointable: ${datawave.query.logic.logics.FacetedQuery.checkpointable}
+=======
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.FacetedQuery.facetHashTableName: ${datawave.query.logic.logics.FacetedQuery.facetHashTableName}
 doc.beans.FacetedQuery.facetMetadataTableName: ${datawave.query.logic.logics.FacetedQuery.facetMetadataTableName}
 doc.beans.FacetedQuery.facetTableName: ${datawave.query.logic.logics.FacetedQuery.facetTableName}
+=======
+doc.beans.FacetedQuery.facetHashTableName: ${table.name.facet.hashes}
+doc.beans.FacetedQuery.facetMetadataTableName: ${table.name.facet.metadata}
+doc.beans.FacetedQuery.facetTableName: ${table.name.facet}
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.FacetedQuery.facetedSearchType: ${datawave.query.logic.logics.FacetedQuery.facetedSearchType}
 doc.beans.FacetedQuery.logicDescription: ${datawave.query.logic.logics.FacetedQuery.logicDescription}
 doc.beans.FacetedQuery.maximumFacetGrouping: ${datawave.query.logic.logics.FacetedQuery.maximumFacetGrouping}
@@ -135,36 +371,94 @@ doc.beans.FacetedQuery.minimumFacet: ${datawave.query.logic.logics.FacetedQuery.
 doc.beans.FacetedQuery.streaming: ${datawave.query.logic.logics.FacetedQuery.streaming}
 doc.beans.FieldIndexCountQuery.auditType: ${datawave.query.logic.logics.FieldIndexCountQuery.auditType}
 doc.beans.FieldIndexCountQuery.checkpointable: ${datawave.query.logic.logics.FieldIndexCountQuery.checkpointable}
+=======
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.FieldIndexCountQuery.indexTableName: ${datawave.query.logic.logics.FieldIndexCountQuery.indexTableName}
+=======
+doc.beans.FieldIndexCountQuery.indexTableName: ${index.table.name}
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.FieldIndexCountQuery.logicDescription: ${datawave.query.logic.logics.FieldIndexCountQuery.logicDescription}
 doc.beans.FieldIndexCountQuery.maxResults: ${datawave.query.logic.logics.FieldIndexCountQuery.maxResults}
 doc.beans.FieldIndexCountQuery.maxUniqueValues: ${datawave.query.logic.logics.FieldIndexCountQuery.maxUniqueValues}
 doc.beans.FieldIndexCountQuery.maxWork: ${datawave.query.logic.logics.FieldIndexCountQuery.maxWork}
+=======
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.FieldIndexCountQuery.metadataTableName: ${datawave.query.logic.logics.FieldIndexCountQuery.metadataTableName}
+=======
+doc.beans.FieldIndexCountQuery.metadataTableName: ${metadata.table.name}
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.FieldIndexCountQuery.modelName: ${datawave.query.logic.logics.FieldIndexCountQuery.modelName}
+=======
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.FieldIndexCountQuery.modelTableName: ${datawave.query.logic.logics.FieldIndexCountQuery.modelTableName}
 doc.beans.FieldIndexCountQuery.queryThreads: ${datawave.query.logic.logics.FieldIndexCountQuery.queryThreads}
 doc.beans.FieldIndexCountQuery.reverseIndexTableName: ${datawave.query.logic.logics.FieldIndexCountQuery.reverseIndexTableName}
 doc.beans.FieldIndexCountQuery.tableName: ${datawave.query.logic.logics.FieldIndexCountQuery.tableName}
+=======
+doc.beans.FieldIndexCountQuery.modelTableName: ${metadata.table.name}
+doc.beans.FieldIndexCountQuery.queryThreads: ${shard.query.threads}
+doc.beans.FieldIndexCountQuery.reverseIndexTableName: ${rindex.table.name}
+doc.beans.FieldIndexCountQuery.tableName: ${shard.table.name}
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.HitHighlights.accumuloPassword: ${datawave.query.logic.logics.HitHighlights.accumuloPassword}
 doc.beans.HitHighlights.auditType: ${datawave.query.logic.logics.HitHighlights.auditType}
 doc.beans.HitHighlights.checkpointable: ${datawave.query.logic.logics.HitHighlights.checkpointable}
 doc.beans.HitHighlights.dateIndexTableName: ${datawave.query.logic.logics.HitHighlights.dateIndexTableName}
 doc.beans.HitHighlights.defaultDateTypeName: ${datawave.query.logic.logics.HitHighlights.defaultDateTypeName}
 doc.beans.HitHighlights.eventPerDayThreshold: ${datawave.query.logic.logics.HitHighlights.eventPerDayThreshold}
+=======
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.HitHighlights.finalMaxTermThreshold: ${datawave.query.logic.logics.BaseEventQuery.finalMaxTermThreshold}
+=======
+doc.beans.HitHighlights.finalMaxTermThreshold: ${beq.finalMaxTermThreshold}
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.HitHighlights.fullTableScanEnabled: ${datawave.query.logic.logics.HitHighlights.fullTableScanEnabled}
+=======
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.HitHighlights.hdfsSiteConfigURLs: ${datawave.query.logic.logics.HitHighlights.hdfsSiteConfigURLs}
+=======
+doc.beans.HitHighlights.hdfsSiteConfigURLs: ${hdfs.site.config.urls}
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.HitHighlights.includeDataTypeAsField: ${datawave.query.logic.logics.HitHighlights.includeDataTypeAsField}
 doc.beans.HitHighlights.includeGroupingContext: ${datawave.query.logic.logics.HitHighlights.includeGroupingContext}
+=======
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.HitHighlights.indexTableName: ${datawave.query.logic.logics.HitHighlights.indexTableName}
 doc.beans.HitHighlights.initialMaxTermThreshold: ${datawave.query.logic.logics.BaseEventQuery.initialMaxTermThreshold}
+=======
+doc.beans.HitHighlights.indexTableName: ${index.table.name}
+doc.beans.HitHighlights.initialMaxTermThreshold: ${beq.initialMaxTermThreshold}
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.HitHighlights.ivaratorCacheBufferSize: ${datawave.query.logic.logics.HitHighlights.ivaratorCacheBufferSize}
 doc.beans.HitHighlights.ivaratorCacheScanPersistThreshold: ${datawave.query.logic.logics.HitHighlights.ivaratorCacheScanPersistThreshold}
+=======
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.HitHighlights.ivaratorCacheScanTimeoutMinutes: ${datawave.query.logic.logics.HitHighlights.ivaratorCacheScanTimeoutMinutes}
 doc.beans.HitHighlights.ivaratorFstHdfsBaseURIs: ${datawave.query.logic.logics.HitHighlights.ivaratorFstHdfsBaseURIs}
 doc.beans.HitHighlights.ivaratorMaxOpenFiles: ${datawave.query.logic.logics.HitHighlights.ivaratorMaxOpenFiles}
+=======
+doc.beans.HitHighlights.ivaratorCacheScanTimeoutMinutes: ${query.max.call.time.minutes}
+doc.beans.HitHighlights.ivaratorFstHdfsBaseURIs: ${ivarator.fst.hdfs.base.uris}
+doc.beans.HitHighlights.ivaratorMaxOpenFiles: ${beq.maxIvaratorOpenFiles}
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.HitHighlights.logicDescription: ${datawave.query.logic.logics.HitHighlights.logicDescription}
+=======
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.HitHighlights.maxDepthThreshold: ${datawave.query.logic.logics.HitHighlights.maxDepthThreshold}
 doc.beans.HitHighlights.maxEvaluationPipelines: ${datawave.query.logic.logics.HitHighlights.maxEvaluationPipelines}
 doc.beans.HitHighlights.maxFieldIndexRangeSplit: ${datawave.query.logic.logics.HitHighlights.maxFieldIndexRangeSplit}
@@ -177,13 +471,45 @@ doc.beans.HitHighlights.maxRangesPerRangeIvarator: ${datawave.query.logic.logics
 doc.beans.HitHighlights.maxUnfieldedExpansionThreshold: ${datawave.query.logic.logics.HitHighlights.maxUnfieldedExpansionThreshold}
 doc.beans.HitHighlights.maxValueExpansionThreshold: ${datawave.query.logic.logics.HitHighlights.maxValueExpansionThreshold}
 doc.beans.HitHighlights.metadataTableName: ${datawave.query.logic.logics.HitHighlights.metadataTableName}
+=======
+doc.beans.HitHighlights.maxDepthThreshold: ${beq.maxDepthThreshold}
+doc.beans.HitHighlights.maxEvaluationPipelines: ${beq.evaluationPipelines}
+doc.beans.HitHighlights.maxFieldIndexRangeSplit: ${beq.fieldIndexRangeSplit}
+doc.beans.HitHighlights.maxOrExpansionFstThreshold: ${beq.orExpansionFstThreshold}
+doc.beans.HitHighlights.maxOrExpansionThreshold: ${beq.orExpansionThreshold}
+doc.beans.HitHighlights.maxOrRangeIvarators: ${beq.maxOrRangeIvarators}
+doc.beans.HitHighlights.maxOrRangeThreshold: ${beq.orRangeThreshold}
+doc.beans.HitHighlights.maxPipelineCachedResults: ${beq.pipelineCachedResults}
+doc.beans.HitHighlights.maxRangesPerRangeIvarator: ${beq.maxRangesPerRangeIvarator}
+doc.beans.HitHighlights.maxUnfieldedExpansionThreshold: ${beq.unfieldedExpansionThreshold}
+doc.beans.HitHighlights.maxValueExpansionThreshold: ${beq.valueExpansionThreshold}
+doc.beans.HitHighlights.metadataTableName: ${metadata.table.name}
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.HitHighlights.minimumSelectivity: ${datawave.query.logic.logics.HitHighlights.minimumSelectivity}
+=======
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.HitHighlights.queryThreads: ${datawave.query.logic.logics.HitHighlights.queryThreads}
 doc.beans.HitHighlights.reverseIndexTableName: ${datawave.query.logic.logics.HitHighlights.reverseIndexTableName}
 doc.beans.HitHighlights.shardsPerDayThreshold: ${datawave.query.logic.logics.HitHighlights.shardsPerDayThreshold}
 doc.beans.HitHighlights.tableName: ${datawave.query.logic.logics.HitHighlights.tableName}
+=======
+doc.beans.HitHighlights.queryThreads: ${index.query.threads}
+doc.beans.HitHighlights.reverseIndexTableName: ${rindex.table.name}
+doc.beans.HitHighlights.shardsPerDayThreshold: ${beq.shardsPerDayThreshold}
+doc.beans.HitHighlights.tableName: ${shard.table.name}
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.HitHighlights.useEnrichers: ${datawave.query.logic.logics.HitHighlights.useEnrichers}
+=======
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.HitHighlights.zookeeperConfig: ${datawave.query.logic.logics.HitHighlights.zookeeperConfig}
+=======
+doc.beans.HitHighlights.zookeeperConfig: ${ivarator.zookeeper.hosts}
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.IndexStatsQuery.auditType: ${datawave.query.logic.logics.IndexStatsQuery.auditType}
 doc.beans.InternalQueryMetricsQuery.collectQueryMetrics: ${datawave.query.logic.logics.InternalQueryMetricsQuery.collectQueryMetrics}
 doc.beans.LuceneUUIDEventQuery.auditType: ${datawave.query.logic.logics.LuceneUUIDEventQuery.auditType}
@@ -192,54 +518,155 @@ doc.beans.LuceneUUIDEventQuery.logicDescription: ${datawave.query.logic.logics.L
 doc.beans.LuceneUUIDEventQuery.queryLogics.ErrorEventQuery.auditType: ${datawave.query.logic.logics.LuceneUUIDEventQuery.errorEventQuery.auditType}
 doc.beans.LuceneUUIDEventQuery.queryLogics.ErrorEventQuery.connPoolName: ${datawave.query.logic.logics.LuceneUUIDEventQuery.errorEventQuery.connPoolName}
 doc.beans.LuceneUUIDEventQuery.queryLogics.ErrorEventQuery.dateIndexTableName: ${datawave.query.logic.logics.LuceneUUIDEventQuery.errorEventQuery.dateIndexTableName}
+=======
+doc.beans.IdTranslatorConfiguration.beginDate: ${lookup.uuid.beginDate}
+doc.beans.LookupUUIDConfiguration.beginDate: ${lookup.uuid.beginDate}
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.LuceneUUIDEventQuery.queryLogics.ErrorEventQuery.indexTableName: ${datawave.query.logic.logics.LuceneUUIDEventQuery.errorEventQuery.indexTableName}
+=======
+doc.beans.LuceneUUIDEventQuery.queryLogics.ErrorEventQuery.indexTableName: ${error.index.table.name}
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.LuceneUUIDEventQuery.queryLogics.ErrorEventQuery.logicDescription: ${datawave.query.logic.logics.LuceneUUIDEventQuery.errorEventQuery.logicDescription}
+=======
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.LuceneUUIDEventQuery.queryLogics.ErrorEventQuery.metadataTableName: ${datawave.query.logic.logics.LuceneUUIDEventQuery.errorEventQuery.metadataTableName}
 doc.beans.LuceneUUIDEventQuery.queryLogics.ErrorEventQuery.reverseIndexTableName: ${datawave.query.logic.logics.LuceneUUIDEventQuery.errorEventQuery.reverseIndexTableName}
 doc.beans.LuceneUUIDEventQuery.queryLogics.ErrorEventQuery.tableName: ${datawave.query.logic.logics.LuceneUUIDEventQuery.errorEventQuery.tableName}
+=======
+doc.beans.LuceneUUIDEventQuery.queryLogics.ErrorEventQuery.metadataTableName: ${error.metadata.table.name}
+doc.beans.LuceneUUIDEventQuery.queryLogics.ErrorEventQuery.reverseIndexTableName: ${error.rindex.table.name}
+doc.beans.LuceneUUIDEventQuery.queryLogics.ErrorEventQuery.tableName: ${error.shard.table.name}
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.LuceneUUIDEventQuery.queryLogics.EventQuery.auditType: ${datawave.query.logic.logics.LuceneUUIDEventQuery.eventQuery.auditType}
 doc.beans.LuceneUUIDEventQuery.queryLogics.EventQuery.connPoolName: ${datawave.query.logic.logics.LuceneUUIDEventQuery.eventQuery.connPoolName}
 doc.beans.LuceneUUIDEventQuery.queryLogics.EventQuery.logicDescription: ${datawave.query.logic.logics.LuceneUUIDEventQuery.eventQuery.logicDescription}
 doc.beans.QueryMetricsQuery.auditType: ${datawave.query.logic.logics.QueryMetricsQuery.auditType}
 doc.beans.QueryMetricsQuery.checkpointable: ${datawave.query.logic.logics.QueryMetricsQuery.checkpointable}
 doc.beans.QueryMetricsQuery.collectQueryMetrics: ${datawave.query.logic.logics.QueryMetricsQuery.collectQueryMetrics}
+=======
+doc.beans.QueryLogicFactoryConfiguration.maxPageSize: ${query.max.page.size}
+doc.beans.QueryLogicFactoryConfiguration.pageByteTrigger: ${query.page.byte.trigger}
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.QueryMetricsQuery.dateIndexTableName: ${datawave.query.logic.logics.QueryMetricsQuery.dateIndexTableName}
+=======
+doc.beans.QueryMetricsQuery.dateIndexTableName: ${querymetrics.dateindex.table.name}
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.QueryMetricsQuery.includeHierarchyFields: ${datawave.query.logic.logics.QueryMetricsQuery.includeHierarchyFields}
+=======
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.QueryMetricsQuery.indexTableName: ${datawave.query.logic.logics.QueryMetricsQuery.indexTableName}
+=======
+doc.beans.QueryMetricsQuery.indexTableName: ${querymetrics.index.table.name}
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.QueryMetricsQuery.logicDescription: ${datawave.query.logic.logics.QueryMetricsQuery.logicDescription}
+=======
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.QueryMetricsQuery.metadataTableName: ${datawave.query.logic.logics.QueryMetricsQuery.metadataTableName}
+=======
+doc.beans.QueryMetricsQuery.metadataTableName: ${querymetrics.metadata.table.name}
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.QueryMetricsQuery.modelName: ${datawave.query.logic.logics.QueryMetricsQuery.modelName}
+=======
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.QueryMetricsQuery.modelTableName: ${datawave.query.logic.logics.QueryMetricsQuery.modelTableName}
 doc.beans.QueryMetricsQuery.reverseIndexTableName: ${datawave.query.logic.logics.QueryMetricsQuery.reverseIndexTableName}
 doc.beans.QueryMetricsQuery.tableName: ${datawave.query.logic.logics.QueryMetricsQuery.tableName}
+=======
+doc.beans.QueryMetricsQuery.modelTableName: ${querymetrics.metadata.table.name}
+doc.beans.QueryMetricsQuery.reverseIndexTableName: ${querymetrics.rindex.table.name}
+doc.beans.QueryMetricsQuery.tableName: ${querymetrics.shard.table.name}
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.TermFrequencyQuery.auditType: ${datawave.query.logic.logics.TermFrequencyQuery.auditType}
 doc.beans.TermFrequencyQuery.logicDescription: ${datawave.query.logic.logics.TermFrequencyQuery.logicDescription}
 doc.beans.TermFrequencyQuery.maxResults: ${datawave.query.logic.logics.TermFrequencyQuery.maxResults}
 doc.beans.TermFrequencyQuery.maxWork: ${datawave.query.logic.logics.TermFrequencyQuery.maxWork}
+=======
+doc.beans.RemoteEventQuery.maxResults: ${event.query.max.results}
+doc.beans.RemoteEventQuery.tableName: ${shard.table.name}
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.TermFrequencyQuery.tableName: ${datawave.query.logic.logics.TermFrequencyQuery.tableName}
+=======
+doc.beans.TermFrequencyQuery.tableName: ${shard.table.name}
+>>>>>>> SECOND
 
 Values (key: value)
 ----------------------------------------
+<<<<<<< FIRST
+=======
+doc.beans.AstValidator.validateFlatten: true
+doc.beans.AstValidator.validateJunctions: true
+doc.beans.AstValidator.validateLineage: true
+doc.beans.AstValidator.validateQueryPropertyMarkers: true
+doc.beans.AstValidator.validateReferenceExpressions: true
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.BaseEventQuery.accumuloPassword: "${warehouse.accumulo.password}"
 doc.beans.BaseEventQuery.auditType: "ACTIVE"
 doc.beans.BaseEventQuery.baseIteratorPriority: "${warehouse.defaults.baseIteratorPriority}"
+=======
+doc.beans.BaseEventQuery.accumuloPassword: "${accumulo.user.password}"
+doc.beans.BaseEventQuery.auditType: "NONE"
+doc.beans.BaseEventQuery.baseIteratorPriority: 100
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.BaseEventQuery.checkpointable: "${warehouse.defaults.checkpointable}"
+=======
+>>>>>>> SECOND
 doc.beans.BaseEventQuery.collapseUids: false
 doc.beans.BaseEventQuery.collapseUidsThreshold: -1
 doc.beans.BaseEventQuery.collectQueryMetrics: true
+<<<<<<< FIRST
+=======
+doc.beans.BaseEventQuery.contentFieldNames: "CONTENT"
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.BaseEventQuery.dateIndexTableName: "${warehouse.tables.dateIndex.name}"
 doc.beans.BaseEventQuery.dateIndexThreads: "${warehouse.defaults.dateIndexThreads}"
+=======
+doc.beans.BaseEventQuery.dateIndexTableName: "${table.name.dateIndex}"
+doc.beans.BaseEventQuery.dateIndexThreads: 20
+>>>>>>> SECOND
 doc.beans.BaseEventQuery.defaultDateTypeName: "EVENT"
 doc.beans.BaseEventQuery.disableIndexOnlyDocuments: false
+<<<<<<< FIRST
+=======
+doc.beans.BaseEventQuery.docAggregationThresholdMs: -1
+doc.beans.BaseEventQuery.enricherClassNames: "datawave.query.enrich.DatawaveTermFrequencyEnricher"
+>>>>>>> SECOND
 doc.beans.BaseEventQuery.evaluationOnlyFields: ""
+<<<<<<< FIRST
 doc.beans.BaseEventQuery.eventPerDayThreshold: "${warehouse.defaults.eventPerDayThreshold}"
 doc.beans.BaseEventQuery.finalMaxTermThreshold: "${warehouse.defaults.finalMaxTermThreshold}"
 doc.beans.BaseEventQuery.fullTableScanEnabled: "${warehouse.defaults.fullTableScanEnabled}"
 doc.beans.BaseEventQuery.hdfsSiteConfigURLs: "${warehouse.defaults.hdfsSiteConfigURLs}"
+=======
+doc.beans.BaseEventQuery.eventPerDayThreshold: 40000
+doc.beans.BaseEventQuery.finalMaxTermThreshold: 2000
+doc.beans.BaseEventQuery.fullTableScanEnabled: false
+doc.beans.BaseEventQuery.hdfsSiteConfigURLs: "file:///etc/hadoop/conf/core-site.xml,file:///etc/hadoop/conf/hdfs-site.xml"
+>>>>>>> SECOND
 doc.beans.BaseEventQuery.includeDataTypeAsField: false
 doc.beans.BaseEventQuery.includeHierarchyFields: false
+<<<<<<< FIRST
 doc.beans.BaseEventQuery.indexLookupThreads: "${warehouse.defaults.indexLookupThreads}"
+=======
+doc.beans.BaseEventQuery.indexLookupThreads: 100
+>>>>>>> SECOND
 doc.beans.BaseEventQuery.indexOnlyFilterFunctionsEnabled: false
+<<<<<<< FIRST
 doc.beans.BaseEventQuery.indexTableName: "${warehouse.tables.index.name}"
 doc.beans.BaseEventQuery.initialMaxTermThreshold: "${warehouse.defaults.initialMaxTermThreshold}"
 doc.beans.BaseEventQuery.ivaratorCacheBufferSize: "${warehouse.defaults.ivaratorCacheBufferSize}"
@@ -247,9 +674,30 @@ doc.beans.BaseEventQuery.ivaratorCacheScanPersistThreshold: "${warehouse.default
 doc.beans.BaseEventQuery.ivaratorCacheScanTimeoutMinutes: "${warehouse.defaults.ivaratorCacheScanTimeoutMinutes}"
 doc.beans.BaseEventQuery.ivaratorFstHdfsBaseURIs: "${warehouse.defaults.ivaratorFstHdfsBaseURIs}"
 doc.beans.BaseEventQuery.ivaratorMaxOpenFiles: "${warehouse.defaults.ivaratorMaxOpenFiles}"
+=======
+doc.beans.BaseEventQuery.indexTableName: "${table.name.shardIndex}"
+doc.beans.BaseEventQuery.initialMaxTermThreshold: 2000
+doc.beans.BaseEventQuery.ivaratorCacheBufferSize: 10000
+doc.beans.BaseEventQuery.ivaratorCacheScanPersistThreshold: 100000
+doc.beans.BaseEventQuery.ivaratorCacheScanTimeoutMinutes: 60
+doc.beans.BaseEventQuery.ivaratorFstHdfsBaseURIs: "hdfs:///IvaratorCache"
+doc.beans.BaseEventQuery.ivaratorMaxOpenFiles: 100
+>>>>>>> SECOND
+<<<<<<< FIRST
+=======
+doc.beans.BaseEventQuery.lazySetMechanismEnabled: false
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.BaseEventQuery.logTimingDetails: true
+=======
+doc.beans.BaseEventQuery.logTimingDetails: false
+>>>>>>> SECOND
 doc.beans.BaseEventQuery.logicDescription: "Retrieve sharded events/documents, leveraging the global index tables as needed"
+<<<<<<< FIRST
 doc.beans.BaseEventQuery.maxConcurrentTasks: 10
+=======
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.BaseEventQuery.maxDepthThreshold: "${warehouse.defaults.maxDepthThreshold}"
 doc.beans.BaseEventQuery.maxEvaluationPipelines: "${warehouse.defaults.maxEvaluationPipelines}"
 doc.beans.BaseEventQuery.maxFieldIndexRangeSplit: "${warehouse.defaults.maxFieldIndexRangeSplit}"
@@ -259,135 +707,342 @@ doc.beans.BaseEventQuery.maxOrExpansionFstThreshold: "${warehouse.defaults.maxOr
 doc.beans.BaseEventQuery.maxOrExpansionThreshold: "${warehouse.defaults.maxOrExpansionThreshold}"
 doc.beans.BaseEventQuery.maxOrRangeThreshold: "${warehouse.defaults.maxOrRangeThreshold}"
 doc.beans.BaseEventQuery.maxPipelineCachedResults: "${warehouse.defaults.maxPipelineCachedResults}"
+=======
+doc.beans.BaseEventQuery.maxDepthThreshold: 2000
+doc.beans.BaseEventQuery.maxEvaluationPipelines: 16
+doc.beans.BaseEventQuery.maxFieldIndexRangeSplit: 16
+doc.beans.BaseEventQuery.maxIndexScanTimeMillis: 3.1536E10
+doc.beans.BaseEventQuery.maxIvaratorSources: 20
+doc.beans.BaseEventQuery.maxOrExpansionFstThreshold: 750
+doc.beans.BaseEventQuery.maxOrExpansionThreshold: 500
+doc.beans.BaseEventQuery.maxOrRangeThreshold: 10
+doc.beans.BaseEventQuery.maxPipelineCachedResults: 16
+>>>>>>> SECOND
 doc.beans.BaseEventQuery.maxResults: -1
+<<<<<<< FIRST
 doc.beans.BaseEventQuery.maxUnfieldedExpansionThreshold: "${warehouse.defaults.maxUnfieldedExpansionThreshold}"
 doc.beans.BaseEventQuery.maxValueExpansionThreshold: "${warehouse.defaults.maxValueExpansionThreshold}"
 doc.beans.BaseEventQuery.metadataTableName: "${warehouse.tables.metadata.name}"
+=======
+doc.beans.BaseEventQuery.maxUnfieldedExpansionThreshold: 50
+doc.beans.BaseEventQuery.maxValueExpansionThreshold: 50
+doc.beans.BaseEventQuery.metadataTableName: "${table.name.metadata}"
+>>>>>>> SECOND
 doc.beans.BaseEventQuery.minimumSelectivity: 0.2
+<<<<<<< FIRST
 doc.beans.BaseEventQuery.modelName: "${warehouse.defaults.modelName}"
 doc.beans.BaseEventQuery.modelTableName: "${warehouse.tables.model.name}"
+=======
+doc.beans.BaseEventQuery.modelName: "DATAWAVE"
+doc.beans.BaseEventQuery.modelTableName: "${table.name.metadata}"
+>>>>>>> SECOND
+<<<<<<< FIRST
+=======
+doc.beans.BaseEventQuery.querySyntaxParsers.JEXL: null
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.BaseEventQuery.queryThreads: "${warehouse.defaults.queryThreads}"
+=======
+doc.beans.BaseEventQuery.queryThreads: 100
+>>>>>>> SECOND
+<<<<<<< FIRST
+=======
+doc.beans.BaseEventQuery.realmSuffixExclusionPatterns: "<.*>$"
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.BaseEventQuery.reverseIndexTableName: "${warehouse.tables.reverseIndex.name}"
+=======
+doc.beans.BaseEventQuery.reverseIndexTableName: "${table.name.shardReverseIndex}"
+>>>>>>> SECOND
 doc.beans.BaseEventQuery.sendTimingToStatsd: false
+<<<<<<< FIRST
 doc.beans.BaseEventQuery.shardsPerDayThreshold: "${warehouse.defaults.shardsPerDayThreshold}"
 doc.beans.BaseEventQuery.statsdHost: "${warehouse.statsd.host}"
 doc.beans.BaseEventQuery.statsdPort: "${warehouse.statsd.port}"
 doc.beans.BaseEventQuery.tableName: "${warehouse.tables.shard.name}"
+=======
+doc.beans.BaseEventQuery.shardsPerDayThreshold: 20
+doc.beans.BaseEventQuery.statsdHost: "localhost"
+doc.beans.BaseEventQuery.statsdPort: 8125
+doc.beans.BaseEventQuery.tableName: "${table.name.shard}"
+>>>>>>> SECOND
+<<<<<<< FIRST
+=======
+doc.beans.BaseEventQuery.tfAggregationThresholdMs: -1
+>>>>>>> SECOND
 doc.beans.BaseEventQuery.useEnrichers: true
 doc.beans.BaseEventQuery.useFilters: false
+<<<<<<< FIRST
 doc.beans.BaseEventQuery.zookeeperConfig: "${warehouse.accumulo.zookeepers}"
+=======
+doc.beans.BaseEventQuery.zookeeperConfig: ""
+>>>>>>> SECOND
+<<<<<<< FIRST
+=======
+doc.beans.BaseModelEventQuery.modelName: "DATAWAVE"
+doc.beans.BaseModelEventQuery.modelTableName: "${table.name.metadata}"
+>>>>>>> SECOND
 doc.beans.ContentQuery.auditType: "NONE"
+<<<<<<< FIRST
 doc.beans.ContentQuery.checkpointable: "${warehouse.defaults.checkpointable}"
+=======
+>>>>>>> SECOND
 doc.beans.ContentQuery.logicDescription: "Query that returns a document given the document identifier"
 doc.beans.ContentQuery.maxResults: -1
 doc.beans.ContentQuery.maxWork: -1
+<<<<<<< FIRST
 doc.beans.ContentQuery.tableName: "${warehouse.tables.shard.name}"
+=======
+doc.beans.ContentQuery.tableName: "${table.name.shard}"
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.CountQuery.checkpointable: "${warehouse.defaults.checkpointable}"
+=======
+>>>>>>> SECOND
 doc.beans.CountQuery.logicDescription: "Retrieve event/document counts based on your search criteria"
 doc.beans.DefaultQueryPlanner.compressOptionMappings: true
 doc.beans.DefaultQueryPlanner[0]: 2611
 doc.beans.DefaultQueryPlanner[1]: true
 doc.beans.DiscoveryQuery.allowLeadingWildcard: true
 doc.beans.DiscoveryQuery.auditType: "NONE"
+<<<<<<< FIRST
 doc.beans.DiscoveryQuery.checkpointable: "${warehouse.defaults.checkpointable}"
+=======
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.DiscoveryQuery.fullTableScanEnabled: "${warehouse.defaults.fullTableScanEnabled}"
 doc.beans.DiscoveryQuery.indexTableName: "${warehouse.tables.index.name}"
+=======
+doc.beans.DiscoveryQuery.fullTableScanEnabled: false
+doc.beans.DiscoveryQuery.indexTableName: "${table.name.shardIndex}"
+>>>>>>> SECOND
 doc.beans.DiscoveryQuery.logicDescription: "Discovery query that returns information from the index about the supplied term(s)"
 doc.beans.DiscoveryQuery.maxResults: -1
 doc.beans.DiscoveryQuery.maxWork: -1
+<<<<<<< FIRST
 doc.beans.DiscoveryQuery.metadataTableName: "${warehouse.tables.metadata.name}"
 doc.beans.DiscoveryQuery.modelName: "${warehouse.defaults.modelName}"
 doc.beans.DiscoveryQuery.modelTableName: "${warehouse.tables.model.name}"
 doc.beans.DiscoveryQuery.reverseIndexTableName: "${warehouse.tables.reverseIndex.name}"
 doc.beans.DiscoveryQuery.tableName: "${warehouse.tables.shard.name}"
+=======
+doc.beans.DiscoveryQuery.metadataTableName: "${table.name.metadata}"
+doc.beans.DiscoveryQuery.modelName: "DATAWAVE"
+doc.beans.DiscoveryQuery.modelTableName: "${table.name.metadata}"
+doc.beans.DiscoveryQuery.reverseIndexTableName: "${table.name.shardReverseIndex}"
+doc.beans.DiscoveryQuery.tableName: "${table.name.shardIndex}"
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.EdgeEventQuery.checkpointable: "${warehouse.defaults.checkpointable}"
+=======
+>>>>>>> SECOND
 doc.beans.EdgeEventQuery.edgeModelName: "DATAWAVE_EDGE"
 doc.beans.EdgeEventQuery.logicDescription: "Use results of an EdgeQuery to obtain events/documents that created the given edge"
+<<<<<<< FIRST
 doc.beans.EdgeEventQuery.modelTableName: "${warehouse.tables.model.name}"
+=======
+doc.beans.EdgeEventQuery.modelTableName: "${table.name.metadata}"
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.ErrorCountQuery.checkpointable: "${warehouse.defaults.checkpointable}"
+=======
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.ErrorCountQuery.indexTableName: "${warehouse.errorTables.index.name}"
+=======
+doc.beans.ErrorCountQuery.indexTableName: "${table.name.errors.shardIndex}"
+>>>>>>> SECOND
 doc.beans.ErrorCountQuery.logicDescription: "Retrieve counts of errored events based on your search criteria"
+<<<<<<< FIRST
 doc.beans.ErrorCountQuery.metadataTableName: "${warehouse.errorTables.metadata.name}"
 doc.beans.ErrorCountQuery.reverseIndexTableName: "${warehouse.errorTables.index.name}"
 doc.beans.ErrorCountQuery.tableName: "${warehouse.errorTables.shard.name}"
+=======
+doc.beans.ErrorCountQuery.metadataTableName: "${table.name.errors.metadata}"
+doc.beans.ErrorCountQuery.reverseIndexTableName: "${table.name.errors.shardReverseIndex}"
+doc.beans.ErrorCountQuery.tableName: "${table.name.errors.shard}"
+>>>>>>> SECOND
 doc.beans.ErrorDiscoveryQuery.allowLeadingWildcard: true
 doc.beans.ErrorDiscoveryQuery.auditType: "NONE"
+<<<<<<< FIRST
 doc.beans.ErrorDiscoveryQuery.checkpointable: "${warehouse.defaults.checkpointable}"
+=======
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.ErrorDiscoveryQuery.fullTableScanEnabled: "${warehouse.defaults.fullTableScanEnabled}"
 doc.beans.ErrorDiscoveryQuery.indexTableName: "${warehouse.errorTables.index.name}"
+=======
+doc.beans.ErrorDiscoveryQuery.fullTableScanEnabled: false
+doc.beans.ErrorDiscoveryQuery.indexTableName: "${table.name.errors.shardIndex}"
+>>>>>>> SECOND
 doc.beans.ErrorDiscoveryQuery.logicDescription: "Discovery query that returns information from the ingest errors index about the supplied term(s)"
 doc.beans.ErrorDiscoveryQuery.maxResults: -1
 doc.beans.ErrorDiscoveryQuery.maxWork: -1
+<<<<<<< FIRST
 doc.beans.ErrorDiscoveryQuery.metadataTableName: "${warehouse.errorTables.metadata.name}"
 doc.beans.ErrorDiscoveryQuery.modelName: "${warehouse.defaults.modelName}"
 doc.beans.ErrorDiscoveryQuery.modelTableName: "${warehouse.errorTables.model.name}"
 doc.beans.ErrorDiscoveryQuery.reverseIndexTableName: "${warehouse.errorTables.reverseIndex.name}"
 doc.beans.ErrorDiscoveryQuery.tableName: "${warehouse.errorTables.shard.name}"
+=======
+doc.beans.ErrorDiscoveryQuery.metadataTableName: "${table.name.errors.metadata}"
+doc.beans.ErrorDiscoveryQuery.modelName: "DATAWAVE"
+doc.beans.ErrorDiscoveryQuery.modelTableName: "${table.name.metadata}"
+doc.beans.ErrorDiscoveryQuery.reverseIndexTableName: "${table.name.errors.shardReverseIndex}"
+doc.beans.ErrorDiscoveryQuery.tableName: "${table.name.errors.shardIndex}"
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.ErrorEventQuery.checkpointable: "${warehouse.defaults.checkpointable}"
+=======
+>>>>>>> SECOND
 doc.beans.ErrorEventQuery.dateIndexTableName: ""
 doc.beans.ErrorEventQuery.includeHierarchyFields: false
+<<<<<<< FIRST
 doc.beans.ErrorEventQuery.indexTableName: "${warehouse.errorTables.index.name}"
+=======
+doc.beans.ErrorEventQuery.indexTableName: "${table.name.errors.shardIndex}"
+>>>>>>> SECOND
 doc.beans.ErrorEventQuery.logicDescription: "Retrieve events/documents that encountered one or more errors during ingest"
+<<<<<<< FIRST
 doc.beans.ErrorEventQuery.metadataTableName: "${warehouse.errorTables.metadata.name}"
 doc.beans.ErrorEventQuery.reverseIndexTableName: "${warehouse.errorTables.reverseIndex.name}"
 doc.beans.ErrorEventQuery.tableName: "${warehouse.errorTables.shard.name}"
+=======
+doc.beans.ErrorEventQuery.metadataTableName: "${table.name.errors.metadata}"
+doc.beans.ErrorEventQuery.reverseIndexTableName: "${table.name.errors.shardReverseIndex}"
+doc.beans.ErrorEventQuery.tableName: "${table.name.errors.shard}"
+>>>>>>> SECOND
 doc.beans.ErrorFieldIndexCountQuery.auditType: "NONE"
+<<<<<<< FIRST
 doc.beans.ErrorFieldIndexCountQuery.checkpointable: false
+=======
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.ErrorFieldIndexCountQuery.indexTableName: "${warehouse.errorTables.index.name}"
+=======
+doc.beans.ErrorFieldIndexCountQuery.indexTableName: "${table.name.errors.shardIndex}"
+>>>>>>> SECOND
 doc.beans.ErrorFieldIndexCountQuery.logicDescription: "FieldIndex count query (experimental)"
 doc.beans.ErrorFieldIndexCountQuery.maxResults: -1
 doc.beans.ErrorFieldIndexCountQuery.maxUniqueValues: 20000
 doc.beans.ErrorFieldIndexCountQuery.maxWork: -1
+<<<<<<< FIRST
 doc.beans.ErrorFieldIndexCountQuery.metadataTableName: "${warehouse.errorTables.metadata.name}"
+=======
+doc.beans.ErrorFieldIndexCountQuery.metadataTableName: "${table.name.errors.metadata}"
+>>>>>>> SECOND
 doc.beans.ErrorFieldIndexCountQuery.modelName: "DATAWAVE"
+<<<<<<< FIRST
 doc.beans.ErrorFieldIndexCountQuery.modelTableName: "${warehouse.errorTables.model.name}"
 doc.beans.ErrorFieldIndexCountQuery.queryThreads: "${warehouse.defaults.queryThreads}"
 doc.beans.ErrorFieldIndexCountQuery.reverseIndexTableName: "${warehouse.errorTables.reverseIndex.name}"
 doc.beans.ErrorFieldIndexCountQuery.tableName: "${warehouse.errorTables.shard.name}"
+=======
+doc.beans.ErrorFieldIndexCountQuery.modelTableName: "${table.name.metadata}"
+doc.beans.ErrorFieldIndexCountQuery.queryThreads: 100
+doc.beans.ErrorFieldIndexCountQuery.reverseIndexTableName: "${table.name.errors.shardReverseIndex}"
+doc.beans.ErrorFieldIndexCountQuery.tableName: "${table.name.errors.shard}"
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.EventQuery.checkpointable: "${warehouse.defaults.checkpointable}"
+=======
+>>>>>>> SECOND
 doc.beans.EventQuery.logicDescription: "Query the sharded event/document schema, leveraging the global index tables as needed"
 doc.beans.FacetedQuery.auditType: "NONE"
+<<<<<<< FIRST
 doc.beans.FacetedQuery.checkpointable: "${warehouse.defaults.checkpointable}"
+=======
+>>>>>>> SECOND
 doc.beans.FacetedQuery.facetHashTableName: "datawave.facetHashes"
 doc.beans.FacetedQuery.facetMetadataTableName: "datawave.facetMetadata"
 doc.beans.FacetedQuery.facetTableName: "datawave.facets"
 doc.beans.FacetedQuery.facetedSearchType: "FIELD_VALUE_FACETS"
+<<<<<<< FIRST
+=======
+doc.beans.FacetedQuery.fullTableScanEnabled: false
+>>>>>>> SECOND
 doc.beans.FacetedQuery.logicDescription: "Faceted search over indexed fields, returning aggregate counts for field values"
 doc.beans.FacetedQuery.maximumFacetGrouping: 200
 doc.beans.FacetedQuery.minimumFacet: 1
+<<<<<<< FIRST
+=======
+doc.beans.FacetedQuery.querySyntaxParsers.JEXL: null
+>>>>>>> SECOND
 doc.beans.FacetedQuery.streaming: true
 doc.beans.FieldIndexCountQuery.auditType: "NONE"
+<<<<<<< FIRST
 doc.beans.FieldIndexCountQuery.checkpointable: false
+=======
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.FieldIndexCountQuery.indexTableName: "${warehouse.tables.index.name}"
+=======
+doc.beans.FieldIndexCountQuery.indexTableName: "${table.name.shardIndex}"
+>>>>>>> SECOND
 doc.beans.FieldIndexCountQuery.logicDescription: "Indexed Fields Only:  Given FIELDNAME returns counts for each unique value. Given FIELDNAME:FIELDVALUE returns count for only that value."
 doc.beans.FieldIndexCountQuery.maxResults: -1
 doc.beans.FieldIndexCountQuery.maxUniqueValues: 20000
 doc.beans.FieldIndexCountQuery.maxWork: -1
+<<<<<<< FIRST
 doc.beans.FieldIndexCountQuery.metadataTableName: "${warehouse.tables.metadata.name}"
+=======
+doc.beans.FieldIndexCountQuery.metadataTableName: "${table.name.metadata}"
+>>>>>>> SECOND
 doc.beans.FieldIndexCountQuery.modelName: "DATAWAVE"
+<<<<<<< FIRST
 doc.beans.FieldIndexCountQuery.modelTableName: "${warehouse.tables.model.name}"
 doc.beans.FieldIndexCountQuery.queryThreads: "${warehouse.defaults.queryThreads}"
 doc.beans.FieldIndexCountQuery.reverseIndexTableName: "${warehouse.tables.reverseIndex.name}"
 doc.beans.FieldIndexCountQuery.tableName: "${warehouse.tables.shard.name}"
+=======
+doc.beans.FieldIndexCountQuery.modelTableName: "${table.name.metadata}"
+doc.beans.FieldIndexCountQuery.queryThreads: 100
+doc.beans.FieldIndexCountQuery.reverseIndexTableName: "${table.name.shardReverseIndex}"
+doc.beans.FieldIndexCountQuery.tableName: "${table.name.shard}"
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.HitHighlights.accumuloPassword: "${warehouse.accumulo.password}"
+=======
+>>>>>>> SECOND
 doc.beans.HitHighlights.auditType: "NONE"
+<<<<<<< FIRST
 doc.beans.HitHighlights.checkpointable: "${warehouse.defaults.checkpointable}"
 doc.beans.HitHighlights.dateIndexTableName: "${warehouse.tables.dateIndex.name}"
 doc.beans.HitHighlights.defaultDateTypeName: "EVENT"
+=======
+>>>>>>> SECOND
 doc.beans.HitHighlights.eventPerDayThreshold: 40000
+<<<<<<< FIRST
 doc.beans.HitHighlights.finalMaxTermThreshold: "${warehouse.defaults.finalMaxTermThreshold}"
 doc.beans.HitHighlights.fullTableScanEnabled: "${warehouse.defaults.fullTableScanEnabled}"
 doc.beans.HitHighlights.hdfsSiteConfigURLs: "${warehouse.defaults.hdfsSiteConfigURLs}"
+=======
+doc.beans.HitHighlights.finalMaxTermThreshold: 2000
+doc.beans.HitHighlights.fullTableScanEnabled: false
+doc.beans.HitHighlights.hdfsSiteConfigURLs: "file:///etc/hadoop/conf/core-site.xml,file:///etc/hadoop/conf/hdfs-site.xml"
+>>>>>>> SECOND
 doc.beans.HitHighlights.includeDataTypeAsField: false
 doc.beans.HitHighlights.includeGroupingContext: false
+<<<<<<< FIRST
 doc.beans.HitHighlights.indexTableName: "${warehouse.tables.index.name}"
 doc.beans.HitHighlights.initialMaxTermThreshold: "${warehouse.defaults.initialMaxTermThreshold}"
+=======
+doc.beans.HitHighlights.indexTableName: "${table.name.shardIndex}"
+doc.beans.HitHighlights.initialMaxTermThreshold: 2000
+>>>>>>> SECOND
 doc.beans.HitHighlights.ivaratorCacheBufferSize: 10000
 doc.beans.HitHighlights.ivaratorCacheScanPersistThreshold: 100000
+<<<<<<< FIRST
 doc.beans.HitHighlights.ivaratorCacheScanTimeoutMinutes: "${warehouse.defaults.ivaratorCacheScanTimeoutMinutes}"
 doc.beans.HitHighlights.ivaratorFstHdfsBaseURIs: "${warehouse.defaults.ivaratorFstHdfsBaseURIs}"
 doc.beans.HitHighlights.ivaratorMaxOpenFiles: "${warehouse.defaults.ivaratorMaxOpenFiles}"
+=======
+doc.beans.HitHighlights.ivaratorCacheScanTimeoutMinutes: 60
+doc.beans.HitHighlights.ivaratorFstHdfsBaseURIs: "hdfs:///IvaratorCache"
+doc.beans.HitHighlights.ivaratorMaxOpenFiles: 100
+>>>>>>> SECOND
 doc.beans.HitHighlights.logicDescription: "Fast boolean query over indexed fields, only returning fields queried on"
+<<<<<<< FIRST
 doc.beans.HitHighlights.maxDepthThreshold: "${warehouse.defaults.maxDepthThreshold}"
 doc.beans.HitHighlights.maxEvaluationPipelines: "${warehouse.defaults.maxEvaluationPipelines}"
 doc.beans.HitHighlights.maxFieldIndexRangeSplit: "${warehouse.defaults.maxFieldIndexRangeSplit}"
@@ -400,556 +1055,304 @@ doc.beans.HitHighlights.maxRangesPerRangeIvarator: "${warehouse.defaults.maxRang
 doc.beans.HitHighlights.maxUnfieldedExpansionThreshold: "${warehouse.defaults.maxUnfieldedExpansionThreshold}"
 doc.beans.HitHighlights.maxValueExpansionThreshold: "${warehouse.defaults.maxValueExpansionThreshold}"
 doc.beans.HitHighlights.metadataTableName: "${warehouse.tables.metadata.name}"
+=======
+doc.beans.HitHighlights.maxDepthThreshold: 2000
+doc.beans.HitHighlights.maxEvaluationPipelines: 16
+doc.beans.HitHighlights.maxFieldIndexRangeSplit: 16
+doc.beans.HitHighlights.maxOrExpansionFstThreshold: 750
+doc.beans.HitHighlights.maxOrExpansionThreshold: 500
+doc.beans.HitHighlights.maxOrRangeIvarators: 10
+doc.beans.HitHighlights.maxOrRangeThreshold: 10
+doc.beans.HitHighlights.maxPipelineCachedResults: 16
+doc.beans.HitHighlights.maxRangesPerRangeIvarator: 5
+doc.beans.HitHighlights.maxUnfieldedExpansionThreshold: 50
+doc.beans.HitHighlights.maxValueExpansionThreshold: 50
+doc.beans.HitHighlights.metadataTableName: "${table.name.metadata}"
+>>>>>>> SECOND
 doc.beans.HitHighlights.minimumSelectivity: 0.2
+<<<<<<< FIRST
+=======
+doc.beans.HitHighlights.querySyntaxParsers.JEXL: null
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.HitHighlights.queryThreads: "${warehouse.defaults.indexLookupThreads}"
 doc.beans.HitHighlights.reverseIndexTableName: "${warehouse.tables.reverseIndex.name}"
 doc.beans.HitHighlights.shardsPerDayThreshold: "${warehouse.defaults.shardsPerDayThreshold}"
 doc.beans.HitHighlights.tableName: "${warehouse.tables.shard.name}"
+=======
+doc.beans.HitHighlights.queryThreads: 100
+doc.beans.HitHighlights.reverseIndexTableName: "${table.name.shardReverseIndex}"
+doc.beans.HitHighlights.shardsPerDayThreshold: 20
+doc.beans.HitHighlights.tableName: "${table.name.shard}"
+>>>>>>> SECOND
 doc.beans.HitHighlights.useEnrichers: false
+<<<<<<< FIRST
 doc.beans.HitHighlights.zookeeperConfig: "${warehouse.accumulo.zookeepers}"
+=======
+doc.beans.HitHighlights.zookeeperConfig: ""
+>>>>>>> SECOND
+<<<<<<< FIRST
+=======
+doc.beans.IdTranslatorConfiguration.beginDate: 20100101
+doc.beans.IdTranslatorConfiguration.columnVisibility: ""
+>>>>>>> SECOND
 doc.beans.IndexStatsQuery.auditType: "NONE"
 doc.beans.IndexStatsQuery.selectorExtractor: null
+<<<<<<< FIRST
 doc.beans.InternalQueryMetricsQuery.collectQueryMetrics: false
+=======
+doc.beans.LookupUUIDConfiguration.beginDate: 20100101
+doc.beans.LookupUUIDConfiguration.columnVisibility: ""
+>>>>>>> SECOND
 doc.beans.LuceneUUIDEventQuery.auditType: "NONE"
+<<<<<<< FIRST
 doc.beans.LuceneUUIDEventQuery.checkpointable: "${warehouse.defaults.checkpointable}"
+=======
+>>>>>>> SECOND
 doc.beans.LuceneUUIDEventQuery.logicDescription: "Composite query logic that retrieves records from the event and error tables, based on known UUID fields, ie, those configured via UUIDTypeList in QueryLogicFactory.xml"
 doc.beans.LuceneUUIDEventQuery.queryLogics.ErrorEventQuery.auditType: "NONE"
 doc.beans.LuceneUUIDEventQuery.queryLogics.ErrorEventQuery.connPoolName: "UUID"
+<<<<<<< FIRST
 doc.beans.LuceneUUIDEventQuery.queryLogics.ErrorEventQuery.dateIndexTableName: "${warehouse.errorTables.dateIndex.name}"
 doc.beans.LuceneUUIDEventQuery.queryLogics.ErrorEventQuery.indexTableName: "${warehouse.errorTables.index.name}"
+=======
+doc.beans.LuceneUUIDEventQuery.queryLogics.ErrorEventQuery.dateIndexTableName: ""
+doc.beans.LuceneUUIDEventQuery.queryLogics.ErrorEventQuery.indexTableName: "${table.name.errors.shardIndex}"
+>>>>>>> SECOND
 doc.beans.LuceneUUIDEventQuery.queryLogics.ErrorEventQuery.logicDescription: "Lucene query for event/document UUIDs for events that encountered errors at ingest time"
+<<<<<<< FIRST
+=======
+doc.beans.LuceneUUIDEventQuery.queryLogics.ErrorEventQuery.mandatoryQuerySyntax: "LUCENE-UUID"
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.LuceneUUIDEventQuery.queryLogics.ErrorEventQuery.metadataTableName: "${warehouse.errorTables.metadata.name}"
 doc.beans.LuceneUUIDEventQuery.queryLogics.ErrorEventQuery.reverseIndexTableName: "${warehouse.errorTables.reverseIndex.name}"
 doc.beans.LuceneUUIDEventQuery.queryLogics.ErrorEventQuery.tableName: "${warehouse.errorTables.shard.name}"
+=======
+doc.beans.LuceneUUIDEventQuery.queryLogics.ErrorEventQuery.metadataTableName: "${table.name.errors.metadata}"
+doc.beans.LuceneUUIDEventQuery.queryLogics.ErrorEventQuery.reverseIndexTableName: "${table.name.errors.shardReverseIndex}"
+doc.beans.LuceneUUIDEventQuery.queryLogics.ErrorEventQuery.tableName: "${table.name.errors.shard}"
+>>>>>>> SECOND
 doc.beans.LuceneUUIDEventQuery.queryLogics.EventQuery.auditType: "NONE"
 doc.beans.LuceneUUIDEventQuery.queryLogics.EventQuery.connPoolName: "UUID"
 doc.beans.LuceneUUIDEventQuery.queryLogics.EventQuery.logicDescription: "Lucene query for event/document UUIDs"
+<<<<<<< FIRST
+=======
+doc.beans.LuceneUUIDEventQuery.queryLogics.EventQuery.mandatoryQuerySyntax: "LUCENE-UUID"
+>>>>>>> SECOND
 doc.beans.LuceneUUIDEventQuery.selectorExtractor: null
+<<<<<<< FIRST
+=======
+doc.beans.MyRemoteUserOps.queryServiceHost: "localhost"
+doc.beans.MyRemoteUserOps.queryServicePort: 8443
+doc.beans.MyRemoteUserOps.queryServiceScheme: "https"
+doc.beans.MyRemoteUserOps.queryServiceURI: "/DataWave/Security/User/"
+doc.beans.QueryLogicFactoryConfiguration.maxPageSize: 10000
+doc.beans.QueryLogicFactoryConfiguration.pageByteTrigger: 0
+>>>>>>> SECOND
 doc.beans.QueryMetricsQuery.auditType: "NONE"
+<<<<<<< FIRST
 doc.beans.QueryMetricsQuery.checkpointable: "${warehouse.defaults.checkpointable}"
 doc.beans.QueryMetricsQuery.collectQueryMetrics: true
+=======
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.QueryMetricsQuery.dateIndexTableName: "${warehouse.metricTables.dateIndex.name}"
+=======
+doc.beans.QueryMetricsQuery.dateIndexTableName: "${table.name.queryMetrics.dateIndex}"
+>>>>>>> SECOND
 doc.beans.QueryMetricsQuery.includeHierarchyFields: false
+<<<<<<< FIRST
 doc.beans.QueryMetricsQuery.indexTableName: "${warehouse.metricTables.index.name}"
+=======
+doc.beans.QueryMetricsQuery.indexTableName: "${table.name.queryMetrics.shardIndex}"
+>>>>>>> SECOND
 doc.beans.QueryMetricsQuery.logicDescription: "Retrieve query metrics based on the given search term(s)"
+<<<<<<< FIRST
 doc.beans.QueryMetricsQuery.metadataTableName: "${warehouse.metricTables.metadata.name}"
+=======
+doc.beans.QueryMetricsQuery.metadataTableName: "${table.name.queryMetrics.metadata}"
+>>>>>>> SECOND
 doc.beans.QueryMetricsQuery.modelName: "NONE"
+<<<<<<< FIRST
 doc.beans.QueryMetricsQuery.modelTableName: "${warehouse.metricTables.model.name}"
 doc.beans.QueryMetricsQuery.reverseIndexTableName: "${warehouse.metricTables.reverseIndex.name}"
 doc.beans.QueryMetricsQuery.tableName: "${warehouse.metricTables.shard.name}"
+=======
+doc.beans.QueryMetricsQuery.modelTableName: "${table.name.queryMetrics.metadata}"
+doc.beans.QueryMetricsQuery.reverseIndexTableName: "${table.name.queryMetrics.shardReverseIndex}"
+doc.beans.QueryMetricsQuery.tableName: "${table.name.queryMetrics.shard}"
+>>>>>>> SECOND
+<<<<<<< FIRST
+=======
+doc.beans.RemoteEventQuery.auditType: "NONE"
+doc.beans.RemoteEventQuery.checkpointable: false
+doc.beans.RemoteEventQuery.logicDescription: "Retrieve sharded events/documents, leveraging the global index tables as needed"
+doc.beans.RemoteEventQuery.maxResults: -1
+doc.beans.RemoteEventQuery.remoteQueryLogic: "EventQuery"
+doc.beans.RemoteEventQuery.tableName: "${table.name.shard}"
+doc.beans.RemoteQueryService.queryServiceHost: "query"
+doc.beans.RemoteQueryService.queryServicePort: 8443
+doc.beans.RemoteQueryService.queryServiceScheme: "https"
+doc.beans.RemoteQueryService.queryServiceURI: "/query/v1/"
+doc.beans.TLDEventQuery.collapseUids: false
+doc.beans.TLDEventQuery.indexFilteringClassNames: "datawave.query.function.NormalizedVersionPredicate"
+>>>>>>> SECOND
 doc.beans.TermFrequencyQuery.auditType: "NONE"
 doc.beans.TermFrequencyQuery.logicDescription: "Query that returns data from the term frequency query table"
 doc.beans.TermFrequencyQuery.maxResults: -1
+<<<<<<< FIRST
 doc.beans.TermFrequencyQuery.maxWork: -14
 doc.beans.TermFrequencyQuery.tableName: "${warehouse.tables.shard.name}"
+=======
+doc.beans.TermFrequencyQuery.maxWork: -1
+doc.beans.TermFrequencyQuery.tableName: "${table.name.shard}"
+>>>>>>> SECOND
+<<<<<<< FIRST
+=======
+doc.beans.TimedVisitorManager.debugEnabled: false
+doc.beans.TimedVisitorManager.validateAst: false
+>>>>>>> SECOND
 doc.beans.TokenizedLuceneToJexlQueryParser.tokenizeUnfieldedQueries: true
+<<<<<<< FIRST
+=======
+doc.beans.skipTokenizeFields: "DOMETA"
+doc.beans.tokenizeFields: "CONTENT"
+>>>>>>> SECOND
 
 Refs (key: ref)
 ----------------------------------------
+<<<<<<< FIRST
 doc.beans.BaseEventQuery.contentFieldNames: baseEventQueryContentFieldNames
+=======
+>>>>>>> SECOND
 doc.beans.BaseEventQuery.dateIndexHelperFactory: dateIndexHelperFactory
+<<<<<<< FIRST
 doc.beans.BaseEventQuery.enricherClassNames: baseEventQueryEnricherClassNames
+=======
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.BaseEventQuery.eventQueryDataDecoratorTransformer: baseEventQueryEventQueryDataDecoratorTransformer
+=======
+doc.beans.BaseEventQuery.eventQueryDataDecoratorTransformer: EventQueryDataDecoratorTransformer
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.BaseEventQuery.filterClassNames: baseEventQueryFilterClassNames
+=======
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.BaseEventQuery.filterOptions: baseEventQueryFilterOptions
 doc.beans.BaseEventQuery.hierarchyFieldOptions: baseEventQueryHierarchyFieldOptions
 doc.beans.BaseEventQuery.ivaratorCacheDirConfigs: baseEventQueryIvaratorCacheDirConfigs
+=======
+doc.beans.BaseEventQuery.filterOptions: BaseEventQueryFilterOptions
+doc.beans.BaseEventQuery.hierarchyFieldOptions: BaseEventQueryHierarchyFieldOptions
+doc.beans.BaseEventQuery.ivaratorCacheDirConfigs: IvaratorCacheDirConfigs
+>>>>>>> SECOND
 doc.beans.BaseEventQuery.metadataHelperFactory: metadataHelperFactory
 doc.beans.BaseEventQuery.queryPlanner: DefaultQueryPlanner
+<<<<<<< FIRST
 doc.beans.BaseEventQuery.querySyntaxParsers: baseEventQuerySyntaxParsers
 doc.beans.BaseEventQuery.realmSuffixExclusionPatterns: baseEventQueryRealmSuffixExclusionPatterns
 doc.beans.BaseEventQuery.requiredRoles: baseEventQueryRequiredRoles
+=======
+>>>>>>> SECOND
 doc.beans.BaseEventQuery.selectorExtractor: DatawaveSelectorExtractor
+<<<<<<< FIRST
+=======
+doc.beans.DatawaveSelectorExtractor.luceneToJexlQueryParser: LuceneToJexlQueryParser
+>>>>>>> SECOND
 doc.beans.DefaultQueryPlanner.queryModelProviderFactory: queryModelProviderFactory
+<<<<<<< FIRST
+=======
+doc.beans.DefaultQueryPlanner.visitorManager: TimedVisitorManager
+>>>>>>> SECOND
 doc.beans.DiscoveryQuery.metadataHelperFactory: metadataHelperFactory
 doc.beans.DiscoveryQuery.selectorExtractor: DatawaveSelectorExtractor
 doc.beans.EdgeEventQuery.edgeDictionaryProvider: edgeDictionaryProvider
+<<<<<<< FIRST
 doc.beans.EdgeEventQuery.edgeModelFieldsFactory: edgeModelFieldsFactory
+=======
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.EdgeEventQuery.edgeQueryModel: edgeQueryModel
+=======
+doc.beans.EdgeEventQuery.edgeQueryModel: edgeEventQueryModel
+>>>>>>> SECOND
 doc.beans.ErrorDiscoveryQuery.metadataHelperFactory: metadataHelperFactory
 doc.beans.ErrorDiscoveryQuery.selectorExtractor: DatawaveSelectorExtractor
 doc.beans.ErrorFieldIndexCountQuery.metadataHelperFactory: metadataHelperFactory
 doc.beans.ErrorFieldIndexCountQuery.selectorExtractor: DatawaveSelectorExtractor
+<<<<<<< FIRST
 doc.beans.FacetedQuery.querySyntaxParsers: facetedQuerySyntaxParsers
+=======
+>>>>>>> SECOND
 doc.beans.FieldIndexCountQuery.metadataHelperFactory: metadataHelperFactory
 doc.beans.FieldIndexCountQuery.selectorExtractor: DatawaveSelectorExtractor
+<<<<<<< FIRST
 doc.beans.HitHighlights.dateIndexHelperFactory: dateIndexHelperFactory
+=======
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.HitHighlights.ivaratorCacheDirConfigs: hitHighlightsIvaratorCacheDirConfigs
+=======
+doc.beans.HitHighlights.ivaratorCacheDirConfigs: IvaratorCacheDirConfigs
+>>>>>>> SECOND
 doc.beans.HitHighlights.metadataHelperFactory: metadataHelperFactory
+<<<<<<< FIRST
 doc.beans.HitHighlights.querySyntaxParsers: hitHighlightsSyntaxParsers
+=======
+>>>>>>> SECOND
 doc.beans.HitHighlights.selectorExtractor: DatawaveSelectorExtractor
+<<<<<<< FIRST
 doc.beans.InternalQueryMetricsQuery.requiredRoles: internalQueryMetricsQueryRequiredRoles
+=======
+doc.beans.IdTranslatorConfiguration.uuidTypes: UUIDTypeList
+doc.beans.LookupUUIDConfiguration.uuidTypes: UUIDTypeList
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.LuceneToJexlQueryParser.allowedFunctions: allowedFunctions
 doc.beans.LuceneToJexlQueryParser.skipTokenizeUnfieldedFields: skipTokenizeUnfieldedFields
 doc.beans.LuceneToJexlUUIDQueryParser.allowedFunctions: allowedFunctions
 doc.beans.LuceneToJexlUUIDQueryParser.uuidTypes: uuidTypes
+=======
+doc.beans.LuceneToJexlQueryParser.allowedFunctions: allowedQueryFunctions
+doc.beans.LuceneToJexlQueryParser.skipTokenizeUnfieldedFields: skipTokenizeFields
+doc.beans.LuceneToJexlUUIDQueryParser.allowedFunctions: allowedQueryFunctions
+doc.beans.LuceneToJexlUUIDQueryParser.uuidTypes: UUIDTypeList
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.LuceneUUIDEventQuery.queryLogics.ErrorEventQuery.mandatoryQuerySyntax: luceneUUIDEventQueryErrorEventQueryMandatoryQuerySyntax
 doc.beans.LuceneUUIDEventQuery.queryLogics.EventQuery.mandatoryQuerySyntax: luceneUUIDEventQueryEventQueryMandatoryQuerySyntax
+=======
+doc.beans.MyRemoteUserOps.responseObjectFactory: responseObjectFactory
+>>>>>>> SECOND
 doc.beans.QueryMetricsQuery.metadataHelperFactory: metadataHelperFactory
+<<<<<<< FIRST
+=======
+doc.beans.RemoteEventQuery.remoteQueryService: RemoteQueryService
+doc.beans.RemoteEventQuery.selectorExtractor: DatawaveSelectorExtractor
+doc.beans.RemoteEventQuery.userOperations: MyRemoteUserOps
+doc.beans.RemoteQueryService.responseObjectFactory: responseObjectFactory
+doc.beans.TimedVisitorManager.validator: AstValidator
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.TokenizedLuceneToJexlQueryParser.allowedFunctions: allowedFunctions
 doc.beans.TokenizedLuceneToJexlQueryParser.skipTokenizeUnfieldedFields: skipTokenizeUnfieldedFields
 doc.beans.TokenizedLuceneToJexlQueryParser.tokenizedFields: tokenizedFields
+=======
+doc.beans.TokenizedLuceneToJexlQueryParser.allowedFunctions: allowedQueryFunctions
+doc.beans.TokenizedLuceneToJexlQueryParser.skipTokenizeUnfieldedFields: skipTokenizeFields
+doc.beans.TokenizedLuceneToJexlQueryParser.tokenizedFields: tokenizeFields
+>>>>>>> SECOND
+<<<<<<< FIRST
 doc.beans.allowedFunctions.parser: LuceneToJexlQueryParser
+=======
+doc.beans.allowedQueryFunctions.parser: LuceneToJexlQueryParser
+>>>>>>> SECOND
 doc.beans.baseQueryLogic.markingFunctions: markingFunctions
 doc.beans.baseQueryLogic.responseObjectFactory: responseObjectFactory
-
-Effective Properties (name=value)
-----------------------------------------
-datawave.query.logic.logics.BaseEventQuery.checkpointable=${warehouse.defaults.checkpointable}
-datawave.query.logic.logics.BaseEventQuery.accumuloPassword=${warehouse.accumulo.password}
-datawave.query.logic.logics.BaseEventQuery.tableName=${warehouse.tables.shard.name}
-datawave.query.logic.logics.BaseEventQuery.dateIndexTableName=${warehouse.tables.dateIndex.name}
-datawave.query.logic.logics.BaseEventQuery.defaultDateTypeName=EVENT
-datawave.query.logic.logics.BaseEventQuery.metadataTableName=${warehouse.tables.metadata.name}
-datawave.query.logic.logics.BaseEventQuery.indexTableName=${warehouse.tables.index.name}
-datawave.query.logic.logics.BaseEventQuery.reverseIndexTableName=${warehouse.tables.reverseIndex.name}
-datawave.query.logic.logics.BaseEventQuery.maxResults=-1
-datawave.query.logic.logics.BaseEventQuery.queryThreads=${warehouse.defaults.queryThreads}
-datawave.query.logic.logics.BaseEventQuery.indexLookupThreads=${warehouse.defaults.indexLookupThreads}
-datawave.query.logic.logics.BaseEventQuery.dateIndexThreads=${warehouse.defaults.dateIndexThreads}
-datawave.query.logic.logics.BaseEventQuery.fullTableScanEnabled=${warehouse.defaults.fullTableScanEnabled}
-datawave.query.logic.logics.BaseEventQuery.includeDataTypeAsField=false
-datawave.query.logic.logics.BaseEventQuery.disableIndexOnlyDocuments=false
-datawave.query.logic.logics.BaseEventQuery.indexOnlyFilterFunctionsEnabled=false
-datawave.query.logic.logics.BaseEventQuery.includeHierarchyFields=false
-datawave.query.logic.logics.BaseEventQuery.baseIteratorPriority=${warehouse.defaults.baseIteratorPriority}
-datawave.query.logic.logics.BaseEventQuery.maxIndexScanTimeMillis=${warehouse.defaults.maxIndexScanTimeMillis}
-datawave.query.logic.logics.BaseEventQuery.collapseUids=false
-datawave.query.logic.logics.BaseEventQuery.collapseUidsThreshold=-1
-datawave.query.logic.logics.BaseEventQuery.useEnrichers=true
-datawave.query.logic.logics.BaseEventQuery.minimumSelectivity=0.2
-datawave.query.logic.logics.BaseEventQuery.useFilters=false
-datawave.query.logic.logics.BaseEventQuery.auditType=ACTIVE
-datawave.query.logic.logics.BaseEventQuery.logicDescription=Retrieve sharded events/documents, leveraging the global index tables as needed
-datawave.query.logic.logics.BaseEventQuery.eventPerDayThreshold=${warehouse.defaults.eventPerDayThreshold}
-datawave.query.logic.logics.BaseEventQuery.shardsPerDayThreshold=${warehouse.defaults.shardsPerDayThreshold}
-datawave.query.logic.logics.BaseEventQuery.initialMaxTermThreshold=${warehouse.defaults.initialMaxTermThreshold}
-datawave.query.logic.logics.BaseEventQuery.finalMaxTermThreshold=${warehouse.defaults.finalMaxTermThreshold}
-datawave.query.logic.logics.BaseEventQuery.maxDepthThreshold=${warehouse.defaults.maxDepthThreshold}
-datawave.query.logic.logics.BaseEventQuery.maxUnfieldedExpansionThreshold=${warehouse.defaults.maxUnfieldedExpansionThreshold}
-datawave.query.logic.logics.BaseEventQuery.maxValueExpansionThreshold=${warehouse.defaults.maxValueExpansionThreshold}
-datawave.query.logic.logics.BaseEventQuery.maxOrExpansionThreshold=${warehouse.defaults.maxOrExpansionThreshold}
-datawave.query.logic.logics.BaseEventQuery.maxOrRangeThreshold=${warehouse.defaults.maxOrRangeThreshold}
-datawave.query.logic.logics.BaseEventQuery.maxOrExpansionFstThreshold=${warehouse.defaults.maxOrExpansionFstThreshold}
-datawave.query.logic.logics.BaseEventQuery.maxFieldIndexRangeSplit=${warehouse.defaults.maxFieldIndexRangeSplit}
-datawave.query.logic.logics.BaseEventQuery.maxIvaratorSources=${warehouse.defaults.maxIvaratorSources}
-datawave.query.logic.logics.BaseEventQuery.maxEvaluationPipelines=${warehouse.defaults.maxEvaluationPipelines}
-datawave.query.logic.logics.BaseEventQuery.maxPipelineCachedResults=${warehouse.defaults.maxPipelineCachedResults}
-datawave.query.logic.logics.BaseEventQuery.hdfsSiteConfigURLs=${warehouse.defaults.hdfsSiteConfigURLs}
-datawave.query.logic.logics.BaseEventQuery.zookeeperConfig=${warehouse.accumulo.zookeepers}
-datawave.query.logic.logics.BaseEventQuery.ivaratorFstHdfsBaseURIs=${warehouse.defaults.ivaratorFstHdfsBaseURIs}
-datawave.query.logic.logics.BaseEventQuery.ivaratorCacheBufferSize=${warehouse.defaults.ivaratorCacheBufferSize}
-datawave.query.logic.logics.BaseEventQuery.ivaratorMaxOpenFiles=${warehouse.defaults.ivaratorMaxOpenFiles}
-datawave.query.logic.logics.BaseEventQuery.ivaratorCacheScanPersistThreshold=${warehouse.defaults.ivaratorCacheScanPersistThreshold}
-datawave.query.logic.logics.BaseEventQuery.ivaratorCacheScanTimeoutMinutes=${warehouse.defaults.ivaratorCacheScanTimeoutMinutes}
-datawave.query.logic.logics.BaseEventQuery.modelTableName=${warehouse.tables.model.name}
-datawave.query.logic.logics.BaseEventQuery.modelName=${warehouse.defaults.modelName}
-datawave.query.logic.logics.BaseEventQuery.sendTimingToStatsd=false
-datawave.query.logic.logics.BaseEventQuery.collectQueryMetrics=true
-datawave.query.logic.logics.BaseEventQuery.logTimingDetails=true
-datawave.query.logic.logics.BaseEventQuery.statsdHost=${warehouse.statsd.host}
-datawave.query.logic.logics.BaseEventQuery.statsdPort=${warehouse.statsd.port}
-datawave.query.logic.logics.BaseEventQuery.evaluationOnlyFields=
-datawave.query.logic.logics.BaseEventQuery.maxConcurrentTasks=10
-datawave.query.logic.logics.LuceneUUIDEventQuery.logicDescription=Composite query logic that retrieves records from the event and error tables, based on known UUID fields, ie, those configured via UUIDTypeList in QueryLogicFactory.xml
-datawave.query.logic.logics.LuceneUUIDEventQuery.auditType=NONE
-datawave.query.logic.logics.LuceneUUIDEventQuery.eventQuery.auditType=NONE
-datawave.query.logic.logics.LuceneUUIDEventQuery.eventQuery.logicDescription=Lucene query for event/document UUIDs
-datawave.query.logic.logics.LuceneUUIDEventQuery.eventQuery.connPoolName=UUID
-datawave.query.logic.logics.LuceneUUIDEventQuery.errorEventQuery.tableName=${warehouse.errorTables.shard.name}
-datawave.query.logic.logics.LuceneUUIDEventQuery.errorEventQuery.dateIndexTableName=${warehouse.errorTables.dateIndex.name}
-datawave.query.logic.logics.LuceneUUIDEventQuery.errorEventQuery.metadataTableName=${warehouse.errorTables.metadata.name}
-datawave.query.logic.logics.LuceneUUIDEventQuery.errorEventQuery.indexTableName=${warehouse.errorTables.index.name}
-datawave.query.logic.logics.LuceneUUIDEventQuery.errorEventQuery.reverseIndexTableName=${warehouse.errorTables.reverseIndex.name}
-datawave.query.logic.logics.LuceneUUIDEventQuery.errorEventQuery.auditType=NONE
-datawave.query.logic.logics.LuceneUUIDEventQuery.errorEventQuery.logicDescription=Lucene query for event/document UUIDs for events that encountered errors at ingest time
-datawave.query.logic.logics.LuceneUUIDEventQuery.errorEventQuery.connPoolName=UUID
-datawave.query.logic.logics.LuceneUUIDEventQuery.checkpointable=${warehouse.defaults.checkpointable}
-datawave.query.logic.logics.EventQuery.checkpointable=${warehouse.defaults.checkpointable}
-datawave.query.logic.logics.EventQuery.logicDescription=Query the sharded event/document schema, leveraging the global index tables as needed
-datawave.query.logic.logics.ErrorEventQuery.checkpointable=${warehouse.defaults.checkpointable}
-datawave.query.logic.logics.ErrorEventQuery.logicDescription=Retrieve events/documents that encountered one or more errors during ingest
-datawave.query.logic.logics.ErrorEventQuery.tableName=${warehouse.errorTables.shard.name}
-datawave.query.logic.logics.ErrorEventQuery.metadataTableName=${warehouse.errorTables.metadata.name}
-datawave.query.logic.logics.ErrorEventQuery.dateIndexTableName=
-datawave.query.logic.logics.ErrorEventQuery.indexTableName=${warehouse.errorTables.index.name}
-datawave.query.logic.logics.ErrorEventQuery.reverseIndexTableName=${warehouse.errorTables.reverseIndex.name}
-datawave.query.logic.logics.ErrorEventQuery.includeHierarchyFields=false
-datawave.query.logic.logics.DiscoveryQuery.checkpointable=${warehouse.defaults.checkpointable}
-datawave.query.logic.logics.DiscoveryQuery.tableName=${warehouse.tables.shard.name}
-datawave.query.logic.logics.DiscoveryQuery.indexTableName=${warehouse.tables.index.name}
-datawave.query.logic.logics.DiscoveryQuery.reverseIndexTableName=${warehouse.tables.reverseIndex.name}
-datawave.query.logic.logics.DiscoveryQuery.maxResults=-1
-datawave.query.logic.logics.DiscoveryQuery.maxWork=-1
-datawave.query.logic.logics.DiscoveryQuery.metadataTableName=${warehouse.tables.metadata.name}
-datawave.query.logic.logics.DiscoveryQuery.modelTableName=${warehouse.tables.model.name}
-datawave.query.logic.logics.DiscoveryQuery.modelName=${warehouse.defaults.modelName}
-datawave.query.logic.logics.DiscoveryQuery.fullTableScanEnabled=${warehouse.defaults.fullTableScanEnabled}
-datawave.query.logic.logics.DiscoveryQuery.allowLeadingWildcard=true
-datawave.query.logic.logics.DiscoveryQuery.auditType=NONE
-datawave.query.logic.logics.DiscoveryQuery.logicDescription=Discovery query that returns information from the index about the supplied term(s)
-datawave.query.logic.logics.ErrorDiscoveryQuery.checkpointable=${warehouse.defaults.checkpointable}
-datawave.query.logic.logics.ErrorDiscoveryQuery.tableName=${warehouse.errorTables.shard.name}
-datawave.query.logic.logics.ErrorDiscoveryQuery.indexTableName=${warehouse.errorTables.index.name}
-datawave.query.logic.logics.ErrorDiscoveryQuery.reverseIndexTableName=${warehouse.errorTables.reverseIndex.name}
-datawave.query.logic.logics.ErrorDiscoveryQuery.maxResults=-1
-datawave.query.logic.logics.ErrorDiscoveryQuery.maxWork=-1
-datawave.query.logic.logics.ErrorDiscoveryQuery.metadataTableName=${warehouse.errorTables.metadata.name}
-datawave.query.logic.logics.ErrorDiscoveryQuery.modelTableName=${warehouse.errorTables.model.name}
-datawave.query.logic.logics.ErrorDiscoveryQuery.modelName=${warehouse.defaults.modelName}
-datawave.query.logic.logics.ErrorDiscoveryQuery.fullTableScanEnabled=${warehouse.defaults.fullTableScanEnabled}
-datawave.query.logic.logics.ErrorDiscoveryQuery.allowLeadingWildcard=true
-datawave.query.logic.logics.ErrorDiscoveryQuery.auditType=NONE
-datawave.query.logic.logics.ErrorDiscoveryQuery.logicDescription=Discovery query that returns information from the ingest errors index about the supplied term(s)
-datawave.query.logic.logics.ContentQuery.checkpointable=${warehouse.defaults.checkpointable}
-datawave.query.logic.logics.ContentQuery.tableName=${warehouse.tables.shard.name}
-datawave.query.logic.logics.ContentQuery.maxResults=-1
-datawave.query.logic.logics.ContentQuery.maxWork=-1
-datawave.query.logic.logics.ContentQuery.auditType=NONE
-datawave.query.logic.logics.ContentQuery.logicDescription=Query that returns a document given the document identifier
-datawave.query.logic.logics.CountQuery.checkpointable=${warehouse.defaults.checkpointable}
-datawave.query.logic.logics.CountQuery.logicDescription=Retrieve event/document counts based on your search criteria
-datawave.query.logic.logics.ErrorCountQuery.checkpointable=${warehouse.defaults.checkpointable}
-datawave.query.logic.logics.ErrorCountQuery.logicDescription=Retrieve counts of errored events based on your search criteria
-datawave.query.logic.logics.ErrorCountQuery.tableName=${warehouse.errorTables.shard.name}
-datawave.query.logic.logics.ErrorCountQuery.metadataTableName=${warehouse.errorTables.metadata.name}
-datawave.query.logic.logics.ErrorCountQuery.indexTableName=${warehouse.errorTables.index.name}
-datawave.query.logic.logics.ErrorCountQuery.indexTableName=${warehouse.errorTables.index.name}
-datawave.query.logic.logics.FieldIndexCountQuery.checkpointable=false
-datawave.query.logic.logics.FieldIndexCountQuery.tableName=${warehouse.tables.shard.name}
-datawave.query.logic.logics.FieldIndexCountQuery.indexTableName=${warehouse.tables.index.name}
-datawave.query.logic.logics.FieldIndexCountQuery.reverseIndexTableName=${warehouse.tables.reverseIndex.name}
-datawave.query.logic.logics.FieldIndexCountQuery.metadataTableName=${warehouse.tables.metadata.name}
-datawave.query.logic.logics.FieldIndexCountQuery.maxResults=-1
-datawave.query.logic.logics.FieldIndexCountQuery.maxWork=-1
-datawave.query.logic.logics.FieldIndexCountQuery.queryThreads=${warehouse.defaults.queryThreads}
-datawave.query.logic.logics.FieldIndexCountQuery.modelTableName=${warehouse.tables.model.name}
-datawave.query.logic.logics.FieldIndexCountQuery.modelName=DATAWAVE
-datawave.query.logic.logics.FieldIndexCountQuery.maxUniqueValues=20000
-datawave.query.logic.logics.FieldIndexCountQuery.auditType=NONE
-datawave.query.logic.logics.FieldIndexCountQuery.logicDescription=Indexed Fields Only\:  Given FIELDNAME returns counts for each unique value. Given FIELDNAME\:FIELDVALUE returns count for only that value.
-datawave.query.logic.logics.ErrorFieldIndexCountQuery.checkpointable=false
-datawave.query.logic.logics.ErrorFieldIndexCountQuery.tableName=${warehouse.errorTables.shard.name}
-datawave.query.logic.logics.ErrorFieldIndexCountQuery.indexTableName=${warehouse.errorTables.index.name}
-datawave.query.logic.logics.ErrorFieldIndexCountQuery.reverseIndexTableName=${warehouse.errorTables.reverseIndex.name}
-datawave.query.logic.logics.ErrorFieldIndexCountQuery.metadataTableName=${warehouse.errorTables.metadata.name}
-datawave.query.logic.logics.ErrorFieldIndexCountQuery.maxResults=-1
-datawave.query.logic.logics.ErrorFieldIndexCountQuery.maxWork=-1
-datawave.query.logic.logics.ErrorFieldIndexCountQuery.queryThreads=${warehouse.defaults.queryThreads}
-datawave.query.logic.logics.ErrorFieldIndexCountQuery.modelTableName=${warehouse.errorTables.model.name}
-datawave.query.logic.logics.ErrorFieldIndexCountQuery.modelName=DATAWAVE
-datawave.query.logic.logics.ErrorFieldIndexCountQuery.maxUniqueValues=20000
-datawave.query.logic.logics.ErrorFieldIndexCountQuery.auditType=NONE
-datawave.query.logic.logics.ErrorFieldIndexCountQuery.logicDescription=FieldIndex count query (experimental)
-datawave.query.logic.logics.TermFrequencyQuery.tableName=${warehouse.tables.shard.name}
-datawave.query.logic.logics.TermFrequencyQuery.maxResults=-1
-datawave.query.logic.logics.TermFrequencyQuery.maxWork=-14
-datawave.query.logic.logics.TermFrequencyQuery.auditType=NONE
-datawave.query.logic.logics.TermFrequencyQuery.logicDescription=Query that returns data from the term frequency query table
-datawave.query.logic.logics.IndexStatsQuery.auditType=NONE
-datawave.query.logic.logics.QueryMetricsQuery.checkpointable=${warehouse.defaults.checkpointable}
-datawave.query.logic.logics.QueryMetricsQuery.logicDescription=Retrieve query metrics based on the given search term(s)
-datawave.query.logic.logics.QueryMetricsQuery.includeHierarchyFields=false
-datawave.query.logic.logics.QueryMetricsQuery.modelTableName=${warehouse.metricTables.model.name}
-datawave.query.logic.logics.QueryMetricsQuery.modelName=NONE
-datawave.query.logic.logics.QueryMetricsQuery.tableName=${warehouse.metricTables.shard.name}
-datawave.query.logic.logics.QueryMetricsQuery.dateIndexTableName=${warehouse.metricTables.dateIndex.name}
-datawave.query.logic.logics.QueryMetricsQuery.metadataTableName=${warehouse.metricTables.metadata.name}
-datawave.query.logic.logics.QueryMetricsQuery.indexTableName=${warehouse.metricTables.index.name}
-datawave.query.logic.logics.QueryMetricsQuery.reverseIndexTableName=${warehouse.metricTables.reverseIndex.name}
-datawave.query.logic.logics.QueryMetricsQuery.auditType=NONE
-datawave.query.logic.logics.QueryMetricsQuery.collectQueryMetrics=true
-datawave.query.logic.logics.InternalQueryMetricsQuery.collectQueryMetrics=false
-datawave.query.logic.logics.FacetedQuery.checkpointable=${warehouse.defaults.checkpointable}
-datawave.query.logic.logics.FacetedQuery.auditType=NONE
-datawave.query.logic.logics.FacetedQuery.logicDescription=Faceted search over indexed fields, returning aggregate counts for field values
-datawave.query.logic.logics.FacetedQuery.facetedSearchType=FIELD_VALUE_FACETS
-datawave.query.logic.logics.FacetedQuery.facetTableName=datawave.facets
-datawave.query.logic.logics.FacetedQuery.facetMetadataTableName=datawave.facetMetadata
-datawave.query.logic.logics.FacetedQuery.facetHashTableName=datawave.facetHashes
-datawave.query.logic.logics.FacetedQuery.maximumFacetGrouping=200
-datawave.query.logic.logics.FacetedQuery.minimumFacet=1
-datawave.query.logic.logics.FacetedQuery.streaming=true
-datawave.query.logic.logics.HitHighlights.checkpointable=${warehouse.defaults.checkpointable}
-datawave.query.logic.logics.HitHighlights.accumuloPassword=${warehouse.accumulo.password}
-datawave.query.logic.logics.HitHighlights.tableName=${warehouse.tables.shard.name}
-datawave.query.logic.logics.HitHighlights.dateIndexTableName=${warehouse.tables.dateIndex.name}
-datawave.query.logic.logics.HitHighlights.defaultDateTypeName=EVENT
-datawave.query.logic.logics.HitHighlights.metadataTableName=${warehouse.tables.metadata.name}
-datawave.query.logic.logics.HitHighlights.indexTableName=${warehouse.tables.index.name}
-datawave.query.logic.logics.HitHighlights.reverseIndexTableName=${warehouse.tables.reverseIndex.name}
-datawave.query.logic.logics.HitHighlights.queryThreads=${warehouse.defaults.indexLookupThreads}
-datawave.query.logic.logics.HitHighlights.fullTableScanEnabled=${warehouse.defaults.fullTableScanEnabled}
-datawave.query.logic.logics.HitHighlights.minimumSelectivity=0.2
-datawave.query.logic.logics.HitHighlights.includeDataTypeAsField=false
-datawave.query.logic.logics.HitHighlights.includeGroupingContext=false
-datawave.query.logic.logics.HitHighlights.useEnrichers=false
-datawave.query.logic.logics.HitHighlights.auditType=NONE
-datawave.query.logic.logics.HitHighlights.logicDescription=Fast boolean query over indexed fields, only returning fields queried on
-datawave.query.logic.logics.HitHighlights.eventPerDayThreshold=40000
-datawave.query.logic.logics.HitHighlights.shardsPerDayThreshold=${warehouse.defaults.shardsPerDayThreshold}
-datawave.query.logic.logics.BaseEventQuery.initialMaxTermThreshold=${warehouse.defaults.initialMaxTermThreshold}
-datawave.query.logic.logics.BaseEventQuery.finalMaxTermThreshold=${warehouse.defaults.finalMaxTermThreshold}
-datawave.query.logic.logics.HitHighlights.maxDepthThreshold=${warehouse.defaults.maxDepthThreshold}
-datawave.query.logic.logics.HitHighlights.maxUnfieldedExpansionThreshold=${warehouse.defaults.maxUnfieldedExpansionThreshold}
-datawave.query.logic.logics.HitHighlights.maxValueExpansionThreshold=${warehouse.defaults.maxValueExpansionThreshold}
-datawave.query.logic.logics.HitHighlights.maxOrExpansionThreshold=${warehouse.defaults.maxOrExpansionThreshold}
-datawave.query.logic.logics.HitHighlights.maxOrRangeThreshold=${warehouse.defaults.maxOrRangeThreshold}
-datawave.query.logic.logics.HitHighlights.maxRangesPerRangeIvarator=${warehouse.defaults.maxRangesPerRangeIvarator}
-datawave.query.logic.logics.HitHighlights.maxOrRangeIvarators=${warehouse.defaults.maxOrRangeIvarators}
-datawave.query.logic.logics.HitHighlights.maxOrExpansionFstThreshold=${warehouse.defaults.maxOrExpansionFstThreshold}
-datawave.query.logic.logics.HitHighlights.maxFieldIndexRangeSplit=${warehouse.defaults.maxFieldIndexRangeSplit}
-datawave.query.logic.logics.HitHighlights.maxEvaluationPipelines=${warehouse.defaults.maxEvaluationPipelines}
-datawave.query.logic.logics.HitHighlights.maxPipelineCachedResults=${warehouse.defaults.maxPipelineCachedResults}
-datawave.query.logic.logics.HitHighlights.hdfsSiteConfigURLs=${warehouse.defaults.hdfsSiteConfigURLs}
-datawave.query.logic.logics.HitHighlights.zookeeperConfig=${warehouse.accumulo.zookeepers}
-datawave.query.logic.logics.HitHighlights.ivaratorFstHdfsBaseURIs=${warehouse.defaults.ivaratorFstHdfsBaseURIs}
-datawave.query.logic.logics.HitHighlights.ivaratorCacheBufferSize=10000
-datawave.query.logic.logics.HitHighlights.ivaratorMaxOpenFiles=${warehouse.defaults.ivaratorMaxOpenFiles}
-datawave.query.logic.logics.HitHighlights.ivaratorCacheScanPersistThreshold=100000
-datawave.query.logic.logics.HitHighlights.ivaratorCacheScanTimeoutMinutes=${warehouse.defaults.ivaratorCacheScanTimeoutMinutes}
-datawave.query.logic.logics.EdgeEventQuery.checkpointable=${warehouse.defaults.checkpointable}
-datawave.query.logic.logics.EdgeEventQuery.logicDescription=Use results of an EdgeQuery to obtain events/documents that created the given edge
-datawave.query.logic.logics.EdgeEventQuery.edgeModelName=DATAWAVE_EDGE
-datawave.query.logic.logics.EdgeEventQuery.modelTableName=${warehouse.tables.model.name}
-
-Effective Yml
-----------------------------------------
-datawave:
-  query:
-    logic:
-      logics:
-        BaseEventQuery:
-          checkpointable: "${warehouse.defaults.checkpointable}"
-          accumuloPassword: "${warehouse.accumulo.password}"
-          tableName: "${warehouse.tables.shard.name}"
-          dateIndexTableName: "${warehouse.tables.dateIndex.name}"
-          defaultDateTypeName: "EVENT"
-          metadataTableName: "${warehouse.tables.metadata.name}"
-          indexTableName: "${warehouse.tables.index.name}"
-          reverseIndexTableName: "${warehouse.tables.reverseIndex.name}"
-          maxResults: -1
-          queryThreads: "${warehouse.defaults.queryThreads}"
-          indexLookupThreads: "${warehouse.defaults.indexLookupThreads}"
-          dateIndexThreads: "${warehouse.defaults.dateIndexThreads}"
-          fullTableScanEnabled: "${warehouse.defaults.fullTableScanEnabled}"
-          includeDataTypeAsField: false
-          disableIndexOnlyDocuments: false
-          indexOnlyFilterFunctionsEnabled: false
-          includeHierarchyFields: false
-          baseIteratorPriority: "${warehouse.defaults.baseIteratorPriority}"
-          maxIndexScanTimeMillis: "${warehouse.defaults.maxIndexScanTimeMillis}"
-          collapseUids: false
-          collapseUidsThreshold: -1
-          useEnrichers: true
-          minimumSelectivity: 0.2
-          useFilters: false
-          auditType: "ACTIVE"
-          logicDescription: "Retrieve sharded events/documents, leveraging the global index tables as needed"
-          eventPerDayThreshold: "${warehouse.defaults.eventPerDayThreshold}"
-          shardsPerDayThreshold: "${warehouse.defaults.shardsPerDayThreshold}"
-          initialMaxTermThreshold: "${warehouse.defaults.initialMaxTermThreshold}"
-          finalMaxTermThreshold: "${warehouse.defaults.finalMaxTermThreshold}"
-          maxDepthThreshold: "${warehouse.defaults.maxDepthThreshold}"
-          maxUnfieldedExpansionThreshold: "${warehouse.defaults.maxUnfieldedExpansionThreshold}"
-          maxValueExpansionThreshold: "${warehouse.defaults.maxValueExpansionThreshold}"
-          maxOrExpansionThreshold: "${warehouse.defaults.maxOrExpansionThreshold}"
-          maxOrRangeThreshold: "${warehouse.defaults.maxOrRangeThreshold}"
-          maxOrExpansionFstThreshold: "${warehouse.defaults.maxOrExpansionFstThreshold}"
-          maxFieldIndexRangeSplit: "${warehouse.defaults.maxFieldIndexRangeSplit}"
-          maxIvaratorSources: "${warehouse.defaults.maxIvaratorSources}"
-          maxEvaluationPipelines: "${warehouse.defaults.maxEvaluationPipelines}"
-          maxPipelineCachedResults: "${warehouse.defaults.maxPipelineCachedResults}"
-          hdfsSiteConfigURLs: "${warehouse.defaults.hdfsSiteConfigURLs}"
-          zookeeperConfig: "${warehouse.accumulo.zookeepers}"
-          ivaratorFstHdfsBaseURIs: "${warehouse.defaults.ivaratorFstHdfsBaseURIs}"
-          ivaratorCacheBufferSize: "${warehouse.defaults.ivaratorCacheBufferSize}"
-          ivaratorMaxOpenFiles: "${warehouse.defaults.ivaratorMaxOpenFiles}"
-          ivaratorCacheScanPersistThreshold: "${warehouse.defaults.ivaratorCacheScanPersistThreshold}"
-          ivaratorCacheScanTimeoutMinutes: "${warehouse.defaults.ivaratorCacheScanTimeoutMinutes}"
-          modelTableName: "${warehouse.tables.model.name}"
-          modelName: "${warehouse.defaults.modelName}"
-          sendTimingToStatsd: false
-          collectQueryMetrics: true
-          logTimingDetails: true
-          statsdHost: "${warehouse.statsd.host}"
-          statsdPort: "${warehouse.statsd.port}"
-          evaluationOnlyFields: ""
-          maxConcurrentTasks: 10
-        LuceneUUIDEventQuery:
-          logicDescription: "Composite query logic that retrieves records from the event and error tables, based on known UUID fields, ie, those configured via UUIDTypeList in QueryLogicFactory.xml"
-          auditType: "NONE"
-          eventQuery:
-            auditType: "NONE"
-            logicDescription: "Lucene query for event/document UUIDs"
-            connPoolName: "UUID"
-          errorEventQuery:
-            tableName: "${warehouse.errorTables.shard.name}"
-            dateIndexTableName: "${warehouse.errorTables.dateIndex.name}"
-            metadataTableName: "${warehouse.errorTables.metadata.name}"
-            indexTableName: "${warehouse.errorTables.index.name}"
-            reverseIndexTableName: "${warehouse.errorTables.reverseIndex.name}"
-            auditType: "NONE"
-            logicDescription: "Lucene query for event/document UUIDs for events that encountered errors at ingest time"
-            connPoolName: "UUID"
-          checkpointable: "${warehouse.defaults.checkpointable}"
-        EventQuery:
-          checkpointable: "${warehouse.defaults.checkpointable}"
-          logicDescription: "Query the sharded event/document schema, leveraging the global index tables as needed"
-        ErrorEventQuery:
-          checkpointable: "${warehouse.defaults.checkpointable}"
-          logicDescription: "Retrieve events/documents that encountered one or more errors during ingest"
-          tableName: "${warehouse.errorTables.shard.name}"
-          metadataTableName: "${warehouse.errorTables.metadata.name}"
-          dateIndexTableName: ""
-          indexTableName: "${warehouse.errorTables.index.name}"
-          reverseIndexTableName: "${warehouse.errorTables.reverseIndex.name}"
-          includeHierarchyFields: false
-        DiscoveryQuery:
-          checkpointable: "${warehouse.defaults.checkpointable}"
-          tableName: "${warehouse.tables.shard.name}"
-          indexTableName: "${warehouse.tables.index.name}"
-          reverseIndexTableName: "${warehouse.tables.reverseIndex.name}"
-          maxResults: -1
-          maxWork: -1
-          metadataTableName: "${warehouse.tables.metadata.name}"
-          modelTableName: "${warehouse.tables.model.name}"
-          modelName: "${warehouse.defaults.modelName}"
-          fullTableScanEnabled: "${warehouse.defaults.fullTableScanEnabled}"
-          allowLeadingWildcard: true
-          auditType: "NONE"
-          logicDescription: "Discovery query that returns information from the index about the supplied term(s)"
-        ErrorDiscoveryQuery:
-          checkpointable: "${warehouse.defaults.checkpointable}"
-          tableName: "${warehouse.errorTables.shard.name}"
-          indexTableName: "${warehouse.errorTables.index.name}"
-          reverseIndexTableName: "${warehouse.errorTables.reverseIndex.name}"
-          maxResults: -1
-          maxWork: -1
-          metadataTableName: "${warehouse.errorTables.metadata.name}"
-          modelTableName: "${warehouse.errorTables.model.name}"
-          modelName: "${warehouse.defaults.modelName}"
-          fullTableScanEnabled: "${warehouse.defaults.fullTableScanEnabled}"
-          allowLeadingWildcard: true
-          auditType: "NONE"
-          logicDescription: "Discovery query that returns information from the ingest errors index about the supplied term(s)"
-        ContentQuery:
-          checkpointable: "${warehouse.defaults.checkpointable}"
-          tableName: "${warehouse.tables.shard.name}"
-          maxResults: -1
-          maxWork: -1
-          auditType: "NONE"
-          logicDescription: "Query that returns a document given the document identifier"
-        CountQuery:
-          checkpointable: "${warehouse.defaults.checkpointable}"
-          logicDescription: "Retrieve event/document counts based on your search criteria"
-        ErrorCountQuery:
-          checkpointable: "${warehouse.defaults.checkpointable}"
-          logicDescription: "Retrieve counts of errored events based on your search criteria"
-          tableName: "${warehouse.errorTables.shard.name}"
-          metadataTableName: "${warehouse.errorTables.metadata.name}"
-          indexTableName: "${warehouse.errorTables.index.name}"
-        FieldIndexCountQuery:
-          checkpointable: false
-          tableName: "${warehouse.tables.shard.name}"
-          indexTableName: "${warehouse.tables.index.name}"
-          reverseIndexTableName: "${warehouse.tables.reverseIndex.name}"
-          metadataTableName: "${warehouse.tables.metadata.name}"
-          maxResults: -1
-          maxWork: -1
-          queryThreads: "${warehouse.defaults.queryThreads}"
-          modelTableName: "${warehouse.tables.model.name}"
-          modelName: "DATAWAVE"
-          maxUniqueValues: 20000
-          auditType: "NONE"
-          logicDescription: "Indexed Fields Only:  Given FIELDNAME returns counts for each unique value. Given FIELDNAME:FIELDVALUE returns count for only that value."
-        ErrorFieldIndexCountQuery:
-          checkpointable: false
-          tableName: "${warehouse.errorTables.shard.name}"
-          indexTableName: "${warehouse.errorTables.index.name}"
-          reverseIndexTableName: "${warehouse.errorTables.reverseIndex.name}"
-          metadataTableName: "${warehouse.errorTables.metadata.name}"
-          maxResults: -1
-          maxWork: -1
-          queryThreads: "${warehouse.defaults.queryThreads}"
-          modelTableName: "${warehouse.errorTables.model.name}"
-          modelName: "DATAWAVE"
-          maxUniqueValues: 20000
-          auditType: "NONE"
-          logicDescription: "FieldIndex count query (experimental)"
-        TermFrequencyQuery:
-          tableName: "${warehouse.tables.shard.name}"
-          maxResults: -1
-          maxWork: -14
-          auditType: "NONE"
-          logicDescription: "Query that returns data from the term frequency query table"
-        IndexStatsQuery:
-          auditType: "NONE"
-        QueryMetricsQuery:
-          checkpointable: "${warehouse.defaults.checkpointable}"
-          logicDescription: "Retrieve query metrics based on the given search term(s)"
-          includeHierarchyFields: false
-          modelTableName: "${warehouse.metricTables.model.name}"
-          modelName: "NONE"
-          tableName: "${warehouse.metricTables.shard.name}"
-          dateIndexTableName: "${warehouse.metricTables.dateIndex.name}"
-          metadataTableName: "${warehouse.metricTables.metadata.name}"
-          indexTableName: "${warehouse.metricTables.index.name}"
-          reverseIndexTableName: "${warehouse.metricTables.reverseIndex.name}"
-          auditType: "NONE"
-          collectQueryMetrics: true
-        InternalQueryMetricsQuery:
-          collectQueryMetrics: false
-        FacetedQuery:
-          checkpointable: "${warehouse.defaults.checkpointable}"
-          auditType: "NONE"
-          logicDescription: "Faceted search over indexed fields, returning aggregate counts for field values"
-          facetedSearchType: "FIELD_VALUE_FACETS"
-          facetTableName: "datawave.facets"
-          facetMetadataTableName: "datawave.facetMetadata"
-          facetHashTableName: "datawave.facetHashes"
-          maximumFacetGrouping: 200
-          minimumFacet: 1
-          streaming: true
-        HitHighlights:
-          checkpointable: "${warehouse.defaults.checkpointable}"
-          accumuloPassword: "${warehouse.accumulo.password}"
-          tableName: "${warehouse.tables.shard.name}"
-          dateIndexTableName: "${warehouse.tables.dateIndex.name}"
-          defaultDateTypeName: "EVENT"
-          metadataTableName: "${warehouse.tables.metadata.name}"
-          indexTableName: "${warehouse.tables.index.name}"
-          reverseIndexTableName: "${warehouse.tables.reverseIndex.name}"
-          queryThreads: "${warehouse.defaults.indexLookupThreads}"
-          fullTableScanEnabled: "${warehouse.defaults.fullTableScanEnabled}"
-          minimumSelectivity: 0.2
-          includeDataTypeAsField: false
-          includeGroupingContext: false
-          useEnrichers: false
-          auditType: "NONE"
-          logicDescription: "Fast boolean query over indexed fields, only returning fields queried on"
-          eventPerDayThreshold: 40000
-          shardsPerDayThreshold: "${warehouse.defaults.shardsPerDayThreshold}"
-          maxDepthThreshold: "${warehouse.defaults.maxDepthThreshold}"
-          maxUnfieldedExpansionThreshold: "${warehouse.defaults.maxUnfieldedExpansionThreshold}"
-          maxValueExpansionThreshold: "${warehouse.defaults.maxValueExpansionThreshold}"
-          maxOrExpansionThreshold: "${warehouse.defaults.maxOrExpansionThreshold}"
-          maxOrRangeThreshold: "${warehouse.defaults.maxOrRangeThreshold}"
-          maxRangesPerRangeIvarator: "${warehouse.defaults.maxRangesPerRangeIvarator}"
-          maxOrRangeIvarators: "${warehouse.defaults.maxOrRangeIvarators}"
-          maxOrExpansionFstThreshold: "${warehouse.defaults.maxOrExpansionFstThreshold}"
-          maxFieldIndexRangeSplit: "${warehouse.defaults.maxFieldIndexRangeSplit}"
-          maxEvaluationPipelines: "${warehouse.defaults.maxEvaluationPipelines}"
-          maxPipelineCachedResults: "${warehouse.defaults.maxPipelineCachedResults}"
-          hdfsSiteConfigURLs: "${warehouse.defaults.hdfsSiteConfigURLs}"
-          zookeeperConfig: "${warehouse.accumulo.zookeepers}"
-          ivaratorFstHdfsBaseURIs: "${warehouse.defaults.ivaratorFstHdfsBaseURIs}"
-          ivaratorCacheBufferSize: 10000
-          ivaratorMaxOpenFiles: "${warehouse.defaults.ivaratorMaxOpenFiles}"
-          ivaratorCacheScanPersistThreshold: 100000
-          ivaratorCacheScanTimeoutMinutes: "${warehouse.defaults.ivaratorCacheScanTimeoutMinutes}"
-        EdgeEventQuery:
-          checkpointable: "${warehouse.defaults.checkpointable}"
-          logicDescription: "Use results of an EdgeQuery to obtain events/documents that created the given edge"
-          edgeModelName: "DATAWAVE_EDGE"
-          modelTableName: "${warehouse.tables.model.name}"
+<<<<<<< FIRST
+=======
+doc.beans.queryLogicFactory.queryLogicFactoryConfiguration: QueryLogicFactoryConfiguration
+>>>>>>> SECOND

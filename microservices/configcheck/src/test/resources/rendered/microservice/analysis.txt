@@ -1,3 +1,5 @@
+Values (key: value)
+----------------------------------------
 doc.beans.BaseEventQuery.accumuloPassword: "${warehouse.accumulo.password}"
 doc.beans.BaseEventQuery.auditType: "ACTIVE"
 doc.beans.BaseEventQuery.baseIteratorPriority: "${warehouse.defaults.baseIteratorPriority}"
