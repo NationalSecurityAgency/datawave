@@ -1,16 +1,20 @@
 package datawave.ingest.mapreduce.handler.ssdeep;
 
+import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
+import datawave.ingest.data.TypeRegistry;
+import datawave.ingest.data.config.ConfigurationHelper;
+import datawave.ingest.data.config.DataTypeHelper;
 import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.ingest.IngestHelperInterface;
 import datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
-import datawave.ingest.mapreduce.handler.facet.FacetHandler;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.writer.ContextWriter;
 import datawave.ingest.metadata.RawRecordMetadata;
 import datawave.marking.MarkingFunctions;
+import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.conf.Configuration;
@@ -23,7 +27,10 @@ import org.apache.log4j.Logger;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 public class SSDeepIndexHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> {
     private static final Logger log = Logger.getLogger(SSDeepIndexHandler.class);
@@ -33,6 +40,27 @@ public class SSDeepIndexHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTy
 
     public static final String SSDEEP_INDEX_TABLE_NAME = "ssdeepIndex.table.name";
     public static final String SSDEEP_INDEX_TABLE_LOADER_PRIORITY = "ssdeepIndex.table.loader.priority";
+    public static final String SSDEEP_FIELD_SET = "ssdeepIndex.fields";
+
+    public static final String SSDEEP_BUCKET_COUNT = "ssdeepIndex.bucket.count";
+
+    public static final int DEFAULT_SSDEEP_BUCKET_COUNT = BucketAccumuloKeyGenerator.DEFAULT_BUCKET_COUNT;
+
+    public static final String SSDEEP_BUCKET_ENCODING_BASE = "ssdeepIndex.bucket.encoding.base";
+
+    public static final int DEFAULT_SSDEEP_BUCKET_ENCODING_BASE = BucketAccumuloKeyGenerator.DEFAULT_BUCKET_ENCODING_BASE;
+
+    public static final String SSDEEP_BUCKET_ENCODING_LENGTH = "ssdeepIndex.bucket.encoding.length";
+
+    public static final int DEFAULT_SSDEEP_BUCKET_ENCODING_LENGTH = BucketAccumuloKeyGenerator.DEFAULT_BUCKET_ENCODING_LENGTH;
+
+    public static final String SSDEEP_INDEX_NGRAM_SIZE = "ssdeepIndex.ngram.size.min";
+
+    public static final int DEFAULT_SSDEEP_INDEX_NGRAM_SIZE = 7;
+
+    public static final String SSDEEP_MIN_HASH_SIZE = "ssdeepIndex.chunk.size.min";
+
+    public static final int DEFAULT_SSDEEP_MIN_HASH_SIZE = 3;
 
     protected Text ssdeepIndexTableName;
 
@@ -40,10 +68,38 @@ public class SSDeepIndexHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTy
 
     protected TaskAttemptContext taskAttemptContext;
 
+    protected Set<String> ssdeepFieldNames;
+
+    NGramByteHashGenerator nGramGenerator;
+    BucketAccumuloKeyGenerator accumuloKeyGenerator;
+
+
+
     @Override
     public void setup(TaskAttemptContext context) {
+        markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
+        taskAttemptContext = context;
 
+        Configuration conf = context.getConfiguration();
+
+        final String t = ConfigurationHelper.isNull(conf, DataTypeHelper.Properties.DATA_NAME, String.class);
+        TypeRegistry.getInstance(conf);
+        Type type = TypeRegistry.getType(t);
+
+        int bucketCount = conf.getInt(SSDEEP_BUCKET_COUNT, DEFAULT_SSDEEP_BUCKET_COUNT);
+        int bucketEncodingBase = conf.getInt(SSDEEP_BUCKET_ENCODING_BASE, DEFAULT_SSDEEP_BUCKET_ENCODING_BASE);
+        int bucketEncodingLength = conf.getInt(SSDEEP_BUCKET_ENCODING_LENGTH, DEFAULT_SSDEEP_BUCKET_ENCODING_LENGTH);
+        int ngramSize = conf.getInt(SSDEEP_INDEX_NGRAM_SIZE, DEFAULT_SSDEEP_INDEX_NGRAM_SIZE);
+        int minHashSize = conf.getInt(SSDEEP_MIN_HASH_SIZE, DEFAULT_SSDEEP_MIN_HASH_SIZE);
+
+        accumuloKeyGenerator = new BucketAccumuloKeyGenerator(bucketCount, bucketEncodingBase, bucketEncodingLength);
+        nGramGenerator = new NGramByteHashGenerator(ngramSize, bucketCount, minHashSize);
+
+        String[] fieldNameArray = conf.getStrings(type.typeName() + SSDEEP_FIELD_SET);
+        ssdeepFieldNames = new HashSet<>(List.of(fieldNameArray));
+        ssdeepIndexTableName = new Text(ConfigurationHelper.isNull(conf, SSDEEP_INDEX_TABLE_NAME, String.class));
     }
+
     @Override
     public String[] getTableNames(Configuration conf) {
         return getNonNullTableNames(conf, SSDEEP_INDEX_TABLE_NAME);
@@ -88,8 +144,34 @@ public class SSDeepIndexHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTy
                         TaskInputOutputContext<KEYIN,? extends RawRecordContainer,KEYOUT,VALUEOUT> context, ContextWriter<KEYOUT,VALUEOUT> contextWriter)
             throws IOException, InterruptedException {
 
-        //TODO generate ssdeep index entries
-        return 0L;
+        final Set<String> eventFieldSet = fields.keySet();
+        long countWritten = 0;
+
+        for (String ssdeepFieldName: ssdeepFieldNames) {
+            if (!eventFieldSet.contains(ssdeepFieldName))
+                continue;
+
+            final Multimap<BulkIngestKey,Value> results = ArrayListMultimap.create();
+
+            for (NormalizedContentInterface ssdeepTypes: fields.get(ssdeepFieldName)) {
+                countWritten += generateSSDeepIndexEntries(ssdeepTypes.getEventFieldValue(), results);
+            }
+        }
+
+        return countWritten;
+    }
+
+    public long generateSSDeepIndexEntries(String fieldValue, Multimap<BulkIngestKey, Value> results) {
+        long countWritten = 0L;
+        Iterator<Tuple2<NGramTuple,byte[]>> it = nGramGenerator.call(fieldValue);
+        while (it.hasNext()) {
+            Tuple2<NGramTuple,byte[]> nt = it.next();
+            Tuple2<Key, Value> at = accumuloKeyGenerator.call(nt);
+            BulkIngestKey indexKey = new BulkIngestKey(ssdeepIndexTableName, at.first());
+            results.put(indexKey, at.second());
+            countWritten++;
+        }
+        return countWritten;
     }
 
     /**

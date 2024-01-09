@@ -6,11 +6,11 @@ import org.apache.accumulo.core.data.Range;
 
 import com.google.common.collect.Multimap;
 
-import datawave.query.util.ssdeep.BucketAccumuloKeyGenerator;
-import datawave.query.util.ssdeep.ChunkSizeEncoding;
-import datawave.query.util.ssdeep.IntegerEncoding;
-import datawave.query.util.ssdeep.NGramTuple;
-import datawave.query.util.ssdeep.SSDeepHash;
+import datawave.ingest.mapreduce.handler.ssdeep.BucketAccumuloKeyGenerator;
+import datawave.ingest.mapreduce.handler.ssdeep.ChunkSizeEncoding;
+import datawave.ingest.mapreduce.handler.ssdeep.IntegerEncoding;
+import datawave.ingest.mapreduce.handler.ssdeep.NGramTuple;
+import datawave.ingest.mapreduce.handler.ssdeep.SSDeepHash;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;

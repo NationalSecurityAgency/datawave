@@ -73,7 +73,6 @@ public class FacetedQueryLogicTest extends AbstractFunctionalQuery {
         dataTypes.add(new FacetedCitiesDataType(CitiesDataType.CityEntry.rome, generic));
 
         FacetQueryTestTableHelper facetQueryTestTableHelper = new FacetQueryTestTableHelper(FacetedQueryLogicTest.class.getName(), log, TEARDOWN.EVERY_OTHER, INTERRUPT.NEVER);
-        accumuloSetup.addSetupHelper(facetQueryTestTableHelper);
         accumuloSetup.setData(FileType.CSV, dataTypes);
         accumuloSetup.setAuthorizations(CitiesDataType.getTestAuths());
 

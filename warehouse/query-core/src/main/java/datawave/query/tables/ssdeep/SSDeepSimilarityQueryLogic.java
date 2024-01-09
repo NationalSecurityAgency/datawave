@@ -23,11 +23,11 @@ import com.google.common.collect.Multimap;
 
 import datawave.query.config.SSDeepSimilarityQueryConfiguration;
 import datawave.query.transformer.SSDeepSimilarityQueryTransformer;
-import datawave.query.util.ssdeep.ChunkSizeEncoding;
-import datawave.query.util.ssdeep.IntegerEncoding;
-import datawave.query.util.ssdeep.NGramGenerator;
-import datawave.query.util.ssdeep.NGramTuple;
-import datawave.query.util.ssdeep.SSDeepHash;
+import datawave.ingest.mapreduce.handler.ssdeep.ChunkSizeEncoding;
+import datawave.ingest.mapreduce.handler.ssdeep.IntegerEncoding;
+import datawave.ingest.mapreduce.handler.ssdeep.NGramGenerator;
+import datawave.ingest.mapreduce.handler.ssdeep.NGramTuple;
+import datawave.ingest.mapreduce.handler.ssdeep.SSDeepHash;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;

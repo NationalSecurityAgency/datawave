@@ -17,12 +17,12 @@ import com.google.common.collect.TreeMultimap;
 
 import datawave.marking.MarkingFunctions;
 import datawave.query.config.SSDeepSimilarityQueryConfiguration;
-import datawave.query.util.ssdeep.ChunkSizeEncoding;
-import datawave.query.util.ssdeep.IntegerEncoding;
-import datawave.query.util.ssdeep.NGramScoreTuple;
-import datawave.query.util.ssdeep.NGramTuple;
-import datawave.query.util.ssdeep.SSDeepHash;
-import datawave.query.util.ssdeep.SSDeepHashScorer;
+import datawave.ingest.mapreduce.handler.ssdeep.ChunkSizeEncoding;
+import datawave.ingest.mapreduce.handler.ssdeep.IntegerEncoding;
+import datawave.ingest.mapreduce.handler.ssdeep.NGramScoreTuple;
+import datawave.ingest.mapreduce.handler.ssdeep.NGramTuple;
+import datawave.ingest.mapreduce.handler.ssdeep.SSDeepHash;
+import datawave.ingest.mapreduce.handler.ssdeep.SSDeepHashScorer;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.exception.EmptyObjectException;

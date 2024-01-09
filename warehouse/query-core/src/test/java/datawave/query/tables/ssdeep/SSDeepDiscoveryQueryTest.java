@@ -35,7 +35,6 @@ public class SSDeepDiscoveryQueryTest extends AbstractFunctionalQuery {
         dataTypes.add(new SSDeepDataType(SSDeepDataType.SSDeepEntry.ssdeep, generic));
 
         SSDeepQueryTestTableHelper ssDeepQueryTestTableHelper = new SSDeepQueryTestTableHelper(SSDeepDiscoveryQueryTest.class.getName(), log, RebuildingScannerTestHelper.TEARDOWN.EVERY_OTHER, RebuildingScannerTestHelper.INTERRUPT.NEVER);
-        accumuloSetup.addSetupHelper(ssDeepQueryTestTableHelper);
         accumuloSetup.setData(FileType.CSV, dataTypes);
         client = accumuloSetup.loadTables(ssDeepQueryTestTableHelper);
     }

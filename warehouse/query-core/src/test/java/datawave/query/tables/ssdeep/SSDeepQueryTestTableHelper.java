@@ -6,7 +6,6 @@ import datawave.ingest.table.config.SSDeepIndexTableConfigHelper;
 import datawave.query.MockAccumuloRecordWriter;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.RebuildingScannerTestHelper;
-import datawave.query.testframework.AbstractAccumuloSetupHelper;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
@@ -16,7 +15,7 @@ import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
 
-public class SSDeepQueryTestTableHelper extends QueryTestTableHelper implements AbstractAccumuloSetupHelper {
+public class SSDeepQueryTestTableHelper extends QueryTestTableHelper {
     public static final String SSDEEP_INDEX_TABLE_NAME = "ssdeepIndex";
 
     public SSDeepQueryTestTableHelper(AccumuloClient client, Logger log) throws AccumuloSecurityException, AccumuloException, TableExistsException,
@@ -35,7 +34,7 @@ public class SSDeepQueryTestTableHelper extends QueryTestTableHelper implements 
     }
 
     @Override
-    public void printTables(AccumuloClient client, Authorizations auths) throws TableNotFoundException {
+    public void printTables(Authorizations auths) throws TableNotFoundException {
         PrintUtility.printTable(client, auths, SSDEEP_INDEX_TABLE_NAME);
     }
 

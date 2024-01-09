@@ -1,9 +1,9 @@
 package datawave.query.tables.ssdeep;
 
-import datawave.query.util.Tuple2;
-import datawave.query.util.ssdeep.BucketAccumuloKeyGenerator;
-import datawave.query.util.ssdeep.NGramByteHashGenerator;
-import datawave.query.util.ssdeep.NGramTuple;
+import datawave.ingest.mapreduce.handler.ssdeep.BucketAccumuloKeyGenerator;
+import datawave.ingest.mapreduce.handler.ssdeep.NGramByteHashGenerator;
+import datawave.ingest.mapreduce.handler.ssdeep.NGramTuple;
+import datawave.ingest.mapreduce.handler.ssdeep.Tuple2;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;

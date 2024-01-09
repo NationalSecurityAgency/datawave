@@ -1,6 +1,7 @@
 package datawave.query;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
+import datawave.helpers.PrintUtility;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.ingest.table.config.MetadataTableConfigHelper;
 import datawave.ingest.table.config.ShardTableConfigHelper;
@@ -92,6 +93,13 @@ public class QueryTestTableHelper {
             System.out.println(entry);
         }
         scanner.close();
+    }
+    
+    public void printTables(Authorizations auths) throws TableNotFoundException {
+        PrintUtility.printTable(client, auths, QueryTestTableHelper.METADATA_TABLE_NAME);
+        PrintUtility.printTable(client, auths, TableName.SHARD);
+        PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
+        PrintUtility.printTable(client, auths, TableName.SHARD_RINDEX);
     }
     
     protected void createTables() throws AccumuloSecurityException, AccumuloException, TableNotFoundException, TableExistsException {

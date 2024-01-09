@@ -1,6 +1,5 @@
 package datawave.query.testframework;
 
-import datawave.helpers.PrintUtility;
 import datawave.ingest.config.RawRecordContainerImpl;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.input.reader.event.EventSequenceFileRecordReader;
@@ -9,7 +8,6 @@ import datawave.ingest.test.StandaloneStatusReporter;
 import datawave.query.MockAccumuloRecordWriter;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.RebuildingScannerTestHelper;
-import datawave.util.TableName;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
@@ -42,11 +40,9 @@ import org.junit.rules.ExternalResource;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -69,7 +65,6 @@ public class AccumuloSetup extends ExternalResource {
     private Set<String> shardIds;
     private FileType fileFormat;
     private Authorizations auths = AbstractDataTypeConfig.getTestAuths();
-    private final List<AbstractAccumuloSetupHelper> setupHelpers = new ArrayList<>();
 
     public AccumuloSetup() {
         this(false);
@@ -126,10 +121,6 @@ public class AccumuloSetup extends ExternalResource {
             }
         }
         return file.delete();
-    }
-
-    public void addSetupHelper(AbstractAccumuloSetupHelper helper) {
-        setupHelpers.add(helper);
     }
 
     public void setData(FileType fileFormat, DataTypeHadoopConfig config) {
@@ -218,15 +209,8 @@ public class AccumuloSetup extends ExternalResource {
                 ingestTestData(hadoopConfig, loader);
             }
         }
-        
-        PrintUtility.printTable(client, auths, QueryTestTableHelper.METADATA_TABLE_NAME);
-        PrintUtility.printTable(client, auths, TableName.SHARD);
-        PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
-        PrintUtility.printTable(client, auths, TableName.SHARD_RINDEX);
 
-        for (AbstractAccumuloSetupHelper helpers: setupHelpers) {
-            helpers.printTables(client, auths);
-        }
+        tableHelper.printTables(auths);
 
         return client;
     }

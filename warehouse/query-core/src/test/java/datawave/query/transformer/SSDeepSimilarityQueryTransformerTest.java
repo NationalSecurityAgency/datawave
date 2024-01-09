@@ -22,8 +22,8 @@ import com.google.common.collect.TreeMultimap;
 
 import datawave.marking.MarkingFunctions;
 import datawave.query.config.SSDeepSimilarityQueryConfiguration;
-import datawave.query.util.ssdeep.NGramTuple;
-import datawave.query.util.ssdeep.SSDeepHash;
+import datawave.ingest.mapreduce.handler.ssdeep.NGramTuple;
+import datawave.ingest.mapreduce.handler.ssdeep.SSDeepHash;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.result.event.DefaultEvent;
 import datawave.webservice.query.result.event.DefaultField;

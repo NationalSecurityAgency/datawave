@@ -1,11 +1,9 @@
-package datawave.query.util.ssdeep;
+package datawave.ingest.mapreduce.handler.ssdeep;
 
 import java.util.Arrays;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
-
-import datawave.query.util.Tuple2;
 
 /**
  * Transforms NGram/SSDeep Pairs to Accumulo Key/Values. The approach toward generating rowIds produces prefixes for each indexed ngram that include a 'bucket'
@@ -72,9 +70,8 @@ public class BucketAccumuloKeyGenerator {
      *
      * @param t
      * @return
-     * @throws Exception
      */
-    public Tuple2<Key,Value> call(Tuple2<NGramTuple,byte[]> t) throws Exception {
+    public Tuple2<Key,Value> call(Tuple2<NGramTuple,byte[]> t) {
         int rowSize = t.first().getChunk().length() + bucketEncoding.getLength() + chunkEncoding.getLength();
         final byte[] row = new byte[rowSize];
         int pos = 0;
