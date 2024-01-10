@@ -1,8 +1,6 @@
 package datawave.query.jexl.functions;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
@@ -22,7 +20,7 @@ import datawave.query.util.Tuple2;
 
 /**
  * Aggregator for TF keys. TF keys that will be aggregated will be matching row and dataType/uid. FIELD/VALUE are not evaluated for performance reasons since
- * the likelyhood of a collision is extremely small
+ * the likelihood of a collision is extremely small
  */
 public class TermFrequencyAggregator extends IdentityAggregator {
 
@@ -37,7 +35,7 @@ public class TermFrequencyAggregator extends IdentityAggregator {
     @Override
     protected List<Tuple2<String,String>> parserFieldNameValue(Key topKey) {
         DatawaveKey parser = new DatawaveKey(topKey);
-        return Arrays.asList(new Tuple2<>(parser.getFieldName(), parser.getFieldValue()));
+        return List.of(new Tuple2<>(parser.getFieldName(), parser.getFieldValue()));
     }
 
     @Override
@@ -45,11 +43,11 @@ public class TermFrequencyAggregator extends IdentityAggregator {
         return TLD.parseFieldAndValueFromTF(cq);
     }
 
+    // cq = datatype uid value field
+    // Parsing for datatype and uid from TF key
     @Override
-    protected ByteSequence parsePointer(ByteSequence qualifier) {
-        ArrayList<Integer> deezNulls = TLD.instancesOf(0, qualifier, -1);
-        final int stop = deezNulls.get(1);
-        return qualifier.subSequence(0, stop);
+    protected ByteSequence parsePointer(ByteSequence cq) {
+        return cq.subSequence(0, TLD.findSecondNull(cq));
     }
 
     @Override
@@ -72,18 +70,22 @@ public class TermFrequencyAggregator extends IdentityAggregator {
      * Dropping empty documents is explicitly necessary for the negated leading wildcard case when dealing with a document specific range. This generates a scan
      * over all keys for that field on that document. Without this check if the aggregator runs, but finds no specific matches there will still be a docKey
      * generated and this will be returned back up through the chain resulting in a missed hit.
-     *
+     * <p>
+     * <br>
      * Consider: '!(FIELD =~ '.*z)'
-     *
+     * <p>
+     * <br>
      * If a document d has FIELD=b, this will in the TermFrequencyIndexIterator must scan against the entire range \0 to MAX for this document. This will cause
      * a document to be generated for our docKey b even though it doesn't match the entire regex (verified in the filter within the aggregation). If the
      * document were going all the way to evaluation this wouldn't matter, but it will be skipped when popping off the nestedIterators due to the way NOT is
-     * short circuited. Since in this case the Range must be overly broad to prevent missing a match, we have to rely on the aggregators which employ the filter
+     * short-circuited. Since in this case the Range must be overly broad to prevent missing a match, we have to rely on the aggregators which employ the filter
      * logic to protect us.
-     *
+     * <p>
+     * <br>
      * This check ensures that post aggregation (and application of the filter) there was actually something to get. Since the field is negated, the presence of
      * the docKey will cause the document to be excluded, even though it satisfies the query.
-     *
+     * <p>
+     * <br>
      * An alternative to adding this check in the TermFrequencyAggregator would be to add this check to the TermFrequencyIndexIterator following the
      * aggregation.
      **/

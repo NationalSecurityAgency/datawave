@@ -47,6 +47,7 @@ import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterators;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
@@ -58,7 +59,6 @@ import datawave.data.type.util.NumericalEncoder;
 import datawave.ingest.data.config.ingest.CompositeIngest;
 import datawave.marking.MarkingFunctionsFactory;
 import datawave.query.Constants;
-import datawave.query.DocumentSerialization.ReturnType;
 import datawave.query.attributes.AttributeKeepFilter;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.ExcerptFields;
@@ -80,10 +80,6 @@ import datawave.query.function.MaskedValueFilterFactory;
 import datawave.query.function.MaskedValueFilterInterface;
 import datawave.query.function.RangeProvider;
 import datawave.query.function.RemoveGroupingContext;
-import datawave.query.function.deserializer.KryoDocumentDeserializer;
-import datawave.query.function.serializer.KryoDocumentSerializer;
-import datawave.query.function.serializer.ToStringDocumentSerializer;
-import datawave.query.function.serializer.WritableDocumentSerializer;
 import datawave.query.iterator.aggregation.DocumentData;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.iterator.pipeline.PipelineFactory;
@@ -99,6 +95,7 @@ import datawave.query.iterator.profile.QuerySpan;
 import datawave.query.iterator.profile.QuerySpanCollector;
 import datawave.query.iterator.profile.SourceTrackingIterator;
 import datawave.query.jexl.DatawaveJexlContext;
+import datawave.query.jexl.DefaultArithmetic;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.StatefulArithmetic;
 import datawave.query.jexl.functions.FieldIndexAggregator;
@@ -160,7 +157,6 @@ import datawave.util.StringUtils;
  * <li>PostProcessing Enrichment - Variable enrichment, e.g. term frequency enrichment</li>
  * <li>Serialize Document to a Value, e.g. Kryo, Writable, etc</li>
  * </ol>
- *
  */
 public class QueryIterator extends QueryOptions implements YieldingKeyValueIterator<Key,Value>, JexlContextCreator.JexlContextValueComparator,
                 SourceFactory<Key,Value>, SortedKeyValueIterator<Key,Value> {
@@ -171,7 +167,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     protected SortedKeyValueIterator<Key,Value> sourceForDeepCopies;
     protected Map<String,String> documentOptions;
     protected NestedIterator<Key> initKeySource, seekKeySource;
-    protected Iterator<Entry<Key,Value>> serializedDocuments;
+    protected Iterator<Entry<Key,Document>> documentIterator;
     protected boolean fieldIndexSatisfiesQuery = false;
 
     protected Range range;
@@ -384,7 +380,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 // see if we can fail fast. If we were rebuilt with the FinalDocument key, then we are already completely done
                 if (collectTimingDetails && FinalDocumentTrackingIterator.isFinalDocumentKey(range.getStartKey())) {
                     this.seekKeySource = new EmptyTreeIterable();
-                    this.serializedDocuments = EmptyIterator.emptyIterator();
+                    this.documentIterator = EmptyIterator.emptyIterator();
                     prepareKeyValue();
                     return;
                 }
@@ -492,47 +488,26 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 return true;
             });
 
-            if (this.getReturnType() == ReturnType.kryo) {
-                // Serialize the Document using Kryo
-                this.serializedDocuments = Iterators.transform(pipelineDocuments, new KryoDocumentSerializer(isReducedResponse(), isCompressResults()));
-            } else if (this.getReturnType() == ReturnType.writable) {
-                // Use the Writable interface to serialize the Document
-                this.serializedDocuments = Iterators.transform(pipelineDocuments, new WritableDocumentSerializer(isReducedResponse()));
-            } else if (this.getReturnType() == ReturnType.tostring) {
-                // Just return a toString() representation of the document
-                this.serializedDocuments = Iterators.transform(pipelineDocuments, new ToStringDocumentSerializer(isReducedResponse()));
-            } else {
-                throw new IllegalArgumentException("Unknown return type of: " + this.getReturnType());
-            }
-
-            if (log.isTraceEnabled()) {
-                KryoDocumentDeserializer dser = new KryoDocumentDeserializer();
-                this.serializedDocuments = Iterators.filter(this.serializedDocuments, keyValueEntry -> {
-                    log.trace("after serializing, keyValueEntry:" + dser.apply(keyValueEntry));
-                    return true;
-                });
-            }
+            this.documentIterator = pipelineDocuments;
 
             // now add the result count to the keys (required when not sorting UIDs)
             // Cannot do this on document specific ranges as the count would place the keys outside the initial range
             if (!sortedUIDs && documentRange == null) {
-                this.serializedDocuments = new ResultCountingIterator(serializedDocuments, resultCount, yield);
+                this.documentIterator = new ResultCountingIterator(documentIterator, resultCount, yield);
             } else if (this.sortedUIDs) {
                 // we have sorted UIDs, so we can mask out the cq
-                this.serializedDocuments = new KeyAdjudicator<>(serializedDocuments, yield);
+                this.documentIterator = new KeyAdjudicator<>(documentIterator, yield);
             }
 
             // only add the final document tracking iterator which sends stats back to the client if collectTimingDetails is true
             if (collectTimingDetails) {
                 // if there is no document to return, then add an empty document
                 // to store the timing metadata
-                this.serializedDocuments = new FinalDocumentTrackingIterator(querySpanCollector, trackingSpan, originalRange, this.serializedDocuments,
-                                this.getReturnType(), this.isReducedResponse(), this.isCompressResults(), this.yield);
+                this.documentIterator = new FinalDocumentTrackingIterator(querySpanCollector, trackingSpan, originalRange, documentIterator, yield);
             }
             if (log.isTraceEnabled()) {
-                KryoDocumentDeserializer dser = new KryoDocumentDeserializer();
-                this.serializedDocuments = Iterators.filter(this.serializedDocuments, keyValueEntry -> {
-                    log.debug("finally, considering:" + dser.apply(keyValueEntry));
+                this.documentIterator = Iterators.filter(this.documentIterator, keyValueEntry -> {
+                    log.debug("finally, considering:" + keyValueEntry);
                     return true;
                 });
             }
@@ -643,26 +618,113 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
      */
     protected NestedIterator<Key> buildDocumentIterator(Range documentRange, Range seekRange, Collection<ByteSequence> columnFamilies, boolean inclusive)
                     throws IOException, ConfigException, InstantiationException, IllegalAccessException {
-
-        // If we had an event-specific range previously, we need to reset it back
-        // to the source we created during init
-        NestedIterator<Key> docIter = getOrSetKeySource(documentRange, script);
-
-        initKeySource = docIter;
-
+        NestedIterator<Key> docIter = null;
         if (log.isTraceEnabled()) {
-            log.trace("Using init()'ialized source: " + this.initKeySource.getClass().getName());
+            log.trace("Batched queries is " + batchedQueries);
         }
+        if (batchedQueries >= 1) {
+            List<NestedQuery<Key>> nests = Lists.newArrayList();
 
-        if (gatherTimingDetails()) {
-            docIter = new EvaluationTrackingNestedIterator(QuerySpan.Stage.FieldIndexTree, trackingSpan, docIter, myEnvironment);
+            for (Entry<Range,String> queries : batchStack) {
+
+                Range myRange = queries.getKey();
+
+                if (log.isTraceEnabled()) {
+                    log.trace("Adding " + myRange + " from seekrange " + seekRange);
+                }
+
+                /*
+                 * Only perform the following checks if start key is not infinite and document range is specified
+                 */
+                if (null != seekRange && !seekRange.isInfiniteStartKey()) {
+                    Key seekStartKey = seekRange.getStartKey();
+                    Key myStartKey = myRange.getStartKey();
+
+                    /*
+                     * if our seek key is greater than our start key we can skip this batched query. myStartKey.compareTo(seekStartKey) must be <= 0, which
+                     * means that startKey must be greater than or equal be seekStartKey
+                     */
+                    if (null != myStartKey && null != seekStartKey && !seekRange.contains(myStartKey)) {
+
+                        if (log.isTraceEnabled()) {
+                            log.trace("skipping " + myRange);
+                        }
+
+                        continue;
+                    }
+                }
+
+                JexlArithmetic myArithmetic;
+                if (arithmetic instanceof StatefulArithmetic) {
+                    myArithmetic = ((StatefulArithmetic) arithmetic).clone();
+                } else {
+                    myArithmetic = new DefaultArithmetic();
+                }
+
+                // Parse the query
+                ASTJexlScript myScript = null;
+                JexlEvaluation eval = null;
+                try {
+
+                    myScript = JexlASTHelper.parseJexlQuery(queries.getValue());
+                    eval = getJexlEvaluation(queries.getValue(), myArithmetic);
+
+                } catch (Exception e) {
+                    throw new IOException("Could not parse the JEXL query: '" + this.getQuery() + "'", e);
+                }
+                // If we had an event-specific range previously, we need to
+                // reset it back
+                // to the source we created during init
+                NestedIterator<Key> subDocIter = getOrSetKeySource(myRange, myScript);
+
+                if (log.isTraceEnabled()) {
+                    log.trace("Using init()'ialized source: " + subDocIter.getClass().getName());
+                }
+
+                if (gatherTimingDetails()) {
+                    subDocIter = new EvaluationTrackingNestedIterator(QuerySpan.Stage.FieldIndexTree, trackingSpan, subDocIter, myEnvironment);
+                }
+
+                // Seek() the boolean logic stuff
+                ((SeekableIterator) subDocIter).seek(myRange, columnFamilies, inclusive);
+
+                NestedQuery<Key> nestedQueryObj = new NestedQuery<>();
+                nestedQueryObj.setQuery(queries.getValue());
+                nestedQueryObj.setIterator(subDocIter);
+                nestedQueryObj.setQueryScript(myScript);
+                nestedQueryObj.setEvaluation(eval);
+                nestedQueryObj.setRange(queries.getKey());
+                nests.add(nestedQueryObj);
+            }
+
+            docIter = new NestedQueryIterator<>(nests);
+
+            // now lets start off the nested iterator
+            docIter.initialize();
+
+            initKeySource = docIter;
+
+        } else {
+            // If we had an event-specific range previously, we need to reset it back
+            // to the source we created during init
+            docIter = getOrSetKeySource(documentRange, script);
+
+            initKeySource = docIter;
+
+            if (log.isTraceEnabled()) {
+                log.trace("Using init()'ialized source: " + this.initKeySource.getClass().getName());
+            }
+
+            if (gatherTimingDetails()) {
+                docIter = new EvaluationTrackingNestedIterator(QuerySpan.Stage.FieldIndexTree, trackingSpan, docIter, myEnvironment);
+            }
+
+            // Seek() the boolean logic stuff
+            ((SeekableIterator) docIter).seek(range, columnFamilies, inclusive);
+
+            // now lets start off the nested iterator
+            docIter.initialize();
         }
-
-        // Seek() the boolean logic stuff
-        ((SeekableIterator) docIter).seek(range, columnFamilies, inclusive);
-
-        // now lets start off the nested iterator
-        docIter.initialize();
 
         return docIter;
     }
@@ -867,7 +929,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             documents = Iterators.transform(documents, new AttributeKeepFilter<>());
         }
 
-        // Project fields using a whitelist or a blacklist before serialization
+        // Project fields using an allowlist or a disallowlist before serialization
         if (this.projectResults) {
             if (gatherTimingDetails()) {
                 documents = Iterators.transform(documents, new EvaluationTrackingFunction<>(DocumentProjection, trackingSpan, getProjection()));
@@ -961,7 +1023,6 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 tfConfig.setTfAggregationThreshold(getTfAggregationThresholdMs());
 
                 Function<Tuple2<Key,Document>,Tuple3<Key,Document,Map<String,Object>>> tfFunction = buildTfFunction(tfConfig);
-
                 itrWithContext = TraceIterators.transform(tupleItr, tfFunction, "Term Frequency Lookup");
             } else {
                 itrWithContext = Iterators.transform(tupleItr, new EmptyContext<>());
@@ -1147,12 +1208,18 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         }
     }
 
-    private void prepareKeyValue() {
-        if (this.serializedDocuments.hasNext()) {
-            Entry<Key,Value> entry = this.serializedDocuments.next();
+    /**
+     * Gets the next document and serializes it for return
+     */
+    protected void prepareKeyValue() {
+        if (documentIterator.hasNext()) {
+
+            // just in time serialization
+            Entry<Key,Document> docEntry = documentIterator.next();
+            Entry<Key,Value> entry = getDocumentSerializer().apply(docEntry);
 
             if (log.isTraceEnabled()) {
-                log.trace("next() returned " + entry);
+                log.trace("next() returned " + entry.getKey());
             }
 
             this.key = entry.getKey();
@@ -1211,22 +1278,22 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
 
     protected DocumentProjection getProjection() {
 
-        if (this.useWhiteListedFields) {
+        if (this.useAllowListedFields) {
             // make sure we include any fields being matched in the limit fields mechanism
             if (!this.matchingFieldSets.isEmpty()) {
-                this.whiteListedFields.addAll(getMatchingFieldList());
+                this.allowListedFields.addAll(getMatchingFieldList());
             }
             return new DocumentProjection(this.isIncludeGroupingContext(), this.isReducedResponse(), isTrackSizes(),
-                            new Projection(this.whiteListedFields, Projection.ProjectionType.INCLUDES));
-        } else if (this.useBlackListedFields) {
+                            new Projection(this.allowListedFields, Projection.ProjectionType.INCLUDES));
+        } else if (this.useDisallowListedFields) {
             // make sure we are not excluding any fields being matched in the limit fields mechanism
             if (!this.matchingFieldSets.isEmpty()) {
-                this.blackListedFields.removeAll(getMatchingFieldList());
+                this.disallowListedFields.removeAll(getMatchingFieldList());
             }
             return new DocumentProjection(this.isIncludeGroupingContext(), this.isReducedResponse(), isTrackSizes(),
-                            new Projection(this.blackListedFields, Projection.ProjectionType.EXCLUDES));
+                            new Projection(this.disallowListedFields, Projection.ProjectionType.EXCLUDES));
         } else {
-            String msg = "Configured to use projection, but no whitelist or blacklist was provided";
+            String msg = "Configured to use projection, but no allowlist or disallowlist was provided";
             log.error(msg);
             throw new IllegalArgumentException(msg);
         }
@@ -1333,27 +1400,26 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         // query)
         if (!this.isFullTableScanOnly()) {
 
-            // we assume the query is satisfiable as an initial state
-            boolean isQueryFullySatisfiedInitialState = true;
+            boolean isQueryFullySatisfiedInitialState = batchedQueries <= 0;
             String hitListOptionString = documentOptions.get(QueryOptions.HIT_LIST);
 
             if (hitListOptionString != null) {
                 boolean hitListOption = Boolean.parseBoolean(hitListOptionString);
                 if (hitListOption) {
                     isQueryFullySatisfiedInitialState = false; // if hit
-                                                               // list is
-                                                               // on, don't
-                                                               // attempt
-                                                               // satisfiability
+                    // list is
+                    // on, don't
+                    // attempt
+                    // satisfiability
                     // don't even make a SatisfactionVisitor.....
                 }
             }
             if (isQueryFullySatisfiedInitialState) {
                 SatisfactionVisitor satisfactionVisitor = this.createSatisfiabilityVisitor(true); // we'll
-                                                                                                  // charge
-                                                                                                  // in
-                                                                                                  // with
-                                                                                                  // optimism
+                // charge
+                // in
+                // with
+                // optimism
 
                 // visit() and get the root which is the root of a tree of
                 // Boolean Logic Iterator<Key>'s
@@ -1498,6 +1564,15 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         String hdfsPrefix = null;
         if (isDocumentSpecificRange(this.range)) {
             hdfsPrefix = range.getStartKey().getColumnFamily().toString().replace('\0', '_');
+        } else if (batchedQueries > 0) {
+            StringBuilder sb = new StringBuilder();
+            for (Entry<Range,String> queries : batchStack) {
+                if (sb.length() > 0) {
+                    sb.append('-');
+                }
+                sb.append(queries.getKey().getStartKey().getColumnFamily().toString().replace('\0', '_'));
+            }
+            hdfsPrefix = sb.toString();
         }
         return hdfsPrefix;
     }
