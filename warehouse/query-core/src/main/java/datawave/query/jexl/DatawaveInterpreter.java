@@ -210,6 +210,7 @@ public class DatawaveInterpreter extends Interpreter {
         return result;
     }
 
+    // check to see if this node's next (right-most) sibling is an ASTMethodNode
     public boolean hasMethodSibling(JexlNode node) {
         boolean methodFound = false;
         if (node.jjtGetParent() != null && node.jjtGetParent().jjtGetNumChildren() > 1) {

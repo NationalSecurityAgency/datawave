@@ -98,8 +98,7 @@ public class FunctionReferenceVisitor extends BaseVisitor {
      */
     @Override
     public Object visit(ASTFunctionNode node, Object data) {
-        final int nChildren = node.jjtGetNumChildren();
-        if (nChildren < 2) {
+        if (node.jjtGetNumChildren() < 2) {
             log.error("Function node does have 2 children-- must supply an ASTNamespaceIdentifier, and ASTArguments.");
             return null;
         }

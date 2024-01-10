@@ -561,11 +561,9 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
             updated.add(replacementField);
 
             ASTArguments argsNode = (ASTArguments) functionCopy.jjtGetChild(1);
-            // skip a zone argument if it exists
-            for (int i = 0; i < argsNode.jjtGetNumChildren(); i++) {
-                if (i != 0 || !zoneExists) {
-                    updated.add(argsNode.jjtGetChild(i));
-                }
+            // Skip the first child if a zone exists.
+            for (int i = zoneExists ? 1 : 0; i < argsNode.jjtGetNumChildren(); i++) {
+                updated.add(argsNode.jjtGetChild(i));
             }
             JexlNodes.setChildren(argsNode, updated.toArray(new JexlNode[0]));
             return functionCopy;
