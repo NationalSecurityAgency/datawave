@@ -217,10 +217,8 @@ public class DatawaveInterpreter extends Interpreter {
             boolean foundSelf = false;
             for (int i = 0; i < parent.jjtGetNumChildren(); i++) {
                 if (foundSelf) {
-                    if (parent.jjtGetChild(i) instanceof ASTMethodNode) {
-                        methodFound = true;
-                        break;
-                    }
+                    methodFound = parent.jjtGetChild(i) instanceof ASTMethodNode;
+                    break;
                 } else {
                     foundSelf = parent.jjtGetChild(i) == node;
                 }
