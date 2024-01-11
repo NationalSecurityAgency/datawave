@@ -1,14 +1,18 @@
 package datawave.query.tables.ssdeep;
 
 import datawave.data.normalizer.Normalizer;
+import datawave.data.type.NoOpType;
+import datawave.data.type.NumberType;
 import datawave.ingest.csv.config.helper.ExtendedCSVHelper;
 import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.data.config.CSVHelper;
+import datawave.ingest.data.config.ingest.BaseIngestHelper;
 import datawave.ingest.input.reader.EventRecordReader;
 import datawave.ingest.mapreduce.handler.shard.AbstractColumnBasedHandler;
 import datawave.ingest.mapreduce.handler.ssdeep.SSDeepIndexHandler;
 import datawave.marking.MarkingFunctions;
 import datawave.query.testframework.AbstractDataTypeConfig;
+import datawave.query.testframework.CitiesDataType;
 import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.RawDataManager;
 import datawave.query.testframework.RawMetaData;
@@ -18,24 +22,22 @@ import org.apache.log4j.Logger;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * Contains all the relevant data needed to configure the SSDeep data type.
+ * Contains all the relevant data needed to configure the ssdeep data type.
  */
 public class SSDeepDataType extends AbstractDataTypeConfig {
 
     private static final Logger log = Logger.getLogger(SSDeepDataType.class);
-    private static final Random rVal = new Random(System.currentTimeMillis());
 
     /**
-     * Contains predefined names for the cities datatype. Each enumeration will contain the path of the data ingest file.
+     * Contains predefined names for the ssdeep datatype. Each enumeration will contain the path of the data ingest file. Currently, there is only one
      */
     public enum SSDeepEntry {
         // default provided cities with datatype name
@@ -79,20 +81,33 @@ public class SSDeepDataType extends AbstractDataTypeConfig {
         SHA1(Normalizer.LC_NO_DIACRITICS_NORMALIZER),
         SHA256(Normalizer.LC_NO_DIACRITICS_NORMALIZER),
         EVENT_DATE(Normalizer.LC_NO_DIACRITICS_NORMALIZER),
-        SECURITY_MARKING(Normalizer.LC_NO_DIACRITICS_NORMALIZER);
+        SECURITY_MARKING(Normalizer.LC_NO_DIACRITICS_NORMALIZER),
         //The folowing fields are 'extra' fields indicated with the K=V structure in the CSV.
-        //FILE_DATE(Normalizer.LC_NO_DIACRITICS_NORMALIZER),
-        //FILE_NAME(Normalizer.LC_NO_DIACRITICS_NORMALIZER),
-        //CHECKSUM_SSDEEP(Normalizer.NOOP_NORMALIZER),
-        //IMAGEHEIGHT(Normalizer.NUMBER_NORMALIZER),
-        //IMAGEWIDTH(Normalizer.NUMBER_NORMALIZER),
-        //PARENT_FILETYPE(Normalizer.LC_NO_DIACRITICS_NORMALIZER),
-        //ACCESS_CONTROLS(Normalizer.LC_NO_DIACRITICS_NORMALIZER);
+        FILE_DATE(Normalizer.LC_NO_DIACRITICS_NORMALIZER, true),
+        FILE_NAME(Normalizer.LC_NO_DIACRITICS_NORMALIZER, true),
+        CHECKSUM_SSDEEP(Normalizer.NOOP_NORMALIZER, true),
+        IMAGEHEIGHT(Normalizer.NUMBER_NORMALIZER, true),
+        IMAGEWIDTH(Normalizer.NUMBER_NORMALIZER, true),
+        PARENT_FILETYPE(Normalizer.LC_NO_DIACRITICS_NORMALIZER, true),
+        ACCESS_CONTROLS(Normalizer.LC_NO_DIACRITICS_NORMALIZER, true);
 
-        private static final List<String> Headers;
+        private static final List<String> HEADERS;
 
         static {
-            Headers = Stream.of(SSDeepField.values()).map(Enum::name).collect(Collectors.toList());
+            HEADERS = Stream.of(SSDeepField.values()).filter(Predicate.not(SSDeepField::isExtraField)).map(Enum::name).collect(Collectors.toList());
+        }
+
+        public static List<String> headers() {
+            return HEADERS;
+        }
+
+        private static final Map<String, RawMetaData> fieldMetadata;
+
+        static {
+            fieldMetadata = new HashMap<>();
+            for (SSDeepField field : SSDeepField.values()) {
+                fieldMetadata.put(field.name().toLowerCase(), field.metadata);
+            }
         }
 
         /**
@@ -114,18 +129,6 @@ public class SSDeepDataType extends AbstractDataTypeConfig {
             throw new AssertionError("invalid SSDeep field(" + field + ")");
         }
 
-        public static List<String> headers() {
-            return Headers;
-        }
-
-        private static final Map<String, RawMetaData> fieldMetadata;
-        static {
-            fieldMetadata = new HashMap<>();
-            for (SSDeepField field : SSDeepField.values()) {
-                fieldMetadata.put(field.name().toLowerCase(), field.metadata);
-            }
-        }
-
         /**
          * Returns mapping of ip address fields to the metadata for the field.
          *
@@ -135,41 +138,20 @@ public class SSDeepDataType extends AbstractDataTypeConfig {
             return fieldMetadata;
         }
 
-        /**
-         * Returns a random set of fields, with or without {@link #EVENT_ID}.
-         *
-         * @param withEventId
-         *            when true, include the event id
-         * @return set of random fields
-         */
-        public static Set<String> getRandomReturnFields(final boolean withEventId) {
-            final Set<String> fields = new HashSet<>();
-            for (final SSDeepField field : SSDeepField.values()) {
-                if (rVal.nextBoolean()) {
-                    fields.add(field.name());
-                }
-            }
+        private final RawMetaData metadata;
 
-            // check to see if event id must be included
-            if (withEventId) {
-                fields.add(SSDeepField.EVENT_ID.name());
-            } else {
-                fields.remove(SSDeepField.EVENT_ID.name());
-            }
-
-            return fields;
-        }
-
-        private static final Map<String,RawMetaData> metadataMapping = new HashMap<>();
-
-        private RawMetaData metadata;
+        /** A flag to set if we expect the field to be not returned as part of the headers. These fields are
+         * represented in the CSC as fieldName=fieldValue pairs.*/
+        private final boolean extraField;
 
         SSDeepField(final Normalizer<?> normalizer) {
             this(normalizer, false);
         }
 
-        SSDeepField(final Normalizer<?> normalizer, final boolean isMulti) {
-            this.metadata = new RawMetaData(this.name(), normalizer, isMulti);
+        SSDeepField(final Normalizer<?> normalizer, final boolean extraField) {
+            this.extraField = extraField;
+            // we don't use multivalued fields for this datatype, so don't bother setting it.
+            this.metadata = new RawMetaData(this.name(), normalizer, false);
         }
 
         /**
@@ -180,6 +162,13 @@ public class SSDeepDataType extends AbstractDataTypeConfig {
         public RawMetaData getMetadata() {
             return metadata;
         }
+
+        /**
+         * Returns whether the field is an 'extra' field and should not be included in the headers.
+         *
+         * @return metadata
+         */
+        public boolean isExtraField() { return extraField; }
     }
 
     // ==================================
@@ -222,10 +211,10 @@ public class SSDeepDataType extends AbstractDataTypeConfig {
      */
     public SSDeepDataType(final String ssdeep, final String ingestFile, final FieldConfig config) throws IOException, URISyntaxException {
         super(ssdeep, ingestFile, config, ssdeepManager);
-        
         // NOTE: see super for default settings
+
         // set datatype settings
-        //this.hConf.set(this.dataType + "." + SSDeepField.NU.name() + BaseIngestHelper.FIELD_TYPE, NumberType.class.getName());
+        this.hConf.set(this.dataType + "." + SSDeepField.CHECKSUM_SSDEEP.name() + BaseIngestHelper.FIELD_TYPE, NoOpType.class.getName());
         this.hConf.set(this.dataType + EventRecordReader.Properties.EVENT_DATE_FIELD_NAME, SSDeepField.PROCESSING_DATE.name());
         this.hConf.set(this.dataType + EventRecordReader.Properties.EVENT_DATE_FIELD_FORMAT, SSDEEP_DATE_FIELD_FORMAT);
         
@@ -238,8 +227,8 @@ public class SSDeepDataType extends AbstractDataTypeConfig {
         // ssdeep index handler
         this.hConf.set(this.dataType + TypeRegistry.HANDLER_CLASSES, String.join(",", AbstractColumnBasedHandler.class.getName(), SSDeepIndexHandler.class.getName()));
         this.hConf.set(this.dataType + SSDeepIndexHandler.SSDEEP_FIELD_SET, "CHECKSUM_SSDEEP");
-
         this.hConf.set(SSDeepIndexHandler.SSDEEP_INDEX_TABLE_NAME, SSDeepQueryTestTableHelper.SSDEEP_INDEX_TABLE_NAME);
+
         log.debug(this.toString());
     }
 
@@ -259,8 +248,7 @@ public class SSDeepDataType extends AbstractDataTypeConfig {
     
     @Override
     public String getSecurityMarkingFieldNames() {
-        // TODO: fix markings
-        return "";
+        return ""; //TODO: while the ssdeep data has security markings, we don't use them in the tests yet.
     }
     
     @Override

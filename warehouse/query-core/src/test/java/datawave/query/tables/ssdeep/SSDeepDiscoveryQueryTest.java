@@ -104,6 +104,7 @@ public class SSDeepDiscoveryQueryTest extends AbstractFunctionalQuery {
         StreamingSSDeepDiscoveryChainStrategy ssdeepStreamedChainStrategy = new StreamingSSDeepDiscoveryChainStrategy();
         ssdeepStreamedChainStrategy.setMaxResultsToBuffer(1); // disable buffering for this test
 
+        //TODO: This implementation works for now, but will likely not scale.
         FullSSDeepDiscoveryChainStrategy ssdeepFullChainStrategy = new FullSSDeepDiscoveryChainStrategy();
 
         similarityDiscoveryQueryLogic = new SSDeepDiscoveryQueryTable();
@@ -142,7 +143,7 @@ public class SSDeepDiscoveryQueryTest extends AbstractFunctionalQuery {
         Map<String,Map<String,String>> observedEvents = extractObservedEvents(events);
         Assert.assertEquals(1, eventCount);
 
-        SSDeepTestUtil.assertMatch(testSSDeep, testSSDeep, "38.0", "1", "100", observedEvents);
+        SSDeepTestUtil.assertSSDeepSimilarityMatch(testSSDeep, testSSDeep, "38.0", "1", "100", observedEvents);
     }
 
     @Test
@@ -162,13 +163,22 @@ public class SSDeepDiscoveryQueryTest extends AbstractFunctionalQuery {
         Logger.getLogger(StreamingSSDeepDiscoveryChainStrategy.SSDeepDiscoveryChainedIterator.class).setLevel(Level.DEBUG);
 
         log.info("------ testSSDeepDiscovery ------");
-        String testSSDeep = "384:nv/fP9FmWVMdRFj2aTgSO+u5QT4ZE1PIVS:nDmWOdRFNTTs504cQS";
+        String testSSDeep = "384:nv/fP9FmWVMdRFj2aTgSO+u5QT4ZE1PIVS:nDmWOdRFNTTs504---";
+        String targetSSDeep = "384:nv/fP9FmWVMdRFj2aTgSO+u5QT4ZE1PIVS:nDmWOdRFNTTs504cQS";
         String query = "CHECKSUM_SSDEEP:" + testSSDeep;
         EventQueryResponseBase response = runChainedQuery(query, 0);
         List<EventBase> events = response.getEvents();
         int eventCount = events.size();
         Map<String,Map<String,String>> observedEvents = extractObservedEvents(events);
         Assert.assertEquals(1, eventCount);
+
+        Map.Entry<String, Map<String,String>> result = observedEvents.entrySet().iterator().next();
+        Map<String, String> resultFields = result.getValue();
+        Assert.assertEquals(targetSSDeep, resultFields.get("VALUE"));
+        Assert.assertEquals("CHECKSUM_SSDEEP",resultFields.get("FIELD"));
+        Assert.assertEquals("20201031", resultFields.get("DATE"));
+        Assert.assertEquals("ssdeep", resultFields.get("DATA TYPE"));
+        Assert.assertEquals("4", resultFields.get("RECORD COUNT"));
     }
 
 

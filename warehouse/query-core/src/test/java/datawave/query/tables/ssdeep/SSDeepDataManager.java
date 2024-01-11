@@ -55,19 +55,6 @@ public class SSDeepDataManager extends AbstractDataManager {
     public List<String> getHeaders() {
         return SSDeepField.headers();
     }
-    
-    private Set<RawData> getRawData(final Set<RawData> rawData, final Date start, final Date end) {
-        final Set<RawData> data = new HashSet<>(this.rawData.size());
-        final Set<String> shards = this.shardValues.getShardRange(start, end);
-        for (final RawData raw : rawData) {
-            String id = raw.getValue(SSDeepField.PROCESSING_DATE.name());
-            if (shards.contains(id)) {
-                data.add(raw);
-            }
-        }
-        
-        return data;
-    }
 
     /**
      * POJO for a single raw data entry.

@@ -122,8 +122,8 @@ public class SSDeepTestUtil {
      * @param observedEvents
      *            the map of observed events, created by extractObservedEvents on the event list obtained from query execution.
      */
-    public static void assertMatch(String querySsdeep, String matchingSsdeep, String matchScore, String matchRank, String weightedScore,
-                    Map<String, Map<String,String>> observedEvents) {
+    public static void assertSSDeepSimilarityMatch(String querySsdeep, String matchingSsdeep, String matchScore, String matchRank, String weightedScore,
+                                                   Map<String, Map<String,String>> observedEvents) {
         final Map<String,String> observedFields = observedEvents.get(querySsdeep + "#" + matchingSsdeep);
         Assert.assertNotNull("Observed fields was null", observedFields);
         Assert.assertFalse("Observed fields was unexpectedly empty", observedFields.isEmpty());

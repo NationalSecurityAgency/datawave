@@ -128,15 +128,15 @@ public class SSDeepSimilarityQueryTest {
         Assert.assertEquals(expectedEventCount, eventCount);
 
         // find the fields for the self match example.
-        SSDeepTestUtil.assertMatch(TEST_SSDEEPS[2], TEST_SSDEEPS[2], "65.0", "1", "100", observedEvents);
+        SSDeepTestUtil.assertSSDeepSimilarityMatch(TEST_SSDEEPS[2], TEST_SSDEEPS[2], "65.0", "1", "100", observedEvents);
 
         // find and validate the fields for the partial match example.
-        SSDeepTestUtil.assertMatch(TEST_SSDEEPS[2], TEST_SSDEEPS[3], "51.0", "2", "96", observedEvents);
+        SSDeepTestUtil.assertSSDeepSimilarityMatch(TEST_SSDEEPS[2], TEST_SSDEEPS[3], "51.0", "2", "96", observedEvents);
 
         if (applyMinScoreThreshold)
             SSDeepTestUtil.assertNoMatch(TEST_SSDEEPS[2], TEST_SSDEEPS[3], observedEvents);
         else
-            SSDeepTestUtil.assertMatch(TEST_SSDEEPS[2], TEST_SSDEEPS[4], "9.0", "3", "63", observedEvents);
+            SSDeepTestUtil.assertSSDeepSimilarityMatch(TEST_SSDEEPS[2], TEST_SSDEEPS[4], "9.0", "3", "63", observedEvents);
     }
 
     public EventQueryResponseBase runSSDeepQuery(String query, int minScoreThreshold) throws Exception {
