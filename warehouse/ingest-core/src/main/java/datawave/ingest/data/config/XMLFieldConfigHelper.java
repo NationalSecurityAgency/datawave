@@ -3,8 +3,6 @@ package datawave.ingest.data.config;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
-import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -14,6 +12,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
+import datawave.common.trie.RadixTreeMap;
 import org.apache.log4j.Logger;
 import org.apache.xerces.jaxp.SAXParserFactoryImpl;
 import org.xml.sax.Attributes;
@@ -40,8 +39,8 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
     private boolean noMatchReverseTokenized = false;
     private String noMatchFieldType = null;
 
-    private final Map<String,FieldInfo> knownFields = new HashMap<>();
-    private final Map<String,Matcher> patterns = new HashMap<>();
+    private final RadixTreeMap<FieldInfo> knownFields = new RadixTreeMap<>();
+    private final RadixTreeMap<Matcher> patterns = new RadixTreeMap<>();
 
     public static class FieldInfo {
         boolean stored;
