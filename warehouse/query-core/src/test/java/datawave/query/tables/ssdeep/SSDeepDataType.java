@@ -80,6 +80,7 @@ public class SSDeepDataType extends AbstractDataTypeConfig {
         SHA256(Normalizer.LC_NO_DIACRITICS_NORMALIZER),
         EVENT_DATE(Normalizer.LC_NO_DIACRITICS_NORMALIZER),
         SECURITY_MARKING(Normalizer.LC_NO_DIACRITICS_NORMALIZER);
+        //The folowing fields are 'extra' fields indicated with the K=V structure in the CSV.
         //FILE_DATE(Normalizer.LC_NO_DIACRITICS_NORMALIZER),
         //FILE_NAME(Normalizer.LC_NO_DIACRITICS_NORMALIZER),
         //CHECKSUM_SSDEEP(Normalizer.NOOP_NORMALIZER),
@@ -244,7 +245,7 @@ public class SSDeepDataType extends AbstractDataTypeConfig {
 
     private static final String SSDEEP_DATE_FIELD_FORMAT = "yyyy-MM-dd hh:mm:ss";
 
-    private static final String[] AUTH_VALUES = new String[] {"A","B","C","D","E","F","G","H"};
+    private static final String[] AUTH_VALUES = new String[] {"public"};
     private static final Authorizations TEST_AUTHS = new Authorizations(AUTH_VALUES);
     private static final Authorizations EXPANSION_AUTHS = new Authorizations("ct-a", "b-ct", "not-b-ct");
     

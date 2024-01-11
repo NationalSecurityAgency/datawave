@@ -68,14 +68,18 @@ public class SSDeepDataManager extends AbstractDataManager {
         
         return data;
     }
-    
+
     /**
      * POJO for a single raw data entry.
      */
     private static class SSDeepRawData extends BaseRawData {
         SSDeepRawData(final String datatype, final String fields[]) {
             super(datatype, fields, SSDeepField.headers(), SSDeepField.getFieldsMetadata());
-            //Assert.assertEquals("ssdeep ingest data field count is invalid", SSDeepField.headers().size(), fields.length);
+        }
+
+        @Override
+        protected boolean hasExtraFields() {
+            return true;
         }
     }
 }

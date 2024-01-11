@@ -14,7 +14,7 @@ import java.util.UUID;
 public abstract class ChainedQueryStreamingIterator<T1,T2> extends ChainedQueryIterator<T1,T2> {
     protected final Logger log = Logger.getLogger(ChainedQueryStreamingIterator.class);
 
-    protected int maxResultsToBuffer =5;
+    protected int maxResultsToBuffer = 5;
 
     protected QueryLogic<T2> runningLatterQueryLogic = null;
 
@@ -154,6 +154,8 @@ public abstract class ChainedQueryStreamingIterator<T1,T2> extends ChainedQueryI
         log.trace("next() discovered more results, stepping..");
         return this.latterQueryResults.next();
     }
+
+
 
     protected abstract Query buildNextQuery(Set<String> queryTerms);
 

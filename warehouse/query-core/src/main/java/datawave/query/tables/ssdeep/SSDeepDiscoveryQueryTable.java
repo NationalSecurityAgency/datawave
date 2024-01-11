@@ -1,5 +1,6 @@
 package datawave.query.tables.ssdeep;
 
+import datawave.query.discovery.DiscoveredThing;
 import datawave.query.tables.chained.ChainedQueryTable;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
@@ -17,7 +18,7 @@ import org.apache.log4j.Logger;
 import java.util.Collections;
 import java.util.Set;
 
-public class SSDeepDiscoveryQueryTable extends ChainedQueryTable<Entry<Key, Value>,Entry<Key,Value>> {
+public class SSDeepDiscoveryQueryTable extends ChainedQueryTable<Entry<Key, Value>, DiscoveredThing> {
 
     private static final Logger log = Logger.getLogger(SSDeepDiscoveryQueryTable.class);
 

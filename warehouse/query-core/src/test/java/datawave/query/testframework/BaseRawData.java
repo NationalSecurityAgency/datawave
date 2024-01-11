@@ -80,10 +80,8 @@ public abstract class BaseRawData implements RawData {
     public void processFields(final String datatype, final String[] fields) {
         // add each header event
         final List<String> hdrs = getHeaders();
-        // ensure headers match field input
-        // TODO: removed this because we have cases where we want to simulate procesing 'extra' fields.
-        //Assert.assertEquals(hdrs.size(), fields.length);
-        
+        Assert.assertTrue("The number of fields must be equal or greater than the number of headers", fields.length >= hdrs.size());
+
         for (int n = 0; n < hdrs.size(); n++) {
             String header = hdrs.get(n);
             final Normalizer<?> norm = getNormalizer(header);
@@ -125,8 +123,22 @@ public abstract class BaseRawData implements RawData {
                 this.event.put(key, values);
             }
         }
+
+        if (fields.length > hdrs.size() && hasExtraFields()) {
+            // extra fields are in the form of fieldName=fieldValue.
+            for (int i = hdrs.size(); i < fields.length; i++) {
+                String value = fields[i];
+            }
+        }
+        else {
+            Assert.fail("The number of fields did not equal the number of headers and hasExtraFields() returned false indicating that there were no extra fields expected");
+        }
     }
-    
+
+    protected boolean hasExtraFields() {
+        return false;
+    }
+
     /**
      * Converts data from a {@link NormalizedContentInterface} into a raw data entry.
      *
