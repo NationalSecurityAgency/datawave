@@ -7,6 +7,7 @@ import datawave.microservice.querymetric.QueryMetricFactoryImpl;
 import datawave.query.RebuildingScannerTestHelper;
 import datawave.query.discovery.DiscoveryLogic;
 import datawave.query.discovery.DiscoveryTransformer;
+import datawave.query.tables.ShardQueryLogic;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.DataTypeHadoopConfig;
@@ -20,6 +21,8 @@ import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.query.QueryImpl;
+import datawave.webservice.query.logic.AbstractQueryLogicTransformer;
+import datawave.webservice.query.logic.QueryLogic;
 import datawave.webservice.query.result.event.DefaultResponseObjectFactory;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
@@ -58,7 +61,11 @@ public class SSDeepDiscoveryQueryTest extends AbstractFunctionalQuery {
 
     DiscoveryLogic discoveryQueryLogic;
 
-    SSDeepDiscoveryQueryTable similarityDiscoveryQueryLogic;
+    ShardQueryLogic eventQueryLogic;
+
+    SSDeepDiscoveryQueryLogic similarityDiscoveryQueryLogic;
+
+    SSDeepEventQueryLogic similarityEventQueryLogic;
 
     @BeforeClass
     public static void filterSetup() throws Exception {
@@ -98,6 +105,15 @@ public class SSDeepDiscoveryQueryTest extends AbstractFunctionalQuery {
         discoveryQueryLogic.setMetadataHelperFactory(metadataHelperFactory);
         discoveryQueryLogic.setResponseObjectFactory(responseFactory);
 
+        eventQueryLogic = new ShardQueryLogic();
+        eventQueryLogic.setTableName("shardIndex");
+        eventQueryLogic.setIndexTableName("shardIndex");
+        eventQueryLogic.setReverseIndexTableName("shardReverseIndex");
+        eventQueryLogic.setModelTableName("metadata");
+        eventQueryLogic.setMarkingFunctions(markingFunctions);
+        eventQueryLogic.setMetadataHelperFactory(metadataHelperFactory);
+        eventQueryLogic.setResponseObjectFactory(responseFactory);
+
         //TODO: this implementation currently does not properly initialize the latter logic at the right time
         // this means that the model is null when we attempt to get the transformer initially. For now,
         // we'll develop using the full chain strategy.
@@ -105,13 +121,23 @@ public class SSDeepDiscoveryQueryTest extends AbstractFunctionalQuery {
         ssdeepStreamedChainStrategy.setMaxResultsToBuffer(1); // disable buffering for this test
 
         //TODO: This implementation works for now, but will likely not scale.
-        FullSSDeepDiscoveryChainStrategy ssdeepFullChainStrategy = new FullSSDeepDiscoveryChainStrategy();
+        FullSSDeepDiscoveryChainStrategy ssdeepDiscoveryChainStrategy = new FullSSDeepDiscoveryChainStrategy();
 
-        similarityDiscoveryQueryLogic = new SSDeepDiscoveryQueryTable();
+        //TODO: eliminate duplication in SSDeepDiscoveryQueryLogic and SSDeepEventQueryLogic
+        // also eliminate duplication in FullSSDeepDiscoveryChainStrategy and FullSSDeepEventChainStrategy.
+        similarityDiscoveryQueryLogic = new SSDeepDiscoveryQueryLogic();
         similarityDiscoveryQueryLogic.setTableName("ssdeepIndex");
         similarityDiscoveryQueryLogic.setLogic1(similarityQueryLogic);
         similarityDiscoveryQueryLogic.setLogic2(discoveryQueryLogic);
-        similarityDiscoveryQueryLogic.setChainStrategy(ssdeepFullChainStrategy);
+        similarityDiscoveryQueryLogic.setChainStrategy(ssdeepDiscoveryChainStrategy);
+
+        FullSSDeepEventChainStrategy ssdeepEventChainStrategy = new FullSSDeepEventChainStrategy();
+
+        similarityEventQueryLogic = new SSDeepEventQueryLogic();
+        similarityEventQueryLogic.setTableName("ssdeepIndex");
+        similarityEventQueryLogic.setLogic1(similarityQueryLogic);
+        similarityEventQueryLogic.setLogic2(eventQueryLogic);
+        similarityEventQueryLogic.setChainStrategy(ssdeepEventChainStrategy);
 
         // init must set auths
         testInit();
@@ -137,11 +163,11 @@ public class SSDeepDiscoveryQueryTest extends AbstractFunctionalQuery {
         log.info("------ testSSDeepSimilarity ------");
         String testSSDeep = "384:nv/fP9FmWVMdRFj2aTgSO+u5QT4ZE1PIVS:nDmWOdRFNTTs504cQS";
         String query = "CHECKSUM_SSDEEP:" + testSSDeep;
-        EventQueryResponseBase response = runSSDeepSimilarityQuery(query, 0);
+        EventQueryResponseBase response = runSSDeepQuery(query, similarityQueryLogic, 0);
+
         List<EventBase> events = response.getEvents();
-        int eventCount = events.size();
+        Assert.assertEquals(1, events.size());
         Map<String,Map<String,String>> observedEvents = extractObservedEvents(events);
-        Assert.assertEquals(1, eventCount);
 
         SSDeepTestUtil.assertSSDeepSimilarityMatch(testSSDeep, testSSDeep, "38.0", "1", "100", observedEvents);
     }
@@ -151,11 +177,13 @@ public class SSDeepDiscoveryQueryTest extends AbstractFunctionalQuery {
         log.info("------ testDiscovery ------");
         String testSSDeep = "384:nv/fP9FmWVMdRFj2aTgSO+u5QT4ZE1PIVS:nDmWOdRFNTTs504cQS";
         String query = "CHECKSUM_SSDEEP:\"" + testSSDeep + "\"";
-        EventQueryResponseBase response = runDiscoveryQuery(query, 0);
+        EventQueryResponseBase response = runSSDeepQuery(query, discoveryQueryLogic, 0);
+
         List<EventBase> events = response.getEvents();
-        int eventCount = events.size();
+        Assert.assertEquals(1, events.size());
         Map<String,Map<String,String>> observedEvents = extractObservedEvents(events);
-        Assert.assertEquals(1, eventCount);
+
+        //TODO: add assertions
     }
 
     @Test
@@ -166,11 +194,11 @@ public class SSDeepDiscoveryQueryTest extends AbstractFunctionalQuery {
         String testSSDeep = "384:nv/fP9FmWVMdRFj2aTgSO+u5QT4ZE1PIVS:nDmWOdRFNTTs504---";
         String targetSSDeep = "384:nv/fP9FmWVMdRFj2aTgSO+u5QT4ZE1PIVS:nDmWOdRFNTTs504cQS";
         String query = "CHECKSUM_SSDEEP:" + testSSDeep;
-        EventQueryResponseBase response = runChainedQuery(query, 0);
+        EventQueryResponseBase response = runSSDeepQuery(query, similarityDiscoveryQueryLogic, 0);
+
         List<EventBase> events = response.getEvents();
-        int eventCount = events.size();
+        Assert.assertEquals(1, events.size());
         Map<String,Map<String,String>> observedEvents = extractObservedEvents(events);
-        Assert.assertEquals(1, eventCount);
 
         Map.Entry<String, Map<String,String>> result = observedEvents.entrySet().iterator().next();
         Map<String, String> resultFields = result.getValue();
@@ -181,28 +209,22 @@ public class SSDeepDiscoveryQueryTest extends AbstractFunctionalQuery {
         Assert.assertEquals("4", resultFields.get("RECORD COUNT"));
     }
 
+    @Test
+    public void testChainedSSDeepEvent() throws Exception {
+        Logger.getLogger(StreamingSSDeepDiscoveryChainStrategy.SSDeepDiscoveryChainedIterator.class).setLevel(Level.DEBUG);
 
-    public EventQueryResponseBase runSSDeepSimilarityQuery(String query, int minScoreThreshold) throws Exception {
-        QueryImpl q = new QueryImpl();
-        q.setQuery(query);
-        q.setId(UUID.randomUUID());
-        q.setPagesize(Integer.MAX_VALUE);
-        q.setQueryAuthorizations(auths.toString());
+        log.info("------ testSSDeepDiscovery ------");
+        String testSSDeep = "384:nv/fP9FmWVMdRFj2aTgSO+u5QT4ZE1PIVS:nDmWOdRFNTTs504---";
+        String targetSSDeep = "384:nv/fP9FmWVMdRFj2aTgSO+u5QT4ZE1PIVS:nDmWOdRFNTTs504cQS";
+        String query = "CHECKSUM_SSDEEP:" + testSSDeep;
+        EventQueryResponseBase response = runSSDeepQuery(query, similarityEventQueryLogic, 0);
 
-        if (minScoreThreshold > 0) {
-            q.addParameter(SSDeepSimilarityQueryTransformer.MIN_SSDEEP_SCORE_PARAMETER, String.valueOf(minScoreThreshold));
-        }
-
-        RunningQuery runner = new RunningQuery(client, AccumuloConnectionFactory.Priority.NORMAL, similarityQueryLogic, q, "", principal,
-                new QueryMetricFactoryImpl());
-        TransformIterator transformIterator = runner.getTransformIterator();
-        SSDeepSimilarityQueryTransformer transformer = (SSDeepSimilarityQueryTransformer) transformIterator.getTransformer();
-        EventQueryResponseBase response = (EventQueryResponseBase) transformer.createResponse(runner.next());
-
-        return response;
+        List<EventBase> events = response.getEvents();
+        Assert.assertEquals(1, events.size());
+        Map<String,Map<String,String>> observedEvents = extractObservedEvents(events);
     }
 
-    public EventQueryResponseBase runDiscoveryQuery(String query, int minScoreThreshold) throws Exception {
+    public EventQueryResponseBase runSSDeepQuery(String query, QueryLogic<?> queryLogic, int minScoreThreshold) throws Exception {
         QueryImpl q = new QueryImpl();
         q.setQuery(query);
         q.setId(UUID.randomUUID());
@@ -213,30 +235,10 @@ public class SSDeepDiscoveryQueryTest extends AbstractFunctionalQuery {
             q.addParameter(SSDeepSimilarityQueryTransformer.MIN_SSDEEP_SCORE_PARAMETER, String.valueOf(minScoreThreshold));
         }
 
-        RunningQuery runner = new RunningQuery(client, AccumuloConnectionFactory.Priority.NORMAL, discoveryQueryLogic, q, "", principal,
+        RunningQuery runner = new RunningQuery(client, AccumuloConnectionFactory.Priority.NORMAL, queryLogic, q, "", principal,
                 new QueryMetricFactoryImpl());
         TransformIterator transformIterator = runner.getTransformIterator();
-        DiscoveryTransformer transformer = (DiscoveryTransformer) transformIterator.getTransformer();
-        EventQueryResponseBase response = (EventQueryResponseBase) transformer.createResponse(runner.next());
-
-        return response;
-    }
-
-    public EventQueryResponseBase runChainedQuery(String query, int minScoreThreshold) throws Exception {
-        QueryImpl q = new QueryImpl();
-        q.setQuery(query);
-        q.setId(UUID.randomUUID());
-        q.setPagesize(Integer.MAX_VALUE);
-        q.setQueryAuthorizations(auths.toString());
-
-        if (minScoreThreshold > 0) {
-            q.addParameter(SSDeepSimilarityQueryTransformer.MIN_SSDEEP_SCORE_PARAMETER, String.valueOf(minScoreThreshold));
-        }
-
-        RunningQuery runner = new RunningQuery(client, AccumuloConnectionFactory.Priority.NORMAL, similarityDiscoveryQueryLogic, q, "", principal,
-                new QueryMetricFactoryImpl());
-        TransformIterator transformIterator = runner.getTransformIterator();
-        DiscoveryTransformer transformer = (DiscoveryTransformer) transformIterator.getTransformer();
+        AbstractQueryLogicTransformer<?,?> transformer = (AbstractQueryLogicTransformer<?,?>) transformIterator.getTransformer();
         EventQueryResponseBase response = (EventQueryResponseBase) transformer.createResponse(runner.next());
 
         return response;
