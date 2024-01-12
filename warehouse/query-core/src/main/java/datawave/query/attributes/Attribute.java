@@ -47,6 +47,17 @@ public abstract class Attribute<T extends Comparable<T>> implements WritableComp
         return (metadata != null);
     }
 
+    /**
+     * Calling this method will always change the backing metadata for an attribute
+     */
+    public void setColumnFamily(Text columnFamily) {
+        if (isMetadataSet()) {
+            metadata = new Key(metadata.getRow(), columnFamily, metadata.getColumnQualifier(), metadata.getColumnVisibility(), metadata.getTimestamp());
+        } else {
+            metadata = new Key(EMPTY_TEXT, columnFamily, EMPTY_TEXT, EMPTY_TEXT, -1);
+        }
+    }
+
     public ColumnVisibility getColumnVisibility() {
         if (isMetadataSet()) {
             return metadata.getColumnVisibilityParsed();
