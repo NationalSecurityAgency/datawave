@@ -12,18 +12,18 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import org.apache.accumulo.core.security.Authorizations;
 import org.junit.Assert;
 import org.junit.Test;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.HashMultimap;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
@@ -48,7 +48,7 @@ import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 
 public class ShardQueryConfigurationTest {
-    
+
     // @formatter:off
     public final static Map<Class<?>,Class<?>> primitiveMap = new ImmutableMap.Builder<Class<?>, Class<?>>()
                     .put(Boolean.class, boolean.class)
@@ -61,7 +61,7 @@ public class ShardQueryConfigurationTest {
                     .put(Double.class, double.class)
                     .build();
     // @formatter:on
-    
+
     /**
      * The set of properties of {@link ShardQueryConfiguration} that are set internally via other properties.
      */
@@ -83,7 +83,7 @@ public class ShardQueryConfigurationTest {
                     "nonEventKeyPrefixesAsString"
     );
     // @formatter:on
-    
+
     /**
      * Assert expected default values from an empty constructor call.
      */
@@ -298,11 +298,11 @@ public class ShardQueryConfigurationTest {
                         .assertValue("fieldIndexHoleMinThreshold", 1.0d)
                         .build();
         // @formatter:on
-    
+
         ShardQueryConfiguration config = ShardQueryConfiguration.create();
         testValues(config, asserts);
     }
-    
+
     /**
      * Test that for a given set of collections, stored in a ShardQueryConfiguration, will in fact be deep-copied into a new ShardQueryConfiguration object.
      */
@@ -521,8 +521,7 @@ public class ShardQueryConfigurationTest {
                         .assertValue("fieldIndexHoleMinThreshold", 0.75d)
                         .build();
         // @formatter:on
-    
-    
+
         // Instantiate ShardQueryConfiguration with non-default values.
         ShardQueryConfiguration other = ShardQueryConfiguration.create();
         for (String field : asserts.keySet()) {
@@ -531,22 +530,22 @@ public class ShardQueryConfigurationTest {
                 setValue(other, field, value);
             }
         }
-    
+
         // Set this manually.
         setValue(other, "queryTree", JexlASTHelper.parseAndFlattenJexlQuery("A == B"));
-    
+
         // Copy 'other' ShardQueryConfiguration into a new config
         ShardQueryConfiguration config = ShardQueryConfiguration.create(other);
-    
+
         testValues(config, asserts);
     }
-    
+
     private Query createQuery(String query) {
         QueryImpl q = new QueryImpl();
         q.setQuery(query);
         return q;
     }
-    
+
     private HashMultimap<String,?> createHashMultimap(Multimap<String,?> multimap) {
         HashMultimap hashMultimap = HashMultimap.create();
         for (Map.Entry<String,?> entry : multimap.entries()) {
@@ -554,7 +553,7 @@ public class ShardQueryConfigurationTest {
         }
         return hashMultimap;
     }
-    
+
     private ArrayListMultimap<String,?> createArrayListMultimap(Multimap<String,?> multimap) {
         ArrayListMultimap arrayListMultimap = ArrayListMultimap.create();
         for (Map.Entry<String,?> entry : multimap.entries()) {
@@ -562,11 +561,11 @@ public class ShardQueryConfigurationTest {
         }
         return arrayListMultimap;
     }
-    
+
     public void setValue(Object source, String fieldName, Object value) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         setValue(source, fieldName, value, value.getClass());
     }
-    
+
     public Object setValue(Object source, String fieldName, Object value, Class<?> valueClass)
                     throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         String getter = "set" + fieldName.substring(0, 1).toUpperCase() + fieldName.substring(1);
@@ -590,46 +589,46 @@ public class ShardQueryConfigurationTest {
             throw e;
         }
     }
-    
-    private void testValues(ShardQueryConfiguration config, Map<String, ValueAssert> asserts)
+
+    private void testValues(ShardQueryConfiguration config, Map<String,ValueAssert> asserts)
                     throws JsonProcessingException, InvocationTargetException, IllegalAccessException, NoSuchMethodException {
         ObjectMapper mapper = new ObjectMapper();
         JsonNode root = mapper.readTree(mapper.writeValueAsString(config));
         Set<String> fieldsSeen = new HashSet<>();
-        
-        for (Iterator<String> it = root.fieldNames(); it.hasNext(); ) {
+
+        for (Iterator<String> it = root.fieldNames(); it.hasNext();) {
             String field = it.next();
             fieldsSeen.add(field);
-            
+
             // Verify a value assert was supplied for the current field.
             Assert.assertTrue("Missing value assert for " + field + ". Please add assert.", asserts.containsKey(field));
-            
+
             // Fetch the value for the field from the configuration.
             Object value = getValue(config, field);
-            
+
             // Assert the value is as expected.
             ValueAssert valueAssert = asserts.get(field);
             valueAssert.assertValue(value);
         }
-        
+
         for (String field : internallySetFields) {
             fieldsSeen.add(field);
-            
+
             // Verify a value assert was supplied for the current field.
             Assert.assertTrue("Missing value assert for " + field + ". Please add assert.", asserts.containsKey(field));
-            
+
             // Fetch the value for the field from the configuration.
             Object value = getValue(config, field);
-            
+
             // Assert the value is as expected.
             ValueAssert valueAssert = asserts.get(field);
             valueAssert.assertValue(value);
         }
-        
+
         Set<String> expectedFields = asserts.keySet();
         Assert.assertEquals("Unexpected fields found: " + Sets.difference(expectedFields, fieldsSeen), expectedFields.size(), fieldsSeen.size());
     }
-    
+
     public Object getValue(Object source, String fieldName) throws InvocationTargetException, IllegalAccessException, NoSuchMethodException {
         String getter = "get" + fieldName.substring(0, 1).toUpperCase() + fieldName.substring(1);
         try {
@@ -639,7 +638,7 @@ public class ShardQueryConfigurationTest {
             return source.getClass().getMethod(getter).invoke(source);
         }
     }
-    
+
     @Test
     public void whenRetrievingActiveQueryLogName_givenTableNameSource_thenReturnsTableName() {
         ShardQueryConfiguration configuration = new ShardQueryConfiguration();
@@ -667,86 +666,88 @@ public class ShardQueryConfigurationTest {
         configuration.setActiveQueryLogNameSource("nonMatchingValue");
         Assert.assertEquals("", configuration.getActiveQueryLogName());
     }
-    
+
     private interface ValueAssert {
         String getField();
+
         Object getExpected();
+
         void assertValue(Object actual);
     }
-    
+
     private static class ValueAssertMapBuilder {
-        
+
         private final Map<String,ValueAssert> asserts = new HashMap<>();
-    
+
         public ValueAssertMapBuilder assertValue(String field, Object value) {
             asserts.put(field, new ObjectAssert(field, value));
             return this;
         }
-    
+
         public ValueAssertMapBuilder assertDelimitedString(String field, String value) {
             asserts.put(field, new DelimitedStringAssert(field, value));
             return this;
         }
-    
+
         @SuppressWarnings("rawtypes")
         public ValueAssertMapBuilder assertPredicate(String field, Object expected, Predicate predicate) {
             asserts.put(field, new PredicateAssert(field, expected, predicate));
             return this;
         }
-        
-        public Map<String, ValueAssert> build() {
+
+        public Map<String,ValueAssert> build() {
             return asserts;
         }
     }
-    
+
     private static abstract class BaseValueAssert implements ValueAssert {
         protected final String field;
         protected final Object expected;
-    
+
         protected BaseValueAssert(String field, Object expected) {
             this.field = field;
             this.expected = expected;
         }
-    
+
         @Override
         public String getField() {
             return field;
         }
-    
+
         @Override
         public Object getExpected() {
             return expected;
         }
     }
-    
+
     private static class ObjectAssert extends BaseValueAssert {
-    
+
         public ObjectAssert(String field, Object expected) {
             super(field, expected);
         }
-    
+
         @Override
         public void assertValue(Object actual) {
             Assert.assertEquals("Unexpected value for " + field, expected, actual);
         }
     }
-    
+
     private static class DelimitedStringAssert extends BaseValueAssert {
-    
+
         private static final String splitPattern = "[,;]";
-        
+
         private final Set<String> expectedSet;
-    
+
         public DelimitedStringAssert(String field, String expected) {
             super(field, expected);
             this.expectedSet = split(expected);
         }
-    
+
         @Override
         public void assertValue(Object actual) {
             Assert.assertEquals("Unexpected value for " + field, expectedSet, split(String.valueOf(actual)));
         }
-    
+
         private Set<String> split(String string) {
             if (string == null) {
                 return null;
@@ -754,17 +755,17 @@ public class ShardQueryConfigurationTest {
             return new HashSet<>(Arrays.asList(string.split(splitPattern)));
         }
     }
-    
+
     @SuppressWarnings("rawtypes")
     private static class PredicateAssert extends BaseValueAssert {
-    
+
         private final Predicate predicate;
-    
+
         public PredicateAssert(String field, Object expected, Predicate predicate) {
             super(field, expected);
             this.predicate = predicate;
         }
-    
+
         @SuppressWarnings("unchecked")
         @Override
         public void assertValue(Object actual) {

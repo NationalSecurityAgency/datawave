@@ -18,7 +18,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import datawave.query.planner.FederatedQueryPlanner;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.IteratorSetting;
@@ -66,6 +65,7 @@ import datawave.query.language.parser.QueryParser;
 import datawave.query.language.tree.QueryNode;
 import datawave.query.model.QueryModel;
 import datawave.query.planner.DefaultQueryPlanner;
+import datawave.query.planner.FederatedQueryPlanner;
 import datawave.query.planner.MetadataHelperQueryModelProvider;
 import datawave.query.planner.QueryModelProvider;
 import datawave.query.planner.QueryPlanner;
@@ -360,7 +360,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         }
         return queryString;
     }
-    
+
     public void initialize(ShardQueryConfiguration config, AccumuloClient client, Query settings, Set<Authorizations> auths) throws Exception {
         // Set the connector and the authorizations into the config object
         config.setClient(client);
@@ -374,7 +374,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         loadQueryParameters(config, settings);
 
         String jexlQueryString = getJexlQueryString(settings);
-        
+
         if (null == jexlQueryString) {
             throw new IllegalArgumentException("Query cannot be null");
         } else {
@@ -423,12 +423,12 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         if (this.queryModel == null) {
             loadQueryModel(metadataHelper, config);
         }
-        
+
         getQueryPlanner().setCreateUidsIteratorClass(createUidsIteratorClass);
         getQueryPlanner().setUidIntersector(uidIntersector);
 
         validateConfiguration(config);
-        
+
         String plannedScript;
         if (getCardinalityConfiguration() != null && (!config.getDisallowlistedFields().isEmpty() || !config.getProjectFields().isEmpty())) {
             // Ensure that fields used for resultCardinalities are returned. They will be removed in the DocumentTransformer.
@@ -445,17 +445,17 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             if (!config.getProjectFields().isEmpty()) {
                 config.setProjectFields(getCardinalityConfiguration().getRevisedProjectFields(queryModel, originalProjectFields));
             }
-    
+
             // If the planner is a DefaultQueryPlanner, delegate the execution to a FederatedQueryPlanner.
             QueryPlanner planner = getQueryPlanner();
             if (planner instanceof DefaultQueryPlanner) {
                 log.info("Executing query via " + FederatedQueryPlanner.class.getSimpleName());
                 planner = new FederatedQueryPlanner(getConfig(), (DefaultQueryPlanner) planner);
             }
-            
+
             this.queries = planner.process(config, jexlQueryString, settings, this.getScannerFactory());
             plannedScript = planner.getPlannedScript();
-            
+
             config.setDisallowlistedFields(originalDisallowlistedFields);
             config.setProjectFields(originalProjectFields);
         } else {
@@ -465,11 +465,11 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
                 log.info("Executing query via " + FederatedQueryPlanner.class.getSimpleName());
                 planner = new FederatedQueryPlanner(getConfig(), (DefaultQueryPlanner) planner);
             }
-            
+
             this.queries = planner.process(config, jexlQueryString, settings, this.getScannerFactory());
             plannedScript = planner.getPlannedScript();
         }
-    
+
         TraceStopwatch stopwatch = config.getTimers().newStartedStopwatch("ShardQueryLogic - Get iterator of queries");
 
         if (this.queries != null) {
@@ -2679,11 +2679,11 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     public void setPruneQueryOptions(boolean pruneQueryOptions) {
         getConfig().setPruneQueryOptions(pruneQueryOptions);
     }
-    
+
     public void setFieldIndexMinThreshold(double fieldIndexMinThreshold) {
         getConfig().setFieldIndexHoleMinThreshold(fieldIndexMinThreshold);
     }
-    
+
     public double getFieldIndexMinThreshold(int fieldIndexMinThreshold) {
         return getConfig().getFieldIndexHoleMinThreshold();
     }
