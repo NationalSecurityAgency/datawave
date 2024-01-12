@@ -42,7 +42,6 @@ import datawave.util.UniversalSet;
  * A visitor that builds a tree of iterators. The main points are at ASTAndNodes and ASTOrNodes, where the code will build AndIterators and OrIterators,
  * respectively. This will automatically roll up binary representations of subtrees into a generic n-ary tree because there isn't a true mapping between JEXL
  * AST trees and iterator trees. A JEXL tree can have subtrees rooted at an ASTNotNode whereas an iterator tree cannot.
- *
  */
 public class FacetedVisitor extends BaseVisitor {
     private static final Logger log = Logger.getLogger(FacetedVisitor.class);
@@ -55,8 +54,6 @@ public class FacetedVisitor extends BaseVisitor {
     protected SortedKeyValueIterator<Key,Value> limitedSource = null;
     protected Map<Entry<String,String>,Entry<Key,Value>> limitedMap = null;
     protected IteratorEnvironment env;
-    protected Collection<String> includeReferences = UniversalSet.instance();
-    protected Collection<String> excludeReferences = Collections.emptyList();
     protected Predicate<Key> datatypeFilter;
     protected TimeFilter timeFilter;
 
@@ -101,9 +98,7 @@ public class FacetedVisitor extends BaseVisitor {
         return root;
     }
 
-    public Iterator<Entry<Key,Document>> streamFacets(ASTJexlScript script, String shard)
-
-    {
+    public Iterator<Entry<Key,Document>> streamFacets(ASTJexlScript script, String shard) {
 
         List<Iterator<Entry<Key,Value>>> kvIterList = Lists.newArrayList();
 

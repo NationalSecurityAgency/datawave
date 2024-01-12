@@ -1792,7 +1792,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         Set<String> dataTypes = config.getDatatypeFilter();
         Set<String> allFields = null;
         try {
-            String dataTypeHash = String.valueOf(dataTypes.hashCode());
+            String dataTypeHash = dataTypes == null ? "" : String.valueOf(dataTypes.hashCode());
             if (cacheDataTypes) {
                 allFields = allFieldTypeMap.getIfPresent(dataTypeHash);
             }
@@ -1804,11 +1804,13 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
             if (log.isTraceEnabled()) {
                 StringBuilder builder = new StringBuilder();
-                for (String dataType : dataTypes) {
-                    if (builder.length() > 0) {
-                        builder.append(',');
+                if (null != dataTypes) {
+                    for (String dataType : dataTypes) {
+                        if (builder.length() > 0) {
+                            builder.append(',');
+                        }
+                        builder.append(dataType);
                     }
-                    builder.append(dataType);
                 }
                 log.trace("Datatypes: " + builder);
                 builder.delete(0, builder.length());

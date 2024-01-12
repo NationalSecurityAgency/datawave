@@ -54,7 +54,6 @@ import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tld.TLDQueryIterator;
 import datawave.query.util.QueryStopwatch;
 import datawave.util.TableName;
-import datawave.util.UniversalSet;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
@@ -219,7 +218,10 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     // Default to having no unevaluatedFields
     private Set<String> unevaluatedFields = Collections.emptySet();
     // Filter results on datatypes. Default to having no filters
-    private Set<String> datatypeFilter = UniversalSet.instance();
+    // A null filter will permit all dataTypes
+    // A non-null empty filter will permit no dataTypes
+    // A non-null populated filter will permit only those dataTypes contained within
+    private Set<String> datatypeFilter = null;
     // A set of sorted index holes
     private List<IndexHole> indexHoles = new ArrayList<>();
     // Limit fields returned per event
@@ -250,7 +252,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private Map<String,Map<String,String>> whindexFieldMappings = new HashMap<>();
 
     private boolean sortedUIDs = true;
-    // The fields in the the query that are tf fields
+    // The fields in the query that are tf fields
     private Set<String> queryTermFrequencyFields = Collections.emptySet();
     // Are we required to get term frequencies (i.e. does the query contain content functions)
     private boolean termFrequenciesRequired = false;
@@ -669,7 +671,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     }
 
     /**
-     * Factory method that instantiates an fresh ShardQueryConfiguration
+     * Factory method that instantiates a fresh ShardQueryConfiguration
      *
      * @return - a clean ShardQueryConfiguration
      */
@@ -880,7 +882,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     @JsonIgnore
     public String getDatatypeFilterAsString() {
-        return StringUtils.join(this.getDatatypeFilter(), Constants.PARAM_VALUE_SEP);
+        return this.getDatatypeFilter() == null ? "" : StringUtils.join(this.getDatatypeFilter(), Constants.PARAM_VALUE_SEP);
     }
 
     private Set<String> deconstruct(Collection<String> fields) {

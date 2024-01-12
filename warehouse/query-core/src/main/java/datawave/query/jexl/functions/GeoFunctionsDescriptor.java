@@ -25,6 +25,7 @@ import org.locationtech.jts.geom.Polygon;
 import org.locationtech.jts.util.GeometricShapeFactory;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 
 import datawave.data.normalizer.GeoNormalizer;
 import datawave.data.normalizer.GeoNormalizer.GeoPoint;
@@ -36,6 +37,7 @@ import datawave.data.type.GeoType;
 import datawave.data.type.Type;
 import datawave.query.attributes.AttributeFactory;
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.ArithmeticJexlEngines;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
@@ -46,10 +48,11 @@ import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.GeoUtils;
 import datawave.query.util.MetadataHelper;
+import datawave.webservice.query.exception.DatawaveErrorCode;
+import datawave.webservice.query.exception.QueryException;
 
 /**
  * This is the descriptor class for performing geo functions. It supports basic spatial relationships against points.
- *
  */
 public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFactory {
 
@@ -61,10 +64,9 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
 
     /**
      * This is the argument descriptor which can be used to normalize and optimize function node queries
-     *
+     * <p>
      * This rebuilding argument descriptor will ensure that if any of the query fields are GeoWave Geometry types that they are removed from the geo query
      * function and placed into the equivalent GeoWave query function.
-     *
      */
     public static class GeoJexlArgumentDescriptor implements RebuildingJexlArgumentDescriptor {
 
@@ -83,9 +85,15 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
         public JexlNode getIndexQuery(ShardQueryConfiguration config, MetadataHelper helper, DateIndexHelper dateIndexHelper, Set<String> datatypeFilter) {
             // return the true node if unable to parse arguments
             JexlNode returnNode = TRUE_NODE;
+            Set<String> allFields = null;
+            try {
+                allFields = (helper != null) ? helper.getAllFields(datatypeFilter) : null;
+            } catch (TableNotFoundException e) {
+                QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
+                throw new DatawaveFatalQueryException(qe);
+            }
 
             if (name.equals(WITHIN_BOUNDING_BOX)) {
-
                 GeoNormalizer geoNormalizer = ((GeoNormalizer) Normalizer.GEO_NORMALIZER);
 
                 // three arguments is the form within_bounding_box(fieldName, lowerLeft, upperRight)
@@ -164,7 +172,6 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
                     }
                 }
             } else if (name.equals(WITHIN_CIRCLE)) {
-
                 String center = args.get(1).image;
                 GeoType gn = new GeoType();
 
@@ -210,6 +217,7 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
             } else {
                 fieldNames.add(node.image);
             }
+
             return fieldNames;
         }
 
@@ -254,43 +262,94 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
 
         @Override
         public Set<String> fieldsForNormalization(MetadataHelper helper, Set<String> datatypeFilter, int arg) {
-            if (arg > 0) {
-                if (name.equals(WITHIN_BOUNDING_BOX)) {
-                    if (args.size() == 6) {
-                        if (arg == 2 || arg == 4) {
-                            return JexlASTHelper.getIdentifierNames(args.get(0));
+            try {
+                Set<String> allFields = helper.getAllFields(datatypeFilter);
+                if (arg > 0) {
+                    if (name.equals(WITHIN_BOUNDING_BOX)) {
+                        if (args.size() == 6) {
+                            if (arg == 2 || arg == 4) {
+                                return filterSet(allFields, JexlASTHelper.getIdentifierNames(args.get(0)));
+                            } else {
+                                return filterSet(allFields, JexlASTHelper.getIdentifierNames(args.get(1)));
+                            }
                         } else {
-                            return JexlASTHelper.getIdentifierNames(args.get(1));
+                            return filterSet(allFields, JexlASTHelper.getIdentifierNames(args.get(0)));
                         }
-                    } else {
-                        return JexlASTHelper.getIdentifierNames(args.get(0));
+                    } else if (arg == 1) { // within_circle
+                        return filterSet(allFields, JexlASTHelper.getIdentifierNames(args.get(0)));
                     }
-                } else if (arg == 1) { // within_circle
-                    return JexlASTHelper.getIdentifierNames(args.get(0));
                 }
+                return Collections.emptySet();
+            } catch (TableNotFoundException e) {
+                QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
+                log.error(qe);
+                throw new DatawaveFatalQueryException(qe);
             }
-            return Collections.emptySet();
         }
 
         @Override
         public Set<String> fields(MetadataHelper helper, Set<String> datatypeFilter) {
-            if (name.equals(WITHIN_BOUNDING_BOX) && args.size() == 6) {
-                Set<String> fields = new HashSet<>();
-                fields.addAll(JexlASTHelper.getIdentifierNames(args.get(0)));
-                fields.addAll(JexlASTHelper.getIdentifierNames(args.get(1)));
-                return fields;
-            } else {
-                return JexlASTHelper.getIdentifierNames(args.get(0));
+            try {
+                Set<String> allFields = (helper != null) ? helper.getAllFields(datatypeFilter) : null;
+                if (name.equals(WITHIN_BOUNDING_BOX) && args.size() == 6) {
+                    Set<String> fields = new HashSet<>();
+                    if (datatypeFilter != null) {
+                        fields.addAll(filterSet(allFields, JexlASTHelper.getIdentifierNames(args.get(0))));
+                        fields.addAll(filterSet(allFields, JexlASTHelper.getIdentifierNames(args.get(1))));
+                    } else {
+                        fields.addAll(JexlASTHelper.getIdentifierNames(args.get(0)));
+                        fields.addAll(JexlASTHelper.getIdentifierNames(args.get(1)));
+                    }
+                    return fields;
+                } else {
+                    return datatypeFilter != null ? filterSet(allFields, JexlASTHelper.getIdentifierNames(args.get(0)))
+                                    : JexlASTHelper.getIdentifierNames(args.get(0));
+                }
+            } catch (TableNotFoundException e) {
+                QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
+                log.error(qe);
+                throw new DatawaveFatalQueryException(qe);
             }
         }
 
         @Override
         public Set<Set<String>> fieldSets(MetadataHelper helper, Set<String> datatypeFilter) {
-            if (name.equals(WITHIN_BOUNDING_BOX) && args.size() == 6) {
-                // if we have an or node anywhere, then we need to produce a cartesion product
-                return JexlArgumentDescriptor.Fields.product(args.get(0), args.get(1));
+            try {
+                Set<String> allFields = helper.getAllFields(datatypeFilter);
+                Set<Set<String>> filteredSets = Sets.newHashSet(Sets.newHashSet());
+                if (name.equals(WITHIN_BOUNDING_BOX) && args.size() == 6) {
+                    // if we have an or node anywhere, then we need to produce a cartesion product
+                    for (Set<String> aFieldSet : JexlArgumentDescriptor.Fields.product(args.get(0), args.get(1))) {
+                        filteredSets.add(filterSet(allFields, aFieldSet));
+                    }
+                } else {
+                    for (Set<String> aFieldSet : JexlArgumentDescriptor.Fields.product(args.get(0))) {
+                        filteredSets.add(filterSet(allFields, aFieldSet));
+                    }
+                }
+                return filteredSets;
+            } catch (TableNotFoundException e) {
+                QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
+                log.error(qe);
+                throw new DatawaveFatalQueryException(qe);
+            }
+        }
+
+        /**
+         * Given a list of all possible fields, filters out fields based on the given datatype(s). If allFields is null, we assume this is a no-op and return
+         * everything
+         *
+         * @param allFields
+         * @param fields
+         */
+        private Set<String> filterSet(Set<String> allFields, Set<String> fields) {
+            if (allFields != null) {
+                Set<String> returnedFields = Sets.newHashSet();
+                returnedFields.addAll(allFields);
+                returnedFields.retainAll(fields);
+                return returnedFields;
             } else {
-                return JexlArgumentDescriptor.Fields.product(args.get(0));
+                return fields;
             }
         }
 
@@ -424,7 +483,6 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
 
         public JexlNode toGeoWaveFunction(Set<String> fields) throws Exception {
             String wkt = null;
-
             // only allow conversion to geowave function for the indexed geo types, not the individual lat/lon fields
             if ((name.equals(WITHIN_BOUNDING_BOX) && args.size() == 3) || name.equals(WITHIN_CIRCLE)) {
                 wkt = getWkt();

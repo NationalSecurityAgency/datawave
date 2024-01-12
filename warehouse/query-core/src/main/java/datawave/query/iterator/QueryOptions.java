@@ -1274,7 +1274,7 @@ public class QueryOptions implements OptionDescriber {
         this.options = options;
 
         // If we don't have a query, make sure it's because
-        // we don't aren't performing any Jexl evaluation
+        // we aren't performing any Jexl evaluation
         if (options.containsKey(DISABLE_EVALUATION)) {
             this.disableEvaluation = Boolean.parseBoolean(options.get(DISABLE_EVALUATION));
         }

@@ -4,12 +4,12 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
 import org.apache.commons.jexl2.parser.ASTIdentifier;
 import org.apache.commons.jexl2.parser.ASTOrNode;
@@ -22,12 +22,15 @@ import com.google.common.collect.Sets;
 import datawave.query.Constants;
 import datawave.query.attributes.AttributeFactory;
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
+import datawave.webservice.query.exception.DatawaveErrorCode;
+import datawave.webservice.query.exception.QueryException;
 
 /**
  * Evaluation phase filter functions cannot be evaluated against index-only fields
@@ -46,9 +49,6 @@ public class EvaluationPhaseFilterFunctionsDescriptor implements JexlFunctionArg
 
     /**
      * This is the argument descriptor which can be used to normalize and optimize function node queries
-     *
-     *
-     *
      */
     public static class EvaluationPhaseFilterJexlArgumentDescriptor implements JexlArgumentDescriptor {
         private static final Logger log = Logger.getLogger(EvaluationPhaseFilterJexlArgumentDescriptor.class);
@@ -76,15 +76,15 @@ public class EvaluationPhaseFilterFunctionsDescriptor implements JexlFunctionArg
             // in the special case of date functions and then only with the between methods,
             // we want to add a range stream hint in terms of SHARDS_AND_DAYS
             if (dateBetweenFunctions.contains(functionMetadata.name()) && dateIndexHelper != null) {
-                return getShardsAndDaysQuery(functionMetadata, config, helper, dateIndexHelper, datatypeFilter);
+                return getShardsAndDaysQuery(functionMetadata, config, dateIndexHelper, datatypeFilter);
             }
 
             // 'true' is returned to imply that there is no range lookup possible for this function
             return TRUE_NODE;
         }
 
-        private JexlNode getShardsAndDaysQuery(FunctionJexlNodeVisitor functionMetadata, ShardQueryConfiguration config, MetadataHelper helper,
-                        DateIndexHelper dateIndexHelper, Set<String> datatypeFilter) {
+        private JexlNode getShardsAndDaysQuery(FunctionJexlNodeVisitor functionMetadata, ShardQueryConfiguration config, DateIndexHelper dateIndexHelper,
+                        Set<String> datatypeFilter) {
             try {
                 List<JexlNode> arguments = functionMetadata.args();
                 JexlNode node0 = arguments.get(0);
@@ -197,15 +197,15 @@ public class EvaluationPhaseFilterFunctionsDescriptor implements JexlFunctionArg
 
             List<JexlNode> arguments = functionMetadata.args();
             if (MATCHCOUNTOF.equals(functionMetadata.name())) {
-                fields.addAll(JexlASTHelper.getIdentifierNames(arguments.get(1)));
+                fields.addAll(filterFields(JexlASTHelper.getIdentifierNames(arguments.get(1)), helper, datatypeFilter));
             } else if (TIMEFUNCTION.equals(functionMetadata.name())) {
-                fields.addAll(JexlASTHelper.getIdentifierNames(arguments.get(0)));
-                fields.addAll(JexlASTHelper.getIdentifierNames(arguments.get(1)));
+                fields.addAll(filterFields(JexlASTHelper.getIdentifierNames(arguments.get(0)), helper, datatypeFilter));
+                fields.addAll(filterFields(JexlASTHelper.getIdentifierNames(arguments.get(1)), helper, datatypeFilter));
             } else if (COMPARE.equals(functionMetadata.name())) {
-                fields.addAll(JexlASTHelper.getIdentifierNames(arguments.get(0)));
-                fields.addAll(JexlASTHelper.getIdentifierNames(arguments.get(3)));
+                fields.addAll(filterFields(JexlASTHelper.getIdentifierNames(arguments.get(0)), helper, datatypeFilter));
+                fields.addAll(filterFields(JexlASTHelper.getIdentifierNames(arguments.get(3)), helper, datatypeFilter));
             } else {
-                fields.addAll(JexlASTHelper.getIdentifierNames(arguments.get(0)));
+                fields.addAll(filterFields(JexlASTHelper.getIdentifierNames(arguments.get(0)), helper, datatypeFilter));
             }
             return fields;
         }
@@ -217,14 +217,46 @@ public class EvaluationPhaseFilterFunctionsDescriptor implements JexlFunctionArg
 
             List<JexlNode> arguments = functionMetadata.args();
             if (MATCHCOUNTOF.equals(functionMetadata.name())) {
-                return JexlArgumentDescriptor.Fields.product(arguments.get(1));
+                return filterSets(JexlArgumentDescriptor.Fields.product(arguments.get(1)), helper, datatypeFilter);
             } else if (TIMEFUNCTION.equals(functionMetadata.name())) {
-                return JexlArgumentDescriptor.Fields.product(arguments.get(0), arguments.get(1));
+                return filterSets(JexlArgumentDescriptor.Fields.product(arguments.get(0), arguments.get(1)), helper, datatypeFilter);
             } else if (COMPARE.equals(functionMetadata.name())) {
-                return JexlArgumentDescriptor.Fields.product(arguments.get(0), arguments.get(3));
+                return filterSets(JexlArgumentDescriptor.Fields.product(arguments.get(0), arguments.get(3)), helper, datatypeFilter);
             } else {
-                return JexlArgumentDescriptor.Fields.product(arguments.get(0));
+                return filterSets(JexlArgumentDescriptor.Fields.product(arguments.get(0)), helper, datatypeFilter);
             }
+        }
+
+        private Set<String> filterFields(Set<String> fields, MetadataHelper helper, Set<String> datatypeFilter) {
+            try {
+                Set<String> filteredFields = new HashSet<>();
+                if (datatypeFilter == null) {
+                    filteredFields.addAll(fields);
+                } else if (!datatypeFilter.isEmpty()) {
+                    for (String field : fields) {
+                        if (!helper.getDatatypesForField(field, datatypeFilter).isEmpty()) {
+                            filteredFields.add(field);
+                        }
+                    }
+                } // non-null but empty typeFilters allow nothing
+                return Collections.unmodifiableSet(filteredFields);
+            } catch (TableNotFoundException e) {
+                QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
+                log.error(qe);
+                throw new DatawaveFatalQueryException(qe);
+            } catch (InstantiationException | IllegalAccessException e) {
+                QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_RECORD_FETCH_ERROR, e);
+                log.error(qe);
+                throw new DatawaveFatalQueryException(qe);
+            }
+        }
+
+        private Set<Set<String>> filterSets(Set<Set<String>> sets, MetadataHelper helper, Set<String> datatypeFilter) {
+            Set<Set<String>> filteredSets = new HashSet<>();
+            for (Set<String> set : sets) {
+                filteredSets.add(filterFields(set, helper, datatypeFilter));
+            }
+            return Collections.unmodifiableSet(filteredSets);
         }
 
         @Override

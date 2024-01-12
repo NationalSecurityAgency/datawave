@@ -16,6 +16,7 @@ import org.apache.commons.jexl2.parser.ASTOrNode;
 import org.apache.commons.jexl2.parser.ASTReference;
 import org.apache.commons.jexl2.parser.ASTReferenceExpression;
 import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.log4j.Logger;
 
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
@@ -31,6 +32,8 @@ public class CaseSensitivityVisitor extends ShortCircuitBaseVisitor {
 
     private ShardQueryConfiguration config;
     private MetadataHelper helper;
+
+    private static final Logger LOGGER = Logger.getLogger(CaseSensitivityVisitor.class);
 
     public CaseSensitivityVisitor(ShardQueryConfiguration config, MetadataHelper helper) {
         this.config = config;
@@ -63,7 +66,8 @@ public class CaseSensitivityVisitor extends ShortCircuitBaseVisitor {
         // lets determine which of the arguments are actually field name identifiers (e.g. termFrequencyMap is not)
         JexlArgumentDescriptor desc = JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor(node);
 
-        Set<String> fields = desc.fields(helper, config.getDatatypeFilter());
+        Set<String> fields = null;
+        fields = desc.fields(helper, config.getDatatypeFilter());
 
         return super.visit(node, fields);
     }
