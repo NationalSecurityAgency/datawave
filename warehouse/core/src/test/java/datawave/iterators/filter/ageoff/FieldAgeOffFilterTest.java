@@ -67,6 +67,11 @@ public class FieldAgeOffFilterTest {
         }
 
         @Override
+        public boolean isUserCompaction() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         public void registerSideChannel(SortedKeyValueIterator<Key,Value> sortedKeyValueIterator) {
             throw new UnsupportedOperationException();
         }
@@ -183,7 +188,7 @@ public class FieldAgeOffFilterTest {
         ageOffFilter.init(filterOptions, iterEnv);
         Assert.assertNotNull("IteratorEnvironment should not be null after init!", ageOffFilter.iterEnv);
         // originally this would cause the iterEnv to be lost and test would fail
-        ageOffFilter = (FieldAgeOffFilter) ageOffFilter.deepCopy(tenSecondsAgo);
+        ageOffFilter = (FieldAgeOffFilter) ageOffFilter.deepCopy(tenSecondsAgo, iterEnv);
 
         Assert.assertNotNull("IteratorEnvironment should not be null after deep copy!", ageOffFilter.iterEnv);
     }
