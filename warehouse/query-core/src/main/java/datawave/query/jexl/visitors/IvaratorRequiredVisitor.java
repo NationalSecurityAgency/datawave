@@ -35,4 +35,81 @@ public class IvaratorRequiredVisitor extends BaseVisitor {
         }
         return data;
     }
+    
+    @Override
+    public Object visit(ASTNotNode node, Object data) {
+        if (!ivaratorRequired) {
+            node.childrenAccept(this, data);
+        }
+        return data;
+    }
+    
+    @Override
+    public Object visit(ASTOrNode node, Object data) {
+        if (!ivaratorRequired) {
+            node.childrenAccept(this, data);
+        }
+        return data;
+    }
+    
+    @Override
+    public Object visit(ASTReference node, Object data) {
+        if (!ivaratorRequired) {
+            node.childrenAccept(this, data);
+        }
+        return data;
+    }
+    
+    @Override
+    public Object visit(ASTReferenceExpression node, Object data) {
+        if (!ivaratorRequired) {
+            node.childrenAccept(this, data);
+        }
+        return data;
+    }
+    
+    // Ensure we short circuit leaf nodes
+    public Object visit(ASTEQNode node, Object data) {
+        return data;
+    }
+    
+    @Override
+    public Object visit(ASTNENode node, Object data) {
+        return data;
+    }
+    
+    @Override
+    public Object visit(ASTERNode node, Object data) {
+        return data;
+    }
+    
+    @Override
+    public Object visit(ASTNRNode node, Object data) {
+        return data;
+    }
+    
+    @Override
+    public Object visit(ASTLTNode node, Object data) {
+        return data;
+    }
+    
+    @Override
+    public Object visit(ASTGTNode node, Object data) {
+        return data;
+    }
+    
+    @Override
+    public Object visit(ASTLENode node, Object data) {
+        return data;
+    }
+    
+    @Override
+    public Object visit(ASTGENode node, Object data) {
+        return data;
+    }
+    
+    @Override
+    public Object visit(ASTFunctionNode node, Object data) {
+        return data;
+    }
 }
