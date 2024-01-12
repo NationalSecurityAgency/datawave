@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedSet;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.IteratorSetting;
@@ -43,7 +44,7 @@ public class SequentialUidScanner extends AbstractUidScanner {
     }
 
     @Override
-    public Set<String> scan(ASTJexlScript script, String row, Set<String> indexedFields) {
+    public SortedSet<String> scan(ASTJexlScript script, String row, Set<String> indexedFields) {
         long start = System.currentTimeMillis();
         Set<JexlNode> terms = QueryTermVisitor.parse(script);
         TreeMultimap<String,String> map = termsToMap(terms, indexedFields);

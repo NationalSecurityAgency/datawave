@@ -80,6 +80,8 @@ public class QueryExecutorOptions {
     private long startTime = -1;
     private long endTime = -1;
 
+    private Set<String> datatypeFilter;
+
     // options from ShardQueryConfig
     private String tableName;
     private AccumuloClient client;
@@ -189,6 +191,11 @@ public class QueryExecutorOptions {
 
         if (options.containsKey(QueryOptions.END_TIME)) {
             this.endTime = Long.parseLong(options.get(QueryOptions.END_TIME));
+        }
+
+        if (options.containsKey(QueryOptions.DATATYPE_FILTER)) {
+            String option = options.get(QueryOptions.DATATYPE_FILTER);
+            this.datatypeFilter = new HashSet<>(Arrays.asList(StringUtils.split(option, ',')));
         }
     }
 
@@ -368,5 +375,13 @@ public class QueryExecutorOptions {
 
     public void setEndTime(Long endTime) {
         this.endTime = endTime;
+    }
+
+    public Set<String> getDatatypeFilter() {
+        return datatypeFilter;
+    }
+
+    public void setDatatypeFilter(Set<String> datatypeFilter) {
+        this.datatypeFilter = datatypeFilter;
     }
 }

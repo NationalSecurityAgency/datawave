@@ -5,8 +5,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.SortedSet;
 
-import datawave.query.predicate.TimeFilter;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.data.Key;
@@ -40,7 +40,7 @@ public class SerialUidScanner extends AbstractUidScanner {
      * Scans the field index serially for the set of query terms
      */
     @Override
-    public Set<String> scan(ASTJexlScript script, String row, Set<String> indexedFields) {
+    public SortedSet<String> scan(ASTJexlScript script, String row, Set<String> indexedFields) {
         Set<JexlNode> terms = QueryTermVisitor.parse(script);
         long elapsed = System.currentTimeMillis();
         int count = 0;

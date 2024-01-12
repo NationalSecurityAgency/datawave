@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
@@ -40,7 +41,7 @@ public class ParallelUidScanner extends SerialUidScanner {
     }
 
     @Override
-    public Set<String> scan(ASTJexlScript script, String row, Set<String> indexedFields) {
+    public SortedSet<String> scan(ASTJexlScript script, String row, Set<String> indexedFields) {
         Set<JexlNode> terms = QueryTermVisitor.parse(script);
         long elapsed = System.currentTimeMillis();
         Map<String,Set<String>> nodesToUids = new HashMap<>();

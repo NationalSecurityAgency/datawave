@@ -9,6 +9,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedSet;
 
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.JexlNode;
@@ -262,7 +263,7 @@ public class UidScannerTest {
             // extract query nodes
             ASTJexlScript script = JexlASTHelper.parseAndFlattenJexlQuery(query);
             Set<JexlNode> terms = QueryTermVisitor.parse(script);
-            Set<String> scannedUids = scanner.scan(script, "20201212_0", Sets.newHashSet("TOK", "FIRST_NAME", "MSG_SIZE"));
+            SortedSet<String> scannedUids = scanner.scan(script, "20201212_0", Sets.newHashSet("TOK", "FIRST_NAME", "MSG_SIZE"));
             assertEquals(prependDatatypeToUids(expected), scannedUids);
         } catch (ParseException e) {
             Assert.fail("Failed to parse query: " + query);

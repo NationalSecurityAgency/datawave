@@ -1,15 +1,10 @@
 package datawave.experimental.fi;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-import datawave.query.jexl.JexlASTHelper;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -70,8 +65,7 @@ import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParserVisitor;
 import org.apache.commons.jexl2.parser.SimpleNode;
 
-import com.google.common.collect.Sets;
-
+import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.order.OrderByCostVisitor;
 
 /**
@@ -94,12 +88,12 @@ public class OrderOptimizedUidScanner extends AbstractUidScanner implements Pars
 
     @SuppressWarnings("unchecked")
     @Override
-    public Set<String> scan(ASTJexlScript script, String row, Set<String> indexedFields) {
+    public SortedSet<String> scan(ASTJexlScript script, String row, Set<String> indexedFields) {
         this.row = row;
         this.indexedFields = indexedFields;
 
         ASTJexlScript orderedScript = OrderByCostVisitor.order(script);
-        return (Set<String>) orderedScript.jjtAccept(this, null);
+        return (SortedSet<String>) orderedScript.jjtAccept(this, null);
     }
 
     @Override
@@ -109,104 +103,114 @@ public class OrderOptimizedUidScanner extends AbstractUidScanner implements Pars
 
     @Override
     public Object visit(ASTJexlScript node, Object data) {
-        return node.childrenAccept(this, data);
+        return node.jjtGetChild(0).jjtAccept(this, data);
     }
 
     @Override
     public Object visit(ASTReference node, Object data) {
-        return node.childrenAccept(this, data);
+        return node.jjtGetChild(0).jjtAccept(this, data);
     }
 
     @Override
     public Object visit(ASTReferenceExpression node, Object data) {
-        return node.childrenAccept(this, data);
+        return node.jjtGetChild(0).jjtAccept(this, data);
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public Object visit(ASTOrNode node, Object data) {
-        Set<String> uids;
-        if (data instanceof Set) {
-            uids = (Set<String>) data;
-        } else {
-            uids = new HashSet<>();
-        }
-
+        SortedSet<String> uids = processData(data);
+        SortedSet<String> ourUids = new TreeSet<>();
         for (int i = 0; i < node.jjtGetNumChildren(); i++) {
             JexlNode child = node.jjtGetChild(i);
-            Object o = child.jjtAccept(this, data);
-            Set<String> childUids = (Set<String>) o;
-            uids.addAll(childUids);
+            if (isJunction(child)) {
+                SortedSet<String> childUids = (SortedSet<String>) child.jjtAccept(this, data);
+                ourUids.addAll(childUids);
+            } else if (isLeaf(child)) {
+                if (!uids.isEmpty()) {
+                    // a parent intersection can be used to bound the scan for a grandchild leaf (AND - OR - LEAF)
+                    SortedSet<String> childUids = scanForLeaf(child, uids.first(), uids.last());
+                    ourUids.addAll(childUids);
+                } else {
+                    SortedSet<String> childUids = scanForLeaf(child);
+                    ourUids.addAll(childUids);
+                }
+            }
         }
+        uids.addAll(ourUids);
         return uids;
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public Object visit(ASTAndNode node, Object data) {
-        Set<String> uids = null;
-        if (data instanceof Set) {
-            uids = (Set<String>) data;
-        }
-
+        SortedSet<String> uids = processData(data);
         for (int i = 0; i < node.jjtGetNumChildren(); i++) {
             JexlNode child = node.jjtGetChild(i);
-            Object o = child.jjtAccept(this, data);
-            Set<String> childUids = (Set<String>) o;
-
-            if (uids == null) {
-                uids = childUids;
-            } else {
-                uids = Sets.intersection(uids, childUids);
+            if (isJunction(child)) {
+                SortedSet<String> childUids = (SortedSet<String>) child.jjtAccept(this, data);
+                uids = processIntersectionUids(uids, childUids);
                 if (uids.isEmpty()) {
-                    return Collections.emptySet();
+                    return uids;
+                }
+            } else if (isLeaf(child)) {
+                if (!uids.isEmpty()) {
+                    SortedSet<String> childUids = scanForLeaf(child, uids.first(), uids.last());
+                    uids = processIntersectionUids(uids, childUids);
+                } else {
+                    SortedSet<String> childUids = scanForLeaf(child);
+                    uids = processIntersectionUids(uids, childUids);
+                }
+
+                if (uids.isEmpty()) {
+                    return uids;
                 }
             }
         }
-        return data;
+        return uids;
     }
 
-    private SortedSet<String> visitJunction(JexlNode node, Object data) {
-        SortedSet<String> uids = null;
-        if (data instanceof Set) {
-            uids = (SortedSet<String>) data;
+    /**
+     * Intersects child uids with an existing set of uids
+     *
+     * @param uids
+     *            existing uids
+     * @param childUids
+     *            uids for child
+     * @return the intersected uids
+     */
+    private SortedSet<String> processIntersectionUids(SortedSet<String> uids, SortedSet<String> childUids) {
+        if (uids.isEmpty()) {
+            // initial state, child is the first scan of the query
+            return childUids;
         }
 
-        boolean parentIsAnd = isParentIntersection(node);
-        boolean nodeIsAnd = node instanceof ASTAndNode;
-
-        SortedSet<String> ourUids = null;
-
-        // simple leaves first
-        List<JexlNode> leaves = new LinkedList<>();
-        for (int i = 0; i < node.jjtGetNumChildren(); i++) {
-            JexlNode child = node.jjtGetChild(i);
-            if (isLeaf(child)) {
-                leaves.add(child);
-            }
-        }
-
-        scanForLeaves(leaves, uids, ourUids, parentIsAnd, nodeIsAnd);
-
-        // complex leaves next
-
-        return ourUids;
+        uids.retainAll(childUids);
+        return uids;
     }
 
-    private boolean isParentIntersection(JexlNode node) {
-        while (node.jjtGetParent() != null) {
-            node = node.jjtGetParent();
-            if (node instanceof ASTAndNode) {
-                return true;
-            } else if (node instanceof ASTOrNode) {
-                return false;
-            }
+    /**
+     * Processes the data object by casting it to a SortedSet of uids or returns an empty collection
+     *
+     * @param data
+     *            the data passed around
+     * @return a sorted set
+     */
+    @SuppressWarnings("unchecked")
+    private SortedSet<String> processData(Object data) {
+        if (data instanceof SortedSet) {
+            return (SortedSet<String>) data;
         }
-        return false;
+        return new TreeSet<>();
     }
 
     private boolean isLeaf(JexlNode node) {
-        return !isJunction(node);
+        JexlNode deref = JexlASTHelper.dereference(node);
+        if (deref instanceof ASTEQNode || deref instanceof ASTERNode) {
+            String field = JexlASTHelper.getIdentifier(deref);
+            return indexedFields.contains(field);
+        }
+        return false;
     }
 
     private boolean isJunction(JexlNode node) {
@@ -218,30 +222,6 @@ public class OrderOptimizedUidScanner extends AbstractUidScanner implements Pars
                         deref instanceof ASTReferenceExpression ||
                         deref instanceof ASTNotNode;
         //  @formatter:on
-    }
-
-    private SortedSet<String> scanForLeaves(List<JexlNode> leaves, SortedSet<String> parentUids, SortedSet<String> ourUids, boolean parentIsAnd,
-                    boolean nodeIsAnd) {
-        for (JexlNode leaf : leaves) {
-            SortedSet<String> leafUids;
-            if (parentIsAnd && parentUids != null) {
-                leafUids = scanForLeaf(leaf, parentUids.first(), parentUids.last());
-            } else if (nodeIsAnd && ourUids != null) {
-                leafUids = scanForLeaf(leaf, ourUids.first(), ourUids.last());
-            } else {
-                leafUids = scanForLeaf(leaf);
-            }
-
-            if (ourUids == null) {
-                ourUids = leafUids;
-            } else if (nodeIsAnd) {
-                ourUids.retainAll(leafUids); // retain all is effectively an intersection
-            } else {
-                ourUids.addAll(leafUids);
-            }
-        }
-
-        return new TreeSet<>();
     }
 
     private SortedSet<String> scanForLeaf(JexlNode node) {
@@ -265,7 +245,7 @@ public class OrderOptimizedUidScanner extends AbstractUidScanner implements Pars
     // assumes single datatype
     private SortedSet<String> scanForLeaf(JexlNode node, String startUid, String stopUid) {
         SortedSet<String> uids = new TreeSet<>();
-        Range range = rangeBuilder.rangeFromTerm(row, node, startUid, stopUid);
+        Range range = rangeBuilder.rangeFromTerm(row, node, startUid, null);
 
         try (Scanner scanner = client.createScanner(tableName, auths)) {
             scanner.setRange(range);
@@ -288,12 +268,16 @@ public class OrderOptimizedUidScanner extends AbstractUidScanner implements Pars
 
     @Override
     public Object visit(ASTNotNode node, Object data) {
-        node.childrenAccept(this, data);
+        // node.childrenAccept(this, data);
         return data;
     }
 
     @Override
     public Object visit(ASTEQNode node, Object data) {
+        String field = JexlASTHelper.getIdentifier(node);
+        if (indexedFields.contains(field)) {
+            return scanForLeaf(node);
+        }
         return data;
     }
 
@@ -324,6 +308,10 @@ public class OrderOptimizedUidScanner extends AbstractUidScanner implements Pars
 
     @Override
     public Object visit(ASTERNode node, Object data) {
+        String field = JexlASTHelper.getIdentifier(node);
+        if (indexedFields.contains(field)) {
+            return scanForLeaf(node);
+        }
         return data;
     }
 

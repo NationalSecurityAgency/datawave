@@ -14,7 +14,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import datawave.query.predicate.TimeFilter;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -50,6 +49,7 @@ import datawave.query.attributes.PreNormalizedAttributeFactory;
 import datawave.query.function.serializer.KryoDocumentSerializer;
 import datawave.query.jexl.DatawaveJexlContext;
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.predicate.TimeFilter;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.Tuple3;
 
@@ -336,6 +336,11 @@ public class QueryExecutor implements Runnable {
             TimeFilter timeFilter = new TimeFilter(options.getStartTime(), options.getEndTime());
             scanner.withTimeFilter(timeFilter);
         }
+
+        if (options.getDatatypeFilter() != null && !options.getDatatypeFilter().isEmpty()) {
+            scanner.withDatatypeFilter(options.getDatatypeFilter());
+        }
+
         return scanner;
     }
 
