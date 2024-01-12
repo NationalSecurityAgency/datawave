@@ -27,7 +27,7 @@
     </property>
 
     <property>
-        <name>protobufedge.table.denylist.enable</name>
+        <name>protobufedge.table.disallowlist.enable</name>
         <value>true</value>
     </property>
 

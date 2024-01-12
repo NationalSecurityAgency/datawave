@@ -28,10 +28,10 @@ import datawave.ingest.mapreduce.handler.edge.evaluation.EdgePreconditionJexlEva
 
 public class EdgeIngestConfiguration {
 
-    public static final String EDGE_TABLE_DENYLIST_VALUES = ".protobufedge.table.denylist.values";
-    public static final String EDGE_TABLE_DENYLIST_FIELDS = ".protobufedge.table.denylist.fields";
+    public static final String EDGE_TABLE_DISALLOWLIST_VALUES = ".protobufedge.table.disallowlist.values";
+    public static final String EDGE_TABLE_DISALLOWLIST_FIELDS = ".protobufedge.table.disallowlist.fields";
     public static final String EDGE_TABLE_METADATA_ENABLE = "protobufedge.table.metadata.enable";
-    public static final String EDGE_TABLE_DENYLIST_ENABLE = "protobufedge.table.denylist.enable";
+    public static final String EDGE_TABLE_DISALLOWLIST_ENABLE = "protobufedge.table.disallowlist.enable";
     public static final String EDGE_SPRING_CONFIG = "protobufedge.spring.config";
     public static final String EDGE_SPRING_RELATIONSHIPS = "protobufedge.table.relationships";
     public static final String EDGE_SPRING_COLLECTIONS = "protobufedge.table.collections";
@@ -42,7 +42,7 @@ public class EdgeIngestConfiguration {
     public static final String EDGE_DEFAULT_DATA_TYPE = "default";
     public static final String TRIM_FIELD_GROUP = ".trim.field.group";
 
-    private boolean enableDenylist = false;
+    private boolean enableDisallowist = false;
     private boolean enableMetadata;
     private boolean evaluatePreconditions = false;
     private boolean includeAllEdges;
@@ -52,8 +52,8 @@ public class EdgeIngestConfiguration {
     private Long futureDelta, pastDelta, newFormatStartDate;
 
     private Map<String,Map<String,String>> edgeEnrichmentTypeLookup = new HashMap<>();
-    private Map<String,Set<String>> denylistFieldLookup = new HashMap<>();
-    private Map<String,Set<String>> denylistValueLookup = new HashMap<>();
+    private Map<String,Set<String>> disallowlistFieldLookup = new HashMap<>();
+    private Map<String,Set<String>> disallowlistValueLookup = new HashMap<>();
     private Map<String,Script> scriptCache;
 
     private EdgePreconditionJexlContext edgePreconditionContext;
@@ -72,7 +72,7 @@ public class EdgeIngestConfiguration {
 
     public EdgeIngestConfiguration(Configuration conf) {
 
-        this.enableDenylist = ConfigurationHelper.isNull(conf, EDGE_TABLE_DENYLIST_ENABLE, Boolean.class);
+        this.enableDisallowist = ConfigurationHelper.isNull(conf, EDGE_TABLE_DISALLOWLIST_ENABLE, Boolean.class);
         this.enableMetadata = ConfigurationHelper.isNull(conf, EDGE_TABLE_METADATA_ENABLE, Boolean.class);
 
         springConfigFile = ConfigurationHelper.isNull(conf, EDGE_SPRING_CONFIG, String.class);
@@ -134,14 +134,14 @@ public class EdgeIngestConfiguration {
                 }
             }
 
-            if (ctx.containsBean(entry.getKey() + EDGE_TABLE_DENYLIST_VALUES)) {
-                Set<String> values = (HashSet<String>) ctx.getBean(entry.getKey() + EDGE_TABLE_DENYLIST_VALUES);
-                denylistValueLookup.put(entry.getKey(), new HashSet<>(values));
+            if (ctx.containsBean(entry.getKey() + EDGE_TABLE_DISALLOWLIST_VALUES)) {
+                Set<String> values = (HashSet<String>) ctx.getBean(entry.getKey() + EDGE_TABLE_DISALLOWLIST_VALUES);
+                disallowlistValueLookup.put(entry.getKey(), new HashSet<>(values));
             }
 
-            if (ctx.containsBean(entry.getKey() + EDGE_TABLE_DENYLIST_FIELDS)) {
-                Set<String> fields = (HashSet<String>) ctx.getBean(entry.getKey() + EDGE_TABLE_DENYLIST_FIELDS);
-                denylistFieldLookup.put(entry.getKey(), new HashSet<>(fields));
+            if (ctx.containsBean(entry.getKey() + EDGE_TABLE_DISALLOWLIST_FIELDS)) {
+                Set<String> fields = (HashSet<String>) ctx.getBean(entry.getKey() + EDGE_TABLE_DISALLOWLIST_FIELDS);
+                disallowlistFieldLookup.put(entry.getKey(), new HashSet<>(fields));
             }
 
         }
@@ -154,7 +154,7 @@ public class EdgeIngestConfiguration {
 
         setUpPreconditions();
 
-        removeDenyListedEdges();
+        removeDisallowListedEdges();
 
         log.info("Found edge definitions for " + edges.keySet().size() + " data types.");
 
@@ -196,39 +196,39 @@ public class EdgeIngestConfiguration {
         return newFormatStartDate;
     }
 
-    private void removeDenyListedEdges() {
-        // loop through edge definitions and collect any ones that have denylisted fields
-        if (this.enableDenylist) {
-            Map<String,Set<EdgeDefinition>> denylistedEdges = new HashMap<>();
+    private void removeDisallowListedEdges() {
+        // loop through edge definitions and collect any ones that have disallowlisted fields
+        if (this.enableDisallowist) {
+            Map<String,Set<EdgeDefinition>> disallowlistedEdges = new HashMap<>();
             for (String dType : edges.keySet()) {
-                if (!denylistedEdges.containsKey(dType)) {
-                    denylistedEdges.put(dType, new HashSet<>());
+                if (!disallowlistedEdges.containsKey(dType)) {
+                    disallowlistedEdges.put(dType, new HashSet<>());
                 }
                 for (EdgeDefinition edgeDef : edges.get(dType).getEdges()) {
-                    if (isDenylistField(dType, edgeDef.getSourceFieldName()) || isDenylistField(dType, edgeDef.getSinkFieldName())) {
-                        denylistedEdges.get(dType).add(edgeDef);
-                        log.warn("Removing Edge Definition due to denylisted Field: DataType: " + dType + " Definition: " + edgeDef.getSourceFieldName() + "-"
-                                        + edgeDef.getSinkFieldName());
+                    if (isDisallowistField(dType, edgeDef.getSourceFieldName()) || isDisallowistField(dType, edgeDef.getSinkFieldName())) {
+                        disallowlistedEdges.get(dType).add(edgeDef);
+                        log.warn("Removing Edge Definition due to disallowlisted Field: DataType: " + dType + " Definition: " + edgeDef.getSourceFieldName()
+                                        + "-" + edgeDef.getSinkFieldName());
                     } else if (edgeDef.isEnrichmentEdge()) {
-                        if (isDenylistField(dType, edgeDef.getEnrichmentField())) {
-                            denylistedEdges.get(dType).add(edgeDef);
+                        if (isDisallowistField(dType, edgeDef.getEnrichmentField())) {
+                            disallowlistedEdges.get(dType).add(edgeDef);
                         }
                     }
                 }
             }
-            // remove the denylistedEdges
-            int denylistedFieldCount = 0;
-            for (String dType : denylistedEdges.keySet()) {
-                for (EdgeDefinition edgeDef : denylistedEdges.get(dType)) {
+            // remove the disallowlistedEdges
+            int disallowlistedFieldCount = 0;
+            for (String dType : disallowlistedEdges.keySet()) {
+                for (EdgeDefinition edgeDef : disallowlistedEdges.get(dType)) {
                     edges.get(dType).getEdges().remove(edgeDef);
-                    denylistedFieldCount++;
+                    disallowlistedFieldCount++;
                 }
             }
-            if (denylistedFieldCount > 0) {
-                log.info("Removed " + denylistedFieldCount + " edge definitions because they contain denylisted fields.");
+            if (disallowlistedFieldCount > 0) {
+                log.info("Removed " + disallowlistedFieldCount + " edge definitions because they contain disallowlisted fields.");
             }
         } else {
-            log.info("Denylisting of edges is disabled.");
+            log.info("Disallowisting of edges is disabled.");
         }
     }
 
@@ -288,30 +288,30 @@ public class EdgeIngestConfiguration {
 
     }
 
-    public Map<String,Set<String>> getDenylistFieldLookup() {
-        return denylistFieldLookup;
+    public Map<String,Set<String>> getDisallowistFieldLookup() {
+        return disallowlistFieldLookup;
     }
 
-    public Map<String,Set<String>> getDenylistValueLookup() {
-        return denylistValueLookup;
+    public Map<String,Set<String>> getDisallowistValueLookup() {
+        return disallowlistValueLookup;
     }
 
-    private boolean isDenylistField(String dataType, String fieldName) {
-        if (denylistFieldLookup.containsKey(dataType)) {
-            return this.denylistFieldLookup.get(dataType).contains(fieldName);
-        } else if (denylistFieldLookup.containsKey(EDGE_DEFAULT_DATA_TYPE)) {
-            // perhaps there is no denylist, which is fine
-            return this.denylistFieldLookup.get(EDGE_DEFAULT_DATA_TYPE).contains(fieldName);
+    private boolean isDisallowistField(String dataType, String fieldName) {
+        if (disallowlistFieldLookup.containsKey(dataType)) {
+            return this.disallowlistFieldLookup.get(dataType).contains(fieldName);
+        } else if (disallowlistFieldLookup.containsKey(EDGE_DEFAULT_DATA_TYPE)) {
+            // perhaps there is no disallowlist, which is fine
+            return this.disallowlistFieldLookup.get(EDGE_DEFAULT_DATA_TYPE).contains(fieldName);
         }
         return false;
     }
 
-    public boolean isDenylistValue(String dataType, String fieldValue) {
-        if (denylistValueLookup.containsKey(dataType)) {
-            return this.denylistValueLookup.get(dataType).contains(fieldValue);
-        } else if (denylistValueLookup.containsKey(EDGE_DEFAULT_DATA_TYPE)) {
-            // perhaps there is no denylist, which is fine
-            return this.denylistValueLookup.get(EDGE_DEFAULT_DATA_TYPE).contains(fieldValue);
+    public boolean isDisallowistValue(String dataType, String fieldValue) {
+        if (disallowlistValueLookup.containsKey(dataType)) {
+            return this.disallowlistValueLookup.get(dataType).contains(fieldValue);
+        } else if (disallowlistValueLookup.containsKey(EDGE_DEFAULT_DATA_TYPE)) {
+            // perhaps there is no disallowlist, which is fine
+            return this.disallowlistValueLookup.get(EDGE_DEFAULT_DATA_TYPE).contains(fieldValue);
         }
         return false;
     }
@@ -344,8 +344,8 @@ public class EdgeIngestConfiguration {
         return scriptCache;
     }
 
-    public boolean enableDenylist() {
-        return enableDenylist;
+    public boolean enableDisallowist() {
+        return enableDisallowist;
     }
 
     public Map<String,Map<String,String>> getEdgeEnrichmentTypeLookup() {

@@ -30,7 +30,15 @@ public class Constants {
 
     public static final String BRACKET_END = "]";
 
+    public static final String EQUALS = "=";
+
     public static final String FORWARD_SLASH = "/";
+
+    public static final String LEFT_PAREN = "(";
+
+    public static final String RIGHT_PAREN = ")";
+
+    public static final String PIPE = "|";
 
     public static final Text TEXT_NULL = new Text(NULL);
 

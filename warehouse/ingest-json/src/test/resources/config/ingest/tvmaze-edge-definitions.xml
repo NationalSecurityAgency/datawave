@@ -1,21 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-       xmlns:util="http://www.springframework.org/schema/util"
-       xmlns:context="http://www.springframework.org/schema/context"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
-http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
-http://www.springframework.org/schema/context
-http://www.springframework.org/schema/context/spring-context-4.0.xsd
-http://www.springframework.org/schema/util
-http://www.springframework.org/schema/util/spring-util-4.0.xsd">
+http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
 
 
     <bean id="tvmaze" class="datawave.ingest.mapreduce.handler.edge.define.EdgeDefinitionConfigurationHelper"
           scope="prototype">
         <property name="edgeAttribute2" value="NAME"/>
         <property name="edgeAttribute3" value="ID"/>
-        <property name="activityDateField" value = "PREMIERED"/>
+        <property name="activityDateField" value="PREMIERED"/>
         <property name="edges">
             <list>
                 <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition">
@@ -68,7 +62,8 @@ http://www.springframework.org/schema/util/spring-util-4.0.xsd">
                             <property name="group2">
                                 <list>
                                     <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                        <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED.CAST.PERSON"/>
+                                        <property name="selector"
+                                                  value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED.CAST.PERSON"/>
                                         <property name="relationship" value="ACTOR"/>
                                         <property name="collection" value="TVMAZE_METADATA"/>
                                     </bean>
@@ -81,15 +76,16 @@ http://www.springframework.org/schema/util/spring-util-4.0.xsd">
         </property>
     </bean>
 
-    <bean id="default.protobufedge.table.blacklist.values" class="org.springframework.beans.factory.config.SetFactoryBean">
+    <bean id="default.protobufedge.table.disallowlist.values"
+          class="org.springframework.beans.factory.config.SetFactoryBean">
         <property name="targetSetClass" value="java.util.HashSet"/>
         <property name="sourceSet">
             <set>
                 <value>.</value>
                 <value>..</value>
                 <value>,</value>
-                <value> </value>
-                <value>  </value>
+                <value></value>
+                <value></value>
                 <value>;</value>
                 <value>:</value>
                 <value>"</value>
@@ -97,8 +93,8 @@ http://www.springframework.org/schema/util/spring-util-4.0.xsd">
         </property>
     </bean>
 
-   <!-- Define the set of valid 'relationship' values -->
-   <bean id="protobufedge.table.relationships" class="org.springframework.beans.factory.config.SetFactoryBean">
+    <!-- Define the set of valid 'relationship' values -->
+    <bean id="protobufedge.table.relationships" class="org.springframework.beans.factory.config.SetFactoryBean">
         <property name="targetSetClass" value="java.util.HashSet"/>
         <property name="sourceSet">
             <set>

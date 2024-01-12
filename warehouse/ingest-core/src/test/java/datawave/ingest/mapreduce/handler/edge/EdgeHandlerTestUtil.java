@@ -92,6 +92,7 @@ public class EdgeHandlerTestUtil {
 
         // check edge keys
         for (Key k : edgeKeys) {
+
             String[] tempArr = {k.getColumnFamily().toString().replaceAll(NB, "%00;"), k.getColumnQualifier().toString().replaceAll(NB, "%00;"),
                     k.getColumnVisibility().toString(), String.valueOf(k.getTimestamp())};
             edgeKeyResults.put(k.getRow().toString().replaceAll(NB, "%00;"), tempArr);

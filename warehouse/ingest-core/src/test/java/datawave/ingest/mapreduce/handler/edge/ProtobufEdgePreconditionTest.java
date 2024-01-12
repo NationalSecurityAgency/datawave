@@ -47,7 +47,8 @@ public class ProtobufEdgePreconditionTest {
     private static Type type = new Type("mycsv", FakeIngestHelper.class, null, new String[] {SimpleDataTypeHandler.class.getName()}, 10, null);
     private static final Now now = Now.getInstance();
     private Configuration conf;
-    private String loadDateStr = loadDateStr = DateHelper.format(new Date(now.get()));
+
+    private String loadDateStr = DateHelper.format(new Date(now.get()));
 
     @Before
     public void setup() {

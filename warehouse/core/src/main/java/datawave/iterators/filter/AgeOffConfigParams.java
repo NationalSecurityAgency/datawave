@@ -40,6 +40,11 @@ public class AgeOffConfigParams {
     public static final String SCAN_START_TIMESTAMP = "scanStart";
 
     /**
+     * A flag denoting whether the age off should be disabled on system initialized major compactions (non-user majc)
+     */
+    public static final String ONLY_ON_USER_COMPACTION = "onlyAgeOffOnUserMajc";
+
+    /**
      * A flag denoting whether the age off should be disabled on system initialized major compactions (non-full majc)
      */
     public static final String DISABLE_ON_NON_FULL_MAJC = "disableOnNonFullMajc";

@@ -70,6 +70,7 @@ public class GroupsDataType extends AbstractDataTypeConfig {
         TOKENS("TOKENS", Normalizer.LC_NO_DIACRITICS_NORMALIZER);
 
         private static final List<String> headers;
+
         static {
             headers = Stream.of(GroupField.values()).map(e -> e.hdrField).collect(Collectors.toList());
         }
@@ -79,6 +80,7 @@ public class GroupsDataType extends AbstractDataTypeConfig {
         }
 
         private static final Map<String,RawMetaData> metadataMapping = new HashMap<>();
+
         static {
             for (GroupField field : GroupField.values()) {
                 metadataMapping.put(field.getQueryField().toLowerCase(), field.metadata);
@@ -198,8 +200,8 @@ public class GroupsDataType extends AbstractDataTypeConfig {
         // settings for tokens
         this.hConf.set(this.dataType + TypeRegistry.HANDLER_CLASSES, ContentCSVColumnBasedHandler.class.getName());
         this.hConf.set(this.dataType + ContentBaseIngestHelper.TOKEN_FIELDNAME_DESIGNATOR_ENABLED, "false");
-        this.hConf.set(this.dataType + ContentBaseIngestHelper.TOKEN_INDEX_WHITELIST, GroupField.TOKENS.name());
-        this.hConf.set(this.dataType + ContentBaseIngestHelper.TOKEN_REV_INDEX_WHITELIST, GroupField.TOKENS.name());
+        this.hConf.set(this.dataType + ContentBaseIngestHelper.TOKEN_INDEX_ALLOWLIST, GroupField.TOKENS.name());
+        this.hConf.set(this.dataType + ContentBaseIngestHelper.TOKEN_REV_INDEX_ALLOWLIST, GroupField.TOKENS.name());
 
         log.debug(this.toString());
     }

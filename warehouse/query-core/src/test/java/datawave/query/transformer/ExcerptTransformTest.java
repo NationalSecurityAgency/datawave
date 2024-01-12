@@ -154,7 +154,7 @@ public class ExcerptTransformTest extends EasyMockSupport {
         assertEquals(2, arg.size());
         Set<String> excerpts = arg.getAttributes().stream().map(a -> a.getData().toString()).collect(Collectors.toSet());
         // both excerpts should be returned
-        assertTrue(excerpts.contains("and the word from bird"));
+        assertTrue(excerpts.contains("and the [word] from bird"));
         assertTrue(excerpts.contains("the quick brown fox jumped over the lazy dog"));
     }
 
@@ -190,7 +190,7 @@ public class ExcerptTransformTest extends EasyMockSupport {
         assertEquals(1, arg.size());
         String excerpt = arg.getAttributes().iterator().next().getData().toString();
         // only one excerpt should return
-        assertEquals("and the quick brown fox jumped over the lazy dog", excerpt);
+        assertEquals("and the [quick brown] fox jumped over the lazy dog", excerpt);
     }
 
     /**
@@ -230,7 +230,7 @@ public class ExcerptTransformTest extends EasyMockSupport {
         Set<String> excerpts = arg.getAttributes().stream().map(a -> a.getData().toString()).collect(Collectors.toSet());
         // all excerpts should be returned
         assertTrue(excerpts.contains("Jack and Jill jumped over the"));
-        assertTrue(excerpts.contains("the brown chicken layed an egg and the quick brown fox jumped over the lazy dog"));
+        assertTrue(excerpts.contains("the brown chicken layed an egg and the [quick brown] fox jumped over the lazy dog"));
     }
 
     /**
@@ -288,7 +288,7 @@ public class ExcerptTransformTest extends EasyMockSupport {
         assertEquals(1, arg.size());
         Set<String> excerpts = arg.getAttributes().stream().map(a -> a.getData().toString()).collect(Collectors.toSet());
         // both excerpts should be returned
-        assertTrue(excerpts.contains("and the word from bird"));
+        assertTrue(excerpts.contains("and the [word] from bird"));
     }
 
     private void initTransform() {

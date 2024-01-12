@@ -30,6 +30,20 @@ public class ConditionalRemoteUserOperations implements UserOperations {
 
     private static final GenericResponse<String> EMPTY_RESPONSE = new GenericResponse<>();
 
+    public boolean isFiltered(DatawavePrincipal principal) {
+        if (!condition.apply(principal)) {
+            if (log.isDebugEnabled()) {
+                log.debug("Filter " + condition + " blocking " + principal.getName() + " from " + delegate + " user operations");
+            }
+            return true;
+        } else {
+            if (log.isDebugEnabled()) {
+                log.debug("Passing through filter " + condition + " for " + principal.getName() + " for " + delegate + " user operations");
+            }
+            return false;
+        }
+    }
+
     @Override
     public AuthorizationsListBase listEffectiveAuthorizations(Object callerObject) throws AuthorizationException {
         assert (delegate != null);
@@ -38,7 +52,7 @@ public class ConditionalRemoteUserOperations implements UserOperations {
 
         final DatawavePrincipal principal = getDatawavePrincipal(callerObject);
 
-        if (condition.apply(principal)) {
+        if (!isFiltered(principal)) {
             return delegate.listEffectiveAuthorizations(callerObject);
         } else {
             AuthorizationsListBase response = responseObjectFactory.getAuthorizationsList();
@@ -55,7 +69,7 @@ public class ConditionalRemoteUserOperations implements UserOperations {
 
         final DatawavePrincipal principal = getDatawavePrincipal(callerObject);
 
-        if (condition.apply(principal)) {
+        if (!isFiltered(principal)) {
             return delegate.flushCachedCredentials(callerObject);
         } else {
             return EMPTY_RESPONSE;

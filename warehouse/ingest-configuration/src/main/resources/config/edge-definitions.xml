@@ -1220,7 +1220,7 @@ http://www.springframework.org/schema/util/spring-util-4.0.xsd">
 
     </bean>
 
-    <bean id="default.protobufedge.table.denylist.values" class="org.springframework.beans.factory.config.SetFactoryBean">
+    <bean id="default.protobufedge.table.disallowlist.values" class="org.springframework.beans.factory.config.SetFactoryBean">
         <property name="targetSetClass" value="java.util.HashSet"/>
         <property name="sourceSet">
             <set>

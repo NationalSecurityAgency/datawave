@@ -36,6 +36,7 @@ import datawave.webservice.query.exception.EmptyObjectException;
 import datawave.webservice.query.logic.BaseQueryLogic;
 import datawave.webservice.query.logic.QueryLogic;
 import datawave.webservice.query.logic.QueryLogicTransformer;
+import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.result.BaseResponse;
 
 /**
@@ -121,20 +122,39 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
                 started = true;
             }
 
+            // ensure we start with a reasonable page time
+            resetPageProcessingStartTime();
+
             // the results queue is also an exception handler
             setUncaughtExceptionHandler(results);
             boolean success = false;
 
             try {
                 Object last = new Object();
-                if (this.getMaxResults() < 0)
+                if (this.getMaxResults() <= 0)
                     this.setMaxResults(Long.MAX_VALUE);
-                while ((null != last) && !interrupted && transformIterator.hasNext() && (resultCount < this.getMaxResults())) {
+                // allow us to get 1 more than maxResults so that the RunningQuery can detect the MAX_RESULTS condition.
+                while ((null != last) && !interrupted && transformIterator.hasNext() && (resultCount <= this.getMaxResults())) {
                     try {
                         last = transformIterator.next();
                         if (null != last) {
-                            log.debug(Thread.currentThread().getName() + ": Added object to results");
-                            results.add(last);
+                            log.debug(Thread.currentThread().getName() + ": Got result");
+
+                            // special logic to deal with intermediate results
+                            if (last instanceof EventBase && ((EventBase) last).isIntermediateResult()) {
+                                resetPageProcessingStartTime();
+                                // reset the page processing time to avoid getting spammed with these
+                                // let the RunningQuery handle timeouts for long-running queries
+                                if (isLongRunningQuery()) {
+                                    last = null;
+                                }
+                            }
+
+                            if (last != null) {
+                                results.add(last);
+                                resultCount++;
+                                log.debug(Thread.currentThread().getName() + ": Added result to queue");
+                            }
                         }
                     } catch (InterruptedException e) {
                         // if this was on purpose, then just log and the loop will naturally exit
@@ -146,14 +166,12 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
                             throw new RuntimeException(e);
                         }
                     } catch (EmptyObjectException eoe) {
-                        // Adding an empty object exception to the results queue needs to be passed all the way out.
-                        results.add(eoe);
+                        // ignore these
                     }
-                    resultCount++;
                 }
                 success = true;
             } catch (Exception e) {
-                throw new CompositeLogicException("Failed to retrieve results", Collections.singletonMap(getLogicName(), e));
+                throw new CompositeLogicException("Failed to retrieve results", getLogicName(), e);
             } finally {
                 if (success) {
                     completionLatch.countDown();
@@ -162,6 +180,9 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
             }
         }
 
+        public void resetPageProcessingStartTime() {
+            logic.setPageProcessingStartTime(System.currentTimeMillis());
+        }
     }
 
     protected static final Logger log = Logger.getLogger(CompositeQueryLogic.class);
@@ -205,6 +226,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
         if (userOperations != null) {
             principal = userOperations.getRemoteUser(principal);
         }
+        logic.preInitialize(settings, WSAuthorizationsUtil.buildAuthorizations(Collections.singleton(requestedAuths)));
         if (logic.getUserOperations() != null) {
             queryPrincipal = logic.getUserOperations().getRemoteUser(queryPrincipal);
         }
@@ -299,11 +321,11 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
             if (log.isDebugEnabled()) {
                 log.debug("CompositeQuery initialized with the following queryLogics: ");
                 for (Entry<String,QueryLogic<?>> entry : getInitializedLogics().entrySet()) {
-                    log.debug("\nLogicName: " + entry.getKey() + ", tableName: " + entry.getValue().getTableName());
+                    log.debug("LogicName: " + entry.getKey() + ", tableName: " + entry.getValue().getTableName());
                 }
                 if (isShortCircuitExecution()) {
                     for (Entry<String,QueryLogic<?>> entry : getUninitializedLogics().entrySet()) {
-                        log.debug("\npending LogicName: " + entry.getKey() + ", tableName: " + entry.getValue().getTableName());
+                        log.debug("Pending LogicName: " + entry.getKey() + ", tableName: " + entry.getValue().getTableName());
                     }
                 }
             }
@@ -492,6 +514,13 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
         this.queryLogics = new TreeMap<>(queryLogics);
     }
 
+    @Override
+    public void preInitialize(Query settings, Set<Authorizations> queryAuths) {
+        for (QueryLogic logic : getUninitializedLogics().values()) {
+            logic.preInitialize(settings, queryAuths);
+        }
+    }
+
     public UserOperations getUserOperations() {
         // if any of the underlying logics have a non-null user operations, then
         // we need to return an instance that combines auths across the underlying
@@ -507,7 +536,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
             }
         }
         if (!userOperations.isEmpty()) {
-            return new CompositeUserOperations(userOperations, includeLocal, responseObjectFactory);
+            return new CompositeUserOperations(userOperations, includeLocal, isShortCircuitExecution(), responseObjectFactory);
         }
         return null;
     }
@@ -613,6 +642,16 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
         for (QueryLogic<?> logic : getQueryLogics().values()) {
             logic.setPageProcessingStartTime(pageProcessingStartTime);
         }
+    }
+
+    @Override
+    public boolean isLongRunningQuery() {
+        for (QueryLogic<?> l : getQueryLogics().values()) {
+            if (l.isLongRunningQuery()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public boolean isAllMustInitialize() {
