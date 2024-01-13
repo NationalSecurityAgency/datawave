@@ -13,7 +13,6 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
-import com.google.common.base.Preconditions;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -21,6 +20,8 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.log4j.Logger;
+
+import com.google.common.base.Preconditions;
 
 import datawave.query.CloseableIterable;
 import datawave.query.config.ShardQueryConfiguration;
@@ -66,8 +67,7 @@ public class FederatedQueryPlanner extends QueryPlanner {
 
         ShardQueryConfiguration config = (ShardQueryConfiguration) genericConfig;
 
-        log.debug("Query originally set to execute against date range " + dateFormat.format(originalBeginDate) + "-"
-                        + dateFormat.format(originalEndDate));
+        log.debug("Query originally set to execute against date range " + dateFormat.format(originalBeginDate) + "-" + dateFormat.format(originalEndDate));
 
         // Get the relevant date ranges.
         // TODO - Determine if we should pass in fields and datatypes to filter on for this query. Can we do this before calling process() on the query?
@@ -108,7 +108,7 @@ public class FederatedQueryPlanner extends QueryPlanner {
             stopwatch.stop();
             totalProcessed++;
         }
-
+        
         // Return the collected results.
         return results;
     }

@@ -447,27 +447,32 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             }
 
             // If the planner is a DefaultQueryPlanner, delegate the execution to a FederatedQueryPlanner.
-            QueryPlanner planner = getQueryPlanner();
-            if (planner instanceof DefaultQueryPlanner) {
-                log.info("Executing query via " + FederatedQueryPlanner.class.getSimpleName());
-                planner = new FederatedQueryPlanner(config, (DefaultQueryPlanner) planner);
+            if (getQueryPlanner() instanceof DefaultQueryPlanner) {
+                log.debug("Executing query via " + FederatedQueryPlanner.class.getSimpleName());
+                DefaultQueryPlanner originalPlanner = (DefaultQueryPlanner) getQueryPlanner();
+                QueryPlanner federatedPlanner = new FederatedQueryPlanner(config, originalPlanner);
+                // Update the iterator.
+                this.queries = federatedPlanner.process(config, jexlQueryString, settings, this.scannerFactory);
+                // Update the planned script in the original planner.
+                originalPlanner.setPlannedScript(federatedPlanner.getPlannedScript());
+            } else {
+                this.queries = getQueryPlanner().process(config, jexlQueryString, settings, this.getScannerFactory());
             }
-
-            this.queries = planner.process(config, jexlQueryString, settings, this.getScannerFactory());
-            plannedScript = planner.getPlannedScript();
-
             config.setDisallowlistedFields(originalDisallowlistedFields);
             config.setProjectFields(originalProjectFields);
         } else {
             // If the planner is a DefaultQueryPlanner, delegate the execution to a FederatedQueryPlanner.
-            QueryPlanner planner = getQueryPlanner();
-            if (planner instanceof DefaultQueryPlanner) {
-                log.info("Executing query via " + FederatedQueryPlanner.class.getSimpleName());
-                planner = new FederatedQueryPlanner(config, (DefaultQueryPlanner) planner);
+            if (getQueryPlanner() instanceof DefaultQueryPlanner) {
+                log.debug("Executing query via " + FederatedQueryPlanner.class.getSimpleName());
+                DefaultQueryPlanner originalPlanner = (DefaultQueryPlanner) getQueryPlanner();
+                QueryPlanner federatedPlanner = new FederatedQueryPlanner(config, originalPlanner);
+                // Update the iterator.
+                this.queries = federatedPlanner.process(config, jexlQueryString, settings, this.scannerFactory);
+                // Update the planned script in the original planner.
+                originalPlanner.setPlannedScript(federatedPlanner.getPlannedScript());
+            } else {
+                this.queries = getQueryPlanner().process(config, jexlQueryString, settings, this.getScannerFactory());
             }
-
-            this.queries = planner.process(config, jexlQueryString, settings, this.getScannerFactory());
-            plannedScript = planner.getPlannedScript();
         }
 
         TraceStopwatch stopwatch = config.getTimers().newStartedStopwatch("ShardQueryLogic - Get iterator of queries");
@@ -476,7 +481,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             config.setQueries(this.queries.iterator());
         }
 
-        config.setQueryString(plannedScript);
+        config.setQueryString(getQueryPlanner().getPlannedScript());
 
         stopwatch.stop();
     }
