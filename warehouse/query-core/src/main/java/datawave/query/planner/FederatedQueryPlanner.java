@@ -28,6 +28,7 @@ import datawave.query.model.FieldIndexHole;
 import datawave.query.planner.pushdown.rules.PushDownRule;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MetadataHelper;
+import datawave.util.time.TraceStopwatch;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
@@ -73,12 +74,16 @@ public class FederatedQueryPlanner extends QueryPlanner {
         // querying on a date if any index holes are seen on that day (current implementation) or only when we see index holes on a date for all fields and
         // datatypes established for a query? What about when a query will include all fields and/or all datatypes?
         if (dateRanges.isEmpty()) {
-            throw new DatawaveQueryException("No dates within query target date range exist within an index hole");
+            throw new DatawaveQueryException("No dates within query target date range exist without an index hole");
         }
 
         // Execute the same query for each date range and collect the results.
         FederatedQueryIterable results = new FederatedQueryIterable();
+        int totalProcessed = 1;
         for (Pair<Date,Date> dateRange : dateRanges) {
+            TraceStopwatch stopwatch = config.getTimers()
+                            .newStartedStopwatch("FederatedQueryPlanner - Execute query against date range subset " + dateFormat.format(dateRange.getLeft())
+                                            + "-" + dateFormat.format(dateRange.getRight()) + " [" + totalProcessed + " of " + dateRanges.size() + "]");
             log.debug("Executing query against date range " + dateFormat.format(dateRange.getLeft()) + "-" + dateFormat.format(dateRange.getRight()));
 
             // Set the new date range in a copy of the config.
@@ -97,6 +102,8 @@ public class FederatedQueryPlanner extends QueryPlanner {
             } else {
                 plannedScript = ";" + planner.getPlannedScript();
             }
+            stopwatch.stop();
+            totalProcessed++;
         }
 
         // Return the collected results.
@@ -111,7 +118,7 @@ public class FederatedQueryPlanner extends QueryPlanner {
         } catch (TableNotFoundException | IOException e) {
             throw new DatawaveQueryException("Error occurred when fetching field index holes from metadata table", e);
         }
-    
+
         // If no fields have been specified, default to all fields.
         if (fieldFilter.isEmpty()) {
             fieldFilter = fieldIndexHoles.keySet();

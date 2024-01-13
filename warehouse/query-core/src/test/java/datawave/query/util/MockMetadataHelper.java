@@ -16,7 +16,6 @@ import java.util.concurrent.ExecutionException;
 
 import javax.annotation.Nullable;
 
-import datawave.query.model.FieldIndexHole;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
@@ -41,6 +40,7 @@ import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.Type;
 import datawave.marking.MarkingFunctions;
 import datawave.query.composite.CompositeMetadataHelper;
+import datawave.query.model.FieldIndexHole;
 import datawave.query.model.QueryModel;
 import datawave.util.TableName;
 
@@ -405,7 +405,7 @@ public class MockMetadataHelper extends MetadataHelper {
     public void setTermCounts(Map<String,Map<String,MetadataCardinalityCounts>> counts) {
         this.termCounts = counts;
     }
-    
+
     @Override
     public Map<String,Map<String,FieldIndexHole>> getFieldIndexHoles(double minThreshold) throws TableNotFoundException, IOException {
         return Collections.emptyMap();

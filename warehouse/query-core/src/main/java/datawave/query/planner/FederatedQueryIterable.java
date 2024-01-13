@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.NoSuchElementException;
 
 import datawave.query.CloseableIterable;
 import datawave.webservice.query.configuration.QueryData;
@@ -60,42 +59,42 @@ public class FederatedQueryIterable implements CloseableIterable<QueryData> {
         // Iterator that traverses over the iterables.
         private final Iterator<CloseableIterable<QueryData>> iterableIterator = iterables.iterator();
 
-        // The current QueryData. Seek to the first available query data.
-        private QueryData current;
+        // The current sub iterator.
+        private Iterator<QueryData> currentSubIterator = null;
 
         @Override
         public boolean hasNext() {
-            current = seekToNext();
-            return current != null;
+            seekToNextAvailableQueryData();
+            return currentSubIterator != null && currentSubIterator.hasNext();
         }
 
         @Override
         public QueryData next() {
-            // If current is not null, we should return it as the next query data. However, first current must be updated with the next possible
-            if (current != null) {
-                return current;
-            } else {
-                throw new NoSuchElementException();
-            }
+            return currentSubIterator.next();
         }
 
         /**
-         * Return the next available {@link QueryData}, or null if none remain.
-         *
-         * @return the next {@link QueryData}
+         * Seek to the next sub-iterator that has a {@link QueryData} remaining in it.
          */
-        private QueryData seekToNext() {
-            // Iterate through the remaining iterables until we find one with a result.
-            while (iterableIterator.hasNext()) {
-                // Check if the iterator for this iterable has a result.
-                Iterator<QueryData> iterator = iterableIterator.next().iterator();
-                if (iterator.hasNext()) {
-                    // If so, return it.
-                    return iterator.next();
+        private void seekToNextAvailableQueryData() {
+            // If the current sub iterator is null, attempt to get the next available iterator, or return early if there are no more iterators.
+            if (currentSubIterator == null) {
+                if (iterableIterator.hasNext()) {
+                    currentSubIterator = iterableIterator.next().iterator();
+                } else {
+                    return;
                 }
             }
-            // There are no more iterables with results.
-            return null;
+            // If the current sub iterator does not have any more elements remaining, move to the next sub iterator that does have elements.
+            if (!currentSubIterator.hasNext()) {
+                while (iterableIterator.hasNext()) {
+                    // We must ensure we only ever call iterator() once on each sub-iterator.
+                    currentSubIterator = iterableIterator.next().iterator();
+                    if (currentSubIterator.hasNext()) {
+                        return;
+                    }
+                }
+            }
         }
     }
 }
