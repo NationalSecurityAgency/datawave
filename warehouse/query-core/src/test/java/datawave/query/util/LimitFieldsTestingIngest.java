@@ -211,7 +211,7 @@ public class LimitFieldsTestingIngest {
             mutation = new Mutation("FOO_3");
             mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
             mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
-            mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype), emptyValue);
+            mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
             mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), emptyValue);
             bw.addMutation(mutation);
 
@@ -228,14 +228,14 @@ public class LimitFieldsTestingIngest {
             mutation = new Mutation("FOO_3_BAR");
             mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
             mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
-            mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype), emptyValue);
+            mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
             mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), emptyValue);
             bw.addMutation(mutation);
 
             mutation = new Mutation("FOO_1_BAR");
             mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
             mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
-            mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype), emptyValue);
+            mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
             mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), emptyValue);
             bw.addMutation(mutation);
 

@@ -1,6 +1,5 @@
 package datawave.query.util;
 
-import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -58,6 +57,7 @@ public class MockMetadataHelper extends MetadataHelper {
     protected Map<Map.Entry<String,String>,Map<String,Long>> cardinalityByDataTypeForFieldAndDate = Maps.newHashMap();
 
     private static final Logger log = Logger.getLogger(MockMetadataHelper.class);
+    protected Map<String,Map<String,FieldIndexHole>> fieldIndexHoles = Collections.emptyMap();
 
     Function<Type<?>,String> function = new Function<Type<?>,String>() {
         @Override
@@ -407,7 +407,11 @@ public class MockMetadataHelper extends MetadataHelper {
     }
 
     @Override
-    public Map<String,Map<String,FieldIndexHole>> getFieldIndexHoles(double minThreshold) throws TableNotFoundException, IOException {
-        return Collections.emptyMap();
+    public Map<String,Map<String,FieldIndexHole>> getFieldIndexHoles(double minThreshold) {
+        return fieldIndexHoles;
+    }
+
+    public void setFieldIndexHoles(Map<String,Map<String,FieldIndexHole>> fieldIndexHoles) {
+        this.fieldIndexHoles = fieldIndexHoles;
     }
 }
