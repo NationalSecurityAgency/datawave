@@ -450,7 +450,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             QueryPlanner planner = getQueryPlanner();
             if (planner instanceof DefaultQueryPlanner) {
                 log.info("Executing query via " + FederatedQueryPlanner.class.getSimpleName());
-                planner = new FederatedQueryPlanner(getConfig(), (DefaultQueryPlanner) planner);
+                planner = new FederatedQueryPlanner(config, (DefaultQueryPlanner) planner);
             }
 
             this.queries = planner.process(config, jexlQueryString, settings, this.getScannerFactory());
@@ -463,7 +463,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             QueryPlanner planner = getQueryPlanner();
             if (planner instanceof DefaultQueryPlanner) {
                 log.info("Executing query via " + FederatedQueryPlanner.class.getSimpleName());
-                planner = new FederatedQueryPlanner(getConfig(), (DefaultQueryPlanner) planner);
+                planner = new FederatedQueryPlanner(config, (DefaultQueryPlanner) planner);
             }
 
             this.queries = planner.process(config, jexlQueryString, settings, this.getScannerFactory());

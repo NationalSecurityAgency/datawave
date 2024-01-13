@@ -13,6 +13,7 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
+import com.google.common.base.Preconditions;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -51,6 +52,8 @@ public class FederatedQueryPlanner extends QueryPlanner {
         this.originalPlanner = planner;
         this.originalBeginDate = config.getBeginDate();
         this.originalEndDate = config.getEndDate();
+        Preconditions.checkNotNull(originalBeginDate, "Configuration begin date must not be null");
+        Preconditions.checkNotNull(originalEndDate, "Configuration end date must not be null");
     }
 
     @Override
@@ -63,8 +66,8 @@ public class FederatedQueryPlanner extends QueryPlanner {
 
         ShardQueryConfiguration config = (ShardQueryConfiguration) genericConfig;
 
-        log.debug("Query originally set to execute against date range " + dateFormat.format(config.getBeginDate()) + "-"
-                        + dateFormat.format(config.getEndDate()));
+        log.debug("Query originally set to execute against date range " + dateFormat.format(originalBeginDate) + "-"
+                        + dateFormat.format(originalEndDate));
 
         // Get the relevant date ranges.
         // TODO - Determine if we should pass in fields and datatypes to filter on for this query. Can we do this before calling process() on the query?

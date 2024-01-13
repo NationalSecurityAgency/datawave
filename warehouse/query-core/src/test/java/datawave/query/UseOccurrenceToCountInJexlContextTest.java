@@ -505,39 +505,48 @@ public abstract class UseOccurrenceToCountInJexlContextTest {
 
                 mutation = new Mutation("NAME");
                 mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), columnVisibility, timeStamp, emptyValue);
-                mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), columnVisibility, timeStamp, new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
+                mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), columnVisibility, timeStamp,
+                                new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
                 mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), columnVisibility, timeStamp,
                                 emptyValue);
-                mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype + "\u0000" + date), columnVisibility, timeStamp, new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
+                mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype + "\u0000" + date), columnVisibility, timeStamp,
+                                new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
                 bw.addMutation(mutation);
 
                 mutation = new Mutation("FOO");
                 mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), columnVisibility, timeStamp, emptyValue);
-                mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), columnVisibility, timeStamp, new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
+                mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), columnVisibility, timeStamp,
+                                new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
                 mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), columnVisibility, timeStamp,
                                 emptyValue);
                 bw.addMutation(mutation);
 
                 mutation = new Mutation("BAR");
                 mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), columnVisibility, timeStamp, emptyValue);
-                mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), columnVisibility, timeStamp, new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
+                mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), columnVisibility, timeStamp,
+                                new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
                 mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), columnVisibility, timeStamp,
                                 emptyValue);
-                mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype + "\u0000" + date), columnVisibility, timeStamp, new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
+                mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype + "\u0000" + date), columnVisibility, timeStamp,
+                                new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
                 bw.addMutation(mutation);
 
                 mutation = new Mutation("BAZ");
                 mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), columnVisibility, timeStamp, emptyValue);
-                mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), columnVisibility, timeStamp, new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
+                mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), columnVisibility, timeStamp,
+                                new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
                 mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), columnVisibility, timeStamp,
                                 emptyValue);
                 bw.addMutation(mutation);
 
                 mutation = new Mutation("UUID");
                 mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), columnVisibility, timeStamp, emptyValue);
-                mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), columnVisibility, timeStamp, new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
-                mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype + "\u0000" + date), columnVisibility, timeStamp, new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
-                mutation.put(ColumnFamilyConstants.COLF_RI, new Text(datatype + "\u0000" + date), columnVisibility, timeStamp, new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
+                mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), columnVisibility, timeStamp,
+                                new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
+                mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype + "\u0000" + date), columnVisibility, timeStamp,
+                                new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
+                mutation.put(ColumnFamilyConstants.COLF_RI, new Text(datatype + "\u0000" + date), columnVisibility, timeStamp,
+                                new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
                 mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), columnVisibility, timeStamp,
                                 emptyValue);
                 bw.addMutation(mutation);
