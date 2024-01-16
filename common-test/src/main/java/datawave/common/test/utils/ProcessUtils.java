@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -14,6 +15,9 @@ public class ProcessUtils {
     public static final int SYSTEM_EXIT_MINUS_TWO = 254;
     public static final int SYSTEM_EXIT_ONE = 1;
 
+    public static final String JAVA_PATH = getJavaPath();
+    public static final String DEBUG_CONFIG = "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:8000";
+
     private ProcessUtils() {
         throw new IllegalStateException("Do not instantiate utility class");
     }
@@ -22,12 +26,10 @@ public class ProcessUtils {
 
         List<String> results = new ArrayList<>();
 
-        results.add("java");
+        results.add(JAVA_PATH);
 
         if (setupDebugger) {
-
-            results.add("-Xdebug");
-            results.add("-Xrunjdwp:transport=dt_socket,address=12345,server=y,suspend=y");
+            results.add(DEBUG_CONFIG);
         }
 
         results.add("-cp");
@@ -40,6 +42,23 @@ public class ProcessUtils {
         results.add(clzName);
 
         return results;
+    }
+
+    /**
+     * Returns the path of the currently executing JVM, or simply "java" if the path can't be verified for whatever reason
+     */
+    public static String getJavaPath() {
+        // Sanity check current 'java.home' path
+        try {
+            File javaBinary = Paths.get(System.getProperty("java.home"), "bin", "java").toFile();
+            if (javaBinary.isFile()) {
+                return javaBinary.getAbsolutePath();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        // Worst case, rely on system PATH to resolve java and hope for the best
+        return "java";
     }
 
     public static String[] convertCommandLine(List<String> arguments) {
