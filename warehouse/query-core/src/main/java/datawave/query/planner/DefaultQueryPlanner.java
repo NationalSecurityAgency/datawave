@@ -238,6 +238,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     private static Set<String> cachedIndexedFields = null;
     private static Set<String> cachedReverseIndexedFields = null;
     private static Set<String> cachedNormalizedFields = null;
+    private static Set<String> cachedExpandedFields = null;
 
     protected List<PushDownRule> rules = Lists.newArrayList();
 
