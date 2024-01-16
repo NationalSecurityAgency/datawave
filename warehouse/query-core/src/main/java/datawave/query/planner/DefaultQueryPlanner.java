@@ -91,6 +91,7 @@ import datawave.query.jexl.functions.EvaluationPhaseFilterFunctions;
 import datawave.query.jexl.functions.QueryFunctions;
 import datawave.query.jexl.lookups.IndexLookup;
 import datawave.query.jexl.nodes.BoundedRange;
+import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
 import datawave.query.jexl.visitors.AddShardsAndDaysVisitor;
 import datawave.query.jexl.visitors.BoundedRangeDetectionVisitor;
@@ -628,11 +629,13 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      *            the configuration
      */
     public static void validateQuerySize(String lastOperation, final JexlNode queryTree, ShardQueryConfiguration config) {
-        validateQuerySize(lastOperation, queryTree, config.getMaxDepthThreshold(), config.getInitialMaxTermThreshold(), config.getTimers());
+        validateQuerySize(lastOperation, queryTree, config.getMaxDepthThreshold(), config.getInitialMaxTermThreshold(), config.getMaxIvaratorTerms(),
+                        config.getTimers());
     }
 
-    public static void validateQuerySize(String lastOperation, final JexlNode queryTree, int maxDepthThreshold, int maxTermThreshold) {
-        validateQuerySize(lastOperation, queryTree, maxDepthThreshold, maxTermThreshold, null);
+    public static void validateQuerySize(String lastOperation, final JexlNode queryTree, int maxDepthThreshold, int maxTermThreshold,
+                    int maxIvaratorThreshold) {
+        validateQuerySize(lastOperation, queryTree, maxDepthThreshold, maxTermThreshold, maxIvaratorThreshold, null);
     }
 
     /**
@@ -646,10 +649,13 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      *            the max depth threshold
      * @param maxTermThreshold
      *            max term threshold
+     * @param maxIvaratorThreshold
+     *            max ivarators
      * @param timers
      *            timers for metrics
      */
-    public static void validateQuerySize(String lastOperation, final JexlNode queryTree, int maxDepthThreshold, int maxTermThreshold, QueryStopwatch timers) {
+    public static void validateQuerySize(String lastOperation, final JexlNode queryTree, int maxDepthThreshold, int maxTermThreshold, int maxIvaratorThreshold,
+                    QueryStopwatch timers) {
         TraceStopwatch stopwatch = null;
 
         if (timers != null) {
@@ -670,6 +676,17 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.QUERY_TERM_THRESHOLD_EXCEEDED,
                             MessageFormat.format("{0} > {1}, last operation: {2}", termCount, maxTermThreshold, lastOperation));
             throw new DatawaveFatalQueryException(qe);
+        }
+
+        // now check whether we are over the ivarator limit
+        if (maxIvaratorThreshold >= 0) {
+            NodeTypeCount nodeCount = NodeTypeCountVisitor.countNodes(queryTree);
+            int totalIvarators = nodeCount.getTotal(ExceededValueThresholdMarkerJexlNode.class) + nodeCount.getTotal(ExceededOrThresholdMarkerJexlNode.class);
+            if (totalIvarators > maxIvaratorThreshold) {
+                QueryException qe = new QueryException(DatawaveErrorCode.EXPAND_QUERY_TERM_SYSTEM_LIMITS, Integer.toString(totalIvarators)
+                                + " terms require server side expansion which is greater than the max of " + maxIvaratorThreshold);
+                throw new DatawaveFatalQueryException(qe);
+            }
         }
 
         if (stopwatch != null) {

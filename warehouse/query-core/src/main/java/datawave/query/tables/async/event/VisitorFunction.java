@@ -324,7 +324,8 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                     }
 
                     // test the final script for thresholds
-                    DefaultQueryPlanner.validateQuerySize("VisitorFunction", script, config.getMaxDepthThreshold(), config.getFinalMaxTermThreshold());
+                    DefaultQueryPlanner.validateQuerySize("VisitorFunction", script, config.getMaxDepthThreshold(), config.getFinalMaxTermThreshold(),
+                                    config.getMaxIvaratorTerms());
 
                     newIteratorSetting.addOption(QueryOptions.QUERY, newQuery);
                     newOptions.removeScanIterator(setting.getName());
