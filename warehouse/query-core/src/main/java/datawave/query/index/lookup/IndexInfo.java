@@ -10,7 +10,6 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -37,6 +36,7 @@ import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.jexl.visitors.RebuildingVisitor;
 import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import datawave.query.language.parser.jexl.JexlNodeSet;
+import datawave.query.util.count.CountMap;
 
 /**
  * This class represents information about hits in the index.
@@ -57,8 +57,8 @@ public class IndexInfo implements Writable, UidIntersector {
     // In the pruned case, the count will exceed the size of the uid set
     protected ImmutableSortedSet<IndexMatch> uids;
 
-    protected Map<String,Long> fieldCounts = new HashMap<>();
-    protected Map<String,Long> termCounts = new HashMap<>();
+    protected CountMap fieldCounts = new CountMap();
+    protected CountMap termCounts = new CountMap();
 
     public IndexInfo() {
         this.count = 0;
@@ -148,14 +148,14 @@ public class IndexInfo implements Writable, UidIntersector {
 
         MapWritable fieldMapWritable = new MapWritable();
         fieldMapWritable.readFields(in);
-        this.fieldCounts = new HashMap<>();
+        this.fieldCounts = new CountMap();
         for (Writable key : fieldMapWritable.keySet()) {
             fieldCounts.put(key.toString(), Long.valueOf(fieldMapWritable.get(key).toString()));
         }
 
         MapWritable termMapWritable = new MapWritable();
         termMapWritable.readFields(in);
-        this.termCounts = new HashMap<>();
+        this.termCounts = new CountMap();
         for (Writable key : termMapWritable.keySet()) {
             termCounts.put(key.toString(), Long.valueOf(termMapWritable.get(key).toString()));
         }
@@ -541,15 +541,15 @@ public class IndexInfo implements Writable, UidIntersector {
         }
     }
 
-    public void setFieldCounts(Map<String,Long> fieldCounts) {
+    public void setFieldCounts(CountMap fieldCounts) {
         this.fieldCounts.putAll(fieldCounts);
     }
 
-    public void setTermCounts(Map<String,Long> termCounts) {
+    public void setTermCounts(CountMap termCounts) {
         this.termCounts.putAll(termCounts);
     }
 
-    public void mergeFieldCounts(Map<String,Long> otherCounts) {
+    public void mergeFieldCounts(CountMap otherCounts) {
         if (fieldCounts == null || fieldCounts.isEmpty()) {
             fieldCounts = otherCounts;
             return;
@@ -566,7 +566,7 @@ public class IndexInfo implements Writable, UidIntersector {
         }
     }
 
-    public void mergeTermCounts(Map<String,Long> otherCounts) {
+    public void mergeTermCounts(CountMap otherCounts) {
         if (termCounts == null || termCounts.isEmpty()) {
             termCounts = otherCounts;
             return;
@@ -583,11 +583,11 @@ public class IndexInfo implements Writable, UidIntersector {
         }
     }
 
-    public Map<String,Long> getFieldCounts() {
+    public CountMap getFieldCounts() {
         return fieldCounts;
     }
 
-    public Map<String,Long> getTermCounts() {
+    public CountMap getTermCounts() {
         return termCounts;
     }
 }

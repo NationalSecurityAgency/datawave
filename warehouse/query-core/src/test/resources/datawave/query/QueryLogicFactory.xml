@@ -262,6 +262,8 @@
         <!--   should the range stream also generate field and term counts    -->
         <property name="useFieldCounts" value="true" />
         <property name="useTermCounts" value="true" />
+        <property name="sortQueryBeforeGlobalIndex" value="true" />
+        <property name="sortQueryByCounts" value="true" />
     </bean>
 
     <bean id="TLDEventQuery" scope="prototype" parent="BaseEventQuery" class="datawave.query.tables.TLDQueryLogic">
