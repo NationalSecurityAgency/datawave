@@ -21,6 +21,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
 
+/**
+ * CommandRunner is used to parse the application arguments and figure out which command needs to be run.
+ */
 public class CommandRunner {
     private static Logger log = LoggerFactory.getLogger(ConfigCheckApplication.class);
     

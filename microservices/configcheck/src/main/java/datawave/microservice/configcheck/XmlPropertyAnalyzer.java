@@ -30,6 +30,10 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 
+/**
+ * XmlPropertyAnalyzer is used to read an xml file and associated properties/yaml in order to produce a report of all the placeholders, their associated
+ * properties, and the values of those properties that are found in the xml file.
+ */
 public class XmlPropertyAnalyzer {
     private static Logger log = LoggerFactory.getLogger(XmlPropertyAnalyzer.class);
     private static final String IGNORED_KEY = "IGNORED_KEY";

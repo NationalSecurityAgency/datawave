@@ -12,6 +12,10 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
+/**
+ * AnalysisComparator is used to produce a 'git merge conflict'-like comparison of two xml analyses. The resulting report can be viewed with a git merge
+ * conflict tool to analyze the differences.
+ */
 public class AnalysisComparator {
     private static final String FIRST_HEADER = "# FIRST: ";
     private static final String SECOND_HEADER = "# SECOND: ";

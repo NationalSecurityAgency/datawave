@@ -8,6 +8,9 @@ import org.springframework.boot.Banner;
 import org.springframework.boot.ExitCodeGenerator;
 import org.springframework.boot.SpringApplication;
 
+/**
+ * ConfigCheckApplication is the main class which will be run when the executable jar is run.
+ */
 public class ConfigCheckApplication implements ApplicationRunner, ExitCodeGenerator {
     private static Logger log = LoggerFactory.getLogger(ConfigCheckApplication.class);
     

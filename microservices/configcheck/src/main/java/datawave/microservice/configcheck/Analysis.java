@@ -6,6 +6,9 @@ import static datawave.microservice.configcheck.XmlPropertyAnalyzer.REFS_HEADER;
 import static datawave.microservice.configcheck.XmlPropertyAnalyzer.VALUES_HEADER;
 import static datawave.microservice.configcheck.XmlPropertyAnalyzer.YML_HEADER;
 
+/**
+ * Analysis is used to represent an xml analysis, splitting the various sections of the report (full or partial) into separate values.
+ */
 public class Analysis {
     private String file;
     private String analysis;

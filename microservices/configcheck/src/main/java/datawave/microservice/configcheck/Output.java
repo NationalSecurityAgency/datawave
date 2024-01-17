@@ -1,5 +1,8 @@
 package datawave.microservice.configcheck;
 
+/**
+ * Output is used to handle both the output message and output type (stdout or stderr).
+ */
 public class Output {
     private String message;
     private boolean error;
