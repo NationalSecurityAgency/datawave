@@ -25,8 +25,10 @@ import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 
 import datawave.core.query.logic.QueryLogic;
 import datawave.core.query.logic.QueryLogicFactory;
+import datawave.core.query.util.QueryUtil;
 import datawave.microservice.query.DefaultQueryParameters;
 import datawave.microservice.query.Query;
+import datawave.microservice.query.QueryImpl;
 import datawave.microservice.query.QueryParameters;
 import datawave.microservice.query.QueryPersistence;
 import datawave.query.data.UUIDType;
@@ -430,26 +432,43 @@ public class LookupUUIDUtil {
         return response;
     }
 
-    private Query createSettings(Map<String,List<String>> queryParameters) {
+    public Query createSettings(Map<String,List<String>> queryParameters) {
+        log.debug("Initial query parameters: " + queryParameters);
         Query query = responseObjectFactory.getQueryImpl();
         if (queryParameters != null) {
-            query.setOptionalQueryParameters(queryParameters);
-            for (String key : queryParameters.keySet()) {
-                if (queryParameters.get(key).size() == 1) {
-                    query.addParameter(key, queryParameters.get(key).get(0));
+            MultivaluedMap<String,String> expandedQueryParameters = new MultivaluedMapImpl<>();
+            if (defaultOptionalParams != null) {
+                expandedQueryParameters.putAll(defaultOptionalParams);
+            }
+            List<String> params = queryParameters.get(QueryParameters.QUERY_PARAMS);
+            String delimitedParams = null;
+            if (params != null && !params.isEmpty()) {
+                delimitedParams = params.get(0);
+            }
+            if (delimitedParams != null) {
+                for (QueryImpl.Parameter pm : QueryUtil.parseParameters(delimitedParams)) {
+                    expandedQueryParameters.putSingle(pm.getParameterName(), pm.getParameterValue());
+                }
+            }
+            expandedQueryParameters.putAll(queryParameters);
+            log.debug("Final query parameters: " + expandedQueryParameters);
+            query.setOptionalQueryParameters(expandedQueryParameters);
+            for (String key : expandedQueryParameters.keySet()) {
+                if (expandedQueryParameters.get(key).size() == 1) {
+                    query.addParameter(key, expandedQueryParameters.getFirst(key));
                 }
             }
         }
         return query;
     }
 
-    private String getAuths(String logicName, Map<String,List<String>> queryParameters, String queryAuths, Principal principal) {
+    public String getAuths(String logicName, Map<String,List<String>> queryParameters, String queryAuths, Principal principal) {
         String userAuths;
         try {
             QueryLogic<?> logic = queryLogicFactory.getQueryLogic(logicName, (DatawavePrincipal) principal);
             Query settings = createSettings(queryParameters);
             if (queryAuths == null) {
-                logic.preInitialize(settings, WSAuthorizationsUtil.buildAuthorizations(null));
+                logic.preInitialize(settings, WSAuthorizationsUtil.buildAuthorizations(((DatawavePrincipal) principal).getAuthorizations()));
             } else {
                 logic.preInitialize(settings, WSAuthorizationsUtil.buildAuthorizations(Collections.singleton(WSAuthorizationsUtil.splitAuths(queryAuths))));
             }
@@ -604,7 +623,6 @@ public class LookupUUIDUtil {
         String sid = principal.getName();
 
         // Initialize the reusable query input
-        final String userAuths = getAuths(CONTENT_QUERY, criteria.getQueryParameters(), null, principal);
         final String queryName = sid + '-' + UUID.randomUUID();
         final Date endDate = new Date();
         final Date expireDate = new Date(endDate.getTime() + 1000 * 60 * 60);
@@ -619,6 +637,7 @@ public class LookupUUIDUtil {
         } else {
             validatedCriteria = criteria;
         }
+        final String userAuths = getAuths(CONTENT_QUERY, validatedCriteria.getQueryParameters(), null, principal);
 
         // Perform the lookup
         boolean allEventMockResponse = (uuidQueryResponse instanceof AllEventMockResponse);
