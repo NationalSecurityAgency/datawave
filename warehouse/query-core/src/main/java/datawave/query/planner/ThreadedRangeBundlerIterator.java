@@ -23,7 +23,6 @@ import com.google.common.collect.Lists;
 import datawave.common.util.MultiComparator;
 import datawave.common.util.concurrent.BoundedBlockingQueue;
 import datawave.core.common.logging.ThreadConfigurableLogger;
-import datawave.core.iterators.ColumnQualifierRangeIterator;
 import datawave.core.query.configuration.QueryData;
 import datawave.microservice.query.Query;
 import datawave.query.CloseableIterable;

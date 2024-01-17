@@ -465,19 +465,22 @@ public class LookupUUIDUtil {
     public String getAuths(String logicName, Map<String,List<String>> queryParameters, String queryAuths, Principal principal) {
         String userAuths;
         try {
-            QueryLogic<?> logic = queryLogicFactory.getQueryLogic(logicName, (DatawavePrincipal) principal);
-            Query settings = createSettings(queryParameters);
-            if (queryAuths == null) {
-                logic.preInitialize(settings, WSAuthorizationsUtil.buildAuthorizations(((DatawavePrincipal) principal).getAuthorizations()));
-            } else {
-                logic.preInitialize(settings, WSAuthorizationsUtil.buildAuthorizations(Collections.singleton(WSAuthorizationsUtil.splitAuths(queryAuths))));
-            }
-            // the query principal is our local principal unless the query logic has a different user operations
-            DatawavePrincipal queryPrincipal = (DatawavePrincipal) ((logic.getUserOperations() == null) ? principal
-                            : logic.getUserOperations().getRemoteUser((DatawavePrincipal) principal));
             // the overall principal (the one with combined auths across remote user operations) is our own user operations (probably the UserOperationsBean)
             DatawavePrincipal overallPrincipal = (DatawavePrincipal) ((userOperations == null) ? principal
                             : userOperations.getRemoteUser((DatawavePrincipal) principal));
+
+            QueryLogic<?> logic = queryLogicFactory.getQueryLogic(logicName, (DatawavePrincipal) principal);
+            Query settings = createSettings(queryParameters);
+            if (queryAuths == null) {
+                logic.preInitialize(settings, WSAuthorizationsUtil.buildAuthorizations(overallPrincipal.getAuthorizations()));
+            } else {
+                logic.preInitialize(settings, WSAuthorizationsUtil.buildAuthorizations(Collections.singleton(WSAuthorizationsUtil.splitAuths(queryAuths))));
+            }
+
+            // the query principal is our local principal unless the query logic has a different user operations
+            DatawavePrincipal queryPrincipal = (DatawavePrincipal) ((logic.getUserOperations() == null) ? principal
+                            : logic.getUserOperations().getRemoteUser((DatawavePrincipal) principal));
+
             if (queryAuths != null) {
                 userAuths = WSAuthorizationsUtil.downgradeUserAuths(queryAuths, overallPrincipal, queryPrincipal);
             } else {
