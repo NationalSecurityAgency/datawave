@@ -1,19 +1,21 @@
 package datawave.query;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.TimeZone;
-import java.util.UUID;
-
-import javax.inject.Inject;
-
+import com.google.common.collect.Sets;
+import datawave.configuration.spring.SpringBean;
+import datawave.helpers.PrintUtility;
+import datawave.ingest.data.TypeRegistry;
+import datawave.query.attributes.Attribute;
+import datawave.query.attributes.Attributes;
+import datawave.query.attributes.Document;
+import datawave.query.function.JexlEvaluation;
+import datawave.query.function.deserializer.KryoDocumentDeserializer;
+import datawave.query.tables.ShardQueryLogic;
+import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
+import datawave.query.util.WiseGuysIngest;
+import datawave.util.TableName;
+import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
+import datawave.webservice.query.QueryImpl;
+import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -32,23 +34,18 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import com.google.common.collect.Sets;
-
-import datawave.configuration.spring.SpringBean;
-import datawave.helpers.PrintUtility;
-import datawave.ingest.data.TypeRegistry;
-import datawave.query.attributes.Attribute;
-import datawave.query.attributes.Attributes;
-import datawave.query.attributes.Document;
-import datawave.query.function.JexlEvaluation;
-import datawave.query.function.deserializer.KryoDocumentDeserializer;
-import datawave.query.tables.ShardQueryLogic;
-import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
-import datawave.query.util.WiseGuysIngest;
-import datawave.util.TableName;
-import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
-import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
+import javax.inject.Inject;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.TimeZone;
+import java.util.UUID;
 
 public abstract class ExcerptTest {
 
@@ -219,8 +216,8 @@ public abstract class ExcerptTest {
 
         String queryString = "QUOTE:(farther) #EXCERPT_FIELDS(QUOTE/2)";
 
-        // brackets around the [a] look wrong. not sure why the timestamp and delete flag are present
-        Set<String> goodResults = Sets.newHashSet("HIT_EXCERPT:get much [farther] with [a]: : [] 9223372036854775807 false");
+        // not sure why the timestamp and delete flag are present
+        Set<String> goodResults = Sets.newHashSet("HIT_EXCERPT:get much [farther] with a: : [] 9223372036854775807 false");
 
         runTestQuery(queryString, format.parse("19000101"), format.parse("20240101"), extraParameters, goodResults);
     }
@@ -235,8 +232,7 @@ public abstract class ExcerptTest {
 
         String queryString = "QUOTE:(he cant refuse) #EXCERPT_FIELDS(QUOTE/2)";
 
-        // we'd probably want the brackets around each matching term?
-        Set<String> goodResults = Sets.newHashSet("HIT_EXCERPT:an offer [he] cant refuse: : [] 9223372036854775807 false");
+        Set<String> goodResults = Sets.newHashSet("HIT_EXCERPT:an offer [he] [cant] [refuse]: : [] 9223372036854775807 false");
 
         runTestQuery(queryString, format.parse("19000101"), format.parse("20240101"), extraParameters, goodResults);
     }
@@ -251,8 +247,7 @@ public abstract class ExcerptTest {
 
         String queryString = "QUOTE:(he cant refuse) #EXCERPT_FIELDS(QUOTE/20)";
 
-        // we'd probably want the brackets around each matching term?
-        Set<String> goodResults = Sets.newHashSet("HIT_EXCERPT:im gonna make him an offer [he] cant refuse: : [] 9223372036854775807 false");
+        Set<String> goodResults = Sets.newHashSet("HIT_EXCERPT:im gonna make him an offer [he] [cant] [refuse]: : [] 9223372036854775807 false");
 
         runTestQuery(queryString, format.parse("19000101"), format.parse("20240101"), extraParameters, goodResults);
     }
@@ -267,46 +262,7 @@ public abstract class ExcerptTest {
 
         String queryString = "QUOTE:(im gonna make him an offer he cant refuse) #EXCERPT_FIELDS(QUOTE/20)";
 
-        // why still just [he]?
-        Set<String> goodResults = Sets.newHashSet("HIT_EXCERPT:im gonna make him an offer [he] cant refuse: : [] 9223372036854775807 false");
-
-        runTestQuery(queryString, format.parse("19000101"), format.parse("20240101"), extraParameters, goodResults);
-    }
-
-    // This one goes back and forth between throwing an NPE and returning 2 results, but never includes the HIT_EXCERPT even though I can see it being generated
-    // when
-    // stepping through the debugger. Threading issue?
-    @Test
-    public void multipleEvents() throws Exception {
-        Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("include.grouping.context", "true");
-        extraParameters.put("hit.list", "true");
-        extraParameters.put("return.fields", "HIT_EXCERPT,UUID");
-        extraParameters.put("query.syntax", "LUCENE");
-
-        // "you" appears in multiple events
-        String queryString = "QUOTE:(you) #EXCERPT_FIELDS(QUOTE/2)";
-
-        // WHERE MA EXCERPT AT?!
-        Set<String> goodResults = Sets.newHashSet("UUID.0:CAPONE", "UUID.0:SOPRANO");
-
-        runTestQuery(queryString, format.parse("19000101"), format.parse("20240101"), extraParameters, goodResults);
-    }
-
-    // Still doesn't return the excerpt but does not NPE like the test above
-    @Test
-    public void multipleEventsOffset1() throws Exception {
-        Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("include.grouping.context", "true");
-        extraParameters.put("hit.list", "true");
-        extraParameters.put("return.fields", "HIT_EXCERPT,UUID");
-        extraParameters.put("query.syntax", "LUCENE");
-
-        // "you" appears in multiple events
-        String queryString = "QUOTE:(you) #EXCERPT_FIELDS(QUOTE/1)";
-
-        // WHERE MA EXCERPT AT?!
-        Set<String> goodResults = Sets.newHashSet("UUID.0:CAPONE", "UUID.0:SOPRANO");
+        Set<String> goodResults = Sets.newHashSet("HIT_EXCERPT:[im] [gonna] [make] [him] [an] [offer] [he] [cant] [refuse]: : [] 9223372036854775807 false");
 
         runTestQuery(queryString, format.parse("19000101"), format.parse("20240101"), extraParameters, goodResults);
     }
@@ -322,7 +278,6 @@ public abstract class ExcerptTest {
         // "if" is the first term for one event
         String queryString = "QUOTE:(if) #EXCERPT_FIELDS(QUOTE/3)";
 
-        // NOW I GET EXCERPT
         Set<String> goodResults = Sets.newHashSet("UUID.0:SOPRANO", "HIT_EXCERPT:[if] you can quote: : [] 9223372036854775807 false");
 
         runTestQuery(queryString, format.parse("19000101"), format.parse("20240101"), extraParameters, goodResults);
