@@ -219,16 +219,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     protected boolean cacheDataTypes = false;
 
     /**
-     * Overrides behavior with doc specific ranges
-     */
-    protected boolean docSpecificOverride = false;
-
-    /**
-     * Number of documents to combine for concurrent evaluation
-     */
-    protected int docsToCombineForEvaluation = -1;
-
-    /**
      * The max number of child nodes that we will print with the PrintingVisitor. If trace is enabled, all nodes will be printed.
      */
     public static int maxChildNodesToPrint = 10;
@@ -340,7 +330,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         preloadOptions = other.preloadOptions;
         rangeStreamClass = other.rangeStreamClass;
         setSourceLimit(other.sourceLimit);
-        setDocsToCombineForEvaluation(other.getDocsToCombineForEvaluation());
         setPushdownThreshold(other.getPushdownThreshold());
         setVisitorManager(other.getVisitorManager());
     }
@@ -486,9 +475,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
         this.plannedScript = newQueryString;
         config.setQueryString(this.plannedScript);
-        // docsToCombineForEvaluation is only enabled when threading is used
-        if (config.getMaxEvaluationPipelines() == 1)
-            docsToCombineForEvaluation = -1;
 
         if (!config.isGeneratePlanOnly()) {
             // add the geo query comparator to sort by geo range granularity if this is a geo query
@@ -517,9 +503,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                     .setQueryTree(config.getQueryTree())
                     .setRanges(queryRanges.first())
                     .setMaxRanges(maxRangesPerQueryPiece())
-                    .setDocsToCombine(docsToCombineForEvaluation)
                     .setSettings(settings)
-                    .setDocSpecificLimitOverride(docSpecificOverride)
                     .setMaxRangeWaitMillis(maxRangeWaitMillis)
                     .setQueryPlanComparators(queryPlanComparators)
                     .setNumRangesToBuffer(config.getNumRangesToBuffer())
@@ -2917,14 +2901,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         return new DefaultQueryPlanner(this);
     }
 
-    public void setDocSpecificOverride(boolean docSpecificOverride) {
-        this.docSpecificOverride = docSpecificOverride;
-    }
-
-    public boolean getDocSpecificOverride() {
-        return docSpecificOverride;
-    }
-
     public void setMaxRangeWaitMillis(long maxRangeWaitMillis) {
         this.maxRangeWaitMillis = maxRangeWaitMillis;
     }
@@ -2939,14 +2915,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
     public long getPushdownThreshold() {
         return pushdownThreshold;
-    }
-
-    public int getDocsToCombineForEvaluation() {
-        return docsToCombineForEvaluation;
-    }
-
-    public void setDocsToCombineForEvaluation(final int docsToCombineForEvaluation) {
-        this.docsToCombineForEvaluation = docsToCombineForEvaluation;
     }
 
     public boolean getExecutableExpansion() {
