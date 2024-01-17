@@ -22,6 +22,7 @@ import com.google.common.base.Function;
 import com.google.common.eventbus.Subscribe;
 
 import datawave.core.query.configuration.Result;
+import datawave.mr.bulk.RfileResource;
 import datawave.query.tables.AccumuloResource;
 import datawave.query.tables.AccumuloResource.ResourceFactory;
 import datawave.query.tables.BatchResource;
@@ -185,8 +186,6 @@ public class Scan implements Callable<Scan> {
                     }
                 }
 
-                boolean docSpecific = RangeDefinition.isDocSpecific(currentRange);
-
                 if (log.isTraceEnabled()) {
                     log.trace(lastSeenKey + ", using current range of " + myScan.getLastRange());
                     log.trace(lastSeenKey + ", using current range of " + currentRange);
@@ -199,29 +198,28 @@ public class Scan implements Callable<Scan> {
 
                 Class<? extends AccumuloResource> initializer = delegatedResourceInitializer;
 
-                if (!docSpecific) {
+                boolean docSpecific = RangeDefinition.isDocSpecific(currentRange);
+                if (!docSpecific && !initializer.isInstance(RfileResource.class)) {
+                    // this catches the case where a scanner was created with a RunningResource and a shard range was generated
+                    // when bypassing accumulo with a RFileResource, do not override the initializer with a BatchResource
                     initializer = BatchResource.class;
-                } else {
+                } else if (null != arbiter && timeout > 0) {
 
-                    if (null != arbiter && timeout > 0) {
+                    myScan.getOptions().setTimeout(timeout, TimeUnit.MILLISECONDS);
 
-                        myScan.getOptions().setTimeout(timeout, TimeUnit.MILLISECONDS);
-
-                        if (!arbiter.canRun(myScan)) {
-                            if (log.isInfoEnabled()) {
-                                log.info("Not running " + currentRange);
-                            }
-                            if (log.isTraceEnabled()) {
-                                log.trace("Not running scan as we have other work to do, and this server is unresponsive");
-                            }
-                            return this;
-                        } else {
-                            if (log.isTraceEnabled()) {
-                                log.trace("Running scan as server is not unresponsive");
-                            }
+                    if (!arbiter.canRun(myScan)) {
+                        if (log.isInfoEnabled()) {
+                            log.info("Not running " + currentRange);
+                        }
+                        if (log.isTraceEnabled()) {
+                            log.trace("Not running scan as we have other work to do, and this server is unresponsive");
+                        }
+                        return this;
+                    } else {
+                        if (log.isTraceEnabled()) {
+                            log.trace("Running scan as server is not unresponsive");
                         }
                     }
-
                 }
 
                 String scanId = getNewScanId();
