@@ -71,7 +71,7 @@ public class FederatedQueryPlanner extends QueryPlanner {
 
         // Get the relevant date ranges.
         // TODO - Determine if we should pass in fields and datatypes to filter on for this query. Can we do this before calling process() on the query?
-        SortedSet<Pair<Date,Date>> dateRanges = getValidTargetDates(Collections.emptySet(), Collections.emptySet());
+        SortedSet<Pair<Date,Date>> dateRanges = getValidTargetDates(Collections.emptySet(), originalConfig.getDatatypeFilter());
 
         // TODO - Determine how restrictive we should be when evaluating whether or not to retain a date in the target date range, i.e. should we refrain from
         // querying on a date if any index holes are seen on that day (current implementation) or only when we see index holes on a date for all fields and
@@ -98,12 +98,9 @@ public class FederatedQueryPlanner extends QueryPlanner {
             DefaultQueryPlanner planner = new DefaultQueryPlanner(originalPlanner);
             results.addIterable(planner.process(config, query, settings, scannerFactory));
 
-            // Update the planned script.
-            // TODO - Verify if this is the way we want to consolidate the planned script for the multiple queries, and if ; works as a delimiter.
+            // Update the planned script to reflect that of the first query.
             if (plannedScript == null) {
                 plannedScript = planner.getPlannedScript();
-            } else {
-                plannedScript = ";" + planner.getPlannedScript();
             }
             stopwatch.stop();
             totalProcessed++;
