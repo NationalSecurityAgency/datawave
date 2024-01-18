@@ -643,9 +643,9 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
             } else {
                 for (Matcher patternMatcher : typeCompiledPatternMap.keySet()) {
                     if (patternMatcher.reset(fieldName).matches()) {
-                        Collection<datawave.data.type.Type<?>> bestMatchTypes = typeCompiledPatternMap.get(patternMatcher);
-                        types.addAll(bestMatchTypes);
-                        typeFieldMap.putAll(fieldName, bestMatchTypes);
+                        Collection<datawave.data.type.Type<?>> matchTypes = typeCompiledPatternMap.get(patternMatcher);
+                        types.addAll(matchTypes);
+                        typeFieldMap.putAll(fieldName, matchTypes);
                     }
                 }
             }
