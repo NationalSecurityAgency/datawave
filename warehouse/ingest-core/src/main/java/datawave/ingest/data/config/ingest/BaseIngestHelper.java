@@ -3,6 +3,7 @@ package datawave.ingest.data.config.ingest;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -24,6 +25,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
+import com.google.common.collect.TreeMultimap;
 
 import datawave.data.normalizer.NormalizationException;
 import datawave.data.type.NoOpType;
@@ -142,7 +144,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
 
     private Multimap<String,datawave.data.type.Type<?>> typeFieldMap = null;
     private Multimap<String,datawave.data.type.Type<?>> typePatternMap = null;
-    private Multimap<Matcher,datawave.data.type.Type<?>> typeCompiledPatternMap = null;
+    private TreeMultimap<Matcher,datawave.data.type.Type<?>> typeCompiledPatternMap = null;
     protected Set<String> indexOnlyFields = Sets.newHashSet();
 
     protected Set<String> indexedFields = Sets.newHashSet();
@@ -186,6 +188,27 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     protected MarkingsHelper markingsHelper = null;
 
     protected FieldConfigHelper fieldConfigHelper = null;
+
+    /**
+     * This matcher is used to create a deterministic ordering of regular expressions
+     */
+    public static class MatcherComparator implements Comparator<Matcher> {
+
+        @Override
+        public int compare(Matcher o1, Matcher o2) {
+            String o1str = o1.pattern().pattern();
+            int o1len = o1str.length();
+            String o2str = o2.pattern().pattern();
+            int o2len = o2str.length();
+            if (o1len > o2len) {
+                return -1;
+            } else if (o1len == o2len) {
+                return o2str.compareTo(o1str);
+            } else {
+                return 1;
+            }
+        }
+    }
 
     @Override
     public void setup(Configuration config) {
@@ -586,7 +609,8 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     }
 
     private void compilePatterns() {
-        Multimap<Matcher,datawave.data.type.Type<?>> patterns = LinkedListMultimap.create();
+        TreeMultimap<Matcher,datawave.data.type.Type<?>> patterns = TreeMultimap.create(new MatcherComparator(),
+                        (o1, o2) -> o1.toString().compareTo(o2.toString()));
         if (typePatternMap != null) {
             for (String pattern : typePatternMap.keySet()) {
                 patterns.putAll(compileFieldNamePattern(pattern), typePatternMap.get(pattern));
@@ -611,48 +635,49 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
                 compilePatterns();
             }
 
-            List<Integer> patternLengths = new ArrayList<>();
-            int bestMatch = 0;
-            Collection<datawave.data.type.Type<?>> bestMatchTypes = null;
-
-            for (Matcher patternMatcher : typeCompiledPatternMap.keySet()) {
-                Collection<datawave.data.type.Type<?>> patternTypes = typeCompiledPatternMap.get(patternMatcher);
-
-                if (patternMatcher.reset(fieldName).matches()) {
-
-                    if (useMostPreciseFieldTypeRegex) {
-                        int patternLength = patternMatcher.pattern().toString().length();
-                        if (patternLengths.contains(patternLength)) {
-                            log.warn("Multiple regular expression patterns with the same length exist for matching field " + fieldName
-                                            + ". Only the last one read will be used. Please verify your configurations.");
-                        }
-                        patternLengths.add(patternLength);
-
-                        if (patternLength >= bestMatch) {
-                            bestMatch = patternLength;
-                            bestMatchTypes = patternTypes;
-                        }
-
-                    } else {
-                        types.addAll(patternTypes);
-                        typeFieldMap.putAll(fieldName, patternTypes);
+            if (useMostPreciseFieldTypeRegex) {
+                Matcher bestMatch = getBestMatch(typeCompiledPatternMap.keySet(), fieldName);
+                if (null != bestMatch) {
+                    Collection<datawave.data.type.Type<?>> bestMatchTypes = typeCompiledPatternMap.get(bestMatch);
+                    types.addAll(bestMatchTypes);
+                    typeFieldMap.putAll(fieldName, bestMatchTypes);
+                }
+            } else {
+                for (Matcher patternMatcher : typeCompiledPatternMap.keySet()) {
+                    if (patternMatcher.reset(fieldName).matches()) {
+                        Collection<datawave.data.type.Type<?>> bestMatchTypes = typeCompiledPatternMap.get(patternMatcher);
+                        types.addAll(bestMatchTypes);
+                        typeFieldMap.putAll(fieldName, bestMatchTypes);
                     }
                 }
             }
-            if (null != bestMatchTypes) {
-                types.addAll(bestMatchTypes);
-                typeFieldMap.putAll(fieldName, bestMatchTypes);
-            }
-
         }
 
         // if no types were defined or matched via regex, use the default
-
         if (types.isEmpty()) {
             types.addAll(typeFieldMap.get(null));
         }
 
         return types;
+    }
+
+    public static Matcher getBestMatch(Set<Matcher> patterns, String fieldName) {
+        Matcher bestMatch = null;
+        for (Matcher patternMatcher : patterns) {
+            if (bestMatch != null && patternMatcher.pattern().pattern().length() < bestMatch.pattern().pattern().length()) {
+                break;
+            }
+            if (patternMatcher.reset(fieldName).matches()) {
+                if (bestMatch != null) {
+                    log.warn("Multiple regular expression patterns with the same length exist for matching field " + fieldName
+                                    + ". The pattern that sorts lexicographically last will be used. Please verify your configurations.");
+                    break;
+                } else {
+                    bestMatch = patternMatcher;
+                }
+            }
+        }
+        return bestMatch;
     }
 
     /**

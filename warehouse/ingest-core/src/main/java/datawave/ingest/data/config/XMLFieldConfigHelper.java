@@ -3,11 +3,15 @@ package datawave.ingest.data.config;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.regex.Matcher;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -41,7 +45,7 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
     private String noMatchFieldType = null;
 
     private final Map<String,FieldInfo> knownFields = new HashMap<>();
-    private final Map<String,Matcher> patterns = new HashMap<>();
+    private TreeMap<Matcher,String> patterns = new TreeMap<>(new BaseIngestHelper.MatcherComparator());
 
     public static class FieldInfo {
         boolean stored;
@@ -119,7 +123,7 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
     }
 
     public boolean addKnownFieldPattern(String fieldName, FieldInfo info, Matcher pattern) {
-        patterns.put(fieldName, pattern);
+        patterns.put(pattern, fieldName);
         return addKnownField(fieldName, info);
     }
 
@@ -250,12 +254,8 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
      * @return whether any patterns were found or not
      */
     private String findMatchingPattern(String fieldName) {
-        for (Map.Entry<String,Matcher> pattern : patterns.entrySet()) {
-            if (pattern.getValue().reset(fieldName).matches()) {
-                return pattern.getKey();
-            }
-        }
-        return null;
+        Matcher bestMatch = BaseIngestHelper.getBestMatch(patterns.keySet(), fieldName);
+        return (bestMatch == null ? null : patterns.get(bestMatch));
     }
 
     static final class FieldConfigHandler extends DefaultHandler {
