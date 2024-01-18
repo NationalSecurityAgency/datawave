@@ -83,7 +83,7 @@ public class ParentQueryIterator extends QueryIterator {
         if (fiEvaluationFilter == null) {
             fiEvaluationFilter = getEvaluationFilter();
         }
-        return fiEvaluationFilter;
+        return fiEvaluationFilter.clone();
     }
 
     @Override
@@ -91,7 +91,7 @@ public class ParentQueryIterator extends QueryIterator {
         if (eventEvaluationFilter == null) {
             eventEvaluationFilter = getEvaluationFilter();
         }
-        return eventEvaluationFilter;
+        return eventEvaluationFilter.clone();
     }
 
     @Override

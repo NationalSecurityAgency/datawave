@@ -139,7 +139,7 @@ public class TLDQueryIterator extends QueryIterator {
                 fiEvaluationFilter = new TLDFieldIndexQueryFilter(getIndexOnlyFields());
             }
 
-            return fiEvaluationFilter;
+            return fiEvaluationFilter.clone();
         }
         return fiEvaluationFilter != null ? fiEvaluationFilter.clone() : null;
     }
