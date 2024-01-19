@@ -51,9 +51,11 @@ public class EventAggregationThread implements Runnable, FutureCallback<EventAgg
                             }
                         }
 
-                        Iterator<Document> documents = ((ConfiguredEventScanner) scanner).fetchDocuments(range, batchedUids);
-                        while (documents.hasNext()) {
-                            offer(documents.next());
+                        if (!batchedUids.isEmpty()) {
+                            Iterator<Document> documents = ((ConfiguredEventScanner) scanner).fetchDocuments(range, batchedUids);
+                            while (documents.hasNext()) {
+                                offer(documents.next());
+                            }
                         }
 
                     } else {

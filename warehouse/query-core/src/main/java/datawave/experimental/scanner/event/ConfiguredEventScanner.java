@@ -65,11 +65,19 @@ public class ConfiguredEventScanner extends AbstractEventScanner {
 
             scanner.addScanIterator(setting);
 
-            Map.Entry<Key,Value> entry = scanner.iterator().next();
+            Iterator<Map.Entry<Key,Value>> iterator = scanner.iterator();
 
-            synchronized (deser) {
-                d = deser.deserialize(new ByteArrayInputStream(entry.getValue().get()));
+            if (iterator.hasNext()) {
+                Map.Entry<Key,Value> entry = iterator.next();
+                synchronized (deser) {
+                    d = deser.deserialize(new ByteArrayInputStream(entry.getValue().get()));
+                }
+            } else {
+                log.error("failed to fetch document: " + range.getStartKey().getRow().toString() + " " + datatypeUid);
             }
+
+            // TODO -- what if document doesn't exist or get's filtered away?
+
         } catch (Exception e) {
             e.printStackTrace();
             log.error("exception while fetching document " + datatypeUid + ", error was: " + e.getMessage());
@@ -77,7 +85,9 @@ public class ConfiguredEventScanner extends AbstractEventScanner {
 
         // add the record id
         try {
-            d.put(Document.DOCKEY_FIELD_NAME, new DocumentKey(new Key(range.getStartKey().getRow(), new Text(datatypeUid)), true));
+            if (d.size() > 0) {
+                d.put(Document.DOCKEY_FIELD_NAME, new DocumentKey(new Key(range.getStartKey().getRow(), new Text(datatypeUid)), true));
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
