@@ -42,6 +42,12 @@ You will need to build the docker image for this service on your local machine f
 
 You will need to build the docker image for this service on your local machine following the instructions in the audit service README.
 
+### Dictionary
+
+[Datawave Dictionary Service v3.0.1-SNAPSHOT](https://github.com/NationalSecurityAgency/datawave-dictionary-service/tree/main) provides access to the data dictionary and edge dictionary for Datawave.
+
+You will need to build the docker image for this service on your local machine following the instructions in the dictionary service README.
+
 ### Metrics
 
 [Datawave Query Metric Service v3.0.5-SNAPSHOT](https://github.com/NationalSecurityAgency/datawave-query-metric-service/tree/main) provides metrics caching, storage, and retrieval capabilities for Datawave.
@@ -55,14 +61,6 @@ You will need to build the docker image for this service on your local machine f
 Enabled via the 'management', or 'full' profile.
 
 Hazelcast Management Center v4.2021.06 is a prepacked docker image used for hazelcast cluster management.
-
-### Dictionary
-
-Enabled via the 'dictionary', or 'full' profile.
-
-[Datawave Dictionary Service v3.0.1-SNAPSHOT](https://github.com/NationalSecurityAgency/datawave-dictionary-service/tree/main) provides access to the data dictionary and edge dictionary for Datawave.
-
-You will need to build the docker image for this service on your local machine following the instructions in the dictionary service README.
 
 ## Usage
 
