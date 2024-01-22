@@ -17,6 +17,8 @@ import datawave.webservice.query.configuration.QueryData;
 
 public abstract class QueryPlanner implements PushDownPlanner {
 
+    protected QueryPlannerOptions options;
+
     protected Class<? extends SortedKeyValueIterator<Key,Value>> createUidsIteratorClass = CreateUidsIterator.class;
 
     protected UidIntersector uidIntersector = new IndexInfo();
@@ -38,8 +40,6 @@ public abstract class QueryPlanner implements PushDownPlanner {
      */
     public abstract CloseableIterable<QueryData> process(GenericQueryConfiguration config, String query, Query settings, ScannerFactory scannerFactory)
                     throws DatawaveQueryException;
-
-    public abstract long maxRangesPerQueryPiece();
 
     public abstract void close(GenericQueryConfiguration config, Query settings);
 
@@ -65,6 +65,14 @@ public abstract class QueryPlanner implements PushDownPlanner {
 
     public void setUidIntersector(UidIntersector uidIntersector) {
         this.uidIntersector = uidIntersector;
+    }
+
+    public QueryPlannerOptions getOptions() {
+        return options;
+    }
+
+    public void setOptions(QueryPlannerOptions options) {
+        this.options = options;
     }
 
 }

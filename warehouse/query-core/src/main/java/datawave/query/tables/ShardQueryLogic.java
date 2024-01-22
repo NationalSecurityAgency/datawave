@@ -68,6 +68,7 @@ import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.planner.MetadataHelperQueryModelProvider;
 import datawave.query.planner.QueryModelProvider;
 import datawave.query.planner.QueryPlanner;
+import datawave.query.planner.QueryPlannerOptions;
 import datawave.query.scheduler.PushdownScheduler;
 import datawave.query.scheduler.Scheduler;
 import datawave.query.scheduler.SequentialScheduler;
@@ -186,6 +187,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     private Map<String,QueryParser> querySyntaxParsers = new HashMap<>();
     private Set<String> mandatoryQuerySyntax = null;
     private QueryPlanner planner = null;
+    private QueryPlannerOptions queryPlannerOptions = null;
     private QueryParser parser = null;
     private QueryLogicTransformer transformerInstance = null;
 
@@ -217,6 +219,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         this.setQuerySyntaxParsers(other.getQuerySyntaxParsers());
         this.setMandatoryQuerySyntax(other.getMandatoryQuerySyntax());
         this.setQueryPlanner(other.getQueryPlanner().clone());
+        this.setQueryPlannerOptions(other.getQueryPlannerOptions());
         this.setCreateUidsIteratorClass(other.getCreateUidsIteratorClass());
         this.setUidIntersector(other.getUidIntersector());
 
@@ -407,6 +410,10 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
 
             currentQueryPlanner.setMetadataHelper(metadataHelper);
             currentQueryPlanner.setDateIndexHelper(dateIndexHelper);
+
+            if (getQueryPlannerOptions() != null) {
+                currentQueryPlanner.setOptions(getQueryPlannerOptions());
+            }
 
             QueryModelProvider queryModelProvider = currentQueryPlanner.getQueryModelProviderFactory().createQueryModelProvider();
             if (queryModelProvider instanceof MetadataHelperQueryModelProvider) {
@@ -2005,6 +2012,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         this.planner = planner;
     }
 
+    public QueryPlannerOptions getQueryPlannerOptions() {
+        return queryPlannerOptions;
+    }
+
+    public void setQueryPlannerOptions(QueryPlannerOptions plannerOptions) {
+        this.queryPlannerOptions = plannerOptions;
+    }
+
     public Class<? extends SortedKeyValueIterator<Key,Value>> getCreateUidsIteratorClass() {
         return createUidsIteratorClass;
     }
@@ -2455,27 +2470,27 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     }
 
     public int getNumRangesToBuffer() {
-        return getConfig().getNumRangesToBuffer();
+        return getQueryPlannerOptions().getNumRangesToBuffer();
     }
 
     public void setNumRangesToBuffer(int numRangesToBuffer) {
-        getConfig().setNumRangesToBuffer(numRangesToBuffer);
+        getQueryPlannerOptions().setNumRangesToBuffer(numRangesToBuffer);
     }
 
     public long getRangeBufferTimeoutMillis() {
-        return getConfig().getRangeBufferTimeoutMillis();
+        return getQueryPlannerOptions().getRangeBufferTimeoutMillis();
     }
 
     public void setRangeBufferTimeoutMillis(long rangeBufferTimeoutMillis) {
-        getConfig().setRangeBufferTimeoutMillis(rangeBufferTimeoutMillis);
+        getQueryPlannerOptions().setRangeBufferTimeoutMillis(rangeBufferTimeoutMillis);
     }
 
     public long getRangeBufferPollMillis() {
-        return getConfig().getRangeBufferPollMillis();
+        return getQueryPlannerOptions().getRangeBufferPollMillis();
     }
 
     public void setRangeBufferPollMillis(long rangeBufferPollMillis) {
-        getConfig().setRangeBufferPollMillis(rangeBufferPollMillis);
+        getQueryPlannerOptions().setRangeBufferPollMillis(rangeBufferPollMillis);
     }
 
     public int getGeometryMaxExpansion() {

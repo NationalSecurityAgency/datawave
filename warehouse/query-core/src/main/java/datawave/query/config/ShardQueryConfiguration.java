@@ -140,18 +140,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      */
     private boolean sortGeoWaveQueryRanges = false;
     /**
-     * Used to determine how many ranges the ThreadedRangeBundler should buffer before returning a range to the caller
-     */
-    private int numRangesToBuffer = 0;
-    /**
-     * Used to determine how long to allow the ThreadedRangeBundler to buffer ranges before returning a range to the caller
-     */
-    private long rangeBufferTimeoutMillis = 0;
-    /**
-     * Used to determine the poll interval when buffering ranges in ThreadedRangeBundler
-     */
-    private long rangeBufferPollMillis = 100;
-    /**
      * Used to determine the maximum number of query ranges to generate per tier when performing a geowave query against a GeometryType field.
      */
     private int geometryMaxExpansion = 8;
@@ -498,9 +486,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setSerializeQueryIterator(other.getSerializeQueryIterator());
         this.setDebugMultithreadedSources(other.isDebugMultithreadedSources());
         this.setSortGeoWaveQueryRanges(other.isSortGeoWaveQueryRanges());
-        this.setNumRangesToBuffer(other.getNumRangesToBuffer());
-        this.setRangeBufferTimeoutMillis(other.getRangeBufferTimeoutMillis());
-        this.setRangeBufferPollMillis(other.getRangeBufferPollMillis());
         this.setGeometryMaxExpansion(other.getGeometryMaxExpansion());
         this.setPointMaxExpansion(other.getPointMaxExpansion());
         this.setGeoMaxExpansion(other.getGeoMaxExpansion());
@@ -954,30 +939,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setSortGeoWaveQueryRanges(boolean sortGeoWaveQueryRanges) {
         this.sortGeoWaveQueryRanges = sortGeoWaveQueryRanges;
-    }
-
-    public int getNumRangesToBuffer() {
-        return numRangesToBuffer;
-    }
-
-    public void setNumRangesToBuffer(int numRangesToBuffer) {
-        this.numRangesToBuffer = numRangesToBuffer;
-    }
-
-    public long getRangeBufferTimeoutMillis() {
-        return rangeBufferTimeoutMillis;
-    }
-
-    public void setRangeBufferTimeoutMillis(long rangeBufferTimeoutMillis) {
-        this.rangeBufferTimeoutMillis = rangeBufferTimeoutMillis;
-    }
-
-    public long getRangeBufferPollMillis() {
-        return rangeBufferPollMillis;
-    }
-
-    public void setRangeBufferPollMillis(long rangeBufferPollMillis) {
-        this.rangeBufferPollMillis = rangeBufferPollMillis;
     }
 
     public int getGeometryMaxExpansion() {

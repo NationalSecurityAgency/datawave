@@ -167,12 +167,6 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("debugMultithreadedSources", true);
         defaultValues.put("sortGeoWaveQueryRanges", false);
         updatedValues.put("sortGeoWaveQueryRanges", true);
-        defaultValues.put("numRangesToBuffer", 0);
-        updatedValues.put("numRangesToBuffer", 4);
-        defaultValues.put("rangeBufferTimeoutMillis", 0L);
-        updatedValues.put("rangeBufferTimeoutMillis", 1000L);
-        defaultValues.put("rangeBufferPollMillis", 100L);
-        updatedValues.put("rangeBufferPollMillis", 140L);
         defaultValues.put("geometryMaxExpansion", 8);
         updatedValues.put("geometryMaxExpansion", 4);
         defaultValues.put("pointMaxExpansion", 32);

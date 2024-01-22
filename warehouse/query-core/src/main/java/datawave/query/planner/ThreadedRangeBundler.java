@@ -142,8 +142,6 @@ public class ThreadedRangeBundler implements CloseableIterable<QueryData> {
         private long maxRanges;
         private Query settings;
         private ASTJexlScript queryTree;
-        private boolean docSpecificLimitOverride;
-        private int docsToCombine = -1;
         private long maxRangeWaitMillis = 50L;
         private Collection<Comparator<QueryPlan>> queryPlanComparators;
         private int numRangesToBuffer;
