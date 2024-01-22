@@ -33,6 +33,7 @@ public class AbstractTableConfigHelperTest {
     private static final String BAD_TABLE_NAME = "VERY_BAD_TABLE_NAME";
     private static final Logger logger = Logger.getLogger(AbstractTableConfigHelperTest.class);
     private static Level testDriverLevel;
+    private Configuration config;
 
     @BeforeClass
     public static void adjustLogLevels() {
@@ -111,7 +112,9 @@ public class AbstractTableConfigHelperTest {
         }
 
         @Override
-        public void setup(String tableName, Configuration config, Logger log) throws IllegalArgumentException {}
+        public void setup(String tableName, Configuration config, Logger log) throws IllegalArgumentException {
+            this.config = config;
+        }
 
         @Override
         public void configure(TableOperations tops) throws AccumuloException, AccumuloSecurityException, TableNotFoundException {}
@@ -256,7 +259,7 @@ public class AbstractTableConfigHelperTest {
                 Assert.assertFalse("AreAggregatorsConfigured returned and unexpected results", results);
 
                 parent.tableProperties.clear();
-                Map<String,String> props = generateInitialTableProperties();
+                Map<String,String> props = generateInitialTableProperties(config, tableName);
                 props.putAll(AbstractTableConfigHelper.generateAggTableProperties(aggregators));
 
                 int counter = 0;
@@ -280,7 +283,7 @@ public class AbstractTableConfigHelperTest {
                 Assert.assertFalse("AreAggregatorsConfigured returned and unexpected results", results);
 
                 parent.tableProperties.clear();
-                props = generateInitialTableProperties();
+                props = generateInitialTableProperties(config, tableName);
                 props.putAll(AbstractTableConfigHelper.generateAggTableProperties(aggregators));
 
                 parent.tableProperties.putAll(props);
@@ -371,7 +374,7 @@ public class AbstractTableConfigHelperTest {
             Assert.assertEquals("SetCombinerConfigurationIfNecessary() failed to generate the expected number of debug messages.", 0, debugMessages.size());
             Assert.assertEquals("SetCombinerConfigurationIfNecessary() failed to generate the expected number of info messages.", 1, infoMessages.size());
 
-            Map<String,String> props = generateInitialTableProperties();
+            Map<String,String> props = generateInitialTableProperties(config, tableName);
             props.putAll(AbstractTableConfigHelper.generateAggTableProperties(aggregators));
             for (int counter = 0; counter < AbstractTableConfigHelperTest.FIXED_KEYS.length; counter++) {
 
