@@ -68,6 +68,8 @@ DW_ACCUMULO_VFS_DATAWAVE_DIR="/datawave/accumulo-vfs-classpath"
 DW_ACCUMULO_PROPERTIES="## Sets location in HDFS where Accumulo will store data
 instance.volumes=${DW_HADOOP_DFS_URI_CLIENT}/accumulo
 
+tserver.memory.maps.native.enabled=false
+
 ## Sets location of Zookeepers
 instance.zookeeper.host=localhost:2181
 
