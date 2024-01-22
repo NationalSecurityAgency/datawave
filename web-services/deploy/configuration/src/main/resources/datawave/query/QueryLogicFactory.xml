@@ -344,12 +344,17 @@
         </property>
     </bean>
 
+    <util:map id="DefaultUUIDViews">
+        <entry key="default" value="LuceneUUIDEventQuery"/>
+    </util:map>
+
     <util:list id="UUIDTypeList" value-type="datawave.query.data.UUIDType">
         ${lookup.uuid.uuidTypes}
     </util:list>
 
     <bean id="LookupUUIDConfiguration" class="datawave.webservice.query.configuration.LookupUUIDConfiguration">
         <property name="uuidTypes" ref="UUIDTypeList" />
+        <property name="contentLookupTypes" ref="contentLookupTypes" />
         <property name="columnVisibility" value="" />
         <property name="beginDate" value="${lookup.uuid.beginDate}" />
     </bean>
@@ -398,7 +403,12 @@
             </list>
         </property>
     </bean>
-    
+
+    <util:map id="contentLookupTypes">
+        <entry key="default" value="ContentQuery"/>
+    </util:map>
+
+
     <!-- Query Logic that returns document content -->
     <bean id="ContentQuery" parent="baseQueryLogic" scope="prototype"  class="datawave.query.tables.content.ContentQueryTable">
         <property name="tableName" value="${shard.table.name}" />
