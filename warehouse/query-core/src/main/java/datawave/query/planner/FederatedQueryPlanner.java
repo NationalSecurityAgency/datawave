@@ -70,8 +70,7 @@ public class FederatedQueryPlanner extends QueryPlanner {
         log.debug("Query originally set to execute against date range " + dateFormat.format(originalBeginDate) + "-" + dateFormat.format(originalEndDate));
 
         // Get the relevant date ranges.
-        // TODO - Determine if we should pass in fields and datatypes to filter on for this query. Can we do this before calling process() on the query?
-        SortedSet<Pair<Date,Date>> dateRanges = getValidTargetDates(Collections.emptySet(), originalConfig.getDatatypeFilter());
+        SortedSet<Pair<Date,Date>> dateRanges = getValidTargetDates(getFieldsForQuery(), originalConfig.getDatatypeFilter());
 
         // TODO - Determine how restrictive we should be when evaluating whether or not to retain a date in the target date range, i.e. should we refrain from
         // querying on a date if any index holes are seen on that day (current implementation) or only when we see index holes on a date for all fields and
@@ -109,29 +108,29 @@ public class FederatedQueryPlanner extends QueryPlanner {
         // Return the collected results.
         return results;
     }
+    
+    private Set<String> getFieldsForQuery() {
+        // Determine the best way to extract fields from original query.
+        return Collections.emptySet();
+    }
 
-    private SortedSet<Pair<Date,Date>> getValidTargetDates(Set<String> fieldFilter, Set<String> datatypeFilter) throws DatawaveQueryException {
+    private SortedSet<Pair<Date,Date>> getValidTargetDates(Set<String> fields, Set<String> datatypes) throws DatawaveQueryException {
+        
+        // Fetch the field index holes for the specified fields and datatypes, using the configured minimum threshold.
         MetadataHelper metadataHelper = originalPlanner.getMetadataHelper();
         Map<String,Map<String,FieldIndexHole>> fieldIndexHoles;
         try {
-            fieldIndexHoles = metadataHelper.getFieldIndexHoles(originalConfig.getFieldIndexHoleMinThreshold());
+            fieldIndexHoles = metadataHelper.getFieldIndexHoles(fields, datatypes, originalConfig.getFieldIndexHoleMinThreshold());
         } catch (TableNotFoundException | IOException e) {
             throw new DatawaveQueryException("Error occurred when fetching field index holes from metadata table", e);
         }
 
-        // If no fields have been specified, default to all fields.
-        if (fieldFilter.isEmpty()) {
-            fieldFilter = fieldIndexHoles.keySet();
-        }
-
         // Collect all field index holes that fall within the original query's target date range.
         SortedSet<Pair<Date,Date>> relevantHoles = new TreeSet<>();
-        for (String field : fieldFilter) {
+        for (String field : fieldIndexHoles.keySet()) {
             Map<String,FieldIndexHole> holes = fieldIndexHoles.get(field);
-            // If no datatypes were specified, default to all datatypes.
-            Set<String> datatypes = datatypeFilter.isEmpty() ? holes.keySet() : datatypeFilter;
-            for (String datatype : datatypes) {
-                relevantHoles.addAll(getHolesWithinOriginalQueryDateRange(holes.get(datatype)));
+            for (FieldIndexHole indexHole : holes.values()) {
+                relevantHoles.addAll(getHolesWithinOriginalQueryDateRange(indexHole));
             }
         }
 
