@@ -1178,7 +1178,7 @@
                 <enabled>false</enabled>
             </snapshots>
             <id>datawave-github-mvn-repo</id>
-            <url>https://raw.githubusercontent.com/NationalSecurityAgency/datawave/mvn-repo</url>
+            <url>https://raw.githubusercontent.com/NationalSecurityAgency/datawave-mvn-repo/mvn-repo</url>
         </repository>
         <repository>
             <snapshots>
@@ -1210,7 +1210,7 @@
                 <enabled>false</enabled>
             </snapshots>
             <id>datawave-github-mvn-repo</id>
-            <url>https://raw.githubusercontent.com/NationalSecurityAgency/datawave/mvn-repo</url>
+            <url>https://raw.githubusercontent.com/NationalSecurityAgency/datawave-mvn-repo/mvn-repo</url>
         </pluginRepository>
     </pluginRepositories>
     <build>
