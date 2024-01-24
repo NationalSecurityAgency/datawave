@@ -1,4 +1,6 @@
-# Generating a Github Repository access token
+# Building Datawave
+
+## Generating a Github Repository access token
 
 In order to download datawave artifacts from the github package repository, you will need to set credentials in 
 your maven `settings.xml` file.
@@ -19,7 +21,7 @@ Save the token value, and create a server entry for the github package repo in y
 ```
 The id of the server matters, and should match what is used in the datawave parent pom.
 
-# Building Datawave
+## Building Datawave
 
 To perform a full (non-release) 'dev' build  without unit tests:
 
