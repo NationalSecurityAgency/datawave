@@ -1,10 +1,13 @@
 package datawave.ingest.mapreduce.partition;
 
-import com.google.common.collect.Maps;
-import datawave.ingest.mapreduce.handler.shard.ShardIdFactory;
-import datawave.ingest.mapreduce.job.BulkIngestKey;
-import datawave.ingest.mapreduce.job.ShardedTableMapFile;
-import datawave.util.time.DateHelper;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.TreeMap;
+
 import org.apache.accumulo.core.data.Value;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.hadoop.conf.Configurable;
@@ -14,13 +17,12 @@ import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Partitioner;
 import org.apache.log4j.Logger;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.TreeMap;
+import com.google.common.collect.Maps;
+
+import datawave.ingest.mapreduce.handler.shard.ShardIdFactory;
+import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.ingest.mapreduce.job.ShardedTableMapFile;
+import datawave.util.time.DateHelper;
 
 /**
  * The BalancedShardPartitioner takes advantage of the way that shards are balanced. See ShardedTableTabletBalancer. * The partitioner is designed to have no
@@ -40,36 +42,36 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
     private Map<String,TreeMap<Text,String>> shardIdToLocations = Maps.newHashMap();
     private Map<Text,Integer> offsetsFactorByTable;
     int missingShardIdCount = 0;
-    
+
     public static final String MISSING_SHARD_STRATEGY_PROP = "datawave.ingest.mapreduce.partition.BalancedShardPartitioner.missing.shard.strategy";
-    
+
     private ShardIdFactory shardIdFactory = null;
-    
+
     @Override
     public synchronized int getPartition(BulkIngestKey key, Value value, int numReduceTasks) {
         try {
             // partition will be balanced for a given day, more so for recent days
             int partition = getAssignedPartition(key.getTableName().toString(), key.getKey().getRow());
-            
+
             // the offsets should help send today's shard data to a different set of reducers than today's error shard data
             int offsetForTable = shardIdFactory.getNumShards(key.getKey().getTimestamp()) * offsetsFactorByTable.get(key.getTableName());
-            
+
             return (partition + offsetForTable) % numReduceTasks;
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
-    
+
     private int getAssignedPartition(String tableName, Text shardId) throws IOException {
         Map<Text,Integer> assignments = lazilyCreateAssignments(tableName);
-        
+
         Integer partitionId = assignments.get(shardId);
         if (partitionId != null) {
             return partitionId;
         }
         // if the partitionId is not there, either shards were not created for the day
         // or not all shards were created for the day
-        
+
         String missingShardStrategy = conf.get(MISSING_SHARD_STRATEGY_PROP, "hash");
         switch (missingShardStrategy) {
             case "hash":
@@ -88,17 +90,17 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
                     log.warn("Something is screwy, found " + shardId + " on the second try");
                     return assignments.get(shardId);
                 }
-                // <tt>(-(<i>insertion point</i>) - 1)</tt> // insertion point in the index of the key greater
+                // <code>(-(<i>insertion point</i>) - 1)</code> // insertion point in the index of the key greater
                 Text shardString = keys.get(Math.abs(closestAssignment + 1));
                 return assignments.get(shardString);
             default:
                 throw new RuntimeException("Unsupported missing shard strategy " + MISSING_SHARD_STRATEGY_PROP + "=" + missingShardStrategy);
         }
     }
-    
+
     /**
      * For a given tablename, provides the mapping from {@code shard id -> partition}
-     * 
+     *
      * @param tableName
      *            the name of the table
      * @return a list of the shard mappings
@@ -114,10 +116,10 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
         }
         return this.shardPartitionsByTable.get(tableName);
     }
-    
+
     /**
      * Loads the splits file for the table name and uses it to assign partitions.
-     * 
+     *
      * @param tableName
      *            name of the table
      * @return a map of the partitions
@@ -127,7 +129,7 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
     private HashMap<Text,Integer> getPartitionsByShardId(String tableName) throws IOException {
         if (log.isDebugEnabled())
             log.debug("Loading splits data for " + tableName);
-        
+
         TreeMap<Text,String> shardIdToLocation = shardIdToLocations.get(tableName);
         if (null == shardIdToLocation) {
             shardIdToLocation = ShardedTableMapFile.getShardIdToLocations(conf, tableName);
@@ -137,7 +139,7 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
             log.debug("Assigning partitioners for each shard in " + tableName);
         return assignPartitionsForEachShard(shardIdToLocation);
     }
-    
+
     /**
      * 1. sorts the the tablet assignments by shard id, starting with the most recent going backwards<br>
      * 2. assigns partitions to each tservers, starting from the beginning, but skipping future dates<br>
@@ -156,31 +158,31 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
      */
     private HashMap<Text,Integer> assignPartitionsForEachShard(TreeMap<Text,String> shardIdToLocations) {
         int totalNumUniqueTServers = calculateNumberOfUniqueTservers(shardIdToLocations);
-        
+
         TreeMap<Text,String> sortedShardIdsToTservers = reverseSortByShardIds(shardIdToLocations);
         HashMap<String,Integer> partitionsByTServer = getTServerAssignments(totalNumUniqueTServers, sortedShardIdsToTservers);
         HashMap<Text,Integer> partitionsByShardId = getShardIdAssignments(sortedShardIdsToTservers, partitionsByTServer);
-        
+
         if (log.isDebugEnabled())
             log.debug("Number of shardIds assigned: " + partitionsByShardId.size());
-        
+
         return partitionsByShardId;
     }
-    
+
     private int calculateNumberOfUniqueTservers(TreeMap<Text,String> shardIdToLocations) {
         int totalNumUniqueTServers = new HashSet(shardIdToLocations.values()).size();
         if (log.isDebugEnabled())
             log.debug("Total TServers involved: " + totalNumUniqueTServers);
         return totalNumUniqueTServers;
     }
-    
+
     private TreeMap<Text,String> reverseSortByShardIds(TreeMap<Text,String> shardIdToLocations) {
         // drop the dates after today's date
         TreeMap<Text,String> shardIdsToTservers = Maps.newTreeMap((o1, o2) -> o2.compareTo(o1));
         shardIdsToTservers.putAll(shardIdToLocations);
         return shardIdsToTservers;
     }
-    
+
     private HashMap<String,Integer> getTServerAssignments(int totalNumTServers, TreeMap<Text,String> shardIdsToTservers) {
         HashMap<String,Integer> partitionsByTServer = new HashMap<>(totalNumTServers);
         int nextAvailableSlot = 0;
@@ -202,7 +204,7 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
         }
         return partitionsByTServer;
     }
-    
+
     private static boolean isFutureShard(Text shardId) {
         String shardIdStr = shardId.toString().intern();
         if (shardIdStr.length() < 8) {
@@ -210,11 +212,11 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
         }
         return shardIdStr.substring(0, 8).compareTo(today) > 0;
     }
-    
+
     private static String formatDay(int numDaysBack) {
         return DateHelper.format(now - (DateUtils.MILLIS_PER_DAY * numDaysBack));
     }
-    
+
     private HashMap<Text,Integer> getShardIdAssignments(TreeMap<Text,String> shardIdsToTservers, HashMap<String,Integer> partitionsByTServer) {
         HashMap<Text,Integer> partitionsByShardId = new HashMap<>();
         for (Map.Entry<Text,String> entry : shardIdsToTservers.entrySet()) {
@@ -222,30 +224,30 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
         }
         return partitionsByShardId;
     }
-    
+
     @Override
     public void configureWithPrefix(String prefix) {/* no op */}
-    
+
     @Override
     public int getNumPartitions() {
         return Integer.MAX_VALUE;
     }
-    
+
     @Override
     public void initializeJob(Job job) {}
-    
+
     @Override
     public Configuration getConf() {
         return conf;
     }
-    
+
     @Override
     public void setConf(Configuration conf) {
         this.conf = conf;
         shardIdFactory = new ShardIdFactory(conf);
         defineOffsetsForTables(conf);
     }
-    
+
     private void defineOffsetsForTables(Configuration conf) {
         offsetsFactorByTable = new HashMap<>();
         int offsetFactor = 0;

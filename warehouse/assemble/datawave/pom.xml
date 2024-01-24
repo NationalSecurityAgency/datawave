@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave</groupId>
         <artifactId>assemble-parent</artifactId>
-        <version>3.41.0-SNAPSHOT</version>
+        <version>6.5.0-SNAPSHOT</version>
     </parent>
     <artifactId>assemble-datawave</artifactId>
     <packaging>pom</packaging>
@@ -29,7 +29,7 @@
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave</groupId>
-            <artifactId>datawave-balancers</artifactId>
+            <artifactId>datawave-accumulo-extensions</artifactId>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave</groupId>
@@ -130,6 +130,22 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-1.2-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j-impl</artifactId>
         </dependency>
         <dependency>
             <groupId>org.infinispan</groupId>
@@ -532,6 +548,7 @@
                                     <dependency>
                                         <includes>
                                             <include>commons-pool:commons-pool</include>
+                                            <include>commons-lang:commons-lang</include>
                                             <include>org.apache.commons:commons-lang3</include>
                                             <include>com.google.protobuf:protobuf-java</include>
                                             <include>com.esotericsoftware.kryo:kryo</include>
@@ -556,7 +573,7 @@
                                             <include>org.apache.commons:commons-collections4</include>
                                             <include>org.apache.commons:commons-jexl</include>
                                             <include>${project.groupId}:datawave-core</include>
-                                            <include>${project.groupId}:datawave-balancers</include>
+                                            <include>${project.groupId}:datawave-accumulo-extensions</include>
                                             <include>${project.groupId}:datawave-ingest-csv</include>
                                             <include>${project.groupId}:datawave-ingest-core</include>
                                             <include>${project.groupId}:datawave-ingest-configuration</include>

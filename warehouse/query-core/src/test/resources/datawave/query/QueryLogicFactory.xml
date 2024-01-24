@@ -45,6 +45,11 @@
             <property name="parser" ref="LuceneToJexlQueryParser"/>
         </bean>
         <bean class="datawave.query.language.functions.jexl.ExcerptFields"/>
+        <bean class="datawave.query.language.functions.jexl.Sum"/>
+        <bean class="datawave.query.language.functions.jexl.Min"/>
+        <bean class="datawave.query.language.functions.jexl.Max"/>
+        <bean class="datawave.query.language.functions.jexl.Average"/>
+        <bean class="datawave.query.language.functions.jexl.Count"/>
     </util:list>
 
     <bean id="DatawaveSelectorExtractor" scope="prototype" class="datawave.audit.DatawaveSelectorExtractor" >
@@ -231,6 +236,23 @@
         <property name="rangeBufferTimeoutMillis" value="15000" />
         <property name="rangeBufferPollMillis" value="100" />
         <property name="evaluationOnlyFields" value="_ANYFIELD_" />
+        <!--   variables that control when a seek is issued     -->
+        <property name="fiFieldSeek" value="-1" />
+        <property name="fiNextSeek" value="-1" />
+        <property name="eventFieldSeek" value="-1" />
+        <property name="eventNextSeek" value="-1" />
+        <property name="tfFieldSeek" value="-1" />
+        <property name="tfNextSeek" value="-1" />
+        <!--    control when to log warnings for long aggregations    -->
+        <property name="docAggregationThresholdMs" value="-1" />
+        <property name="tfAggregationThresholdMs" value="-1" />
+        <!--   enable per-tablet pruning of certain query options     -->
+        <property name="pruneQueryOptions" value="false" />
+        <property name="reduceQueryFields" value="false" />
+        <property name="reduceTypeMetadata" value="false" />
+        <property name="reduceTypeMetadataPerShard" value="false" />
+        <!--    should the query prune fields by ingest type    -->
+        <property name="pruneQueryByIngestTypes" value="false" />
     </bean>
 
     <bean id="TLDEventQuery" scope="prototype" parent="BaseEventQuery" class="datawave.query.tables.TLDQueryLogic">

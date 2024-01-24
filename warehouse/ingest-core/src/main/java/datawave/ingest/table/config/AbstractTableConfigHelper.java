@@ -7,33 +7,38 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 
-import datawave.ingest.table.aggregator.CombinerConfiguration;
-import datawave.iterators.PropogatingIterator;
-
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.core.conf.Property;
-import org.apache.accumulo.core.constraints.DefaultKeySizeConstraint;
+import org.apache.accumulo.core.data.constraints.DefaultKeySizeConstraint;
 import org.apache.accumulo.core.iterators.IteratorUtil.IteratorScope;
 import org.apache.accumulo.core.iterators.user.VersioningIterator;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
+import datawave.ingest.table.aggregator.CombinerConfiguration;
+import datawave.iterators.PropogatingIterator;
+
 public abstract class AbstractTableConfigHelper implements TableConfigHelper {
-    
+
+    private static final String DISABLE_VERSIONING_ITERATOR = ".disable.versioning.iterator";
+    protected Configuration config;
+
+    protected AbstractTableConfigHelper() {}
+
     @Override
     public abstract void setup(String tableName, Configuration config, Logger log) throws IllegalArgumentException;
-    
+
     @Override
     public abstract void configure(TableOperations tops) throws AccumuloException, AccumuloSecurityException, TableNotFoundException;
-    
+
     /**
      * Sets {@code propertyName} to {@code propertyValue} on table {@code tableName}, unless the property is already set to {@code propertyValue}.
-     * 
+     *
      * @param tableName
      *            the name of the table whose properties are to be modified
      * @param propertyName
@@ -44,7 +49,7 @@ public abstract class AbstractTableConfigHelper implements TableConfigHelper {
      *            accumulo table operations helper for configuring tables
      * @param log
      *            a {@link Logger} for diagnostic messages
-     * 
+     *
      * @throws AccumuloException
      *             for issues with accumulo
      * @throws AccumuloSecurityException
@@ -54,7 +59,7 @@ public abstract class AbstractTableConfigHelper implements TableConfigHelper {
      */
     public static void setPropertyIfNecessary(String tableName, String propertyName, String propertyValue, TableOperations tops, Logger log)
                     throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
-        
+
         boolean propertySet = false;
         for (Entry<String,String> prop : tops.getProperties(tableName)) {
             if (prop.getKey().equals(propertyName) && prop.getValue().equals(propertyValue)) {
@@ -66,11 +71,11 @@ public abstract class AbstractTableConfigHelper implements TableConfigHelper {
             tops.setProperty(tableName, propertyName, propertyValue);
         }
     }
-    
+
     /**
      * Sets the aggregator configuration on table {@code tableName} to that contained in {@code aggregators}, if {@code tableName} is not already configured
      * with the specified aggregators.
-     * 
+     *
      * @param tableName
      *            the name of the table whose configuration is to be modified
      * @param aggregators
@@ -93,37 +98,40 @@ public abstract class AbstractTableConfigHelper implements TableConfigHelper {
             log.debug(tableName + " appears to have its aggregators configured already.");
             return;
         }
-        
+
         log.info("Configuring aggregators for " + tableName);
-        Map<String,String> props = generateInitialTableProperties();
+        Map<String,String> props = generateInitialTableProperties(config, tableName);
         props.putAll(generateAggTableProperties(aggregators));
         for (Entry<String,String> prop : props.entrySet()) {
             tops.setProperty(tableName, prop.getKey(), prop.getValue());
         }
     }
-    
+
     /**
      * Copied from Accumulo 1.9 IteratorUtil
-     * 
+     *
      * @return a map of the table properties
      */
-    public static Map<String,String> generateInitialTableProperties() {
+    public static Map<String,String> generateInitialTableProperties(Configuration config, String tableName) {
         TreeMap<String,String> props = new TreeMap<>();
-        
-        for (IteratorScope iterScope : IteratorScope.values()) {
-            props.put(Property.TABLE_ITERATOR_PREFIX + iterScope.name() + ".vers", "20," + VersioningIterator.class.getName());
-            props.put(Property.TABLE_ITERATOR_PREFIX + iterScope.name() + ".vers.opt.maxVersions", "1");
+
+        boolean disableVersioning = config != null && config.getBoolean(tableName + DISABLE_VERSIONING_ITERATOR, false);
+        if (!disableVersioning) {
+            for (IteratorScope iterScope : IteratorScope.values()) {
+                props.put(Property.TABLE_ITERATOR_PREFIX + iterScope.name() + ".vers", "20," + VersioningIterator.class.getName());
+                props.put(Property.TABLE_ITERATOR_PREFIX + iterScope.name() + ".vers.opt.maxVersions", "1");
+            }
         }
-        
+
         props.put(Property.TABLE_CONSTRAINT_PREFIX + "1", DefaultKeySizeConstraint.class.getName());
-        
+
         return props;
     }
-    
+
     /**
      * Indicates whether or not the aggregators specified in {@code aggregators} have been configured on the table {@code tableName}. Note that this does not
      * check whether other aggregators are configured on {@code tableName} are configured, only whether the specified ones are or are not.
-     * 
+     *
      * @param tableName
      *            the name of the table to check for {@code aggregators}
      * @param aggregators
@@ -131,13 +139,13 @@ public abstract class AbstractTableConfigHelper implements TableConfigHelper {
      * @param tops
      *            accumulo table operations helper for configuring tables
      * @return {@code true} if {@code aggregators} are configured on {@code tableName} and {@code false} if not
-     * 
+     *
      * @throws TableNotFoundException
      *             if the table is not found
      */
     protected boolean areAggregatorsConfigured(String tableName, List<CombinerConfiguration> aggregators, TableOperations tops) throws TableNotFoundException {
         boolean aggregatorsConfigured = false;
-        Map<String,String> props = generateInitialTableProperties();
+        Map<String,String> props = generateInitialTableProperties(config, tableName);
         props.putAll(generateAggTableProperties(aggregators));
         Iterable<Entry<String,String>> properties;
         try {
@@ -148,11 +156,11 @@ public abstract class AbstractTableConfigHelper implements TableConfigHelper {
         for (Entry<String,String> entry : properties) {
             String key = entry.getKey();
             String actualValue = entry.getValue();
-            
+
             // Removes the properties already defined on the table
             // from set of properties being defined by the caller
             String requiredValue = props.remove(key);
-            
+
             // Check to make sure that caller's expected settings are
             // actually going to be set on the table
             if (requiredValue != null && !requiredValue.equals(actualValue)) {
@@ -167,11 +175,11 @@ public abstract class AbstractTableConfigHelper implements TableConfigHelper {
         aggregatorsConfigured = props.isEmpty();
         return aggregatorsConfigured;
     }
-    
+
     /**
      * Set the locality group configuration for a table if necessary. If the specified configuration is not already included in the current group configuration,
      * then the new locality groups are merged with the current set and the locality groups are reset for the table.
-     * 
+     *
      * @param tableName
      *            the table name
      * @param newLocalityGroups
@@ -193,7 +201,7 @@ public abstract class AbstractTableConfigHelper implements TableConfigHelper {
             log.debug("Verified the following locality groups are configured for " + tableName + ": " + newLocalityGroups);
             return;
         }
-        
+
         log.info("Creating the locality groups for " + tableName + ": " + newLocalityGroups);
         Map<String,Set<Text>> localityGroups = tops.getLocalityGroups(tableName);
         for (Map.Entry<String,Set<Text>> entry : newLocalityGroups.entrySet()) {
@@ -207,10 +215,10 @@ public abstract class AbstractTableConfigHelper implements TableConfigHelper {
         tops.setLocalityGroups(tableName, localityGroups);
         log.info("Reset the locality groups for " + tableName + " to " + localityGroups);
     }
-    
+
     /**
      * Is the specified configuration already included in the current table configuration for locality groups.
-     * 
+     *
      * @param tableName
      *            the table name
      * @param newLocalityGroups
@@ -225,8 +233,8 @@ public abstract class AbstractTableConfigHelper implements TableConfigHelper {
      * @throws TableNotFoundException
      *             if the table is not found
      */
-    protected boolean areLocalityGroupsConfigured(String tableName, Map<String,Set<Text>> newLocalityGroups, TableOperations tops) throws AccumuloException,
-                    TableNotFoundException, AccumuloSecurityException {
+    protected boolean areLocalityGroupsConfigured(String tableName, Map<String,Set<Text>> newLocalityGroups, TableOperations tops)
+                    throws AccumuloException, TableNotFoundException, AccumuloSecurityException {
         Map<String,Set<Text>> localityGroups = tops.getLocalityGroups(tableName);
         for (Map.Entry<String,Set<Text>> entry : newLocalityGroups.entrySet()) {
             Set<Text> families = localityGroups.get(entry.getKey());
@@ -239,27 +247,27 @@ public abstract class AbstractTableConfigHelper implements TableConfigHelper {
         }
         return true;
     }
-    
+
     public static Map<String,String> generateAggTableProperties(List<CombinerConfiguration> aggregators) {
-        
+
         Map<String,String> props = new TreeMap<>();
-        
+
         for (IteratorScope iterScope : IteratorScope.values()) {
             if (!aggregators.isEmpty()) {
                 props.put(Property.TABLE_ITERATOR_PREFIX + iterScope.name() + ".agg", "10," + PropogatingIterator.class.getName());
             }
         }
-        
+
         for (CombinerConfiguration ac : aggregators) {
             for (IteratorSetting.Column column : ac.getColumns()) {
                 for (IteratorScope iterScope : IteratorScope.values()) {
-                    
+
                     props.put(Property.TABLE_ITERATOR_PREFIX + iterScope.name() + ".agg.opt." + column.getColumnFamily(), ac.getSettings().getIteratorClass());
                 }
             }
         }
-        
+
         return props;
     }
-    
+
 }

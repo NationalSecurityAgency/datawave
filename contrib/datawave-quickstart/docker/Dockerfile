@@ -6,7 +6,7 @@ ARG DATAWAVE_JAVA_HOME
 
 USER root
 
-ENV YARN_IDENT_STRING=root HADOOP_MAPRED_IDENT_STRING=root
+ENV HADOOP_IDENT_STRING=root
 ENV HDFS_NAMENODE_USER=root HDFS_DATANODE_USER=root
 ENV HDFS_SECONDARYNAMENODE_USER=root YARN_RESOURCEMANAGER_USER=root
 ENV YARN_NODEMANAGER_USER=root
@@ -17,7 +17,7 @@ COPY . /opt/datawave
 
 # Install dependencies, configure password-less/zero-prompt SSH...
 
-RUN yum -y install openssl openssh openssh-server openssh-clients openssl-libs which bc wget git java-1.8.0-openjdk-devel  && \
+RUN yum -y install gcc-c++ openssl openssh openssh-server openssh-clients openssl-libs which bc wget git java-11-openjdk-devel iproute  && \
     yum clean all && \
     ssh-keygen -q -N "" -t rsa -f ~/.ssh/id_rsa && \
     cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys && \
@@ -41,7 +41,7 @@ RUN rm -f .dockerignore && \
     git config user.name "Root User" && \
     git commit -m "Source Branch :: $DATAWAVE_BRANCH_NAME :: Source Commit :: $DATAWAVE_COMMIT_ID" && \
     echo "export DW_ACCUMULO_DIST_URI=file://$(find /opt/datawave/contrib/datawave-quickstart/bin/services/accumulo -name 'accumulo*.tar.gz')" >> ~/.bashrc && \
-    echo "export DW_ZOOKEEPER_DIST_URI=file://$(find /opt/datawave/contrib/datawave-quickstart/bin/services/accumulo -name 'zookeeper*.tar.gz')" >> ~/.bashrc && \
+    echo "export DW_ZOOKEEPER_DIST_URI=file://$(find /opt/datawave/contrib/datawave-quickstart/bin/services/accumulo -name 'apache-zookeeper*.tar.gz')" >> ~/.bashrc && \
     echo "export DW_MAVEN_DIST_URI=file://$(find /opt/datawave/contrib/datawave-quickstart/bin/services/maven -name 'apache-maven*.tar.gz')" >> ~/.bashrc && \
     echo "export DW_HADOOP_DIST_URI=file://$(find /opt/datawave/contrib/datawave-quickstart/bin/services/hadoop -name 'hadoop*.tar.gz')" >> ~/.bashrc && \
     echo "export DW_WILDFLY_DIST_URI=file://$(find /opt/datawave/contrib/datawave-quickstart/bin/services/datawave -name 'wildfly*.tar.gz')" >> ~/.bashrc && \
@@ -69,10 +69,8 @@ RUN /bin/bash -c "/usr/bin/nohup /usr/sbin/sshd -D &" && \
 # Primary data volume (for HDFS, Accumulo, ZooKeeper, etc)
 VOLUME ["/opt/datawave/contrib/datawave-quickstart/data"]
 
-
 # In case user wants to rebuild DW
 VOLUME ["$HOME/.m2/repository"]
-
 
 VOLUME ["/opt/datawave/contrib/datawave-quickstart/hadoop/logs"]
 VOLUME ["/opt/datawave/contrib/datawave-quickstart/accumulo/logs"]

@@ -16,7 +16,13 @@ findWebserviceJar (){
 findProvenanceJar (){
   ls -1 ../../lib/$1-[0-9.]*.*.jar |  grep -v with-dependencies | sort | tail -1
 }
-
+findAccumuloJar (){
+  ls -1 $WAREHOUSE_ACCUMULO_LIB/$1-[0-9]*.jar | sort | tail -1
+}
+findZookeeperJar(){
+  result=$(ls -1 $ZOOKEEPER_HOME/zookeeper-*.jar 2>/dev/null | head -1)
+  [[ -f $result ]] || result=$(ls -1 $ZOOKEEPER_HOME/lib/zookeeper-*.jar | head -1)
+}
 
 
 CONF_DIR=../../config
@@ -28,7 +34,7 @@ DATAWAVE_INGEST_NYCTLC_JAR=$(findJar datawave-ingest-nyctlc)
 DATAWAVE_INGEST_CORE_JAR=$(findJar datawave-ingest-core)
 DATAWAVE_INGEST_CONFIG_JAR=$(findJar datawave-ingest-configuration)
 DATAWAVE_COMMON_JAR=$(findJar datawave-common)
-DATAWAVE_BALANCERS_JAR=$(findJar datawave-balancers)
+DATAWAVE_ACCUMULO_EXTENSIONS_JAR=$(findJar datawave-accumulo-extensions)
 DATAWAVE_METRICS_CORE_JAR=$(findJar datawave-metrics-core)
 DATAWAVE_METADATA_UTILS_JAR=$(findJar metadata-utils)
 DATAWAVE_TYPE_UTILS_JAR=$(findJar type-utils)
@@ -59,20 +65,19 @@ CAFFEINE_JAR=$(findJar caffeine)
 GUAVA_JAR=$(findJar guava)
 PROTOBUF_JAR=$(findJar protobuf-java)
 SLF4J_JAR=$(findJar slf4j-api)
-SLF4J_BRIDGE_JAR=$(findJar slf4j-reload4j)
+LOG4J2_API_JAR=$(findJar log4j-api)
+LOG4J2_CORE_JAR=$(findJar log4j-core)
+LOG4J2_12_API_JAR=$(findJar log4j-1.2-api)
+LOG4J2_SLF4J_JAR=$(findJar log4j-slf4j-impl)
 JSON_SIMPLE=$(findJar json-simple)
-LOG4J_JAR=$(findJar reload4j)
-LOG4J_EXTRAS_JAR=$(findJar apache-log4j-extras)
 LUCENE_JAR=$(findJar lucene-core)
 LUCENE_JAR=$LUCENE_JAR:$(findJar lucene-queryparser)
 LUCENE_JAR=$LUCENE_JAR:$(findJar lucene-analyzers-common)
 THRIFT_JAR=$(findJar libthrift)
-AC_CORE_JAR=$WAREHOUSE_ACCUMULO_LIB/accumulo-core.jar
-AC_SERVER_JAR=$WAREHOUSE_ACCUMULO_LIB/accumulo-server-base.jar
-AC_FATE_JAR=$WAREHOUSE_ACCUMULO_LIB/accumulo-fate.jar
-AC_START_JAR=$WAREHOUSE_ACCUMULO_LIB/accumulo-start.jar
-AC_TRACE_JAR=$WAREHOUSE_ACCUMULO_LIB/accumulo-trace.jar
-AC_HTRACE_JAR=$(findJar htrace-core)
+AC_CORE_JAR=$(findAccumuloJar accumulo-core)
+AC_SERVER_JAR=$(findAccumuloJar accumulo-server-base)
+AC_START_JAR=$(findAccumuloJar accumulo-start)
+AC_MAPRED_JAR=$(findAccumuloJar accumulo-hadoop-mapreduce)
 VFS_JAR=`ls -1 $WAREHOUSE_ACCUMULO_LIB/commons-vfs*.jar | sort | head -1`
 ASM_JAR=$(findJar asm)
 KRYO_JAR=$(findJar kryo)
@@ -82,7 +87,7 @@ INFINISPAN_CORE_JAR=$(findJar infinispan-core)
 INFINISPAN_COMMONS_JAR=$(findJar infinispan-commons)
 JBOSS_LOGGING_JAR=$(findJar jboss-logging)
 JGROUPS_JAR=$(findJar jgroups)
-ZOOKEEPER_JAR=$ZOOKEEPER_HOME/zookeeper-$ZOOKEEPER_VERSION.jar
+ZOOKEEPER_JAR=$(findZookeeperJar)
 DATAWAVE_QUERY_CORE_JAR=$(findJar datawave-query-core)
 COMMONS_JEXL_JAR=$(findJar commons-jexl)
 PROTOSTUFF_API_JAR=$(findJar protostuff-api)
@@ -97,8 +102,11 @@ SPRING_BEAN_JAR=$(findJar spring-beans)
 SPRING_AOP_JAR=$(findJar spring-aop)
 SPRING_EXPRESSION_JAR=$(findJar spring-expression)
 COMMON_JAR=$(findJar datawave-ws-common)
-#XERCES_JAR=$(findJar org.apache.xerces)
 JCOMMANDER_JAR=$(findJar jcommander)
+OPENTELEMETRY_API_JAR=$(findJar opentelemetry-api)
+OPENTELEMETRY_CONTEXT_JAR=$(findJar opentelemetry-context)
+MICROMETER_CORE_JAR=$(findJar micrometer-core)
+MICROMETER_COMMONS_JAR=$(findJar micrometer-commons)
 
 #for geo hilbert curve processing
 JTS_CORE_JAR=$(findJar jts-core)
@@ -109,14 +117,10 @@ UZAYGEZEN_JAR=$(findJar uzaygezen-core)
 VECMATH_JAR=$(findJar vecmath)
 GT_OPENGIS_JAR=$(findJar gt-opengis)
 GT_API_JAR=$(findJar gt-api)
-GT_DATA_JAR=$(findJar gt-data)
 GT_EPSG_JAR=$(findJar gt-epsg-wkt)
 GT_MAIN_JAR=$(findJar gt-main)
 GT_MD_JAR=$(findJar gt-metadata)
 GT_REF_JAR=$(findJar gt-referencing)
-# Currently, gt-shapefile is not getting packaged and only appears in dependency:tree of
-# datawave-ws-deploy-application (even w/geowave profile enabled), so removing for now...
-#GT_SHAPE_JAR=$(findJar gt-shapefile)
 JAXB_IMPL_JAR=$(findJar resteasy-jaxb-provider)
 
 # extra jars

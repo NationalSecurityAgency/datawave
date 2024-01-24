@@ -1,14 +1,17 @@
 package datawave.query.predicate;
 
-import com.google.common.collect.Sets;
-import datawave.core.iterators.key.util.FiKeyUtil;
-import datawave.query.attributes.Document;
+import java.util.Map;
+import java.util.Set;
+
+import javax.annotation.Nullable;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 
-import javax.annotation.Nullable;
-import java.util.Map;
-import java.util.Set;
+import com.google.common.collect.Sets;
+
+import datawave.core.iterators.key.util.FiKeyUtil;
+import datawave.query.attributes.Document;
 
 /**
  * An {@link EventDataQueryFilter} that applies TLD logic to Field Index keys
@@ -16,9 +19,9 @@ import java.util.Set;
  * Keeps any FI key that is index only and part of the TLD or is not part of the TLD
  */
 public class TLDFieldIndexQueryFilter implements EventDataQueryFilter {
-    
+
     private final Set<String> indexOnlyFields;
-    
+
     /**
      * Default constructor
      *
@@ -28,7 +31,7 @@ public class TLDFieldIndexQueryFilter implements EventDataQueryFilter {
     public TLDFieldIndexQueryFilter(Set<String> indexOnlyFields) {
         this.indexOnlyFields = indexOnlyFields;
     }
-    
+
     /**
      * This method is a no-op
      *
@@ -39,7 +42,7 @@ public class TLDFieldIndexQueryFilter implements EventDataQueryFilter {
     public void startNewDocument(Key documentKey) {
         // no-op
     }
-    
+
     /**
      * Always returns true.
      *
@@ -51,7 +54,7 @@ public class TLDFieldIndexQueryFilter implements EventDataQueryFilter {
     public boolean apply(@Nullable Map.Entry<Key,String> var1) {
         return true;
     }
-    
+
     /**
      * Always returns true
      *
@@ -63,7 +66,7 @@ public class TLDFieldIndexQueryFilter implements EventDataQueryFilter {
     public boolean peek(@Nullable Map.Entry<Key,String> var1) {
         return true;
     }
-    
+
     /**
      * Keep any FI that is index only and part of the TLD or is not part of the TLD
      *
@@ -79,43 +82,7 @@ public class TLDFieldIndexQueryFilter implements EventDataQueryFilter {
         }
         return true;
     }
-    
-    /**
-     * Not supported.
-     *
-     * @param from
-     *            a start key
-     * @return an exception
-     */
-    @Override
-    public Key getStartKey(Key from) {
-        throw new UnsupportedOperationException();
-    }
-    
-    /**
-     * Not supported.
-     *
-     * @param from
-     *            a stop key
-     * @return an exception
-     */
-    @Override
-    public Key getStopKey(Key from) {
-        throw new UnsupportedOperationException();
-    }
-    
-    /**
-     * Not supported.
-     *
-     * @param from
-     *            an entry of type Key,Document
-     * @return an exception
-     */
-    @Override
-    public Range getKeyRange(Map.Entry<Key,Document> from) {
-        throw new UnsupportedOperationException();
-    }
-    
+
     /**
      * Clones this query filter
      *
@@ -125,7 +92,7 @@ public class TLDFieldIndexQueryFilter implements EventDataQueryFilter {
     public EventDataQueryFilter clone() {
         return new TLDFieldIndexQueryFilter(Sets.newHashSet(indexOnlyFields));
     }
-    
+
     /**
      * Not supported.
      *
@@ -141,7 +108,7 @@ public class TLDFieldIndexQueryFilter implements EventDataQueryFilter {
     public Range getSeekRange(Key current, Key endKey, boolean endKeyInclusive) {
         throw new UnsupportedOperationException();
     }
-    
+
     /**
      * Effectively a no-op
      *
@@ -151,7 +118,7 @@ public class TLDFieldIndexQueryFilter implements EventDataQueryFilter {
     public int getMaxNextCount() {
         return -1;
     }
-    
+
     /**
      * A no-op.
      * <p>

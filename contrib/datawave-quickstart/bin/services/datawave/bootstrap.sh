@@ -30,8 +30,7 @@ source "${DW_DATAWAVE_SERVICE_DIR}/bootstrap-user.sh"
 DW_DATAWAVE_BUILD_PROFILE=${DW_DATAWAVE_BUILD_PROFILE:-dev}
 
 # Maven command
-
-DW_DATAWAVE_BUILD_COMMAND="${DW_DATAWAVE_BUILD_COMMAND:-mvn -P${DW_DATAWAVE_BUILD_PROFILE} -Ddeploy -Dtar -Ddist -Dservices -DskipTests clean install --builder smart -T1.0C}"
+DW_DATAWAVE_BUILD_COMMAND="${DW_DATAWAVE_BUILD_COMMAND:-mvn -P${DW_DATAWAVE_BUILD_PROFILE} -Ddeploy -Dtar -Ddist -DskipTests -Dmaven.build.cache.enabled=false clean package --builder smart -T1.0C}"
 
 # Home of any temp data and *.properties file overrides for this instance of DataWave
 
@@ -75,7 +74,10 @@ function createAccumuloShellInitScript() {
 
    if [ "${DW_ACCUMULO_VFS_DATAWAVE_ENABLED}" != false ] ; then
       DW_ACCUMULO_SHELL_INIT_SCRIPT="${DW_ACCUMULO_SHELL_INIT_SCRIPT}
-   config -s table.classpath.context=datawave"
+   config -s table.class.loader.context=datawave"
+   else
+      DW_ACCUMULO_SHELL_INIT_SCRIPT="${DW_ACCUMULO_SHELL_INIT_SCRIPT}
+   config -s table.class.loader.context=extlib"
    fi
 
    DW_ACCUMULO_SHELL_INIT_SCRIPT="${DW_ACCUMULO_SHELL_INIT_SCRIPT}

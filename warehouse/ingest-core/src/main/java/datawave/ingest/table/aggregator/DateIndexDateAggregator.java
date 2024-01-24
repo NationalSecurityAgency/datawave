@@ -8,11 +8,11 @@ import org.apache.accumulo.core.data.Value;
 /**
  * Implementation of an Aggregator that aggregates objects of the type DateIndex.List. A date index entry contains a list of dates and shard specs. A date is of
  * the form yyyyMMdd, and a shard spec is a bit set representing the shards
- * 
- * 
+ *
+ *
  */
 public class DateIndexDateAggregator extends PropogatingCombiner {
-    
+
     @Override
     public Value reduce(Key key, Iterator<Value> iter) {
         byte[] finalBytes = new byte[0];
@@ -37,10 +37,10 @@ public class DateIndexDateAggregator extends PropogatingCombiner {
             return new Value(finalBytes, false);
         }
     }
-    
+
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see datawave.ingest.table.aggregator.PropogatingAggregator#propogateKey()
      */
     @Override
