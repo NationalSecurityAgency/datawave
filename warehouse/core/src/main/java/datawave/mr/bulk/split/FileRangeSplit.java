@@ -56,17 +56,29 @@ public class FileRangeSplit extends InputSplit implements Writable {
         return file.equals(other.file) && start == other.start && length == other.length;
     }
 
-    /** The file containing this split's data. */
+    /**
+     * The file containing this split's data.
+     *
+     * @return the path
+     */
     public Path getPath() {
         return file;
     }
 
-    /** The position of the first byte in the file to process. */
+    /**
+     * The position of the first byte in the file to process.
+     *
+     * @return the position of the first byte
+     */
     public long getStart() {
         return start;
     }
 
-    /** The number of bytes in the file to process. */
+    /**
+     * The number of bytes in the file to process.
+     *
+     * @return the number of bytes
+     */
     @Override
     public long getLength() {
         return length;
