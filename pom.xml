@@ -26,6 +26,13 @@
         <tag>HEAD</tag>
         <url>https://github.com/NationalSecurityAgency/datawave</url>
     </scm>
+    <distributionManagement>
+        <repository>
+            <id>github-datawave</id>
+            <name>GitHub Datawave Apache Maven Packages</name>
+            <url>https://maven.pkg.github.com/NationalSecurityAgency/datawave</url>
+        </repository>
+    </distributionManagement>
     <properties>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
@@ -1167,18 +1174,14 @@
     </dependencyManagement>
     <repositories>
         <repository>
-            <!--
-                This repository is a temporary work-around until we can public artifacts to maven central.
-                This allows us to retrieve released microservice artifacts from our github repository.
-            -->
             <releases>
                 <enabled>true</enabled>
             </releases>
             <snapshots>
                 <enabled>false</enabled>
             </snapshots>
-            <id>datawave-github-mvn-repo</id>
-            <url>https://raw.githubusercontent.com/NationalSecurityAgency/datawave-mvn-repo/mvn-repo</url>
+            <id>github-datawave</id>
+            <url>https://maven.pkg.github.com/NationalSecurityAgency/datawave</url>
         </repository>
         <repository>
             <snapshots>
@@ -1197,11 +1200,6 @@
         </repository>
     </repositories>
     <pluginRepositories>
-        <!--
-            This is a temporary work-around until we can publish artifacts to maven central.
-            This allows us to download the read-properties and assert-properties plugins, as
-            well as the datawave code style template for the formatter-maven-plugin.
-        -->
         <pluginRepository>
             <releases>
                 <enabled>true</enabled>
@@ -1209,8 +1207,8 @@
             <snapshots>
                 <enabled>false</enabled>
             </snapshots>
-            <id>datawave-github-mvn-repo</id>
-            <url>https://raw.githubusercontent.com/NationalSecurityAgency/datawave-mvn-repo/mvn-repo</url>
+            <id>github-datawave</id>
+            <url>https://maven.pkg.github.com/NationalSecurityAgency/datawave</url>
         </pluginRepository>
     </pluginRepositories>
     <build>
