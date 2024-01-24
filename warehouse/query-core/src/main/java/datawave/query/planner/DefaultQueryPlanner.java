@@ -2798,11 +2798,11 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     public String getPlannedScript() {
         return plannedScript;
     }
-    
+
     public void setPlannedScript(String plannedScript) {
         this.plannedScript = plannedScript;
     }
-    
+
     protected Multimap<String,Type<?>> configureIndexedAndNormalizedFields(MetadataHelper metadataHelper, ShardQueryConfiguration config,
                     ASTJexlScript queryTree) throws DatawaveQueryException {
         // Fetch the mapping of fields to Types from the DatawaveMetadata table

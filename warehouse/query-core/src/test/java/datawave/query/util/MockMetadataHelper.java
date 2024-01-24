@@ -407,7 +407,7 @@ public class MockMetadataHelper extends MetadataHelper {
     }
 
     @Override
-    public Map<String,Map<String,FieldIndexHole>> getFieldIndexHoles(double minThreshold) {
+    public Map<String,Map<String,FieldIndexHole>> getFieldIndexHoles(Set<String> fields, Set<String> datatypes, double minThreshold) {
         return fieldIndexHoles;
     }
 
