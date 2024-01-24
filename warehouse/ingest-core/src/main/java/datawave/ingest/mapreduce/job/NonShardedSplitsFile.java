@@ -9,6 +9,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -17,7 +18,6 @@ import java.util.Map;
 
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -124,7 +124,7 @@ public class NonShardedSplitsFile {
                 tableSplits = splits.getSplits(table);
             }
             for (Text split : tableSplits) {
-                out.println(table + "\t" + new String(Base64.encodeBase64(split.getBytes())));
+                out.println(table + "\t" + new String(Base64.getEncoder().encode(split.getBytes())));
                 if (log.isTraceEnabled()) {
                     log.trace(table + " split: " + split);
                 }
@@ -174,11 +174,11 @@ public class NonShardedSplitsFile {
                     String[] parts = line.split("\\t");
                     if (parts[0].equals(previousTableName)) {
                         if (parts.length > 1)
-                            cutPoints.add(new Text(Base64.decodeBase64(parts[1].getBytes())));
+                            cutPoints.add(new Text(Base64.getDecoder().decode(parts[1].getBytes())));
                     } else if (previousTableName == null) {
                         previousTableName = parts[0];
                         if (parts.length > 1)
-                            cutPoints.add(new Text(Base64.decodeBase64(parts[1].getBytes())));
+                            cutPoints.add(new Text(Base64.getDecoder().decode(parts[1].getBytes())));
                     } else {
                         Collections.sort(cutPoints);
                         splits.put(previousTableName, cutPoints.toArray(new Text[cutPoints.size()]));
@@ -186,7 +186,7 @@ public class NonShardedSplitsFile {
                         previousTableName = parts[0];
                         cutPoints.clear();
                         if (parts.length > 1)
-                            cutPoints.add(new Text(Base64.decodeBase64(parts[1].getBytes())));
+                            cutPoints.add(new Text(Base64.getDecoder().decode(parts[1].getBytes())));
                     }
                 }
             } finally {

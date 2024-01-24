@@ -1,11 +1,11 @@
-shard	[B@57c8b24d
-shard	[B@39320a41
-shard	[B@43f4ebd
-shard	[B@584a5c78
-shard	[B@79fcf790
-shard1	[B@79fcf790
+shard	B0E=
+shard	B0D=
+shard	B1o=
+shard	B2o=
+shard	CA==
+shard1	CA==
 shard1
-someTableName	[B@57c8b24d
-someTableName	[B@39320a41
-someTableName	[B@43f4ebd
-someTableName	[B@79fcf790
+someTableName	B0E=
+someTableName	B0D=
+someTableName	B1o=
+someTableName	CA==
