@@ -1,7 +1,6 @@
 package datawave.query.planner;
 
 import java.io.IOException;
-import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Collection;
@@ -12,30 +11,21 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
-import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 
 import datawave.query.exceptions.DatawaveFatalQueryException;
-import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.QueryFieldsVisitor;
 import datawave.query.jexl.visitors.UnfieldedIndexExpansionVisitor;
-import datawave.query.jexl.visitors.ValidComparisonVisitor;
-import datawave.query.jexl.visitors.ValidPatternVisitor;
 import datawave.query.model.QueryModel;
-import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
-import datawave.webservice.query.exception.PreConditionFailedQueryException;
 import datawave.webservice.query.exception.QueryException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.log4j.Logger;
-
-import com.google.common.base.Preconditions;
 
 import datawave.query.CloseableIterable;
 import datawave.query.config.ShardQueryConfiguration;
@@ -82,7 +72,7 @@ public class FederatedQueryPlanner extends QueryPlanner {
         log.debug("Query originally set to execute against date range " + dateFormat.format(originalBeginDate) + "-" + dateFormat.format(originalEndDate));
 
         // Get the relevant date ranges.
-        SortedSet<Pair<Date,Date>> dateRanges = getValidTargetDates(query, scannerFactory);
+        SortedSet<Pair<Date,Date>> dateRanges = getSubQueryDateRanges(query, scannerFactory);
 
         // TODO - Determine how restrictive we should be when evaluating whether or not to retain a date in the target date range, i.e. should we refrain from
         // querying on a date if any index holes are seen on that day (current implementation) or only when we see index holes on a date for all fields and
@@ -122,9 +112,10 @@ public class FederatedQueryPlanner extends QueryPlanner {
     }
     
     /**
-     * Return the set of valid date ranges that the original query should target.
+     * Return the set of date ranges that sub-queries should be created for. Each date range will have a consistent index state, meaning that within each date
+     * range, we can expect to either encounter no field index holes, or to always encounter a field index hole.
      */
-    private SortedSet<Pair<Date,Date>> getValidTargetDates(String query, ScannerFactory scannerFactory) throws DatawaveQueryException {
+    private SortedSet<Pair<Date,Date>> getSubQueryDateRanges(String query, ScannerFactory scannerFactory) throws DatawaveQueryException {
         // Fetch the field index holes for the specified fields and datatypes, using the configured minimum threshold.
         MetadataHelper metadataHelper = originalPlanner.getMetadataHelper();
         Map<String,Map<String,FieldIndexHole>> fieldIndexHoles;
@@ -145,10 +136,10 @@ public class FederatedQueryPlanner extends QueryPlanner {
         }
 
         // Establish the date ranges we can query on.
-        SortedSet<Pair<Date,Date>> validDateRanges = new TreeSet<>();
+        SortedSet<Pair<Date,Date>> subDateRanges = new TreeSet<>();
         if (relevantHoles.isEmpty()) {
             // If we found no index holes, we can default to the original target date range.
-            validDateRanges.add(Pair.of(originalBeginDate, originalEndDate));
+            subDateRanges.add(Pair.of(originalBeginDate, originalEndDate));
         } else {
             // Otherwise, get the valid date ranges.
             // Merge any overlaps.
@@ -159,7 +150,9 @@ public class FederatedQueryPlanner extends QueryPlanner {
             Iterator<Pair<Date,Date>> it = mergedHoles.iterator();
             Pair<Date,Date> firstHole = it.next();
             if (firstHole.getLeft().getTime() > originalBeginDate.getTime()) {
-                validDateRanges.add(Pair.of(new Date(originalBeginDate.getTime()), oneDayBefore(firstHole.getLeft())));
+                subDateRanges.add(Pair.of(new Date(originalBeginDate.getTime()), oneDayBefore(firstHole.getLeft())));
+            } else {
+                subDateRanges.add(firstHole);
             }
 
             // Track the end of the previous hole.
@@ -167,19 +160,33 @@ public class FederatedQueryPlanner extends QueryPlanner {
             while (it.hasNext()) {
                 // The start of the next hole is guaranteed to fall within the original query's target date range. Add a target date range from one day after
                 // the end of the previous hole to one day before the start of the next hole.
-                Pair<Date,Date> hole = it.next();
-                validDateRanges.add(Pair.of(oneDayAfter(endOfPrevHole), oneDayBefore(hole.getLeft())));
-                endOfPrevHole = hole.getRight();
+                Pair<Date,Date> currentHole = it.next();
+                subDateRanges.add(Pair.of(oneDayAfter(endOfPrevHole), oneDayBefore(currentHole.getLeft())));
+    
+                // If there is another hole, the current hole is guaranteed to fall within the original target's date range. Add it to the sub ranges.
+                if (it.hasNext()) {
+                    subDateRanges.add(currentHole);
+                } else {
+                    // If this is the last hole, it is possible that the end date falls outside the original query's target date range. If so, shorten it to end
+                    // at the original target end date.
+                    if (currentHole.getRight().getTime() > originalEndDate.getTime()) {
+                        subDateRanges.add(Pair.of(currentHole.getLeft(), originalEndDate));
+                    } else {
+                        // If it does not fall outside the target date range, include it as is.
+                        subDateRanges.add(currentHole);
+                    }
+                }
+                endOfPrevHole = currentHole.getRight();
             }
 
             // If the last hole we saw ended before the end of the original query's target date range, add a target date range from one day after the end of the
             // last hole to the original target end date.
             if (endOfPrevHole.getTime() < originalEndDate.getTime()) {
-                validDateRanges.add(Pair.of(oneDayAfter(endOfPrevHole), new Date(originalEndDate.getTime())));
+                subDateRanges.add(Pair.of(oneDayAfter(endOfPrevHole), new Date(originalEndDate.getTime())));
             }
         }
 
-        return validDateRanges;
+        return subDateRanges;
     }
     
     /**
