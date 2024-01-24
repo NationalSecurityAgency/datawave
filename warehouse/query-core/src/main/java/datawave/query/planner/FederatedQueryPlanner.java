@@ -74,13 +74,6 @@ public class FederatedQueryPlanner extends QueryPlanner {
         // Get the relevant date ranges.
         SortedSet<Pair<Date,Date>> dateRanges = getSubQueryDateRanges(query, scannerFactory);
 
-        // TODO - Determine how restrictive we should be when evaluating whether or not to retain a date in the target date range, i.e. should we refrain from
-        // querying on a date if any index holes are seen on that day (current implementation) or only when we see index holes on a date for all fields and
-        // datatypes established for a query? What about when a query will include all fields and/or all datatypes?
-        if (dateRanges.isEmpty()) {
-            throw new DatawaveQueryException("No dates within query target date range exist without a field index hole");
-        }
-
         // Execute the same query for each date range and collect the results.
         FederatedQueryIterable results = new FederatedQueryIterable();
         int totalProcessed = 1;
