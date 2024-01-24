@@ -1,8 +1,6 @@
-package datawave.query.util.ssdeep;
+package datawave.util.ssdeep;
 
 import java.util.Iterator;
-
-import datawave.query.util.Tuple2;
 
 /**
  * Generates NGrams for the specified hash using the NGram Generator. Note: hashes may be normalized prior to n-gram-ing, but the non-normalized version of the
@@ -17,7 +15,7 @@ public class NGramByteHashGenerator {
         ssDeepEncoder = new SSDeepEncoding();
     }
 
-    public Iterator<Tuple2<NGramTuple,byte[]>> call(final String hash) throws Exception {
+    public Iterator<Tuple2<NGramTuple,byte[]>> call(final String hash) {
         return nGramEngine.generateNgrams(hash).stream().map(g -> new Tuple2<>(g, ssDeepEncoder.encode(hash))).iterator();
     }
 }

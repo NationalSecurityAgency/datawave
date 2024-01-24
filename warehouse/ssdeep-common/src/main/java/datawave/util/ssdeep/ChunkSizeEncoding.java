@@ -1,4 +1,4 @@
-package datawave.query.util.ssdeep;
+package datawave.util.ssdeep;
 
 import java.io.Serializable;
 
@@ -27,7 +27,10 @@ import java.io.Serializable;
 //@formatter:on
 public class ChunkSizeEncoding implements Serializable {
 
-    private static final int MIN_CHUNK_SIZE = 3;
+    public static final int SPAMSUM_LENGTH = 64;
+
+    public static final int MIN_CHUNK_SIZE = 3;
+
     private static final int DEFAULT_ENCODING_ALPHABET_LENGTH = HashReverse.LEXICAL_B64_TABLE.length;
 
     private static final int DEFAULT_ENCODING_LENGTH = 1;
@@ -36,7 +39,7 @@ public class ChunkSizeEncoding implements Serializable {
 
     private final IntegerEncoding chunkIndexEncoding;
 
-    final int minChunkSize;
+    private final int minChunkSize;
 
     /**
      * Create a ChunkSizeEncoding with the default parameters of a 64 character encoding alphabet and a length of 1. This allows us to encode 64 distinct chunk

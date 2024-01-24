@@ -2,7 +2,6 @@ package datawave.query;
 
 import static org.junit.Assert.fail;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -38,13 +37,13 @@ import datawave.microservice.querymetric.QueryMetricFactoryImpl;
 import datawave.query.tables.SSDeepSimilarityQueryLogic;
 import datawave.query.testframework.AbstractDataTypeConfig;
 import datawave.query.transformer.SSDeepSimilarityQueryTransformer;
-import datawave.query.util.Tuple2;
-import datawave.query.util.ssdeep.BucketAccumuloKeyGenerator;
-import datawave.query.util.ssdeep.NGramByteHashGenerator;
-import datawave.query.util.ssdeep.NGramTuple;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
+import datawave.util.ssdeep.BucketAccumuloKeyGenerator;
+import datawave.util.ssdeep.NGramByteHashGenerator;
+import datawave.util.ssdeep.NGramTuple;
+import datawave.util.ssdeep.Tuple2;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.result.event.DefaultResponseObjectFactory;
