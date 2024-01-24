@@ -1,6 +1,7 @@
 package datawave.query.planner;
 
 import java.io.IOException;
+import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Collection;
@@ -11,13 +12,26 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 
+import datawave.query.exceptions.DatawaveFatalQueryException;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.visitors.QueryFieldsVisitor;
+import datawave.query.jexl.visitors.UnfieldedIndexExpansionVisitor;
+import datawave.query.jexl.visitors.ValidComparisonVisitor;
+import datawave.query.jexl.visitors.ValidPatternVisitor;
+import datawave.query.model.QueryModel;
+import datawave.webservice.query.exception.BadRequestQueryException;
+import datawave.webservice.query.exception.DatawaveErrorCode;
+import datawave.webservice.query.exception.PreConditionFailedQueryException;
+import datawave.webservice.query.exception.QueryException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.log4j.Logger;
 
@@ -53,8 +67,6 @@ public class FederatedQueryPlanner extends QueryPlanner {
         this.originalPlanner = planner;
         this.originalBeginDate = config.getBeginDate();
         this.originalEndDate = config.getEndDate();
-        Preconditions.checkNotNull(originalBeginDate, "Configuration begin date must not be null");
-        Preconditions.checkNotNull(originalEndDate, "Configuration end date must not be null");
     }
 
     @Override
@@ -70,13 +82,13 @@ public class FederatedQueryPlanner extends QueryPlanner {
         log.debug("Query originally set to execute against date range " + dateFormat.format(originalBeginDate) + "-" + dateFormat.format(originalEndDate));
 
         // Get the relevant date ranges.
-        SortedSet<Pair<Date,Date>> dateRanges = getValidTargetDates(getFieldsForQuery(), originalConfig.getDatatypeFilter());
+        SortedSet<Pair<Date,Date>> dateRanges = getValidTargetDates(query, scannerFactory);
 
         // TODO - Determine how restrictive we should be when evaluating whether or not to retain a date in the target date range, i.e. should we refrain from
         // querying on a date if any index holes are seen on that day (current implementation) or only when we see index holes on a date for all fields and
         // datatypes established for a query? What about when a query will include all fields and/or all datatypes?
         if (dateRanges.isEmpty()) {
-            throw new DatawaveQueryException("No dates within query target date range exist without an index hole");
+            throw new DatawaveQueryException("No dates within query target date range exist without a field index hole");
         }
 
         // Execute the same query for each date range and collect the results.
@@ -109,18 +121,16 @@ public class FederatedQueryPlanner extends QueryPlanner {
         return results;
     }
     
-    private Set<String> getFieldsForQuery() {
-        // Determine the best way to extract fields from original query.
-        return Collections.emptySet();
-    }
-
-    private SortedSet<Pair<Date,Date>> getValidTargetDates(Set<String> fields, Set<String> datatypes) throws DatawaveQueryException {
-        
+    /**
+     * Return the set of valid date ranges that the original query should target.
+     */
+    private SortedSet<Pair<Date,Date>> getValidTargetDates(String query, ScannerFactory scannerFactory) throws DatawaveQueryException {
         // Fetch the field index holes for the specified fields and datatypes, using the configured minimum threshold.
         MetadataHelper metadataHelper = originalPlanner.getMetadataHelper();
         Map<String,Map<String,FieldIndexHole>> fieldIndexHoles;
         try {
-            fieldIndexHoles = metadataHelper.getFieldIndexHoles(fields, datatypes, originalConfig.getFieldIndexHoleMinThreshold());
+            Set<String> fields = getFieldsForQuery(query, scannerFactory);
+            fieldIndexHoles = metadataHelper.getFieldIndexHoles(fields, originalConfig.getDatatypeFilter(), originalConfig.getFieldIndexHoleMinThreshold());
         } catch (TableNotFoundException | IOException e) {
             throw new DatawaveQueryException("Error occurred when fetching field index holes from metadata table", e);
         }
@@ -171,7 +181,37 @@ public class FederatedQueryPlanner extends QueryPlanner {
 
         return validDateRanges;
     }
-
+    
+    /**
+     * Return the set of fields in the query.
+     */
+    private Set<String> getFieldsForQuery(String query, ScannerFactory scannerFactory) {
+        // Parse the query.
+        ASTJexlScript queryTree = originalPlanner.parseQueryAndValidatePattern(query, null);
+    
+        // Apply the query model.
+        MetadataHelper metadataHelper = originalPlanner.getMetadataHelper();
+        QueryModel queryModel = originalPlanner.loadQueryModel(originalConfig);
+        queryTree = originalPlanner.applyQueryModel(metadataHelper, originalConfig, queryTree, queryModel);
+        
+        //Expand unfielded terms.
+        ShardQueryConfiguration configCopy = new ShardQueryConfiguration(originalConfig);
+        try {
+            configCopy.setIndexedFields(metadataHelper.getIndexedFields(originalConfig.getDatatypeFilter()));
+            configCopy.setReverseIndexedFields(metadataHelper.getReverseIndexedFields(originalConfig.getDatatypeFilter()));
+            queryTree = UnfieldedIndexExpansionVisitor.expandUnfielded(configCopy, scannerFactory, metadataHelper, queryTree);
+        } catch (TableNotFoundException e) {
+            QueryException qe = new QueryException(DatawaveErrorCode.METADATA_ACCESS_ERROR, e);
+            log.info(qe);
+            throw new DatawaveFatalQueryException(qe);
+        } catch (IllegalAccessException | InstantiationException e) {
+            throw new DatawaveFatalQueryException(e);
+        }
+    
+        // Extract and return the fields from the query.
+        return QueryFieldsVisitor.parseQueryFields(queryTree, metadataHelper);
+    }
+    
     /**
      * Return the set of any field index hole date ranges that fall within the original query's target date range.
      */
