@@ -1,3 +1,24 @@
+# Generating a Github Repository access token
+
+In order to download datawave artifacts from the github package repository, you will need to set credentials in 
+your maven `settings.xml` file.
+
+You should first create a classic personal access token on github [here](https://github.com/settings/tokens). Be 
+sure to give the token at least the following permissions:
+ * `read:packages`
+
+Save the token value, and create a server entry for the github package repo in your maven `settings.xml` file, like so:
+```xml
+<servers>
+      <server>
+         <id>github-datawave</id>
+         <username>PUT_YOUR_GITHUB_USERNAME_HERE</username>
+         <password>PUT_YOUR_PERSONAL_ACCESS_TOKEN_HERE</password>
+      </server>
+   </servers>
+```
+The id of the server matters, and should match what is used in the datawave parent pom.
+
 # Building Datawave
 
 To perform a full (non-release) 'dev' build  without unit tests:
@@ -54,6 +75,7 @@ You should first create a classic personal access token on github [here](https:/
 sure to give the token at least the following permissions:
  * `write:packages`
  * `delete:packages`
+
 Save the token value, and create a server entry for the github package repo in your maven `settings.xml` file, like so:
 ```xml
 <servers>
