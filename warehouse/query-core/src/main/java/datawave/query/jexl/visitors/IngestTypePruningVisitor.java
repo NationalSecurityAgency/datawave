@@ -240,8 +240,7 @@ public class IngestTypePruningVisitor extends BaseVisitor {
         JexlNode source = node.jjtGetChild(1);
         Set<String> dts = (Set<String>) visit(source, data);
 
-        if (source.jjtGetNumChildren() == 0) {
-            pruneNodeFromParent(source);
+        if (source.jjtGetParent() == null) {
             pruneNodeFromParent(node);
         }
 
@@ -382,7 +381,13 @@ public class IngestTypePruningVisitor extends BaseVisitor {
     public Set<String> getFieldsForLeaf(JexlNode node) {
         JexlNode deref = JexlASTHelper.dereference(node);
         if (deref instanceof ASTFunctionNode) {
-            return getFieldsForFunctionNode((ASTFunctionNode) deref);
+            try {
+                return getFieldsForFunctionNode((ASTFunctionNode) deref);
+            } catch (Exception e) {
+                // if a FunctionsDescriptor throws an exception for any reason then return an empty collection
+                // so the node gets treated as an unknown type
+                return Collections.emptySet();
+            }
         }
 
         //  @formatter:off

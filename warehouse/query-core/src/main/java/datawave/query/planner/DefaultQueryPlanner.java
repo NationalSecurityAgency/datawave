@@ -550,7 +550,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      *            the IteratorSetting
      */
     private void configureExcerpts(ShardQueryConfiguration config, IteratorSetting cfg) {
-        if (config.isTermFrequenciesRequired()) {
+        if (!config.getExcerptFields().isEmpty()) {
             addOption(cfg, QueryOptions.EXCERPT_FIELDS, config.getExcerptFields().toString(), true);
             addOption(cfg, QueryOptions.EXCERPT_ITERATOR, config.getExcerptIterator().getName(), false);
         }
@@ -1704,7 +1704,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         }
     }
 
-    // Overwrite projection and blacklist properties if the query model is
+    // Overwrite projection and disallowlist properties if the query model is
     // being used
     protected ASTJexlScript applyQueryModel(MetadataHelper metadataHelper, ShardQueryConfiguration config, ASTJexlScript script, QueryModel queryModel) {
         config.setQueryTree(script);
@@ -1716,7 +1716,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         Multimap<String,String> inverseReverseModel = invertMultimap(queryModel.getReverseQueryMapping());
 
         inverseReverseModel.putAll(queryModel.getForwardQueryMapping());
-        Collection<String> projectFields = config.getProjectFields(), blacklistedFields = config.getBlacklistedFields(), limitFields = config.getLimitFields();
+        Collection<String> projectFields = config.getProjectFields(), disallowlistedFields = config.getDisallowlistedFields(),
+                        limitFields = config.getLimitFields();
 
         if (projectFields != null && !projectFields.isEmpty()) {
             projectFields = queryModel.remapParameter(projectFields, inverseReverseModel);
@@ -1756,12 +1757,12 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             config.setExcerptFields(excerptFields);
         }
 
-        if (config.getBlacklistedFields() != null && !config.getBlacklistedFields().isEmpty()) {
-            blacklistedFields = queryModel.remapParameter(blacklistedFields, inverseReverseModel);
+        if (config.getDisallowlistedFields() != null && !config.getDisallowlistedFields().isEmpty()) {
+            disallowlistedFields = queryModel.remapParameter(disallowlistedFields, inverseReverseModel);
             if (log.isTraceEnabled()) {
-                log.trace("Updated blacklist set using query model to: " + blacklistedFields);
+                log.trace("Updated disallowlist set using query model to: " + disallowlistedFields);
             }
-            config.setBlacklistedFields(Sets.newHashSet(blacklistedFields));
+            config.setDisallowlistedFields(Sets.newHashSet(disallowlistedFields));
         }
 
         if (config.getLimitFields() != null && !config.getLimitFields().isEmpty()) {
@@ -2362,7 +2363,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             }
         }
 
-        // Whitelist and blacklist projection are mutually exclusive. You can't
+        // Allowlist and disallowlist projection are mutually exclusive. You can't
         // have both.
         if (null != config.getProjectFields() && !config.getProjectFields().isEmpty()) {
             if (log.isDebugEnabled()) {
@@ -2375,12 +2376,12 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             }
 
             addOption(cfg, QueryOptions.PROJECTION_FIELDS, config.getProjectFieldsAsString(), false);
-        } else if (null != config.getBlacklistedFields() && !config.getBlacklistedFields().isEmpty()) {
+        } else if (null != config.getDisallowlistedFields() && !config.getDisallowlistedFields().isEmpty()) {
             if (log.isDebugEnabled()) {
-                log.debug("Setting scan option: " + QueryOptions.BLACKLISTED_FIELDS + " to " + config.getBlacklistedFieldsAsString());
+                log.debug("Setting scan option: " + QueryOptions.DISALLOWLISTED_FIELDS + " to " + config.getDisallowlistedFieldsAsString());
             }
 
-            addOption(cfg, QueryOptions.BLACKLISTED_FIELDS, config.getBlacklistedFieldsAsString(), false);
+            addOption(cfg, QueryOptions.DISALLOWLISTED_FIELDS, config.getDisallowlistedFieldsAsString(), false);
         }
 
         // We don't need to do any expansion of the start or end date/time

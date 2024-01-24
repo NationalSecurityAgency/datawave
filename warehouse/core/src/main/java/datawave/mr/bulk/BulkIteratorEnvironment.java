@@ -2,6 +2,7 @@ package datawave.mr.bulk;
 
 import java.io.IOException;
 
+import org.apache.accumulo.core.client.PluginEnvironment;
 import org.apache.accumulo.core.client.SampleNotPresentException;
 import org.apache.accumulo.core.client.sample.SamplerConfiguration;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
@@ -12,6 +13,7 @@ import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.IteratorUtil.IteratorScope;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.security.Authorizations;
+import org.apache.accumulo.core.spi.common.ServiceEnvironment;
 
 public class BulkIteratorEnvironment implements IteratorEnvironment {
 
@@ -66,6 +68,16 @@ public class BulkIteratorEnvironment implements IteratorEnvironment {
     @Override
     public SortedKeyValueIterator<Key,Value> reserveMapFileReader(String mapFileName) throws IOException {
         // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public ServiceEnvironment getServiceEnv() {
+        return null;
+    }
+
+    @Override
+    public PluginEnvironment getPluginEnv() {
         return null;
     }
 
