@@ -33,8 +33,11 @@ jobs:
         maven-version: 3.9.5
         cache: 'maven'
     - name: Format code
+      env:
+        USER_NAME: ${{ secrets.USER_NAME }}
+        ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
       run: |
-        mvn -V -B -e -ntp "-Dstyle.color=always" clean formatter:format sortpom:sort impsort:sort -Dmaven.build.cache.enabled=false -Pautoformat
+        mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -V -B -e -ntp "-Dstyle.color=always" clean formatter:format sortpom:sort impsort:sort -Dmaven.build.cache.enabled=false -Pautoformat
         git status
         git diff-index --quiet HEAD || (echo "Modified files found. Creating new commit with formatting fixes" && echo "diffs_found=true" >> "$GITHUB_ENV")
     - name: Commit Changes
@@ -62,8 +65,11 @@ jobs:
         maven-version: 3.9.5
         cache: 'maven'
     - name: Build and Run Unit Tests
+      env:
+        USER_NAME: ${{ secrets.USER_NAME }}
+        ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
       run: |
-        RUN_TESTS="mvn -V -B -e -ntp "-Dstyle.color=always" -Pdev,examples,assemble,spotbugs -Dmaven.build.cache.enabled=false -Ddeploy -Ddist -T1C clean verify"
+        RUN_TESTS="mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -V -B -e -ntp "-Dstyle.color=always" -Pdev,examples,assemble,spotbugs -Dmaven.build.cache.enabled=false -Ddeploy -Ddist -T1C clean verify"
         $RUN_TESTS \
           || { echo "***** TESTS FAILED. Attempting retry."; $RUN_TESTS; } \
           || { echo "***** TESTS FAILED. Attempting final retry."; $RUN_TESTS; }
@@ -95,12 +101,18 @@ jobs:
   #           ${{ runner.os }}-maven-format-
   #           ${{ runner.os }}-maven-
   #     - name: Build Project
+  #       env:
+  #         USER_NAME: ${{ secrets.USER_NAME }}
+  #         ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
   #       run: |
-  #         BUILD="mvn -V -B -e -Pdev,examples,assemble,spotbugs -Dmaven.build.cache.enabled=false -DskipServices -Ddeploy -Ddist -T1C -pl "-:config-service" clean install -DskipTests"
+  #         BUILD="mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -V -B -e -Pdev,examples,assemble,spotbugs -Dmaven.build.cache.enabled=false -DskipServices -Ddeploy -Ddist -T1C -pl "-:config-service" clean install -DskipTests"
   #         $BUILD
   #     - name: Run Microservice Unit Tests
+  #       env:
+  #         USER_NAME: ${{ secrets.USER_NAME }}
+  #         ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
   #       run: |
-  #         RUN_TESTS="mvn -V -B -e -Dmaven.build.cache.enabled=false verify"
+  #         RUN_TESTS="mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -V -B -e -Dmaven.build.cache.enabled=false verify"
   #         cd microservices
   #         $RUN_TESTS \
   #           || { echo "***** TESTS FAILED. Attempting retry."; $RUN_TESTS; } \
@@ -131,10 +143,12 @@ jobs:
     # Builds the quickstart docker image and run the query tests
     - name: Quickstart Query Tests
       env:
-        DW_DATAWAVE_BUILD_COMMAND: "mvn -B -V -e -ntp -Dstyle.color=always -Dmaven.build.cache.enabled=false -Pdev -Ddeploy -Dtar -DskipTests clean package"
+        DW_DATAWAVE_BUILD_COMMAND: "mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -B -V -e -ntp -Dstyle.color=always -Dmaven.build.cache.enabled=false -Pdev -Ddeploy -Dtar -DskipTests clean package"
         DOCKER_BUILD_OPTS: "--squash --force-rm"
+        USER_NAME: ${{ secrets.USER_NAME }}
+        ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
       run: |
-        TAG=$(mvn -q -N -Dmaven.build.cache.enabled=false -Dexec.executable='echo' -Dexec.args='${project.version}' exec:exec)
+        TAG=$(mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -q -N -Dmaven.build.cache.enabled=false -Dexec.executable='echo' -Dexec.args='${project.version}' exec:exec)
         contrib/datawave-quickstart/docker/docker-build.sh ${TAG} --docker-opts "${DOCKER_BUILD_OPTS}"
 
     # Here's an example of how you'd deploy the image to the github package registry.
@@ -146,9 +160,11 @@ jobs:
     #     IMAGE_REGISTRY: "docker.pkg.github.com"
     #     IMAGE_USERNAME: "brianloss"
     #     IMAGE_NAME: "datawave/quickstart"
+    #     USER_NAME: ${{ secrets.USER_NAME }}
+    #     ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
     #   run: |
     #     # Set up env vars
-    #     TAG=$(mvn -q -N -Dmaven.build.cache.enabled=false -Dexec.executable='echo' -Dexec.args='${project.version}' exec:exec)
+    #     TAG=$(mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -q -N -Dmaven.build.cache.enabled=false -Dexec.executable='echo' -Dexec.args='${project.version}' exec:exec)
     #     REMOTE_IMAGE_NAME="${IMAGE_REGISTRY}/${IMAGE_USERNAME}/${IMAGE_NAME}"
     #     # Log in to the package registry
     #     echo ${{ secrets.GITHUB_TOKEN }} | docker login docker.pkg.github.com --username ${GITHUB_ACTOR} --password-stdin
