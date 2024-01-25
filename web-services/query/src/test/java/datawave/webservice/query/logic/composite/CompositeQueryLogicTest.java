@@ -1571,7 +1571,7 @@ public class CompositeQueryLogicTest {
 
         CompositeQueryLogic composite = new CompositeQueryLogic();
         composite.setQueryLogics(logicMap);
-        composite.setPrincipal(principal);
+        composite.setCurrentUser(principal);
         composite.setDnResultLimits(Collections.singletonMap("dn=user", 300L));
 
         // initial state
