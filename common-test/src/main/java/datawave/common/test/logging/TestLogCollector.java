@@ -4,6 +4,7 @@ import java.io.CharArrayWriter;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.apache.log4j.bridge.FilterAdapter;
@@ -27,7 +28,7 @@ import org.junit.rules.ExternalResource;
  */
 public class TestLogCollector extends ExternalResource {
 
-    private List<String> messages = new ArrayList<>();
+    private List<String> messages = Collections.synchronizedList(new ArrayList<>());
 
     private List<LogAppender> loggers;
     private Writer writer = new CharArrayWriter();
