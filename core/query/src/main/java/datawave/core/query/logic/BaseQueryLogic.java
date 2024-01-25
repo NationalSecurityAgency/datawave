@@ -85,6 +85,8 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
         setCurrentUser(other.getCurrentUser());
         setServerUser(other.getServerUser());
         setResponseEnricherBuilder(other.getResponseEnricherBuilder());
+        this.dnResultLimits = other.dnResultLimits;
+        this.systemFromResultLimits = other.systemFromResultLimits;
     }
 
     public GenericQueryConfiguration getConfig() {

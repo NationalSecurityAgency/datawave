@@ -155,6 +155,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         if (this.maxResults != this.logic.getMaxResults()) {
             log.info("Maximum results set to " + this.maxResults + " instead of default " + this.logic.getMaxResults() + ", user " + this.settings.getUserDN()
                             + " has a DN configured with a different limit");
+            this.logic.setMaxResults(maxResults);
         }
     }
 
