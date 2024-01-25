@@ -73,11 +73,11 @@ for i in ${NUM_MAP_LOADERS_COPY[@]}; do
 done
 TOTAL=$((TOTAL + EXTRA_MAP))
 
-if [[ ${TOTAL} > 0 ]]; then
+if [[ ${TOTAL} -gt 0 ]]; then
   SHUTDOWN_PORT=24100
   for ((LOADER = 0; LOADER < ${#MAP_LOADER_HDFS_NAME_NODES[@]}; LOADER = $((LOADER + 1)))); do
-    #Make sure that there are no active loaders running on the namenode in question before "resetting" perceived stuck files in HDFS
-    currentLoaders =$(ps -eaf | grep [b]ulkIngestMap | grep ${MAP_LOADER_HDFS_NAME_NODES[$LOADER]} | cut -d" " -f1-7)
+    # Make sure that there are no active loaders running on the namenode in question before "resetting" perceived stuck files in HDFS
+    currentLoaders=$(ps -eaf | grep [b]ulkIngestMap | grep ${MAP_LOADER_HDFS_NAME_NODES[$LOADER]} | cut -d" " -f1-7)
     echo "currentLoaders is: " $currentLoaders
     FILES_STUCK_LOADING=$(${INGEST_HADOOP_HOME}/bin/hadoop fs -ls "${MAP_LOADER_HDFS_NAME_NODES[$LOADER]}$BASE_WORK_DIR/*/job.loading" | awk '{print $NF}')
     if [[ ! -z $FILES_STUCK_LOADING && -z $currentLoaders ]]; then
@@ -98,7 +98,7 @@ if [[ ${TOTAL} > 0 ]]; then
     portInUse=$(lsof -i:${SHUTDOWN_PORT} | grep $SHUTDOWN_PORT)
     portUsed=$(ps -eaf | grep [b]ulkIngestMap | grep $SHUTDOWN_PORT)
     for (( x=0; x < $COUNT; x=$((x+1)) )) ; do
-      while [[ ! -z "$portInUse$portUsed"]]
+      while [[ ! -z "$portInUse$portUsed" ]]
       do
           echo "port in use, finding another"
           SHUTDOWN_PORT = $((SHUTDOWN_PORT + 1))
@@ -145,7 +145,7 @@ if [[ ${TOTAL} > 0 ]]; then
       SHUTDOWN_PORT=25100
       portInUse=$(lsof -i:${SHUTDOWN_PORT} | grep $SHUTDOWN_PORT)
       portUsed=$(ps -eaf | grep [b]ulkIngestMap | grep $SHUTDOWN_PORT)
-      while [[ ! -z "$portInUse$portUsed"]]
+      while [[ ! -z "$portInUse$portUsed" ]]
       do
           SHUTDOWN_PORT=$((SHUTDOWN_PORT + 1))
           portInUse=$(lsof -i:${SHUTDOWN_PORT} | grep $SHUTDOWN_PORT)
@@ -156,5 +156,5 @@ if [[ ${TOTAL} > 0 ]]; then
       done
   fi
 else
-        echo "$COUNT map file loaders already running"
+    echo "$COUNT map file loaders already running"
 fi
