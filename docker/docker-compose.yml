@@ -235,7 +235,7 @@ services:
 
   metrics:
     entrypoint: ["java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005","-jar","app.jar"]
-    image: datawave/query-metric-service:3.0.7-SNAPSHOT
+    image: datawave/query-metric-service:3.0.8-SNAPSHOT
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,compose,remoteauth
