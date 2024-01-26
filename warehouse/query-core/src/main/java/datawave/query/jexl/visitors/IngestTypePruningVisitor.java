@@ -381,7 +381,13 @@ public class IngestTypePruningVisitor extends BaseVisitor {
     public Set<String> getFieldsForLeaf(JexlNode node) {
         JexlNode deref = JexlASTHelper.dereference(node);
         if (deref instanceof ASTFunctionNode) {
-            return getFieldsForFunctionNode((ASTFunctionNode) deref);
+            try {
+                return getFieldsForFunctionNode((ASTFunctionNode) deref);
+            } catch (Exception e) {
+                // if a FunctionsDescriptor throws an exception for any reason then return an empty collection
+                // so the node gets treated as an unknown type
+                return Collections.emptySet();
+            }
         }
 
         //  @formatter:off
