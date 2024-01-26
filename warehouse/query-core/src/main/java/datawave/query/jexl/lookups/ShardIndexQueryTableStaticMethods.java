@@ -808,7 +808,7 @@ public class ShardIndexQueryTableStaticMethods {
         else if (null == leadingLiteral && null != trailingLiteral) {
             return true;
         }
-        // we have neither leading or trailing, use foward index
+        // we have neither leading or trailing, use forward index
         if (trailingLiteral == null && leadingLiteral == null) {
             return false;
         }
