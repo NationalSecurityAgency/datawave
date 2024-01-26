@@ -1,0 +1,15 @@
+2024-01-26T18:05:52,927 [config.BaseHdfsFileCacheUtil] INFO : Updated /data/accumuloConfigCache/accConfCache.txt
+starting bulk ingest server
+started bulk ingest server
+starting live ingest server
+started live ingest server
+done starting ingest servers
+starting cleanup server ...
+starting map file loaders ...
+currentLoaders is:
+ls: `hdfs://localhost:9000/datawave/ingest/work/*/job.loading': No such file or directory
+starting 1 map file loaders for  on hdfs://localhost:9000 ...
+starting /data/git/datawave/contrib/datawave-quickstart/bin/services/datawave/datawave-ingest-install/bin/ingest/map-file-bulk-loader.sh -srcHdfs hdfs://localhost:9000 -destHdfs hdfs://localhost:9000 -shutdownPort 24100 with log file /data/git/datawave/contrib/datawave-quickstart/datawave-ingest/logs/map-file-loader.00.log
+No extra map file loader configured.
+starting flag makers ...
+done
