@@ -98,6 +98,9 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
 
         public void setMaxResults(long maxResults) {
             this.maxResults = maxResults;
+            if (maxResults > logic.getMaxResults() && logic.getMaxResults() != -1) {
+                logic.setMaxResults(maxResults);
+            }
         }
 
         public long getMaxResults() {
@@ -677,5 +680,14 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
 
     public CountDownLatch getCompletionLatch() {
         return completionLatch;
+    }
+
+    @Override
+    public void setMaxResults(long maxResults) {
+        this.maxResults = maxResults;
+        super.setMaxResults(maxResults);
+        for (QueryLogic<?> queryLogic : getQueryLogics().values()) {
+            queryLogic.setMaxResults(maxResults);
+        }
     }
 }

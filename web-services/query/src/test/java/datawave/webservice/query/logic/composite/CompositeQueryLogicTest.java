@@ -1562,4 +1562,43 @@ public class CompositeQueryLogicTest {
         c.close();
     }
 
+    @Test
+    public void testDnResultLimit() {
+        TestQueryLogic logic1 = new TestQueryLogic();
+        TestQueryLogic logic2 = new TestQueryLogic();
+
+        logic1.setMaxResults(150L);
+        logic2.setMaxResults(-1L);
+
+        Map<String,QueryLogic<?>> logicMap = new HashMap<>();
+        logicMap.put("LogicOne", logic1);
+        logicMap.put("LogicTwo", logic2);
+
+        // set up DN limits
+        QueryImpl settings = new QueryImpl();
+        settings.setPagesize(100);
+        settings.setUserDN("dn=user");
+        settings.setDnList(Collections.singletonList("dn=user"));
+        settings.setQueryAuthorizations(auths.toString());
+
+        CompositeQueryLogic composite = new CompositeQueryLogic();
+        composite.setQueryLogics(logicMap);
+        composite.setPrincipal(principal);
+        composite.setDnResultLimits(Collections.singletonMap("dn=user", 300L));
+
+        // initial state
+        Assert.assertEquals(-1L, composite.getMaxResults());
+        Assert.assertEquals(150L, logic1.getMaxResults());
+        Assert.assertEquals(-1L, logic2.getMaxResults());
+
+        // should update max results as part of this call
+        long resultLimit = composite.getResultLimit(settings);
+        Assert.assertEquals(300L, resultLimit);
+        composite.setMaxResults(resultLimit);
+
+        Assert.assertEquals(300L, composite.getMaxResults());
+        Assert.assertEquals(300L, logic1.getMaxResults());
+        Assert.assertEquals(300L, logic2.getMaxResults());
+    }
+
 }
