@@ -123,6 +123,11 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         this.connectionPriority = priority;
         this.settings = settings;
         // the query principal is our local principal unless the query logic has a different user operations
+        if (methodAuths != null) {
+            logic.preInitialize(settings, WSAuthorizationsUtil.buildAuthorizations(Collections.singleton(WSAuthorizationsUtil.splitAuths(methodAuths))));
+        } else {
+            logic.preInitialize(settings, WSAuthorizationsUtil.buildAuthorizations(null));
+        }
         DatawavePrincipal queryPrincipal = (logic.getUserOperations() == null) ? (DatawavePrincipal) principal
                         : logic.getUserOperations().getRemoteUser((DatawavePrincipal) principal);
         // the overall principal (the one with combined auths across remote user operations) is our own user operations (probably the UserOperationsBean)
@@ -151,6 +156,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         if (this.maxResults != this.logic.getMaxResults()) {
             log.info("Maximum results set to " + this.maxResults + " instead of default " + this.logic.getMaxResults() + ", user " + this.settings.getUserDN()
                             + " has a DN configured with a different limit");
+            this.logic.setMaxResults(maxResults);
         }
     }
 

@@ -94,9 +94,9 @@ public class JsonObjectFlattenerImplTest {
     }
 
     @Test
-    public void testFlattenWithBlacklist() throws Exception {
+    public void testFlattenWithDisallowlist() throws Exception {
         JsonObjectFlattener flattener = new JsonObjectFlattenerImpl.Builder()
-                        .mapKeyBlacklist(new HashSet<>(Arrays.asList("ROOTOBJECT.NUMBER2", "ROOTOBJECT.STRING2"))).pathDelimiter(".")
+                        .mapKeyDisallowlist(new HashSet<>(Arrays.asList("ROOTOBJECT.NUMBER2", "ROOTOBJECT.STRING2"))).pathDelimiter(".")
                         .mapKeyValueNormalizer(toUpperCaseNormalizer).build();
 
         JsonParser parser = new JsonParser();
@@ -113,9 +113,9 @@ public class JsonObjectFlattenerImplTest {
     }
 
     @Test
-    public void testFlattenWithWhitelist() throws Exception {
+    public void testFlattenWithAllowlist() throws Exception {
         JsonObjectFlattener flattener = new JsonObjectFlattenerImpl.Builder()
-                        .mapKeyWhitelist(new HashSet<>(Arrays.asList("ROOTOBJECT.NUMBER2", "ROOTOBJECT.STRING2"))).pathDelimiter(".")
+                        .mapKeyAllowlist(new HashSet<>(Arrays.asList("ROOTOBJECT.NUMBER2", "ROOTOBJECT.STRING2"))).pathDelimiter(".")
                         .mapKeyValueNormalizer(toUpperCaseNormalizer).build();
 
         JsonParser parser = new JsonParser();
@@ -131,10 +131,10 @@ public class JsonObjectFlattenerImplTest {
     }
 
     @Test
-    public void testFlattenWithWhitelistBlacklistConflict() throws Exception {
+    public void testFlattenWithAllowlistDisallowlistConflict() throws Exception {
         JsonObjectFlattener flattener = new JsonObjectFlattenerImpl.Builder()
-                        .mapKeyWhitelist(new HashSet<>(Arrays.asList("ROOTOBJECT.NUMBER2", "ROOTOBJECT.STRING2")))
-                        .mapKeyBlacklist(new HashSet<>(Arrays.asList("ROOTOBJECT.NUMBER2"))).pathDelimiter(".").mapKeyValueNormalizer(toUpperCaseNormalizer)
+                        .mapKeyAllowlist(new HashSet<>(Arrays.asList("ROOTOBJECT.NUMBER2", "ROOTOBJECT.STRING2")))
+                        .mapKeyDisallowlist(new HashSet<>(Arrays.asList("ROOTOBJECT.NUMBER2"))).pathDelimiter(".").mapKeyValueNormalizer(toUpperCaseNormalizer)
                         .build();
 
         JsonParser parser = new JsonParser();

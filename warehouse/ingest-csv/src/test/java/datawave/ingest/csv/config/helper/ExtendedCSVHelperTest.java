@@ -38,7 +38,7 @@ public class ExtendedCSVHelperTest {
 
         assertEquals(1, helper.getSecurityMarkingFieldDomainMap().size());
 
-        assertTrue((helper.getMultiValuedFields().size() + helper.getMultiValuedFieldsBlacklist().size()) > 0);
+        assertTrue((helper.getMultiValuedFields().size() + helper.getMultiValuedFieldsDisallowlist().size()) > 0);
 
         assertFalse(helper.getParsers().isEmpty());
         assertEquals(1, helper.getParsers().size());

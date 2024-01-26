@@ -897,6 +897,11 @@ public class QueryExecutorBean implements QueryExecutor {
             }
 
             // the query principal is our local principal unless the query logic has a different user operations
+            if (qp.getAuths() != null) {
+                qd.logic.preInitialize(q, WSAuthorizationsUtil.buildAuthorizations(Collections.singleton(WSAuthorizationsUtil.splitAuths(qp.getAuths()))));
+            } else {
+                qd.logic.preInitialize(q, WSAuthorizationsUtil.buildAuthorizations(null));
+            }
             DatawavePrincipal queryPrincipal = (qd.logic.getUserOperations() == null) ? (DatawavePrincipal) qd.p
                             : qd.logic.getUserOperations().getRemoteUser((DatawavePrincipal) qd.p);
             // the overall principal (the one with combined auths across remote user operations) is our own user operations bean

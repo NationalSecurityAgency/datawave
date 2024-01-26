@@ -44,6 +44,7 @@ import datawave.webservice.query.cache.ResultsPage;
 import datawave.webservice.query.cache.ResultsPage.Status;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.exception.EmptyObjectException;
+import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.logic.BaseQueryLogic;
 import datawave.webservice.query.logic.BaseQueryLogicTransformer;
 import datawave.webservice.query.logic.DatawaveRoleManager;
@@ -397,6 +398,11 @@ public class CompositeQueryLogicTest {
         public GenericQueryConfiguration initialize(AccumuloClient client, Query settings, Set<Authorizations> runtimeQueryAuthorizations) throws Exception {
             return new TestQueryConfiguration();
         }
+
+        @Override
+        public boolean isLongRunningQuery() {
+            return true;
+        }
     }
 
     public static class DifferentTestQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
@@ -688,6 +694,47 @@ public class CompositeQueryLogicTest {
         c.initialize(null, settings, Collections.singleton(auths));
 
         c.getTransformer(settings);
+    }
+
+    @Test
+    public void testInitializeAllFailQueryExceptionCause() throws Exception {
+
+        Map<String,QueryLogic<?>> logics = new HashMap<>();
+        logics.put("TestQueryLogic", new TestQueryLogic() {
+            @Override
+            public GenericQueryConfiguration initialize(AccumuloClient connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations)
+                            throws Exception {
+                throw new Exception("initialize failed");
+            }
+        });
+
+        logics.put("TestQueryLogic2", new TestQueryLogic2() {
+            @Override
+            public GenericQueryConfiguration initialize(AccumuloClient connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations)
+                            throws Exception {
+                throw new RuntimeException(new QueryException("query initialize failed"));
+            }
+        });
+
+        QueryImpl settings = new QueryImpl();
+        settings.setPagesize(100);
+        settings.setQueryAuthorizations(auths.toString());
+        settings.setQuery("FOO == 'BAR'");
+        settings.setParameters(new HashSet<>());
+        settings.setId(UUID.randomUUID());
+
+        CompositeQueryLogic c = new CompositeQueryLogic();
+        c.setAllMustInitialize(true);
+        c.setQueryLogics(logics);
+
+        c.setPrincipal(principal);
+        try {
+            c.initialize(null, settings, Collections.singleton(auths));
+
+            c.getTransformer(settings);
+        } catch (CompositeLogicException e) {
+            Assert.assertEquals("query initialize failed", e.getCause().getCause().getMessage());
+        }
     }
 
     @Test(expected = RuntimeException.class)
@@ -1145,8 +1192,8 @@ public class CompositeQueryLogicTest {
 
         CompositeQueryLogic c = new CompositeQueryLogic();
         // max.results.override is set to -1 when it is not passed in as it is an optional parameter
-        logic1.setMaxResults(0);
-        logic2.setMaxResults(4);
+        logic1.setMaxResults(2); // it can return 4, so this will cap it at 3 (1 more than max)
+        logic2.setMaxResults(1); // it cat return 4, so this will cap it at 2 (1 more than max)
         /**
          * RunningQuery.setupConnection()
          */
@@ -1167,14 +1214,14 @@ public class CompositeQueryLogicTest {
             Assert.assertTrue(o instanceof TestQueryResponse);
             results.add(o);
         }
-        Assert.assertEquals(4, results.size());
+        Assert.assertEquals(5, results.size());
         ResultsPage page = new ResultsPage(results, Status.COMPLETE);
 
         /**
          * QueryExecutorBean.next() - transform list of objects into JAXB response
          */
         TestQueryResponseList response = (TestQueryResponseList) c.getEnrichedTransformer((Query) settings).createResponse(page);
-        Assert.assertEquals(4, response.getResponses().size());
+        Assert.assertEquals(5, response.getResponses().size());
         for (TestQueryResponse r : response.getResponses()) {
             Assert.assertNotNull(r);
         }
@@ -1427,6 +1474,27 @@ public class CompositeQueryLogicTest {
     }
 
     @Test
+    public void testIsLongRunningQuery() throws Exception {
+        Map<String,QueryLogic<?>> logics = new HashMap<>();
+        TestQueryLogic logic1 = new TestQueryLogic();
+        TestQueryLogic logic2 = new TestQueryLogic();
+        logics.put("TestQueryLogic", logic1);
+        logics.put("TestQueryLogic2", logic2);
+
+        CompositeQueryLogic c = new CompositeQueryLogic();
+        c.setQueryLogics(logics);
+
+        Assert.assertFalse(c.isLongRunningQuery());
+
+        TestQueryLogic2 logic3 = new TestQueryLogic2();
+        logics.put("TestQueryLogic3", logic3);
+
+        c.setQueryLogics(logics);
+
+        Assert.assertTrue(c.isLongRunningQuery());
+    }
+
+    @Test
     public void testAuthorizationsUpdate() throws Exception {
         Map<String,QueryLogic<?>> logics = new HashMap<>();
         TestQueryLogic logic1 = new TestQueryLogic(new TestUserOperations());
@@ -1492,6 +1560,45 @@ public class CompositeQueryLogicTest {
         }
 
         c.close();
+    }
+
+    @Test
+    public void testDnResultLimit() {
+        TestQueryLogic logic1 = new TestQueryLogic();
+        TestQueryLogic logic2 = new TestQueryLogic();
+
+        logic1.setMaxResults(150L);
+        logic2.setMaxResults(-1L);
+
+        Map<String,QueryLogic<?>> logicMap = new HashMap<>();
+        logicMap.put("LogicOne", logic1);
+        logicMap.put("LogicTwo", logic2);
+
+        // set up DN limits
+        QueryImpl settings = new QueryImpl();
+        settings.setPagesize(100);
+        settings.setUserDN("dn=user");
+        settings.setDnList(Collections.singletonList("dn=user"));
+        settings.setQueryAuthorizations(auths.toString());
+
+        CompositeQueryLogic composite = new CompositeQueryLogic();
+        composite.setQueryLogics(logicMap);
+        composite.setPrincipal(principal);
+        composite.setDnResultLimits(Collections.singletonMap("dn=user", 300L));
+
+        // initial state
+        Assert.assertEquals(-1L, composite.getMaxResults());
+        Assert.assertEquals(150L, logic1.getMaxResults());
+        Assert.assertEquals(-1L, logic2.getMaxResults());
+
+        // should update max results as part of this call
+        long resultLimit = composite.getResultLimit(settings);
+        Assert.assertEquals(300L, resultLimit);
+        composite.setMaxResults(resultLimit);
+
+        Assert.assertEquals(300L, composite.getMaxResults());
+        Assert.assertEquals(300L, logic1.getMaxResults());
+        Assert.assertEquals(300L, logic2.getMaxResults());
     }
 
 }

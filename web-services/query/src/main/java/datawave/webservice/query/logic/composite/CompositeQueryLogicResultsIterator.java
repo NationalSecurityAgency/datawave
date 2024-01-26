@@ -36,6 +36,9 @@ public class CompositeQueryLogicResultsIterator implements Iterator<Object>, Thr
             }
             while (nextEntry == null) {
                 try {
+                    if (failure != null) {
+                        Throwables.propagate(failure);
+                    }
                     while (nextEntry == null && failure == null && (!results.isEmpty() || logic.getCompletionLatch().getCount() > 0)) {
                         nextEntry = results.poll(1, TimeUnit.SECONDS);
                     }
@@ -62,14 +65,15 @@ public class CompositeQueryLogicResultsIterator implements Iterator<Object>, Thr
                         }
                     }
                 } catch (InterruptedException e) {
+                    if (failure != null) {
+                        Throwables.propagate(failure);
+                    }
                     throw new RuntimeException(e);
                 }
             }
         }
         if (nextEntry != null) {
-            if (!(nextEntry instanceof EmptyObjectException)) {
-                seenEntries = true;
-            }
+            seenEntries = true;
             return true;
         }
         return false;
@@ -87,9 +91,9 @@ public class CompositeQueryLogicResultsIterator implements Iterator<Object>, Thr
                 current = nextEntry;
                 nextEntry = null;
             }
-        }
-        if (current instanceof EmptyObjectException) {
-            throw new EmptyObjectException();
+            if (failure != null) {
+                Throwables.propagate(failure);
+            }
         }
         return current;
     }
