@@ -486,7 +486,6 @@ public class ExtendedRunningQueryTest {
         expect(this.queryLogic.getMaxPageSize()).andReturn(maxPageSize).anyTimes();
         expect(this.queryLogic.getPageByteTrigger()).andReturn(pageByteTrigger).anyTimes();
         expect(this.queryLogic.getMaxWork()).andReturn(maxWork).anyTimes();
-        expect(this.queryLogic.getMaxResults()).andReturn(maxResults).anyTimes();
         this.queryLogic.preInitialize(this.query, AuthorizationsUtil.buildAuthorizations(Collections.singleton(Collections.singleton("AUTH_1"))));
         expect(this.queryLogic.getUserOperations()).andReturn(null);
         expect(this.genericConfiguration.getQueryString()).andReturn(query).once();
