@@ -1,6 +1,25 @@
 # DATAWAVE Docker Compose
 
-It is recommended to read through these instructions in their entirety before attempting to build or deploy Datawave.
+It is recommended to read through these instructions in their entirety before attempting to build or deploy Datawave.  However, 
+if you just want to get started and use this document as a reference, here's the short version:
+
+## TLDR
+
+```shell
+# from the base datawave project directory check out the microservice submodules
+git submodule update --init --recursive
+
+# build docker images for datawave and all of the microservices
+mvn -Pcompose -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -Ddist -DskipTests clean install
+
+# bring the services up using docker compose
+cd docker
+docker compose up -d
+
+# run some queries to ensure everything is working
+cd scripts
+./testAll.sh
+```
 
 ## Components
 
