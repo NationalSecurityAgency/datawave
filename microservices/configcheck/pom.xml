@@ -5,6 +5,13 @@
     <artifactId>datawave-microservice-configcheck</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <name>${project.artifactId}</name>
+    <distributionManagement>
+        <repository>
+            <id>github-datawave</id>
+            <name>GitHub Datawave Apache Maven Packages</name>
+            <url>https://maven.pkg.github.com/NationalSecurityAgency/datawave</url>
+        </repository>
+    </distributionManagement>
     <properties>
         <java.version>11</java.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
@@ -241,7 +248,7 @@
                         </goals>
                         <configuration>
                             <executable>true</executable>
-                            <mainClass>datawave.microservice.config.ConfigCheckApplication</mainClass>
+                            <mainClass>datawave.microservice.configcheck.ConfigCheckApplication</mainClass>
                             <embeddedLaunchScriptProperties>
                                 <inlinedConfScript>${basedir}/src/main/resources/launch.conf</inlinedConfScript>
                             </embeddedLaunchScriptProperties>

@@ -6,6 +6,9 @@ import java.util.stream.Collectors;
 
 import org.springframework.boot.ApplicationArguments;
 
+/**
+ * ArgumentUtils is used to parse application arguments into various different objects.
+ */
 public class ArgumentUtils {
     public static final String OUTPUT = "output";
     

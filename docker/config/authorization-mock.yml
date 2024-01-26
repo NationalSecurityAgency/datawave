@@ -44,6 +44,8 @@ mock:
         roles-to-auths:
           AuthorizedServer: DW_SERV
           MetricsAdministrator: METRICS_ADMIN
+          JBossAdministrator: JBOSS_ADMIN
+          Administrator: DW_ADMIN
           FooRole: FOO
           BarRole: BAR
           DefRole: DEF

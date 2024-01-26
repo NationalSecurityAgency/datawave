@@ -15,6 +15,10 @@ import org.springframework.core.CollectionFactory;
 import org.springframework.core.io.PathResource;
 import org.springframework.util.PropertyPlaceholderHelper;
 
+/**
+ * XmlRenderUtils is used to load xml content as a string from a given file and subsequently render the property placeholders in the xml file using either yaml
+ * or java properties.
+ */
 public class XmlRenderUtils {
     private static Logger log = LoggerFactory.getLogger(XmlRenderUtils.class);
     
@@ -25,7 +29,7 @@ public class XmlRenderUtils {
         String xmlContent = null;
         try {
             xmlContent = Files.readString(getFilePath(filePath), StandardCharsets.UTF_8);
-        } catch (IOException e) {
+        } catch (Exception e) {
             log.error("Exception reading xml file", e);
         }
         return xmlContent;
@@ -39,7 +43,7 @@ public class XmlRenderUtils {
                 props.load(Files.newBufferedReader(getFilePath(configdir, propertiesFile)));
                 mergedProperties.putAll(props);
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             log.error("Exception reading properties file", e);
         }
         return mergedProperties;
@@ -61,6 +65,7 @@ public class XmlRenderUtils {
     
     public static Object valueToObject(Object value) {
         if (value instanceof String) {
+            value = ((String) value).trim();
             try {
                 value = Integer.parseInt((String) value);
             } catch (Exception e1) {

@@ -22,10 +22,6 @@ logging:
     datawave.microservice.authorization: DEBUG
 
 datawave:
-  security:
-    util:
-      subjectDnPattern: "(?:^|,)\\s*OU\\s*=\\s*My Department\\s*(?:,|$)"
-      npeOuList: "EXAMPLE_SERVER_OU1,EXAMPLE_SERVER_OU2"
   swagger:
     title: "Authorization Service"
     description: "REST API provided by the Authorization Service"

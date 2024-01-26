@@ -3,6 +3,9 @@ package datawave.microservice.configcheck.util;
 import java.io.File;
 import java.nio.file.Path;
 
+/**
+ * FileUtils is used to load files, keeping in mind that the relative path of a file is based on the working directory.
+ */
 public class FileUtils {
     public static final String WORKING_DIR = "working.dir";
     public static final String workingDir = System.getProperty(WORKING_DIR);

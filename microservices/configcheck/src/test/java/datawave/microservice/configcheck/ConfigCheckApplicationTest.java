@@ -1,6 +1,7 @@
 package datawave.microservice.configcheck;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import java.io.File;
 import java.io.IOException;
@@ -38,11 +39,12 @@ public class ConfigCheckApplicationTest {
         
         ApplicationArguments args = new DefaultApplicationArguments(stringArgs);
         
-        String output = new CommandRunner(args).run();
+        Output output = new CommandRunner(args).run();
         
         String expectedOutput = Files.readString(Path.of(resourcesAbsolutePath, "rendered/microservice/QueryLogicFactory.xml"), StandardCharsets.UTF_8);
         
-        assertEquals(expectedOutput, output);
+        assertEquals(expectedOutput, output.getMessage());
+        assertFalse(output.isError());
     }
     
     @Test
@@ -58,11 +60,12 @@ public class ConfigCheckApplicationTest {
         
         ApplicationArguments args = new DefaultApplicationArguments(stringArgs);
         
-        String output = new CommandRunner(args).run();
+        Output output = new CommandRunner(args).run();
         
         String expectedOutput = Files.readString(Path.of(resourcesAbsolutePath, "rendered/webservice/QueryLogicFactory.xml"), StandardCharsets.UTF_8);
         
-        assertEquals(expectedOutput, output);
+        assertEquals(expectedOutput, output.getMessage());
+        assertFalse(output.isError());
     }
     
     @Test
@@ -78,11 +81,12 @@ public class ConfigCheckApplicationTest {
         
         ApplicationArguments args = new DefaultApplicationArguments(stringArgs);
         
-        String output = new CommandRunner(args).run();
+        Output output = new CommandRunner(args).run();
         
         String expectedOutput = Files.readString(Path.of(resourcesAbsolutePath, "rendered/microservice/analysis.txt"), StandardCharsets.UTF_8);
         
-        assertEquals(expectedOutput, output);
+        assertEquals(expectedOutput, output.getMessage());
+        assertFalse(output.isError());
     }
     
     @Test
@@ -98,11 +102,12 @@ public class ConfigCheckApplicationTest {
         
         ApplicationArguments args = new DefaultApplicationArguments(stringArgs);
         
-        String output = new CommandRunner(args).run();
+        Output output = new CommandRunner(args).run();
         
         String expectedOutput = Files.readString(Path.of(resourcesAbsolutePath, "rendered/webservice/analysis.txt"), StandardCharsets.UTF_8);
         
-        assertEquals(expectedOutput, output);
+        assertEquals(expectedOutput, output.getMessage());
+        assertFalse(output.isError());
     }
     
     @Test
@@ -119,11 +124,12 @@ public class ConfigCheckApplicationTest {
         
         ApplicationArguments args = new DefaultApplicationArguments(stringArgs);
         
-        String output = new CommandRunner(args).run();
+        Output output = new CommandRunner(args).run();
         
         String expectedOutput = Files.readString(Path.of(resourcesAbsolutePath, "rendered/microservice/fullReport.txt"), StandardCharsets.UTF_8);
         
-        assertEquals(expectedOutput, output);
+        assertEquals(expectedOutput, output.getMessage());
+        assertFalse(output.isError());
     }
     
     @Test
@@ -140,11 +146,12 @@ public class ConfigCheckApplicationTest {
         
         ApplicationArguments args = new DefaultApplicationArguments(stringArgs);
         
-        String output = new CommandRunner(args).run();
+        Output output = new CommandRunner(args).run();
         
         String expectedOutput = Files.readString(Path.of(resourcesAbsolutePath, "rendered/webservice/fullReport.txt"), StandardCharsets.UTF_8);
         
-        assertEquals(expectedOutput, output);
+        assertEquals(expectedOutput, output.getMessage());
+        assertFalse(output.isError());
     }
     
     @Test
@@ -159,10 +166,31 @@ public class ConfigCheckApplicationTest {
         
         ApplicationArguments args = new DefaultApplicationArguments(stringArgs);
         
-        String output = new CommandRunner(args).run();
+        Output output = new CommandRunner(args).run();
         
         String expectedOutput = Files.readString(Path.of(resourcesAbsolutePath, "rendered/comparison.diff"), StandardCharsets.UTF_8);
         
-        assertEquals(expectedOutput, output.substring(output.indexOf("\n", output.indexOf("\n") + 1) + 1));
+        assertEquals(expectedOutput, output.getMessage().substring(output.getMessage().indexOf("\n", output.getMessage().indexOf("\n") + 1) + 1));
+        assertFalse(output.isError());
+    }
+    
+    @Test
+    public void testFullComparator() throws IOException {
+        // @formatter:off
+        String[] stringArgs = new String[]{
+                "compare",
+                Path.of(resourcesAbsolutePath, "rendered/microservice/fullReport.txt").toFile().getAbsolutePath(),
+                Path.of(resourcesAbsolutePath, "rendered/webservice/fullReport.txt").toFile().getAbsolutePath()
+        };
+        // @formatter:on
+        
+        ApplicationArguments args = new DefaultApplicationArguments(stringArgs);
+        
+        Output output = new CommandRunner(args).run();
+        
+        String expectedOutput = Files.readString(Path.of(resourcesAbsolutePath, "rendered/fullComparison.diff"), StandardCharsets.UTF_8);
+        
+        assertEquals(expectedOutput, output.getMessage().substring(output.getMessage().indexOf("\n", output.getMessage().indexOf("\n") + 1) + 1));
+        assertFalse(output.isError());
     }
 }

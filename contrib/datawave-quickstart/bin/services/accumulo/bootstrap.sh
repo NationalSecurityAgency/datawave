@@ -26,7 +26,6 @@ DW_ZOOKEEPER_SYMLINK="zookeeper"
 DW_BIND_HOST="${DW_BIND_HOST:-localhost}"
 
 # If we are configured to bind to all interfaces, instead bind to the hostname
-# Binding to all interfaces is not available until Accumulo 2.0
 DW_ACCUMULO_BIND_HOST="${DW_ACCUMULO_BIND_HOST:-${DW_BIND_HOST}}"
 if [ "$DW_ACCUMULO_BIND_HOST" == "0.0.0.0" ] ; then
   DW_ACCUMULO_BIND_HOST="$(hostname)"
@@ -69,6 +68,8 @@ DW_ACCUMULO_VFS_DATAWAVE_DIR="/datawave/accumulo-vfs-classpath"
 
 DW_ACCUMULO_PROPERTIES="## Sets location in HDFS where Accumulo will store data
 instance.volumes=${DW_HADOOP_DFS_URI_CLIENT}/accumulo
+
+tserver.memory.maps.native.enabled=false
 
 ## Sets location of Zookeepers
 instance.zookeeper.host=localhost:2181

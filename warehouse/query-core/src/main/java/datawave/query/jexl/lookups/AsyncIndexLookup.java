@@ -41,7 +41,7 @@ public abstract class AsyncIndexLookup extends IndexLookup {
         return Math.max(0L, config.getMaxIndexScanTimeMillis() - (System.currentTimeMillis() - startTimeMillis));
     }
 
-    protected void timedScanWait(Future<Boolean> future, CountDownLatch startedLatch, long startTimeMillis, long timeout) {
+    protected void timedScanWait(Future<Boolean> future, CountDownLatch startedLatch, CountDownLatch stoppedLatch, long startTimeMillis, long timeout) {
         // this ensures that we don't wait for the future response until the task has started
         if (startedLatch != null) {
             try {
@@ -83,6 +83,14 @@ public abstract class AsyncIndexLookup extends IndexLookup {
             throw new RuntimeException(e);
         } catch (TimeoutException e) {
             future.cancel(true);
+
+            try {
+                stoppedLatch.await();
+            } catch (InterruptedException ex) {
+                log.error("Interrupted waiting for canceled AsyncIndexLookup to complete.");
+                throw new RuntimeException(ex);
+            }
+
             if (log.isTraceEnabled())
                 log.trace("Timed out ");
             // Only if not doing an unfielded lookup should we mark all fields as having an exceeded threshold

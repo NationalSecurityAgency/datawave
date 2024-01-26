@@ -78,11 +78,6 @@ datawave:
     type-substitutions:
       "[datawave.data.type.DateType]": "datawave.data.type.RawDateType"
 
-  security:
-    util:
-      subjectDnPattern: "(?:^|,)\\s*OU\\s*=\\s*My Department\\s*(?:,|$)"
-      npeOuList: "EXAMPLE_SERVER_OU1,EXAMPLE_SERVER_OU2"
-
 hazelcast:
   client.enabled: false
   server:

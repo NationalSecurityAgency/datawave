@@ -1,6 +1,27 @@
 # DATAWAVE Docker Compose
 
-It is recommended to read through these instructions in their entirety before attempting to build or deploy Datawave.
+It is recommended to read through these instructions in their entirety before attempting to build or deploy Datawave.  However, 
+if you just want to get started and use this document as a reference, here's the short version (although we recommend checking 
+out the [prereqs](#prereqs) at a minimum):
+
+## TLDR
+
+```shell
+# from the base datawave project directory check out the microservice submodules
+git submodule update --init --recursive
+
+# build docker images for datawave and all of the microservices
+mvn -Pcompose -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -Ddist -DskipTests clean install
+
+# bootstrap the services, and bring them up using docker compose
+cd docker
+./bootstrap.sh
+docker compose up -d
+
+# run some queries to ensure everything is working
+cd scripts
+./testAll.sh
+```
 
 ## Components
 
@@ -10,15 +31,15 @@ Datawave Quickstart is a self-contained hadoop, zookeeper, and accumulo deployme
 
 ### Consul
 
-Consul v1.9.8 is a prepacked docker image used for discovery between the various services.
+Consul v1.15.4 is a prepacked docker image used for discovery between the various services.
 
 ### RabbitMQ
 
-RabbitMQ v3.8.25 is a prepacked docker image used for messaging between the various services.
+RabbitMQ v3.12.4 is a prepacked docker image used for messaging between the various services.
 
 ### Configuration
 
-[Datawave Config Service v1.5-SNAPSHOT](https://github.com/NationalSecurityAgency/datawave-config-service/tree/feature/queryMicroservices) is Datawave's customized Spring Cloud config service.
+[Datawave Config Service](https://github.com/NationalSecurityAgency/datawave-config-service/tree/main) is Datawave's customized Spring Cloud config service.
 
 Sample configuration files can be found in the config folder.
 
@@ -26,25 +47,25 @@ You will need to build the docker image for this service on your local machine f
 
 ### Cache
 
-[Datawave Hazelcast Service v1.7-SNAPSHOT](https://github.com/NationalSecurityAgency/datawave-hazelcast-service/tree/feature/queryMicroservices) is Datawave's customized Hazelcast In-Memory Data Grid.
+[Datawave Hazelcast Service](https://github.com/NationalSecurityAgency/datawave-hazelcast-service/tree/main) is Datawave's customized Hazelcast In-Memory Data Grid.
 
 You will need to build the docker image for this service on your local machine following the instructions in the hazelcast cache service README.
 
 ### Authorization
 
-[Datawave Authorization Service v1.11-SNAPSHOT](https://github.com/NationalSecurityAgency/datawave-authorization-service/tree/feature/queryMicroservices) provides basic authorization for the Datawave microservices.
+[Datawave Authorization Service](https://github.com/NationalSecurityAgency/datawave-authorization-service/tree/main) provides basic authorization for the Datawave microservices.
 
 You will need to build the docker image for this service on your local machine following the instructions in the authorization service README.
 
 ### Audit
 
-[Datawave Audit Service v1.10-SNAPSHOT](https://github.com/NationalSecurityAgency/datawave-audit-service/tree/feature/queryMicroservices) provides query audit capabilities for Datawave.
+[Datawave Audit Service](https://github.com/NationalSecurityAgency/datawave-audit-service/tree/main) provides query audit capabilities for Datawave.
 
 You will need to build the docker image for this service on your local machine following the instructions in the audit service README.
 
 ### Metrics
 
-[Datawave Query Metric Service v1.3-SNAPSHOT](https://github.com/NationalSecurityAgency/datawave-query-metric-service/tree/feature/queryMicroservices) provides metrics caching, storage, and retrieval capabilities for Datawave.
+[Datawave Query Metric Service](https://github.com/NationalSecurityAgency/datawave-query-metric-service/tree/main) provides metrics caching, storage, and retrieval capabilities for Datawave.
 
 You will need to build the docker image for this service on your local machine following the instructions in the query metrics service README.
 
@@ -110,7 +131,7 @@ Hazelcast Management Center v4.2021.06 is a prepacked docker image used for haze
 
 Enabled via the 'dictionary', or 'full' profile.
 
-[Datawave Dictionary Service v1.2-SNAPSHOT](https://github.com/NationalSecurityAgency/datawave-dictionary-service/tree/feature/queryMicroservices) provides access to the data dictionary and edge dictionary for Datawave.
+[Datawave Dictionary Service](https://github.com/NationalSecurityAgency/datawave-dictionary-service/tree/main) provides access to the data dictionary and edge dictionary for Datawave.
 
 You will need to build the docker image for this service on your local machine following the instructions in the dictionary service README.
 
@@ -135,9 +156,9 @@ These services have been successfully deployed using the following versions of d
 
 ```
 $> docker --version
-Docker version 20.10.16, build aa7e414
+Docker version 24.0.6, build ed223bc
 $> docker compose version
-Docker Compose version v2.5.0
+Docker Compose version v2.21.0
 ```
 
 #### Datawave Quickstart
@@ -156,7 +177,7 @@ Build the Datawave Quickstart docker image using the following build command:
 
 ```
 # To build the quickstart docker image, and all of the microservice images, run this
-mvn -Pcompose,docker,quickstart -Ddeploy -Dtar -Ddist -DskipTests clean install -T1C
+mvn -Pcompose -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -Ddist -DskipTests clean install -T1C
 
 # To build just the quickstart docker image, run this
 mvn -Pcompose -DskipServices -Dquickstart-docker -Ddeploy -Dtar -Ddist -DskipTests clean install -T1C
@@ -191,10 +212,13 @@ What follows is a brief description of how to setup and run the Datawave Quickst
 ```
 # Add the quickstart env.sh to your .bashrc
 # DW_SOURCE refers to your local path to the datawave source code, and may be set as an environment variable if desired
-echo "source DW_SOURCE/contrib/datawave-quickstart/bin/env.sh" >> ~/.bashrc
+echo "activateDW() {\n source DW_SOURCE/contrib/datawave-quickstart/bin/env.sh\n}" >> ~/.bashrc
 
 # Source .bashrc to kick off the quickstart build
 source ~/.bashrc
+
+# Activate DataWave
+activateDW
 
 # Install Datawave and its dependencies
 allInstall

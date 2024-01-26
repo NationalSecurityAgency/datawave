@@ -30,6 +30,10 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 
+/**
+ * XmlPropertyAnalyzer is used to read an xml file and associated properties/yaml in order to produce a report of all the placeholders, their associated
+ * properties, and the values of those properties that are found in the xml file.
+ */
 public class XmlPropertyAnalyzer {
     private static Logger log = LoggerFactory.getLogger(XmlPropertyAnalyzer.class);
     private static final String IGNORED_KEY = "IGNORED_KEY";
@@ -60,6 +64,12 @@ public class XmlPropertyAnalyzer {
     private static final String PLACEHOLDER_SUFFIX = "}";
     
     private static final String KEY_COMPONENT_SEPARATOR = ".";
+    
+    public static final String PLACEHOLDERS_HEADER = "Placeholders (key: ${placeholder})\n----------------------------------------\n";
+    public static final String VALUES_HEADER = "Values (key: value)\n----------------------------------------\n";
+    public static final String REFS_HEADER = "Refs (key: ref)\n----------------------------------------\n";
+    public static final String PROPERTIES_HEADER = "Effective Properties (name=value)\n----------------------------------------\n";
+    public static final String YML_HEADER = "Effective Yml\n----------------------------------------\n";
     
     private String xmlContent;
     private Properties properties;
@@ -257,11 +267,20 @@ public class XmlPropertyAnalyzer {
         return sb.toString();
     }
     
-    public String getReport() {
+    public String getSimpleReport() {
         StringBuilder sb = new StringBuilder();
         
-        sb.append("Placeholders (key: ${placeholder})\n");
-        sb.append("----------------------------------------\n");
+        sb.append(VALUES_HEADER);
+        sb.append(getKeyedValues());
+        sb.append("\n");
+        
+        return sb.toString().trim();
+    }
+    
+    public String getFullReport() {
+        StringBuilder sb = new StringBuilder();
+        
+        sb.append(PLACEHOLDERS_HEADER);
         // @formatter:off
         propertyPlaceholderByKey.keySet().stream()
                 .sorted()
@@ -269,13 +288,11 @@ public class XmlPropertyAnalyzer {
         // @formatter:on
         sb.append("\n");
         
-        sb.append("Values (key: value)\n");
-        sb.append("----------------------------------------\n");
+        sb.append(VALUES_HEADER);
         sb.append(getKeyedValues());
         sb.append("\n");
         
-        sb.append("Refs (key: ref)\n");
-        sb.append("----------------------------------------\n");
+        sb.append(REFS_HEADER);
         // @formatter:off
         propertyRefByKey.keySet().stream()
                 .sorted()
@@ -285,17 +302,15 @@ public class XmlPropertyAnalyzer {
         
         // Note: We could just add all of the properties to a single properties object,
         // but if we do that, they will be printed in a random order, so we add one at a time
-        sb.append("Effective Properties (name=value)\n");
-        sb.append("----------------------------------------\n");
+        sb.append(PROPERTIES_HEADER);
         sb.append(createEffectiveProperties());
         sb.append("\n");
         
-        sb.append("Effective Yml\n");
-        sb.append("----------------------------------------\n");
+        sb.append(YML_HEADER);
         sb.append(createEffectiveYaml());
         sb.append("\n");
         
-        return sb.toString();
+        return sb.toString().trim();
     }
     
     private String createEffectiveProperties() {
@@ -353,7 +368,7 @@ public class XmlPropertyAnalyzer {
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
-        return yml.trim();
+        return yml;
     }
     
     private String createPartialKey(String[] keyComponents, int start, int stop) {
