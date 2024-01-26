@@ -1,5 +1,7 @@
 package datawave.query.iterator;
 
+import static datawave.query.jexl.visitors.QueryFieldMetadataVisitor.FieldMetadata;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
@@ -33,6 +35,8 @@ import org.apache.accumulo.core.iterators.OptionDescriber;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.jexl2.JexlArithmetic;
+import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
@@ -64,6 +68,7 @@ import datawave.query.attributes.ExcerptFields;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.common.grouping.GroupFields;
 import datawave.query.composite.CompositeMetadata;
+import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.function.ConfiguredFunction;
 import datawave.query.function.DocumentPermutation;
 import datawave.query.function.Equality;
@@ -83,8 +88,10 @@ import datawave.query.iterator.logic.IndexIterator;
 import datawave.query.iterator.logic.TermFrequencyExcerptIterator;
 import datawave.query.jexl.DefaultArithmetic;
 import datawave.query.jexl.HitListArithmetic;
+import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.FieldIndexAggregator;
 import datawave.query.jexl.functions.IdentityAggregator;
+import datawave.query.jexl.visitors.QueryFieldMetadataVisitor;
 import datawave.query.predicate.ConfiguredPredicate;
 import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.predicate.TimeFilter;
@@ -267,6 +274,7 @@ public class QueryOptions implements OptionDescriber {
     public static final String DOC_AGGREGATION_THRESHOLD_MS = "doc.agg.threshold";
 
     public static final String TERM_FREQUENCY_AGGREGATION_THRESHOLD_MS = "tf.agg.threshold";
+    public static final String USE_NEW_AGGREGATORS = "use.new.agg";
 
     protected Map<String,String> options;
 
@@ -375,7 +383,7 @@ public class QueryOptions implements OptionDescriber {
 
     protected boolean termFrequenciesRequired = false;
     protected Set<String> termFrequencyFields = Collections.emptySet();
-    protected Set<String> contentExpansionFields;
+    protected Set<String> contentExpansionFields = Collections.emptySet();
 
     protected boolean compressResults = false;
 
@@ -428,6 +436,8 @@ public class QueryOptions implements OptionDescriber {
     // aggregation thresholds
     private int docAggregationThresholdMs = -1;
     private int tfAggregationThresholdMs = -1;
+    private boolean useNewAggregators;
+    private FieldMetadata fieldMetadata;
 
     public void deepCopy(QueryOptions other) {
         this.options = other.options;
@@ -1242,6 +1252,7 @@ public class QueryOptions implements OptionDescriber {
         options.put(TF_NEXT_SEEK, "The number of next calls made by a Term Frequency data filter or aggregator before a seek is issued");
         options.put(DOC_AGGREGATION_THRESHOLD_MS, "Document aggregations that exceed this threshold are logged as a warning");
         options.put(TERM_FREQUENCY_AGGREGATION_THRESHOLD_MS, "TermFrequency aggregations that exceed this threshold are logged as a warning");
+        options.put(USE_NEW_AGGREGATORS, "Use alternate implementations of the field index aggregator");
         return new IteratorOptions(getClass().getSimpleName(), "Runs a query against the DATAWAVE tables", options, null);
     }
 
@@ -1435,6 +1446,39 @@ public class QueryOptions implements OptionDescriber {
             this.tfAggregationThresholdMs = Integer.parseInt(options.get(TERM_FREQUENCY_AGGREGATION_THRESHOLD_MS));
         }
 
+        // parse field sets prior to building aggregators
+
+        if (options.containsKey(INDEXED_FIELDS)) {
+            this.indexedFields = buildFieldSetFromString(options.get(INDEXED_FIELDS));
+        }
+
+        if (options.containsKey(INDEX_ONLY_FIELDS)) {
+            this.indexOnlyFields = buildFieldSetFromString(options.get(INDEX_ONLY_FIELDS));
+        } else if (!this.fullTableScanOnly) {
+            log.warn("A list of index only fields must be provided when running an optimized query");
+        }
+
+        if (options.containsKey(TERM_FREQUENCY_FIELDS)) {
+            this.termFrequencyFields = buildFieldSetFromString(options.get(TERM_FREQUENCY_FIELDS));
+        }
+
+        if (options.containsKey(CONTENT_EXPANSION_FIELDS)) {
+            this.contentExpansionFields = buildFieldSetFromString(options.get(CONTENT_EXPANSION_FIELDS));
+        }
+
+        if (options.containsKey(USE_NEW_AGGREGATORS)) {
+            this.useNewAggregators = Boolean.parseBoolean(options.getOrDefault(USE_NEW_AGGREGATORS, Boolean.FALSE.toString()));
+            QueryFieldMetadataVisitor fieldMetadataVisitor = new QueryFieldMetadataVisitor(indexedFields, indexOnlyFields, termFrequencyFields);
+
+            try {
+                ASTJexlScript script = JexlASTHelper.parseAndFlattenJexlQuery(query);
+                script.jjtAccept(fieldMetadataVisitor, null);
+                this.fieldMetadata = fieldMetadataVisitor.getFieldMetadata();
+            } catch (ParseException e) {
+                throw new DatawaveFatalQueryException("Failed to parse query while building FieldMetadata", e);
+            }
+        }
+
         if (options.containsKey(DATATYPE_FILTER)) {
             String filterCsv = options.get(DATATYPE_FILTER);
             if (filterCsv != null && !filterCsv.isEmpty()) {
@@ -1455,17 +1499,6 @@ public class QueryOptions implements OptionDescriber {
         } else {
             this.fieldIndexKeyDataTypeFilter = KeyIdentity.Function;
             this.eventEntryKeyDataTypeFilter = KeyIdentity.Function;
-        }
-
-        if (options.containsKey(INDEX_ONLY_FIELDS)) {
-            this.indexOnlyFields = buildFieldSetFromString(options.get(INDEX_ONLY_FIELDS));
-        } else if (!this.fullTableScanOnly) {
-            log.error("A list of index only fields must be provided when running an optimized query");
-            return false;
-        }
-
-        if (options.containsKey(INDEXED_FIELDS)) {
-            this.indexedFields = buildFieldSetFromString(options.get(INDEXED_FIELDS));
         }
 
         if (options.containsKey(IGNORE_COLUMN_FAMILIES)) {
@@ -1683,8 +1716,6 @@ public class QueryOptions implements OptionDescriber {
         if (options.containsKey(TERM_FREQUENCIES_REQUIRED)) {
             this.setTermFrequenciesRequired(Boolean.parseBoolean(options.get(TERM_FREQUENCIES_REQUIRED)));
         }
-        this.setTermFrequencyFields(parseTermFrequencyFields(options));
-        this.setContentExpansionFields(parseContentExpansionFields(options));
 
         if (options.containsKey(DATE_INDEX_TIME_TRAVEL)) {
             this.dateIndexTimeTravel = Boolean.parseBoolean(options.get(DATE_INDEX_TIME_TRAVEL));
@@ -2030,21 +2061,8 @@ public class QueryOptions implements OptionDescriber {
         this.termFrequencyFields = termFrequencyFields;
     }
 
-    public Set<String> parseContentExpansionFields(Map<String,String> options) {
-        String val = options.get(CONTENT_EXPANSION_FIELDS);
-        if (val == null) {
-            return Collections.emptySet();
-        } else {
-            return ImmutableSet.copyOf(Splitter.on(',').trimResults().split(val));
-        }
-    }
-
     public Set<String> getContentExpansionFields() {
         return contentExpansionFields;
-    }
-
-    public void setContentExpansionFields(Set<String> contentExpansionFields) {
-        this.contentExpansionFields = contentExpansionFields;
     }
 
     public int getMaxEvaluationPipelines() {
@@ -2189,6 +2207,18 @@ public class QueryOptions implements OptionDescriber {
 
     public void setTfAggregationThresholdMs(int tfAggregationThresholdMs) {
         this.tfAggregationThresholdMs = tfAggregationThresholdMs;
+    }
+
+    public boolean getUseNewAggregators() {
+        return useNewAggregators;
+    }
+
+    public void setUseNewAggregators(boolean useNewAggregators) {
+        this.useNewAggregators = useNewAggregators;
+    }
+
+    public FieldMetadata getFieldMetadata() {
+        return fieldMetadata;
     }
 
     /**

@@ -41,6 +41,7 @@ import datawave.query.iterator.profile.EvaluationTrackingFunction;
 import datawave.query.iterator.profile.QuerySpan;
 import datawave.query.iterator.profile.SourceTrackingIterator;
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.functions.FiAggregator;
 import datawave.query.jexl.functions.FieldIndexAggregator;
 import datawave.query.jexl.functions.IdentityAggregator;
 import datawave.query.jexl.visitors.IteratorBuildingVisitor;
@@ -357,7 +358,12 @@ public class FieldIndexOnlyQueryIterator extends QueryIterator {
     @Override
     public FieldIndexAggregator getFiAggregator() {
         if (fiAggregator == null) {
-            fiAggregator = new IdentityAggregator(null, null);
+            if (getUseNewAggregators()) {
+                // no fields to keep, no query filter
+                fiAggregator = new FiAggregator();
+            } else {
+                fiAggregator = new IdentityAggregator(null, null);
+            }
         }
         return fiAggregator;
     }

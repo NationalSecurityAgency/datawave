@@ -2108,6 +2108,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
             loadFields(cfg, config, isPreload);
             configureSeekingOptions(cfg, config);
+            configureExperimentalOptions(cfg, config);
 
             try {
                 CompositeMetadata compositeMetadata = metadataHelper.getCompositeMetadata().filter(config.getQueryFieldsDatatypes().keySet());
@@ -2209,6 +2210,20 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         }
         if (config.getTfNextSeek() > 0) {
             addOption(cfg, QueryOptions.TF_NEXT_SEEK, String.valueOf(config.getTfNextSeek()), false);
+        }
+    }
+
+    /**
+     * Method configures experimental query options
+     *
+     * @param cfg
+     *            IteratorSetting
+     * @param config
+     *            ShardQueryConfig
+     */
+    protected void configureExperimentalOptions(IteratorSetting cfg, ShardQueryConfiguration config) {
+        if (config.getUseNewFiAggregators()) {
+            addOption(cfg, QueryOptions.USE_NEW_AGGREGATORS, String.valueOf(config.getUseNewFiAggregators()), false);
         }
     }
 

@@ -1,5 +1,6 @@
 package datawave.query.iterator;
 
+import static datawave.query.jexl.visitors.QueryFieldMetadataVisitor.FieldMetadata;
 import static datawave.util.TableName.SHARD;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -40,8 +41,10 @@ import datawave.query.attributes.Document;
 import datawave.query.data.parsers.EventKey;
 import datawave.query.data.parsers.FieldIndexKey;
 import datawave.query.data.parsers.KeyParser;
+import datawave.query.jexl.functions.FiAggregator;
 import datawave.query.jexl.functions.FieldIndexAggregator;
 import datawave.query.jexl.functions.IdentityAggregator;
+import datawave.query.jexl.functions.TLDFiAggregator;
 import datawave.query.tld.TLDFieldIndexAggregator;
 import datawave.query.util.TypeMetadata;
 
@@ -82,6 +85,20 @@ public class FieldIndexIntegrationTest {
             put("TLD_FIELD_A", 6);
             put("TLD_FIELD_B", 26);
             put("TLD_FIELD_C", 8);
+            put("FIELD_X", 2);
+            put("FIELD_Y", 2);
+            put("FIELD_Z", 2);
+        }
+    };
+
+    private final Map<String,Integer> fieldTldDocumentSeekingCounts = new HashMap<>() {
+        {
+            put("FIELD_A", 2);
+            put("FIELD_B", 2);
+            put("FIELD_C", 2);
+            put("TLD_FIELD_A", 2);
+            put("TLD_FIELD_B", 2);
+            put("TLD_FIELD_C", 2);
             put("FIELD_X", 2);
             put("FIELD_Y", 2);
             put("FIELD_Z", 2);
@@ -531,6 +548,223 @@ public class FieldIndexIntegrationTest {
         driveSeekingAggregation(aggregator, "FIELD_Z", 1);
     }
 
+    // tests to verify that the FiAggregator functions just like the IdentityAggregator
+
+    @Test
+    public void testFiAggregator() throws Exception {
+        FiAggregator aggregator = new FiAggregator();
+        driveAggregator(aggregator, "FIELD_A", 2);
+        driveAggregator(aggregator, "FIELD_B", 3);
+        driveAggregator(aggregator, "FIELD_C", 4);
+
+        driveAggregator(aggregator, "TLD_FIELD_A", 9);
+        driveAggregator(aggregator, "TLD_FIELD_B", 13);
+        driveAggregator(aggregator, "TLD_FIELD_C", 12);
+
+        driveAggregator(aggregator, "FIELD_X", 1);
+        driveAggregator(aggregator, "FIELD_Y", 1);
+        driveAggregator(aggregator, "FIELD_Z", 1);
+    }
+
+    @Test
+    public void testFiAggregator_withSeeking() throws Exception {
+        FiAggregator aggregator = new FiAggregator();
+        aggregator.withMaxNextCount(1);
+
+        driveAggregator(aggregator, "FIELD_A", 2);
+        driveAggregator(aggregator, "FIELD_B", 3);
+        driveAggregator(aggregator, "FIELD_C", 4);
+
+        driveAggregator(aggregator, "TLD_FIELD_A", 9);
+        driveAggregator(aggregator, "TLD_FIELD_B", 13);
+        driveAggregator(aggregator, "TLD_FIELD_C", 12);
+
+        driveAggregator(aggregator, "FIELD_X", 1);
+        driveAggregator(aggregator, "FIELD_Y", 1);
+        driveAggregator(aggregator, "FIELD_Z", 1);
+    }
+
+    @Test
+    public void testFiAggregator_aggregateDocuments() throws Exception {
+        FiAggregator aggregator = new FiAggregator();
+        driveDocumentAggregation(aggregator, "FIELD_A", 2);
+        driveDocumentAggregation(aggregator, "FIELD_B", 3);
+        driveDocumentAggregation(aggregator, "FIELD_C", 4);
+
+        driveDocumentAggregation(aggregator, "TLD_FIELD_A", 9);
+        driveDocumentAggregation(aggregator, "TLD_FIELD_B", 13);
+        driveDocumentAggregation(aggregator, "TLD_FIELD_C", 12);
+
+        driveDocumentAggregation(aggregator, "FIELD_X", 1);
+        driveDocumentAggregation(aggregator, "FIELD_Y", 1);
+        driveDocumentAggregation(aggregator, "FIELD_Z", 1);
+    }
+
+    @Test
+    public void testFiAggregator_aggregateDocuments_withSeeking() throws Exception {
+        FieldMetadata fieldMetadata = new FieldMetadata(allFields, allFields, allFields);
+        FiAggregator aggregator = new FiAggregator();
+        aggregator.withMaxNextCount(1);
+        aggregator.withFieldMetadata(fieldMetadata);
+
+        driveDocumentAggregation(aggregator, "FIELD_A", 2);
+        driveDocumentAggregation(aggregator, "FIELD_B", 3);
+        driveDocumentAggregation(aggregator, "FIELD_C", 4);
+
+        driveDocumentAggregation(aggregator, "TLD_FIELD_A", 3); // was 9
+        driveDocumentAggregation(aggregator, "TLD_FIELD_B", 1); // was 13
+        driveDocumentAggregation(aggregator, "TLD_FIELD_C", 3); // was 12
+
+        driveDocumentAggregation(aggregator, "FIELD_X", 1);
+        driveDocumentAggregation(aggregator, "FIELD_Y", 1);
+        driveDocumentAggregation(aggregator, "FIELD_Z", 1);
+    }
+
+    @Test
+    public void testFiAggregator_seekingAggregation() throws Exception {
+        FiAggregator aggregator = new FiAggregator();
+        driveSeekingAggregation(aggregator, "FIELD_A", 2);
+        driveSeekingAggregation(aggregator, "FIELD_B", 3);
+        driveSeekingAggregation(aggregator, "FIELD_C", 4);
+
+        driveSeekingAggregation(aggregator, "TLD_FIELD_A", 9);
+        driveSeekingAggregation(aggregator, "TLD_FIELD_B", 13);
+        driveSeekingAggregation(aggregator, "TLD_FIELD_C", 12);
+
+        driveSeekingAggregation(aggregator, "FIELD_X", 1);
+        driveSeekingAggregation(aggregator, "FIELD_Y", 1);
+        driveSeekingAggregation(aggregator, "FIELD_Z", 1);
+    }
+
+    @Test
+    public void testFiAggregator_seekingAggregation_withSeeking() throws Exception {
+        FiAggregator aggregator = new FiAggregator();
+        aggregator.withMaxNextCount(1);
+
+        driveSeekingAggregation(aggregator, "FIELD_A", 2);
+        driveSeekingAggregation(aggregator, "FIELD_B", 3);
+        driveSeekingAggregation(aggregator, "FIELD_C", 4);
+
+        driveSeekingAggregation(aggregator, "TLD_FIELD_A", 9);
+        driveSeekingAggregation(aggregator, "TLD_FIELD_B", 13);
+        driveSeekingAggregation(aggregator, "TLD_FIELD_C", 12);
+
+        driveSeekingAggregation(aggregator, "FIELD_X", 1);
+        driveSeekingAggregation(aggregator, "FIELD_Y", 1);
+        driveSeekingAggregation(aggregator, "FIELD_Z", 1);
+    }
+
+    // now test the TLDFiAggregator
+
+    @Test
+    public void testTLDFiAggregator() throws Exception {
+        TLDFiAggregator aggregator = new TLDFiAggregator();
+
+        driveAggregator(aggregator, "FIELD_A", 2);
+        driveAggregator(aggregator, "FIELD_B", 3);
+        driveAggregator(aggregator, "FIELD_C", 4);
+
+        // TLD aggregator treats all child uids as part of the parent, thus a lower count
+        driveAggregator(aggregator, "TLD_FIELD_A", 3);
+        driveAggregator(aggregator, "TLD_FIELD_B", 1);
+        driveAggregator(aggregator, "TLD_FIELD_C", 3);
+
+        driveAggregator(aggregator, "FIELD_X", 1);
+        driveAggregator(aggregator, "FIELD_Y", 1);
+        driveAggregator(aggregator, "FIELD_Z", 1);
+    }
+
+    @Test
+    public void testTLDFiAggregator_withSeeking() throws Exception {
+        TLDFiAggregator aggregator = new TLDFiAggregator();
+        aggregator.withMaxNextCount(1);
+
+        driveAggregator(aggregator, "FIELD_A", 2);
+        driveAggregator(aggregator, "FIELD_B", 3);
+        driveAggregator(aggregator, "FIELD_C", 4);
+
+        // TLD aggregator treats all child uids as part of the parent, thus a lower count
+        driveAggregator(aggregator, "TLD_FIELD_A", 3);
+        driveAggregator(aggregator, "TLD_FIELD_B", 1);
+        driveAggregator(aggregator, "TLD_FIELD_C", 3);
+
+        driveAggregator(aggregator, "FIELD_X", 1);
+        driveAggregator(aggregator, "FIELD_Y", 1);
+        driveAggregator(aggregator, "FIELD_Z", 1);
+    }
+
+    @Test
+    public void testTLDFiAggregator_aggregateDocuments() throws Exception {
+        TLDFiAggregator aggregator = new TLDFiAggregator();
+        driveDocumentAggregation(aggregator, "FIELD_A", 2);
+        driveDocumentAggregation(aggregator, "FIELD_B", 3);
+        driveDocumentAggregation(aggregator, "FIELD_C", 4);
+
+        driveDocumentAggregation(aggregator, "TLD_FIELD_A", 3);
+        driveDocumentAggregation(aggregator, "TLD_FIELD_B", 1);
+        driveDocumentAggregation(aggregator, "TLD_FIELD_C", 3);
+
+        driveDocumentAggregation(aggregator, "FIELD_X", 1);
+        driveDocumentAggregation(aggregator, "FIELD_Y", 1);
+        driveDocumentAggregation(aggregator, "FIELD_Z", 1);
+    }
+
+    @Test
+    public void testTLDFiAggregator_aggregateDocuments_withSeeking() throws Exception {
+        FieldMetadata fieldMetadata = new FieldMetadata(allFields, allFields, allFields);
+        TLDFiAggregator aggregator = new TLDFiAggregator();
+        aggregator.withMaxNextCount(1);
+        aggregator.withFieldMetadata(fieldMetadata);
+
+        driveDocumentAggregation(aggregator, "FIELD_A", 2);
+        driveDocumentAggregation(aggregator, "FIELD_B", 3);
+        driveDocumentAggregation(aggregator, "FIELD_C", 4);
+
+        driveDocumentAggregation(aggregator, "TLD_FIELD_A", 3); // was 6
+        driveDocumentAggregation(aggregator, "TLD_FIELD_B", 1);
+        driveDocumentAggregation(aggregator, "TLD_FIELD_C", 3);
+
+        driveDocumentAggregation(aggregator, "FIELD_X", 1);
+        driveDocumentAggregation(aggregator, "FIELD_Y", 1);
+        driveDocumentAggregation(aggregator, "FIELD_Z", 1);
+    }
+
+    @Test
+    public void testTLDFiAggregator_seekingAggregation() throws Exception {
+        TLDFiAggregator aggregator = new TLDFiAggregator();
+        driveSeekingAggregation(aggregator, "FIELD_A", 2);
+        driveSeekingAggregation(aggregator, "FIELD_B", 3);
+        driveSeekingAggregation(aggregator, "FIELD_C", 4);
+
+        // TLD aggregator treats all child uids as part of the parent, thus a lower count
+        driveSeekingAggregation(aggregator, "TLD_FIELD_A", 3);
+        driveSeekingAggregation(aggregator, "TLD_FIELD_B", 1);
+        driveSeekingAggregation(aggregator, "TLD_FIELD_C", 3);
+
+        driveSeekingAggregation(aggregator, "FIELD_X", 1);
+        driveSeekingAggregation(aggregator, "FIELD_Y", 1);
+        driveSeekingAggregation(aggregator, "FIELD_Z", 1);
+    }
+
+    @Test
+    public void testTLDFiAggregator_seekingAggregation_withSeeking() throws Exception {
+        TLDFiAggregator aggregator = new TLDFiAggregator();
+        aggregator.withMaxNextCount(1);
+
+        driveSeekingAggregation(aggregator, "FIELD_A", 2);
+        driveSeekingAggregation(aggregator, "FIELD_B", 3);
+        driveSeekingAggregation(aggregator, "FIELD_C", 4);
+
+        // TLD aggregator treats all child uids as part of the parent, thus a lower count
+        driveSeekingAggregation(aggregator, "TLD_FIELD_A", 3);
+        driveSeekingAggregation(aggregator, "TLD_FIELD_B", 1);
+        driveSeekingAggregation(aggregator, "TLD_FIELD_C", 3);
+
+        driveSeekingAggregation(aggregator, "FIELD_X", 1);
+        driveSeekingAggregation(aggregator, "FIELD_Y", 1);
+        driveSeekingAggregation(aggregator, "FIELD_Z", 1);
+    }
+
     /**
      * Constructs an iterator for the specified field
      *
@@ -540,9 +774,7 @@ public class FieldIndexIntegrationTest {
      * @throws Exception
      *             if something goes wrong
      */
-    private SortedKeyValueIterator<Key,Value> createIteratorForField(String field) throws Exception {
-        Range range = createRangeForField(field);
-
+    private SortedKeyValueIterator<Key,Value> createIteratorForRange(Range range) throws Exception {
         Scanner scanner = client.createScanner(SHARD);
         scanner.setRange(range);
         Iterator<Map.Entry<Key,Value>> iter = scanner.iterator();
@@ -593,10 +825,10 @@ public class FieldIndexIntegrationTest {
         int uidCount = 0;
         Set<String> uids = new HashSet<>();
 
-        Key k;
-        SortedKeyValueIterator<Key,Value> iter = createIteratorForField(field);
+        Range range = createRangeForField(field);
+        SortedKeyValueIterator<Key,Value> iter = createIteratorForRange(range);
         while (iter.hasTop()) {
-            k = iter.getTopKey();
+            Key k = iter.getTopKey();
 
             // increment count and parse uid
             uidCount++;
@@ -650,10 +882,10 @@ public class FieldIndexIntegrationTest {
         int uidCount = 0;
         Set<String> uids = new HashSet<>();
 
-        Key k;
-        SortedKeyValueIterator<Key,Value> iter = createIteratorForField(field);
+        Range range = createRangeForField(field);
+        SortedKeyValueIterator<Key,Value> iter = createIteratorForRange(range);
         while (iter.hasTop()) {
-            k = aggregator.apply(iter);
+            Key k = aggregator.apply(iter);
 
             // increment count and parse uid
             uidCount++;
@@ -686,12 +918,17 @@ public class FieldIndexIntegrationTest {
     private void driveDocumentAggregation(FieldIndexAggregator aggregator, String field, int expectedUidCount) throws Exception {
         int uidCount = 0;
 
-        Key k;
-        Document d;
-        SortedKeyValueIterator<Key,Value> iter = createIteratorForField(field);
+        Range range = createRangeForField(field);
+        if (aggregator instanceof FiAggregator) {
+            FiAggregator fiAgg = (FiAggregator) aggregator;
+            fiAgg.setSeekRange(range);
+            fiAgg.setColumnFamilies(Collections.emptySet());
+        }
+
+        SortedKeyValueIterator<Key,Value> iter = createIteratorForRange(range);
         while (iter.hasTop()) {
-            d = new Document();
-            k = aggregator.apply(iter, d, attributeFactory);
+            Document d = new Document();
+            Key k = aggregator.apply(iter, d, attributeFactory);
             assertTopKeyForField(field, k);
 
             uidCount++;
@@ -718,11 +955,10 @@ public class FieldIndexIntegrationTest {
         int uidCount = 0;
         Set<String> uids = new HashSet<>();
 
-        Key k;
         Range range = createRangeForField(field);
-        SortedKeyValueIterator<Key,Value> iter = createIteratorForField(field);
+        SortedKeyValueIterator<Key,Value> iter = createIteratorForRange(range);
         while (iter.hasTop()) {
-            k = aggregator.apply(iter, range, Collections.emptySet(), true);
+            Key k = aggregator.apply(iter, range, Collections.emptySet(), true);
             assertTopKeyForField(field, k);
 
             uidCount++;
@@ -739,7 +975,9 @@ public class FieldIndexIntegrationTest {
     }
 
     private void assertDocumentSize(FieldIndexAggregator aggregator, String field, Document d) {
-        if (aggregator instanceof TLDFieldIndexAggregator) {
+        if (aggregator instanceof TLDFiAggregator && ((TLDFiAggregator) aggregator).getFieldMetadata() != null) {
+            assertEquals(fieldTldDocumentSeekingCounts.get(field).intValue(), d.size());
+        } else if (aggregator instanceof TLDFieldIndexAggregator || aggregator instanceof TLDFiAggregator) {
             assertEquals(fieldTldDocumentCounts.get(field).intValue(), d.size());
         } else {
             assertEquals(fieldDocumentCounts.get(field).intValue(), d.size());

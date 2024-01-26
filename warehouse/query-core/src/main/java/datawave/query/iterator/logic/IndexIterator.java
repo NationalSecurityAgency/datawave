@@ -25,6 +25,7 @@ import datawave.query.attributes.PreNormalizedAttributeFactory;
 import datawave.query.iterator.DocumentIterator;
 import datawave.query.iterator.LimitedSortedKeyValueIterator;
 import datawave.query.iterator.Util;
+import datawave.query.jexl.functions.FiAggregator;
 import datawave.query.jexl.functions.FieldIndexAggregator;
 import datawave.query.jexl.functions.IdentityAggregator;
 import datawave.query.predicate.SeekingFilter;
@@ -367,6 +368,12 @@ public class IndexIterator implements SortedKeyValueIterator<Key,Value>, Documen
 
         if (log.isTraceEnabled()) {
             log.trace(this + " seek'ing to: " + this.scanRange + " from " + range);
+        }
+
+        if (aggregation instanceof FiAggregator) {
+            FiAggregator aggregator = (FiAggregator) aggregation;
+            aggregator.setSeekRange(scanRange);
+            aggregator.setColumnFamilies(columnFamilies);
         }
 
         source.seek(this.scanRange, this.seekColumnFamilies, true);
