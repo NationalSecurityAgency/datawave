@@ -33,10 +33,11 @@ import datawave.policy.IngestPolicyEnforcer;
 public class XMLFieldConfigHelperTest {
 
     private final BaseIngestHelper ingestHelper = new TestBaseIngestHelper();
+    private Configuration conf = new Configuration();
 
     @Before
     public void setUp() {
-        Configuration conf = new Configuration();
+
         conf.set(DataTypeHelper.Properties.DATA_NAME, "test");
         conf.set("test" + DataTypeHelper.Properties.INGEST_POLICY_ENFORCER_CLASS, IngestPolicyEnforcer.NoOpIngestPolicyEnforcer.class.getName());
         conf.set("test" + BaseIngestHelper.DEFAULT_TYPE, NoOpType.class.getName());
@@ -63,6 +64,7 @@ public class XMLFieldConfigHelperTest {
 
         } finally {
             server.stop(0);
+
         }
     }
 
@@ -85,7 +87,6 @@ public class XMLFieldConfigHelperTest {
 
     private String readFile(String path) {
         StringBuilder sb = new StringBuilder();
-
         InputStream istream = getClass().getClassLoader().getResourceAsStream(path);
         try (Scanner scanner = new Scanner(istream)) {
             while (scanner.hasNext()) {
@@ -178,11 +179,63 @@ public class XMLFieldConfigHelperTest {
     }
 
     @Test
-    public void testFieldConfigHelperWhitelist() throws Exception {
-        InputStream in = ClassLoader.getSystemResourceAsStream("datawave/ingest/test-field-whitelist.xml");
+    public void testOverlappingRegex() throws Exception {
+        String input = "<?xml version=\"1.0\"?>\n" + "<fieldConfig>\n"
+                        + "    <default stored=\"true\" indexed=\"false\" reverseIndexed=\"false\" tokenized=\"true\" reverseTokenized=\"true\" indexType=\"datawave.data.type.LcNoDiacriticsType\"/>\n"
+                        + "    <fieldPattern pattern=\"B*\" indexed=\"true\" indexType=\"datawave.data.type.MacAddressType\"/>\n"
+                        + "    <fieldPattern pattern=\"BA*\"  indexType=\"datawave.data.type.HexStringType\"/>\n"
+                        + "    <fieldPattern pattern=\"BANAN*\"  indexType=\"datawave.data.type.DateType\"/>\n" + "</fieldConfig>";
+
+        FieldConfigHelper helper = new XMLFieldConfigHelper(new ByteArrayInputStream(input.getBytes()), ingestHelper);
+
+        List<Type<?>> types = ingestHelper.getDataTypes("BANANA");
+        assertEquals(3, types.size());
+    }
+
+    @Test
+    public void testOverlappingRegexPrecise() throws Exception {
+        conf.setBoolean(BaseIngestHelper.USE_MOST_PRECISE_FIELD_TYPE_REGEX, true);
+        ingestHelper.setup(conf);
+
+        String input = "<?xml version=\"1.0\"?>\n" + "<fieldConfig>\n"
+                        + "    <default stored=\"true\" indexed=\"false\" reverseIndexed=\"false\" tokenized=\"true\" reverseTokenized=\"true\" indexType=\"datawave.data.type.LcNoDiacriticsType\"/>\n"
+                        + "    <fieldPattern pattern=\"B*\" indexed=\"true\" indexType=\"datawave.data.type.MacAddressType\"/>\n"
+                        + "    <fieldPattern pattern=\"BANAN*\" indexType=\"datawave.data.type.DateType\"/>\n"
+                        + "    <fieldPattern pattern=\"BA*\" indexed=\"true\" indexType=\"datawave.data.type.HexStringType\"/>\n" + "</fieldConfig>";
+
+        FieldConfigHelper helper = new XMLFieldConfigHelper(new ByteArrayInputStream(input.getBytes()), ingestHelper);
+
+        List<Type<?>> types = ingestHelper.getDataTypes("BANANA");
+        assertEquals(1, types.size());
+        assertTrue(types.get(0) instanceof datawave.data.type.DateType);
+        assertFalse(helper.isIndexedField("BANANA"));
+    }
+
+    @Test
+    public void testSameLengthOverlappingRegexPrecise() throws Exception {
+        conf.setBoolean(BaseIngestHelper.USE_MOST_PRECISE_FIELD_TYPE_REGEX, true);
+        ingestHelper.setup(conf);
+
+        String input = "<?xml version=\"1.0\"?>\n" + "<fieldConfig>\n"
+                        + "    <default stored=\"true\" indexed=\"false\" reverseIndexed=\"false\" tokenized=\"true\" reverseTokenized=\"true\" indexType=\"datawave.data.type.LcNoDiacriticsType\"/>\n"
+                        + "    <fieldPattern pattern=\"B*\" indexType=\"datawave.data.type.HexStringType\"/>\n"
+                        + "    <fieldPattern pattern=\"*A\" indexed=\"true\" indexType=\"datawave.data.type.MacAddressType\"/>\n" + "</fieldConfig>";
+
+        FieldConfigHelper helper = new XMLFieldConfigHelper(new ByteArrayInputStream(input.getBytes()), ingestHelper);
+
+        List<Type<?>> types = ingestHelper.getDataTypes("BANANA");
+        assertEquals(1, types.size());
+        // B* should sort after *A and hence should be the one used.
+        assertTrue(types.get(0) instanceof datawave.data.type.HexStringType);
+        assertFalse(helper.isIndexedField("BANANA"));
+    }
+
+    @Test
+    public void testFieldConfigHelperAllowlist() throws Exception {
+        InputStream in = ClassLoader.getSystemResourceAsStream("datawave/ingest/test-field-allowlist.xml");
         XMLFieldConfigHelper helper = new XMLFieldConfigHelper(in, ingestHelper);
 
-        // this is whitelist behavior
+        // this is allowlist behavior
         assertFalse(helper.isNoMatchStored());
         assertFalse(helper.isNoMatchIndexed());
         assertFalse(helper.isNoMatchReverseIndexed());
@@ -265,11 +318,11 @@ public class XMLFieldConfigHelperTest {
     }
 
     @Test
-    public void testFieldConfigHelperBlacklist() throws Exception {
-        InputStream in = ClassLoader.getSystemResourceAsStream("datawave/ingest/test-field-blacklist.xml");
+    public void testFieldConfigHelperDisallowlist() throws Exception {
+        InputStream in = ClassLoader.getSystemResourceAsStream("datawave/ingest/test-field-disallowlist.xml");
         XMLFieldConfigHelper helper = new XMLFieldConfigHelper(in, ingestHelper);
 
-        // this is blacklist behavior
+        // this is disallowlist behavior
         assertTrue(helper.isNoMatchStored());
         assertTrue(helper.isNoMatchIndexed());
         assertTrue(helper.isNoMatchReverseIndexed());

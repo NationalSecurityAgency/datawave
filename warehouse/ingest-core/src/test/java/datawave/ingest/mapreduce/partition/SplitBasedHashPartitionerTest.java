@@ -1,7 +1,8 @@
 package datawave.ingest.mapreduce.partition;
 
-import datawave.ingest.mapreduce.job.BulkIngestKey;
-import datawave.ingest.mapreduce.job.TableSplitsCache;
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
@@ -13,26 +14,26 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
+import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.ingest.mapreduce.job.TableSplitsCache;
 
 public class SplitBasedHashPartitionerTest {
     private static final String TEST_FILE_LOCATION = "datawave/ingest/mapreduce/job/full_splits.txt";
     private static final String TABLE_NAME = "someTableName"; // matches entry in test file: full_splits.txt
     Configuration conf = new Configuration();
-    
+
     @Before
     public void before() {
         final String testFilePath = SplitBasedHashPartitionerTest.class.getClassLoader().getResource(TEST_FILE_LOCATION).getPath();
-        
+
         conf.setBoolean(TableSplitsCache.REFRESH_SPLITS, false);
         conf.set(TableSplitsCache.SPLITS_CACHE_DIR, testFilePath.substring(0, testFilePath.lastIndexOf('/')));
         conf.set(TableSplitsCache.SPLITS_CACHE_FILE, "full_splits.txt");
-        
+
         TableSplitsCache.getCurrentCache(conf).clear();
 
         MultiTableRangePartitioner.context = getTaskInputOutputContext(testFilePath, conf);
-        
+
     }
 
     @Test

@@ -3,34 +3,50 @@ package datawave.query.predicate;
 import java.util.Map;
 import java.util.Set;
 
+import javax.annotation.Nullable;
+
 import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.commons.jexl2.parser.ASTIdentifier;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 
 import com.google.common.collect.Sets;
 
-import datawave.query.attributes.Document;
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.predicate.EventDataQueryFilter;
+import datawave.query.predicate.KeyProjection;
+import datawave.query.predicate.Projection;
 
 /**
  * This filter will filter event data keys by only those fields that are required in the specified query.
  */
-public class EventDataQueryFieldFilter extends KeyProjection implements EventDataQueryFilter {
+public class EventDataQueryFieldFilter implements EventDataQueryFilter {
     private Set<String> nonEventFields;
 
-    public EventDataQueryFieldFilter() {
-        super();
-        // empty white list and black list
-    }
+    private KeyProjection keyProjection;
 
     public EventDataQueryFieldFilter(EventDataQueryFieldFilter other) {
-        super(other);
         this.nonEventFields = other.nonEventFields;
         if (other.document != null) {
             document = new Key(other.document);
         }
+        this.keyProjection = other.getProjection();
+    }
+
+    /**
+     * Initialize filter with an empty projection
+     */
+    public EventDataQueryFieldFilter(Set<String> projections, Projection.ProjectionType projectionType) {
+        this.keyProjection = new KeyProjection(projections, projectionType);
+    }
+
+    /**
+     * Initiate from a KeyProjection
+     *
+     * @param projection
+     */
+    public EventDataQueryFieldFilter(KeyProjection projection) {
+        this.keyProjection = projection;
     }
 
     /**
@@ -39,8 +55,9 @@ public class EventDataQueryFieldFilter extends KeyProjection implements EventDat
      * @param script
      *            a script
      * @param nonEventFields
-     *            a set of non event fields
+     *            a set of non-event fields
      */
+    @Deprecated
     public EventDataQueryFieldFilter(ASTJexlScript script, Set<String> nonEventFields) {
         this.nonEventFields = nonEventFields;
 
@@ -49,7 +66,8 @@ public class EventDataQueryFieldFilter extends KeyProjection implements EventDat
             queryFields.add(JexlASTHelper.deconstructIdentifier(identifier));
         }
 
-        setIncludes(queryFields);
+        this.keyProjection = new KeyProjection(queryFields, Projection.ProjectionType.INCLUDES);
+
     }
 
     protected Key document = null;
@@ -67,6 +85,20 @@ public class EventDataQueryFieldFilter extends KeyProjection implements EventDat
     @Override
     public boolean keep(Key k) {
         return true;
+    }
+
+    public KeyProjection getProjection() {
+        return keyProjection;
+    }
+
+    @Override
+    public boolean apply(@Nullable Map.Entry<Key,String> input) {
+        return keyProjection.apply(input);
+    }
+
+    @Override
+    public boolean peek(@Nullable Map.Entry<Key,String> input) {
+        return keyProjection.peek(input);
     }
 
     /**
@@ -102,4 +134,29 @@ public class EventDataQueryFieldFilter extends KeyProjection implements EventDat
     public EventDataQueryFilter clone() {
         return new EventDataQueryFieldFilter(this);
     }
+
+    /**
+     * Configure the delegate {@link Projection} with the fields to exclude
+     *
+     * @param excludes
+     *            the set of fields to exclude
+     * @deprecated This method is deprecated and should no longer be used.
+     */
+    @Deprecated
+    public void setExcludes(Set<String> excludes) {
+        this.keyProjection.setExcludes(excludes);
+    }
+
+    /**
+     * Set the delegate {@link Projection} with the fields to include
+     *
+     * @param includedFields
+     *            the sorted set of fields to include
+     * @deprecated This method is deprecated and should no longer be used.
+     */
+    @Deprecated
+    public void setIncludes(Set<String> includedFields) {
+        this.keyProjection.setIncludes(includedFields);
+    }
+
 }

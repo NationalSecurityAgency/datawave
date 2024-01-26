@@ -4,9 +4,15 @@
  */
 package datawave.ingest.mapreduce.partition;
 
-import datawave.ingest.mapreduce.job.BulkIngestKey;
-import datawave.ingest.mapreduce.job.TableSplitsCache;
-import datawave.util.TableName;
+import static org.junit.Assert.assertEquals;
+
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.TreeMap;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
@@ -20,14 +26,9 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.TreeMap;
-
-import static org.junit.Assert.assertEquals;
+import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.ingest.mapreduce.job.TableSplitsCache;
+import datawave.util.TableName;
 
 public class MultiTableRRRangePartitionerTest {
 
@@ -38,22 +39,22 @@ public class MultiTableRRRangePartitionerTest {
      * the cut points is assigned a bin
      *
      */
-    
+
     private static final String TABLE_NAME = "abc";
     Configuration configuration;
     Job mockJob;
-    
+
     @Before
     public void before() throws IOException {
         mockJob = new Job();
         configuration = mockJob.getConfiguration();
         configuration.set("job.output.table.names", TableName.SHARD);
         configuration.setBoolean(TableSplitsCache.REFRESH_SPLITS, false);
-        
+
         TableSplitsCache.getCurrentCache(configuration).clear();
-        
+
     }
-    
+
     @Test
     public void testCalculateIndex() {
         int index = -9;
@@ -71,8 +72,8 @@ public class MultiTableRRRangePartitionerTest {
         int resultFour = instance.calculateIndex(indexFour, numPartitions, tableName, cutPointArrayLength);
         assertEquals(result, resultTwo);
         assertEquals(result, expectedResult);
-        Assert.assertNotNull(resultThree);
-        Assert.assertNotNull(resultFour);
+        Assert.assertEquals(4, resultThree);
+        Assert.assertEquals(0, resultFour);
     }
 
     @Test(expected = RuntimeException.class)
@@ -92,7 +93,6 @@ public class MultiTableRRRangePartitionerTest {
         mockContextForLocalCacheFile(url);
         configuration.set(TableSplitsCache.SPLITS_CACHE_DIR, url.getPath().substring(0, url.getPath().lastIndexOf('/')));
         configuration.set(TableSplitsCache.SPLITS_CACHE_FILE, filename);
-        
 
         MultiTableRangePartitioner.setContext(new MapContextImpl<Key,Value,Text,Mutation>(configuration, new TaskAttemptID(), null, null, null, null, null) {
             @Override
@@ -134,7 +134,6 @@ public class MultiTableRRRangePartitionerTest {
 
         MultiTableRRRangePartitioner partitioner = new MultiTableRRRangePartitioner();
         partitioner.setConf(configuration);
-        
 
         // first split is a, last is z
         for (int i = 0; i < 26; i++) {
@@ -173,7 +172,6 @@ public class MultiTableRRRangePartitionerTest {
 
         MultiTableRRRangePartitioner partitioner = new MultiTableRRRangePartitioner();
         partitioner.setConf(configuration);
-        
 
         // first split is a, last is z
         int numSplits = 26;

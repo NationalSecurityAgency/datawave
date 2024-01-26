@@ -1,7 +1,9 @@
 package datawave.ingest.mapreduce.partition;
 
-import datawave.ingest.mapreduce.handler.shard.ShardIdFactory;
-import datawave.ingest.mapreduce.job.TableSplitsCache;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
+
 import org.apache.hadoop.conf.Configuration;
 import org.junit.After;
 import org.junit.Assert;
@@ -10,9 +12,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Set;
+import datawave.ingest.mapreduce.handler.shard.ShardIdFactory;
+import datawave.ingest.mapreduce.job.TableSplitsCache;
 
 public class TabletLocationHashPartitionerTest {
     public static final int MAX_EXPECTED_COLLISIONS = 70;
@@ -31,9 +32,9 @@ public class TabletLocationHashPartitionerTest {
     public void setUp() {
         conf = new Configuration();
         conf.setBoolean(TableSplitsCache.REFRESH_SPLITS, false);
-        
+
         TableSplitsCache.getCurrentCache(conf).clear();
-        
+
         partitioner = new TabletLocationHashPartitioner();
         partitioner.setConf(conf);
     }

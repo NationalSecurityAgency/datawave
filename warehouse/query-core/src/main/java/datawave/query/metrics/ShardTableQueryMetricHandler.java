@@ -86,7 +86,7 @@ import datawave.query.jexl.visitors.JexlFormattedStringBuildingVisitor;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.map.SimpleQueryGeometryHandler;
 import datawave.security.authorization.DatawavePrincipal;
-import datawave.security.util.AuthorizationsUtil;
+import datawave.security.util.WSAuthorizationsUtil;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
@@ -542,7 +542,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             query.setQuery("QUERY_ID == '" + queryId + "'");
             query.setQueryName(QUERY_METRICS_LOGIC_NAME);
             query.setColumnVisibility(visibilityString);
-            query.setQueryAuthorizations(AuthorizationsUtil.buildAuthorizationString(authorizations));
+            query.setQueryAuthorizations(WSAuthorizationsUtil.buildAuthorizationString(authorizations));
             query.setExpirationDate(DateUtils.addDays(new Date(), 1));
             query.setPagesize(1000);
             query.setUserDN(datawavePrincipal.getShortName());
@@ -814,12 +814,17 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
     public void reload() {
         try {
             if (this.recordWriter != null) {
-                // don't try to flush the mtbw (close). If recordWriter != null then this method is being called
-                // because of an Exception and the metrics have been saved off to be added to the new recordWriter.
-                this.recordWriter.returnConnector();
+                // If recordWriter != null then this method is being called because of an error writing to Accumulo.
+                // We have to try to close the recordWriter and therefore the mtbw because Accumulo now reference
+                // counts certain objects (like mtbw) to ensure that they are closed before being dereferenced.
+                try {
+                    this.recordWriter.close(null);
+                } catch (Exception e) {
+                    log.error(e.getMessage(), e);
+                }
             }
             recordWriter = new AccumuloRecordWriter(this.connectionFactory, conf);
-        } catch (AccumuloException | AccumuloSecurityException | IOException e) {
+        } catch (Exception e) {
             log.error(e.getMessage(), e);
         }
     }
@@ -858,7 +863,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             }
             query.setQueryName(QUERY_METRICS_LOGIC_NAME);
             query.setColumnVisibility(visibilityString);
-            query.setQueryAuthorizations(AuthorizationsUtil.buildAuthorizationString(authorizations));
+            query.setQueryAuthorizations(WSAuthorizationsUtil.buildAuthorizationString(authorizations));
             query.setExpirationDate(DateUtils.addDays(new Date(), 1));
             query.setPagesize(1000);
             query.setUserDN(datawavePrincipal.getShortName());

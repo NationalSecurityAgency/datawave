@@ -55,6 +55,7 @@ import datawave.query.postprocessing.tf.TermOffsetPopulator;
 import datawave.query.tables.SessionOptions;
 import datawave.query.tables.async.ScannerChunk;
 import datawave.query.util.MetadataHelper;
+import datawave.query.util.TypeMetadata;
 import datawave.util.StringUtils;
 import datawave.util.time.DateHelper;
 import datawave.webservice.query.Query;
@@ -77,6 +78,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
     protected Set<String> indexedFields;
     protected Set<String> indexOnlyFields;
     protected Set<String> nonEventFields;
+    protected Random random = new Random();
 
     // thread-safe cache where the key is the original query, and the value is the expanded query
     private Cache<String,String> queryCache;
@@ -306,6 +308,10 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                         reduceQueryFields(script, newIteratorSetting);
                     }
 
+                    if (config.getReduceTypeMetadataPerShard()) {
+                        reduceTypeMetadata(script, newIteratorSetting);
+                    }
+
                     if (config.getPruneQueryOptions()) {
                         pruneQueryOptions(script, newIteratorSetting);
                     }
@@ -430,6 +436,38 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
     }
 
     /**
+     * Reduce the TypeMetadata object that is serialized
+     *
+     * @param script
+     *            the query
+     * @param newIteratorSetting
+     *            the iterator settings
+     */
+    private void reduceTypeMetadata(ASTJexlScript script, IteratorSetting newIteratorSetting) {
+
+        String serializedTypeMetadata = newIteratorSetting.removeOption(QueryOptions.TYPE_METADATA);
+        TypeMetadata typeMetadata = new TypeMetadata(serializedTypeMetadata);
+
+        Set<String> fieldsToRetain = ReduceFields.getQueryFields(script);
+        typeMetadata = typeMetadata.reduce(fieldsToRetain);
+
+        serializedTypeMetadata = typeMetadata.toString();
+
+        if (newIteratorSetting.getOptions().containsKey(QueryOptions.QUERY_MAPPING_COMPRESS)) {
+            boolean compress = Boolean.parseBoolean(newIteratorSetting.getOptions().get(QueryOptions.QUERY_MAPPING_COMPRESS));
+            if (compress) {
+                try {
+                    serializedTypeMetadata = QueryOptions.compressOption(serializedTypeMetadata, QueryOptions.UTF8);
+                } catch (IOException e) {
+                    throw new DatawaveFatalQueryException("Failed to compress type metadata in the VisitorFunction", e);
+                }
+            }
+        }
+
+        newIteratorSetting.addOption(QueryOptions.TYPE_METADATA, serializedTypeMetadata);
+    }
+
+    /**
      * Certain query options may be pruned on a per-tablet basis
      *
      * @param script
@@ -438,11 +476,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
      *            the iterator settings
      */
     protected void pruneQueryOptions(ASTJexlScript script, IteratorSetting settings) {
-
-        if (config.isTermFrequenciesRequired() && TermOffsetPopulator.getContentFunctions(script).isEmpty()) {
-            settings.removeOption(QueryOptions.EXCERPT_FIELDS);
-            settings.removeOption(QueryOptions.EXCERPT_ITERATOR);
-        }
+        // stub for now
     }
 
     // push down large fielded lists. Assumes that the hdfs query cache uri and
@@ -534,7 +568,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
     protected URI getFstHdfsQueryCacheUri(ShardQueryConfiguration config, Query settings) {
         if (config.getIvaratorFstHdfsBaseURIs() != null) {
             String[] choices = StringUtils.split(config.getIvaratorFstHdfsBaseURIs(), ',');
-            int index = new Random().nextInt(choices.length);
+            int index = random.nextInt(choices.length);
             Path path = new Path(choices[index], settings.getId().toString());
             return path.toUri();
         }

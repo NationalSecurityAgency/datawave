@@ -18,7 +18,7 @@ public abstract class BaseHdfsFileCacheUtil {
     protected Path cacheFilePath;
     protected final Configuration conf;
     protected AccumuloHelper accumuloHelper;
-    
+
     protected String delimiter = "\t";
     private static final int MAX_RETRIES = 3;
     protected short cacheReplicas = 3;
@@ -47,7 +47,7 @@ public abstract class BaseHdfsFileCacheUtil {
         boolean retry = true;
         while (retry && attempts <= MAX_RETRIES) {
             attempts++;
-            
+
             log.info("Reading cache at " + this.cacheFilePath);
             try (BufferedReader in = new BufferedReader(new InputStreamReader(FileSystem.get(this.cacheFilePath.toUri(), conf).open(this.cacheFilePath)))) {
                 readCache(in);
@@ -58,7 +58,7 @@ public abstract class BaseHdfsFileCacheUtil {
                 } else if (attempts == MAX_RETRIES) {
                     throw new IOException("Unable to read cache file at " + this.cacheFilePath, ex);
                 }
-                
+
             }
 
         }
@@ -78,7 +78,7 @@ public abstract class BaseHdfsFileCacheUtil {
         } catch (IOException e) {
             cleanup(fs, tempFile);
 
-            log.error("Unable to update cache file " + cacheFilePath + " " + e.getMessage());
+            log.error("Unable to update cache file " + cacheFilePath + ". " + e.getMessage());
         }
 
     }

@@ -1,6 +1,5 @@
 package datawave.ingest.mapreduce.partition;
 
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -9,8 +8,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.TreeMap;
 
-import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
-import datawave.ingest.mapreduce.job.SplitsFile;
 import org.apache.accumulo.core.data.Value;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.hadoop.conf.Configurable;
@@ -23,7 +20,9 @@ import org.apache.log4j.Logger;
 import com.google.common.collect.Maps;
 
 import datawave.ingest.mapreduce.handler.shard.ShardIdFactory;
+import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.ingest.mapreduce.job.SplitsFile;
 import datawave.util.time.DateHelper;
 
 /**
@@ -134,7 +133,7 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
     private HashMap<Text,Integer> getPartitionsByShardId(String tableName) throws IOException {
         if (log.isDebugEnabled())
             log.debug("Loading splits data for " + tableName);
-        
+
         Map<Text,String> shardIdToLocation = shardIdToLocations.get(tableName);
 
         if (null == shardIdToLocation) {
@@ -185,7 +184,6 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
 
     private TreeMap<Text,String> reverseSortByShardIds(Map<Text,String> shardIdToLocations) {
         // if we need it sorted in reverse order, should we just do this as we're writing the cache file instead of having every partitioner do it every job?
-        
 
         // drop the dates after today's date
         TreeMap<Text,String> shardIdsToTservers = Maps.newTreeMap((o1, o2) -> o2.compareTo(o1));

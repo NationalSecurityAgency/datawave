@@ -1,6 +1,5 @@
 package datawave.ingest.mapreduce.partition;
 
-
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;

@@ -12,6 +12,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 import org.apache.accumulo.core.client.Accumulo;
 import org.apache.accumulo.core.client.AccumuloClient;
@@ -34,9 +37,6 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
-import java.util.SortedMap;
-import java.util.TreeMap;
-import java.util.stream.Collectors;
 
 import datawave.ingest.config.BaseHdfsFileCacheUtil;
 import datawave.util.StringUtils;
@@ -51,7 +51,7 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
     public static final String REFRESH_SPLITS = "datawave.ingest.refresh.splits";
     public static final String SPLITS_CACHE_DIR = "datawave.ingest.splits.cache.dir";
     public static final String SPLITS_CACHE_FILE = "datawave.ingest.splits.cache.fileName";
-    
+
     public static final String MAX_SPLIT_DECREASE = "datawave.ingest.splits.max.decrease.number";
     public static final String MAX_SPLIT_PERCENTAGE_DECREASE = "datawave.ingest.splits.max.decrease.percentage";
     private static final Logger log = Logger.getLogger(TableSplitsCache.class);
@@ -62,33 +62,27 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
     private static final boolean DEFAULT_REFRESH_SPLITS = true;
     private static final String NO_LOCATION = "noloc";
     private static TableSplitsCache cache;
-    
+
     private Path splitsPath = null;
     private Map<String,List<Text>> splits = new HashMap<>();
     private Map<String,Map<Text,String>> splitLocations = new HashMap<>();
-    
+
     private Map<Text,String> getSplitsWithLocation(String table) throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
         SortedMap<KeyExtent,String> tabletLocations = new TreeMap<>();
         SortedMap<Text,String> tabletLocationsByEndRow = new TreeMap<>();
 
         Properties props = Accumulo.newClientProperties().to(conf.get(accumuloHelper.getInstanceName()), conf.get(accumuloHelper.getZooKeepers()))
-                .as(accumuloHelper.getUsername(), new PasswordToken(accumuloHelper.getPassword())).build();
+                        .as(accumuloHelper.getUsername(), new PasswordToken(accumuloHelper.getPassword())).build();
         ClientInfo info = ClientInfo.from(props);
         ClientContext context = new ClientContext(SingletonReservation.noop(), info, ClientConfConverter.toAccumuloConf(info.getProperties()), Threads.UEH);
-        
+
         MetadataServicer.forTableName(context, table).getTabletLocations(tabletLocations);
-        
-        tabletLocationsByEndRow = tabletLocations
-                        .entrySet()
-                        .stream()
-                        .filter(k -> k.getKey().endRow() != null)
-                        .collect(Collectors.toMap(e -> e.getKey().endRow(), e -> e.getValue() == null ? NO_LOCATION : e.getValue(), (o1, o2) -> o1,
-                                        TreeMap::new));
-        
+
+        tabletLocationsByEndRow = tabletLocations.entrySet().stream().filter(k -> k.getKey().endRow() != null).collect(
+                        Collectors.toMap(e -> e.getKey().endRow(), e -> e.getValue() == null ? NO_LOCATION : e.getValue(), (o1, o2) -> o1, TreeMap::new));
+
         return tabletLocationsByEndRow;
     }
-
-    
 
     /**
      *
@@ -100,16 +94,16 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
 
         super(conf);
         this.splitsPath = getSplitsPath(conf);
-        
+
     }
-    
+
     public static TableSplitsCache getCurrentCache(Configuration conf) {
         if (null == cache) {
             cache = new TableSplitsCache(conf);
         }
         return cache;
     }
-    
+
     public static void clear() {
         cache = null;
     }
@@ -147,7 +141,7 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
     public void setCacheFilePath(Configuration conf) {
         this.cacheFilePath = new Path(conf.get(SPLITS_CACHE_DIR, DEFAULT_SPLITS_CACHE_DIR), conf.get(SPLITS_CACHE_FILE, DEFAULT_SPLITS_CACHE_FILE));
     }
-    
+
     public void setCacheFilePath(Path path) {
         this.cacheFilePath = path;
     }
@@ -221,9 +215,9 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
                     log.info("Writing " + splits.size() + " splits.");
                     tmpSplitLocations.put(table, splitLocations);
                     for (Text split : splits) {
-                        
+
                         out.println(table + this.delimiter + new String(Base64.encodeBase64(split.getBytes())) + "\t" + splitLocations.get(split));
-                        
+
                     }
                 }
                 if (null != getFileStatus() && exceedsMaxSplitsDeviation(splitsPerTable)) {
@@ -237,7 +231,6 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
         }
 
     }
-
 
     private boolean exceedsMaxSplitsDeviation(Map<String,Integer> tmpSplitsPerTable) {
         Map<String,Integer> currentSplitsPerTable = getCurrentSplitsPerTable();
@@ -261,7 +254,6 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
         int maxSplitDecrease = conf.getInt(MAX_SPLIT_DECREASE, DEFAULT_MAX_SPLIT_DECREASE);
         return currentCount * (1 - maxSplitPercentDecrease) > newCount && currentCount - newCount > maxSplitDecrease;
     }
-    
 
     private Map<String,Integer> getCurrentSplitsPerTable() {
         Map<String,Integer> currentSplitsPerTable = new HashMap<>();
@@ -311,13 +303,13 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
             if (parts.length > 2) {
                 tmpSplitLocations.put(new Text(Base64.decodeBase64(parts[1].getBytes())), parts[2]);
             }
-            
+
         }
         if (null == tmpSplitLocations || tmpSplitLocations.isEmpty()) {
             this.splitLocations.remove(tableName);
         }
         in.close();
-        
+
     }
 
     /**
@@ -378,7 +370,7 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
             return Collections.emptyMap();
         }
     }
-    
+
     /**
      * @return map of splits to table name to map of splits to table locations for the table
      * @throws java.io.IOException
@@ -388,6 +380,5 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
             read();
         return Collections.unmodifiableMap(splitLocations);
     }
-    
 
 }

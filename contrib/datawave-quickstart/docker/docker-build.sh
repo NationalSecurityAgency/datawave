@@ -100,7 +100,7 @@ function removeDatawaveTarball() {
 
 function cleanBuildContext() {
     info "Cleaning up"
-    unlink ${DATAWAVE_SOURCE_DIR}/.dockerignore > /dev/null 2>&1 && info ".dockerignore symlink removed"
+    rm -f ${DATAWAVE_SOURCE_DIR}/.dockerignore > /dev/null 2>&1 && info ".dockerignore copy removed"
 
     # Remove any potentially stale DataWave tarballs from the DW service directory. Removal
     # will guarantee that a fresh Maven build is triggered whenever env.sh is sourced
@@ -138,9 +138,9 @@ function prepareBuildContext() {
 
     datawaveBuildSucceeded || fatal "Most recent DataWave build failed. Cannot proceed with Docker build!"
 
-    # Set temporary .dockerignore symlink in DATAWAVE_SOURCE_DIR for context exclusions...
+    # Temporarily copy .dockerignore to DATAWAVE_SOURCE_DIR (i.e., root context for docker build)...
 
-    ln -s "${THIS_DIR}/.dockerignore" "${DATAWAVE_SOURCE_DIR}/.dockerignore" || fatal "Failed to set .dockerignore symlink"
+    cp "${THIS_DIR}/.dockerignore" "${DATAWAVE_SOURCE_DIR}/.dockerignore" || fatal "Failed to copy .dockerignore into place"
 
     sanityCheckTarball "${QUICKSTART_DIR}/bin/services/maven" "apache-maven*.tar.gz" "${DW_MAVEN_DIST_URI}"
 }
@@ -187,10 +187,11 @@ function buildDockerImage() {
 
     info "Building Docker image: ${IMAGE_NAME}"
 
-    docker build ${docker_opts} -f ${THIS_DIR}/Dockerfile -t ${IMAGE_NAME} \
+    docker build -m 8g ${docker_opts} -f ${THIS_DIR}/Dockerfile -t ${IMAGE_NAME} \
          --build-arg DATAWAVE_COMMIT_ID=$( git rev-parse --verify HEAD ) \
          --build-arg DATAWAVE_BRANCH_NAME=$( git rev-parse --abbrev-ref HEAD ) \
          --build-arg DATAWAVE_JAVA_HOME="${DW_JAVA_HOME_OVERRIDE}" \
+         --build-arg DATAWAVE_BUILD_PROFILE="${DW_DATAWAVE_BUILD_PROFILE}" \
          ${DATAWAVE_SOURCE_DIR} || fatal "Docker image creation for DataWave Quickstart failed"
 }
 

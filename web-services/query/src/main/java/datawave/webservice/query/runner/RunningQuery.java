@@ -30,7 +30,7 @@ import datawave.microservice.querymetric.QueryMetricFactory;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.UserOperations;
-import datawave.security.util.AuthorizationsUtil;
+import datawave.security.util.WSAuthorizationsUtil;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
@@ -123,12 +123,17 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         this.connectionPriority = priority;
         this.settings = settings;
         // the query principal is our local principal unless the query logic has a different user operations
+        if (methodAuths != null) {
+            logic.preInitialize(settings, WSAuthorizationsUtil.buildAuthorizations(Collections.singleton(WSAuthorizationsUtil.splitAuths(methodAuths))));
+        } else {
+            logic.preInitialize(settings, WSAuthorizationsUtil.buildAuthorizations(null));
+        }
         DatawavePrincipal queryPrincipal = (logic.getUserOperations() == null) ? (DatawavePrincipal) principal
                         : logic.getUserOperations().getRemoteUser((DatawavePrincipal) principal);
         // the overall principal (the one with combined auths across remote user operations) is our own user operations (probably the UserOperationsBean)
         DatawavePrincipal overallPrincipal = (userOperations == null) ? (DatawavePrincipal) principal
                         : userOperations.getRemoteUser((DatawavePrincipal) principal);
-        this.calculatedAuths = AuthorizationsUtil.getDowngradedAuthorizations(methodAuths, overallPrincipal, queryPrincipal);
+        this.calculatedAuths = WSAuthorizationsUtil.getDowngradedAuthorizations(methodAuths, overallPrincipal, queryPrincipal);
         this.timing = timing;
         this.executor = Executors.newSingleThreadExecutor();
         this.predictor = predictor;
@@ -151,6 +156,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         if (this.maxResults != this.logic.getMaxResults()) {
             log.info("Maximum results set to " + this.maxResults + " instead of default " + this.logic.getMaxResults() + ", user " + this.settings.getUserDN()
                             + " has a DN configured with a different limit");
+            this.logic.setMaxResults(maxResults);
         }
     }
 

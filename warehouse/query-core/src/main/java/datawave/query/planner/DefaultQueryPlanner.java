@@ -65,6 +65,7 @@ import datawave.query.Constants;
 import datawave.query.QueryParameters;
 import datawave.query.attributes.ExcerptFields;
 import datawave.query.attributes.UniqueFields;
+import datawave.query.common.grouping.GroupFields;
 import datawave.query.composite.CompositeMetadata;
 import datawave.query.composite.CompositeUtils;
 import datawave.query.config.ShardQueryConfiguration;
@@ -110,6 +111,7 @@ import datawave.query.jexl.visitors.FixNegativeNumbersVisitor;
 import datawave.query.jexl.visitors.FixUnindexedNumericTerms;
 import datawave.query.jexl.visitors.FunctionIndexQueryExpansionVisitor;
 import datawave.query.jexl.visitors.GeoWavePruningVisitor;
+import datawave.query.jexl.visitors.IngestTypePruningVisitor;
 import datawave.query.jexl.visitors.InvertNodeVisitor;
 import datawave.query.jexl.visitors.IsNotNullIntentVisitor;
 import datawave.query.jexl.visitors.IsNotNullPruningVisitor;
@@ -126,6 +128,7 @@ import datawave.query.jexl.visitors.QueryModelVisitor;
 import datawave.query.jexl.visitors.QueryOptionsFromQueryVisitor;
 import datawave.query.jexl.visitors.QueryPropertyMarkerSourceConsolidator;
 import datawave.query.jexl.visitors.QueryPruningVisitor;
+import datawave.query.jexl.visitors.RebuildingVisitor;
 import datawave.query.jexl.visitors.RegexFunctionVisitor;
 import datawave.query.jexl.visitors.RegexIndexExpansionVisitor;
 import datawave.query.jexl.visitors.RewriteNegationsVisitor;
@@ -156,6 +159,7 @@ import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.QueryStopwatch;
 import datawave.query.util.Tuple2;
+import datawave.query.util.TypeMetadata;
 import datawave.util.time.TraceStopwatch;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.Query;
@@ -320,7 +324,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         queryIteratorClazz = other.queryIteratorClazz;
         setMetadataHelper(other.getMetadataHelper());
         setDateIndexHelper(other.getDateIndexHelper());
-        setCompressOptionMappings(other.compressMappings);
+        setCompressOptionMappings(other.getCompressOptionMappings());
         buildQueryModel = other.buildQueryModel;
         preloadOptions = other.preloadOptions;
         rangeStreamClass = other.rangeStreamClass;
@@ -522,9 +526,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
         addOption(cfg, QueryOptions.LIMIT_FIELDS, config.getLimitFieldsAsString(), false);
         addOption(cfg, QueryOptions.MATCHING_FIELD_SETS, config.getMatchingFieldSetsAsString(), false);
-        addOption(cfg, QueryOptions.GROUP_FIELDS, config.getGroupFieldsAsString(), false);
-        addOption(cfg, QueryOptions.GROUP_FIELDS_BATCH_SIZE, config.getGroupFieldsBatchSizeAsString(), false);
-        addOption(cfg, QueryOptions.UNIQUE_FIELDS, config.getUniqueFields().toString(), false);
+        addOption(cfg, QueryOptions.GROUP_FIELDS, config.getGroupFields().toString(), true);
+        addOption(cfg, QueryOptions.GROUP_FIELDS_BATCH_SIZE, config.getGroupFieldsBatchSizeAsString(), true);
+        addOption(cfg, QueryOptions.UNIQUE_FIELDS, config.getUniqueFields().toString(), true);
         addOption(cfg, QueryOptions.HIT_LIST, Boolean.toString(config.isHitList()), false);
         addOption(cfg, QueryOptions.TERM_FREQUENCY_FIELDS, Joiner.on(',').join(config.getQueryTermFrequencyFields()), false);
         addOption(cfg, QueryOptions.TERM_FREQUENCIES_REQUIRED, Boolean.toString(config.isTermFrequenciesRequired()), false);
@@ -534,7 +538,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         addOption(cfg, QueryOptions.TRACK_SIZES, Boolean.toString(config.isTrackSizes()), false);
         addOption(cfg, QueryOptions.ACTIVE_QUERY_LOG_NAME, config.getActiveQueryLogName(), false);
         // Set the start and end dates
-        configureTypeMappings(config, cfg, metadataHelper, compressMappings);
+        configureTypeMappings(config, cfg, metadataHelper, getCompressOptionMappings());
     }
 
     /**
@@ -546,8 +550,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      *            the IteratorSetting
      */
     private void configureExcerpts(ShardQueryConfiguration config, IteratorSetting cfg) {
-        if (config.isTermFrequenciesRequired()) {
-            addOption(cfg, QueryOptions.EXCERPT_FIELDS, config.getExcerptFields().toString(), false);
+        if (!config.getExcerptFields().isEmpty()) {
+            addOption(cfg, QueryOptions.EXCERPT_FIELDS, config.getExcerptFields().toString(), true);
             addOption(cfg, QueryOptions.EXCERPT_ITERATOR, config.getExcerptIterator().getName(), false);
         }
     }
@@ -853,8 +857,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             config.setQueryTree(timedReduce(timers, "Reduce Query After ANYFIELD Expansions", config.getQueryTree()));
         }
 
-        if (!disableTestNonExistentFields) {
+        if (!disableTestNonExistentFields && (!config.getIgnoreNonExistentFields())) {
             timedTestForNonExistentFields(timers, config.getQueryTree(), config, metadataHelper, queryModel, settings);
+        } else {
+            log.debug("Skipping check for nonExistentFields..");
         }
 
         // apply the node transform rules
@@ -1698,7 +1704,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         }
     }
 
-    // Overwrite projection and blacklist properties if the query model is
+    // Overwrite projection and disallowlist properties if the query model is
     // being used
     protected ASTJexlScript applyQueryModel(MetadataHelper metadataHelper, ShardQueryConfiguration config, ASTJexlScript script, QueryModel queryModel) {
         config.setQueryTree(script);
@@ -1710,8 +1716,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         Multimap<String,String> inverseReverseModel = invertMultimap(queryModel.getReverseQueryMapping());
 
         inverseReverseModel.putAll(queryModel.getForwardQueryMapping());
-        Collection<String> projectFields = config.getProjectFields(), blacklistedFields = config.getBlacklistedFields(), limitFields = config.getLimitFields(),
-                        groupFields = config.getGroupFields();
+        Collection<String> projectFields = config.getProjectFields(), disallowlistedFields = config.getDisallowlistedFields(),
+                        limitFields = config.getLimitFields();
 
         if (projectFields != null && !projectFields.isEmpty()) {
             projectFields = queryModel.remapParameter(projectFields, inverseReverseModel);
@@ -1721,14 +1727,16 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             config.setProjectFields(Sets.newHashSet(projectFields));
         }
 
-        if (groupFields != null && !groupFields.isEmpty()) {
-            Collection<String> remappedGroupFields = queryModel.remapParameter(groupFields, inverseReverseModel);
+        GroupFields groupFields = config.getGroupFields();
+        if (groupFields != null && groupFields.hasGroupByFields()) {
+            groupFields.remapFields(inverseReverseModel, queryModel.getReverseQueryMapping());
             if (log.isTraceEnabled()) {
-                log.trace("Updated grouping set using query model to: " + remappedGroupFields);
+                log.trace("Updating group-by fields using query model to " + groupFields);
             }
-            config.setGroupFields(Sets.newHashSet(remappedGroupFields));
-            // if grouping is set, also set the projection to be the same
-            config.setProjectFields(Sets.newHashSet(remappedGroupFields));
+            config.setGroupFields(groupFields);
+
+            // If grouping is set, we must make the projection fields match all the group-by fields and aggregation fields.
+            config.setProjectFields(groupFields.getProjectionFields());
         }
 
         UniqueFields uniqueFields = config.getUniqueFields();
@@ -1749,12 +1757,12 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             config.setExcerptFields(excerptFields);
         }
 
-        if (config.getBlacklistedFields() != null && !config.getBlacklistedFields().isEmpty()) {
-            blacklistedFields = queryModel.remapParameter(blacklistedFields, inverseReverseModel);
+        if (config.getDisallowlistedFields() != null && !config.getDisallowlistedFields().isEmpty()) {
+            disallowlistedFields = queryModel.remapParameter(disallowlistedFields, inverseReverseModel);
             if (log.isTraceEnabled()) {
-                log.trace("Updated blacklist set using query model to: " + blacklistedFields);
+                log.trace("Updated disallowlist set using query model to: " + disallowlistedFields);
             }
-            config.setBlacklistedFields(Sets.newHashSet(blacklistedFields));
+            config.setDisallowlistedFields(Sets.newHashSet(disallowlistedFields));
         }
 
         if (config.getLimitFields() != null && !config.getLimitFields().isEmpty()) {
@@ -2095,7 +2103,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
             addOption(cfg, QueryOptions.SORTED_UIDS, Boolean.toString(config.isSortedUIDs()), false);
 
-            configureTypeMappings(config, cfg, metadataHelper, compressMappings);
+            configureTypeMappings(config, cfg, metadataHelper, getCompressOptionMappings());
             configureAdditionalOptions(config, cfg);
 
             loadFields(cfg, config, isPreload);
@@ -2264,7 +2272,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     public static void configureTypeMappings(ShardQueryConfiguration config, IteratorSetting cfg, MetadataHelper metadataHelper, boolean compressMappings)
                     throws DatawaveQueryException {
         try {
-            addOption(cfg, QueryOptions.QUERY_MAPPING_COMPRESS, Boolean.valueOf(compressMappings).toString(), false);
+            addOption(cfg, QueryOptions.QUERY_MAPPING_COMPRESS, Boolean.toString(compressMappings), false);
 
             // now lets filter the query field datatypes to those that are not
             // indexed
@@ -2272,16 +2280,27 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             nonIndexedQueryFieldsDatatypes.keySet().removeAll(config.getIndexedFields());
 
             String nonIndexedTypes = QueryOptions.buildFieldNormalizerString(nonIndexedQueryFieldsDatatypes);
-            String typeMetadataString = metadataHelper.getTypeMetadata(config.getDatatypeFilter()).toString();
             String requiredAuthsString = metadataHelper.getUsersMetadataAuthorizationSubset();
+
+            TypeMetadata typeMetadata = metadataHelper.getTypeMetadata(config.getDatatypeFilter());
+
+            if (config.getReduceTypeMetadata()) {
+                Set<String> fieldsToRetain = ReduceFields.getQueryFields(config.getQueryTree());
+                typeMetadata = typeMetadata.reduce(fieldsToRetain);
+            }
+
+            String serializedTypeMetadata = typeMetadata.toString();
 
             if (compressMappings) {
                 nonIndexedTypes = QueryOptions.compressOption(nonIndexedTypes, QueryOptions.UTF8);
-                typeMetadataString = QueryOptions.compressOption(typeMetadataString, QueryOptions.UTF8);
                 requiredAuthsString = QueryOptions.compressOption(requiredAuthsString, QueryOptions.UTF8);
+                if (!config.getReduceTypeMetadataPerShard()) {
+                    // if we're reducing later, don't compress the type metadata
+                    serializedTypeMetadata = QueryOptions.compressOption(serializedTypeMetadata, QueryOptions.UTF8);
+                }
             }
             addOption(cfg, QueryOptions.NON_INDEXED_DATATYPES, nonIndexedTypes, false);
-            addOption(cfg, QueryOptions.TYPE_METADATA, typeMetadataString, false);
+            addOption(cfg, QueryOptions.TYPE_METADATA, serializedTypeMetadata, false);
             addOption(cfg, QueryOptions.TYPE_METADATA_AUTHS, requiredAuthsString, false);
             addOption(cfg, QueryOptions.METADATA_TABLE_NAME, config.getMetadataTableName(), false);
 
@@ -2289,7 +2308,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             QueryException qe = new QueryException(DatawaveErrorCode.TYPE_MAPPING_CONFIG_ERROR, e);
             throw new DatawaveQueryException(qe);
         }
-
     }
 
     public static void addOption(IteratorSetting cfg, String option, String value, boolean allowBlankValue) {
@@ -2345,7 +2363,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             }
         }
 
-        // Whitelist and blacklist projection are mutually exclusive. You can't
+        // Allowlist and disallowlist projection are mutually exclusive. You can't
         // have both.
         if (null != config.getProjectFields() && !config.getProjectFields().isEmpty()) {
             if (log.isDebugEnabled()) {
@@ -2358,12 +2376,12 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             }
 
             addOption(cfg, QueryOptions.PROJECTION_FIELDS, config.getProjectFieldsAsString(), false);
-        } else if (null != config.getBlacklistedFields() && !config.getBlacklistedFields().isEmpty()) {
+        } else if (null != config.getDisallowlistedFields() && !config.getDisallowlistedFields().isEmpty()) {
             if (log.isDebugEnabled()) {
-                log.debug("Setting scan option: " + QueryOptions.BLACKLISTED_FIELDS + " to " + config.getBlacklistedFieldsAsString());
+                log.debug("Setting scan option: " + QueryOptions.DISALLOWLISTED_FIELDS + " to " + config.getDisallowlistedFieldsAsString());
             }
 
-            addOption(cfg, QueryOptions.BLACKLISTED_FIELDS, config.getBlacklistedFieldsAsString(), false);
+            addOption(cfg, QueryOptions.DISALLOWLISTED_FIELDS, config.getDisallowlistedFieldsAsString(), false);
         }
 
         // We don't need to do any expansion of the start or end date/time
@@ -2424,7 +2442,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         }
 
         // if groupby function is used, force include.grouping.context to be true
-        if (config.getGroupFields() != null && !config.getGroupFields().isEmpty()) {
+        if (config.getGroupFields() != null && config.getGroupFields().hasGroupByFields()) {
             addOption(cfg, QueryOptions.INCLUDE_GROUPING_CONTEXT, Boolean.toString(true), false);
         } else {
             addOption(cfg, QueryOptions.INCLUDE_GROUPING_CONTEXT, Boolean.toString(config.getIncludeGroupingContext()), false);
@@ -2523,6 +2541,17 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             fullTableScanReason = state.reason;
         }
 
+        if (config.getPruneQueryByIngestTypes()) {
+            JexlNode pruned = IngestTypePruningVisitor.prune(RebuildingVisitor.copy(queryTree), getTypeMetadata());
+            if (config.getFullTableScanEnabled() || ExecutableDeterminationVisitor.isExecutable(pruned, config, metadataHelper)) {
+                // always update the query for full table scans or in cases where the query is still executable
+                queryTree = pruned;
+                config.setQueryTree((ASTJexlScript) pruned);
+            } else {
+                throw new DatawaveFatalQueryException("Check query for mutually exclusive ingest types, query was non-executable after pruning by ingest type");
+            }
+        }
+
         // if a simple examination of the query has not forced a full table
         // scan, then lets try to compute ranges
         if (!needsFullTable) {
@@ -2591,6 +2620,14 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         }
 
         return new Tuple2<>(ranges, needsFullTable);
+    }
+
+    private TypeMetadata getTypeMetadata() {
+        try {
+            return metadataHelper.getTypeMetadata();
+        } catch (TableNotFoundException e) {
+            throw new DatawaveFatalQueryException("Could not get TypeMetadata");
+        }
     }
 
     /**

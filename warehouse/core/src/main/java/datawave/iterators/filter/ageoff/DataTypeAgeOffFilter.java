@@ -295,12 +295,16 @@ public class DataTypeAgeOffFilter extends AppliedRule {
 
                 final String dataTypeHasScanTime = options.getOption(dataType + ".hasScanTime");
                 if (Boolean.parseBoolean(dataTypeHasScanTime)) {
-                    final String scanTime = iterEnv.getConfig().get("table.custom.timestamp.current." + dataType);
-                    try {
-                        dataTypeScanTimes.put(dataType, Long.parseLong(scanTime, 10));
-                    } catch (final NumberFormatException e) {
-                        throw new NumberFormatException(dataType + " marked as hasScanTime but corresponding table.custom.timestamp.current." + dataType
-                                        + " is invalid: " + scanTime);
+                    if (iterEnv != null) {
+                        final String scanTime = iterEnv.getConfig().get("table.custom.timestamp.current." + dataType);
+                        try {
+                            dataTypeScanTimes.put(dataType, Long.parseLong(scanTime, 10));
+                        } catch (final NumberFormatException e) {
+                            throw new NumberFormatException(dataType + " marked as hasScanTime but corresponding table.custom.timestamp.current." + dataType
+                                            + " is invalid: " + scanTime);
+                        }
+                    } else {
+                        throw new NullPointerException("IteratorEnvironment is null");
                     }
                 }
             }

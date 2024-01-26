@@ -1,6 +1,5 @@
 package datawave.ingest.mapreduce.job;
 
-
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -675,8 +674,7 @@ public class TableSplitsCacheTest {
         Assert.assertEquals(5, splitsCache.getSplitsAndLocationByTable("shard").size());
         Assert.assertEquals(1, splitsCache.getSplitsAndLocationByTable("shard1").size());
         Assert.assertEquals(0, splitsCache.getSplitsAndLocationByTable("someOtherTable").size());
-        
+
     }
-    
 
 }

@@ -26,7 +26,7 @@ public class ReusableMetricsLabels {
      * Clear all labels.
      */
     public void clear() {
-        get().clear();
+        threadLocalMap.remove();
     }
 
     /**

@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import datawave.ingest.mapreduce.job.SplitsFile;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
@@ -14,7 +13,7 @@ import org.apache.hadoop.mapreduce.Partitioner;
 import org.apache.log4j.Logger;
 
 import datawave.ingest.mapreduce.job.BulkIngestKey;
-import datawave.ingest.mapreduce.job.ShardedTableMapFile;
+import datawave.ingest.mapreduce.job.SplitsFile;
 
 /**
  * The TabletLocationHashPartitioner will generate partitions for the shard table using the hashCode method on the tserver location string

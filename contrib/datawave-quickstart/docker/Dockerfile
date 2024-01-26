@@ -3,13 +3,24 @@ FROM centos:centos7
 ARG DATAWAVE_COMMIT_ID
 ARG DATAWAVE_BRANCH_NAME
 ARG DATAWAVE_JAVA_HOME
+ARG DATAWAVE_BUILD_PROFILE
+ARG DATAWAVE_SKIP_INGEST=false
+ARG DATAWAVE_SKIP_TESTS=false
 
 USER root
 
+ENV USER=root
 ENV HADOOP_IDENT_STRING=root
 ENV HDFS_NAMENODE_USER=root HDFS_DATANODE_USER=root
 ENV HDFS_SECONDARYNAMENODE_USER=root YARN_RESOURCEMANAGER_USER=root
 ENV YARN_NODEMANAGER_USER=root
+
+# Bind services to all interfaces
+ENV DW_BIND_HOST=0.0.0.0
+
+# Bind accumulo specifically to localhost
+# This can be overridden at runtime to match the service name using DW_CONTAINER_HOST
+ENV DW_ACCUMULO_BIND_HOST=localhost
 
 # Build context should be the DataWave source root, minus .git and other dirs. See .dockerignore
 
@@ -34,17 +45,15 @@ WORKDIR /opt/datawave
 
 # Create new Git repo and configure environment...
 
-RUN rm -f .dockerignore && \
+RUN rm -f .dockerignore .maven-dockerignore && \
     git init && \
     git add . && \
     git config user.email "root@localhost.local" && \
     git config user.name "Root User" && \
     git commit -m "Source Branch :: $DATAWAVE_BRANCH_NAME :: Source Commit :: $DATAWAVE_COMMIT_ID" && \
-    echo "export DW_ACCUMULO_DIST_URI=file://$(find /opt/datawave/contrib/datawave-quickstart/bin/services/accumulo -name 'accumulo*.tar.gz')" >> ~/.bashrc && \
-    echo "export DW_ZOOKEEPER_DIST_URI=file://$(find /opt/datawave/contrib/datawave-quickstart/bin/services/accumulo -name 'apache-zookeeper*.tar.gz')" >> ~/.bashrc && \
-    echo "export DW_MAVEN_DIST_URI=file://$(find /opt/datawave/contrib/datawave-quickstart/bin/services/maven -name 'apache-maven*.tar.gz')" >> ~/.bashrc && \
-    echo "export DW_HADOOP_DIST_URI=file://$(find /opt/datawave/contrib/datawave-quickstart/bin/services/hadoop -name 'hadoop*.tar.gz')" >> ~/.bashrc && \
-    echo "export DW_WILDFLY_DIST_URI=file://$(find /opt/datawave/contrib/datawave-quickstart/bin/services/datawave -name 'wildfly*.tar.gz')" >> ~/.bashrc && \
+    echo "export DW_DATAWAVE_BUILD_PROFILE=\"$DATAWAVE_BUILD_PROFILE\"" >> ~/.bashrc && \
+    echo "export DW_DATAWAVE_INGEST_TEST_SKIP=\"$DATAWAVE_SKIP_INGEST\"" >> ~/.bashrc && \
+    echo "export DW_WGET_OPTS=\"-q\"" >> ~/.bashrc && \
     echo "export JAVA_HOME=\"$DATAWAVE_JAVA_HOME\"" >> ~/.bashrc && \
     echo "export PATH=\$JAVA_HOME/bin:\$PATH" >> ~/.bashrc && \
     echo "source /opt/datawave/contrib/datawave-quickstart/bin/env.sh" >> ~/.bashrc
@@ -56,8 +65,7 @@ RUN rm -f .dockerignore && \
 # stopped gracefully, and any cruft is purged.
 
 RUN /bin/bash -c "/usr/bin/nohup /usr/sbin/sshd -D &" && \
-    /bin/bash -c "source ~/.bashrc && allInstall && datawaveStart && datawaveWebTest --blacklist-files QueryMetrics && allStop" && \
-    echo "0.0.0.0" > contrib/datawave-quickstart/accumulo/conf/monitor && \
+    /bin/bash -c "source ~/.bashrc && allInstall && [ $DATAWAVE_SKIP_TESTS == true ] || (datawaveStart && datawaveWebTest --blacklist-files QueryMetrics && allStop)" && \
     rm -rf contrib/datawave-quickstart/datawave-ingest/logs/* && \
     rm -rf contrib/datawave-quickstart/hadoop/logs/* && \
     rm -rf contrib/datawave-quickstart/accumulo/logs/* && \
@@ -69,17 +77,15 @@ RUN /bin/bash -c "/usr/bin/nohup /usr/sbin/sshd -D &" && \
 # Primary data volume (for HDFS, Accumulo, ZooKeeper, etc)
 VOLUME ["/opt/datawave/contrib/datawave-quickstart/data"]
 
-
 # In case user wants to rebuild DW
 VOLUME ["$HOME/.m2/repository"]
-
 
 VOLUME ["/opt/datawave/contrib/datawave-quickstart/hadoop/logs"]
 VOLUME ["/opt/datawave/contrib/datawave-quickstart/accumulo/logs"]
 VOLUME ["/opt/datawave/contrib/datawave-quickstart/wildfly/standalone/log"]
 VOLUME ["/opt/datawave/contrib/datawave-quickstart/datawave-ingest/logs"]
 
-EXPOSE 8443 9995 50070 8088 9000 2181
+EXPOSE 8443 9995 9870 8088 9000 2181
 
 WORKDIR /opt/datawave/contrib/datawave-quickstart
 

@@ -102,7 +102,7 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
 
     protected ContentIndexCounters counters = null;
 
-    private Set<String> termTypeBlacklist = Collections.emptySet();
+    private Set<String> termTypeDisallowlist = Collections.emptySet();
 
     private boolean tokenizerTimeWarned = false;
 
@@ -376,9 +376,10 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
             tokenizerTimeWarned = false;
 
             while (true) {
-                if (heartBeatCount != HeartBeatThread.counter) {
-                    tokenizerBeats += HeartBeatThread.counter - heartBeatCount;
-                    heartBeatCount = HeartBeatThread.counter;
+                int currentHeartBeatCount = HeartBeatThread.counter;
+                if (heartBeatCount != currentHeartBeatCount) {
+                    tokenizerBeats += currentHeartBeatCount - heartBeatCount;
+                    heartBeatCount = currentHeartBeatCount;
 
                     // warn once on exceeding the warn threshold
                     long elapsedEstimateMsec = tokenizerBeats * HeartBeatThread.INTERVAL;
@@ -464,8 +465,8 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
                 // Track the number of tokens processed
                 counters.increment(ContentIndexCounters.ORIGINAL_PROCESSED_COUNTER, reporter);
 
-                if (termTypeBlacklist.contains(type)) {
-                    counters.increment(ContentIndexCounters.TERM_TYPE_GROUP_NAME, "BLACKLISTED_BY_TYPE", reporter);
+                if (termTypeDisallowlist.contains(type)) {
+                    counters.increment(ContentIndexCounters.TERM_TYPE_GROUP_NAME, "DISALLOWLISTED_BY_TYPE", reporter);
                     continue;
                 }
 

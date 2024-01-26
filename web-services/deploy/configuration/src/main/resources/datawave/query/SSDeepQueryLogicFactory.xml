@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
+
+    <!-- Query Logic that returns document content -->
+    <bean id="SSDeepSimilarityQuery" parent="baseQueryLogic" scope="prototype"  class="datawave.query.tables.SSDeepSimilarityQueryLogic">
+        <property name="tableName" value="ssdeepIndex" />
+        <property name="maxResults" value="-1" />
+        <property name="maxWork" value="-1" />
+        <property name="auditType" value="NONE" />
+        <property name="indexBuckets" value="32" />
+        <property name="queryThreads" value="100" />
+        <property name="maxRepeatedCharacters" value="3" />
+        <property name="bucketEncodingBase" value="32" />
+        <property name="bucketEncodingLength" value="2" />
+        <property name="logicDescription" value="Query that will retrieve similar ssdeep hashes" />
+    </bean>
+</beans>

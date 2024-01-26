@@ -133,7 +133,6 @@ public class MultiRFileOutputFormatterTest {
         testDriverLevel = MultiRFileOutputFormatterTest.logger.getLevel();
         MultiRFileOutputFormatterTest.logger.setLevel(Level.ALL);
 
-
         MultiRFileOutputFormatterTest.mockedConfiguration.clear();
     }
 
@@ -435,7 +434,7 @@ public class MultiRFileOutputFormatterTest {
         conf = new Configuration();
         conf.set("mapred.output.dir", "/tmp");
         conf.set(SplitsFile.CONFIGURED_SHARDED_TABLE_NAMES, TableName.SHARD);
-        
+
     }
 
     @Test

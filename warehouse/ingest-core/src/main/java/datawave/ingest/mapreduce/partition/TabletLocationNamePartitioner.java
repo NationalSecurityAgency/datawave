@@ -1,6 +1,5 @@
 package datawave.ingest.mapreduce.partition;
 
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -100,7 +99,6 @@ public class TabletLocationNamePartitioner extends Partitioner<BulkIngestKey,Val
 
         if (null == this.shardLocations.get(tableName)) {
             Map<Text,String> shards = SplitsFile.getSplitsAndLocations(conf, tableName);
-            
 
             // now sort the locations
             SortedSet<String> locations = new TreeSet<>();

@@ -1,15 +1,5 @@
 package datawave.ingest.mapreduce.partition;
 
-import datawave.ingest.mapreduce.job.ShardedTableMapFile;
-import datawave.ingest.mapreduce.job.TableSplitsCache;
-import datawave.util.time.DateHelper;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.lang.time.DateUtils;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.Text;
-
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -19,6 +9,16 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Random;
 import java.util.TreeMap;
+
+import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.lang.time.DateUtils;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.Text;
+
+import datawave.ingest.mapreduce.job.TableSplitsCache;
+import datawave.util.time.DateHelper;
 
 /**
  * Creates a splits file for the shard table that's relatively balanced
@@ -44,20 +44,20 @@ public class TestShardGenerator {
         Map<Text,String> locations = simulateTabletAssignments(tableNames);
         String tmpDirectory = tmpDir + "/";
         Path splitsPath = new Path(tmpDir.getAbsolutePath() + "/all-splits.txt");
-        
+
         FileSystem fs = new Path(tmpDir.getAbsolutePath()).getFileSystem(conf);
         // constructor that takes a created list of locations
         try (PrintStream out = new PrintStream(new BufferedOutputStream(fs.create(splitsPath)))) {
-            
+
             for (String table : tableNames) {
-                
+
                 for (Map.Entry<Text,String> entry : locations.entrySet()) {
                     out.println(table + "\t" + new String(Base64.encodeBase64(entry.getKey().toString().getBytes())).trim() + "\t" + entry.getValue());
                 }
             }
         }
         conf.set(TableSplitsCache.SPLITS_CACHE_DIR, tmpDir.getAbsolutePath());
-        
+
         // writeSplits(locations, tmpDirectory, BALANCEDISH_SHARDS_LST);
     }
 
@@ -67,17 +67,17 @@ public class TestShardGenerator {
         // constructor that takes a created list of locations
         String tmpDirectory = tmpDir + "/";
         Path splitsPath = new Path(tmpDir.getAbsolutePath() + "/all-splits.txt");
-        
+
         try (PrintStream out = new PrintStream(new BufferedOutputStream(fs.create(splitsPath)))) {
             for (String table : tableNames) {
-                
+
                 for (Map.Entry<Text,String> entry : locations.entrySet()) {
                     out.println(table + "\t" + new String(Base64.encodeBase64(entry.getKey().toString().getBytes())) + "\t" + entry.getValue());
                 }
             }
         }
         conf.set(TableSplitsCache.SPLITS_CACHE_DIR, tmpDir.getAbsolutePath());
-        
+
         // writeSplits(locations, tmpDirectory, BALANCEDISH_SHARDS_LST);
     }
 
