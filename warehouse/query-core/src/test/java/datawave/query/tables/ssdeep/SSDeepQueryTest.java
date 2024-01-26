@@ -1,4 +1,4 @@
-package datawave.query;
+package datawave.query.tables.ssdeep;
 
 import static org.junit.Assert.fail;
 
@@ -35,9 +35,7 @@ import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.marking.MarkingFunctions;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
-import datawave.query.tables.SSDeepSimilarityQueryLogic;
 import datawave.query.testframework.AbstractDataTypeConfig;
-import datawave.query.transformer.SSDeepSimilarityQueryTransformer;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;

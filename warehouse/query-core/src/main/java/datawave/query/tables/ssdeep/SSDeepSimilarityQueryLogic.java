@@ -1,4 +1,4 @@
-package datawave.query.tables;
+package datawave.query.tables.ssdeep;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -21,7 +21,7 @@ import org.apache.log4j.Logger;
 import com.google.common.collect.Multimap;
 
 import datawave.query.config.SSDeepSimilarityQueryConfiguration;
-import datawave.query.transformer.SSDeepSimilarityQueryTransformer;
+import datawave.query.tables.ScannerFactory;
 import datawave.util.ssdeep.ChunkSizeEncoding;
 import datawave.util.ssdeep.IntegerEncoding;
 import datawave.util.ssdeep.NGramGenerator;
@@ -170,6 +170,7 @@ public class SSDeepSimilarityQueryLogic extends BaseQueryLogic<Map.Entry<Key,Val
         return AccumuloConnectionFactory.Priority.NORMAL;
     }
 
+    @SuppressWarnings("rawtypes")
     @Override
     public QueryLogicTransformer getTransformer(Query settings) {
         final SSDeepSimilarityQueryConfiguration config = getConfig();

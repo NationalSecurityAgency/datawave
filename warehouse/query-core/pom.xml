@@ -228,6 +228,12 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>gov.nsa.datawave</groupId>
+            <artifactId>datawave-ingest-ssdeep</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-cached-results</artifactId>
             <version>${project.version}</version>
