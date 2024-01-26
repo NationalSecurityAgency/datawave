@@ -39,7 +39,7 @@ RabbitMQ v3.12.4 is a prepacked docker image used for messaging between the vari
 
 ### Configuration
 
-[Datawave Config Service v3.0.1-SNAPSHOT](https://github.com/NationalSecurityAgency/datawave-config-service/tree/main) is Datawave's customized Spring Cloud config service.
+[Datawave Config Service](https://github.com/NationalSecurityAgency/datawave-config-service/tree/main) is Datawave's customized Spring Cloud config service.
 
 Sample configuration files can be found in the config folder.
 
@@ -47,31 +47,31 @@ You will need to build the docker image for this service on your local machine f
 
 ### Cache
 
-[Datawave Hazelcast Service v3.0.1-SNAPSHOT](https://github.com/NationalSecurityAgency/datawave-hazelcast-service/tree/main) is Datawave's customized Hazelcast In-Memory Data Grid.
+[Datawave Hazelcast Service](https://github.com/NationalSecurityAgency/datawave-hazelcast-service/tree/main) is Datawave's customized Hazelcast In-Memory Data Grid.
 
 You will need to build the docker image for this service on your local machine following the instructions in the hazelcast cache service README.
 
 ### Authorization
 
-[Datawave Authorization Service v3.0.1-SNAPSHOT](https://github.com/NationalSecurityAgency/datawave-authorization-service/tree/main) provides basic authorization for the Datawave microservices.
+[Datawave Authorization Service](https://github.com/NationalSecurityAgency/datawave-authorization-service/tree/main) provides basic authorization for the Datawave microservices.
 
 You will need to build the docker image for this service on your local machine following the instructions in the authorization service README.
 
 ### Audit
 
-[Datawave Audit Service v3.0.2-SNAPSHOT](https://github.com/NationalSecurityAgency/datawave-audit-service/tree/main) provides query audit capabilities for Datawave.
+[Datawave Audit Service](https://github.com/NationalSecurityAgency/datawave-audit-service/tree/main) provides query audit capabilities for Datawave.
 
 You will need to build the docker image for this service on your local machine following the instructions in the audit service README.
 
 ### Dictionary
 
-[Datawave Dictionary Service v3.0.1-SNAPSHOT](https://github.com/NationalSecurityAgency/datawave-dictionary-service/tree/main) provides access to the data dictionary and edge dictionary for Datawave.
+[Datawave Dictionary Service](https://github.com/NationalSecurityAgency/datawave-dictionary-service/tree/main) provides access to the data dictionary and edge dictionary for Datawave.
 
 You will need to build the docker image for this service on your local machine following the instructions in the dictionary service README.
 
 ### Metrics
 
-[Datawave Query Metric Service v3.0.5-SNAPSHOT](https://github.com/NationalSecurityAgency/datawave-query-metric-service/tree/main) provides metrics caching, storage, and retrieval capabilities for Datawave.
+[Datawave Query Metric Service](https://github.com/NationalSecurityAgency/datawave-query-metric-service/tree/main) provides metrics caching, storage, and retrieval capabilities for Datawave.
 
 You will need to build the docker image for this service on your local machine following the instructions in the query metrics service README.
 
