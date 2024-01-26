@@ -4,6 +4,7 @@ import java.util.Arrays;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 
 /**
  * Transforms NGram/SSDeep Pairs to Accumulo Key/Values. The approach toward generating rowIds produces prefixes for each indexed ngram that include a 'bucket'
@@ -71,25 +72,25 @@ public class BucketAccumuloKeyGenerator {
      * @param t
      * @return
      */
-    public Tuple2<Key,Value> call(Tuple2<NGramTuple,byte[]> t) {
-        int rowSize = t.first().getChunk().length() + bucketEncoding.getLength() + chunkEncoding.getLength();
+    public ImmutablePair<Key,Value> call(ImmutablePair<NGramTuple,byte[]> t) {
+        int rowSize = t.getKey().getChunk().length() + bucketEncoding.getLength() + chunkEncoding.getLength();
         final byte[] row = new byte[rowSize];
         int pos = 0;
 
         // encode and write the bucket
-        final int bucket = Math.abs(Arrays.hashCode(t.second()) % bucketCount);
+        final int bucket = Math.abs(Arrays.hashCode(t.getValue()) % bucketCount);
         bucketEncoding.encodeToBytes(bucket, row, pos);
         pos += bucketEncoding.getLength();
 
         // encode and write the chunk size
-        chunkEncoding.encodeToBytes(t.first().getChunkSize(), row, pos);
+        chunkEncoding.encodeToBytes(t.getKey().getChunkSize(), row, pos);
         pos += chunkEncoding.getLength();
 
         // encode and write the ngram
-        ngramEncoding.encodeToBytes(t.first().getChunk(), row, pos);
+        ngramEncoding.encodeToBytes(t.getKey().getChunk(), row, pos);
 
-        final byte[] cf = IntegerEncoding.encodeBaseTenDigitBytes(t.first().getChunkSize());
-        final byte[] cq = t.second();
-        return new Tuple2<>(new Key(row, cf, cq, EMPTY_BYTES, timestamp, false, false), EMPTY_VALUE);
+        final byte[] cf = IntegerEncoding.encodeBaseTenDigitBytes(t.getKey().getChunkSize());
+        final byte[] cq = t.getValue();
+        return new ImmutablePair<>(new Key(row, cf, cq, EMPTY_BYTES, timestamp, false, false), EMPTY_VALUE);
     }
 }

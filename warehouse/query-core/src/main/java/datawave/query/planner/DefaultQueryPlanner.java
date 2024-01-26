@@ -2491,8 +2491,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     }
 
     /**
-     * Returns a Tuple2&lt;Iterable&lt;Range&gt;,Boolean&gt; whose elements represent the Ranges to use for querying the shard table and whether or not this is
-     * a "full-table-scan" query.
+     * Returns a ImmutablePair&lt;Iterable&lt;Range&gt;,Boolean&gt; whose elements represent the Ranges to use for querying the shard table and whether or not
+     * this is a "full-table-scan" query.
      *
      * @param scannerFactory
      *            the scanner factory
