@@ -1843,6 +1843,17 @@
             </build>
         </profile>
         <profile>
+            <id>quickstart</id>
+            <activation>
+                <property>
+                    <name>quickstart-docker</name>
+                </property>
+            </activation>
+            <modules>
+                <module>contrib/datawave-quickstart/docker</module>
+            </modules>
+        </profile>
+        <profile>
             <id>microservices</id>
             <activation>
                 <property>
@@ -1872,6 +1883,28 @@
                                 <files>
                                     <file>dev.properties</file>
                                     <file>dev-passwords.properties</file>
+                                </files>
+                            </configuration>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
+        </profile>
+        <profile>
+            <id>compose</id>
+            <properties>
+                <build.env>compose</build.env>
+                <env>compose</env>
+            </properties>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>gov.nsa.datawave.plugins</groupId>
+                            <artifactId>read-properties</artifactId>
+                            <configuration>
+                                <files>
+                                    <file>compose.properties</file>
                                 </files>
                             </configuration>
                         </plugin>
