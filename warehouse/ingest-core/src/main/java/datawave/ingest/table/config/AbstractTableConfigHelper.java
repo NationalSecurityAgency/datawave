@@ -13,7 +13,7 @@ import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.core.conf.Property;
-import org.apache.accumulo.core.constraints.DefaultKeySizeConstraint;
+import org.apache.accumulo.core.data.constraints.DefaultKeySizeConstraint;
 import org.apache.accumulo.core.iterators.IteratorUtil.IteratorScope;
 import org.apache.accumulo.core.iterators.user.VersioningIterator;
 import org.apache.hadoop.conf.Configuration;
@@ -24,6 +24,11 @@ import datawave.ingest.table.aggregator.CombinerConfiguration;
 import datawave.iterators.PropogatingIterator;
 
 public abstract class AbstractTableConfigHelper implements TableConfigHelper {
+
+    private static final String DISABLE_VERSIONING_ITERATOR = ".disable.versioning.iterator";
+    protected Configuration config;
+
+    protected AbstractTableConfigHelper() {}
 
     @Override
     public abstract void setup(String tableName, Configuration config, Logger log) throws IllegalArgumentException;
@@ -95,7 +100,7 @@ public abstract class AbstractTableConfigHelper implements TableConfigHelper {
         }
 
         log.info("Configuring aggregators for " + tableName);
-        Map<String,String> props = generateInitialTableProperties();
+        Map<String,String> props = generateInitialTableProperties(config, tableName);
         props.putAll(generateAggTableProperties(aggregators));
         for (Entry<String,String> prop : props.entrySet()) {
             tops.setProperty(tableName, prop.getKey(), prop.getValue());
@@ -107,12 +112,15 @@ public abstract class AbstractTableConfigHelper implements TableConfigHelper {
      *
      * @return a map of the table properties
      */
-    public static Map<String,String> generateInitialTableProperties() {
+    public static Map<String,String> generateInitialTableProperties(Configuration config, String tableName) {
         TreeMap<String,String> props = new TreeMap<>();
 
-        for (IteratorScope iterScope : IteratorScope.values()) {
-            props.put(Property.TABLE_ITERATOR_PREFIX + iterScope.name() + ".vers", "20," + VersioningIterator.class.getName());
-            props.put(Property.TABLE_ITERATOR_PREFIX + iterScope.name() + ".vers.opt.maxVersions", "1");
+        boolean disableVersioning = config != null && config.getBoolean(tableName + DISABLE_VERSIONING_ITERATOR, false);
+        if (!disableVersioning) {
+            for (IteratorScope iterScope : IteratorScope.values()) {
+                props.put(Property.TABLE_ITERATOR_PREFIX + iterScope.name() + ".vers", "20," + VersioningIterator.class.getName());
+                props.put(Property.TABLE_ITERATOR_PREFIX + iterScope.name() + ".vers.opt.maxVersions", "1");
+            }
         }
 
         props.put(Property.TABLE_CONSTRAINT_PREFIX + "1", DefaultKeySizeConstraint.class.getName());
@@ -137,7 +145,7 @@ public abstract class AbstractTableConfigHelper implements TableConfigHelper {
      */
     protected boolean areAggregatorsConfigured(String tableName, List<CombinerConfiguration> aggregators, TableOperations tops) throws TableNotFoundException {
         boolean aggregatorsConfigured = false;
-        Map<String,String> props = generateInitialTableProperties();
+        Map<String,String> props = generateInitialTableProperties(config, tableName);
         props.putAll(generateAggTableProperties(aggregators));
         Iterable<Entry<String,String>> properties;
         try {

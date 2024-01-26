@@ -80,6 +80,8 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
         setRoleManager(other.getRoleManager());
         setSelectorExtractor(other.getSelectorExtractor());
         setResponseEnricherBuilder(other.getResponseEnricherBuilder());
+        this.dnResultLimits = other.dnResultLimits;
+        this.systemFromResultLimits = other.systemFromResultLimits;
     }
 
     public GenericQueryConfiguration getConfig() {
