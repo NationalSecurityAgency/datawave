@@ -319,7 +319,7 @@ public abstract class TestLimitReturnedGroupsToHitTermGroups {
                         "FISH:tuna", "CAT:tabby", "CAT:tom", "FISH:swordtail", "FISH:angelfish", "CAT:siamese", "FISH:goldfish", "CAT:himalayan", "CAT:leopard",
                         "CAT:cougar", "CAT:calico", "CAT:tiger", "FISH:tetra", "FISH:mackerel", "FISH:shark", "CAT:puma", "CAT:ragdoll", "FISH:beta",
 
-                        "FISH:guppy", "FISH:salmon", "REPTILE:snake", "DOG:coyote" , "SIZE:20,12.5", "SIZE:90,26.5", "CAT:sphynx", "CANINE:doberman");
+                        "FISH:guppy", "FISH:salmon", "REPTILE:snake", "DOG:coyote", "SIZE:20,12.5", "SIZE:90,26.5", "CAT:sphynx", "CANINE:doberman");
 
         runTestQuery(queryString, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
     }
