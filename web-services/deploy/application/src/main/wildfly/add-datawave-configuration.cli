@@ -56,6 +56,8 @@ module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.ap
 /system-property=dw.hornetq.system.password:add(value=${hornetq.system.password})
 /system-property=dw.modification.cache.mdb.pool.size:add(value=${modification.cache.mdb.pool.size})
 /system-property=dw.trusted.header.authentication:add(value=${trusted.header.login})
+/system-property=dw.trusted.header.issuerDn:add(value=${trusted.header.issuer-header-name})
+/system-property=dw.trusted.header.subjectDn:add(value=${trusted.header.subject-header-name})
 /system-property=dw.transport.guarantee:add(value=${webapp.transport.guarantee})
 /system-property=dw.connectionPool.default:add(value=WAREHOUSE)
 /system-property=dw.connectionPool.pools:add(value="WAREHOUSE,METRICS,UUID")

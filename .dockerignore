@@ -1,0 +1,58 @@
+# This .dockerignore gets copied temporarily to the datawave repo's
+# root directory by docker-build.sh, since that directory is used as
+# the build context for the image.
+
+# Therefore, any exclusions/exceptions added here should take that into account
+
+# Ignore any ide and repo dirs/files
+
+**/.m2
+**/.git
+**/.idea
+**/target
+**/*.iml
+**/.classpath
+**/.project
+**/.settings
+
+# Ignore temporary .dockerignore copy in the root directory...
+.dockerignore
+# ...but don't ignore the actual .dockerignore source file
+!**/datawave-quickstart/docker/.dockerignore
+
+# Below, we mostly just ignore enviromnent-specific stuff that may have
+# already been initialized under **/datawave-quickstart
+
+# Ignore any service install symlinks
+
+**/datawave-quickstart/accumulo
+**/datawave-quickstart/datawave-ingest
+**/datawave-quickstart/datawave-webservice
+**/datawave-quickstart/hadoop
+**/datawave-quickstart/nifi
+**/datawave-quickstart/zookeeper
+**/datawave-quickstart/java
+**/datawave-quickstart/maven
+**/datawave-quickstart/wildfly
+
+# Ignore any service install directories
+
+**/datawave-quickstart/bin/services/accumulo/accumulo-install
+**/datawave-quickstart/bin/services/datawave/datawave-ingest-*
+**/datawave-quickstart/bin/services/datawave/datawave-web-*
+**/datawave-quickstart/bin/services/hadoop/hadoop-install
+**/datawave-quickstart/bin/services/nifi/nifi-install
+**/datawave-quickstart/bin/services/maven/maven-install
+**/datawave-quickstart/bin/services/maven/apache-maven-install
+**/datawave-quickstart/bin/services/java/jdk-8-linux-x64
+**/datawave-quickstart/bin/services/datawave/wildfly-install
+**/datawave-quickstart/bin/services/accumulo/zookeeper-install
+**/datawave-quickstart/data
+**/datawave-quickstart/build-properties
+
+# Make sure that we don't exclude the datawave tarballs, if they exist.
+# The docker-build.sh script *should* ensure that these are built prior
+# to the 'docker build ...' and that they are configured for the
+# docker container's standard root directory, ie, /opt/datawave
+
+!**/datawave-quickstart/bin/services/datawave/datawave-*.tar.gz
