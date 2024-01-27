@@ -71,7 +71,7 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
         SortedMap<KeyExtent,String> tabletLocations = new TreeMap<>();
         SortedMap<Text,String> tabletLocationsByEndRow = new TreeMap<>();
 
-        Properties props = Accumulo.newClientProperties().to(conf.get(accumuloHelper.getInstanceName()), conf.get(accumuloHelper.getZooKeepers()))
+        Properties props = Accumulo.newClientProperties().to(accumuloHelper.getInstanceName(), accumuloHelper.getZooKeepers())
                         .as(accumuloHelper.getUsername(), new PasswordToken(accumuloHelper.getPassword())).build();
         ClientInfo info = ClientInfo.from(props);
         ClientContext context = new ClientContext(SingletonReservation.noop(), info, ClientConfConverter.toAccumuloConf(info.getProperties()), Threads.UEH);
@@ -101,6 +101,7 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
         if (null == cache) {
             cache = new TableSplitsCache(conf);
         }
+
         return cache;
     }
 
@@ -194,40 +195,36 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
      */
     @Override
     public void writeCacheFile(FileSystem fs, Path tmpSplitsFile) throws IOException {
-        TableOperations tops = null;
         initAccumuloHelper();
 
-        try (AccumuloClient client = this.accumuloHelper.newClient()) {
-            tops = client.tableOperations();
-            Set<String> tableNames = getIngestTableNames();
-            Map<String,Integer> splitsPerTable = new HashMap<>();
-            Map<String,Map<Text,String>> tmpSplitLocations = new HashMap<>();
+        Set<String> tableNames = getIngestTableNames();
+        Map<String,Integer> splitsPerTable = new HashMap<>();
+        Map<String,Map<Text,String>> tmpSplitLocations = new HashMap<>();
 
-            try (PrintStream out = new PrintStream(new BufferedOutputStream(fs.create(tmpSplitsFile)))) {
-                this.splits = new HashMap<>();
-                // gather the splits and write to PrintStream
-                for (String table : tableNames) {
-                    log.info("Retrieving splits for " + table);
-                    Map<Text,String> splitLocations = getSplitsWithLocation(table);
-                    List<Text> splits = new ArrayList<>(splitLocations.keySet());
-                    this.splits.put(table, splits);
-                    splitsPerTable.put(table, splits.size());
-                    log.info("Writing " + splits.size() + " splits.");
-                    tmpSplitLocations.put(table, splitLocations);
-                    for (Text split : splits) {
+        try (PrintStream out = new PrintStream(new BufferedOutputStream(fs.create(tmpSplitsFile)))) {
+            this.splits = new HashMap<>();
+            // gather the splits and write to PrintStream
+            for (String table : tableNames) {
+                log.info("Retrieving splits for " + table);
+                Map<Text,String> splitLocations = getSplitsWithLocation(table);
+                List<Text> splits = new ArrayList<>(splitLocations.keySet());
+                this.splits.put(table, splits);
+                splitsPerTable.put(table, splits.size());
+                log.info("Writing " + splits.size() + " splits.");
+                tmpSplitLocations.put(table, splitLocations);
+                for (Text split : splits) {
 
-                        out.println(table + this.delimiter + new String(Base64.encodeBase64(split.getBytes())) + "\t" + splitLocations.get(split));
+                    out.println(table + this.delimiter + new String(Base64.encodeBase64(split.getBytes())) + "\t" + splitLocations.get(split));
 
-                    }
                 }
-                if (null != getFileStatus() && exceedsMaxSplitsDeviation(splitsPerTable)) {
-                    // if the file exists and the new file would exceed the deviation threshold, don't replace it
-                    throw new IOException("Splits file will not be replaced");
-                }
-            } catch (IOException | AccumuloSecurityException | AccumuloException | TableNotFoundException ex) {
-                log.error("Unable to write new splits file", ex);
-                throw new IOException(ex);
             }
+            if (null != getFileStatus() && exceedsMaxSplitsDeviation(splitsPerTable)) {
+                // if the file exists and the new file would exceed the deviation threshold, don't replace it
+                throw new IOException("Splits file will not be replaced");
+            }
+        } catch (IOException | AccumuloSecurityException | AccumuloException | TableNotFoundException ex) {
+            log.error("Unable to write new splits file", ex);
+            throw new IOException(ex);
         }
 
     }
