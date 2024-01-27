@@ -192,7 +192,11 @@ public class FederatedQueryPlanner extends QueryPlanner {
         // Apply the query model.
         MetadataHelper metadataHelper = originalPlanner.getMetadataHelper();
         QueryModel queryModel = originalPlanner.loadQueryModel(originalConfig);
-        queryTree = originalPlanner.applyQueryModel(metadataHelper, originalConfig, queryTree, queryModel);
+        if (queryModel != null) {
+            queryTree = originalPlanner.applyQueryModel(metadataHelper, originalConfig, queryTree, queryModel);
+        } else {
+            log.warn("Query model was null, will not apply to query tree.");
+        }
 
         // Expand unfielded terms.
         ShardQueryConfiguration configCopy = new ShardQueryConfiguration(originalConfig);
