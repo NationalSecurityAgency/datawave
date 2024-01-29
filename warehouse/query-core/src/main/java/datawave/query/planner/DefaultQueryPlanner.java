@@ -2558,6 +2558,12 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
             // count the terms
             int termCount = TermCountingVisitor.countTerms(queryTree);
+
+            if (config.getIntermediateMaxTermThreshold() > 0 && termCount > config.getIntermediateMaxTermThreshold()) {
+                throw new DatawaveFatalQueryException(
+                                "Query with " + termCount + " exceeds the initial max term threshold of " + config.getIntermediateMaxTermThreshold());
+            }
+
             if (termCount >= pushdownThreshold) {
                 if (log.isTraceEnabled()) {
                     log.trace("pushing down query because it has " + termCount + " when our max is " + pushdownThreshold);
