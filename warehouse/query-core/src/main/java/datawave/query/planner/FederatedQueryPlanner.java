@@ -43,22 +43,17 @@ import datawave.webservice.query.exception.QueryException;
 public class FederatedQueryPlanner extends QueryPlanner {
 
     private static final Logger log = ThreadConfigurableLogger.getLogger(FederatedQueryPlanner.class);
+
     private final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd");
     private final Calendar calendar = Calendar.getInstance();
 
-    private final ShardQueryConfiguration originalConfig;
-    private final DefaultQueryPlanner originalPlanner;
-    private final Date originalBeginDate;
-    private final Date originalEndDate;
+    private final DefaultQueryPlanner subPlan;
     private String plannedScript;
-
-    public FederatedQueryPlanner(ShardQueryConfiguration config, DefaultQueryPlanner planner) {
-        this.originalConfig = config;
-        this.originalPlanner = planner;
-        this.originalBeginDate = config.getBeginDate();
-        this.originalEndDate = config.getEndDate();
+    
+    public FederatedQueryPlanner(DefaultQueryPlanner subPlan) {
+        this.subPlan = subPlan;
     }
-
+    
     @Override
     public CloseableIterable<QueryData> process(GenericQueryConfiguration genericConfig, String query, Query settings, ScannerFactory scannerFactory)
                     throws DatawaveQueryException {
@@ -67,34 +62,37 @@ public class FederatedQueryPlanner extends QueryPlanner {
             throw new ClassCastException("Config must be an instance of " + ShardQueryConfiguration.class.getSimpleName());
         }
 
-        ShardQueryConfiguration config = (ShardQueryConfiguration) genericConfig;
+        ShardQueryConfiguration originalConfig = (ShardQueryConfiguration) genericConfig;
 
-        log.debug("Query originally set to execute against date range " + dateFormat.format(originalBeginDate) + "-" + dateFormat.format(originalEndDate));
+        log.debug("Query originally set to execute against date range " + dateFormat.format(originalConfig.getBeginDate()) + "-" + dateFormat.format(originalConfig.getEndDate()));
 
         // Get the relevant date ranges.
-        SortedSet<Pair<Date,Date>> dateRanges = getSubQueryDateRanges(query, scannerFactory);
+        SortedSet<Pair<Date,Date>> dateRanges = getSubQueryDateRanges(originalConfig, query, scannerFactory);
+        log.debug("Federated query will have " + dateRanges.size() + " sub-plan(s)");
+        log.debug("Original planned script: " + subPlan.getPlannedScript());
 
         // Execute the same query for each date range and collect the results.
         FederatedQueryIterable results = new FederatedQueryIterable();
         int totalProcessed = 1;
         for (Pair<Date,Date> dateRange : dateRanges) {
-            TraceStopwatch stopwatch = config.getTimers()
+            TraceStopwatch stopwatch = originalConfig.getTimers()
                             .newStartedStopwatch("FederatedQueryPlanner - Execute query against date range subset " + dateFormat.format(dateRange.getLeft())
                                             + "-" + dateFormat.format(dateRange.getRight()) + " [" + totalProcessed + " of " + dateRanges.size() + "]");
-            log.debug("Executing query against date range " + dateFormat.format(dateRange.getLeft()) + "-" + dateFormat.format(dateRange.getRight()));
+            log.debug("Executing sub-plan against date range " + dateFormat.format(dateRange.getLeft()) + "-" + dateFormat.format(dateRange.getRight()));
 
             // Set the new date range in a copy of the config.
-            ShardQueryConfiguration configCopy = new ShardQueryConfiguration(config);
+            ShardQueryConfiguration configCopy = new ShardQueryConfiguration(originalConfig);
             configCopy.setBeginDate(dateRange.getLeft());
             configCopy.setEndDate(dateRange.getRight());
 
             // Create a copy of the original default query planner, and process the query with the new date range.
-            DefaultQueryPlanner planner = new DefaultQueryPlanner(originalPlanner);
-            results.addIterable(planner.process(config, query, settings, scannerFactory));
+            DefaultQueryPlanner planner = new DefaultQueryPlanner(subPlan);
+            results.addIterable(planner.process(originalConfig, query, settings, scannerFactory));
 
             // Update the planned script to reflect that of the first query.
-            if (plannedScript == null) {
-                plannedScript = planner.getPlannedScript();
+            if (this.plannedScript == null) {
+                this.plannedScript = planner.getPlannedScript();
+                log.debug("Setting federated planned script to " + plannedScript);
             }
             stopwatch.stop();
             totalProcessed++;
@@ -108,13 +106,13 @@ public class FederatedQueryPlanner extends QueryPlanner {
      * Return the set of date ranges that sub-queries should be created for. Each date range will have a consistent index state, meaning that within each date
      * range, we can expect to either encounter no field index holes, or to always encounter a field index hole.
      */
-    private SortedSet<Pair<Date,Date>> getSubQueryDateRanges(String query, ScannerFactory scannerFactory) throws DatawaveQueryException {
+    private SortedSet<Pair<Date,Date>> getSubQueryDateRanges(ShardQueryConfiguration config, String query, ScannerFactory scannerFactory) throws DatawaveQueryException {
         // Fetch the field index holes for the specified fields and datatypes, using the configured minimum threshold.
-        MetadataHelper metadataHelper = originalPlanner.getMetadataHelper();
+        MetadataHelper metadataHelper = subPlan.getMetadataHelper();
         Map<String,Map<String,FieldIndexHole>> fieldIndexHoles;
         try {
-            Set<String> fields = getFieldsForQuery(query, scannerFactory);
-            fieldIndexHoles = metadataHelper.getFieldIndexHoles(fields, originalConfig.getDatatypeFilter(), originalConfig.getFieldIndexHoleMinThreshold());
+            Set<String> fields = getFieldsForQuery(config, query, scannerFactory);
+            fieldIndexHoles = metadataHelper.getFieldIndexHoles(fields, config.getDatatypeFilter(), config.getFieldIndexHoleMinThreshold());
         } catch (TableNotFoundException | IOException e) {
             throw new DatawaveQueryException("Error occurred when fetching field index holes from metadata table", e);
         }
@@ -124,15 +122,15 @@ public class FederatedQueryPlanner extends QueryPlanner {
         for (String field : fieldIndexHoles.keySet()) {
             Map<String,FieldIndexHole> holes = fieldIndexHoles.get(field);
             for (FieldIndexHole indexHole : holes.values()) {
-                relevantHoles.addAll(getHolesWithinOriginalQueryDateRange(indexHole));
+                relevantHoles.addAll(getHolesWithinOriginalQueryDateRange(config.getBeginDate(), config.getEndDate(), indexHole));
             }
         }
-
+    
         // Establish the date ranges we can query on.
         SortedSet<Pair<Date,Date>> subDateRanges = new TreeSet<>();
         if (relevantHoles.isEmpty()) {
             // If we found no index holes, we can default to the original target date range.
-            subDateRanges.add(Pair.of(originalBeginDate, originalEndDate));
+            subDateRanges.add(Pair.of(config.getBeginDate(), config.getEndDate()));
         } else {
             // Otherwise, get the valid date ranges.
             // Merge any overlaps.
@@ -142,8 +140,8 @@ public class FederatedQueryPlanner extends QueryPlanner {
             // one day before the start of the first hole.
             Iterator<Pair<Date,Date>> it = mergedHoles.iterator();
             Pair<Date,Date> firstHole = it.next();
-            if (firstHole.getLeft().getTime() > originalBeginDate.getTime()) {
-                subDateRanges.add(Pair.of(new Date(originalBeginDate.getTime()), oneDayBefore(firstHole.getLeft())));
+            if (firstHole.getLeft().getTime() > config.getBeginDate().getTime()) {
+                subDateRanges.add(Pair.of(new Date(config.getBeginDate().getTime()), oneDayBefore(firstHole.getLeft())));
             } else {
                 subDateRanges.add(firstHole);
             }
@@ -162,8 +160,8 @@ public class FederatedQueryPlanner extends QueryPlanner {
                 } else {
                     // If this is the last hole, it is possible that the end date falls outside the original query's target date range. If so, shorten it to end
                     // at the original target end date.
-                    if (currentHole.getRight().getTime() > originalEndDate.getTime()) {
-                        subDateRanges.add(Pair.of(currentHole.getLeft(), originalEndDate));
+                    if (currentHole.getRight().getTime() > config.getEndDate().getTime()) {
+                        subDateRanges.add(Pair.of(currentHole.getLeft(), config.getEndDate()));
                     } else {
                         // If it does not fall outside the target date range, include it as is.
                         subDateRanges.add(currentHole);
@@ -174,8 +172,8 @@ public class FederatedQueryPlanner extends QueryPlanner {
 
             // If the last hole we saw ended before the end of the original query's target date range, add a target date range from one day after the end of the
             // last hole to the original target end date.
-            if (endOfPrevHole.getTime() < originalEndDate.getTime()) {
-                subDateRanges.add(Pair.of(oneDayAfter(endOfPrevHole), new Date(originalEndDate.getTime())));
+            if (endOfPrevHole.getTime() < config.getEndDate().getTime()) {
+                subDateRanges.add(Pair.of(oneDayAfter(endOfPrevHole), new Date(config.getEndDate().getTime())));
             }
         }
 
@@ -185,24 +183,24 @@ public class FederatedQueryPlanner extends QueryPlanner {
     /**
      * Return the set of fields in the query.
      */
-    private Set<String> getFieldsForQuery(String query, ScannerFactory scannerFactory) {
+    private Set<String> getFieldsForQuery(ShardQueryConfiguration config, String query, ScannerFactory scannerFactory) {
         // Parse the query.
-        ASTJexlScript queryTree = originalPlanner.parseQueryAndValidatePattern(query, null);
+        ASTJexlScript queryTree = subPlan.parseQueryAndValidatePattern(query, null);
 
         // Apply the query model.
-        MetadataHelper metadataHelper = originalPlanner.getMetadataHelper();
-        QueryModel queryModel = originalPlanner.loadQueryModel(originalConfig);
+        MetadataHelper metadataHelper = subPlan.getMetadataHelper();
+        QueryModel queryModel = subPlan.loadQueryModel(config);
         if (queryModel != null) {
-            queryTree = originalPlanner.applyQueryModel(metadataHelper, originalConfig, queryTree, queryModel);
+            queryTree = subPlan.applyQueryModel(metadataHelper, config, queryTree, queryModel);
         } else {
             log.warn("Query model was null, will not apply to query tree.");
         }
 
         // Expand unfielded terms.
-        ShardQueryConfiguration configCopy = new ShardQueryConfiguration(originalConfig);
+        ShardQueryConfiguration configCopy = new ShardQueryConfiguration(config);
         try {
-            configCopy.setIndexedFields(metadataHelper.getIndexedFields(originalConfig.getDatatypeFilter()));
-            configCopy.setReverseIndexedFields(metadataHelper.getReverseIndexedFields(originalConfig.getDatatypeFilter()));
+            configCopy.setIndexedFields(metadataHelper.getIndexedFields(config.getDatatypeFilter()));
+            configCopy.setReverseIndexedFields(metadataHelper.getReverseIndexedFields(config.getDatatypeFilter()));
             queryTree = UnfieldedIndexExpansionVisitor.expandUnfielded(configCopy, scannerFactory, metadataHelper, queryTree);
         } catch (TableNotFoundException e) {
             QueryException qe = new QueryException(DatawaveErrorCode.METADATA_ACCESS_ERROR, e);
@@ -219,37 +217,37 @@ public class FederatedQueryPlanner extends QueryPlanner {
     /**
      * Return the set of any field index hole date ranges that fall within the original query's target date range.
      */
-    private SortedSet<Pair<Date,Date>> getHolesWithinOriginalQueryDateRange(FieldIndexHole fieldIndexHole) {
+    private SortedSet<Pair<Date,Date>> getHolesWithinOriginalQueryDateRange(Date beginDate, Date endDate, FieldIndexHole fieldIndexHole) {
         SortedSet<Pair<Date,Date>> holes = fieldIndexHole.getDateRanges();
         // If the earliest date range falls after the original query date range, or the latest date range falls before the original query range, then none of
         // the holes fall within the date range.
-        if (isOutsideTargetDates(holes.first(), holes.last())) {
+        if (isOutsideDateRange(beginDate, endDate, holes.first(), holes.last())) {
             return Collections.emptySortedSet();
         }
 
         // There is at least one index hole that falls within the original query date range. Collect and return them.
-        return holes.stream().filter(this::isWithinTargetDates).collect(Collectors.toCollection(TreeSet::new));
+        return holes.stream().filter((range) -> isInDateRange(beginDate, endDate, range)).collect(Collectors.toCollection(TreeSet::new));
     }
 
     /**
      * Return whether the given date ranges representing the earliest and latest date ranges respectively do not encompass any dates that could fall within the
      */
-    private boolean isOutsideTargetDates(Pair<Date,Date> earliestRange, Pair<Date,Date> latestRange) {
-        return earliestRange.getLeft().getTime() > originalBeginDate.getTime() || latestRange.getRight().getTime() < originalEndDate.getTime();
+    private boolean isOutsideDateRange(Date beginDate, Date endDate, Pair<Date,Date> earliestRange, Pair<Date,Date> latestRange) {
+        return earliestRange.getLeft().getTime() > beginDate.getTime() || latestRange.getRight().getTime() < endDate.getTime();
     }
 
     /**
      * Return whether any dates in the given date range fall within the original query's target date range, inclusively.
      */
-    private boolean isWithinTargetDates(Pair<Date,Date> dateRange) {
-        return isWithinTargetDates(dateRange.getLeft()) || isWithinTargetDates(dateRange.getRight());
+    private boolean isInDateRange(Date beginDate, Date endDate, Pair<Date,Date> dateRange) {
+        return isInDateRange(beginDate, endDate, dateRange.getLeft()) || isInDateRange(beginDate, endDate, dateRange.getRight());
     }
 
     /**
      * Return whether the given date falls within the start and end date of the original query's target date range, inclusively.
      */
-    private boolean isWithinTargetDates(Date date) {
-        return date.getTime() >= originalBeginDate.getTime() && date.getTime() <= originalEndDate.getTime();
+    private boolean isInDateRange(Date beginDate, Date endDate, Date date) {
+        return beginDate.getTime() >= date.getTime() && date.getTime() <= endDate.getTime();
     }
 
     /**
@@ -351,5 +349,9 @@ public class FederatedQueryPlanner extends QueryPlanner {
     @Override
     public ASTJexlScript applyRules(ASTJexlScript queryTree, ScannerFactory scannerFactory, MetadataHelper metadataHelper, ShardQueryConfiguration config) {
         return null;
+    }
+    
+    public DefaultQueryPlanner getSubPlan() {
+        return subPlan;
     }
 }

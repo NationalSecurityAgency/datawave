@@ -429,7 +429,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
 
         validateConfiguration(config);
 
-        String plannedScript;
         if (getCardinalityConfiguration() != null && (!config.getDisallowlistedFields().isEmpty() || !config.getProjectFields().isEmpty())) {
             // Ensure that fields used for resultCardinalities are returned. They will be removed in the DocumentTransformer.
             // Modify the projectFields and disallowlistFields only for this stage, then return to the original values.
@@ -449,12 +448,11 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             // If the planner is a DefaultQueryPlanner, delegate the execution to a FederatedQueryPlanner.
             if (getQueryPlanner() instanceof DefaultQueryPlanner) {
                 log.debug("Executing query via " + FederatedQueryPlanner.class.getSimpleName());
-                DefaultQueryPlanner originalPlanner = (DefaultQueryPlanner) getQueryPlanner();
-                QueryPlanner federatedPlanner = new FederatedQueryPlanner(config, originalPlanner);
+                FederatedQueryPlanner federatedPlanner = new FederatedQueryPlanner((DefaultQueryPlanner) getQueryPlanner());
                 // Update the iterator.
                 this.queries = federatedPlanner.process(config, jexlQueryString, settings, this.scannerFactory);
                 // Update the planned script in the original planner.
-                originalPlanner.setPlannedScript(federatedPlanner.getPlannedScript());
+                ((DefaultQueryPlanner) getQueryPlanner()).setPlannedScript(federatedPlanner.getPlannedScript());
             } else {
                 this.queries = getQueryPlanner().process(config, jexlQueryString, settings, this.getScannerFactory());
             }
@@ -464,12 +462,11 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             // If the planner is a DefaultQueryPlanner, delegate the execution to a FederatedQueryPlanner.
             if (getQueryPlanner() instanceof DefaultQueryPlanner) {
                 log.debug("Executing query via " + FederatedQueryPlanner.class.getSimpleName());
-                DefaultQueryPlanner originalPlanner = (DefaultQueryPlanner) getQueryPlanner();
-                QueryPlanner federatedPlanner = new FederatedQueryPlanner(config, originalPlanner);
+                FederatedQueryPlanner federatedPlanner = new FederatedQueryPlanner((DefaultQueryPlanner) getQueryPlanner());
                 // Update the iterator.
                 this.queries = federatedPlanner.process(config, jexlQueryString, settings, this.scannerFactory);
                 // Update the planned script in the original planner.
-                originalPlanner.setPlannedScript(federatedPlanner.getPlannedScript());
+                ((DefaultQueryPlanner) getQueryPlanner()).setPlannedScript(federatedPlanner.getPlannedScript());
             } else {
                 this.queries = getQueryPlanner().process(config, jexlQueryString, settings, this.getScannerFactory());
             }
