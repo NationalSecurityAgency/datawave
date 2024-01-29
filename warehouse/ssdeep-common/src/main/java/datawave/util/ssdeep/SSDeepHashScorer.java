@@ -1,4 +1,4 @@
-package datawave.query.util.ssdeep;
+package datawave.util.ssdeep;
 
 import org.apache.commons.text.similarity.LevenshteinDistance;
 import org.apache.log4j.Logger;
