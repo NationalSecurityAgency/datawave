@@ -1,0 +1,14 @@
+hadoop
+**/scripts/query_*
+**/scripts/errorQuery_*
+**/scripts/lookup_*
+**/scripts/batchLookup_*
+**/scripts/lookupContent_*
+**/scripts/batchLookupContent_*
+**/scripts/discovery_*
+**/scripts/errorDiscovery_*
+**/scripts/count_*
+**/scripts/errorCount_*
+**/scripts/fieldIndexCount_*
+**/scripts/errorFieldIndexCount_*
+**/scripts/hitHighlights_*
