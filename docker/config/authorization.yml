@@ -19,7 +19,6 @@ spring:
 
 logging:
   level:
-    root: TRACE
     datawave.microservice.authorization: DEBUG
 
 datawave:
