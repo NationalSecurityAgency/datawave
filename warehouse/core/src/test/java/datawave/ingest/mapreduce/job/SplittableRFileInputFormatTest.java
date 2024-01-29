@@ -25,7 +25,10 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.InputSplit;
+import org.apache.hadoop.mapreduce.JobContext;
+import org.apache.hadoop.mapreduce.JobID;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
+import org.apache.hadoop.mapreduce.task.JobContextImpl;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.After;
@@ -149,6 +152,31 @@ public class SplittableRFileInputFormatTest {
         verifySplit((RFileSplit) splits.get(0), 0, 127, createKey(1), createKey(1), 1000000);
         verifySplit((RFileSplit) splits.get(1), 127, 1, createKey(2), createKey(2), 1000);
         verifySplit((RFileSplit) splits.get(2), 128, 1, createKey(3), createKey(3), 1000);
+    }
+
+    @Test
+    public void testGetSplits_noSizeBasedPreSplit() throws IOException {
+        // set the max split size to be tiny to the FileInputFormat
+        config.setInt("mapreduce.input.fileinputformat.split.maxsize", 10);
+
+        // add more than the max size of data to the file which would otherwise cause the file to be split
+        List<Map.Entry<Key,Value>> data = new ArrayList<>();
+        for (int i = 0; i < 100; i++) {
+            addData(data, 1, i);
+        }
+
+        tmpFile = createRFile(data);
+
+        // link the tmp file to the input format path
+        config.set("mapreduce.input.fileinputformat.inputdir", tmpFile.toString());
+
+        SplittableRFileInputFormat inputFormat = new SplittableRFileInputFormat();
+        JobContext context = new JobContextImpl(config, new JobID());
+        List<InputSplit> splits = inputFormat.getSplits(context);
+
+        // there is only one key used for all data, so it will all be in a single split, unless multiple FileSplit are being generated for the same base file by
+        // FileInputFormat
+        assertEquals(1, splits.size());
     }
 
     private Key createKey(int key) {

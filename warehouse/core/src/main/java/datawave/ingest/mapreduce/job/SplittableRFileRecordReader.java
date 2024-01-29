@@ -3,6 +3,7 @@ package datawave.ingest.mapreduce.job;
 import static org.apache.accumulo.core.conf.Property.TABLE_CRYPTO_PREFIX;
 
 import java.io.EOFException;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Collections;
 
@@ -21,6 +22,15 @@ import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 
 public class SplittableRFileRecordReader extends RFileRecordReader {
+    /**
+     * Initializes the fileIterator from the split. If split is an RFileSplit the record reader will create an iterator that only covers the content for the
+     * split. If instead the split is a FileSplit it will be handled by {@link RFileRecordReader}.
+     *
+     * @param split
+     * @param context
+     * @throws IOException
+     * @throws InterruptedException
+     */
     @Override
     public void initialize(InputSplit split, TaskAttemptContext context) throws IOException, InterruptedException {
         if (split instanceof RFileSplit) {
@@ -34,7 +44,7 @@ public class SplittableRFileRecordReader extends RFileRecordReader {
         FileSystem fs = rfile.getFileSystem(config);
 
         if (!fs.exists(rfile)) {
-            throw new IllegalArgumentException(rfile + " does not exist");
+            throw new FileNotFoundException(rfile + " does not exist");
         }
 
         CryptoService cs = CryptoFactoryLoader.getServiceForClient(CryptoEnvironment.Scope.TABLE, config.getPropsWithPrefix(TABLE_CRYPTO_PREFIX.name()));
