@@ -30,7 +30,9 @@ public class SplittableRFileInputFormat extends RFileInputFormat {
 
     @Override
     protected boolean isSplitable(JobContext context, Path filename) {
-        return true;
+        // prevent FileInputFormat from splitting the raw files, potentially creating duplicates with InputSplit.getStart() != 0 when super.getSplits() is
+        // called
+        return false;
     }
 
     @Override
