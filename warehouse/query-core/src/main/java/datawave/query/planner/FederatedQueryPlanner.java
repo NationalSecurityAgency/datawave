@@ -49,11 +49,11 @@ public class FederatedQueryPlanner extends QueryPlanner {
 
     private final DefaultQueryPlanner subPlan;
     private String plannedScript;
-    
+
     public FederatedQueryPlanner(DefaultQueryPlanner subPlan) {
         this.subPlan = subPlan;
     }
-    
+
     @Override
     public CloseableIterable<QueryData> process(GenericQueryConfiguration genericConfig, String query, Query settings, ScannerFactory scannerFactory)
                     throws DatawaveQueryException {
@@ -64,7 +64,8 @@ public class FederatedQueryPlanner extends QueryPlanner {
 
         ShardQueryConfiguration originalConfig = (ShardQueryConfiguration) genericConfig;
 
-        log.debug("Query originally set to execute against date range " + dateFormat.format(originalConfig.getBeginDate()) + "-" + dateFormat.format(originalConfig.getEndDate()));
+        log.debug("Query originally set to execute against date range " + dateFormat.format(originalConfig.getBeginDate()) + "-"
+                        + dateFormat.format(originalConfig.getEndDate()));
 
         // Get the relevant date ranges.
         SortedSet<Pair<Date,Date>> dateRanges = getSubQueryDateRanges(originalConfig, query, scannerFactory);
@@ -106,7 +107,8 @@ public class FederatedQueryPlanner extends QueryPlanner {
      * Return the set of date ranges that sub-queries should be created for. Each date range will have a consistent index state, meaning that within each date
      * range, we can expect to either encounter no field index holes, or to always encounter a field index hole.
      */
-    private SortedSet<Pair<Date,Date>> getSubQueryDateRanges(ShardQueryConfiguration config, String query, ScannerFactory scannerFactory) throws DatawaveQueryException {
+    private SortedSet<Pair<Date,Date>> getSubQueryDateRanges(ShardQueryConfiguration config, String query, ScannerFactory scannerFactory)
+                    throws DatawaveQueryException {
         // Fetch the field index holes for the specified fields and datatypes, using the configured minimum threshold.
         MetadataHelper metadataHelper = subPlan.getMetadataHelper();
         Map<String,Map<String,FieldIndexHole>> fieldIndexHoles;
@@ -125,7 +127,7 @@ public class FederatedQueryPlanner extends QueryPlanner {
                 relevantHoles.addAll(getHolesWithinOriginalQueryDateRange(config.getBeginDate(), config.getEndDate(), indexHole));
             }
         }
-    
+
         // Establish the date ranges we can query on.
         SortedSet<Pair<Date,Date>> subDateRanges = new TreeSet<>();
         if (relevantHoles.isEmpty()) {
@@ -350,7 +352,7 @@ public class FederatedQueryPlanner extends QueryPlanner {
     public ASTJexlScript applyRules(ASTJexlScript queryTree, ScannerFactory scannerFactory, MetadataHelper metadataHelper, ShardQueryConfiguration config) {
         return null;
     }
-    
+
     public DefaultQueryPlanner getSubPlan() {
         return subPlan;
     }
