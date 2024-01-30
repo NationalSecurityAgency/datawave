@@ -66,6 +66,11 @@ sed -i'' -e "s~\(ACCUMULO_TSERVER_OPTS=\).*$~\1\"${DW_ACCUMULO_TSERVER_OPTS}\"~g
 sed -i'' -e "s~\(export JAVA_HOME=\).*$~\1\"${JAVA_HOME}\"~g" "${DW_ACCUMULO_CONF_DIR}/accumulo-env.sh"
 sed -i'' -e "s~\(export ACCUMULO_MONITOR_OPTS=\).*$~\1\"\${POLICY} -Xmx2g -Xms512m\"~g" "${DW_ACCUMULO_CONF_DIR}/accumulo-env.sh"
 
+# Update Accumulo bind host if it's not set to localhost
+if [ "${DW_ACCUMULO_BIND_HOST}" != "localhost" ] ; then
+  sed -i'' -e "s/localhost/${DW_ACCUMULO_BIND_HOST}/g" ${DW_ACCUMULO_CONF_DIR}/cluster.yaml
+fi
+
 # Write zoo.cfg file using our settings in DW_ZOOKEEPER_CONF
 if [ -n "${DW_ZOOKEEPER_CONF}" ] ; then
    echo "${DW_ZOOKEEPER_CONF}" > "${DW_ZOOKEEPER_CONF_DIR}/zoo.cfg" || fatal "Failed to write zoo.cfg"
