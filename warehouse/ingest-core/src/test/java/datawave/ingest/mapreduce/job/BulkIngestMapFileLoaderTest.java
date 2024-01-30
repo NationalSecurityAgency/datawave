@@ -1,5 +1,9 @@
 package datawave.ingest.mapreduce.job;
 
+import static datawave.ingest.mapreduce.job.BulkIngestMapFileLoader.COMPLETE_FILE_MARKER;
+import static datawave.ingest.mapreduce.job.BulkIngestMapFileLoader.FAILED_FILE_MARKER;
+import static datawave.ingest.mapreduce.job.BulkIngestMapFileLoader.INPUT_FILES_MARKER;
+
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -11,12 +15,27 @@ import java.net.ServerSocket;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.accumulo.core.client.AccumuloException;
+import org.apache.accumulo.core.client.AccumuloSecurityException;
+import org.apache.accumulo.core.client.BatchScanner;
+import org.apache.accumulo.core.client.TableExistsException;
+import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
+import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.security.Authorizations;
+import org.apache.accumulo.minicluster.MiniAccumuloCluster;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileStatus;
@@ -32,12 +51,16 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.TemporaryFolder;
 import org.powermock.api.easymock.PowerMock;
 import org.powermock.reflect.Whitebox;
 
@@ -55,20 +78,166 @@ import datawave.ingest.input.reader.LongLineEventRecordReader;
 @Category(IntegrationTest.class)
 public class BulkIngestMapFileLoaderTest {
 
+    @ClassRule
+    public static TemporaryFolder temporaryFolder = new TemporaryFolder();
+
     protected static final URI FILE_SYSTEM_URI = URI.create("file:///");
+    protected static final Logger LOG = Logger.getLogger(BulkIngestMapFileLoaderTest.class);
 
-    protected static final Logger logger = Logger.getLogger(BulkIngestMapFileLoaderTest.class);
-    protected Level testDriverLevel;
+    private static final String PASSWORD = "secret";
 
-    private List<String> systemProperties;
+    private static final String USER = "root";
 
-    private Configuration conf = new Configuration();
+    private static final Authorizations USER_AUTHS = new Authorizations("BAR", "FOO", "PRIVATE", "PUBLIC");
+
+    private static final String METADATA_TABLE = "metadata";
+    private static final String METADATA_RFILE_PATH = "/datawave/rfiles/metadata/I3abcdef01.rf";
+    private static final long METADATA_EXPECTED_KEY_COUNT = 380L;
+
+    private static final String SHARD_TABLE = "shard";
+    private static final String SHARD_RFILE_PATH = "/datawave/rfiles/shard/I2abcdef01.rf";
+    private static final long SHARD_EXPECTED_KEY_COUNT = 16301L;
+
+    private static MiniAccumuloCluster cluster;
+    private static File tmpDir;
+    private static java.nio.file.Path workPath;
+    private static java.nio.file.Path flaggedPath;
+    private static java.nio.file.Path loadedPath;
+    private static URI metadataRfile;
+    private static URI shardRfile;
 
     @Rule
     public final ExpectedSystemExit exit = ExpectedSystemExit.none();
 
     @Rule
     public TestLogCollector logCollector = new TestLogCollector.Builder().with(BulkIngestMapFileLoader.class, Level.ALL).build();
+
+    protected Level testDriverLevel;
+
+    private List<String> systemProperties;
+    private Configuration conf = new Configuration();
+
+    @BeforeClass
+    public static void setupClass() throws AccumuloSecurityException, AccumuloException, TableExistsException, TableNotFoundException, IOException,
+                    InterruptedException, URISyntaxException {
+        tmpDir = temporaryFolder.newFolder();
+        cluster = new MiniAccumuloCluster(tmpDir, PASSWORD);
+        cluster.start();
+
+        workPath = Paths.get(tmpDir.getAbsolutePath(), "datawave", "ingest", "work");
+        Files.createDirectories(workPath);
+
+        flaggedPath = Files.createDirectory(Paths.get(workPath.toString(), "flagged"));
+        loadedPath = Files.createDirectory(Paths.get(workPath.toString(), "loaded"));
+
+        metadataRfile = BulkIngestMapFileLoaderTest.class.getResource(METADATA_RFILE_PATH).toURI();
+        shardRfile = BulkIngestMapFileLoaderTest.class.getResource(SHARD_RFILE_PATH).toURI();
+
+        try (AccumuloClient client = cluster.createAccumuloClient(USER, new PasswordToken(PASSWORD))) {
+            client.securityOperations().changeUserAuthorizations(USER, USER_AUTHS);
+        }
+    }
+
+    /**
+     * Sets up all inputs required to process a completed ingest job (job.complete) against the running MAC
+     *
+     * @param jobName
+     *            should uniquely identify the bulk load job to be run
+     * @param loaderSleepTime
+     *            desired sleep time (in ms) for the bulk loader
+     *
+     * @return BulkIngestMapFileLoader instance for running the job
+     * @throws IOException
+     */
+    private BulkIngestMapFileLoader setupJobComplete(String jobName, int loaderSleepTime) throws IOException {
+
+        Assert.assertFalse("jobName can't be null/empty", jobName == null || jobName.isEmpty());
+
+        java.nio.file.Path metaSrc, metaDest, shardSrc, shardDest, inputFilesPath, inputFile, jobPathsFile;
+
+        String parentDir = workPath.toString();
+        String mapFilesDir = "mapFiles";
+
+        Assert.assertFalse(jobName + " directory already exists", Files.exists(Paths.get(parentDir, jobName)));
+        Assert.assertFalse(jobName + " flagged directory already exists", Files.exists(Paths.get(flaggedPath.toString(), jobName)));
+        Assert.assertFalse(jobName + " loaded directory already exists", Files.exists(Paths.get(loadedPath.toString(), jobName)));
+
+        // Copy metadata rfile into jobName/mapFiles/DW_METADATA_TABLE dir
+        metaSrc = Paths.get(metadataRfile);
+        metaDest = Files.createDirectories(Paths.get(parentDir, jobName, mapFilesDir, METADATA_TABLE));
+        Files.copy(metaSrc, Paths.get(metaDest.toString(), metaSrc.getFileName().toString()));
+
+        // Copy shard rfile into jobName/mapFiles/DW_SHARD_TABLE dir
+        shardSrc = Paths.get(shardRfile);
+        shardDest = Files.createDirectories(Paths.get(parentDir, jobName, mapFilesDir, SHARD_TABLE));
+        Files.copy(shardSrc, Paths.get(shardDest.toString(), shardSrc.getFileName().toString()));
+
+        // Create 'job.paths' marker and associated dummy input file...
+        inputFilesPath = Files.createDirectory(Paths.get(flaggedPath.toString(), jobName));
+        inputFile = Files.createFile(Paths.get(inputFilesPath.toString(), "dummy"));
+        jobPathsFile = Files.createFile(Paths.get(parentDir, jobName, INPUT_FILES_MARKER));
+        Files.write(jobPathsFile, inputFile.toString().getBytes(StandardCharsets.UTF_8));
+
+        // Create 'job.complete' marker
+        Files.createFile(Paths.get(parentDir, jobName, COMPLETE_FILE_MARKER));
+
+        // @formatter:off
+        return new BulkIngestMapFileLoader(
+                workPath.toString(),
+                "*",
+                cluster.getInstanceName(),
+                cluster.getZooKeepers(),
+                USER,
+                new PasswordToken(PASSWORD),
+                tmpDir.toURI(),
+                tmpDir.toURI(),
+                tmpDir.toURI(),
+                null,
+                new HashMap<>(),
+                conf,
+                0,
+                1,
+                new ArrayList<>(),
+                loaderSleepTime,
+                loaderSleepTime,
+                false);
+        // @formatter:on
+    }
+
+    private void verifyTableImport(String tableName, long expectedKeyCount) throws TableNotFoundException {
+
+        long actualKeyCount = 0;
+        Collection ranges = Collections.singleton(new Range());
+        try (AccumuloClient client = cluster.createAccumuloClient(USER, new PasswordToken(PASSWORD))) {
+            BatchScanner scanner = client.createBatchScanner(tableName, USER_AUTHS);
+            scanner.setRanges(ranges);
+            Iterator it = scanner.iterator();
+            while (it.hasNext()) {
+                it.next();
+                actualKeyCount++;
+            }
+            scanner.close();
+        }
+        Assert.assertEquals("Unexpected number of " + tableName + " entries", expectedKeyCount, actualKeyCount);
+    }
+
+    private void createTables() throws Exception {
+        try (AccumuloClient client = cluster.createAccumuloClient(USER, new PasswordToken(PASSWORD))) {
+            if (client.tableOperations().exists(METADATA_TABLE)) {
+                client.tableOperations().delete(METADATA_TABLE);
+            }
+            if (client.tableOperations().exists(SHARD_TABLE)) {
+                client.tableOperations().delete(SHARD_TABLE);
+            }
+            client.tableOperations().create(SHARD_TABLE);
+            client.tableOperations().create(METADATA_TABLE);
+        }
+    }
+
+    @AfterClass
+    public static void teardownClass() throws IOException {
+        cluster.close();
+    }
 
     @Test
     public void testShutdownPortAlreadyInUse() throws IOException {
@@ -389,19 +558,19 @@ public class BulkIngestMapFileLoaderTest {
     public void setup() throws Exception {
         systemProperties = new ArrayList<>();
 
-        testDriverLevel = BulkIngestMapFileLoaderTest.logger.getLevel();
-        BulkIngestMapFileLoaderTest.logger.setLevel(Level.ALL);
+        testDriverLevel = BulkIngestMapFileLoaderTest.LOG.getLevel();
+        BulkIngestMapFileLoaderTest.LOG.setLevel(Level.ALL);
     }
 
     @After
     public void teardown() {
-        BulkIngestMapFileLoaderTest.logger.setLevel(testDriverLevel);
+        BulkIngestMapFileLoaderTest.LOG.setLevel(testDriverLevel);
     }
 
     @Test
     public void testMainWithoutArgs() throws IOException, InterruptedException {
 
-        BulkIngestMapFileLoaderTest.logger.info("testMainWitoutArgs called...");
+        BulkIngestMapFileLoaderTest.LOG.info("testMainWitoutArgs called...");
 
         try {
 
@@ -425,7 +594,7 @@ public class BulkIngestMapFileLoaderTest {
 
         } finally {
 
-            BulkIngestMapFileLoaderTest.logger.info("testMainWitoutArgs completed.");
+            BulkIngestMapFileLoaderTest.LOG.info("testMainWitoutArgs completed.");
 
         }
     }
@@ -433,7 +602,7 @@ public class BulkIngestMapFileLoaderTest {
     @Test
     public void testMainWithSixArgs() throws IOException, InterruptedException {
 
-        BulkIngestMapFileLoaderTest.logger.info("testMainWithSixArgs called...");
+        BulkIngestMapFileLoaderTest.LOG.info("testMainWithSixArgs called...");
 
         try {
 
@@ -462,7 +631,7 @@ public class BulkIngestMapFileLoaderTest {
 
         } finally {
 
-            BulkIngestMapFileLoaderTest.logger.info("testMainWithSixArgs completed.");
+            BulkIngestMapFileLoaderTest.LOG.info("testMainWithSixArgs completed.");
 
         }
     }
@@ -470,7 +639,7 @@ public class BulkIngestMapFileLoaderTest {
     @Test
     public void testMainWithAllOptionalArgs() throws IOException, InterruptedException {
 
-        BulkIngestMapFileLoaderTest.logger.info("testMainWithAllOptionalArgs called...");
+        BulkIngestMapFileLoaderTest.LOG.info("testMainWithAllOptionalArgs called...");
 
         try {
 
@@ -535,15 +704,125 @@ public class BulkIngestMapFileLoaderTest {
 
         } finally {
 
-            BulkIngestMapFileLoaderTest.logger.info("testMainWithAllOptionalArgs completed.");
+            BulkIngestMapFileLoaderTest.LOG.info("testMainWithAllOptionalArgs completed.");
 
+        }
+    }
+
+    /**
+     * Use MAC to verify that bulk loader actually loads rfiles into shard, metadata tables successfully
+     */
+    @Test
+    public void testLoaderWithMiniAccumuloCluster() {
+        BulkIngestMapFileLoaderTest.LOG.info("testLoaderWithMiniAccumuloCluster called...");
+
+        List<String> log = logCollector.getMessages();
+        Assert.assertTrue("Unexpected log messages", log.isEmpty());
+
+        BulkIngestMapFileLoader processor = null;
+        try {
+            createTables();
+
+            processor = setupJobComplete("job1", 1000);
+            new Thread(processor, "map-file-watcher").start();
+
+            // Wait up to 30 secs for the bulk loader to log completion
+            for (int i = 1; i <= 15; i++) {
+                Thread.sleep(2000);
+                if (log.contains("Marking 1 sequence files from flagged to loaded")) {
+                    break;
+                }
+            }
+
+            Assert.assertTrue("Unexpected log output", log.contains("Bringing Map Files online for " + METADATA_TABLE));
+            Assert.assertTrue("Unexpected log output", log.contains("Bringing Map Files online for " + SHARD_TABLE));
+            Assert.assertTrue("Unexpected log output", log.contains("Completed bringing map files online for " + METADATA_TABLE));
+            Assert.assertTrue("Unexpected log output", log.contains("Completed bringing map files online for " + SHARD_TABLE));
+            Assert.assertTrue("Unexpected log output", log.contains("Marking 1 sequence files from flagged to loaded"));
+
+            verifyTableImport(SHARD_TABLE, SHARD_EXPECTED_KEY_COUNT);
+            verifyTableImport(METADATA_TABLE, METADATA_EXPECTED_KEY_COUNT);
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        } finally {
+            BulkIngestMapFileLoaderTest.LOG.info("testLoaderWithMiniAccumuloCluster completed.");
+            if (processor != null) {
+                processor.shutdown();
+            }
+        }
+    }
+
+    /**
+     * Use MAC to verify that bulk loader fails as expected in the face of invalid rfile(s)
+     */
+    @Test
+    public void testLoadFailedWithMiniAccumuloCluster() {
+        BulkIngestMapFileLoaderTest.LOG.info("testLoadFailedWithMiniAccumuloCluster called...");
+
+        List<String> log = logCollector.getMessages();
+        Assert.assertTrue("Unexpected log messages", log.isEmpty());
+
+        String jobName = "job2";
+
+        java.nio.file.Path metaRfile, expectedMarkerFile;
+
+        // expected job.failed file
+        expectedMarkerFile = Paths.get(workPath.toString(), jobName, FAILED_FILE_MARKER);
+
+        BulkIngestMapFileLoader processor = null;
+        try {
+            createTables();
+
+            // Create/configure 'job2'
+            processor = setupJobComplete(jobName, 500);
+
+            // rfile to corrupt...
+            metaRfile = Paths.get(workPath.toString(), jobName, "mapFiles", METADATA_TABLE, "I3abcdef01.rf");
+
+            Assert.assertTrue("metadata rfile is missing after setup", Files.exists(metaRfile));
+
+            // Write invalid content...
+            Files.delete(metaRfile);
+            Files.createFile(metaRfile);
+            Files.write(metaRfile, "Invalid rfile content here".getBytes(StandardCharsets.UTF_8));
+
+            String expectedMsg = "Error importing files into table " + METADATA_TABLE + " from directory file:"
+                            + Paths.get(workPath.toString(), jobName, "mapFiles");
+
+            // Start the loader
+            new Thread(processor, "map-file-watcher").start();
+
+            // Wait up to 30 secs for the bulk loader to log & mark the failure
+            for (int i = 1; i <= 10; i++) {
+                Thread.sleep(3000);
+                if (log.contains(expectedMsg) && Files.exists(expectedMarkerFile)) {
+                    break;
+                }
+            }
+
+            Assert.assertTrue("Unexpected log output", log.contains("Bringing Map Files online for " + METADATA_TABLE));
+            Assert.assertTrue("Unexpected log output", log.contains(expectedMsg));
+            Assert.assertTrue("Bad metadata rfile should have remained in the job dir: " + metaRfile, Files.exists(metaRfile));
+            Assert.assertTrue("Missing 'job.failed' marker after failed import", Files.exists(expectedMarkerFile));
+
+            verifyTableImport(METADATA_TABLE, 0L);
+            verifyTableImport(SHARD_TABLE, SHARD_EXPECTED_KEY_COUNT);
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        } finally {
+            BulkIngestMapFileLoaderTest.LOG.info("testLoadFailedWithMiniAccumuloCluster completed.");
+            if (processor != null) {
+                processor.shutdown();
+            }
         }
     }
 
     @Test
     public void testMainWithAllOptionalArgsNoTablePriorites() throws IOException, InterruptedException {
 
-        BulkIngestMapFileLoaderTest.logger.info("testMainWithAllOptionalArgsNoTablePriorites called...");
+        BulkIngestMapFileLoaderTest.LOG.info("testMainWithAllOptionalArgsNoTablePriorites called...");
 
         try {
 
@@ -570,7 +849,7 @@ public class BulkIngestMapFileLoaderTest {
 
         } finally {
 
-            BulkIngestMapFileLoaderTest.logger.info("testMainWithAllOptionalArgsNoTablePriorites completed.");
+            BulkIngestMapFileLoaderTest.LOG.info("testMainWithAllOptionalArgsNoTablePriorites completed.");
 
         }
     }
@@ -578,7 +857,7 @@ public class BulkIngestMapFileLoaderTest {
     @Test
     public void testMainWithBadResource() throws IOException, InterruptedException {
 
-        BulkIngestMapFileLoaderTest.logger.info("testMainWithBadResource called...");
+        BulkIngestMapFileLoaderTest.LOG.info("testMainWithBadResource called...");
 
         try {
 
@@ -605,7 +884,7 @@ public class BulkIngestMapFileLoaderTest {
 
         } finally {
 
-            BulkIngestMapFileLoaderTest.logger.info("testMainWithBadResource completed.");
+            BulkIngestMapFileLoaderTest.LOG.info("testMainWithBadResource completed.");
 
         }
     }
@@ -613,7 +892,7 @@ public class BulkIngestMapFileLoaderTest {
     @Test
     public void testMainWithBadSleepTime() throws IOException, InterruptedException {
 
-        BulkIngestMapFileLoaderTest.logger.info("testMainWithBadSleepTime called...");
+        BulkIngestMapFileLoaderTest.LOG.info("testMainWithBadSleepTime called...");
 
         try {
 
@@ -646,7 +925,7 @@ public class BulkIngestMapFileLoaderTest {
 
         } finally {
 
-            BulkIngestMapFileLoaderTest.logger.info("testMainWithBadSleepTime completed.");
+            BulkIngestMapFileLoaderTest.LOG.info("testMainWithBadSleepTime completed.");
 
         }
     }
@@ -654,7 +933,7 @@ public class BulkIngestMapFileLoaderTest {
     @Test
     public void testMainWithMissingSleepTime() throws IOException, InterruptedException {
 
-        BulkIngestMapFileLoaderTest.logger.info("testMainWithMissingSleepTime called...");
+        BulkIngestMapFileLoaderTest.LOG.info("testMainWithMissingSleepTime called...");
 
         try {
 
@@ -686,7 +965,7 @@ public class BulkIngestMapFileLoaderTest {
 
         } finally {
 
-            BulkIngestMapFileLoaderTest.logger.info("testMainWithMissingSleepTime completed.");
+            BulkIngestMapFileLoaderTest.LOG.info("testMainWithMissingSleepTime completed.");
 
         }
     }
@@ -694,7 +973,7 @@ public class BulkIngestMapFileLoaderTest {
     @Test
     public void testMainWithBadMajCThreshold() throws IOException, InterruptedException {
 
-        BulkIngestMapFileLoaderTest.logger.info("testMainWithBadMajCThreshold called...");
+        BulkIngestMapFileLoaderTest.LOG.info("testMainWithBadMajCThreshold called...");
 
         try {
 
@@ -727,7 +1006,7 @@ public class BulkIngestMapFileLoaderTest {
 
         } finally {
 
-            BulkIngestMapFileLoaderTest.logger.info("testMainWithBadMajCThreshold completed.");
+            BulkIngestMapFileLoaderTest.LOG.info("testMainWithBadMajCThreshold completed.");
 
         }
     }
@@ -735,7 +1014,7 @@ public class BulkIngestMapFileLoaderTest {
     @Test
     public void testMainWithMissingMajCThreshold() throws IOException, InterruptedException {
 
-        BulkIngestMapFileLoaderTest.logger.info("testMainWithMissingMajCThreshold called...");
+        BulkIngestMapFileLoaderTest.LOG.info("testMainWithMissingMajCThreshold called...");
 
         try {
 
@@ -767,7 +1046,7 @@ public class BulkIngestMapFileLoaderTest {
 
         } finally {
 
-            BulkIngestMapFileLoaderTest.logger.info("testMainWithMissingMajCThreshold completed.");
+            BulkIngestMapFileLoaderTest.LOG.info("testMainWithMissingMajCThreshold completed.");
 
         }
     }
@@ -775,7 +1054,7 @@ public class BulkIngestMapFileLoaderTest {
     @Test
     public void testMainWithBadMajCDelay() throws IOException, InterruptedException {
 
-        BulkIngestMapFileLoaderTest.logger.info("testMainWithBadMajCDelay called...");
+        BulkIngestMapFileLoaderTest.LOG.info("testMainWithBadMajCDelay called...");
 
         try {
 
@@ -808,7 +1087,7 @@ public class BulkIngestMapFileLoaderTest {
 
         } finally {
 
-            BulkIngestMapFileLoaderTest.logger.info("testMainWithBadMajCDelay completed.");
+            BulkIngestMapFileLoaderTest.LOG.info("testMainWithBadMajCDelay completed.");
 
         }
     }
@@ -816,7 +1095,7 @@ public class BulkIngestMapFileLoaderTest {
     @Test
     public void testMainWithMissingMajCDelay() throws IOException, InterruptedException {
 
-        BulkIngestMapFileLoaderTest.logger.info("testMainWithMissingMajCDelay called...");
+        BulkIngestMapFileLoaderTest.LOG.info("testMainWithMissingMajCDelay called...");
 
         try {
 
@@ -848,7 +1127,7 @@ public class BulkIngestMapFileLoaderTest {
 
         } finally {
 
-            BulkIngestMapFileLoaderTest.logger.info("testMainWithMissingMajCDelay completed.");
+            BulkIngestMapFileLoaderTest.LOG.info("testMainWithMissingMajCDelay completed.");
 
         }
     }
@@ -856,7 +1135,7 @@ public class BulkIngestMapFileLoaderTest {
     @Test
     public void testMainWithBadMaxDirectories() throws IOException, InterruptedException {
 
-        BulkIngestMapFileLoaderTest.logger.info("testMainWithBadMaxDirectories called...");
+        BulkIngestMapFileLoaderTest.LOG.info("testMainWithBadMaxDirectories called...");
 
         try {
 
@@ -889,7 +1168,7 @@ public class BulkIngestMapFileLoaderTest {
 
         } finally {
 
-            BulkIngestMapFileLoaderTest.logger.info("testMainWithBadMaxDirectories completed.");
+            BulkIngestMapFileLoaderTest.LOG.info("testMainWithBadMaxDirectories completed.");
 
         }
     }
@@ -897,7 +1176,7 @@ public class BulkIngestMapFileLoaderTest {
     @Test
     public void testMainWithMissingMaxDirectories() throws IOException, InterruptedException {
 
-        BulkIngestMapFileLoaderTest.logger.info("testMainWithMissingMaxDirectories called...");
+        BulkIngestMapFileLoaderTest.LOG.info("testMainWithMissingMaxDirectories called...");
 
         try {
 
@@ -929,7 +1208,7 @@ public class BulkIngestMapFileLoaderTest {
 
         } finally {
 
-            BulkIngestMapFileLoaderTest.logger.info("testMainWithMissingMaxDirectories completed.");
+            BulkIngestMapFileLoaderTest.LOG.info("testMainWithMissingMaxDirectories completed.");
 
         }
     }
@@ -937,7 +1216,7 @@ public class BulkIngestMapFileLoaderTest {
     @Test
     public void testMainWithBadNumThreads() throws IOException, InterruptedException {
 
-        BulkIngestMapFileLoaderTest.logger.info("testMainWithBadNumThreads called...");
+        BulkIngestMapFileLoaderTest.LOG.info("testMainWithBadNumThreads called...");
 
         try {
 
@@ -970,7 +1249,7 @@ public class BulkIngestMapFileLoaderTest {
 
         } finally {
 
-            BulkIngestMapFileLoaderTest.logger.info("testMainWithBadNumThreads completed.");
+            BulkIngestMapFileLoaderTest.LOG.info("testMainWithBadNumThreads completed.");
 
         }
     }
@@ -978,7 +1257,7 @@ public class BulkIngestMapFileLoaderTest {
     @Test
     public void testMainWithMissingNumThreads() throws IOException, InterruptedException {
 
-        BulkIngestMapFileLoaderTest.logger.info("testMainWithMissingNumThreads called...");
+        BulkIngestMapFileLoaderTest.LOG.info("testMainWithMissingNumThreads called...");
 
         try {
 
@@ -1010,7 +1289,7 @@ public class BulkIngestMapFileLoaderTest {
 
         } finally {
 
-            BulkIngestMapFileLoaderTest.logger.info("testMainWithMissingNumThreads completed.");
+            BulkIngestMapFileLoaderTest.LOG.info("testMainWithMissingNumThreads completed.");
 
         }
     }
@@ -1018,7 +1297,7 @@ public class BulkIngestMapFileLoaderTest {
     @Test
     public void testMainWithBadNumAssignThreads() throws IOException, InterruptedException {
 
-        BulkIngestMapFileLoaderTest.logger.info("testMainWithBadNumAssignThreads called...");
+        BulkIngestMapFileLoaderTest.LOG.info("testMainWithBadNumAssignThreads called...");
 
         try {
 
@@ -1051,7 +1330,7 @@ public class BulkIngestMapFileLoaderTest {
 
         } finally {
 
-            BulkIngestMapFileLoaderTest.logger.info("testMainWithBadNumAssignThreads completed.");
+            BulkIngestMapFileLoaderTest.LOG.info("testMainWithBadNumAssignThreads completed.");
 
         }
     }
@@ -1059,7 +1338,7 @@ public class BulkIngestMapFileLoaderTest {
     @Test
     public void testMainWithMissingNumAssignThreads() throws IOException, InterruptedException {
 
-        BulkIngestMapFileLoaderTest.logger.info("testMainWithMissingNumAssignThreads called...");
+        BulkIngestMapFileLoaderTest.LOG.info("testMainWithMissingNumAssignThreads called...");
 
         try {
 
@@ -1091,7 +1370,7 @@ public class BulkIngestMapFileLoaderTest {
 
         } finally {
 
-            BulkIngestMapFileLoaderTest.logger.info("testMainWithMissingNumAssignThreads completed.");
+            BulkIngestMapFileLoaderTest.LOG.info("testMainWithMissingNumAssignThreads completed.");
 
         }
     }
@@ -1099,7 +1378,7 @@ public class BulkIngestMapFileLoaderTest {
     @Test
     public void testMainWithBadSeqFileHdfs() throws IOException, InterruptedException {
 
-        BulkIngestMapFileLoaderTest.logger.info("testMainWithBadSeqFileHdfs called...");
+        BulkIngestMapFileLoaderTest.LOG.info("testMainWithBadSeqFileHdfs called...");
 
         try {
 
@@ -1132,7 +1411,7 @@ public class BulkIngestMapFileLoaderTest {
 
         } finally {
 
-            BulkIngestMapFileLoaderTest.logger.info("testMainWithBadSeqFileHdfs completed.");
+            BulkIngestMapFileLoaderTest.LOG.info("testMainWithBadSeqFileHdfs completed.");
 
         }
     }
@@ -1140,7 +1419,7 @@ public class BulkIngestMapFileLoaderTest {
     @Test
     public void testMainWithMissingSeqFileHdfs() throws IOException, InterruptedException {
 
-        BulkIngestMapFileLoaderTest.logger.info("testMainWithMissingSeqFileHdfs called...");
+        BulkIngestMapFileLoaderTest.LOG.info("testMainWithMissingSeqFileHdfs called...");
 
         try {
 
@@ -1172,7 +1451,7 @@ public class BulkIngestMapFileLoaderTest {
 
         } finally {
 
-            BulkIngestMapFileLoaderTest.logger.info("testMainWithMissingSeqFileHdfs completed.");
+            BulkIngestMapFileLoaderTest.LOG.info("testMainWithMissingSeqFileHdfs completed.");
 
         }
     }
@@ -1180,7 +1459,7 @@ public class BulkIngestMapFileLoaderTest {
     @Test
     public void testMainWithBadSrcHdfs() throws IOException, InterruptedException {
 
-        BulkIngestMapFileLoaderTest.logger.info("testMainWithBadSrcHdfs called...");
+        BulkIngestMapFileLoaderTest.LOG.info("testMainWithBadSrcHdfs called...");
 
         try {
 
@@ -1213,7 +1492,7 @@ public class BulkIngestMapFileLoaderTest {
 
         } finally {
 
-            BulkIngestMapFileLoaderTest.logger.info("testMainWithBadSrcHdfs completed.");
+            BulkIngestMapFileLoaderTest.LOG.info("testMainWithBadSrcHdfs completed.");
 
         }
     }
@@ -1221,7 +1500,7 @@ public class BulkIngestMapFileLoaderTest {
     @Test
     public void testMainWithMissingSrcHdfs() throws IOException, InterruptedException {
 
-        BulkIngestMapFileLoaderTest.logger.info("testMainWithMissingSrcHdfs called...");
+        BulkIngestMapFileLoaderTest.LOG.info("testMainWithMissingSrcHdfs called...");
 
         try {
 
@@ -1253,7 +1532,7 @@ public class BulkIngestMapFileLoaderTest {
 
         } finally {
 
-            BulkIngestMapFileLoaderTest.logger.info("testMainWithMissingSrcHdfs completed.");
+            BulkIngestMapFileLoaderTest.LOG.info("testMainWithMissingSrcHdfs completed.");
 
         }
     }
@@ -1261,7 +1540,7 @@ public class BulkIngestMapFileLoaderTest {
     @Test
     public void testMainWithBadDestHDFS() throws IOException, InterruptedException {
 
-        BulkIngestMapFileLoaderTest.logger.info("testMainWithBadDestHDFS called...");
+        BulkIngestMapFileLoaderTest.LOG.info("testMainWithBadDestHDFS called...");
 
         try {
 
@@ -1294,7 +1573,7 @@ public class BulkIngestMapFileLoaderTest {
 
         } finally {
 
-            BulkIngestMapFileLoaderTest.logger.info("testMainWithBadDestHDFS completed.");
+            BulkIngestMapFileLoaderTest.LOG.info("testMainWithBadDestHDFS completed.");
 
         }
     }
@@ -1302,7 +1581,7 @@ public class BulkIngestMapFileLoaderTest {
     @Test
     public void testMainWithMissingDestHDFS() throws IOException, InterruptedException {
 
-        BulkIngestMapFileLoaderTest.logger.info("testMainWithMissingDestHDFS called...");
+        BulkIngestMapFileLoaderTest.LOG.info("testMainWithMissingDestHDFS called...");
 
         try {
 
@@ -1334,7 +1613,7 @@ public class BulkIngestMapFileLoaderTest {
 
         } finally {
 
-            BulkIngestMapFileLoaderTest.logger.info("testMainWithMissingDestHDFS completed.");
+            BulkIngestMapFileLoaderTest.LOG.info("testMainWithMissingDestHDFS completed.");
 
         }
     }
@@ -1342,7 +1621,7 @@ public class BulkIngestMapFileLoaderTest {
     @Test
     public void testMainWithBadJT() throws IOException, InterruptedException {
 
-        BulkIngestMapFileLoaderTest.logger.info("testMainWithBadJT called...");
+        BulkIngestMapFileLoaderTest.LOG.info("testMainWithBadJT called...");
 
         try {
 
@@ -1374,7 +1653,7 @@ public class BulkIngestMapFileLoaderTest {
 
         } finally {
 
-            BulkIngestMapFileLoaderTest.logger.info("testMainWithBadJT completed.");
+            BulkIngestMapFileLoaderTest.LOG.info("testMainWithBadJT completed.");
 
         }
     }
@@ -1382,7 +1661,7 @@ public class BulkIngestMapFileLoaderTest {
     @Test
     public void testMainWithBadShutdownPort() throws IOException, InterruptedException {
 
-        BulkIngestMapFileLoaderTest.logger.info("testMainWithBadShutdownPort called...");
+        BulkIngestMapFileLoaderTest.LOG.info("testMainWithBadShutdownPort called...");
 
         try {
 
@@ -1415,7 +1694,7 @@ public class BulkIngestMapFileLoaderTest {
 
         } finally {
 
-            BulkIngestMapFileLoaderTest.logger.info("testMainWithBadShutdownPort completed.");
+            BulkIngestMapFileLoaderTest.LOG.info("testMainWithBadShutdownPort completed.");
 
         }
     }
@@ -1423,7 +1702,7 @@ public class BulkIngestMapFileLoaderTest {
     @Test
     public void testMainWithMissingShutdownPort() throws IOException, InterruptedException {
 
-        BulkIngestMapFileLoaderTest.logger.info("testMainWithMissingShutdownPort called...");
+        BulkIngestMapFileLoaderTest.LOG.info("testMainWithMissingShutdownPort called...");
 
         try {
 
@@ -1455,7 +1734,7 @@ public class BulkIngestMapFileLoaderTest {
 
         } finally {
 
-            BulkIngestMapFileLoaderTest.logger.info("testMainWithMissingShutdownPort completed.");
+            BulkIngestMapFileLoaderTest.LOG.info("testMainWithMissingShutdownPort completed.");
 
         }
     }
@@ -1463,7 +1742,7 @@ public class BulkIngestMapFileLoaderTest {
     @Test
     public void testMainWithBadPropery() throws IOException, InterruptedException {
 
-        BulkIngestMapFileLoaderTest.logger.info("testMainWithBadPropery called...");
+        BulkIngestMapFileLoaderTest.LOG.info("testMainWithBadPropery called...");
 
         try {
 
@@ -1495,7 +1774,7 @@ public class BulkIngestMapFileLoaderTest {
 
         } finally {
 
-            BulkIngestMapFileLoaderTest.logger.info("testMainWithBadPropery completed.");
+            BulkIngestMapFileLoaderTest.LOG.info("testMainWithBadPropery completed.");
 
         }
     }
@@ -1539,7 +1818,7 @@ public class BulkIngestMapFileLoaderTest {
     @Test
     public void testCtors() {
 
-        BulkIngestMapFileLoaderTest.logger.info("testCtors called...");
+        BulkIngestMapFileLoaderTest.LOG.info("testCtors called...");
 
         try {
             URL url = BulkIngestMapFileLoaderTest.class.getResource("/datawave/ingest/mapreduce/job/all-splits.txt");
@@ -1554,7 +1833,7 @@ public class BulkIngestMapFileLoaderTest {
 
         } finally {
 
-            BulkIngestMapFileLoaderTest.logger.info("testCtors comleted.");
+            BulkIngestMapFileLoaderTest.LOG.info("testCtors comleted.");
 
         }
 
@@ -1563,7 +1842,7 @@ public class BulkIngestMapFileLoaderTest {
     @Test
     public void testCleanUpJobDirectoryHappyPath() throws Exception {
 
-        BulkIngestMapFileLoaderTest.logger.info("testCleanUpJobDirectoryUnableToMakeDirectory called...");
+        BulkIngestMapFileLoaderTest.LOG.info("testCleanUpJobDirectoryUnableToMakeDirectory called...");
 
         try {
 
@@ -1606,7 +1885,7 @@ public class BulkIngestMapFileLoaderTest {
 
             Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, null, null);
 
-            BulkIngestMapFileLoaderTest.logger.info("testCleanUpJobDirectoryUnableToMakeDirectory completed.");
+            BulkIngestMapFileLoaderTest.LOG.info("testCleanUpJobDirectoryUnableToMakeDirectory completed.");
         }
 
     }
@@ -1614,7 +1893,7 @@ public class BulkIngestMapFileLoaderTest {
     @Test
     public void testCleanUpJobDirectoryMakesDirectory() throws Exception {
 
-        BulkIngestMapFileLoaderTest.logger.info("testCleanUpJobDirectoryMakesDirectory called...");
+        BulkIngestMapFileLoaderTest.LOG.info("testCleanUpJobDirectoryMakesDirectory called...");
 
         try {
 
@@ -1650,7 +1929,7 @@ public class BulkIngestMapFileLoaderTest {
 
             Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, null, null);
 
-            BulkIngestMapFileLoaderTest.logger.info("testCleanUpJobDirectoryMakesDirectory completed.");
+            BulkIngestMapFileLoaderTest.LOG.info("testCleanUpJobDirectoryMakesDirectory completed.");
         }
 
     }
@@ -1658,7 +1937,7 @@ public class BulkIngestMapFileLoaderTest {
     @Test
     public void testCleanUpJobDirectoryUnableToMakeDirectory() throws Exception {
 
-        BulkIngestMapFileLoaderTest.logger.info("testCleanUpJobDirectoryUnableToMakeDirectory called...");
+        BulkIngestMapFileLoaderTest.LOG.info("testCleanUpJobDirectoryUnableToMakeDirectory called...");
 
         try {
 
@@ -1695,7 +1974,7 @@ public class BulkIngestMapFileLoaderTest {
 
             Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, null, null);
 
-            BulkIngestMapFileLoaderTest.logger.info("testCleanUpJobDirectoryUnableToMakeDirectory completed.");
+            BulkIngestMapFileLoaderTest.LOG.info("testCleanUpJobDirectoryUnableToMakeDirectory completed.");
         }
 
     }
@@ -1703,7 +1982,7 @@ public class BulkIngestMapFileLoaderTest {
     @Test
     public void testCleanUpJobDirectoryJobSuccess() throws Exception {
 
-        BulkIngestMapFileLoaderTest.logger.info("testCleanUpJobDirectoryJobSuccess called...");
+        BulkIngestMapFileLoaderTest.LOG.info("testCleanUpJobDirectoryJobSuccess called...");
 
         try {
 
@@ -1740,7 +2019,7 @@ public class BulkIngestMapFileLoaderTest {
 
             Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, null, null);
 
-            BulkIngestMapFileLoaderTest.logger.info("testCleanUpJobDirectoryJobSuccess completed.");
+            BulkIngestMapFileLoaderTest.LOG.info("testCleanUpJobDirectoryJobSuccess completed.");
         }
 
     }
@@ -1748,7 +2027,7 @@ public class BulkIngestMapFileLoaderTest {
     @Test
     public void testCleanUpJobDirectoryWithFailedJobAndFailedCreateNewFile() throws Exception {
 
-        BulkIngestMapFileLoaderTest.logger.info("testCleanUpJobDirectoryWithFailedJobAndFailedCreateNewFile called...");
+        BulkIngestMapFileLoaderTest.LOG.info("testCleanUpJobDirectoryWithFailedJobAndFailedCreateNewFile called...");
 
         try {
 
@@ -1792,7 +2071,7 @@ public class BulkIngestMapFileLoaderTest {
 
             Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, null, null);
 
-            BulkIngestMapFileLoaderTest.logger.info("testCleanUpJobDirectoryWithFailedJobAndFailedCreateNewFile completed.");
+            BulkIngestMapFileLoaderTest.LOG.info("testCleanUpJobDirectoryWithFailedJobAndFailedCreateNewFile completed.");
         }
 
     }
@@ -1800,7 +2079,7 @@ public class BulkIngestMapFileLoaderTest {
     @Test
     public void testCleanUpJobDirectoryWithFailedJobAndFailedRenames() throws Exception {
 
-        BulkIngestMapFileLoaderTest.logger.info("testCleanUpJobDirectoryWithFailedJobAndFailedRenames called...");
+        BulkIngestMapFileLoaderTest.LOG.info("testCleanUpJobDirectoryWithFailedJobAndFailedRenames called...");
 
         try {
 
@@ -1842,7 +2121,7 @@ public class BulkIngestMapFileLoaderTest {
 
             Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, null, null);
 
-            BulkIngestMapFileLoaderTest.logger.info("testCleanUpJobDirectoryWithFailedJobAndFailedRenames completed.");
+            BulkIngestMapFileLoaderTest.LOG.info("testCleanUpJobDirectoryWithFailedJobAndFailedRenames completed.");
         }
 
     }
@@ -1850,7 +2129,7 @@ public class BulkIngestMapFileLoaderTest {
     @Test
     public void testCleanUpJobDirectoryWithFailedJob() throws Exception {
 
-        BulkIngestMapFileLoaderTest.logger.info("testCleanUpJobDirectoryWithFailedJob called...");
+        BulkIngestMapFileLoaderTest.LOG.info("testCleanUpJobDirectoryWithFailedJob called...");
 
         try {
 
@@ -1889,7 +2168,7 @@ public class BulkIngestMapFileLoaderTest {
 
             Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, null, null);
 
-            BulkIngestMapFileLoaderTest.logger.info("testCleanUpJobDirectoryWithFailedJob completed.");
+            BulkIngestMapFileLoaderTest.LOG.info("testCleanUpJobDirectoryWithFailedJob completed.");
         }
 
     }
@@ -1897,7 +2176,7 @@ public class BulkIngestMapFileLoaderTest {
     @Test
     public void testTakeOwnershipJobDirectoryHappyPath() throws Exception {
 
-        BulkIngestMapFileLoaderTest.logger.info("testTakeOwnershipJobDirectoryHappyPath called...");
+        BulkIngestMapFileLoaderTest.LOG.info("testTakeOwnershipJobDirectoryHappyPath called...");
 
         try {
 
@@ -1911,7 +2190,7 @@ public class BulkIngestMapFileLoaderTest {
             String filePath = String.format("%s%s", url.toString(), BulkIngestMapFileLoader.LOADING_FILE_MARKER);
 
             exists.put(filePath, Boolean.TRUE);
-            filePath = String.format("%s%s", url.toString(), BulkIngestMapFileLoader.COMPLETE_FILE_MARKER);
+            filePath = String.format("%s%s", url.toString(), COMPLETE_FILE_MARKER);
             exists.put(filePath, Boolean.FALSE);
 
             BulkIngestMapFileLoaderTest.WrappedLocalFileSystem fs = new BulkIngestMapFileLoaderTest.WrappedLocalFileSystem(createMockInputStream(),
@@ -1939,7 +2218,7 @@ public class BulkIngestMapFileLoaderTest {
 
             Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, null, null);
 
-            BulkIngestMapFileLoaderTest.logger.info("testTakeOwnershipJobDirectoryHappyPath completed.");
+            BulkIngestMapFileLoaderTest.LOG.info("testTakeOwnershipJobDirectoryHappyPath completed.");
         }
 
     }
@@ -1947,7 +2226,7 @@ public class BulkIngestMapFileLoaderTest {
     @Test
     public void testTakeOwnershipJobDirectoryFailedOwnershipExchangeLoading() throws Exception {
 
-        BulkIngestMapFileLoaderTest.logger.info("testTakeOwnershipJobDirectoryFailedOwnershipExchangeLoading called...");
+        BulkIngestMapFileLoaderTest.LOG.info("testTakeOwnershipJobDirectoryFailedOwnershipExchangeLoading called...");
 
         try {
             URL url = BulkIngestMapFileLoaderTest.class.getResource("/datawave/ingest/mapreduce/job/");
@@ -1959,7 +2238,7 @@ public class BulkIngestMapFileLoaderTest {
             Map<String,Boolean> existsResults = new HashMap<>();
             String filePath = String.format("%s%s", url, BulkIngestMapFileLoader.LOADING_FILE_MARKER);
             existsResults.put(filePath, Boolean.FALSE);
-            filePath = String.format("%s%s", url, BulkIngestMapFileLoader.COMPLETE_FILE_MARKER);
+            filePath = String.format("%s%s", url, COMPLETE_FILE_MARKER);
             existsResults.put(filePath, Boolean.TRUE);
 
             BulkIngestMapFileLoaderTest.WrappedLocalFileSystem fs = new BulkIngestMapFileLoaderTest.WrappedLocalFileSystem(createMockInputStream(),
@@ -1989,7 +2268,7 @@ public class BulkIngestMapFileLoaderTest {
 
             Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, null, null);
 
-            BulkIngestMapFileLoaderTest.logger.info("testTakeOwnershipJobDirectoryFailedOwnershipExchangeLoading completed.");
+            BulkIngestMapFileLoaderTest.LOG.info("testTakeOwnershipJobDirectoryFailedOwnershipExchangeLoading completed.");
         }
 
     }
@@ -1997,7 +2276,7 @@ public class BulkIngestMapFileLoaderTest {
     @Test
     public void testTakeOwnershipJobDirectoryFailedOwnershipExchangeComplete() throws Exception {
 
-        BulkIngestMapFileLoaderTest.logger.info("testTakeOwnershipJobDirectoryFailedOwnershipExchangeComplete called...");
+        BulkIngestMapFileLoaderTest.LOG.info("testTakeOwnershipJobDirectoryFailedOwnershipExchangeComplete called...");
 
         try {
 
@@ -2010,7 +2289,7 @@ public class BulkIngestMapFileLoaderTest {
             Map<String,Boolean> existsResults = new HashMap<>();
             String filePath = String.format("%s%s", url, BulkIngestMapFileLoader.LOADING_FILE_MARKER);
             existsResults.put(filePath, Boolean.TRUE);
-            filePath = String.format("%s%s", url, BulkIngestMapFileLoader.COMPLETE_FILE_MARKER);
+            filePath = String.format("%s%s", url, COMPLETE_FILE_MARKER);
             existsResults.put(filePath, Boolean.TRUE);
 
             BulkIngestMapFileLoaderTest.WrappedLocalFileSystem fs = new BulkIngestMapFileLoaderTest.WrappedLocalFileSystem(createMockInputStream(),
@@ -2040,7 +2319,7 @@ public class BulkIngestMapFileLoaderTest {
 
             Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, null, null);
 
-            BulkIngestMapFileLoaderTest.logger.info("testTakeOwnershipJobDirectoryFailedOwnershipExchangeComplete completed.");
+            BulkIngestMapFileLoaderTest.LOG.info("testTakeOwnershipJobDirectoryFailedOwnershipExchangeComplete completed.");
         }
 
     }
@@ -2048,7 +2327,7 @@ public class BulkIngestMapFileLoaderTest {
     @Test
     public void testTakeOwnershipJobDirectoryFailedRenameLoadedExists() throws Exception {
 
-        BulkIngestMapFileLoaderTest.logger.info("testTakeOwnershipJobDirectoryFailedRenameLoadedExists called...");
+        BulkIngestMapFileLoaderTest.LOG.info("testTakeOwnershipJobDirectoryFailedRenameLoadedExists called...");
 
         try {
 
@@ -2089,7 +2368,7 @@ public class BulkIngestMapFileLoaderTest {
 
             Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, null, null);
 
-            BulkIngestMapFileLoaderTest.logger.info("testTakeOwnershipJobDirectoryFailedRenameLoadedExists completed.");
+            BulkIngestMapFileLoaderTest.LOG.info("testTakeOwnershipJobDirectoryFailedRenameLoadedExists completed.");
         }
 
     }
@@ -2097,7 +2376,7 @@ public class BulkIngestMapFileLoaderTest {
     @Test
     public void testTakeOwnershipJobDirectoryFailedRenameLoadedDoesNotExists() throws Exception {
 
-        BulkIngestMapFileLoaderTest.logger.info("testTakeOwnershipJobDirectoryFailedRenameLoadedDoesNotExists called...");
+        BulkIngestMapFileLoaderTest.LOG.info("testTakeOwnershipJobDirectoryFailedRenameLoadedDoesNotExists called...");
 
         try {
 
@@ -2139,7 +2418,7 @@ public class BulkIngestMapFileLoaderTest {
 
             Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, null, null);
 
-            BulkIngestMapFileLoaderTest.logger.info("testTakeOwnershipJobDirectoryFailedRenameLoadedDoesNotExists completed.");
+            BulkIngestMapFileLoaderTest.LOG.info("testTakeOwnershipJobDirectoryFailedRenameLoadedDoesNotExists completed.");
         }
 
     }
@@ -2147,7 +2426,7 @@ public class BulkIngestMapFileLoaderTest {
     @Test
     public void testTakeOwnershipJobDirectoryRenameThrowsException() throws Exception {
 
-        BulkIngestMapFileLoaderTest.logger.info("testTakeOwnershipJobDirectoryRenameThrowsException called...");
+        BulkIngestMapFileLoaderTest.LOG.info("testTakeOwnershipJobDirectoryRenameThrowsException called...");
 
         try {
 
@@ -2187,7 +2466,7 @@ public class BulkIngestMapFileLoaderTest {
 
             Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, null, null);
 
-            BulkIngestMapFileLoaderTest.logger.info("testTakeOwnershipJobDirectoryRenameThrowsException completed.");
+            BulkIngestMapFileLoaderTest.LOG.info("testTakeOwnershipJobDirectoryRenameThrowsException completed.");
         }
 
     }
@@ -2195,7 +2474,7 @@ public class BulkIngestMapFileLoaderTest {
     @Test
     public void testTakeOwnershipJobDirectoryExistsThrowsException() throws Exception {
 
-        BulkIngestMapFileLoaderTest.logger.info("testTakeOwnershipJobDirectoryExistsThrowsException called...");
+        BulkIngestMapFileLoaderTest.LOG.info("testTakeOwnershipJobDirectoryExistsThrowsException called...");
 
         try {
 
@@ -2237,7 +2516,7 @@ public class BulkIngestMapFileLoaderTest {
 
             Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, null, null);
 
-            BulkIngestMapFileLoaderTest.logger.info("testTakeOwnershipJobDirectoryExistsThrowsException completed.");
+            BulkIngestMapFileLoaderTest.LOG.info("testTakeOwnershipJobDirectoryExistsThrowsException completed.");
         }
 
     }
@@ -2245,7 +2524,7 @@ public class BulkIngestMapFileLoaderTest {
     @Test
     public void testMarkJobDirectoryFailedFailedRenameAndCreate() throws Exception {
 
-        BulkIngestMapFileLoaderTest.logger.info("testMarkJobDirectoryFailedFailedRenameAndCreate called...");
+        BulkIngestMapFileLoaderTest.LOG.info("testMarkJobDirectoryFailedFailedRenameAndCreate called...");
 
         try {
 
@@ -2280,7 +2559,7 @@ public class BulkIngestMapFileLoaderTest {
 
             Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, null, null);
 
-            BulkIngestMapFileLoaderTest.logger.info("testMarkJobDirectoryFailedFailedRenameAndCreate completed.");
+            BulkIngestMapFileLoaderTest.LOG.info("testMarkJobDirectoryFailedFailedRenameAndCreate completed.");
         }
 
     }
@@ -2288,7 +2567,7 @@ public class BulkIngestMapFileLoaderTest {
     @Test
     public void testMarkJobDirectoryFailedFailedRename() throws Exception {
 
-        BulkIngestMapFileLoaderTest.logger.info("testMarkJobDirectoryFailedFailedRename called...");
+        BulkIngestMapFileLoaderTest.LOG.info("testMarkJobDirectoryFailedFailedRename called...");
 
         try {
 
@@ -2318,7 +2597,7 @@ public class BulkIngestMapFileLoaderTest {
 
             Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, null, null);
 
-            BulkIngestMapFileLoaderTest.logger.info("testMarkJobDirectoryFailedFailedRename completed.");
+            BulkIngestMapFileLoaderTest.LOG.info("testMarkJobDirectoryFailedFailedRename completed.");
         }
 
     }
@@ -2326,7 +2605,7 @@ public class BulkIngestMapFileLoaderTest {
     @Test
     public void testMarkJobDirectoryFailedHappyPath() throws Exception {
 
-        BulkIngestMapFileLoaderTest.logger.info("testMarkJobDirectoryFailedHappyPath called...");
+        BulkIngestMapFileLoaderTest.LOG.info("testMarkJobDirectoryFailedHappyPath called...");
 
         try {
 
@@ -2354,7 +2633,7 @@ public class BulkIngestMapFileLoaderTest {
 
             Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, null, null);
 
-            BulkIngestMapFileLoaderTest.logger.info("testMarkJobDirectoryFailedHappyPath completed.");
+            BulkIngestMapFileLoaderTest.LOG.info("testMarkJobDirectoryFailedHappyPath completed.");
         }
 
     }
@@ -2362,7 +2641,7 @@ public class BulkIngestMapFileLoaderTest {
     @Test
     public void testMarkJobDirectoryFailedHandlesThrownException() throws Exception {
 
-        BulkIngestMapFileLoaderTest.logger.info("testMarkJobDirectoryFailedHandlesThrownException called...");
+        BulkIngestMapFileLoaderTest.LOG.info("testMarkJobDirectoryFailedHandlesThrownException called...");
 
         try {
 
@@ -2393,14 +2672,14 @@ public class BulkIngestMapFileLoaderTest {
 
             Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, null, null);
 
-            BulkIngestMapFileLoaderTest.logger.info("testMarkJobDirectoryFailedHandlesThrownException completed.");
+            BulkIngestMapFileLoaderTest.LOG.info("testMarkJobDirectoryFailedHandlesThrownException completed.");
         }
 
     }
 
     @Test
     public void testMarkJobCleanup() throws Exception {
-        BulkIngestMapFileLoaderTest.logger.info("testMarkJobCleanup called...");
+        BulkIngestMapFileLoaderTest.LOG.info("testMarkJobCleanup called...");
 
         try {
 
@@ -2431,13 +2710,13 @@ public class BulkIngestMapFileLoaderTest {
 
             Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, null, null);
 
-            BulkIngestMapFileLoaderTest.logger.info("testMarkJobCleanup completed.");
+            BulkIngestMapFileLoaderTest.LOG.info("testMarkJobCleanup completed.");
         }
     }
 
     @Test
     public void testJobCleanupOnStartup() throws Exception {
-        BulkIngestMapFileLoaderTest.logger.info("testMarkJobCleanupOnStartup called...");
+        BulkIngestMapFileLoaderTest.LOG.info("testMarkJobCleanupOnStartup called...");
         try {
 
             URL url = BulkIngestMapFileLoaderTest.class.getResource("/datawave/ingest/mapreduce/job/");
@@ -2477,7 +2756,7 @@ public class BulkIngestMapFileLoaderTest {
 
             Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, null, null);
 
-            BulkIngestMapFileLoaderTest.logger.info("testMarkJobCleanupOnStartup completed.");
+            BulkIngestMapFileLoaderTest.LOG.info("testMarkJobCleanupOnStartup completed.");
         }
     }
 }

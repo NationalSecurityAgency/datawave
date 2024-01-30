@@ -286,6 +286,7 @@ public abstract class ExecutableExpansionVisitorTest {
 
         logic.setMaxDepthThreshold(30);
         logic.setInitialMaxTermThreshold(10000);
+        logic.setIntermediateMaxTermThreshold(10000);
         logic.setFinalMaxTermThreshold(10000);
 
         //  @formatter:off
@@ -445,6 +446,8 @@ public abstract class ExecutableExpansionVisitorTest {
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
+
+        logic.setIntermediateMaxTermThreshold(15);
 
         if (log.isDebugEnabled()) {
             log.debug("testMatchesAtLeastCountOf");
