@@ -2,6 +2,7 @@ package datawave.query.jexl.lookups;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map.Entry;
@@ -41,6 +42,7 @@ public class FieldNameIndexLookup extends AsyncIndexLookup {
     protected CountDownLatch lookupStoppedLatch;
 
     private final Collection<ScannerSession> sessions = Lists.newArrayList();
+    private ExpandedFieldCache fieldCache = new ExpandedFieldCache();
 
     /**
      *
@@ -74,35 +76,41 @@ public class FieldNameIndexLookup extends AsyncIndexLookup {
 
             Iterator<Entry<Key,Value>> iter = Collections.emptyIterator();
 
+            // Previously Expanded Terms
+            HashMap<String,Collection<String>> pExpandedTerms = new HashMap<>();
+
             ScannerSession bs;
 
             try {
                 if (!fields.isEmpty()) {
                     for (String term : terms) {
-
-                        Set<Range> ranges = Collections.singleton(ShardIndexQueryTableStaticMethods.getLiteralRange(term));
-                        if (config.getLimitAnyFieldLookups()) {
-                            log.trace("Creating configureTermMatchOnly");
-                            bs = ShardIndexQueryTableStaticMethods.configureTermMatchOnly(config, scannerFactory, config.getIndexTableName(), ranges,
-                                            Collections.singleton(term), Collections.emptySet(), false, true);
+                        if (fieldCache.containsExpansionsFor(term)) {
+                            pExpandedTerms.put(term, fieldCache.getExpansions(term));
                         } else {
-                            log.trace("Creating configureLimitedDiscovery");
-                            bs = ShardIndexQueryTableStaticMethods.configureLimitedDiscovery(config, scannerFactory, config.getIndexTableName(), ranges,
-                                            Collections.singleton(term), Collections.emptySet(), false, true);
+                            Set<Range> ranges = Collections.singleton(ShardIndexQueryTableStaticMethods.getLiteralRange(term));
+                            if (config.getLimitAnyFieldLookups()) {
+                                log.trace("Creating configureTermMatchOnly");
+                                bs = ShardIndexQueryTableStaticMethods.configureTermMatchOnly(config, scannerFactory, config.getIndexTableName(), ranges,
+                                                Collections.singleton(term), Collections.emptySet(), false, true);
+                            } else {
+                                log.trace("Creating configureLimitedDiscovery");
+                                bs = ShardIndexQueryTableStaticMethods.configureLimitedDiscovery(config, scannerFactory, config.getIndexTableName(), ranges,
+                                                Collections.singleton(term), Collections.emptySet(), false, true);
+                            }
+
+                            // Fetch the limited field names for the given rows
+                            for (String field : fields) {
+                                bs.getOptions().fetchColumnFamily(new Text(field));
+                            }
+
+                            sessions.add(bs);
+
+                            iter = Iterators.concat(iter, bs);
                         }
-
-                        // Fetch the limited field names for the given rows
-                        for (String field : fields) {
-                            bs.getOptions().fetchColumnFamily(new Text(field));
-                        }
-
-                        sessions.add(bs);
-
-                        iter = Iterators.concat(iter, bs);
                     }
                 }
 
-                timedScanFuture = execService.submit(createTimedCallable(iter));
+                timedScanFuture = execService.submit(createTimedCallable(iter, pExpandedTerms));
             } catch (TableNotFoundException e) {
                 log.error(e);
             } catch (Exception e) {
@@ -128,7 +136,7 @@ public class FieldNameIndexLookup extends AsyncIndexLookup {
         return indexLookupMap;
     }
 
-    protected Callable<Boolean> createTimedCallable(final Iterator<Entry<Key,Value>> iter) {
+    protected Callable<Boolean> createTimedCallable(final Iterator<Entry<Key,Value>> iter, HashMap<String,Collection<String>> pExpandedTerms) {
         lookupStartedLatch = new CountDownLatch(1);
         lookupStoppedLatch = new CountDownLatch(1);
 
@@ -179,6 +187,12 @@ public class FieldNameIndexLookup extends AsyncIndexLookup {
                     for (ScannerSession session : sessions) {
                         scannerFactory.close(session);
                     }
+                }
+
+                // This adds the expansions that were previously found to the cache
+                for (String term : pExpandedTerms.keySet()) {
+                    Collection<String> expandedTerms = pExpandedTerms.get(term);
+                    indexLookupMap.putAll(term, expandedTerms);
                 }
 
                 return true;

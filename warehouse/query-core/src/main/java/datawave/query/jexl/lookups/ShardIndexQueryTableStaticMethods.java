@@ -113,7 +113,8 @@ public class ShardIndexQueryTableStaticMethods {
     }
 
     public static IndexLookup normalizeQueryTerm(String literal, ShardQueryConfiguration config, ScannerFactory scannerFactory, Set<String> expansionFields,
-                    Set<Type<?>> dataTypes, MetadataHelper helperRef, ExecutorService execService) throws TableNotFoundException {
+                    Set<Type<?>> dataTypes, MetadataHelper helperRef, ExecutorService execService, ExpandedFieldCache fieldCache)
+                    throws TableNotFoundException {
         Set<String> terms = Sets.newHashSet(literal);
 
         for (Type<?> normalizer : dataTypes) {
@@ -182,8 +183,9 @@ public class ShardIndexQueryTableStaticMethods {
      *             if the table was not found
      */
     public static IndexLookup normalizeQueryTerm(ASTEQNode node, ShardQueryConfiguration config, ScannerFactory scannerFactory, Set<String> expansionFields,
-                    Set<Type<?>> dataTypes, MetadataHelper helperRef, ExecutorService execService) throws TableNotFoundException {
-        return _normalizeQueryTerm(node, config, scannerFactory, expansionFields, dataTypes, helperRef, execService);
+                    Set<Type<?>> dataTypes, MetadataHelper helperRef, ExecutorService execService, ExpandedFieldCache fieldCache)
+                    throws TableNotFoundException {
+        return _normalizeQueryTerm(node, config, scannerFactory, expansionFields, dataTypes, helperRef, execService, fieldCache);
     }
 
     /**
@@ -208,18 +210,20 @@ public class ShardIndexQueryTableStaticMethods {
      *             if the table was not found
      */
     public static IndexLookup normalizeQueryTerm(ASTNENode node, ShardQueryConfiguration config, ScannerFactory scannerFactory, Set<String> expansionFields,
-                    Set<Type<?>> dataTypes, MetadataHelper helperRef, ExecutorService execService) throws TableNotFoundException {
-        return _normalizeQueryTerm(node, config, scannerFactory, expansionFields, dataTypes, helperRef, execService);
+                    Set<Type<?>> dataTypes, MetadataHelper helperRef, ExecutorService execService, ExpandedFieldCache fieldCache)
+                    throws TableNotFoundException {
+        return _normalizeQueryTerm(node, config, scannerFactory, expansionFields, dataTypes, helperRef, execService, fieldCache);
     }
 
     protected static IndexLookup _normalizeQueryTerm(JexlNode node, ShardQueryConfiguration config, ScannerFactory scannerFactory, Set<String> expansionFields,
-                    Set<Type<?>> dataTypes, MetadataHelper helperRef, ExecutorService execService) throws TableNotFoundException {
+                    Set<Type<?>> dataTypes, MetadataHelper helperRef, ExecutorService execService, ExpandedFieldCache fieldCache)
+                    throws TableNotFoundException {
         Object literal = JexlASTHelper.getLiteralValue(node);
 
         if (literal instanceof String) {
-            return normalizeQueryTerm((String) literal, config, scannerFactory, expansionFields, dataTypes, helperRef, execService);
+            return normalizeQueryTerm((String) literal, config, scannerFactory, expansionFields, dataTypes, helperRef, execService, fieldCache);
         } else if (literal instanceof Number) {
-            return normalizeQueryTerm(((Number) literal).toString(), config, scannerFactory, expansionFields, dataTypes, helperRef, execService);
+            return normalizeQueryTerm(((Number) literal).toString(), config, scannerFactory, expansionFields, dataTypes, helperRef, execService, fieldCache);
         } else {
             log.error("Encountered literal that was not a String nor a Number: " + literal.getClass().getName() + ", " + literal);
             throw new IllegalArgumentException("Encountered literal that was not a String nor a Number: " + literal.getClass().getName() + ", " + literal);
