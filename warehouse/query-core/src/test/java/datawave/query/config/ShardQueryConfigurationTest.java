@@ -321,6 +321,8 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("shardsPerDayThreshold", 18);
         defaultValues.put("initialMaxTermThreshold", 2500);
         updatedValues.put("initialMaxTermThreshold", 2540);
+        defaultValues.put("intermediateMaxTermThreshold", 2500);
+        updatedValues.put("intermediateMaxTermThreshold", 5500);
         defaultValues.put("finalMaxTermThreshold", 2500);
         updatedValues.put("finalMaxTermThreshold", 2501);
         defaultValues.put("maxDepthThreshold", 2500);

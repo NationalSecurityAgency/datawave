@@ -1,4 +1,4 @@
-package datawave.query.util.ssdeep;
+package datawave.util.ssdeep;
 
 import java.io.DataInput;
 import java.io.DataOutput;
