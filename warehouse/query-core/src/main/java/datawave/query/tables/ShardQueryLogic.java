@@ -3003,4 +3003,12 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
     public double getFieldIndexHoleMinThreshold(int fieldIndexHoleMinThreshold) {
         return getConfig().getFieldIndexHoleMinThreshold();
     }
+
+    public int getMaxLinesToPrint() {
+        return getConfig().getMaxLinesToPrint();
+    }
+
+    public void setMaxLinesToPrint(int maxLinesToPrint) {
+        getConfig().setMaxLinesToPrint(maxLinesToPrint);
+    }
 }
