@@ -4,6 +4,7 @@ import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.util.Objects;
 
+import datawave.query.tables.RemoteEdgeQueryLogic;
 import datawave.query.tables.RemoteEventQueryLogic;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
@@ -86,6 +87,17 @@ public class RemoteQueryConfiguration extends GenericQueryConfiguration implemen
      * @return - a RemoteQueryConfiguration
      */
     public static RemoteQueryConfiguration create(RemoteEventQueryLogic remoteQueryLogic) {
+        return create(remoteQueryLogic.getConfig());
+    }
+
+    /**
+     * Factory method that creates a RemoteQueryConfiguration deep copy from a RemoteQueryLogic
+     *
+     * @param remoteQueryLogic
+     *            - a configured RemoteQueryLogic
+     * @return - a RemoteQueryConfiguration
+     */
+    public static RemoteQueryConfiguration create(RemoteEdgeQueryLogic remoteQueryLogic) {
         return create(remoteQueryLogic.getConfig());
     }
 
