@@ -30,8 +30,7 @@ source "${DW_DATAWAVE_SERVICE_DIR}/bootstrap-user.sh"
 DW_DATAWAVE_BUILD_PROFILE=${DW_DATAWAVE_BUILD_PROFILE:-dev}
 
 # Maven command
-
-DW_DATAWAVE_BUILD_COMMAND="${DW_DATAWAVE_BUILD_COMMAND:-mvn -P${DW_DATAWAVE_BUILD_PROFILE} -Ddeploy -Dtar -Ddist -Dservices -DskipTests clean install --builder smart -T1.0C}"
+DW_DATAWAVE_BUILD_COMMAND="${DW_DATAWAVE_BUILD_COMMAND:-mvn -P${DW_DATAWAVE_BUILD_PROFILE} -Ddeploy -Dtar -Ddist -DskipServices -DskipTests -Dmaven.build.cache.enabled=false clean package --builder smart -T1.0C}"
 
 # Home of any temp data and *.properties file overrides for this instance of DataWave
 
@@ -75,7 +74,10 @@ function createAccumuloShellInitScript() {
 
    if [ "${DW_ACCUMULO_VFS_DATAWAVE_ENABLED}" != false ] ; then
       DW_ACCUMULO_SHELL_INIT_SCRIPT="${DW_ACCUMULO_SHELL_INIT_SCRIPT}
-   config -s table.classpath.context=datawave"
+   config -s table.class.loader.context=datawave"
+   else
+      DW_ACCUMULO_SHELL_INIT_SCRIPT="${DW_ACCUMULO_SHELL_INIT_SCRIPT}
+   config -s table.class.loader.context=extlib"
    fi
 
    DW_ACCUMULO_SHELL_INIT_SCRIPT="${DW_ACCUMULO_SHELL_INIT_SCRIPT}
@@ -135,10 +137,10 @@ function setBuildPropertyOverrides() {
 
    echo "WAREHOUSE_ACCUMULO_HOME=${ACCUMULO_HOME}" >> ${BUILD_PROPERTIES_FILE}
    echo "WAREHOUSE_INSTANCE_NAME=${DW_ACCUMULO_INSTANCE_NAME}" >> ${BUILD_PROPERTIES_FILE}
-   echo "WAREHOUSE_JOBTRACKER_NODE=${DW_HADOOP_RESOURCE_MANAGER_ADDRESS}" >> ${BUILD_PROPERTIES_FILE}
+   echo "WAREHOUSE_JOBTRACKER_NODE=${DW_HADOOP_RESOURCE_MANAGER_ADDRESS_CLIENT}" >> ${BUILD_PROPERTIES_FILE}
    echo "INGEST_ACCUMULO_HOME=${ACCUMULO_HOME}" >> ${BUILD_PROPERTIES_FILE}
    echo "INGEST_INSTANCE_NAME=${DW_ACCUMULO_INSTANCE_NAME}" >> ${BUILD_PROPERTIES_FILE}
-   echo "INGEST_JOBTRACKER_NODE=${DW_HADOOP_RESOURCE_MANAGER_ADDRESS}" >> ${BUILD_PROPERTIES_FILE}
+   echo "INGEST_JOBTRACKER_NODE=${DW_HADOOP_RESOURCE_MANAGER_ADDRESS_CLIENT}" >> ${BUILD_PROPERTIES_FILE}
    echo "BULK_INGEST_DATA_TYPES=${DW_DATAWAVE_INGEST_BULK_DATA_TYPES}" >> ${BUILD_PROPERTIES_FILE}
    echo "LIVE_INGEST_DATA_TYPES=${DW_DATAWAVE_INGEST_LIVE_DATA_TYPES}" >> ${BUILD_PROPERTIES_FILE}
    echo "PASSWORD=${DW_ACCUMULO_PASSWORD}" >> ${BUILD_PROPERTIES_FILE}
@@ -163,11 +165,14 @@ function setBuildPropertyOverrides() {
    echo "accumulo.instance.name=${DW_ACCUMULO_INSTANCE_NAME}" >> ${BUILD_PROPERTIES_FILE}
    echo "accumulo.user.password=${DW_ACCUMULO_PASSWORD}" >> ${BUILD_PROPERTIES_FILE}
 
-   echo "cached.results.hdfs.uri=${DW_HADOOP_DFS_URI}" >> ${BUILD_PROPERTIES_FILE}
-   echo "type.metadata.hdfs.uri=${DW_HADOOP_DFS_URI}" >> ${BUILD_PROPERTIES_FILE}
-   echo "mapReduce.hdfs.uri=${DW_HADOOP_DFS_URI}" >> ${BUILD_PROPERTIES_FILE}
-   echo "bulkResults.hdfs.uri=${DW_HADOOP_DFS_URI}" >> ${BUILD_PROPERTIES_FILE}
-   echo "jboss.log.hdfs.uri=${DW_HADOOP_DFS_URI}" >> ${BUILD_PROPERTIES_FILE}
+#   # uncomment to enable environment passwords in the quickstart, and comment out above line
+#   echo "accumulo.user.password=env:DW_ACCUMULO_PASSWORD" >> ${BUILD_PROPERTIES_FILE}
+
+   echo "cached.results.hdfs.uri=${DW_HADOOP_DFS_URI_CLIENT}" >> ${BUILD_PROPERTIES_FILE}
+   echo "type.metadata.hdfs.uri=${DW_HADOOP_DFS_URI_CLIENT}" >> ${BUILD_PROPERTIES_FILE}
+   echo "mapReduce.hdfs.uri=${DW_HADOOP_DFS_URI_CLIENT}" >> ${BUILD_PROPERTIES_FILE}
+   echo "bulkResults.hdfs.uri=${DW_HADOOP_DFS_URI_CLIENT}" >> ${BUILD_PROPERTIES_FILE}
+   echo "jboss.log.hdfs.uri=${DW_HADOOP_DFS_URI_CLIENT}" >> ${BUILD_PROPERTIES_FILE}
 
    echo "lock.file.dir=${DW_DATAWAVE_INGEST_LOCKFILE_DIR}" >> ${BUILD_PROPERTIES_FILE}
    echo "server.keystore.password=${DW_ACCUMULO_PASSWORD}" >> ${BUILD_PROPERTIES_FILE}
@@ -176,8 +181,8 @@ function setBuildPropertyOverrides() {
    echo "jboss.managed.executor.service.default.max.threads=${DW_WILDFLY_EE_DEFAULT_MAX_THREADS:-48}" >> ${BUILD_PROPERTIES_FILE}
    echo "hornetq.cluster.password=${DW_ACCUMULO_PASSWORD}" >> ${BUILD_PROPERTIES_FILE}
    echo "hornetq.system.password=${DW_ACCUMULO_PASSWORD}" >> ${BUILD_PROPERTIES_FILE}
-   echo "mapReduce.job.tracker=${DW_HADOOP_RESOURCE_MANAGER_ADDRESS}" >> ${BUILD_PROPERTIES_FILE}
-   echo "bulkResults.job.tracker=${DW_HADOOP_RESOURCE_MANAGER_ADDRESS}" >> ${BUILD_PROPERTIES_FILE}
+   echo "mapReduce.job.tracker=${DW_HADOOP_RESOURCE_MANAGER_ADDRESS_CLIENT}" >> ${BUILD_PROPERTIES_FILE}
+   echo "bulkResults.job.tracker=${DW_HADOOP_RESOURCE_MANAGER_ADDRESS_CLIENT}" >> ${BUILD_PROPERTIES_FILE}
    echo "EVENT_DISCARD_INTERVAL=0" >> ${BUILD_PROPERTIES_FILE}
    echo "ingest.data.types=${DW_DATAWAVE_INGEST_LIVE_DATA_TYPES},${DW_DATAWAVE_INGEST_BULK_DATA_TYPES}" >> ${BUILD_PROPERTIES_FILE}
    echo "JOB_CACHE_REPLICATION=1" >> ${BUILD_PROPERTIES_FILE}
@@ -360,7 +365,7 @@ function datawaveUninstall() {
    datawaveIngestUninstall
    datawaveWebUninstall
 
-   [[ "${1}" == "${DW_UNINSTALL_RM_BINARIES_FLAG_LONG}" || "${1}" == "${DW_UNINSTALL_RM_BINARIES_FLAG_SHORT}" ]] && rm -f "${DW_DATAWAVE_SERVICE_DIR}"/*.tar.gz
+   [[ "${1}" == "${DW_UNINSTALL_RM_BINARIES_FLAG_LONG}" || "${1}" == "${DW_UNINSTALL_RM_BINARIES_FLAG_SHORT}" ]] && rm -f "${DW_DATAWAVE_SERVICE_DIR}"/datawave*.tar.gz
 }
 
 function datawaveInstall() {

@@ -12,12 +12,13 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MultivaluedMap;
 
+import org.apache.log4j.Logger;
+import org.jboss.resteasy.annotations.GZIP;
+
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.result.VoidResponse;
-import org.apache.log4j.Logger;
-import org.jboss.resteasy.annotations.GZIP;
 
 @Path("/Common/Auditor")
 @LocalBean
@@ -27,13 +28,13 @@ import org.jboss.resteasy.annotations.GZIP;
 @DeclareRoles({"AuthorizedUser", "AuthorizedServer", "InternalUser", "Administrator"})
 public class AuditBean {
     private static final Logger log = Logger.getLogger(AuditBean.class);
-    
+
     @Inject
     private AuditService auditService;
-    
+
     @Inject
     private AuditParameterBuilder auditParameterBuilder;
-    
+
     @POST
     @Path("/audit")
     @Consumes("*/*")
@@ -53,7 +54,7 @@ public class AuditBean {
             throw new DatawaveWebApplicationException(qe, response, statusCode);
         }
     }
-    
+
     public String audit(MultivaluedMap<String,String> parameters) throws Exception {
         return auditService.audit(auditParameterBuilder.convertAndValidate(parameters));
     }

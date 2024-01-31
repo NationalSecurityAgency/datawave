@@ -22,6 +22,9 @@ DW_DATAWAVE_WEB_BASEDIR="datawave-webservice-install"
 getDataWaveTarball "${DW_DATAWAVE_WEB_TARBALL}"
 DW_DATAWAVE_WEB_DIST="${tarball}"
 
+# uncomment to enable environment passwords in the quickstart
+# export DW_ACCUMULO_PASSWORD="secret"
+
 function datawaveWebIsRunning() {
     DW_DATAWAVE_WEB_PID_LIST="$(eval "${DW_DATAWAVE_WEB_CMD_FIND_ALL_PIDS}")"
     [ -z "${DW_DATAWAVE_WEB_PID_LIST}" ] && return 1 || return 0
@@ -145,6 +148,7 @@ function datawaveWebStart() {
           echo
           info "Documentation: https://localhost:8443/DataWave/doc"
           info "Data Dictionary: https://localhost:8443/DataWave/DataDictionary"
+          info "NOTE: DataDictionary will need to be deployed separately via the microservices modules in order to function."
           echo
           return 0
        fi

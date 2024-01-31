@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.webservices</groupId>
         <artifactId>datawave-ws-parent</artifactId>
-        <version>3.23.0-SNAPSHOT</version>
+        <version>6.5.0-SNAPSHOT</version>
     </parent>
     <artifactId>datawave-ws-common</artifactId>
     <packaging>ejb</packaging>
@@ -40,7 +40,7 @@
             <artifactId>commons-configuration</artifactId>
         </dependency>
         <dependency>
-            <groupId>gov.nsa.datawave.contrib</groupId>
+            <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-in-memory-accumulo</artifactId>
         </dependency>
         <dependency>
@@ -70,16 +70,20 @@
         </dependency>
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
-            <artifactId>jjwt</artifactId>
+            <artifactId>jjwt-impl</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-jackson</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.accumulo</groupId>
             <artifactId>accumulo-core</artifactId>
         </dependency>
-        <dependency>
+        <!--<dependency>
             <groupId>org.apache.accumulo</groupId>
             <artifactId>accumulo-tracer</artifactId>
-        </dependency>
+        </dependency>-->
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-pool2</artifactId>
@@ -99,11 +103,11 @@
         </dependency>
         <dependency>
             <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-common</artifactId>
+            <artifactId>hadoop-client-api</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.apache.htrace</groupId>
-            <artifactId>htrace-core4</artifactId>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-client-runtime</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
@@ -162,18 +166,23 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>log4j</groupId>
-            <artifactId>apache-log4j-extras</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-configuration2</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-1.2-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -286,7 +295,7 @@
                         <configuration>
                             <outputDirectory>lib</outputDirectory>
                             <!-- just grab the non-provided runtime dependencies -->
-                            <includeArtifactIds>stream,accumulo-trace,accumulo-tracer,accumulo-tserver,zookeeper,commons-pool2,spring-core,spring-asm,spring-aop,spring-beans,spring-context,spring-context-support,spring-expression,commons-lang,accumulo-core,libthrift,guava,jul-to-slf4j-stub,hadoop-auth,hadoop-common,hadoop-hdfs,hadoop-mapreduce-client-core,hadoop-yarn-api,hadoop-yarn-common,hadoop-mapreduce-client-common,hadoop-mapreduce-client-shuffle,hadoop-mapreduce-client-jobclient,hadoop-yarn-client,httpcore,httpclient,avro,commons-compress,xz,commons-vfs2,accumulo-start,commons-configuration,accumulo-fate,json-simple,aopalliance,curator-client,curator-framework,curator-recipes</includeArtifactIds>
+                            <includeArtifactIds>stream,accumulo-trace,accumulo-tserver,zookeeper,commons-pool2,spring-core,spring-asm,spring-aop,spring-beans,spring-context,spring-context-support,spring-expression,commons-lang,accumulo-core,libthrift,guava,jul-to-slf4j-stub,hadoop-auth,hadoop-common,hadoop-hdfs,hadoop-mapreduce-client-core,hadoop-yarn-api,hadoop-yarn-common,hadoop-mapreduce-client-common,hadoop-mapreduce-client-shuffle,hadoop-mapreduce-client-jobclient,hadoop-yarn-client,httpcore,httpclient,avro,commons-compress,xz,commons-vfs2,accumulo-start,commons-configuration,json-simple,aopalliance,curator-client,curator-framework,curator-recipes</includeArtifactIds>
                             <excludeTransitive>true</excludeTransitive>
                         </configuration>
                     </execution>
@@ -307,6 +316,17 @@
                         </manifestEntries>
                     </archive>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>test-jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

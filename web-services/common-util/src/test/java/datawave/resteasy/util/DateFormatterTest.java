@@ -8,19 +8,19 @@ import java.util.Date;
 import org.junit.Test;
 
 public class DateFormatterTest {
-    
+
     private DateFormatter formatter = new DateFormatter(null);
-    
+
     @Test(expected = RuntimeException.class)
     public void testDateFormatterFail1() {
         formatter.fromString("20120101120000");
     }
-    
+
     @Test(expected = RuntimeException.class)
     public void testDateFormatterFail2() {
         formatter.fromString("20120101 250000");
     }
-    
+
     @Test
     public void testDateFormatterSuccess() {
         SimpleDateFormat f = new SimpleDateFormat(DateFormatter.getFormatPattern());

@@ -1,10 +1,13 @@
 package datawave.ingest.mapreduce.handler.edge.evaluation;
 
-import com.google.common.base.Predicate;
+import java.util.Collection;
+
+import org.apache.commons.jexl2.JexlArithmetic;
 import org.apache.commons.jexl2.Script;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.util.Collection;
+
+import com.google.common.base.Predicate;
 
 /**
  *
@@ -12,21 +15,24 @@ import java.util.Collection;
  *
  */
 public class EdgePreconditionJexlEvaluation implements Predicate<Script> {
-    
+
     private static final Logger log = LoggerFactory.getLogger(EdgePreconditionJexlEvaluation.class);
-    
+
     private EdgePreconditionJexlContext jexlContext;
-    
+
+    private JexlArithmetic arithmetic;
+
     public EdgePreconditionJexlEvaluation() {}
-    
+
     public EdgePreconditionJexlEvaluation(EdgePreconditionJexlContext jexlContext) {
         setJexlContext(jexlContext);
     }
-    
+
     /**
      * This convenience method can be used to interpret the result of the script.execute() result which calls the interpret method below.
-     * 
+     *
      * @param scriptExecuteResult
+     *            the result of script execute
      * @return true if we matched, false otherwise.
      */
     public boolean isMatched(Object scriptExecuteResult) {
@@ -43,25 +49,27 @@ public class EdgePreconditionJexlEvaluation implements Predicate<Script> {
         }
         return matched;
     }
-    
+
     @Override
     public boolean apply(Script compiledScript) {
-        
+        boolean matched = false;
         if (null == getJexlContext()) {
             log.trace("Dropping entry because it was null");
-            
+
             return false;
         }
-        
+
         Object o = compiledScript.execute(getJexlContext());
         return isMatched(o);
+
     }
-    
+
     public EdgePreconditionJexlContext getJexlContext() {
         return jexlContext;
     }
-    
+
     public void setJexlContext(EdgePreconditionJexlContext jexlContext) {
         this.jexlContext = jexlContext;
     }
+
 }

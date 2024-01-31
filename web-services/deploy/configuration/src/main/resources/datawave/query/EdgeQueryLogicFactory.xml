@@ -46,6 +46,20 @@
         <property name="metadataHelperFactory" ref="metadataHelperFactory" />
         <property name="selectorExtractor" ref="DatawaveSelectorExtractor" />
         <property name="listSelectorExtractor" ref="SplitSelectorExtractorParamDefaultNull" />
+        <property name="querySyntaxParsers">
+            <map key-type="java.lang.String" value-type="datawave.query.language.parser.QueryParser">
+                <entry key="JEXL">
+                    <null/>
+                </entry>
+                <entry key="LIST">
+                    <null/>
+                </entry>
+                <entry key="LIMITED_JEXL">
+                    <null/>
+                </entry>
+                <entry key="LUCENE" value-ref="LuceneToJexlQueryParser" />
+            </map>
+        </property>
     </bean>
 
     <bean id="SplitSelectorExtractorParamDefaultNull" scope="prototype" class="datawave.audit.SplitSelectorExtractor">

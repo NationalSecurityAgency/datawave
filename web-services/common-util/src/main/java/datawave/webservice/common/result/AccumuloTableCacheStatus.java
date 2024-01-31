@@ -18,33 +18,33 @@ import datawave.webservice.result.BaseResponse;
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class AccumuloTableCacheStatus extends BaseResponse implements HtmlProvider {
-    
+
     private static final long serialVersionUID = 1L;
     private static final String TITLE = "Accumulo Table Cache Status", EMPTY = "";
-    
+
     @XmlElementWrapper(name = "TableCaches")
     @XmlElement(name = "TableCache")
     private List<TableCache> caches = new LinkedList<>();
-    
+
     @Override
     public String getTitle() {
         return TITLE;
     }
-    
+
     @Override
     public String getHeadContent() {
         return TITLE;
     }
-    
+
     @Override
     public String getPageHeader() {
         return EMPTY;
     }
-    
+
     @Override
     public String getMainContent() {
         StringBuilder builder = new StringBuilder();
-        
+
         builder.append("<style>\n");
         builder.append("table td, table th {");
         builder.append("border-colapse: collapse;\n");
@@ -52,7 +52,7 @@ public class AccumuloTableCacheStatus extends BaseResponse implements HtmlProvid
         builder.append("empty-cells: hide;\n");
         builder.append("}\n");
         builder.append("</style>\n");
-        
+
         builder.append("<h2>").append("Table Caches").append("</h2>");
         builder.append("<br/>");
         builder.append("<table>");
@@ -71,7 +71,7 @@ public class AccumuloTableCacheStatus extends BaseResponse implements HtmlProvid
         builder.append("</table>");
         return builder.toString();
     }
-    
+
     public List<TableCache> getCaches() {
         return caches;
     }

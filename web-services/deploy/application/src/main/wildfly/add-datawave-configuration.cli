@@ -101,6 +101,9 @@ module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.ap
 /system-property=dw.mapreduce.securitydomain.trustStoreType:add(value="${TRUSTSTORE_TYPE}")
 /system-property=dw.mapreduce.securitydomain.trustStorePassword:add(value="${TRUSTSTORE_PASSWORD}")
 
+# proxied entities to be pruned from credentials
+/system-property=dw.trusted.proxied.entities:add(value="${trusted.proxied.entities}")
+
 # Enable/disable the test authorization service (enable for development use only)
 /system-property=dw.security.use.testuserservice:add(value=${security.use.testauthservice})
 
@@ -112,6 +115,20 @@ module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.ap
 /system-property=dw.remoteDatawaveUserService.scheme:add(value=${security.remoteuserservice.scheme})
 /system-property=dw.remoteDatawaveUserService.host:add(value=${security.remoteuserservice.host})
 /system-property=dw.remoteDatawaveUserService.port:add(value=${security.remoteuserservice.port})
+
+# Audit microservice config
+/system-property=dw.audit.use.remoteauditservice:add(value=${auditing.use.remoteauditservice})
+/system-property=dw.remoteDatawaveAuditService.useSrvDnsLookup:add(value=${auditing.remoteauditservice.srv.lookup.enabled})
+/system-property=dw.remoteDatawaveAuditService.srvDnsServers:add(value=${auditing.remoteauditservice.srv.lookup.servers})
+/system-property=dw.remoteDatawaveAuditService.srvDnsPort:add(value=${auditing.remoteauditservice.srv.lookup.port})
+/system-property=dw.remoteDatawaveAuditService.scheme:add(value=${auditing.remoteauditservice.scheme})
+/system-property=dw.remoteDatawaveAuditService.host:add(value=${auditing.remoteauditservice.host})
+/system-property=dw.remoteDatawaveAuditService.port:add(value=${auditing.remoteauditservice.port})
+
+# Dictionary microservice config
+/system-property=dw.remoteDictionary.scheme:add(value=${dictionary.remoteservice.scheme})
+/system-property=dw.remoteDictionary.host:add(value=${dictionary.remoteservice.host})
+/system-property=dw.remoteDictionary.port:add(value=${dictionary.remoteservice.port})
 
 # Accumulo microservice config
 /system-property=dw.remoteAccumuloService.useSrvDnsLookup:add(value=${accumulo.remoteservice.srv.lookup.enabled})
@@ -176,7 +193,6 @@ module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.ap
 #
 jms-topic add --topic-address=AccumuloTableCache --entries=topic/AccumuloTableCache
 jms-queue add --queue-address=AccumuloTableCacheDLQ --entries=queue/AccumuloTableCache.DLQ
-jms-queue add --queue-address=QueryMetricsQueue --entries=queue/QueryMetrics
 #/subsystem=messaging-activemq/server=default/:write-attribute(name=security-domain,value=datawave)
 /subsystem=messaging-activemq/server=default/pooled-connection-factory=activemq-ra/:write-attribute(name=max-pool-size,value=${hornetq.datasource.max.pool.size})
 /subsystem=messaging-activemq/server=default/:write-attribute(name=cluster-user,value="${hornetq.cluster.username}")
@@ -227,13 +243,14 @@ jms-queue add --queue-address=QueryMetricsQueue --entries=queue/QueryMetrics
 /subsystem=logging/periodic-rotating-file-handler=RESTEASY_LOG/:add(level=TRACE,suffix=".yyyy-MM-dd",append=true,autoflush=true,named-formatter=PATTERN,file={relative-to=>"jboss.server.log.dir", path=>"RestEasy.log"})
 
 /subsystem=logging/logger=datawave.query:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=DEBUG)
+/subsystem=logging/logger=datawave.webservice.common.cache.SharedCacheCoordinator:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=INFO)
 /subsystem=logging/logger=datawave.webservice.query.factory:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=DEBUG)
 /subsystem=logging/logger=datawave.webservice.query.iterator:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=DEBUG)
 /subsystem=logging/logger=datawave.webservice.query.logic:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=DEBUG)
 /subsystem=logging/logger=datawave.webservice.query.metric:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=DEBUG)
 /subsystem=logging/logger=datawave.webservice.query.runner:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=DEBUG)
 /subsystem=logging/logger=datawave.webservice.query.util:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=DEBUG)
-/subsystem=logging/logger=datawave.webservice.query.cache.QueryExpirationBean:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=DEBUG)
+/subsystem=logging/logger=datawave.webservice.query.cache.QueryExpirationBean:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=INFO)
 /subsystem=logging/logger=datawave.query.tables:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=INFO)
 /subsystem=logging/logger=datawave.query.parser:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=INFO)
 /subsystem=logging/logger=datawave.query.metrics.AccumuloRecordWriter:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=INFO)

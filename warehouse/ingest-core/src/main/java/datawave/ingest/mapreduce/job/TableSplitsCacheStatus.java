@@ -1,6 +1,7 @@
 package datawave.ingest.mapreduce.job;
 
 import java.io.IOException;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -12,11 +13,14 @@ public class TableSplitsCacheStatus {
     private static final long DEFAULT_CACHE_TIMEOUT = 21600000L;
     public static final String SPLITS_CACHE_TIMEOUT_MS = "datawave.ingest.splits.cache.timeout.ms";
     public static final Logger log = Logger.getLogger(TableSplitsCacheStatus.class);
-    
+
     /**
-     * 
+     *
      * @param conf
-     * @return
+     *            the configuration
+     * @return if the cache is valid
+     * @throws IOException
+     *             for issues with read or write
      */
     public static boolean isCacheValid(Configuration conf) throws IOException {
         Path splitsPath = TableSplitsCache.getSplitsPath(conf);
@@ -34,5 +38,5 @@ public class TableSplitsCacheStatus {
         }
         return null != fileStatus && isFileAgeValid;
     }
-    
+
 }

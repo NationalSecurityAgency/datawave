@@ -31,8 +31,10 @@
     <property>
         <name>data.name</name>
         <value>myjson</value>
-        <description>This is the name of the datatype, which distinguishes it from other types for the purposes of ingest
-            processing and perhaps even for dataflow/transport concerns. As such, this can be used to denote a subtype of
+        <description>This is the name of the datatype, which distinguishes it from other types for the purposes of
+            ingest
+            processing and perhaps even for dataflow/transport concerns. As such, this can be used to denote a subtype
+            of
             some common data format, like CSV files for example, which could originate from any number of sources
         </description>
     </property>
@@ -68,7 +70,8 @@
     <property>
         <name>myjson.data.separator</name>
         <value>,</value>
-        <description>This is the separator to use for delimited text, and between configuration file parameters with multiple values.
+        <description>This is the separator to use for delimited text, and between configuration file parameters with
+            multiple values.
         </description>
     </property>
 
@@ -76,14 +79,16 @@
         <name>myjson.data.header</name>
         <value>HEADER_DATE,HEADER_ID,HEADER_NUMBER,DOCUMENT_VISIBILITY,HEADER_TEXT_1,HEADER_TEXT_2</value>
         <description>Known metadata fields that may be expected to appear in every json document. Often, these may be
-            "required" fields, and/or fields that you want to use for policy enforcement, quality assurance, etc</description>
+            "required" fields, and/or fields that you want to use for policy enforcement, quality assurance, etc
+        </description>
     </property>
 
     <property>
         <name>myjson.data.process.extra.fields</name>
         <value>true</value>
         <description>If true, "extra" fields within the json tree (ie, those outside the defined "header") should be
-            processed. Otherwise, everything outside the header will be ignored unless explicitly whitelisted</description>
+            processed. Otherwise, everything outside the header will be ignored unless explicitly allowlisted
+        </description>
     </property>
 
     <property>
@@ -92,11 +97,12 @@
         <description>The classes datawave.ingest.json.mr.input.JsonRecordReader and
             datawave.ingest.json.config.helper.JsonIngestHelper support 4 different json-flattening modes:
 
-        (1) 'SIMPLE' mode:
+            (1) 'SIMPLE' mode:
 
             Ignores nested objects. Only retrieves root-level primitives, including primitives within root-level arrays.
-            Array primitives will be represented as multi-valued keys in the resulting map. If your json is flat already,
-            or if you wish to ignore nested objects for whatever reason, this mode should suffice.  If you require
+            Array primitives will be represented as multi-valued keys in the resulting map. If your json is flat
+            already,
+            or if you wish to ignore nested objects for whatever reason, this mode should suffice. If you require
             complete tree traversal, see NORMAL and GROUPED modes.
 
             PROs:
@@ -107,7 +113,7 @@
 
             A bad choice if you need to ingest json schemas where items of interest are nested
 
-        (2) 'NORMAL' mode:
+            (2) 'NORMAL' mode:
 
             Traverses the entire Json tree, unlike SIMPLE mode. Given a nested 'fieldname' property @ level 4 in the
             tree and path delimiter value of '_', the flattened result would take the form:
@@ -127,7 +133,7 @@
             need the ability to easily disambiguate certain json sibling elements from cousin elements at
             query time, then 'NORMAL' mode will prove more difficult, since no context information is retained
 
-        (3) 'GROUPED' mode:
+            (3) 'GROUPED' mode:
 
             Same as NORMAL mode, but instead we append the hierarchical context onto 'FIELDNAME' as a dot-delimited
             suffix, with additional information to identify the ordinal position or occurrence at each level.
@@ -156,7 +162,7 @@
             to confusion, particularly if the repository will store data from mutliple distinct sources and those
             sources differ in format/structure yet have 'FIELDNAME' elements in common.
 
-        (4) 'GROUPED_AND_NORMAL' mode:
+            (4) 'GROUPED_AND_NORMAL' mode:
 
             Retains the fully-qualified 'NORMAL' mode field name as the prefix, and appends the full context suffix
             as defined by 'GROUPED' mode above.
@@ -188,7 +194,9 @@
     <property>
         <name>myjson.data.category.marking.default</name>
         <value>PRIVATE|(BAR&amp;FOO)</value>
-        <description>ColumnVisibility expression to be applied to each field, when the raw data is known to provide none</description>
+        <description>ColumnVisibility expression to be applied to each field, when the raw data is known to provide
+            none
+        </description>
     </property>
 
     <property>
@@ -200,7 +208,8 @@
     <property>
         <name>myjson.data.category.date</name>
         <value>HEADER_DATE</value>
-        <description>Known date field to be used, if found, for the shard row id. Otherwise, current date will be used</description>
+        <description>Known date field to be used, if found, for the shard row id. Otherwise, current date will be used
+        </description>
     </property>
 
     <property>
@@ -213,7 +222,9 @@
 
     <property>
         <name>myjson.data.category.index</name>
-        <value>ROOT_NUMBER,ROOT_STRING1,HEADER_ID,HEADER_NUMBER,HEADER_TEXT_1,HEADER_TEXT_2,EXTRA_UUID_1,EXTRA_UUID_2,EXTRA_TEXT,NAME,VALUE,DESCRIPTION,STRING,ID,NUMBER</value>
+        <value>
+            ROOT_NUMBER,ROOT_STRING1,HEADER_ID,HEADER_NUMBER,HEADER_TEXT_1,HEADER_TEXT_2,EXTRA_UUID_1,EXTRA_UUID_2,EXTRA_TEXT,NAME,VALUE,DESCRIPTION,STRING,ID,NUMBER
+        </value>
         <description>List of known fields to index</description>
     </property>
 
@@ -227,11 +238,12 @@
         <name>myjson.data.category.token.fieldname.designator</name>
         <value>_TOKEN</value>
         <description>Field name suffix to be applied to field names that are tokenized.
-            See *.data.category.index.tokenize.whitelist</description>
+            See *.data.category.index.tokenize.allowlist
+        </description>
     </property>
 
     <property>
-        <name>myjson.data.category.index.tokenize.whitelist</name>
+        <name>myjson.data.category.index.tokenize.allowlist</name>
         <value>SUMMARY,DESCRIPTION,NAME</value>
         <description>These are the fields to tokenize and index.</description>
     </property>
@@ -239,7 +251,8 @@
     <property>
         <name>myjson.data.category.index.only</name>
         <value>SUMMARY_TOKEN,NAME_TOKEN,DESCRIPTION_TOKEN</value>
-        <description>Fields that will exist only in the global index. Will not be stored as part of the event</description>
+        <description>Fields that will exist only in the global index. Will not be stored as part of the event
+        </description>
     </property>
 
     <!-- Field Normalization -->
@@ -248,7 +261,8 @@
         <name>myjson.data.default.normalization.failure.policy</name>
         <value>FAIL</value>
         <description>For field normalization failures: DROP, LEAVE, FAIL.
-            FAIL will cause the entire record to be dropped and written to the error schema in Accumulo</description>
+            FAIL will cause the entire record to be dropped and written to the error schema in Accumulo
+        </description>
     </property>
 
     <property>

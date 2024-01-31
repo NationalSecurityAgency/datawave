@@ -12,42 +12,40 @@ import datawave.query.attributes.Document;
 
 /**
  * Allows an arbitrary nesting of nested iterators
- *
- * @param <T>
  */
 public class NestedQueryIterator<T> implements NestedIterator<T> {
-    
+
     private static final Logger log = Logger.getLogger(NestedQueryIterator.class);
     protected Queue<NestedQuery<T>> nests;
     protected NestedQuery<T> currentQuery = null;
     protected NestedIterator<T> currentNest = null;
-    
+
     protected NestedQueryIterator() {
-        
+
     }
-    
+
     public NestedQueryIterator(NestedQuery<T> start) {
         nests = Queues.newArrayDeque();
         addNestedIterator(start);
     }
-    
+
     public NestedQueryIterator(Collection<NestedQuery<T>> newNests) {
         nests = Queues.newArrayDeque();
         for (NestedQuery<T> nest : newNests) {
             addNestedIterator(nest);
         }
-        
+
     }
-    
+
     public void addNestedIterator(NestedQuery<T> iter) {
         nests.add(iter);
     }
-    
+
     public void setCurrentQuery(NestedQuery<T> query) {
         currentQuery = query;
         currentNest = currentQuery.iter;
     }
-    
+
     @Override
     public boolean hasNext() {
         // if we have no more in the current nest, we peek to the next one
@@ -74,84 +72,79 @@ public class NestedQueryIterator<T> implements NestedIterator<T> {
             return true;
         }
     }
-    
+
     @Override
     public T next() {
         return currentNest.next();
     }
-    
+
     @Override
     public void remove() {
         currentNest.remove();
-        
+
     }
-    
+
     @Override
     public void initialize() {
         if (null == currentNest) {
             popNextNest();
         } else
             currentNest.initialize();
-        
+
     }
-    
+
     @Override
     public T move(T minimum) {
         return currentNest.move(minimum);
     }
-    
+
     @Override
     public Collection<NestedIterator<T>> leaves() {
         return currentNest.leaves();
     }
-    
+
     @Override
     public Collection<NestedIterator<T>> children() {
         return currentNest.children();
     }
-    
+
     @Override
     public Document document() {
         return currentNest.document();
     }
-    
-    /**
-     * Return the nested query.
-     * 
-     * @return
-     */
+
     public NestedQuery<T> getNestedQuery() {
         return currentQuery;
     }
-    
+
     protected void popNextNest() {
         if (nests.peek() != null) {
             if (log.isTraceEnabled()) {
                 log.trace("Peekingshows we have a query");
             }
-            
+
             currentQuery = nests.poll();
             currentNest = currentQuery.getIter();
             currentNest.initialize();
         }
     }
-    
+
     public Range getRange() {
         return currentQuery.getRange();
     }
-    
+
     public String getQuery() {
         if (currentQuery == null)
             return null;
         else
             return currentQuery.getQuery();
     }
-    
+
     @Override
     public boolean isContextRequired() {
         return false;
     }
-    
+
     @Override
     public void setContext(T context) {
         // no-op

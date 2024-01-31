@@ -1,10 +1,9 @@
 package datawave.query.planner.rules;
 
-import datawave.query.Constants;
-import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.exceptions.DatawaveFatalQueryException;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.util.MetadataHelper;
+import java.util.List;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
 import org.apache.commons.jexl2.parser.ASTERNode;
@@ -13,14 +12,16 @@ import org.apache.commons.jexl2.parser.ASTNRNode;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.log4j.Logger;
 
-import java.util.List;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
+import datawave.query.Constants;
+import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.exceptions.DatawaveFatalQueryException;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.util.MetadataHelper;
 
 public class RegexPushdownTransformRule implements NodeTransformRule {
     private static final Logger log = Logger.getLogger(RegexPushdownTransformRule.class);
     private List<Pattern> patterns = null;
-    
+
     @Override
     public JexlNode apply(JexlNode node, ShardQueryConfiguration config, MetadataHelper helper) {
         try {
@@ -42,11 +43,11 @@ public class RegexPushdownTransformRule implements NodeTransformRule {
             throw new DatawaveFatalQueryException("Failure to apply node transform rule", tnfe);
         }
     }
-    
+
     public void setRegexPatterns(List<String> patterns) {
         this.patterns = patterns.stream().map(Pattern::compile).collect(Collectors.toList());
     }
-    
+
     public List<String> getPatterns() {
         return this.patterns.stream().map(p -> p.toString()).collect(Collectors.toList());
     }

@@ -6,24 +6,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.UUID;
 
-import datawave.ingest.protobuf.Uid;
-import datawave.marking.MarkingFunctions;
-import datawave.marking.MarkingFunctions.Exception;
-import datawave.query.model.QueryModel;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.cachedresults.CacheableLogic;
-import datawave.webservice.query.cachedresults.CacheableQueryRow;
-import datawave.webservice.query.cachedresults.CacheableQueryRowImpl;
-import datawave.webservice.query.exception.QueryException;
-import datawave.webservice.query.logic.BaseQueryLogic;
-import datawave.webservice.query.logic.BaseQueryLogicTransformer;
-import datawave.webservice.query.result.event.EventBase;
-import datawave.webservice.query.result.event.FieldBase;
-import datawave.webservice.query.result.event.ResponseObjectFactory;
-import datawave.webservice.query.result.event.Metadata;
-import datawave.webservice.result.BaseQueryResponse;
-
-import datawave.webservice.result.EventQueryResponseBase;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
@@ -32,15 +14,32 @@ import org.apache.log4j.Logger;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 
+import datawave.ingest.protobuf.Uid;
+import datawave.marking.MarkingFunctions;
+import datawave.marking.MarkingFunctions.Exception;
+import datawave.query.model.QueryModel;
+import datawave.webservice.query.Query;
+import datawave.webservice.query.cachedresults.CacheableLogic;
+import datawave.webservice.query.cachedresults.CacheableQueryRow;
+import datawave.webservice.query.exception.QueryException;
+import datawave.webservice.query.logic.BaseQueryLogic;
+import datawave.webservice.query.logic.BaseQueryLogicTransformer;
+import datawave.webservice.query.result.event.EventBase;
+import datawave.webservice.query.result.event.FieldBase;
+import datawave.webservice.query.result.event.Metadata;
+import datawave.webservice.query.result.event.ResponseObjectFactory;
+import datawave.webservice.result.BaseQueryResponse;
+import datawave.webservice.result.EventQueryResponseBase;
+
 public class ShardIndexQueryTransformer extends BaseQueryLogicTransformer<Entry<Key,Value>,EventBase> implements CacheableLogic {
-    
+
     private Authorizations auths = null;
     private Logger log = Logger.getLogger(ShardIndexQueryTransformer.class);
     private List<String> variableFieldList = null;
     private BaseQueryLogic<Entry<Key,Value>> logic = null;
     private QueryModel myQueryModel = null;
     private ResponseObjectFactory responseObjectFactory;
-    
+
     public ShardIndexQueryTransformer(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions markingFunctions,
                     ResponseObjectFactory responseObjectFactory, QueryModel qm) {
         super(markingFunctions);
@@ -49,22 +48,22 @@ public class ShardIndexQueryTransformer extends BaseQueryLogicTransformer<Entry<
         this.logic = logic;
         this.myQueryModel = qm;
     }
-    
+
     @Override
     public EventBase transform(Entry<Key,Value> input) {
-        
+
         log.debug("Transform got " + input);
         @SuppressWarnings("unchecked")
         Entry<Key,Value> entry = (Entry<Key,Value>) input;
-        
+
         if (entry.getKey() == null && entry.getValue() == null) {
             return null;
         }
-        
+
         if (null == entry.getKey() || null == entry.getValue()) {
             throw new IllegalArgumentException("Null key or value. Key:" + entry.getKey() + ", Value: " + entry.getValue());
         }
-        
+
         EventBase event = responseObjectFactory.getEvent();
         ColumnVisibility columnVisibility = new ColumnVisibility(entry.getKey().getColumnVisibility());
         Map<String,String> markings;
@@ -74,15 +73,15 @@ public class ShardIndexQueryTransformer extends BaseQueryLogicTransformer<Entry<
             throw new RuntimeException("could not make markings from: " + columnVisibility);
         }
         event.setMarkings(markings);
-        
+
         List<FieldBase> fields = new ArrayList<>();
-        
+
         Key key = entry.getKey();
         String row = key.getRow().toString();
         String cf = key.getColumnFamily().toString();
         String cq = key.getColumnQualifier().toString();
         String cv = key.getColumnVisibility().toString();
-        
+
         fields.add(makeField("VALUE", markings, cv, 0L, row));
         /**
          * Added query model to alias FIELD
@@ -103,7 +102,7 @@ public class ShardIndexQueryTransformer extends BaseQueryLogicTransformer<Entry<
         }
         fields.add(makeField("RECORD COUNT", markings, cv, 0L, Long.toString(count)));
         event.setFields(fields);
-        
+
         Metadata metadata = new Metadata();
         String id = logic.getTableName() + ":" + row + ":" + cf + ":" + cq;
         metadata.setInternalId(UUID.nameUUIDFromBytes(id.getBytes()).toString());
@@ -113,7 +112,7 @@ public class ShardIndexQueryTransformer extends BaseQueryLogicTransformer<Entry<
         event.setMetadata(metadata);
         return event;
     }
-    
+
     private FieldBase makeField(String name, Map<String,String> markings, String columnVisibility, Long timestamp, Object value) {
         FieldBase field = this.responseObjectFactory.getField();
         field.setName(name);
@@ -123,7 +122,7 @@ public class ShardIndexQueryTransformer extends BaseQueryLogicTransformer<Entry<
         field.setValue(value);
         return field;
     }
-    
+
     @Override
     public BaseQueryResponse createResponse(List<Object> resultList) {
         EventQueryResponseBase response = responseObjectFactory.getEventQueryResponse();
@@ -131,44 +130,44 @@ public class ShardIndexQueryTransformer extends BaseQueryLogicTransformer<Entry<
         for (Object o : resultList) {
             EventBase e = (EventBase) o;
             eventList.add(e);
-            
+
         }
         response.setFields(this.variableFieldList);
         response.setEvents(eventList);
         response.setReturnedEvents((long) eventList.size());
         return response;
     }
-    
+
     @Override
     public List<CacheableQueryRow> writeToCache(Object o) throws QueryException {
-        
+
         List<CacheableQueryRow> cqoList = new ArrayList<>();
         EventBase event = (EventBase) o;
-        
-        CacheableQueryRowImpl cqo = new CacheableQueryRowImpl();
+
+        CacheableQueryRow cqo = responseObjectFactory.getCacheableQueryRow();
         Metadata metadata = event.getMetadata();
         cqo.setColFam(metadata.getDataType() + ":" + cqo.getEventId());
         cqo.setDataType(metadata.getDataType());
         cqo.setEventId(metadata.getInternalId());
         cqo.setRow(metadata.getRow());
-        
+
         List<FieldBase> fields = event.getFields();
         for (FieldBase f : fields) {
             cqo.addColumn(f.getName(), f.getTypedValue(), f.getMarkings(), f.getColumnVisibility(), f.getTimestamp());
         }
-        
+
         // set the size in bytes using the initial event size as an approximation
         cqo.setSizeInBytes(event.getSizeInBytes());
-        
+
         cqoList.add(cqo);
         return cqoList;
     }
-    
+
     @Override
     public List<Object> readFromCache(List<CacheableQueryRow> cacheableQueryRowList) {
-        
+
         List<Object> eventList = new ArrayList<>();
-        
+
         for (CacheableQueryRow cqr : cacheableQueryRowList) {
             if (this.variableFieldList == null) {
                 this.variableFieldList = cqr.getVariableColumnNames();
@@ -177,18 +176,18 @@ public class ShardIndexQueryTransformer extends BaseQueryLogicTransformer<Entry<
             String dataType = cqr.getDataType();
             String internalId = cqr.getEventId();
             String row = cqr.getRow();
-            
+
             EventBase event = responseObjectFactory.getEvent();
-            
+
             event.setMarkings(markings);
-            
+
             Metadata metadata = new Metadata();
             metadata.setDataType(dataType);
             metadata.setInternalId(internalId);
             metadata.setRow(row);
             metadata.setTable(logic.getTableName());
             event.setMetadata(metadata);
-            
+
             List<FieldBase> fieldList = new ArrayList<>();
             Map<String,String> columnValueMap = cqr.getColumnValues();
             for (Map.Entry<String,String> entry : columnValueMap.entrySet()) {
@@ -208,7 +207,7 @@ public class ShardIndexQueryTransformer extends BaseQueryLogicTransformer<Entry<
             event.setFields(fieldList);
             eventList.add(event);
         }
-        
+
         return eventList;
     }
 }

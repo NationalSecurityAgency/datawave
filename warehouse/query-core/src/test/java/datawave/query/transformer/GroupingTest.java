@@ -1,26 +1,70 @@
 package datawave.query.transformer;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.SortedSet;
+import java.util.TimeZone;
+import java.util.TreeMap;
+import java.util.TreeSet;
+import java.util.UUID;
+import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
+
+import javax.inject.Inject;
+
+import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.accumulo.core.security.Authorizations;
+import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.log4j.Logger;
+import org.assertj.core.api.Assertions;
+import org.assertj.core.util.Sets;
+import org.jboss.arquillian.container.test.api.Deployment;
+import org.jboss.arquillian.junit.Arquillian;
+import org.jboss.shrinkwrap.api.ShrinkWrap;
+import org.jboss.shrinkwrap.api.asset.StringAsset;
+import org.jboss.shrinkwrap.api.spec.JavaArchive;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableMap;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
+
 import datawave.configuration.spring.SpringBean;
-import datawave.data.type.LcType;
-import datawave.data.type.NumberType;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
-import datawave.marking.MarkingFunctions;
+import datawave.query.QueryParameters;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.RebuildingScannerTestHelper;
-import datawave.query.attributes.Attribute;
-import datawave.query.common.grouping.GroupingUtil.GroupCountingHashMap;
-import datawave.query.common.grouping.GroupingUtil.GroupingTypeAttribute;
+import datawave.query.common.grouping.AggregateOperation;
+import datawave.query.common.grouping.DocumentGrouper;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
-import datawave.query.language.parser.jexl.JexlControlledQueryParser;
+import datawave.query.iterator.QueryOptions;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.tables.ShardQueryLogic;
+import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.util.VisibilityWiseGuysIngest;
+import datawave.query.util.VisibilityWiseGuysIngestWithModel;
 import datawave.util.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.QueryImpl;
@@ -28,631 +72,936 @@ import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.iterator.DatawaveTransformIterator;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
-import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.DefaultEventQueryResponse;
-import datawave.webservice.result.EventQueryResponseBase;
-import org.apache.accumulo.core.client.Connector;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.security.Authorizations;
-import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.commons.collections4.iterators.TransformIterator;
-import org.apache.log4j.Logger;
-import org.easymock.EasyMock;
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.StringAsset;
-import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
-
-import javax.enterprise.inject.Produces;
-import javax.inject.Inject;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TimeZone;
-import java.util.UUID;
-
-import static datawave.query.RebuildingScannerTestHelper.TEARDOWN.ALWAYS;
-import static datawave.query.RebuildingScannerTestHelper.TEARDOWN.ALWAYS_SANS_CONSISTENCY;
-import static datawave.query.RebuildingScannerTestHelper.TEARDOWN.EVERY_OTHER;
-import static datawave.query.RebuildingScannerTestHelper.TEARDOWN.EVERY_OTHER_SANS_CONSISTENCY;
-import static datawave.query.RebuildingScannerTestHelper.TEARDOWN.NEVER;
-import static datawave.query.RebuildingScannerTestHelper.TEARDOWN.RANDOM;
-import static datawave.query.RebuildingScannerTestHelper.TEARDOWN.RANDOM_SANS_CONSISTENCY;
 
 /**
- * Applies grouping to queries
- * 
+ * Applies grouping to queries.
  */
 public abstract class GroupingTest {
-    
-    private static final Logger log = Logger.getLogger(GroupingTest.class);
-    
-    private static final String COLVIS_MARKING = "columnVisibility";
-    private static final String EXPECTED_COLVIS = "ALL&E&I";
-    
-    private static Authorizations auths = new Authorizations("ALL", "E", "I");
-    
-    // @formatter:off
-    private static final List<RebuildingScannerTestHelper.TEARDOWN> TEARDOWNS = Lists.newArrayList(
-            NEVER,
-            ALWAYS,
-            ALWAYS_SANS_CONSISTENCY,
-            RANDOM,
-            RANDOM_SANS_CONSISTENCY,
-            EVERY_OTHER,
-            EVERY_OTHER_SANS_CONSISTENCY
-    );
-    private static final List<RebuildingScannerTestHelper.INTERRUPT> INTERRUPTS = Arrays.asList(RebuildingScannerTestHelper.INTERRUPT.values());
-    // @formatter:on
-    
+
     @RunWith(Arquillian.class)
     public static class ShardRange extends GroupingTest {
-        
+
         @Override
-        protected BaseQueryResponse runTestQueryWithGrouping(Map<String,Integer> expected, String querystr, Date startDate, Date endDate,
-                        Map<String,String> extraParms, RebuildingScannerTestHelper.TEARDOWN teardown, RebuildingScannerTestHelper.INTERRUPT interrupt)
-                        throws Exception {
-            QueryTestTableHelper qtth = new QueryTestTableHelper(ShardRange.class.getName(), log, teardown, interrupt);
-            Connector connector = qtth.connector;
-            VisibilityWiseGuysIngest.writeItAll(connector, VisibilityWiseGuysIngest.WhatKindaRange.SHARD);
-            PrintUtility.printTable(connector, auths, TableName.SHARD);
-            PrintUtility.printTable(connector, auths, TableName.SHARD_INDEX);
-            PrintUtility.printTable(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
-            return super.runTestQueryWithGrouping(expected, querystr, startDate, endDate, extraParms, connector);
+        protected String getRange() {
+            return "SHARD";
         }
     }
-    
+
     @RunWith(Arquillian.class)
     public static class DocumentRange extends GroupingTest {
-        
+
         @Override
-        protected BaseQueryResponse runTestQueryWithGrouping(Map<String,Integer> expected, String querystr, Date startDate, Date endDate,
-                        Map<String,String> extraParms, RebuildingScannerTestHelper.TEARDOWN teardown, RebuildingScannerTestHelper.INTERRUPT interrupt)
-                        throws Exception {
-            QueryTestTableHelper qtth = new QueryTestTableHelper(DocumentRange.class.toString(), log, teardown, interrupt);
-            Connector connector = qtth.connector;
-            VisibilityWiseGuysIngest.writeItAll(connector, VisibilityWiseGuysIngest.WhatKindaRange.DOCUMENT);
-            PrintUtility.printTable(connector, auths, TableName.SHARD);
-            PrintUtility.printTable(connector, auths, TableName.SHARD_INDEX);
-            PrintUtility.printTable(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
-            return super.runTestQueryWithGrouping(expected, querystr, startDate, endDate, extraParms, connector);
+        protected String getRange() {
+            return "DOCUMENT";
         }
     }
-    
-    @Rule
-    public TemporaryFolder temporaryFolder = new TemporaryFolder();
-    
-    protected Set<Authorizations> authSet = Collections.singleton(auths);
-    
+
+    private static class QueryResult {
+        private static final ObjectWriter writer = new ObjectMapper().enable(MapperFeature.USE_WRAPPER_NAME_AS_PROPERTY_NAME).writerWithDefaultPrettyPrinter();
+
+        private final RebuildingScannerTestHelper.TEARDOWN teardown;
+        private final RebuildingScannerTestHelper.INTERRUPT interrupt;
+        private final DefaultEventQueryResponse response;
+        private final String json;
+
+        private QueryResult(RebuildingScannerTestHelper.TEARDOWN teardown, RebuildingScannerTestHelper.INTERRUPT interrupt, DefaultEventQueryResponse response)
+                        throws JsonProcessingException {
+            this.teardown = teardown;
+            this.interrupt = interrupt;
+            this.response = response;
+            this.json = writer.writeValueAsString(response);
+        }
+    }
+
+    private static class Group {
+        private final SortedSet<String> groupValues;
+        private final SortedMap<String,SortedMap<AggregateOperation,String>> aggregateValues = new TreeMap<>();
+        private int count;
+
+        public static Group of(String... values) {
+            return new Group(values);
+        }
+
+        public Group() {
+            this.groupValues = new TreeSet<>();
+        }
+
+        public Group(String... values) {
+            this.groupValues = Sets.newTreeSet(values);
+        }
+
+        public void addGroupValue(String value) {
+            this.groupValues.add(value);
+        }
+
+        public Group withCount(int count) {
+            this.count = count;
+            return this;
+        }
+
+        public Group withAggregate(Aggregate field) {
+            this.aggregateValues.put(field.field, field.values);
+            return this;
+        }
+
+        public Group withFieldSum(String field, String sum) {
+            putAggregate(field, AggregateOperation.SUM, sum);
+            return this;
+        }
+
+        public Group withFieldMax(String field, String max) {
+            putAggregate(field, AggregateOperation.MAX, max);
+            return this;
+        }
+
+        public Group withFieldMin(String field, String min) {
+            putAggregate(field, AggregateOperation.MIN, min);
+            return this;
+        }
+
+        public Group withFieldCount(String field, String count) {
+            putAggregate(field, AggregateOperation.COUNT, count);
+            return this;
+        }
+
+        public Group withFieldAverage(String field, String average) {
+            putAggregate(field, AggregateOperation.AVERAGE, average);
+            return this;
+        }
+
+        private void putAggregate(String field, AggregateOperation operation, String value) {
+            Map<AggregateOperation,String> map = aggregateValues.computeIfAbsent(field, k -> new TreeMap<>());
+            map.put(operation, value);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            Group group = (Group) o;
+            return count == group.count && Objects.equals(groupValues, group.groupValues) && Objects.equals(aggregateValues, group.aggregateValues);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(groupValues, count, aggregateValues);
+        }
+
+        @Override
+        public String toString() {
+            return new ToStringBuilder(this).append("groupValues", groupValues).append("aggregateValues", aggregateValues).append("count", count).toString();
+        }
+    }
+
+    private static class Aggregate {
+        private final String field;
+        private final SortedMap<AggregateOperation,String> values = new TreeMap<>();
+
+        public static Aggregate of(String field) {
+            return new Aggregate(field);
+        }
+
+        public Aggregate(String field) {
+            this.field = field;
+        }
+
+        public Aggregate withSum(String sum) {
+            values.put(AggregateOperation.SUM, sum);
+            return this;
+        }
+
+        public Aggregate withAverage(String average) {
+            values.put(AggregateOperation.AVERAGE, average);
+            return this;
+        }
+
+        public Aggregate withCount(String count) {
+            values.put(AggregateOperation.COUNT, count);
+            return this;
+        }
+
+        public Aggregate withMin(String min) {
+            values.put(AggregateOperation.MIN, min);
+            return this;
+        }
+
+        public Aggregate withMax(String max) {
+            values.put(AggregateOperation.MAX, max);
+            return this;
+        }
+    }
+
+    private static final String COUNT_FIELD = "COUNT";
+    private static final Set<String> FIELDS_OF_INTEREST = ImmutableSet.of("GENDER", "GEN", "BIRTHDAY", "AGE", "AG", "RECORD");
+    private static final Logger log = Logger.getLogger(GroupingTest.class);
+    private static final String COLVIS_MARKING = "columnVisibility";
+    private static final String REDUCED_COLVIS = "ALL&E&I";
+    private static final Authorizations auths = new Authorizations("ALL", "E", "I");
+    private static final EnumSet<RebuildingScannerTestHelper.TEARDOWN> TEARDOWNS = EnumSet.allOf(RebuildingScannerTestHelper.TEARDOWN.class);
+    private static final EnumSet<RebuildingScannerTestHelper.INTERRUPT> INTERRUPTS = EnumSet.allOf(RebuildingScannerTestHelper.INTERRUPT.class);
+    private static final Set<Authorizations> authSet = Collections.singleton(auths);
+
     @Inject
     @SpringBean(name = "EventQuery")
     protected ShardQueryLogic logic;
-    
     protected KryoDocumentDeserializer deserializer;
-    
+
     private final DateFormat format = new SimpleDateFormat("yyyyMMdd");
-    
+    private final Map<String,String> queryParameters = new HashMap<>();
+    private final Map<SortedSet<String>,Group> expectedGroups = new HashMap<>();
+    private final List<QueryResult> queryResults = new ArrayList<>();
+
+    private String query;
+    private Date startDate;
+    private Date endDate;
+    private BiConsumer<AccumuloClient,String> dataWriter;
+
     @Deployment
     public static JavaArchive createDeployment() {
-        
-        return ShrinkWrap
-                        .create(JavaArchive.class)
+        return ShrinkWrap.create(JavaArchive.class)
                         .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "org.jboss.logging",
                                         "datawave.webservice.query.result.event")
-                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
-                        .deleteClass(datawave.query.metrics.ShardTableQueryMetricHandler.class)
-                        .addAsManifestResource(
-                                        new StringAsset("<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>"
-                                                        + "</alternatives>"), "beans.xml");
+                        .deleteClass(DefaultEdgeEventQueryLogic.class).deleteClass(RemoteEdgeDictionary.class)
+                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class).deleteClass(datawave.query.metrics.ShardTableQueryMetricHandler.class)
+                        .addAsManifestResource(new StringAsset(
+                                        "<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>" + "</alternatives>"),
+                                        "beans.xml");
     }
-    
+
+    @BeforeClass
+    public static void beforeClass() {
+        TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
+    }
+
+    @Before
+    public void setup() throws ParseException {
+        this.logic.setFullTableScanEnabled(true);
+        this.logic.setMaxEvaluationPipelines(1);
+        this.logic.setQueryExecutionForPageTimeout(300000000000000L);
+        this.deserializer = new KryoDocumentDeserializer();
+        this.startDate = format.parse("20091231");
+        this.endDate = format.parse("20150101");
+    }
+
+    @After
+    public void tearDown() {
+        this.queryParameters.clear();
+        this.query = null;
+        this.startDate = null;
+        this.endDate = null;
+        this.expectedGroups.clear();
+        this.queryResults.clear();
+        this.dataWriter = null;
+    }
+
     @AfterClass
     public static void teardown() {
         TypeRegistry.reset();
     }
-    
-    @Before
-    public void setup() {
-        TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
-        
-        logic.setFullTableScanEnabled(true);
-        logic.setMaxEvaluationPipelines(1);
-        logic.setQueryExecutionForPageTimeout(300000000000000L);
-        deserializer = new KryoDocumentDeserializer();
+
+    protected abstract String getRange();
+
+    private void givenQuery(String query) {
+        this.query = query;
     }
-    
-    protected abstract BaseQueryResponse runTestQueryWithGrouping(Map<String,Integer> expected, String querystr, Date startDate, Date endDate,
-                    Map<String,String> extraParms, RebuildingScannerTestHelper.TEARDOWN teardown, RebuildingScannerTestHelper.INTERRUPT interrupt)
-                    throws Exception;
-    
-    protected BaseQueryResponse runTestQueryWithGrouping(Map<String,Integer> expected, String querystr, Date startDate, Date endDate,
-                    Map<String,String> extraParms, Connector connector) throws Exception {
-        log.debug("runTestQueryWithGrouping");
-        
-        QueryImpl settings = new QueryImpl();
-        settings.setBeginDate(startDate);
-        settings.setEndDate(endDate);
-        settings.setPagesize(Integer.MAX_VALUE);
-        settings.setQueryAuthorizations(auths.serialize());
-        settings.setQuery(querystr);
-        settings.setParameters(extraParms);
-        settings.setId(UUID.randomUUID());
-        
-        log.debug("query: " + settings.getQuery());
-        log.debug("logic: " + settings.getQueryLogicName());
-        
-        GenericQueryConfiguration config = logic.initialize(connector, settings, authSet);
-        logic.setupQuery(config);
-        
-        DocumentTransformer transformer = (DocumentTransformer) (logic.getTransformer(settings));
-        TransformIterator iter = new DatawaveTransformIterator(logic.iterator(), transformer);
-        List<Object> eventList = new ArrayList<>();
-        while (iter.hasNext()) {
-            eventList.add(iter.next());
-        }
-        
-        BaseQueryResponse response = transformer.createResponse(eventList);
-        
-        // un-comment to look at the json output
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.enable(MapperFeature.USE_WRAPPER_NAME_AS_PROPERTY_NAME);
-        mapper.writeValue(temporaryFolder.newFile(), response);
-        
-        Assert.assertTrue(response instanceof DefaultEventQueryResponse);
-        DefaultEventQueryResponse eventQueryResponse = (DefaultEventQueryResponse) response;
-        
-        Assert.assertEquals("Got the wrong number of events", expected.size(), (long) eventQueryResponse.getReturnedEvents());
-        
-        for (EventBase event : eventQueryResponse.getEvents()) {
-            
-            String firstKey = "";
-            String secondKey = "";
-            Integer value = null;
-            for (Object field : event.getFields()) {
-                FieldBase fieldBase = (FieldBase) field;
-                switch (fieldBase.getName()) {
-                    case "COUNT":
-                        value = Integer.valueOf(fieldBase.getValueString());
-                        break;
-                    case "GENDER":
-                    case "GEN":
-                    case "BIRTHDAY":
-                        firstKey = fieldBase.getValueString();
-                        break;
-                    case "AGE":
-                    case "AG":
-                    case "RECORD":
-                        secondKey = fieldBase.getValueString();
-                        break;
-                }
-            }
-            
-            log.debug("mapping is " + firstKey + "-" + secondKey + " count:" + value);
-            String key;
-            if (!firstKey.isEmpty() && !secondKey.isEmpty()) {
-                key = firstKey + "-" + secondKey;
-            } else if (!firstKey.isEmpty()) {
-                key = firstKey;
-            } else {
-                key = secondKey;
-            }
-            Assert.assertEquals(expected.get(key), value);
-        }
-        return response;
+
+    private void givenQueryParameter(String key, String value) {
+        this.queryParameters.put(key, value);
     }
-    
-    @Test
-    public void testGrouping() throws Exception {
-        Map<String,String> extraParameters = new HashMap<>();
-        
-        Date startDate = format.parse("20091231");
-        Date endDate = format.parse("20150101");
-        
-        String queryString = "UUID =~ '^[CS].*'";
-        
-        // @formatter:off
-        Map<String,Integer> expectedMap = ImmutableMap.<String,Integer> builder()
-                .put("FEMALE-18", 2)
-                .put("MALE-30", 1)
-                .put("MALE-34", 1)
-                .put("MALE-16", 1)
-                .put("MALE-40", 2)
-                .put("MALE-20", 2)
-                .put("MALE-24", 1)
-                .put("MALE-22", 2)
-                .build();
-        // @formatter:on
-        
-        extraParameters.put("group.fields", "AGE,$GENDER");
-        extraParameters.put("group.fields.batch.size", "6");
-        
-        List<List<EventBase>> responseEvents = new ArrayList<>();
-        for (RebuildingScannerTestHelper.TEARDOWN teardown : TEARDOWNS) {
-            for (RebuildingScannerTestHelper.INTERRUPT interrupt : INTERRUPTS) {
-                responseEvents.add(((DefaultEventQueryResponse) runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate, extraParameters,
-                                teardown, interrupt)).getEvents());
-            }
-        }
-        List<String> digested = digest(responseEvents);
-        log.debug("reponses:" + digested);
-        Set<String> responseSet = Sets.newHashSet(digested);
-        // if the grouped results from every type of rebuild are the same, there should be only 1 entry in the responseSet
-        Assert.assertEquals(responseSet.size(), 1);
+
+    private void expectGroup(Group group) {
+        expectedGroups.put(group.groupValues, group);
     }
-    
-    // grab the relevant stuff from the events and do some formatting
-    private List<String> digest(List<List<EventBase>> in) {
-        List<String> stringList = new ArrayList<>();
-        for (List<EventBase> list : in) {
-            StringBuilder builder = new StringBuilder();
-            for (EventBase eb : list) {
-                for (Object field : eb.getFields()) {
-                    FieldBase fieldBase = (FieldBase) field;
-                    builder.append(fieldBase.getName());
-                    builder.append(':');
-                    builder.append(fieldBase.getTypedValue().getValue());
-                    builder.append(',');
-                }
-            }
-            stringList.add(builder.toString() + '\n');
-        }
-        return stringList;
+
+    private void givenLuceneParserForLogic() {
+        logic.setParser(new LuceneToJexlQueryParser());
     }
-    
-    @Test
-    public void testGrouping2() throws Exception {
-        Map<String,String> extraParameters = new HashMap<>();
-        
-        Date startDate = format.parse("20091231");
-        Date endDate = format.parse("20150101");
-        
-        String queryString = "UUID =~ '^[CS].*'";
-        
-        // @formatter:off
-        Map<String,Integer> expectedMap = ImmutableMap.<String,Integer> builder()
-                .put("18", 2)
-                .put("30", 1)
-                .put("34", 1)
-                .put("16", 1)
-                .put("40", 2)
-                .put("20", 2)
-                .put("24", 1)
-                .put("22", 2)
-                .build();
-        // @formatter:on
-        extraParameters.put("group.fields", "AGE");
-        extraParameters.put("group.fields.batch.size", "6");
-        
-        for (RebuildingScannerTestHelper.TEARDOWN teardown : TEARDOWNS) {
-            for (RebuildingScannerTestHelper.INTERRUPT interrupt : INTERRUPTS) {
-                runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate, extraParameters, teardown, interrupt);
+
+    private void givenNonModelData() {
+        dataWriter = (client, range) -> {
+            try {
+                VisibilityWiseGuysIngest.writeItAll(client, range);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
             }
-        }
+        };
     }
-    
-    @Test
-    public void testGrouping3() throws Exception {
-        Map<String,String> extraParameters = new HashMap<>();
-        
-        Date startDate = format.parse("20091231");
-        Date endDate = format.parse("20150101");
-        
-        String queryString = "UUID =~ '^[CS].*'";
-        
-        Map<String,Integer> expectedMap = ImmutableMap.of("MALE", 10, "FEMALE", 2);
-        
-        extraParameters.put("group.fields", "GENDER");
-        extraParameters.put("group.fields.batch.size", "0");
-        
-        for (RebuildingScannerTestHelper.TEARDOWN teardown : TEARDOWNS) {
-            for (RebuildingScannerTestHelper.INTERRUPT interrupt : INTERRUPTS) {
-                runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate, extraParameters, teardown, interrupt);
+
+    private void givenModelData() {
+        dataWriter = (client, range) -> {
+            try {
+                VisibilityWiseGuysIngestWithModel.writeItAll(client, range);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
             }
-        }
+        };
     }
-    
-    @Test
-    public void testGroupingWithReducedResponse() throws Exception {
-        Map<String,String> extraParameters = new HashMap<>();
-        
-        Date startDate = format.parse("20091231");
-        Date endDate = format.parse("20150101");
-        
-        String queryString = "UUID =~ '^[CS].*'";
-        
-        Map<String,Integer> expectedMap = ImmutableMap.of("MALE", 10, "FEMALE", 2);
-        
-        extraParameters.put("reduced.response", "true");
-        extraParameters.put("group.fields", "GENDER");
-        extraParameters.put("group.fields.batch.size", "0");
-        
-        for (RebuildingScannerTestHelper.TEARDOWN teardown : TEARDOWNS) {
-            for (RebuildingScannerTestHelper.INTERRUPT interrupt : INTERRUPTS) {
-                EventQueryResponseBase response = (EventQueryResponseBase) runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate,
-                                extraParameters, teardown, interrupt);
-                
-                for (EventBase event : response.getEvents()) {
-                    // The event should have a collapsed columnVisibility
-                    String actualCV = event.getMarkings().get(COLVIS_MARKING).toString();
-                    Assert.assertEquals(EXPECTED_COLVIS, actualCV);
-                    
-                    // The fields should have no columnVisibility
-                    for (Object f : event.getFields()) {
-                        FieldBase<?> field = (FieldBase<?>) f;
-                        Assert.assertNull(field.getMarkings().get(COLVIS_MARKING));
+
+    private void assertGroups() {
+        for (QueryResult result : queryResults) {
+            Map<SortedSet<String>,Group> actualGroups = new HashMap<>();
+            // noinspection rawtypes
+            for (EventBase event : result.response.getEvents()) {
+                Group group = new Group();
+                for (Object field : event.getFields()) {
+                    FieldBase<?> fieldBase = (FieldBase<?>) field;
+                    String fieldName = fieldBase.getName();
+                    if (fieldName.equals(COUNT_FIELD)) {
+                        group.withCount(Integer.parseInt(fieldBase.getValueString()));
+                    } else if (FIELDS_OF_INTEREST.contains(fieldName)) {
+                        group.addGroupValue(fieldBase.getValueString());
+                    } else if (fieldName.endsWith(DocumentGrouper.FIELD_SUM_SUFFIX)) {
+                        fieldName = removeSuffix(fieldName, DocumentGrouper.FIELD_SUM_SUFFIX);
+                        group.withFieldSum(fieldName, fieldBase.getValueString());
+                    } else if (fieldName.endsWith(DocumentGrouper.FIELD_MAX_SUFFIX)) {
+                        fieldName = removeSuffix(fieldName, DocumentGrouper.FIELD_MAX_SUFFIX);
+                        group.withFieldMax(fieldName, fieldBase.getValueString());
+                    } else if (fieldName.endsWith(DocumentGrouper.FIELD_MIN_SUFFIX)) {
+                        fieldName = removeSuffix(fieldName, DocumentGrouper.FIELD_MIN_SUFFIX);
+                        group.withFieldMin(fieldName, fieldBase.getValueString());
+                    } else if (fieldName.endsWith(DocumentGrouper.FIELD_COUNT_SUFFIX)) {
+                        fieldName = removeSuffix(fieldName, DocumentGrouper.FIELD_COUNT_SUFFIX);
+                        group.withFieldCount(fieldName, fieldBase.getValueString());
+                    } else if (fieldName.endsWith(DocumentGrouper.FIELD_AVERAGE_SUFFIX)) {
+                        fieldName = removeSuffix(fieldName, DocumentGrouper.FIELD_AVERAGE_SUFFIX);
+                        group.withFieldAverage(fieldName, fieldBase.getValueString());
                     }
                 }
+                actualGroups.put(group.groupValues, group);
             }
+            assertThat(actualGroups).describedAs("Assert group for teardown: %s, interrupt: %s", result.teardown, result.interrupt)
+                            .containsExactlyInAnyOrderEntriesOf(expectedGroups);
         }
     }
-    
-    @Test
-    public void testGrouping4() throws Exception {
-        Map<String,String> extraParameters = new HashMap<>();
-        
-        Date startDate = format.parse("20091231");
-        Date endDate = format.parse("20150101");
-        
-        String queryString = "UUID =~ '^[CS].*'";
-        
-        Map<String,Integer> expectedMap = ImmutableMap.of("MALE", 10, "FEMALE", 2);
-        
-        extraParameters.put("group.fields", "GENDER");
-        extraParameters.put("group.fields.batch.size", "6");
-        
-        for (RebuildingScannerTestHelper.TEARDOWN teardown : TEARDOWNS) {
-            for (RebuildingScannerTestHelper.INTERRUPT interrupt : INTERRUPTS) {
-                runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate, extraParameters, teardown, interrupt);
+
+    private String removeSuffix(String str, String suffix) {
+        int suffixLength = suffix.length();
+        return str.substring(0, str.length() - suffixLength);
+    }
+
+    private void assertResponseEventsAreIdenticalForAllTestResults() {
+        RebuildingScannerTestHelper.TEARDOWN prevTeardown = null;
+        RebuildingScannerTestHelper.INTERRUPT prevInterrupt = null;
+        String prevEvents = null;
+
+        for (QueryResult result : queryResults) {
+            DefaultEventQueryResponse response = result.response;
+            String events = getEventFieldNamesAndValues(response);
+            if (prevEvents != null) {
+                assertThat(events)
+                                .describedAs("Assert events are identical between result from (teardown: %s, interrupt: %s) and (teardown: %s, interrupt: %s)",
+                                                result.teardown, result.interrupt, prevTeardown, prevInterrupt)
+                                .isEqualTo(prevEvents);
             }
+            prevEvents = events;
+            prevTeardown = result.teardown;
+            prevInterrupt = result.interrupt;
         }
     }
-    
-    @Test
-    public void testGroupingEntriesWithNoContext() throws Exception {
-        // Testing multivalued entries with no grouping context
-        Map<String,String> extraParameters = new HashMap<>();
-        
-        Date startDate = format.parse("20091231");
-        Date endDate = format.parse("20150101");
-        
-        String queryString = "UUID =~ '^[CS].*'";
-        
-        Map<String,Integer> expectedMap = ImmutableMap.of("1", 3, "2", 3, "3", 1);
-        
-        extraParameters.put("group.fields", "RECORD");
-        
-        for (RebuildingScannerTestHelper.TEARDOWN teardown : TEARDOWNS) {
-            for (RebuildingScannerTestHelper.INTERRUPT interrupt : INTERRUPTS) {
-                runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate, extraParameters, teardown, interrupt);
-            }
-        }
-    }
-    
-    @Test
-    public void testGroupingMixedEntriesWithAndWithNoContext() throws Exception {
-        // Testing multivalued entries with no grouping context in combination with a grouping context entries
-        Map<String,String> extraParameters = new HashMap<>();
-        
-        Date startDate = format.parse("20091231");
-        Date endDate = format.parse("20150101");
-        
-        String queryString = "UUID =~ '^[CS].*'";
-        
+
+    private String getEventFieldNamesAndValues(DefaultEventQueryResponse response) {
         // @formatter:off
-        Map<String,Integer> expectedMap = ImmutableMap.<String,Integer> builder()
-                .put("FEMALE-2", 1)
-                .put("MALE-1", 3)
-                .put("MALE-2", 2)
-                .put("MALE-3", 1)
-                .build();
+        //noinspection unchecked
+        return response.getEvents().stream().map((event) -> ((List<FieldBase<?>>)event.getFields()))
+                        .flatMap(List::stream)
+                        .map((field) -> field.getName() + ":" + field.getTypedValue().getValue())
+                        .collect(Collectors.joining(","));
         // @formatter:on
-        
-        extraParameters.put("group.fields", "GENDER,RECORD");
-        // extraParameters.put("group.fields.batch.size", "12");
-        
+    }
+
+    private void collectQueryResults() throws Exception {
         for (RebuildingScannerTestHelper.TEARDOWN teardown : TEARDOWNS) {
             for (RebuildingScannerTestHelper.INTERRUPT interrupt : INTERRUPTS) {
-                runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate, extraParameters, teardown, interrupt);
+                queryResults.add(getQueryResult(teardown, interrupt));
             }
         }
     }
-    
-    @Test
-    public void testGroupingUsingFunction() throws Exception {
-        Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("group.fields.batch.size", "6");
-        
-        Date startDate = format.parse("20091231");
-        Date endDate = format.parse("20150101");
-        
-        String queryString = "UUID =~ '^[CS].*' && f:groupby('$AGE','GENDER')";
-        
-        // @formatter:off
-        Map<String,Integer> expectedMap = ImmutableMap.<String,Integer> builder()
-                .put("FEMALE-18", 2)
-                .put("MALE-30", 1)
-                .put("MALE-34", 1)
-                .put("MALE-16", 1)
-                .put("MALE-40", 2)
-                .put("MALE-20", 2)
-                .put("MALE-24", 1)
-                .put("MALE-22", 2)
-                .build();
-        // @formatter:on
-        
-        for (RebuildingScannerTestHelper.TEARDOWN teardown : TEARDOWNS) {
-            for (RebuildingScannerTestHelper.INTERRUPT interrupt : INTERRUPTS) {
-                runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate, extraParameters, teardown, interrupt);
-            }
-        }
+
+    private QueryResult getQueryResult(RebuildingScannerTestHelper.TEARDOWN teardown, RebuildingScannerTestHelper.INTERRUPT interrupt) throws Exception {
+        // Initialize the query settings.
+        QueryImpl settings = new QueryImpl();
+        settings.setBeginDate(this.startDate);
+        settings.setEndDate(this.endDate);
+        settings.setPagesize(Integer.MAX_VALUE);
+        settings.setQueryAuthorizations(auths.serialize());
+        settings.setQuery(this.query);
+        settings.setParameters(this.queryParameters);
+        settings.setId(UUID.randomUUID());
+
+        log.debug("query: " + settings.getQuery());
+        log.debug("queryLogicName: " + settings.getQueryLogicName());
+
+        // Initialize the query logic.
+        AccumuloClient client = createClient(teardown, interrupt);
+        GenericQueryConfiguration config = logic.initialize(client, settings, authSet);
+        logic.setupQuery(config);
+
+        // Run the query and retrieve the response.
+        DocumentTransformer transformer = (DocumentTransformer) (logic.getTransformer(settings));
+        List<Object> eventList = Lists.newArrayList(new DatawaveTransformIterator<>(logic.iterator(), transformer));
+        DefaultEventQueryResponse response = ((DefaultEventQueryResponse) transformer.createResponse(eventList));
+
+        // Return the test result.
+        return new QueryResult(teardown, interrupt, response);
     }
-    
-    @Test
-    public void testGroupingUsingLuceneFunction() throws Exception {
-        Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("group.fields.batch.size", "6");
-        
-        Date startDate = format.parse("20091231");
-        Date endDate = format.parse("20150101");
-        
-        String queryString = "(UUID:C* or UUID:S* ) and #GROUPBY('AGE','$GENDER')";
-        
-        // @formatter:off
-        Map<String,Integer> expectedMap = ImmutableMap.<String,Integer> builder()
-                .put("FEMALE-18", 2)
-                .put("MALE-30", 1)
-                .put("MALE-34", 1)
-                .put("MALE-16", 1)
-                .put("MALE-40", 2)
-                .put("MALE-20", 2)
-                .put("MALE-24", 1)
-                .put("MALE-22", 2)
-                .build();
-        // @formatter:on
-        logic.setParser(new LuceneToJexlQueryParser());
-        for (RebuildingScannerTestHelper.TEARDOWN teardown : TEARDOWNS) {
-            for (RebuildingScannerTestHelper.INTERRUPT interrupt : INTERRUPTS) {
-                runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate, extraParameters, teardown, interrupt);
-            }
-        }
-        logic.setParser(new JexlControlledQueryParser());
+
+    private AccumuloClient createClient(RebuildingScannerTestHelper.TEARDOWN teardown, RebuildingScannerTestHelper.INTERRUPT interrupt) throws Exception {
+        AccumuloClient client = new QueryTestTableHelper(getClass().toString(), log, teardown, interrupt).client;
+        dataWriter.accept(client, getRange());
+        PrintUtility.printTable(client, auths, TableName.SHARD);
+        PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
+        PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+        return client;
     }
-    
+
     @Test
-    public void testGroupingUsingLuceneFunctionWithDuplicateValues() throws Exception {
-        Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("group.fields.batch.size", "6");
-        
-        Date startDate = format.parse("20091231");
-        Date endDate = format.parse("20150101");
-        
-        String queryString = "(UUID:CORLEONE) and #GROUPBY('AGE','BIRTHDAY')";
-        
-        // @formatter:off
-        Map<String,Integer> expectedMap = ImmutableMap.<String,Integer> builder()
-                .put("4-18", 1)
-                .put("5-40", 1)
-                .put("3-20", 1)
-                .put("1-24", 1)
-                .put("2-22", 1)
-                .put("22-22", 1)
-                .build();
-        // @formatter:on
-        logic.setParser(new LuceneToJexlQueryParser());
-        for (RebuildingScannerTestHelper.TEARDOWN teardown : TEARDOWNS) {
-            for (RebuildingScannerTestHelper.INTERRUPT interrupt : INTERRUPTS) {
-                runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate, extraParameters, teardown, interrupt);
-            }
-        }
-        logic.setParser(new JexlControlledQueryParser());
+    public void testGroupByAgeAndGenderWithBatchSizeOfSix() throws Exception {
+        givenNonModelData();
+
+        givenQuery("UUID =~ '^[CS].*'");
+
+        givenQueryParameter(QueryParameters.GROUP_FIELDS, "AGE,$GENDER");
+        givenQueryParameter(QueryParameters.GROUP_FIELDS_BATCH_SIZE, "6");
+
+        expectGroup(Group.of("FEMALE", "18").withCount(2));
+        expectGroup(Group.of("MALE", "30").withCount(1));
+        expectGroup(Group.of("MALE", "34").withCount(1));
+        expectGroup(Group.of("MALE", "16").withCount(1));
+        expectGroup(Group.of("MALE", "40").withCount(2));
+        expectGroup(Group.of("MALE", "20").withCount(2));
+        expectGroup(Group.of("MALE", "24").withCount(1));
+        expectGroup(Group.of("MALE", "22").withCount(2));
+
+        // Run the test queries and collect their results.
+        collectQueryResults();
+
+        // Verify the results.
+        assertGroups();
+        assertResponseEventsAreIdenticalForAllTestResults();
     }
-    
+
+    /**
+     * Verify grouping by age with a batch size of 6 works correctly.
+     */
     @Test
-    public void testCountingMap() {
-        MarkingFunctions markingFunctions = new MarkingFunctions.Default();
-        GroupCountingHashMap map = new GroupCountingHashMap(markingFunctions);
-        GroupingTypeAttribute attr1 = new GroupingTypeAttribute(new LcType("FOO"), new Key("FOO"), true);
-        attr1.setColumnVisibility(new ColumnVisibility("A"));
-        map.add(Collections.singleton(attr1));
-        
-        GroupingTypeAttribute attr2 = new GroupingTypeAttribute(new LcType("FOO"), new Key("FOO"), true);
-        attr2.setColumnVisibility(new ColumnVisibility("B"));
-        map.add(Collections.singleton(attr2));
-        GroupingTypeAttribute attr3 = new GroupingTypeAttribute(new LcType("BAR"), new Key("BAR"), true);
-        attr3.setColumnVisibility(new ColumnVisibility("C"));
-        map.add(Collections.singleton(attr3));
-        
-        log.debug("map is: " + map);
-        
-        for (Map.Entry<Collection<GroupingTypeAttribute<?>>,Integer> entry : map.entrySet()) {
-            Attribute<?> attr = entry.getKey().iterator().next(); // the first and only one
-            int count = entry.getValue();
-            if (attr.getData().toString().equals("FOO")) {
-                Assert.assertEquals(2, count);
-                Assert.assertEquals(new ColumnVisibility("A&B"), attr.getColumnVisibility());
-            } else if (attr.getData().toString().equals("BAR")) {
-                Assert.assertEquals(1, count);
-                Assert.assertEquals(new ColumnVisibility("C"), attr.getColumnVisibility());
-            }
-        }
+    public void testGroupByAgeWithBatchSizeOfSix() throws Exception {
+        givenNonModelData();
+
+        givenQuery("UUID =~ '^[CS].*'");
+
+        givenQueryParameter(QueryParameters.GROUP_FIELDS, "AGE");
+        givenQueryParameter(QueryParameters.GROUP_FIELDS_BATCH_SIZE, "6");
+
+        expectGroup(Group.of("18").withCount(2));
+        expectGroup(Group.of("30").withCount(1));
+        expectGroup(Group.of("34").withCount(1));
+        expectGroup(Group.of("16").withCount(1));
+        expectGroup(Group.of("40").withCount(2));
+        expectGroup(Group.of("20").withCount(2));
+        expectGroup(Group.of("24").withCount(1));
+        expectGroup(Group.of("22").withCount(2));
+
+        collectQueryResults();
+
+        assertGroups();
     }
-    
+
+    /**
+     * Verify that grouping by gender with a batch size of 0 works correctly.
+     */
     @Test
-    public void testCountingMapAgain() {
-        MarkingFunctions markingFunctions = new MarkingFunctions.Default();
-        GroupCountingHashMap map = new GroupCountingHashMap(markingFunctions);
-        
-        GroupingTypeAttribute<?> attr1a = new GroupingTypeAttribute(new LcType("FOO"), new Key("NAME"), true);
-        attr1a.setColumnVisibility(new ColumnVisibility("A"));
-        GroupingTypeAttribute<?> attr1b = new GroupingTypeAttribute(new NumberType("5"), new Key("AGE"), true);
-        attr1b.setColumnVisibility(new ColumnVisibility("C"));
-        Set<GroupingTypeAttribute<?>> seta = Sets.newHashSet(attr1a, attr1b);
-        map.add(seta);
-        
-        GroupingTypeAttribute<?> attr2a = new GroupingTypeAttribute(new LcType("FOO"), new Key("NAME"), true);
-        attr2a.setColumnVisibility(new ColumnVisibility("B"));
-        GroupingTypeAttribute<?> attr2b = new GroupingTypeAttribute(new NumberType("5"), new Key("AGE"), true);
-        attr2b.setColumnVisibility(new ColumnVisibility("D"));
-        Set<GroupingTypeAttribute<?>> setb = Sets.newHashSet(attr2a, attr2b);
-        map.add(setb);
-        
-        // even though the ColumnVisibilities are different, the 2 collections seta and setb are 'equal' and generate the same hashCode
-        Assert.assertEquals(seta.hashCode(), setb.hashCode());
-        Assert.assertEquals(seta, setb);
-        
-        GroupingTypeAttribute attr3a = new GroupingTypeAttribute(new LcType("BAR"), new Key("NAME"), true);
-        attr3a.setColumnVisibility(new ColumnVisibility("C"));
-        GroupingTypeAttribute attr3b = new GroupingTypeAttribute(new NumberType("6"), new Key("AGE"), true);
-        attr3b.setColumnVisibility(new ColumnVisibility("D"));
-        map.add(Sets.newHashSet(attr3a, attr3b));
-        
-        log.debug("map is: " + map);
-        
-        for (Map.Entry<Collection<GroupingTypeAttribute<?>>,Integer> entry : map.entrySet()) {
-            for (Attribute<?> attr : entry.getKey()) {
-                int count = entry.getValue();
-                if (attr.getData().toString().equals("FOO")) {
-                    Assert.assertEquals(2, count);
-                    // the ColumnVisibility for the key was changed to the merged value of the 2 items that were added to the map
-                    Assert.assertEquals(new ColumnVisibility("A&B"), attr.getColumnVisibility());
-                } else if (attr.getData().toString().equals("5")) {
-                    Assert.assertEquals(2, count);
-                    // the ColumnVisibility for the key was changed to the merged value of the 2 items that were added to the map
-                    Assert.assertEquals(new ColumnVisibility("C&D"), attr.getColumnVisibility());
-                } else if (attr.getData().toString().equals("BAR")) {
-                    Assert.assertEquals(1, count);
-                    Assert.assertEquals(new ColumnVisibility("C"), attr.getColumnVisibility());
-                } else if (attr.getData().toString().equals("6")) {
-                    Assert.assertEquals(1, count);
-                    Assert.assertEquals(new ColumnVisibility("D"), attr.getColumnVisibility());
+    public void testGroupByGenderWithBatchSizeOfZero() throws Exception {
+        givenNonModelData();
+
+        givenQuery("UUID =~ '^[CS].*'");
+
+        givenQueryParameter(QueryParameters.GROUP_FIELDS, "GENDER");
+        givenQueryParameter(QueryParameters.GROUP_FIELDS_BATCH_SIZE, "0");
+
+        expectGroup(Group.of("MALE").withCount(10));
+        expectGroup(Group.of("FEMALE").withCount(2));
+
+        // Run the test queries and collect their results.
+        collectQueryResults();
+
+        // Verify the results.
+        assertGroups();
+    }
+
+    /**
+     * Verify grouping by gender with a batch size of 6 works correctly.
+     */
+    @Test
+    public void testGroupByGenderWithBatchSizeOfSix() throws Exception {
+        givenNonModelData();
+
+        givenQuery("UUID =~ '^[CS].*'");
+
+        givenQueryParameter(QueryParameters.GROUP_FIELDS, "GENDER");
+        givenQueryParameter(QueryParameters.GROUP_FIELDS_BATCH_SIZE, "6");
+
+        expectGroup(Group.of("MALE").withCount(10));
+        expectGroup(Group.of("FEMALE").withCount(2));
+
+        // Run the test queries and collect their results.
+        collectQueryResults();
+
+        // Verify the results.
+        assertGroups();
+    }
+
+    /**
+     * Verify that reducing the response when grouping results in the correct combined visibility and markings.
+     */
+    @Test
+    public void testGroupByWithReducedResponse() throws Exception {
+        givenNonModelData();
+
+        givenQuery("UUID =~ '^[CS].*'");
+
+        givenQueryParameter(QueryOptions.REDUCED_RESPONSE, "true");
+        givenQueryParameter(QueryParameters.GROUP_FIELDS, "GENDER");
+        givenQueryParameter(QueryParameters.GROUP_FIELDS_BATCH_SIZE, "0");
+
+        expectGroup(Group.of("MALE").withCount(10));
+        expectGroup(Group.of("FEMALE").withCount(2));
+
+        // Run the test queries and collect their results.
+        collectQueryResults();
+
+        // Verify the results.
+        assertGroups();
+
+        // Verify that the column visibility was appropriately reduced
+        for (QueryResult result : queryResults) {
+            // noinspection rawtypes
+            for (EventBase event : result.response.getEvents()) {
+                String eventCV = event.getMarkings().get(COLVIS_MARKING).toString();
+                assertThat(eventCV).describedAs("Assert event cv for teardown: %s, interrupt: %s", result.teardown, result.interrupt).isEqualTo(REDUCED_COLVIS);
+                // noinspection unchecked
+                for (FieldBase<?> field : (List<FieldBase<?>>) event.getFields()) {
+                    String fieldCV = field.getMarkings().get(COLVIS_MARKING);
+                    assertThat(fieldCV).describedAs("Assert null field cv for field: %s, teardown: %s, interrupt: %s", field.getName(), result.teardown,
+                                    result.interrupt).isNull();
                 }
             }
         }
     }
-    
-    private static RemoteEdgeDictionary mockRemoteEdgeDictionary = EasyMock.createMock(RemoteEdgeDictionary.class);
-    
-    public static class Producer {
-        @Produces
-        public static RemoteEdgeDictionary produceRemoteEdgeDictionary() {
-            return mockRemoteEdgeDictionary;
-        }
+
+    /**
+     * Verify that grouping by multivalued entries with no context works correctly.
+     */
+    @Test
+    public void testGroupByRecord() throws Exception {
+        givenNonModelData();
+
+        givenQuery("UUID =~ '^[CS].*'");
+
+        givenQueryParameter(QueryParameters.GROUP_FIELDS, "RECORD");
+
+        expectGroup(Group.of("1").withCount(3));
+        expectGroup(Group.of("2").withCount(3));
+        expectGroup(Group.of("3").withCount(1));
+
+        // Run the test queries and collect their results.
+        collectQueryResults();
+
+        // Verify the results.
+        assertGroups();
     }
-    
+
+    /**
+     * Verify that grouping multivalued entries with no context in combination with entries that have grouping context works correctly.
+     */
+    @Test
+    public void testGroupByGenderAndRecord() throws Exception {
+        givenNonModelData();
+
+        givenQuery("UUID =~ '^[CS].*'");
+
+        givenQueryParameter(QueryParameters.GROUP_FIELDS, "GENDER,RECORD");
+
+        expectGroup(Group.of("FEMALE", "1").withCount(2));
+        expectGroup(Group.of("FEMALE", "2").withCount(2));
+        expectGroup(Group.of("MALE", "1").withCount(10));
+        expectGroup(Group.of("MALE", "2").withCount(10));
+        expectGroup(Group.of("MALE", "3").withCount(4));
+
+        // Run the test queries and collect their results.
+        collectQueryResults();
+
+        // Verify the results.
+        assertGroups();
+    }
+
+    /**
+     * Verify that specifying group fields via a JEXL function works correctly.
+     */
+    @Test
+    public void testGroupByJexlFunction() throws Exception {
+        givenNonModelData();
+
+        givenQuery("UUID =~ '^[CS].*' && f:groupby('$AGE','GENDER')");
+
+        givenQueryParameter(QueryParameters.GROUP_FIELDS_BATCH_SIZE, "6");
+
+        expectGroup(Group.of("FEMALE", "18").withCount(2));
+        expectGroup(Group.of("MALE", "30").withCount(1));
+        expectGroup(Group.of("MALE", "34").withCount(1));
+        expectGroup(Group.of("MALE", "16").withCount(1));
+        expectGroup(Group.of("MALE", "40").withCount(2));
+        expectGroup(Group.of("MALE", "20").withCount(2));
+        expectGroup(Group.of("MALE", "24").withCount(1));
+        expectGroup(Group.of("MALE", "22").withCount(2));
+
+        // Run the test queries and collect their results.
+        collectQueryResults();
+
+        // Verify the results.
+        assertGroups();
+    }
+
+    /**
+     * Verify that specifying group fields via a LUCENE function works correctly.
+     */
+    @Test
+    public void testGroupByLuceneFunction() throws Exception {
+        givenNonModelData();
+
+        givenQuery("(UUID:C* or UUID:S* ) and #GROUPBY('AGE','$GENDER')");
+
+        givenQueryParameter(QueryParameters.GROUP_FIELDS_BATCH_SIZE, "6");
+
+        givenLuceneParserForLogic();
+
+        expectGroup(Group.of("FEMALE", "18").withCount(2));
+        expectGroup(Group.of("MALE", "30").withCount(1));
+        expectGroup(Group.of("MALE", "34").withCount(1));
+        expectGroup(Group.of("MALE", "16").withCount(1));
+        expectGroup(Group.of("MALE", "40").withCount(2));
+        expectGroup(Group.of("MALE", "20").withCount(2));
+        expectGroup(Group.of("MALE", "24").withCount(1));
+        expectGroup(Group.of("MALE", "22").withCount(2));
+
+        // Run the test queries and collect their results.
+        collectQueryResults();
+
+        // Verify the results.
+        assertGroups();
+    }
+
+    /**
+     * Verify that specifying group fields via a LUCENE function with two values works correctly.
+     */
+    @Test
+    public void testGroupByLuceneFunctionWithDuplicateValues() throws Exception {
+        givenNonModelData();
+
+        givenQuery("(UUID:CORLEONE) and #GROUPBY('AGE','BIRTHDAY')");
+
+        givenQueryParameter(QueryParameters.GROUP_FIELDS_BATCH_SIZE, "6");
+
+        givenLuceneParserForLogic();
+
+        expectGroup(Group.of("4", "18").withCount(1));
+        expectGroup(Group.of("5", "40").withCount(1));
+        expectGroup(Group.of("3", "20").withCount(1));
+        expectGroup(Group.of("1", "24").withCount(1));
+        expectGroup(Group.of("2", "22").withCount(1));
+        expectGroup(Group.of("22", "22").withCount(1));
+
+        // Run the test queries and collect their results.
+        collectQueryResults();
+
+        // Verify the results.
+        assertGroups();
+    }
+
+    @Test
+    public void testGroupingByGenderAndAllAgeMetrics() throws Exception {
+        givenNonModelData();
+
+        givenQuery("UUID =~ '^[CS].*'");
+
+        givenQueryParameter(QueryParameters.GROUP_FIELDS, "GENDER");
+        givenQueryParameter(QueryParameters.MAX_FIELDS, "AGE");
+        givenQueryParameter(QueryParameters.MIN_FIELDS, "AGE");
+        givenQueryParameter(QueryParameters.SUM_FIELDS, "AGE");
+        givenQueryParameter(QueryParameters.AVERAGE_FIELDS, "AGE");
+        givenQueryParameter(QueryParameters.COUNT_FIELDS, "AGE");
+        givenQueryParameter(QueryParameters.GROUP_FIELDS_BATCH_SIZE, "6");
+
+        expectGroup(Group.of("MALE").withCount(10)
+                        .withAggregate(Aggregate.of("AGE").withCount("10").withMax("40").withMin("16").withSum("268").withAverage("26.8")));
+        expectGroup(Group.of("FEMALE").withCount(2)
+                        .withAggregate(Aggregate.of("AGE").withCount("2").withMax("18").withMin("18").withSum("36").withAverage("18")));
+
+        // Run the test queries and collect their results.
+        collectQueryResults();
+
+        // Verify the results.
+        assertGroups();
+    }
+
+    @Test
+    public void testGroupingByGenderAndAllAgeMetricsUsingJexlFunction() throws Exception {
+        givenNonModelData();
+
+        givenQuery("UUID =~ '^[CS].*' && f:groupby('$GENDER') && f:sum('AGE') && f:min('AGE') && f:max('AGE') && f:average('AGE') && f:count('AGE')");
+
+        expectGroup(Group.of("MALE").withCount(10)
+                        .withAggregate(Aggregate.of("AGE").withCount("10").withMax("40").withMin("16").withSum("268").withAverage("26.8")));
+        expectGroup(Group.of("FEMALE").withCount(2)
+                        .withAggregate(Aggregate.of("AGE").withCount("2").withMax("18").withMin("18").withSum("36").withAverage("18")));
+
+        // Run the test queries and collect their results.
+        collectQueryResults();
+
+        // Verify the results.
+        assertGroups();
+    }
+
+    @Test
+    public void testGroupingByGenderAndAllAgeMetricsUsingLuceneFunction() throws Exception {
+        givenNonModelData();
+
+        givenQuery("(UUID:C* or UUID:S* ) and #GROUPBY('$GENDER') and #SUM('AGE') and #MAX('AGE') and #MIN('AGE') and #AVERAGE('AGE') and #COUNT('AGE')");
+        givenLuceneParserForLogic();
+
+        expectGroup(Group.of("MALE").withCount(10)
+                        .withAggregate(Aggregate.of("AGE").withCount("10").withMax("40").withMin("16").withSum("268").withAverage("26.8")));
+        expectGroup(Group.of("FEMALE").withCount(2)
+                        .withAggregate(Aggregate.of("AGE").withCount("2").withMax("18").withMin("18").withSum("36").withAverage("18")));
+
+        // Run the test queries and collect their results.
+        collectQueryResults();
+
+        // Verify the results.
+        assertGroups();
+    }
+
+    @Test
+    public void testGroupByAgeAndGenderWithBatchSizeOfSixUsingModel() throws Exception {
+        givenModelData();
+
+        givenQuery("UUID =~ '^[CS].*'");
+
+        givenQueryParameter(QueryParameters.GROUP_FIELDS, "AG,GEN");
+        givenQueryParameter(QueryParameters.GROUP_FIELDS_BATCH_SIZE, "6");
+
+        expectGroup(Group.of("FEMALE", "18").withCount(2));
+        expectGroup(Group.of("MALE", "30").withCount(1));
+        expectGroup(Group.of("MALE", "34").withCount(1));
+        expectGroup(Group.of("MALE", "16").withCount(1));
+        expectGroup(Group.of("MALE", "40").withCount(2));
+        expectGroup(Group.of("MALE", "20").withCount(2));
+        expectGroup(Group.of("MALE", "24").withCount(1));
+        expectGroup(Group.of("MALE", "22").withCount(2));
+
+        // Run the test queries and collect their results.
+        collectQueryResults();
+
+        // Verify the results.
+        assertGroups();
+        assertResponseEventsAreIdenticalForAllTestResults();
+    }
+
+    @Test
+    public void testGroupByAgeWithBatchSizeOfSixUsingModel() throws Exception {
+        // Set up the test.
+        givenModelData();
+
+        givenQuery("UUID =~ '^[CS].*'");
+
+        givenQueryParameter(QueryParameters.GROUP_FIELDS, "AG");
+        givenQueryParameter(QueryParameters.GROUP_FIELDS_BATCH_SIZE, "6");
+
+        expectGroup(Group.of("18").withCount(2));
+        expectGroup(Group.of("30").withCount(1));
+        expectGroup(Group.of("34").withCount(1));
+        expectGroup(Group.of("16").withCount(1));
+        expectGroup(Group.of("40").withCount(2));
+        expectGroup(Group.of("20").withCount(2));
+        expectGroup(Group.of("24").withCount(1));
+        expectGroup(Group.of("22").withCount(2));
+
+        // Run the test queries and collect their results.
+        collectQueryResults();
+
+        // Verify the results.
+        assertGroups();
+    }
+
+    @Test
+    public void testGroupByGenderWithBatchSizeOfSixUsingModel() throws Exception {
+        givenModelData();
+
+        givenQuery("UUID =~ '^[CS].*'");
+
+        givenQueryParameter(QueryParameters.GROUP_FIELDS, "GEN");
+        givenQueryParameter(QueryParameters.GROUP_FIELDS_BATCH_SIZE, "6");
+
+        expectGroup(Group.of("MALE").withCount(10));
+        expectGroup(Group.of("FEMALE").withCount(2));
+
+        collectQueryResults();
+
+        assertGroups();
+    }
+
+    @Test
+    public void testGroupByGenderWithBatchSizeOfZeroUsingModel() throws Exception {
+        givenModelData();
+
+        givenQuery("UUID =~ '^[CS].*'");
+
+        givenQueryParameter(QueryParameters.GROUP_FIELDS, "GEN");
+        givenQueryParameter(QueryParameters.GROUP_FIELDS_BATCH_SIZE, "0");
+
+        expectGroup(Group.of("MALE").withCount(10));
+        expectGroup(Group.of("FEMALE").withCount(2));
+
+        collectQueryResults();
+
+        assertGroups();
+    }
+
+    @Test
+    public void testGroupByJexlFunctionsUsingModel() throws Exception {
+        givenModelData();
+
+        givenQuery("UUID =~ '^[CS].*' && f:groupby('AG','GEN')");
+
+        givenQueryParameter(QueryParameters.GROUP_FIELDS_BATCH_SIZE, "6");
+
+        expectGroup(Group.of("FEMALE", "18").withCount(2));
+        expectGroup(Group.of("MALE", "30").withCount(1));
+        expectGroup(Group.of("MALE", "34").withCount(1));
+        expectGroup(Group.of("MALE", "16").withCount(1));
+        expectGroup(Group.of("MALE", "40").withCount(2));
+        expectGroup(Group.of("MALE", "20").withCount(2));
+        expectGroup(Group.of("MALE", "24").withCount(1));
+        expectGroup(Group.of("MALE", "22").withCount(2));
+
+        collectQueryResults();
+
+        assertGroups();
+    }
+
+    @Test
+    public void testGroupByLuceneFunctionUsingModel() throws Exception {
+        givenModelData();
+
+        givenQuery("(UUID:C* or UUID:S* ) and #GROUPBY('AG','GEN')");
+
+        givenQueryParameter(QueryParameters.GROUP_FIELDS_BATCH_SIZE, "6");
+
+        givenLuceneParserForLogic();
+
+        expectGroup(Group.of("FEMALE", "18").withCount(2));
+        expectGroup(Group.of("MALE", "30").withCount(1));
+        expectGroup(Group.of("MALE", "34").withCount(1));
+        expectGroup(Group.of("MALE", "16").withCount(1));
+        expectGroup(Group.of("MALE", "40").withCount(2));
+        expectGroup(Group.of("MALE", "20").withCount(2));
+        expectGroup(Group.of("MALE", "24").withCount(1));
+        expectGroup(Group.of("MALE", "22").withCount(2));
+
+        collectQueryResults();
+
+        assertGroups();
+    }
+
+    @Test
+    public void testGroupingByGenderAndAllAgeMetricsUsingModel() throws Exception {
+        givenModelData();
+
+        givenQuery("UUID =~ '^[CS].*'");
+
+        givenQueryParameter(QueryParameters.GROUP_FIELDS, "GEN");
+        givenQueryParameter(QueryParameters.MAX_FIELDS, "AG");
+        givenQueryParameter(QueryParameters.MIN_FIELDS, "AG");
+        givenQueryParameter(QueryParameters.SUM_FIELDS, "AG");
+        givenQueryParameter(QueryParameters.AVERAGE_FIELDS, "AG");
+        givenQueryParameter(QueryParameters.COUNT_FIELDS, "AG");
+        givenQueryParameter(QueryParameters.GROUP_FIELDS_BATCH_SIZE, "6");
+
+        expectGroup(Group.of("MALE").withCount(10)
+                        .withAggregate(Aggregate.of("AG").withCount("10").withMax("40").withMin("16").withSum("268").withAverage("26.8")));
+        expectGroup(Group.of("FEMALE").withCount(2)
+                        .withAggregate(Aggregate.of("AG").withCount("2").withMax("18").withMin("18").withSum("36").withAverage("18")));
+
+        // Run the test queries and collect their results.
+        collectQueryResults();
+
+        // Verify the results.
+        assertGroups();
+    }
+
+    /**
+     * Verify that aggregating values when grouping by multivalued entries with no context works correctly.
+     */
+    @Test
+    public void testGroupByRecordWithAggregation() throws Exception {
+        givenNonModelData();
+
+        givenQuery("UUID =~ '^[CS].*' && f:sum('AGE') && f:min('GENDER') && f:max('GENDER') && f:average('BIRTHDAY') && f:count('GENDER', 'AGE', 'BIRTHDAY')");
+
+        givenQueryParameter(QueryParameters.GROUP_FIELDS, "RECORD");
+
+        // @formatter:off
+        expectGroup(Group.of("1").withCount(3)
+                        .withAggregate(Aggregate.of("AGE").withSum("304").withCount("12"))
+                        .withAggregate(Aggregate.of("BIRTHDAY").withAverage("6.166666667").withCount("6"))
+                        .withAggregate(Aggregate.of("GENDER").withMin("FEMALE").withMax("MALE").withCount("12")));
+        expectGroup(Group.of("2").withCount(3)
+                        .withAggregate(Aggregate.of("AGE").withSum("304").withCount("12"))
+                        .withAggregate(Aggregate.of("BIRTHDAY").withAverage("6.166666667").withCount("6"))
+                        .withAggregate(Aggregate.of("GENDER").withMin("FEMALE").withMax("MALE").withCount("12")));
+        expectGroup(Group.of("3").withCount(1)
+                        .withAggregate(Aggregate.of("AGE").withSum("124").withCount("4"))
+                        .withAggregate(Aggregate.of("BIRTHDAY").withCount("0"))
+                        .withAggregate(Aggregate.of("GENDER").withMin("MALE").withMax("MALE").withCount("4")));
+        // @formatter:on
+        // Run the test queries and collect their results.
+        collectQueryResults();
+
+        // Verify the results.
+        assertGroups();
+    }
+
+    /**
+     * Verify that attempting to sum a non-numerical value results in an exception.
+     */
+    @Test
+    public void testSummingNonNumericalValue() {
+        givenNonModelData();
+
+        givenQuery("UUID =~ '^[CS].*' && f:sum('GENDER')");
+
+        givenQueryParameter(QueryParameters.GROUP_FIELDS, "RECORD");
+
+        Assertions.assertThatIllegalArgumentException().isThrownBy(this::collectQueryResults)
+                        .withMessage("Unable to calculate a sum with non-numerical value 'MALE'");
+    }
+
+    /**
+     * Verify that attempting to average a non-numerical value results in an exception.
+     */
+    @Test
+    public void testAveragingNonNumericalValue() {
+        givenNonModelData();
+
+        givenQuery("UUID =~ '^[CS].*' && f:average('GENDER')");
+
+        givenQueryParameter(QueryParameters.GROUP_FIELDS, "RECORD");
+
+        Assertions.assertThatIllegalArgumentException().isThrownBy(this::collectQueryResults)
+                        .withMessage("Unable to calculate an average with non-numerical value 'MALE'");
+    }
 }

@@ -11,8 +11,8 @@ THIS_SCRIPT=`eval $READLINK_CMD $0`
 THIS_DIR="${THIS_SCRIPT%/*}"
 cd $THIS_DIR
 
-. ../ingest/job-cache-env.sh
 . ../ingest/ingest-env.sh
+. ../ingest/job-cache-env.sh
 
 # Check that there are no other instances of this script running
 acquire_lock_file $(basename "$0") || exit 1
@@ -76,9 +76,11 @@ if $INGEST_HADOOP_HOME/bin/hadoop fs -conf $INGEST_HADOOP_CONF/hdfs-site.xml -fs
 else
    echo "Creating ingest job cache directory: $INGEST_HDFS_NAME_NODE$JOB_CACHE_DIR"
 fi
-find -L $tmpdir -type d | sed "s|$tmpdir||" | xargs -P $CPUS -L1 -I% $INGEST_HADOOP_HOME/bin/hadoop fs -conf $INGEST_HADOOP_CONF/hdfs-site.xml -fs $INGEST_HDFS_NAME_NODE -mkdir -p $INGEST_HDFS_NAME_NODE${JOB_CACHE_DIR}%
-find -L $tmpdir -type f | sed "s|$tmpdir||" | xargs -P $CPUS -L1 -I% $INGEST_HADOOP_HOME/bin/hadoop fs -conf $INGEST_HADOOP_CONF/hdfs-site.xml -fs $INGEST_HDFS_NAME_NODE -put ${tmpdir}% $INGEST_HDFS_NAME_NODE${JOB_CACHE_DIR}%
-$INGEST_HADOOP_HOME/bin/hadoop fs -conf $INGEST_HADOOP_CONF/hdfs-site.xml -setrep -R ${JOB_CACHE_REPLICATION} $INGEST_HDFS_NAME_NODE${JOB_CACHE_DIR}
+# copyFromLocal needs the parent directory chain to exist, so ensure that is in place before doing a multi-threaded copyFromLocal
+$INGEST_HADOOP_HOME/bin/hadoop fs -conf $INGEST_HADOOP_CONF/hdfs-site.xml -fs $INGEST_HDFS_NAME_NODE -mkdir -p $INGEST_HDFS_NAME_NODE${JOB_CACHE_DIR}/..
+$INGEST_HADOOP_HOME/bin/hadoop fs -conf $INGEST_HADOOP_CONF/hdfs-site.xml -fs $INGEST_HDFS_NAME_NODE -copyFromLocal -t $CPUS ${tmpdir} $INGEST_HDFS_NAME_NODE${JOB_CACHE_DIR}
+# Only do setrep for an hdfs filesystem. Others, such as local or abfs, don't support or need the replication to be set.
+[[ "$INGEST_HDFS_NAME_NODE" == "hdfs://"* ]] && $INGEST_HADOOP_HOME/bin/hadoop fs -conf $INGEST_HADOOP_CONF/hdfs-site.xml -setrep -R ${JOB_CACHE_REPLICATION} $INGEST_HDFS_NAME_NODE${JOB_CACHE_DIR}
 
 ########### We need this section to allow running the map file merger on the warehouse cluster ##########
 if [[ "$WAREHOUSE_HDFS_NAME_NODE" != "$INGEST_HDFS_NAME_NODE" ]]; then
@@ -88,9 +90,11 @@ if [[ "$WAREHOUSE_HDFS_NAME_NODE" != "$INGEST_HDFS_NAME_NODE" ]]; then
    else
       echo "Creating warehouse job cache directory: $WAREHOUSE_HDFS_NAME_NODE$JOB_CACHE_DIR"
    fi
-   find -L $tmpdir -type d | sed "s|$tmpdir||" | xargs -P $CPUS -L1 -I% $WAREHOUSE_HADOOP_HOME/bin/hadoop fs -conf $WAREHOUSE_HADOOP_CONF/hdfs-site.xml -fs $WAREHOUSE_HDFS_NAME_NODE -mkdir -p $WAREHOUSE_HDFS_NAME_NODE${JOB_CACHE_DIR}%
-   find -L $tmpdir -type f | sed "s|$tmpdir||" | xargs -P $CPUS -L1 -I% $WAREHOUSE_HADOOP_HOME/bin/hadoop fs -conf $WAREHOUSE_HADOOP_CONF/hdfs-site.xml -fs $WAREHOUSE_HDFS_NAME_NODE -put ${tmpdir}% $WAREHOUSE_HDFS_NAME_NODE${JOB_CACHE_DIR}%
-   $WAREHOUSE_HADOOP_HOME/bin/hadoop fs -conf $WAREHOUSE_HADOOP_CONF/hdfs-site.xml -setrep -R ${JOB_CACHE_REPLICATION} $WAREHOUSE_HDFS_NAME_NODE${JOB_CACHE_DIR}
+   # copyFromLocal needs the parent directory chain to exist, so ensure that is in place before doing a multi-threaded copyFromLocal
+   $WAREHOUSE_HADOOP_HOME/bin/hadoop fs -conf $WAREHOUSE_HADOOP_CONF/hdfs-site.xml -fs $WAREHOUSE_HDFS_NAME_NODE -mkdir -p $WAREHOUSE_HDFS_NAME_NODE${JOB_CACHE_DIR}/..
+   $WAREHOUSE_HADOOP_HOME/bin/hadoop fs -conf $WAREHOUSE_HADOOP_CONF/hdfs-site.xml -fs $WAREHOUSE_HDFS_NAME_NODE -copyFromLocal -t $CPUS ${tmpdir} $WAREHOUSE_HDFS_NAME_NODE${JOB_CACHE_DIR}
+   # Only do setrep for an hdfs filesystem. Others, such as local or abfs, don't support or need the replication to be set.
+   [[ "$WAREHOUSE_HDFS_NAME_NODE" == "hdfs://"* ]] && $WAREHOUSE_HADOOP_HOME/bin/hadoop fs -conf $WAREHOUSE_HADOOP_CONF/hdfs-site.xml -setrep -R ${JOB_CACHE_REPLICATION} $WAREHOUSE_HDFS_NAME_NODE${JOB_CACHE_DIR}
 else
    echo "Warehouse and ingest are one in the same. Assuming the warehouse job cache loading is sufficient"
 fi

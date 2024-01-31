@@ -1,0 +1,96 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+
+<configuration>
+
+<property>
+  <name>num.shards</name>
+  <value>10</value>
+</property>
+
+<property>
+  <name>sharded.table.names</name>
+  <value>datawave.shard,datawave.error_s</value>
+  <description>Comma-separated list of tables that need to pull splits from accumulo</description>
+</property>
+
+<property>
+  <name>shard.table.name</name>
+  <value>datawave.shard</value>
+</property>
+
+<property>
+  <name>shard.table.loader.priority</name>
+  <value>30</value>
+</property>
+
+<property>
+	<name>datawave.shard.table.config.class</name>
+	<value>datawave.ingest.table.config.ShardTableConfigHelper</value>
+</property>
+
+<property>
+    <name>shard.table.locality.groups</name>
+    <value>fullcontent:d,termfrequency:tf</value>
+    <description>The list of locality groups in the form groupname:columnfamily, comma separated</description>
+</property>
+
+<property>
+  <name>shard.global.index.table.name</name>
+  <value>datawave.shardIndex</value>
+</property>
+
+<property>
+  <name>shard.global.index.table.loader.priority</name>
+  <value>30</value>
+</property>
+
+<property>
+	<name>datawave.shardIndex.table.config.class</name>
+	<value>datawave.ingest.table.config.ShardTableConfigHelper</value>
+</property>
+
+<property>
+  <name>shard.global.rindex.table.name</name>
+  <value>datawave.shardReverseIndex</value>
+</property>
+
+<property>
+  <name>shard.global.rindex.table.loader.priority</name>
+  <value>30</value>
+</property>
+
+<property>
+	<name>datawave.shardReverseIndex.table.config.class</name>
+	<value>datawave.ingest.table.config.ShardTableConfigHelper</value>
+</property>
+
+<property>
+	<name>markings.setup.iterator.enabled</name>
+	<value>false</value>
+</property>
+
+<property>
+	<name>markings.setup.iterator.config</name>
+	<value></value>
+</property>
+
+<property>
+  <name>shard.global.index.geo.field</name>
+  <value>LAT_LONG</value>
+</property>
+
+<!-- This category is referenced in the other sharded table's -ingest-config.xml files -->
+<property>
+    <name>partitioner.category.shardedTables</name>
+    <value>datawave.ingest.mapreduce.partition.BalancedShardPartitioner</value>
+</property>
+<property>
+    <name>partitioner.category.member.datawave.shard</name>
+    <value>shardedTables</value>
+</property>
+<property>
+    <name>index.tables.keep.count.only.entries</name>
+    <value>false</value>
+</property>
+</configuration>

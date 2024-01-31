@@ -35,7 +35,7 @@ if ! hadoopIsRunning ; then
    hadoopStart
 fi
 
-# Create any Hadoop directories related to Datawave Ingest
+# Create any Hadoop directories needed for live ingest input
 if [[ -n "${DW_DATAWAVE_INGEST_LIVE_DATA_TYPES}" ]] ; then
 
    OLD_IFS="${IFS}"
@@ -44,7 +44,22 @@ if [[ -n "${DW_DATAWAVE_INGEST_LIVE_DATA_TYPES}" ]] ; then
    IFS="${OLD_IFS}"
 
    for dir in "${HDFS_RAW_INPUT_DIRS[@]}" ; do
+      # Dirs created here should be configured in your live flag maker config (e.g., in config/flag-maker-live.xml)
       hdfs dfs -mkdir -p "${DW_DATAWAVE_INGEST_HDFS_BASEDIR}/${dir}" || fatal "Failed to create HDFS directory: ${dir}"
+   done
+fi
+
+# Create any Hadoop directories needed for bulk ingest input
+if [[ -n "${DW_DATAWAVE_INGEST_BULK_DATA_TYPES}" ]] ; then
+
+   OLD_IFS="${IFS}"
+   IFS=","
+   HDFS_RAW_INPUT_DIRS=( ${DW_DATAWAVE_INGEST_BULK_DATA_TYPES} )
+   IFS="${OLD_IFS}"
+
+   for dir in "${HDFS_RAW_INPUT_DIRS[@]}" ; do
+      # Dirs created here should be configured in your bulk flag maker config (e.g., in config/flag-maker-bulk.xml)
+      hdfs dfs -mkdir -p "${DW_DATAWAVE_INGEST_HDFS_BASEDIR}/${dir}-bulk" || fatal "Failed to create HDFS directory: ${dir}-bulk"
    done
 fi
 
@@ -71,12 +86,13 @@ if [ "${DW_ACCUMULO_VFS_DATAWAVE_ENABLED}" == true ]; then
       ${HADOOP_HOME}/bin/hdfs dfs -put -f ${DW_DATAWAVE_INGEST_HOME}/accumulo-warehouse/lib/ext/*.jar ${DW_ACCUMULO_VFS_DATAWAVE_DIR}
    fi
 else
+   mkdir "${ACCUMULO_HOME}/lib/ext"
    [ ! -d ${ACCUMULO_HOME}/lib/ext ] && fatal "Unable to update Accumulo classpath. ${ACCUMULO_HOME}/lib/ext does not exist!"
    info "Removing any existing jars from ${ACCUMULO_HOME}/lib/ext"
    rm -f ${ACCUMULO_HOME}/lib/ext/*.jar
-   info "Copying DataWave jars into ${ACCUMULO_HOME}/lib/ext"
+   info "Copying DataWave jars into ${ACCUMULO_HOME}/lib and ${ACCUMULO_HOME}/lib/ext"
    if [ -d ${DW_DATAWAVE_INGEST_HOME}/accumulo-warehouse/lib ]; then
-      cp ${DW_DATAWAVE_INGEST_HOME}/accumulo-warehouse/lib/*.jar ${ACCUMULO_HOME}/lib/ext > /dev/null 2>&1
+      cp ${DW_DATAWAVE_INGEST_HOME}/accumulo-warehouse/lib/*.jar ${ACCUMULO_HOME}/lib > /dev/null 2>&1
    fi
    if [ -d ${DW_DATAWAVE_INGEST_HOME}/accumulo-warehouse/lib/ext ]; then
       cp ${DW_DATAWAVE_INGEST_HOME}/accumulo-warehouse/lib/ext/*.jar ${ACCUMULO_HOME}/lib/ext > /dev/null 2>&1
@@ -141,7 +157,7 @@ fi
 function initializeDatawaveTables() {
     # create tables
     if [[ ${DW_DATAWAVE_SKIP_CREATE_TABLES} != true ]]; then
-        info "creating datawave tables and splits ..."
+        info "creating datawave tables, splits, and caches ..."
         ${DW_DATAWAVE_INGEST_HOME}/bin/ingest/create-all-tables.sh || fatal "error creating tables"
         # create splits for shard table for today
         local _today=$(date "+%Y%m%d")
@@ -151,6 +167,10 @@ function initializeDatawaveTables() {
 
         # set splits cache
         ${DW_DATAWAVE_INGEST_HOME}/bin/ingest/generate-splits-file.sh
+
+	#set config cache
+	 ${DW_DATAWAVE_INGEST_HOME}/bin/ingest/generate-accumulo-config-cache.sh
+
     fi
 }
 

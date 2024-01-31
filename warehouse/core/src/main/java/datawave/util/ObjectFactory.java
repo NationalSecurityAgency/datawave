@@ -15,15 +15,15 @@ import org.apache.log4j.Logger;
  */
 public class ObjectFactory {
     private static final Logger logger = Logger.getLogger(ObjectFactory.class);
-    
+
     /**
      * Take away the public constructor
      */
     private ObjectFactory() {}
-    
+
     /**
      * Create an object from it's classname using args for arguments
-     * 
+     *
      * @param className
      *            the string classname to get a new instance of
      * @param args
@@ -44,29 +44,29 @@ public class ObjectFactory {
                     types.add(o.getClass());
                 }
             }
-            
+
             Constructor<?> constructor = null;
-            
+
             // Look for exact match
             try {
                 constructor = clazz.getConstructor(types.toArray(new Class[0]));
             } catch (NoSuchMethodException e) {
                 logger.debug("No constructor for [" + className + "] in ObjectFactory.create())");
             }
-            
+
             // Look for assignable match if nothing exact was found
             if (constructor == null) {
                 Constructor<?>[] constructors = clazz.getConstructors();
                 for (int i = 0; i < constructors.length && constructor == null; i++) {
                     Constructor<?> c = constructors[i];
                     Class<?> ctypes[] = c.getParameterTypes();
-                    
+
                     if (logger.isDebugEnabled()) {
                         logger.debug("Checking:" + className + ", " + clazz);
                         logger.debug("   types   :" + Arrays.toString(ctypes));
                         logger.debug("   numParms:" + ctypes.length + " =? " + types.size());
                     }
-                    
+
                     if (ctypes.length != types.size()) {
                         logger.debug("    not equal:");
                         constructor = null;
@@ -79,7 +79,7 @@ public class ObjectFactory {
                         if (a == null || b == null) {
                             continue;
                         }
-                        
+
                         if (a.isAssignableFrom(b)) {
                             logger.debug("   param=" + a + "  assignable " + b);
                         } else {
@@ -119,7 +119,7 @@ public class ObjectFactory {
             throw new Error(t);
         }
     }
-    
+
     private static Map<Class<?>,Class<?>> PrimClass = new HashMap<>();
     static {
         PrimClass.put(Integer.class, Integer.TYPE);
@@ -130,10 +130,10 @@ public class ObjectFactory {
         PrimClass.put(Double.class, Double.TYPE);
         PrimClass.put(Byte.class, Byte.TYPE);
     }
-    
+
     /**
      * Return primitive for a Primitive wrapper, i.e. int --&gt; Integer
-     * 
+     *
      * @return the class requested
      */
     public static Class<?> getPrim(Class<?> clazz) {
@@ -142,10 +142,10 @@ public class ObjectFactory {
             newClass = clazz;
         return newClass;
     }
-    
+
     /**
      * Create an object of the type specified using a no-arg constructor
-     * 
+     *
      * @param className
      *            the string class name to instantiate
      * @return the newly instantiated object
@@ -153,10 +153,10 @@ public class ObjectFactory {
     public static Object create(String className) {
         return create(className, new Object[] {});
     }
-    
+
     /**
      * Create an object
-     * 
+     *
      * @param className
      *            the string classname to get a new instance of
      * @param args
