@@ -1,4 +1,4 @@
-package datawave.query.util.ssdeep;
+package datawave.util.ssdeep;
 
 import java.nio.charset.StandardCharsets;
 

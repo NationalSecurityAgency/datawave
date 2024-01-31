@@ -2491,8 +2491,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     }
 
     /**
-     * Returns a Tuple2&lt;Iterable&lt;Range&gt;,Boolean&gt; whose elements represent the Ranges to use for querying the shard table and whether or not this is
-     * a "full-table-scan" query.
+     * Returns a ImmutablePair&lt;Iterable&lt;Range&gt;,Boolean&gt; whose elements represent the Ranges to use for querying the shard table and whether or not
+     * this is a "full-table-scan" query.
      *
      * @param scannerFactory
      *            the scanner factory
@@ -2558,6 +2558,12 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
             // count the terms
             int termCount = TermCountingVisitor.countTerms(queryTree);
+
+            if (config.getIntermediateMaxTermThreshold() > 0 && termCount > config.getIntermediateMaxTermThreshold()) {
+                throw new DatawaveFatalQueryException(
+                                "Query with " + termCount + " exceeds the initial max term threshold of " + config.getIntermediateMaxTermThreshold());
+            }
+
             if (termCount >= pushdownThreshold) {
                 if (log.isTraceEnabled()) {
                     log.trace("pushing down query because it has " + termCount + " when our max is " + pushdownThreshold);
