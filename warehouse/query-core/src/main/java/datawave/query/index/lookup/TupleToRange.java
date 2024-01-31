@@ -1,5 +1,6 @@
 package datawave.query.index.lookup;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -116,8 +117,9 @@ public class TupleToRange implements Function<Tuple2<String,IndexInfo>,Iterator<
                 range = RangeFactory.createDocumentSpecificRange(shard, docId);
             }
 
-            if (log.isTraceEnabled())
+            if (log.isTraceEnabled()) {
                 log.trace(queryNode + " " + indexMatch.getNode());
+            }
 
             // don't really want log statement if uid.getNode is null
 
@@ -129,7 +131,8 @@ public class TupleToRange implements Function<Tuple2<String,IndexInfo>,Iterator<
                                 + JexlStringBuildingVisitor.buildQuery(indexMatch.getNode()));
             }
 
-            ranges.add(new QueryPlan(indexMatch.getNode(), range));
+            QueryPlan queryPlan = new QueryPlan().withQueryTree(indexMatch.getNode()).withRanges(Collections.singleton(range));
+            ranges.add(queryPlan);
         }
         return ranges.iterator();
     }
@@ -146,7 +149,8 @@ public class TupleToRange implements Function<Tuple2<String,IndexInfo>,Iterator<
             log.trace("Building shard " + range + " From " + JexlStringBuildingVisitor.buildQuery(myNode));
         }
 
-        return Collections.singleton(new QueryPlan(myNode, range)).iterator();
+        QueryPlan queryPlan = new QueryPlan().withQueryTree(myNode).withRanges(Collections.singleton(range));
+        return Collections.singleton(queryPlan).iterator();
     }
 
     public static Iterator<QueryPlan> createDayRange(JexlNode queryNode, String shard, IndexInfo indexInfo) {
@@ -156,8 +160,11 @@ public class TupleToRange implements Function<Tuple2<String,IndexInfo>,Iterator<
         }
 
         Range range = RangeFactory.createDayRange(shard);
-        if (log.isTraceEnabled())
+        if (log.isTraceEnabled()) {
             log.trace("Building day" + range + " from " + (null == myNode ? "NoQueryNode" : JexlStringBuildingVisitor.buildQuery(myNode)));
-        return Collections.singleton(new QueryPlan(myNode, range)).iterator();
+        }
+
+        QueryPlan queryPlan = new QueryPlan().withQueryTree(myNode).withRanges(Collections.singleton(range));
+        return Collections.singleton(queryPlan).iterator();
     }
 }
