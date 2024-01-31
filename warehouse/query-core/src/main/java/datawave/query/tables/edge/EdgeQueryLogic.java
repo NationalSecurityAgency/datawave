@@ -121,30 +121,21 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
 
     public EdgeQueryLogic(EdgeQueryLogic other) {
         super(other);
-        this.protobufEdgeFormat = other.protobufEdgeFormat;
-        this.config = other.config;
-        this.iteratorDiscriptors = other.iteratorDiscriptors;
-        this.currentIteratorPriority = other.currentIteratorPriority;
-        this.scannerFactory = other.scannerFactory;
-        this.blockedNormalizers = other.blockedNormalizers;
-        this.dataTypes = other.dataTypes;
-        this.regexDataTypes = other.regexDataTypes;
-        this.queryThreads = other.queryThreads;
-        this.dateFilterSkipLimit = other.dateFilterSkipLimit;
-        this.dateFilterScanLimit = other.dateFilterScanLimit;
-        this.ranges = other.ranges;
-        this.prefilterValues = other.prefilterValues;
-        this.maxQueryTerms = other.maxQueryTerms;
-        this.maxPrefilterValues = other.maxPrefilterValues;
-        this.modelName = other.modelName;
-        this.modelTableName = other.modelTableName;
-        this.edgeQueryModel = other.edgeQueryModel;
-        this.visitationContext = other.visitationContext;
-        this.metadataHelperFactory = other.metadataHelperFactory;
-        this.querySyntaxParsers = other.querySyntaxParsers;
-        this.queryMacroFunction = other.queryMacroFunction;
-        this.mandatoryQuerySyntax = other.mandatoryQuerySyntax;
-        this.parser = other.parser;
+        setDataTypes(other.getDataTypes());
+        setRegexDataTypes(other.getRegexDataTypes());
+        setQueryThreads(other.getQueryThreads());
+        setProtobufEdgeFormat(other.isProtobufEdgeFormat());
+        setEdgeQueryModel(other.getEdgeQueryModel());
+        setModelName(other.getModelName());
+        setModelTableName(other.getModelTableName());
+        setMetadataHelperFactory(other.getMetadataHelperFactory());
+        setDateFilterScanLimit(other.getDateFilterScanLimit());
+        setDateFilterSkipLimit(other.getDateFilterSkipLimit());
+        setQuerySyntaxParsers(other.getQuerySyntaxParsers());
+        setMandatoryQuerySyntax(other.getMandatoryQuerySyntax());
+        setQueryMacroFunction(other.getQueryMacroFunction());
+        setParser(other.getParser());
+        visitationContext = other.visitationContext;
     }
 
     @Override

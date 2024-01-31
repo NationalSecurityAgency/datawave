@@ -73,7 +73,6 @@ public class RemoteEventQueryLogic extends BaseQueryLogic<EventBase> implements 
             log.trace("Creating Cloned RemoteQueryLogic: " + System.identityHashCode(this) + " from " + System.identityHashCode(other));
 
         setRemoteQueryService(other.getRemoteQueryService());
-        setUserOperations(other.getUserOperations());
 
         // Set ShardQueryConfiguration variables
         setConfig(RemoteQueryConfiguration.create(other));
