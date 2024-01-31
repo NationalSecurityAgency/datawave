@@ -73,8 +73,8 @@ public class SSDeepIndexHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTy
 
     protected Set<String> ssdeepFieldNames;
 
-    NGramByteHashGenerator nGramGenerator;
-    BucketAccumuloKeyGenerator accumuloKeyGenerator;
+    protected NGramByteHashGenerator nGramGenerator;
+    protected BucketAccumuloKeyGenerator accumuloKeyGenerator;
 
     @Override
     public void setup(TaskAttemptContext context) {
