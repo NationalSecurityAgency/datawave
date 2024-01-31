@@ -6,7 +6,6 @@ on:
     branches:
     - 'integration'
     - 'release/version*'
-    - 'feature/accumulo-2.0'
   pull_request:
     paths-ignore: ['*.md', 'CODEOWNERS', 'LICENSE']
   workflow_dispatch:
