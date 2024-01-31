@@ -121,12 +121,11 @@ public class TermOffsetPopulator {
      * @return TermOffset map
      */
     public Map<String,Object> getContextMap(Key docKey, Set<Key> keys, Set<String> fields) {
+        document = new Document();
 
         if (keys.isEmpty()) {
             return Collections.emptyMap();
         }
-
-        document = new Document();
 
         TermFrequencyIterator tfSource;
         // Do not prune if no fields exist or if the tf fields would prune to nothing. TODO skip tf entirely if this would prune to zero
