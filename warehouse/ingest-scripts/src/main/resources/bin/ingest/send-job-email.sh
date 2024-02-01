@@ -1,12 +1,12 @@
 #!/bin/bash
 
-if [[ `uname` == "Darwin" ]]; then
-	THIS_SCRIPT=`python -c 'import os,sys;print os.path.realpath(sys.argv[1])' $0`
-    MKTEMP="mktemp -t `basename $0`"
+if [[ $(uname) == "Darwin" ]]; then
+	THIS_SCRIPT=$(python -c 'import os,sys;print os.path.realpath(sys.argv[1])' $0)
+    MKTEMP="mktemp -t $(basename $0)"
     STATLASTMOD="stat -f %m"	
 else
-	THIS_SCRIPT=`readlink -f $0`
-    MKTEMP="mktemp -t `basename $0`.XXXXXXXX"
+	THIS_SCRIPT=$(readlink -f $0)
+    MKTEMP="mktemp -t $(basename $0).XXXXXXXX"
     STATLASTMOD="stat -c %Y"	
 fi
 THIS_DIR="${THIS_SCRIPT%/*}"
@@ -27,7 +27,7 @@ if [[ "$SEND_JOB_EMAIL_DISABLED" == "true" ]]; then
 else
     JOB_CONTENT=$(tail -100 $JOB_LOG_FILE)
 
-    TMPFILE=`$MKTEMP`
+    TMPFILE=$($MKTEMP)
 
     # this pattern is for log likes that contain the date and time at the beginning of lines
     PATTERN='^[0-9][0-9]\/[0-9][0-9]\/[0-9][0-9] [0-9][0-9]:[0-9][0-9]:[0-9][0-9]'
@@ -35,7 +35,7 @@ else
     # we are only comparing the log lines sans the date and time itself and sans INFO lines (should leave WARN and above)
     echo -e "$JOB_CONTENT" | grep -v ' INFO ' | grep -v 'Executed Command: ' | grep -v 'hadoop jar ' | sed "s/$PATTERN\(.*\)/\1/" >> $TMPFILE
 
-    now=`$STATLASTMOD $TMPFILE`
+    now=$($STATLASTMOD $TMPFILE)
 
     # We need to lock out any concurrent send-job-email scripts while checking for duplicate messages
     lockfile="/tmp/.sent-job-email.lock"
@@ -53,25 +53,25 @@ while [[ "$processed" == "0" ]] ; do
 
 
 	# determine the closest match out of the previous sent emails
-	lines=`cat $TMPFILE | wc -l`
+	lines=$(cat $TMPFILE | wc -l)
 	best_match=
 	best_diffs=
 	best_age=
 	best_count=
-	for file in `ls -1 /tmp/sent-job-email.* 2> /dev/null`; do
+	for file in $(ls -1 /tmp/sent-job-email.* 2> /dev/null); do
 	    
 	    # ignore file sent over 2 hours ago
-	    sent=`$STATLASTMOD $file`
+	    sent=$($STATLASTMOD $file)
 	    if [[ $((now - sent)) -gt 7200 ]]; then
 		rm $file
 	    else
 
 		# we consider two files matching if they have the same number of lines with 2
-		fileLines=`cat $file | wc -l`
+		fileLines=$(cat $file | wc -l)
 		if [[ $fileLines -gt $((lines - 3 )) && $fileLines -lt $((lines + 3)) ]]; then
 
 		    # and the differences are within 5%
-		    diffs=`diff --ignore-all-space --ignore-blank-lines --ignore-case $TMPFILE $file | egrep '^(<|>) ' | wc -l`
+		    diffs=$(diff --ignore-all-space --ignore-blank-lines --ignore-case $TMPFILE $file | egrep '^(<|>) ' | wc -l)
 		    # echo "diffs between $file are $diffs out of ($lines + $fileLines)"
 		    if [[ $diffs -lt $(( (lines + fileLines ) / 20 )) ]]; then
 			if [[ "$best_match" == "" || $diffs -lt $best_diffs ]]; then
@@ -97,7 +97,7 @@ while [[ "$processed" == "0" ]] ; do
 	    if [[ $best_age -lt 3600 ]]; then
 		best_count=$(( best_count + 1 ))
 		mv $best_match ${best_match%.*}.$best_count
-		if [[ ! ( "$((best_count - 1))" =~ "^10+$" ) ]]; then
+		if [[ ! ( "$((best_count - 1))" =~ ^10+$ ) ]]; then
 		    echo "$EXTRA_MESSAGE ... suppressing email"
 		    send_message=0
 		fi

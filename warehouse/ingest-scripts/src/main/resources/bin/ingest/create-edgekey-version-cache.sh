@@ -12,19 +12,16 @@ function usage
         \t--help\t print this message\n"
 }
 
-
-
-if [[ `uname` == "Darwin" ]]; then
-        THIS_SCRIPT=`python -c 'import os,sys;print os.path.realpath(sys.argv[1])' $0`
+if [[ $(uname) == "Darwin" ]]; then
+  THIS_SCRIPT=$(python -c 'import os,sys;print os.path.realpath(sys.argv[1])' $0)
 else
-        THIS_SCRIPT=`readlink -f $0`
+  THIS_SCRIPT=$(readlink -f "$0")
 fi
-THIS_DIR="${THIS_SCRIPT%/*}"
-cd $THIS_DIR
 
+THIS_DIR="${THIS_SCRIPT%/*}"
+cd $THIS_DIR || exit
 
 RUN_OPS=""
-
 
 #Parse the command line args
 while [ "$1" != "" ]; do

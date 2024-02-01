@@ -1,13 +1,13 @@
 #!/bin/bash
 
-if [[ `uname` == "Darwin" ]]; then
-        THIS_SCRIPT=`python -c 'import os,sys;print os.path.realpath(sys.argv[1])' $0`
+if [[ $(uname) == "Darwin" ]]; then
+  THIS_SCRIPT=$(python -c 'import os,sys;print os.path.realpath(sys.argv[1])' $0)
 else
-        THIS_SCRIPT=`readlink -f $0`
+  THIS_SCRIPT=$(readlink -f "$0")
 fi
 
 THIS_DIR="${THIS_SCRIPT%/*}"
-cd $THIS_DIR
+cd $THIS_DIR || exit
 
 . ../util/pid-functions.sh
 
@@ -76,7 +76,7 @@ for type in $TYPES_TO_RUN
 do
     script=${type}_SCRIPT
     text=${type}_TEXT
-    PID=`ps -wwef | egrep "bash .*${!script}" | grep -v grep | awk {'print $2'}`
+    PID=$(ps -wwef | egrep "bash .*${!script}" | grep -v grep | awk {'print $2'})
 
      if [ -z "$PID" ]; then
         echo "no ${!text} ingest server running"
