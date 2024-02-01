@@ -25,6 +25,7 @@ import datawave.query.attributes.PreNormalizedAttributeFactory;
 import datawave.query.iterator.DocumentIterator;
 import datawave.query.iterator.LimitedSortedKeyValueIterator;
 import datawave.query.iterator.Util;
+import datawave.query.iterator.waitwindow.WaitWindowObserver;
 import datawave.query.jexl.functions.FieldIndexAggregator;
 import datawave.query.jexl.functions.IdentityAggregator;
 import datawave.query.predicate.SeekingFilter;
@@ -424,10 +425,17 @@ public class IndexIterator implements SortedKeyValueIterator<Key,Value>, Documen
      * @return the field index range
      */
     protected Range buildIndexRange(Range r) {
-        Key startKey = permuteRangeKey(r.getStartKey(), r.isStartKeyInclusive());
-        Key endKey = permuteRangeKey(r.getEndKey(), r.isEndKeyInclusive());
+        // include startKey if we yielded to the beginning of a document range
+        Key startKey = r.getStartKey();
+        Key endKey = r.getEndKey();
+        boolean startKeyInclusive = r.isStartKeyInclusive();
+        if (startKey != null && WaitWindowObserver.hasBeginMarker(startKey.getColumnQualifier())) {
+            startKeyInclusive = true;
+        }
 
-        return new Range(startKey, r.isStartKeyInclusive(), endKey, r.isEndKeyInclusive());
+        startKey = permuteRangeKey(startKey, startKeyInclusive);
+        endKey = permuteRangeKey(endKey, r.isEndKeyInclusive());
+        return new Range(startKey, startKeyInclusive, endKey, r.isEndKeyInclusive());
     }
 
     /**
