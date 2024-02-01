@@ -325,6 +325,8 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("initialMaxTermThreshold", 2540);
         defaultValues.put("intermediateMaxTermThreshold", 2500);
         updatedValues.put("intermediateMaxTermThreshold", 5500);
+        defaultValues.put("indexedMaxTermThreshold", 2500);
+        updatedValues.put("indexedMaxTermThreshold", 5500);
         defaultValues.put("finalMaxTermThreshold", 2500);
         updatedValues.put("finalMaxTermThreshold", 2501);
         defaultValues.put("maxDepthThreshold", 2500);
