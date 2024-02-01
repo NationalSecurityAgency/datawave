@@ -1,4 +1,4 @@
-package org.apache.commons.jexl2.parser;
+package org.apache.commons.jexl3.parser;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -15,8 +15,8 @@ public class JexlNodesTest {
         ASTJexlScript script = JexlASTHelper.parseAndFlattenJexlQuery(query);
 
         // parse the script into logical components
-        JexlNode union = script.jjtGetChild(0).jjtGetChild(0).jjtGetChild(0);
-        JexlNode intersection = union.jjtGetChild(0).jjtGetChild(0).jjtGetChild(0);
+        JexlNode union = script.jjtGetChild(0).jjtGetChild(0);
+        JexlNode intersection = union.jjtGetChild(0).jjtGetChild(0);
         JexlNode fooNode = intersection.jjtGetChild(0);
         JexlNode textNode = intersection.jjtGetChild(1);
         JexlNode ageNode = union.jjtGetChild(1);
@@ -33,8 +33,8 @@ public class JexlNodesTest {
         String query = "!((FOO == 'bar' && TEXT == 'text') || AGE == '25')";
         ASTJexlScript script = JexlASTHelper.parseAndFlattenJexlQuery(query);
 
-        JexlNode union = script.jjtGetChild(0).jjtGetChild(0).jjtGetChild(0).jjtGetChild(0);
-        JexlNode intersection = union.jjtGetChild(0).jjtGetChild(0).jjtGetChild(0);
+        JexlNode union = script.jjtGetChild(0).jjtGetChild(0).jjtGetChild(0);
+        JexlNode intersection = union.jjtGetChild(0).jjtGetChild(0);
         JexlNode fooNode = intersection.jjtGetChild(0);
         JexlNode textNode = intersection.jjtGetChild(1);
         JexlNode ageNode = union.jjtGetChild(1);
@@ -51,8 +51,8 @@ public class JexlNodesTest {
         String query = "(!(FOO == 'bar' && TEXT == 'text') || AGE == '25')";
         ASTJexlScript script = JexlASTHelper.parseAndFlattenJexlQuery(query);
 
-        JexlNode union = script.jjtGetChild(0).jjtGetChild(0).jjtGetChild(0);
-        JexlNode intersection = union.jjtGetChild(0).jjtGetChild(0).jjtGetChild(0).jjtGetChild(0);
+        JexlNode union = script.jjtGetChild(0).jjtGetChild(0);
+        JexlNode intersection = union.jjtGetChild(0).jjtGetChild(0).jjtGetChild(0);
         JexlNode fooNode = intersection.jjtGetChild(0);
         JexlNode textNode = intersection.jjtGetChild(1);
         JexlNode ageNode = union.jjtGetChild(1);

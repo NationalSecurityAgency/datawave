@@ -1,5 +1,6 @@
-package org.apache.commons.jexl2.parser;
+package org.apache.commons.jexl3.parser;
 
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DELAYED;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -21,7 +22,7 @@ public class ASTDelayedPredicateTest {
 
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
         for (int i = 0; i < 15; i++) {
-            node = ASTDelayedPredicate.create(node);
+            node = QueryPropertyMarker.create(node, DELAYED);
         }
 
         String delayedQuery = JexlStringBuildingVisitor.buildQueryWithoutParse(node);
@@ -40,7 +41,7 @@ public class ASTDelayedPredicateTest {
         assertEquals(expectedSource, JexlStringBuildingVisitor.buildQueryWithoutParse(source));
 
         expectedSource = "FOO == 'bar'";
-        source = ASTDelayedPredicate.unwrapFully(node, ASTDelayedPredicate.class);
+        source = QueryPropertyMarker.unwrapFully(node, DELAYED);
         assertEquals(expectedSource, JexlStringBuildingVisitor.buildQueryWithoutParse(source));
     }
 
@@ -50,12 +51,13 @@ public class ASTDelayedPredicateTest {
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
 
         assertNull(node.jjtGetParent());
-        assertFalse(QueryPropertyMarker.isAncestorMarked(node, ASTDelayedPredicate.class));
+        assertFalse(QueryPropertyMarker.isAncestorMarked(node, DELAYED));
 
-        JexlNode delayed = ASTDelayedPredicate.create(node);
+        JexlNode delayed = QueryPropertyMarker.create(node, DELAYED);
+        node = QueryPropertyMarker.findInstance(delayed).getSource();
         assertNotNull(node.jjtGetParent());
-        assertTrue(QueryPropertyMarker.findInstance(delayed).isType(ASTDelayedPredicate.class));
-        assertTrue(ASTDelayedPredicate.isAncestorMarked(node, ASTDelayedPredicate.class));
+        assertTrue(QueryPropertyMarker.findInstance(delayed).isType(DELAYED));
+        assertTrue(QueryPropertyMarker.isAncestorMarked(node, DELAYED));
     }
 
 }

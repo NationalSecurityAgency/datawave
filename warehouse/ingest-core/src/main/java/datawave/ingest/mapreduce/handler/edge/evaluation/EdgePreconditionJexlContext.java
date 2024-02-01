@@ -6,8 +6,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.commons.jexl2.JexlEngine;
-import org.apache.commons.jexl2.Script;
+import org.apache.commons.jexl3.JexlEngine;
+import org.apache.commons.jexl3.JexlScript;
+import org.apache.commons.jexl3.internal.Engine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,8 +63,8 @@ public class EdgePreconditionJexlContext extends MultimapContext {
 
     private HashSet<String> createFilterKeysFromEdgeDefinitions(List<EdgeDefinition> edges) {
         long start = System.currentTimeMillis();
-        JexlEngine engine = new JexlEngine();
-        Script script;
+        JexlEngine engine = new Engine();
+        JexlScript script;
         HashSet<String> filterFields = new HashSet<>();
         for (EdgeDefinition edgeDef : edges) {
             if (edgeDef.hasJexlPrecondition()) {
@@ -80,7 +81,7 @@ public class EdgePreconditionJexlContext extends MultimapContext {
         return filterFields;
     }
 
-    private HashSet<String> extractTermsFromJexlScript(Script script) {
+    private HashSet<String> extractTermsFromJexlScript(JexlScript script) {
         HashSet<String> terms = new HashSet<>();
         Set<List<String>> scriptVariables = script.getVariables();
 
