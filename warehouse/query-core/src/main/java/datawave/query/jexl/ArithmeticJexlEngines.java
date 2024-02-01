@@ -4,7 +4,9 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.apache.commons.jexl2.JexlArithmetic;
+import org.apache.commons.jexl3.JexlArithmetic;
+import org.apache.commons.jexl3.JexlBuilder;
+import org.apache.commons.jexl3.introspection.JexlPermissions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,17 +56,19 @@ public class ArithmeticJexlEngines {
     }
 
     private static DatawaveJexlEngine createEngine(JexlArithmetic arithmetic) {
-        DatawaveJexlEngine engine = new DatawaveJexlEngine(null, arithmetic, registeredFunctions, null);
-        engine.setCache(1024);
-        engine.setSilent(false);
-
         // Setting strict to be true causes an Exception when a field
         // in the query does not occur in the document being tested.
         // This doesn't appear to have any unexpected consequences looking
         // at the Interpreter class in JEXL.
-        engine.setStrict(false);
-
-        return engine;
+        // @formatter:off
+        return new DatawaveJexlEngine(new JexlBuilder()
+                .arithmetic(arithmetic)
+                .namespaces(registeredFunctions)
+                .cache(1024)
+                .silent(false)
+                .strict(false)
+                .permissions(JexlPermissions.UNRESTRICTED));
+        // @formatter:on
     }
 
     /**

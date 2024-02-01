@@ -1,17 +1,11 @@
 package datawave.query.jexl;
 
-import java.io.IOException;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Pattern;
 
 import org.apache.log4j.Logger;
-import org.apache.lucene.util.IntsRef;
-import org.apache.lucene.util.IntsRefBuilder;
-import org.apache.lucene.util.fst.FST;
-import org.apache.lucene.util.fst.Util;
 
 import datawave.data.type.Type;
 import datawave.query.attributes.ValueTuple;
@@ -33,22 +27,22 @@ public class DefaultArithmetic extends DatawaveArithmetic {
      * This method differs from the parent in that we are not calling String.matches() because it does not match on a newline. Instead we are handling this
      * case.
      *
-     * @param left
+     * @param container
      *            first value
-     * @param right
+     * @param value
      *            second value
      * @return test result.
      */
     @SuppressWarnings("unchecked")
     @Override
-    public boolean matches(Object left, Object right) {
-        left = allValues(left);
-        right = allValues(right);
-        if (left == null && right == null) {
+    public Boolean contains(Object container, Object value) {
+        value = allValues(value);
+        container = allValues(container);
+        if (value == null && container == null) {
             // if both are null L == R
             return true;
         }
-        if (left == null || right == null) {
+        if (value == null || container == null) {
             // we know both aren't null, therefore L != R
             return false;
         }
@@ -56,18 +50,18 @@ public class DefaultArithmetic extends DatawaveArithmetic {
         Set<Object> elements;
 
         // for every element in left, check if one matches the right pattern
-        if (left instanceof Set) {
-            elements = (Set<Object>) left;
+        if (value instanceof Set) {
+            elements = (Set<Object>) value;
         } else {
-            elements = Collections.singleton(left);
+            elements = Collections.singleton(value);
         }
 
         Set<Pattern> patterns;
-        if (right instanceof Pattern) {
-            patterns = Collections.singleton((Pattern) right);
-        } else if (right instanceof Set) {
+        if (container instanceof Pattern) {
+            patterns = Collections.singleton((Pattern) container);
+        } else if (container instanceof Set) {
             patterns = new HashSet<>();
-            for (Object r : (Set<Object>) right) {
+            for (Object r : (Set<Object>) container) {
                 if (r instanceof Pattern) {
                     patterns.add((Pattern) r);
                 } else {
@@ -75,7 +69,7 @@ public class DefaultArithmetic extends DatawaveArithmetic {
                 }
             }
         } else {
-            patterns = Collections.singleton(JexlPatternCache.getPattern(right.toString()));
+            patterns = Collections.singleton(JexlPatternCache.getPattern(container.toString()));
         }
 
         for (Object o : elements) {
