@@ -54,24 +54,26 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     }
 
     public BaseQueryLogic(BaseQueryLogic<T> other) {
-        // copy base config variables
-        this.baseConfig = new GenericQueryConfiguration(other.getConfig());
+        // Generic Query Config variables
+        setTableName(other.getTableName());
+        setMaxWork(other.getMaxWork());
+        setMaxResults(other.getMaxResults());
+        setBaseIteratorPriority(other.getBaseIteratorPriority());
+        setBypassAccumulo(other.getBypassAccumulo());
+        setAccumuloPassword(other.getAccumuloPassword());
 
-        // copy other variables
+        // Other variables
         setMaxResults(other.maxResults);
         setMarkingFunctions(other.getMarkingFunctions());
         setResponseObjectFactory(other.getResponseObjectFactory());
         setLogicName(other.getLogicName());
         setLogicDescription(other.getLogicDescription());
         setAuditType(other.getAuditType(null));
-        this.dnResultLimits = other.dnResultLimits;
-        this.systemFromResultLimits = other.systemFromResultLimits;
         this.scanner = other.scanner;
         this.iterator = other.iterator;
         setMaxPageSize(other.getMaxPageSize());
         setPageByteTrigger(other.getPageByteTrigger());
         setCollectQueryMetrics(other.getCollectQueryMetrics());
-        this.authorizedDNs = other.authorizedDNs;
         setConnPoolName(other.getConnPoolName());
         setPrincipal(other.getPrincipal());
         setRoleManager(other.getRoleManager());

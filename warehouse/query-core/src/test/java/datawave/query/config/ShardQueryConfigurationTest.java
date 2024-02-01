@@ -47,7 +47,7 @@ import datawave.webservice.query.QueryImpl;
 
 public class ShardQueryConfigurationTest {
 
-    public final static Map<Class<?>,Class<?>> primitiveMap = new HashMap<>();
+    public final static Map<Class<?>,Class<?>> primitiveMap = new HashMap<Class<?>,Class<?>>();
     static {
         primitiveMap.put(Boolean.class, boolean.class);
         primitiveMap.put(Byte.class, byte.class);
@@ -64,7 +64,6 @@ public class ShardQueryConfigurationTest {
 
     // The set of predicates for the subset of defaultValues that will
     // be used to evaluate the equality instead of .equals(Object).
-    @SuppressWarnings("rawtypes")
     private final Map<String,Predicate> defaultPredicates = new HashMap<>();
 
     // The set of alternate values to test the setters/getters
@@ -76,7 +75,6 @@ public class ShardQueryConfigurationTest {
 
     // The set of predicate for the subset of alternateValues that will
     // be used to evaluate the equality instead of .equals(Object).
-    @SuppressWarnings("rawtypes")
     private final Map<String,Predicate> updatedPredicates = new HashMap<>();
 
     // The set of fields that are already set via one of the other fields.

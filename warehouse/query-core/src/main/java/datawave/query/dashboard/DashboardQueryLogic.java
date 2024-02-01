@@ -30,8 +30,6 @@ public class DashboardQueryLogic extends ShardQueryLogic implements QueryLogicTr
 
     public DashboardQueryLogic(DashboardQueryLogic logic) {
         super(logic);
-        this.responseEnricher = logic.responseEnricher;
-        this.queryExecutionForCurrentPageStartTime = logic.queryExecutionForCurrentPageStartTime;
     }
 
     @Override

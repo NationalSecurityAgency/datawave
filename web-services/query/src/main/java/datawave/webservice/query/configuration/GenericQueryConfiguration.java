@@ -29,7 +29,7 @@ import datawave.webservice.util.EnvProvider;
  * </p>
  *
  */
-public class GenericQueryConfiguration {
+public abstract class GenericQueryConfiguration {
 
     private static final Logger log = ThreadConfigurableLogger.getLogger(GenericQueryConfiguration.class);
 
