@@ -39,6 +39,7 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.commons.jexl3.parser.ASTAndNode;
 import org.apache.commons.jexl3.parser.ASTERNode;
 import org.apache.commons.jexl3.parser.ASTFunctionNode;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
@@ -1946,7 +1947,11 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             // now for each field, add an expression to filter that date
             List<JexlNode> andChildren = new ArrayList<>();
             for (int i = 0; i < queryTree.jjtGetNumChildren(); i++) {
-                andChildren.add(JexlNodeFactory.createExpression(queryTree.jjtGetChild(i)));
+                if (queryTree.jjtGetChild(i) instanceof ASTAndNode) {
+                    andChildren.add(queryTree.jjtGetChild(i));
+                } else {
+                    andChildren.add(JexlNodeFactory.createExpression(queryTree.jjtGetChild(i)));
+                }
             }
             List<JexlNode> orChildren = new ArrayList<>();
             for (String field : dateIndexData.getFields()) {
