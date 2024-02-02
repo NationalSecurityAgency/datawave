@@ -3,11 +3,10 @@ package datawave.query.jexl.visitors;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-import org.apache.commons.jexl2.parser.ASTFunctionNode;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ASTReference;
-import org.apache.commons.jexl2.parser.ASTReferenceExpression;
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ASTFunctionNode;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTReferenceExpression;
+import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.log4j.Logger;
 import org.geotools.geojson.geom.GeometryJSON;
 import org.locationtech.jts.io.WKTReader;
@@ -92,12 +91,6 @@ public class GeoFeatureVisitor extends ShortCircuitBaseVisitor {
     // Descend through these nodes
     @Override
     public Object visit(ASTJexlScript node, Object data) {
-        node.childrenAccept(this, data);
-        return data;
-    }
-
-    @Override
-    public Object visit(ASTReference node, Object data) {
         node.childrenAccept(this, data);
         return data;
     }

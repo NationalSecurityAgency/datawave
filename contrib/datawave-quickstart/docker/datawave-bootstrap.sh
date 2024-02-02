@@ -2,9 +2,22 @@
 
 source ~/.bashrc
 
+# If DW_CONTAINER_HOST is defined update Accumulo and Hadoop bind hosts
+if [ ! -z "${DW_CONTAINER_HOST}" ] && [ "${DW_CONTAINER_HOST}" != "localhost" ] ; then
+  # Update Accumulo bind hosts
+  sed -i'' -e "s/localhost/${DW_CONTAINER_HOST}/g" ${ACCUMULO_HOME}/conf/cluster.yaml
+
+  # Create hadoop client configs
+  mkdir -p ${HADOOP_HOME}/client/conf
+  cp -r ${HADOOP_CONF_DIR}/*-site.xml ${HADOOP_HOME}/client/conf
+  sed -i'' -e "s/${DW_BIND_HOST}/${DW_CONTAINER_HOST}/g" ${HADOOP_HOME}/client/conf/*-site.xml
+fi
+
 START_AS_DAEMON=true
 
+START_ACCUMULO=false
 START_WEB=false
+START_TEST=false
 START_INGEST=false
 
 for arg in "$@"
@@ -13,7 +26,10 @@ do
           --bash)
              START_AS_DAEMON=false
              ;;
-          --web)
+          --accumulo)
+             START_ACCUMULO=true
+             ;;
+           --web)
              START_WEB=true
              ;;
           --webdebug)
@@ -33,6 +49,8 @@ do
 done
 
 [ "${START_INGEST}" == true ] && datawaveIngestStart
+
+[ "${START_ACCUMULO}" == true ] && accumuloStart
 
 [ "${START_WEB}" == true ] && datawaveWebStart
 
