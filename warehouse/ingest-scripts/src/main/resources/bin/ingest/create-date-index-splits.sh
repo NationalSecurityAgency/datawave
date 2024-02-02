@@ -24,7 +24,7 @@ NUM_DAYS=1
 # optional argument -d YYYYMMDD
 while getopts d:n: FLAG; do
   case $FLAG in
-    d) DATE=$(cho $OPTARG | egrep '^[0-9]{8}$')
+    d) DATE=$(echo $OPTARG | egrep '^[0-9]{8}$')
       if [ "$DATE" == "" ]; then
         echo "DATE must be in YYYYMMDD format, not $OPTARG"
         exit 1
