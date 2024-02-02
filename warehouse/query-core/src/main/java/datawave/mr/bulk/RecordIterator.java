@@ -20,14 +20,15 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.accumulo.core.client.IteratorSetting;
+import org.apache.accumulo.core.client.PluginEnvironment;
 import org.apache.accumulo.core.client.SampleNotPresentException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.sample.SamplerConfiguration;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.conf.DefaultConfiguration;
-import org.apache.accumulo.core.conf.IterConfigUtil;
-import org.apache.accumulo.core.conf.IterLoad;
 import org.apache.accumulo.core.conf.Property;
+import org.apache.accumulo.core.conf.SiteConfiguration;
+import org.apache.accumulo.core.crypto.CryptoFactoryLoader;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -41,11 +42,16 @@ import org.apache.accumulo.core.file.rfile.RFileOperations;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.IteratorUtil.IteratorScope;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.accumulo.core.iterators.system.DeletingIterator;
-import org.apache.accumulo.core.iterators.system.MultiIterator;
-import org.apache.accumulo.core.iterators.system.VisibilityFilter;
+import org.apache.accumulo.core.iteratorsImpl.IteratorBuilder;
+import org.apache.accumulo.core.iteratorsImpl.IteratorConfigUtil;
+import org.apache.accumulo.core.iteratorsImpl.system.DeletingIterator;
+import org.apache.accumulo.core.iteratorsImpl.system.MultiIterator;
+import org.apache.accumulo.core.iteratorsImpl.system.VisibilityFilter;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.accumulo.core.spi.common.ServiceEnvironment;
+import org.apache.accumulo.core.spi.crypto.CryptoEnvironment;
+import org.apache.accumulo.core.spi.crypto.CryptoService;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
@@ -65,174 +71,193 @@ import datawave.mr.bulk.split.RangeSplit;
 import datawave.mr.bulk.split.TabletSplitSplit;
 
 public class RecordIterator extends RangeSplit implements SortedKeyValueIterator<Key,Value>, Closeable {
-    
+
     private static final int READ_AHEAD_THREADS = 5;
-    
+
     public static final long DEFAULT_FAILURE_SLEEP = 3000L;
-    
+
     public static final int FAILURE_MAX_DEFAULT = 5;
-    
+
     public static final String RECORDITER_FAILURE_COUNT_MAX = "recorditer.failure.count.max";
-    
+
     public static final String RECORDITER_FAILURE_SLEEP_INTERVAL = "recorditer.failure.sleep.interval";
-    
+
+    protected static final CryptoService CRYPTO_SERVICE;
+
+    static {
+        // Use our default properties from the classpath, if necessary, as required by SiteConfiguration
+        if (System.getProperty("accumulo.properties") == null) {
+            System.setProperty("accumulo.properties", "accumulo-default.properties");
+        }
+        CRYPTO_SERVICE = CryptoFactoryLoader.getServiceForClient(CryptoEnvironment.Scope.TABLE, SiteConfiguration.fromEnv().build().getAllCryptoProperties());
+    }
+
     protected TabletSplitSplit fileSplit;
-    
+
     protected Deque<Range> rangeQueue;
-    
+
     protected Collection<FileRangeSplit> fileRangeSplits;
-    
+
     protected Collection<FileSKVIterator> fileIterators;
-    
+
     protected ConcurrentLinkedDeque<Future<SortedKeyValueIterator<Key,Value>>> futures = new ConcurrentLinkedDeque<>();
-    
+
     protected Collection<RfileCloseable> rfileReferences;
-    
+
     protected SortedKeyValueIterator<Key,Value> globalIter;
-    
+
     protected volatile boolean isOpen = false;
-    
+
     protected Key lastSeenKey = null;
-    
+
     protected Configuration conf;
-    
+
     private volatile int failureCount = 0;
-    
+
     private final int failureMax;
-    
+
     private final long failureSleep;
-    
+
     protected Range currentRange;
-    
+
     protected AccumuloConfiguration acuTableConf;
-    
+
     protected Authorizations auths = null;
-    
+
     private long MAX_COUNT = 1;
-    
+
     protected long count = 0;
-    
+
     private float lastProgress = 0.0f;
-    
+
     protected AtomicBoolean callClosed = new AtomicBoolean(false);
-    
+
     private class RecordIteratorFactory implements ThreadFactory {
-        
+
         private ThreadFactory dtf = Executors.defaultThreadFactory();
         private int threadNum = 1;
         private StringBuilder threadIdentifier;
-        
+
         public RecordIteratorFactory(String threadName)
-        
+
         {
             this.threadIdentifier = new StringBuilder(threadName);
         }
-        
+
         public Thread newThread(Runnable r) {
             Thread thread = dtf.newThread(r);
             thread.setName("Datawave BatchScanner Session " + threadIdentifier + " -" + threadNum++);
             thread.setDaemon(true);
             return thread;
         }
-        
+
     }
-    
+
     protected ExecutorService executor = null;
-    
+
     protected volatile int numberFiles = 0;
-    
+
     // our goal is a precision of 0.1%, so set the precision to half of that
     // given we double MAX_COUNT each time
     private static final float PROGRESS_PRECISION = 0.0005f;
-    
+
     private static final Logger log = Logger.getLogger(RecordIterator.class);
-    
+
     public static class RFileEnvironment implements IteratorEnvironment {
-        
+
         AccumuloConfiguration conf;
-        
+
         public RFileEnvironment(AccumuloConfiguration conf) {
             this.conf = conf;
         }
-        
+
         public RFileEnvironment() {
             this.conf = DefaultConfiguration.getInstance();
         }
-        
+
         @Override
         public AccumuloConfiguration getConfig() {
             return conf;
         }
-        
+
         @Override
         public IteratorScope getIteratorScope() {
             return IteratorScope.scan;
         }
-        
+
         @Override
         public IteratorEnvironment cloneWithSamplingEnabled() {
             throw new SampleNotPresentException();
         }
-        
+
         @Override
         public boolean isSamplingEnabled() {
             return false;
         }
-        
+
         @Override
         public SamplerConfiguration getSamplerConfiguration() {
             return null;
         }
-        
+
+        @Override
+        public ServiceEnvironment getServiceEnv() {
+            return null;
+        }
+
+        @Override
+        public PluginEnvironment getPluginEnv() {
+            return null;
+        }
     }
-    
+
     public RecordIterator(final TabletSplitSplit fileSplit, Configuration conf) {
         this(fileSplit, null, conf);
-        
+
     }
-    
+
     public RecordIterator(final TabletSplitSplit fileSplit, AccumuloConfiguration acuTableConf, Configuration conf) {
         super();
-        
+
         this.conf = conf;
-        
+
         this.conf.setInt("dfs.client.socket-timeout", 10 * 1000);
-        
+
         failureMax = conf.getInt(RECORDITER_FAILURE_COUNT_MAX, FAILURE_MAX_DEFAULT);
-        
+
         failureSleep = conf.getLong(RECORDITER_FAILURE_SLEEP_INTERVAL, DEFAULT_FAILURE_SLEEP);
-        
+
         String[] authStrings = conf.getStrings("recorditer.auth.string");
-        
+
         List<ByteBuffer> authBuffer = Lists.newArrayList();
         if (null != authStrings) {
             for (String authString : authStrings) {
                 authBuffer.add(ByteBuffer.wrap(authString.getBytes()));
             }
         }
-        
+
         auths = new Authorizations(authBuffer);
-        
+
         this.fileSplit = fileSplit;
-        
+
         this.acuTableConf = acuTableConf;
-        
+
         executor = Executors.newFixedThreadPool(READ_AHEAD_THREADS, new RecordIteratorFactory("RecordIterator "));
-        
+
         try {
             fileRangeSplits = buildRangeSplits(fileSplit);
             if (log.isTraceEnabled()) {
                 log.trace("Iterator over the following files: " + fileRangeSplits);
             }
-            
+
             initialize(conf, true);
-            
+
             if (rangeQueue.isEmpty()) {
                 throw new RuntimeException("Queue of ranges is empty");
             }
-            
+
             seekToNextKey();
-            
+
         } catch (Exception e) {
             try {
                 close();
@@ -241,36 +266,36 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
             }
             throw new RuntimeException(e);
         }
-        
+
     }
-    
+
     protected Collection<FileRangeSplit> buildRangeSplits(TabletSplitSplit split) throws IOException {
         Collection<FileRangeSplit> splits = Lists.newArrayList();
         for (int i = 0; i < split.getLength(); i++) {
             FileRangeSplit fileSplit = (FileRangeSplit) split.get(i);
-            
+
             splits.add(fileSplit);
-            
+
         }
-        
+
         return splits;
     }
-    
+
     protected synchronized void initialize(Configuration conf, boolean initRanges) throws IOException {
-        
+
         if (isOpen) {
             close();
             executor = Executors.newFixedThreadPool(READ_AHEAD_THREADS, new RecordIteratorFactory("RecordIterator "));
         }
-        
+
         fileIterators = new ConcurrentLinkedDeque<>();
-        
+
         rfileReferences = new ConcurrentLinkedDeque<>();
-        
+
         List<SortedKeyValueIterator<Key,Value>> iterators = Lists.newArrayList();
-        
+
         Set<Path> pathSet = Sets.newHashSet();
-        
+
         for (FileRangeSplit split : fileRangeSplits) {
             List<Range> myRanges = split.getRanges();
             if (initRanges) {
@@ -278,29 +303,29 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
                     addRange(myRange);
                 }
             }
-            
+
             pathSet.add(split.getPath());
-            
+
         }
-        
+
         FileOperations fops = RFileOperations.getInstance();
-        
+
         futures.clear();
         numberFiles = pathSet.size();
         for (Path path : pathSet) {
-            
+
             try {
-                
+
                 if (null != path)
                     futures.add(iterFromFile(fops, path, conf));
             } catch (Exception e) {
-                
+
             }
-            
+
         }
-        
+
         for (Future<SortedKeyValueIterator<Key,Value>> future : futures) {
-            
+
             SortedKeyValueIterator<Key,Value> rfileIter = null;
             try {
                 rfileIter = future.get();
@@ -308,78 +333,88 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
                 close();
                 throw new RuntimeException(e.getCause());
             } catch (Exception e) {
-                
+
             }
             if (null != rfileIter)
                 iterators.add(rfileIter);
-            
+
         }
-        
+
         executor.shutdownNow();
-        
+
         futures.clear();
-        
+
         SortedKeyValueIterator<Key,Value> topIter = new MultiIterator(iterators, true);
-        
+
         boolean applyDeletingIterator = conf.getBoolean("range.record.reader.apply.delete", true);
         if (applyDeletingIterator)
             topIter = DeletingIterator.wrap(topIter, false, DeletingIterator.Behavior.PROCESS);
-        
+
         try {
             globalIter = applyTableIterators(topIter, conf);
             globalIter = buildTopIterators(globalIter, conf);
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
             throw new IOException(e);
         }
-        
+
         if (initRanges) {
             rangeQueue = new LinkedList<>();
             rangeQueue.addAll(ranges);
         }
-        
+
         isOpen = true;
     }
-    
+
     /**
      * Applies the table configuration if one is specified.
-     * 
+     *
      * @param topIter
+     *            a iterator of key/values
      * @param conf
-     * @return
+     *            a configuration
+     * @return the loaded table iterator
      * @throws IOException
+     *             for issues with read/write
      */
     protected SortedKeyValueIterator<Key,Value> applyTableIterators(SortedKeyValueIterator<Key,Value> topIter, Configuration conf) throws IOException {
-        
+
         if (null != acuTableConf) {
             // don't need to be populated as we'll do this later.
             RFileEnvironment iterEnv = new RFileEnvironment();
-            
+
             ColumnVisibility cv = new ColumnVisibility(acuTableConf.get(Property.TABLE_DEFAULT_SCANTIME_VISIBILITY));
             byte[] defaultSecurityLabel = cv.getExpression();
-            
+
             SortedKeyValueIterator<Key,Value> visFilter = VisibilityFilter.wrap(topIter, auths, defaultSecurityLabel);
-            IterLoad iterLoad = IterConfigUtil.loadIterConf(IteratorScope.scan, Collections.emptyList(), Collections.emptyMap(), acuTableConf);
-            return IterConfigUtil.loadIterators(visFilter, iterLoad.iterEnv(iterEnv).useAccumuloClassLoader(false));
+            IteratorBuilder.IteratorBuilderEnv iterLoad = IteratorConfigUtil.loadIterConf(IteratorScope.scan, Collections.emptyList(), Collections.emptyMap(),
+                            acuTableConf);
+            return IteratorConfigUtil.loadIterators(visFilter, iterLoad.env(iterEnv).build());
         }
-        
+
         return topIter;
     }
-    
+
     /**
      * @param topIter
+     *            the top iterator
      * @param conf
-     * @return
+     *            the configuration
+     * @return the loaded iterators
      * @throws ClassNotFoundException
+     *             if there is an issue finding the class
      * @throws IllegalAccessException
+     *             for issues instantiating the sub iterator
      * @throws InstantiationException
+     *             for issues with instantiation
      * @throws IOException
+     *             for read/write issues
      */
-    protected SortedKeyValueIterator<Key,Value> buildTopIterators(SortedKeyValueIterator<Key,Value> topIter, Configuration conf) throws ClassNotFoundException,
-                    InstantiationException, IllegalAccessException, IOException {
-        
+    protected SortedKeyValueIterator<Key,Value> buildTopIterators(SortedKeyValueIterator<Key,Value> topIter, Configuration conf)
+                    throws ClassNotFoundException, InstantiationException, IllegalAccessException, IOException {
+
         List<AccumuloIterator> iterators = BulkInputFormat.getIterators(conf);
         List<AccumuloIteratorOption> options = BulkInputFormat.getIteratorOptions(conf);
-        
+
         Map<String,IteratorSetting> scanIterators = new HashMap<>();
         for (AccumuloIterator iterator : iterators) {
             scanIterators.put(iterator.getIteratorName(), new IteratorSetting(iterator.getPriority(), iterator.getIteratorName(), iterator.getIteratorClass()));
@@ -387,9 +422,9 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
         for (AccumuloIteratorOption option : options) {
             scanIterators.get(option.getIteratorName()).addOption(option.getKey(), option.getValue());
         }
-        
+
         SortedKeyValueIterator<Key,Value> newIter = topIter;
-        
+
         BulkIteratorEnvironment myData = new BulkIteratorEnvironment(IteratorScope.scan);
         // ensure we create the iterators in priority order
         Collections.sort(iterators, (o1, o2) -> {
@@ -402,64 +437,71 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
             }
         });
         for (AccumuloIterator iterator : iterators) {
-            
+
             IteratorSetting settings = scanIterators.get(iterator.getIteratorName());
-            
+
             Class<? extends SortedKeyValueIterator> iter = Class.forName(settings.getIteratorClass()).asSubclass(SortedKeyValueIterator.class);
-            
+
             SortedKeyValueIterator<Key,Value> newInstance = iter.newInstance();
-            
+
             newInstance.init(newIter, settings.getOptions(), myData);
-            
+
             newIter = newInstance;
         }
         return newIter;
     }
-    
+
     protected Future<SortedKeyValueIterator<Key,Value>> iterFromFile(final FileOperations ops, final Path path, final Configuration conf)
                     throws TableNotFoundException, IOException {
-        
+
         return executor.submit(() -> {
-            
+
             if (callClosed.get()) {
                 throw new IOException("Shutdown in progress");
             }
-            
+
             final FileSystem fs = FileSystem.newInstance(path.toUri(), conf);
-            
+
             if (callClosed.get()) {
                 fs.close();
                 throw new IOException("Shutdown in progress");
             }
-            
+
             AtomicBoolean isSuccess = new AtomicBoolean(false);
-            
+
             RfileCloseable closeable = new RfileCloseable();
-            
+
             FileSKVIterator fileIterator = null;
-            
+
             try {
-                
+
                 rfileReferences.add(closeable);
-                
+
                 closeable.setFileSystemReference(fs);
-                
+
                 // Path path = new Path(file);
-                
+
                 closeable.setInputStream(fs.open(path));
-                
+
                 long length = fs.getFileStatus(path).getLen();
-                
-                CachableBlockFile.CachableBuilder builder = new CachableBlockFile.CachableBuilder().fsPath(fs, path).input(closeable.getInputStream())
-                                .length(length).conf(conf);
+
+                //@formatter:off
+                CachableBlockFile.CachableBuilder builder = new CachableBlockFile.CachableBuilder()
+                        .input(closeable.getInputStream(), CachableBlockFile.pathToCacheId(path))
+                        .cryptoService(CRYPTO_SERVICE)
+                        .fsPath(fs, path)
+                        .length(length)
+                        .conf(conf);
+                //@formatter:on
+
                 closeable.setBlockFile(new Reader(builder));
-                
+
                 fileIterator = new RFile.Reader(closeable.getReader());
-                
+
                 closeable.setIterator(fileIterator);
-                
+
                 fileIterators.add(fileIterator);
-                
+
                 isSuccess.set(true);
             } catch (Exception e) {
                 if (null != fileIterator) {
@@ -472,13 +514,13 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
                     closeable.close();
                 }
             }
-            
+
             return fileIterator;
         });
     }
-    
+
     protected synchronized void fail(Throwable t) {
-        
+
         if (++failureCount >= failureMax || callClosed.get()) {
             try {
                 close();
@@ -487,7 +529,7 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
             }
             throw new RuntimeException("Failure count of " + failureCount + " + exceeded failureMax. Last known error: " + t);
         }
-        
+
         try {
             close();
             executor = Executors.newFixedThreadPool(READ_AHEAD_THREADS, new RecordIteratorFactory("RecordIterator "));
@@ -512,38 +554,38 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
             }
             throw new RuntimeException(e);
         }
-        
+
         final String tableName = BulkInputFormat.getTablename(conf);
-        
+
         final List<Range> rangeList = Lists.newArrayList(ranges.iterator().next());
-        
+
         try {
-            
+
             MultiRfileInputformat.clearMetadataCache();
-            
+
             Collection<InputSplit> splits = MultiRfileInputformat.computeSplitPoints(conf, tableName, rangeList);
-            
+
             Preconditions.checkArgument(splits.size() == 1);
-            
+
             TabletSplitSplit tabletSplit = (TabletSplitSplit) splits.iterator().next();
-            
+
             fileRangeSplits = buildRangeSplits(tabletSplit);
-            
+
             initialize(conf, false);
-            
+
             seekLastSeen();
-            
+
         } catch (Exception e) {
             if (!callClosed.get() && !Thread.interrupted())
                 fail(e);
         }
-        
+
     }
-    
+
     protected void closeOnExit() {
         // close the underlying file system references
         if (null != rfileReferences) {
-            
+
             for (Closeable fs : rfileReferences) {
                 IOUtils.cleanup(null, fs);
             }
@@ -557,40 +599,40 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
                 }
             }
         }
-        
+
     }
-    
+
     public synchronized void close() throws IOException {
         isOpen = false;
         globalIter = null;
         callClosed.set(true);
         if (null != executor) {
             executor.shutdownNow();
-            
+
             closeOnExit();
-            
+
             for (Future<SortedKeyValueIterator<Key,Value>> future : futures) {
                 future.cancel(true);
             }
-            
+
         }
         // try to close before we interrupt.
         // and then after. this is because HDFS may swallow errors
         // and re-try. If that does not close a thread we will
         // attempt to interrupt and then clean up those resources.
         closeOnExit();
-        
+
         futures.clear();
         fileIterators.clear();
-        
+
     }
-    
+
     @Override
     public void init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env) throws IOException {
         throw new UnsupportedOperationException("Init is not supported in RecordIterator");
-        
+
     }
-    
+
     @Override
     public boolean hasTop() {
         if (!isOpen)
@@ -607,7 +649,7 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
         }
         return hasTop;
     }
-    
+
     @Override
     public void next() throws IOException {
         if (!isOpen) {
@@ -626,13 +668,13 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
             seekToNextKey();
         }
     }
-    
+
     /**
      * @throws IOException
-     * 
+     *             for issues with read/write
      */
     private void seekLastSeen() throws IOException {
-        
+
         try {
             if (lastSeenKey != null) {
                 currentRange = new Range(lastSeenKey, false, currentRange.getEndKey(), currentRange.isEndKeyInclusive());
@@ -640,12 +682,15 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
         } catch (Exception e) {
             log.error(e);
         }
-        
+
         globalIter.seek(currentRange, Collections.emptyList(), false);
     }
-    
+
     /**
      * Seek to the next range containing a key.
+     *
+     * @throws IOException
+     *             for issues with read/write
      */
     private void seekToNextKey() throws IOException {
         try {
@@ -661,13 +706,14 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
             }
         }
     }
-    
+
     /**
      * @throws IOException
-     * 
+     *             for issues with read/write
+     *
      */
     private void seekRange() throws IOException {
-        
+
         if (!rangeQueue.isEmpty()) {
             currentRange = rangeQueue.removeFirst();
             if (currentRange != null) {
@@ -675,13 +721,13 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
                 // failure scenario (which calls seekLastSeen) does not put
                 // us back into the previous range.
                 lastSeenKey = null;
-                
+
                 globalIter.seek(currentRange, Collections.emptyList(), false);
             }
-            
+
         }
     }
-    
+
     @Override
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
         // now that we have a completely new range, ensure that a failure
@@ -691,10 +737,10 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
         currentRange = range;
         globalIter.seek(range, columnFamilies, inclusive);
     }
-    
+
     @Override
     public Key getTopKey() {
-        
+
         Key topKey = null;
         try {
             topKey = globalIter.getTopKey();
@@ -706,7 +752,7 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
         lastSeenKey = topKey;
         return topKey;
     }
-    
+
     @Override
     public Value getTopValue() {
         Value topValue = null;
@@ -719,11 +765,13 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
         }
         return topValue;
     }
-    
+
     /**
      * Get the progress for the last key returned. This will try to minimize the underlying progress calculations by reusing the last progress until the
      * progress had changed significantly enough. This is done by estimating how many keys to cache the last value. If the progress does not change
      * significantly over a set of keys, then the number of keys for which to cache the value is doubled.
+     *
+     * @return the current progress
      */
     public float getProgress() {
         count++;
@@ -751,55 +799,55 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
         }
         return lastProgress;
     }
-    
+
     @Override
     public SortedKeyValueIterator<Key,Value> deepCopy(IteratorEnvironment env) {
         return new RecordIterator(fileSplit, conf);
     }
-    
+
     public class RfileCloseable implements Closeable {
         protected FileSystem fileSystemReference = null;
-        
+
         protected FSDataInputStream inputStream = null;
-        
+
         protected AtomicBoolean closed = new AtomicBoolean(false);
-        
+
         protected Reader reader = null;
-        
+
         protected FileSKVIterator fileIterator = null;
-        
+
         public synchronized void setFileSystemReference(FileSystem fileSystemReference) throws InterruptedException {
             if (closed.get())
                 throw new InterruptedException();
             this.fileSystemReference = fileSystemReference;
         }
-        
+
         public synchronized void setIterator(FileSKVIterator fileIterator) throws InterruptedException {
             if (closed.get())
                 throw new InterruptedException();
             this.fileIterator = fileIterator;
         }
-        
+
         public CachableBlockFile.Reader getReader() {
             return reader;
         }
-        
+
         public synchronized void setBlockFile(Reader reader) throws InterruptedException {
             if (closed.get())
                 throw new InterruptedException();
             this.reader = reader;
         }
-        
+
         public FSDataInputStream getInputStream() {
             return inputStream;
         }
-        
+
         public synchronized void setInputStream(FSDataInputStream inputStream) throws InterruptedException {
             if (closed.get())
                 throw new InterruptedException();
             this.inputStream = inputStream;
         }
-        
+
         @Override
         public synchronized void close() {
             closed.set(true);
@@ -809,30 +857,30 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
             } catch (Exception e) {
                 log.warn("close iterator " + e);
             }
-            
+
             try {
                 if (null != reader)
                     reader.close();
-                
+
             } catch (Exception e) {
                 log.warn("close reader " + e);
             }
-            
+
             try {
                 if (null != inputStream)
                     inputStream.close();
             } catch (Exception e) {
                 log.warn("close input " + e);
             }
-            
+
             try {
                 if (null != fileSystemReference)
                     fileSystemReference.close();
             } catch (Exception e) {
                 log.warn("close fs" + e);
             }
-            
+
         }
     }
-    
+
 }

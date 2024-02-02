@@ -12,13 +12,13 @@ import java.util.SortedSet;
 
 import javax.annotation.Nullable;
 
-import datawave.query.predicate.EventDataQueryFieldFilter;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.log4j.Logger;
+import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
 
 import com.google.common.base.Function;
 import com.google.common.base.Splitter;
@@ -27,7 +27,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
-import datawave.query.DocumentSerialization.ReturnType;
 import datawave.query.attributes.Document;
 import datawave.query.function.Aggregation;
 import datawave.query.function.AttributeToCardinality;
@@ -36,63 +35,63 @@ import datawave.query.function.DocumentCountCardinality;
 import datawave.query.function.JexlEvaluation;
 import datawave.query.function.KeyToDocumentData;
 import datawave.query.function.MinimumEstimation;
-import datawave.query.function.serializer.KryoDocumentSerializer;
-import datawave.query.function.serializer.ToStringDocumentSerializer;
-import datawave.query.function.serializer.WritableDocumentSerializer;
 import datawave.query.iterator.AccumuloTreeIterable;
 import datawave.query.iterator.FieldIndexOnlyQueryIterator;
 import datawave.query.iterator.aggregation.DocumentData;
 import datawave.query.iterator.builder.CardinalityIteratorBuilder;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.CardinalityAggregator;
+import datawave.query.jexl.functions.FieldIndexAggregator;
 import datawave.query.jexl.visitors.IteratorBuildingVisitor;
+import datawave.query.predicate.EventDataQueryFieldFilter;
+import datawave.query.predicate.KeyProjection;
+import datawave.query.predicate.Projection;
 import datawave.query.tables.facets.FacetedConfiguration;
 import datawave.query.tables.facets.FacetedSearchType;
 import datawave.query.util.TypeMetadata;
-import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
 
 /**
  *
  */
 public class DynamicFacetIterator extends FieldIndexOnlyQueryIterator {
     private static final Logger log = Logger.getLogger(DynamicFacetIterator.class);
-    
+
     public static final String FACETED_SEARCH_TYPE = "query.facet.type";
     public static final String FACETED_MINIMUM = "query.facet.minimum";
     public static final String FACETED_SEARCH_FIELDS = "query.facet.fields";
-    
+
     FacetedConfiguration configuration;
-    
+
     Map<String,String> documenIteratorOptions;
-    
+
     protected boolean merge = false;
-    
+
     @Override
     public IteratorOptions describeOptions() {
         IteratorOptions parentOpts = super.describeOptions();
-        
+
         Map<String,String> options = parentOpts.getNamedOptions();
-        
+
         options.put(FACETED_SEARCH_TYPE, "Type of faceted search");
         options.put(FACETED_MINIMUM, "Minimum Facet count. Defaults to 0");
         options.put(FACETED_SEARCH_FIELDS, "Comma separated list of facets that we must include. If this is empty, we return all facets");
-        
+
         return new IteratorOptions(getClass().getSimpleName(), "Runs a Faceted search against event data", options, null);
     }
-    
+
     @Override
     public boolean validateOptions(Map<String,String> options) {
         boolean res = super.validateOptions(options);
-        
+
         configuration = new FacetedConfiguration();
-        
+
         FacetedSearchType type = FacetedSearchType.DAY_COUNT;
         if (options.containsKey(FACETED_SEARCH_TYPE)) {
             type = FacetedSearchType.valueOf(options.get(FACETED_SEARCH_TYPE));
         }
-        
+
         configuration.setType(type);
-        
+
         if (options.containsKey(FACETED_MINIMUM)) {
             try {
                 configuration.setMinimumCount(Integer.parseInt(options.get(FACETED_MINIMUM)));
@@ -101,83 +100,81 @@ public class DynamicFacetIterator extends FieldIndexOnlyQueryIterator {
                 // defaulting to 1
             }
         }
-        
+
         String fields = "";
         if (options.containsKey(FACETED_SEARCH_FIELDS)) {
-            
+
             fields = options.get(FACETED_SEARCH_FIELDS);
-            
+
         }
-        
+
         switch (type) {
             case SHARD_COUNT:
             case DAY_COUNT:
-                
+
                 try {
-                    
+
                     // Parse & flatten the query tree.
                     script = JexlASTHelper.parseAndFlattenJexlQuery(this.getQuery());
-                    
+
                     myEvaluationFunction = new JexlEvaluation(this.getQuery(), arithmetic);
-                    
+
                 } catch (Exception e) {
                     throw new RuntimeException("Could not parse the JEXL query: '" + this.getQuery() + "'", e);
                 }
-                
+
                 break;
             default:
                 break;
         }
-        
+
         SortedSet<String> facetedFields = Sets.newTreeSet(Splitter.on(",").split(fields));
-        
+
         // add faceted fields to the index only field list, then remove the key list of
         // indexed fields from the faceted field list.
         if (!facetedFields.isEmpty())
             configuration.setHasFieldLimits(true);
-        
+
         configuration.setFacetedFields(facetedFields);
-        
-        fiAggregator = new CardinalityAggregator(getAllIndexOnlyFields(), !merge);
+
         // assign the options for later use by the document iterator
         documenIteratorOptions = options;
-        
+
         return res;
     }
-    
+
     @Override
     protected IteratorBuildingVisitor createIteratorBuildingVisitor(final Range documentRange, boolean isQueryFullySatisfied, boolean sortedUIDs)
                     throws MalformedURLException, ConfigException, IllegalAccessException, InstantiationException {
-        
+
         return super.createIteratorBuildingVisitor(documentRange, isQueryFullySatisfied, sortedUIDs).setIteratorBuilder(CardinalityIteratorBuilder.class)
                         .setFieldsToAggregate(configuration.getFacetedFields());
     }
-    
+
     @SuppressWarnings({"unchecked", "rawtypes"})
     @Override
-    public Iterator<Entry<Key,Document>> getDocumentIterator(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException,
-                    ConfigException, InstantiationException, IllegalAccessException {
+    public Iterator<Entry<Key,Document>> getDocumentIterator(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive)
+                    throws IOException, ConfigException, InstantiationException, IllegalAccessException {
         // Otherwise, we have to use the field index
         // Seek() the boolean logic stuff
         createAndSeekIndexIterator(range, columnFamilies, inclusive);
-        
+
         Function<Entry<Key,Document>,Entry<DocumentData,Document>> keyToDoc = null;
-        
+
         // TODO consider using the new EventDataQueryExpressionFilter
         EventDataQueryFieldFilter projection = null;
-        
+
         Iterator<Entry<Key,Document>> documents = null;
-        
+
         if (!configuration.getFacetedFields().isEmpty()) {
-            projection = new EventDataQueryFieldFilter();
-            projection.initializeWhitelist(configuration.getFacetedFields());
+            projection = new EventDataQueryFieldFilter(configuration.getFacetedFields(), Projection.ProjectionType.INCLUDES);
         }
-        
+
         if (!configuration.hasFieldLimits() || projection != null) {
-            keyToDoc = new KeyToDocumentData(source.deepCopy(myEnvironment), super.equality, projection, this.includeHierarchyFields,
-                            this.includeHierarchyFields);
+            keyToDoc = new KeyToDocumentData(source.deepCopy(myEnvironment), getEquality(), projection, this.includeHierarchyFields,
+                            this.includeHierarchyFields).withRangeProvider(getRangeProvider()).withAggregationThreshold(getDocAggregationThresholdMs());
         }
-        
+
         AccumuloTreeIterable<Key,DocumentData> doc = null;
         if (null != keyToDoc) {
             doc = new AccumuloTreeIterable<>(fieldIndexResults.tree, keyToDoc);
@@ -186,112 +183,104 @@ public class DynamicFacetIterator extends FieldIndexOnlyQueryIterator {
                 log.trace("Skipping document lookup, because we don't need it");
             }
             doc = new AccumuloTreeIterable<>(fieldIndexResults.tree, new Function<Entry<Key,Document>,Entry<DocumentData,Document>>() {
-                
+
                 @Override
                 @Nullable
                 public Entry<DocumentData,Document> apply(@Nullable Entry<Key,Document> input) {
-                    
+
                     Set<Key> docKeys = Sets.newHashSet();
-                    
+
                     List<Entry<Key,Value>> attrs = Lists.newArrayList();
-                    
-                    return Maps.immutableEntry(new DocumentData(input.getKey(), docKeys, attrs), input.getValue());
+
+                    return Maps.immutableEntry(new DocumentData(input.getKey(), docKeys, attrs, true), input.getValue());
                 }
-                
+
             });
         }
-        
+
         doc.seek(range, columnFamilies, inclusive);
-        
+
         TypeMetadata typeMetadata = this.getTypeMetadata();
-        
+
         documents = Iterators.transform(doc.iterator(), new Aggregation(this.getTimeFilter(), typeMetadata, compositeMetadata, this.isIncludeGroupingContext(),
                         this.includeRecordId, false, null));
-        
+
         switch (configuration.getType()) {
             case SHARD_COUNT:
             case DAY_COUNT:
-                
+
                 SortedKeyValueIterator<Key,Value> sourceDeepCopy = source.deepCopy(myEnvironment);
-                
+
                 documents = getEvaluation(sourceDeepCopy, documents, compositeMetadata, typeMetadata, columnFamilies, inclusive);
-                
+
                 // Take the document Keys and transform it into Entry<Key,Document>, removing Attributes for this Document
                 // which do not fall within the expected time range
                 documents = Iterators.transform(documents, new DocumentCountCardinality(configuration.getType(), !merge));
             default:
                 break;
         }
-        
+
         return documents;
-        
+
     }
-    
+
     @Override
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
         if (log.isDebugEnabled()) {
             log.debug("Seek range: " + range);
         }
-        
+
         this.range = range;
-        
+
         Iterator<Entry<Key,Document>> fieldIndexDocuments = null;
         try {
             fieldIndexDocuments = getDocumentIterator(range, columnFamilies, inclusive);
         } catch (ConfigException | IllegalAccessException | InstantiationException e) {
             throw new IOException("Unable to create document iterator", e);
         }
-        
+
         // at this point we should have the cardinality for all fields
         // so we should convert each Attribute into a Cardinality
         fieldIndexDocuments = Iterators.transform(fieldIndexDocuments, new AttributeToCardinality());
-        
+
         // convert the stream into a single document, so that we can summarize the cardinality
         fieldIndexDocuments = summarize(fieldIndexDocuments);
-        
+
         // minimize the list of facets that are returned.
         fieldIndexDocuments = Iterators.transform(fieldIndexDocuments, new MinimumEstimation(configuration.getMinimumFacetCount()));
-        
-        if (this.getReturnType() == ReturnType.kryo) {
-            // Serialize the Document using Kryo
-            this.serializedDocuments = Iterators.transform(fieldIndexDocuments, new KryoDocumentSerializer(isReducedResponse(), isCompressResults()));
-        } else if (this.getReturnType() == ReturnType.writable) {
-            // Use the Writable interface to serialize the Document
-            this.serializedDocuments = Iterators.transform(fieldIndexDocuments, new WritableDocumentSerializer(isReducedResponse()));
-        } else if (this.getReturnType() == ReturnType.tostring) {
-            // Just return a toString() representation of the document
-            this.serializedDocuments = Iterators.transform(fieldIndexDocuments, new ToStringDocumentSerializer(isReducedResponse()));
-        } else {
-            throw new IllegalArgumentException("Unknown return type of: " + this.getReturnType());
-        }
-        
-        // Determine if we have items to return
-        if (this.serializedDocuments.hasNext()) {
-            Entry<Key,Value> entry = this.serializedDocuments.next();
-            
-            this.key = entry.getKey();
-            this.value = entry.getValue();
-            
-            entry = null;
-        } else {
-            this.key = null;
-            this.value = null;
-        }
+
+        documentIterator = fieldIndexDocuments;
+
+        prepareKeyValue();
     }
-    
+
     protected Iterator<Entry<Key,Document>> summarize(Iterator<Entry<Key,Document>> fieldIndexDocuments) {
-        
+
         if (fieldIndexDocuments.hasNext()) {
             Entry<Key,Document> topEntry = fieldIndexDocuments.next();
-            
+
             CardinalitySummation summarizer = new CardinalitySummation(topEntry.getKey(), topEntry.getValue(), merge);
             while (fieldIndexDocuments.hasNext()) {
                 topEntry = fieldIndexDocuments.next();
                 summarizer.apply(topEntry);
             }
-            
+
             return Iterators.singletonIterator(summarizer.getTop());
         } else
             return fieldIndexDocuments;
     }
+
+    /**
+     * Get a FieldIndexAggregator
+     *
+     * @return a {@link CardinalityAggregator}
+     */
+    @Override
+    public FieldIndexAggregator getFiAggregator() {
+        if (fiAggregator == null) {
+            fiAggregator = new CardinalityAggregator(getAllIndexOnlyFields(), !merge);
+        }
+        return fiAggregator;
+    }
+
 }

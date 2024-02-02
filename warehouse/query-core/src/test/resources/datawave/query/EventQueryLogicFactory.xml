@@ -13,6 +13,8 @@
         isn't defined in Accumulo for whatever reason...
     -->
 
+    <bean id="ResponseObjectFactory" class="datawave.webservice.query.result.event.DefaultResponseObjectFactory"/>
+
     <!-- A list of lucene to jexl query functions -->
     <util:list id="allowedQueryFunctions" value-type="datawave.query.language.functions.jexl.JexlQueryFunction">
         <bean class="datawave.query.language.functions.jexl.IsNull"/>
@@ -36,6 +38,7 @@
         <bean class="datawave.query.language.functions.jexl.Geowave.Overlaps"/>
         <bean class="datawave.query.language.functions.jexl.Geowave.Within"/>
         <bean class="datawave.query.language.functions.jexl.EvaluationOnly"/>
+        <bean class="datawave.query.language.functions.jexl.Compare"/>
     </util:list>
 
 
@@ -45,7 +48,8 @@
     
     <bean id="baseQueryLogic" class="datawave.webservice.query.logic.BaseQueryLogic" abstract="true" >
         <property name="roleManager" ref="easyRoleManager" />
-        <property name="markingFunctions" ref="markingFunctions" />
+	<property name="markingFunctions" ref="markingFunctions" />
+        <property name="responseObjectFactory" ref="ResponseObjectFactory" />
     </bean>
     
     <bean id="BaseEventQuery" parent="baseQueryLogic" scope="prototype" class="datawave.query.tables.ShardQueryLogic" abstract="true">
@@ -91,8 +95,11 @@
         <!-- Determines how many shards in the global index lookup will be
         aggregated into a day range -->
         <property name="shardsPerDayThreshold" value="4" />	<!-- ${beq.shardsPerDayThreshold} -->
+        <!-- The max number of terms BEFORE all expansions -->
+        <property name="initialMaxTermThreshold" value="10" />	<!-- was ${beq.initialMaxTermThreshold} -->
+        <property name="intermediateMaxTermThreshold" value="10" />
         <!-- The max number of terms AFTER all expansions -->
-        <property name="maxTermThreshold" value="10" />	<!-- was ${beq.maxTermThreshold} -->
+        <property name="finalMaxTermThreshold" value="10" />	<!-- was ${beq.finalMaxTermThreshold} -->
         <!-- The max query depth -->
         <property name="maxDepthThreshold" value="5" />	<!-- was ${beq.maxDepthThreshold} -->
         <!-- The max unfielded (_ANYFIELD_) expansion per term -->

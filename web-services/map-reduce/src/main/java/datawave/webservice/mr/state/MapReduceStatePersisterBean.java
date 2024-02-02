@@ -1,16 +1,31 @@
 package datawave.webservice.mr.state;
 
-import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
-import datawave.security.authorization.DatawavePrincipal;
-import datawave.security.util.ScannerHelper;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
-import datawave.webservice.query.exception.DatawaveErrorCode;
-import datawave.webservice.query.exception.NotFoundQueryException;
-import datawave.webservice.query.exception.QueryException;
-import datawave.webservice.results.mr.JobExecution;
-import datawave.webservice.results.mr.MapReduceInfoResponse;
-import datawave.webservice.results.mr.MapReduceInfoResponseList;
-import datawave.webservice.results.mr.ResultFile;
+import java.io.IOException;
+import java.security.Principal;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Queue;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.concurrent.TimeUnit;
+
+import javax.annotation.Resource;
+import javax.annotation.security.DeclareRoles;
+import javax.annotation.security.PermitAll;
+import javax.annotation.security.RolesAllowed;
+import javax.ejb.EJBContext;
+import javax.ejb.LocalBean;
+import javax.ejb.Stateless;
+import javax.inject.Inject;
+
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
@@ -32,36 +47,24 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
-import javax.annotation.Resource;
-import javax.annotation.security.DeclareRoles;
-import javax.annotation.security.PermitAll;
-import javax.annotation.security.RolesAllowed;
-import javax.ejb.EJBContext;
-import javax.ejb.LocalBean;
-import javax.ejb.Stateless;
-import javax.inject.Inject;
-import java.io.IOException;
-import java.security.Principal;
-import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Queue;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.concurrent.TimeUnit;
+import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
+import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.util.ScannerHelper;
+import datawave.webservice.common.connection.AccumuloConnectionFactory;
+import datawave.webservice.query.exception.DatawaveErrorCode;
+import datawave.webservice.query.exception.NotFoundQueryException;
+import datawave.webservice.query.exception.QueryException;
+import datawave.webservice.results.mr.JobExecution;
+import datawave.webservice.results.mr.MapReduceInfoResponse;
+import datawave.webservice.results.mr.MapReduceInfoResponseList;
+import datawave.webservice.results.mr.ResultFile;
 
 /**
  * Maintains information in a table about the state of a MapReduce job <br>
  *
  * MapReduce Table
- * <table summary="">
+ * <table>
+ * <caption></caption>
  * <tr>
  * <th>Row</th>
  * <th>ColF</th>
@@ -113,7 +116,8 @@ import java.util.concurrent.TimeUnit;
  * </table>
  *
  * MapReduce Index
- * <table summary="">
+ * <table>
+ * <caption></caption>
  * <tr>
  * <th>Row</th>
  * <th>ColF</th>
@@ -138,15 +142,15 @@ public class MapReduceStatePersisterBean {
     public enum MapReduceState {
         STARTED, RUNNING, SUCCEEDED, FAILED, KILLED
     }
-    
+
     private Logger log = Logger.getLogger(this.getClass());
-    
+
     @Inject
     private AccumuloConnectionFactory connectionFactory;
-    
+
     @Resource
     private EJBContext ctx;
-    
+
     public static final String TABLE_NAME = "MapReduceService";
     public static final String INDEX_TABLE_NAME = "MapReduceServiceJobIndex";
     public static final String WORKING_DIRECTORY = "dir";
@@ -158,13 +162,15 @@ public class MapReduceStatePersisterBean {
     public static final String NAME = "name";
     public static final String NULL = "\u0000";
     public static final Value NULL_VALUE = new Value(new byte[0]);
-    
+
     /**
      *
      * @param id
      *            map reduce id
      * @param hdfsUri
+     *            the uri
      * @param jobTracker
+     *            the job tracker name
      * @param workingDirectory
      *            map reduce job working directory
      * @param mapReduceJobId
@@ -174,6 +180,9 @@ public class MapReduceStatePersisterBean {
      * @param runtimeParameters
      *            parameters
      * @param jobName
+     *            job name
+     * @throws QueryException
+     *             for QueryException
      */
     public void create(String id, String hdfsUri, String jobTracker, String workingDirectory, String mapReduceJobId, String resultsDirectory,
                     String runtimeParameters, String jobName) throws QueryException {
@@ -184,7 +193,7 @@ public class MapReduceStatePersisterBean {
             DatawavePrincipal cp = (DatawavePrincipal) p;
             sid = cp.getShortName();
         }
-        
+
         AccumuloClient c = null;
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
@@ -219,7 +228,7 @@ public class MapReduceStatePersisterBean {
             }
         }
     }
-    
+
     /**
      * Update the state of the Bulk Results entry
      *
@@ -244,7 +253,7 @@ public class MapReduceStatePersisterBean {
             try (Scanner scanner = ScannerHelper.createScanner(c, INDEX_TABLE_NAME, Collections.singleton(new Authorizations()))) {
                 Range range = new Range(mapReduceJobId, mapReduceJobId);
                 scanner.setRange(range);
-                
+
                 for (Entry<Key,Value> entry : scanner) {
                     if (null == results)
                         results = new ArrayList<>();
@@ -262,7 +271,7 @@ public class MapReduceStatePersisterBean {
                 log.error("Error returning connection to pool", e);
             }
         }
-        
+
         if (null == results)
             throw new NotFoundQueryException(DatawaveErrorCode.NO_QUERY_OBJECT_MATCH);
         if (results.size() > 1)
@@ -278,7 +287,8 @@ public class MapReduceStatePersisterBean {
                 Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
                 c = connectionFactory.getClient(AccumuloConnectionFactory.Priority.ADMIN, trackingMap);
                 tableCheck(c);
-                writer = c.createBatchWriter(TABLE_NAME, new BatchWriterConfig().setMaxLatency(10, TimeUnit.SECONDS).setMaxMemory(10240L).setMaxWriteThreads(1));
+                writer = c.createBatchWriter(TABLE_NAME,
+                                new BatchWriterConfig().setMaxLatency(10, TimeUnit.SECONDS).setMaxMemory(10240L).setMaxWriteThreads(1));
                 writer.addMutation(m);
                 writer.flush();
             } catch (RuntimeException re) {
@@ -298,7 +308,7 @@ public class MapReduceStatePersisterBean {
             }
         }
     }
-    
+
     /**
      * Returns all MapReduce jobs for the current user
      *
@@ -316,7 +326,7 @@ public class MapReduceStatePersisterBean {
                 auths.add(new Authorizations(cbAuths.toArray(new String[cbAuths.size()])));
         }
         log.trace(sid + " has authorizations " + auths);
-        
+
         MapReduceInfoResponseList result = new MapReduceInfoResponseList();
         AccumuloClient c = null;
         try {
@@ -325,7 +335,7 @@ public class MapReduceStatePersisterBean {
             tableCheck(c);
             try (Scanner scanner = ScannerHelper.createScanner(c, TABLE_NAME, auths)) {
                 scanner.fetchColumnFamily(new Text(sid));
-                
+
                 // We need to create a response for each job
                 String previousRow = sid;
                 Map<Key,Value> batch = new HashMap<>();
@@ -366,7 +376,7 @@ public class MapReduceStatePersisterBean {
             }
         }
     }
-    
+
     /**
      * Information for a specific map reduce id
      *
@@ -386,7 +396,7 @@ public class MapReduceStatePersisterBean {
                 auths.add(new Authorizations(cbAuths.toArray(new String[cbAuths.size()])));
         }
         log.trace(sid + " has authorizations " + auths);
-        
+
         MapReduceInfoResponseList result = new MapReduceInfoResponseList();
         AccumuloClient c = null;
         try {
@@ -420,7 +430,7 @@ public class MapReduceStatePersisterBean {
             }
         }
     }
-    
+
     private MapReduceInfoResponse populateResponse(Iterable<Entry<Key,Value>> data) throws IOException {
         MapReduceInfoResponse result = null;
         String hdfs = null;
@@ -466,7 +476,7 @@ public class MapReduceStatePersisterBean {
                 Path resultDirectoryPath = new Path(result.getResultsDirectory());
                 int resultDirectoryPathLength = resultDirectoryPath.toUri().getPath().length();
                 FileSystem fs = FileSystem.get(resultDirectoryPath.toUri(), conf);
-                
+
                 List<FileStatus> stats = new ArrayList<>();
                 // recurse through the directory to find all files
                 Queue<FileStatus> fileQueue = new LinkedList<>();
@@ -474,16 +484,16 @@ public class MapReduceStatePersisterBean {
                 while (!fileQueue.isEmpty()) {
                     FileStatus currentFileStatus = fileQueue.remove();
                     if (currentFileStatus.isFile()) {
-                        
+
                         stats.add(currentFileStatus);
                     } else {
                         FileStatus[] dirList = fs.listStatus(currentFileStatus.getPath());
                         Collections.addAll(fileQueue, dirList);
                     }
                 }
-                
+
                 // FileStatus[] stats = fs.listStatus(p);
-                
+
                 if (!stats.isEmpty()) {
                     List<ResultFile> resultFiles = new ArrayList<>();
                     for (FileStatus f : stats) {
@@ -503,15 +513,16 @@ public class MapReduceStatePersisterBean {
         }
         return result;
     }
-    
+
     /**
      * Adds a new job to the history for this BulkResults id
-     * 
+     *
      * @param id
      *            bulk results id
      * @param mapReduceJobId
      *            map reduce job id
      * @throws QueryException
+     *             for problems with query
      */
     public void addJob(String id, String mapReduceJobId) throws QueryException {
         // Find out who/what called this method
@@ -521,7 +532,7 @@ public class MapReduceStatePersisterBean {
             DatawavePrincipal dp = (DatawavePrincipal) p;
             sid = dp.getShortName();
         }
-        
+
         AccumuloClient c = null;
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
@@ -549,9 +560,9 @@ public class MapReduceStatePersisterBean {
                 log.error("Error closing writers", e);
             }
         }
-        
+
     }
-    
+
     private void tableCheck(AccumuloClient c) throws AccumuloException, AccumuloSecurityException, TableExistsException, TableNotFoundException {
         if (!c.tableOperations().exists(TABLE_NAME)) {
             c.tableOperations().create(TABLE_NAME);
@@ -566,13 +577,14 @@ public class MapReduceStatePersisterBean {
         if (!c.tableOperations().exists(INDEX_TABLE_NAME))
             c.tableOperations().create(INDEX_TABLE_NAME);
     }
-    
+
     /**
      * Removes Bulk Results information and related directory in HDFS for the given job id.
      *
      * @param id
      *            bulk results id
-     *
+     * @throws QueryException
+     *             for problems with query
      */
     public void remove(String id) throws QueryException {
         // Find out who/what called this method
@@ -582,7 +594,7 @@ public class MapReduceStatePersisterBean {
             DatawavePrincipal dp = (DatawavePrincipal) p;
             sid = dp.getShortName();
         }
-        
+
         MapReduceInfoResponseList results = findById(id);
         if (null == results)
             throw new NotFoundQueryException(DatawaveErrorCode.NO_QUERY_OBJECT_MATCH);
@@ -590,7 +602,7 @@ public class MapReduceStatePersisterBean {
             throw new NotFoundQueryException(DatawaveErrorCode.TOO_MANY_QUERY_OBJECT_MATCHES);
         else {
             MapReduceInfoResponse r = results.getResults().get(0);
-            
+
             List<Mutation> indexEntries = new ArrayList<>();
             Mutation m = new Mutation(r.getId());
             m.putDelete(sid, WORKING_DIRECTORY);
@@ -633,49 +645,49 @@ public class MapReduceStatePersisterBean {
             }
         }
     }
-    
+
     /**
      * Class to parse a row of information from the BulkResultsJobIndex table into a BulkResultsInfoResponse
      */
     private static class MapReduceServiceJobIndex {
-        
+
         private String user;
         private String id;
         private String mapReduceJobId;
         private String state;
-        
+
         public String getUser() {
             return user;
         }
-        
+
         public String getId() {
             return id;
         }
-        
+
         public String getMapReduceJobId() {
             return mapReduceJobId;
         }
-        
+
         public String getState() {
             return state;
         }
-        
+
         public void setUser(String user) {
             this.user = user;
         }
-        
+
         public void setId(String id) {
             this.id = id;
         }
-        
+
         public void setMapReduceJobId(String mapReduceJobId) {
             this.mapReduceJobId = mapReduceJobId;
         }
-        
+
         public void setState(String state) {
             this.state = state;
         }
-        
+
         public static MapReduceServiceJobIndex parse(Key key, MapReduceState state) {
             MapReduceServiceJobIndex result = new MapReduceServiceJobIndex();
             result.setMapReduceJobId(key.getRow().toString());
@@ -685,5 +697,5 @@ public class MapReduceStatePersisterBean {
             return result;
         }
     }
-    
+
 }

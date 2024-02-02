@@ -1,5 +1,10 @@
 package datawave.query.planner;
 
+import java.util.concurrent.ExecutionException;
+
+import org.apache.accumulo.core.client.IteratorSetting;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveQueryException;
 import datawave.query.exceptions.EmptyUnfieldedTermExpansionException;
@@ -14,10 +19,6 @@ import datawave.webservice.query.Query;
 import datawave.webservice.query.configuration.QueryData;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
-import org.apache.accumulo.core.client.IteratorSetting;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-
-import java.util.concurrent.ExecutionException;
 
 /**
  *
@@ -26,20 +27,20 @@ public class IndexQueryPlanner extends DefaultQueryPlanner {
     public IndexQueryPlanner(IndexQueryPlanner indexQueryPlanner) {
         super(indexQueryPlanner);
     }
-    
+
     public IndexQueryPlanner() {
         super();
     }
-    
+
     @Override
     public IteratorSetting getQueryIterator(MetadataHelper metadataHelper, ShardQueryConfiguration config, Query settings, String queryString,
-                    Boolean isFullTable) throws DatawaveQueryException {
+                    Boolean isFullTable, boolean isPreload) throws DatawaveQueryException {
         if (isFullTable) {
             QueryException qe = new QueryException(DatawaveErrorCode.FULL_TABLE_SCAN_DISALLOWED);
             throw new FullTableScansDisallowedException(qe);
         }
-        
-        IteratorSetting cfg = super.getQueryIterator(metadataHelper, config, settings, queryString, isFullTable);
+
+        IteratorSetting cfg = super.getQueryIterator(metadataHelper, config, settings, queryString, isFullTable, isPreload);
         if (null == cfg) {
             try {
                 cfg = settingFuture.get();
@@ -47,24 +48,24 @@ public class IndexQueryPlanner extends DefaultQueryPlanner {
                 throw new RuntimeException(e);
             }
         }
-        
+
         cfg.setIteratorClass(FieldIndexOnlyQueryIterator.class.getName());
-        
+
         return cfg;
     }
-    
+
     @Override
     protected ASTJexlScript updateQueryTree(ScannerFactory scannerFactory, MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper,
                     ShardQueryConfiguration config, String query, QueryData queryData, Query settings) throws DatawaveQueryException {
         // we want all terms expanded (except when max terms is reached)
         config.setExpandAllTerms(true);
-        
+
         // update the query tree
         ASTJexlScript script = super.updateQueryTree(scannerFactory, metadataHelper, dateIndexHelper, config, query, queryData, settings);
-        
+
         return limitQueryTree(script, config);
     }
-    
+
     protected ASTJexlScript limitQueryTree(ASTJexlScript script, ShardQueryConfiguration config) throws NoResultsException {
         // Assert that all of the terms in the query are indexed (so we can
         // completely use the field index)
@@ -75,7 +76,7 @@ public class IndexQueryPlanner extends DefaultQueryPlanner {
             throw new NoResultsException(qe);
         }
     }
-    
+
     @Override
     public IndexQueryPlanner clone() {
         return new IndexQueryPlanner(this);

@@ -1,5 +1,13 @@
 package datawave.util.flag.config;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlTransient;
+
 import datawave.util.StringUtils;
 import datawave.util.flag.FlagMaker;
 import datawave.util.flag.processor.DateFlagDistributor;
@@ -8,41 +16,34 @@ import datawave.util.flag.processor.DateUtils;
 import datawave.util.flag.processor.FlagDistributor;
 import datawave.util.flag.processor.SimpleFlagDistributor;
 
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlTransient;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
 /**
  * Simple JAXB Wrapper for FlagConfig objects
  */
 @XmlRootElement
 public class FlagMakerConfig {
-    
+
     // A value used as a default to denote that it was unset
     public static final int UNSET = Integer.MIN_VALUE;
-    
+
     @XmlElement
     private List<FlagDataTypeConfig> flagCfg = new ArrayList<>();
-    
+
     private FlagDataTypeConfig defaultCfg;
     // default to localhost
     private String hdfs = "hdfs://localhost:9000";
-    
+
     private String datawaveHome;
     // default path
     private String baseHDFSDir = "/data/ShardIngest";
     private int socketPort;
     private String flagFileDirectory;
-    
+
     public static final String DEFAULT_FILE_PATTERN = "2*/*/*/*";
-    
+
     // a list of file patterns.
     @XmlElement(name = "filePattern")
     private List<String> filePatterns = new ArrayList<>();
-    
+
     // default to simple. valid values are simple|date|folderdate
     private String distributorType = "simple";
     // default timeout
@@ -67,180 +68,181 @@ public class FlagMakerConfig {
     protected long directoryCacheTimeout = (2 * 60 * 60 * 1000);
     // implementation of flagmaker to run
     private String flagMakerClass = FlagMaker.class.getName();
-    
+
     public FlagDataTypeConfig getDefaultCfg() {
         return defaultCfg;
     }
-    
+
     public void setDefaultCfg(FlagDataTypeConfig defaultCfg) {
         this.defaultCfg = defaultCfg;
     }
-    
+
     public String getDatawaveHome() {
         return datawaveHome;
     }
-    
+
     public void setDatawaveHome(String datawaveHome) {
         this.datawaveHome = datawaveHome;
     }
-    
+
     public String getDistributorType() {
         return distributorType;
     }
-    
+
     public void setDistributorType(String distributorType) {
         this.distributorType = distributorType;
     }
-    
+
     public List<String> getFilePatterns() {
         return (filePatterns.isEmpty() ? Collections.singletonList(DEFAULT_FILE_PATTERN) : filePatterns);
     }
-    
+
     public void addFilePattern(String filePattern) {
         this.filePatterns.add(filePattern);
     }
-    
+
     public String getBaseHDFSDir() {
         return baseHDFSDir;
     }
-    
+
     public void setBaseHDFSDir(String baseHDFSDir) {
         this.baseHDFSDir = baseHDFSDir;
     }
-    
+
     public String getFlagFileDirectory() {
         return flagFileDirectory;
     }
-    
+
     public void setFlagFileDirectory(String flagFileDirectory) {
         this.flagFileDirectory = flagFileDirectory;
     }
-    
+
     public String getHdfs() {
         return hdfs;
     }
-    
+
     public void setHdfs(String hdfs) {
         this.hdfs = hdfs;
     }
-    
+
     public int getSocketPort() {
         return socketPort;
     }
-    
+
     public void setSocketPort(int socketPort) {
         this.socketPort = socketPort;
     }
-    
+
     public long getTimeoutMilliSecs() {
         return timeoutMilliSecs;
     }
-    
+
     public void setTimeoutMilliSecs(long timeoutMilliSecs) {
         this.timeoutMilliSecs = timeoutMilliSecs;
     }
-    
+
     public long getSleepMilliSecs() {
         return sleepMilliSecs;
     }
-    
+
     public void setSleepMilliSecs(long sleepMilliSecs) {
         this.sleepMilliSecs = sleepMilliSecs;
     }
-    
+
     public int getMaxHdfsThreads() {
         return maxHdfsThreads;
     }
-    
+
     public void setMaxHdfsThreads(int maxHdfsThreads) {
         this.maxHdfsThreads = maxHdfsThreads;
     }
-    
+
     public int getDirectoryCacheSize() {
         return directoryCacheSize;
     }
-    
+
     public void setDirectoryCacheSize(int maxDirectoryCacheSize) {
         this.directoryCacheSize = maxDirectoryCacheSize;
     }
-    
+
     public long getDirectoryCacheTimeout() {
         return directoryCacheTimeout;
     }
-    
+
     public void setDirectoryCacheTimeout(int directoryCacheTimeout) {
         this.directoryCacheTimeout = directoryCacheTimeout;
     }
-    
+
     public int getMaxFileLength() {
         return maxFileLength;
     }
-    
+
     public void setMaxFileLength(int maxFileLength) {
         this.maxFileLength = maxFileLength;
     }
-    
+
     public boolean isSetFlagFileTimestamp() {
         return setFlagFileTimestamp;
     }
-    
+
     public void setSetFlagFileTimestamp(boolean setFlagFileTimestamp) {
         this.setFlagFileTimestamp = setFlagFileTimestamp;
     }
-    
+
     public boolean isUseFolderTimestamp() {
         return useFolderTimestamp;
     }
-    
+
     public void setUseFolderTimestamp(boolean useFolderTimestamp) {
         this.useFolderTimestamp = useFolderTimestamp;
     }
-    
+
     public int getFlagCountThreshold() {
         return flagCountThreshold;
     }
-    
+
     public void setFlagCountThreshold(int flagCountThreshold) {
         this.flagCountThreshold = flagCountThreshold;
     }
-    
+
     public String getFlagMakerClass() {
         return flagMakerClass;
     }
-    
+
     public void setFlagMakerClass(String flagMakerClass) {
         this.flagMakerClass = flagMakerClass;
     }
-    
+
     /**
      * Gets the list of <code>FlagConfig</code>s
      *
-     * @return
+     * @return a list of flagconfigs
      */
     @XmlTransient
     public List<FlagDataTypeConfig> getFlagConfigs() {
         return flagCfg;
     }
-    
+
     /**
      * Allows the programmatic addition of <code>FlagConfig</code>s to this object.
      *
      * @param fc
+     *            the flag config
      */
     public void addFlagConfig(FlagDataTypeConfig fc) {
         if (fc != null) {
             flagCfg.add(fc);
         }
     }
-    
+
     public void setFlagMetricsDirectory(String d) {
         this.flagMetricsDirectory = d;
     }
-    
+
     public String getFlagMetricsDirectory() {
         return flagMetricsDirectory;
     }
-    
+
     public FlagDistributor getFlagDistributor() {
         FlagDistributor fd = null;
         if ("simple".equals(this.distributorType)) {
@@ -250,10 +252,10 @@ public class FlagMakerConfig {
         } else if ("folderdate".equals(this.distributorType)) {
             fd = new DateFolderFlagDistributor();
         }
-        
+
         return fd;
     }
-    
+
     /**
      * Validate config and set up folders for each data type. Here we have a few rules:
      * <ul>
@@ -271,28 +273,28 @@ public class FlagMakerConfig {
         if (this.baseHDFSDir == null) {
             throw new IllegalArgumentException(prefix + "baseHDFSDir is required");
         }
-        
+
         if (!this.baseHDFSDir.endsWith("/")) {
             setBaseHDFSDir(this.baseHDFSDir + "/");
         }
-        
+
         if (this.socketPort < 1025 || socketPort > 65534) {
             throw new IllegalArgumentException(prefix + "socketPort is required and must be greater than 1024 and less than 65535");
         }
-        
+
         if (this.flagFileDirectory == null) {
             throw new IllegalArgumentException(prefix + "flagFileDirectory is required");
         }
-        
+
         if (this.defaultCfg.getMaxFlags() < 1) {
             throw new IllegalArgumentException(prefix + "Default Max Flags must be set.");
         }
-        
+
         if (this.distributorType == null || !this.distributorType.matches("(simple|date|folderdate)")) {
-            throw new IllegalArgumentException("Invalid Distributor type provided: " + this.distributorType
-                            + ". Must be one of the following: simple|date|folderdate");
+            throw new IllegalArgumentException(
+                            "Invalid Distributor type provided: " + this.distributorType + ". Must be one of the following: simple|date|folderdate");
         }
-        
+
         for (FlagDataTypeConfig cfg : this.flagCfg) {
             if (cfg.getInputFormat() == null)
                 throw new IllegalArgumentException("Input Format Class must be specified for data type: " + cfg.getDataName());
@@ -347,7 +349,7 @@ public class FlagMakerConfig {
             cfg.setFolder(fixedFolders);
         }
     }
-    
+
     @Override
     public String toString() {
         StringBuilder result = new StringBuilder();
@@ -371,5 +373,4 @@ public class FlagMakerConfig {
         result.append("flagMakerClass: " + this.getFlagMakerClass() + "\n");
         return result.toString();
     }
-    
 }

@@ -15,42 +15,50 @@ import datawave.webservice.result.QueryLogicResponse;
 import datawave.webservice.result.VoidResponse;
 
 public interface QueryExecutor {
-    
+
     /**
      * List QueryLogic types that are currently available
      *
      * @return base response
      */
     QueryLogicResponse listQueryLogic();
-    
+
     /**
      * @param logicName
+     *            the logic name
      * @param queryParameters
-     * @return
+     *            query parameters
+     * @return a generic response
      */
     GenericResponse<String> predictQuery(String logicName, MultivaluedMap<String,String> queryParameters);
-    
+
     /**
      * @param logicName
+     *            the logic name
      * @param queryParameters
-     * @return
+     *            query parameters
+     * @return a generic response
      */
     GenericResponse<String> defineQuery(String logicName, MultivaluedMap<String,String> queryParameters);
-    
+
     /**
      * @param logicName
+     *            the logic name
      * @param queryParameters
-     * @return
+     *            query parameters
+     * @return a generic response
      */
     GenericResponse<String> createQuery(String logicName, MultivaluedMap<String,String> queryParameters);
-    
+
     /**
      * @param logicName
+     *            the logic name
      * @param queryParameters
-     * @return
+     *            query parameters
+     * @return a query response
      */
     BaseQueryResponse createQueryAndNext(String logicName, MultivaluedMap<String,String> queryParameters);
-    
+
     /**
      * Resets the query named by {@code id}. If the query is not alive, meaning that the current session has expired (due to either timeout, or server failure),
      * then this will reload the query and start it over. If the query is alive, it closes it and starts the query over.
@@ -60,13 +68,19 @@ public interface QueryExecutor {
      * @return an empty response
      */
     VoidResponse reset(String id);
-    
+
     /**
-     * 
+     *
      * @param uuid
+     *            a uuid
      * @param uuidType
+     *            a uuid type
      * @param uriInfo
+     *            a uri
      * @param httpHeaders
+     *            headers
+     * @param <T>
+     *            type of content
      * @return content results, either as a paged BaseQueryResponse or StreamingOutput
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user, by specifying a chain of DNs of the identities to proxy
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
@@ -82,11 +96,15 @@ public interface QueryExecutor {
      * @HTTP 500 internal server error
      */
     <T> T lookupContentByUUID(String uuidType, String uuid, UriInfo uriInfo, HttpHeaders httpHeaders);
-    
+
     /**
-     * 
+     *
      * @param queryParameters
+     *            query parameters
      * @param httpHeaders
+     *            headers
+     * @param <T>
+     *            type of content
      * @return content results, either as a paged BaseQueryResponse or StreamingOutput
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user, by specifying a chain of DNs of the identities to proxy
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
@@ -101,14 +119,19 @@ public interface QueryExecutor {
      * @HTTP 500 internal server error
      */
     <T> T lookupContentByUUIDBatch(MultivaluedMap<String,String> queryParameters, HttpHeaders httpHeaders);
-    
+
     /**
-     * 
+     *
      * @param uuidType
+     *            the uuid type
      * @param uuid
+     *            the uuid
      * @param uriInfo
+     *            the uri
      * @param httpHeaders
-     * @return
+     *            headers
+     * @param <T>
+     *            type of content
      * @return event results, either as a paged BaseQueryResponse (automatically closed upon return) or StreamingOutput
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user, by specifying a chain of DNs of the identities to proxy
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
@@ -123,11 +146,15 @@ public interface QueryExecutor {
      * @HTTP 500 internal server error
      */
     <T> T lookupUUID(String uuidType, String uuid, UriInfo uriInfo, HttpHeaders httpHeaders);
-    
+
     /**
-     * 
+     *
      * @param queryParameters
+     *            query parameters
      * @param httpHeaders
+     *            headers
+     * @param <T>
+     *            type of content
      * @return event results, either as a paged BaseQueryResponse or StreamingOutput
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user, by specifying a chain of DNs of the identities to proxy
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
@@ -142,32 +169,35 @@ public interface QueryExecutor {
      * @HTTP 500 internal server error
      */
     <T> T lookupUUIDBatch(MultivaluedMap<String,String> queryParameters, HttpHeaders httpHeaders);
-    
+
     /**
      * Gets the plan from the query object. If the object is no longer alive, meaning that the current session has expired, then this will fail.
      *
      * @param id
+     *            the id
      * @return the plan
      */
     GenericResponse<String> plan(String id);
-    
+
     /**
      * Gets the latest query predictions from the query object. If the object is no longer alive, meaning that the current session has expired, then this will
      * fail.
      *
      * @param id
+     *            the id
      * @return the predictions
      */
     GenericResponse<String> predictions(String id);
-    
+
     /**
      * Gets the next page of results from the query object. If the object is no longer alive, meaning that the current session has expired, then this will fail.
-     * 
+     *
      * @param id
+     *            the id
      * @return set of Row objects
      */
     BaseQueryResponse next(String id);
-    
+
     /**
      * Locates queries for the current user by name.
      *
@@ -176,13 +206,13 @@ public interface QueryExecutor {
      * @return the query named {@code name}, if any
      */
     QueryImplListResponse list(String name);
-    
+
     /**
      *
      * @return list of users queries.
      */
     QueryImplListResponse listUserQueries();
-    
+
     /**
      * Updates a query object
      *
@@ -217,7 +247,7 @@ public interface QueryExecutor {
     GenericResponse<String> updateQuery(String id, String queryLogicName, String newQuery, String newColumnVisibility, Date newBeginDate, Date newEndDate,
                     String newQueryAuthorizations, Date newExpirationDate, Integer newPagesize, Integer newPageTimeout, Long newMaxResultsOverride,
                     QueryPersistence newPersistenceMode, String newParameters);
-    
+
     /**
      * Duplicates a query and allows modification of optional properties
      *
@@ -256,35 +286,38 @@ public interface QueryExecutor {
     GenericResponse<String> duplicateQuery(String id, String newQueryName, String newQueryLogicName, String newQuery, String newColumnVisibility,
                     Date newBeginDate, Date newEndDate, String newQueryAuthorizations, Date newExpirationDate, Integer newPagesize, Integer newPageTimeout,
                     Long newMaxResultsOverride, QueryPersistence newPersistenceMode, String newParameters, boolean trace);
-    
+
     /**
      * Release the resources associated with this query
-     * 
+     *
      * @param id
+     *            the id
      * @return base response
      */
     VoidResponse close(String id);
-    
+
     VoidResponse adminClose(String id);
-    
+
     /**
      * Cancels the current query and releases the resources associated with it.
-     * 
+     *
      * @param id
+     *            the id
      * @return base response
      */
     VoidResponse cancel(String id);
-    
+
     VoidResponse adminCancel(String id);
-    
+
     /**
      * remove query
-     * 
+     *
      * @return base response
      * @param id
+     *            the id
      */
     VoidResponse remove(String id);
-    
+
     /**
      * <strong>Administrator credentials required.</strong>
      * <p>
@@ -308,7 +341,7 @@ public interface QueryExecutor {
      * @HTTP 401 if the user does not have Administrative credentials
      */
     VoidResponse enableTracing(String queryRegex, String user);
-    
+
     /**
      * <strong>Administrator credentials required.</strong>
      * <p>
@@ -325,7 +358,7 @@ public interface QueryExecutor {
      * @HTTP 401 if the user does not have Administrative credentials
      */
     VoidResponse disableTracing(String queryRegex, String user);
-    
+
     /**
      * <strong>Administrator credentials required.</strong>
      * <p>
@@ -338,18 +371,20 @@ public interface QueryExecutor {
      * @HTTP 401 if the user does not have Administrative credentials
      */
     VoidResponse disableAllTracing();
-    
+
     /**
      * Creates a query object for the user and returns all of the pages in a stream. When done, closes the query. This method is a convenience for users so that
      * they don't have to call create/next/next/next/.../close. Callers should utilize the max.override.results parameter to limit the number of results that
      * they receive.
-     * 
+     *
      * @param logicName
+     *            a logic name
      * @param queryParameters
+     *            parameters
      * @param httpHeaders
-     *            HttpHeaders object injected by the JAX-RS layer
-     * @return
+     *            headers HttpHeaders object injected by the JAX-RS layer
+     * @return all of the pages in a stream
      */
     StreamingOutput execute(String logicName, MultivaluedMap<String,String> queryParameters, HttpHeaders httpHeaders);
-    
+
 }

@@ -3,14 +3,14 @@ package datawave.webservice.query.dashboard;
 import java.util.Arrays;
 import java.util.List;
 
-import datawave.webservice.query.result.event.EventBase;
-import datawave.webservice.query.result.event.FieldBase;
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
+import datawave.webservice.query.result.event.EventBase;
+import datawave.webservice.query.result.event.FieldBase;
+
 public final class DashboardFields {
-    
+
     private static final Logger log = Logger.getLogger(DashboardFields.class);
     private static final String NUM_RESULTS = "NUM_RESULTS";
     private static final String ERROR_MESSAGE = "ERROR_MESSAGE";
@@ -22,17 +22,17 @@ public final class DashboardFields {
     private static final String SETUP_TIME = "SETUP_TIME";
     private static final String RETURN_FIELDS = toCSV(NUM_RESULTS, ERROR_MESSAGE, CREATE_CALL_TIME, PAGE_METRICS, POSITIVE_SELECTORS, NEGATIVE_SELECTORS,
                     SETUP_TIME);
-    
+
     private DashboardFields() {}
-    
+
     private static String toCSV(String... strings) {
         return StringUtils.join(strings, ',');
     }
-    
+
     public static String getReturnFields() {
         return RETURN_FIELDS;
     }
-    
+
     public static void addEvent(DashboardSummary summary, EventBase event) {
         long createCallTime = 0;
         long pageReturnTime = 0;
@@ -40,7 +40,7 @@ public final class DashboardFields {
         boolean error = false;
         int results = 0;
         int selectors = 0;
-        
+
         for (FieldBase f : (List<FieldBase>) (event.getFields())) {
             switch (f.getName()) {
                 case PAGE_METRICS_0:
@@ -90,7 +90,7 @@ public final class DashboardFields {
                     break;
             }
         }
-        
+
         summary.addQuery(createCallTime + pageReturnTime + setupTime, error, results, selectors);
     }
 }

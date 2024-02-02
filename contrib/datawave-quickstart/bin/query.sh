@@ -55,7 +55,7 @@ function datawaveQuery() {
 
    local curlcmd="/usr/bin/curl \
     --silent --write-out 'HTTP_STATUS_CODE:%{http_code};TOTAL_TIME:%{time_total};CONTENT_TYPE:%{content_type}' \
-    --insecure --cert "${DW_CURL_CERT}" --key "${DW_CURL_KEY_RSA}" --cacert "${DW_CURL_CA}" \
+    --insecure --cert "${DW_CURL_CERT}" --key "${DW_CURL_KEY_RSA}" --cacert "${DW_CURL_CA}" --keepalive-time 180 \
     --header 'Content-Type: application/x-www-form-urlencoded;charset=UTF-8' --header 'Accept: application/json' \
     ${DW_REQUEST_HEADERS} ${DW_CURL_DATA} -X POST ${DW_QUERY_URI}/${DW_QUERY_LOGIC}/${DW_QUERY_CREATE_MODE}"
 
@@ -133,7 +133,7 @@ function setQueryIdFromResponse() {
 function prettyPrintJson() {
     local PY=$( which python )
     if [ -n "${PY}" ] ; then
-        echo "${1}" | ${PY} -c 'import sys,json;data=json.loads(sys.stdin.read()); print(json.dumps(data, indent=2, sort_keys=True))'
+        echo "${1}" | ${PY} -c 'from __future__ import print_function;import sys,json;data=json.loads(sys.stdin.read()); print(json.dumps(data, indent=2, sort_keys=True))'
         local exitStatus=$?
         echo
         if [ "${exitStatus}" != "0" ] ; then
@@ -333,7 +333,7 @@ function closeQuery() {
 
    local curlcmd="/usr/bin/curl \
    --silent --write-out 'HTTP_STATUS_CODE:%{http_code};TOTAL_TIME:%{time_total};CONTENT_TYPE:%{content_type}' \
-   --insecure --cert "${DW_CURL_CERT}" --key "${DW_CURL_KEY_RSA}" --cacert "${DW_CURL_CA}" \
+   --insecure --cert ${DW_CURL_CERT} --key ${DW_CURL_KEY_RSA} --cacert ${DW_CURL_CA} --keepalive-time 180 \
    -X PUT ${DW_QUERY_URI}/${DW_QUERY_ID}/close"
 
    local response="$( eval "${curlcmd}" )"
@@ -368,7 +368,7 @@ function getNextPage() {
 
    local curlcmd="/usr/bin/curl \
    --silent --write-out 'HTTP_STATUS_CODE:%{http_code};TOTAL_TIME:%{time_total};CONTENT_TYPE:%{content_type}' \
-   --insecure --header 'Accept: application/json' ${DW_REQUEST_HEADERS} --cert "${DW_CURL_CERT}" --key "${DW_CURL_KEY_RSA}" --cacert "${DW_CURL_CA}" \
+   --insecure --header 'Accept: application/json' ${DW_REQUEST_HEADERS} --cert ${DW_CURL_CERT} --key ${DW_CURL_KEY_RSA} --cacert ${DW_CURL_CA} --keepalive-time 180 \
    -X GET ${DW_QUERY_URI}/${DW_QUERY_ID}/next"
 
    local response="$( eval "${curlcmd}" )"
@@ -464,13 +464,20 @@ function configureUserIdentity() {
     info "Converting client certificate into more portable PKI materials. *Should* work no matter which versions you have of CURL, OpenSSL, NSS, etc"
 
     local OPENSSL="$( which openssl )" && [ -z "${OPENSSL}" ] && error "OpenSSL executable not found!" && return 1
+    local opensslVersion3="$( ${OPENSSL} version | awk '{ print $2}' | grep -E ^3\. )"
+
+    if [ -z "$opensslVersion3" ]; then
+	local params="" # Not version 3.x
+    else
+	local params="-provider legacy -provider default" # Version 3.x
+    fi
 
     [ ! -f "${DW_PKCS12_CLIENT_CERT}" ] && error "Source client certificate not found: ${DW_PKCS12_CLIENT_CERT}" && return 1
 
-    ! ${OPENSSL} pkcs12 -passin "pass:${DW_CLIENT_CERT_PASS}" -passout "pass:${DW_CLIENT_CERT_PASS}" -in "${DW_PKCS12_CLIENT_CERT}" -out "${DW_CURL_KEY}" -nocerts > /dev/null 2>&1 && error "Key creation failed!" && return 1
+    ! ${OPENSSL} pkcs12 ${params} -passin "pass:${DW_CLIENT_CERT_PASS}" -passout "pass:${DW_CLIENT_CERT_PASS}" -in "${DW_PKCS12_CLIENT_CERT}" -out "${DW_CURL_KEY}" -nocerts > /dev/null 2>&1 && error "Key creation failed!" && return 1
     ! ${OPENSSL} rsa -passin "pass:${DW_CLIENT_CERT_PASS}" -in "${DW_CURL_KEY}" -out "${DW_CURL_KEY_RSA}" > /dev/null 2>&1 && error "RSA key creation failed!" && return 1
-    ! ${OPENSSL} pkcs12 -passin "pass:${DW_CLIENT_CERT_PASS}" -in "${DW_PKCS12_CLIENT_CERT}" -out "${DW_CURL_CERT}" -clcerts -nokeys > /dev/null 2>&1 && error "Certificate creation failed!" && return 1
-    ! ${OPENSSL} pkcs12 -passin "pass:${DW_CLIENT_CERT_PASS}" -in "${DW_PKCS12_CLIENT_CERT}" -out "${DW_CURL_CA}" -cacerts -nokeys > /dev/null 2>&1 && error "CA creation failed!" && return 1
+    ! ${OPENSSL} pkcs12 ${params} -passin "pass:${DW_CLIENT_CERT_PASS}" -in "${DW_PKCS12_CLIENT_CERT}" -out "${DW_CURL_CERT}" -clcerts -nokeys > /dev/null 2>&1 && error "Certificate creation failed!" && return 1
+    ! ${OPENSSL} pkcs12 ${params} -passin "pass:${DW_CLIENT_CERT_PASS}" -in "${DW_PKCS12_CLIENT_CERT}" -out "${DW_CURL_CA}" -cacerts -nokeys > /dev/null 2>&1 && error "CA creation failed!" && return 1
 
     return 0
 }

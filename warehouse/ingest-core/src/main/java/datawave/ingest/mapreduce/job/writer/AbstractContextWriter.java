@@ -1,21 +1,23 @@
 package datawave.ingest.mapreduce.job.writer;
 
+import java.io.IOException;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Set;
+
+import org.apache.accumulo.core.data.Value;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.mapreduce.TaskInputOutputContext;
+
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
+
 import datawave.ingest.data.config.ingest.BaseIngestHelper;
 import datawave.ingest.mapreduce.job.BulkIngestCounters;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.ConstraintChecker;
 import datawave.ingest.mapreduce.job.TableConfigurationUtil;
 import datawave.ingest.mapreduce.job.statsd.StatsDHelper;
-import org.apache.accumulo.core.data.Value;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.mapreduce.TaskInputOutputContext;
-
-import java.io.IOException;
-import java.util.Collection;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * An abstraction of writing to a context object. This class always takes BulkIngestKeys and Values in the write methods. The actual writing to the context
@@ -29,27 +31,28 @@ import java.util.Set;
  *            The output value
  */
 public abstract class AbstractContextWriter<OK,OV> extends StatsDHelper implements ContextWriter<OK,OV> {
-    
+
     public static final String CONTEXT_WRITER_COUNTERS = "context.writer.counters";
     public static final String CONTEXT_WRITER_MAX_CACHE_SIZE = "context.writer.max.cache.size";
-    
+
     private BulkIngestCounters counters = null;
     // caching the simple class name as the calculation is actually a little expensive
     private String simpleClassName = null;
     private long count = 0;
-    
+
     // the cache
     private Multimap<BulkIngestKey,Value> cache = ArrayListMultimap.create();
-    
+
     // the maximum size of the cache. When the cache reaches this size, it will automatically be flushed
     private int maxSize = 2500;
-    
+
     private ConstraintChecker constraintChecker;
-    
+
     /**
      * Initialize this context writer.
      *
      * @param conf
+     *            the configuration
      */
     @Override
     public void setup(Configuration conf, boolean outputTableCounters) throws IOException, InterruptedException {
@@ -58,7 +61,7 @@ public abstract class AbstractContextWriter<OK,OV> extends StatsDHelper implemen
             counters = new BulkIngestCounters(conf);
             boolean deleteMode = conf.getBoolean(BaseIngestHelper.INGEST_MODE_DELETE, false);
             // Get the list of tables that we are bulk ingesting into.
-            Set<String> tables = TableConfigurationUtil.getTables(conf);
+            Set<String> tables = TableConfigurationUtil.getJobOutputTableNames(conf);
             for (String table : tables) {
                 // Create the counters for this table.
                 counters.createCounter(table, deleteMode);
@@ -70,7 +73,7 @@ public abstract class AbstractContextWriter<OK,OV> extends StatsDHelper implemen
         maxSize = conf.getInt(CONTEXT_WRITER_MAX_CACHE_SIZE, maxSize);
         constraintChecker = ConstraintChecker.create(conf);
     }
-    
+
     /**
      * Write the key, value to the cache.
      */
@@ -79,7 +82,7 @@ public abstract class AbstractContextWriter<OK,OV> extends StatsDHelper implemen
         if (constraintChecker != null && constraintChecker.isConfigured()) {
             constraintChecker.check(key.getTableName(), key.getKey().getColumnVisibilityData().getBackingArray());
         }
-        
+
         cache.put(key, value);
         this.count++;
         if (counters != null) {
@@ -89,7 +92,7 @@ public abstract class AbstractContextWriter<OK,OV> extends StatsDHelper implemen
             commit(context);
         }
     }
-    
+
     /**
      * Write the keys, values to the cache.
      */
@@ -100,7 +103,7 @@ public abstract class AbstractContextWriter<OK,OV> extends StatsDHelper implemen
                 constraintChecker.check(key.getTableName(), key.getKey().getColumnVisibilityData().getBackingArray());
             }
         }
-        
+
         cache.putAll(entries);
         this.count += entries.size();
         if (counters != null) {
@@ -112,7 +115,7 @@ public abstract class AbstractContextWriter<OK,OV> extends StatsDHelper implemen
             commit(context);
         }
     }
-    
+
     /**
      * Flush the cache from the current thread to the context. This method is expected to be called periodically. If a thread has used the write methods, then
      * this method must be called before the thread terminates.
@@ -123,7 +126,7 @@ public abstract class AbstractContextWriter<OK,OV> extends StatsDHelper implemen
         // cache.clear() can be fairly expensive, so let's let garbage collection do that
         cache = ArrayListMultimap.create();
     }
-    
+
     /**
      * Rollback the context. This method will rollback to the last time this context was flushed in this thread.
      */
@@ -138,23 +141,30 @@ public abstract class AbstractContextWriter<OK,OV> extends StatsDHelper implemen
         // cache.clear() can be fairly expensive, so let's let garbage collection do that
         cache = ArrayListMultimap.create();
     }
-    
+
     /**
      * The method that actually flushes the entries to the context.
      *
      * @param entries
+     *            entries to flush
      * @param context
+     *            the context
      * @throws IOException
+     *             if there is an issue with read or write
      * @throws InterruptedException
+     *             if the thread is interrupted
      */
     protected abstract void flush(Multimap<BulkIngestKey,Value> entries, TaskInputOutputContext<?,?,OK,OV> context) throws IOException, InterruptedException;
-    
+
     /**
      * Clean up the context writer. Default implementation executes the flush method.
      *
      * @param context
+     *            a context
      * @throws IOException
+     *             if there is an issue with read or write
      * @throws InterruptedException
+     *             if the thread is interrupted
      */
     @Override
     public void cleanup(TaskInputOutputContext<?,?,OK,OV> context) throws IOException, InterruptedException {

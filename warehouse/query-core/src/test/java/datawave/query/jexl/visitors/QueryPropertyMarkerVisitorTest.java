@@ -1,109 +1,111 @@
 package datawave.query.jexl.visitors;
 
-import datawave.query.jexl.nodes.BoundedRange;
-import datawave.query.jexl.nodes.QueryPropertyMarker;
-import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
-import org.apache.commons.jexl2.parser.ASTReference;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.ParseException;
-import org.apache.commons.jexl2.parser.ParserTreeConstants;
-import org.junit.Test;
-
-import java.util.Collections;
-
-import static datawave.query.jexl.JexlASTHelper.parseJexlQuery;
-import static org.junit.Assert.assertEquals;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DELAYED;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EVALUATION_ONLY;
+import static datawave.test.JexlNodeAssertions.assertThat;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ParseException;
+import org.junit.Before;
+import org.junit.Test;
+
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
+
 public class QueryPropertyMarkerVisitorTest {
-    
-    private static class DoesNotOverrideLabelMethod extends QueryPropertyMarker {
-        
-        public DoesNotOverrideLabelMethod() {
-            super();
-        }
-        
-        @Override
-        public String getLabel() {
-            return null;
-        }
+
+    private QueryPropertyMarker.Instance instance;
+
+    @Before
+    public void setUp() throws Exception {
+        instance = null;
     }
-    
-    private static class HasEmptyLabel extends QueryPropertyMarker {
-        
-        @SuppressWarnings("unused")
-        public static String label() {
-            return "";
-        }
-        
-        public HasEmptyLabel() {
-            super();
-        }
-        
-        @Override
-        public String getLabel() {
-            return "";
-        }
-    }
-    
+
     @Test
-    public void testQueryPropertyMarkerTypeWithoutOverriddenLabelMethodThrowsError() {
-        JexlNode node = new ASTReference(ParserTreeConstants.JJTREFERENCE);
-        Throwable throwable = assertThrows(IllegalStateException.class, () -> QueryPropertyMarkerVisitor.instanceOf(node, DoesNotOverrideLabelMethod.class));
-        assertEquals("Unable to invoke label() method for datawave.query.jexl.visitors.QueryPropertyMarkerVisitorTest$DoesNotOverrideLabelMethod",
-                        throwable.getMessage());
+    public void testNull() {
+        instance = QueryPropertyMarkerVisitor.getInstance(null);
+        assertNoType();
+        assertNullSource();
     }
-    
+
     @Test
-    public void testQueryPropertyMarkerTypeWithEmptyLabelThrowsError() {
-        JexlNode node = new ASTReference(ParserTreeConstants.JJTREFERENCE);
-        Throwable throwable = assertThrows(IllegalStateException.class, () -> QueryPropertyMarkerVisitor.instanceOf(node, HasEmptyLabel.class));
-        assertEquals("label() method returns null/empty label for type datawave.query.jexl.visitors.QueryPropertyMarkerVisitorTest$HasEmptyLabel",
-                        throwable.getMessage());
+    public void testAndNodeWithoutMarker() throws ParseException {
+        givenNode("FOO == 1 && BAR == 2");
+        assertNoType();
+        assertNullSource();
     }
-    
+
     @Test
-    public void testInstanceOfAny() throws ParseException {
-        assertTrue(QueryPropertyMarkerVisitor.instanceOfAny(parseJexlQuery("((_Hole_ = true) && (FOO == 'a'))")));
-        assertTrue(QueryPropertyMarkerVisitor.instanceOfAny(parseJexlQuery("((_Delayed_ = true) && (FOO == 'a'))")));
-        assertTrue(QueryPropertyMarkerVisitor.instanceOfAny(parseJexlQuery("((_Hole_ = true) && (FOO == 'a'))")));
-        assertTrue(QueryPropertyMarkerVisitor.instanceOfAny(parseJexlQuery("((_Eval_ = true) && (FOO == 'a'))")));
-        assertTrue(QueryPropertyMarkerVisitor.instanceOfAny(parseJexlQuery("((_List_ = true) && (FOO == 'a'))")));
-        assertTrue(QueryPropertyMarkerVisitor.instanceOfAny(parseJexlQuery("((_Term_ = true) && (FOO == 'a'))")));
-        assertTrue(QueryPropertyMarkerVisitor.instanceOfAny(parseJexlQuery("((_Value_ = true) && (FOO == 'a'))")));
-        assertTrue(QueryPropertyMarkerVisitor.instanceOfAny(parseJexlQuery("((_Bounded_ = true) && (FOO > 1 && FOO < 5))")));
-        assertFalse(QueryPropertyMarkerVisitor.instanceOfAny(parseJexlQuery("FOO == 'a'")));
+    public void testAndWithNestedMarker() throws ParseException {
+        givenNode("ABC == 'aaa' && ((_Eval_ = true) && (FOO == 1 && BAR == 2))");
+        assertNoType();
+        assertNullSource();
     }
-    
+
     @Test
-    public void testInstanceOf() throws ParseException {
-        JexlNode node = parseJexlQuery("((_Bounded_ = true) && (FOO > 1 && FOO < 5))");
-        assertTrue(QueryPropertyMarkerVisitor.instanceOf(node, BoundedRange.class));
-        assertFalse(QueryPropertyMarkerVisitor.instanceOf(node, ASTDelayedPredicate.class));
-        assertTrue(QueryPropertyMarkerVisitor.instanceOf(node, Collections.singleton(BoundedRange.class)));
-        assertFalse(QueryPropertyMarkerVisitor.instanceOf(node, Collections.singleton(ASTDelayedPredicate.class)));
+    public void testAndWithMarkersOnBothSides() throws ParseException {
+        givenNode("((_Bounded_ = true) && (FOO > 1 && FOO < 2)) && ((_Eval_ = true) && (FOO == 1 && BAR == 2))");
+        assertNoType();
+        assertNullSource();
     }
-    
+
     @Test
-    public void testInstanceOfAnyExcept() throws ParseException {
-        JexlNode node = parseJexlQuery("((_Bounded_ = true) && (FOO > 1 && FOO < 5))");
-        assertTrue(QueryPropertyMarkerVisitor.instanceOfAnyExcept(node, ASTDelayedPredicate.class));
-        assertFalse(QueryPropertyMarkerVisitor.instanceOfAnyExcept(node, BoundedRange.class));
-        assertTrue(QueryPropertyMarkerVisitor.instanceOfAnyExcept(node, Collections.singleton(ASTDelayedPredicate.class)));
-        assertFalse(QueryPropertyMarkerVisitor.instanceOfAnyExcept(node, Collections.singleton(BoundedRange.class)));
+    public void testUnwrappedMarkerAndUnwrappedSources() throws ParseException {
+        givenNode("(_Delayed_ = true) && FOO == 1 && BAR == 2");
+        assertType(DELAYED);
+        assertSources("FOO == 1", "BAR == 2");
     }
-    
+
     @Test
-    public void testIsDelayedPredicate() throws ParseException {
-        assertTrue(QueryPropertyMarkerVisitor.isDelayedPredicate(parseJexlQuery("((_Hole_ = true) && (FOO == 'a'))")));
-        assertTrue(QueryPropertyMarkerVisitor.isDelayedPredicate(parseJexlQuery("((_Delayed_ = true) && (FOO == 'a'))")));
-        assertTrue(QueryPropertyMarkerVisitor.isDelayedPredicate(parseJexlQuery("((_Hole_ = true) && (FOO == 'a'))")));
-        assertTrue(QueryPropertyMarkerVisitor.isDelayedPredicate(parseJexlQuery("((_Eval_ = true) && (FOO == 'a'))")));
-        assertTrue(QueryPropertyMarkerVisitor.isDelayedPredicate(parseJexlQuery("((_List_ = true) && (FOO == 'a'))")));
-        assertTrue(QueryPropertyMarkerVisitor.isDelayedPredicate(parseJexlQuery("((_Term_ = true) && (FOO == 'a'))")));
-        assertTrue(QueryPropertyMarkerVisitor.isDelayedPredicate(parseJexlQuery("((_Value_ = true) && (FOO == 'a'))")));
-        assertFalse(QueryPropertyMarkerVisitor.isDelayedPredicate(parseJexlQuery("((_Bounded_ = true) && (FOO > 1 && FOO < 5))")));
+    public void testUnwrappedMarkerAndWrappedSources() throws ParseException {
+        givenNode("(_Delayed_ = true) && (FOO == 1 && BAR == 2)");
+        assertType(DELAYED);
+        assertSources("FOO == 1 && BAR == 2");
+    }
+
+    @Test
+    public void testWrappedMarkerAndUnwrappedSources() throws ParseException {
+        givenNode("((_Delayed_ = true) && FOO == 1 && BAR == 2)");
+        assertType(DELAYED);
+        assertSources("FOO == 1", "BAR == 2");
+    }
+
+    @Test
+    public void testUnwrappedNestedSources() throws ParseException {
+        givenNode("((_Delayed_ = true) && FOO == 1 && (BAR == 2 && BAT == 4))");
+        assertType(DELAYED);
+        assertSources("FOO == 1", "BAR == 2 && BAT == 4");
+    }
+
+    @Test
+    public void testWrappedMarkerAndWrappedSources() throws ParseException {
+        givenNode("((_Eval_ = true) && (FOO == 1 && BAR == 2))");
+        assertType(EVALUATION_ONLY);
+        assertSources("FOO == 1 && BAR == 2");
+    }
+
+    private void givenNode(String query) throws ParseException {
+        JexlNode node = JexlASTHelper.parseJexlQuery(query);
+        PrintingVisitor.printQuery(node);
+        instance = QueryPropertyMarkerVisitor.getInstance(node);
+    }
+
+    private void assertNoType() {
+        assertFalse(instance.isAnyType());
+    }
+
+    private void assertType(QueryPropertyMarker.MarkerType type) {
+        assertTrue(instance.isType(type));
+    }
+
+    private void assertNullSource() {
+        assertNull(instance.getSource());
+    }
+
+    private void assertSources(String... sources) {
+        assertThat(instance.getSources()).asStrings().containsExactlyInAnyOrder(sources);
     }
 }

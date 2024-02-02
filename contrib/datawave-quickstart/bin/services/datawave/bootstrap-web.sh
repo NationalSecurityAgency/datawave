@@ -1,6 +1,6 @@
 
 # You may override DW_WILDFLY_DIST_URI in your env ahead of time, and set as file:///path/to/file.tar.gz for local tarball, if needed
-DW_WILDFLY_DIST_URI="${DW_WILDFLY_DIST_URI:-http://download.jboss.org/wildfly/17.0.1.Final/wildfly-17.0.1.Final.tar.gz}"
+DW_WILDFLY_DIST_URI="${DW_WILDFLY_DIST_URI:-https://download.jboss.org/wildfly/17.0.1.Final/wildfly-17.0.1.Final.tar.gz}"
 DW_WILDFLY_DIST="$( downloadTarball "${DW_WILDFLY_DIST_URI}" "${DW_DATAWAVE_SERVICE_DIR}" && echo "${tarball}" )"
 DW_WILDFLY_BASEDIR="wildfly-install"
 DW_WILDFLY_SYMLINK="wildfly"
@@ -21,6 +21,9 @@ DW_DATAWAVE_WEB_BASEDIR="datawave-webservice-install"
 
 getDataWaveTarball "${DW_DATAWAVE_WEB_TARBALL}"
 DW_DATAWAVE_WEB_DIST="${tarball}"
+
+# uncomment to enable environment passwords in the quickstart
+# export DW_ACCUMULO_PASSWORD="secret"
 
 function datawaveWebIsRunning() {
     DW_DATAWAVE_WEB_PID_LIST="$(eval "${DW_DATAWAVE_WEB_CMD_FIND_ALL_PIDS}")"
@@ -145,6 +148,7 @@ function datawaveWebStart() {
           echo
           info "Documentation: https://localhost:8443/DataWave/doc"
           info "Data Dictionary: https://localhost:8443/DataWave/DataDictionary"
+          info "NOTE: DataDictionary will need to be deployed separately via the microservices modules in order to function."
           echo
           return 0
        fi

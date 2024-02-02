@@ -1,0 +1,16 @@
+<ageoffConfiguration>
+    <rules>
+        <rule label="labeledPatternsFormat">
+            <ttl units="d">0</ttl>
+            <filterClass>datawave.iterators.filter.ColumnVisibilityLabeledFilter</filterClass>
+            <matchPattern>
+                001 bakingPowder=365d       <!-- bucket -->
+                002 driedBeans=548d         <!-- bucket -->
+                003 bakingSoda=720d         <!-- bucket -->
+                004 coffeeGround=90d        <!-- cardboard box -->
+                005 coffeeWholeBean=183d    <!-- bucket -->
+                006 coffeeInstant=730d      <!-- bucket -->
+            </matchPattern>
+        </rule>
+    </rules>
+</ageoffConfiguration>

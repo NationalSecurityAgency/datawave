@@ -1,7 +1,9 @@
 package datawave.query.metrics;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -21,59 +23,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
-
-import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Multimap;
-
-import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
-import datawave.data.hash.UID;
-import datawave.data.hash.UIDBuilder;
-import datawave.ingest.data.RawRecordContainer;
-import datawave.ingest.config.RawRecordContainerImpl;
-import datawave.ingest.data.Type;
-import datawave.ingest.data.TypeRegistry;
-import datawave.ingest.data.config.NormalizedContentInterface;
-import datawave.ingest.mapreduce.handler.shard.AbstractColumnBasedHandler;
-import datawave.ingest.mapreduce.job.BulkIngestKey;
-import datawave.ingest.mapreduce.job.writer.LiveContextWriter;
-import datawave.ingest.table.config.TableConfigHelper;
-import datawave.marking.MarkingFunctions;
-import datawave.query.iterator.QueryOptions;
-import datawave.query.map.SimpleQueryGeometryHandler;
-import datawave.security.authorization.DatawavePrincipal;
-import datawave.security.system.CallerPrincipal;
-import datawave.security.util.AuthorizationsUtil;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
-import datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.QueryImpl.Parameter;
-import datawave.webservice.query.cache.QueryMetricFactory;
-import datawave.webservice.query.cache.ResultsPage;
-import datawave.webservice.query.exception.QueryException;
-import datawave.webservice.query.exception.QueryExceptionType;
-import datawave.webservice.query.logic.QueryLogic;
-import datawave.webservice.query.logic.QueryLogicFactory;
-import datawave.webservice.query.metric.BaseQueryMetric;
-import datawave.webservice.query.metric.BaseQueryMetric.PageMetric;
-import datawave.webservice.query.metric.BaseQueryMetric.Lifecycle;
-import datawave.webservice.query.metric.BaseQueryMetricListResponse;
-import datawave.webservice.query.metric.QueryMetric;
-import datawave.webservice.query.metric.QueryMetricListResponse;
-import datawave.webservice.query.metric.QueryMetricsDetailListResponse;
-import datawave.webservice.query.metric.QueryMetricsSummaryHtmlResponse;
-import datawave.webservice.query.metric.QueryMetricsSummaryResponse;
-import datawave.webservice.query.result.event.EventBase;
-import datawave.webservice.query.result.event.FieldBase;
-import datawave.webservice.query.runner.RunningQuery;
-import datawave.webservice.query.util.QueryUtil;
-import datawave.webservice.result.BaseQueryResponse;
-import datawave.webservice.result.BaseResponse;
-import datawave.webservice.result.EventQueryResponseBase;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
@@ -103,79 +52,133 @@ import org.apache.hadoop.mapreduce.task.MapContextImpl;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
+import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
+
+import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
+import datawave.configuration.spring.SpringBean;
+import datawave.data.hash.UID;
+import datawave.data.hash.UIDBuilder;
+import datawave.ingest.config.RawRecordContainerImpl;
+import datawave.ingest.data.RawRecordContainer;
+import datawave.ingest.data.Type;
+import datawave.ingest.data.TypeRegistry;
+import datawave.ingest.data.config.NormalizedContentInterface;
+import datawave.ingest.mapreduce.handler.shard.AbstractColumnBasedHandler;
+import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.ingest.mapreduce.job.writer.LiveContextWriter;
+import datawave.ingest.table.config.TableConfigHelper;
+import datawave.marking.MarkingFunctions;
+import datawave.microservice.querymetric.BaseQueryMetric;
+import datawave.microservice.querymetric.BaseQueryMetric.Lifecycle;
+import datawave.microservice.querymetric.BaseQueryMetric.PageMetric;
+import datawave.microservice.querymetric.BaseQueryMetricListResponse;
+import datawave.microservice.querymetric.QueryMetric;
+import datawave.microservice.querymetric.QueryMetricFactory;
+import datawave.microservice.querymetric.QueryMetricListResponse;
+import datawave.microservice.querymetric.QueryMetricsDetailListResponse;
+import datawave.microservice.querymetric.QueryMetricsSummaryResponse;
+import datawave.query.iterator.QueryOptions;
+import datawave.query.jexl.visitors.JexlFormattedStringBuildingVisitor;
+import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
+import datawave.query.map.SimpleQueryGeometryHandler;
+import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.util.WSAuthorizationsUtil;
+import datawave.webservice.common.connection.AccumuloConnectionFactory;
+import datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
+import datawave.webservice.common.logging.ThreadConfigurableLogger;
+import datawave.webservice.query.Query;
+import datawave.webservice.query.QueryImpl;
+import datawave.webservice.query.QueryImpl.Parameter;
+import datawave.webservice.query.cache.ResultsPage;
+import datawave.webservice.query.exception.QueryException;
+import datawave.webservice.query.exception.QueryExceptionType;
+import datawave.webservice.query.logic.QueryLogic;
+import datawave.webservice.query.logic.QueryLogicFactory;
+import datawave.webservice.query.result.event.EventBase;
+import datawave.webservice.query.result.event.FieldBase;
+import datawave.webservice.query.runner.RunningQuery;
+import datawave.webservice.query.util.QueryUtil;
+import datawave.webservice.result.BaseQueryResponse;
+import datawave.webservice.result.BaseResponse;
+import datawave.webservice.result.EventQueryResponseBase;
+
 @ApplicationScoped
 @Exclude(ifProjectStage = DatawaveEmbeddedProjectStageHolder.DatawaveEmbedded.class)
 @SuppressWarnings("unused")
 public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMetric> {
     private static final Logger log = ThreadConfigurableLogger.getLogger(ShardTableQueryMetricHandler.class);
-    
+
     private static final String QUERY_METRICS_LOGIC_NAME = "QueryMetricsQuery";
     protected static final String DEFAULT_SECURITY_MARKING = "PUBLIC";
-    
+
     @Inject
     private AccumuloConnectionFactory connectionFactory;
-    
+
     @Inject
     private QueryLogicFactory queryLogicFactory;
-    
-    @Inject
-    @CallerPrincipal
-    private DatawavePrincipal callerPrincipal;
-    
+
     @Inject
     @ConfigProperty(name = "dw.query.metrics.marking")
     protected String markingString;
-    
+
     @Inject
     @ConfigProperty(name = "dw.query.metrics.visibility")
     protected String visibilityString;
-    
+
     @Inject
     private QueryMetricFactory metricFactory;
-    
+
+    @Inject
+    @SpringBean(name = "LuceneToJexlQueryParser", refreshable = true)
+    private LuceneToJexlQueryParser luceneToJexlQueryParser;
+
     private Collection<String> connectorAuthorizationCollection = null;
     private String connectorAuthorizations = null;
     private MarkingFunctions markingFunctions = null;
-    
+
     @SuppressWarnings("FieldCanBeLocal")
     private final String JOB_ID = "job_201109071404_1";
     @SuppressWarnings("FieldCanBeLocal")
     private static final String NULL_BYTE = "\0";
     public static final String CONTEXT_WRITER_MAX_CACHE_SIZE = "context.writer.max.cache.size";
-    
+
     // static to share the cache across instances of this class held by QueryExecutorBean, CachedResultsBean, QueryMetricsEnrichmentInterceptor, etc
     @SuppressWarnings("unchecked")
     private static Map metricsCache = Collections.synchronizedMap(new LRUMap(5000));
-    
+
     private final Configuration conf = new Configuration();
     private final StatusReporter reporter = new MockStatusReporter();
     private final AtomicBoolean tablesChecked = new AtomicBoolean(false);
     private AccumuloRecordWriter recordWriter = null;
-    
+
     private UIDBuilder<UID> uidBuilder = UID.builder();
-    
+
     public ShardTableQueryMetricHandler() {
         URL queryMetricsUrl = Thread.currentThread().getContextClassLoader().getResource("datawave/query/QueryMetrics.xml");
         Preconditions.checkNotNull(queryMetricsUrl);
         conf.addResource(queryMetricsUrl);
-        
+
         // encode the password because that's how the AccumuloRecordWriter
         String accumuloPassword = conf.get("AccumuloRecordWriter.password");
         byte[] encodedAccumuloPassword = Base64.encodeBase64(accumuloPassword.getBytes());
         conf.set("AccumuloRecordWriter.password", new String(encodedAccumuloPassword));
         markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
     }
-    
+
     @PostConstruct
     private void initialize() {
         AccumuloClient client = null;
-        
+
         try {
             client = connectionFactory.getClient(Priority.ADMIN, new HashMap<>());
             connectorAuthorizations = client.securityOperations().getUserAuthorizations(client.whoami()).toString();
             connectorAuthorizationCollection = Lists.newArrayList(StringUtils.split(connectorAuthorizations, ","));
             reload();
-            
+
             if (tablesChecked.compareAndSet(false, true))
                 verifyTables();
         } catch (Exception e) {
@@ -190,21 +193,21 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             }
         }
     }
-    
+
     @Override
     protected void finalize() throws Throwable {
         super.finalize();
         this.recordWriter.close(null);
     }
-    
+
     @Override
     public void flush() throws Exception {
         this.recordWriter.flush();
     }
-    
+
     private void verifyTables() {
         AccumuloClient client = null;
-        
+
         try {
             client = this.connectionFactory.getClient(Priority.ADMIN, new HashMap<>());
             AbstractColumnBasedHandler<Key> handler = new ContentQueryMetricsHandler<>();
@@ -221,30 +224,30 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             }
         }
     }
-    
+
     private void writeMetrics(QueryMetric updatedQueryMetric, List<QueryMetric> storedQueryMetrics, Date lastUpdated, boolean delete) throws Exception {
         LiveContextWriter contextWriter = null;
-        
+
         MapContext<Text,RawRecordContainer,Text,Mutation> context = null;
-        
+
         try {
             contextWriter = new LiveContextWriter();
             contextWriter.setup(conf, false);
-            
+
             TaskAttemptID taskId = new TaskAttemptID(new TaskID(new JobID(JOB_ID, 1), TaskType.MAP, 1), 1);
             context = new MapContextImpl<>(conf, taskId, null, recordWriter, null, reporter, null);
-            
+
             for (QueryMetric storedQueryMetric : storedQueryMetrics) {
                 AbstractColumnBasedHandler<Key> handler = new ContentQueryMetricsHandler<>();
                 handler.setup(context);
-                
+
                 Multimap<BulkIngestKey,Value> r = getEntries(handler, updatedQueryMetric, storedQueryMetric, lastUpdated, delete);
-                
+
                 try {
                     if (r != null) {
                         contextWriter.write(r, context);
                     }
-                    
+
                     if (handler.getMetadata() != null) {
                         contextWriter.write(handler.getMetadata().getBulkMetadata(), context);
                     }
@@ -258,7 +261,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             }
         }
     }
-    
+
     public Map<String,String> getEventFields(BaseQueryMetric queryMetric) {
         // ignore duplicates as none are expected
         Map<String,String> eventFields = new HashMap<>();
@@ -270,14 +273,14 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
         }
         return eventFields;
     }
-    
+
     private Multimap<BulkIngestKey,Value> getEntries(AbstractColumnBasedHandler<Key> handler, QueryMetric updatedQueryMetric, QueryMetric storedQueryMetric,
                     Date lastUpdated, boolean delete) {
         Type type = TypeRegistry.getType("querymetrics");
         ContentQueryMetricsIngestHelper ingestHelper = new ContentQueryMetricsIngestHelper(delete);
-        
+
         ingestHelper.setup(conf);
-        
+
         RawRecordContainerImpl event = new RawRecordContainerImpl();
         event.setConf(this.conf);
         event.setDataType(type);
@@ -297,23 +300,23 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
         event.setAuxData(storedQueryMetric);
         event.setRawRecordNumber(1000L);
         event.addAltId(storedQueryMetric.getQueryId());
-        
+
         event.setId(uidBuilder.newId(storedQueryMetric.getQueryId().getBytes(), (Date) null));
-        
+
         final Multimap<String,NormalizedContentInterface> fields;
-        
+
         if (delete) {
             fields = ingestHelper.getEventFieldsToDelete(updatedQueryMetric, storedQueryMetric);
         } else {
             fields = ingestHelper.getEventFieldsToWrite(updatedQueryMetric);
         }
-        
+
         Key key = new Key();
-        
+
         if (handler.getMetadata() != null) {
             handler.getMetadata().addEventWithoutLoadDates(ingestHelper, event, fields);
         }
-        
+
         String eventTable = handler.getShardTableName().toString();
         String indexTable = handler.getShardIndexTableName().toString();
         String reverseIndexTable = handler.getShardReverseIndexTableName().toString();
@@ -321,13 +324,13 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
         Multimap<BulkIngestKey,Value> r = handler.processBulk(key, event, fields, reporter);
         List<BulkIngestKey> keysToRemove = new ArrayList<>();
         Map<String,BulkIngestKey> tfFields = new HashMap<>();
-        
+
         // if an event has more than two entries for a given field, only keep the longest
         for (Entry<BulkIngestKey,Collection<Value>> entry : r.asMap().entrySet()) {
             String table = entry.getKey().getTableName().toString();
             BulkIngestKey bulkIngestKey = entry.getKey();
             Key currentKey = bulkIngestKey.getKey();
-            
+
             if (table.equals(indexTable) || table.equals(reverseIndexTable)) {
                 String value = currentKey.getRow().toString();
                 if (value.length() > fieldSizeThreshold) {
@@ -335,17 +338,17 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
                 }
             }
         }
-        
+
         // remove any keys from the index or reverseIndex where the value size exceeds the fieldSizeThreshold
         for (BulkIngestKey b : keysToRemove) {
             r.removeAll(b);
         }
-        
+
         // replace the longest of the keys from fields that get parsed as content
         for (Entry<String,BulkIngestKey> l : tfFields.entrySet()) {
             r.put(l.getValue(), new Value(new byte[0]));
         }
-        
+
         for (Entry<BulkIngestKey,Collection<Value>> entry : r.asMap().entrySet()) {
             if (delete) {
                 entry.getKey().getKey().setTimestamp(lastUpdated.getTime());
@@ -355,34 +358,32 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             }
             entry.getKey().getKey().setDeleted(delete);
         }
-        
+
         return r;
     }
-    
+
     @SuppressWarnings("unchecked")
     @Override
     public void updateMetric(QueryMetric updatedQueryMetric, DatawavePrincipal datawavePrincipal) throws Exception {
         Date lastUpdated = updatedQueryMetric.getLastUpdated();
-        
+
         try {
             enableLogs(false);
             String sid = updatedQueryMetric.getUser();
             if (sid == null) {
                 sid = datawavePrincipal.getShortName();
             }
-            
+
             // find and remove previous entries
             BaseQueryMetricListResponse response = new QueryMetricListResponse();
             Date end = new Date();
             Date begin = DateUtils.setYears(end, 2000);
-            
+
             // user's DatawavePrincipal must have the Administrator role to use the Metrics query logic
             QueryMetric cachedQueryMetric;
-            QueryMetric newCachedQueryMetric;
+            QueryMetric updatedQueryMetricCopy;
             synchronized (ShardTableQueryMetricHandler.class) {
                 cachedQueryMetric = (QueryMetric) metricsCache.get(updatedQueryMetric.getQueryId());
-                // duplicate updatedQueryMetric because we're counting on the cache to be a snapshot of the QueryMetric
-                // so that we can retrieve it next update call to create the delete Mutations for the values written to Accumulo
                 Map<Long,PageMetric> storedPageMetricMap = new TreeMap<>();
                 if (cachedQueryMetric != null) {
                     List<PageMetric> cachedPageMetrics = cachedQueryMetric.getPageTimes();
@@ -396,15 +397,14 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
                 for (PageMetric p : updatedQueryMetric.getPageTimes()) {
                     storedPageMetricMap.put(p.getPageNumber(), p);
                 }
-                newCachedQueryMetric = (QueryMetric) updatedQueryMetric.duplicate();
                 ArrayList<PageMetric> newPageMetrics = new ArrayList<>();
                 newPageMetrics.addAll(storedPageMetricMap.values());
-                newCachedQueryMetric.setPageTimes(newPageMetrics);
-                metricsCache.put(updatedQueryMetric.getQueryId(), newCachedQueryMetric);
+                updatedQueryMetric.setPageTimes(newPageMetrics);
+                metricsCache.put(updatedQueryMetric.getQueryId(), updatedQueryMetric);
             }
-            
+
             List<QueryMetric> queryMetrics = new ArrayList<>();
-            
+
             if (cachedQueryMetric == null) {
                 // if numPages > 0 or Lifecycle > DEFINED, then we should have a metric cached already
                 // if we don't, then query for the current stored metric
@@ -422,43 +422,34 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
                     query.setPagesize(1000);
                     query.setId(UUID.randomUUID());
                     query.setParameters(ImmutableMap.of(QueryOptions.INCLUDE_GROUPING_CONTEXT, "true"));
-                    queryMetrics = getQueryMetrics(response, query, callerPrincipal);
+                    queryMetrics = getQueryMetrics(response, query, datawavePrincipal);
                 }
             } else {
                 queryMetrics = Collections.singletonList(cachedQueryMetric);
             }
-            
+
             if (!queryMetrics.isEmpty()) {
                 writeMetrics(updatedQueryMetric, queryMetrics, lastUpdated, true);
             }
-            
-            long nextUpdateNumber = 0;
-            
-            for (BaseQueryMetric m : queryMetrics) {
-                if ((m.getNumUpdates() + 1) > nextUpdateNumber) {
-                    nextUpdateNumber = m.getNumUpdates() + 1;
-                }
-            }
-            
-            updatedQueryMetric.setNumUpdates(nextUpdateNumber);
-            
+
+            populateMetricSelectors(updatedQueryMetric, this.luceneToJexlQueryParser);
+            incrementNumUpdates(updatedQueryMetric, queryMetrics);
             synchronized (ShardTableQueryMetricHandler.class) {
-                newCachedQueryMetric.setNumUpdates(nextUpdateNumber);
-                metricsCache.put(updatedQueryMetric.getQueryId(), newCachedQueryMetric);
+                metricsCache.put(updatedQueryMetric.getQueryId(), updatedQueryMetric);
             }
-            
+
             // write new entry
             writeMetrics(updatedQueryMetric, Collections.singletonList(updatedQueryMetric), lastUpdated, false);
         } finally {
             enableLogs(true);
         }
     }
-    
+
     private List<QueryMetric> getQueryMetrics(BaseResponse response, Query query, DatawavePrincipal datawavePrincipal) {
         List<QueryMetric> queryMetrics = new ArrayList<>();
         RunningQuery runningQuery = null;
         AccumuloClient client = null;
-        
+
         try {
             Map<String,String> trackingMap = this.connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
             client = this.connectionFactory.getClient(Priority.ADMIN, trackingMap);
@@ -467,43 +458,45 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
                 ((QueryMetricQueryLogic) queryLogic).setRolesSets(datawavePrincipal.getPrimaryUser().getRoles());
             }
             runningQuery = new RunningQuery(null, client, Priority.ADMIN, queryLogic, query, query.getQueryAuthorizations(), datawavePrincipal, metricFactory);
-            
+
             boolean done = false;
             List<Object> objectList = new ArrayList<>();
-            
+
             while (!done) {
                 ResultsPage resultsPage = runningQuery.next();
-                
+
                 if (!resultsPage.getResults().isEmpty()) {
                     objectList.addAll(resultsPage.getResults());
                 } else {
                     done = true;
                 }
             }
-            
-            BaseQueryResponse queryResponse = queryLogic.getTransformer(query).createResponse(new ResultsPage(objectList));
+
+            BaseQueryResponse queryResponse = queryLogic.getEnrichedTransformer(query).createResponse(new ResultsPage(objectList));
             List<QueryExceptionType> exceptions = queryResponse.getExceptions();
-            
+
             if (queryResponse.getExceptions() != null && !queryResponse.getExceptions().isEmpty()) {
                 if (response != null) {
                     response.setExceptions(new LinkedList<>(exceptions));
                     response.setHasResults(false);
                 }
             }
-            
+
             if (!(queryResponse instanceof EventQueryResponseBase)) {
                 if (response != null) {
                     response.addException(new QueryException("incompatible response")); // TODO: Should this be an IllegalStateException?
                     response.setHasResults(false);
                 }
             }
-            
+
             EventQueryResponseBase eventQueryResponse = (EventQueryResponseBase) queryResponse;
             List<EventBase> eventList = eventQueryResponse.getEvents();
-            
-            for (EventBase<?,?> event : eventList) {
-                QueryMetric metric = toMetric(event);
-                queryMetrics.add(metric);
+
+            if (eventList != null) {
+                for (EventBase<?,?> event : eventList) {
+                    QueryMetric metric = (QueryMetric) toMetric(event);
+                    queryMetrics.add(metric);
+                }
             }
         } catch (Exception e) {
             log.error(e.getMessage(), e);
@@ -527,21 +520,20 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
                 }
             }
         }
-        
-        return queryMetrics;
+        return JexlFormattedStringBuildingVisitor.formatMetrics(queryMetrics);
     }
-    
+
     @Override
-    public QueryMetricListResponse query(String user, String queryId, DatawavePrincipal datawavePrincipal) {
+    public QueryMetricsDetailListResponse query(String user, String queryId, DatawavePrincipal datawavePrincipal) {
         QueryMetricsDetailListResponse response = new QueryMetricsDetailListResponse();
-        
+
         try {
             enableLogs(false);
-            
+
             Collection<? extends Collection<String>> authorizations = datawavePrincipal.getAuthorizations();
             Date end = new Date();
             Date begin = DateUtils.setYears(end, 2000);
-            
+
             QueryImpl query = new QueryImpl();
             query.setBeginDate(begin);
             query.setEndDate(end);
@@ -550,7 +542,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             query.setQuery("QUERY_ID == '" + queryId + "'");
             query.setQueryName(QUERY_METRICS_LOGIC_NAME);
             query.setColumnVisibility(visibilityString);
-            query.setQueryAuthorizations(AuthorizationsUtil.buildAuthorizationString(authorizations));
+            query.setQueryAuthorizations(WSAuthorizationsUtil.buildAuthorizationString(authorizations));
             query.setExpirationDate(DateUtils.addDays(new Date(), 1));
             query.setPagesize(1000);
             query.setUserDN(datawavePrincipal.getShortName());
@@ -558,270 +550,194 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             query.setId(UUID.randomUUID());
             query.setParameters(ImmutableMap.of(QueryOptions.INCLUDE_GROUPING_CONTEXT, "true"));
             List<QueryMetric> queryMetrics = getQueryMetrics(response, query, datawavePrincipal);
-            
+
             response.setResult(queryMetrics);
-            
+
             response.setGeoQuery(queryMetrics.stream().anyMatch(SimpleQueryGeometryHandler::isGeoQuery));
         } finally {
             enableLogs(true);
         }
-        
+
         return response;
     }
-    
-    @Override
-    public QueryMetricsSummaryResponse getTotalQueriesSummaryCounts(Date begin, Date end, DatawavePrincipal datawavePrincipal) {
-        QueryMetricsSummaryResponse response = new QueryMetricsSummaryResponse();
-        
-        try {
-            enableLogs(false);
-            // this method is open to any user
-            datawavePrincipal = callerPrincipal;
-            
-            Collection<? extends Collection<String>> authorizations = datawavePrincipal.getAuthorizations();
-            QueryImpl query = new QueryImpl();
-            query.setBeginDate(begin);
-            query.setEndDate(end);
-            query.setQueryLogicName(QUERY_METRICS_LOGIC_NAME);
-            query.setQuery("USER > 'A' && USER < 'ZZZZZZZ'");
-            query.setQueryName(QUERY_METRICS_LOGIC_NAME);
-            query.setColumnVisibility(visibilityString);
-            query.setQueryAuthorizations(AuthorizationsUtil.buildAuthorizationString(authorizations));
-            query.setExpirationDate(DateUtils.addDays(new Date(), 1));
-            query.setPagesize(1000);
-            query.setUserDN(datawavePrincipal.getShortName());
-            query.setId(UUID.randomUUID());
-            query.setParameters(ImmutableMap.of(QueryOptions.INCLUDE_GROUPING_CONTEXT, "true"));
-            
-            List<QueryMetric> queryMetrics = getQueryMetrics(response, query, datawavePrincipal);
-            response = processQueryMetricsSummary(queryMetrics);
-        } catch (IOException e) {
-            log.error(e.getMessage(), e);
-        } finally {
-            enableLogs(true);
-        }
-        
-        return response;
-    }
-    
-    @Override
-    public QueryMetricsSummaryHtmlResponse getUserQueriesSummary(Date begin, Date end, DatawavePrincipal datawavePrincipal) {
-        QueryMetricsSummaryHtmlResponse response = new QueryMetricsSummaryHtmlResponse();
-        
-        try {
-            String user = datawavePrincipal.getShortName();
-            enableLogs(false);
-            // this method is open to any user
-            datawavePrincipal = callerPrincipal;
-            
-            Collection<? extends Collection<String>> authorizations = datawavePrincipal.getAuthorizations();
-            QueryImpl query = new QueryImpl();
-            query.setBeginDate(begin);
-            query.setEndDate(end);
-            query.setQueryLogicName(QUERY_METRICS_LOGIC_NAME);
-            query.setQuery("USER == '" + user + "'");
-            query.setQueryName(QUERY_METRICS_LOGIC_NAME);
-            query.setColumnVisibility(visibilityString);
-            query.setQueryAuthorizations(AuthorizationsUtil.buildAuthorizationString(authorizations));
-            query.setExpirationDate(DateUtils.addDays(new Date(), 1));
-            query.setPagesize(1000);
-            query.setUserDN(datawavePrincipal.getShortName());
-            query.setId(UUID.randomUUID());
-            query.setParameters(ImmutableMap.of(QueryOptions.INCLUDE_GROUPING_CONTEXT, "true"));
-            
-            List<QueryMetric> queryMetrics = getQueryMetrics(response, query, datawavePrincipal);
-            response = processQueryMetricsHtmlSummary(queryMetrics);
-        } catch (IOException e) {
-            log.error(e.getMessage(), e);
-        } finally {
-            enableLogs(true);
-        }
-        
-        return response;
-    }
-    
-    public QueryMetric toMetric(datawave.webservice.query.result.event.EventBase event) {
+
+    public BaseQueryMetric toMetric(EventBase event) {
         SimpleDateFormat sdf_date_time1 = new SimpleDateFormat("yyyyMMdd HHmmss");
         SimpleDateFormat sdf_date_time2 = new SimpleDateFormat("yyyyMMdd HHmmss");
-        
+        SimpleDateFormat sdf_date_time3 = new SimpleDateFormat("yyyyMMdd");
+
+        List<String> excludedFields = Arrays.asList("ELAPSED_TIME", "RECORD_ID", "NUM_PAGES", "NUM_RESULTS");
+
         try {
-            QueryMetric m = new QueryMetric();
+            BaseQueryMetric m = metricFactory.createMetric(false);
             List<FieldBase> field = event.getFields();
             m.setMarkings(event.getMarkings());
             TreeMap<Long,PageMetric> pageMetrics = Maps.newTreeMap();
-            
+
+            boolean createDateSet = false;
             for (FieldBase f : field) {
                 String fieldName = f.getName();
                 String fieldValue = f.getValueString();
-                
-                if (fieldName.equals("USER")) {
-                    m.setUser(fieldValue);
-                } else if (fieldName.equals("USER_DN")) {
-                    m.setUserDN(fieldValue);
-                } else if (fieldName.equals("QUERY_ID")) {
-                    m.setQueryId(fieldValue);
-                } else if (fieldName.equals("CREATE_DATE")) {
-                    try {
-                        Date d = sdf_date_time2.parse(fieldValue);
-                        m.setCreateDate(d);
-                    } catch (Exception e) {
-                        log.error(e.getMessage());
-                    }
-                } else if (fieldName.equals("QUERY")) {
-                    m.setQuery(fieldValue);
-                } else if (fieldName.equals("PLAN")) {
-                    m.setPlan(fieldValue);
-                } else if (fieldName.equals("QUERY_LOGIC")) {
-                    m.setQueryLogic(fieldValue);
-                } else if (fieldName.equals("QUERY_ID")) {
-                    m.setQueryId(fieldValue);
-                } else if (fieldName.equals("BEGIN_DATE")) {
-                    try {
-                        Date d = sdf_date_time1.parse(fieldValue);
-                        m.setBeginDate(d);
-                    } catch (Exception e) {
-                        log.error(e.getMessage());
-                    }
-                } else if (fieldName.equals("END_DATE")) {
-                    try {
-                        Date d = sdf_date_time1.parse(fieldValue);
-                        m.setEndDate(d);
-                    } catch (Exception e) {
-                        log.error(e.getMessage());
-                    }
-                } else if (fieldName.equals("HOST")) {
-                    m.setHost(fieldValue);
-                } else if (fieldName.equals("PROXY_SERVERS")) {
-                    m.setProxyServers(Arrays.asList(StringUtils.split(fieldValue, ",")));
-                } else if (fieldName.equals("AUTHORIZATIONS")) {
-                    m.setQueryAuthorizations(fieldValue);
-                } else if (fieldName.equals("QUERY_TYPE")) {
-                    m.setQueryType(fieldValue);
-                } else if (fieldName.equals("LIFECYCLE")) {
-                    m.setLifecycle(Lifecycle.valueOf(fieldValue));
-                } else if (fieldName.equals("ERROR_CODE")) {
-                    m.setErrorCode(fieldValue);
-                } else if (fieldName.equals("ERROR_MESSAGE")) {
-                    m.setErrorMessage(fieldValue);
-                } else if (fieldName.equals("SETUP_TIME")) {
-                    m.setSetupTime(Long.parseLong(fieldValue));
-                } else if (fieldName.equals("CREATE_CALL_TIME")) {
-                    m.setCreateCallTime(Long.parseLong(fieldValue));
-                } else if (fieldName.startsWith("PAGE_METRICS")) {
-                    int index = fieldName.indexOf(".");
-                    if (-1 == index) {
-                        log.error("Could not parse field name to extract repetition count: " + fieldName);
-                    } else {
-                        Long repetition = Long.parseLong(fieldName.substring(index + 1));
-                        
-                        String[] parts = StringUtils.split(fieldValue, "/");
-                        PageMetric pageMetric = null;
-                        if (parts.length == 8) {
-                            pageMetric = new PageMetric(Long.parseLong(parts[0]), Long.parseLong(parts[1]), Long.parseLong(parts[2]), Long.parseLong(parts[3]),
-                                            Long.parseLong(parts[4]), Long.parseLong(parts[5]), Long.parseLong(parts[6]), Long.parseLong(parts[7]));
-                        } else if (parts.length == 7) {
-                            pageMetric = new PageMetric(Long.parseLong(parts[0]), Long.parseLong(parts[1]), Long.parseLong(parts[2]), Long.parseLong(parts[3]),
-                                            Long.parseLong(parts[4]), Long.parseLong(parts[5]), Long.parseLong(parts[6]));
-                        } else if (parts.length == 5) {
-                            pageMetric = new PageMetric(Long.parseLong(parts[0]), Long.parseLong(parts[1]), Long.parseLong(parts[2]), Long.parseLong(parts[3]),
-                                            Long.parseLong(parts[4]), 0l, 0l);
-                        } else if (parts.length == 2) {
-                            pageMetric = new PageMetric(Long.parseLong(parts[0]), Long.parseLong(parts[1]), 0l, 0l);
-                        }
-                        
-                        if (pageMetric != null)
-                            pageMetrics.put(repetition, pageMetric);
-                    }
-                } else if (fieldName.equals("POSITIVE_SELECTORS")) {
-                    List<String> positiveSelectors = m.getPositiveSelectors();
-                    if (positiveSelectors == null) {
-                        positiveSelectors = new ArrayList<>();
-                    }
-                    positiveSelectors.add(fieldValue);
-                    m.setPositiveSelectors(positiveSelectors);
-                } else if (fieldName.equals("NEGATIVE_SELECTORS")) {
-                    List<String> negativeSelectors = m.getNegativeSelectors();
-                    if (negativeSelectors == null) {
-                        negativeSelectors = new ArrayList<>();
-                    }
-                    negativeSelectors.add(fieldValue);
-                    m.setNegativeSelectors(negativeSelectors);
-                } else if (fieldName.equals("LAST_UPDATED")) {
-                    try {
-                        Date d = sdf_date_time2.parse(fieldValue);
-                        m.setLastUpdated(d);
-                    } catch (Exception e) {
-                        log.error(e.getMessage());
-                    }
-                } else if (fieldName.equals("NUM_UPDATES")) {
-                    try {
-                        long numUpdates = Long.parseLong(fieldValue);
-                        m.setNumUpdates(numUpdates);
-                    } catch (Exception e) {
-                        log.error(e.getMessage());
-                    }
-                } else if (fieldName.equals("QUERY_NAME")) {
-                    m.setQueryName(fieldValue);
-                } else if (fieldName.equals("PARAMETERS")) {
-                    if (fieldValue != null) {
+                if (!excludedFields.contains(fieldName)) {
+                    if (fieldName.equals("USER")) {
+                        m.setUser(fieldValue);
+                    } else if (fieldName.equals("USER_DN")) {
+                        m.setUserDN(fieldValue);
+                    } else if (fieldName.equals("QUERY_ID")) {
+                        m.setQueryId(fieldValue);
+                    } else if (fieldName.equals("CREATE_DATE")) {
                         try {
-                            Set<Parameter> parameters = QueryUtil.parseParameters(fieldValue);
-                            m.setParameters(parameters);
-                            
+                            Date d = sdf_date_time2.parse(fieldValue);
+                            m.setCreateDate(d);
+                            createDateSet = true;
                         } catch (Exception e) {
-                            log.debug(e.getMessage());
+                            log.error(e.getMessage());
                         }
+                    } else if (fieldName.equals("QUERY")) {
+                        m.setQuery(fieldValue);
+                    } else if (fieldName.equals("PLAN")) {
+                        m.setPlan(fieldValue);
+                    } else if (fieldName.equals("QUERY_LOGIC")) {
+                        m.setQueryLogic(fieldValue);
+                    } else if (fieldName.equals("QUERY_ID")) {
+                        m.setQueryId(fieldValue);
+                    } else if (fieldName.equals("BEGIN_DATE")) {
+                        try {
+                            Date d = sdf_date_time1.parse(fieldValue);
+                            m.setBeginDate(d);
+                        } catch (Exception e) {
+                            log.error(e.getMessage());
+                        }
+                    } else if (fieldName.equals("END_DATE")) {
+                        try {
+                            Date d = sdf_date_time1.parse(fieldValue);
+                            m.setEndDate(d);
+                        } catch (Exception e) {
+                            log.error(e.getMessage());
+                        }
+                    } else if (fieldName.equals("HOST")) {
+                        m.setHost(fieldValue);
+                    } else if (fieldName.equals("PROXY_SERVERS")) {
+                        m.setProxyServers(Arrays.asList(StringUtils.split(fieldValue, ",")));
+                    } else if (fieldName.equals("AUTHORIZATIONS")) {
+                        m.setQueryAuthorizations(fieldValue);
+                    } else if (fieldName.equals("QUERY_TYPE")) {
+                        m.setQueryType(fieldValue);
+                    } else if (fieldName.equals("LIFECYCLE")) {
+                        m.setLifecycle(Lifecycle.valueOf(fieldValue));
+                    } else if (fieldName.equals("ERROR_CODE")) {
+                        m.setErrorCode(fieldValue);
+                    } else if (fieldName.equals("ERROR_MESSAGE")) {
+                        m.setErrorMessage(fieldValue);
+                    } else if (fieldName.equals("SETUP_TIME")) {
+                        m.setSetupTime(Long.parseLong(fieldValue));
+                    } else if (fieldName.equals("CREATE_CALL_TIME")) {
+                        m.setCreateCallTime(Long.parseLong(fieldValue));
+                    } else if (fieldName.startsWith("PAGE_METRICS")) {
+                        int index = fieldName.indexOf(".");
+                        if (-1 == index) {
+                            log.error("Could not parse field name to extract repetition count: " + fieldName);
+                        } else {
+                            Long pageNum = Long.parseLong(fieldName.substring(index + 1));
+                            PageMetric pageMetric = PageMetric.parse(fieldValue);
+                            if (pageMetric != null) {
+                                pageMetric.setPageNumber(pageNum);
+                                pageMetrics.put(pageNum, pageMetric);
+                            }
+                        }
+                    } else if (fieldName.equals("POSITIVE_SELECTORS")) {
+                        List<String> positiveSelectors = m.getPositiveSelectors();
+                        if (positiveSelectors == null) {
+                            positiveSelectors = new ArrayList<>();
+                        }
+                        positiveSelectors.add(fieldValue);
+                        m.setPositiveSelectors(positiveSelectors);
+                    } else if (fieldName.equals("NEGATIVE_SELECTORS")) {
+                        List<String> negativeSelectors = m.getNegativeSelectors();
+                        if (negativeSelectors == null) {
+                            negativeSelectors = new ArrayList<>();
+                        }
+                        negativeSelectors.add(fieldValue);
+                        m.setNegativeSelectors(negativeSelectors);
+                    } else if (fieldName.equals("LAST_UPDATED")) {
+                        try {
+                            Date d = sdf_date_time2.parse(fieldValue);
+                            m.setLastUpdated(d);
+                        } catch (Exception e) {
+                            log.error(e.getMessage());
+                        }
+                    } else if (fieldName.equals("NUM_UPDATES")) {
+                        try {
+                            long numUpdates = Long.parseLong(fieldValue);
+                            m.setNumUpdates(numUpdates);
+                        } catch (Exception e) {
+                            log.error(e.getMessage());
+                        }
+                    } else if (fieldName.equals("QUERY_NAME")) {
+                        m.setQueryName(fieldValue);
+                    } else if (fieldName.equals("PARAMETERS")) {
+                        if (fieldValue != null) {
+                            try {
+                                Set<Parameter> parameters = QueryUtil.parseParameters(fieldValue);
+                                m.setParameters(parameters);
+
+                            } catch (Exception e) {
+                                log.debug(e.getMessage());
+                            }
+                        }
+                    } else if (fieldName.equals("SOURCE_COUNT")) {
+                        m.setSourceCount(Long.parseLong(fieldValue));
+                    } else if (fieldName.equals("NEXT_COUNT")) {
+                        m.setNextCount(Long.parseLong(fieldValue));
+                    } else if (fieldName.equals("SEEK_COUNT")) {
+                        m.setSeekCount(Long.parseLong(fieldValue));
+                    } else if (fieldName.equals("YIELD_COUNT")) {
+                        m.setYieldCount(Long.parseLong(fieldValue));
+                    } else if (fieldName.equals("DOC_RANGES")) {
+                        m.setDocRanges(Long.parseLong(fieldValue));
+                    } else if (fieldName.equals("FI_RANGES")) {
+                        m.setFiRanges(Long.parseLong(fieldValue));
+                    } else if (fieldName.equals("VERSION")) {
+                        m.addVersion(BaseQueryMetric.DATAWAVE, fieldValue);
+                    } else if (fieldName.startsWith("VERSION.")) {
+                        m.addVersion(fieldName.substring(8), fieldValue);
+                    } else if (fieldName.equals("YIELD_COUNT")) {
+                        m.setYieldCount(Long.parseLong(fieldValue));
+                    } else if (fieldName.equals("LOGIN_TIME")) {
+                        m.setLoginTime(Long.parseLong(fieldValue));
+                    } else {
+                        log.debug("encountered unanticipated field name: " + fieldName);
                     }
-                }
-                
-                else if (fieldName.equals("SOURCE_COUNT")) {
-                    m.setSourceCount(Long.parseLong(fieldValue));
-                }
-                
-                else if (fieldName.equals("NEXT_COUNT")) {
-                    m.setNextCount(Long.parseLong(fieldValue));
-                }
-                
-                else if (fieldName.equals("SEEK_COUNT")) {
-                    m.setSeekCount(Long.parseLong(fieldValue));
-                }
-                
-                else if (fieldName.equals("YIELD_COUNT")) {
-                    m.setYieldCount(Long.parseLong(fieldValue));
-                }
-                
-                else if (fieldName.equals("DOC_RANGES")) {
-                    m.setDocRanges(Long.parseLong(fieldValue));
-                }
-                
-                else if (fieldName.equals("FI_RANGES")) {
-                    m.setFiRanges(Long.parseLong(fieldValue));
-                } else {
-                    log.error("encountered unanticipated field name: " + fieldName);
                 }
             }
-            
-            for (final Entry<Long,PageMetric> entry : pageMetrics.entrySet())
-                m.addPageMetric(entry.getValue());
-            
+            // if createDate has not been set, try to parse it from the event row
+            if (!createDateSet) {
+                try {
+                    String dateStr = event.getMetadata().getRow().substring(0, 8);
+                    m.setCreateDate(sdf_date_time3.parse(dateStr));
+                } catch (ParseException e) {
+
+                }
+            }
+            m.setPageTimes(new ArrayList<>(pageMetrics.values()));
             return m;
         } catch (Exception e) {
             log.warn("Unexpected error creating query metric. Returning null", e);
             return null;
         }
     }
-    
-    protected void createAndConfigureTablesIfNecessary(String[] tableNames, TableOperations tops, Configuration conf) throws AccumuloSecurityException,
-                    AccumuloException, TableNotFoundException {
+
+    protected void createAndConfigureTablesIfNecessary(String[] tableNames, TableOperations tops, Configuration conf)
+                    throws AccumuloSecurityException, AccumuloException, TableNotFoundException {
         for (String table : tableNames) {
             // If the tables don't exist, then create them.
             try {
                 if (!tops.exists(table)) {
                     tops.create(table);
                     Map<String,TableConfigHelper> tableConfigs = getTableConfigs(log, conf, tableNames);
-                    
+
                     TableConfigHelper tableHelper = tableConfigs.get(table);
-                    
+
                     if (tableHelper != null) {
                         tableHelper.configure(tops);
                     } else {
@@ -834,34 +750,34 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             }
         }
     }
-    
+
     @SuppressWarnings("unchecked")
     private Map<String,TableConfigHelper> getTableConfigs(Logger log, Configuration conf, String[] tableNames) {
         Map<String,TableConfigHelper> helperMap = new HashMap<>(tableNames.length);
-        
+
         for (String table : tableNames) {
             String prop = table + TableConfigHelper.TABLE_CONFIG_CLASS_SUFFIX;
             String className = conf.get(prop, null);
             TableConfigHelper tableHelper = null;
-            
+
             if (className != null) {
                 try {
                     Class<? extends TableConfigHelper> tableHelperClass = (Class<? extends TableConfigHelper>) Class.forName(className.trim());
-                    tableHelper = tableHelperClass.newInstance();
-                    
+                    tableHelper = tableHelperClass.getDeclaredConstructor().newInstance();
+
                     if (tableHelper != null)
                         tableHelper.setup(table, conf, log);
-                } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
+                } catch (ClassNotFoundException | IllegalAccessException | InstantiationException | NoSuchMethodException | InvocationTargetException e) {
                     throw new IllegalArgumentException(e);
                 }
             }
-            
+
             helperMap.put(table, tableHelper);
         }
-        
+
         return helperMap;
     }
-    
+
     private void enableLogs(boolean enable) {
         if (enable) {
             ThreadConfigurableLogger.clearThreadLevels();
@@ -872,7 +788,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             // Logger log = Logger.getLogger(MyClass.class);
             // to
             // Logger log = ThreadConfigurableLogger.getLogger(MyClass.class);
-            
+
             ThreadConfigurableLogger.setLevelForThread("datawave.query.index.lookup.RangeStream", Level.ERROR);
             ThreadConfigurableLogger.setLevelForThread("datawave.query.metrics.ShardTableQueryMetricHandler", Level.ERROR);
             ThreadConfigurableLogger.setLevelForThread("datawave.query.planner.DefaultQueryPlanner", Level.ERROR);
@@ -884,7 +800,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             ThreadConfigurableLogger.setLevelForThread("datawave.query.jexl.visitors.ExpandMultiNormalizedTerms", Level.ERROR);
             ThreadConfigurableLogger.setLevelForThread("datawave.query.jexl.lookups.LookupBoundedRangeForTerms", Level.ERROR);
             ThreadConfigurableLogger.setLevelForThread("datawave.query.jexl.visitors.RangeConjunctionRebuildingVisitor", Level.ERROR);
-            
+
             ThreadConfigurableLogger.setLevelForThread("datawave.ingest.data.TypeRegistry", Level.ERROR);
             ThreadConfigurableLogger.setLevelForThread("datawave.ingest.data.config.ingest.BaseIngestHelper", Level.ERROR);
             ThreadConfigurableLogger.setLevelForThread("datawave.ingest.mapreduce.handler.shard.AbstractColumnBasedHandler", Level.ERROR);
@@ -893,54 +809,75 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             ThreadConfigurableLogger.setLevelForThread("datawave.ingest.data.Event", Level.OFF);
         }
     }
-    
+
     @Override
     public void reload() {
         try {
             if (this.recordWriter != null) {
-                // don't try to flush the mtbw (close). If recordWriter != null then this method is being called
-                // because of an Exception and the metrics have been saved off to be added to the new recordWriter.
-                this.recordWriter.returnConnector();
+                // If recordWriter != null then this method is being called because of an error writing to Accumulo.
+                // We have to try to close the recordWriter and therefore the mtbw because Accumulo now reference
+                // counts certain objects (like mtbw) to ensure that they are closed before being dereferenced.
+                try {
+                    this.recordWriter.close(null);
+                } catch (Exception e) {
+                    log.error(e.getMessage(), e);
+                }
             }
             recordWriter = new AccumuloRecordWriter(this.connectionFactory, conf);
-        } catch (AccumuloException | AccumuloSecurityException | IOException e) {
+        } catch (Exception e) {
             log.error(e.getMessage(), e);
         }
     }
-    
+
     @Override
-    public QueryMetricsSummaryHtmlResponse getTotalQueriesSummary(Date begin, Date end, DatawavePrincipal datawavePrincipal) {
-        QueryMetricsSummaryHtmlResponse response = new QueryMetricsSummaryHtmlResponse();
-        
+    public QueryMetricsSummaryResponse getTotalQueriesSummaryCounts(Date begin, Date end, DatawavePrincipal datawavePrincipal) {
+        return getQueryMetricsSummary(begin, end, false, datawavePrincipal, new QueryMetricsSummaryResponse());
+    }
+
+    @Override
+    public QueryMetricsSummaryResponse getTotalQueriesSummary(Date begin, Date end, DatawavePrincipal datawavePrincipal) {
+        return (QueryMetricsSummaryResponse) getQueryMetricsSummary(begin, end, false, datawavePrincipal, new QueryMetricsSummaryResponse());
+    }
+
+    @Override
+    public QueryMetricsSummaryResponse getUserQueriesSummary(Date begin, Date end, DatawavePrincipal datawavePrincipal) {
+        return (QueryMetricsSummaryResponse) getQueryMetricsSummary(begin, end, true, datawavePrincipal, new QueryMetricsSummaryResponse());
+    }
+
+    public QueryMetricsSummaryResponse getQueryMetricsSummary(Date begin, Date end, boolean onlyCurrentUser, DatawavePrincipal datawavePrincipal,
+                    QueryMetricsSummaryResponse response) {
+
         try {
             enableLogs(false);
-            enableLogs(true);
-            // this method is open to any user
-            datawavePrincipal = callerPrincipal;
-            
+
             Collection<? extends Collection<String>> authorizations = datawavePrincipal.getAuthorizations();
             QueryImpl query = new QueryImpl();
             query.setBeginDate(begin);
             query.setEndDate(end);
             query.setQueryLogicName(QUERY_METRICS_LOGIC_NAME);
-            query.setQuery("USER > 'A' && USER < 'ZZZZZZZ'");
+            if (onlyCurrentUser) {
+                String user = datawavePrincipal.getShortName();
+                query.setQuery("USER == '" + user + "'");
+            } else {
+                query.setQuery("((_Bounded_ = true) && (USER > 'A' && USER < 'ZZZZZZZ'))");
+            }
             query.setQueryName(QUERY_METRICS_LOGIC_NAME);
             query.setColumnVisibility(visibilityString);
-            query.setQueryAuthorizations(AuthorizationsUtil.buildAuthorizationString(authorizations));
+            query.setQueryAuthorizations(WSAuthorizationsUtil.buildAuthorizationString(authorizations));
             query.setExpirationDate(DateUtils.addDays(new Date(), 1));
             query.setPagesize(1000);
             query.setUserDN(datawavePrincipal.getShortName());
             query.setId(UUID.randomUUID());
             query.setParameters(ImmutableMap.of(QueryOptions.INCLUDE_GROUPING_CONTEXT, "true"));
-            
+
             List<QueryMetric> queryMetrics = getQueryMetrics(response, query, datawavePrincipal);
-            response = processQueryMetricsHtmlSummary(queryMetrics);
+            response = processQueryMetricsSummary(queryMetrics, end, response);
         } catch (IOException e) {
             log.error(e.getMessage(), e);
         } finally {
             enableLogs(true);
         }
-        
+
         return response;
     }
 }

@@ -16,15 +16,8 @@ package datawave.query.language.builder.jexl;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 import java.util.ArrayList;
 import java.util.List;
-
-import datawave.query.language.parser.jexl.JexlNode;
-import datawave.query.language.parser.jexl.JexlPhraseNode;
-import datawave.query.language.parser.jexl.JexlSelectorNode;
-import datawave.query.language.parser.lucene.EscapeQuerySyntaxImpl;
-import datawave.query.search.WildcardFieldedTerm;
 
 import org.apache.lucene.queryparser.flexible.core.QueryNodeException;
 import org.apache.lucene.queryparser.flexible.core.builders.QueryBuilder;
@@ -38,28 +31,34 @@ import org.apache.lucene.search.TermQuery;
 
 import com.google.common.collect.Sets;
 
+import datawave.query.language.parser.jexl.JexlNode;
+import datawave.query.language.parser.jexl.JexlPhraseNode;
+import datawave.query.language.parser.jexl.JexlSelectorNode;
+import datawave.query.language.parser.lucene.EscapeQuerySyntaxImpl;
+import datawave.query.search.WildcardFieldedTerm;
+
 /**
  * Builds a {@link TermQuery} object from a {@link FieldQueryNode} object.
  */
 public class FieldQueryNodeBuilder implements QueryBuilder {
     private static final String WHITE_SPACE_ESCAPE_STRING = "~~";
     public static final String SPACE = " ";
-    
+
     public JexlNode build(QueryNode queryNode) throws QueryNodeException {
         JexlNode returnNode = null;
-        
+
         if (queryNode instanceof QuotedFieldQueryNode) {
             List<String> phraseWordList = new ArrayList<>();
             FieldQueryNode quotedFieldNode = (QuotedFieldQueryNode) queryNode;
             String field = quotedFieldNode.getFieldAsString();
             String selector = quotedFieldNode.getTextAsString();
-            
+
             // check if spaces were escaped
             FieldQueryNode fieldQueryNode = (QuotedFieldQueryNode) queryNode;
             UnescapedCharSequence origChars = (UnescapedCharSequence) fieldQueryNode.getText();
             int nextWordStart = 0;
             ArrayList<String> words = new ArrayList<>();
-            
+
             for (int x = 0; x < origChars.length(); x++) {
                 if (origChars.charAt(x) == ' ' && !origChars.wasEscaped(x)) {
                     words.add(selector.substring(nextWordStart, x));
@@ -69,16 +68,16 @@ public class FieldQueryNodeBuilder implements QueryBuilder {
                     words.add(selector.substring(nextWordStart));
                 }
             }
-            
+
             replaceEscapeCharsWithSpace(words);
-            
+
             for (String s : words) {
                 String currWord = s.trim();
                 if (!currWord.isEmpty()) {
                     phraseWordList.add(currWord);
                 }
             }
-            
+
             if (phraseWordList.size() == 1) {
                 // if only one term in quotes, just use a SelectorNode
                 String firstWord = phraseWordList.get(0);
@@ -97,10 +96,10 @@ public class FieldQueryNodeBuilder implements QueryBuilder {
             // queryNode instanceof WildcardQueryNode
             // queryNode instanceof QuotedFieldQueryNode
             // queryNode instanceof FieldQueryNode
-            
+
             FieldQueryNode fieldNode = (FieldQueryNode) queryNode;
             boolean hasUnescapedWildcard = WildcardFieldedTerm.hasUnescapedWildcard(fieldNode, Sets.newHashSet(' ', '/'));
-            
+
             String field = fieldNode.getFieldAsString();
             String selector;
             JexlSelectorNode.Type type;
@@ -112,21 +111,21 @@ public class FieldQueryNodeBuilder implements QueryBuilder {
                 selector = fieldNode.getTextAsString();
                 type = JexlSelectorNode.Type.EXACT;
             }
-            
+
             if (field == null || field.isEmpty()) {
                 returnNode = new JexlSelectorNode(type, "", selector);
             } else {
                 returnNode = new JexlSelectorNode(type, field, selector);
             }
         }
-        
+
         return returnNode;
     }
-    
+
     private void replaceEscapeCharsWithSpace(ArrayList<String> words) {
         for (int i = 0; i < words.size(); i++) {
             words.set(i, words.get(i).replaceAll(WHITE_SPACE_ESCAPE_STRING, SPACE));
         }
     }
-    
+
 }

@@ -1,8 +1,8 @@
 package datawave.webservice.query;
 
 import java.util.Date;
-
-import javax.ws.rs.core.MultivaluedMap;
+import java.util.List;
+import java.util.Map;
 
 import datawave.validation.ParameterValidator;
 
@@ -11,7 +11,7 @@ import datawave.validation.ParameterValidator;
  *
  */
 public interface QueryParameters extends ParameterValidator {
-    
+
     String QUERY_STRING = "query";
     String QUERY_NAME = "queryName";
     String QUERY_PERSISTENCE = "persistence";
@@ -26,67 +26,72 @@ public interface QueryParameters extends ParameterValidator {
     String QUERY_PARAMS = "params";
     String QUERY_VISIBILITY = "columnVisibility";
     String QUERY_LOGIC_NAME = "logicName";
-    
+    String QUERY_SYSTEM_FROM = "systemFrom";
+
     String getQuery();
-    
+
     void setQuery(String query);
-    
+
     String getQueryName();
-    
+
     void setQueryName(String queryName);
-    
+
     QueryPersistence getPersistenceMode();
-    
+
     void setPersistenceMode(QueryPersistence persistenceMode);
-    
+
     int getPagesize();
-    
+
     void setPagesize(int pagesize);
-    
+
     int getPageTimeout();
-    
+
     void setPageTimeout(int pageTimeout);
-    
+
     long getMaxResultsOverride();
-    
+
     void setMaxResultsOverride(long maxResults);
-    
+
     boolean isMaxResultsOverridden();
-    
+
     String getAuths();
-    
+
     void setAuths(String auths);
-    
+
     Date getExpirationDate();
-    
+
     void setExpirationDate(Date expirationDate);
-    
+
     boolean isTrace();
-    
+
     void setTrace(boolean trace);
-    
+
     Date getBeginDate();
-    
+
     Date getEndDate();
-    
+
     void setBeginDate(Date beginDate);
-    
+
     void setEndDate(Date endDate);
-    
+
     String getVisibility();
-    
+
     void setVisibility(String visibility);
-    
+
     String getLogicName();
-    
+
     void setLogicName(String logicName);
-    
-    MultivaluedMap<String,String> getRequestHeaders();
-    
-    void setRequestHeaders(MultivaluedMap<String,String> requestHeaders);
-    
-    MultivaluedMap<String,String> getUnknownParameters(MultivaluedMap<String,String> allQueryParameters);
-    
+
+    String getSystemFrom();
+
+    void setSystemFrom(String systemFrom);
+
+    Map<String,List<String>> getRequestHeaders();
+
+    void setRequestHeaders(Map<String,List<String>> requestHeaders);
+
+    Map<String,List<String>> getUnknownParameters(Map<String,List<String>> allQueryParameters);
+
     void clear();
-    
+
 }

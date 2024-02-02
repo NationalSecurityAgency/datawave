@@ -1,5 +1,43 @@
 package datawave.webservice.modification;
 
+import static java.util.Map.Entry;
+
+import java.security.Principal;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import javax.annotation.Resource;
+import javax.annotation.security.DeclareRoles;
+import javax.annotation.security.RolesAllowed;
+import javax.ejb.EJBContext;
+import javax.ejb.LocalBean;
+import javax.ejb.Stateless;
+import javax.ejb.TransactionAttribute;
+import javax.ejb.TransactionAttributeType;
+import javax.ejb.TransactionManagement;
+import javax.ejb.TransactionManagementType;
+import javax.inject.Inject;
+import javax.interceptor.Interceptors;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MultivaluedMap;
+
+import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.accumulo.core.security.Authorizations;
+import org.apache.log4j.Logger;
+import org.jboss.resteasy.annotations.GZIP;
+import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
+
 import datawave.annotation.Required;
 import datawave.configuration.spring.SpringBean;
 import datawave.interceptor.RequiredInterceptor;
@@ -20,40 +58,6 @@ import datawave.webservice.query.exception.UnauthorizedQueryException;
 import datawave.webservice.query.runner.QueryExecutorBean;
 import datawave.webservice.result.VoidResponse;
 import datawave.webservice.results.modification.ModificationConfigurationResponse;
-import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.security.Authorizations;
-import org.apache.log4j.Logger;
-import org.jboss.resteasy.annotations.GZIP;
-
-import javax.annotation.Resource;
-import javax.annotation.security.DeclareRoles;
-import javax.annotation.security.RolesAllowed;
-import javax.ejb.EJBContext;
-import javax.ejb.LocalBean;
-import javax.ejb.Stateless;
-import javax.ejb.TransactionAttribute;
-import javax.ejb.TransactionAttributeType;
-import javax.ejb.TransactionManagement;
-import javax.ejb.TransactionManagementType;
-import javax.inject.Inject;
-import javax.interceptor.Interceptors;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import java.security.Principal;
-import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import static java.util.Map.Entry;
 
 @Path("/Modification")
 @RolesAllowed({"AuthorizedUser", "AuthorizedQueryServer", "InternalUser", "Administrator"})
@@ -63,28 +67,28 @@ import static java.util.Map.Entry;
 @TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED)
 @TransactionManagement(TransactionManagementType.BEAN)
 public class ModificationBean {
-    
+
     private Logger log = Logger.getLogger(this.getClass());
-    
+
     @Resource
     private EJBContext ctx;
-    
+
     @Inject
     private AccumuloConnectionFactory connectionFactory;
-    
+
     @Inject
     private ModificationCacheBean cache;
-    
+
     @Inject
     private QueryExecutorBean queryService;
-    
+
     @Inject
     @SpringBean(refreshable = true)
     private ModificationConfiguration modificationConfiguration;
-    
+
     @Inject
     private AuditParameterBuilder auditParameterBuilder;
-    
+
     /**
      * Returns a list of the Modification service names and their configurations
      *
@@ -111,7 +115,7 @@ public class ModificationBean {
         }
         return configs;
     }
-    
+
     /**
      * Execute a Modification service with the given name and runtime parameters
      *
@@ -138,7 +142,7 @@ public class ModificationBean {
     public VoidResponse submit(@Required("modificationServiceName") @PathParam("serviceName") String modificationServiceName,
                     @Required("request") ModificationRequestBase request) {
         VoidResponse response = new VoidResponse();
-        
+
         // Find out who/what called this method
         Principal p = ctx.getCallerPrincipal();
         String user;
@@ -155,43 +159,45 @@ public class ModificationBean {
             response.addException(qe);
             throw new DatawaveWebApplicationException(qe, response);
         }
-        
+
         AccumuloClient client = null;
         AccumuloConnectionFactory.Priority priority;
         try {
             // Get the Modification Service from the configuration
             ModificationServiceConfiguration service = modificationConfiguration.getConfiguration(modificationServiceName);
             if (!request.getClass().equals(service.getRequestClass())) {
-                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_REQUEST_CLASS, MessageFormat.format("Requires: {0}",
-                                service.getRequestClass().getName()));
+                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_REQUEST_CLASS,
+                                MessageFormat.format("Requires: {0}", service.getRequestClass().getName()));
                 response.addException(qe);
                 throw new BadRequestException(qe, response);
             }
-            
+
             priority = service.getPriority();
-            
+
             // Ensure that the user is in the list of authorized roles
             if (null != service.getAuthorizedRoles()) {
                 boolean authorized = !Collections.disjoint(userRoles, service.getAuthorizedRoles());
                 if (!authorized) {
                     // Then the user does not have any of the authorized roles
-                    UnauthorizedQueryException qe = new UnauthorizedQueryException(DatawaveErrorCode.JOB_EXECUTION_UNAUTHORIZED, MessageFormat.format(
-                                    "Requires one of: {0}", service.getAuthorizedRoles()));
+                    UnauthorizedQueryException qe = new UnauthorizedQueryException(DatawaveErrorCode.JOB_EXECUTION_UNAUTHORIZED,
+                                    MessageFormat.format("Requires one of: {0}", service.getAuthorizedRoles()));
                     response.addException(qe);
                     throw new UnauthorizedException(qe, response);
                 }
             }
-            
+
             if (service.getRequiresAudit()) {
                 try {
-                    auditParameterBuilder.convertAndValidate(request.toMap());
+                    MultivaluedMap<String,String> requestMap = new MultivaluedMapImpl<>();
+                    requestMap.putAll(request.toMap());
+                    auditParameterBuilder.convertAndValidate(requestMap);
                 } catch (Exception e) {
                     QueryException qe = new QueryException(DatawaveErrorCode.QUERY_AUDITING_ERROR, e);
                     log.error(qe);
                     response.addException(qe.getBottomQueryException());
                 }
             }
-            
+
             // Process the modification
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
             client = connectionFactory.getClient(modificationConfiguration.getPoolName(), priority, trackingMap);
@@ -215,5 +221,5 @@ public class ModificationBean {
                 }
         }
     }
-    
+
 }

@@ -22,25 +22,6 @@ import javax.ejb.Stateless;
 import javax.inject.Inject;
 import javax.ws.rs.core.MultivaluedMap;
 
-import com.google.common.base.Function;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import com.google.protobuf.InvalidProtocolBufferException;
-
-import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
-import datawave.marking.SecurityMarking;
-import datawave.query.iterator.QueriesTableAgeOffIterator;
-import datawave.security.authorization.DatawavePrincipal;
-import datawave.security.util.ScannerHelper;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
-import datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.QueryParameters;
-import datawave.webservice.query.QueryPersistence;
-import datawave.webservice.query.result.event.ResponseObjectFactory;
-import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
-import datawave.webservice.query.util.QueryUtil;
-
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
@@ -62,6 +43,26 @@ import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
+import com.google.common.base.Function;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import com.google.protobuf.InvalidProtocolBufferException;
+
+import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
+import datawave.configuration.spring.SpringBean;
+import datawave.marking.SecurityMarking;
+import datawave.query.iterator.QueriesTableAgeOffIterator;
+import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.util.ScannerHelper;
+import datawave.webservice.common.connection.AccumuloConnectionFactory;
+import datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
+import datawave.webservice.query.Query;
+import datawave.webservice.query.QueryParameters;
+import datawave.webservice.query.QueryPersistence;
+import datawave.webservice.query.result.event.ResponseObjectFactory;
+import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
+import datawave.webservice.query.util.QueryUtil;
+
 /**
  * Object that creates and updates QueryImpl objects using a table structure:
  *
@@ -81,30 +82,31 @@ public class Persister {
         @Override
         public Q apply(final Entry<Key,Value> entry) {
             try {
-                
+
                 return (Q) QueryUtil.deserialize(QueryUtil.getQueryImplClassName(entry.getKey()), entry.getKey().getColumnVisibility(), entry.getValue());
             } catch (InvalidProtocolBufferException | ClassNotFoundException ipbEx) {
                 throw new EJBException("Error deserializing the Query", ipbEx);
             }
         }
     }
-    
+
     private static final QueryResultsTransform<Query> resultsTransform = new QueryResultsTransform<>();
     private static final QueryResultsTransform<Query> implResultsTransform = new QueryResultsTransform<>();
-    
+
     private Logger log = Logger.getLogger(Persister.class);
-    
+
     private static final String TABLE_NAME = "Queries";
-    
+
     @Inject
     private AccumuloConnectionFactory connectionFactory;
-    
+
     @Resource
     protected EJBContext ctx;
-    
+
     @Inject
+    @SpringBean(name = "ResponseObjectFactory")
     private ResponseObjectFactory responseObjectFactory;
-    
+
     public Query create(String userDN, List<String> dnList, SecurityMarking marking, String queryLogicName, QueryParameters qp,
                     MultivaluedMap<String,String> optionalQueryParameters) {
         Query q = responseObjectFactory.getQueryImpl();
@@ -119,7 +121,7 @@ public class Persister {
         }
         return q;
     }
-    
+
     private void tableCheck(AccumuloClient c) throws AccumuloException, AccumuloSecurityException, TableExistsException {
         if (!c.tableOperations().exists(TABLE_NAME)) {
             c.tableOperations().create(TABLE_NAME);
@@ -131,11 +133,12 @@ public class Persister {
             }
         }
     }
-    
+
     /**
      * Persists a QueryImpl object
      *
      * @param query
+     *            the query
      *
      */
     private void create(Query query) {
@@ -144,11 +147,11 @@ public class Persister {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
             c = connectionFactory.getClient(Priority.ADMIN, trackingMap);
             tableCheck(c);
-            try (BatchWriter writer = c.createBatchWriter(TABLE_NAME, new BatchWriterConfig().setMaxLatency(10, TimeUnit.SECONDS).setMaxMemory(10240L)
-                            .setMaxWriteThreads(1))) {
+            try (BatchWriter writer = c.createBatchWriter(TABLE_NAME,
+                            new BatchWriterConfig().setMaxLatency(10, TimeUnit.SECONDS).setMaxMemory(10240L).setMaxWriteThreads(1))) {
                 writer.addMutation(QueryUtil.toMutation(query, new ColumnVisibility(query.getColumnVisibility())));
             }
-            
+
         } catch (RuntimeException re) {
             throw re;
         } catch (Exception e) {
@@ -163,11 +166,14 @@ public class Persister {
             }
         }
     }
-    
+
     /**
      * Removes existing query object with same id and inserts the updated object
-     * 
+     *
      * @param query
+     *            the query
+     * @throws Exception
+     *             if there are issues
      */
     public void update(Query query) throws Exception {
         // TODO: decide the right thing to do here
@@ -176,11 +182,14 @@ public class Persister {
         remove(query);
         create(query);
     }
-    
+
     /**
      * Removes the query object
-     * 
+     *
      * @param query
+     *            the query
+     * @throws Exception
+     *             if there are issues
      */
     public void remove(Query query) throws Exception {
         // Find out who/what called this method
@@ -194,7 +203,7 @@ public class Persister {
                 auths.add(new Authorizations(cbAuths.toArray(new String[cbAuths.size()])));
         }
         log.trace(sid + " has authorizations " + auths);
-        
+
         AccumuloClient c = null;
         BatchDeleter deleter = null;
         try {
@@ -228,12 +237,13 @@ public class Persister {
             }
         }
     }
-    
+
     /**
      *
      * Finds Query objects by the query id
      *
      * @param id
+     *            the id
      * @return null if no results or list of query objects
      */
     @SuppressWarnings("unchecked")
@@ -242,7 +252,7 @@ public class Persister {
         Principal p = ctx.getCallerPrincipal();
         String sid = p.getName();
         Set<Authorizations> auths = new HashSet<>();
-        
+
         if (p instanceof DatawavePrincipal) {
             DatawavePrincipal dp = (DatawavePrincipal) p;
             sid = dp.getShortName();
@@ -250,21 +260,21 @@ public class Persister {
                 auths.add(new Authorizations(cbAuths.toArray(new String[cbAuths.size()])));
         }
         log.trace(sid + " has authorizations " + auths);
-        
+
         AccumuloClient client = null;
-        
+
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
             client = connectionFactory.getClient(Priority.ADMIN, trackingMap);
             tableCheck(client);
-            
+
             IteratorSetting regex = new IteratorSetting(21, RegExFilter.class);
             regex.addOption(RegExFilter.COLQ_REGEX, id + "\0.*");
-            
+
             try (Scanner scanner = ScannerHelper.createScanner(client, TABLE_NAME, auths)) {
                 scanner.setRange(new Range(sid, sid));
                 scanner.addScanIterator(regex);
-                
+
                 return Lists.newArrayList(Iterables.transform(scanner, resultsTransform));
             }
         } catch (Exception e) {
@@ -278,12 +288,13 @@ public class Persister {
             }
         }
     }
-    
+
     /**
      *
      * Finds Query objects by the query name
      *
      * @param name
+     *            query name
      * @return null if no results or list of query objects
      */
     public List<Query> findByName(String name) {
@@ -298,7 +309,7 @@ public class Persister {
                 auths.add(new Authorizations(authCollection.toArray(new String[authCollection.size()])));
         }
         log.trace(shortName + " has authorizations " + auths);
-        
+
         AccumuloClient c = null;
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
@@ -314,7 +325,7 @@ public class Persister {
                         results = new ArrayList<>();
                     results.add(QueryUtil.deserialize(QueryUtil.getQueryImplClassName(entry.getKey()), entry.getKey().getColumnVisibility(), entry.getValue()));
                 }
-                
+
                 return results;
             }
         } catch (RuntimeException re) {
@@ -331,7 +342,7 @@ public class Persister {
             }
         }
     }
-    
+
     public List<Query> findByUser() {
         // Find out who/what called this method
         Principal p = ctx.getCallerPrincipal();
@@ -344,7 +355,7 @@ public class Persister {
                 auths.add(new Authorizations(cbAuths.toArray(new String[cbAuths.size()])));
         }
         log.trace(sid + " has authorizations " + auths);
-        
+
         AccumuloClient c = null;
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
@@ -375,11 +386,12 @@ public class Persister {
             }
         }
     }
-    
+
     /**
      * Returns queries for the specified user with the credentials of the caller.
      *
      * @param user
+     *            user name
      * @return list of specified users queries.
      */
     @RolesAllowed("Administrator")
@@ -395,7 +407,7 @@ public class Persister {
                 auths.add(new Authorizations(cbAuths.toArray(new String[cbAuths.size()])));
         }
         log.trace(sid + " has authorizations " + auths);
-        
+
         AccumuloClient c = null;
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
@@ -426,22 +438,22 @@ public class Persister {
             }
         }
     }
-    
+
     @RolesAllowed({"Administrator", "JBossAdministrator"})
     public List<Query> adminFindById(final String queryId) {
         AccumuloClient client = null;
-        
+
         try {
             final Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
             client = connectionFactory.getClient(Priority.ADMIN, trackingMap);
             tableCheck(client);
-            
+
             final IteratorSetting regex = new IteratorSetting(21, RegExFilter.class);
             regex.addOption(RegExFilter.COLQ_REGEX, queryId);
-            
+
             final HashSet<Authorizations> auths = new HashSet<>();
             auths.add(client.securityOperations().getUserAuthorizations(client.whoami()));
-            
+
             try (final Scanner scanner = ScannerHelper.createScanner(client, TABLE_NAME, auths)) {
                 scanner.addScanIterator(regex);
                 return Lists.newArrayList(Iterables.transform(scanner, implResultsTransform));

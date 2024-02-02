@@ -93,8 +93,8 @@
             <fileMode>0444</fileMode>
             <includes>
                 <include>org.apache.commons:commons-collections4</include>
-                <include>org.apache.commons:commons-jexl</include>
-                <include>${groupId}:datawave-balancers</include>
+                <include>org.apache.commons:commons-jexl3</include>
+                <include>${groupId}:datawave-accumulo-extensions</include>
                 <include>${groupId}:datawave-common</include>
                 <include>${groupId}:datawave-core</include>
                 <include>${groupId}:datawave-data-dictionary-core</include>

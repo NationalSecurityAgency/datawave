@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.webservices</groupId>
         <artifactId>datawave-ws-deploy-parent</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>6.6.0-SNAPSHOT</version>
     </parent>
     <artifactId>datawave-ws-deploy-application</artifactId>
     <packaging>ear</packaging>
@@ -151,7 +151,7 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-text</artifactId>
-            <version>1.8</version>
+            <version>${version.commons-text}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
@@ -192,75 +192,6 @@
             <artifactId>hadoop-hdfs</artifactId>
             <scope>runtime</scope>
         </dependency>
-        <dependency>
-            <groupId>org.apache.htrace</groupId>
-            <artifactId>htrace-core4</artifactId>
-            <scope>runtime</scope>
-        </dependency>
-        <!--
-                         The following dependencies are pulled in just to silence some Wildfly warnings about missing jars that
-            are referenced in another jar's Class-Path in the manifest. Some of these are test jars that will
-            go away from future versions of the emissary jar.
-        
-        <dependency>
-            <groupId>asm</groupId>
-            <artifactId>asm-tree</artifactId>
-            <version>3.3.1</version>
-        </dependency>
-        <dependency>
-            <groupId>cobertura</groupId>
-            <artifactId>cobertura</artifactId>
-            <version>1.8</version>
-        </dependency>
-        <dependency>
-            <groupId>edu.ucar</groupId>
-            <artifactId>netcdf</artifactId>
-            <version>4.2.20-datawave</version>
-        </dependency>
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>net.sf.jgrapht</groupId>
-            <artifactId>jgrapht</artifactId>
-            <version>0.8.3-datawave</version>
-        </dependency>
-        <dependency>
-            <groupId>org.geotools</groupId>
-            <artifactId>gt-epsg-wkt</artifactId>
-            <version>${version.geotools}-datawave</version>
-        </dependency>
-        <dependency>
-            <groupId>org.geotools</groupId>
-            <artifactId>gt-shapefile</artifactId>
-            <version>${version.geotools}-datawave</version>
-        </dependency>
-        <dependency>
-            <groupId>org.hamcrest</groupId>
-            <artifactId>hamcrest-all</artifactId>
-            <version>1.3</version>
-        </dependency>
-        <dependency>
-            <groupId>org.hamcrest</groupId>
-            <artifactId>hamcrest-core</artifactId>
-            <scope>compile</scope>
-            <version>1.3</version>
-        </dependency>
-        <dependency>
-            <groupId>org.mockito</groupId>
-            <artifactId>mockito-all</artifactId>
-            <scope>compile</scope>
-            <version>1.8.5</version>
-        </dependency>
-        <dependency>
-            <groupId>oro</groupId>
-            <artifactId>oro</artifactId>
-            <scope>compile</scope>
-            <version>2.0.8</version>
-        </dependency>
-       -->
     </dependencies>
     <build>
         <finalName>${project.artifactId}-${project.version}</finalName>
@@ -576,9 +507,12 @@
                                             <artifactId>hadoop-common</artifactId>
                                         </artifactItem>
                                         <artifactItem>
-                                            <groupId>org.apache.htrace</groupId>
-                                            <artifactId>htrace-core4</artifactId>
-                                            <version>4.0.1-incubating</version>
+                                            <groupId>org.apache.hadoop.thirdparty</groupId>
+                                            <artifactId>hadoop-shaded-guava</artifactId>
+                                        </artifactItem>
+                                        <artifactItem>
+                                            <groupId>org.apache.hadoop.thirdparty</groupId>
+                                            <artifactId>hadoop-shaded-protobuf_3_7</artifactId>
                                         </artifactItem>
                                         <artifactItem>
                                             <groupId>com.fasterxml.woodstox</groupId>
@@ -593,6 +527,10 @@
                                         <artifactItem>
                                             <groupId>com.google.protobuf</groupId>
                                             <artifactId>protobuf-java</artifactId>
+                                        </artifactItem>
+                                        <artifactItem>
+                                            <groupId>commons-beanutils</groupId>
+                                            <artifactId>commons-beanutils</artifactId>
                                         </artifactItem>
                                         <artifactItem>
                                             <groupId>org.apache.commons</groupId>

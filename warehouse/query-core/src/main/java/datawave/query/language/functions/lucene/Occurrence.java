@@ -4,19 +4,20 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 
-import datawave.query.language.functions.QueryFunction;
-import datawave.query.search.WildcardFieldedFilter;
-
-import datawave.webservice.query.exception.BadRequestQueryException;
-import datawave.webservice.query.exception.DatawaveErrorCode;
 import org.apache.lucene.queryparser.flexible.core.nodes.AndQueryNode;
 import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
 
+import datawave.query.language.functions.QueryFunction;
+import datawave.query.search.WildcardFieldedFilter;
+import datawave.webservice.query.exception.BadRequestQueryException;
+import datawave.webservice.query.exception.DatawaveErrorCode;
+
+@Deprecated
 public class Occurrence extends LuceneQueryFunction {
     public Occurrence() {
         super("occurrence", new ArrayList<>());
     }
-    
+
     @Override
     public void initialize(List<String> parameterList, int depth, QueryNode parent) throws IllegalArgumentException {
         super.initialize(parameterList, depth, parent);
@@ -27,21 +28,21 @@ public class Occurrence extends LuceneQueryFunction {
                 String firstArg = this.parameterList.get(0);
                 type = WildcardFieldedFilter.BooleanType.valueOf(firstArg.toUpperCase());
             } catch (Exception e) {
-                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_FUNCTION_ARGUMENTS, MessageFormat.format("{0}", e,
-                                this.name));
+                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_FUNCTION_ARGUMENTS,
+                                MessageFormat.format("{0}", e, this.name));
                 throw new IllegalArgumentException(qe);
             }
             x = 1;
         }
         this.fieldedFilter = new WildcardFieldedFilter(true, type);
-        
+
         while (x < parameterList.size()) {
             String field = parameterList.get(x++);
             String regex = parameterList.get(x++);
             this.fieldedFilter.addCondition(field, regex);
         }
     }
-    
+
     @Override
     public void validate() throws IllegalArgumentException {
         if (this.depth != 1) {
@@ -55,12 +56,12 @@ public class Occurrence extends LuceneQueryFunction {
             throw new IllegalArgumentException(qe);
         }
     }
-    
+
     @Override
     public String toString() {
         return this.fieldedFilter.toString();
     }
-    
+
     @Override
     public QueryFunction duplicate() {
         return new Occurrence();

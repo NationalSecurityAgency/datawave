@@ -16,12 +16,8 @@ package datawave.query.language.builder.lucene;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 import java.util.ArrayList;
 import java.util.List;
-
-import datawave.query.language.tree.AdjNode;
-import datawave.query.language.tree.SelectorNode;
 
 import org.apache.lucene.queryparser.flexible.core.QueryNodeException;
 import org.apache.lucene.queryparser.flexible.core.builders.QueryBuilder;
@@ -31,26 +27,30 @@ import org.apache.lucene.queryparser.flexible.core.nodes.TokenizedPhraseQueryNod
 import org.apache.lucene.queryparser.flexible.messages.MessageImpl;
 import org.apache.lucene.search.PhraseQuery;
 
+import datawave.query.language.tree.AdjNode;
+import datawave.query.language.tree.SelectorNode;
+
 /**
  * Builds a {@link PhraseQuery} object from a {@link TokenizedPhraseQueryNode} object.
  */
+@Deprecated
 public class PhraseQueryNodeBuilder implements QueryBuilder {
-    
+
     public datawave.query.language.tree.QueryNode build(QueryNode queryNode) throws QueryNodeException {
         TokenizedPhraseQueryNode phraseNode = (TokenizedPhraseQueryNode) queryNode;
         datawave.query.language.tree.QueryNode bNode = null;
-        
+
         List<QueryNode> children = phraseNode.getChildren();
         List<datawave.query.language.tree.QueryNode> childrenList = new ArrayList<>();
-        
+
         if (children != null) {
-            
+
             for (QueryNode child : children) {
                 SelectorNode selectorNode = (SelectorNode) child.getTag(QueryTreeBuilder.QUERY_TREE_BUILDER_TAGID);
                 childrenList.add(selectorNode);
             }
         }
-        
+
         if (children != null) {
             datawave.query.language.tree.QueryNode[] childrenArray = new datawave.query.language.tree.QueryNode[childrenList.size()];
             childrenList.toArray(childrenArray);
@@ -58,7 +58,7 @@ public class PhraseQueryNodeBuilder implements QueryBuilder {
         } else {
             throw new QueryNodeException(new MessageImpl("Unknown class: " + queryNode.getClass().getName()));
         }
-        
+
         return bNode;
     }
 }

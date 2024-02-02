@@ -1,68 +1,71 @@
 package datawave.query.jexl.visitors;
 
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DELAYED;
+
+import java.util.Map;
+import java.util.NoSuchElementException;
+
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTEQNode;
+import org.apache.commons.jexl3.parser.ASTReferenceExpression;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNodes;
+import org.apache.log4j.Logger;
+
 import datawave.data.MetadataCardinalityCounts;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.util.MetadataHelper;
-import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
-import org.apache.commons.jexl2.parser.ASTEQNode;
-import org.apache.commons.jexl2.parser.ASTReference;
-import org.apache.commons.jexl2.parser.ASTReferenceExpression;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.log4j.Logger;
-
-import java.util.Map;
-import java.util.NoSuchElementException;
 
 /**
  * Visitor meant to 'push down' predicates for expressions that reference low selectable fields.
  */
-public class PushdownLowSelectivityNodesVisitor extends BaseVisitor {
-    
+public class PushdownLowSelectivityNodesVisitor extends ShortCircuitBaseVisitor {
+
     protected MetadataHelper helper;
     protected ShardQueryConfiguration config;
-    
+
     public PushdownLowSelectivityNodesVisitor(ShardQueryConfiguration config, MetadataHelper helper) {
         this.helper = helper;
         this.config = config;
     }
-    
+
     private static final Logger log = Logger.getLogger(PushdownLowSelectivityNodesVisitor.class);
-    
+
     public static <T extends JexlNode> T pushdownLowSelectiveTerms(T queryTree, ShardQueryConfiguration config, MetadataHelper helper) {
         PushdownLowSelectivityNodesVisitor visitor = new PushdownLowSelectivityNodesVisitor(config, helper);
         queryTree.jjtAccept(visitor, null);
         return queryTree;
     }
-    
+
     @Override
     public Object visit(ASTReferenceExpression node, Object data) {
         // if not already delayed somehow
-        if (!QueryPropertyMarker.instanceOf(node, null)) {
+        if (!QueryPropertyMarker.findInstance(node).isAnyType()) {
             return super.visit(node, data);
         }
         return data;
     }
-    
+
     @Override
-    public Object visit(ASTReference node, Object data) {
+    public Object visit(ASTAndNode node, Object data) {
         // if not already delayed somehow
-        if (!QueryPropertyMarker.instanceOf(node, null)) {
+        if (!QueryPropertyMarker.findInstance(node).isAnyType()) {
             return super.visit(node, data);
         }
         return data;
     }
-    
+
     @Override
     public Object visit(ASTEQNode node, Object data) {
         // if this node represents a field/value that has poor selectability, then push it down
         if (hasLowSelectability(node)) {
-            return ASTDelayedPredicate.create(node);
+            JexlNodes.swap(node.jjtGetParent(), node, QueryPropertyMarker.create(node, DELAYED));
         }
-        return node;
+        return data;
     }
-    
+
     public boolean hasLowSelectability(JexlNode node) {
         try {
             String field = JexlASTHelper.getIdentifier(node);
@@ -87,5 +90,5 @@ public class PushdownLowSelectivityNodesVisitor extends BaseVisitor {
         }
         return false;
     }
-    
+
 }

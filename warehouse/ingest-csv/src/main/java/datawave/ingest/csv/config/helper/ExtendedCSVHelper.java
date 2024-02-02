@@ -7,19 +7,19 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import datawave.ingest.data.config.CSVHelper;
-import datawave.ingest.data.config.ConfigurationHelper;
-import datawave.ingest.metadata.id.MetadataIdParser;
-import datawave.ingest.validation.EventValidator;
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
+import datawave.ingest.data.config.CSVHelper;
+import datawave.ingest.data.config.ConfigurationHelper;
+import datawave.ingest.metadata.id.MetadataIdParser;
+import datawave.ingest.validation.EventValidator;
+
 public class ExtendedCSVHelper extends CSVHelper {
-    
+
     public interface Properties {
         /**
          * Parameter to specify the name of the field that contains the event id. This parameter supports multiple datatypes, for example
@@ -56,17 +56,17 @@ public class ExtendedCSVHelper extends CSVHelper {
          * Comma-delimited list of ignored fields
          */
         String IGNORED_FIELDS = ".data.field.drop";
-        
+
         String EVENT_DATA_TYPE_FIELD_NAME = ".data.type.field.name";
         String DATA_TYPE_KEYS = ".event.data.type.keys";
         String DATA_TYPE_VALUES = ".event.data.type.values";
     }
-    
+
     /**
      * Default data type field name
      */
     protected static final String EVENT_DATA_TYPE_PARM = "DATA_TYPE";
-    
+
     private boolean eventIdDowncase = false;
     private Map<String,String> eventSecurityMarkingFieldDomainMap = new HashMap<>();
     private List<EventValidator> validators = null;
@@ -75,60 +75,62 @@ public class ExtendedCSVHelper extends CSVHelper {
     private Map<String,String> eventDataTypeMap = null;
     private String eventIdFieldName = null;
     private Multimap<String,MetadataIdParser> parsers = HashMultimap.create();
-    
+
     @Override
     public void setup(Configuration config) throws IllegalArgumentException {
         super.setup(config);
-        
+
         // If the event id is specified, then we will get the visibilities from it.
         this.eventIdFieldName = config.get(this.getType().typeName() + Properties.EVENT_ID_FIELD_NAME);
-        
+
         // Should we downcase the id we receive.
         this.eventIdDowncase = config.getBoolean(this.getType().typeName() + Properties.EVENT_ID_FIELD_DOWNCASE, eventIdDowncase);
-        
+
         // Get the list of security marking field names
         String[] eventSecurityMarkingFieldNames = config.get(this.getType().typeName() + Properties.EVENT_SECURITY_MARKING_FIELD_NAMES, "").split(",");
         // Get the list of security marking field domains
         String[] eventSecurityMarkingFieldDomains = config.get(this.getType().typeName() + Properties.EVENT_SECURITY_MARKING_FIELD_DOMAINS, "").split(",");
-        
+
         if (eventSecurityMarkingFieldNames.length != eventSecurityMarkingFieldDomains.length) {
             throw new IllegalArgumentException("Both " + this.getType().typeName() + Properties.EVENT_SECURITY_MARKING_FIELD_NAMES + " and "
                             + this.getType().typeName() + Properties.EVENT_SECURITY_MARKING_FIELD_DOMAINS + " must contain the same number of values.");
         }
-        
+
         for (int i = 0; i < eventSecurityMarkingFieldNames.length; i++) {
             eventSecurityMarkingFieldDomainMap.put(eventSecurityMarkingFieldNames[i], eventSecurityMarkingFieldDomains[i]);
         }
-        
+
         this.ignoredFields = config.getStrings(this.getType().typeName() + Properties.IGNORED_FIELDS, ignoredFields);
-        
+
         // Get the list of id parsers from the configuration
         addIdParsers(config, Pattern.compile(this.getType().typeName() + "\\.data\\.id\\.parser\\.(.*)\\..*"));
-        
+
         validators = ConfigurationHelper.getInstances(config, this.getType().typeName() + Properties.EVENT_VALIDATORS, EventValidator.class);
         for (EventValidator validator : validators) {
             validator.setup(getType(), config);
         }
-        
+
         this.eventDataTypeFieldName = config.get(this.getType().typeName() + Properties.EVENT_DATA_TYPE_FIELD_NAME, EVENT_DATA_TYPE_PARM);
-        
+
         String[] eventDataTypeKeys = config.get(this.getType().typeName() + Properties.DATA_TYPE_KEYS, "").split(",");
         String[] eventDataTypeValues = config.get(this.getType().typeName() + Properties.DATA_TYPE_VALUES, "").split(",");
-        
+
         this.eventDataTypeMap = new HashMap<>();
-        
+
         if (eventDataTypeKeys.length != eventDataTypeValues.length) {
             throw new IllegalArgumentException("Both " + this.getType().typeName() + Properties.DATA_TYPE_KEYS + " and " + this.getType().typeName()
                             + Properties.DATA_TYPE_VALUES + " must contain the same number of values.");
         }
-        
+
         for (int i = 0; i < eventDataTypeKeys.length; i++)
             this.eventDataTypeMap.put(eventDataTypeKeys[i].trim(), eventDataTypeValues[i].trim());
     }
-    
+
     /**
      * @param config
+     *            a configuration
      * @param prefixPattern
+     *            prefix pattern to match
      */
     protected void addIdParsers(Configuration config, Pattern prefixPattern) {
         for (Map.Entry<String,String> entry : config) {
@@ -139,27 +141,27 @@ public class ExtendedCSVHelper extends CSVHelper {
             }
         }
     }
-    
+
     public String getEventIdFieldName() {
         return eventIdFieldName;
     }
-    
+
     public boolean getEventIdDowncase() {
         return eventIdDowncase;
     }
-    
+
     protected void setEventIdFieldName(String fieldName) {
         eventIdFieldName = fieldName;
     }
-    
+
     protected void setEventIdDowncase(boolean idDowncase) {
         eventIdDowncase = idDowncase;
     }
-    
+
     public Multimap<String,MetadataIdParser> getParsers() {
         return parsers;
     }
-    
+
     public static String expandFieldValue(String fieldValue) {
         // We replace new lines and carriage returns with \\~n~
         if (fieldValue.contains("\\~n~")) {
@@ -169,18 +171,18 @@ public class ExtendedCSVHelper extends CSVHelper {
         if (fieldValue.contains("\"\"")) {
             fieldValue = fieldValue.replaceAll("\"\"", "\"");
         }
-        
+
         return fieldValue;
     }
-    
+
     public String[] getIgnoredFields() {
         return ignoredFields;
     }
-    
+
     public List<EventValidator> getValidators() {
         return validators;
     }
-    
+
     /**
      * Lowercase MD5,SHA1,SHA256 but do *not* remove any whitespace as CSVHelper does.
      *
@@ -195,18 +197,18 @@ public class ExtendedCSVHelper extends CSVHelper {
         if (StringUtils.isEmpty(fieldValue)) {
             return null;
         }
-        
+
         if (fieldName.equalsIgnoreCase("md5") || fieldName.equalsIgnoreCase("sha1") || fieldName.equalsIgnoreCase("sha256")) {
             fieldValue = fieldValue.toLowerCase();
         }
-        
+
         return fieldValue;
     }
-    
+
     public Map<String,String> getSecurityMarkingFieldDomainMap() {
         return Collections.unmodifiableMap(eventSecurityMarkingFieldDomainMap);
     }
-    
+
     public String getEventDataTypeFieldName() {
         return eventDataTypeFieldName;
     }

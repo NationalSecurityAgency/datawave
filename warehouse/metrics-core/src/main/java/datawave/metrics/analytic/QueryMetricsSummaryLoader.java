@@ -10,11 +10,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import datawave.metrics.config.MetricsConfig;
-import datawave.metrics.mapreduce.util.JobSetupUtil;
-import datawave.metrics.util.Connections;
-import datawave.util.time.DateHelper;
-
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
@@ -36,6 +31,11 @@ import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.apache.log4j.Logger;
 
+import datawave.metrics.config.MetricsConfig;
+import datawave.metrics.mapreduce.util.JobSetupUtil;
+import datawave.metrics.util.Connections;
+import datawave.util.time.DateHelper;
+
 /**
  * This MapReduce job computes a by-day summary of query metrics.
  */
@@ -50,39 +50,39 @@ public class QueryMetricsSummaryLoader extends Configured implements Tool {
     private static final String ERROR_MESSAGE = "ERROR_MESSAGE";
     private static final String CREATE_DATE = "CREATE_DATE";
     private static final String BEGIN_DATE = "BEGIN_DATE";
-    
+
     private static final String QUERY_METRICS_REGEX = "^querymetrics.*";
-    
+
     /**
      * Read information from the sharded query metrics table and output it in our daily metrics summary format.
      */
     public static class QueryMetricsMapper extends Mapper<Key,Value,Key,Value> {
-        
+
         private final HashSet<String> uniqueUsers = new HashSet<>();
-        
+
         private boolean useHourlyPrecision = false;
-        
+
         private Text prevRow = null;
         private Text prevCF = null;
-        
+
         private final List<Key> currentQueryMetric = new ArrayList<>();
         private Text currentRow = new Text();
         private Text currentCF = new Text();
         private DateTimeFormatter deltaDtf;
-        
+
         @Override
         protected void setup(Mapper<Key,Value,Key,Value>.Context context) throws IOException, InterruptedException {
             super.setup(context);
             useHourlyPrecision = HourlyPrecisionHelper.checkForHourlyPrecisionOption(context.getConfiguration(), log);
             deltaDtf = DateTimeFormatter.ofPattern("yyyyMMdd HHmmss");
         }
-        
+
         @Override
         protected void map(Key key, Value value, Context context) throws IOException, InterruptedException {
-            
+
             currentRow = key.getRow();
             currentCF = key.getColumnFamily();
-            
+
             if (prevRow == null) {
                 // first
                 prevRow = currentRow;
@@ -91,24 +91,24 @@ public class QueryMetricsSummaryLoader extends Configured implements Tool {
             } else if (!currentCF.equals(prevCF) || !currentRow.equals(prevRow)) {
                 // Query metric is finished process last
                 processQueryMetric(context);
-                
+
                 // Start on next query metric
                 currentQueryMetric.clear();
                 prevRow = currentRow;
                 prevCF = currentCF;
             }
-            
+
             currentQueryMetric.add(key);
         }
-        
+
         @Override
         protected void cleanup(Context context) throws IOException, InterruptedException {
             super.cleanup(context);
-            
+
             // Process the final query metric
             processQueryMetric(context);
         }
-        
+
         private String getTimeUnit(Key key) {
             if (useHourlyPrecision) {
                 return DateHelper.formatToHour(key.getTimestamp());
@@ -117,31 +117,31 @@ public class QueryMetricsSummaryLoader extends Configured implements Tool {
                 return new String(row.getBytes(), 0, row.find("_"));
             }
         }
-        
+
         private void processQueryMetric(Context context) throws IOException, InterruptedException {
-            
+
             // Metric fields
             String queryLogic = null;
             long elapsedTimeMs = 0L;
-            
+
             Text cq = new Text();
             boolean errorReported = false;
             String outRow = null;
             String beginDate = null;
             String createDate = null;
-            
+
             for (Key key : currentQueryMetric) {
                 if (outRow == null) { // First
                     outRow = getTimeUnit(key);
                 }
-                
+
                 key.getColumnQualifier(cq);
                 String[] cqPair = cq.toString().split("\0");
-                
+
                 if (cqPair.length == 2) {
                     String field = cqPair[0];
                     String fieldValue = cqPair[1];
-                    
+
                     switch (field) {
                         case USER:
                             if (!uniqueUsers.contains(fieldValue)) {
@@ -158,9 +158,10 @@ public class QueryMetricsSummaryLoader extends Configured implements Tool {
                                     context.write(makeKey(outRow, QueryMetricsColumns.QUERY_RESULT_COUNT_CF, QueryMetricsColumns.TOTAL_CQ),
                                                     makeValue(numResults));
                                     context.write(makeKey(outRow, QueryMetricsColumns.QUERIES_EXECUTED_CF, QueryMetricsColumns.PRODUCTIVE_CQ), makeValue(1));
-                                    
+
                                 } else {
-                                    context.write(makeKey(outRow, QueryMetricsColumns.QUERIES_EXECUTED_CF, QueryMetricsColumns.NON_PRODUCTIVE_CQ), makeValue(1));
+                                    context.write(makeKey(outRow, QueryMetricsColumns.QUERIES_EXECUTED_CF, QueryMetricsColumns.NON_PRODUCTIVE_CQ),
+                                                    makeValue(1));
                                 }
                                 context.write(makeKey(outRow, QueryMetricsColumns.QUERIES_EXECUTED_CF, QueryMetricsColumns.TOTAL_CQ), makeValue(1));
                             } catch (NumberFormatException nfe) {
@@ -175,7 +176,7 @@ public class QueryMetricsSummaryLoader extends Configured implements Tool {
                             } catch (NumberFormatException nfe) {
                                 log.error("Failed to parse number for QUERY_RESPONSE_TIME_MS =>" + fieldValue);
                             }
-                            
+
                             break;
                         case WS_HOST:
                             context.write(makeKey(outRow, QueryMetricsColumns.WEB_SERVER_HOST, fieldValue), makeValue(1));
@@ -192,7 +193,7 @@ public class QueryMetricsSummaryLoader extends Configured implements Tool {
                             if (errorReported) {
                                 break;
                             }
-                            
+
                             context.write(makeKey(outRow, QueryMetricsColumns.QUERIES_EXECUTED_CF, QueryMetricsColumns.ERROR_CQ), makeValue(1));
                             errorReported = true;
                             break;
@@ -203,13 +204,13 @@ public class QueryMetricsSummaryLoader extends Configured implements Tool {
                             createDate = fieldValue;
                             break;
                     }
-                    
+
                 } else {
                     log.error("Invalid key/value pair in column qualifier. " + cq);
                     return;
                 }
             }
-            
+
             if (queryLogic != null && !queryLogic.isEmpty()) {
                 String field = QueryMetricsColumns.QUERY_RESPONSE_TIME_MS_CF + "\0" + queryLogic.toLowerCase();
                 context.write(makeKey(outRow, field, MetricsDailySummaryReducer.STATS_METRIC_VALUE), makeValue(elapsedTimeMs));
@@ -223,51 +224,51 @@ public class QueryMetricsSummaryLoader extends Configured implements Tool {
                 LocalDateTime createDateTime = LocalDateTime.parse(createDate, deltaDtf);
                 long days = ChronoUnit.DAYS.between(beginDateTime, createDateTime);
                 String label = "DAYS_" + days;
-                
+
                 context.write(makeKey(outRow, QueryMetricsColumns.QUERY_DATA_ACCESS_AGE_CF, label), makeValue(1));
             }
         }
-        
+
         private Key makeKey(String row, String cf, String cq) {
             return new Key(row, cf, cq);
         }
-        
+
         private Value makeValue(String value) {
             return new Value(value.getBytes());
         }
-        
+
         private Value makeValue(long value) {
             return makeValue(Long.toString(value));
         }
     }
-    
+
     @Override
     public int run(String[] args) throws Exception {
         Configuration conf = JobSetupUtil.configure(args, getConf(), log);
-        
+
         JobSetupUtil.printConfig(getConf(), log);
-        
+
         Job job = Job.getInstance(conf);
         Configuration jconf = job.getConfiguration();
         job.setJarByClass(this.getClass());
-        
+
         boolean useHourlyPrecision = Boolean.valueOf(jconf.get(MetricsConfig.USE_HOURLY_PRECISION, MetricsConfig.DEFAULT_USE_HOURLY_PRECISION));
-        
+
         if (useHourlyPrecision) {
             job.setJobName("QueryMetricsSummaries (hourly)");
         } else {
             job.setJobName("QueryMetricsSummaries");
         }
-        
+
         try {
             Connections.initTables(conf);
         } catch (AccumuloException | AccumuloSecurityException e) {
             throw new IOException(e);
         }
-        
+
         String inputTable = jconf.get(MetricsConfig.QUERY_METRICS_EVENT_TABLE, MetricsConfig.DEFAULT_QUERY_METRICS_EVENT_TABLE);
         String outputTable = HourlyPrecisionHelper.getOutputTable(jconf, useHourlyPrecision);
-        
+
         String userName = jconf.get(MetricsConfig.WAREHOUSE_USERNAME);
         String password = jconf.get(MetricsConfig.WAREHOUSE_PASSWORD);
         String instance = jconf.get(MetricsConfig.WAREHOUSE_INSTANCE);
@@ -280,40 +281,45 @@ public class QueryMetricsSummaryLoader extends Configured implements Tool {
         Range timeRange = JobSetupUtil.computeTimeRange(jconf, log);
         long delta = Long.parseLong(timeRange.getEndKey().getRow().toString()) - Long.parseLong(timeRange.getStartKey().getRow().toString());
         int numDays = (int) Math.max(1, delta / TimeUnit.DAYS.toMillis(1));
-        
+
         job.setMapperClass(QueryMetricsMapper.class);
         job.setMapOutputKeyClass(Key.class);
         job.setMapOutputValueClass(Value.class);
         job.setInputFormatClass(AccumuloInputFormat.class);
-        
+
         AccumuloInputFormat.setConnectorInfo(job, userName, new PasswordToken(password));
         AccumuloInputFormat.setZooKeeperInstance(job, ClientConfiguration.loadDefault().withInstance(instance).withZkHosts(zookeepers));
         AccumuloInputFormat.setRanges(job, dayRanges);
         AccumuloInputFormat.setAutoAdjustRanges(job, false);
         AccumuloInputFormat.setInputTableName(job, inputTable);
         AccumuloInputFormat.setScanAuthorizations(job, auths);
-        
+
         IteratorSetting regex = new IteratorSetting(50, RegExFilter.class);
         regex.addOption(RegExFilter.COLF_REGEX, QUERY_METRICS_REGEX);
         AccumuloInputFormat.addIterator(job, regex);
-        
+
         // Ensure all data for a day goes to the same reducer so that we aggregate it correctly before sending to Accumulo
         RowPartitioner.configureJob(job);
-        
+
         // Configure the reducer and output format to write out our metrics
         MetricsDailySummaryReducer.configureJob(job, numDays, jconf.get(MetricsConfig.INSTANCE), jconf.get(MetricsConfig.ZOOKEEPERS),
                         jconf.get(MetricsConfig.USER), jconf.get(MetricsConfig.PASS), outputTable);
-        
+
         job.submit();
         JobSetupUtil.changeJobPriority(job, log);
-        
+
         job.waitForCompletion(true);
-        
+
         return 0;
     }
-    
+
     /**
      * Expects to receive args in the order of [config opts] [dates] ... where [dates] are the last two
+     *
+     * @param args
+     *            the string arguments
+     * @throws Exception
+     *             if there is an issue
      */
     public static void main(String[] args) throws Exception {
         try {
@@ -322,7 +328,7 @@ public class QueryMetricsSummaryLoader extends Configured implements Tool {
             e.printStackTrace(); // Called from main()
         }
     }
-    
+
     public static class QueryMetricsColumns {
         public static final String ERROR_CQ = "ERROR";
         public static final String ERROR_CODE_CQ = "ERROR_CODE";
@@ -336,8 +342,8 @@ public class QueryMetricsSummaryLoader extends Configured implements Tool {
         public static final String TOTAL_CQ = "TOTAL";
         public static final String QUERY_USERS_CF = "QUERY_USERS";
         public static final String QUERY_DATA_ACCESS_AGE_CF = "QUERY_DATA_ACCESS_AGE";
-        
+
         private QueryMetricsColumns() {}
-        
+
     }
 }

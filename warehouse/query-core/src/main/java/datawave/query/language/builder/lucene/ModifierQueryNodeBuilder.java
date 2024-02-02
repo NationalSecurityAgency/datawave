@@ -16,7 +16,6 @@ package datawave.query.language.builder.lucene;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 import org.apache.lucene.queryparser.flexible.core.QueryNodeException;
 import org.apache.lucene.queryparser.flexible.core.builders.QueryBuilder;
 import org.apache.lucene.queryparser.flexible.core.builders.QueryTreeBuilder;
@@ -28,12 +27,13 @@ import org.apache.lucene.search.Query;
  * Builds no object, it only returns the {@link Query} object set on the {@link ModifierQueryNode} object using a
  * {@link QueryTreeBuilder#QUERY_TREE_BUILDER_TAGID} tag.
  */
+@Deprecated
 public class ModifierQueryNodeBuilder implements QueryBuilder {
-    
+
     public datawave.query.language.tree.QueryNode build(QueryNode queryNode) throws QueryNodeException {
         ModifierQueryNode modifierQueryNode = (ModifierQueryNode) queryNode;
-        
+
         return (datawave.query.language.tree.QueryNode) (modifierQueryNode).getChild().getTag(QueryTreeBuilder.QUERY_TREE_BUILDER_TAGID);
-        
+
     }
 }

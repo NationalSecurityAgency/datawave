@@ -11,5 +11,4 @@ message List {
   required uint64 COUNT = 2;
   repeated string UID = 3;
   repeated string REMOVEDUID = 4;
-  repeated string QUARANTINEUID =5;
 }

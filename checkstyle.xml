@@ -5,7 +5,7 @@
   <module name="TreeWalker">
     <!--check that only Accumulo 1.9 public APIs are imported-->
     <module name="RegexpSinglelineJava">
-      <property name="format" value="import\s+org\.apache\.accumulo\.(.*\.(impl|thrift|crypto)\..*|(?!core|minicluster|testing).*|core\.(?!client|data|security|iterators).*)"/>
+      <property name="format" value="import\s+org\.apache\.accumulo\.(.*\.(impl|thrift|crypto)\..*|(?!core|minicluster|testing).*|core\.(?!client|conf|data|security|spi|iterators).*)"/>
       <property name="ignoreComments" value="true" />
       <property name="message" value="Accumulo non-public classes imported" />
     </module>

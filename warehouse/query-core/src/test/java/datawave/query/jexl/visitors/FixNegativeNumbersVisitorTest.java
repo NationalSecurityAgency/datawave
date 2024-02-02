@@ -1,57 +1,33 @@
 package datawave.query.jexl.visitors;
 
-import datawave.query.jexl.JexlASTHelper;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ASTNumberLiteral;
-import org.apache.commons.jexl2.parser.ASTUnaryMinusNode;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.ParseException;
-import org.apache.log4j.Logger;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTNumberLiteral;
+import org.apache.commons.jexl3.parser.ASTUnaryMinusNode;
+import org.apache.commons.jexl3.parser.ParseException;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.test.JexlNodeAssert;
 
 public class FixNegativeNumbersVisitorTest {
-    
-    private static final Logger log = Logger.getLogger(FixNegativeNumbersVisitorTest.class);
-    
+
     @Test
     public void testUnaryMinusModeConvertedToNumberLiteral() throws ParseException {
         String query = "FOO == -1";
         ASTJexlScript queryScript = JexlASTHelper.parseJexlQuery(query);
-        
-        // Verify the script was parsed with an unary minus node.
-        assertTrue(queryScript.jjtGetChild(0).jjtGetChild(1) instanceof ASTUnaryMinusNode);
-        
+
+        // Verify the script was parsed with a single unary minus node.
+        JexlNodeAssert.assertThat(queryScript).child(0).child(1).isInstanceOf(ASTUnaryMinusNode.class);
+
         ASTJexlScript fixed = FixNegativeNumbersVisitor.fix(queryScript);
-        JexlNode convertedNode = fixed.jjtGetChild(0).jjtGetChild(1);
-        
+
         // Verify the unary minus mode was converted to a number literal.
-        assertTrue(convertedNode instanceof ASTNumberLiteral);
-        assertEquals("-1", convertedNode.jjtGetValue());
-        assertEquals(query, JexlStringBuildingVisitor.buildQuery(fixed));
-        
-        // Verify the resulting script has a valid lineage.
-        assertLineage(fixed);
-        
+        JexlNodeAssert.assertThat(fixed).child(0).child(1).isInstanceOf(ASTNumberLiteral.class).hasImage("-1");
+
+        // Verify the resulting script has a valid lineage and the same query string.
+        JexlNodeAssert.assertThat(fixed).hasExactQueryString(query).hasValidLineage();
+
         // Verify the original script was not modified, and has a valid lineage.
-        assertScriptEquality(queryScript, query);
-        assertLineage(queryScript);
-    }
-    
-    private void assertScriptEquality(ASTJexlScript actual, String expected) throws ParseException {
-        ASTJexlScript expectedScript = JexlASTHelper.parseJexlQuery(expected);
-        TreeEqualityVisitor.Reason reason = new TreeEqualityVisitor.Reason();
-        boolean equal = TreeEqualityVisitor.isEqual(expectedScript, actual, reason);
-        if (!equal) {
-            log.error("Expected " + PrintingVisitor.formattedQueryString(expectedScript));
-            log.error("Actual " + PrintingVisitor.formattedQueryString(actual));
-        }
-        assertTrue(reason.reason, equal);
-    }
-    
-    private void assertLineage(JexlNode node) {
-        assertTrue(JexlASTHelper.validateLineage(node, true));
+        JexlNodeAssert.assertThat(queryScript).isEqualTo(query).hasValidLineage();
     }
 }

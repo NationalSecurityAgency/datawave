@@ -37,6 +37,7 @@
         <reducers>${BULK_INGEST_REDUCERS}</reducers>
         <script>bin/ingest/bulk-ingest.sh</script>
         <fileListMarker>***FILE_LIST***</fileListMarker>
+        <collectMetrics>${BULK_FLAG_COLLECT_METRICS}</collectMetrics>
     </defaultCfg>
     <sleepMilliSecs>5000</sleepMilliSecs>
     <timeoutMilliSecs>${BULK_FLAG_TIMEOUT_MS}</timeoutMilliSecs>

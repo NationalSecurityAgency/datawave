@@ -1,16 +1,13 @@
 package datawave.ingest.json.mr.handler;
 
-import datawave.ingest.json.config.helper.JsonDataTypeHelper;
-import datawave.ingest.json.config.helper.JsonIngestHelper;
-import datawave.ingest.json.mr.input.JsonRecordReader;
-import datawave.ingest.data.RawRecordContainer;
-import datawave.ingest.data.TypeRegistry;
-import datawave.ingest.data.config.ingest.ContentBaseIngestHelper;
-import datawave.ingest.mapreduce.handler.edge.ProtobufEdgeDataTypeHandler;
-import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
-import datawave.ingest.mapreduce.handler.tokenize.ContentIndexingColumnBasedHandler;
-import datawave.ingest.mapreduce.job.BulkIngestKey;
-import datawave.util.TableName;
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Enumeration;
+import java.util.TimeZone;
+
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
@@ -29,26 +26,30 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Enumeration;
-import java.util.TimeZone;
+import datawave.ingest.data.RawRecordContainer;
+import datawave.ingest.data.TypeRegistry;
+import datawave.ingest.data.config.ingest.ContentBaseIngestHelper;
+import datawave.ingest.json.config.helper.JsonDataTypeHelper;
+import datawave.ingest.json.config.helper.JsonIngestHelper;
+import datawave.ingest.json.mr.input.JsonRecordReader;
+import datawave.ingest.mapreduce.handler.edge.ProtobufEdgeDataTypeHandler;
+import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
+import datawave.ingest.mapreduce.handler.tokenize.ContentIndexingColumnBasedHandler;
+import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.util.TableName;
 
 public class ContentJsonColumnBasedHandlerTest {
-    
+
     /**
      * If you want to print keys on success for whatever reason, set to false
      */
     private static final boolean PRINT_GENERATED_KEYS_ONLY_ON_FAIL = true;
-    
+
     private Configuration conf;
     private static Path edgeKeyVersionCachePath = Paths.get(System.getProperty("user.dir"), "edge-key-version.txt");
     private static Logger log = Logger.getLogger(ContentJsonColumnBasedHandlerTest.class);
     private static Enumeration rootAppenders = Logger.getRootLogger().getAllAppenders();
-    
+
     @BeforeClass
     public static void setupSystemSettings() throws Exception {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
@@ -60,7 +61,7 @@ public class ContentJsonColumnBasedHandlerTest {
             log.fatal("Could not create " + edgeKeyVersionCachePath);
         }
     }
-    
+
     @AfterClass
     public static void tearDown() {
         Logger.getRootLogger().removeAllAppenders();
@@ -74,7 +75,7 @@ public class ContentJsonColumnBasedHandlerTest {
             log.error("Could not delete " + edgeKeyVersionCachePath);
         }
     }
-    
+
     private JsonRecordReader getJsonRecordReader(String file) throws IOException, URISyntaxException {
         InputSplit split = ColumnBasedHandlerTestUtil.getSplit(file);
         TaskAttemptContext ctx = new TaskAttemptContextImpl(conf, new TaskAttemptID());
@@ -85,23 +86,25 @@ public class ContentJsonColumnBasedHandlerTest {
         reader.initialize(split, ctx);
         return reader;
     }
-    
+
     private static void enableLogging() {
         Logger.getRootLogger().removeAllAppenders();
-        Logger.getRootLogger().addAppender(new ConsoleAppender(new PatternLayout("%p [%c{1}] %m%n")));
+        ConsoleAppender ca = new ConsoleAppender();
+        ca.setLayout(new PatternLayout("%p [%c{1}] %m%n"));
+        Logger.getRootLogger().addAppender(ca);
         log.setLevel(Level.TRACE);
         Logger.getLogger(ColumnBasedHandlerTestUtil.class).setLevel(Level.TRACE);
         Logger.getLogger(ContentIndexingColumnBasedHandler.class).setLevel(Level.TRACE);
         Logger.getLogger(ContentBaseIngestHelper.class).setLevel(Level.TRACE);
     }
-    
+
     private static void disableLogging() {
         log.setLevel(Level.OFF);
         Logger.getLogger(ColumnBasedHandlerTestUtil.class).setLevel(Level.OFF);
         Logger.getLogger(ContentIndexingColumnBasedHandler.class).setLevel(Level.OFF);
         Logger.getLogger(ContentBaseIngestHelper.class).setLevel(Level.OFF);
     }
-    
+
     @Before
     public void setup() {
         TypeRegistry.reset();
@@ -111,7 +114,7 @@ public class ContentJsonColumnBasedHandlerTest {
         conf.set(ShardedDataTypeHandler.SHARD_GIDX_TNAME, TableName.SHARD_INDEX);
         conf.set(ShardedDataTypeHandler.SHARD_GRIDX_TNAME, TableName.SHARD_RINDEX);
     }
-    
+
     @Test
     public void testJsonContentHandlers() throws Exception {
         conf.addResource(ClassLoader.getSystemResource("config/ingest/all-config.xml"));
@@ -121,30 +124,30 @@ public class ContentJsonColumnBasedHandlerTest {
         TypeRegistry.getInstance(conf);
         JsonDataTypeHelper helper = new JsonDataTypeHelper();
         helper.setup(conf);
-        
+
         // Set up the IngestHelper
         JsonIngestHelper ingestHelper = new JsonIngestHelper();
         ingestHelper.setup(conf);
-        
+
         // Set up the ColumnBasedHandler
         TaskAttemptContext context = new TaskAttemptContextImpl(conf, new TaskAttemptID());
         ContentJsonColumnBasedHandler<Text> jsonHandler = new ContentJsonColumnBasedHandler<>();
         jsonHandler.setup(context);
-        
+
         // Set up the Reader
         JsonRecordReader reader = getJsonRecordReader("/input/tvmaze-seinfeld.json");
-        
+
         Assert.assertTrue("First Record did not read properly?", reader.nextKeyValue());
         RawRecordContainer event = reader.getEvent();
         Assert.assertNotNull("Event 1 was null.", event);
         Assert.assertTrue("Event 1 has parsing errors", event.getErrors().isEmpty());
-        
+
         // Set up the edge
         ProtobufEdgeDataTypeHandler<Text,BulkIngestKey,Value> edgeHandler = new ProtobufEdgeDataTypeHandler<>();
         edgeHandler.setup(context);
-        
+
         ColumnBasedHandlerTestUtil.processEvent(jsonHandler, edgeHandler, event, 231, 90, 4, 38, PRINT_GENERATED_KEYS_ONLY_ON_FAIL);
-        
+
         reader.close();
     }
 }

@@ -15,66 +15,66 @@ import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
 
+import datawave.webservice.query.exception.QueryExceptionType;
+import datawave.webservice.result.BaseResponse;
 import io.protostuff.Input;
 import io.protostuff.Message;
 import io.protostuff.Output;
 import io.protostuff.Schema;
-import datawave.webservice.query.exception.QueryExceptionType;
-import datawave.webservice.result.BaseResponse;
 
 @XmlRootElement(name = "MapReduceInfoResponseList")
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class MapReduceInfoResponseList extends BaseResponse implements Serializable, Message<MapReduceInfoResponseList> {
     private static final long serialVersionUID = 1L;
-    
+
     @XmlElementWrapper(name = "MapReduceInfoResponseList")
     @XmlElement(name = "MapReduceInfoResponse")
     List<MapReduceInfoResponse> results = new ArrayList<MapReduceInfoResponse>();
-    
+
     public List<MapReduceInfoResponse> getResults() {
         return results;
     }
-    
+
     public void setResults(List<MapReduceInfoResponse> results) {
         this.results = results;
     }
-    
+
     @Override
     public Schema<MapReduceInfoResponseList> cachedSchema() {
         return SCHEMA;
     }
-    
+
     public static Schema<MapReduceInfoResponseList> getSchema() {
         return SCHEMA;
     }
-    
+
     @XmlTransient
     private static final Schema<MapReduceInfoResponseList> SCHEMA = new Schema<MapReduceInfoResponseList>() {
         // schema methods
-        
+
         public MapReduceInfoResponseList newMessage() {
             return new MapReduceInfoResponseList();
         }
-        
+
         public Class<MapReduceInfoResponseList> typeClass() {
             return MapReduceInfoResponseList.class;
         }
-        
+
         public String messageName() {
             return MapReduceInfoResponseList.class.getSimpleName();
         }
-        
+
         public String messageFullName() {
             return MapReduceInfoResponseList.class.getName();
         }
-        
+
         public boolean isInitialized(MapReduceInfoResponseList message) {
             return true;
         }
-        
+
         public void writeTo(Output output, MapReduceInfoResponseList message) throws IOException {
-            
+
             if (message.getResults() != null) {
                 for (MapReduceInfoResponse response : message.getResults()) {
                     if (null != response) {
@@ -82,9 +82,9 @@ public class MapReduceInfoResponseList extends BaseResponse implements Serializa
                     }
                 }
             }
-            
+
             output.writeUInt64(2, message.getOperationTimeMS(), false);
-            
+
             List<String> messages = message.getMessages();
             if (messages != null) {
                 for (String msg : messages) {
@@ -92,7 +92,7 @@ public class MapReduceInfoResponseList extends BaseResponse implements Serializa
                         output.writeString(3, msg, true);
                 }
             }
-            
+
             List<QueryExceptionType> exceptions = message.getExceptions();
             if (exceptions != null) {
                 for (QueryExceptionType exception : exceptions) {
@@ -100,9 +100,9 @@ public class MapReduceInfoResponseList extends BaseResponse implements Serializa
                         output.writeObject(4, exception, QueryExceptionType.getSchema(), true);
                 }
             }
-            
+
         }
-        
+
         public void mergeFrom(Input input, MapReduceInfoResponseList message) throws IOException {
             List<MapReduceInfoResponse> responses = null;
             LinkedList<QueryExceptionType> exceptions = null;
@@ -135,7 +135,7 @@ public class MapReduceInfoResponseList extends BaseResponse implements Serializa
             if (responses != null)
                 message.setResults(responses);
         }
-        
+
         public String getFieldName(int number) {
             switch (number) {
                 case 1:
@@ -150,12 +150,12 @@ public class MapReduceInfoResponseList extends BaseResponse implements Serializa
                     return null;
             }
         }
-        
+
         public int getFieldNumber(String name) {
             final Integer number = fieldMap.get(name);
             return number == null ? 0 : number.intValue();
         }
-        
+
         final java.util.HashMap<String,Integer> fieldMap = new java.util.HashMap<String,Integer>();
         {
             fieldMap.put("results", 1);
@@ -164,5 +164,5 @@ public class MapReduceInfoResponseList extends BaseResponse implements Serializa
             fieldMap.put("exceptions", 4);
         }
     };
-    
+
 }

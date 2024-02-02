@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.webservices</groupId>
         <artifactId>datawave-ws-parent</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>6.6.0-SNAPSHOT</version>
     </parent>
     <artifactId>datawave-ws-cached-results</artifactId>
     <packaging>ejb</packaging>
@@ -27,6 +27,10 @@
             <artifactId>datawave-core</artifactId>
         </dependency>
         <dependency>
+            <groupId>gov.nsa.datawave.microservice</groupId>
+            <artifactId>query-metric-api</artifactId>
+        </dependency>
+        <dependency>
             <groupId>javax.enterprise</groupId>
             <artifactId>cdi-api</artifactId>
         </dependency>
@@ -36,7 +40,7 @@
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
-            <artifactId>commons-jexl</artifactId>
+            <artifactId>commons-jexl3</artifactId>
         </dependency>
         <dependency>
             <groupId>org.easymock</groupId>
@@ -71,6 +75,12 @@
         <dependency>
             <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-query</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.webservices</groupId>
+            <artifactId>datawave-ws-security</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>

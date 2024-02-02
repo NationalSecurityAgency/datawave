@@ -1,9 +1,24 @@
 package datawave.query;
 
+import static datawave.query.testframework.RawDataManager.AND_OP;
+import static datawave.query.testframework.RawDataManager.EQ_OP;
+import static datawave.query.testframework.RawDataManager.OR_OP;
+import static datawave.query.testframework.RawDataManager.RE_OP;
+import static org.junit.Assert.assertEquals;
+
+import java.util.ArrayList;
+import java.util.Collection;
+
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Test;
+
 import datawave.query.exceptions.DoNotPerformOptimizedQueryException;
 import datawave.query.exceptions.FullTableScansDisallowedException;
 import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods;
-import datawave.query.jexl.visitors.ParallelIndexExpansion;
+import datawave.query.jexl.visitors.RegexIndexExpansionVisitor;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetup;
@@ -15,27 +30,14 @@ import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.FileType;
 import datawave.query.testframework.GenericCityFields;
 import datawave.query.util.AllFieldMetadataHelper;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
-
-import java.util.ArrayList;
-import java.util.Collection;
-
-import static datawave.query.testframework.RawDataManager.AND_OP;
-import static datawave.query.testframework.RawDataManager.EQ_OP;
-import static datawave.query.testframework.RawDataManager.OR_OP;
-import static datawave.query.testframework.RawDataManager.RE_OP;
 
 public class RegexQueryTest extends AbstractFunctionalQuery {
-    
+
     @ClassRule
     public static AccumuloSetup accumuloSetup = new AccumuloSetup();
-    
+
     private static final Logger log = Logger.getLogger(RegexQueryTest.class);
-    
+
     @BeforeClass
     public static void filterSetup() throws Exception {
         Collection<DataTypeHadoopConfig> dataTypes = new ArrayList<>();
@@ -45,15 +47,15 @@ public class RegexQueryTest extends AbstractFunctionalQuery {
         generic.addReverseIndexField(CityField.STATE.name());
         generic.addReverseIndexField(CityField.CONTINENT.name());
         dataTypes.add(new CitiesDataType(CityEntry.generic, generic));
-        
+
         accumuloSetup.setData(FileType.CSV, dataTypes);
         client = accumuloSetup.loadTables(log);
     }
-    
+
     public RegexQueryTest() {
         super(CitiesDataType.getManager());
     }
-    
+
     @Test
     public void testBasic() throws Exception {
         log.info("------  testBasic  ------");
@@ -61,7 +63,7 @@ public class RegexQueryTest extends AbstractFunctionalQuery {
         String query = CityField.CODE.name() + RE_OP + regex;
         runTest(query, query);
     }
-    
+
     @Test
     public void testIndexNoMatch() throws Exception {
         log.info("------  testIndexNoMatch  ------");
@@ -69,7 +71,7 @@ public class RegexQueryTest extends AbstractFunctionalQuery {
         String query = CityField.CODE.name() + RE_OP + regex;
         runTest(query, query);
     }
-    
+
     @Test
     public void testReverse() throws Exception {
         log.info("------  testReverse  ------");
@@ -79,7 +81,7 @@ public class RegexQueryTest extends AbstractFunctionalQuery {
             runTest(query, query);
         }
     }
-    
+
     @Test
     public void testMissingIndex() throws Exception {
         log.info("------  testMissingIndex  ------");
@@ -90,7 +92,7 @@ public class RegexQueryTest extends AbstractFunctionalQuery {
             runTest(query, query);
         }
     }
-    
+
     @Test
     public void testMissingReverseIndex() throws Exception {
         log.info("------  testMissingReverseIndex  ------");
@@ -102,12 +104,12 @@ public class RegexQueryTest extends AbstractFunctionalQuery {
             runTest(query, query);
         }
     }
-    
+
     @Test
     public void testMissingReverseIndexPlus() throws Exception {
         log.info("------  testMissingReverseIndex  ------");
         Logger.getLogger(DefaultQueryPlanner.class).setLevel(Level.DEBUG);
-        Logger.getLogger(ParallelIndexExpansion.class).setLevel(Level.DEBUG);
+        Logger.getLogger(RegexIndexExpansionVisitor.class).setLevel(Level.DEBUG);
         Logger.getLogger(ShardIndexQueryTableStaticMethods.class).setLevel(Level.DEBUG);
         Logger.getLogger(AllFieldMetadataHelper.class).setLevel(Level.DEBUG);
         // should at least match usa, fra, and ita
@@ -118,7 +120,7 @@ public class RegexQueryTest extends AbstractFunctionalQuery {
             runTest(query, query);
         }
     }
-    
+
     @Test
     public void testEqualAndRegex() throws Exception {
         log.info("------  testEqualAndRegex  ------");
@@ -128,7 +130,7 @@ public class RegexQueryTest extends AbstractFunctionalQuery {
             runTest(query, query);
         }
     }
-    
+
     @Test
     public void testQueryThreads() throws Exception {
         log.info("------  testQueryThreads  ------");
@@ -139,7 +141,7 @@ public class RegexQueryTest extends AbstractFunctionalQuery {
             runTest(query, query);
         }
     }
-    
+
     @Test
     public void testBoolean() throws Exception {
         log.info("------  testBoolean  ------");
@@ -151,7 +153,7 @@ public class RegexQueryTest extends AbstractFunctionalQuery {
             runTest(query, query);
         }
     }
-    
+
     @Test
     public void testAndNot() throws Exception {
         log.info("------  testAndNot  ------");
@@ -162,7 +164,15 @@ public class RegexQueryTest extends AbstractFunctionalQuery {
             runTest(query, query);
         }
     }
-    
+
+    @Test
+    public void testAndNotAgain() throws Exception {
+        String query = "(NUM == '2' || NUM == '3') && CITY !~ '.*iSs.*'";
+        String expected = "(NUM == '+aE2' || NUM == '+aE3') && !((_Delayed_ = true) && (CITY =~ '.*iss.*'))";
+        String plan = getPlan(query, false, false);
+        assertEquals(expected, plan);
+    }
+
     @Test
     public void testReluctantZeroOrMoreNoMatch() throws Exception {
         log.info("------  testReluctantZeroOrMoreNoMatch  ------");
@@ -170,7 +180,7 @@ public class RegexQueryTest extends AbstractFunctionalQuery {
         String query = CityField.STATE.name() + RE_OP + regex;
         runTest(query, query);
     }
-    
+
     @Test
     public void testReluctantZeroOrMore() throws Exception {
         log.info("------  testReluctantZeroOrMore  ------");
@@ -178,7 +188,7 @@ public class RegexQueryTest extends AbstractFunctionalQuery {
         String query = CityField.STATE.name() + RE_OP + regex;
         runTest(query, query);
     }
-    
+
     @Test
     public void testInfinite() throws Exception {
         log.info("------  testInfinite  ------");
@@ -188,7 +198,7 @@ public class RegexQueryTest extends AbstractFunctionalQuery {
             runTest(query, query);
         }
     }
-    
+
     @Test
     public void testFullTableScan() throws Exception {
         String regex = "'.*uro.*'";
@@ -196,7 +206,7 @@ public class RegexQueryTest extends AbstractFunctionalQuery {
         logic.setFullTableScanEnabled(true);
         runTest(query, query);
     }
-    
+
     // THE EVENT VALUE: '\Edge-City-1'
     // EQUALS QUERY: CITY == '\Edge-City-1'
     // REGEX QUERY: CITY =~ '\\Edge-City-1'
@@ -207,7 +217,7 @@ public class RegexQueryTest extends AbstractFunctionalQuery {
         String query = CityField.CITY.name() + EQ_OP + term;
         runTest(query, query);
     }
-    
+
     // THE EVENT VALUE: '\Edge-City-1'
     // EQUALS QUERY: CITY == '\\Edge-City-1'
     // REGEX QUERY: CITY =~ '\\Edge-City-1'
@@ -218,7 +228,7 @@ public class RegexQueryTest extends AbstractFunctionalQuery {
         String query = CityField.CITY.name() + RE_OP + term;
         runTest(query, query);
     }
-    
+
     // THE EVENT VALUE: '\\Edge-City-2'
     // EQUALS QUERY: CITY == '\\\\Edge-City-2'
     // REGEX QUERY: CITY =~ '\\\\Edge-City-2'
@@ -229,7 +239,7 @@ public class RegexQueryTest extends AbstractFunctionalQuery {
         String query = CityField.CITY.name() + EQ_OP + term;
         runTest(query, query);
     }
-    
+
     // THE EVENT VALUE: '\\Edge-City-2'
     // EQUALS QUERY: CITY == '\\\\Edge-City-2'
     // REGEX QUERY: CITY =~ '\\\\Edge-City-2'
@@ -240,7 +250,7 @@ public class RegexQueryTest extends AbstractFunctionalQuery {
         String query = CityField.CITY.name() + RE_OP + term;
         runTest(query, query);
     }
-    
+
     // THE EVENT VALUE: '\\\Edge-City-3'
     // EQUALS QUERY: CITY == '\\\\\\Edge-City-2'
     // REGEX QUERY: CITY =~ '\\\\\\Edge-City-2'
@@ -251,7 +261,7 @@ public class RegexQueryTest extends AbstractFunctionalQuery {
         String query = CityField.CITY.name() + EQ_OP + term;
         runTest(query, query);
     }
-    
+
     // THE EVENT VALUE: '\\\Edge-City-3'
     // EQUALS QUERY: CITY == '\\\\\\Edge-City-2'
     // REGEX QUERY: CITY =~ '\\\\\\Edge-City-2'
@@ -262,7 +272,7 @@ public class RegexQueryTest extends AbstractFunctionalQuery {
         String query = CityField.CITY.name() + RE_OP + term;
         runTest(query, query);
     }
-    
+
     // THE EVENT VALUE: 'Edge-City-4\'
     // EQUALS QUERY: CITY == 'Edge-City-2\\'
     // REGEX QUERY: CITY =~ 'Edge-City-2\\'
@@ -273,7 +283,7 @@ public class RegexQueryTest extends AbstractFunctionalQuery {
         String query = CityField.CITY.name() + EQ_OP + term;
         runTest(query, query);
     }
-    
+
     // THE EVENT VALUE: 'Edge-City-4\'
     // EQUALS QUERY: CITY == 'Edge-City-2\\'
     // REGEX QUERY: CITY =~ 'Edge-City-2\\'
@@ -284,7 +294,7 @@ public class RegexQueryTest extends AbstractFunctionalQuery {
         String query = CityField.CITY.name() + RE_OP + term;
         runTest(query, query);
     }
-    
+
     // THE EVENT VALUE: 'Edge-City-5\\'
     // EQUALS QUERY: CITY == 'Edge-City-5\\\\'
     // REGEX QUERY: CITY =~ 'Edge-City-5\\\\'
@@ -295,7 +305,7 @@ public class RegexQueryTest extends AbstractFunctionalQuery {
         String query = CityField.CITY.name() + EQ_OP + term;
         runTest(query, query);
     }
-    
+
     // THE EVENT VALUE: 'Edge-City-5\\'
     // EQUALS QUERY: CITY == 'Edge-City-5\\\\'
     // REGEX QUERY: CITY =~ 'Edge-City-5\\\\'
@@ -306,7 +316,7 @@ public class RegexQueryTest extends AbstractFunctionalQuery {
         String query = CityField.CITY.name() + RE_OP + term;
         runTest(query, query);
     }
-    
+
     // THE EVENT VALUE: 'Edge-City-6\\\'
     // EQUALS QUERY: CITY == 'Edge-City-6\\\\\\'
     // REGEX QUERY: CITY =~ 'Edge-City-6\\\\\\'
@@ -317,7 +327,7 @@ public class RegexQueryTest extends AbstractFunctionalQuery {
         String query = CityField.CITY.name() + EQ_OP + term;
         runTest(query, query);
     }
-    
+
     // THE EVENT VALUE: 'Edge-City-6\\\'
     // EQUALS QUERY: CITY == 'Edge-City-6\\\\\\'
     // REGEX QUERY: CITY =~ 'Edge-City-6\\\\\\'
@@ -328,7 +338,7 @@ public class RegexQueryTest extends AbstractFunctionalQuery {
         String query = CityField.CITY.name() + RE_OP + term;
         runTest(query, query);
     }
-    
+
     // THE EVENT VALUE: 'Edge-C\ity-7'
     // EQUALS QUERY: CITY == 'Edge-C\\ity-7'
     // REGEX QUERY: CITY =~ 'Edge-C\\ity-7'
@@ -339,7 +349,7 @@ public class RegexQueryTest extends AbstractFunctionalQuery {
         String query = CityField.CITY.name() + EQ_OP + term;
         runTest(query, query);
     }
-    
+
     // THE EVENT VALUE: 'Edge-C\ity-7'
     // EQUALS QUERY: CITY == 'Edge-C\\ity-7'
     // REGEX QUERY: CITY =~ 'Edge-C\\ity-7'
@@ -350,7 +360,7 @@ public class RegexQueryTest extends AbstractFunctionalQuery {
         String query = CityField.CITY.name() + RE_OP + term;
         runTest(query, query);
     }
-    
+
     // THE EVENT VALUE: 'Edge-C\\ity-8'
     // EQUALS QUERY: CITY == 'Edge-C\\\\ity-8'
     // REGEX QUERY: CITY =~ 'Edge-C\\\\ity-8'
@@ -361,7 +371,7 @@ public class RegexQueryTest extends AbstractFunctionalQuery {
         String query = CityField.CITY.name() + EQ_OP + term;
         runTest(query, query);
     }
-    
+
     // THE EVENT VALUE: 'Edge-C\\ity-8'
     // EQUALS QUERY: CITY == 'Edge-C\\\\ity-8'
     // REGEX QUERY: CITY =~ 'Edge-C\\\\ity-8'
@@ -372,7 +382,7 @@ public class RegexQueryTest extends AbstractFunctionalQuery {
         String query = CityField.CITY.name() + RE_OP + term;
         runTest(query, query);
     }
-    
+
     // THE EVENT VALUE: 'Edge-C\\\ity-9'
     // EQUALS QUERY: CITY == 'Edge-C\\\\\\ity-9'
     // REGEX QUERY: CITY =~ 'Edge-C\\\\\\ity-9'
@@ -383,7 +393,7 @@ public class RegexQueryTest extends AbstractFunctionalQuery {
         String query = CityField.CITY.name() + EQ_OP + term;
         runTest(query, query);
     }
-    
+
     // THE EVENT VALUE: 'Edge-C\\\ity-9'
     // EQUALS QUERY: CITY == 'Edge-C\\\\\\ity-9'
     // REGEX QUERY: CITY =~ 'Edge-C\\\\\\ity-9'
@@ -394,7 +404,7 @@ public class RegexQueryTest extends AbstractFunctionalQuery {
         String query = CityField.CITY.name() + RE_OP + term;
         runTest(query, query);
     }
-    
+
     // ============================================
     // error conditions
     @Test(expected = FullTableScansDisallowedException.class)
@@ -403,21 +413,21 @@ public class RegexQueryTest extends AbstractFunctionalQuery {
         String query = CityField.STATE.name() + RE_OP + regex;
         runTest(query, query);
     }
-    
+
     @Test(expected = FullTableScansDisallowedException.class)
     public void testErrorFullTableScan() throws Exception {
         String regex = "'.*uro.*'";
         String query = CityField.CONTINENT.name() + RE_OP + regex;
         runTest(query, query);
     }
-    
+
     @Test(expected = FullTableScansDisallowedException.class)
     public void testErrorInfinite() throws Exception {
         String regex = "'.*'";
         String query = CityField.STATE.name() + RE_OP + regex;
         runTest(query, query);
     }
-    
+
     @Test(expected = DoNotPerformOptimizedQueryException.class)
     public void testErrorFullTableInfinite() throws Exception {
         String regex = "'.*'";
@@ -425,7 +435,7 @@ public class RegexQueryTest extends AbstractFunctionalQuery {
         logic.setFullTableScanEnabled(true);
         runTest(query, query);
     }
-    
+
     @Test(expected = FullTableScansDisallowedException.class)
     public void testErrorMissingReverseIndex() throws Exception {
         log.info("------  testMissingReverseIndex  ------");
@@ -437,7 +447,7 @@ public class RegexQueryTest extends AbstractFunctionalQuery {
             runTest(query, query);
         }
     }
-    
+
     // ============================================
     // implemented abstract methods
     protected void testInit() {

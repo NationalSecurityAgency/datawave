@@ -37,6 +37,7 @@
         <maxFlags>${INGEST_MAX_LIVE_BLOCKS_PER_JOB}</maxFlags>
         <script>bin/ingest/live-ingest.sh</script>
         <fileListMarker>***FILE_LIST***</fileListMarker>
+        <collectMetrics>${LIVE_FLAG_COLLECT_METRICS}</collectMetrics>
    </defaultCfg>
    <timeoutMilliSecs>${LIVE_FLAG_TIMEOUT_MS}</timeoutMilliSecs>
    <baseHDFSDir>${HDFS_BASE_DIR}</baseHDFSDir>

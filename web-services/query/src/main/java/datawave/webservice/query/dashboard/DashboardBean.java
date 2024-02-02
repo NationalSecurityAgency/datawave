@@ -1,22 +1,12 @@
 package datawave.webservice.query.dashboard;
 
-import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
-import datawave.interceptor.ResponseInterceptor;
-import datawave.security.authorization.DatawavePrincipal;
-import datawave.security.util.AuthorizationsUtil;
-import datawave.security.util.ScannerHelper;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
-import datawave.webservice.common.extjs.ExtJsResponse;
-import datawave.webservice.query.runner.QueryExecutorBean;
-import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.client.Scanner;
-import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Range;
-import org.apache.accumulo.core.security.Authorizations;
-import org.apache.deltaspike.core.api.exclude.Exclude;
-import org.apache.log4j.Logger;
-import org.jboss.resteasy.annotations.GZIP;
+import java.security.Principal;
+import java.time.Instant;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 import javax.annotation.Resource;
 import javax.annotation.security.DeclareRoles;
@@ -31,13 +21,25 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
-import java.security.Principal;
-import java.time.Instant;
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+
+import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.accumulo.core.client.Scanner;
+import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.security.Authorizations;
+import org.apache.deltaspike.core.api.exclude.Exclude;
+import org.apache.log4j.Logger;
+import org.jboss.resteasy.annotations.GZIP;
+
+import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
+import datawave.interceptor.ResponseInterceptor;
+import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.util.ScannerHelper;
+import datawave.security.util.WSAuthorizationsUtil;
+import datawave.webservice.common.connection.AccumuloConnectionFactory;
+import datawave.webservice.common.extjs.ExtJsResponse;
+import datawave.webservice.query.runner.QueryExecutorBean;
 
 @Path("/Query/Metrics/dashboard")
 @GZIP
@@ -48,7 +50,7 @@ import java.util.Set;
 @DeclareRoles("AuthorizedUser")
 @Exclude(ifProjectStage = DatawaveEmbeddedProjectStageHolder.DatawaveEmbedded.class)
 public class DashboardBean {
-    
+
     private static final Logger log = Logger.getLogger(DashboardBean.class);
     private static final long MS_IN_12_HRS = 43_200_000;// timestamps seem to be about 11 hours behind
     private static final String TABLE_NAME_JMC = "DpsJmcLogs";
@@ -58,7 +60,7 @@ public class DashboardBean {
     private QueryExecutorBean queryExecutor;
     @Resource
     protected EJBContext ctx;
-    
+
     @Path("/dpsjmc/heartbeat")
     @GET
     public boolean getHeartbeat() throws Exception {
@@ -74,7 +76,7 @@ public class DashboardBean {
             }
         }
     }
-    
+
     @GET
     @Path("/stats")
     @Interceptors(ResponseInterceptor.class)
@@ -87,9 +89,9 @@ public class DashboardBean {
         if (principal == null) {
             auths = "ALL";
         } else {
-            auths = AuthorizationsUtil.buildAuthorizationString(principal.getAuthorizations());
+            auths = WSAuthorizationsUtil.buildAuthorizationString(principal.getAuthorizations());
         }
-        
+
         ExtJsResponse<DashboardSummary> summary = null;
         try {
             summary = DashboardQuery.createQuery(queryExecutor, auths, Date.from(start), Date.from(end), Date.from(now));
@@ -101,33 +103,33 @@ public class DashboardBean {
                 queryExecutor.close(summary.getQueryId());
             }
         }
-        
+
         return summary;
     }
-    
+
     private DatawavePrincipal getPrincipal() {
         Principal p = ctx.getCallerPrincipal();
-        
+
         if (p instanceof DatawavePrincipal) {
             return (DatawavePrincipal) p;
         }
-        
+
         log.warn("Principal is not of the correct type");
-        
+
         return null;
     }
-    
+
     private Set<Authorizations> getAuths() {
         DatawavePrincipal dp = getPrincipal();
         Set<Authorizations> auths = new HashSet<>();
-        
+
         for (Collection<String> cbAuths : dp.getAuthorizations()) {
             auths.add(new Authorizations(cbAuths.toArray(new String[cbAuths.size()])));
         }
-        
+
         return auths;
     }
-    
+
     /**
      * Create scanner for last 60 minutes of logs.
      *
@@ -137,6 +139,7 @@ public class DashboardBean {
      * @return a {@link Scanner} that will only scan over the last 60 minutes of logs
      *
      * @throws TableNotFoundException
+     *             if the table is not found
      */
     private Scanner createScanner(AccumuloClient accumuloClient) throws TableNotFoundException {
         long start = Instant.now().toEpochMilli() - MS_IN_12_HRS;
@@ -148,7 +151,7 @@ public class DashboardBean {
         scanner.setRange(range);
         return scanner;
     }
-    
+
     private AccumuloClient createClient() throws Exception {
         Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
         return connectionFactory.getClient(AccumuloConnectionFactory.Priority.LOW, trackingMap);

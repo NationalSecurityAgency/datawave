@@ -94,12 +94,15 @@ module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.ap
 
 # Keystore and Truststore settings for export into MapReduce jobs run via the MapReduce API
 /system-property=dw.mapreduce.securitydomain.useJobCache:add(value=${mapreduce.securitydomain.useJobCache})
-/system-property=dw.mapreduce.securitydomain.keyStoreURL:add(value=file:/${jboss.server.config.dir}/certificates/testServer.p12)
-/system-property=dw.mapreduce.securitydomain.keyStoreType:add(value="PKCS12")
-/system-property=dw.mapreduce.securitydomain.keyStorePassword:add(value=ChangeIt)
-/system-property=dw.mapreduce.securitydomain.trustStoreURL:add(value=file:/${jboss.server.config.dir}/certificates/ca.jks)
-/system-property=dw.mapreduce.securitydomain.trustStoreType:add(value="JKS")
-/system-property=dw.mapreduce.securitydomain.trustStorePassword:add(value=ChangeIt)
+/system-property=dw.mapreduce.securitydomain.keyStoreURL:add(value=file://${KEYSTORE})
+/system-property=dw.mapreduce.securitydomain.keyStoreType:add(value="${KEYSTORE_TYPE}")
+/system-property=dw.mapreduce.securitydomain.keyStorePassword:add(value="${KEYSTORE_PASSWORD}")
+/system-property=dw.mapreduce.securitydomain.trustStoreURL:add(value=file://${TRUSTSTORE})
+/system-property=dw.mapreduce.securitydomain.trustStoreType:add(value="${TRUSTSTORE_TYPE}")
+/system-property=dw.mapreduce.securitydomain.trustStorePassword:add(value="${TRUSTSTORE_PASSWORD}")
+
+# proxied entities to be pruned from credentials
+/system-property=dw.trusted.proxied.entities:add(value="${trusted.proxied.entities}")
 
 # Enable/disable the test authorization service (enable for development use only)
 /system-property=dw.security.use.testuserservice:add(value=${security.use.testauthservice})
@@ -113,6 +116,20 @@ module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.ap
 /system-property=dw.remoteDatawaveUserService.host:add(value=${security.remoteuserservice.host})
 /system-property=dw.remoteDatawaveUserService.port:add(value=${security.remoteuserservice.port})
 
+# Audit microservice config
+/system-property=dw.audit.use.remoteauditservice:add(value=${auditing.use.remoteauditservice})
+/system-property=dw.remoteDatawaveAuditService.useSrvDnsLookup:add(value=${auditing.remoteauditservice.srv.lookup.enabled})
+/system-property=dw.remoteDatawaveAuditService.srvDnsServers:add(value=${auditing.remoteauditservice.srv.lookup.servers})
+/system-property=dw.remoteDatawaveAuditService.srvDnsPort:add(value=${auditing.remoteauditservice.srv.lookup.port})
+/system-property=dw.remoteDatawaveAuditService.scheme:add(value=${auditing.remoteauditservice.scheme})
+/system-property=dw.remoteDatawaveAuditService.host:add(value=${auditing.remoteauditservice.host})
+/system-property=dw.remoteDatawaveAuditService.port:add(value=${auditing.remoteauditservice.port})
+
+# Dictionary microservice config
+/system-property=dw.remoteDictionary.scheme:add(value=${dictionary.remoteservice.scheme})
+/system-property=dw.remoteDictionary.host:add(value=${dictionary.remoteservice.host})
+/system-property=dw.remoteDictionary.port:add(value=${dictionary.remoteservice.port})
+
 # Accumulo microservice config
 /system-property=dw.remoteAccumuloService.useSrvDnsLookup:add(value=${accumulo.remoteservice.srv.lookup.enabled})
 /system-property=dw.remoteAccumuloService.srvDnsServers:add(value=${accumulo.remoteservice.srv.lookup.servers})
@@ -120,6 +137,14 @@ module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.ap
 /system-property=dw.remoteAccumuloService.scheme:add(value=${accumulo.remoteservice.scheme})
 /system-property=dw.remoteAccumuloService.host:add(value=${accumulo.remoteservice.host})
 /system-property=dw.remoteAccumuloService.port:add(value=${accumulo.remoteservice.port})
+
+# QueryMetric microservice config
+/system-property=dw.remoteQueryMetricService.useSrvDnsLookup:add(value=${querymetric.remoteservice.srv.lookup.enabled})
+/system-property=dw.remoteQueryMetricService.srvDnsServers:add(value=${querymetric.remoteservice.srv.lookup.servers})
+/system-property=dw.remoteQueryMetricService.srvDnsPort:add(value=${querymetric.remoteservice.srv.lookup.port})
+/system-property=dw.remoteQueryMetricService.scheme:add(value=${querymetric.remoteservice.scheme})
+/system-property=dw.remoteQueryMetricService.host:add(value=${querymetric.remoteservice.host})
+/system-property=dw.remoteQueryMetricService.port:add(value=${querymetric.remoteservice.port})
 
 # Disable SASL client authentication in zookeeper
 /system-property=zookeeper.sasl.client:add(value=false)
@@ -138,8 +163,8 @@ module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.ap
 # Add security realm and domain
 #
 /core-service=management/security-realm=SSLRealm/:add
-/core-service=management/security-realm=SSLRealm/server-identity=ssl/:add(enabled-protocols=["TLSv1.1","TLSv1.2"],keystore-path=certificates/testServer.p12,keystore-relative-to=jboss.server.config.dir,keystore-provider=PKCS12,keystore-password="ChangeIt")
-/core-service=management/security-realm=SSLRealm/authentication=truststore/:add(keystore-path=certificates/ca.jks,keystore-relative-to=jboss.server.config.dir,keystore-provider=JKS,keystore-password="ChangeIt")
+/core-service=management/security-realm=SSLRealm/server-identity=ssl/:add(enabled-protocols=["TLSv1.1","TLSv1.2"],keystore-path=${KEYSTORE},keystore-provider=${KEYSTORE_TYPE},keystore-password="${KEYSTORE_PASSWORD}")
+/core-service=management/security-realm=SSLRealm/authentication=truststore/:add(keystore-path=${TRUSTSTORE},keystore-provider=${TRUSTSTORE_TYPE},keystore-password="${TRUSTSTORE_PASSWORD}")
 /core-service=management/security-realm=SSLRealm/authentication=jaas/:add(name=datawave)
 
 /subsystem=security/security-domain=datawave:add(cache-type=infinispan)
@@ -147,7 +172,7 @@ module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.ap
 /subsystem=security/security-domain=datawave/authentication=classic/login-module=Remoting:add(code=Remoting,flag=optional,module-options={password-stacking=useFirstPass})
 /subsystem=security/security-domain=datawave/authentication=classic/login-module=RunAs:add(code=RunAs,flag=required,module-options={roleName=InternalUser})
 /subsystem=security/security-domain=datawave/authentication=classic/login-module=Datawave:add(code=datawave.security.login.DatawavePrincipalLoginModule,flag=required,module-options={principalClass=datawave.security.authorization.DatawavePrincipal,verifier=datawave.security.login.DatawaveCertVerifier,ocspLevel=off,allowUserProxying=false,trustedHeaderLogin="${dw.trusted.header.authentication:false}"})
-/subsystem=security/security-domain=datawave/jsse=classic:add(keystore={type="PKCS12",password="ChangeIt",url="file://${jboss.server.config.dir}/certificates/testServer.p12"},truststore={type="JKS",password="ChangeIt",url="file://${jboss.server.config.dir}/certificates/ca.jks"})
+/subsystem=security/security-domain=datawave/jsse=classic:add(keystore={type="${KEYSTORE_TYPE}",password="${KEYSTORE_PASSWORD}",url="file://${KEYSTORE}"},truststore={type="${TRUSTSTORE_TYPE}",password="${TRUSTSTORE_PASSWORD}",url="file://${TRUSTSTORE}"})
 /subsystem=security/security-domain=JmsXARealm:add(cache-type=default)
 /subsystem=security/security-domain=JmsXARealm/authentication=classic:add
 /subsystem=security/security-domain=JmsXARealm/authentication=classic/login-module=ConfiguredIdentity:add(code=ConfiguredIdentity,flag=required,module-options={principal=${dw.hornetq.system.userName},userName=${dw.hornetq.system.userName},password=${dw.hornetq.system.password},managedConnectionFactoryName="jboss.jca:service=TxCM,name=JmsXA"})
@@ -168,7 +193,6 @@ module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.ap
 #
 jms-topic add --topic-address=AccumuloTableCache --entries=topic/AccumuloTableCache
 jms-queue add --queue-address=AccumuloTableCacheDLQ --entries=queue/AccumuloTableCache.DLQ
-jms-queue add --queue-address=QueryMetricsQueue --entries=queue/QueryMetrics
 #/subsystem=messaging-activemq/server=default/:write-attribute(name=security-domain,value=datawave)
 /subsystem=messaging-activemq/server=default/pooled-connection-factory=activemq-ra/:write-attribute(name=max-pool-size,value=${hornetq.datasource.max.pool.size})
 /subsystem=messaging-activemq/server=default/:write-attribute(name=cluster-user,value="${hornetq.cluster.username}")
@@ -219,13 +243,14 @@ jms-queue add --queue-address=QueryMetricsQueue --entries=queue/QueryMetrics
 /subsystem=logging/periodic-rotating-file-handler=RESTEASY_LOG/:add(level=TRACE,suffix=".yyyy-MM-dd",append=true,autoflush=true,named-formatter=PATTERN,file={relative-to=>"jboss.server.log.dir", path=>"RestEasy.log"})
 
 /subsystem=logging/logger=datawave.query:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=DEBUG)
+/subsystem=logging/logger=datawave.webservice.common.cache.SharedCacheCoordinator:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=INFO)
 /subsystem=logging/logger=datawave.webservice.query.factory:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=DEBUG)
 /subsystem=logging/logger=datawave.webservice.query.iterator:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=DEBUG)
 /subsystem=logging/logger=datawave.webservice.query.logic:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=DEBUG)
 /subsystem=logging/logger=datawave.webservice.query.metric:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=DEBUG)
 /subsystem=logging/logger=datawave.webservice.query.runner:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=DEBUG)
 /subsystem=logging/logger=datawave.webservice.query.util:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=DEBUG)
-/subsystem=logging/logger=datawave.webservice.query.cache.QueryExpirationBean:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=DEBUG)
+/subsystem=logging/logger=datawave.webservice.query.cache.QueryExpirationBean:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=INFO)
 /subsystem=logging/logger=datawave.query.tables:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=INFO)
 /subsystem=logging/logger=datawave.query.parser:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=INFO)
 /subsystem=logging/logger=datawave.query.metrics.AccumuloRecordWriter:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=INFO)

@@ -2,7 +2,7 @@
 
 DW_MAVEN_SERVICE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 # You may override DW_MAVEN_DIST_URI in your env ahead of time, and set as file:///path/to/file.tar.gz for local tarball, if needed
-DW_MAVEN_DIST_URI="${DW_MAVEN_DIST_URI:-http://mirror.cogentco.com/pub/apache/maven/maven-3/3.5.4/binaries/apache-maven-3.5.4-bin.tar.gz}"
+DW_MAVEN_DIST_URI="${DW_MAVEN_DIST_URI:-https://archive.apache.org/dist/maven/maven-3/3.8.6/binaries/apache-maven-3.8.6-bin.tar.gz}"
 DW_MAVEN_DIST="$( basename "${DW_MAVEN_DIST_URI}" )"
 DW_MAVEN_BASEDIR="maven-install"
 DW_MAVEN_SYMLINK="maven"
