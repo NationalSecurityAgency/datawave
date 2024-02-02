@@ -132,7 +132,10 @@ public class CSVIngestHelper extends ContentBaseIngestHelper {
      *            the field value
      */
     protected void processExtraField(Multimap<String,String> fields, String fieldValue) {
-        int equalsIndex = fieldValue.indexOf('=');
+        int equalsIndex = -1;
+        if (fieldValue != null) {
+            equalsIndex = fieldValue.indexOf('=');
+        }
         if (equalsIndex > 0) {
             String fieldName = fieldValue.substring(0, equalsIndex);
 

@@ -1,5 +1,7 @@
 package datawave.query.testframework;
 
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -34,8 +36,8 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -60,7 +62,6 @@ import datawave.query.attributes.Document;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
 import datawave.query.jexl.visitors.TreeEqualityVisitor;
 import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import datawave.query.planner.DefaultQueryPlanner;
@@ -97,7 +98,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
-    protected static final String VALUE_THRESHOLD_JEXL_NODE = ExceededValueThresholdMarkerJexlNode.label();
+    protected static final String VALUE_THRESHOLD_JEXL_NODE = EXCEEDED_VALUE.getLabel();
     protected static final String FILTER_EXCLUDE_REGEX = "filter:excludeRegex";
 
     private static final Logger log = Logger.getLogger(AbstractFunctionalQuery.class);
@@ -171,7 +172,6 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         this.logic.setDateIndexHelperFactory(new DateIndexHelperFactory());
         this.logic.setMarkingFunctions(new Default());
         this.logic.setMetadataHelperFactory(new MetadataHelperFactory());
-        this.logic.setQueryPlanner(new DefaultQueryPlanner());
         this.logic.setResponseObjectFactory(new DefaultResponseObjectFactory());
 
         this.logic.setCollectTimingDetails(true);

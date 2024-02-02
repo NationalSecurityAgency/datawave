@@ -1,5 +1,8 @@
 package datawave.query.planner;
 
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.BOUNDED_RANGE;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
+
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.text.MessageFormat;
@@ -36,12 +39,12 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.commons.jexl2.parser.ASTERNode;
-import org.apache.commons.jexl2.parser.ASTFunctionNode;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ASTNRNode;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.commons.jexl3.parser.ASTERNode;
+import org.apache.commons.jexl3.parser.ASTFunctionNode;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTNRNode;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.log4j.Logger;
@@ -90,8 +93,6 @@ import datawave.query.jexl.NodeTypeCount;
 import datawave.query.jexl.functions.EvaluationPhaseFilterFunctions;
 import datawave.query.jexl.functions.QueryFunctions;
 import datawave.query.jexl.lookups.IndexLookup;
-import datawave.query.jexl.nodes.BoundedRange;
-import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
 import datawave.query.jexl.visitors.AddShardsAndDaysVisitor;
 import datawave.query.jexl.visitors.BoundedRangeDetectionVisitor;
 import datawave.query.jexl.visitors.BoundedRangeIndexExpansionVisitor;
@@ -163,6 +164,7 @@ import datawave.query.util.TypeMetadata;
 import datawave.util.time.TraceStopwatch;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.Query;
+import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.QueryImpl.Parameter;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.configuration.QueryData;
@@ -216,16 +218,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      * Allows developers to cache data types
      */
     protected boolean cacheDataTypes = false;
-
-    /**
-     * Overrides behavior with doc specific ranges
-     */
-    protected boolean docSpecificOverride = false;
-
-    /**
-     * Number of documents to combine for concurrent evaluation
-     */
-    protected int docsToCombineForEvaluation = -1;
 
     /**
      * The max number of child nodes that we will print with the PrintingVisitor. If trace is enabled, all nodes will be printed.
@@ -339,7 +331,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         preloadOptions = other.preloadOptions;
         rangeStreamClass = other.rangeStreamClass;
         setSourceLimit(other.sourceLimit);
-        setDocsToCombineForEvaluation(other.getDocsToCombineForEvaluation());
         setPushdownThreshold(other.getPushdownThreshold());
         setVisitorManager(other.getVisitorManager());
     }
@@ -485,9 +476,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
         this.plannedScript = newQueryString;
         config.setQueryString(this.plannedScript);
-        // docsToCombineForEvaluation is only enabled when threading is used
-        if (config.getMaxEvaluationPipelines() == 1)
-            docsToCombineForEvaluation = -1;
 
         if (!config.isGeneratePlanOnly()) {
             // add the geo query comparator to sort by geo range granularity if this is a geo query
@@ -516,9 +504,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                     .setQueryTree(config.getQueryTree())
                     .setRanges(queryRanges.first())
                     .setMaxRanges(maxRangesPerQueryPiece())
-                    .setDocsToCombine(docsToCombineForEvaluation)
                     .setSettings(settings)
-                    .setDocSpecificLimitOverride(docSpecificOverride)
                     .setMaxRangeWaitMillis(maxRangeWaitMillis)
                     .setQueryPlanComparators(queryPlanComparators)
                     .setNumRangesToBuffer(config.getNumRangesToBuffer())
@@ -566,7 +552,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      *            the IteratorSetting
      */
     private void configureExcerpts(ShardQueryConfiguration config, IteratorSetting cfg) {
-        if (config.isTermFrequenciesRequired()) {
+        if (!config.getExcerptFields().isEmpty()) {
             addOption(cfg, QueryOptions.EXCERPT_FIELDS, config.getExcerptFields().toString(), true);
             addOption(cfg, QueryOptions.EXCERPT_ITERATOR, config.getExcerptIterator().getName(), false);
         }
@@ -940,7 +926,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 }
 
                 // Check if there are any bounded ranges to expand.
-                if (nodeCount.isPresent(BoundedRange.class)) {
+                if (nodeCount.isPresent(BOUNDED_RANGE)) {
                     config.setQueryTree(timedExpandRanges(timers, "Expand Ranges", config.getQueryTree(), config, metadataHelper, scannerFactory));
                 }
 
@@ -955,7 +941,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 }
 
                 // Check if there are functions that can be pushed into exceeded value ranges.
-                if (nodeCount.hasAll(ASTFunctionNode.class, ExceededValueThresholdMarkerJexlNode.class)) {
+                if (nodeCount.isPresent(ASTFunctionNode.class) && nodeCount.isPresent(EXCEEDED_VALUE)) {
                     config.setQueryTree(timedPushFunctions(timers, config.getQueryTree(), config, metadataHelper));
                 }
 
@@ -1612,7 +1598,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         }
 
         // Check if there are any bounded ranges to expand.
-        if (nodeCount.isPresent(BoundedRange.class)) {
+        if (nodeCount.isPresent(BOUNDED_RANGE)) {
 
             try {
                 config.setQueryTree(BoundedRangeIndexExpansionVisitor.expandBoundedRanges(config, scannerFactory, metadataHelper, config.getQueryTree()));
@@ -1636,7 +1622,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         }
 
         // Check if there are functions that can be pushed into exceeded value ranges.
-        if (nodeCount.hasAll(ASTFunctionNode.class, ExceededValueThresholdMarkerJexlNode.class)) {
+        if (nodeCount.isPresent(ASTFunctionNode.class) && nodeCount.isPresent(EXCEEDED_VALUE)) {
             config.setQueryTree(PushFunctionsIntoExceededValueRanges.pushFunctions(config.getQueryTree(), metadataHelper, config.getDatatypeFilter()));
             if (log.isDebugEnabled()) {
                 logQuery(config.getQueryTree(), "Query after expanding pushing functions into exceeded value ranges again:");
@@ -2040,7 +2026,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     /*
      * (non-Javadoc)
      *
-     * @see PushDownPlanner#rewriteQuery( org.apache .commons.jexl2.parser.ASTJexlScript)
+     * @see PushDownPlanner#rewriteQuery( org.apache.commons.jexl3.parser.ASTJexlScript)
      */
     @Override
     public ASTJexlScript applyRules(final ASTJexlScript queryTree, ScannerFactory scannerFactory, MetadataHelper metadataHelper,
@@ -2507,8 +2493,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     }
 
     /**
-     * Returns a Tuple2&lt;Iterable&lt;Range&gt;,Boolean&gt; whose elements represent the Ranges to use for querying the shard table and whether or not this is
-     * a "full-table-scan" query.
+     * Returns a ImmutablePair&lt;Iterable&lt;Range&gt;,Boolean&gt; whose elements represent the Ranges to use for querying the shard table and whether or not
+     * this is a "full-table-scan" query.
      *
      * @param scannerFactory
      *            the scanner factory
@@ -2574,6 +2560,12 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
             // count the terms
             int termCount = TermCountingVisitor.countTerms(queryTree);
+
+            if (config.getIntermediateMaxTermThreshold() > 0 && termCount > config.getIntermediateMaxTermThreshold()) {
+                throw new DatawaveFatalQueryException(
+                                "Query with " + termCount + " exceeds the initial max term threshold of " + config.getIntermediateMaxTermThreshold());
+            }
+
             if (termCount >= pushdownThreshold) {
                 if (log.isTraceEnabled()) {
                     log.trace("pushing down query because it has " + termCount + " when our max is " + pushdownThreshold);
@@ -2916,14 +2908,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         return new DefaultQueryPlanner(this);
     }
 
-    public void setDocSpecificOverride(boolean docSpecificOverride) {
-        this.docSpecificOverride = docSpecificOverride;
-    }
-
-    public boolean getDocSpecificOverride() {
-        return docSpecificOverride;
-    }
-
     public void setMaxRangeWaitMillis(long maxRangeWaitMillis) {
         this.maxRangeWaitMillis = maxRangeWaitMillis;
     }
@@ -2938,14 +2922,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
     public long getPushdownThreshold() {
         return pushdownThreshold;
-    }
-
-    public int getDocsToCombineForEvaluation() {
-        return docsToCombineForEvaluation;
-    }
-
-    public void setDocsToCombineForEvaluation(final int docsToCombineForEvaluation) {
-        this.docsToCombineForEvaluation = docsToCombineForEvaluation;
     }
 
     public boolean getExecutableExpansion() {

@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
-import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -454,6 +454,23 @@ public class IngestTypePruningVisitorTest {
     void testArithmetic() {
         String query = "A == '1' && 1 + 1 == 3";
         test(query, query);
+    }
+
+    @Test
+    void testPruneNestedMarker() {
+        TypeMetadata metadata = new TypeMetadata();
+        metadata.put("A", "ingestType1", LcType.class.getTypeName());
+        metadata.put("A", "ingestType2", LcType.class.getTypeName());
+        metadata.put("B", "ingestType1", LcType.class.getTypeName());
+        metadata.put("B", "ingestType2", LcType.class.getTypeName());
+        metadata.put("B", "ingestType3", LcType.class.getTypeName());
+        metadata.put("B", "ingestType4", LcType.class.getTypeName());
+        metadata.put("C", "ingestType3", LcType.class.getTypeName());
+        metadata.put("C", "ingestType4", LcType.class.getTypeName());
+
+        String query = "A == '1' && (((_Delayed_ = true) && (B =~ 'b.*')) || ((_Delayed_ = true) && (C =~ 'c.*')))";
+        String expected = "A == '1' && (((_Delayed_ = true) && (B =~ 'b.*')))";
+        test(query, expected, typeMetadata);
     }
 
     private void test(String query, String expected) {

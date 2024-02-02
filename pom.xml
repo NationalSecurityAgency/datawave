@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>gov.nsa.datawave</groupId>
     <artifactId>datawave-parent</artifactId>
-    <version>6.4.0-SNAPSHOT</version>
+    <version>6.6.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>DataWave</name>
     <description>DataWave is a Java-based ingest and query framework that leverages Apache Accumulo to provide fast, secure access to your data.</description>
@@ -26,6 +26,13 @@
         <tag>HEAD</tag>
         <url>https://github.com/NationalSecurityAgency/datawave</url>
     </scm>
+    <distributionManagement>
+        <repository>
+            <id>github-datawave</id>
+            <name>GitHub Datawave Apache Maven Packages</name>
+            <url>https://maven.pkg.github.com/NationalSecurityAgency/datawave</url>
+        </repository>
+    </distributionManagement>
     <properties>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
@@ -45,7 +52,7 @@
         <version.commons-configuration>1.10</version.commons-configuration>
         <version.commons-configuration2>2.7</version.commons-configuration2>
         <version.commons-io>2.6</version.commons-io>
-        <version.commons-jexl>2.1.1</version.commons-jexl>
+        <version.commons-jexl3>3.3</version.commons-jexl3>
         <version.commons-lang>2.6</version.commons-lang>
         <version.commons-logging>1.2</version.commons-logging>
         <version.commons-pool>1.6</version.commons-pool>
@@ -593,8 +600,8 @@
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
-                <artifactId>commons-jexl</artifactId>
-                <version>${version.commons-jexl}</version>
+                <artifactId>commons-jexl3</artifactId>
+                <version>${version.commons-jexl3}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
@@ -1167,18 +1174,14 @@
     </dependencyManagement>
     <repositories>
         <repository>
-            <!--
-                This repository is a temporary work-around until we can public artifacts to maven central.
-                This allows us to retrieve released microservice artifacts from our github repository.
-            -->
             <releases>
                 <enabled>true</enabled>
             </releases>
             <snapshots>
                 <enabled>false</enabled>
             </snapshots>
-            <id>datawave-github-mvn-repo</id>
-            <url>https://raw.githubusercontent.com/NationalSecurityAgency/datawave/mvn-repo</url>
+            <id>github-datawave</id>
+            <url>https://maven.pkg.github.com/NationalSecurityAgency/datawave</url>
         </repository>
         <repository>
             <snapshots>
@@ -1197,11 +1200,6 @@
         </repository>
     </repositories>
     <pluginRepositories>
-        <!--
-            This is a temporary work-around until we can publish artifacts to maven central.
-            This allows us to download the read-properties and assert-properties plugins, as
-            well as the datawave code style template for the formatter-maven-plugin.
-        -->
         <pluginRepository>
             <releases>
                 <enabled>true</enabled>
@@ -1209,8 +1207,8 @@
             <snapshots>
                 <enabled>false</enabled>
             </snapshots>
-            <id>datawave-github-mvn-repo</id>
-            <url>https://raw.githubusercontent.com/NationalSecurityAgency/datawave/mvn-repo</url>
+            <id>github-datawave</id>
+            <url>https://maven.pkg.github.com/NationalSecurityAgency/datawave</url>
         </pluginRepository>
     </pluginRepositories>
     <build>
@@ -1845,6 +1843,17 @@
             </build>
         </profile>
         <profile>
+            <id>quickstart</id>
+            <activation>
+                <property>
+                    <name>quickstart-docker</name>
+                </property>
+            </activation>
+            <modules>
+                <module>contrib/datawave-quickstart/docker</module>
+            </modules>
+        </profile>
+        <profile>
             <id>microservices</id>
             <activation>
                 <property>
@@ -1874,6 +1883,28 @@
                                 <files>
                                     <file>dev.properties</file>
                                     <file>dev-passwords.properties</file>
+                                </files>
+                            </configuration>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
+        </profile>
+        <profile>
+            <id>compose</id>
+            <properties>
+                <build.env>compose</build.env>
+                <env>compose</env>
+            </properties>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>gov.nsa.datawave.plugins</groupId>
+                            <artifactId>read-properties</artifactId>
+                            <configuration>
+                                <files>
+                                    <file>compose.properties</file>
                                 </files>
                             </configuration>
                         </plugin>
