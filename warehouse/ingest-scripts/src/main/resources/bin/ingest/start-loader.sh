@@ -81,7 +81,6 @@ if [[ ${TOTAL} -gt 0 ]]; then
     FILES_STUCK_LOADING=$(${INGEST_HADOOP_HOME}/bin/hadoop fs -ls "${MAP_LOADER_HDFS_NAME_NODES[$LOADER]}$BASE_WORK_DIR/*/job.loading" | awk '{print $NF}')
     if [[ ! -z $FILES_STUCK_LOADING && -z $currentLoaders ]]; then
       echo "About to reset stuck files, no active loaders detected on ${MAP_LOADER_HDFS_NAME_NODES[$LOADER]}"
-      echo "FILES_STUCK_LOADING: " $FILES_STUCK_LOADING
       for stuckFile in $FILES_STUCK_LOADING; do
         echo "Resetting ${stuckFile} to ${stuckFile%.loading}.complete"
         moving=$(${INGEST_HADOOP_HOME}/bin/hadoop fs -mv $stuckFile ${stuckFile%.loading}.complete 2>&1)
@@ -104,7 +103,6 @@ if [[ ${TOTAL} -gt 0 ]]; then
           portInUse=$(lsof -i:${SHUTDOWN_PORT} | grep $SHUTDOWN_PORT)
           portUsed=$(ps -eaf | grep [b]ulkIngestMap | grep $SHUTDOWN_PORT)
       done
-      echo starting $MAPFILE_LOADER_CMD -srcHdfs ${MAP_LOADER_HDFS_NAME_NODE} -destHdfs ${MAP_LOADER_HDFS_NAME_NODE} -shutdownPort ${SHUTDOWN_PORT} with log file $LOG_DIR/map-file-loader.$LOADER$x.log
       $MAPFILE_LOADER_CMD -srcHdfs ${MAP_LOADER_HDFS_NAME_NODE} -destHdfs ${MAP_LOADER_HDFS_NAME_NODE} -shutdownPort ${SHUTDOWN_PORT} >> $LOG_DIR/map-file-loader.$LOADER$x.log 2>&1 &
       SHUTDOWN_PORT=$((SHUTDOWN_PORT + 1))
       portInUse=$(lsof -i:${SHUTDOWN_PORT} | grep $SHUTDOWN_PORT)
@@ -149,7 +147,6 @@ if [[ ${TOTAL} -gt 0 ]]; then
           portInUse=$(lsof -i:${SHUTDOWN_PORT} | grep $SHUTDOWN_PORT)
           portUsed=$(ps -eaf | grep [b]ulkIngestMap | grep $SHUTDOWN_PORT)
       done
-      echo starting ${MAP_LOADER_CUSTOM[$CUSTOM_LOADER]} -shutdownPort ${SHUTDOWN_PORT} with log file $LOG_DIR/map-file-loader-custom.$CUSTOM_LOADER.log
       ${MAP_LOADER_CUSTOM[$CUSTOM_LOADER]} -shutdownPort ${SHUTDOWN_PORT} >>$LOG_DIR/map-file-loader-custom.$CUSTOM_LOADER.log 2>&1 &
       done
   fi
