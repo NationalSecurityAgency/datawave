@@ -110,7 +110,9 @@ public abstract class BaseRemoteQueryLogic<T> extends BaseQueryLogic<T> implemen
         GenericResponse<String> createResponse = remoteQueryService.createQuery(getRemoteQueryLogic(), parms, getCallerObject());
         setRemoteId(createResponse.getResult());
         log.info("Local query " + settings.getId() + " maps to remote query " + getRemoteId());
-        return getConfig();
+        RemoteQueryConfiguration config = getConfig();
+        config.setQuery(settings);
+        return config;
     }
 
     @Override
@@ -172,14 +174,6 @@ public abstract class BaseRemoteQueryLogic<T> extends BaseQueryLogic<T> implemen
     @Override
     public AccumuloConnectionFactory.Priority getConnectionPriority() {
         return AccumuloConnectionFactory.Priority.NORMAL;
-    }
-
-    public Query getSettings() {
-        return getConfig().getQuery();
-    }
-
-    public void setSettings(Query settings) {
-        getConfig().setQuery(settings);
     }
 
     @Override
