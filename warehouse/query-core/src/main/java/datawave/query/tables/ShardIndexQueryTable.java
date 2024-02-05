@@ -104,6 +104,7 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
         this.reverseIndexTableName = other.getReverseIndexTableName();
         this.fullTableScanEnabled = other.isFullTableScanEnabled();
         this.allowLeadingWildcard = other.isAllowLeadingWildcard();
+        this.scannerFactory = other.scannerFactory;
         this.queryModel = other.getQueryModel();
         this.modelName = other.getModelName();
         this.modelTableName = other.getModelTableName();
