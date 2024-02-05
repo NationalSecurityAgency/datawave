@@ -27,7 +27,7 @@ import io.protostuff.Schema;
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class FileResponseList extends BaseResponse implements Serializable, Message<FileResponseList> {
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 8541398556286101729L;
 
     @XmlAttribute(name = "truncated", required = false)
     protected Boolean resultsTruncated;

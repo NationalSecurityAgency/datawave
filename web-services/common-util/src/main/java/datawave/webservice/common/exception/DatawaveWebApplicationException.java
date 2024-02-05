@@ -10,7 +10,7 @@ import datawave.webservice.result.BaseResponse;
 @ApplicationException(inherited = true, rollback = true)
 public class DatawaveWebApplicationException extends WebApplicationException {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -583694643599319251L;
 
     public DatawaveWebApplicationException(Throwable t, BaseResponse response) {
         super(t, Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(response).build());

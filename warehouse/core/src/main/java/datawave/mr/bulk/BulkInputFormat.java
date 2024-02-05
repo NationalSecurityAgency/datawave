@@ -1067,8 +1067,8 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
         try {
             Class<? extends LocationStrategy> clazz = Class.forName(conf.get(RACKSTRATEGY, DefaultLocationStrategy.class.getCanonicalName()))
                             .asSubclass(LocationStrategy.class);
-            return clazz.newInstance();
-        } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
+            return clazz.getDeclaredConstructor().newInstance();
+        } catch (ClassNotFoundException | IllegalAccessException | InstantiationException | NoSuchMethodException | InvocationTargetException e) {
             log.error(e);
         }
         return new DefaultLocationStrategy();

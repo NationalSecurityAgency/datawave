@@ -15,7 +15,7 @@ import datawave.marking.MarkingFunctions.Exception;
 
 public abstract class AttributeBag<T extends Comparable<T>> extends Attribute<T> implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -5961455715747661898L;
     private static final Logger log = Logger.getLogger(AttributeBag.class);
     protected long shardTimestamp = Long.MAX_VALUE;
     protected boolean validMetadata = false;

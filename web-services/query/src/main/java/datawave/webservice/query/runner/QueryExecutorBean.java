@@ -424,7 +424,9 @@ public class QueryExecutorBean implements QueryExecutor {
      * Setup the caller data in the QueryData object
      *
      * @param p
+     *            the principal
      * @param qd
+     *            the query data
      * @return qd
      */
     private QueryData setUserData(Principal p, QueryData qd) {

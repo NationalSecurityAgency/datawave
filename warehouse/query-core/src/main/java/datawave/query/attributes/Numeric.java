@@ -22,7 +22,7 @@ import datawave.query.collections.FunctionalSet;
 import datawave.query.jexl.DatawaveJexlContext;
 
 public class Numeric extends Attribute<Numeric> implements Serializable {
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 5823344312405439698L;
 
     private static final NumberNormalizer normalizer = new NumberNormalizer();
 

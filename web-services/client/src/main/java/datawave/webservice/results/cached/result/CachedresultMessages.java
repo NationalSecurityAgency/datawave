@@ -191,7 +191,7 @@ public final class CachedresultMessages {
             return size;
         }
 
-        private static final long serialVersionUID = 0L;
+        private static final long serialVersionUID = 624675560600682014L;
 
         @java.lang.Override
         protected java.lang.Object writeReplace() throws java.io.ObjectStreamException {
@@ -640,7 +640,7 @@ public final class CachedresultMessages {
             return size;
         }
 
-        private static final long serialVersionUID = 0L;
+        private static final long serialVersionUID = -3328980380205664729L;
 
         @java.lang.Override
         protected java.lang.Object writeReplace() throws java.io.ObjectStreamException {
@@ -1299,7 +1299,7 @@ public final class CachedresultMessages {
             return size;
         }
 
-        private static final long serialVersionUID = 0L;
+        private static final long serialVersionUID = -7787558478777504304L;
 
         @java.lang.Override
         protected java.lang.Object writeReplace() throws java.io.ObjectStreamException {

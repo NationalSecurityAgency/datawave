@@ -87,6 +87,7 @@ public class TupleToRange implements Function<Tuple2<String,IndexInfo>,Iterator<
     }
 
     /**
+     * Determine if this is a shard range
      *
      * @param shard
      *            a shard string
