@@ -12,10 +12,10 @@ import org.apache.accumulo.core.iterators.Filter;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.jexl2.Expression;
-import org.apache.commons.jexl2.JexlContext;
-import org.apache.commons.jexl2.JexlEngine;
-import org.apache.commons.jexl2.MapContext;
+import org.apache.commons.jexl3.JexlContext;
+import org.apache.commons.jexl3.JexlExpression;
+import org.apache.commons.jexl3.MapContext;
+import org.apache.commons.jexl3.internal.Engine;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.HashMultimap;
@@ -42,12 +42,12 @@ public class EdgeFilterIterator extends Filter {
     public static final String JEXL_STATS_OPTION = "jexlStatsQuery";
     public static final String PREFILTER_ALLOWLIST = "prefilter";
 
-    private static final JexlEngine jexlEngine = new JexlEngine();
+    private static final Engine jexlEngine = new Engine();
 
     private boolean protobuffFormat;
     private boolean includeStatsEdges;
-    private Expression expression = null;
-    private Expression statsExpression = null;
+    private JexlExpression expression = null;
+    private JexlExpression statsExpression = null;
     private JexlContext ctx = new MapContext();
 
     private HashMultimap<String,String> preFilterValues;
