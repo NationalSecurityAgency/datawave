@@ -20,7 +20,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.TreeSet;
 
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNode;
 import org.junit.Test;
 
 import com.google.common.collect.Ordering;

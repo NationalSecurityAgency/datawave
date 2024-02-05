@@ -67,7 +67,7 @@ import javax.ws.rs.core.Response.Status;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.commons.collections4.Transformer;
 import org.apache.commons.dbutils.DbUtils;
-import org.apache.commons.jexl2.parser.TokenMgrError;
+import org.apache.commons.jexl3.parser.TokenMgrException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -665,7 +665,7 @@ public class CachedResultsBean {
                 response.addException(new PreConditionFailedQueryException(DatawaveErrorCode.CACHED_RESULTS_IMPORT_ERROR, e2));
             }
             // don't log stack trace of parse errors and other IllegalArgumentExceptions
-            if (t instanceof IllegalArgumentException || t instanceof TokenMgrError) {
+            if (t instanceof IllegalArgumentException || t instanceof TokenMgrException) {
                 log.info(t.getMessage());
             } else {
                 log.error(t.getMessage(), t);
@@ -693,7 +693,7 @@ public class CachedResultsBean {
                     DbUtils.closeQuietly(s);
                 }
             }
-            if (t instanceof Error && (t instanceof TokenMgrError) == false) {
+            if (t instanceof Error && (t instanceof TokenMgrException) == false) {
                 throw (Error) t;
             }
 
