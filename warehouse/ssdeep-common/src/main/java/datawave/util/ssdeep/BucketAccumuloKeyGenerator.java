@@ -71,7 +71,11 @@ public class BucketAccumuloKeyGenerator {
      *
      * @param t
      *            tuple
+<<<<<<< HEAD
      * @return Accumulo key/value pair when unable to produce an accumulo key/value pair
+=======
+     * @return Accumulo key/value pair
+>>>>>>> 9efee83b5a (no longer thows exception)
      */
     public ImmutablePair<Key,Value> call(ImmutablePair<NGramTuple,byte[]> t) {
         int rowSize = t.getKey().getChunk().length() + bucketEncoding.getLength() + chunkEncoding.getLength();
