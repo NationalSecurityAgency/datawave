@@ -77,6 +77,8 @@ public class RemoteEventQueryLogic extends BaseQueryLogic<EventBase> implements 
 
         // Set ShardQueryConfiguration variables
         setConfig(RemoteQueryConfiguration.create(other));
+
+        // transformer instance is created dynamically
     }
 
     public String getRemoteId() {

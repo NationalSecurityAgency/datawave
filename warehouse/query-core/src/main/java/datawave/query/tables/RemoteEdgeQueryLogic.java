@@ -14,6 +14,7 @@ import org.apache.log4j.Logger;
 
 import datawave.marking.MarkingFunctions;
 import datawave.query.config.RemoteQueryConfiguration;
+import datawave.query.tables.edge.EdgeQueryLogic;
 import datawave.query.tables.remote.RemoteQueryLogic;
 import datawave.query.transformer.EdgeQueryTransformerSupport;
 import datawave.security.authorization.UserOperations;
@@ -62,7 +63,7 @@ public class RemoteEdgeQueryLogic extends BaseQueryLogic<EdgeBase> implements Re
      * Copy constructor
      *
      * @param other
-     *            - another ShardQueryLogic object
+     *            - another RemoteEdgeQueryLogic object
      */
     public RemoteEdgeQueryLogic(RemoteEdgeQueryLogic other) {
         super(other);
@@ -71,9 +72,12 @@ public class RemoteEdgeQueryLogic extends BaseQueryLogic<EdgeBase> implements Re
             log.trace("Creating Cloned RemoteQueryLogic: " + System.identityHashCode(this) + " from " + System.identityHashCode(other));
 
         setRemoteQueryService(other.getRemoteQueryService());
+        setUserOperations(other.getUserOperations());
 
         // Set Configuration variables
         setConfig(RemoteQueryConfiguration.create(other));
+
+        // transformer instance is created dynamically
     }
 
     public String getRemoteId() {
@@ -186,17 +190,17 @@ public class RemoteEdgeQueryLogic extends BaseQueryLogic<EdgeBase> implements Re
 
     @Override
     public Set<String> getOptionalQueryParameters() {
-        return new ShardQueryLogic().getOptionalQueryParameters();
+        return new EdgeQueryLogic().getOptionalQueryParameters();
     }
 
     @Override
     public Set<String> getRequiredQueryParameters() {
-        return new ShardQueryLogic().getRequiredQueryParameters();
+        return new EdgeQueryLogic().getRequiredQueryParameters();
     }
 
     @Override
     public Set<String> getExampleQueries() {
-        return new ShardQueryLogic().getExampleQueries();
+        return new EdgeQueryLogic().getExampleQueries();
     }
 
     public Query getSettings() {
