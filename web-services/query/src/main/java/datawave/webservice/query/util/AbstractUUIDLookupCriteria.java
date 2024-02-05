@@ -80,7 +80,7 @@ public abstract class AbstractUUIDLookupCriteria {
      * returns a context for the lookup request if any was specfied in the request. The lookup context is used to obtain alternate query logics for the lookup
      * requests to use. This can be used to modify the types of responses the query operations provide (e.g., plaintext responses.)
      *
-     * @return
+     * @return uuidTypeContext string
      */
     public String getUUIDTypeContext() {
         return uuidTypeContext;

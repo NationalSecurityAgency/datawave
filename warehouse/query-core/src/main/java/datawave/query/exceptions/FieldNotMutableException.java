@@ -5,6 +5,7 @@ package datawave.query.exceptions;
  *
  */
 public class FieldNotMutableException extends Exception {
+    private static final long serialVersionUID = 0l;
 
     private String fieldName = "";
     private String dataType = "";

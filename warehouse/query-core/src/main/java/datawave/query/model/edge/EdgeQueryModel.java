@@ -29,6 +29,7 @@ import datawave.query.model.util.LoadModel;
  * (3) Additionally, index-only/unevaluated fields are ignored, as this concept is not applicable to edges.
  */
 public class EdgeQueryModel extends QueryModel {
+    private static final long serialVersionUID = 0l;
 
     private final EdgeModelFields fields;
 

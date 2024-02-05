@@ -148,7 +148,8 @@ public class DatawaveInterpreter extends Interpreter {
      *            the variable name
      * @param undef
      *            whether the variable is undefined or null
-     * @return
+     *
+     * @return null if it cannot be solved
      */
     @Override
     protected Object unsolvableVariable(JexlNode node, String var, boolean undef) {
@@ -168,7 +169,7 @@ public class DatawaveInterpreter extends Interpreter {
      *            the method/function name
      * @param xany
      *            the cause
-     * @return
+     * @return the JexlException
      */
     @Override
     protected JexlException invocationException(JexlNode node, String methodName, Throwable xany) {

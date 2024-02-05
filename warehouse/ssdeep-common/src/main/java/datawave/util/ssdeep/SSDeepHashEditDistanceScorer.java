@@ -76,6 +76,15 @@ public class SSDeepHashEditDistanceScorer implements SSDeepHashScorer<Integer> {
     /**
      * This is the low level chunk scoring algorithm. It takes two chunks and scores them on a scale of 0-100 where 0 is a terrible match and 100 is a great
      * match. The chunkSize is used to cope with very small messages.
+     *
+     * @param s1
+     *            the first chunk
+     * @param s2
+     *            the second chunk
+     * @param chunkSize
+     *            size of the chunk
+     *
+     * @return the new score
      */
     private static int scoreChunks(final String s1, final String s2, final int chunkSize) {
         final int len1 = s1.length();
@@ -113,7 +122,7 @@ public class SSDeepHashEditDistanceScorer implements SSDeepHashScorer<Integer> {
         score = 100 - score;
 
         // When the chunk size is small we don't want to exaggerate the match.
-        final int threshold = (int) (chunkSize / SSDeepHash.MIN_CHUNK_SIZE * Math.min(len1, len2));
+        final int threshold = (chunkSize / SSDeepHash.MIN_CHUNK_SIZE * Math.min(len1, len2));
         if (score > threshold) {
             score = threshold;
         }

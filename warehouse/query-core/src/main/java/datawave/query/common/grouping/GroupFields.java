@@ -27,6 +27,7 @@ import datawave.query.jexl.JexlASTHelper;
  * {@link GroupFields#from(String)}.
  */
 public class GroupFields implements Serializable {
+    private static final long serialVersionUID = 1l;
 
     private static final String GROUP = "GROUP";
     private static final String SUM = "SUM";

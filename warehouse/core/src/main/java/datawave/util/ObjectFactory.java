@@ -49,7 +49,7 @@ public class ObjectFactory {
 
             // Look for exact match
             try {
-                constructor = clazz.getConstructor(types.toArray(new Class[0]));
+                constructor = clazz.getConstructor(types.toArray(new Class<?>[0]));
             } catch (NoSuchMethodException e) {
                 logger.debug("No constructor for [" + className + "] in ObjectFactory.create())");
             }
@@ -59,7 +59,7 @@ public class ObjectFactory {
                 Constructor<?>[] constructors = clazz.getConstructors();
                 for (int i = 0; i < constructors.length && constructor == null; i++) {
                     Constructor<?> c = constructors[i];
-                    Class<?> ctypes[] = c.getParameterTypes();
+                    Class<?>[] ctypes = c.getParameterTypes();
 
                     if (logger.isDebugEnabled()) {
                         logger.debug("Checking:" + className + ", " + clazz);

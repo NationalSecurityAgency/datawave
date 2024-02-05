@@ -65,7 +65,7 @@ public class MetricsConfiguration {
                 try {
                     receiverClass = receiverClass.trim();
                     Class<? extends MetricsReceiver> clazz = (Class<? extends MetricsReceiver>) Class.forName(receiverClass);
-                    receivers.add(clazz.newInstance());
+                    receivers.add(clazz.getDeclaredConstructor().newInstance());
                 } catch (Exception e) {
                     logger.error("Could not instantiate receiver: " + receiverClass + ", skipping...", e);
                 }

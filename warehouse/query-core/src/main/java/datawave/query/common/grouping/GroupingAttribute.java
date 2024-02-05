@@ -15,6 +15,7 @@ import datawave.query.attributes.TypeAttribute;
  *            the delegate type
  */
 public class GroupingAttribute<T extends Comparable<T>> extends TypeAttribute<T> {
+    private static final long serialVersionUID = 0l;
 
     public GroupingAttribute(Type<T> type, Key key, boolean toKeep) {
         super(type, key, toKeep);

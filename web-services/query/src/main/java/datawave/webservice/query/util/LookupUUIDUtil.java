@@ -550,7 +550,8 @@ public class LookupUUIDUtil {
      * check if the query logic name is one of the configured content lookup type logics.
      *
      * @param queryLogicName
-     * @return
+     *            the query logic name
+     * @return true if it is configured as content lookup, false if not
      */
     public boolean isContentLookup(String queryLogicName) {
         if (queryLogicName == null)

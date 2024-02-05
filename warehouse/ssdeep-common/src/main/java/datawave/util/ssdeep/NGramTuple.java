@@ -11,6 +11,8 @@ import java.util.Objects;
  */
 public class NGramTuple implements Serializable, Comparable<NGramTuple> {
 
+    private static final long serialVersionUID = 1L;
+
     public static final String CHUNK_DELIMITER = ":";
 
     final int chunkSize;

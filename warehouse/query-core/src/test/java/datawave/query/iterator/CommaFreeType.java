@@ -7,11 +7,14 @@ import datawave.data.type.BaseType;
  * Purely testing type to remove all commas from a string.
  */
 public class CommaFreeType extends BaseType<String> {
+    private static final long serialVersionUID = 0l;
+
     public CommaFreeType() {
         super(new CommaNormalizer());
     }
 
     public static class CommaNormalizer extends AbstractNormalizer<String> {
+        private static final long serialVersionUID = 0l;
 
         @Override
         public String normalize(String s) {

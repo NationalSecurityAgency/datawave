@@ -110,13 +110,13 @@ public class QueryWizardResultResponse extends BaseResponse implements HtmlProvi
             builder.append("<tbody>");
 
             String dataType = "";
-            for (EventBase event : tempResponse.getEvents()) {
+            for (EventBase<?,?> event : tempResponse.getEvents()) {
                 dataType = event.getMetadata().getDataType();
                 builder.append("<tr>");
                 putTableCell(builder, dataType);
                 for (Object field : event.getFields()) {
                     if (field instanceof FieldBase) {
-                        FieldBase defaultField = (FieldBase) field;
+                        FieldBase<?> defaultField = (FieldBase<?>) field;
                         fieldNameToValueMap.put(defaultField.getName(), defaultField.getValueString());
                     }
                 }
@@ -147,10 +147,10 @@ public class QueryWizardResultResponse extends BaseResponse implements HtmlProvi
                 builder.append("</tr>");
             }
         } else if (response instanceof MetadataQueryResponseBase) {
-            MetadataQueryResponseBase tempResponse = (MetadataQueryResponseBase) response;
+            MetadataQueryResponseBase<?> tempResponse = (MetadataQueryResponseBase<?>) response;
             builder.append("<thead><tr><th>Field Name</th><th>Internal Field Name</th><th>Data Type</th><th>Last Updated</th><th>Index only</th></tr></thead>");
             builder.append("<tbody>");
-            for (MetadataFieldBase field : ((List<MetadataFieldBase>) (tempResponse.getFields()))) {
+            for (MetadataFieldBase<?,?> field : (tempResponse.getFields())) {
                 builder.append("<tr>");
                 putTableCell(builder, field.getFieldName());
                 putTableCell(builder, field.getInternalFieldName());
@@ -194,10 +194,10 @@ public class QueryWizardResultResponse extends BaseResponse implements HtmlProvi
 
         HashSet<String> fieldnameSet = new HashSet<>();
         builder.append("<thead><tr><th>DataType</th>");
-        for (EventBase event : tempResponse.getEvents()) {
+        for (EventBase<?,?> event : tempResponse.getEvents()) {
             for (Object field : event.getFields()) {
                 if (field instanceof FieldBase) {
-                    fieldnameSet.add(((FieldBase) field).getName());
+                    fieldnameSet.add(((FieldBase<?>) field).getName());
                 }
             }
         }

@@ -118,6 +118,7 @@ public class CompositeQueryLogicTest {
     }
 
     public static class TestEdgeQueryResponse extends EdgeQueryResponseBase {
+        private static final long serialVersionUID = 0l;
         private ArrayList<EdgeBase> edges = new ArrayList<>();
         private long totalResults = 0;
 

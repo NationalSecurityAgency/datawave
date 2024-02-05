@@ -178,9 +178,9 @@ public class TableConfigurationUtilTest {
 
         tcu.serializeTableConfgurationIntoConf(conf);
         TableConfigCache.getCurrentCache(conf).clear();
-        tcu.addOutputTables("audit", conf);
+        TableConfigurationUtil.addOutputTables("audit", conf);
 
-        tcu.deserializeTableConfigs(conf);
+        TableConfigurationUtil.deserializeTableConfigs(conf);
 
     }
 
@@ -196,7 +196,7 @@ public class TableConfigurationUtilTest {
 
         tcu.updateCacheFile();
 
-        tcu.addOutputTables("nonexistent_table", conf);
+        TableConfigurationUtil.addOutputTables("nonexistent_table", conf);
         try {
             tcu.serializeTableConfgurationIntoConf(conf);
         } finally {

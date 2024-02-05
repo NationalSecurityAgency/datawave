@@ -1466,15 +1466,15 @@ public final class EdgeData {
                 output.writeInt64(1, count_);
             }
             if (getHoursList().size() > 0) {
-                output.writeRawVarint32(18);
-                output.writeRawVarint32(hoursMemoizedSerializedSize);
+                output.writeUInt32NoTag(18);
+                output.writeUInt32NoTag(hoursMemoizedSerializedSize);
             }
             for (int i = 0; i < hours_.size(); i++) {
                 output.writeInt64NoTag(hours_.get(i));
             }
             if (getDurationList().size() > 0) {
-                output.writeRawVarint32(26);
-                output.writeRawVarint32(durationMemoizedSerializedSize);
+                output.writeUInt32NoTag(26);
+                output.writeUInt32NoTag(durationMemoizedSerializedSize);
             }
             for (int i = 0; i < duration_.size(); i++) {
                 output.writeInt64NoTag(duration_.get(i));

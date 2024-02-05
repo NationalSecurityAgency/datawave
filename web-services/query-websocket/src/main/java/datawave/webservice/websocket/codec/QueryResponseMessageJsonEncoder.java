@@ -13,6 +13,7 @@ import com.fasterxml.jackson.databind.AnnotationIntrospector;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.introspect.JacksonAnnotationIntrospector;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.module.jaxb.JaxbAnnotationIntrospector;
 
 import datawave.webservice.result.BaseResponse;
@@ -33,8 +34,8 @@ public class QueryResponseMessageJsonEncoder implements Encoder.TextStream<Query
 
     @Override
     public void init(EndpointConfig config) {
-        mapper = new ObjectMapper();
-        mapper.enable(MapperFeature.USE_WRAPPER_NAME_AS_PROPERTY_NAME);
+        mapper = JsonMapper.builder().enable(MapperFeature.USE_WRAPPER_NAME_AS_PROPERTY_NAME).build();
+
         mapper.setAnnotationIntrospector(
                         AnnotationIntrospector.pair(new JacksonAnnotationIntrospector(), new JaxbAnnotationIntrospector(mapper.getTypeFactory())));
         // Don't close the output stream

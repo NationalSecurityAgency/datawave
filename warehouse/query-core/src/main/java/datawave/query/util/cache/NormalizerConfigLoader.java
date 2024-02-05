@@ -7,6 +7,7 @@ import java.io.DataInputStream;
 import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map.Entry;
@@ -138,8 +139,8 @@ public class NormalizerConfigLoader extends Loader<String,Multimap<String,Type<?
 
                 Class<? extends Type<?>> clazz = (Class<? extends Type<?>>) Class.forName(className);
 
-                normalizerMap.put(dataType, clazz.newInstance());
-            } catch (InstantiationException | ClassNotFoundException | IllegalAccessException e) {
+                normalizerMap.put(dataType, clazz.getDeclaredConstructor().newInstance());
+            } catch (InstantiationException | ClassNotFoundException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
                 log.error(e);
             }
         }

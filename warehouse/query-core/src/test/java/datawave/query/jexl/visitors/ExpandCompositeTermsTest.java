@@ -1253,6 +1253,7 @@ public class ExpandCompositeTermsTest {
     }
 
     private static class MockDiscreteIndexType extends BaseType<String> implements DiscreteIndexType<String> {
+        private static final long serialVersionUID = 0l;
 
         public MockDiscreteIndexType() {
             super(new NoOpNormalizer());

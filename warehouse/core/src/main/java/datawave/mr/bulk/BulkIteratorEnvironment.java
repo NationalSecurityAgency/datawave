@@ -26,6 +26,7 @@ public class BulkIteratorEnvironment implements IteratorEnvironment {
     }
 
     @Override
+    @Deprecated
     public AccumuloConfiguration getConfig() {
         return conf;
     }
@@ -46,6 +47,7 @@ public class BulkIteratorEnvironment implements IteratorEnvironment {
     }
 
     @Override
+    @Deprecated
     public void registerSideChannel(SortedKeyValueIterator<Key,Value> iter) {
         throw new UnsupportedOperationException();
     }
@@ -71,12 +73,14 @@ public class BulkIteratorEnvironment implements IteratorEnvironment {
     }
 
     @Override
+    @Deprecated
     public SortedKeyValueIterator<Key,Value> reserveMapFileReader(String mapFileName) throws IOException {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
+    @Deprecated
     public ServiceEnvironment getServiceEnv() {
         return null;
     }
