@@ -3,7 +3,7 @@ package datawave.experimental.fi;
 import java.util.Set;
 import java.util.SortedSet;
 
-import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
 
 import datawave.query.predicate.TimeFilter;
 

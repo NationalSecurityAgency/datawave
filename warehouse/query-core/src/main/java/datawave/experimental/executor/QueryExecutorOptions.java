@@ -16,8 +16,8 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.commons.lang3.StringUtils;
 
 import com.google.common.base.Splitter;

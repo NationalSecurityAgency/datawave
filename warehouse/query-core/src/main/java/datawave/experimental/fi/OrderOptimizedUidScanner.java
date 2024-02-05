@@ -12,58 +12,92 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.commons.jexl2.parser.ASTAdditiveNode;
-import org.apache.commons.jexl2.parser.ASTAdditiveOperator;
-import org.apache.commons.jexl2.parser.ASTAmbiguous;
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTArrayAccess;
-import org.apache.commons.jexl2.parser.ASTArrayLiteral;
-import org.apache.commons.jexl2.parser.ASTAssignment;
-import org.apache.commons.jexl2.parser.ASTBitwiseAndNode;
-import org.apache.commons.jexl2.parser.ASTBitwiseComplNode;
-import org.apache.commons.jexl2.parser.ASTBitwiseOrNode;
-import org.apache.commons.jexl2.parser.ASTBitwiseXorNode;
-import org.apache.commons.jexl2.parser.ASTBlock;
-import org.apache.commons.jexl2.parser.ASTConstructorNode;
-import org.apache.commons.jexl2.parser.ASTDivNode;
-import org.apache.commons.jexl2.parser.ASTEQNode;
-import org.apache.commons.jexl2.parser.ASTERNode;
-import org.apache.commons.jexl2.parser.ASTEmptyFunction;
-import org.apache.commons.jexl2.parser.ASTFalseNode;
-import org.apache.commons.jexl2.parser.ASTForeachStatement;
-import org.apache.commons.jexl2.parser.ASTFunctionNode;
-import org.apache.commons.jexl2.parser.ASTGENode;
-import org.apache.commons.jexl2.parser.ASTGTNode;
-import org.apache.commons.jexl2.parser.ASTIdentifier;
-import org.apache.commons.jexl2.parser.ASTIfStatement;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ASTLENode;
-import org.apache.commons.jexl2.parser.ASTLTNode;
-import org.apache.commons.jexl2.parser.ASTMapEntry;
-import org.apache.commons.jexl2.parser.ASTMapLiteral;
-import org.apache.commons.jexl2.parser.ASTMethodNode;
-import org.apache.commons.jexl2.parser.ASTModNode;
-import org.apache.commons.jexl2.parser.ASTMulNode;
-import org.apache.commons.jexl2.parser.ASTNENode;
-import org.apache.commons.jexl2.parser.ASTNRNode;
-import org.apache.commons.jexl2.parser.ASTNotNode;
-import org.apache.commons.jexl2.parser.ASTNullLiteral;
-import org.apache.commons.jexl2.parser.ASTNumberLiteral;
-import org.apache.commons.jexl2.parser.ASTOrNode;
-import org.apache.commons.jexl2.parser.ASTReference;
-import org.apache.commons.jexl2.parser.ASTReferenceExpression;
-import org.apache.commons.jexl2.parser.ASTReturnStatement;
-import org.apache.commons.jexl2.parser.ASTSizeFunction;
-import org.apache.commons.jexl2.parser.ASTSizeMethod;
-import org.apache.commons.jexl2.parser.ASTStringLiteral;
-import org.apache.commons.jexl2.parser.ASTTernaryNode;
-import org.apache.commons.jexl2.parser.ASTTrueNode;
-import org.apache.commons.jexl2.parser.ASTUnaryMinusNode;
-import org.apache.commons.jexl2.parser.ASTVar;
-import org.apache.commons.jexl2.parser.ASTWhileStatement;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.ParserVisitor;
-import org.apache.commons.jexl2.parser.SimpleNode;
+import org.apache.commons.jexl3.parser.ASTAddNode;
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTAnnotatedStatement;
+import org.apache.commons.jexl3.parser.ASTAnnotation;
+import org.apache.commons.jexl3.parser.ASTArguments;
+import org.apache.commons.jexl3.parser.ASTArrayAccess;
+import org.apache.commons.jexl3.parser.ASTArrayLiteral;
+import org.apache.commons.jexl3.parser.ASTAssignment;
+import org.apache.commons.jexl3.parser.ASTBitwiseAndNode;
+import org.apache.commons.jexl3.parser.ASTBitwiseComplNode;
+import org.apache.commons.jexl3.parser.ASTBitwiseOrNode;
+import org.apache.commons.jexl3.parser.ASTBitwiseXorNode;
+import org.apache.commons.jexl3.parser.ASTBlock;
+import org.apache.commons.jexl3.parser.ASTBreak;
+import org.apache.commons.jexl3.parser.ASTConstructorNode;
+import org.apache.commons.jexl3.parser.ASTContinue;
+import org.apache.commons.jexl3.parser.ASTDecrementGetNode;
+import org.apache.commons.jexl3.parser.ASTDefineVars;
+import org.apache.commons.jexl3.parser.ASTDivNode;
+import org.apache.commons.jexl3.parser.ASTDoWhileStatement;
+import org.apache.commons.jexl3.parser.ASTEQNode;
+import org.apache.commons.jexl3.parser.ASTERNode;
+import org.apache.commons.jexl3.parser.ASTEWNode;
+import org.apache.commons.jexl3.parser.ASTEmptyFunction;
+import org.apache.commons.jexl3.parser.ASTExtendedLiteral;
+import org.apache.commons.jexl3.parser.ASTFalseNode;
+import org.apache.commons.jexl3.parser.ASTForeachStatement;
+import org.apache.commons.jexl3.parser.ASTFunctionNode;
+import org.apache.commons.jexl3.parser.ASTGENode;
+import org.apache.commons.jexl3.parser.ASTGTNode;
+import org.apache.commons.jexl3.parser.ASTGetDecrementNode;
+import org.apache.commons.jexl3.parser.ASTGetIncrementNode;
+import org.apache.commons.jexl3.parser.ASTIdentifier;
+import org.apache.commons.jexl3.parser.ASTIdentifierAccess;
+import org.apache.commons.jexl3.parser.ASTIfStatement;
+import org.apache.commons.jexl3.parser.ASTIncrementGetNode;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTJxltLiteral;
+import org.apache.commons.jexl3.parser.ASTLENode;
+import org.apache.commons.jexl3.parser.ASTLTNode;
+import org.apache.commons.jexl3.parser.ASTMapEntry;
+import org.apache.commons.jexl3.parser.ASTMapLiteral;
+import org.apache.commons.jexl3.parser.ASTMethodNode;
+import org.apache.commons.jexl3.parser.ASTModNode;
+import org.apache.commons.jexl3.parser.ASTMulNode;
+import org.apache.commons.jexl3.parser.ASTNENode;
+import org.apache.commons.jexl3.parser.ASTNEWNode;
+import org.apache.commons.jexl3.parser.ASTNRNode;
+import org.apache.commons.jexl3.parser.ASTNSWNode;
+import org.apache.commons.jexl3.parser.ASTNotNode;
+import org.apache.commons.jexl3.parser.ASTNullLiteral;
+import org.apache.commons.jexl3.parser.ASTNullpNode;
+import org.apache.commons.jexl3.parser.ASTNumberLiteral;
+import org.apache.commons.jexl3.parser.ASTOrNode;
+import org.apache.commons.jexl3.parser.ASTQualifiedIdentifier;
+import org.apache.commons.jexl3.parser.ASTRangeNode;
+import org.apache.commons.jexl3.parser.ASTReference;
+import org.apache.commons.jexl3.parser.ASTReferenceExpression;
+import org.apache.commons.jexl3.parser.ASTRegexLiteral;
+import org.apache.commons.jexl3.parser.ASTReturnStatement;
+import org.apache.commons.jexl3.parser.ASTSWNode;
+import org.apache.commons.jexl3.parser.ASTSetAddNode;
+import org.apache.commons.jexl3.parser.ASTSetAndNode;
+import org.apache.commons.jexl3.parser.ASTSetDivNode;
+import org.apache.commons.jexl3.parser.ASTSetLiteral;
+import org.apache.commons.jexl3.parser.ASTSetModNode;
+import org.apache.commons.jexl3.parser.ASTSetMultNode;
+import org.apache.commons.jexl3.parser.ASTSetOrNode;
+import org.apache.commons.jexl3.parser.ASTSetShiftLeftNode;
+import org.apache.commons.jexl3.parser.ASTSetShiftRightNode;
+import org.apache.commons.jexl3.parser.ASTSetShiftRightUnsignedNode;
+import org.apache.commons.jexl3.parser.ASTSetSubNode;
+import org.apache.commons.jexl3.parser.ASTSetXorNode;
+import org.apache.commons.jexl3.parser.ASTShiftLeftNode;
+import org.apache.commons.jexl3.parser.ASTShiftRightNode;
+import org.apache.commons.jexl3.parser.ASTShiftRightUnsignedNode;
+import org.apache.commons.jexl3.parser.ASTSizeFunction;
+import org.apache.commons.jexl3.parser.ASTStringLiteral;
+import org.apache.commons.jexl3.parser.ASTSubNode;
+import org.apache.commons.jexl3.parser.ASTTernaryNode;
+import org.apache.commons.jexl3.parser.ASTTrueNode;
+import org.apache.commons.jexl3.parser.ASTUnaryMinusNode;
+import org.apache.commons.jexl3.parser.ASTUnaryPlusNode;
+import org.apache.commons.jexl3.parser.ASTVar;
+import org.apache.commons.jexl3.parser.ASTWhileStatement;
+import org.apache.commons.jexl3.parser.JexlNode;
 
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.order.OrderByCostVisitor;
@@ -77,7 +111,7 @@ import datawave.query.jexl.visitors.order.OrderByCostVisitor;
  * <p>
  * Once an 'anchor' scan has been executed
  */
-public class OrderOptimizedUidScanner extends AbstractUidScanner implements ParserVisitor {
+public class OrderOptimizedUidScanner extends AbstractUidScanner {
 
     private String row;
     private Set<String> indexedFields;
@@ -114,6 +148,101 @@ public class OrderOptimizedUidScanner extends AbstractUidScanner implements Pars
     @Override
     public Object visit(ASTReferenceExpression node, Object data) {
         return node.jjtGetChild(0).jjtAccept(this, data);
+    }
+
+    @Override
+    protected Object visit(ASTSetAddNode astSetAddNode, Object o) {
+        return null;
+    }
+
+    @Override
+    protected Object visit(ASTSetSubNode astSetSubNode, Object o) {
+        return null;
+    }
+
+    @Override
+    protected Object visit(ASTSetMultNode astSetMultNode, Object o) {
+        return null;
+    }
+
+    @Override
+    protected Object visit(ASTSetDivNode astSetDivNode, Object o) {
+        return null;
+    }
+
+    @Override
+    protected Object visit(ASTSetModNode astSetModNode, Object o) {
+        return null;
+    }
+
+    @Override
+    protected Object visit(ASTSetAndNode astSetAndNode, Object o) {
+        return null;
+    }
+
+    @Override
+    protected Object visit(ASTSetOrNode astSetOrNode, Object o) {
+        return null;
+    }
+
+    @Override
+    protected Object visit(ASTSetXorNode astSetXorNode, Object o) {
+        return null;
+    }
+
+    @Override
+    protected Object visit(ASTSetShiftLeftNode astSetShiftLeftNode, Object o) {
+        return null;
+    }
+
+    @Override
+    protected Object visit(ASTSetShiftRightNode astSetShiftRightNode, Object o) {
+        return null;
+    }
+
+    @Override
+    protected Object visit(ASTSetShiftRightUnsignedNode astSetShiftRightUnsignedNode, Object o) {
+        return null;
+    }
+
+    @Override
+    protected Object visit(ASTGetDecrementNode astGetDecrementNode, Object o) {
+        return null;
+    }
+
+    @Override
+    protected Object visit(ASTGetIncrementNode astGetIncrementNode, Object o) {
+        return null;
+    }
+
+    @Override
+    protected Object visit(ASTDecrementGetNode astDecrementGetNode, Object o) {
+        return null;
+    }
+
+    @Override
+    protected Object visit(ASTIncrementGetNode astIncrementGetNode, Object o) {
+        return null;
+    }
+
+    @Override
+    protected Object visit(ASTJxltLiteral astJxltLiteral, Object o) {
+        return null;
+    }
+
+    @Override
+    protected Object visit(ASTAnnotation astAnnotation, Object o) {
+        return null;
+    }
+
+    @Override
+    protected Object visit(ASTAnnotatedStatement astAnnotatedStatement, Object o) {
+        return null;
+    }
+
+    @Override
+    protected Object visit(ASTQualifiedIdentifier astQualifiedIdentifier, Object o) {
+        return null;
     }
 
     @SuppressWarnings("unchecked")
@@ -321,7 +450,32 @@ public class OrderOptimizedUidScanner extends AbstractUidScanner implements Pars
     }
 
     @Override
-    public Object visit(SimpleNode node, Object data) {
+    protected Object visit(ASTSWNode astswNode, Object o) {
+        return null;
+    }
+
+    @Override
+    protected Object visit(ASTNSWNode astnswNode, Object o) {
+        return null;
+    }
+
+    @Override
+    protected Object visit(ASTEWNode astewNode, Object o) {
+        return null;
+    }
+
+    @Override
+    protected Object visit(ASTNEWNode astnewNode, Object o) {
+        return null;
+    }
+
+    @Override
+    protected Object visit(ASTAddNode astAddNode, Object o) {
+        return null;
+    }
+
+    @Override
+    protected Object visit(ASTSubNode astSubNode, Object o) {
         return null;
     }
 
@@ -332,17 +486,27 @@ public class OrderOptimizedUidScanner extends AbstractUidScanner implements Pars
     }
 
     @Override
-    public Object visit(ASTAmbiguous node, Object data) {
-        return null;
-    }
-
-    @Override
     public Object visit(ASTIfStatement node, Object data) {
         return null;
     }
 
     @Override
     public Object visit(ASTWhileStatement node, Object data) {
+        return null;
+    }
+
+    @Override
+    protected Object visit(ASTDoWhileStatement astDoWhileStatement, Object o) {
+        return null;
+    }
+
+    @Override
+    protected Object visit(ASTContinue astContinue, Object o) {
+        return null;
+    }
+
+    @Override
+    protected Object visit(ASTBreak astBreak, Object o) {
         return null;
     }
 
@@ -367,7 +531,17 @@ public class OrderOptimizedUidScanner extends AbstractUidScanner implements Pars
     }
 
     @Override
+    protected Object visit(ASTDefineVars astDefineVars, Object o) {
+        return null;
+    }
+
+    @Override
     public Object visit(ASTTernaryNode node, Object data) {
+        return null;
+    }
+
+    @Override
+    protected Object visit(ASTNullpNode astNullpNode, Object o) {
         return null;
     }
 
@@ -387,12 +561,17 @@ public class OrderOptimizedUidScanner extends AbstractUidScanner implements Pars
     }
 
     @Override
-    public Object visit(ASTAdditiveNode node, Object data) {
+    protected Object visit(ASTShiftLeftNode astShiftLeftNode, Object o) {
         return null;
     }
 
     @Override
-    public Object visit(ASTAdditiveOperator node, Object data) {
+    protected Object visit(ASTShiftRightNode astShiftRightNode, Object o) {
+        return null;
+    }
+
+    @Override
+    protected Object visit(ASTShiftRightUnsignedNode astShiftRightUnsignedNode, Object o) {
         return null;
     }
 
@@ -413,6 +592,11 @@ public class OrderOptimizedUidScanner extends AbstractUidScanner implements Pars
 
     @Override
     public Object visit(ASTUnaryMinusNode node, Object data) {
+        return null;
+    }
+
+    @Override
+    protected Object visit(ASTUnaryPlusNode astUnaryPlusNode, Object o) {
         return null;
     }
 
@@ -452,7 +636,27 @@ public class OrderOptimizedUidScanner extends AbstractUidScanner implements Pars
     }
 
     @Override
+    protected Object visit(ASTRegexLiteral astRegexLiteral, Object o) {
+        return null;
+    }
+
+    @Override
+    protected Object visit(ASTSetLiteral astSetLiteral, Object o) {
+        return null;
+    }
+
+    @Override
+    protected Object visit(ASTExtendedLiteral astExtendedLiteral, Object o) {
+        return null;
+    }
+
+    @Override
     public Object visit(ASTArrayLiteral node, Object data) {
+        return null;
+    }
+
+    @Override
+    protected Object visit(ASTRangeNode astRangeNode, Object o) {
         return null;
     }
 
@@ -487,17 +691,22 @@ public class OrderOptimizedUidScanner extends AbstractUidScanner implements Pars
     }
 
     @Override
-    public Object visit(ASTSizeMethod node, Object data) {
-        return null;
-    }
-
-    @Override
     public Object visit(ASTConstructorNode node, Object data) {
         return null;
     }
 
     @Override
     public Object visit(ASTArrayAccess node, Object data) {
+        return null;
+    }
+
+    @Override
+    protected Object visit(ASTIdentifierAccess astIdentifierAccess, Object o) {
+        return null;
+    }
+
+    @Override
+    protected Object visit(ASTArguments astArguments, Object o) {
         return null;
     }
 }

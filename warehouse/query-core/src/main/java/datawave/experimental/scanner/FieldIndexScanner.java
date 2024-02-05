@@ -13,10 +13,10 @@ import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTERNode;
-import org.apache.commons.jexl2.parser.ASTNRNode;
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTERNode;
+import org.apache.commons.jexl3.parser.ASTNRNode;
+import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 

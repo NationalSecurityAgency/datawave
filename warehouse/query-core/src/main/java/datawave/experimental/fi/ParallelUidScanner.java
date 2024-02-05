@@ -10,9 +10,9 @@ import java.util.concurrent.Future;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.log4j.Logger;
 
 import com.google.common.base.Throwables;
@@ -50,7 +50,7 @@ public class ParallelUidScanner extends SerialUidScanner {
             String field;
             if (term instanceof ASTAndNode) {
                 // handle the bounded range case
-                field = JexlASTHelper.getIdentifiers(term).get(0).image;
+                field = JexlASTHelper.getIdentifiers(term).get(0).getName();
             } else {
                 field = JexlASTHelper.getIdentifier(term);
             }

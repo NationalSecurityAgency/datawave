@@ -4,7 +4,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 
-import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
 
 /**
  * Interface used for intersection uids from the field index

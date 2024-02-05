@@ -3,7 +3,7 @@ package datawave.experimental.scanner.tf;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
 
 import datawave.query.attributes.Document;
 

@@ -2,12 +2,12 @@ package datawave.query.jexl.nodes;
 
 import java.util.Comparator;
 
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTOrNode;
-import org.apache.commons.jexl2.parser.ASTReference;
-import org.apache.commons.jexl2.parser.ASTReferenceExpression;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.JexlNodes;
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTOrNode;
+import org.apache.commons.jexl3.parser.ASTReference;
+import org.apache.commons.jexl3.parser.ASTReferenceExpression;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNodes;
 
 /**
  * Compare nodes based on arbitrary cost.

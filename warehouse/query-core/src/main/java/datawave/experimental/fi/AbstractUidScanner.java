@@ -4,11 +4,12 @@ import java.util.Set;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
+import org.apache.commons.jexl3.parser.ParserVisitor;
 
 import datawave.experimental.util.FieldIndexRangeBuilder;
 import datawave.query.predicate.TimeFilter;
 
-public abstract class AbstractUidScanner implements UidScanner {
+public abstract class AbstractUidScanner extends ParserVisitor implements UidScanner {
 
     protected AccumuloClient client;
     protected Authorizations auths;

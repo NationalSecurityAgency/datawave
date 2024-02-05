@@ -3,13 +3,13 @@ package datawave.query.jexl.visitors.order;
 import java.util.Arrays;
 import java.util.Map;
 
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTFunctionNode;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ASTOrNode;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.JexlNodes;
-import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTFunctionNode;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTOrNode;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNodes;
+import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.log4j.Logger;
 
 import datawave.query.jexl.JexlASTHelper;
@@ -19,7 +19,7 @@ import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.TreeFlatteningRebuilder;
 
 /**
- * Order query nodes by cost. Default cost is assumed via {@link org.apache.commons.jexl2.parser.ParserTreeConstants}.
+ * Order query nodes by cost. Default cost is assumed via {@link org.apache.commons.jexl3.parser.ParserTreeConstants}.
  *
  * An informed cost would count the occurrences of a field-value pair off the global index for a given shard.
  *
@@ -84,9 +84,9 @@ public class OrderByCostVisitor extends BaseVisitor {
     @Override
     public Object visit(ASTOrNode node, Object data) {
 
-        JexlNode[] children = JexlNodes.children(node);
-        Arrays.sort(children, costComparator);
-        JexlNodes.children(node, children);
+        // JexlNode[] children = JexlNodes.children(node);
+        // Arrays.sort(children, costComparator);
+        // JexlNodes.children(node, children);
 
         node.childrenAccept(this, data);
         return data;
@@ -95,9 +95,9 @@ public class OrderByCostVisitor extends BaseVisitor {
     @Override
     public Object visit(ASTAndNode node, Object data) {
 
-        JexlNode[] children = JexlNodes.children(node);
-        Arrays.sort(children, costComparator);
-        JexlNodes.children(node, children);
+        // JexlNode[] children = JexlNodes.children(node);
+        // Arrays.sort(children, costComparator);
+        // JexlNodes.children(node, children);
 
         node.childrenAccept(this, data);
         return data;

@@ -1,6 +1,6 @@
 package datawave.query.jexl.visitors.order;
 
-import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
 
 import datawave.query.jexl.visitors.BaseVisitor;
 

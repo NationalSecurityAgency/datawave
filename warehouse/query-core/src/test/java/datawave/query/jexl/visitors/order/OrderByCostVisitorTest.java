@@ -8,16 +8,16 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
-import org.apache.commons.jexl2.parser.ASTERNode;
-import org.apache.commons.jexl2.parser.ASTGENode;
-import org.apache.commons.jexl2.parser.ASTGTNode;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ASTLENode;
-import org.apache.commons.jexl2.parser.ASTLTNode;
-import org.apache.commons.jexl2.parser.ASTNENode;
-import org.apache.commons.jexl2.parser.ASTNRNode;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.commons.jexl3.parser.ASTERNode;
+import org.apache.commons.jexl3.parser.ASTGENode;
+import org.apache.commons.jexl3.parser.ASTGTNode;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTLENode;
+import org.apache.commons.jexl3.parser.ASTLTNode;
+import org.apache.commons.jexl3.parser.ASTNENode;
+import org.apache.commons.jexl3.parser.ASTNRNode;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ParseException;
 import org.junit.Test;
 
 import datawave.query.jexl.JexlASTHelper;

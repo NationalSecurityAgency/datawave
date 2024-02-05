@@ -3,65 +3,55 @@ package datawave.experimental.visitor;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.apache.commons.jexl2.parser.ASTAdditiveNode;
-import org.apache.commons.jexl2.parser.ASTAdditiveOperator;
-import org.apache.commons.jexl2.parser.ASTAmbiguous;
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTArrayAccess;
-import org.apache.commons.jexl2.parser.ASTArrayLiteral;
-import org.apache.commons.jexl2.parser.ASTAssignment;
-import org.apache.commons.jexl2.parser.ASTBitwiseAndNode;
-import org.apache.commons.jexl2.parser.ASTBitwiseComplNode;
-import org.apache.commons.jexl2.parser.ASTBitwiseOrNode;
-import org.apache.commons.jexl2.parser.ASTBitwiseXorNode;
-import org.apache.commons.jexl2.parser.ASTBlock;
-import org.apache.commons.jexl2.parser.ASTConstructorNode;
-import org.apache.commons.jexl2.parser.ASTDivNode;
-import org.apache.commons.jexl2.parser.ASTEQNode;
-import org.apache.commons.jexl2.parser.ASTERNode;
-import org.apache.commons.jexl2.parser.ASTEmptyFunction;
-import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
-import org.apache.commons.jexl2.parser.ASTFalseNode;
-import org.apache.commons.jexl2.parser.ASTFloatLiteral;
-import org.apache.commons.jexl2.parser.ASTForeachStatement;
-import org.apache.commons.jexl2.parser.ASTFunctionNode;
-import org.apache.commons.jexl2.parser.ASTGENode;
-import org.apache.commons.jexl2.parser.ASTGTNode;
-import org.apache.commons.jexl2.parser.ASTIdentifier;
-import org.apache.commons.jexl2.parser.ASTIfStatement;
-import org.apache.commons.jexl2.parser.ASTIntegerLiteral;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ASTLENode;
-import org.apache.commons.jexl2.parser.ASTLTNode;
-import org.apache.commons.jexl2.parser.ASTMapEntry;
-import org.apache.commons.jexl2.parser.ASTMapLiteral;
-import org.apache.commons.jexl2.parser.ASTMethodNode;
-import org.apache.commons.jexl2.parser.ASTModNode;
-import org.apache.commons.jexl2.parser.ASTMulNode;
-import org.apache.commons.jexl2.parser.ASTNENode;
-import org.apache.commons.jexl2.parser.ASTNRNode;
-import org.apache.commons.jexl2.parser.ASTNotNode;
-import org.apache.commons.jexl2.parser.ASTNullLiteral;
-import org.apache.commons.jexl2.parser.ASTNumberLiteral;
-import org.apache.commons.jexl2.parser.ASTOrNode;
-import org.apache.commons.jexl2.parser.ASTReference;
-import org.apache.commons.jexl2.parser.ASTReferenceExpression;
-import org.apache.commons.jexl2.parser.ASTReturnStatement;
-import org.apache.commons.jexl2.parser.ASTSizeFunction;
-import org.apache.commons.jexl2.parser.ASTSizeMethod;
-import org.apache.commons.jexl2.parser.ASTStringLiteral;
-import org.apache.commons.jexl2.parser.ASTTernaryNode;
-import org.apache.commons.jexl2.parser.ASTTrueNode;
-import org.apache.commons.jexl2.parser.ASTUnaryMinusNode;
-import org.apache.commons.jexl2.parser.ASTVar;
-import org.apache.commons.jexl2.parser.ASTWhileStatement;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.SimpleNode;
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTArrayAccess;
+import org.apache.commons.jexl3.parser.ASTArrayLiteral;
+import org.apache.commons.jexl3.parser.ASTAssignment;
+import org.apache.commons.jexl3.parser.ASTBitwiseAndNode;
+import org.apache.commons.jexl3.parser.ASTBitwiseComplNode;
+import org.apache.commons.jexl3.parser.ASTBitwiseOrNode;
+import org.apache.commons.jexl3.parser.ASTBitwiseXorNode;
+import org.apache.commons.jexl3.parser.ASTBlock;
+import org.apache.commons.jexl3.parser.ASTConstructorNode;
+import org.apache.commons.jexl3.parser.ASTDivNode;
+import org.apache.commons.jexl3.parser.ASTEQNode;
+import org.apache.commons.jexl3.parser.ASTERNode;
+import org.apache.commons.jexl3.parser.ASTEmptyFunction;
+import org.apache.commons.jexl3.parser.ASTFalseNode;
+import org.apache.commons.jexl3.parser.ASTForeachStatement;
+import org.apache.commons.jexl3.parser.ASTFunctionNode;
+import org.apache.commons.jexl3.parser.ASTGENode;
+import org.apache.commons.jexl3.parser.ASTGTNode;
+import org.apache.commons.jexl3.parser.ASTIdentifier;
+import org.apache.commons.jexl3.parser.ASTIfStatement;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTLENode;
+import org.apache.commons.jexl3.parser.ASTLTNode;
+import org.apache.commons.jexl3.parser.ASTMapEntry;
+import org.apache.commons.jexl3.parser.ASTMapLiteral;
+import org.apache.commons.jexl3.parser.ASTMethodNode;
+import org.apache.commons.jexl3.parser.ASTModNode;
+import org.apache.commons.jexl3.parser.ASTMulNode;
+import org.apache.commons.jexl3.parser.ASTNENode;
+import org.apache.commons.jexl3.parser.ASTNRNode;
+import org.apache.commons.jexl3.parser.ASTNotNode;
+import org.apache.commons.jexl3.parser.ASTNullLiteral;
+import org.apache.commons.jexl3.parser.ASTNumberLiteral;
+import org.apache.commons.jexl3.parser.ASTOrNode;
+import org.apache.commons.jexl3.parser.ASTReference;
+import org.apache.commons.jexl3.parser.ASTReferenceExpression;
+import org.apache.commons.jexl3.parser.ASTReturnStatement;
+import org.apache.commons.jexl3.parser.ASTSizeFunction;
+import org.apache.commons.jexl3.parser.ASTStringLiteral;
+import org.apache.commons.jexl3.parser.ASTTernaryNode;
+import org.apache.commons.jexl3.parser.ASTTrueNode;
+import org.apache.commons.jexl3.parser.ASTUnaryMinusNode;
+import org.apache.commons.jexl3.parser.ASTVar;
+import org.apache.commons.jexl3.parser.ASTWhileStatement;
+import org.apache.commons.jexl3.parser.JexlNode;
 
-import datawave.query.jexl.nodes.BoundedRange;
-import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
+import datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType;
 import datawave.query.jexl.visitors.BaseVisitor;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 
@@ -98,16 +88,11 @@ public class QueryTermVisitor extends BaseVisitor {
                 throw new IllegalStateException("QueryPropertyMarker has a null source for node: " + JexlStringBuildingVisitor.buildQueryWithoutParse(node));
             }
 
-            if (instance.isType(BoundedRange.class)) {
+            if (instance.isType(MarkerType.BOUNDED_RANGE)) {
                 // add full node so QueryPropertyMarker can detect a bounded range
                 leaves.add(node);
                 return data;
-            } else if (instance.isAnyTypeOf(
-            //  @formatter:off
-                            ASTEvaluationOnly.class,
-                            ExceededValueThresholdMarkerJexlNode.class,
-                            ExceededTermThresholdMarkerJexlNode.class)) {
-                //  @formatter:on
+            } else if (instance.isAnyTypeOf(MarkerType.EVALUATION_ONLY, MarkerType.EXCEEDED_VALUE, MarkerType.EXCEEDED_TERM)) {
                 // skip these nodes for remote scheduling. there may be room in the future for an optimized regex scan
                 return data;
             } else if (source instanceof ASTAndNode) {
@@ -163,12 +148,6 @@ public class QueryTermVisitor extends BaseVisitor {
     /*
      * Expected leaf nodes
      */
-
-    @Override
-    public Object visit(SimpleNode node, Object data) {
-        node.childrenAccept(this, data);
-        return data;
-    }
 
     @Override
     public Object visit(ASTEQNode node, Object data) {
@@ -227,18 +206,6 @@ public class QueryTermVisitor extends BaseVisitor {
      */
 
     @Override
-    public Object visit(ASTAdditiveNode node, Object data) {
-        node.childrenAccept(this, data);
-        return data;
-    }
-
-    @Override
-    public Object visit(ASTAdditiveOperator node, Object data) {
-        node.childrenAccept(this, data);
-        return data;
-    }
-
-    @Override
     public Object visit(ASTMulNode node, Object data) {
         node.childrenAccept(this, data);
         return data;
@@ -293,18 +260,6 @@ public class QueryTermVisitor extends BaseVisitor {
     }
 
     @Override
-    public Object visit(ASTIntegerLiteral node, Object data) {
-        node.childrenAccept(this, data);
-        return data;
-    }
-
-    @Override
-    public Object visit(ASTFloatLiteral node, Object data) {
-        node.childrenAccept(this, data);
-        return data;
-    }
-
-    @Override
     public Object visit(ASTStringLiteral node, Object data) {
         node.childrenAccept(this, data);
         return data;
@@ -342,12 +297,6 @@ public class QueryTermVisitor extends BaseVisitor {
 
     @Override
     public Object visit(ASTBlock node, Object data) {
-        node.childrenAccept(this, data);
-        return data;
-    }
-
-    @Override
-    public Object visit(ASTAmbiguous node, Object data) {
         node.childrenAccept(this, data);
         return data;
     }
@@ -402,12 +351,6 @@ public class QueryTermVisitor extends BaseVisitor {
 
     @Override
     public Object visit(ASTMethodNode node, Object data) {
-        node.childrenAccept(this, data);
-        return data;
-    }
-
-    @Override
-    public Object visit(ASTSizeMethod node, Object data) {
         node.childrenAccept(this, data);
         return data;
     }

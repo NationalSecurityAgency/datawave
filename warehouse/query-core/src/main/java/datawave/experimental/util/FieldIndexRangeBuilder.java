@@ -2,16 +2,16 @@ package datawave.experimental.util;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTERNode;
-import org.apache.commons.jexl2.parser.ASTNRNode;
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTERNode;
+import org.apache.commons.jexl3.parser.ASTNRNode;
+import org.apache.commons.jexl3.parser.JexlNode;
 
 import datawave.query.Constants;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.LiteralRange;
-import datawave.query.jexl.nodes.BoundedRange;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
+import datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.parser.JavaRegexAnalyzer;
 
@@ -31,7 +31,7 @@ public class FieldIndexRangeBuilder {
     public Range rangeFromTerm(String shard, JexlNode node, String firstDtUid, String lastDtUid) {
         if (node instanceof ASTAndNode) {
             // probably have a bounded range
-            if (QueryPropertyMarker.findInstance(node).isType(BoundedRange.class)) {
+            if (QueryPropertyMarker.findInstance(node).isType(MarkerType.BOUNDED_RANGE)) {
                 return buildBoundedRange(shard, node);
             }
             throw new IllegalStateException("Expected a BoundedRange but was: " + JexlStringBuildingVisitor.buildQueryWithoutParse(node));
@@ -47,7 +47,7 @@ public class FieldIndexRangeBuilder {
         JexlASTHelper.RangeFinder rangeFinder = new JexlASTHelper.RangeFinder();
         LiteralRange<?> literalRange = rangeFinder.getRange(node);
 
-        String field = JexlASTHelper.getIdentifiers(node).get(0).image;
+        String field = JexlASTHelper.getIdentifiers(node).get(0).getName();
         Key startKey = new Key(shard, "fi\0" + field, literalRange.getLower().toString() + "\0");
         Key endKey = new Key(shard, "fi\0" + field, literalRange.getUpper().toString() + "\1");
         return new Range(startKey, literalRange.isLowerInclusive(), endKey, literalRange.isUpperInclusive());
