@@ -1,5 +1,11 @@
 package datawave.query.index.lookup;
 
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DELAYED;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_OR;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_TERM;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.INDEX_HOLE;
+
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
@@ -7,11 +13,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
-import org.apache.commons.jexl2.parser.ASTOrNode;
-import org.apache.commons.jexl2.parser.ASTReference;
-import org.apache.commons.jexl2.parser.ASTReferenceExpression;
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ASTOrNode;
+import org.apache.commons.jexl3.parser.ASTReferenceExpression;
+import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.hadoop.io.VIntWritable;
 import org.apache.hadoop.io.VLongWritable;
 import org.apache.hadoop.io.Writable;
@@ -25,10 +29,6 @@ import com.google.common.collect.Sets;
 
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlNodeFactory;
-import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.jexl.visitors.RebuildingVisitor;
 import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
@@ -183,7 +183,7 @@ public class IndexInfo implements Writable, UidIntersector {
         if (nodeSet.isEmpty()) {
             merged.myNode = null;
         } else {
-            merged.myNode = JexlNodeFactory.createUnwrappedOrNode(nodeSet.getNodes());
+            merged.myNode = JexlNodeFactory.createOrNode(nodeSet.getNodes());
         }
 
         return merged;
@@ -192,8 +192,6 @@ public class IndexInfo implements Writable, UidIntersector {
     private JexlNode getOrNode(JexlNode node) {
         if (node instanceof ASTOrNode) {
             return node;
-        } else if (node instanceof ASTReference) {
-            return getOrNode(node.jjtGetChild(0));
         } else if (node instanceof ASTReferenceExpression) {
             return getOrNode(node.jjtGetChild(0));
         }
@@ -202,8 +200,7 @@ public class IndexInfo implements Writable, UidIntersector {
 
     public static JexlNode getSourceNode(JexlNode delayedNode) {
         QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(delayedNode);
-        if (instance.isAnyTypeOf(ASTDelayedPredicate.class, ExceededOrThresholdMarkerJexlNode.class, ExceededValueThresholdMarkerJexlNode.class,
-                        ExceededTermThresholdMarkerJexlNode.class, IndexHoleMarkerJexlNode.class)) {
+        if (instance.isAnyTypeOf(DELAYED, EXCEEDED_OR, EXCEEDED_VALUE, EXCEEDED_TERM, INDEX_HOLE)) {
             return instance.getSource();
         } else {
             return delayedNode;
@@ -304,7 +301,7 @@ public class IndexInfo implements Writable, UidIntersector {
         if (nodeSet.isEmpty()) {
             merged.myNode = null;
         } else {
-            merged.myNode = TreeFlatteningRebuildingVisitor.flatten(JexlNodeFactory.createUnwrappedOrNode(nodeSet.getNodes()));
+            merged.myNode = TreeFlatteningRebuildingVisitor.flatten(JexlNodeFactory.createOrNode(nodeSet.getNodes()));
         }
         return merged;
     }

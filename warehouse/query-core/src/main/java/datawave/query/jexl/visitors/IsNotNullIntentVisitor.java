@@ -1,11 +1,11 @@
 package datawave.query.jexl.visitors;
 
-import org.apache.commons.jexl2.parser.ASTERNode;
-import org.apache.commons.jexl2.parser.ASTNENode;
-import org.apache.commons.jexl2.parser.ASTNullLiteral;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.JexlNodes;
-import org.apache.commons.jexl2.parser.ParserTreeConstants;
+import org.apache.commons.jexl3.parser.ASTERNode;
+import org.apache.commons.jexl3.parser.ASTNENode;
+import org.apache.commons.jexl3.parser.ASTNullLiteral;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNodes;
+import org.apache.commons.jexl3.parser.ParserTreeConstants;
 
 import datawave.query.jexl.JexlASTHelper;
 
@@ -35,7 +35,7 @@ public class IsNotNullIntentVisitor extends BaseVisitor {
         if (".*?".equals(value)) {
             JexlNode nullLiteral = new ASTNullLiteral(ParserTreeConstants.JJTNULLLITERAL);
             JexlNode neNode = new ASTNENode(ParserTreeConstants.JJTNENODE);
-            JexlNodes.children(neNode, node.jjtGetChild(0), nullLiteral);
+            JexlNodes.setChildren(neNode, node.jjtGetChild(0), nullLiteral);
 
             JexlNodes.replaceChild(node.jjtGetParent(), node, neNode);
         }
