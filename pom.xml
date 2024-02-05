@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>gov.nsa.datawave</groupId>
     <artifactId>datawave-parent</artifactId>
-    <version>6.5.0-SNAPSHOT</version>
+    <version>6.6.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>DataWave</name>
     <description>DataWave is a Java-based ingest and query framework that leverages Apache Accumulo to provide fast, secure access to your data.</description>
@@ -52,7 +52,7 @@
         <version.commons-configuration>1.10</version.commons-configuration>
         <version.commons-configuration2>2.7</version.commons-configuration2>
         <version.commons-io>2.6</version.commons-io>
-        <version.commons-jexl>2.1.1</version.commons-jexl>
+        <version.commons-jexl3>3.3</version.commons-jexl3>
         <version.commons-lang>2.6</version.commons-lang>
         <version.commons-logging>1.2</version.commons-logging>
         <version.commons-pool>1.6</version.commons-pool>
@@ -96,7 +96,7 @@
         <version.microservice.audit-api>3.0.0</version.microservice.audit-api>
         <version.microservice.authorization-api>3.0.0</version.microservice.authorization-api>
         <version.microservice.base-rest-responses>3.0.0</version.microservice.base-rest-responses>
-        <version.microservice.common-utils>2.0.0</version.microservice.common-utils>
+        <version.microservice.common-utils>2.0.1</version.microservice.common-utils>
         <version.microservice.dictionary-api>3.0.0</version.microservice.dictionary-api>
         <version.microservice.metadata-utils>3.0.0</version.microservice.metadata-utils>
         <version.microservice.metrics-reporter>2.0.0</version.microservice.metrics-reporter>
@@ -600,8 +600,8 @@
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
-                <artifactId>commons-jexl</artifactId>
-                <version>${version.commons-jexl}</version>
+                <artifactId>commons-jexl3</artifactId>
+                <version>${version.commons-jexl3}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
