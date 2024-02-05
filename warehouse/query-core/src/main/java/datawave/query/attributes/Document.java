@@ -855,8 +855,8 @@ public class Document extends AttributeBag<Document> implements Serializable {
             if (Attribute.class.isAssignableFrom(clz)) {
                 // Get an instance of the concrete Attribute
                 try {
-                    attr = (Attribute<?>) clz.newInstance();
-                } catch (InstantiationException | IllegalAccessException e) {
+                    attr = (Attribute<?>) clz.getDeclaredConstructor().newInstance();
+                } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
                     throw new RuntimeException(e);
                 }
 

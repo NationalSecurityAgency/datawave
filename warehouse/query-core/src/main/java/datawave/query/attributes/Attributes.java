@@ -329,8 +329,8 @@ public class Attributes extends AttributeBag<Attributes> implements Serializable
             // Get the Class for the name of the class of the concrete Attribute
             Attribute<?> attr;
             try {
-                attr = (Attribute<?>) clz.newInstance();
-            } catch (InstantiationException | IllegalAccessException e) {
+                attr = (Attribute<?>) clz.getDeclaredConstructor().newInstance();
+            } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
                 throw new RuntimeException(e);
             }
 

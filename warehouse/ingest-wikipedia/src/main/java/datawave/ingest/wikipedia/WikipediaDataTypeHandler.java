@@ -472,7 +472,7 @@ public class WikipediaDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends ExtendedCon
 
             // Now add the offset to the token offset queue, and if we overflow then output the overflow
             if (tokenOffsetCache != null) {
-                OffsetList overflow = tokenOffsetCache.addOffset(indexedTermAndZone, position);
+                OffsetList<Integer> overflow = tokenOffsetCache.addOffset(indexedTermAndZone, position);
                 if (overflow != null) {
                     // no need to normalize as that was already done upon insertion into the token offset cache
                     NormalizedFieldAndValue overflowNfv = new NormalizedFieldAndValue(overflow.termAndZone.zone, overflow.termAndZone.term);

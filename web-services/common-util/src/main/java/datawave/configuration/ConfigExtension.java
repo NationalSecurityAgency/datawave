@@ -19,7 +19,7 @@ import javax.xml.parsers.SAXParserFactory;
  * find a resource on the class path matching the class' name and path. The xml resource is a jax-b serialized version of the configuration object.
  */
 public class ConfigExtension implements Extension {
-    @SuppressWarnings("unused")
+    @SuppressWarnings({"unused", "unchecked"})
     <T> void processInjectionTarget(@Observes ProcessInjectionTarget<T> pit) {
         final InjectionTarget<T> it = pit.getInjectionTarget();
 

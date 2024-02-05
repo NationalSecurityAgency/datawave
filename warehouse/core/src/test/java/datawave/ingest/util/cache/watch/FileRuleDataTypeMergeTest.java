@@ -1,8 +1,6 @@
 package datawave.ingest.util.cache.watch;
 
-import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -54,22 +52,22 @@ public class FileRuleDataTypeMergeTest {
         // <zip ttl="123"/>
 
         // verify original values
-        assertThat(parentFilter.options.getOption("foo.ttl"), is("600"));
-        assertThat(parentFilter.options.getOption("bar.ttl"), is("500"));
-        assertThat(parentFilter.options.getOption("baz.ttl"), is("400"));
+        assertEquals(parentFilter.options.getOption("foo.ttl"), "600");
+        assertEquals(parentFilter.options.getOption("bar.ttl"), "500");
+        assertEquals(parentFilter.options.getOption("baz.ttl"), "400");
 
         // check overrides
-        assertThat(childFilter.options.getOption("bar.ttl"), is("500"));
-        assertThat(childFilter.options.getOption("baz.ttl"), is("400"));
+        assertEquals(childFilter.options.getOption("bar.ttl"), "500");
+        assertEquals(childFilter.options.getOption("baz.ttl"), "400");
         // these are overridden
-        assertThat(childFilter.options.getOption("foo.ttl"), is("123"));
-        assertThat(childFilter.options.getOption("zip.ttl"), is("123"));
+        assertEquals(childFilter.options.getOption("foo.ttl"), "123");
+        assertEquals(childFilter.options.getOption("zip.ttl"), "123");
     }
 
     private static FilterRule loadRulesFromFile(FileRuleWatcher watcher, FileSystem fs, Path filePath) throws IOException {
         Collection<FilterRule> rules = watcher.loadContents(fs.open(filePath));
         // should only have the single rule
-        assertThat(rules.size(), is(1));
+        assertEquals(rules.size(), 1);
         for (FilterRule rule : rules) {
             assertEquals(TestDataTypeFilter.class, rule.getClass());
         }

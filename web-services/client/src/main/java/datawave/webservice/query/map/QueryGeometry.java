@@ -16,6 +16,8 @@ import org.apache.commons.lang.StringEscapeUtils;
 @XmlAccessorType(XmlAccessType.NONE)
 public class QueryGeometry implements Serializable {
 
+    private static final long serialVersionUID = 1l;
+
     @XmlElement
     private String function;
     @XmlElement

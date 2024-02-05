@@ -1994,9 +1994,9 @@
             <id>clover</id>
             <dependencies>
                 <dependency>
-                    <groupId>com.cenqua.clover</groupId>
+                    <groupId>org.openclover</groupId>
                     <artifactId>clover</artifactId>
-                    <version>RELEASE</version>
+                    <version>4.5.1</version>
                 </dependency>
             </dependencies>
         </profile>

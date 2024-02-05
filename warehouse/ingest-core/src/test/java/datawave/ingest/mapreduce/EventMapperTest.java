@@ -110,7 +110,7 @@ public class EventMapperTest {
         TaskAttemptID id = new TaskAttemptID();
         expect(mapContext.getTaskAttemptID()).andReturn(id).anyTimes();
 
-        StandaloneTaskAttemptContext standaloneContext = new StandaloneTaskAttemptContext(conf, new StandaloneStatusReporter());
+        StandaloneTaskAttemptContext<?,?,?,?> standaloneContext = new StandaloneTaskAttemptContext<>(conf, new StandaloneStatusReporter());
         expect(mapContext.getCounter(anyObject())).andDelegateTo(standaloneContext).anyTimes();
         expect(mapContext.getCounter(anyString(), anyString())).andDelegateTo(standaloneContext).anyTimes();
 

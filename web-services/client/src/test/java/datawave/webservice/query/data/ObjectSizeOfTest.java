@@ -60,20 +60,20 @@ public class ObjectSizeOfTest {
     @Test
     public void testNumbers() {
         assertEquals(16, ObjectSizeOf.Sizer.getObjectSize(Boolean.TRUE));
-        assertEquals(16, ObjectSizeOf.Sizer.getObjectSize(new Byte((byte) 1)));
-        assertEquals(16, ObjectSizeOf.Sizer.getObjectSize(new Character((char) 1)));
-        assertEquals(16, ObjectSizeOf.Sizer.getObjectSize(new Short((short) 1)));
-        assertEquals(16, ObjectSizeOf.Sizer.getObjectSize(new Integer(1)));
-        assertEquals(16, ObjectSizeOf.Sizer.getObjectSize(new Float(1)));
-        assertEquals(16, ObjectSizeOf.Sizer.getObjectSize(new Long(1)));
-        assertEquals(16, ObjectSizeOf.Sizer.getObjectSize(new Double(1)));
+        assertEquals(16, ObjectSizeOf.Sizer.getObjectSize((byte) 1));
+        assertEquals(16, ObjectSizeOf.Sizer.getObjectSize((char) 1));
+        assertEquals(16, ObjectSizeOf.Sizer.getObjectSize((short) 1));
+        assertEquals(16, ObjectSizeOf.Sizer.getObjectSize(1));
+        assertEquals(16, ObjectSizeOf.Sizer.getObjectSize(1F));
+        assertEquals(16, ObjectSizeOf.Sizer.getObjectSize(1L));
+        assertEquals(16, ObjectSizeOf.Sizer.getObjectSize(1.0));
     }
 
     @Test
     public void testObjects() {
         List<Object> list = new ArrayList<Object>(10);
-        list.add(new Long(1));
-        list.add(new Double(1));
+        list.add(1L);
+        list.add(1.0);
         int overhead = 8;
         int arrayoverhead = 12;
         int reference = 4;

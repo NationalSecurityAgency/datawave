@@ -37,7 +37,7 @@ class MockMapDriver<KEYIN,VALUEIN,KEYOUT,VALUEOUT> {
     }
 
     void addInput(KEYIN key, VALUEIN value) {
-        MRPair pair = new MRPair(key, value);
+        MRPair<KEYIN,VALUEIN> pair = new MRPair<>(key, value);
         this.input.add(pair);
     }
 

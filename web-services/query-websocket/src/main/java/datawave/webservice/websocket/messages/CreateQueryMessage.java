@@ -27,7 +27,7 @@ import javax.ws.rs.core.MultivaluedMap;
 public class CreateQueryMessage implements QueryMessage {
     private MultivaluedMap<String,String> parameters;
 
-    public CreateQueryMessage(MultivaluedMap parameters) {
+    public CreateQueryMessage(MultivaluedMap<String,String> parameters) {
         this.parameters = parameters;
     }
 

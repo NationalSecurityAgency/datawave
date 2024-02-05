@@ -42,7 +42,7 @@ public abstract class AbstractChainedContextWriter<OK,OV> extends StatsDHelper i
                             + getChainedContextWriterOption());
         }
         try {
-            contextWriter = contextWriterClass.newInstance();
+            contextWriter = contextWriterClass.getDeclaredConstructor().newInstance();
             contextWriter.setup(conf, outputTableCounters);
         } catch (Exception e) {
             throw new IOException("Failed to initialized " + contextWriterClass + " from property " + getChainedContextWriterOption(), e);

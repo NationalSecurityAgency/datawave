@@ -295,7 +295,7 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
             for (Object hitValue : hitTermMap.get(keyWithGrouping)) {
                 try {
                     if (Type.class.isAssignableFrom(clazz)) {
-                        Type<?> thing = (Type<?>) clazz.newInstance();
+                        Type<?> thing = (Type<?>) clazz.getDeclaredConstructor().newInstance();
                         thing.setDelegateFromString(String.valueOf(hitValue));
                         hitValue = thing;
                     } else { // otherwise, s is not a Type, just compare as string values
@@ -377,6 +377,7 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
      * A map that assumes a value for missing keys.
      */
     public static class CountMap extends HashMap<String,Integer> {
+        private static final long serialVersionUID = 0l;
         private static final Integer ZERO = Integer.valueOf(0);
 
         @Override

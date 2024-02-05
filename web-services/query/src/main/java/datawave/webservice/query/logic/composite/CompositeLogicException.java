@@ -7,6 +7,8 @@ import java.util.Map;
 import datawave.webservice.query.exception.QueryException;
 
 public class CompositeLogicException extends RuntimeException {
+    private static final long serialVersionUID = 0l;
+
     public CompositeLogicException(String message, String logicName, Exception exception) {
         super(getMessage(message, Collections.singletonMap(logicName, exception)), exception);
     }

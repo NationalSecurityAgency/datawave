@@ -3,6 +3,9 @@ package datawave.util.ssdeep;
 import java.nio.charset.StandardCharsets;
 
 public class SSDeepParseException extends RuntimeException {
+
+    private static final long serialVersionUID = 1L;
+
     final String message;
     final String input;
 

@@ -19,13 +19,13 @@ import datawave.webservice.result.GenericResponse;
  */
 public interface UserOperations {
 
-    AuthorizationsListBase listEffectiveAuthorizations(Object callerObject) throws AuthorizationException;
+    AuthorizationsListBase<?> listEffectiveAuthorizations(Object callerObject) throws AuthorizationException;
 
     GenericResponse<String> flushCachedCredentials(Object callerObject) throws AuthorizationException;
 
     default DatawavePrincipal getRemoteUser(DatawavePrincipal principal) throws AuthorizationException {
         // get the effective authorizations for this user
-        AuthorizationsListBase auths = listEffectiveAuthorizations(principal);
+        AuthorizationsListBase<?> auths = listEffectiveAuthorizations(principal);
 
         // create a new set of proxied users
         List<DatawaveUser> mappedUsers = new ArrayList<>();

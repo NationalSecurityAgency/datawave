@@ -41,7 +41,7 @@ public class ConditionalRemoteUserOperationsTest {
         boolean invoked = false;
 
         @Override
-        public AuthorizationsListBase listEffectiveAuthorizations(Object callerObject) throws AuthorizationException {
+        public AuthorizationsListBase<?> listEffectiveAuthorizations(Object callerObject) throws AuthorizationException {
             invoked = true;
             return new DefaultAuthorizationsList();
         }
