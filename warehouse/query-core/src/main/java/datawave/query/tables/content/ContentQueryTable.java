@@ -64,6 +64,9 @@ public class ContentQueryTable extends BaseQueryLogic<Entry<Key,Value>> {
 
     public ContentQueryTable(final ContentQueryTable contentQueryTable) {
         super(contentQueryTable);
+        this.queryThreads = contentQueryTable.queryThreads;
+        this.scannerFactory = contentQueryTable.scannerFactory;
+        this.viewName = contentQueryTable.viewName;
     }
 
     /**

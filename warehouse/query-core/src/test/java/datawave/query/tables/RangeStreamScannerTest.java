@@ -32,7 +32,7 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.commons.jexl2.parser.ASTEQNode;
+import org.apache.commons.jexl3.parser.ASTEQNode;
 import org.apache.hadoop.io.Text;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -343,7 +343,7 @@ public class RangeStreamScannerTest {
         // Construct a ScannerStream from RangeStreamScanner, iterator, entry parser.
         RangeStreamScanner rangeStreamScanner = buildRangeStreamScanner(fieldName, fieldValue);
         EntryParser entryParser = new EntryParser(eqNode, fieldName, fieldValue, config.getIndexedFields());
-        // Iterator<Tuple2<String,IndexInfo>> iterator = Iterators.transform(rangeStreamScanner, entryParser);
+        // Iterator<ImmutablePair<String,IndexInfo>> iterator = Iterators.transform(rangeStreamScanner, entryParser);
         ScannerStream scannerStream = ScannerStream.initialized(rangeStreamScanner, entryParser, eqNode);
 
         // Assert the iterator correctly iterates over the iterables without irritating the unit test.

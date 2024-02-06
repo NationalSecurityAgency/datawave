@@ -296,9 +296,10 @@ public class ShardQueryConfigurationTest {
                         .assertValue("groupFieldsBatchSizeAsString", "0")
                         .assertValue("groupFields", new GroupFields())
                         .assertValue("fieldIndexHoleMinThreshold", 1.0d)
+                        .assertValue("intermediateMaxTermThreshold", 2500)
                         .build();
         // @formatter:on
-
+    
         ShardQueryConfiguration config = ShardQueryConfiguration.create();
         testValues(config, asserts);
     }
@@ -519,6 +520,7 @@ public class ShardQueryConfigurationTest {
                         .assertValue("groupFieldsBatchSizeAsString", "5")
                         .assertValue("groupFields", GroupFields.from("GROUP(FIELD_G,FIELD_H)"))
                         .assertValue("fieldIndexHoleMinThreshold", 0.75d)
+                        .assertValue("intermediateMaxTermThreshold", 5500)
                         .build();
         // @formatter:on
 
