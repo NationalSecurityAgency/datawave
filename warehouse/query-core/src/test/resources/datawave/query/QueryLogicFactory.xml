@@ -45,6 +45,11 @@
             <property name="parser" ref="LuceneToJexlQueryParser"/>
         </bean>
         <bean class="datawave.query.language.functions.jexl.ExcerptFields"/>
+        <bean class="datawave.query.language.functions.jexl.Sum"/>
+        <bean class="datawave.query.language.functions.jexl.Min"/>
+        <bean class="datawave.query.language.functions.jexl.Max"/>
+        <bean class="datawave.query.language.functions.jexl.Average"/>
+        <bean class="datawave.query.language.functions.jexl.Count"/>
     </util:list>
 
     <bean id="DatawaveSelectorExtractor" scope="prototype" class="datawave.audit.DatawaveSelectorExtractor" >
@@ -193,6 +198,7 @@
         <property name="shardsPerDayThreshold" value="4" />	<!-- ${beq.shardsPerDayThreshold} -->
         <!-- The max number of terms BEFORE all expansions -->
         <property name="initialMaxTermThreshold" value="10" />	<!-- was ${beq.initialMaxTermThreshold} -->
+        <property name="intermediateMaxTermThreshold" value="10" />
         <!-- The max number of terms AFTER all expansions -->
         <property name="finalMaxTermThreshold" value="10" />	<!-- was ${beq.finalMaxTermThreshold} -->
         <!-- The max query depth -->
@@ -246,6 +252,8 @@
         <property name="reduceQueryFields" value="false" />
         <property name="reduceTypeMetadata" value="false" />
         <property name="reduceTypeMetadataPerShard" value="false" />
+        <!--    should the query prune fields by ingest type    -->
+        <property name="pruneQueryByIngestTypes" value="false" />
     </bean>
 
     <bean id="TLDEventQuery" scope="prototype" parent="BaseEventQuery" class="datawave.query.tables.TLDQueryLogic">

@@ -1,7 +1,9 @@
 package datawave.query.tables;
 
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
@@ -39,6 +41,8 @@ public class RemoteEventQueryLogic extends BaseQueryLogic<EventBase> implements 
 
     protected static final Logger log = ThreadConfigurableLogger.getLogger(RemoteEventQueryLogic.class);
 
+    public static final String QUERY_ID = "queryId";
+
     private RemoteQueryConfiguration config;
 
     private RemoteQueryService remoteQueryService;
@@ -69,6 +73,7 @@ public class RemoteEventQueryLogic extends BaseQueryLogic<EventBase> implements 
             log.trace("Creating Cloned RemoteQueryLogic: " + System.identityHashCode(this) + " from " + System.identityHashCode(other));
 
         setRemoteQueryService(other.getRemoteQueryService());
+        setUserOperations(other.getUserOperations());
 
         // Set ShardQueryConfiguration variables
         setConfig(RemoteQueryConfiguration.create(other));
@@ -97,8 +102,14 @@ public class RemoteEventQueryLogic extends BaseQueryLogic<EventBase> implements 
 
     @Override
     public GenericQueryConfiguration initialize(AccumuloClient connection, Query settings, Set<Authorizations> auths) throws Exception {
-        GenericResponse<String> createResponse = remoteQueryService.createQuery(getRemoteQueryLogic(), settings.toMap(), getCallerObject());
+        Map<String,List<String>> parms = settings.toMap();
+        // we need to ensure that the remote query request includes the local query id for tracking purposes via query metrics.
+        if (!parms.containsKey(QUERY_ID) && settings.getId() != null) {
+            parms.put(QUERY_ID, Collections.singletonList(settings.getId().toString()));
+        }
+        GenericResponse<String> createResponse = remoteQueryService.createQuery(getRemoteQueryLogic(), parms, getCallerObject());
         setRemoteId(createResponse.getResult());
+        log.info("Local query " + settings.getId() + " maps to remote query " + getRemoteId());
         return getConfig();
     }
 

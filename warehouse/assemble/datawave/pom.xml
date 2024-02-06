@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave</groupId>
         <artifactId>assemble-parent</artifactId>
-        <version>6.1.0-SNAPSHOT</version>
+        <version>6.6.0-SNAPSHOT</version>
     </parent>
     <artifactId>assemble-datawave</artifactId>
     <packaging>pom</packaging>
@@ -571,7 +571,7 @@
                                         <includes>
                                             <include>com.github.ben-manes.caffeine:caffeine</include>
                                             <include>org.apache.commons:commons-collections4</include>
-                                            <include>org.apache.commons:commons-jexl</include>
+                                            <include>org.apache.commons:commons-jexl3</include>
                                             <include>${project.groupId}:datawave-core</include>
                                             <include>${project.groupId}:datawave-accumulo-extensions</include>
                                             <include>${project.groupId}:datawave-ingest-csv</include>

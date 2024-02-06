@@ -11,8 +11,8 @@ import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.commons.jexl2.parser.ASTEQNode;
-import org.apache.commons.jexl2.parser.ASTNENode;
+import org.apache.commons.jexl3.parser.ASTEQNode;
+import org.apache.commons.jexl3.parser.ASTNENode;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
@@ -165,7 +165,7 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
         if (data == null) {
             // Make this EQNode the root
             if (!includeReferences.contains(builder.getField()) && excludeReferences.contains(builder.getField())) {
-                throw new IllegalStateException(builder.getField() + " is a blacklisted reference.");
+                throw new IllegalStateException(builder.getField() + " is a disallowlisted reference.");
             } else {
                 root = builder.build();
 

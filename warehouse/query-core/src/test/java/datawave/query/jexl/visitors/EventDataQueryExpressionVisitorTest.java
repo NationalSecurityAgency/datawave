@@ -19,7 +19,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -168,7 +168,7 @@ public class EventDataQueryExpressionVisitorTest {
     }
 
     @Test
-    public void testExpressionFilterSingleWhitelist() {
+    public void testExpressionFilterSingleAllowlist() {
         ExpressionFilter f = new ExpressionFilter(attrFactory, "FOO");
         f.addFieldValue("bar");
 
@@ -184,7 +184,7 @@ public class EventDataQueryExpressionVisitorTest {
     }
 
     @Test
-    public void testExpressionFilterMultiWhitelist() {
+    public void testExpressionFilterMultiAllowlist() {
         ExpressionFilter f = new ExpressionFilter(attrFactory, "FOO");
         f.addFieldValue("bar");
         f.addFieldValue("baz");
@@ -851,7 +851,7 @@ public class EventDataQueryExpressionVisitorTest {
         assertTrue(filter.get("BAR").apply(n2));
         assertFalse(filter.get("BAR").apply(n3));
 
-        // confusion - the filter is for FOO, but the values match - a whitelist should fail.
+        // confusion - the filter is for FOO, but the values match - a Allowlist should fail.
         assertFalse(filter.get("BAR").apply(p2));
     }
 

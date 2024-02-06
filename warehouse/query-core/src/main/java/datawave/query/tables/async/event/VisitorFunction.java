@@ -22,8 +22,8 @@ import javax.annotation.Nullable;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Range;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
@@ -51,7 +51,6 @@ import datawave.query.jexl.visitors.TermCountingVisitor;
 import datawave.query.jexl.visitors.TreeEqualityVisitor;
 import datawave.query.jexl.visitors.whindex.WhindexVisitor;
 import datawave.query.planner.DefaultQueryPlanner;
-import datawave.query.postprocessing.tf.TermOffsetPopulator;
 import datawave.query.tables.SessionOptions;
 import datawave.query.tables.async.ScannerChunk;
 import datawave.query.util.MetadataHelper;
@@ -476,11 +475,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
      *            the iterator settings
      */
     protected void pruneQueryOptions(ASTJexlScript script, IteratorSetting settings) {
-
-        if (config.isTermFrequenciesRequired() && TermOffsetPopulator.getContentFunctions(script).isEmpty()) {
-            settings.removeOption(QueryOptions.EXCERPT_FIELDS);
-            settings.removeOption(QueryOptions.EXCERPT_ITERATOR);
-        }
+        // stub for now
     }
 
     // push down large fielded lists. Assumes that the hdfs query cache uri and

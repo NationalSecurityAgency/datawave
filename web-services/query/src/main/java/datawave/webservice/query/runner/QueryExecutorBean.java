@@ -72,7 +72,7 @@ import javax.xml.bind.Marshaller;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.util.Pair;
-import org.apache.commons.jexl2.parser.TokenMgrError;
+import org.apache.commons.jexl3.parser.TokenMgrException;
 import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.apache.log4j.Logger;
 import org.jboss.resteasy.annotations.GZIP;
@@ -87,7 +87,6 @@ import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.introspect.JacksonAnnotationIntrospector;
 import com.fasterxml.jackson.module.jaxb.JaxbAnnotationIntrospector;
-import com.google.common.base.Throwables;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.io.CountingOutputStream;
@@ -780,7 +779,7 @@ public class QueryExecutorBean implements QueryExecutor {
             /*
              * Allow web services to throw their own WebApplicationExceptions
              */
-            if (t instanceof Error && !(t instanceof TokenMgrError)) {
+            if (t instanceof Error && !(t instanceof TokenMgrException)) {
                 log.error(queryId + ": " + t.getMessage(), t);
                 throw (Error) t;
             } else if (t instanceof WebApplicationException) {
@@ -897,6 +896,11 @@ public class QueryExecutorBean implements QueryExecutor {
             }
 
             // the query principal is our local principal unless the query logic has a different user operations
+            if (qp.getAuths() != null) {
+                qd.logic.preInitialize(q, WSAuthorizationsUtil.buildAuthorizations(Collections.singleton(WSAuthorizationsUtil.splitAuths(qp.getAuths()))));
+            } else {
+                qd.logic.preInitialize(q, WSAuthorizationsUtil.buildAuthorizations(null));
+            }
             DatawavePrincipal queryPrincipal = (qd.logic.getUserOperations() == null) ? (DatawavePrincipal) qd.p
                             : qd.logic.getUserOperations().getRemoteUser((DatawavePrincipal) qd.p);
             // the overall principal (the one with combined auths across remote user operations) is our own user operations bean
@@ -912,7 +916,7 @@ public class QueryExecutorBean implements QueryExecutor {
             /*
              * Allow web services to throw their own WebApplicationExceptions
              */
-            if (t instanceof Error && !(t instanceof TokenMgrError)) {
+            if (t instanceof Error && !(t instanceof TokenMgrException)) {
                 log.error(t.getMessage(), t);
                 throw (Error) t;
             } else if (t instanceof WebApplicationException) {
@@ -1003,7 +1007,7 @@ public class QueryExecutorBean implements QueryExecutor {
                  * Allow web services to throw their own WebApplicationExceptions
                  */
 
-                if (t instanceof Error && !(t instanceof TokenMgrError)) {
+                if (t instanceof Error && !(t instanceof TokenMgrException)) {
                     log.error(t.getMessage(), t);
                     throw (Error) t;
                 } else if (t instanceof WebApplicationException) {

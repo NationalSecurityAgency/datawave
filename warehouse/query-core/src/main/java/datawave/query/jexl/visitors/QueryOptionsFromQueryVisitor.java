@@ -1,7 +1,7 @@
 package datawave.query.jexl.visitors;
 
-import static org.apache.commons.jexl2.parser.ParserTreeConstants.JJTANDNODE;
-import static org.apache.commons.jexl2.parser.ParserTreeConstants.JJTORNODE;
+import static org.apache.commons.jexl3.parser.ParserTreeConstants.JJTANDNODE;
+import static org.apache.commons.jexl3.parser.ParserTreeConstants.JJTORNODE;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -10,15 +10,16 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTFunctionNode;
-import org.apache.commons.jexl2.parser.ASTIdentifier;
-import org.apache.commons.jexl2.parser.ASTOrNode;
-import org.apache.commons.jexl2.parser.ASTReference;
-import org.apache.commons.jexl2.parser.ASTReferenceExpression;
-import org.apache.commons.jexl2.parser.ASTStringLiteral;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.JexlNodes;
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTFunctionNode;
+import org.apache.commons.jexl3.parser.ASTIdentifier;
+import org.apache.commons.jexl3.parser.ASTNamespaceIdentifier;
+import org.apache.commons.jexl3.parser.ASTOrNode;
+import org.apache.commons.jexl3.parser.ASTReference;
+import org.apache.commons.jexl3.parser.ASTReferenceExpression;
+import org.apache.commons.jexl3.parser.ASTStringLiteral;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNodes;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableSet;
@@ -58,7 +59,8 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
                     UniqueFunction.UNIQUE_BY_MINUTE_FUNCTION, UniqueFunction.UNIQUE_BY_TENTH_OF_HOUR_FUNCTION, UniqueFunction.UNIQUE_BY_MONTH_FUNCTION,
                     UniqueFunction.UNIQUE_BY_SECOND_FUNCTION, UniqueFunction.UNIQUE_BY_MILLISECOND_FUNCTION, UniqueFunction.UNIQUE_BY_YEAR_FUNCTION,
                     QueryFunctions.GROUPBY_FUNCTION, QueryFunctions.EXCERPT_FIELDS_FUNCTION, QueryFunctions.NO_EXPANSION,
-                    QueryFunctions.LENIENT_FIELDS_FUNCTION, QueryFunctions.STRICT_FIELDS_FUNCTION);
+                    QueryFunctions.LENIENT_FIELDS_FUNCTION, QueryFunctions.STRICT_FIELDS_FUNCTION, QueryFunctions.SUM, QueryFunctions.MIN, QueryFunctions.MAX,
+                    QueryFunctions.AVERAGE, QueryFunctions.COUNT);
 
     @SuppressWarnings("unchecked")
     public static <T extends JexlNode> T collect(T node, Object data) {
@@ -108,8 +110,8 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
     private Object visitJunction(JexlNode node, Object data, Supplier<JexlNode> creator) {
         // Visit each child, and keep only the non-null ones.
         List<JexlNode> children = new ArrayList<>();
-        for (JexlNode child : JexlNodes.children(node)) {
-            Object copy = child.jjtAccept(this, data);
+        for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+            Object copy = node.jjtGetChild(i).jjtAccept(this, data);
             if (copy != null) {
                 children.add((JexlNode) copy);
             }
@@ -124,8 +126,8 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
         } else {
             // If there are multiple children, return a new junction with the children.
             JexlNode copy = creator.get();
-            copy.image = node.image;
-            JexlNodes.children(copy, children.toArray(new JexlNode[0]));
+            JexlNodes.copyIdentifierOrLiteral(node, copy);
+            JexlNodes.setChildren(copy, children.toArray(new JexlNode[0]));
             return copy;
         }
     }
@@ -182,9 +184,10 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
      * @return null if this is a function with any key/value options, or the rebuilt node
      */
     private Object visit(ASTFunctionNode node, Map<String,String> optionsMap) {
+        ASTNamespaceIdentifier nsIdentifier = (ASTNamespaceIdentifier) node.jjtGetChild(0);
         // if this is the f:options function, create a List for the userData to be passed to the child nodes
-        if (node.jjtGetChild(0).image.equals(QueryFunctions.QUERY_FUNCTION_NAMESPACE)) {
-            switch (node.jjtGetChild(1).image) {
+        if (nsIdentifier.getNamespace().equals(QueryFunctions.QUERY_FUNCTION_NAMESPACE)) {
+            switch (String.valueOf(nsIdentifier.getName())) {
                 case QueryFunctions.OPTIONS_FUNCTION: {
                     List<String> optionsList = new ArrayList<>();
                     this.visit(node, optionsList);
@@ -229,7 +232,7 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
                 case UniqueFunction.UNIQUE_BY_SECOND_FUNCTION:
                 case UniqueFunction.UNIQUE_BY_TENTH_OF_HOUR_FUNCTION: {
                     UniqueFields uniqueFields = new UniqueFields();
-                    updateUniqueFields(node, uniqueFields, optionsMap, UniqueFunction.findByName(node.jjtGetChild(1).image));
+                    updateUniqueFields(node, uniqueFields, optionsMap, UniqueFunction.findByName(nsIdentifier.getName()));
                     return null;
                 }
                 case QueryFunctions.GROUPBY_FUNCTION: {
@@ -262,6 +265,36 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
                     updateFieldsOption(optionsMap, QueryParameters.STRICT_FIELDS, optionsList);
                     return null;
                 }
+                case QueryFunctions.SUM: {
+                    List<String> options = new ArrayList<>();
+                    this.visit(node, options);
+                    optionsMap.put(QueryParameters.SUM_FIELDS, JOINER.join(options));
+                    return null;
+                }
+                case QueryFunctions.MAX: {
+                    List<String> options = new ArrayList<>();
+                    this.visit(node, options);
+                    optionsMap.put(QueryParameters.MAX_FIELDS, JOINER.join(options));
+                    return null;
+                }
+                case QueryFunctions.MIN: {
+                    List<String> options = new ArrayList<>();
+                    this.visit(node, options);
+                    optionsMap.put(QueryParameters.MIN_FIELDS, JOINER.join(options));
+                    return null;
+                }
+                case QueryFunctions.AVERAGE: {
+                    List<String> options = new ArrayList<>();
+                    this.visit(node, options);
+                    optionsMap.put(QueryParameters.AVERAGE_FIELDS, JOINER.join(options));
+                    return null;
+                }
+                case QueryFunctions.COUNT: {
+                    List<String> options = new ArrayList<>();
+                    this.visit(node, options);
+                    optionsMap.put(QueryParameters.COUNT_FIELDS, JOINER.join(options));
+                    return null;
+                }
             }
         }
         return super.visit(node, optionsMap);
@@ -270,7 +303,7 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
     // Find all unique fields declared in the provided node and add them to the provided {@link UniqueFields} with the specified transformer.
     private void putFieldsFromChildren(JexlNode node, UniqueFields uniqueFields, UniqueGranularity transformer) {
         List<String> fields = new ArrayList<>();
-        this.visit(node, fields);
+        node.jjtAccept(this, fields);
         fields.forEach((field) -> uniqueFields.put(field, transformer));
     }
 
@@ -323,7 +356,7 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
     @Override
     public Object visit(ASTIdentifier node, Object data) {
         // Check if the current node is a child of the f:options function.
-        if (!RESERVED.contains(node.image)) {
+        if (!RESERVED.contains(JexlNodes.getIdentifierOrLiteral(node))) {
             addImageToListData(node, data);
         }
         return super.visit(node, data);
@@ -334,7 +367,7 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
     private void addImageToListData(JexlNode node, Object data) {
         if (data instanceof List) {
             List list = (List) data;
-            list.add(node.image);
+            list.add(JexlNodes.getIdentifierOrLiteral(node));
         }
     }
 

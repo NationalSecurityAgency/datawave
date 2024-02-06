@@ -4,12 +4,13 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
-import org.apache.commons.jexl2.JexlEngine;
+import org.apache.commons.jexl3.JexlEngine;
+import org.apache.commons.jexl3.internal.Engine;
 import org.junit.Test;
 
 public class DatawaveJexlContextTest {
 
-    private final JexlEngine engine = new JexlEngine();
+    private final JexlEngine engine = new Engine();
     private final DatawaveJexlContext context = new DatawaveJexlContext();
 
     @Test

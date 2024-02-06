@@ -2,7 +2,6 @@ package datawave.query.transformer;
 
 import java.util.AbstractMap;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -22,12 +21,12 @@ import com.google.common.collect.TreeMultimap;
 
 import datawave.marking.MarkingFunctions;
 import datawave.query.config.SSDeepSimilarityQueryConfiguration;
-import datawave.query.tables.SSDeepSimilarityQueryLogic;
-import datawave.query.util.ssdeep.ChunkSizeEncoding;
-import datawave.query.util.ssdeep.IntegerEncoding;
-import datawave.query.util.ssdeep.NGramTuple;
-import datawave.query.util.ssdeep.SSDeepHash;
+import datawave.util.ssdeep.ChunkSizeEncoding;
+import datawave.util.ssdeep.IntegerEncoding;
+import datawave.util.ssdeep.NGramTuple;
+import datawave.util.ssdeep.SSDeepHash;
 import datawave.webservice.query.Query;
+import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.result.event.DefaultEvent;
 import datawave.webservice.query.result.event.DefaultField;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
@@ -52,6 +51,7 @@ public class SSDeepSimilarityQueryTransformerTest {
 
     public void basicExpects(Key k) {
         EasyMock.expect(mockQuery.getQueryAuthorizations()).andReturn("A,B,C");
+        EasyMock.expect(mockQuery.findParameter("minScore")).andReturn(new QueryImpl.Parameter("minScore", ""));
         EasyMock.expect(mockResponseFactory.getEventQueryResponse()).andReturn(new DefaultEventQueryResponse());
         EasyMock.expect(mockResponseFactory.getEvent()).andReturn(new DefaultEvent()).times(1);
         EasyMock.expect(mockResponseFactory.getField()).andReturn(new DefaultField()).times(4);

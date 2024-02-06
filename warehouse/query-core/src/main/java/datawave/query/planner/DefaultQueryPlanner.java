@@ -1,5 +1,8 @@
 package datawave.query.planner;
 
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.BOUNDED_RANGE;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
+
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.text.MessageFormat;
@@ -36,12 +39,12 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.commons.jexl2.parser.ASTERNode;
-import org.apache.commons.jexl2.parser.ASTFunctionNode;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ASTNRNode;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.commons.jexl3.parser.ASTERNode;
+import org.apache.commons.jexl3.parser.ASTFunctionNode;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTNRNode;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.log4j.Logger;
@@ -65,6 +68,7 @@ import datawave.query.Constants;
 import datawave.query.QueryParameters;
 import datawave.query.attributes.ExcerptFields;
 import datawave.query.attributes.UniqueFields;
+import datawave.query.common.grouping.GroupFields;
 import datawave.query.composite.CompositeMetadata;
 import datawave.query.composite.CompositeUtils;
 import datawave.query.config.ShardQueryConfiguration;
@@ -89,8 +93,6 @@ import datawave.query.jexl.NodeTypeCount;
 import datawave.query.jexl.functions.EvaluationPhaseFilterFunctions;
 import datawave.query.jexl.functions.QueryFunctions;
 import datawave.query.jexl.lookups.IndexLookup;
-import datawave.query.jexl.nodes.BoundedRange;
-import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
 import datawave.query.jexl.visitors.AddShardsAndDaysVisitor;
 import datawave.query.jexl.visitors.BoundedRangeDetectionVisitor;
 import datawave.query.jexl.visitors.BoundedRangeIndexExpansionVisitor;
@@ -110,6 +112,7 @@ import datawave.query.jexl.visitors.FixNegativeNumbersVisitor;
 import datawave.query.jexl.visitors.FixUnindexedNumericTerms;
 import datawave.query.jexl.visitors.FunctionIndexQueryExpansionVisitor;
 import datawave.query.jexl.visitors.GeoWavePruningVisitor;
+import datawave.query.jexl.visitors.IngestTypePruningVisitor;
 import datawave.query.jexl.visitors.InvertNodeVisitor;
 import datawave.query.jexl.visitors.IsNotNullIntentVisitor;
 import datawave.query.jexl.visitors.IsNotNullPruningVisitor;
@@ -126,6 +129,7 @@ import datawave.query.jexl.visitors.QueryModelVisitor;
 import datawave.query.jexl.visitors.QueryOptionsFromQueryVisitor;
 import datawave.query.jexl.visitors.QueryPropertyMarkerSourceConsolidator;
 import datawave.query.jexl.visitors.QueryPruningVisitor;
+import datawave.query.jexl.visitors.RebuildingVisitor;
 import datawave.query.jexl.visitors.RegexFunctionVisitor;
 import datawave.query.jexl.visitors.RegexIndexExpansionVisitor;
 import datawave.query.jexl.visitors.RewriteNegationsVisitor;
@@ -160,6 +164,7 @@ import datawave.query.util.TypeMetadata;
 import datawave.util.time.TraceStopwatch;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.Query;
+import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.QueryImpl.Parameter;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.configuration.QueryData;
@@ -523,9 +528,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
         addOption(cfg, QueryOptions.LIMIT_FIELDS, config.getLimitFieldsAsString(), false);
         addOption(cfg, QueryOptions.MATCHING_FIELD_SETS, config.getMatchingFieldSetsAsString(), false);
-        addOption(cfg, QueryOptions.GROUP_FIELDS, config.getGroupFieldsAsString(), false);
-        addOption(cfg, QueryOptions.GROUP_FIELDS_BATCH_SIZE, config.getGroupFieldsBatchSizeAsString(), false);
-        addOption(cfg, QueryOptions.UNIQUE_FIELDS, config.getUniqueFields().toString(), false);
+        addOption(cfg, QueryOptions.GROUP_FIELDS, config.getGroupFields().toString(), true);
+        addOption(cfg, QueryOptions.GROUP_FIELDS_BATCH_SIZE, config.getGroupFieldsBatchSizeAsString(), true);
+        addOption(cfg, QueryOptions.UNIQUE_FIELDS, config.getUniqueFields().toString(), true);
         addOption(cfg, QueryOptions.HIT_LIST, Boolean.toString(config.isHitList()), false);
         addOption(cfg, QueryOptions.TERM_FREQUENCY_FIELDS, Joiner.on(',').join(config.getQueryTermFrequencyFields()), false);
         addOption(cfg, QueryOptions.TERM_FREQUENCIES_REQUIRED, Boolean.toString(config.isTermFrequenciesRequired()), false);
@@ -547,8 +552,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      *            the IteratorSetting
      */
     private void configureExcerpts(ShardQueryConfiguration config, IteratorSetting cfg) {
-        if (config.isTermFrequenciesRequired()) {
-            addOption(cfg, QueryOptions.EXCERPT_FIELDS, config.getExcerptFields().toString(), false);
+        if (!config.getExcerptFields().isEmpty()) {
+            addOption(cfg, QueryOptions.EXCERPT_FIELDS, config.getExcerptFields().toString(), true);
             addOption(cfg, QueryOptions.EXCERPT_ITERATOR, config.getExcerptIterator().getName(), false);
         }
     }
@@ -854,8 +859,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             config.setQueryTree(timedReduce(timers, "Reduce Query After ANYFIELD Expansions", config.getQueryTree()));
         }
 
-        if (!disableTestNonExistentFields) {
+        if (!disableTestNonExistentFields && (!config.getIgnoreNonExistentFields())) {
             timedTestForNonExistentFields(timers, config.getQueryTree(), config, metadataHelper, queryModel, settings);
+        } else {
+            log.debug("Skipping check for nonExistentFields..");
         }
 
         // apply the node transform rules
@@ -919,7 +926,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 }
 
                 // Check if there are any bounded ranges to expand.
-                if (nodeCount.isPresent(BoundedRange.class)) {
+                if (nodeCount.isPresent(BOUNDED_RANGE)) {
                     config.setQueryTree(timedExpandRanges(timers, "Expand Ranges", config.getQueryTree(), config, metadataHelper, scannerFactory));
                 }
 
@@ -934,7 +941,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 }
 
                 // Check if there are functions that can be pushed into exceeded value ranges.
-                if (nodeCount.hasAll(ASTFunctionNode.class, ExceededValueThresholdMarkerJexlNode.class)) {
+                if (nodeCount.isPresent(ASTFunctionNode.class) && nodeCount.isPresent(EXCEEDED_VALUE)) {
                     config.setQueryTree(timedPushFunctions(timers, config.getQueryTree(), config, metadataHelper));
                 }
 
@@ -1591,7 +1598,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         }
 
         // Check if there are any bounded ranges to expand.
-        if (nodeCount.isPresent(BoundedRange.class)) {
+        if (nodeCount.isPresent(BOUNDED_RANGE)) {
 
             try {
                 config.setQueryTree(BoundedRangeIndexExpansionVisitor.expandBoundedRanges(config, scannerFactory, metadataHelper, config.getQueryTree()));
@@ -1615,7 +1622,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         }
 
         // Check if there are functions that can be pushed into exceeded value ranges.
-        if (nodeCount.hasAll(ASTFunctionNode.class, ExceededValueThresholdMarkerJexlNode.class)) {
+        if (nodeCount.isPresent(ASTFunctionNode.class) && nodeCount.isPresent(EXCEEDED_VALUE)) {
             config.setQueryTree(PushFunctionsIntoExceededValueRanges.pushFunctions(config.getQueryTree(), metadataHelper, config.getDatatypeFilter()));
             if (log.isDebugEnabled()) {
                 logQuery(config.getQueryTree(), "Query after expanding pushing functions into exceeded value ranges again:");
@@ -1699,7 +1706,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         }
     }
 
-    // Overwrite projection and blacklist properties if the query model is
+    // Overwrite projection and disallowlist properties if the query model is
     // being used
     protected ASTJexlScript applyQueryModel(MetadataHelper metadataHelper, ShardQueryConfiguration config, ASTJexlScript script, QueryModel queryModel) {
         config.setQueryTree(script);
@@ -1711,8 +1718,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         Multimap<String,String> inverseReverseModel = invertMultimap(queryModel.getReverseQueryMapping());
 
         inverseReverseModel.putAll(queryModel.getForwardQueryMapping());
-        Collection<String> projectFields = config.getProjectFields(), blacklistedFields = config.getBlacklistedFields(), limitFields = config.getLimitFields(),
-                        groupFields = config.getGroupFields();
+        Collection<String> projectFields = config.getProjectFields(), disallowlistedFields = config.getDisallowlistedFields(),
+                        limitFields = config.getLimitFields();
 
         if (projectFields != null && !projectFields.isEmpty()) {
             projectFields = queryModel.remapParameter(projectFields, inverseReverseModel);
@@ -1722,14 +1729,16 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             config.setProjectFields(Sets.newHashSet(projectFields));
         }
 
-        if (groupFields != null && !groupFields.isEmpty()) {
-            Collection<String> remappedGroupFields = queryModel.remapParameter(groupFields, inverseReverseModel);
+        GroupFields groupFields = config.getGroupFields();
+        if (groupFields != null && groupFields.hasGroupByFields()) {
+            groupFields.remapFields(inverseReverseModel, queryModel.getReverseQueryMapping());
             if (log.isTraceEnabled()) {
-                log.trace("Updated grouping set using query model to: " + remappedGroupFields);
+                log.trace("Updating group-by fields using query model to " + groupFields);
             }
-            config.setGroupFields(Sets.newHashSet(remappedGroupFields));
-            // if grouping is set, also set the projection to be the same
-            config.setProjectFields(Sets.newHashSet(remappedGroupFields));
+            config.setGroupFields(groupFields);
+
+            // If grouping is set, we must make the projection fields match all the group-by fields and aggregation fields.
+            config.setProjectFields(groupFields.getProjectionFields());
         }
 
         UniqueFields uniqueFields = config.getUniqueFields();
@@ -1750,12 +1759,12 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             config.setExcerptFields(excerptFields);
         }
 
-        if (config.getBlacklistedFields() != null && !config.getBlacklistedFields().isEmpty()) {
-            blacklistedFields = queryModel.remapParameter(blacklistedFields, inverseReverseModel);
+        if (config.getDisallowlistedFields() != null && !config.getDisallowlistedFields().isEmpty()) {
+            disallowlistedFields = queryModel.remapParameter(disallowlistedFields, inverseReverseModel);
             if (log.isTraceEnabled()) {
-                log.trace("Updated blacklist set using query model to: " + blacklistedFields);
+                log.trace("Updated disallowlist set using query model to: " + disallowlistedFields);
             }
-            config.setBlacklistedFields(Sets.newHashSet(blacklistedFields));
+            config.setDisallowlistedFields(Sets.newHashSet(disallowlistedFields));
         }
 
         if (config.getLimitFields() != null && !config.getLimitFields().isEmpty()) {
@@ -2017,7 +2026,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     /*
      * (non-Javadoc)
      *
-     * @see PushDownPlanner#rewriteQuery( org.apache .commons.jexl2.parser.ASTJexlScript)
+     * @see PushDownPlanner#rewriteQuery( org.apache.commons.jexl3.parser.ASTJexlScript)
      */
     @Override
     public ASTJexlScript applyRules(final ASTJexlScript queryTree, ScannerFactory scannerFactory, MetadataHelper metadataHelper,
@@ -2356,7 +2365,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             }
         }
 
-        // Whitelist and blacklist projection are mutually exclusive. You can't
+        // Allowlist and disallowlist projection are mutually exclusive. You can't
         // have both.
         if (null != config.getProjectFields() && !config.getProjectFields().isEmpty()) {
             if (log.isDebugEnabled()) {
@@ -2369,12 +2378,12 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             }
 
             addOption(cfg, QueryOptions.PROJECTION_FIELDS, config.getProjectFieldsAsString(), false);
-        } else if (null != config.getBlacklistedFields() && !config.getBlacklistedFields().isEmpty()) {
+        } else if (null != config.getDisallowlistedFields() && !config.getDisallowlistedFields().isEmpty()) {
             if (log.isDebugEnabled()) {
-                log.debug("Setting scan option: " + QueryOptions.BLACKLISTED_FIELDS + " to " + config.getBlacklistedFieldsAsString());
+                log.debug("Setting scan option: " + QueryOptions.DISALLOWLISTED_FIELDS + " to " + config.getDisallowlistedFieldsAsString());
             }
 
-            addOption(cfg, QueryOptions.BLACKLISTED_FIELDS, config.getBlacklistedFieldsAsString(), false);
+            addOption(cfg, QueryOptions.DISALLOWLISTED_FIELDS, config.getDisallowlistedFieldsAsString(), false);
         }
 
         // We don't need to do any expansion of the start or end date/time
@@ -2435,7 +2444,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         }
 
         // if groupby function is used, force include.grouping.context to be true
-        if (config.getGroupFields() != null && !config.getGroupFields().isEmpty()) {
+        if (config.getGroupFields() != null && config.getGroupFields().hasGroupByFields()) {
             addOption(cfg, QueryOptions.INCLUDE_GROUPING_CONTEXT, Boolean.toString(true), false);
         } else {
             addOption(cfg, QueryOptions.INCLUDE_GROUPING_CONTEXT, Boolean.toString(config.getIncludeGroupingContext()), false);
@@ -2484,8 +2493,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     }
 
     /**
-     * Returns a Tuple2&lt;Iterable&lt;Range&gt;,Boolean&gt; whose elements represent the Ranges to use for querying the shard table and whether or not this is
-     * a "full-table-scan" query.
+     * Returns a ImmutablePair&lt;Iterable&lt;Range&gt;,Boolean&gt; whose elements represent the Ranges to use for querying the shard table and whether or not
+     * this is a "full-table-scan" query.
      *
      * @param scannerFactory
      *            the scanner factory
@@ -2534,12 +2543,29 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             fullTableScanReason = state.reason;
         }
 
+        if (config.getPruneQueryByIngestTypes()) {
+            JexlNode pruned = IngestTypePruningVisitor.prune(RebuildingVisitor.copy(queryTree), getTypeMetadata());
+            if (config.getFullTableScanEnabled() || ExecutableDeterminationVisitor.isExecutable(pruned, config, metadataHelper)) {
+                // always update the query for full table scans or in cases where the query is still executable
+                queryTree = pruned;
+                config.setQueryTree((ASTJexlScript) pruned);
+            } else {
+                throw new DatawaveFatalQueryException("Check query for mutually exclusive ingest types, query was non-executable after pruning by ingest type");
+            }
+        }
+
         // if a simple examination of the query has not forced a full table
         // scan, then lets try to compute ranges
         if (!needsFullTable) {
 
             // count the terms
             int termCount = TermCountingVisitor.countTerms(queryTree);
+
+            if (config.getIntermediateMaxTermThreshold() > 0 && termCount > config.getIntermediateMaxTermThreshold()) {
+                throw new DatawaveFatalQueryException(
+                                "Query with " + termCount + " exceeds the initial max term threshold of " + config.getIntermediateMaxTermThreshold());
+            }
+
             if (termCount >= pushdownThreshold) {
                 if (log.isTraceEnabled()) {
                     log.trace("pushing down query because it has " + termCount + " when our max is " + pushdownThreshold);
@@ -2602,6 +2628,14 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         }
 
         return new Tuple2<>(ranges, needsFullTable);
+    }
+
+    private TypeMetadata getTypeMetadata() {
+        try {
+            return metadataHelper.getTypeMetadata();
+        } catch (TableNotFoundException e) {
+            throw new DatawaveFatalQueryException("Could not get TypeMetadata");
+        }
     }
 
     /**

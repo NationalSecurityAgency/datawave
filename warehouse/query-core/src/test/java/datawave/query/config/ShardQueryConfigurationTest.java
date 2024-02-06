@@ -35,6 +35,7 @@ import datawave.data.type.Type;
 import datawave.query.DocumentSerialization;
 import datawave.query.attributes.ExcerptFields;
 import datawave.query.attributes.UniqueFields;
+import datawave.query.common.grouping.GroupFields;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.iterator.logic.TermFrequencyExcerptIterator;
 import datawave.query.iterator.logic.TermFrequencyIndexIterator;
@@ -46,7 +47,7 @@ import datawave.webservice.query.QueryImpl;
 
 public class ShardQueryConfigurationTest {
 
-    public final static Map<Class<?>,Class<?>> primitiveMap = new HashMap<Class<?>,Class<?>>();
+    public final static Map<Class<?>,Class<?>> primitiveMap = new HashMap<>();
     static {
         primitiveMap.put(Boolean.class, boolean.class);
         primitiveMap.put(Byte.class, byte.class);
@@ -63,6 +64,7 @@ public class ShardQueryConfigurationTest {
 
     // The set of predicates for the subset of defaultValues that will
     // be used to evaluate the equality instead of .equals(Object).
+    @SuppressWarnings("rawtypes")
     private final Map<String,Predicate> defaultPredicates = new HashMap<>();
 
     // The set of alternate values to test the setters/getters
@@ -74,6 +76,7 @@ public class ShardQueryConfigurationTest {
 
     // The set of predicate for the subset of alternateValues that will
     // be used to evaluate the equality instead of .equals(Object).
+    @SuppressWarnings("rawtypes")
     private final Map<String,Predicate> updatedPredicates = new HashMap<>();
 
     // The set of fields that are already set via one of the other fields.
@@ -122,6 +125,8 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("maxIndexScanTimeMillis", 100000L);
         defaultValues.put("parseTldUids", false);
         updatedValues.put("parseTldUids", true);
+        defaultValues.put("ignoreNonExistentFields", false);
+        updatedValues.put("ignoreNonExistentFields", true);
         defaultValues.put("collapseUids", false);
         updatedValues.put("collapseUids", true);
         defaultValues.put("collapseUidsThreshold", -1);
@@ -316,6 +321,8 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("shardsPerDayThreshold", 18);
         defaultValues.put("initialMaxTermThreshold", 2500);
         updatedValues.put("initialMaxTermThreshold", 2540);
+        defaultValues.put("intermediateMaxTermThreshold", 2500);
+        updatedValues.put("intermediateMaxTermThreshold", 5500);
         defaultValues.put("finalMaxTermThreshold", 2500);
         updatedValues.put("finalMaxTermThreshold", 2501);
         defaultValues.put("maxDepthThreshold", 2500);
@@ -439,6 +446,8 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("tfAggregationThresholdMs", 10000);
         defaultValues.put("pruneQueryOptions", false);
         updatedValues.put("pruneQueryOptions", true);
+        defaultValues.put("pruneQueryByIngestTypes", false);
+        updatedValues.put("pruneQueryByIngestTypes", true);
         defaultValues.put("numIndexLookupThreads", 8);
         updatedValues.put("numIndexLookupThreads", 18);
         defaultValues.put("expansionLimitedToModelContents", false);
@@ -485,11 +494,11 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("projectFieldsAsString", "FIELD_P,FIELD_Q");
         alreadySet.add("projectFieldsAsString");
 
-        defaultValues.put("blacklistedFields", Sets.newHashSet());
-        updatedValues.put("blacklistedFields", Sets.newHashSet("FIELD_B", "FIELD_C"));
-        defaultValues.put("blacklistedFieldsAsString", "");
-        updatedValues.put("blacklistedFieldsAsString", "FIELD_B,FIELD_C");
-        alreadySet.add("blacklistedFieldsAsString");
+        defaultValues.put("disallowlistedFields", Sets.newHashSet());
+        updatedValues.put("disallowlistedFields", Sets.newHashSet("FIELD_B", "FIELD_C"));
+        defaultValues.put("disallowlistedFieldsAsString", "");
+        updatedValues.put("disallowlistedFieldsAsString", "FIELD_B,FIELD_C");
+        alreadySet.add("disallowlistedFieldsAsString");
 
         defaultValues.put("queryFieldsDatatypes", HashMultimap.create());
         updatedValues.put("queryFieldsDatatypes", createHashMultimap(
@@ -523,11 +532,8 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("groupFieldsBatchSizeAsString", "5");
         alreadySet.add("groupFieldsBatchSizeAsString");
 
-        defaultValues.put("groupFields", Sets.newHashSet());
-        updatedValues.put("groupFields", Sets.newHashSet("FIELD_G", "FIELD_H"));
-        defaultValues.put("groupFieldsAsString", "");
-        updatedValues.put("groupFieldsAsString", "FIELD_G,FIELD_H");
-        alreadySet.add("groupFieldsAsString");
+        defaultValues.put("groupFields", new GroupFields());
+        updatedValues.put("groupFields", GroupFields.from("GROUP(FIELD_G,FIELD_H)"));
     }
 
     private Query createQuery(String query) {

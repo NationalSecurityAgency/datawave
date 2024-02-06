@@ -14,7 +14,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
@@ -40,7 +40,7 @@ public class ThreadedRangeBundlerIterator implements Iterator<QueryData>, Closea
     private final BlockingQueue<QueryPlan> rangeQueue;
 
     private QueryData next = null;
-    private Object producerLock = new Object();
+    private final Object producerLock = new Object();
 
     private RangeConsumer rangeConsumer;
     private Thread rangeConsumerThread;
@@ -268,6 +268,7 @@ public class ThreadedRangeBundlerIterator implements Iterator<QueryData>, Closea
 
         final String queryString = plan.getQueryString();
         List<IteratorSetting> settings = Lists.newArrayList();
+
         for (IteratorSetting setting : this.original.getSettings()) {
             String iterClazz = setting.getIteratorClass();
 

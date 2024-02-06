@@ -10,8 +10,8 @@ import java.util.Set;
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.data.Range;
-import org.apache.commons.jexl2.JexlException;
-import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.commons.jexl3.JexlException;
+import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
@@ -51,6 +51,7 @@ public class DefaultExtendedEdgeQueryLogic extends EdgeQueryLogic {
         summaryInputType = logic.isSummaryInputType();
         summaryOutputType = logic.isSummaryOutputType();
         allowOverrideIO = logic.isAllowOverrideIO();
+        listSelectorExtractor = logic.getSelectorExtractor();
     }
 
     @Override
@@ -146,7 +147,7 @@ public class DefaultExtendedEdgeQueryLogic extends EdgeQueryLogic {
             }
             if (prefilterValues != null) {
                 String value = serializePrefilter();
-                edgeIteratorSetting.addOption(EdgeFilterIterator.PREFILTER_WHITELIST, value);
+                edgeIteratorSetting.addOption(EdgeFilterIterator.PREFILTER_ALLOWLIST, value);
             }
 
             if (includeStats) {

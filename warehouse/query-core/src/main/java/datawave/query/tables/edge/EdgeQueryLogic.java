@@ -25,11 +25,12 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.jexl2.JexlException;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ParseException;
-import org.apache.commons.jexl2.parser.Parser;
-import org.apache.commons.jexl2.parser.TokenMgrError;
+import org.apache.commons.jexl3.JexlException;
+import org.apache.commons.jexl3.JexlFeatures;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ParseException;
+import org.apache.commons.jexl3.parser.Parser;
+import org.apache.commons.jexl3.parser.StringProvider;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
@@ -121,21 +122,30 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
 
     public EdgeQueryLogic(EdgeQueryLogic other) {
         super(other);
-        setDataTypes(other.getDataTypes());
-        setRegexDataTypes(other.getRegexDataTypes());
-        setQueryThreads(other.getQueryThreads());
-        setProtobufEdgeFormat(other.isProtobufEdgeFormat());
-        setEdgeQueryModel(other.getEdgeQueryModel());
-        setModelName(other.getModelName());
-        setModelTableName(other.getModelTableName());
-        setMetadataHelperFactory(other.getMetadataHelperFactory());
-        setDateFilterScanLimit(other.getDateFilterScanLimit());
-        setDateFilterSkipLimit(other.getDateFilterSkipLimit());
-        setQuerySyntaxParsers(other.getQuerySyntaxParsers());
-        setMandatoryQuerySyntax(other.getMandatoryQuerySyntax());
-        setQueryMacroFunction(other.getQueryMacroFunction());
-        setParser(other.getParser());
-        visitationContext = other.visitationContext;
+        this.protobufEdgeFormat = other.protobufEdgeFormat;
+        this.config = other.config;
+        this.iteratorDiscriptors = other.iteratorDiscriptors;
+        this.currentIteratorPriority = other.currentIteratorPriority;
+        this.scannerFactory = other.scannerFactory;
+        this.blockedNormalizers = other.blockedNormalizers;
+        this.dataTypes = other.dataTypes;
+        this.regexDataTypes = other.regexDataTypes;
+        this.queryThreads = other.queryThreads;
+        this.dateFilterSkipLimit = other.dateFilterSkipLimit;
+        this.dateFilterScanLimit = other.dateFilterScanLimit;
+        this.ranges = other.ranges;
+        this.prefilterValues = other.prefilterValues;
+        this.maxQueryTerms = other.maxQueryTerms;
+        this.maxPrefilterValues = other.maxPrefilterValues;
+        this.modelName = other.modelName;
+        this.modelTableName = other.modelTableName;
+        this.edgeQueryModel = other.edgeQueryModel;
+        this.visitationContext = other.visitationContext;
+        this.metadataHelperFactory = other.metadataHelperFactory;
+        this.querySyntaxParsers = other.querySyntaxParsers;
+        this.queryMacroFunction = other.queryMacroFunction;
+        this.mandatoryQuerySyntax = other.mandatoryQuerySyntax;
+        this.parser = other.parser;
     }
 
     @Override
@@ -328,18 +338,18 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
      *
      * @param queryString
      *            jexl string for the query
+     * @return QueryData
      * @throws ParseException
      *             for issues with parsing
-     * @return QueryData
      */
     protected QueryData configureRanges(String queryString) throws ParseException {
         queryString = EdgeQueryLogic.fixQueryString(queryString);
         QueryData qData = new QueryData();
-        Parser parser = new Parser(new StringReader(";"));
+        Parser parser = new Parser(new StringProvider(";"));
         ASTJexlScript script;
         try {
-            script = parser.parse(new StringReader(queryString), null);
-        } catch (TokenMgrError | Exception e) {
+            script = parser.parse(null, new JexlFeatures(), queryString, null);
+        } catch (Exception e) {
             throw new IllegalArgumentException("Invalid jexl supplied. " + e.getMessage());
         }
 
@@ -581,7 +591,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
      * @param dateFilterType
      *            type of filtering (EVENT, LOAD, ACTIVITY, ACTIVITY_LOAD, ANY, ANY_LOAD)
      * @return created iterators
-     *
+     *         <p>
      *         There can now be one or more edges with matching keys other than a date type distinction in the column qualifier. Old-style edges have no date
      *         type marking but always used event date. New-style edges may indicate an event date-based edge, both, or activity date-based edge. Hence, based
      *         on whether the query is for event date-based edges or activity date-based edges the appropriate types of edges must be returned. Additionally,
@@ -683,7 +693,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             }
             if (prefilterValues != null) {
                 String value = serializePrefilter();
-                edgeIteratorSetting.addOption(EdgeFilterIterator.PREFILTER_WHITELIST, value);
+                edgeIteratorSetting.addOption(EdgeFilterIterator.PREFILTER_ALLOWLIST, value);
             }
 
             if (includeStats) {
