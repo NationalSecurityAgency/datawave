@@ -117,18 +117,18 @@ public abstract class Attribute<T extends Comparable<T>> implements WritableComp
             } else if (isTermFrequency(cf)) {
                 // find the second null byte in the cq and take everything before that (cq = DataType\0UID\0Normalized Field Value\0Field Name)
                 final ByteSequence cq = key.getColumnQualifierData();
-                int nullOffset = 0;
+                int length = cq.length();
                 int count = 0;
-                for (int i = 0; i < cf.length(); i++) {
-                    if (cf.byteAt(i) == '\0') {
+                for (int i = 0; i < cq.length(); i++) {
+                    if (cq.byteAt(i) == '\0') {
                         count++;
                         if (count == 2) {
-                            nullOffset = i;
+                            length = i;
                             break;
                         }
                     }
                 }
-                this.metadata = new Key(row.getBackingArray(), row.offset(), row.length(), cq.getBackingArray(), cq.offset(), nullOffset,
+                this.metadata = new Key(row.getBackingArray(), row.offset(), row.length(), cq.getBackingArray(), 0, length,
                                 EMPTY_BYTE_SEQUENCE.getBackingArray(), EMPTY_BYTE_SEQUENCE.offset(), EMPTY_BYTE_SEQUENCE.length(), cv.getBackingArray(),
                                 cv.offset(), cv.length(), key.getTimestamp());
             } else {
