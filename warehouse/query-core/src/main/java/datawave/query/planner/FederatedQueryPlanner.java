@@ -47,11 +47,11 @@ public class FederatedQueryPlanner extends QueryPlanner {
     private final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd");
     private final Calendar calendar = Calendar.getInstance();
 
-    private final DefaultQueryPlanner subPlan;
+    private final DefaultQueryPlanner originalPlanner;
     private String plannedScript;
 
-    public FederatedQueryPlanner(DefaultQueryPlanner subPlan) {
-        this.subPlan = subPlan;
+    public FederatedQueryPlanner(DefaultQueryPlanner originalPlanner) {
+        this.originalPlanner = originalPlanner;
     }
 
     @Override
@@ -69,35 +69,41 @@ public class FederatedQueryPlanner extends QueryPlanner {
 
         // Get the relevant date ranges.
         SortedSet<Pair<Date,Date>> dateRanges = getSubQueryDateRanges(originalConfig, query, scannerFactory);
-        log.debug("Federated query will have " + dateRanges.size() + " sub-plan(s)");
-        log.debug("Original planned script: " + subPlan.getPlannedScript());
 
         // Execute the same query for each date range and collect the results.
         FederatedQueryIterable results = new FederatedQueryIterable();
+        ASTJexlScript queryTree = null;
         int totalProcessed = 1;
         for (Pair<Date,Date> dateRange : dateRanges) {
             TraceStopwatch stopwatch = originalConfig.getTimers()
                             .newStartedStopwatch("FederatedQueryPlanner - Execute query against date range subset " + dateFormat.format(dateRange.getLeft())
                                             + "-" + dateFormat.format(dateRange.getRight()) + " [" + totalProcessed + " of " + dateRanges.size() + "]");
-            log.debug("Executing sub-plan against date range " + dateFormat.format(dateRange.getLeft()) + "-" + dateFormat.format(dateRange.getRight()));
-
             // Set the new date range in a copy of the config.
             ShardQueryConfiguration configCopy = new ShardQueryConfiguration(originalConfig);
             configCopy.setBeginDate(dateRange.getLeft());
             configCopy.setEndDate(dateRange.getRight());
 
             // Create a copy of the original default query planner, and process the query with the new date range.
-            DefaultQueryPlanner planner = new DefaultQueryPlanner(subPlan);
-            results.addIterable(planner.process(originalConfig, query, settings, scannerFactory));
+            DefaultQueryPlanner subPlan = new DefaultQueryPlanner(originalPlanner);
+
+            // TODO - Check if it's okay to add this to the copy constructor.
+            subPlan.setTransformRules(originalPlanner.getTransformRules());
+
+            // TODO - Verify if we need to make copies of settings or scannerFactory for the sub-plans.
+            results.addIterable(subPlan.process(configCopy, query, settings, scannerFactory));
 
             // Update the planned script to reflect that of the first query.
             if (this.plannedScript == null) {
-                this.plannedScript = planner.getPlannedScript();
-                log.debug("Setting federated planned script to " + plannedScript);
+                this.plannedScript = subPlan.getPlannedScript();
+                queryTree = configCopy.getQueryTree();
             }
+
             stopwatch.stop();
             totalProcessed++;
         }
+
+        // Update the query tree in the original config to reflect that of the first executed sub-plan.
+        originalConfig.setQueryTree(queryTree);
 
         // Return the collected results.
         return results;
@@ -110,7 +116,7 @@ public class FederatedQueryPlanner extends QueryPlanner {
     private SortedSet<Pair<Date,Date>> getSubQueryDateRanges(ShardQueryConfiguration config, String query, ScannerFactory scannerFactory)
                     throws DatawaveQueryException {
         // Fetch the field index holes for the specified fields and datatypes, using the configured minimum threshold.
-        MetadataHelper metadataHelper = subPlan.getMetadataHelper();
+        MetadataHelper metadataHelper = originalPlanner.getMetadataHelper();
         Map<String,Map<String,FieldIndexHole>> fieldIndexHoles;
         try {
             Set<String> fields = getFieldsForQuery(config, query, scannerFactory);
@@ -187,13 +193,13 @@ public class FederatedQueryPlanner extends QueryPlanner {
      */
     private Set<String> getFieldsForQuery(ShardQueryConfiguration config, String query, ScannerFactory scannerFactory) {
         // Parse the query.
-        ASTJexlScript queryTree = subPlan.parseQueryAndValidatePattern(query, null);
+        ASTJexlScript queryTree = originalPlanner.parseQueryAndValidatePattern(query, null);
 
         // Apply the query model.
-        MetadataHelper metadataHelper = subPlan.getMetadataHelper();
-        QueryModel queryModel = subPlan.loadQueryModel(config);
+        MetadataHelper metadataHelper = originalPlanner.getMetadataHelper();
+        QueryModel queryModel = originalPlanner.loadQueryModel(config);
         if (queryModel != null) {
-            queryTree = subPlan.applyQueryModel(metadataHelper, config, queryTree, queryModel);
+            queryTree = originalPlanner.applyQueryModel(metadataHelper, config, queryTree, queryModel);
         } else {
             log.warn("Query model was null, will not apply to query tree.");
         }
@@ -353,7 +359,4 @@ public class FederatedQueryPlanner extends QueryPlanner {
         return null;
     }
 
-    public DefaultQueryPlanner getSubPlan() {
-        return subPlan;
-    }
 }

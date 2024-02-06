@@ -112,7 +112,7 @@ public class QueryPlanTest extends AbstractFunctionalQuery {
     @Test
     public void planInMetricsAfterTableNotFoundException() throws Exception {
         String query = Constants.ANY_FIELD + " != " + "'" + TestCities.london + "'";
-        String expectedPlan = "!(_ANYFIELD_ == 'london')";
+        String expectedPlan = "_ANYFIELD_ != 'london'";
 
         this.logic.setMetadataTableName("missing");
         try {

@@ -114,10 +114,10 @@ class GroupingAccumuloWriter {
                         Value colVal = new Value(SummingCombiner.VAR_LEN_ENCODER.encode((long) rawData.get(column).size()));
                         mut.put(ColumnFamilyConstants.COLF_F, new Text(this.dataType + NULL_SEP + shardDate), colVal);
                         if (this.fieldConfig.getIndexFields().contains(column)) {
-                            mut.put(ColumnFamilyConstants.COLF_I, dtText, EMPTY_VALUE);
+                            mut.put(ColumnFamilyConstants.COLF_I, new Text(this.dataType + NULL_SEP + shardDate), colVal);
                         }
                         if (this.fieldConfig.getReverseIndexFields().contains(column)) {
-                            mut.put(ColumnFamilyConstants.COLF_RI, dtText, EMPTY_VALUE);
+                            mut.put(ColumnFamilyConstants.COLF_RI, new Text(this.dataType + NULL_SEP + shardDate), colVal);
                         }
                         Normalizer<?> norm = meta.get(column.toLowerCase()).normalizer;
                         String type = getNormalizerTypeName(norm);

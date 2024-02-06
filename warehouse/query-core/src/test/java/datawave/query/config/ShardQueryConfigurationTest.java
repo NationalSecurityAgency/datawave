@@ -299,7 +299,7 @@ public class ShardQueryConfigurationTest {
                         .assertValue("intermediateMaxTermThreshold", 2500)
                         .build();
         // @formatter:on
-    
+
         ShardQueryConfiguration config = ShardQueryConfiguration.create();
         testValues(config, asserts);
     }
