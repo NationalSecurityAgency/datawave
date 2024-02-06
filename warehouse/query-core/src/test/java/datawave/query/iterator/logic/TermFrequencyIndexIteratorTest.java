@@ -10,6 +10,7 @@ import static org.junit.Assert.fail;
 import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -187,9 +188,8 @@ public class TermFrequencyIndexIteratorTest {
         assertTrue(d.getDictionary().get("RECORD_ID") != null);
         assertTrue(d.getDictionary().get("FOO").getData() != null);
         assertTrue(((Set) d.getDictionary().get("FOO").getData()).size() == 2);
-        Iterator<PreNormalizedAttribute> i = ((Set) d.getDictionary().get("FOO").getData()).iterator();
-        assertTrue(i.next().getValue().equals("bar"));
-        assertTrue(i.next().getValue().equals("baz"));
+        Set<String> expectedValues = new HashSet<>(Arrays.asList("bar", "baz"));
+        assertValues(d, expectedValues);
 
         iterator.next();
 
@@ -201,9 +201,8 @@ public class TermFrequencyIndexIteratorTest {
         assertTrue(d.getDictionary().get("RECORD_ID") != null);
         assertTrue(d.getDictionary().get("FOO").getData() != null);
         assertTrue(((Set) d.getDictionary().get("FOO").getData()).size() == 2);
-        i = ((Set) d.getDictionary().get("FOO").getData()).iterator();
-        assertTrue(i.next().getValue().equals("buf"));
-        assertTrue(i.next().getValue().equals("buz"));
+        expectedValues = new HashSet<>(Arrays.asList("buz", "buf"));
+        assertValues(d, expectedValues);
 
         iterator.next();
 
@@ -215,9 +214,8 @@ public class TermFrequencyIndexIteratorTest {
         assertTrue(d.getDictionary().get("RECORD_ID") != null);
         assertTrue(d.getDictionary().get("FOO").getData() != null);
         assertTrue(((Set) d.getDictionary().get("FOO").getData()).size() == 2);
-        i = ((Set) d.getDictionary().get("FOO").getData()).iterator();
-        assertTrue(i.next().getValue().equals("alf"));
-        assertTrue(i.next().getValue().equals("arm"));
+        expectedValues = new HashSet<>(Arrays.asList("alf", "arm"));
+        assertValues(d, expectedValues);
     }
 
     @Test
@@ -238,13 +236,8 @@ public class TermFrequencyIndexIteratorTest {
         assertTrue(d.getDictionary().get("RECORD_ID") != null);
         assertTrue(d.getDictionary().get("FOO").getData() != null);
         assertTrue(((Set) d.getDictionary().get("FOO").getData()).size() == 6);
-        Iterator<PreNormalizedAttribute> i = ((Set) d.getDictionary().get("FOO").getData()).iterator();
-        assertTrue(i.next().getValue().equals("bar"));
-        assertTrue(i.next().getValue().equals("baz"));
-        assertTrue(i.next().getValue().equals("buf"));
-        assertTrue(i.next().getValue().equals("buz"));
-        assertTrue(i.next().getValue().equals("alf"));
-        assertTrue(i.next().getValue().equals("arm"));
+        Set<String> expectedValues = new HashSet<>(Arrays.asList("bar", "baz", "buf", "buz", "alf", "arm"));
+        assertValues(d, expectedValues);
 
         iterator.next();
         assertFalse(iterator.hasTop());
@@ -290,9 +283,8 @@ public class TermFrequencyIndexIteratorTest {
         assertTrue(d.getDictionary().get("FOO") != null);
         assertTrue(d.getDictionary().get("RECORD_ID") != null);
         assertTrue(d.getDictionary().get("FOO").getData() != null);
-        Iterator<PreNormalizedAttribute> i = ((Set) d.getDictionary().get("FOO").getData()).iterator();
-        assertTrue(i.next().getValue().equals("bar"));
-        assertTrue(i.next().getValue().equals("baz"));
+        Set<String> expectedValues = new HashSet<>(Arrays.asList("bar", "baz"));
+        assertValues(d, expectedValues);
 
         iterator.next();
 
@@ -303,9 +295,8 @@ public class TermFrequencyIndexIteratorTest {
         assertTrue(d.getDictionary().get("FOO") != null);
         assertTrue(d.getDictionary().get("RECORD_ID") != null);
         assertTrue(d.getDictionary().get("FOO").getData() != null);
-        i = ((Set) d.getDictionary().get("FOO").getData()).iterator();
-        assertTrue(i.next().getValue().equals("buf"));
-        assertTrue(i.next().getValue().equals("buz"));
+        expectedValues = new HashSet<>(Arrays.asList("buz", "buf"));
+        assertValues(d, expectedValues);
 
         iterator.next();
 
@@ -347,11 +338,8 @@ public class TermFrequencyIndexIteratorTest {
         assertTrue(d.getDictionary().get("FOO") != null);
         assertTrue(d.getDictionary().get("RECORD_ID") != null);
         assertTrue(d.getDictionary().get("FOO").getData() != null);
-        Iterator<PreNormalizedAttribute> i = ((Set) d.getDictionary().get("FOO").getData()).iterator();
-        assertTrue(i.next().getValue().equals("bar"));
-        assertTrue(i.next().getValue().equals("baz"));
-        assertTrue(i.next().getValue().equals("buf"));
-        assertTrue(i.next().getValue().equals("arm"));
+        Set<String> expectedValues = new HashSet<>(Arrays.asList("bar", "baz", "buf", "arm"));
+        assertValues(d, expectedValues);
 
         iterator.next();
         assertFalse(iterator.hasTop());
@@ -379,13 +367,8 @@ public class TermFrequencyIndexIteratorTest {
         assertTrue(d.getDictionary().get("FOO") != null);
         assertTrue(d.getDictionary().get("RECORD_ID") != null);
         assertTrue(d.getDictionary().get("FOO").getData() != null);
-        Iterator<PreNormalizedAttribute> i = ((Set) d.getDictionary().get("FOO").getData()).iterator();
-        assertTrue(i.next().getValue().equals("bar"));
-        assertTrue(i.next().getValue().equals("baz"));
-        assertTrue(i.next().getValue().equals("buf"));
-        assertTrue(i.next().getValue().equals("buz"));
-        assertTrue(i.next().getValue().equals("alf"));
-        assertTrue(i.next().getValue().equals("arm"));
+        Set<String> expectedValues = new HashSet<>(Arrays.asList("bar", "baz", "buf", "buz", "alf", "arm"));
+        assertValues(d, expectedValues);
 
         iterator.next();
         assertFalse(iterator.hasTop());
@@ -481,4 +464,10 @@ public class TermFrequencyIndexIteratorTest {
         return new Key(row, "tf", dataType + Constants.NULL + uid + Constants.NULL + fieldValue + Constants.NULL + fieldName);
     }
 
+    private void assertValues(Document document, Set<String> expectedValues) {
+        Set<PreNormalizedAttribute> attributeSet = (Set) document.getDictionary().get("FOO").getData();
+        Set<String> values = new HashSet<>();
+        attributeSet.forEach(attr -> values.add(attr.getValue()));
+        assertEquals(expectedValues, values);
+    }
 }
