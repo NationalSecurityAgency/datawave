@@ -446,7 +446,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             }
 
             // If the planner is a DefaultQueryPlanner, delegate the execution to a FederatedQueryPlanner.
-            if (getQueryPlanner() instanceof DefaultQueryPlanner) {
+            if (getQueryPlanner().getClass().equals(DefaultQueryPlanner.class)) {
                 log.debug("Executing query via " + FederatedQueryPlanner.class.getSimpleName());
                 FederatedQueryPlanner federatedPlanner = new FederatedQueryPlanner((DefaultQueryPlanner) getQueryPlanner());
                 // Update the iterator.
@@ -460,7 +460,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             config.setProjectFields(originalProjectFields);
         } else {
             // If the planner is a DefaultQueryPlanner, delegate the execution to a FederatedQueryPlanner.
-            if (getQueryPlanner() instanceof DefaultQueryPlanner) {
+            if (getQueryPlanner().getClass().equals(DefaultQueryPlanner.class)) {
                 log.debug("Executing query via " + FederatedQueryPlanner.class.getSimpleName());
                 FederatedQueryPlanner federatedPlanner = new FederatedQueryPlanner((DefaultQueryPlanner) getQueryPlanner());
                 // Update the iterator.
