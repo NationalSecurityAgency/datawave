@@ -75,18 +75,29 @@ public class GenericQueryConfiguration {
         this(configuredLogic.getConfig());
     }
 
-    public GenericQueryConfiguration(GenericQueryConfiguration genericConfig) {
-        this.setBaseIteratorPriority(genericConfig.getBaseIteratorPriority());
-        this.setBypassAccumulo(genericConfig.getBypassAccumulo());
-        this.setAccumuloPassword(genericConfig.getAccumuloPassword());
-        this.setAuthorizations(genericConfig.getAuthorizations());
-        this.setBeginDate(genericConfig.getBeginDate());
-        this.setClient(genericConfig.getClient());
-        this.setEndDate(genericConfig.getEndDate());
-        this.setMaxWork(genericConfig.getMaxWork());
-        this.setQueries(genericConfig.getQueries());
-        this.setQueryString(genericConfig.getQueryString());
-        this.setTableName(genericConfig.getTableName());
+    @SuppressWarnings("CopyConstructorMissesField")
+    public GenericQueryConfiguration(GenericQueryConfiguration other) {
+        copyFrom(other);
+    }
+
+    /**
+     * Deeply copies over all fields from the given {@link GenericQueryConfiguration} to this {@link GenericQueryConfiguration}.
+     *
+     * @param other
+     *            the {@link GenericQueryConfiguration} to copy values from
+     */
+    public void copyFrom(GenericQueryConfiguration other) {
+        this.setBaseIteratorPriority(other.getBaseIteratorPriority());
+        this.setBypassAccumulo(other.getBypassAccumulo());
+        this.setAccumuloPassword(other.getAccumuloPassword());
+        this.setAuthorizations(other.getAuthorizations());
+        this.setBeginDate(other.getBeginDate());
+        this.setClient(other.getClient());
+        this.setEndDate(other.getEndDate());
+        this.setMaxWork(other.getMaxWork());
+        this.setQueries(other.getQueries());
+        this.setQueryString(other.getQueryString());
+        this.setTableName(other.getTableName());
     }
 
     /**

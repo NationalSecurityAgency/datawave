@@ -72,12 +72,13 @@ public class FederatedQueryPlanner extends QueryPlanner {
 
         // Execute the same query for each date range and collect the results.
         FederatedQueryIterable results = new FederatedQueryIterable();
-        ASTJexlScript queryTree = null;
+        ShardQueryConfiguration firstConfigCopy = null;
         int totalProcessed = 1;
         for (Pair<Date,Date> dateRange : dateRanges) {
-            TraceStopwatch stopwatch = originalConfig.getTimers()
-                            .newStartedStopwatch("FederatedQueryPlanner - Execute query against date range subset " + dateFormat.format(dateRange.getLeft())
-                                            + "-" + dateFormat.format(dateRange.getRight()) + " [" + totalProcessed + " of " + dateRanges.size() + "]");
+            String subStartDate = dateFormat.format(dateRange.getLeft());
+            String subEndDate = dateFormat.format(dateRange.getRight());
+            TraceStopwatch stopwatch = originalConfig.getTimers().newStartedStopwatch("FederatedQueryPlanner - Executing sub-plan [" + totalProcessed + " of "
+                            + dateRanges.size() + "] against date range (" + subStartDate + "-" + subEndDate + ")");
             // Set the new date range in a copy of the config.
             ShardQueryConfiguration configCopy = new ShardQueryConfiguration(originalConfig);
             configCopy.setBeginDate(dateRange.getLeft());
@@ -87,23 +88,36 @@ public class FederatedQueryPlanner extends QueryPlanner {
             DefaultQueryPlanner subPlan = new DefaultQueryPlanner(originalPlanner);
 
             // TODO - Check if it's okay to add this to the copy constructor.
+            // TODO - Check if anything else needs to be added to the copy constructor.
             subPlan.setTransformRules(originalPlanner.getTransformRules());
 
             // TODO - Verify if we need to make copies of settings or scannerFactory for the sub-plans.
-            results.addIterable(subPlan.process(configCopy, query, settings, scannerFactory));
+            try {
+                results.addIterable(subPlan.process(configCopy, query, settings, scannerFactory));
+            } catch (Exception e) {
+                log.error("Error occured when processing sub-plan [" + totalProcessed + " of " + dateRanges.size() + "] against date range (" + subStartDate
+                                + "-" + subEndDate + ")", e);
+                // If an exception occurs, ensure that the planned script and the original config are updated before allowing the exception to bubble up.
+                this.plannedScript = subPlan.getPlannedScript();
+                originalConfig.copyFrom(configCopy);
+                throw e;
+            }
 
             // Update the planned script to reflect that of the first query.
             if (this.plannedScript == null) {
                 this.plannedScript = subPlan.getPlannedScript();
-                queryTree = configCopy.getQueryTree();
+            }
+
+            if (firstConfigCopy == null) {
+                firstConfigCopy = configCopy;
             }
 
             stopwatch.stop();
             totalProcessed++;
         }
 
-        // Update the query tree in the original config to reflect that of the first executed sub-plan.
-        originalConfig.setQueryTree(queryTree);
+        // Copy over all fields from the config of the first executed sub-plan to the original config.
+        originalConfig.copyFrom(firstConfigCopy);
 
         // Return the collected results.
         return results;

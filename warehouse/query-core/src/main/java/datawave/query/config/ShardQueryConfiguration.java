@@ -471,10 +471,20 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      * @param other
      *            - another ShardQueryConfiguration instance
      */
+    @SuppressWarnings("CopyConstructorMissesField")
     public ShardQueryConfiguration(ShardQueryConfiguration other) {
+        copyFrom(other);
+    }
 
+    /**
+     * Deeply copies over all fields from the given {@link ShardQueryConfiguration} to this {@link ShardQueryConfiguration}.
+     *
+     * @param other
+     *            the {@link ShardQueryConfiguration} to copy values from
+     */
+    public void copyFrom(ShardQueryConfiguration other) {
         // GenericQueryConfiguration copy first
-        super(other);
+        super.copyFrom(other);
 
         // ShardQueryConfiguration copy
         this.setTldQuery(other.isTldQuery());

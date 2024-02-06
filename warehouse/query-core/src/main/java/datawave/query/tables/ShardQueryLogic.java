@@ -286,7 +286,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             this.config.setGeneratePlanOnly(true);
         }
         initialize(config, client, settings, auths);
-        return config.getQueryString();
+        return this.config.getQueryString();
     }
 
     protected String expandQueryMacros(String query) throws ParseException {
