@@ -18,13 +18,13 @@ source "${BIN_DIR}/query.sh" # for urlencode function
 
 CURL="$( which curl )"
 
-TVMAZE_SHOWNAME="${1}"
-[ -z "${TVMAZE_SHOWNAME}" ] && fatal "TV show argument is required!"
+SHOW_ID="${1}"
+[ -z "${SHOW_ID}" ] && fatal "TV show ID is required!"
 
 PRETTY=false
 [ "${2}" == "-p" ] && PRETTY=true
 
-TVMAZE_QUERY="http://api.tvmaze.com/singlesearch/shows?q=$(urlencode "${TVMAZE_SHOWNAME}")\&embed=cast"
+TVMAZE_QUERY="http://api.tvmaze.com/shows/${SHOW_ID}&embed=cast"
 
 CURL_CMD="${CURL} --silent --write-out 'HTTP_STATUS_CODE:%{http_code}' -X GET ${TVMAZE_QUERY}"
 CURL_RESPONSE="$( eval "${CURL_CMD}" )"
@@ -35,8 +35,8 @@ CURL_EXIT=$?
 TVMAZE_RESPONSE_BODY=$( echo ${CURL_RESPONSE} | sed -e 's/HTTP_STATUS_CODE\:.*//g' )
 TVMAZE_RESPONSE_STATUS=$( echo ${CURL_RESPONSE} | tr -d '\n' | sed -e 's/.*HTTP_STATUS_CODE://' )
 
-[ "${TVMAZE_RESPONSE_STATUS}" != "200" ] && exit 1 #error "api.tvmaze.com returned invalid response status: ${TVMAZE_RESPONSE_STATUS}" && exit 1
-[ -z "${TVMAZE_RESPONSE_BODY}" ] && exit 1 #error "Response body is empty!" && exit 1
+[ "${TVMAZE_RESPONSE_STATUS}" != "200" ] && error "api.tvmaze.com returned invalid response status: ${TVMAZE_RESPONSE_STATUS}" && exit 1
+[ -z "${TVMAZE_RESPONSE_BODY}" ] && error "Response body is empty!" && exit 1
 
 if [ "${PRETTY}" == true ] ; then
     echo "${TVMAZE_RESPONSE_BODY}" | python -c 'from __future__ import print_function;import sys,json;data=json.loads(sys.stdin.read()); print(json.dumps(data, indent=2, sort_keys=True))'
