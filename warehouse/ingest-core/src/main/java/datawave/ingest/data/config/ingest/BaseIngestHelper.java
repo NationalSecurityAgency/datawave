@@ -978,17 +978,12 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
                 if (n.getError() != null) {
                     switch (getFailurePolicy(n.getIndexedFieldName())) {
                         case LEAVE:
-                            // for the leave policy, clear out the exception but add
-                            // a failed normalization field
+                            // for the leave policy, clear out the exception
                             n.setError(null);
-                            results.put(n.getIndexedFieldName(), n);
-                            results.put(failedNormalizationField, new NormalizedFieldAndValue(failedNormalizationField, n.getIndexedFieldName()));
-                            break;
                         case DROP:
-                            // for the leave policy, only add a failed normalization
+                            // for the drop policy, add a failed normalization
                             // field
                             results.put(failedNormalizationField, new NormalizedFieldAndValue(failedNormalizationField, n.getIndexedFieldName()));
-                            break;
                         case FAIL:
                             // for the fail policy, leave the exception and let the
                             // caller (EventMapper) fail the event
