@@ -1,5 +1,5 @@
 {% assign major_release_target = page.release_tag | split: '.' | first | append: ".x" %}
-{% assign href = "{{ site.baseurl }}/docs/version/getting-started/data-model#data-dictionary-table" | replace: 'version', major_release_target %}
+{% assign href = "site_baseurl/docs/version/getting-started/data-model#data-dictionary-table" | replace: 'version', major_release_target | replace: 'site_baseurl', site.baseurl %}
 <div markdown="span" class="alert alert-info" role="alert"><i class="fa fa-info-circle"></i> <b>Note:</b>
     At ingest time, DataWave creates/maintains a <a href="{{ href }}">data dictionary</a> of known data types
     and their associated field names. A typical DataWave query expression will leverage one or more of these field names
