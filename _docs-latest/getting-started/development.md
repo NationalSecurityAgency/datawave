@@ -6,7 +6,7 @@ summary: This page provides a brief overview of development environment setup an
 
 ## Prerequisites
 
-Git, Java 1.8, Maven 3.x
+Git, Java 11, Maven 3.x
 
 ## Clone the Repository
 
@@ -24,8 +24,7 @@ the build leverages a custom Maven plugin, described below, to manage this proce
 
 ### Maven Plugin: *read-properties*
 
-The **read-properties** plugin source is in [DW_SOURCE/contrib/read-properties][dw_read_properties] and will need to be
-built/installed prior to your first DataWave build.
+The **read-properties** plugin source is in the [datawave-utils][dw_read_properties] repo and the jar should already be deployed to a public artifact repository.
 
 The DataWave build will leverage the **read-properties** plugin to load Maven properties in *\*.properties* files from
 predefined locations. Moreover, the specific *\*.properties* files for a given deployment environment are typically
@@ -127,15 +126,14 @@ along with a new set of \*.properties files for the targeted environment.
 
 ### Maven Plugin: *assert-properties*
 
-The custom **assert-properties** plugin source is in [DW_SOURCE/contrib/assert-properties][dw_assert_properties] and will need to be built/installed
-prior to your first DataWave build.
+The **assert-properties** plugin source is in the [datawave-utils][dw_assert_properties] repo and the jar should already be deployed to a public artifact repository.
 
-The **assert-properties** plugin is configured on a per-artifact basis to define the set of *required* Maven
-properties for that artifact. Thus, if any required properties are not set, then the artifact build will fail with a
+The **assert-properties** plugin is configured on a per-module basis to define the set of *required* Maven
+properties for that module. Thus, if any required properties are not set, then the module build will fail with a
 descriptive message. See [DW_SOURCE/web-services/pom.xml][dw_blob_web_services_pom] for example usage.
 
-[dw_blob_web_services_pom]: https://github.com/NationalSecurityAgency/datawave/blob/{{ page.release_tag }}/web-services/pom.xml#L709
-[dw_assert_properties]: https://github.com/NationalSecurityAgency/datawave/tree/{{ page.release_tag }}/contrib/assert-properties
-[dw_read_properties]: https://github.com/NationalSecurityAgency/datawave/tree/{{ page.release_tag }}/contrib/read-properties
+[dw_blob_web_services_pom]: https://github.com/NationalSecurityAgency/datawave/blob/{{ page.release_tag }}/web-services/pom.xml#L694
+[dw_assert_properties]: https://github.com/NationalSecurityAgency/datawave-utils/tree/main/assert-properties
+[dw_read_properties]: https://github.com/NationalSecurityAgency/datawave-utils/tree/main/read-properties
 [dw_blob_root_pom]: https://github.com/NationalSecurityAgency/datawave/blob/{{ page.release_tag }}/pom.xml
 [dw_blob_buildme]: https://github.com/NationalSecurityAgency/datawave/blob/{{ page.release_tag }}/BUILDME.md
