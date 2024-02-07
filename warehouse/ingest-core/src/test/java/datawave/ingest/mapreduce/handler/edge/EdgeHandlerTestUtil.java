@@ -1,10 +1,7 @@
 package datawave.ingest.mapreduce.handler.edge;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -42,14 +39,6 @@ public class EdgeHandlerTestUtil {
     public static ListMultimap<String,String> edgeValueResults = ArrayListMultimap.create();
 
     private static Logger log = Logger.getLogger(EdgeHandlerTestUtil.class);
-
-    public static boolean isDocumentKey(Key k) {
-        return isShardKey(k) && k.getColumnFamily().toString().equals(ExtendedDataTypeHandler.FULL_CONTENT_COLUMN_FAMILY);
-    }
-
-    public static boolean isShardKey(Key k) {
-        return k.getRow().toString().matches("\\d{8}_\\d+");
-    }
 
     public static void processEvent(Multimap<String,NormalizedContentInterface> eventFields, ExtendedDataTypeHandler<Text,BulkIngestKey,Value> edgeHandler,
                     RawRecordContainer event, int expectedEdgeKeys, boolean printKeysOnlyOnFail, boolean edgeDeleteMode) {

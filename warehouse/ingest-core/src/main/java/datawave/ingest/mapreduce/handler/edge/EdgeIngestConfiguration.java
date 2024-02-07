@@ -42,14 +42,13 @@ public class EdgeIngestConfiguration {
     public static final String EDGE_DEFAULT_DATA_TYPE = "default";
     public static final String TRIM_FIELD_GROUP = ".trim.field.group";
 
-    private boolean enableDisallowist = false;
-    private boolean enableMetadata;
-    private boolean evaluatePreconditions = false;
+    private boolean enableDisallowList;
+    private boolean evaluatePreconditions;
     private boolean includeAllEdges;
 
     private String springConfigFile;
 
-    private Long futureDelta, pastDelta, newFormatStartDate;
+    private Long futureDelta, pastDelta;
 
     private Map<String,Map<String,String>> edgeEnrichmentTypeLookup = new HashMap<>();
     private Map<String,Set<String>> disallowlistFieldLookup = new HashMap<>();
@@ -72,8 +71,7 @@ public class EdgeIngestConfiguration {
 
     public EdgeIngestConfiguration(Configuration conf) {
 
-        this.enableDisallowist = ConfigurationHelper.isNull(conf, EDGE_TABLE_DISALLOWLIST_ENABLE, Boolean.class);
-        this.enableMetadata = ConfigurationHelper.isNull(conf, EDGE_TABLE_METADATA_ENABLE, Boolean.class);
+        enableDisallowList = ConfigurationHelper.isNull(conf, EDGE_TABLE_DISALLOWLIST_ENABLE, Boolean.class);
 
         springConfigFile = ConfigurationHelper.isNull(conf, EDGE_SPRING_CONFIG, String.class);
         futureDelta = ConfigurationHelper.isNull(conf, ACTIVITY_DATE_FUTURE_DELTA, Long.class);
@@ -95,7 +93,7 @@ public class EdgeIngestConfiguration {
      */
     public void readEdgeConfigFile(TypeRegistry registry, String springConfigFile) {
 
-        ClassPathXmlApplicationContext ctx = null;
+        ClassPathXmlApplicationContext ctx;
 
         edges = new HashMap<>();
 
@@ -198,7 +196,7 @@ public class EdgeIngestConfiguration {
 
     private void removeDisallowListedEdges() {
         // loop through edge definitions and collect any ones that have disallowlisted fields
-        if (this.enableDisallowist) {
+        if (this.enableDisallowList) {
             Map<String,Set<EdgeDefinition>> disallowlistedEdges = new HashMap<>();
             for (String dType : edges.keySet()) {
                 if (!disallowlistedEdges.containsKey(dType)) {
@@ -324,10 +322,6 @@ public class EdgeIngestConfiguration {
         this.edges = edges;
     }
 
-    public void setVersioningCache(EdgeKeyVersioningCache versioningCache) {
-        this.versioningCache = versioningCache;
-    }
-
     public boolean evaluatePreconditions() {
         return evaluatePreconditions;
     }
@@ -345,7 +339,7 @@ public class EdgeIngestConfiguration {
     }
 
     public boolean enableDisallowist() {
-        return enableDisallowist;
+        return enableDisallowList;
     }
 
     public Map<String,Map<String,String>> getEdgeEnrichmentTypeLookup() {
