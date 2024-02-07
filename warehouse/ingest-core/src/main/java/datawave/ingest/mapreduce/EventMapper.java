@@ -107,7 +107,7 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
     public static final String DISCARD_INTERVAL = "event.discard.interval";
 
     /**
-     * number which will be used to evaluate whether or not an Event should be processed. If the Event.getEventDate() is less than (now - futureInterval) then
+     * number which will be used to evaluate whether or not an Event should be processed. If the Event.getEventDate() is less than (now + futureInterval) then
      * it will be processed.
      */
     public static final String DISCARD_FUTURE_INTERVAL = "event.discard.future.interval";
