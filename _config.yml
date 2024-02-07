@@ -222,7 +222,7 @@ defaults:
       # other things, a means of creating href links to specific source files
       # on the main datawave repo, sometimes to specific line #'s in a given source
       # file. Thus, changing the release_tag here can potentially break things
-      release_tag: 6.4.5
+      release_tag: 6.5.5
       show_summary: true
       skip_title_for_h1: false
       toc: true
