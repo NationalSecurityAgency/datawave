@@ -203,12 +203,12 @@ public class EdgeIngestConfiguration {
                     disallowlistedEdges.put(dType, new HashSet<>());
                 }
                 for (EdgeDefinition edgeDef : edges.get(dType).getEdges()) {
-                    if (isDisallowistField(dType, edgeDef.getSourceFieldName()) || isDisallowistField(dType, edgeDef.getSinkFieldName())) {
+                    if (isDisallowListField(dType, edgeDef.getSourceFieldName()) || isDisallowListField(dType, edgeDef.getSinkFieldName())) {
                         disallowlistedEdges.get(dType).add(edgeDef);
                         log.warn("Removing Edge Definition due to disallowlisted Field: DataType: " + dType + " Definition: " + edgeDef.getSourceFieldName()
                                         + "-" + edgeDef.getSinkFieldName());
                     } else if (edgeDef.isEnrichmentEdge()) {
-                        if (isDisallowistField(dType, edgeDef.getEnrichmentField())) {
+                        if (isDisallowListField(dType, edgeDef.getEnrichmentField())) {
                             disallowlistedEdges.get(dType).add(edgeDef);
                         }
                     }
@@ -226,7 +226,7 @@ public class EdgeIngestConfiguration {
                 log.info("Removed " + disallowlistedFieldCount + " edge definitions because they contain disallowlisted fields.");
             }
         } else {
-            log.info("Disallowisting of edges is disabled.");
+            log.info("DisallowListing of edges is disabled.");
         }
     }
 
@@ -286,15 +286,15 @@ public class EdgeIngestConfiguration {
 
     }
 
-    public Map<String,Set<String>> getDisallowistFieldLookup() {
+    public Map<String,Set<String>> getDisallowListFieldLookup() {
         return disallowlistFieldLookup;
     }
 
-    public Map<String,Set<String>> getDisallowistValueLookup() {
+    public Map<String,Set<String>> getDisallowListValueLookup() {
         return disallowlistValueLookup;
     }
 
-    private boolean isDisallowistField(String dataType, String fieldName) {
+    private boolean isDisallowListField(String dataType, String fieldName) {
         if (disallowlistFieldLookup.containsKey(dataType)) {
             return this.disallowlistFieldLookup.get(dataType).contains(fieldName);
         } else if (disallowlistFieldLookup.containsKey(EDGE_DEFAULT_DATA_TYPE)) {
@@ -304,7 +304,7 @@ public class EdgeIngestConfiguration {
         return false;
     }
 
-    public boolean isDisallowistValue(String dataType, String fieldValue) {
+    public boolean isDisallowListValue(String dataType, String fieldValue) {
         if (disallowlistValueLookup.containsKey(dataType)) {
             return this.disallowlistValueLookup.get(dataType).contains(fieldValue);
         } else if (disallowlistValueLookup.containsKey(EDGE_DEFAULT_DATA_TYPE)) {
@@ -338,7 +338,7 @@ public class EdgeIngestConfiguration {
         return scriptCache;
     }
 
-    public boolean enableDisallowist() {
+    public boolean enableDisallowList() {
         return enableDisallowList;
     }
 
