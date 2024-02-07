@@ -7,8 +7,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
 
-import org.apache.commons.jexl2.parser.Node;
+import org.apache.commons.jexl3.parser.Node;
 import org.apache.commons.lang.builder.ToStringBuilder;
+
+import datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType;
 
 public class NodeTypeCount {
 
@@ -28,6 +30,16 @@ public class NodeTypeCount {
     }
 
     /**
+     * Increment the count for the specified node type by 1.
+     *
+     * @param type
+     *            the marker type
+     */
+    public void increment(MarkerType type) {
+        typeTotals.compute(type.getLabel(), (key, val) -> (val == null) ? 1 : val + 1);
+    }
+
+    /**
      * Return the total number of times the specified node type was found.
      *
      * @param type
@@ -36,6 +48,17 @@ public class NodeTypeCount {
      */
     public int getTotal(Class<? extends Node> type) {
         return typeTotals.getOrDefault(type.getName(), 0);
+    }
+
+    /**
+     * Return the total number of times the specified node type was found.
+     *
+     * @param type
+     *            the node type
+     * @return the total number
+     */
+    public int getTotal(MarkerType type) {
+        return typeTotals.getOrDefault(type.getLabel(), 0);
     }
 
     /**
@@ -68,6 +91,27 @@ public class NodeTypeCount {
     }
 
     /**
+     * Return whether or not at least one of the specified node types was found.
+     *
+     * @param type
+     *            the node type
+     * @return true if the specified node type was found, or false otherwise
+     */
+    public boolean isPresent(MarkerType type) {
+        return typeTotals.containsKey(type.getLabel());
+    }
+
+    @SuppressWarnings("unchecked")
+    private boolean isPresent(Object type) {
+        if (type instanceof Class && Node.class.isAssignableFrom((Class<?>) type)) {
+            return isPresent((Class<? extends Node>) type);
+        } else if (type instanceof MarkerType) {
+            return isPresent((MarkerType) type);
+        }
+        return false;
+    }
+
+    /**
      * Return true if any of the specified node types were found.
      *
      * @param types
@@ -86,7 +130,19 @@ public class NodeTypeCount {
      *            the node types
      * @return true if any of the types were found, or false otherwise
      */
-    public boolean hasAny(Collection<Class<? extends Node>> types) {
+    @SafeVarargs
+    public final boolean hasAny(MarkerType... types) {
+        return hasAny(Arrays.stream(types));
+    }
+
+    /**
+     * Return true if any of the specified node types were found.
+     *
+     * @param types
+     *            the node types
+     * @return true if any of the types were found, or false otherwise
+     */
+    public boolean hasAny(Collection<?> types) {
         return hasAny(types.stream());
     }
 
@@ -97,7 +153,7 @@ public class NodeTypeCount {
      *            the node types
      * @return true if any of the types were found, or false otherwise
      */
-    public boolean hasAny(Stream<Class<? extends Node>> types) {
+    public boolean hasAny(Stream<?> types) {
         return types.anyMatch(this::isPresent);
     }
 
@@ -120,7 +176,18 @@ public class NodeTypeCount {
      *            the node types
      * @return true if any of the types were found, or false otherwise
      */
-    public boolean hasAll(Collection<Class<? extends Node>> types) {
+    public final boolean hasAll(MarkerType... types) {
+        return hasAll(Arrays.stream(types));
+    }
+
+    /**
+     * Return true if all of the specified node types were found.
+     *
+     * @param types
+     *            the node types
+     * @return true if any of the types were found, or false otherwise
+     */
+    public boolean hasAll(Collection<?> types) {
         return hasAll(types.stream());
     }
 
@@ -131,7 +198,7 @@ public class NodeTypeCount {
      *            the node types
      * @return true if any of the types were found, or false otherwise
      */
-    public boolean hasAll(Stream<Class<? extends Node>> types) {
+    public boolean hasAll(Stream<?> types) {
         return types.allMatch(this::isPresent);
     }
 

@@ -1,10 +1,11 @@
 package datawave.query.jexl.visitors;
 
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.JexlNode;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_OR;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
 
-import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.JexlNode;
+
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 
 /**
@@ -28,7 +29,7 @@ public class IvaratorRequiredVisitor extends BaseVisitor {
     @Override
     public Object visit(ASTAndNode and, Object data) {
         QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(and);
-        if (instance.isAnyTypeOf(ExceededOrThresholdMarkerJexlNode.class, ExceededValueThresholdMarkerJexlNode.class)) {
+        if (instance.isAnyTypeOf(EXCEEDED_OR, EXCEEDED_VALUE)) {
             ivaratorRequired = true;
         } else if (!instance.isAnyTypeOf()) {
             super.visit(and, data);

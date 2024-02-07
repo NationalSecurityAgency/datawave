@@ -1,9 +1,9 @@
 package datawave.test;
 
 import java.util.Comparator;
-import java.util.Objects;
 
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ASTIdentifier;
+import org.apache.commons.jexl3.parser.JexlNode;
 
 /**
  * Performs a shallow comparison of two nodes. It is meant to be used by the {@link DeepJexlNodeComparator} to quickly identify simplistic differences between
@@ -32,11 +32,22 @@ public class ShallowJexlNodeComparator implements Comparator<JexlNode> {
         if (first.jjtGetNumChildren() != second.jjtGetNumChildren()) {
             return 1;
         }
-        if (!Objects.equals(first.image, second.image)) {
+        if (!first.getClass().equals(second.getClass())) {
             return 1;
         }
-        if (!Objects.equals(first.jjtGetValue(), second.jjtGetValue())) {
-            return 1;
+        if (first instanceof ASTIdentifier && second instanceof ASTIdentifier) {
+            ASTIdentifier firstIdentifier = (ASTIdentifier) first;
+            ASTIdentifier secondIdentifier = (ASTIdentifier) second;
+            if (!(firstIdentifier.getNamespace().equals(secondIdentifier.getNamespace()) && firstIdentifier.getName().equals(secondIdentifier.getName()))) {
+                return 1;
+            }
+        }
+        if (first instanceof JexlNode.Constant && second instanceof JexlNode.Constant) {
+            JexlNode.Constant<?> firstLiteral = (JexlNode.Constant<?>) first;
+            JexlNode.Constant<?> secondLiteral = (JexlNode.Constant<?>) second;
+            if (!firstLiteral.getLiteral().equals(secondLiteral.getLiteral())) {
+                return 1;
+            }
         }
         return 0;
     }

@@ -11,7 +11,7 @@ sure to give the token at least the following permissions:
 
 Save the token value, and create a server entry for the github package repo in your maven `settings.xml` file, like so:
 ```xml
-<servers>
+   <servers>
       <server>
          <id>github-datawave</id>
          <username>PUT_YOUR_GITHUB_USERNAME_HERE</username>
