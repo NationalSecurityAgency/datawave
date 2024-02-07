@@ -1,41 +1,33 @@
 package datawave.query.jexl;
 
-import java.util.Map;
-
-import org.apache.commons.jexl2.Interpreter;
-import org.apache.commons.jexl2.JexlArithmetic;
-import org.apache.commons.jexl2.JexlContext;
-import org.apache.commons.jexl2.JexlEngine;
-import org.apache.commons.jexl2.introspection.Uberspect;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.logging.Log;
+import org.apache.commons.jexl3.JexlBuilder;
+import org.apache.commons.jexl3.JexlContext;
+import org.apache.commons.jexl3.JexlOptions;
+import org.apache.commons.jexl3.internal.Engine;
+import org.apache.commons.jexl3.internal.Frame;
+import org.apache.commons.jexl3.internal.Interpreter;
+import org.apache.commons.jexl3.introspection.JexlPermissions;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
 
 /**
  * Extension of the JexlEngine.
  *
  */
-public class DatawaveJexlEngine extends JexlEngine {
-
+public class DatawaveJexlEngine extends Engine {
     public DatawaveJexlEngine() {
-        super();
-        setDebug(false);
-        registerFunctions();
+        super(new JexlBuilder().debug(false).namespaces(ArithmeticJexlEngines.functions()).permissions(JexlPermissions.UNRESTRICTED));
     }
 
-    public DatawaveJexlEngine(Uberspect anUberspect, JexlArithmetic anArithmetic, Map<String,Object> theFunctions, Log log) {
-        super(anUberspect, anArithmetic, theFunctions, log);
-    }
-
-    private void registerFunctions() {
-        this.setFunctions(ArithmeticJexlEngines.functions());
+    public DatawaveJexlEngine(JexlBuilder conf) {
+        super(conf);
     }
 
     @Override
-    protected Interpreter createInterpreter(JexlContext context, boolean strictFlag, boolean silentFlag) {
-        return new DatawaveInterpreter(this, context, strictFlag, silentFlag);
+    protected Interpreter createInterpreter(JexlContext context, Frame frame, JexlOptions opts) {
+        return new DatawaveInterpreter(this, opts, context, frame);
     }
 
-    public ASTJexlScript parse(CharSequence expression) {
-        return super.parse(expression, null, null);
+    public ASTJexlScript parse(String expression) {
+        return super.parse(null, true, expression, null);
     }
 }

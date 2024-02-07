@@ -2,7 +2,6 @@ package datawave.query;
 
 import static org.junit.Assert.fail;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -23,6 +22,7 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.collections4.iterators.TransformIterator;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Before;
@@ -38,13 +38,12 @@ import datawave.microservice.querymetric.QueryMetricFactoryImpl;
 import datawave.query.tables.SSDeepSimilarityQueryLogic;
 import datawave.query.testframework.AbstractDataTypeConfig;
 import datawave.query.transformer.SSDeepSimilarityQueryTransformer;
-import datawave.query.util.Tuple2;
-import datawave.query.util.ssdeep.BucketAccumuloKeyGenerator;
-import datawave.query.util.ssdeep.NGramByteHashGenerator;
-import datawave.query.util.ssdeep.NGramTuple;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
+import datawave.util.ssdeep.BucketAccumuloKeyGenerator;
+import datawave.util.ssdeep.NGramByteHashGenerator;
+import datawave.util.ssdeep.NGramTuple;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.result.event.DefaultResponseObjectFactory;
@@ -97,14 +96,14 @@ public class SSDeepQueryTest {
         // operations
         ssdeepLines.forEach(s -> {
             try {
-                Iterator<Tuple2<NGramTuple,byte[]>> it = nGramGenerator.call(s);
+                Iterator<ImmutablePair<NGramTuple,byte[]>> it = nGramGenerator.call(s);
                 while (it.hasNext()) {
-                    Tuple2<NGramTuple,byte[]> nt = it.next();
-                    Tuple2<Key,Value> at = accumuloKeyGenerator.call(nt);
-                    Key k = at.first();
+                    ImmutablePair<NGramTuple,byte[]> nt = it.next();
+                    ImmutablePair<Key,Value> at = accumuloKeyGenerator.call(nt);
+                    Key k = at.getKey();
                     Mutation m = new Mutation(k.getRow());
                     ColumnVisibility cv = new ColumnVisibility(k.getColumnVisibility());
-                    m.put(k.getColumnFamily(), k.getColumnQualifier(), cv, k.getTimestamp(), at.second());
+                    m.put(k.getColumnFamily(), k.getColumnQualifier(), cv, k.getTimestamp(), at.getValue());
                     bw.addMutation(m);
                 }
                 bw.flush();

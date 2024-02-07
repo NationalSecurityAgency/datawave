@@ -1,22 +1,18 @@
 package datawave.query.jexl.visitors;
 
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.BOUNDED_RANGE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.JexlNodes;
-import org.apache.commons.jexl2.parser.ParseException;
-import org.apache.commons.jexl2.parser.ParserTreeConstants;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ParseException;
 import org.junit.Test;
 
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.JexlNodeFactory;
-import datawave.query.jexl.nodes.BoundedRange;
-import datawave.test.JexlNodeAssert;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
 
 public class TreeEqualityVisitorTest {
 
@@ -30,14 +26,14 @@ public class TreeEqualityVisitorTest {
     }
 
     /**
-     * Verify that two nodes identical other than their values are considered non-equal.
+     * Verify that two nodes identical other than their values are considered equal.
      */
     @Test
     public void testNonEqualValue() throws ParseException {
         ASTJexlScript first = JexlASTHelper.parseJexlQuery("FOO == 'bar'");
         first.jjtSetValue("somevalue");
         ASTJexlScript second = JexlASTHelper.parseJexlQuery("FOO == 'bar'");
-        assertNotEquivalent(first, second, "Node values differ: somevalue vs null");
+        assertEquivalent(first, second);
     }
 
     /**
@@ -46,7 +42,7 @@ public class TreeEqualityVisitorTest {
     @Test
     public void testNonEqualImage() throws ParseException {
         assertNotEquivalent("FOO == 'bar'", "FOO == 'bat'",
-                        "Did not find a matching child for EQNode in [EQNode]: Did not find a matching child for StringLiteral in [StringLiteral]: Node images differ: bar vs bat");
+                        "Did not find a matching child for EQNode in [EQNode]: Did not find a matching child for bar in [bat]: Node images differ: bar vs bat");
     }
 
     /**
@@ -55,7 +51,7 @@ public class TreeEqualityVisitorTest {
     @Test
     public void testNonEqualChildrenSize() throws ParseException {
         assertNotEquivalent("[1, 2, 3, 4]", "[1, 2]",
-                        "Did not find a matching child for ArrayLiteral in [ArrayLiteral]: Num children differ: [NumberLiteral, NumberLiteral, NumberLiteral, NumberLiteral] vs [NumberLiteral, NumberLiteral]");
+                        "Did not find a matching child for [ 1, 2, 3, 4 ] in [[ 1, 2 ]]: Num children differ: [1, 2, 3, 4] vs [1, 2]");
     }
 
     /**
@@ -64,7 +60,7 @@ public class TreeEqualityVisitorTest {
     @Test
     public void testNonEqualChildren() throws ParseException {
         assertNotEquivalent("[1, 2]", "[1, 3]",
-                        "Did not find a matching child for ArrayLiteral in [ArrayLiteral]: Did not find a matching child for NumberLiteral in [NumberLiteral]: Node images differ: 2 vs 3");
+                        "Did not find a matching child for [ 1, 2 ] in [[ 1, 3 ]]: Did not find a matching child for 2 in [3]: Node images differ: 2 vs 3");
     }
 
     /**
@@ -100,12 +96,11 @@ public class TreeEqualityVisitorTest {
     }
 
     /**
-     * Verify that a wrapped query property marker is not considered equal to an unwrapped version of the same query property marker.
+     * Verify that a wrapped query property marker is considered equal to an unwrapped version of the same query property marker.
      */
     @Test
     public void testNonEqualTreesWithUnwrappedQueryPropertyMarker() throws ParseException {
-        assertNotEquivalent("((_Bounded_ = true) && (NUM > '1' && NUM < '5'))", "(_Bounded_ = true) && (NUM > '1' && NUM < '5')",
-                        "Did not find a matching child for Reference in [AndNode]: Classes differ: ASTReference vs ASTAndNode");
+        assertEquivalent("((_Bounded_ = true) && (NUM > '1' && NUM < '5'))", "(_Bounded_ = true) && (NUM > '1' && NUM < '5')");
     }
 
     /**
@@ -130,7 +125,7 @@ public class TreeEqualityVisitorTest {
     @Test
     public void testEqualTreesWithTypedQueryPropertyMarkerAndNonTypedQueryPropertyMarker() throws ParseException {
         JexlNode first = parseWithoutASTJexlScript("((_Bounded_ = true) && (NUM > '1' && NUM < '5'))");
-        BoundedRange second = new BoundedRange(parseWithoutASTJexlScript("NUM > '1' && NUM < '5'"));
+        JexlNode second = QueryPropertyMarker.create(parseWithoutASTJexlScript("NUM > '1' && NUM < '5'"), BOUNDED_RANGE);
 
         assertEquivalent(first, second);
     }

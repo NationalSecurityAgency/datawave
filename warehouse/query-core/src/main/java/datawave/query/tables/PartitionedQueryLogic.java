@@ -12,7 +12,6 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
 
 import datawave.query.QueryParameters;
-import datawave.query.planner.QueryPlanner;
 import datawave.query.tables.chunk.Chunker;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl.Parameter;
@@ -33,7 +32,10 @@ public class PartitionedQueryLogic extends ShardQueryLogic {
 
     public PartitionedQueryLogic(PartitionedQueryLogic other) {
         super(other);
-        this.setChunker(other.chunker.clone());
+        this.client = other.client;
+        this.settings = other.settings;
+        this.auths = other.auths;
+        this.chunker = other.chunker.clone();
     }
 
     @Override

@@ -11,7 +11,7 @@ import java.util.Set;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
-import org.apache.commons.jexl2.parser.ASTEQNode;
+import org.apache.commons.jexl3.parser.ASTEQNode;
 
 import com.google.common.collect.Multimap;
 
