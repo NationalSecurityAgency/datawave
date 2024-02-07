@@ -380,7 +380,7 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
         return typeMap.get(typeStr);
     }
 
-    protected Set<RawRecordPredicate> getPredicates(final String type, final Context context, final Collection<String> basePredicates) {
+    private Set<RawRecordPredicate> getPredicates(final String type, final Context context, final Collection<String> basePredicates) {
         Collection<String> predicateClasses = new HashSet<>(context.getConfiguration().getTrimmedStringCollection(type + "." + RECORD_PREDICATES));
         predicateClasses.addAll(basePredicates);
         if (!predicateClasses.isEmpty()) {
@@ -391,15 +391,17 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
                     throw new IllegalArgumentException("Cannot load predicate for type " + type + ": " + s, e);
                 }
             }).filter(c -> {
-                if (!c.isInstance(RawRecordPredicate.class)) {
-                    throw new IllegalArgumentException("Predicate " + c.getName() + " for type " + type + " is not a RawRecordPredicate");
+                if (!RawRecordPredicate.class.isAssignableFrom(c)) {
+                    throw new IllegalArgumentException("Predicate " + c.getName() + " for type " + type + " is not a RawRecordPredicate.");
                 }
                 return true;
             }).map(c -> {
                 try {
-                    return (RawRecordPredicate) c.getDeclaredConstructor().newInstance();
+                    RawRecordPredicate predicate = (RawRecordPredicate) c.getDeclaredConstructor().newInstance();
+                    predicate.setConfiguration(type, context.getConfiguration());
+                    return predicate;
                 } catch (Exception e) {
-                    throw new IllegalArgumentException("Predicate " + c.getName() + " for type " + type + " could not be constructed", e);
+                    throw new IllegalArgumentException("Predicate " + c.getName() + " for type " + type + " could not be constructed.", e);
                 }
             }).collect(Collectors.toSet());
         } else {
@@ -518,7 +520,7 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
             Set<RawRecordPredicate> predicates = predicateMap.get(value.getDataType().typeName());
             if (null != predicates && !predicates.isEmpty()) {
                 for (RawRecordPredicate predicate : predicates) {
-                    if (!predicate.shouldProcess(value)) {
+                    if (!predicate.test(value)) {
                         getCounter(context, IngestInput.FILTER.name(), predicate.getCounterName()).increment(1);
                         return;
                     }

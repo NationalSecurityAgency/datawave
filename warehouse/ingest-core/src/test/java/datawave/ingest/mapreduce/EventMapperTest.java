@@ -10,7 +10,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
@@ -26,6 +28,7 @@ import org.junit.Test;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
 
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
@@ -197,6 +200,115 @@ public class EventMapperTest {
 
         // two fields mutations + LOAD_DATE + ORIG_FILE
         assertEquals(4, written.size());
+    }
+
+    public static class BaseEventPredicate implements RawRecordPredicate {
+        public static ThreadLocal<Set<String>> seenTypes = ThreadLocal.withInitial(() -> new HashSet<>());
+        public static ThreadLocal<Set<RawRecordContainer>> allowed = ThreadLocal.withInitial(() -> new HashSet<>());
+        public static ThreadLocal<Set<RawRecordContainer>> denied = ThreadLocal.withInitial(() -> new HashSet<>());
+
+        public static void reset() {
+            seenTypes.get().clear();
+            allowed.get().clear();
+            denied.get().clear();
+        }
+
+        @Override
+        public boolean shouldProcess(RawRecordContainer record) {
+            return true;
+        }
+
+        @Override
+        public void setConfiguration(String type, Configuration conf) {
+            seenTypes.get().add(type);
+        }
+
+        @Override
+        public boolean test(RawRecordContainer record) {
+            boolean value = RawRecordPredicate.super.test(record);
+            if (value) {
+                allowed.get().add(record);
+            } else {
+                denied.get().add(record);
+            }
+            return value;
+        }
+    }
+
+    public static class DroppingEventPredicate extends BaseEventPredicate implements RawRecordPredicate {
+        @Override
+        public boolean shouldProcess(RawRecordContainer record) {
+            return false;
+        }
+    }
+
+    public static class CantConfigureEventPredicate extends BaseEventPredicate implements RawRecordPredicate {
+        @Override
+        public void setConfiguration(String type, Configuration conf) {
+            throw new RuntimeException();
+        }
+    }
+
+    @Test
+    public void testBaseEventPredicates() throws IOException, InterruptedException {
+        try {
+            conf.set(EventMapper.RECORD_PREDICATES, BaseEventPredicate.class.getName());
+            eventMapper.setup(mapContext);
+            eventMapper.map(new LongWritable(1), record, mapContext);
+            eventMapper.cleanup(mapContext);
+            Multimap<BulkIngestKey,Value> written = TestContextWriter.getWritten();
+            assertEquals(5, written.size());
+            assertEquals(Sets.newHashSet("all", "file"), BaseEventPredicate.seenTypes.get());
+            assertEquals(0, BaseEventPredicate.denied.get().size());
+            assertEquals(1, BaseEventPredicate.allowed.get().size());
+        } finally {
+            BaseEventPredicate.reset();
+        }
+    }
+
+    @Test
+    public void testTypePredicates() throws IOException, InterruptedException {
+        try {
+            conf.set("file." + EventMapper.RECORD_PREDICATES, BaseEventPredicate.class.getName());
+            eventMapper.setup(mapContext);
+            eventMapper.map(new LongWritable(1), record, mapContext);
+            eventMapper.cleanup(mapContext);
+            Multimap<BulkIngestKey,Value> written = TestContextWriter.getWritten();
+            assertEquals(5, written.size());
+            assertEquals(Sets.newHashSet("file"), BaseEventPredicate.seenTypes.get());
+            assertEquals(0, BaseEventPredicate.denied.get().size());
+            assertEquals(1, BaseEventPredicate.allowed.get().size());
+        } finally {
+            BaseEventPredicate.reset();
+        }
+    }
+
+    @Test
+    public void testMultTypePredicates() throws IOException, InterruptedException {
+        try {
+            conf.set("file." + EventMapper.RECORD_PREDICATES, BaseEventPredicate.class.getName() + "," + DroppingEventPredicate.class.getName());
+            eventMapper.setup(mapContext);
+            eventMapper.map(new LongWritable(1), record, mapContext);
+            eventMapper.cleanup(mapContext);
+            Multimap<BulkIngestKey,Value> written = TestContextWriter.getWritten();
+            assertEquals(0, written.size());
+            assertEquals(Sets.newHashSet("file"), BaseEventPredicate.seenTypes.get());
+            assertEquals(1, BaseEventPredicate.denied.get().size());
+            assertEquals(0, BaseEventPredicate.allowed.get().size());
+        } finally {
+            BaseEventPredicate.reset();
+        }
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testFailedPredicates() throws IOException, InterruptedException {
+        try {
+            conf.set("file." + EventMapper.RECORD_PREDICATES, CantConfigureEventPredicate.class.getName());
+            eventMapper.setup(mapContext);
+            eventMapper.map(new LongWritable(1), record, mapContext);
+        } finally {
+            BaseEventPredicate.reset();
+        }
     }
 
     @Test
