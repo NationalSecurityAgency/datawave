@@ -1,6 +1,9 @@
 package datawave.query.jexl.visitors;
 
-import datawave.query.tables.edge.EdgeQueryLogic;
+import static java.util.Collections.emptyList;
+
+import static org.junit.Assert.assertThrows;
+
 import org.apache.commons.jexl3.JexlFeatures;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.Parser;
@@ -8,8 +11,7 @@ import org.apache.commons.jexl3.parser.StringProvider;
 import org.junit.Before;
 import org.junit.Test;
 
-import static java.util.Collections.emptyList;
-import static org.junit.Assert.assertThrows;
+import datawave.query.tables.edge.EdgeQueryLogic;
 
 public class EdgeTableRangeBuildingVisitorTest {
 
