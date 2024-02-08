@@ -347,6 +347,17 @@
                                         <resource>
                                             <directory>${project.basedir}/src/main/docker</directory>
                                             <filtering>true</filtering>
+                                            <excludes>
+                                                <exclude>runtime-config.clis</exclude>
+                                            </excludes>
+                                        </resource>
+                                        <resource>
+                                            <!-- Include file with filtering disabled-->
+                                            <directory>${project.basedir}/src/main/docker</directory>
+                                            <filtering>false</filtering>
+                                            <includes>
+                                                <exclude>runtime-config.clis</exclude>
+                                            </includes>
                                         </resource>
                                     </resources>
                                 </configuration>
