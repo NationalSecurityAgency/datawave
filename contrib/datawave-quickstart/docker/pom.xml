@@ -255,6 +255,7 @@
                                             <memory>8589934592</memory>
                                         </buildOptions>
                                         <contextDir>${project.basedir}/../../../</contextDir>
+                                        <cleanup>none</cleanup>
                                         <dockerFile>${project.basedir}/Dockerfile</dockerFile>
                                         <tags>
                                             <tag>latest</tag>
