@@ -406,8 +406,9 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
 
     private void incrementTermCountAndCheck() {
         if (++termCount > maxTerms) {
-            log.error("Query has too many terms");
-            throw new IllegalArgumentException("Too many search terms " + termCount);
+            String message = "Exceeded max term limit of " + maxTerms;
+            log.error(message);
+            throw new IllegalArgumentException(message);
         }
     }
 
