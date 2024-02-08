@@ -103,7 +103,7 @@ if [[ ${TOTAL} -gt 0 ]]; then
           portInUse=$(lsof -i:${SHUTDOWN_PORT} | grep $SHUTDOWN_PORT)
           portUsed=$(ps -eaf | grep [b]ulkIngestMap | grep $SHUTDOWN_PORT)
       done
-      echo starting loader with log file map-file-loader.$LOADER$x.log
+      echo starting map file loader with log file map-file-loader.$LOADER$x.log
       $MAPFILE_LOADER_CMD -srcHdfs ${MAP_LOADER_HDFS_NAME_NODE} -destHdfs ${MAP_LOADER_HDFS_NAME_NODE} -shutdownPort ${SHUTDOWN_PORT} >> $LOG_DIR/map-file-loader.$LOADER$x.log 2>&1 &
       SHUTDOWN_PORT=$((SHUTDOWN_PORT + 1))
       portInUse=$(lsof -i:${SHUTDOWN_PORT} | grep $SHUTDOWN_PORT)
@@ -133,7 +133,7 @@ if [[ ${TOTAL} -gt 0 ]]; then
         portInUse=$(lsof -i:${SHUTDOWN_PORT} | grep $SHUTDOWN_PORT)
         portUsed=$(ps -eaf | grep [b]ulkIngestMap | grep $SHUTDOWN_PORT)
     done
-    echo starting loader with log file map-file-loader.$LOADER$COUNT.log
+    echo starting map file loader with log file map-file-loader.$LOADER$COUNT.log
     $MAPFILE_LOADER_CMD -srcHdfs ${EXTRA_MAP_LOADER} -destHdfs ${EXTRA_MAP_LOADER} -shutdownPort ${SHUTDOWN_PORT} >>$LOG_DIR/map-file-loader.$LOADER$COUNT.log 2>&1 &
   fi
 
@@ -149,7 +149,7 @@ if [[ ${TOTAL} -gt 0 ]]; then
           portInUse=$(lsof -i:${SHUTDOWN_PORT} | grep $SHUTDOWN_PORT)
           portUsed=$(ps -eaf | grep [b]ulkIngestMap | grep $SHUTDOWN_PORT)
       done
-      echo starting loader with log file $LOG_DIR/map-file-loader-custom.$CUSTOM_LOADER.log
+      echo starting map file loader with log file $LOG_DIR/map-file-loader-custom.$CUSTOM_LOADER.log
       ${MAP_LOADER_CUSTOM[$CUSTOM_LOADER]} -shutdownPort ${SHUTDOWN_PORT} >>$LOG_DIR/map-file-loader-custom.$CUSTOM_LOADER.log 2>&1 &
       done
   fi
