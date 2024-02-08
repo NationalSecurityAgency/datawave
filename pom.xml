@@ -67,7 +67,6 @@
         <version.google-guava>31.1-jre</version.google-guava>
         <version.googlecode-findbugs>2.0.3</version.googlecode-findbugs>
         <version.googlecode-json-simple>1.1.1</version.googlecode-json-simple>
-        <version.guava>32.0.0-android</version.guava>
         <version.hadoop>3.3.5</version.hadoop>
         <version.hadoop-shaded>1.1.1</version.hadoop-shaded>
         <version.httpcomponents-httpclient>4.5.13</version.httpcomponents-httpclient>
@@ -83,10 +82,12 @@
         <version.jetty>6.1.26</version.jetty>
         <version.jgroups>4.0.19.Final</version.jgroups>
         <version.jjwt>0.11.2</version.jjwt>
+        <version.json>20231013</version.json>
         <version.jts>1.19.0</version.jts>
         <version.junit>4.13.2</version.junit>
         <version.junit.jupiter>5.5.2</version.junit.jupiter>
         <version.junit.vintage>5.5.2</version.junit.vintage>
+        <version.jython>2.7.2b2</version.jython>
         <version.kryo>2.20</version.kryo>
         <version.kryonet>2.20</version.kryonet>
         <version.log4j2>2.17.2</version.log4j2>
