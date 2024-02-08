@@ -1,5 +1,7 @@
 package datawave.query.jexl.visitors;
 
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.BOUNDED_RANGE;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -7,19 +9,17 @@ import java.util.Scanner;
 import java.util.Set;
 import java.util.TreeSet;
 
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ASTOrNode;
-import org.apache.commons.jexl2.parser.ASTReference;
-import org.apache.commons.jexl2.parser.ASTReferenceExpression;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTOrNode;
+import org.apache.commons.jexl3.parser.ASTReferenceExpression;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ParseException;
 
 import datawave.microservice.query.QueryImpl.Parameter;
 import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.nodes.BoundedRange;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
@@ -124,16 +124,14 @@ public class JexlFormattedStringBuildingVisitor extends JexlStringBuildingVisito
         boolean markerWithSingleTerm = false;
 
         for (int i = 0; i < numChildren; i++) {
-            if (QueryPropertyMarker.findInstance(node.jjtGetChild(i)).isType(BoundedRange.class)) {
+            if (QueryPropertyMarker.findInstance(node.jjtGetChild(i)).isType(BOUNDED_RANGE)) {
                 childHasBoundedRange = true;
             }
         }
 
         if (numChildren == 2) {
-            if (QueryPropertyMarker.findInstance(node).isAnyType() && node.jjtGetChild(1) instanceof ASTReference
-                            && node.jjtGetChild(1).jjtGetChild(0) instanceof ASTReferenceExpression
-                            && !(node.jjtGetChild(1).jjtGetChild(0).jjtGetChild(0) instanceof ASTAndNode)
-                            && !(node.jjtGetChild(1).jjtGetChild(0).jjtGetChild(0) instanceof ASTOrNode)) {
+            if (QueryPropertyMarker.findInstance(node).isAnyType() && node.jjtGetChild(1) instanceof ASTReferenceExpression
+                            && !(node.jjtGetChild(1).jjtGetChild(0) instanceof ASTAndNode) && !(node.jjtGetChild(1).jjtGetChild(0) instanceof ASTOrNode)) {
                 markerWithSingleTerm = true;
             }
         }
@@ -141,7 +139,7 @@ public class JexlFormattedStringBuildingVisitor extends JexlStringBuildingVisito
         // If this node is a bounded marker node OR if this node is a marker node which has a child bounded marker node
         // OR if this node is a marker node with a single term as a child, then
         // we don't want to add any new lines on this visit or on visits to this nodes children
-        if (QueryPropertyMarker.findInstance(node).isType(BoundedRange.class) || (QueryPropertyMarker.findInstance(node).isAnyType() && childHasBoundedRange)
+        if (QueryPropertyMarker.findInstance(node).isType(BOUNDED_RANGE) || (QueryPropertyMarker.findInstance(node).isAnyType() && childHasBoundedRange)
                         || markerWithSingleTerm) {
             needNewLines = false;
         }

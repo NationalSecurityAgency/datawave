@@ -28,11 +28,12 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.jexl2.JexlException;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ParseException;
-import org.apache.commons.jexl2.parser.Parser;
-import org.apache.commons.jexl2.parser.TokenMgrError;
+import org.apache.commons.jexl3.JexlException;
+import org.apache.commons.jexl3.JexlFeatures;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ParseException;
+import org.apache.commons.jexl3.parser.Parser;
+import org.apache.commons.jexl3.parser.StringProvider;
 import org.apache.hadoop.io.DataInputBuffer;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
@@ -111,14 +112,15 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements 
         // Set EdgeQueryConfiguration variables
         this.config = EdgeQueryConfiguration.create(other);
 
-        setMetadataHelperFactory(other.getMetadataHelperFactory());
-        setDateFilterScanLimit(other.getDateFilterScanLimit());
-        setDateFilterSkipLimit(other.getDateFilterSkipLimit());
-        setQuerySyntaxParsers(other.getQuerySyntaxParsers());
-        setMandatoryQuerySyntax(other.getMandatoryQuerySyntax());
-        setQueryMacroFunction(other.getQueryMacroFunction());
-        setParser(other.getParser());
-        visitationContext = other.visitationContext;
+        this.currentIteratorPriority = other.currentIteratorPriority;
+        this.scannerFactory = other.scannerFactory;
+        this.prefilterValues = other.prefilterValues;
+        this.visitationContext = other.visitationContext;
+        this.metadataHelperFactory = other.metadataHelperFactory;
+        this.querySyntaxParsers = other.querySyntaxParsers;
+        this.queryMacroFunction = other.queryMacroFunction;
+        this.mandatoryQuerySyntax = other.mandatoryQuerySyntax;
+        this.parser = other.parser;
     }
 
     @Override
@@ -377,11 +379,11 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements 
      */
     protected Set<Range> configureRanges(String queryString) throws ParseException {
         queryString = EdgeQueryLogic.fixQueryString(queryString);
-        Parser parser = new Parser(new StringReader(";"));
+        Parser parser = new Parser(new StringProvider(";"));
         ASTJexlScript script;
         try {
-            script = parser.parse(new StringReader(queryString), null);
-        } catch (TokenMgrError | Exception e) {
+            script = parser.parse(null, new JexlFeatures(), queryString, null);
+        } catch (Exception e) {
             throw new IllegalArgumentException("Invalid jexl supplied. " + e.getMessage());
         }
 

@@ -6,38 +6,40 @@ import java.util.Collection;
 import java.util.Set;
 import java.util.TreeSet;
 
-import org.apache.commons.jexl2.parser.ASTAdditiveNode;
-import org.apache.commons.jexl2.parser.ASTAdditiveOperator;
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTAssignment;
-import org.apache.commons.jexl2.parser.ASTDivNode;
-import org.apache.commons.jexl2.parser.ASTEQNode;
-import org.apache.commons.jexl2.parser.ASTERNode;
-import org.apache.commons.jexl2.parser.ASTFalseNode;
-import org.apache.commons.jexl2.parser.ASTFunctionNode;
-import org.apache.commons.jexl2.parser.ASTGENode;
-import org.apache.commons.jexl2.parser.ASTGTNode;
-import org.apache.commons.jexl2.parser.ASTIdentifier;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ASTLENode;
-import org.apache.commons.jexl2.parser.ASTLTNode;
-import org.apache.commons.jexl2.parser.ASTMethodNode;
-import org.apache.commons.jexl2.parser.ASTModNode;
-import org.apache.commons.jexl2.parser.ASTMulNode;
-import org.apache.commons.jexl2.parser.ASTNENode;
-import org.apache.commons.jexl2.parser.ASTNRNode;
-import org.apache.commons.jexl2.parser.ASTNotNode;
-import org.apache.commons.jexl2.parser.ASTNullLiteral;
-import org.apache.commons.jexl2.parser.ASTNumberLiteral;
-import org.apache.commons.jexl2.parser.ASTOrNode;
-import org.apache.commons.jexl2.parser.ASTReference;
-import org.apache.commons.jexl2.parser.ASTReferenceExpression;
-import org.apache.commons.jexl2.parser.ASTSizeMethod;
-import org.apache.commons.jexl2.parser.ASTStringLiteral;
-import org.apache.commons.jexl2.parser.ASTTrueNode;
-import org.apache.commons.jexl2.parser.ASTUnaryMinusNode;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.commons.jexl3.parser.ASTAddNode;
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTArguments;
+import org.apache.commons.jexl3.parser.ASTAssignment;
+import org.apache.commons.jexl3.parser.ASTDivNode;
+import org.apache.commons.jexl3.parser.ASTEQNode;
+import org.apache.commons.jexl3.parser.ASTERNode;
+import org.apache.commons.jexl3.parser.ASTFalseNode;
+import org.apache.commons.jexl3.parser.ASTGENode;
+import org.apache.commons.jexl3.parser.ASTGTNode;
+import org.apache.commons.jexl3.parser.ASTIdentifier;
+import org.apache.commons.jexl3.parser.ASTIdentifierAccess;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTLENode;
+import org.apache.commons.jexl3.parser.ASTLTNode;
+import org.apache.commons.jexl3.parser.ASTMethodNode;
+import org.apache.commons.jexl3.parser.ASTModNode;
+import org.apache.commons.jexl3.parser.ASTMulNode;
+import org.apache.commons.jexl3.parser.ASTNENode;
+import org.apache.commons.jexl3.parser.ASTNRNode;
+import org.apache.commons.jexl3.parser.ASTNotNode;
+import org.apache.commons.jexl3.parser.ASTNullLiteral;
+import org.apache.commons.jexl3.parser.ASTNumberLiteral;
+import org.apache.commons.jexl3.parser.ASTOrNode;
+import org.apache.commons.jexl3.parser.ASTReference;
+import org.apache.commons.jexl3.parser.ASTReferenceExpression;
+import org.apache.commons.jexl3.parser.ASTSizeFunction;
+import org.apache.commons.jexl3.parser.ASTStringLiteral;
+import org.apache.commons.jexl3.parser.ASTSubNode;
+import org.apache.commons.jexl3.parser.ASTTrueNode;
+import org.apache.commons.jexl3.parser.ASTUnaryMinusNode;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNodes;
+import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.Sets;
@@ -367,13 +369,25 @@ public class JexlStringBuildingVisitor extends BaseVisitor {
     public Object visit(ASTIdentifier node, Object data) {
         StringBuilder sb = (StringBuilder) data;
 
-        // We want to remove the $ if present and only replace it when necessary
-        String fieldName = JexlASTHelper.rebuildIdentifier(JexlASTHelper.deconstructIdentifier(node.image));
+        String namespace = node.getNamespace();
+        if (namespace != null) {
+            sb.append(namespace);
+            sb.append(":");
+        }
 
+        // We want to remove the $ if present and only replace it when necessary
+        String fieldName = JexlASTHelper.rebuildIdentifier(JexlASTHelper.deconstructIdentifier(node.getName()));
         sb.append(fieldName);
 
-        node.childrenAccept(this, sb);
+        return sb;
+    }
 
+    @Override
+    protected Object visit(ASTIdentifierAccess node, Object data) {
+        StringBuilder sb = (StringBuilder) data;
+
+        sb.append(".");
+        sb.append(node.getName());
         return sb;
     }
 
@@ -401,7 +415,7 @@ public class JexlStringBuildingVisitor extends BaseVisitor {
     public Object visit(ASTStringLiteral node, Object data) {
         StringBuilder sb = (StringBuilder) data;
 
-        String literal = node.image;
+        String literal = node.getLiteral();
 
         JexlNode parent = node;
         do {
@@ -440,15 +454,14 @@ public class JexlStringBuildingVisitor extends BaseVisitor {
         return sb;
     }
 
-    public Object visit(ASTFunctionNode node, Object data) {
+    @Override
+    protected Object visit(ASTArguments node, Object data) {
         StringBuilder sb = (StringBuilder) data;
 
+        sb.append("(");
+
         for (int i = 0; i < node.jjtGetNumChildren(); i++) {
-            if (1 == i) {
-                sb.append(":");
-            } else if (2 == i) {
-                sb.append("(");
-            } else if (2 < i) {
+            if (i > 0) {
                 sb.append(", ");
             }
 
@@ -462,63 +475,20 @@ public class JexlStringBuildingVisitor extends BaseVisitor {
 
     @Override
     public Object visit(ASTMethodNode node, Object data) {
-        StringBuilder sb = (StringBuilder) data;
-        StringBuilder methodStringBuilder = new StringBuilder();
-        StringBuilder argumentStringBuilder = new StringBuilder();
-        int kidCount = node.jjtGetNumChildren();
-        for (int i = 0; i < kidCount; i++) {
-            if (i == 0) {
-                JexlNode methodNode = node.jjtGetChild(i);
-                methodStringBuilder.append(".");
-                if (allowedMethods.contains(methodNode.image) == false) {
-                    QueryException qe = new QueryException(DatawaveErrorCode.METHOD_COMPOSITION_ERROR, MessageFormat.format("{0}", methodNode.image));
-                    throw new DatawaveFatalQueryException(qe);
-                }
-                methodStringBuilder.append(methodNode.image);
-                methodStringBuilder.append("("); // parens are open. don't forget to close
-            } else {
-                // adding any method arguments
-                JexlNode argumentNode = node.jjtGetChild(i);
-                if (argumentNode instanceof ASTReference) {
-                    // a method may have an argument that is another method. In this case, descend the visit tree for it
-                    if (JexlASTHelper.HasMethodVisitor.hasMethod(argumentNode)) {
-                        this.visit((ASTReference) argumentNode, argumentStringBuilder);
-                    } else {
-                        for (int j = 0; j < argumentNode.jjtGetNumChildren(); j++) {
-                            JexlNode argKid = argumentNode.jjtGetChild(j);
-                            if (argKid instanceof ASTFunctionNode) {
-                                this.visit((ASTFunctionNode) argKid, argumentStringBuilder);
-                            } else {
-                                if (argumentStringBuilder.length() > 0) {
-                                    argumentStringBuilder.append(",");
-                                }
-                                if (argKid instanceof ASTStringLiteral) {
-                                    argumentStringBuilder.append("'");
-                                }
-                                argumentStringBuilder.append(argKid.image);
-                                if (argKid instanceof ASTStringLiteral) {
-                                    argumentStringBuilder.append("'");
-                                }
-                            }
-                        }
-                    }
-                } else if (argumentNode instanceof ASTNumberLiteral) {
-                    if (argumentStringBuilder.length() > 0) {
-                        argumentStringBuilder.append(",");
-                    }
-                    argumentStringBuilder.append(argumentNode.image);
-                }
+        if (node.jjtGetNumChildren() > 0 && node.jjtGetChild(0) instanceof ASTIdentifierAccess) {
+            ASTIdentifierAccess methodNameNode = (ASTIdentifierAccess) node.jjtGetChild(0);
+            if (!allowedMethods.contains(methodNameNode.getName())) {
+                QueryException qe = new QueryException(DatawaveErrorCode.METHOD_COMPOSITION_ERROR, MessageFormat.format("{0}", methodNameNode.getName()));
+                throw new DatawaveFatalQueryException(qe);
             }
         }
-        methodStringBuilder.append(argumentStringBuilder);
-        methodStringBuilder.append(")"); // close parens in method
-        sb.append(methodStringBuilder);
-        return sb;
+
+        return node.childrenAccept(this, data);
     }
 
     public Object visit(ASTNumberLiteral node, Object data) {
         StringBuilder sb = (StringBuilder) data;
-        sb.append(node.image);
+        sb.append(JexlNodes.getIdentifierOrLiteral(node));
         node.childrenAccept(this, sb);
         return sb;
     }
@@ -552,17 +522,12 @@ public class JexlStringBuildingVisitor extends BaseVisitor {
     }
 
     @Override
-    public Object visit(ASTAdditiveOperator node, Object data) {
-        StringBuilder sb = (StringBuilder) data;
-        sb.append(node.image);
-        node.childrenAccept(this, sb);
-        return sb;
-    }
-
-    @Override
-    public Object visit(ASTAdditiveNode node, Object data) {
+    public Object visit(ASTAddNode node, Object data) {
         StringBuilder sb = (StringBuilder) data;
         for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+            if (i > 0) {
+                sb.append(" + ");
+            }
             node.jjtGetChild(i).jjtAccept(this, sb);
         }
 
@@ -570,10 +535,15 @@ public class JexlStringBuildingVisitor extends BaseVisitor {
     }
 
     @Override
-    public Object visit(ASTSizeMethod node, Object data) {
+    public Object visit(ASTSubNode node, Object data) {
         StringBuilder sb = (StringBuilder) data;
-        sb.append(".size() ");
-        node.childrenAccept(this, sb);
+        for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+            if (i > 0) {
+                sb.append(" - ");
+            }
+            node.jjtGetChild(i).jjtAccept(this, sb);
+        }
+
         return sb;
     }
 
@@ -640,6 +610,14 @@ public class JexlStringBuildingVisitor extends BaseVisitor {
     public Object visit(ASTUnaryMinusNode node, Object data) {
         StringBuilder sb = (StringBuilder) data;
         sb.append("-");
+        node.childrenAccept(this, sb);
+        return sb;
+    }
+
+    @Override
+    public Object visit(ASTSizeFunction node, Object data) {
+        StringBuilder sb = (StringBuilder) data;
+        sb.append("size");
         node.childrenAccept(this, sb);
         return sb;
     }

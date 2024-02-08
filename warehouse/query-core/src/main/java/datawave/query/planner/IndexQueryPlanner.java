@@ -3,7 +3,7 @@ package datawave.query.planner;
 import java.util.concurrent.ExecutionException;
 
 import org.apache.accumulo.core.client.IteratorSetting;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
 
 import datawave.core.query.configuration.QueryData;
 import datawave.microservice.query.Query;

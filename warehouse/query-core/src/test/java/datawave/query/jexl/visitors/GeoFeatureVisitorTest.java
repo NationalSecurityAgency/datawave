@@ -6,7 +6,7 @@ import static org.junit.Assert.assertTrue;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNode;
 import org.junit.Test;
 
 import datawave.query.jexl.JexlASTHelper;

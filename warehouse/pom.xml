@@ -29,6 +29,7 @@
         <module>ops-tools</module>
         <module>data-dictionary-core</module>
         <module>edge-model-configuration-core</module>
+        <module>ssdeep-common</module>
     </modules>
     <scm>
         <connection>scm:git:https://fixme/git/warehouse/</connection>

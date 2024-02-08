@@ -8,6 +8,7 @@ import static datawave.microservice.query.QueryParameters.QUERY_LOGIC_NAME;
 import static datawave.microservice.query.QueryParameters.QUERY_NAME;
 import static datawave.microservice.query.QueryParameters.QUERY_PERSISTENCE;
 import static datawave.microservice.query.QueryParameters.QUERY_STRING;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 import java.text.SimpleDateFormat;
@@ -32,7 +33,7 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
@@ -70,6 +71,7 @@ import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
 import datawave.microservice.query.QueryParameters;
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.GeoWaveQueryInfoVisitor;
 import datawave.query.tables.ShardQueryLogic;
@@ -275,6 +277,8 @@ public class GeoSortedQueryDataTest {
         // increase the depth threshold
         logic.setMaxDepthThreshold(10);
 
+        logic.setIntermediateMaxTermThreshold(50);
+
         // set the pushdown threshold really high to avoid collapsing uids into shards (overrides setCollapseUids if #terms is greater than this threshold)
         ((DefaultQueryPlanner) (logic.getQueryPlanner())).setPushdownThreshold(1000000);
     }
@@ -296,6 +300,14 @@ public class GeoSortedQueryDataTest {
                 assertTrue(prevQueryInfo.compareTo(queryInfo) <= 0);
             prevQueryInfo = queryInfo;
         }
+    }
+
+    @Test
+    public void testIntermediateMaxTermCountEnforcement() {
+        logic.setSortGeoWaveQueryRanges(true);
+        logic.setIntermediateMaxTermThreshold(10);
+
+        assertThrows(DatawaveFatalQueryException.class, this::initializeGeoQuery);
     }
 
     @Test

@@ -10,11 +10,11 @@ import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.logic.BaseQueryLogic;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
-import datawave.query.util.ssdeep.BucketAccumuloKeyGenerator;
-import datawave.query.util.ssdeep.ChunkSizeEncoding;
-import datawave.query.util.ssdeep.IntegerEncoding;
-import datawave.query.util.ssdeep.NGramTuple;
-import datawave.query.util.ssdeep.SSDeepHash;
+import datawave.util.ssdeep.BucketAccumuloKeyGenerator;
+import datawave.util.ssdeep.ChunkSizeEncoding;
+import datawave.util.ssdeep.IntegerEncoding;
+import datawave.util.ssdeep.NGramTuple;
+import datawave.util.ssdeep.SSDeepHash;
 
 public class SSDeepSimilarityQueryConfiguration extends GenericQueryConfiguration {
 

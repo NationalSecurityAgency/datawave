@@ -72,7 +72,7 @@ import javax.xml.bind.Marshaller;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.util.Pair;
-import org.apache.commons.jexl2.parser.TokenMgrError;
+import org.apache.commons.jexl3.parser.TokenMgrException;
 import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.apache.log4j.Logger;
 import org.jboss.resteasy.annotations.GZIP;
@@ -795,7 +795,7 @@ public class QueryExecutorBean implements QueryExecutor {
             /*
              * Allow web services to throw their own WebApplicationExceptions
              */
-            if (t instanceof Error && !(t instanceof TokenMgrError)) {
+            if (t instanceof Error && !(t instanceof TokenMgrException)) {
                 log.error(queryId + ": " + t.getMessage(), t);
                 throw (Error) t;
             } else if (t instanceof WebApplicationException) {
@@ -931,7 +931,7 @@ public class QueryExecutorBean implements QueryExecutor {
             /*
              * Allow web services to throw their own WebApplicationExceptions
              */
-            if (t instanceof Error && !(t instanceof TokenMgrError)) {
+            if (t instanceof Error && !(t instanceof TokenMgrException)) {
                 log.error(t.getMessage(), t);
                 throw (Error) t;
             } else if (t instanceof WebApplicationException) {
@@ -1021,7 +1021,7 @@ public class QueryExecutorBean implements QueryExecutor {
                  * Allow web services to throw their own WebApplicationExceptions
                  */
 
-                if (t instanceof Error && !(t instanceof TokenMgrError)) {
+                if (t instanceof Error && !(t instanceof TokenMgrException)) {
                     log.error(t.getMessage(), t);
                     throw (Error) t;
                 } else if (t instanceof WebApplicationException) {

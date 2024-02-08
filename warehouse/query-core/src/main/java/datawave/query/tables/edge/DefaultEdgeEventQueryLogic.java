@@ -5,7 +5,7 @@ import java.util.Set;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.log4j.Logger;
 
 import datawave.core.common.edgedictionary.EdgeDictionaryProvider;
@@ -51,6 +51,7 @@ public class DefaultEdgeEventQueryLogic extends ShardQueryLogic {
         this.dict = other.dict;
         this.edgeModelName = other.edgeModelName;
         this.edgeQueryModel = other.edgeQueryModel;
+        this.edgeDictionaryProvider = other.edgeDictionaryProvider;
     }
 
     @Override

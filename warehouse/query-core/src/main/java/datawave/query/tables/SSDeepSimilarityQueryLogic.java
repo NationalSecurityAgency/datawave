@@ -27,11 +27,11 @@ import datawave.core.query.logic.QueryLogicTransformer;
 import datawave.microservice.query.Query;
 import datawave.query.config.SSDeepSimilarityQueryConfiguration;
 import datawave.query.transformer.SSDeepSimilarityQueryTransformer;
-import datawave.query.util.ssdeep.ChunkSizeEncoding;
-import datawave.query.util.ssdeep.IntegerEncoding;
-import datawave.query.util.ssdeep.NGramGenerator;
-import datawave.query.util.ssdeep.NGramTuple;
-import datawave.query.util.ssdeep.SSDeepHash;
+import datawave.util.ssdeep.ChunkSizeEncoding;
+import datawave.util.ssdeep.IntegerEncoding;
+import datawave.util.ssdeep.NGramGenerator;
+import datawave.util.ssdeep.NGramTuple;
+import datawave.util.ssdeep.SSDeepHash;
 import datawave.webservice.query.exception.QueryException;
 
 public class SSDeepSimilarityQueryLogic extends BaseQueryLogic<Map.Entry<Key,Value>> {

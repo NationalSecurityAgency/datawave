@@ -32,7 +32,10 @@ public class PartitionedQueryLogic extends ShardQueryLogic {
 
     public PartitionedQueryLogic(PartitionedQueryLogic other) {
         super(other);
-        this.setChunker(other.chunker.clone());
+        this.client = other.client;
+        this.settings = other.settings;
+        this.auths = other.auths;
+        this.chunker = other.chunker.clone();
     }
 
     @Override

@@ -1,5 +1,7 @@
 package datawave.query.iterator.filter;
 
+import static datawave.query.jexl.DatawaveInterpreter.isMatched;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -12,16 +14,21 @@ import org.apache.accumulo.core.iterators.Filter;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.jexl2.Expression;
-import org.apache.commons.jexl2.JexlContext;
-import org.apache.commons.jexl2.JexlEngine;
-import org.apache.commons.jexl2.MapContext;
+import org.apache.commons.jexl3.JexlBuilder;
+import org.apache.commons.jexl3.JexlContext;
+import org.apache.commons.jexl3.JexlExpression;
+import org.apache.commons.jexl3.MapContext;
+import org.apache.commons.jexl3.internal.Engine;
+import org.apache.commons.jexl3.introspection.JexlPermissions;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.HashMultimap;
 
 import datawave.edge.model.EdgeModelFields.FieldKey;
 import datawave.edge.util.EdgeKeyUtil;
+import datawave.query.jexl.ArithmeticJexlEngines;
+import datawave.query.jexl.DatawaveJexlEngine;
+import datawave.query.jexl.DefaultArithmetic;
 
 /**
  * This is a simple JEXL query filter iterator used in conjunction with the EdgeQueryLogic to evaluate more complicated expressions against edge keys.
@@ -40,15 +47,19 @@ public class EdgeFilterIterator extends Filter {
     public static final String JEXL_STATS_OPTION = "jexlStatsQuery";
     public static final String PREFILTER_ALLOWLIST = "prefilter";
 
-    private static final JexlEngine jexlEngine = new JexlEngine();
+    private static final Engine jexlEngine;
 
     private boolean protobuffFormat;
     private boolean includeStatsEdges;
-    private Expression expression = null;
-    private Expression statsExpression = null;
+    private JexlExpression expression = null;
+    private JexlExpression statsExpression = null;
     private JexlContext ctx = new MapContext();
 
     private HashMultimap<String,String> preFilterValues;
+
+    static {
+        jexlEngine = ArithmeticJexlEngines.getEngine(new DefaultArithmetic());
+    }
 
     @Override
     public SortedKeyValueIterator<Key,Value> deepCopy(IteratorEnvironment env) {
@@ -255,7 +266,8 @@ public class EdgeFilterIterator extends Filter {
             if (includeStatsEdges) {
                 if (statsExpression != null) {
                     setupContext(ctx, keyComponents);
-                    value = (boolean) statsExpression.evaluate(ctx);
+                    Object o = statsExpression.evaluate(ctx);
+                    value = isMatched(o);
                 } else {
                     value = true;
                 }
@@ -264,7 +276,8 @@ public class EdgeFilterIterator extends Filter {
             }
         } else {
             setupContext(ctx, keyComponents);
-            value = (boolean) expression.evaluate(ctx);
+            Object o = expression.evaluate(ctx);
+            value = isMatched(o);
         }
 
         return value;

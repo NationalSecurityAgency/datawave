@@ -72,6 +72,9 @@ public class ContentQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
 
     public ContentQueryLogic(final ContentQueryLogic contentQueryLogic) {
         super(contentQueryLogic);
+        this.queryThreads = contentQueryLogic.queryThreads;
+        this.scannerFactory = contentQueryLogic.scannerFactory;
+        this.viewName = contentQueryLogic.viewName;
     }
 
     /**

@@ -6,19 +6,18 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTEQNode;
-import org.apache.commons.jexl2.parser.ASTERNode;
-import org.apache.commons.jexl2.parser.ASTGENode;
-import org.apache.commons.jexl2.parser.ASTGTNode;
-import org.apache.commons.jexl2.parser.ASTLENode;
-import org.apache.commons.jexl2.parser.ASTLTNode;
-import org.apache.commons.jexl2.parser.ASTNENode;
-import org.apache.commons.jexl2.parser.ASTNRNode;
-import org.apache.commons.jexl2.parser.ASTOrNode;
-import org.apache.commons.jexl2.parser.ASTReferenceExpression;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.JexlNodes;
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTEQNode;
+import org.apache.commons.jexl3.parser.ASTERNode;
+import org.apache.commons.jexl3.parser.ASTGENode;
+import org.apache.commons.jexl3.parser.ASTGTNode;
+import org.apache.commons.jexl3.parser.ASTLENode;
+import org.apache.commons.jexl3.parser.ASTLTNode;
+import org.apache.commons.jexl3.parser.ASTNENode;
+import org.apache.commons.jexl3.parser.ASTNRNode;
+import org.apache.commons.jexl3.parser.ASTOrNode;
+import org.apache.commons.jexl3.parser.ASTReferenceExpression;
+import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.log4j.Logger;
 
 import datawave.core.common.logging.ThreadConfigurableLogger;
@@ -108,7 +107,7 @@ public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
             case 1:
                 return children.get(0);
             default:
-                return JexlNodeFactory.createUnwrappedOrNode(children);
+                return JexlNodeFactory.createOrNode(children);
         }
     }
 
@@ -140,7 +139,7 @@ public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
             case 1:
                 return children.get(0);
             default:
-                return JexlNodeFactory.createUnwrappedAndNode(children);
+                return JexlNodeFactory.createAndNode(children);
         }
     }
 
@@ -197,7 +196,7 @@ public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
     @Override
     public Object visit(ASTReferenceExpression node, Object data) {
         ASTReferenceExpression ref = (ASTReferenceExpression) super.visit(node, data);
-        if (JexlNodes.children(ref).length == 0) {
+        if (ref.jjtGetNumChildren() == 0) {
             return null;
         } else {
             return ref;

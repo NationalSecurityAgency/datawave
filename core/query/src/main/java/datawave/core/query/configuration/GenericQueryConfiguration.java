@@ -32,7 +32,7 @@ import datawave.util.TableName;
  * </p>
  *
  */
-public abstract class GenericQueryConfiguration implements Serializable {
+public class GenericQueryConfiguration implements Serializable {
     // is this execution expected to be checkpointable (changes how we allocate ranges to scanners)
     private boolean checkpointable = false;
 
