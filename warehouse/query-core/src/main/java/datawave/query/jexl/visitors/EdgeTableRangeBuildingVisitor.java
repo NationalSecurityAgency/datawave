@@ -168,11 +168,6 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
      */
     @Override
     public Object visit(ASTAndNode node, Object data) {
-        if (termCount > maxTerms) {
-            log.error("Query has too many terms");
-            throw new IllegalArgumentException("Too many search terms " + termCount);
-        }
-
         // run the visitor against all of the children
         List<List<? extends EdgeContext>> childContexts = new ArrayList<>(node.jjtGetNumChildren());
         for (JexlNode child : children(node)) {
@@ -274,11 +269,6 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
      */
     @Override
     public Object visit(ASTOrNode node, Object data) {
-        if (termCount > maxTerms) {
-            log.error("Query has too many terms");
-            throw new IllegalArgumentException("Too many search terms " + termCount);
-        }
-
         // run the visitor against all of the children
         List<List<? extends EdgeContext>> childContexts = new ArrayList<>(node.jjtGetNumChildren());
         for (JexlNode child : children(node)) {
@@ -410,8 +400,16 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
      */
     @Override
     public Object visit(ASTEQNode node, Object data) {
-        termCount++;
+        incrementTermCountAndCheck();
         return visitExpresionNode(node, EQUALS);
+    }
+
+    private void incrementTermCountAndCheck() {
+        if (++termCount > maxTerms) {
+            String message = "Exceeded max term limit of " + maxTerms;
+            log.error(message);
+            throw new IllegalArgumentException(message);
+        }
     }
 
     /**
@@ -428,7 +426,7 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
      */
     @Override
     public Object visit(ASTERNode node, Object data) {
-        termCount++;
+        incrementTermCountAndCheck();
         List<IdentityContext> contexts = (List<IdentityContext>) visitExpresionNode(node, EQUALS_REGEX);
         if (contexts.get(0).getIdentity().equals(EDGE_SOURCE)) {
             sawEquivalenceRegexSource = true;
@@ -440,13 +438,13 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
 
     @Override
     public Object visit(ASTNRNode node, Object data) {
-        termCount++;
+        incrementTermCountAndCheck();
         return visitExpresionNode(node, NOT_EQUALS_REGEX);
     }
 
     @Override
     public Object visit(ASTNENode node, Object data) {
-        termCount++;
+        incrementTermCountAndCheck();
         return visitExpresionNode(node, NOT_EQUALS);
     }
 
