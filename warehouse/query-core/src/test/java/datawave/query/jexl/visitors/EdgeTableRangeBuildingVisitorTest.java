@@ -4,10 +4,11 @@ import static java.util.Collections.emptyList;
 
 import static org.junit.Assert.assertThrows;
 
-import org.apache.commons.jexl3.JexlFeatures;
-import org.apache.commons.jexl3.parser.ASTJexlScript;
-import org.apache.commons.jexl3.parser.Parser;
-import org.apache.commons.jexl3.parser.StringProvider;
+import java.io.StringReader;
+
+import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.commons.jexl2.parser.Parser;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -22,19 +23,19 @@ public class EdgeTableRangeBuildingVisitorTest {
 
     @Before
     public void setup() {
-        parser = new Parser(new StringProvider(";"));
+        parser = new Parser(new StringReader(";"));
 
         visitor = new EdgeTableRangeBuildingVisitor(false, emptyList(), termLimit, emptyList());
     }
 
     @Test
-    public void shouldEnforceTermLimit() {
+    public void shouldEnforceTermLimit() throws ParseException {
         ASTJexlScript parsedQuery = parseQuery("TYPE == 'like it' OR TYPE == 'love it' OR TYPE == 'gotta have it' OR TYPE == 'hand it over or else'");
 
         assertThrows(IllegalArgumentException.class, () -> parsedQuery.jjtAccept(visitor, null));
     }
 
-    private ASTJexlScript parseQuery(String query) {
-        return parser.parse(null, new JexlFeatures(), EdgeQueryLogic.fixQueryString(query), null);
+    private ASTJexlScript parseQuery(String query) throws ParseException {
+        return parser.parse(new StringReader(EdgeQueryLogic.fixQueryString(query)), null);
     }
 }
