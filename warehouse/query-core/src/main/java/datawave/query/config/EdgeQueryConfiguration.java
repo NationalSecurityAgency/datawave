@@ -65,6 +65,7 @@ public class EdgeQueryConfiguration extends GenericQueryConfiguration {
         setModelName(configuredLogic.getModelName());
         setModelTableName(configuredLogic.getModelTableName());
         setEdgeQueryModel(configuredLogic.getEdgeQueryModel());
+        setMaxQueryTerms(configuredLogic.getMaxQueryTerms());
     }
 
     public List<? extends Type<?>> getDataTypes() {

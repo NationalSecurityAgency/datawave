@@ -462,7 +462,6 @@ public class ExtendedRunningQueryTest {
         expect(this.query.getQueryAuthorizations()).andReturn(methodAuths).times(2);
         expect(this.query.getUserDN()).andReturn(userDN).times(4);
         expect(this.query.getColumnVisibility()).andReturn(columnVisibility);
-        expect(this.queryLogic.getMaxResults()).andReturn(maxResults).anyTimes();
         expect(this.queryLogic.initialize(eq(this.client), eq(this.query), isA(Set.class))).andReturn(this.genericConfiguration);
         this.queryLogic.setupQuery(this.genericConfiguration);
         expect(this.queryLogic.getTransformIterator(this.query)).andReturn(this.transformIterator);
@@ -486,11 +485,11 @@ public class ExtendedRunningQueryTest {
         expect(this.queryLogic.getMaxPageSize()).andReturn(maxPageSize).anyTimes();
         expect(this.queryLogic.getPageByteTrigger()).andReturn(pageByteTrigger).anyTimes();
         expect(this.queryLogic.getMaxWork()).andReturn(maxWork).anyTimes();
+        expect(this.queryLogic.getMaxResults()).andReturn(maxResults).anyTimes();
         this.queryLogic.preInitialize(this.query, WSAuthorizationsUtil.buildAuthorizations(Collections.singleton(Collections.singleton("AUTH_1"))));
         expect(this.queryLogic.getUserOperations()).andReturn(null);
         expect(this.genericConfiguration.getQueryString()).andReturn(query).once();
         this.queryLogic.setPageProcessingStartTime(anyLong());
-        this.queryLogic.setMaxResults(anyLong());
 
         // Run the test
         PowerMock.replayAll();
