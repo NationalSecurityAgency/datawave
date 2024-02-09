@@ -2124,7 +2124,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
             addOption(cfg, QueryOptions.SORTED_UIDS, Boolean.toString(config.isSortedUIDs()), false);
 
-            configureTypeMappings(config, cfg, metadataHelper, getCompressOptionMappings());
+            configureTypeMappings(config, cfg, metadataHelper, getCompressOptionMappings(), isPreload);
             configureAdditionalOptions(config, cfg);
 
             loadFields(cfg, config, isPreload);
@@ -2292,6 +2292,11 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
     public static void configureTypeMappings(ShardQueryConfiguration config, IteratorSetting cfg, MetadataHelper metadataHelper, boolean compressMappings)
                     throws DatawaveQueryException {
+        configureTypeMappings(config, cfg, metadataHelper, compressMappings, false);
+    }
+
+    public static void configureTypeMappings(ShardQueryConfiguration config, IteratorSetting cfg, MetadataHelper metadataHelper, boolean compressMappings,
+                    boolean isPreload) throws DatawaveQueryException {
         try {
             addOption(cfg, QueryOptions.QUERY_MAPPING_COMPRESS, Boolean.toString(compressMappings), false);
 
@@ -2305,7 +2310,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
             TypeMetadata typeMetadata = metadataHelper.getTypeMetadata(config.getDatatypeFilter());
 
-            if (config.getReduceTypeMetadata()) {
+            if (config.getReduceTypeMetadata() && !isPreload) {
                 Set<String> fieldsToRetain = ReduceFields.getQueryFields(config.getQueryTree());
                 typeMetadata = typeMetadata.reduce(fieldsToRetain);
             }
