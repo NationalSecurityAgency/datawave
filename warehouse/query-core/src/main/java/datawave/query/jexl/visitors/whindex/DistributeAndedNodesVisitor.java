@@ -1,5 +1,7 @@
 package datawave.query.jexl.visitors.whindex;
 
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EVALUATION_ONLY;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -8,26 +10,26 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTEQNode;
-import org.apache.commons.jexl2.parser.ASTERNode;
-import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
-import org.apache.commons.jexl2.parser.ASTFunctionNode;
-import org.apache.commons.jexl2.parser.ASTGENode;
-import org.apache.commons.jexl2.parser.ASTGTNode;
-import org.apache.commons.jexl2.parser.ASTLENode;
-import org.apache.commons.jexl2.parser.ASTLTNode;
-import org.apache.commons.jexl2.parser.ASTNENode;
-import org.apache.commons.jexl2.parser.ASTNRNode;
-import org.apache.commons.jexl2.parser.ASTOrNode;
-import org.apache.commons.jexl2.parser.ASTReference;
-import org.apache.commons.jexl2.parser.ASTReferenceExpression;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.JexlNodes;
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTEQNode;
+import org.apache.commons.jexl3.parser.ASTERNode;
+import org.apache.commons.jexl3.parser.ASTFunctionNode;
+import org.apache.commons.jexl3.parser.ASTGENode;
+import org.apache.commons.jexl3.parser.ASTGTNode;
+import org.apache.commons.jexl3.parser.ASTLENode;
+import org.apache.commons.jexl3.parser.ASTLTNode;
+import org.apache.commons.jexl3.parser.ASTNENode;
+import org.apache.commons.jexl3.parser.ASTNRNode;
+import org.apache.commons.jexl3.parser.ASTOrNode;
+import org.apache.commons.jexl3.parser.ASTReference;
+import org.apache.commons.jexl3.parser.ASTReferenceExpression;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNodes;
 
 import com.google.common.collect.Multimap;
 
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.jexl.visitors.RebuildingVisitor;
 
 /**
@@ -53,10 +55,11 @@ class DistributeAndedNodesVisitor extends RebuildingVisitor {
         addEvaluationOnlyFieldValueNodes();
     }
 
-    private static class PlaceholderEvaluationOnly extends ASTEvaluationOnly {
+    private static class PlaceholderEvaluationOnly extends JexlNode {
         private final JexlNode origNode;
 
         public PlaceholderEvaluationOnly(JexlNode origNode) {
+            super(origNode.getId());
             this.origNode = origNode;
         }
 
@@ -65,7 +68,11 @@ class DistributeAndedNodesVisitor extends RebuildingVisitor {
         }
 
         public JexlNode getEvaluationOnlyNode() {
-            return ASTEvaluationOnly.create(RebuildingVisitor.copy(origNode));
+            JexlNode evalOnlyNode = QueryPropertyMarker.create(RebuildingVisitor.copy(origNode), EVALUATION_ONLY);
+            if (!(evalOnlyNode instanceof ASTReferenceExpression)) {
+                evalOnlyNode = JexlNodes.wrap(evalOnlyNode);
+            }
+            return evalOnlyNode;
         }
     }
 
@@ -163,7 +170,8 @@ class DistributeAndedNodesVisitor extends RebuildingVisitor {
         List<JexlNode> nodesMissingEverything = new ArrayList<>();
         List<JexlNode> nodesWithEverything = new ArrayList<>();
         Map<JexlNode,List<JexlNode>> nodesMissingSomething = new LinkedHashMap<>();
-        for (JexlNode child : JexlNodes.children(node)) {
+        for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+            JexlNode child = node.jjtGetChild(i);
             DistributeAndedNodesVisitor.DistAndData foundData = new DistributeAndedNodesVisitor.DistAndData();
             JexlNode processedChild = (JexlNode) child.jjtAccept(this, foundData);
 
@@ -264,9 +272,9 @@ class DistributeAndedNodesVisitor extends RebuildingVisitor {
 
         // check each child node to see how many of the desired andedNodes are present
         List<JexlNode> rebuiltChildren = new ArrayList<>();
-        for (JexlNode child : JexlNodes.children(node)) {
+        for (int i = 0; i < node.jjtGetNumChildren(); i++) {
             DistributeAndedNodesVisitor.DistAndData foundData = new DistributeAndedNodesVisitor.DistAndData();
-            rebuiltChildren.add((JexlNode) child.jjtAccept(this, foundData));
+            rebuiltChildren.add((JexlNode) node.jjtGetChild(i).jjtAccept(this, foundData));
 
             parentData.usedAndedNodes.addAll(foundData.usedAndedNodes);
         }

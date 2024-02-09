@@ -1,20 +1,17 @@
 package datawave.query.jexl.visitors;
 
-import static org.apache.commons.jexl2.parser.JexlNodes.children;
-
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTEQNode;
-import org.apache.commons.jexl2.parser.ASTFalseNode;
-import org.apache.commons.jexl2.parser.ASTFunctionNode;
-import org.apache.commons.jexl2.parser.ASTOrNode;
-import org.apache.commons.jexl2.parser.ASTReference;
-import org.apache.commons.jexl2.parser.ASTReferenceExpression;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.ParserTreeConstants;
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTEQNode;
+import org.apache.commons.jexl3.parser.ASTFalseNode;
+import org.apache.commons.jexl3.parser.ASTFunctionNode;
+import org.apache.commons.jexl3.parser.ASTOrNode;
+import org.apache.commons.jexl3.parser.ASTReferenceExpression;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
 import org.locationtech.jts.geom.Geometry;
 
@@ -65,8 +62,8 @@ public class GeoWavePruningVisitor extends RebuildingVisitor {
         Multimap<String,Geometry> fieldToGeometryMap = (data instanceof Multimap) ? (Multimap<String,Geometry>) data : HashMultimap.create();
 
         // if one of the anded nodes is a geowave function, pass down the geometry and field name in the multimap
-        for (JexlNode child : children(node)) {
-            child = JexlASTHelper.dereference(child);
+        for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+            JexlNode child = JexlASTHelper.dereference(node.jjtGetChild(i));
             if (child instanceof ASTFunctionNode) {
                 JexlArgumentDescriptor desc = JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor((ASTFunctionNode) child);
                 if (desc instanceof GeoWaveFunctionsDescriptor.GeoWaveJexlArgumentDescriptor) {
@@ -121,12 +118,6 @@ public class GeoWavePruningVisitor extends RebuildingVisitor {
         }
 
         return copiedNode;
-    }
-
-    @Override
-    public Object visit(ASTReference node, Object data) {
-        JexlNode rebuiltNode = (JexlNode) super.visit(node, data);
-        return (rebuiltNode.jjtGetNumChildren() == 0) ? null : rebuiltNode;
     }
 
     @Override

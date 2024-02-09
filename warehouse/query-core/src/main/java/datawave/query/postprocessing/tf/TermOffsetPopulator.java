@@ -24,9 +24,9 @@ import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
@@ -121,12 +121,11 @@ public class TermOffsetPopulator {
      * @return TermOffset map
      */
     public Map<String,Object> getContextMap(Key docKey, Set<Key> keys, Set<String> fields) {
+        document = new Document();
 
         if (keys.isEmpty()) {
             return Collections.emptyMap();
         }
-
-        document = new Document();
 
         TermFrequencyIterator tfSource;
         // Do not prune if no fields exist or if the tf fields would prune to nothing. TODO skip tf entirely if this would prune to zero
