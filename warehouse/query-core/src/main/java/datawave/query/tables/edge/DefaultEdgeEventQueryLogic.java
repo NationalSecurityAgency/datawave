@@ -50,6 +50,7 @@ public class DefaultEdgeEventQueryLogic extends ShardQueryLogic {
         this.dict = other.dict;
         this.edgeModelName = other.edgeModelName;
         this.edgeQueryModel = other.edgeQueryModel;
+        this.remoteEdgeDictionary = other.remoteEdgeDictionary;
     }
 
     @Override
