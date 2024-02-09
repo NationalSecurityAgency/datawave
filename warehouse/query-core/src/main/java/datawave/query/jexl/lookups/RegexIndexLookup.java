@@ -223,8 +223,8 @@ public class RegexIndexLookup extends AsyncIndexLookup {
     public synchronized IndexLookupMap lookup() {
         if (!forwardLookupData.getSessions().isEmpty()) {
             try {
-                timedScanWait(forwardLookupData.getTimedScanFuture(), forwardLookupData.getLookupStartedLatch(), forwardLookupData.getLookupStartTimeMillis(),
-                                config.getMaxIndexScanTimeMillis());
+                timedScanWait(forwardLookupData.getTimedScanFuture(), forwardLookupData.getLookupStartedLatch(), forwardLookupData.getLookupStoppedLatch(),
+                                forwardLookupData.getLookupStartTimeMillis(), config.getMaxIndexScanTimeMillis());
             } finally {
                 for (ScannerSession sesh : forwardLookupData.getSessions()) {
                     scannerFactory.close(sesh);
@@ -235,8 +235,8 @@ public class RegexIndexLookup extends AsyncIndexLookup {
 
         if (!reverseLookupData.getSessions().isEmpty()) {
             try {
-                timedScanWait(reverseLookupData.getTimedScanFuture(), reverseLookupData.getLookupStartedLatch(), reverseLookupData.getLookupStartTimeMillis(),
-                                config.getMaxIndexScanTimeMillis());
+                timedScanWait(reverseLookupData.getTimedScanFuture(), reverseLookupData.getLookupStartedLatch(), reverseLookupData.getLookupStoppedLatch(),
+                                reverseLookupData.getLookupStartTimeMillis(), config.getMaxIndexScanTimeMillis());
             } finally {
                 for (ScannerSession sesh : reverseLookupData.getSessions()) {
                     scannerFactory.close(sesh);
@@ -251,100 +251,105 @@ public class RegexIndexLookup extends AsyncIndexLookup {
     protected Callable<Boolean> createTimedCallable(final Iterator<Entry<Key,Value>> iter, final Set<String> fields, RegexLookupData regexLookupData,
                     final IndexLookupMap indexLookupMap) {
         regexLookupData.setLookupStartedLatch(new CountDownLatch(1));
+        regexLookupData.setLookupStoppedLatch(new CountDownLatch(1));
 
         return () -> {
-            regexLookupData.setLookupStartTimeMillis(System.currentTimeMillis());
-            regexLookupData.getLookupStartedLatch().countDown();
-
-            Text holder = new Text();
             try {
-                if (log.isTraceEnabled()) {
-                    log.trace("Do we have next? " + iter.hasNext());
-                }
+                regexLookupData.setLookupStartTimeMillis(System.currentTimeMillis());
+                regexLookupData.getLookupStartedLatch().countDown();
 
-                while (iter.hasNext()) {
-
-                    Entry<Key,Value> entry = iter.next();
-
-                    if (TimeoutExceptionIterator.exceededTimedValue(entry)) {
-                        throw new Exception("Exceeded fair threshold");
-                    }
-
-                    Key topKey = entry.getKey();
-
+                Text holder = new Text();
+                try {
                     if (log.isTraceEnabled()) {
-                        log.trace("Foward Index entry: " + entry.getKey());
+                        log.trace("Do we have next? " + iter.hasNext());
                     }
 
-                    // Get the column qualifier from the key. It contains the datatype and normalizer class
-                    if (null != topKey.getColumnQualifier()) {
-                        String colq = topKey.getColumnQualifier().toString();
-                        int idx = colq.indexOf(Constants.NULL);
+                    while (iter.hasNext()) {
 
-                        if (idx != -1) {
-                            String type = colq.substring(idx + 1);
+                        Entry<Key,Value> entry = iter.next();
 
-                            // If types are specified and this type is not in the list, skip it.
-                            if (null != config.getDatatypeFilter() && !config.getDatatypeFilter().isEmpty() && !config.getDatatypeFilter().contains(type)) {
+                        if (TimeoutExceptionIterator.exceededTimedValue(entry)) {
+                            throw new Exception("Exceeded fair threshold");
+                        }
 
-                                if (log.isTraceEnabled()) {
-                                    log.trace(config.getDatatypeFilter() + " does not contain " + type);
-                                }
-                                continue;
-                            }
+                        Key topKey = entry.getKey();
 
-                            topKey.getRow(holder);
-                            String term;
-                            if (regexLookupData == forwardLookupData) {
-                                term = holder.toString();
-                            } else {
-                                term = (new StringBuilder(holder.toString())).reverse().toString();
-                            }
+                        if (log.isTraceEnabled()) {
+                            log.trace("Forward Index entry: " + entry.getKey());
+                        }
 
-                            topKey.getColumnFamily(holder);
-                            String field = holder.toString();
+                        // Get the column qualifier from the key. It contains the datatype and normalizer class
+                        if (null != topKey.getColumnQualifier()) {
+                            String colq = topKey.getColumnQualifier().toString();
+                            int idx = colq.indexOf(Constants.NULL);
 
-                            // synchronize access to fieldsToValues
-                            synchronized (indexLookupMap) {
-                                // We are only returning a mapping of field value to field name, no need to
-                                // determine cardinality and such at this point.
-                                indexLookupMap.put(field, term);
-                                // conditional states that if we exceed the key threshold OR field name is not null and we've exceeded
-                                // the value threshold for that field name ( in the case where we have a fielded lookup ).
-                                if (indexLookupMap.isKeyThresholdExceeded() || (fields.size() == 1 && indexLookupMap.get(field).isThresholdExceeded())) {
+                            if (idx != -1) {
+                                String type = colq.substring(idx + 1);
+
+                                // If types are specified and this type is not in the list, skip it.
+                                if (null != config.getDatatypeFilter() && !config.getDatatypeFilter().isEmpty() && !config.getDatatypeFilter().contains(type)) {
+
                                     if (log.isTraceEnabled()) {
-                                        log.trace("We've passed term expansion threshold");
+                                        log.trace(config.getDatatypeFilter() + " does not contain " + type);
                                     }
-                                    return true;
+                                    continue;
+                                }
+
+                                topKey.getRow(holder);
+                                String term;
+                                if (regexLookupData == forwardLookupData) {
+                                    term = holder.toString();
+                                } else {
+                                    term = (new StringBuilder(holder.toString())).reverse().toString();
+                                }
+
+                                topKey.getColumnFamily(holder);
+                                String field = holder.toString();
+
+                                // synchronize access to fieldsToValues
+                                synchronized (indexLookupMap) {
+                                    // We are only returning a mapping of field value to field name, no need to
+                                    // determine cardinality and such at this point.
+                                    indexLookupMap.put(field, term);
+                                    // conditional states that if we exceed the key threshold OR field name is not null and we've exceeded
+                                    // the value threshold for that field name ( in the case where we have a fielded lookup ).
+                                    if (indexLookupMap.isKeyThresholdExceeded() || (fields.size() == 1 && indexLookupMap.get(field).isThresholdExceeded())) {
+                                        if (log.isTraceEnabled()) {
+                                            log.trace("We've passed term expansion threshold");
+                                        }
+                                        return true;
+                                    }
                                 }
                             }
                         }
                     }
-                }
 
-            } catch (Exception e) {
-                log.info("Failed or Timed out expanding regex: " + e.getMessage());
-                if (log.isDebugEnabled()) {
-                    log.debug("Failed or Timed out " + e);
-                }
-                // synchronize access to fieldsToValues
-                synchronized (indexLookupMap) {
-                    // Only if not doing an unfielded lookup should we mark all fields as having an exceeded threshold
-                    if (!unfieldedLookup) {
-                        for (String field : fields) {
-                            if (log.isTraceEnabled()) {
-                                log.trace("field is " + field);
-                            }
-                            indexLookupMap.put(field, "");
-                            indexLookupMap.get(field).setThresholdExceeded();
-                        }
-                    } else {
-                        indexLookupMap.setKeyThresholdExceeded();
+                } catch (Exception e) {
+                    log.info("Failed or Timed out expanding regex: " + e.getMessage());
+                    if (log.isDebugEnabled()) {
+                        log.debug("Failed or Timed out " + e);
                     }
+                    // synchronize access to fieldsToValues
+                    synchronized (indexLookupMap) {
+                        // Only if not doing an unfielded lookup should we mark all fields as having an exceeded threshold
+                        if (!unfieldedLookup) {
+                            for (String field : fields) {
+                                if (log.isTraceEnabled()) {
+                                    log.trace("field is " + field);
+                                }
+                                indexLookupMap.put(field, "");
+                                indexLookupMap.get(field).setThresholdExceeded();
+                            }
+                        } else {
+                            indexLookupMap.setKeyThresholdExceeded();
+                        }
+                    }
+                    return false;
                 }
-                return false;
+                return true;
+            } finally {
+                regexLookupData.getLookupStoppedLatch().countDown();
             }
-            return true;
         };
     }
 
@@ -352,6 +357,7 @@ public class RegexIndexLookup extends AsyncIndexLookup {
         private Collection<ScannerSession> sessions = Lists.newArrayList();
         private Future<Boolean> timedScanFuture;
         private CountDownLatch lookupStartedLatch;
+        private CountDownLatch lookupStoppedLatch;
         private long lookupStartTimeMillis = Long.MAX_VALUE;
 
         public Collection<ScannerSession> getSessions() {
@@ -376,6 +382,14 @@ public class RegexIndexLookup extends AsyncIndexLookup {
 
         public void setLookupStartedLatch(CountDownLatch lookupStartedLatch) {
             this.lookupStartedLatch = lookupStartedLatch;
+        }
+
+        public CountDownLatch getLookupStoppedLatch() {
+            return lookupStoppedLatch;
+        }
+
+        public void setLookupStoppedLatch(CountDownLatch lookupStoppedLatch) {
+            this.lookupStoppedLatch = lookupStoppedLatch;
         }
 
         public long getLookupStartTimeMillis() {

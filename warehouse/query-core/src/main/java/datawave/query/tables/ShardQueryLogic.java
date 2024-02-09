@@ -1533,6 +1533,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         getConfig().setInitialMaxTermThreshold(initialMaxTermThreshold);
     }
 
+    public int getIntermediateMaxTermThreshold() {
+        return getConfig().getIntermediateMaxTermThreshold();
+    }
+
+    public void setIntermediateMaxTermThreshold(int intermediateMaxTermThreshold) {
+        getConfig().setIntermediateMaxTermThreshold(intermediateMaxTermThreshold);
+    }
+
     public int getFinalMaxTermThreshold() {
         return getConfig().getFinalMaxTermThreshold();
     }
