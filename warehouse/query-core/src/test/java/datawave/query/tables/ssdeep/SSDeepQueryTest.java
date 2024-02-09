@@ -33,6 +33,7 @@ import com.google.common.collect.Sets;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.ingest.mapreduce.handler.ssdeep.SSDeepIndexHandler;
 import datawave.marking.MarkingFunctions;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
 import datawave.query.testframework.AbstractDataTypeConfig;
@@ -41,6 +42,7 @@ import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.util.ssdeep.BucketAccumuloKeyGenerator;
 import datawave.util.ssdeep.NGramByteHashGenerator;
+import datawave.util.ssdeep.NGramGenerator;
 import datawave.util.ssdeep.NGramTuple;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.query.QueryImpl;
@@ -76,9 +78,9 @@ public class SSDeepQueryTest {
 
     public static void indexSSDeepTestData(AccumuloClient accumuloClient) throws Exception {
         // configuration
-        String ssdeepTableName = "ssdeepIndex";
-        int ngramSize = 7;
-        int minHashSize = 3;
+        String ssdeepTableName = SSDeepIndexHandler.DEFAULT_SSDEEP_INDEX_TABLE_NAME;
+        int ngramSize = NGramGenerator.DEFAULT_NGRAM_SIZE;
+        int minHashSize = NGramGenerator.DEFAULT_MIN_HASH_SIZE;
 
         // input
         Stream<String> ssdeepLines = Stream.of(TEST_SSDEEPS);
@@ -116,7 +118,7 @@ public class SSDeepQueryTest {
 
     @BeforeClass
     public static void loadData() throws Exception {
-        final String tableName = "ssdeepIndex";
+        final String tableName = SSDeepIndexHandler.DEFAULT_SSDEEP_INDEX_TABLE_NAME;
 
         InMemoryInstance i = new InMemoryInstance("ssdeepTestInstance");
         accumuloClient = new InMemoryAccumuloClient("root", i);
@@ -138,7 +140,7 @@ public class SSDeepQueryTest {
     @Before
     public void setUpQuery() {
         logic = new SSDeepSimilarityQueryLogic();
-        logic.setTableName("ssdeepIndex");
+        logic.setTableName(SSDeepIndexHandler.DEFAULT_SSDEEP_INDEX_TABLE_NAME);
         logic.setMarkingFunctions(new MarkingFunctions.Default());
         logic.setResponseObjectFactory(new DefaultResponseObjectFactory());
         logic.setBucketEncodingBase(BUCKET_ENCODING_BASE);

@@ -27,18 +27,14 @@ public class SSDeepIndexTableConfigHelper extends AbstractTableConfigHelper {
         this.log = log;
         this.conf = config;
 
-        ssdeepIndexTableName = conf.get(SSDeepIndexHandler.SSDEEP_INDEX_TABLE_NAME, null);
-
-        if (ssdeepIndexTableName == null) {
-            throw new IllegalArgumentException("No Facet Table names are defined");
-        }
+        ssdeepIndexTableName = conf.get(SSDeepIndexHandler.SSDEEP_INDEX_TABLE_NAME, SSDeepIndexHandler.DEFAULT_SSDEEP_INDEX_TABLE_NAME);
 
         // TODO: generic balancer, markings, bloom filters, locality groups.
 
         if (tableName.equals(ssdeepIndexTableName)) {
             this.tableType = SSDeepTableType.INDEX;
         } else {
-            throw new IllegalArgumentException("Invalid Facet Table Definition Fot: " + tableName);
+            throw new IllegalArgumentException("Invalid SSDeepIndex Table Definition For: " + tableName);
         }
         this.tableName = tableName;
     }
@@ -50,7 +46,7 @@ public class SSDeepIndexTableConfigHelper extends AbstractTableConfigHelper {
             return;
         }
 
-        throw new TableNotFoundException(null, tableName, "Table is not a SSDeep Type Table");
+        throw new TableNotFoundException(null, tableName, "Table is not a SSDeep Index Type Table");
     }
 
     @SuppressWarnings({"unused", "RedundantThrows"})

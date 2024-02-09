@@ -70,20 +70,15 @@ public class QueryTestTableHelper {
         createTables();
     }
 
-    public void dumpTables(Authorizations auths) {
-        try {
-            dumpTable(METADATA_TABLE_NAME, auths);
-            dumpTable(TableName.DATE_INDEX, auths);
-            dumpTable(TableName.LOAD_DATES, auths);
-            dumpTable(TableName.SHARD, auths);
-            dumpTable(TableName.SHARD_INDEX, auths);
-            dumpTable(TableName.SHARD_RINDEX, auths);
-            dumpTable(SHARD_DICT_INDEX_NAME, auths);
-            dumpTable(MODEL_TABLE_NAME, auths);
-        } catch (TableNotFoundException e) {
-            // should not happen
-            throw new IllegalArgumentException(e);
-        }
+    public void dumpTables(Authorizations auths) throws TableNotFoundException {
+        dumpTable(METADATA_TABLE_NAME, auths);
+        dumpTable(TableName.DATE_INDEX, auths);
+        dumpTable(TableName.LOAD_DATES, auths);
+        dumpTable(TableName.SHARD, auths);
+        dumpTable(TableName.SHARD_INDEX, auths);
+        dumpTable(TableName.SHARD_RINDEX, auths);
+        dumpTable(SHARD_DICT_INDEX_NAME, auths);
+        dumpTable(MODEL_TABLE_NAME, auths);
     }
 
     public void dumpTable(String table, Authorizations auths) throws TableNotFoundException {

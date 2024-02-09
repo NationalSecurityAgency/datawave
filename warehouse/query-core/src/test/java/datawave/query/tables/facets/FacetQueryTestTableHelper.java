@@ -35,17 +35,11 @@ public class FacetQueryTestTableHelper extends QueryTestTableHelper {
     }
 
     @Override
-    public void dumpTables(Authorizations auths) {
+    public void dumpTables(Authorizations auths) throws TableNotFoundException {
         super.dumpTables(auths);
-
-        try {
-            dumpTable(FACET_TABLE_NAME, auths);
-            dumpTable(FACET_HASH_TABLE_NAME, auths);
-            dumpTable(FACET_METADATA_TABLE_NAME, auths);
-        } catch (TableNotFoundException e) {
-            // should not happen
-            throw new IllegalArgumentException(e);
-        }
+        dumpTable(FACET_TABLE_NAME, auths);
+        dumpTable(FACET_HASH_TABLE_NAME, auths);
+        dumpTable(FACET_METADATA_TABLE_NAME, auths);
     }
 
     @Override

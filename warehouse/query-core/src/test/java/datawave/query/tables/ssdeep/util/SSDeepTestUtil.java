@@ -19,9 +19,11 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 
+import datawave.ingest.mapreduce.handler.ssdeep.SSDeepIndexHandler;
 import datawave.query.tables.ssdeep.SSDeepSimilarityQueryTest;
 import datawave.util.ssdeep.BucketAccumuloKeyGenerator;
 import datawave.util.ssdeep.NGramByteHashGenerator;
+import datawave.util.ssdeep.NGramGenerator;
 import datawave.util.ssdeep.NGramTuple;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
@@ -45,9 +47,9 @@ public class SSDeepTestUtil {
 
     public static void loadSSDeepIndexTextData(AccumuloClient accumuloClient) throws Exception {
         // configuration
-        String ssdeepTableName = "ssdeepIndex";
-        int ngramSize = 7;
-        int minHashSize = 3;
+        String ssdeepTableName = SSDeepIndexHandler.DEFAULT_SSDEEP_INDEX_TABLE_NAME;
+        int ngramSize = NGramGenerator.DEFAULT_NGRAM_SIZE;
+        int minHashSize = NGramGenerator.DEFAULT_MIN_HASH_SIZE;
 
         // input
         Stream<String> ssdeepLines = Stream.of(TEST_SSDEEPS);

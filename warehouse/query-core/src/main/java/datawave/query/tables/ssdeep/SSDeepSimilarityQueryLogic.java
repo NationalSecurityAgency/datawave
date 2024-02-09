@@ -109,9 +109,9 @@ public class SSDeepSimilarityQueryLogic extends BaseQueryLogic<Map.Entry<Key,Val
             return pos > 0 ? k.substring(pos + 1) : k;
         }).map(SSDeepHash::parse).collect(Collectors.toSet());
 
-        final NGramGenerator nGramEngine = new NGramGenerator(7);
-        log.info("Pre-processing " + queries.size() + " SSDeepHash queries");
         final int maxRepeatedCharacters = config.getMaxRepeatedCharacters();
+        final NGramGenerator nGramEngine = new NGramGenerator(config.getNGramSize(), maxRepeatedCharacters, config.getMinHashSize());
+        log.info("Pre-processing " + queries.size() + " SSDeepHash queries");
         if (maxRepeatedCharacters > 0) {
             log.info("Normalizing SSDeepHashes to remove long runs of consecutive characters");
             queries = queries.stream().map(h -> h.normalize(maxRepeatedCharacters)).collect(Collectors.toSet());

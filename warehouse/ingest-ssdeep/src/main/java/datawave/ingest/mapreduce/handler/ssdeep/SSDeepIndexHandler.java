@@ -35,6 +35,7 @@ import datawave.ingest.metadata.RawRecordMetadata;
 import datawave.marking.MarkingFunctions;
 import datawave.util.ssdeep.BucketAccumuloKeyGenerator;
 import datawave.util.ssdeep.NGramByteHashGenerator;
+import datawave.util.ssdeep.NGramGenerator;
 import datawave.util.ssdeep.NGramTuple;
 
 public class SSDeepIndexHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> {
@@ -59,11 +60,15 @@ public class SSDeepIndexHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTy
 
     public static final String SSDEEP_INDEX_NGRAM_SIZE = ".ssdeepIndex.ngram.size.min";
 
-    public static final int DEFAULT_SSDEEP_INDEX_NGRAM_SIZE = 7;
+    public static final int DEFAULT_SSDEEP_INDEX_NGRAM_SIZE = NGramGenerator.DEFAULT_NGRAM_SIZE;
 
     public static final String SSDEEP_MIN_HASH_SIZE = ".ssdeepIndex.chunk.size.min";
 
-    public static final int DEFAULT_SSDEEP_MIN_HASH_SIZE = 3;
+    public static final int DEFAULT_SSDEEP_MIN_HASH_SIZE = NGramGenerator.DEFAULT_MIN_HASH_SIZE;
+
+    /** The priority of 40 is arbitrary, based on setting other priorities - this controls the bulk loading process */
+    public static final int DEFAULT_SSDEEP_INDEX_TABLE_LOADER_PRIORITY = 40;
+    public static final String DEFAULT_SSDEEP_INDEX_TABLE_NAME = "ssdeepIndex";
 
     protected Text ssdeepIndexTableName;
 
@@ -83,9 +88,9 @@ public class SSDeepIndexHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTy
 
         Configuration conf = context.getConfiguration();
 
-        final String t = ConfigurationHelper.isNull(conf, DataTypeHelper.Properties.DATA_NAME, String.class);
+        final String dataType = ConfigurationHelper.isNull(conf, DataTypeHelper.Properties.DATA_NAME, String.class);
         TypeRegistry.getInstance(conf);
-        Type type = TypeRegistry.getType(t);
+        Type type = TypeRegistry.getType(dataType);
 
         int bucketCount = conf.getInt(type.typeName() + SSDEEP_BUCKET_COUNT, DEFAULT_SSDEEP_BUCKET_COUNT);
         int bucketEncodingBase = conf.getInt(type.typeName() + SSDEEP_BUCKET_ENCODING_BASE, DEFAULT_SSDEEP_BUCKET_ENCODING_BASE);
@@ -103,16 +108,12 @@ public class SSDeepIndexHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTy
 
     @Override
     public String[] getTableNames(Configuration conf) {
-        return getNonNullTableNames(conf, SSDEEP_INDEX_TABLE_NAME);
+        return new String[] {conf.get(SSDEEP_INDEX_TABLE_NAME, DEFAULT_SSDEEP_INDEX_TABLE_NAME)};
     }
 
     @Override
     public int[] getTableLoaderPriorities(Configuration conf) {
-        // @formatter:off
-        return getNonNullTableLoaderPriorities(
-                conf, 40,
-                SSDEEP_INDEX_TABLE_NAME, SSDEEP_INDEX_TABLE_LOADER_PRIORITY);
-        // @formatter:on
+        return new int[] {conf.getInt(SSDEEP_INDEX_TABLE_LOADER_PRIORITY, DEFAULT_SSDEEP_INDEX_TABLE_LOADER_PRIORITY)};
     }
 
     @Override
@@ -173,66 +174,5 @@ public class SSDeepIndexHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTy
             countWritten++;
         }
         return countWritten;
-    }
-
-    /**
-     * Return an array of table loader priorities extracted from the specified configuration based on the property names supplied, where those properties are
-     * present in the configuration.
-     *
-     * @param conf
-     *            the configuration to extract the priority values from
-     * @param defaultPriority
-     *            the default priority to use if none is specified.
-     * @param properties
-     *            the properties to read from the configuration, must be an even number organized based on table name property name, table priority property
-     *            name.
-     * @return an array of the table priorities loaded from the configuration the length of this will be based on the number of the specified table name
-     *         properties present in the configuration.
-     */
-    protected int[] getNonNullTableLoaderPriorities(Configuration conf, int defaultPriority, String... properties) {
-        if (properties.length % 2 != 0) {
-            throw new IllegalArgumentException("Received an odd number of properties, expected an even number, "
-                            + "each table name property should be followed by the table priority property");
-        }
-
-        int[] priorities = new int[properties.length / 2];
-        int index = 0;
-
-        for (int i = 0; i < properties.length; i += 2) {
-            final String tableNameProp = properties[i];
-            final String tablePriorityProp = properties[i + 1];
-            final String tableName = conf.get(tableNameProp, null);
-            if (null != tableName)
-                priorities[index++] = conf.getInt(tablePriorityProp, defaultPriority);
-        }
-
-        if (index != priorities.length) {
-            return Arrays.copyOf(priorities, index);
-        } else {
-            return priorities;
-        }
-    }
-
-    /**
-     * Return an array of table names extracted from the specified configuration based on the property names supplied, where those properties are present in the
-     * configuration.
-     *
-     * @param conf
-     *            the configuration to extract the table names from.
-     * @param properties
-     *            the properties to read from the configuration in order to obtain table names
-     * @return an array of the table priorities loaded from the configuration. The length of this will be dependent on the number of specified properties
-     *         present in the configuration.
-     */
-    protected String[] getNonNullTableNames(Configuration conf, String... properties) {
-        final List<String> tableNames = new ArrayList<>();
-
-        for (final String p : properties) {
-            final String tableName = conf.get(p, null);
-            if (null != tableName)
-                tableNames.add(tableName);
-        }
-
-        return tableNames.toArray(new String[0]);
     }
 }

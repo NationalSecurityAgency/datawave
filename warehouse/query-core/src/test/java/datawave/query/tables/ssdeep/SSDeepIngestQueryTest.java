@@ -24,6 +24,7 @@ import org.junit.Test;
 import com.google.common.collect.Sets;
 
 import datawave.helpers.PrintUtility;
+import datawave.ingest.mapreduce.handler.ssdeep.SSDeepIndexHandler;
 import datawave.marking.MarkingFunctions;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
 import datawave.query.RebuildingScannerTestHelper;
@@ -82,7 +83,7 @@ public class SSDeepIngestQueryTest extends AbstractFunctionalQuery {
         ResponseObjectFactory responseFactory = new DefaultResponseObjectFactory();
 
         similarityQueryLogic = new SSDeepSimilarityQueryLogic();
-        similarityQueryLogic.setTableName("ssdeepIndex");
+        similarityQueryLogic.setTableName(SSDeepIndexHandler.DEFAULT_SSDEEP_INDEX_TABLE_NAME);
         similarityQueryLogic.setMarkingFunctions(markingFunctions);
         similarityQueryLogic.setResponseObjectFactory(responseFactory);
         similarityQueryLogic.setBucketEncodingBase(BUCKET_ENCODING_BASE);

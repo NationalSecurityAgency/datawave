@@ -7,6 +7,7 @@ import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.core.security.Authorizations;
+import org.apache.deltaspike.core.api.jmx.Table;
 import org.apache.log4j.Logger;
 
 import datawave.helpers.PrintUtility;
@@ -17,7 +18,7 @@ import datawave.query.QueryTestTableHelper;
 import datawave.query.RebuildingScannerTestHelper;
 
 public class SSDeepQueryTestTableHelper extends QueryTestTableHelper {
-    public static final String SSDEEP_INDEX_TABLE_NAME = "ssdeepIndex";
+    public static final String SSDEEP_INDEX_TABLE_NAME = SSDeepIndexHandler.DEFAULT_SSDEEP_INDEX_TABLE_NAME;
 
     public SSDeepQueryTestTableHelper(AccumuloClient client, Logger log)
                     throws AccumuloSecurityException, AccumuloException, TableExistsException, TableNotFoundException {
@@ -42,15 +43,9 @@ public class SSDeepQueryTestTableHelper extends QueryTestTableHelper {
     }
 
     @Override
-    public void dumpTables(Authorizations auths) {
+    public void dumpTables(Authorizations auths) throws TableNotFoundException {
         super.dumpTables(auths);
-
-        try {
-            dumpTable(SSDEEP_INDEX_TABLE_NAME, auths);
-        } catch (TableNotFoundException e) {
-            // should not happen
-            throw new IllegalArgumentException(e);
-        }
+        dumpTable(SSDEEP_INDEX_TABLE_NAME, auths);
     }
 
     @Override
