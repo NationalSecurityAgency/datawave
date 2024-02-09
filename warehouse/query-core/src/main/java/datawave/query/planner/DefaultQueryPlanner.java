@@ -93,9 +93,7 @@ import datawave.query.jexl.NodeTypeCount;
 import datawave.query.jexl.functions.EvaluationPhaseFilterFunctions;
 import datawave.query.jexl.functions.QueryFunctions;
 import datawave.query.jexl.lookups.IndexLookup;
-import datawave.query.jexl.nodes.BoundedRange;
-import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.jexl.visitors.AddShardsAndDaysVisitor;
 import datawave.query.jexl.visitors.BoundedRangeDetectionVisitor;
 import datawave.query.jexl.visitors.BoundedRangeIndexExpansionVisitor;
@@ -685,7 +683,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         // now check whether we are over the ivarator limit
         if (maxIvaratorThreshold >= 0) {
             NodeTypeCount nodeCount = NodeTypeCountVisitor.countNodes(queryTree);
-            int totalIvarators = nodeCount.getTotal(ExceededValueThresholdMarkerJexlNode.class) + nodeCount.getTotal(ExceededOrThresholdMarkerJexlNode.class);
+            int totalIvarators = nodeCount.getTotal(QueryPropertyMarker.MarkerType.EXCEEDED_VALUE)
+                            + nodeCount.getTotal(QueryPropertyMarker.MarkerType.EXCEEDED_OR);
             if (totalIvarators > maxIvaratorThreshold) {
                 QueryException qe = new QueryException(DatawaveErrorCode.EXPAND_QUERY_TERM_SYSTEM_LIMITS, Integer.toString(totalIvarators)
                                 + " terms require server side expansion which is greater than the max of " + maxIvaratorThreshold);
