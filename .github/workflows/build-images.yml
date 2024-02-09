@@ -1,0 +1,46 @@
+#
+name: Create and publish a Docker image
+
+on:
+  push:
+    paths-ignore: ['*.md', 'CODEOWNERS', 'LICENSE']
+    tags:
+      - "**"
+    branches:
+      - 'integration'
+      - 'release/version*'
+      - 'docker-images'
+  workflow_dispatch:
+
+# Defines two custom environment variables for the workflow. These are used for the Container registry domain, and a name for the Docker image that this workflow builds.
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository.lowercase }}
+  JAVA_VERSION: '11'
+  JAVA_DISTRIBUTION: 'zulu' #This is the default on v1 of the action for 1.8
+  USER_NAME: ${{ secrets.GHCR_WRITE_USER_NAME }}
+  ACCESS_TOKEN: ${{ secrets.GHCR_WRITE_ACCESS_TOKEN }}
+
+jobs:
+  build-and-push-datawave-images:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Log in to the Container registry
+      uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ env.USER_NAME }}
+        password: ${{ env.ACCESS_TOKEN }}
+    - name: Checkout Code
+      uses: actions/checkout@v3
+    - name: Set up JDK ${{env.JAVA_VERSION}}
+      uses: actions/setup-java@v3
+      with:
+        distribution: ${{env.JAVA_DISTRIBUTION}}
+        java-version: ${{env.JAVA_VERSION}}
+        cache: 'maven'
+    - name: Build Web and Ingest Docker Images (Maven)
+      run: |
+        mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml clean install -Prpm,kubernetes,assemble,deploy-ws -Ddist -Pdocker -DpushImage -Ddocker-release -DskipTests
+
+ 
