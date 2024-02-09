@@ -70,7 +70,7 @@ while [ $attempt -lt $MAX_ATTEMPTS ]; do
     if [ "$WEBSERVICE" = true ]; then
         echo "Checking webservice status (${attempt}/${MAX_ATTEMPTS})"
 
-        WEBSERVICE_STATUS=$(curl -s -m 5 -k https://localhost:8443/DataWave/Common/Health/health | grep Status)
+        WEBSERVICE_STATUS=$(curl -s -m 5 -k https://localhost:9443/DataWave/Common/Health/health | grep Status)
         if [[ "${WEBSERVICE_STATUS}" =~ \"Status\":\"ready\" ]] ; then
             echo "Webservice ready"
             break

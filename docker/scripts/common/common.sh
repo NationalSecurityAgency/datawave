@@ -3,9 +3,9 @@
 WEBSERVICE="${WEBSERVICE:-false}"
 
 if [ "$WEBSERVICE" = true ]; then
-    DATAWAVE_ENDPOINT=https://localhost:8443/DataWave/Query
-    CACHEDRESULTS_ENDPOINT=https://localhost:8443/DataWave/CachedResults
-    MAPREDUCE_ENDPOINT=https://localhost:8443/DataWave/MapReduce
+    DATAWAVE_ENDPOINT=https://localhost:9443/DataWave/Query
+    CACHEDRESULTS_ENDPOINT=https://localhost:9443/DataWave/CachedResults
+    MAPREDUCE_ENDPOINT=https://localhost:9443/DataWave/MapReduce
 else
     DATAWAVE_ENDPOINT=https://localhost:8443/query/v1/query
     CACHEDRESULTS_ENDPOINT=https://localhost:8443/query/v1/cachedresults

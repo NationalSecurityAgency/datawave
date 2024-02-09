@@ -42,8 +42,6 @@ public abstract class LookupQueryLogic<T> extends BaseQueryLogic<T> implements C
         this((BaseQueryLogic<T>) other.delegateQueryLogic.clone());
     }
 
-    public abstract String createQueryFromLookupTerms(MultiValueMap<String,String> lookupTerms);
-
     public abstract boolean isEventLookupRequired(MultiValueMap<String,String> lookupTerms);
 
     public abstract Set<String> getContentLookupTerms(MultiValueMap<String,String> lookupTerms);

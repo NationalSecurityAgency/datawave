@@ -254,6 +254,7 @@
                                         <buildOptions>
                                             <memory>8589934592</memory>
                                         </buildOptions>
+                                        <cleanup>none</cleanup>
                                         <contextDir>${project.basedir}/../../../</contextDir>
                                         <cleanup>none</cleanup>
                                         <dockerFile>${project.basedir}/Dockerfile</dockerFile>

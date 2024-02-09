@@ -22,16 +22,6 @@ public class LookupUIDQueryLogic<T> extends LookupQueryLogic<T> {
     }
 
     @Override
-    public String createQueryFromLookupTerms(MultiValueMap<String,String> lookupUIDPairs) {
-        // @formatter:off
-        return lookupUIDPairs
-                .entrySet().stream()
-                .flatMap(entry -> entry.getValue().stream().map(value -> String.join(LOOKUP_KEY_VALUE_DELIMITER, entry.getKey(), value)))
-                .collect(Collectors.joining(UID_TERM_SEPARATOR));
-        // @formatter:on
-    }
-
-    @Override
     public boolean isEventLookupRequired(MultiValueMap<String,String> lookupTerms) {
         return !(lookupTerms.keySet().size() == 1 && lookupTerms.containsKey(EVENT_FIELD));
     }
