@@ -12,7 +12,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
 
-import org.apache.commons.jexl2.MapContext;
+import org.apache.commons.jexl3.MapContext;
 
 import com.google.common.base.Objects;
 
