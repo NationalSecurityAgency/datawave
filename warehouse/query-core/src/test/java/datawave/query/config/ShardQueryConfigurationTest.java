@@ -47,7 +47,7 @@ import datawave.webservice.query.QueryImpl;
 
 public class ShardQueryConfigurationTest {
 
-    public final static Map<Class<?>,Class<?>> primitiveMap = new HashMap<Class<?>,Class<?>>();
+    public final static Map<Class<?>,Class<?>> primitiveMap = new HashMap<>();
     static {
         primitiveMap.put(Boolean.class, boolean.class);
         primitiveMap.put(Byte.class, byte.class);
@@ -64,6 +64,7 @@ public class ShardQueryConfigurationTest {
 
     // The set of predicates for the subset of defaultValues that will
     // be used to evaluate the equality instead of .equals(Object).
+    @SuppressWarnings("rawtypes")
     private final Map<String,Predicate> defaultPredicates = new HashMap<>();
 
     // The set of alternate values to test the setters/getters
@@ -75,6 +76,7 @@ public class ShardQueryConfigurationTest {
 
     // The set of predicate for the subset of alternateValues that will
     // be used to evaluate the equality instead of .equals(Object).
+    @SuppressWarnings("rawtypes")
     private final Map<String,Predicate> updatedPredicates = new HashMap<>();
 
     // The set of fields that are already set via one of the other fields.
@@ -319,6 +321,8 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("shardsPerDayThreshold", 18);
         defaultValues.put("initialMaxTermThreshold", 2500);
         updatedValues.put("initialMaxTermThreshold", 2540);
+        defaultValues.put("intermediateMaxTermThreshold", 2500);
+        updatedValues.put("intermediateMaxTermThreshold", 5500);
         defaultValues.put("finalMaxTermThreshold", 2500);
         updatedValues.put("finalMaxTermThreshold", 2501);
         defaultValues.put("maxDepthThreshold", 2500);

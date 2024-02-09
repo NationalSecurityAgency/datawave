@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -320,6 +320,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private int eventPerDayThreshold = 10000;
     private int shardsPerDayThreshold = 10;
     private int initialMaxTermThreshold = 2500;
+    // the intermediate term threshold is used to enforce a term limit prior to the range stream
+    private int intermediateMaxTermThreshold = 2500;
     private int finalMaxTermThreshold = 2500;
     private int maxDepthThreshold = 2500;
     private boolean expandFields = true;
@@ -588,6 +590,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setEventPerDayThreshold(other.getEventPerDayThreshold());
         this.setShardsPerDayThreshold(other.getShardsPerDayThreshold());
         this.setInitialMaxTermThreshold(other.getInitialMaxTermThreshold());
+        this.setIntermediateMaxTermThreshold(other.getIntermediateMaxTermThreshold());
         this.setFinalMaxTermThreshold(other.getFinalMaxTermThreshold());
         this.setMaxDepthThreshold(other.getMaxDepthThreshold());
         this.setMaxUnfieldedExpansionThreshold(other.getMaxUnfieldedExpansionThreshold());
@@ -1210,6 +1213,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setInitialMaxTermThreshold(int initialMaxTermThreshold) {
         this.initialMaxTermThreshold = initialMaxTermThreshold;
+    }
+
+    public int getIntermediateMaxTermThreshold() {
+        return intermediateMaxTermThreshold;
+    }
+
+    public void setIntermediateMaxTermThreshold(int intermediateMaxTermThreshold) {
+        this.intermediateMaxTermThreshold = intermediateMaxTermThreshold;
     }
 
     public int getFinalMaxTermThreshold() {
