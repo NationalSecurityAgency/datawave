@@ -475,6 +475,18 @@
                             <log4j.configuration>file:${project.build.testOutputDirectory}/log4j.properties</log4j.configuration>
                         </systemPropertyVariables>
                     </configuration>
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.junit.jupiter</groupId>
+                            <artifactId>junit-jupiter-engine</artifactId>
+                            <version>${version.junit.jupiter}</version>
+                        </dependency>
+                        <dependency>
+                            <groupId>org.junit.vintage</groupId>
+                            <artifactId>junit-vintage-engine</artifactId>
+                            <version>${version.junit.vintage}</version>
+                        </dependency>
+                    </dependencies>
                     <executions>
                         <execution>
                             <id>default-test</id>
