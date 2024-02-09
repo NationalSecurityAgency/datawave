@@ -348,10 +348,12 @@ public class CompositeIndexTest {
                 "((_Bounded_ = true) && (" + WKT_BYTE_LENGTH_FIELD + " >= 0" + JEXL_AND_OP + WKT_BYTE_LENGTH_FIELD + " < 80))";
         // @formatter:on
 
-        List<QueryData> queries = getQueryRanges(query, false);
+        ShardQueryLogic logic = getShardQueryLogic(false);
+        logic.setIntermediateMaxTermThreshold(50);
+        List<QueryData> queries = getQueryRanges(logic, query, false);
         Assert.assertEquals(12, queries.size());
 
-        List<DefaultEvent> events = getQueryResults(query, false);
+        List<DefaultEvent> events = getQueryResults(logic, query, false);
         Assert.assertEquals(9, events.size());
 
         List<String> wktList = new ArrayList<>();
@@ -482,7 +484,10 @@ public class CompositeIndexTest {
 
     private List<QueryData> getQueryRanges(String queryString, boolean useIvarator) throws Exception {
         ShardQueryLogic logic = getShardQueryLogic(useIvarator);
+        return getQueryRanges(logic, queryString, useIvarator);
+    }
 
+    private List<QueryData> getQueryRanges(ShardQueryLogic logic, String queryString, boolean useIvarator) throws Exception {
         Iterator iter = getQueryRangesIterator(queryString, logic);
         List<QueryData> queryData = new ArrayList<>();
         while (iter.hasNext())
@@ -492,7 +497,10 @@ public class CompositeIndexTest {
 
     private List<DefaultEvent> getQueryResults(String queryString, boolean useIvarator) throws Exception {
         ShardQueryLogic logic = getShardQueryLogic(useIvarator);
+        return getQueryResults(logic, queryString, useIvarator);
+    }
 
+    private List<DefaultEvent> getQueryResults(ShardQueryLogic logic, String queryString, boolean useIvarator) throws Exception {
         Iterator iter = getResultsIterator(queryString, logic);
         List<DefaultEvent> events = new ArrayList<>();
         while (iter.hasNext())
@@ -564,6 +572,7 @@ public class CompositeIndexTest {
         // increase the depth threshold
         logic.setMaxDepthThreshold(20);
         logic.setInitialMaxTermThreshold(15);
+        logic.setIntermediateMaxTermThreshold(15);
         logic.setFinalMaxTermThreshold(15);
 
         // set the pushdown threshold really high to avoid collapsing uids into shards (overrides setCollapseUids if #terms is greater than this threshold)

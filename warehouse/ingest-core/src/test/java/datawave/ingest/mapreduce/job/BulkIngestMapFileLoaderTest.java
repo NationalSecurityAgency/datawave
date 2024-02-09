@@ -92,9 +92,11 @@ public class BulkIngestMapFileLoaderTest {
 
     private static final String METADATA_TABLE = "metadata";
     private static final String METADATA_RFILE_PATH = "/datawave/rfiles/metadata/I3abcdef01.rf";
+    private static final long METADATA_EXPECTED_KEY_COUNT = 380L;
 
     private static final String SHARD_TABLE = "shard";
     private static final String SHARD_RFILE_PATH = "/datawave/rfiles/shard/I2abcdef01.rf";
+    private static final long SHARD_EXPECTED_KEY_COUNT = 16301L;
 
     private static MiniAccumuloCluster cluster;
     private static File tmpDir;
@@ -132,12 +134,6 @@ public class BulkIngestMapFileLoaderTest {
         shardRfile = BulkIngestMapFileLoaderTest.class.getResource(SHARD_RFILE_PATH).toURI();
 
         try (AccumuloClient client = cluster.createAccumuloClient(USER, new PasswordToken(PASSWORD))) {
-            if (!client.tableOperations().exists(METADATA_TABLE)) {
-                client.tableOperations().create(METADATA_TABLE);
-            }
-            if (!client.tableOperations().exists(SHARD_TABLE)) {
-                client.tableOperations().create(SHARD_TABLE);
-            }
             client.securityOperations().changeUserAuthorizations(USER, USER_AUTHS);
         }
     }
@@ -208,35 +204,34 @@ public class BulkIngestMapFileLoaderTest {
         // @formatter:on
     }
 
-    private void verifyImportedData() throws TableNotFoundException {
+    private void verifyTableImport(String tableName, long expectedKeyCount) throws TableNotFoundException {
 
-        long shardKeyCount = 0;
-        long metaKeyCount = 0;
-
+        long actualKeyCount = 0;
         Collection ranges = Collections.singleton(new Range());
         try (AccumuloClient client = cluster.createAccumuloClient(USER, new PasswordToken(PASSWORD))) {
-            // Count shard keys
-            BatchScanner scanner = client.createBatchScanner(SHARD_TABLE, USER_AUTHS);
+            BatchScanner scanner = client.createBatchScanner(tableName, USER_AUTHS);
             scanner.setRanges(ranges);
             Iterator it = scanner.iterator();
             while (it.hasNext()) {
                 it.next();
-                shardKeyCount++;
-            }
-            scanner.close();
-
-            // Count metadata keys
-            scanner = client.createBatchScanner(METADATA_TABLE, USER_AUTHS);
-            scanner.setRanges(ranges);
-            it = scanner.iterator();
-            while (it.hasNext()) {
-                it.next();
-                metaKeyCount++;
+                actualKeyCount++;
             }
             scanner.close();
         }
-        Assert.assertEquals("Unexpected number of shard entries", 16301, shardKeyCount);
-        Assert.assertEquals("Unexpected number of metadata entries", 380, metaKeyCount);
+        Assert.assertEquals("Unexpected number of " + tableName + " entries", expectedKeyCount, actualKeyCount);
+    }
+
+    private void createTables() throws Exception {
+        try (AccumuloClient client = cluster.createAccumuloClient(USER, new PasswordToken(PASSWORD))) {
+            if (client.tableOperations().exists(METADATA_TABLE)) {
+                client.tableOperations().delete(METADATA_TABLE);
+            }
+            if (client.tableOperations().exists(SHARD_TABLE)) {
+                client.tableOperations().delete(SHARD_TABLE);
+            }
+            client.tableOperations().create(SHARD_TABLE);
+            client.tableOperations().create(METADATA_TABLE);
+        }
     }
 
     @AfterClass
@@ -726,6 +721,8 @@ public class BulkIngestMapFileLoaderTest {
 
         BulkIngestMapFileLoader processor = null;
         try {
+            createTables();
+
             processor = setupJobComplete("job1", 1000);
             new Thread(processor, "map-file-watcher").start();
 
@@ -743,7 +740,8 @@ public class BulkIngestMapFileLoaderTest {
             Assert.assertTrue("Unexpected log output", log.contains("Completed bringing map files online for " + SHARD_TABLE));
             Assert.assertTrue("Unexpected log output", log.contains("Marking 1 sequence files from flagged to loaded"));
 
-            verifyImportedData();
+            verifyTableImport(SHARD_TABLE, SHARD_EXPECTED_KEY_COUNT);
+            verifyTableImport(METADATA_TABLE, METADATA_EXPECTED_KEY_COUNT);
 
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -767,13 +765,15 @@ public class BulkIngestMapFileLoaderTest {
 
         String jobName = "job2";
 
-        java.nio.file.Path metaRfile, failedMarker;
+        java.nio.file.Path metaRfile, expectedMarkerFile;
 
-        // expected marker file
-        failedMarker = Paths.get(workPath.toString(), jobName, FAILED_FILE_MARKER);
+        // expected job.failed file
+        expectedMarkerFile = Paths.get(workPath.toString(), jobName, FAILED_FILE_MARKER);
 
         BulkIngestMapFileLoader processor = null;
         try {
+            createTables();
+
             // Create/configure 'job2'
             processor = setupJobComplete(jobName, 500);
 
@@ -793,10 +793,10 @@ public class BulkIngestMapFileLoaderTest {
             // Start the loader
             new Thread(processor, "map-file-watcher").start();
 
-            // Wait up to 30 secs for the bulk loader to log the failure
+            // Wait up to 30 secs for the bulk loader to log & mark the failure
             for (int i = 1; i <= 10; i++) {
                 Thread.sleep(3000);
-                if (log.contains(expectedMsg)) {
+                if (log.contains(expectedMsg) && Files.exists(expectedMarkerFile)) {
                     break;
                 }
             }
@@ -804,7 +804,10 @@ public class BulkIngestMapFileLoaderTest {
             Assert.assertTrue("Unexpected log output", log.contains("Bringing Map Files online for " + METADATA_TABLE));
             Assert.assertTrue("Unexpected log output", log.contains(expectedMsg));
             Assert.assertTrue("Bad metadata rfile should have remained in the job dir: " + metaRfile, Files.exists(metaRfile));
-            Assert.assertTrue("Missing 'job.failed' marker after failed import", Files.exists(failedMarker));
+            Assert.assertTrue("Missing 'job.failed' marker after failed import", Files.exists(expectedMarkerFile));
+
+            verifyTableImport(METADATA_TABLE, 0L);
+            verifyTableImport(SHARD_TABLE, SHARD_EXPECTED_KEY_COUNT);
 
         } catch (Exception e) {
             throw new RuntimeException(e);

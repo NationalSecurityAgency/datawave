@@ -7,8 +7,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
-import org.apache.commons.jexl2.parser.ASTIdentifier;
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ASTIdentifier;
+import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.lang.StringUtils;
 
 import datawave.query.jexl.JexlASTHelper;
@@ -93,7 +93,7 @@ public class JexlControlledQueryParser implements QueryParser, ControlledQueryPa
         Set<String> fields = new TreeSet<>();
         List<ASTIdentifier> idList = JexlASTHelper.getIdentifiers(node);
         for (ASTIdentifier id : idList) {
-            String fieldName = id.image;
+            String fieldName = id.getName();
             if (!StringUtils.isEmpty(fieldName)) {
                 fieldName = fieldName.trim().toUpperCase();
                 if (fieldName.charAt(0) == '$') {
