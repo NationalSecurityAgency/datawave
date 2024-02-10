@@ -42,7 +42,7 @@ public class IdTranslatorConfiguration {
         List<UUIDType> goodTypes = new ArrayList<>();
         if (uuidTypes != null) {
             for (UUIDType uuidType : uuidTypes) {
-                if (uuidType.getQueryLogic().equalsIgnoreCase("LuceneUUIDEventQuery")) {
+                if ("LuceneUUIDEventQuery".equalsIgnoreCase(uuidType.getQueryLogic("default"))) {
                     goodTypes.add(uuidType);
                 }
             }

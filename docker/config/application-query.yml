@@ -426,20 +426,25 @@ datawave:
     uuidTypes: &defaultUuidTypes
       'EVENT_ID':
         fieldName: 'EVENT_ID'
-        queryLogic: 'LuceneUUIDEventQuery'
+        queryLogics:
+          'default': 'LuceneUUIDEventQuery'
         allowedWildcardAfter: 28
       'UUID':
         fieldName: 'UUID'
-        queryLogic: 'LuceneUUIDEventQuery'
+        queryLogics:
+          'default': 'LuceneUUIDEventQuery'
       'PARENT_UUID':
         fieldName: 'PARENT_UUID'
-        queryLogic: 'LuceneUUIDEventQuery'
+        queryLogics:
+          'default': 'LuceneUUIDEventQuery'
       'PAGE_ID':
         fieldName: 'PAGE_ID'
-        queryLogic: 'LuceneUUIDEventQuery'
+        queryLogics:
+          'default': 'LuceneUUIDEventQuery'
       'PAGE_TITLE':
         fieldName: 'PAGE_TITLE'
-        queryLogic: 'LuceneUUIDEventQuery'
+        queryLogics:
+          'default': 'LuceneUUIDEventQuery'
 
     lookup:
       columnVisibility: ""

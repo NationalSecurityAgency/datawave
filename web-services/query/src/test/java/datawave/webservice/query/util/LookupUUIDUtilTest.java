@@ -45,6 +45,7 @@ public class LookupUUIDUtilTest {
 
     @Test
     public void testCreateSettings() {
+        expect(configuration.getContentLookupTypes()).andReturn(Collections.emptyMap());
         expect(configuration.getUuidTypes()).andReturn(Collections.singletonList(new UUIDType("ID", "LuceneUUIDEventQuery", 28)));
         expect(configuration.getBeginDate()).andReturn("20230101");
         expect(configuration.getBatchLookupUpperLimit()).andReturn(10);

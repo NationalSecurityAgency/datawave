@@ -342,7 +342,7 @@ public class ErrorShardedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends Abstract
      * @return the visibility
      */
     @Override
-    protected byte[] getVisibility(RawRecordContainer event, NormalizedContentInterface value) {
+    public byte[] getVisibility(RawRecordContainer event, NormalizedContentInterface value) {
         byte[] visibility;
         if (value != null && value.getMarkings() != null && !value.getMarkings().isEmpty()) {
             try {

@@ -1,6 +1,7 @@
 package datawave.webservice.query.configuration;
 
 import java.util.List;
+import java.util.Map;
 
 import javax.ws.rs.core.MultivaluedMap;
 
@@ -16,6 +17,8 @@ import datawave.webservice.query.util.LookupUUIDConstants;
 public class LookupUUIDConfiguration {
 
     protected List<UUIDType> uuidTypes = null;
+    protected Map<String,String> contentLookupTypes = null;
+
     protected int batchLookupUpperLimit = LookupUUIDConstants.DEFAULT_BATCH_LOOKUP_UPPER_LIMIT;
     protected String beginDate = null;
     protected String columnVisibility;
@@ -35,6 +38,10 @@ public class LookupUUIDConfiguration {
 
     public String getColumnVisibility() {
         return this.columnVisibility;
+    }
+
+    public Map<String,String> getContentLookupTypes() {
+        return this.contentLookupTypes;
     }
 
     public List<UUIDType> getUuidTypes() {
@@ -61,6 +68,10 @@ public class LookupUUIDConfiguration {
 
     public void setUuidTypes(List<UUIDType> uuidTypes) {
         this.uuidTypes = uuidTypes;
+    }
+
+    public void setContentLookupTypes(Map<String,String> contentLookupTypes) {
+        this.contentLookupTypes = contentLookupTypes;
     }
 
     public MultivaluedMap<String,String> optionalParamsToMap() {

@@ -53,7 +53,7 @@ public abstract class AbstractDataTypeConfig implements DataTypeHadoopConfig {
     protected static final String DATE_FIELD_FORMAT = "yyyyMMdd";
     public static final SimpleDateFormat YMD_DateFormat = new SimpleDateFormat(DATE_FIELD_FORMAT);
     private static final String TEST_VISIBILITY = "public";
-    private static final String[] AUTH_VALUES = new String[] {"public", "Euro", "NA"};
+    private static final String[] AUTH_VALUES = new String[] {"public", "private", "Euro", "NA"};
     private static final Authorizations TEST_AUTHS = new Authorizations(AUTH_VALUES);
 
     /**

@@ -101,6 +101,7 @@ public class EdgeQueryConfiguration extends GenericQueryConfiguration implements
         setAggregateResults(other.isAggregateResults());
         setDateFilterScanLimit(other.getDateFilterScanLimit());
         setDateFilterSkipLimit(other.getDateFilterSkipLimit());
+        setMaxQueryTerms(other.getMaxQueryTerms());
     }
 
     /**
