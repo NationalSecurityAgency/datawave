@@ -12,7 +12,7 @@ public class CompositeTimestampTest {
     public void testConversion() {
         long eventDate = Instant.from(DateTimeFormatter.ISO_INSTANT.parse("2022-10-26T01:00:00Z")).toEpochMilli();
         long ageOff = eventDate + CompositeTimestamp.MILLIS_PER_DAY;
-        long expectedTS = 142404234355328L;
+        long expectedTS = 72035490177664L;
 
         long compositeTS = CompositeTimestamp.getCompositeTimeStamp(eventDate, ageOff);
 
@@ -25,20 +25,13 @@ public class CompositeTimestampTest {
     }
 
     @Test
-    public void testEventDateBounds() {
-        long eventDate = (-1L >>> 17);
+    public void testEventUpperDateBound() {
+        long eventDate = (-1L >>> 18);
         long compositeTS = CompositeTimestamp.getCompositeTimeStamp(eventDate, eventDate);
         Assert.assertEquals(eventDate, compositeTS);
         Assert.assertFalse(CompositeTimestamp.isCompositeTimestamp(compositeTS));
         Assert.assertEquals(CompositeTimestamp.getEventDate(compositeTS), eventDate);
         Assert.assertEquals(CompositeTimestamp.getAgeOffDate(compositeTS), eventDate);
-
-        try {
-            CompositeTimestamp.getCompositeTimeStamp(-1, 0);
-            Assert.fail("Expected negative event date to fail");
-        } catch (IllegalArgumentException e) {
-            // expected
-        }
 
         try {
             CompositeTimestamp.getCompositeTimeStamp(eventDate + 1, 0);
@@ -49,15 +42,31 @@ public class CompositeTimestampTest {
     }
 
     @Test
+    public void testEventLowerDateBound() {
+        long eventDate = (0 - (-1L >>> 18));
+        long compositeTS = CompositeTimestamp.getCompositeTimeStamp(eventDate, eventDate);
+        Assert.assertEquals(eventDate, compositeTS);
+        Assert.assertFalse(CompositeTimestamp.isCompositeTimestamp(compositeTS));
+        Assert.assertEquals(CompositeTimestamp.getEventDate(compositeTS), eventDate);
+        Assert.assertEquals(CompositeTimestamp.getAgeOffDate(compositeTS), eventDate);
+
+        try {
+            CompositeTimestamp.getCompositeTimeStamp(eventDate - 1, 0);
+            Assert.fail("Expected event date greater than 17 bits to fail");
+        } catch (IllegalArgumentException e) {
+            // expected
+        }
+    }
+
+    @Test
     public void testAgeOffDateBounds() {
-        long eventDate = (-1L >>> 17);
+        long eventDate = (0 - (-1L >>> 18));
         long ageOffEventDays = (-1L >>> 47);
-        long ageOffEventDate = ageOffEventDays * 1000 * 60 * 60 * 24;
-        long compositeTS = CompositeTimestamp.getCompositeTimeStamp(eventDate, eventDate + ageOffEventDate);
-        Assert.assertEquals(-1L, compositeTS);
+        long ageOffEventDelta = ageOffEventDays * 1000 * 60 * 60 * 24;
+        long compositeTS = CompositeTimestamp.getCompositeTimeStamp(eventDate, eventDate + ageOffEventDelta);
         Assert.assertTrue(CompositeTimestamp.isCompositeTimestamp(compositeTS));
         Assert.assertEquals(CompositeTimestamp.getEventDate(compositeTS), eventDate);
-        Assert.assertEquals(CompositeTimestamp.getAgeOffDate(compositeTS), eventDate + ageOffEventDate);
+        Assert.assertEquals(CompositeTimestamp.getAgeOffDate(compositeTS), eventDate + ageOffEventDelta);
 
         try {
             CompositeTimestamp.getCompositeTimeStamp(eventDate, eventDate - 1);
@@ -74,11 +83,25 @@ public class CompositeTimestampTest {
         }
 
         try {
-            CompositeTimestamp.getCompositeTimeStamp(eventDate, eventDate + ageOffEventDate + 1);
+            CompositeTimestamp.getCompositeTimeStamp(eventDate, eventDate + ageOffEventDelta + 1);
             Assert.fail("Expected age off date greater than " + ageOffEventDays + " days from event date to fail");
         } catch (IllegalArgumentException e) {
             // expected
         }
+    }
+
+    @Test
+    public void testMaxEntropy() {
+        long eventDate = -1L;
+        long ageOff = -1L;
+
+        long compositeTS = CompositeTimestamp.getCompositeTimeStamp(eventDate, ageOff);
+
+        Assert.assertEquals(-1L, compositeTS);
+        // since the ageoff is equal to the event date, this is not considered a composite timestamp
+        Assert.assertFalse(CompositeTimestamp.isCompositeTimestamp(compositeTS));
+        Assert.assertEquals(CompositeTimestamp.getEventDate(compositeTS), eventDate);
+        Assert.assertEquals(CompositeTimestamp.getAgeOffDate(compositeTS), ageOff);
     }
 
 }
