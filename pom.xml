@@ -83,8 +83,7 @@
         <version.jjwt>0.11.2</version.jjwt>
         <version.jts>1.19.0</version.jts>
         <version.junit>4.13.2</version.junit>
-        <version.junit.jupiter>5.10.2</version.junit.jupiter>
-        <version.junit.vintage>5.10.2</version.junit.vintage>
+        <version.junit.bom>5.10.2</version.junit.bom>
         <version.kryo>2.20</version.kryo>
         <version.kryonet>2.20</version.kryonet>
         <version.log4j2>2.17.2</version.log4j2>
@@ -1057,6 +1056,13 @@
                 <scope>import</scope>
             </dependency>
             <dependency>
+                <groupId>org.junit</groupId>
+                <artifactId>junit-bom</artifactId>
+                <version>${version.junit.bom}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
                 <groupId>org.springframework</groupId>
                 <artifactId>spring-framework-bom</artifactId>
                 <version>${version.springframework}</version>
@@ -1143,19 +1149,19 @@
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter-api</artifactId>
-                <version>${version.junit.jupiter}</version>
+                <version>${version.junit.bom}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter-engine</artifactId>
-                <version>${version.junit.jupiter}</version>
+                <version>${version.junit.bom}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.junit.vintage</groupId>
                 <artifactId>junit-vintage-engine</artifactId>
-                <version>${version.junit.vintage}</version>
+                <version>${version.junit.bom}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
@@ -1482,12 +1488,12 @@
                         <dependency>
                             <groupId>org.junit.jupiter</groupId>
                             <artifactId>junit-jupiter-engine</artifactId>
-                            <version>${version.junit.jupiter}</version>
+                            <version>${version.junit.bom}</version>
                         </dependency>
                         <dependency>
                             <groupId>org.junit.vintage</groupId>
                             <artifactId>junit-vintage-engine</artifactId>
-                            <version>${version.junit.vintage}</version>
+                            <version>${version.junit.bom}</version>
                         </dependency>
                     </dependencies>
                     <executions>
@@ -1574,12 +1580,12 @@
                         <dependency>
                             <groupId>org.junit.jupiter</groupId>
                             <artifactId>junit-jupiter-engine</artifactId>
-                            <version>${version.junit.jupiter}</version>
+                            <version>${version.junit.bom}</version>
                         </dependency>
                         <dependency>
                             <groupId>org.junit.vintage</groupId>
                             <artifactId>junit-vintage-engine</artifactId>
-                            <version>${version.junit.vintage}</version>
+                            <version>${version.junit.bom}</version>
                         </dependency>
                     </dependencies>
                 </plugin>
