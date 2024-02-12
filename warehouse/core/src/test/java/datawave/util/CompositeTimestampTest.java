@@ -29,8 +29,8 @@ public class CompositeTimestampTest {
     @Test
     public void testOldDateWithOldAgeoff() {
         long eventDate = Instant.from(DateTimeFormatter.ISO_INSTANT.parse("1900-01-01T00:00:00Z")).toEpochMilli();
-        long ageOff = eventDate + CompositeTimestamp.MILLIS_PER_DAY;
-        long expectedTS = -72577732977664L;
+        long ageOff = Instant.from(DateTimeFormatter.ISO_INSTANT.parse("1950-01-01T00:00:00Z")).toEpochMilli();
+        long expectedTS = -1285076215161299968L;
 
         long compositeTS = CompositeTimestamp.getCompositeTimeStamp(eventDate, ageOff);
 
