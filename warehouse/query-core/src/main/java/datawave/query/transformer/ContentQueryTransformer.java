@@ -24,6 +24,7 @@ import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.EventQueryResponseBase;
 
+@SuppressWarnings("rawtypes")
 public class ContentQueryTransformer extends BaseQueryLogicTransformer<Entry<Key,Value>,EventBase> {
 
     private static final Logger log = Logger.getLogger(ContentQueryTransformer.class);
