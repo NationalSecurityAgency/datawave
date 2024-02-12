@@ -6,11 +6,13 @@ import org.apache.log4j.Logger;
 
 import datawave.core.iterators.ResultCountingIterator;
 import datawave.core.query.logic.QueryLogicTransformer;
+import datawave.core.query.logic.ResultPostprocessor;
 import datawave.microservice.query.Query;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.scheduler.PushdownScheduler;
 import datawave.query.scheduler.Scheduler;
 import datawave.query.tables.shard.CountAggregatingIterator;
+import datawave.query.tables.shard.CountResultPostprocessor;
 import datawave.query.transformer.ShardQueryCountTableTransformer;
 
 /**
@@ -43,6 +45,11 @@ public class CountingShardQueryLogic extends ShardQueryLogic {
     @Override
     public TransformIterator getTransformIterator(Query settings) {
         return new CountAggregatingIterator(this.iterator(), getTransformer(settings), this.markingFunctions);
+    }
+
+    @Override
+    public ResultPostprocessor getResultPostprocessor() {
+        return new CountResultPostprocessor(markingFunctions);
     }
 
     @Override

@@ -103,6 +103,10 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
 
     QueryLogicTransformer getEnrichedTransformer(Query settings);
 
+    default ResultPostprocessor getResultPostprocessor() {
+        return new ResultPostprocessor.IdentityResultPostprocessor();
+    }
+
     default String getResponseClass(Query query) throws QueryException {
         try {
             QueryLogicTransformer t = this.getEnrichedTransformer(query);
