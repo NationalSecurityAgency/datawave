@@ -10,6 +10,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.accumulo.core.client.PluginEnvironment;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.conf.DefaultConfiguration;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
@@ -39,18 +40,23 @@ public class IteratorThreadPoolManager {
         createExecutorService(EVALUATOR_THREAD_PROP, EVALUATOR_THREAD_NAME, env);
     }
 
-    private ThreadPoolExecutor createExecutorService(final String prop, final String name, IteratorEnvironment env) {
+    private ThreadPoolExecutor createExecutorService(final String prop, final String name, final IteratorEnvironment env) {
         final AccumuloConfiguration accumuloConfiguration;
+        final PluginEnvironment pluginEnv;
         if (env != null) {
+            pluginEnv = env.getPluginEnv();
             accumuloConfiguration = env.getConfig();
         } else {
+            pluginEnv = null;
             accumuloConfiguration = DefaultConfiguration.getInstance();
         }
-        final ThreadPoolExecutor service = createExecutorService(getMaxThreads(prop, accumuloConfiguration), name + " (" + instanceId + ')');
+        final ThreadPoolExecutor service = createExecutorService(getMaxThreads(prop, pluginEnv), name + " (" + instanceId + ')');
         threadPools.put(name, service);
         ThreadPools.getServerThreadPools().createGeneralScheduledExecutorService(accumuloConfiguration).scheduleWithFixedDelay(() -> {
             try {
-                int max = getMaxThreads(prop, accumuloConfiguration);
+                // Very important to not use the accumuloConfiguration in this thread and instead use the pluginEnv
+                // The accumuloConfiguration caches table ids which may no longer exist down the road.
+                int max = getMaxThreads(prop, pluginEnv);
                 if (service.getMaximumPoolSize() != max) {
                     log.info("Changing " + prop + " to " + max);
                     service.setMaximumPoolSize(max);
@@ -70,12 +76,11 @@ public class IteratorThreadPoolManager {
         return pool;
     }
 
-    private int getMaxThreads(final String prop, AccumuloConfiguration conf) {
-        if (conf != null) {
-            Map<String,String> properties = new TreeMap<>();
-            conf.getProperties(properties, k -> Objects.equals(k, prop));
-            if (properties.containsKey(prop)) {
-                return Integer.parseInt(properties.get(prop));
+    private int getMaxThreads(final String prop, PluginEnvironment pluginEnv) {
+        if (pluginEnv != null && pluginEnv.getConfiguration() != null) {
+            String value = pluginEnv.getConfiguration().get(prop);
+            if (value != null) {
+                return Integer.parseInt(value);
             }
         }
         return DEFAULT_THREAD_POOL_SIZE;
