@@ -192,6 +192,7 @@ public class IngestTypePruningVisitor extends BaseVisitor {
             pruningTypes = ingestTypes;
         }
 
+        // must traverse the children in reverse order because this visitor prunes as it visits
         for (int i = node.jjtGetNumChildren() - 1; i >= 0; i--) {
             node.jjtGetChild(i).jjtAccept(this, pruningTypes);
         }
@@ -300,6 +301,7 @@ public class IngestTypePruningVisitor extends BaseVisitor {
     }
 
     private Set<String> pruneJunction(JexlNode node, Object data) {
+        // must traverse the children in reverse order because this visitor prunes as it visits
         for (int i = node.jjtGetNumChildren() - 1; i >= 0; i--) {
             node.jjtGetChild(i).jjtAccept(this, data);
         }
