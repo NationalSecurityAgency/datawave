@@ -200,7 +200,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     // changed here.
     // prior code that changed its value from true to false will now log a
     // warning, so that the
-    // SatisfactionVisitor can be changed to accomodate the conditions that
+    // SatisfactionVisitor can be changed to accommodate the conditions that
     // caused it.
     protected boolean isQueryFullySatisfied;
 
@@ -386,6 +386,12 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                 AbstractIteratorBuilder parent = (AbstractIteratorBuilder) data;
                 if (!andItr.includes().isEmpty()) {
                     parent.addInclude(andItr.build());
+                } else if (!andItr.excludes().isEmpty() && !isParentRoot(and)) {
+                    // (A || (!B && !C)) -- technically this is a top level negation.
+                    // HOWEVER there is no way to tell if there is another intersection farther up the tree
+                    // i.e., (Z && (A || (!B && !C)))
+                    // add to parent as exclude if parent is not the root
+                    parent.addExclude(andItr.build());
                 }
             }
 
@@ -396,6 +402,40 @@ public class IteratorBuildingVisitor extends BaseVisitor {
 
         }
 
+        return null;
+    }
+
+    /**
+     * Determines if this node's parent is the root of the query tree. Necessary to support intersections of negated terms
+     *
+     * @param node
+     *            a Jexl node
+     * @return true if the node's parent is the root
+     */
+    public boolean isParentRoot(JexlNode node) {
+        JexlNode parent = findParentNode(node);
+        if (parent != null) {
+            JexlNode grandparent = findParentNode(parent);
+            return grandparent == null;
+        }
+        return true;
+    }
+
+    /**
+     * Find the next parent for the provided node. A parent is defined as an OrNode or an AndNode
+     *
+     * @param node
+     *            a Jexl node
+     * @return the node's parent
+     */
+    private JexlNode findParentNode(JexlNode node) {
+        JexlNode parent = node.jjtGetParent();
+        while (parent != null) {
+            if (parent instanceof ASTOrNode || parent instanceof ASTAndNode) {
+                return parent;
+            }
+            parent = parent.jjtGetParent();
+        }
         return null;
     }
 
@@ -523,9 +563,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             orItr.negateAsNeeded(data);
             or.childrenAccept(this, orItr);
 
-            // If there is no parent
             if (data == null) {
-                // Make this OrIterator the root node
+                // the OrIterator can become the root node if there is no parent and there is at least one include
                 if (!orItr.includes().isEmpty()) {
                     root = orItr.build();
                 }
@@ -534,6 +573,9 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                 AbstractIteratorBuilder parent = (AbstractIteratorBuilder) data;
                 if (!orItr.includes().isEmpty()) {
                     parent.addInclude(orItr.build());
+                } else if (!orItr.excludes().isEmpty()) {
+                    // the case of (A && (!B || !C)) drops the whole union...
+                    parent.addExclude(orItr.build());
                 }
                 if (log.isTraceEnabled()) {
                     log.trace("ASTOrNode visit: pretty formatting of:\nparent.includes:" + formatIncludesOrExcludes(orItr.includes()) + "\nparent.excludes:"

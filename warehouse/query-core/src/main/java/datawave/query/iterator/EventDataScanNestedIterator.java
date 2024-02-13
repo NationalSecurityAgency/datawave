@@ -34,9 +34,6 @@ public class EventDataScanNestedIterator implements NestedIterator<Key>, Seekabl
         this.dataTypeFilter = dataTypeFilter;
     }
 
-    @Override
-    public void initialize() {}
-
     /**
      * Get the next document start key. TODO: See if we can skip over datatypes as defined by the dataTypeFilter
      *
@@ -111,10 +108,13 @@ public class EventDataScanNestedIterator implements NestedIterator<Key>, Seekabl
         this.columnFamilies = columnFamilies;
         this.inclusive = inclusive;
 
+        log.info("seeking source: " + range.getStartKey().toStringNoTime());
         // determine if we have been torn down and rebuilt
         if (!range.isInfiniteStartKey() && !range.isStartKeyInclusive()) {
+            log.info("moving");
             move(nextStartKey(range.getStartKey()));
         } else {
+            log.info("seeking");
             source.seek(range, columnFamilies, inclusive);
             findNextDocument();
         }
@@ -193,8 +193,13 @@ public class EventDataScanNestedIterator implements NestedIterator<Key>, Seekabl
         return false;
     }
 
+    /**
+     * By definition this iterator only scans event keys
+     *
+     * @return false
+     */
     @Override
-    public void setContext(Key context) {
-        // no-op
+    public boolean isNonEventField() {
+        return false;
     }
 }

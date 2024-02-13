@@ -899,8 +899,7 @@ public class IteratorBuildingVisitorTest {
         NestedIterator result = visitor.root();
         Assert.assertTrue(result != null);
         SeekableNestedIterator seekableNestedIterator = new SeekableNestedIterator(result, env);
-        seekableNestedIterator.seek(docRange, null, true);
-        seekableNestedIterator.initialize();
+        seekableNestedIterator.seek(docRange, Collections.emptySet(), true);
 
         // asserts for a hit or miss
         if (docKeyHit == null) {

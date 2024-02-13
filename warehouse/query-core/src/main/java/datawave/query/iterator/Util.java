@@ -1,6 +1,7 @@
 package datawave.query.iterator;
 
 import java.util.Comparator;
+import java.util.Iterator;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
@@ -10,6 +11,9 @@ import org.apache.hadoop.io.WritableComparator;
 import com.google.common.collect.TreeMultimap;
 
 import datawave.query.attributes.Document;
+import datawave.query.iterator.logic.AndIterator;
+import datawave.query.iterator.logic.IndexIteratorBridge;
+import datawave.query.iterator.logic.OrIterator;
 
 /**
  * Provides utility methods for text matching and multimaps that need to be referenced by the iterators.
@@ -31,6 +35,8 @@ public class Util {
 
     private static final TreeMultimap EMPTY;
 
+    private static final Document EMPTY_DOCUMENT;
+
     static {
         keyTransformer = (Transformer<Object>) o -> {
             if (o instanceof Key) {
@@ -47,9 +53,16 @@ public class Util {
             return o1.compareTo(o2);
         };
 
-        hashComparator = (Comparator<Object>) Comparator.comparingInt(Object::hashCode);
+        hashComparator = Comparator.comparingInt(Object::hashCode);
 
         nestedIteratorComparator = (Comparator<NestedIterator>) (o1, o2) -> {
+
+            // sort order is (single terms) < (intersection) < (union)
+            int leftIndex = getIteratorSortIndex(o1);
+            int rightIndex = getIteratorSortIndex(o2);
+            if (leftIndex != rightIndex) {
+                return leftIndex - rightIndex;
+            }
 
             // reversed order to sort bigger documents first
             Document doc1 = o1.document();
@@ -73,6 +86,20 @@ public class Util {
         };
 
         EMPTY = TreeMultimap.create();
+
+        EMPTY_DOCUMENT = new Document();
+    }
+
+    private static int getIteratorSortIndex(NestedIterator iterator) {
+        if (iterator instanceof OrIterator) {
+            return 3;
+        } else if (iterator instanceof AndIterator) {
+            return 2;
+        } else if (iterator instanceof IndexIteratorBridge) {
+            return 1;
+        } else {
+            return 0;
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -125,7 +152,7 @@ public class Util {
     }
 
     public static int prefixDiff(Text prefix, Text text) {
-        int textEnd = (prefix.getLength() > text.getLength()) ? text.getLength() : prefix.getLength();
+        int textEnd = Math.min(prefix.getLength(), text.getLength());
 
         return WritableComparator.compareBytes(prefix.getBytes(), 0, prefix.getLength(), text.getBytes(), 0, textEnd);
     }
@@ -140,6 +167,102 @@ public class Util {
             d.putAll(iterator.document().getDictionary().entrySet().iterator(), false);
         }
         return d;
+    }
+
+    /**
+     * Build a document from the sorted map of either includes or contextIncludes iterators
+     *
+     * @param iterators
+     *            the sorted map of iterators
+     * @param lowest
+     *            the lowest key
+     * @param <T>
+     *            the type
+     */
+    public static <T> Document buildNewDocument(TreeMultimap<T,NestedIterator<T>> iterators, T lowest) {
+        Document d = new Document();
+        for (NestedIterator<T> iterator : iterators.get(lowest)) {
+            Document doc = iterator.document();
+            // a contextInclude may return an empty document
+            if (doc != null) {
+                d.putAll(doc.getDictionary().entrySet().iterator(), false);
+            }
+        }
+        return d;
+    }
+
+    /**
+     * For cases when you have a mix of includes and context includes within a junction
+     *
+     * @param includes
+     *            iterators
+     * @param contextIncludes
+     *            iterators that require context to evaluate
+     * @return A document
+     */
+    public static <T> Document buildNewDocument(TreeMultimap<T,NestedIterator<T>> includes, TreeMultimap<T,NestedIterator<T>> contextIncludes, T lowest) {
+        Document d = new Document();
+        if (includes != null) {
+            for (NestedIterator<T> include : includes.get(lowest)) {
+                Document doc = include.document();
+                if (doc != null) {
+                    d.putAll(include.document().getDictionary().entrySet().iterator(), false);
+                }
+            }
+        }
+
+        if (contextIncludes != null) {
+            // context includes may not map to the lowest provided key
+            for (NestedIterator<T> contextInclude : contextIncludes.get(lowest)) {
+                Document doc = contextInclude.document();
+                if (doc != null) {
+                    d.putAll(doc.getDictionary().entrySet().iterator(), false);
+                }
+            }
+        }
+        return d;
+    }
+
+    public static Document emptyDocument() {
+        return EMPTY_DOCUMENT;
+    }
+
+    /**
+     * Distinct from a {@link Iterator#hasNext()} call, this method determines if a next element is possible.
+     *
+     * @param iterator
+     *            a nested iterator
+     * @return true if this iterator is exhausted
+     * @param <T>
+     *            the type
+     */
+    public static <T> boolean isIteratorExhausted(NestedIterator<T> iterator) {
+        if (iterator instanceof AndIterator) {
+            AndIterator and = (AndIterator) iterator;
+            return and.isIteratorExhausted();
+        }
+        if (iterator instanceof OrIterator) {
+            OrIterator or = (OrIterator) iterator;
+            return or.isIteratorExhausted();
+        }
+        if (iterator instanceof IndexIteratorBridge) {
+            IndexIteratorBridge bridge = (IndexIteratorBridge) iterator;
+            return !bridge.hasNext();
+        }
+        return false;
+    }
+
+    /**
+     * Determines if this iterator has any expired sources
+     *
+     * @param iterator
+     *            the iterator
+     * @return true if any source is expired
+     * @param <T>
+     *            type param
+     */
+    public static <T> boolean isLeaf(NestedIterator<T> iterator) {
+        return !(iterator instanceof AndIterator || iterator instanceof OrIterator);
     }
 
 }

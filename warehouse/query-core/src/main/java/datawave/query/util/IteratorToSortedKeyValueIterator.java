@@ -71,7 +71,9 @@ public class IteratorToSortedKeyValueIterator implements SortedKeyValueIterator<
     }
 
     @Override
-    public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {}
+    public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
+        init();
+    }
 
     @Override
     public SortedKeyValueIterator<Key,Value> deepCopy(IteratorEnvironment env) {

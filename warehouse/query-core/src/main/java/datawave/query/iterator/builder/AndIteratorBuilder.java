@@ -26,9 +26,9 @@ public class AndIteratorBuilder extends AbstractIteratorBuilder {
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     public <T> NestedIterator<T> build() {
-        if (includes.isEmpty()) {
-            throw new IllegalStateException("AndIterator has no inclusive sources!");
-        }
+        // we can build an intersection of all excludes on the field index
+        // IFF there is a parent context out there to drive it
+        // Z && (A || (!B && !C))
         return new AndIterator(includes, excludes);
     }
 }

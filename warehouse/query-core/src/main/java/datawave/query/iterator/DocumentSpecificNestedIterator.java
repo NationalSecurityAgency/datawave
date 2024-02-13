@@ -30,9 +30,6 @@ public class DocumentSpecificNestedIterator extends NestedQueryIterator<Key> {
     }
 
     @Override
-    public void initialize() {}
-
-    @Override
     public Key move(Key minimum) {
         if (minimum.compareTo(this.documentKey.getKey()) <= 0) {
             this.next = documentKey;
