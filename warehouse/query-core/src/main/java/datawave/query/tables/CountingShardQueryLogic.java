@@ -1,10 +1,15 @@
 package datawave.query.tables;
 
+import java.util.Set;
+
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.IteratorSetting;
+import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.log4j.Logger;
 
 import datawave.core.iterators.ResultCountingIterator;
+import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.logic.QueryLogicTransformer;
 import datawave.core.query.logic.ResultPostprocessor;
 import datawave.microservice.query.Query;
@@ -33,6 +38,13 @@ public class CountingShardQueryLogic extends ShardQueryLogic {
     }
 
     @Override
+    public GenericQueryConfiguration initialize(AccumuloClient client, Query settings, Set<Authorizations> runtimeQueryAuthorizations) throws Exception {
+        GenericQueryConfiguration config = super.initialize(client, settings, runtimeQueryAuthorizations);
+        config.setAggregateResults(true);
+        return config;
+    }
+
+    @Override
     public CountingShardQueryLogic clone() {
         return new CountingShardQueryLogic(this);
     }
@@ -48,7 +60,7 @@ public class CountingShardQueryLogic extends ShardQueryLogic {
     }
 
     @Override
-    public ResultPostprocessor getResultPostprocessor() {
+    public ResultPostprocessor getResultPostprocessor(GenericQueryConfiguration config) {
         return new CountResultPostprocessor(markingFunctions);
     }
 

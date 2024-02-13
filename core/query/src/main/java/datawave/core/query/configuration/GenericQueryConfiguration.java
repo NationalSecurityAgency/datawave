@@ -67,6 +67,9 @@ public class GenericQueryConfiguration implements Serializable {
     // use a value like 'env:PASS' to pull from the environment
     private String accumuloPassword = "";
 
+    // Whether or not this query emits every result or performs some kind of aggregation
+    protected boolean aggregateResults = false;
+
     /**
      * Empty default constructor
      */
@@ -247,6 +250,14 @@ public class GenericQueryConfiguration implements Serializable {
         return this.accumuloPassword;
     }
 
+    public boolean isAggregateResults() {
+        return aggregateResults;
+    }
+
+    public void setAggregateResults(boolean aggregateResults) {
+        this.aggregateResults = aggregateResults;
+    }
+
     /**
      * Sets configured password for accumulo access
      *
@@ -298,12 +309,13 @@ public class GenericQueryConfiguration implements Serializable {
                         && Objects.equals(getQuery(), that.getQuery()) && Objects.equals(getQueryString(), that.getQueryString())
                         && Objects.equals(getBeginDate(), that.getBeginDate()) && Objects.equals(getEndDate(), that.getEndDate())
                         && Objects.equals(getMaxWork(), that.getMaxWork()) && Objects.equals(getTableName(), that.getTableName())
-                        && Objects.equals(getQueries(), that.getQueries());
+                        && Objects.equals(getQueries(), that.getQueries()) && Objects.equals(getAccumuloPassword(), that.getAccumuloPassword())
+                        && Objects.equals(isAggregateResults(), that.isAggregateResults());
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(isCheckpointable(), getAuthorizations(), getQuery(), getQueryString(), getBeginDate(), getEndDate(), getMaxWork(),
-                        getBaseIteratorPriority(), getTableName(), getQueries(), getBypassAccumulo());
+                        getBaseIteratorPriority(), getTableName(), getQueries(), getBypassAccumulo(), getAccumuloPassword(), isAggregateResults());
     }
 }

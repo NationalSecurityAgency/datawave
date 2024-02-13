@@ -103,7 +103,7 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
 
     QueryLogicTransformer getEnrichedTransformer(Query settings);
 
-    default ResultPostprocessor getResultPostprocessor() {
+    default ResultPostprocessor getResultPostprocessor(GenericQueryConfiguration config) {
         return new ResultPostprocessor.IdentityResultPostprocessor();
     }
 
