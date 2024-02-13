@@ -36,12 +36,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.apache.accumulo.core.client.PluginEnvironment;
 import org.apache.accumulo.core.conf.DefaultConfiguration;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
+import org.apache.accumulo.core.util.ConfigurationImpl;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockSupport;
 import org.junit.After;
@@ -80,6 +82,7 @@ public class QueryIteratorIT extends EasyMockSupport {
     protected SortedListKeyValueIterator baseIterator;
     protected Map<String,String> options;
     protected IteratorEnvironment environment;
+    protected PluginEnvironment penvironment;
     protected EventDataQueryFilter filter;
     protected TypeMetadata typeMetadata;
 
@@ -145,7 +148,10 @@ public class QueryIteratorIT extends EasyMockSupport {
         typeMetadata.put("INDEX_ONLY_FIELD3", DEFAULT_DATATYPE, "datawave.data.type.LcNoDiacriticsType");
 
         environment = createMock(IteratorEnvironment.class);
+        penvironment = createMock(PluginEnvironment.class);
         EasyMock.expect(environment.getConfig()).andReturn(DefaultConfiguration.getInstance()).anyTimes();
+        EasyMock.expect(environment.getPluginEnv()).andReturn(penvironment).anyTimes();
+        EasyMock.expect(penvironment.getConfiguration()).andReturn(new ConfigurationImpl(DefaultConfiguration.getInstance())).anyTimes();
         filter = createMock(EventDataQueryFilter.class);
     }
 
