@@ -2745,6 +2745,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.lookupUUIDConfiguration.getUuidTypes()).andReturn(null);
         expect(this.lookupUUIDConfiguration.getBeginDate()).andReturn("not a date");
         expect(this.lookupUUIDConfiguration.getBatchLookupUpperLimit()).andReturn(0);
+        expect(this.lookupUUIDConfiguration.getContentLookupTypes()).andReturn(Collections.emptyMap());
         expect(this.context.getCallerPrincipal()).andReturn(this.principal).anyTimes();
         LookupUUIDConfiguration tmpCfg = new LookupUUIDConfiguration();
         tmpCfg.setColumnVisibility("PUBLIC");
@@ -3762,7 +3763,7 @@ public class ExtendedQueryExecutorBeanTest {
 
         expect(uriInfo.getQueryParameters()).andReturn(new MultivaluedHashMap<>());
         expect(lookupUUIDUtil.getUUIDType("uuidType")).andReturn(uuidType);
-        expect(uuidType.getDefinedView()).andReturn("abc");
+        expect(uuidType.getDefinedView(null)).andReturn("abc");
         expect(lookupUUIDUtil.createUUIDQueryAndNext(isA(GetUUIDCriteria.class))).andReturn(response);
         expect(response.getQueryId()).andReturn("11111");
         expect(context.getCallerPrincipal()).andReturn(principal);
@@ -3796,7 +3797,7 @@ public class ExtendedQueryExecutorBeanTest {
 
         expect(uriInfo.getQueryParameters()).andReturn(new MultivaluedHashMap<>());
         expect(lookupUUIDUtil.getUUIDType("uuidType")).andReturn(uuidType);
-        expect(uuidType.getDefinedView()).andReturn("abc");
+        expect(uuidType.getDefinedView(null)).andReturn("abc");
         expect(lookupUUIDUtil.createUUIDQueryAndNext(isA(GetUUIDCriteria.class))).andReturn(response);
         expect(response.getQueryId()).andReturn("11111");
         expect(context.getCallerPrincipal()).andReturn(principal);
