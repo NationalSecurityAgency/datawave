@@ -80,7 +80,7 @@ public class CompositeTimestampTest {
         long ageOff = eventDate + (131071L * CompositeTimestamp.MILLIS_PER_DAY);
         long expectedTS = -9223311640052998144L;
 
-        long compositeTs1 = Long.MIN_VALUE+1;
+        long compositeTs1 = Long.MIN_VALUE + 1;
         long eventDate1 = CompositeTimestamp.getEventDate(compositeTs1);
 
         long compositeTS = CompositeTimestamp.getCompositeTimeStamp(eventDate, ageOff);
@@ -174,27 +174,28 @@ public class CompositeTimestampTest {
     }
 
     @Test
-    public void testDoomsday(){
+    public void testDoomsday() {
         long compositeTs = Long.MAX_VALUE - 5L;
 
-        long eventDate = CompositeTimestamp.getEventDate(compositeTs); //4199-11-24
+        long eventDate = CompositeTimestamp.getEventDate(compositeTs); // 4199-11-24
         long now = System.currentTimeMillis();
 
         Date endGame = new Date(TimeUnit.MILLISECONDS.toMillis(eventDate));
-        Assert.assertTrue("Doomsday is "+endGame+".  You have less than one year before timestamps roll over.  Get cracking.",(now + (365L * CompositeTimestamp.MILLIS_PER_DAY)) < eventDate);
+        Assert.assertTrue("Doomsday is " + endGame + ".  You have less than one year before timestamps roll over.  Get cracking.",
+                        (now + (365L * CompositeTimestamp.MILLIS_PER_DAY)) < eventDate);
 
     }
 
     @Test
-    public void testPostDoomsday(){
+    public void testPostDoomsday() {
         long eventDate = Instant.from(DateTimeFormatter.ISO_INSTANT.parse("4199-11-25T00:00:00Z")).toEpochMilli();
         long ageOff = Instant.from(DateTimeFormatter.ISO_INSTANT.parse("4299-06-01T00:00:00Z")).toEpochMilli();
 
         try {
             CompositeTimestamp.getCompositeTimeStamp(eventDate, ageOff);
             Assert.fail("Expected event date to fail");
-        }catch (IllegalArgumentException e){
-            //expected
+        } catch (IllegalArgumentException e) {
+            // expected
         }
 
     }
