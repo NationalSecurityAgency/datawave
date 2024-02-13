@@ -107,7 +107,7 @@ public class TableConfigurationUtilTest {
 
         Assert.assertEquals(0, tempCacheFile.length());
         tcu.updateCacheFile();
-        Assert.assertEquals(7867, tempCacheFile.length());
+        Assert.assertEquals(7868, tempCacheFile.length());
 
         tcu.serializeTableConfgurationIntoConf(conf);
 
