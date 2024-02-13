@@ -373,7 +373,7 @@
             <dependency>
                 <groupId>org.python</groupId>
                 <artifactId>jython</artifactId>
-                <version>2.5.2b2-callable</version>
+                <version>2.7.2b2</version>
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>
