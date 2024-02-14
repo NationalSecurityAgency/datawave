@@ -1,23 +1,19 @@
 package datawave.ingest.mapreduce.handler.edge;
 
-import static datawave.ingest.mapreduce.handler.edge.EdgeIngestConfiguration.EDGE_DEFAULT_DATA_TYPE;
 import static datawave.ingest.mapreduce.handler.edge.EdgeIngestConfiguration.EDGE_TABLE_METADATA_ENABLE;
 import static datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler.METADATA_TABLE_LOADER_PRIORITY;
 import static datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler.METADATA_TABLE_NAME;
 
 import java.io.IOException;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -25,7 +21,6 @@ import java.util.regex.Pattern;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.commons.jexl2.Script;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.StatusReporter;
@@ -33,8 +28,6 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.support.ClassPathXmlApplicationContext;
-import org.springframework.util.Assert;
 
 import com.google.common.base.Charsets;
 import com.google.common.collect.Multimap;
@@ -494,9 +487,9 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         }
 
         // check value denylist
-        if (edgeConfig.enableDisallowist()
-                        && edgeConfig.isDisallowistValue(edgeDataBundle.getDataTypeName(), edgeDataBundle.getSource().getValue(ValueType.INDEXED))
-                        || edgeConfig.isDisallowistValue(edgeDataBundle.getDataTypeName(), edgeDataBundle.getSink().getValue(ValueType.INDEXED))) {
+        if (edgeConfig.enableDisallowList()
+                        && edgeConfig.isDisallowListValue(edgeDataBundle.getDataTypeName(), edgeDataBundle.getSource().getValue(ValueType.INDEXED))
+                        || edgeConfig.isDisallowListValue(edgeDataBundle.getDataTypeName(), edgeDataBundle.getSink().getValue(ValueType.INDEXED))) {
 
             return null;
         }
@@ -612,15 +605,6 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
             BulkIngestKey bulk = new BulkIngestKey(new Text(tableName), metaKey);
             contextWriter.write(bulk, new Value(value.toByteArray()), context);
         }
-    }
-
-    // this just avoids ugly copy pasta
-    private NormalizedContentInterface getNullKeyedNCI(String fieldValue, Multimap<String,NormalizedContentInterface> fields) {
-        Iterator<NormalizedContentInterface> nciIter = fields.get(fieldValue).iterator();
-        if (nciIter.hasNext()) {
-            return nciIter.next();
-        }
-        return null;
     }
 
     protected String getEdgeDefGroup(String groupedFieldName) {
@@ -844,14 +828,6 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         BulkIngestKey bk = new BulkIngestKey(new Text(this.edgeTableName), key);
         contextWriter.write(bk, val, context);
         return 1;
-    }
-
-    private Map<String,String> findLookupMap(Map<String,Map<String,String>> lookup, String typeName) {
-        if (lookup.containsKey(typeName)) {
-            return lookup.get(typeName);
-        } else {
-            return lookup.get(EDGE_DEFAULT_DATA_TYPE);
-        }
     }
 
     @Override

@@ -37,7 +37,7 @@ public class EdgeEventFieldUtil {
     protected Map<String,Multimap<String,NormalizedContentInterface>> depthFirstList;
 
     SimpleGroupFieldNameParser fieldParser = new SimpleGroupFieldNameParser();
-    protected boolean trimFieldGroup = false;
+    protected boolean trimFieldGroup;
 
     public EdgeEventFieldUtil(boolean trimFieldGroup) {
         this.trimFieldGroup = trimFieldGroup;
@@ -164,7 +164,6 @@ public class EdgeEventFieldUtil {
         return null;
     }
 
-    // this just avoids ugly copy pasta
     private NormalizedContentInterface getNullKeyedNCI(String fieldValue, Multimap<String,NormalizedContentInterface> fields) {
         Iterator<NormalizedContentInterface> nciIter = fields.get(fieldValue).iterator();
         if (nciIter.hasNext()) {
@@ -189,7 +188,7 @@ public class EdgeEventFieldUtil {
     }
 
     protected void setEdgeKeyDateType(EdgeDataBundle bundle, boolean validActivtyDate, boolean sameActivityDate, long eventDate, long newFormatStartDate) {
-        EdgeKey.DATE_TYPE dateType = null;
+        EdgeKey.DATE_TYPE dateType;
         if (eventDate < newFormatStartDate) {
             dateType = EdgeKey.DATE_TYPE.OLD_EVENT;
         } else if (validActivtyDate) {

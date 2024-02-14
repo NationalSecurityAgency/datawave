@@ -63,51 +63,17 @@ public class EdgeDataBundle {
     private DurationValue durationValue = null;
 
     private String loadDate;
-    private MarkingFunctions mf = null;
+    private MarkingFunctions mf;
     private String uuid;
     private long activityDate;
     private boolean validActivityDate;
 
     private EdgeKey.DATE_TYPE dateType;
 
-    public EdgeDataBundle(RawRecordContainer event, String typeName, String id, IngestHelperInterface helper) {
-        this.mf = MarkingFunctions.Factory.createMarkingFunctions();
-        this.event = event;
-        this.eventDate = event.getDate();
-        this.edgeType = typeName;
-        this.uuid = id;
-        this.helper = helper;
-    }
-
-    public EdgeDataBundle(EdgeDefinition edgeDef, NormalizedContentInterface ifaceSource, NormalizedContentInterface ifaceSink, RawRecordContainer event,
-                    IngestHelperInterface helper) {
-        this(event, edgeDef.getEdgeType().toString(), null, helper);
-
-        this.setSource(new VertexValue(edgeDef.isUseRealm(), edgeDef.getSourceIndexedFieldRealm(), edgeDef.getSourceEventFieldRealm(),
-                        edgeDef.getSourceRelationship(), edgeDef.getSourceCollection(), ifaceSource));
-        this.setSink(new VertexValue(edgeDef.isUseRealm(), edgeDef.getSinkIndexedFieldRealm(), edgeDef.getSourceEventFieldRealm(),
-                        edgeDef.getSinkRelationship(), edgeDef.getSinkCollection(), ifaceSink));
-        this.edgeDefinition = edgeDef;
-
-        this.edgeDirection = edgeDef.getDirection();
-        if (event.getAltIds() != null && !event.getAltIds().isEmpty()) {
-            this.uuid = event.getAltIds().iterator().next();
-        }
-        // even though event, etc references are saved above, passing in the event
-        // prevents future bug
-        this.initFieldMasking(helper, event);
-        this.initMarkings(getSource().getMarkings(), getSink().getMarkings());
-    }
-
     public EdgeDataBundle(RawRecordContainer event) {
         this.mf = MarkingFunctions.Factory.createMarkingFunctions();
         this.event = event;
 
-    }
-
-    public void clearNonEventFields() {
-        this.source = null;
-        this.sink = null;
     }
 
     private int getHour(long time) {
@@ -153,7 +119,7 @@ public class EdgeDataBundle {
     }
 
     @SuppressWarnings("unchecked")
-    public void initMarkings(Map<String,String> m1, Map<String,String> m2) {
+    public void initMarkings(Map<String, String> m1, Map<String, String> m2) {
         if (m1 != null) {
             if (m2 != null) {
                 try {
@@ -187,10 +153,6 @@ public class EdgeDataBundle {
 
     public String getEdgeAttribute2() {
         return this.edgeAttribute2;
-    }
-
-    public Value getEdgeValue(EdgeKey.DATE_TYPE date_type) {
-        return getEdgeValue(true, date_type);
     }
 
     public Value getEdgeValue(boolean forwardEdge, EdgeKey.DATE_TYPE date_type) {
@@ -231,10 +193,6 @@ public class EdgeDataBundle {
         builder.setLoadDate(loadDate);
         builder.setUuid(uuid);
         return builder.build().encode();
-    }
-
-    public Value getStatsActivityValue(EdgeKey.DATE_TYPE date_type) {
-        return getStatsActivityValue(true, date_type);
     }
 
     public Value getStatsActivityValue(boolean forwardEdge, EdgeKey.DATE_TYPE date_type) {
@@ -278,10 +236,6 @@ public class EdgeDataBundle {
 
     public DurationValue getDurationValue() {
         return this.durationValue;
-    }
-
-    public Value getDurationAsValue() {
-        return getDurationAsValue(true);
     }
 
     public Value getDurationAsValue(boolean forwardEdge) {
@@ -411,10 +365,6 @@ public class EdgeDataBundle {
 
     public EdgeDirection getEdgeDirection() {
         return edgeDirection;
-    }
-
-    public void setEdgeDirection(EdgeDirection edgeDirection) {
-        this.edgeDirection = edgeDirection;
     }
 
     public void setDurationValue(DurationValue durationValue) {
@@ -571,4 +521,4 @@ public class EdgeDataBundle {
         return this.dateType;
     }
 
-} /* end EdgeValue */
+}

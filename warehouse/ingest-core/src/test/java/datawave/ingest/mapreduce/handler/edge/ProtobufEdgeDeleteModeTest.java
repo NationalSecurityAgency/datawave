@@ -38,7 +38,6 @@ import datawave.ingest.data.config.ingest.FakeIngestHelper;
 import datawave.ingest.mapreduce.SimpleDataTypeHandler;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.writer.ContextWriter;
-import datawave.ingest.time.Now;
 
 public class ProtobufEdgeDeleteModeTest {
 
@@ -48,10 +47,9 @@ public class ProtobufEdgeDeleteModeTest {
     private static Enumeration rootAppenders = Logger.getRootLogger().getAllAppenders();
     private static Multimap<String,NormalizedContentInterface> fields = HashMultimap.create();
     private static Type type = new Type("mycsv", FakeIngestHelper.class, null, new String[] {SimpleDataTypeHandler.class.getName()}, 10, null);
-    private static final Now now = Now.getInstance();
 
     @BeforeClass
-    public static void setupSystemSettings() throws Exception {
+    public static void setupSystemSettings() {
 
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         System.setProperty("file.encoding", "UTF8");
@@ -127,7 +125,7 @@ public class ProtobufEdgeDeleteModeTest {
     }
 
     @Test
-    public void testEdgeKeyDeleteModeSetViaHelper() throws Exception {
+    public void testEdgeKeyDeleteModeSetViaHelper() {
         log.debug("---testHelperDeleteMode---");
 
         //
@@ -161,7 +159,7 @@ public class ProtobufEdgeDeleteModeTest {
     }
 
     @Test
-    public void testIngestJobDeleteProperty() throws Exception {
+    public void testIngestJobDeleteProperty() {
         log.debug("---testIngestJobDeleteModeProperty---");
 
         //
