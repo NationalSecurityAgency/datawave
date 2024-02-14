@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>gov.nsa.datawave</groupId>
     <artifactId>datawave-parent</artifactId>
-    <version>6.6.0-SNAPSHOT</version>
+    <version>6.7.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>DataWave</name>
     <description>DataWave is a Java-based ingest and query framework that leverages Apache Accumulo to provide fast, secure access to your data.</description>
@@ -1534,6 +1534,7 @@
                     <version>2.7</version>
                     <configuration>
                         <encoding>UTF-8</encoding>
+                        <escapeString>\</escapeString>
                     </configuration>
                     <dependencies>
                         <dependency>
@@ -1905,6 +1906,32 @@
                             <configuration>
                                 <files>
                                     <file>compose.properties</file>
+                                </files>
+                            </configuration>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
+        </profile>
+        <profile>
+            <id>kubernetes</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <properties>
+                <build.env>kubernetes</build.env>
+                <env>kubernetes</env>
+            </properties>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>gov.nsa.datawave.plugins</groupId>
+                            <artifactId>read-properties</artifactId>
+                            <configuration>
+                                <files>
+                                    <file>kubernetes.properties</file>
+                                    <file>kubernetes-passwords.properties</file>
                                 </files>
                             </configuration>
                         </plugin>
