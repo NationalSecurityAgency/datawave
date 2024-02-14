@@ -60,6 +60,8 @@ public class QueryOptionsSwitch {
                     break;
                 case QueryParameters.UNIQUE_FIELDS:
                     UniqueFields uniqueFields = UniqueFields.from(value);
+                    // preserve the most recent flag
+                    uniqueFields.setMostRecent(config.getUniqueFields().isMostRecent());
                     config.setUniqueFields(uniqueFields);
                     break;
                 case QueryParameters.EXCERPT_FIELDS:

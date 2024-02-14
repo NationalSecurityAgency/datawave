@@ -877,13 +877,16 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             UniqueFields uniqueFields = UniqueFields.from(uniqueFieldsParam);
             // Only set the unique fields if we were actually given some
             if (!uniqueFields.isEmpty()) {
-                String mostRecentUnique = settings.findParameter(QueryParameters.MOST_RECENT_UNIQUE).getParameterValue().trim();
-                if (StringUtils.isNotBlank(mostRecentUnique)) {
-                    uniqueFields.setMostRecent(Boolean.valueOf(mostRecentUnique));
-                }
                 this.setUniqueFields(uniqueFields);
                 config.setUniqueFields(uniqueFields);
             }
+        }
+
+        // Get the most recent flag
+        String mostRecentUnique = settings.findParameter(QueryParameters.MOST_RECENT_UNIQUE).getParameterValue().trim();
+        if (StringUtils.isNotBlank(mostRecentUnique)) {
+            this.getUniqueFields().setMostRecent(Boolean.valueOf(mostRecentUnique));
+            config.getUniqueFields().setMostRecent(Boolean.valueOf(mostRecentUnique));
         }
 
         // Get the EXCERPT_FIELDS parameter if given

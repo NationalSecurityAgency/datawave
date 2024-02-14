@@ -202,6 +202,9 @@ public abstract class UniqueTest {
         Assert.assertTrue(response instanceof DefaultEventQueryResponse);
         DefaultEventQueryResponse eventQueryResponse = (DefaultEventQueryResponse) response;
 
+        // copy expected set to avoid modifying parameter passed in
+        expected = new HashSet<>(expected);
+
         for (EventBase event : eventQueryResponse.getEvents()) {
             boolean found = false;
             for (Iterator<Set<String>> it = expected.iterator(); it.hasNext();) {
@@ -213,9 +216,9 @@ public abstract class UniqueTest {
                     break;
                 }
             }
-            Assert.assertTrue(found);
+            Assert.assertTrue("Failed to find " + event.getMetadata().getInternalId() + " in expected results", found);
         }
-        Assert.assertTrue(expected.isEmpty());
+        Assert.assertTrue("Failed to find all expected results.  Missing " + expected, expected.isEmpty());
     }
 
     @Test
@@ -233,12 +236,14 @@ public abstract class UniqueTest {
         extraParameters.put("unique.fields", "DEATH_DATE,$MAGIC");
         runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
 
+        expected.clear();
         expected.add(Sets.newHashSet(WiseGuysIngest.sopranoUID));
         expected.add(Sets.newHashSet(WiseGuysIngest.corleoneUID));
         expected.add(Sets.newHashSet(WiseGuysIngest.caponeUID));
         extraParameters.put("unique.fields", "$DEATH_DATE,BIRTH_DATE");
         runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
 
+        expected.clear();
         expected.add(Sets.newHashSet(WiseGuysIngest.sopranoUID));
         expected.add(Sets.newHashSet(WiseGuysIngest.corleoneUID));
         expected.add(Sets.newHashSet(WiseGuysIngest.caponeUID));
@@ -278,12 +283,14 @@ public abstract class UniqueTest {
         runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
 
         queryString = "UUID =~ '^[CS].*' && f:unique('DEATH_DATE','$BIRTH_DATE')";
+        expected.clear();
         expected.add(Sets.newHashSet(WiseGuysIngest.sopranoUID));
         expected.add(Sets.newHashSet(WiseGuysIngest.corleoneUID));
         expected.add(Sets.newHashSet(WiseGuysIngest.caponeUID));
         runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
 
         queryString = "UUID =~ '^[CS].*' && f:unique('death_date','$birth_date')";
+        expected.clear();
         expected.add(Sets.newHashSet(WiseGuysIngest.sopranoUID));
         expected.add(Sets.newHashSet(WiseGuysIngest.corleoneUID));
         expected.add(Sets.newHashSet(WiseGuysIngest.caponeUID));
@@ -305,12 +312,14 @@ public abstract class UniqueTest {
         runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
 
         queryString = "UUID:/^[CS].*/ AND #UNIQUE(DEATH_DATE,$BIRTH_DATE)";
+        expected.clear();
         expected.add(Sets.newHashSet(WiseGuysIngest.sopranoUID));
         expected.add(Sets.newHashSet(WiseGuysIngest.corleoneUID));
         expected.add(Sets.newHashSet(WiseGuysIngest.caponeUID));
         runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
 
         queryString = "UUID:/^[CS].*/ AND #UNIQUE(death_date,birth_date)";
+        expected.clear();
         expected.add(Sets.newHashSet(WiseGuysIngest.sopranoUID));
         expected.add(Sets.newHashSet(WiseGuysIngest.corleoneUID));
         expected.add(Sets.newHashSet(WiseGuysIngest.caponeUID));
@@ -379,17 +388,45 @@ public abstract class UniqueTest {
         extraParameters.put("unique.fields", "DEATH_DATE,$MAGIC");
         runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
 
+        expected.clear();
+        expected.add(Sets.newHashSet(WiseGuysIngest.caponeUID));
+        extraParameters.put("unique.fields", "death_date,$magic");
+        runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
+
+        expected.clear();
         expected.add(Sets.newHashSet(WiseGuysIngest.sopranoUID));
         expected.add(Sets.newHashSet(WiseGuysIngest.corleoneUID));
         expected.add(Sets.newHashSet(WiseGuysIngest.caponeUID));
         extraParameters.put("unique.fields", "$DEATH_DATE,BIRTH_DATE");
         runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
 
+        expected.clear();
         expected.add(Sets.newHashSet(WiseGuysIngest.sopranoUID));
         expected.add(Sets.newHashSet(WiseGuysIngest.corleoneUID));
         expected.add(Sets.newHashSet(WiseGuysIngest.caponeUID));
         extraParameters.put("unique.fields", "death_date,birth_date");
         runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
+    }
+
+    @Test
+    public void testHannahHypothesis() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        Date startDate = format.parse("20091231");
+        Date endDate = format.parse("20150101");
+
+        Set<Set<String>> expected = new HashSet<>();
+        expected.add(Sets.newHashSet(WiseGuysIngest.caponeUID));
+        extraParameters.put(QueryParameters.MOST_RECENT_UNIQUE, "true");
+        extraParameters.put("unique.fields", "DEATH_DATE,$MAGIC");
+        String queryString = "UUID =~ '^[CS].*'";
+        runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
+
+        extraParameters.clear();
+        extraParameters.put(QueryParameters.MOST_RECENT_UNIQUE, "true");
+        queryString = "UUID =~ '^[CS].*' && f:unique(death_date,magic)";
+        runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
+
+        this.getClass().getMethod("testHannahHypothesis").getName().replace("Hypothesis", "Theory");
     }
 
 }

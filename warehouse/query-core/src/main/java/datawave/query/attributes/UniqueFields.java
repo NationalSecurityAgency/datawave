@@ -180,7 +180,7 @@ public class UniqueFields implements Serializable, Cloneable {
      *            the granularity
      */
     public UniqueFields put(String field, UniqueGranularity uniqueGranularity) {
-        fieldMap.put(JexlASTHelper.deconstructIdentifier(field), uniqueGranularity);
+        fieldMap.put(JexlASTHelper.deconstructIdentifier(field).toUpperCase(), uniqueGranularity);
         return this;
     }
 
@@ -193,7 +193,7 @@ public class UniqueFields implements Serializable, Cloneable {
     public UniqueFields putAll(Multimap<String,UniqueGranularity> fieldMap) {
         if (fieldMap != null) {
             for (String field : fieldMap.keySet()) {
-                this.fieldMap.putAll(JexlASTHelper.deconstructIdentifier(field), fieldMap.get(field));
+                this.fieldMap.putAll(JexlASTHelper.deconstructIdentifier(field).toUpperCase(), fieldMap.get(field));
             }
         }
         return this;
@@ -227,7 +227,6 @@ public class UniqueFields implements Serializable, Cloneable {
         Multimap<String,UniqueGranularity> newFieldMap = TreeMultimap.create(fieldMap);
         for (String field : fieldMap.keySet()) {
             Collection<UniqueGranularity> granularities = fieldMap.get(field);
-            field = field.toUpperCase();
             if (model.containsKey(field)) {
                 model.get(field).forEach((newField) -> newFieldMap.putAll(newField, granularities));
             }
