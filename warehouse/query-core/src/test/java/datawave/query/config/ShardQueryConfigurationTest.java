@@ -404,6 +404,8 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("maxIvaratorSources", 16);
         defaultValues.put("maxIvaratorResults", -1L);
         updatedValues.put("maxIvaratorResults", 10000L);
+        defaultValues.put("maxIvaratorSourceWait", 1000L * 60 * 30);
+        updatedValues.put("maxIvaratorSourceWait", 1000L * 60 * 10);
         defaultValues.put("maxEvaluationPipelines", 25);
         updatedValues.put("maxEvaluationPipelines", 24);
         defaultValues.put("maxPipelineCachedResults", 25);

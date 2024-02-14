@@ -98,32 +98,6 @@ public class RemoteQueryConfiguration extends GenericQueryConfiguration implemen
         return new RemoteQueryConfiguration(other);
     }
 
-    /**
-     * Factory method that creates a RemoteQueryConfiguration deep copy from a RemoteQueryLogic
-     *
-     * @param remoteQueryLogic
-     *            - a configured RemoteQueryLogic
-     * @return - a RemoteQueryConfiguration
-     */
-    public static RemoteQueryConfiguration create(RemoteEventQueryLogic remoteQueryLogic) {
-        return create(remoteQueryLogic.getConfig());
-    }
-
-    /**
-     * Factory method that creates a RemoteQueryConfiguration from a RemoteQueryLogic and a Query
-     *
-     * @param remoteQueryLogic
-     *            - a configured RemoteQueryLogic
-     * @param query
-     *            - a configured Query object
-     * @return - a RemoteQueryConfiguration
-     */
-    public static RemoteQueryConfiguration create(RemoteEventQueryLogic remoteQueryLogic, Query query) {
-        RemoteQueryConfiguration config = create(remoteQueryLogic);
-        config.setQuery(query);
-        return config;
-    }
-
     public String getRemoteId() {
         return remoteId;
     }

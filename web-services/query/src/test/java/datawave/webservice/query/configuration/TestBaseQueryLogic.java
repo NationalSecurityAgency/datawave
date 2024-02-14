@@ -78,6 +78,7 @@ public class TestBaseQueryLogic {
         expect(config.getTableName()).andReturn("tableName").anyTimes();
         expect(config.getBypassAccumulo()).andReturn(false).anyTimes();
         expect(config.getAccumuloPassword()).andReturn("env:PASS").anyTimes();
+        expect(config.isReduceResults()).andReturn(false).anyTimes();
         expect(config.getClient()).andReturn(null).anyTimes();
         expect(config.getQueries()).andReturn(Collections.emptyList()).anyTimes();
         expect(config.getQueriesIter()).andReturn(Collections.emptyIterator()).anyTimes();

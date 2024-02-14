@@ -77,7 +77,7 @@ public class ActiveQueryLog {
 
     /**
      * Return the {@link ActiveQueryLog} instance associated with the specified name. If one does not exist, it will be created.
-     *
+     * <p>
      * If the specified name is null or blank, the default instance with the name '{@value #DEFAULT_NAME}' will be returned. Additionally, the time the log was
      * last accessed will be updated to the current time in milliseconds, and if the log's timer was cancelled, it will be restarted.
      *
