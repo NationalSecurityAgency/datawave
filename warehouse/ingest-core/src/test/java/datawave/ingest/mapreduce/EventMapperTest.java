@@ -338,9 +338,25 @@ public class EventMapperTest {
     }
 
     @Test
-    public void testDiscardInterval() throws IOException, InterruptedException {
+    public void testHitDiscardInterval() throws IOException, InterruptedException {
         // event date < now minus discard interval
-        long tomorrow = -1L * UIDConstants.MILLISECONDS_PER_DAY;
+        long yesterday = -1L * UIDConstants.MILLISECONDS_PER_DAY;
+        conf.setLong(record.getDataType().typeName() + "." + DataTypeDiscardIntervalPredicate.DISCARD_INTERVAL, yesterday);
+
+        eventMapper.setup(mapContext);
+        eventMapper.map(new LongWritable(1), record, mapContext);
+        eventMapper.cleanup(mapContext);
+
+        Multimap<BulkIngestKey,Value> written = TestContextWriter.getWritten();
+
+        // discard interval lower bound is yesterday. data from today should be dropped
+        assertEquals(0, written.size());
+    }
+
+    @Test
+    public void testMissDiscardInterval() throws IOException, InterruptedException {
+        // event date < now minus discard interval
+        long tomorrow = 1L * UIDConstants.MILLISECONDS_PER_DAY;
         conf.setLong(record.getDataType().typeName() + "." + DataTypeDiscardIntervalPredicate.DISCARD_INTERVAL, tomorrow);
 
         eventMapper.setup(mapContext);
@@ -349,12 +365,12 @@ public class EventMapperTest {
 
         Multimap<BulkIngestKey,Value> written = TestContextWriter.getWritten();
 
-        // discard interval lower bound is tomorrow. data from today should be dropped
-        assertEquals(0, written.size());
+        // discard interval lower bound is tomorrow. data from today should be ok
+        assertEquals(5, written.size());
     }
 
     @Test
-    public void testFutureDiscardInterval() throws IOException, InterruptedException {
+    public void testHitFutureDiscardInterval() throws IOException, InterruptedException {
         // event date > now plus future discard interval
         long yesterday = -1L * UIDConstants.MILLISECONDS_PER_DAY;
         conf.setLong(record.getDataType().typeName() + "." + DataTypeDiscardFutureIntervalPredicate.DISCARD_FUTURE_INTERVAL, yesterday);
@@ -367,6 +383,23 @@ public class EventMapperTest {
 
         // future discard is yesterday. data from today should be dropped
         assertEquals(0, written.size());
+
+    }
+
+    @Test
+    public void testMissFutureDiscardInterval() throws IOException, InterruptedException {
+        // event date > now plus future discard interval
+        long tomorrow = 1L * UIDConstants.MILLISECONDS_PER_DAY;
+        conf.setLong(record.getDataType().typeName() + "." + DataTypeDiscardFutureIntervalPredicate.DISCARD_FUTURE_INTERVAL, tomorrow);
+
+        eventMapper.setup(mapContext);
+        eventMapper.map(new LongWritable(1), record, mapContext);
+        eventMapper.cleanup(mapContext);
+
+        Multimap<BulkIngestKey,Value> written = TestContextWriter.getWritten();
+
+        // future discard is tomorrow. data from today should be ok
+        assertEquals(5, written.size());
 
     }
 
