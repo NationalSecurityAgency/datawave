@@ -19,6 +19,7 @@ public class GzipDetectionUtil {
      *            the file to check for GZIP Compression.
      * @return whether or not the given File is GZIP compressed.
      * @throws IOException
+     *             if there is an error reading the file
      */
     public static boolean isCompressed(final File file) throws IOException {
         final FileInputStream fis = new FileInputStream(file);
@@ -44,6 +45,9 @@ public class GzipDetectionUtil {
      * @param inputStream
      *            the {@link InputStream} to check.
      * @return an {@link InputStream} to read from.
+     *
+     * @throws IOException
+     *             if there is an error reading the file
      */
     public static InputStream decompressTream(InputStream inputStream) throws IOException {
         PushbackInputStream pushBack = new PushbackInputStream(inputStream, 2); // need to check first two bytes
