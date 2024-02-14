@@ -600,7 +600,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             reducedInSettings = Boolean.parseBoolean(reducedResponseStr);
         }
         boolean reduced = (this.isReducedResponse() || reducedInSettings);
-        DocumentTransformer transformer = new DocumentTransformer(this, settings, markingFunctions, responseObjectFactory, reduced);
+        DocumentTransformer transformer = createDocumentTransformer(this, settings, markingFunctions, responseObjectFactory, reduced);
         transformer.setEventQueryDataDecoratorTransformer(eventQueryDataDecoratorTransformer);
         transformer.setContentFieldNames(getConfig().getContentFieldNames());
         transformer.setLogTimingDetails(this.getLogTimingDetails());
@@ -611,6 +611,11 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         addConfigBasedTransformers();
 
         return this.transformerInstance;
+    }
+
+    protected DocumentTransformer createDocumentTransformer(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions markingFunctions,
+                    ResponseObjectFactory responseObjectFactory, Boolean reducedResponse) {
+        return new DocumentTransformer(logic, settings, markingFunctions, responseObjectFactory, reducedResponse);
     }
 
     public boolean isLongRunningQuery() {
@@ -1979,6 +1984,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
 
     public void setMaxIvaratorSources(int maxIvaratorSources) {
         getConfig().setMaxIvaratorSources(maxIvaratorSources);
+    }
+
+    public long getMaxIvaratorSourceWait() {
+        return getConfig().getMaxIvaratorSourceWait();
+    }
+
+    public void setMaxIvaratorSourceWait(long maxIvaratorSourceWait) {
+        getConfig().setMaxIvaratorSourceWait(maxIvaratorSourceWait);
     }
 
     public long getMaxIvaratorResults() {
