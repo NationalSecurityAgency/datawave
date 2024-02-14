@@ -99,7 +99,7 @@ public class CreatedQueryLogicCacheBean {
      * @param logic
      *            the query logic
      * @param client
-     *            the client
+     *            accumulo client
      * @return true if there was no previous mapping for the given queryId in the cache.
      */
     public boolean add(String queryId, String userId, QueryLogic<?> logic, AccumuloClient client) {

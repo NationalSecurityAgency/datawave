@@ -450,7 +450,9 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      * it to filter this call as well. Most query logics will not implement this.
      *
      * @param settings
+     *            query settings
      * @param userAuthorizations
+     *            a set of user authorizations
      */
     default void preInitialize(Query settings, Set<Authorizations> userAuthorizations) {
         // noop

@@ -43,6 +43,7 @@ import datawave.webservice.query.exception.DatawaveErrorCode;
  * The high level design of how the parsing works is as follows: There are two data structures that are built during the traversal to keep track of information.
  * Once the traversal is complete and the data structures are built they are sent to the VisitationContext which then builds the ranges and normalized query and
  * gets returned.<br>
+ * </p>
  * <br>
  * <p>
  * All data is expected to be passed up since this is a depth first search nothing will be passed down<br>
@@ -69,7 +70,6 @@ import datawave.webservice.query.exception.DatawaveErrorCode;
  * During the Traversal lists of QueryContexts are built. Once traversal is over we must have 1 or more QueryContexts which are then used to build the
  * ranges/normalized query.<br>
  * <br>
- * <p>
  * <p>
  * The 3 basic rules that are enforced are:<br>
  * for equivalence expressions (== =~)<br>

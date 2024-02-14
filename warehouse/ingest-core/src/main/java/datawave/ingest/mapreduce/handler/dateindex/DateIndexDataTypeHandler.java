@@ -49,7 +49,7 @@ import datawave.util.StringUtils;
  * This class creates the following Mutations or Key/Values: <br>
  * <br>
  * <table border="1">
- * <caption></caption>
+ * <caption>DataTypeHandler</caption>
  * <tr>
  * <th>Schema Type</th>
  * <th>Use</th>
@@ -70,7 +70,7 @@ import datawave.util.StringUtils;
  *
  * <p>
  * The table with the name specified by {@link #DATEINDEX_TNAME} will be the date index table.
- *
+ * </p>
  *
  *
  * @param <KEYIN>

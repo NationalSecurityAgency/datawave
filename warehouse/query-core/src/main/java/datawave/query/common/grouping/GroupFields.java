@@ -322,6 +322,8 @@ public class GroupFields implements Serializable {
      *
      * @param modelMap
      *            the map to retrieve alternative field mappings from
+     * @param reverseModelMap
+     *            the reverse model map
      */
     public void remapFields(Multimap<String,String> modelMap, Map<String,String> reverseModelMap) {
         this.groupByFields = remap(this.groupByFields, modelMap);

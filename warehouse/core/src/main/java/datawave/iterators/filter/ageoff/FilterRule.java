@@ -10,7 +10,7 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
  */
 public interface FilterRule {
     /**
-     * Used to initialize the the {@code FilterRule} implementation
+     * Used to initialize the {@code FilterRule} implementation
      *
      * @param options
      *            {@code Map} object
@@ -18,16 +18,20 @@ public interface FilterRule {
     void init(FilterOptions options);
 
     /**
-     * Used to initialize the the {@code FilterRule} implementation
+     * Used to initialize the {@code FilterRule} implementation
      *
      * @param options
      *            {@code Map} object
      * @param iterEnv
+     *            iterator environment
      */
     void init(FilterOptions options, IteratorEnvironment iterEnv);
 
     /**
      * Used to test a {@code Key/Value} pair, and returns {@code true} if it is accepted
+     *
+     * @param iter
+     *            key/value iterator
      *
      * @return {@code boolean} value.
      */
@@ -37,7 +41,10 @@ public interface FilterRule {
 
     /**
      * @param scanStart
-     * @return
+     *            index to start scan
+     * @param iterEnv
+     *            the iterator environment
+     * @return a copy
      */
     FilterRule deepCopy(long scanStart, IteratorEnvironment iterEnv);
 

@@ -401,6 +401,8 @@ public class OperationEvaluator {
      * <li>&gt;= returns whether the left is greater than or equal to the right</li>
      * </ul>
      *
+     * @param <T>
+     *            comparable class
      * @param left
      *            the left side of the expression
      * @param right
@@ -442,12 +444,16 @@ public class OperationEvaluator {
      * <li>&gt;= returns whether the left is greater than or equal to the right</li>
      * </ul>
      *
+     * @param <T>
+     *            comparable class
      * @param left
      *            the left side of the expression
      * @param right
      *            the right side of the expression
      * @param operator
      *            the logical operator
+     * @param comparator
+     *            the comparator
      * @return true if the logical expression evaluates to true, or false otherwise
      */
     public static <T> boolean compare(T left, T right, String operator, Comparator<T> comparator) {

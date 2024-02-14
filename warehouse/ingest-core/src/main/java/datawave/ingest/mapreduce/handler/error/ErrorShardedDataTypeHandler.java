@@ -50,7 +50,7 @@ import datawave.marking.MarkingFunctions;
  * This class creates the following Mutations or Key/Values: <br>
  * <br>
  * <table border="1">
- * <caption></caption>
+ * <caption>ErrorShardedDataType</caption>
  * <tr>
  * <th>Schema Type</th>
  * <th>Use</th>
