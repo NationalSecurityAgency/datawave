@@ -139,6 +139,8 @@ public class SimpleEvent extends EventBase<SimpleEvent,SimpleField> implements S
                     return "fields";
                 case 3:
                     return "markings";
+                case 4:
+                    return "payload";
                 default:
                     return null;
             }

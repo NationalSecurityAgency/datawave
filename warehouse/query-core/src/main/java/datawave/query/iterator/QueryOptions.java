@@ -228,6 +228,7 @@ public class QueryOptions implements OptionDescriber {
     public static final String IVARATOR_PERSIST_VERIFY_COUNT = "ivarator.persist.verify.count";
 
     public static final String MAX_IVARATOR_SOURCES = "max.ivarator.sources";
+    public static final String MAX_IVARATOR_SOURCE_WAIT = "max.ivarator.source.wait";
 
     public static final String MAX_IVARATOR_RESULTS = "max.ivarator.results";
 
@@ -362,6 +363,7 @@ public class QueryOptions implements OptionDescriber {
     protected FileSortedSet.PersistOptions ivaratorPersistOptions = new FileSortedSet.PersistOptions();
 
     protected int maxIvaratorSources = 33;
+    protected long maxIvaratorSourceWait = 1000L * 60 * 30;
 
     protected long maxIvaratorResults = -1;
 
@@ -496,6 +498,7 @@ public class QueryOptions implements OptionDescriber {
         this.maxIndexRangeSplit = other.maxIndexRangeSplit;
         this.ivaratorMaxOpenFiles = other.ivaratorMaxOpenFiles;
         this.maxIvaratorSources = other.maxIvaratorSources;
+        this.maxIvaratorSourceWait = other.maxIvaratorSourceWait;
         this.maxIvaratorResults = other.maxIvaratorResults;
 
         this.yieldThresholdMs = other.yieldThresholdMs;
@@ -1000,6 +1003,14 @@ public class QueryOptions implements OptionDescriber {
 
     public void setMaxIvaratorSources(int maxIvaratorSources) {
         this.maxIvaratorSources = maxIvaratorSources;
+    }
+
+    public long getMaxIvaratorSourceWait() {
+        return maxIvaratorSourceWait;
+    }
+
+    public void setMaxIvaratorSourceWait(long maxIvaratorSourceWait) {
+        this.maxIvaratorSourceWait = maxIvaratorSourceWait;
     }
 
     public long getMaxIvaratorResults() {
@@ -1655,6 +1666,10 @@ public class QueryOptions implements OptionDescriber {
 
         if (options.containsKey(MAX_IVARATOR_SOURCES)) {
             this.setMaxIvaratorSources(Integer.parseInt(options.get(MAX_IVARATOR_SOURCES)));
+        }
+
+        if (options.containsKey(MAX_IVARATOR_SOURCE_WAIT)) {
+            this.setMaxIvaratorSourceWait(Long.parseLong(options.get(MAX_IVARATOR_SOURCE_WAIT)));
         }
 
         if (options.containsKey(MAX_IVARATOR_RESULTS)) {

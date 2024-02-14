@@ -63,6 +63,9 @@ else
   trap 'kill -WINCH $CMD_PID'  WINCH
   trap 'kill -USR2 $CMD_PID'  USR2
 
+  printenv > env.properties
+  $WILDFLY_HOME/bin/jboss-cli.sh --file=./runtime-config.cli --properties=env.properties
+
   eval "$@" "&"
   CMD_PID=${!}
 
