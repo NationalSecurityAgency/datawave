@@ -98,7 +98,7 @@ public class EdgeQueryConfiguration extends GenericQueryConfiguration implements
         setMaxQueryTerms(other.getMaxQueryTerms());
         setMaxPrefilterValues(other.getMaxPrefilterValues());
         setDateRangeType(other.getDateRangeType());
-        setAggregateResults(other.isAggregateResults());
+        setReduceResults(other.isReduceResults());
         setDateFilterScanLimit(other.getDateFilterScanLimit());
         setDateFilterSkipLimit(other.getDateFilterSkipLimit());
         setMaxQueryTerms(other.getMaxQueryTerms());
@@ -270,12 +270,12 @@ public class EdgeQueryConfiguration extends GenericQueryConfiguration implements
         this.maxPrefilterValues = maxPrefilterValues;
     }
 
-    public boolean isAggregateResults() {
+    public boolean isReduceResults() {
         return aggregateResults;
     }
 
-    public void setAggregateResults(boolean aggregateResults) {
-        this.aggregateResults = aggregateResults;
+    public void setReduceResults(boolean reduceResults) {
+        this.aggregateResults = reduceResults;
     }
 
     public EdgeQueryModel getEdgeQueryModel() {

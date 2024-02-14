@@ -104,7 +104,7 @@ public class DefaultExtendedEdgeQueryLogic extends EdgeQueryLogic {
             this.summaryInputType = config.isSummaryInputType();
         }
         if (allowOverrideIO && config.isOverRideOutput()) {
-            this.summaryOutputType = config.isAggregateResults();
+            this.summaryOutputType = config.isReduceResults();
         }
 
         boolean includeStats = config.includeStats();

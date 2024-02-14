@@ -207,7 +207,7 @@ public class EdgeExtendedSummaryConfiguration extends EdgeQueryConfiguration imp
         return includeRelationships;
     }
 
-    public boolean isAggregateResults() {
+    public boolean isReduceResults() {
         return aggregateResults;
     }
 

@@ -40,7 +40,7 @@ public class CountingShardQueryLogic extends ShardQueryLogic {
     @Override
     public GenericQueryConfiguration initialize(AccumuloClient client, Query settings, Set<Authorizations> runtimeQueryAuthorizations) throws Exception {
         GenericQueryConfiguration config = super.initialize(client, settings, runtimeQueryAuthorizations);
-        config.setAggregateResults(true);
+        config.setReduceResults(true);
         return config;
     }
 
