@@ -195,8 +195,9 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
 
         // load the predicates applied to all types
         predicates = new HashSet<>(context.getConfiguration().getTrimmedStringCollection(RECORD_PREDICATES));
-        // always add the discard interval predicate
+        // always add the discard interval predicates
         predicates.add(DataTypeDiscardIntervalPredicate.class.getName());
+        predicates.add(DataTypeDiscardFutureIntervalPredicate.class.getName());
 
         // default to true, but it can be disabled
         createSequenceFileName = context.getConfiguration().getBoolean(LOAD_SEQUENCE_FILE_NAME, true);

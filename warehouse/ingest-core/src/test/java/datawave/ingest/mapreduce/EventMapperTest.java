@@ -341,7 +341,7 @@ public class EventMapperTest {
     public void testDiscardInterval() throws IOException, InterruptedException {
         // event date < now minus discard interval
         long tomorrow = -1L * UIDConstants.MILLISECONDS_PER_DAY;
-        conf.setLong(record.getDataType().typeName() + "." + EventMapper.DISCARD_INTERVAL, tomorrow);
+        conf.setLong(record.getDataType().typeName() + "." + DataTypeDiscardIntervalPredicate.DISCARD_INTERVAL, tomorrow);
 
         eventMapper.setup(mapContext);
         eventMapper.map(new LongWritable(1), record, mapContext);
@@ -357,7 +357,7 @@ public class EventMapperTest {
     public void testFutureDiscardInterval() throws IOException, InterruptedException {
         // event date > now plus future discard interval
         long yesterday = -1L * UIDConstants.MILLISECONDS_PER_DAY;
-        conf.setLong(record.getDataType().typeName() + "." + EventMapper.DISCARD_INTERVAL, yesterday);
+        conf.setLong(record.getDataType().typeName() + "." + DataTypeDiscardFutureIntervalPredicate.DISCARD_FUTURE_INTERVAL, yesterday);
 
         eventMapper.setup(mapContext);
         eventMapper.map(new LongWritable(1), record, mapContext);
