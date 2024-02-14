@@ -30,6 +30,7 @@
         <module>data-dictionary-core</module>
         <module>edge-model-configuration-core</module>
         <module>ssdeep-common</module>
+        <module>ingest-ssdeep</module>
     </modules>
     <scm>
         <connection>scm:git:https://fixme/git/warehouse/</connection>
