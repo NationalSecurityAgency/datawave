@@ -104,6 +104,12 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
 
     public static final String RECORD_PREDICATES = "event.predicates";
 
+    /**
+     * number which will be used to evaluate whether or not an Event should be processed. If the Event.getEventDate() is less than (now + futureInterval) then
+     * it will be processed.
+     */
+    public static final String DISCARD_FUTURE_INTERVAL = "event.discard.future.interval";
+
     public static final String CONTEXT_WRITER_CLASS = "ingest.event.mapper.context.writer.class";
     public static final String CONTEXT_WRITER_OUTPUT_TABLE_COUNTERS = "ingest.event.mapper.context.writer.output.table.counters";
     public static final String FILE_NAME_COUNTERS = "ingest.event.mapper.file.name.counters";

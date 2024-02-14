@@ -30,6 +30,7 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
+import datawave.data.hash.UIDConstants;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
 import datawave.ingest.data.TypeRegistry;
@@ -334,6 +335,39 @@ public class EventMapperTest {
         // two fields mutations + LOAD_DATE + ORIG_FILE
         // previously this would have been zero
         assertEquals(4, written.size());
+    }
+
+    @Test
+    public void testDiscardInterval() throws IOException, InterruptedException {
+        // event date < now minus discard interval
+        long tomorrow = -1L * UIDConstants.MILLISECONDS_PER_DAY;
+        conf.setLong(record.getDataType().typeName() + "." + EventMapper.DISCARD_INTERVAL, tomorrow);
+
+        eventMapper.setup(mapContext);
+        eventMapper.map(new LongWritable(1), record, mapContext);
+        eventMapper.cleanup(mapContext);
+
+        Multimap<BulkIngestKey,Value> written = TestContextWriter.getWritten();
+
+        // discard interval lower bound is tomorrow. data from today should be dropped
+        assertEquals(0, written.size());
+    }
+
+    @Test
+    public void testFutureDiscardInterval() throws IOException, InterruptedException {
+        // event date > now plus future discard interval
+        long yesterday = -1L * UIDConstants.MILLISECONDS_PER_DAY;
+        conf.setLong(record.getDataType().typeName() + "." + EventMapper.DISCARD_INTERVAL, yesterday);
+
+        eventMapper.setup(mapContext);
+        eventMapper.map(new LongWritable(1), record, mapContext);
+        eventMapper.cleanup(mapContext);
+
+        Multimap<BulkIngestKey,Value> written = TestContextWriter.getWritten();
+
+        // future discard is yesterday. data from today should be dropped
+        assertEquals(0, written.size());
+
     }
 
     private Map.Entry<BulkIngestKey,Value> getMetric(Multimap<BulkIngestKey,Value> written) {
