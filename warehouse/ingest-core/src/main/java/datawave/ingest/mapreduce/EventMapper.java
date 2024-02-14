@@ -102,7 +102,6 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
 
     private static final Logger log = Logger.getLogger(EventMapper.class);
 
-    public static final String DISCARD_INTERVAL = DataTypeDiscardIntervalPredicate.DISCARD_INTERVAL;
     public static final String RECORD_PREDICATES = "event.predicates";
 
     public static final String CONTEXT_WRITER_CLASS = "ingest.event.mapper.context.writer.class";
