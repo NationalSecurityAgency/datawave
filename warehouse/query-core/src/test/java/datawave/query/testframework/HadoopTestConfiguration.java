@@ -3,6 +3,7 @@ package datawave.query.testframework;
 import java.util.HashMap;
 import java.util.Map;
 
+import datawave.ingest.mapreduce.DataTypeDiscardIntervalPredicate;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
@@ -58,7 +59,7 @@ public class HadoopTestConfiguration extends Configuration {
         this.set("multiple.numshards.enable", "false");
 
         // mapper options
-        this.set(EventMapper.DISCARD_INTERVAL, Long.toString(Long.MAX_VALUE));
+        this.set(DataTypeDiscardIntervalPredicate.DISCARD_INTERVAL, Long.toString(Long.MAX_VALUE));
         this.set(EventMapper.CONTEXT_WRITER_OUTPUT_TABLE_COUNTERS, Boolean.TRUE.toString());
         this.set(EventMapper.CONTEXT_WRITER_OUTPUT_TABLE_COUNTERS, Boolean.FALSE.toString());
         this.set(ShardedDataTypeHandler.NUM_SHARDS, "1");
