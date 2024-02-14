@@ -36,7 +36,7 @@ import datawave.util.time.DateHelper;
  * <p>
  * <br>
  * <table border="1">
- * <caption></caption>
+ * <caption>EventMetadata</caption>
  * <tr>
  * <th>Schema Type</th>
  * <th>Use</th>

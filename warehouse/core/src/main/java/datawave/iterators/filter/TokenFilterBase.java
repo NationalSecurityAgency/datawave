@@ -105,11 +105,12 @@ public abstract class TokenFilterBase extends AppliedRule {
     }
 
     /**
-     * Required by the {@code FilterRule} interface. Used to initialize the the {@code FilterRule} implementation
+     * Required by the {@code FilterRule} interface. Used to initialize the {@code FilterRule} implementation
      *
      * @param options
      *            {@code Map} object containing the TTL, TTL_UNITS, and MATCHPATTERN for the filter rule.
      * @param iterEnv
+     *            iterator environment
      * @see datawave.iterators.filter.AgeOffConfigParams
      */
     @Override

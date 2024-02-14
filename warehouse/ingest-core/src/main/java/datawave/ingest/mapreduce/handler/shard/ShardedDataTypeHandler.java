@@ -58,7 +58,7 @@ import datawave.webservice.common.logging.ThreadConfigurableLogger;
  * This class creates the following Mutations or Key/Values: <br>
  * <br>
  * <table border="1">
- * <caption></caption>
+ * <caption>SgardedDataType</caption>
  * <tr>
  * <th>Schema Type</th>
  * <th>Use</th>
