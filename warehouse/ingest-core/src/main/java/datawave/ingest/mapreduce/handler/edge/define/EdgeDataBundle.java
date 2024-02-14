@@ -114,6 +114,10 @@ public class EdgeDataBundle {
         }
     }
 
+    public void setMaskedVisibility(ColumnVisibility maskedVisibility) {
+        this.maskedVisibility = maskedVisibility;
+    }
+
     @SuppressWarnings("unchecked")
     public void initMarkings(Map<String, String> m1, Map<String, String> m2) {
         if (m1 != null) {
