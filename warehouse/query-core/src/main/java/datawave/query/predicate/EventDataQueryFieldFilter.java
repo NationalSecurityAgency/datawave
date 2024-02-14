@@ -35,6 +35,11 @@ public class EventDataQueryFieldFilter implements EventDataQueryFilter {
 
     /**
      * Initialize filter with an empty projection
+     *
+     * @param projections
+     *            the projection
+     * @param projectionType
+     *            the projection type
      */
     public EventDataQueryFieldFilter(Set<String> projections, Projection.ProjectionType projectionType) {
         this.keyProjection = new KeyProjection(projections, projectionType);
@@ -44,6 +49,7 @@ public class EventDataQueryFieldFilter implements EventDataQueryFilter {
      * Initiate from a KeyProjection
      *
      * @param projection
+     *            the projection
      */
     public EventDataQueryFieldFilter(KeyProjection projection) {
         this.keyProjection = projection;

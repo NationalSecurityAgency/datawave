@@ -50,14 +50,17 @@ import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.util.TypeMetadata;
 
 /**
+ * <p>
  * This visitor addresses the case when multiple ingest types share some but not all fields in a query
+ * </p>
  * <p>
  * Consider the query <code>(A AND B)</code> where term A maps to ingest type 1 and term B maps to ingest type 2. No document will ever satisfy this
  * intersection. Thus, this should prune to zero terms.
+ * </p>
  * <p>
  * Consider the query <code>(A AND (B OR C))</code> where term A and term B map to ingest type 1 and term C maps to ingest type 2. In this case term C should be
  * pruned from the nested union leaving the intersection <code>(A AND B)</code>
- * <p>
+ * </p>
  */
 public class IngestTypePruningVisitor extends BaseVisitor {
     private static final Logger log = Logger.getLogger(IngestTypePruningVisitor.class);

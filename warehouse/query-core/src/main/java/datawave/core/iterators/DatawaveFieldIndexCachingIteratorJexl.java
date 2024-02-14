@@ -1227,8 +1227,14 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
             }
         };
 
-        return IteratorThreadPoolManager.executeIvarator(runnable, DatawaveFieldIndexCachingIteratorJexl.this + " in " + boundingFiRange, this.initEnv);
-
+        try {
+            return IteratorThreadPoolManager.executeIvarator(runnable, DatawaveFieldIndexCachingIteratorJexl.this + " in " + boundingFiRange, this.initEnv);
+        } catch (Exception e) {
+            log.error("Failed to execute a fill Set", e);
+            // if the execute somehow failed, we need to return the pool source.
+            returnPoolSource(source);
+            throw new RuntimeException(e);
+        }
     }
 
     /**

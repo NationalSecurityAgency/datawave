@@ -738,7 +738,6 @@ public class CachedResultsBean {
      *            a query id
      * @return List of attribute names that can be used in subsequent queries
      *
-     * @return {@code datawave.webservice.result.GenericResponse<String>}
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user by specifying a chain of DNs of the identities to proxy
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
      * @ResponseHeader X-OperationTimeInMS time spent on the server performing the operation, does not account for network or result serialization
@@ -862,7 +861,6 @@ public class CachedResultsBean {
      *            additional name that this query can be retrieved by
      * @return name of the view for this query, use it as the table name in the SQL query
      *
-     * @return {@code datawave.webservice.result.GenericResponse<String>}
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user by specifying a chain of DNs of the identities to proxy
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
      * @ResponseHeader X-OperationTimeInMS time spent on the server performing the operation, does not account for network or result serialization
@@ -1096,7 +1094,6 @@ public class CachedResultsBean {
      *            view, queryId, or alias
      * @return number of results, columns contained in the results
      *
-     * @return {@code datawave.webservice.result.CachedResultsDescribeResponse<Description>}
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user by specifying a chain of DNs of the identities to proxy
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
      * @ResponseHeader X-OperationTimeInMS time spent on the server performing the operation, does not account for network or result serialization
@@ -1473,7 +1470,6 @@ public class CachedResultsBean {
      *            user defined id for this query
      * @return previous page of results
      *
-     * @return datawave.webservice.result.BaseQueryResponse
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user by specifying a chain of DNs of the identities to proxy
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
      * @RequestHeader query-session-id session id value used for load balancing purposes. query-session-id can be placed in the request in a Cookie header or as
@@ -1681,7 +1677,6 @@ public class CachedResultsBean {
      *            user defined id for this query
      * @return a page of results
      *
-     * @return datawave.webservice.result.BaseQueryResponse
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user by specifying a chain of DNs of the identities to proxy
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
      * @RequestHeader query-session-id session id value used for load balancing purposes. query-session-id can be placed in the request in a Cookie header or as

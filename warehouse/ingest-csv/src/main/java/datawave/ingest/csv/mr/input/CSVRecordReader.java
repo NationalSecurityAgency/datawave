@@ -37,7 +37,7 @@ public class CSVRecordReader extends CSVReaderBase implements EventFixer {
     private static final IngestConfiguration ingestConfig = IngestConfigurationFactory.getIngestConfiguration();
     private static final MarkingFunctions markingFunctions = MarkingFunctionsFactory.createMarkingFunctions();
 
-    private String csvEventId;
+    protected String csvEventId;
     private final Multimap<String,Object> metadataForValidation = ArrayListMultimap.create(100, 1);
     private String rawData = null;
 

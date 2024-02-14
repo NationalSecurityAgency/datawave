@@ -46,7 +46,11 @@ public class IntegerEncoding implements Serializable {
         this.limit = (int) calculatedLimit; // truncation is fine here.
     }
 
-    /** Return the maximum value this encoder can encode */
+    /**
+     * Return the maximum value this encoder can encode
+     *
+     * @return the limit
+     */
     public int getLimit() {
         return limit;
     }
@@ -55,13 +59,20 @@ public class IntegerEncoding implements Serializable {
         return length;
     }
 
-    /** Encode the provided value, return a string result */
+    /**
+     * Encode the provided value, return a string result
+     *
+     * @param value
+     *            integer value to encode
+     *
+     * @return the encoded string
+     */
     public String encode(int value) {
         return new String(encodeToBytes(value, new byte[length], 0));
     }
 
     /**
-     * encode the provided value, writing the result to the provided buffer starting offset
+     * Encode the provided value, writing the result to the provided buffer starting offset
      *
      * @param value
      *            the value to encode
@@ -114,6 +125,7 @@ public class IntegerEncoding implements Serializable {
      *
      * @param encodedValue
      *            the string to decode
+     *
      * @return the decoded result
      */
     public int decode(String encodedValue) {
