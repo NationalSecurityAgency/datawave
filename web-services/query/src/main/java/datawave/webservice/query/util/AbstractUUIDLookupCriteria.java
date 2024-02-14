@@ -16,6 +16,8 @@ public abstract class AbstractUUIDLookupCriteria {
     private HttpHeaders headersForStreamedResponse;
     private MultivaluedMap<String,String> queryParameters;
 
+    private String uuidTypeContext;
+
     /**
      * Constructor
      *
@@ -73,4 +75,19 @@ public abstract class AbstractUUIDLookupCriteria {
     }
 
     public abstract String getRawQueryString();
+
+    /**
+     * returns a context for the lookup request if any was specfied in the request. The lookup context is used to obtain alternate query logics for the lookup
+     * requests to use. This can be used to modify the types of responses the query operations provide (e.g., plaintext responses.)
+     *
+     * @return
+     */
+    public String getUUIDTypeContext() {
+        return uuidTypeContext;
+    }
+
+    public void setUUIDTypeContext(String uuidTypeContext) {
+        this.uuidTypeContext = uuidTypeContext;
+    }
+
 }
