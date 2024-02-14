@@ -31,7 +31,7 @@ import datawave.iterators.filter.ageoff.FilterOptions;
 import datawave.iterators.filter.ageoff.FilterRule;
 
 /**
- *
+ * File Rule Watch
  */
 public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
 
@@ -41,9 +41,13 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
 
     /**
      * @param fs
+     *            file system
      * @param filePath
+     *            path to the file
      * @param configuredDiff
+     *            configured diff
      * @throws IOException
+     *             if there is a problem reading the file
      */
     public FileRuleWatcher(FileSystem fs, Path filePath, long configuredDiff) throws IOException {
         this(fs, filePath, configuredDiff, null);
@@ -51,10 +55,15 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
 
     /**
      * @param fs
+     *            file system
      * @param filePath
+     *            path to the file
      * @param configuredDiff
+     *            configured diff
      * @param iterEnv
+     *            iterator environment
      * @throws IOException
+     *             if there is a problem reading the file
      */
     public FileRuleWatcher(FileSystem fs, Path filePath, long configuredDiff, IteratorEnvironment iterEnv) throws IOException {
         super(fs, filePath, configuredDiff);
@@ -63,8 +72,11 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
 
     /**
      * @param filePath
+     *            path to the file
      * @param configuredDiff
+     *            configured diff
      * @throws IOException
+     *             if there is an error reading the file
      */
     public FileRuleWatcher(Path filePath, long configuredDiff) throws IOException {
         this(filePath, configuredDiff, null);
@@ -72,9 +84,13 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
 
     /**
      * @param filePath
+     *            the path to the file
      * @param configuredDiff
+     *            configured diff
      * @param iterEnv
+     *            iterator environment
      * @throws IOException
+     *             if there is an error reading the file
      */
     public FileRuleWatcher(Path filePath, long configuredDiff, IteratorEnvironment iterEnv) throws IOException {
         super(filePath.getFileSystem(new Configuration()), filePath, configuredDiff);

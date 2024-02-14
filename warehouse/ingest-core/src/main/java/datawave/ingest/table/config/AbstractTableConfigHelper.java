@@ -110,6 +110,11 @@ public abstract class AbstractTableConfigHelper implements TableConfigHelper {
     /**
      * Copied from Accumulo 1.9 IteratorUtil
      *
+     * @param config
+     *            the configuration
+     * @param tableName
+     *            the table name
+     *
      * @return a map of the table properties
      */
     public static Map<String,String> generateInitialTableProperties(Configuration config, String tableName) {
