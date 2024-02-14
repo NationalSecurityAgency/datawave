@@ -9,7 +9,7 @@ import datawave.ingest.time.Now;
 
 public class DataTypeDiscardFutureIntervalPredicate implements RawRecordPredicate {
 
-    private static final Logger log = Logger.getLogger(DataTypeDiscardIntervalPredicate.class);
+    private static final Logger log = Logger.getLogger(DataTypeDiscardFutureIntervalPredicate.class);
 
     /**
      * number which will be used to evaluate whether or not an Event should be processed. If the Event.getEventDate() is less than (now + interval) then it will
