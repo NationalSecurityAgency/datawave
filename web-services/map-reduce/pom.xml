@@ -161,7 +161,7 @@
             <!-- This is needed in order to submit MapReduce jobs. -->
             <groupId>org.codehaus.jackson</groupId>
             <artifactId>jackson-mapper-asl</artifactId>
-            <version>1.9.13</version>
+            <version>${version.jackson-mapper-asl}</version>
             <scope>runtime</scope>
         </dependency>
         <dependency>

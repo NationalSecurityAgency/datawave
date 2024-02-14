@@ -43,7 +43,6 @@ import datawave.query.testframework.FileType;
 import datawave.query.testframework.GenericCityFields;
 import datawave.query.testframework.QueryLogicTestHarness;
 import datawave.query.testframework.QueryLogicTestHarness.DocumentChecker;
-import datawave.query.testframework.cardata.CarsDataType;
 import datawave.query.util.DateIndexHelperFactory;
 import datawave.query.util.MetadataHelperFactory;
 import datawave.security.authorization.DatawavePrincipal;
@@ -75,9 +74,12 @@ public class FacetedQueryLogicTest extends AbstractFunctionalQuery {
         dataTypes.add(new FacetedCitiesDataType(CitiesDataType.CityEntry.paris, generic));
         dataTypes.add(new FacetedCitiesDataType(CitiesDataType.CityEntry.rome, generic));
 
+        FacetQueryTestTableHelper facetQueryTestTableHelper = new FacetQueryTestTableHelper(FacetedQueryLogicTest.class.getName(), log, TEARDOWN.EVERY_OTHER,
+                        INTERRUPT.NEVER);
         accumuloSetup.setData(FileType.CSV, dataTypes);
         accumuloSetup.setAuthorizations(CitiesDataType.getTestAuths());
-        client = accumuloSetup.loadTables(log, TEARDOWN.EVERY_OTHER, INTERRUPT.NEVER);
+
+        client = accumuloSetup.loadTables(facetQueryTestTableHelper);
     }
 
     @Before
@@ -90,9 +92,9 @@ public class FacetedQueryLogicTest extends AbstractFunctionalQuery {
         FacetedQueryLogic facetLogic = new FacetedQueryLogic();
         facetLogic.setFacetedSearchType(FacetedSearchType.FIELD_VALUE_FACETS);
 
-        facetLogic.setFacetTableName(QueryTestTableHelper.FACET_TABLE_NAME);
-        facetLogic.setFacetMetadataTableName(QueryTestTableHelper.FACET_METADATA_TABLE_NAME);
-        facetLogic.setFacetHashTableName(QueryTestTableHelper.FACET_HASH_TABLE_NAME);
+        facetLogic.setFacetTableName(FacetQueryTestTableHelper.FACET_TABLE_NAME);
+        facetLogic.setFacetMetadataTableName(FacetQueryTestTableHelper.FACET_METADATA_TABLE_NAME);
+        facetLogic.setFacetHashTableName(FacetQueryTestTableHelper.FACET_HASH_TABLE_NAME);
 
         facetLogic.setMaximumFacetGrouping(200);
         facetLogic.setMinimumFacet(1);
@@ -150,7 +152,7 @@ public class FacetedQueryLogicTest extends AbstractFunctionalQuery {
         expected.add("STATE; veneto -- veneto//1");
         expected.add("STATE; viana do castelo -- viana do castelo//1");
 
-        String query = CitiesDataType.CityField.CONTINENT.name() + " == 'Europe'";
+        String query = CityField.CONTINENT.name() + " == 'Europe'";
 
         runTest(query, Collections.emptyMap(), expected);
     }
@@ -190,7 +192,7 @@ public class FacetedQueryLogicTest extends AbstractFunctionalQuery {
     @Override
     protected void testInit() {
         this.auths = CitiesDataType.getTestAuths();
-        this.documentKey = CitiesDataType.CityField.EVENT_ID.name();
+        this.documentKey = CityField.EVENT_ID.name();
     }
 
     @Override

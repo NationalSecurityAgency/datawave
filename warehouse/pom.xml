@@ -30,6 +30,7 @@
         <module>data-dictionary-core</module>
         <module>edge-model-configuration-core</module>
         <module>ssdeep-common</module>
+        <module>ingest-ssdeep</module>
     </modules>
     <scm>
         <connection>scm:git:https://fixme/git/warehouse/</connection>
@@ -338,7 +339,7 @@
             <dependency>
                 <groupId>org.codehaus.jackson</groupId>
                 <artifactId>jackson-mapper-asl</artifactId>
-                <version>1.9.13</version>
+                <version>${version.jackson-mapper-asl}</version>
             </dependency>
             <dependency>
                 <groupId>org.fusesource.jdbm</groupId>
@@ -358,7 +359,7 @@
             <dependency>
                 <groupId>org.json</groupId>
                 <artifactId>json</artifactId>
-                <version>20080701</version>
+                <version>${version.json}</version>
             </dependency>
             <dependency>
                 <groupId>org.mortbay.jetty</groupId>
@@ -373,7 +374,7 @@
             <dependency>
                 <groupId>org.python</groupId>
                 <artifactId>jython</artifactId>
-                <version>2.5.2b2-callable</version>
+                <version>${version.jython}</version>
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>
