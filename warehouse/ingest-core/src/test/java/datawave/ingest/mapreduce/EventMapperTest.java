@@ -202,7 +202,7 @@ public class EventMapperTest {
         assertEquals(4, written.size());
     }
 
-    public static class BaseEventPredicate implements RawRecordPredicate {
+    public abstract static class TestPredicate implements RawRecordPredicate {
         public static ThreadLocal<Set<String>> seenTypes = ThreadLocal.withInitial(() -> new HashSet<>());
         public static ThreadLocal<Set<RawRecordContainer>> allowed = ThreadLocal.withInitial(() -> new HashSet<>());
         public static ThreadLocal<Set<RawRecordContainer>> denied = ThreadLocal.withInitial(() -> new HashSet<>());
@@ -211,11 +211,6 @@ public class EventMapperTest {
             seenTypes.get().clear();
             allowed.get().clear();
             denied.get().clear();
-        }
-
-        @Override
-        public boolean shouldProcess(RawRecordContainer record) {
-            return true;
         }
 
         @Override
@@ -233,16 +228,33 @@ public class EventMapperTest {
             }
             return value;
         }
+
+        @Override
+        public int hashCode() {
+            return getClass().hashCode();
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            return getClass().equals(obj.getClass());
+        }
     }
 
-    public static class DroppingEventPredicate extends BaseEventPredicate implements RawRecordPredicate {
+    public static class AlwaysProcessPredicate extends TestPredicate {
+        @Override
+        public boolean shouldProcess(RawRecordContainer record) {
+            return true;
+        }
+    }
+
+    public static class DroppingAllPredicate extends TestPredicate {
         @Override
         public boolean shouldProcess(RawRecordContainer record) {
             return false;
         }
     }
 
-    public static class CantConfigureEventPredicate extends BaseEventPredicate implements RawRecordPredicate {
+    public static class CantConfigureEventPredicate extends AlwaysProcessPredicate implements RawRecordPredicate {
         @Override
         public void setConfiguration(String type, Configuration conf) {
             throw new RuntimeException();
@@ -252,51 +264,51 @@ public class EventMapperTest {
     @Test
     public void testBaseEventPredicates() throws IOException, InterruptedException {
         try {
-            conf.set(EventMapper.RECORD_PREDICATES, BaseEventPredicate.class.getName());
+            conf.set(EventMapper.RECORD_PREDICATES, AlwaysProcessPredicate.class.getName());
             eventMapper.setup(mapContext);
             eventMapper.map(new LongWritable(1), record, mapContext);
             eventMapper.cleanup(mapContext);
             Multimap<BulkIngestKey,Value> written = TestContextWriter.getWritten();
             assertEquals(5, written.size());
-            assertEquals(Sets.newHashSet("all", "file"), BaseEventPredicate.seenTypes.get());
-            assertEquals(0, BaseEventPredicate.denied.get().size());
-            assertEquals(1, BaseEventPredicate.allowed.get().size());
+            assertEquals(Sets.newHashSet("all", "file"), TestPredicate.seenTypes.get());
+            assertEquals(0, TestPredicate.denied.get().size());
+            assertEquals(1, TestPredicate.allowed.get().size());
         } finally {
-            BaseEventPredicate.reset();
+            TestPredicate.reset();
         }
     }
 
     @Test
     public void testTypePredicates() throws IOException, InterruptedException {
         try {
-            conf.set("file." + EventMapper.RECORD_PREDICATES, BaseEventPredicate.class.getName());
+            conf.set("file." + EventMapper.RECORD_PREDICATES, AlwaysProcessPredicate.class.getName());
             eventMapper.setup(mapContext);
             eventMapper.map(new LongWritable(1), record, mapContext);
             eventMapper.cleanup(mapContext);
             Multimap<BulkIngestKey,Value> written = TestContextWriter.getWritten();
             assertEquals(5, written.size());
-            assertEquals(Sets.newHashSet("file"), BaseEventPredicate.seenTypes.get());
-            assertEquals(0, BaseEventPredicate.denied.get().size());
-            assertEquals(1, BaseEventPredicate.allowed.get().size());
+            assertEquals(Sets.newHashSet("file"), TestPredicate.seenTypes.get());
+            assertEquals(0, TestPredicate.denied.get().size());
+            assertEquals(1, TestPredicate.allowed.get().size());
         } finally {
-            BaseEventPredicate.reset();
+            TestPredicate.reset();
         }
     }
 
     @Test
     public void testMultTypePredicates() throws IOException, InterruptedException {
         try {
-            conf.set("file." + EventMapper.RECORD_PREDICATES, BaseEventPredicate.class.getName() + "," + DroppingEventPredicate.class.getName());
+            conf.set("file." + EventMapper.RECORD_PREDICATES, AlwaysProcessPredicate.class.getName() + "," + DroppingAllPredicate.class.getName());
             eventMapper.setup(mapContext);
             eventMapper.map(new LongWritable(1), record, mapContext);
             eventMapper.cleanup(mapContext);
             Multimap<BulkIngestKey,Value> written = TestContextWriter.getWritten();
             assertEquals(0, written.size());
-            assertEquals(Sets.newHashSet("file"), BaseEventPredicate.seenTypes.get());
-            assertEquals(1, BaseEventPredicate.denied.get().size());
-            assertEquals(0, BaseEventPredicate.allowed.get().size());
+            assertEquals(Sets.newHashSet("file"), TestPredicate.seenTypes.get());
+            assertEquals(1, TestPredicate.denied.get().size());
+            // allowed size may be 1 or 0, depending on the order of the predicates in the set. No need to test allowed size.
         } finally {
-            BaseEventPredicate.reset();
+            TestPredicate.reset();
         }
     }
 
@@ -307,7 +319,7 @@ public class EventMapperTest {
             eventMapper.setup(mapContext);
             eventMapper.map(new LongWritable(1), record, mapContext);
         } finally {
-            BaseEventPredicate.reset();
+            TestPredicate.reset();
         }
     }
 
