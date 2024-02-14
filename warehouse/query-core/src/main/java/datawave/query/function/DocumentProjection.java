@@ -28,52 +28,13 @@ public class DocumentProjection implements DocumentPermutation {
     @SuppressWarnings("unused")
     private static final Logger log = Logger.getLogger(DocumentProjection.class);
 
-    private final boolean includeGroupingContext;
-    private final boolean reducedResponse;
     private final Projection projection;
 
-    /**
-     * should track document sizes
-     */
-    private boolean trackSizes = true;
-
-    @Deprecated
-    public DocumentProjection() {
-        this(false, false);
-    }
-
-    @Deprecated
-    public DocumentProjection(boolean includeGroupingContext, boolean reducedResponse) {
-        this.includeGroupingContext = includeGroupingContext;
-        this.reducedResponse = reducedResponse;
-        this.projection = new Projection();
-    }
-
-    public DocumentProjection(boolean includeGroupingContext, boolean reducedResponse, boolean trackSizes, Set<String> projections,
-                    Projection.ProjectionType projectionType) {
-        this.includeGroupingContext = includeGroupingContext;
-        this.reducedResponse = reducedResponse;
-        this.projection = new Projection(projections, projectionType);
-        this.trackSizes = trackSizes;
-    }
-
-    /*
-     * This contstructor will not include the grouping context and will not reduce the document
-     */
-    @Deprecated
     public DocumentProjection(Set<String> projections, Projection.ProjectionType projectionType) {
-        this(false, false, projections, projectionType);
+        this(new Projection(projections, projectionType));
     }
 
-    @Deprecated
-    public DocumentProjection(boolean includeGroupingContext, boolean reducedResponse, Set<String> projections, Projection.ProjectionType projectionType) {
-        this(includeGroupingContext, reducedResponse, true, projections, projectionType);
-    }
-
-    public DocumentProjection(boolean includeGroupingContext, boolean isReducedResponse, boolean isTrackSizes, Projection projection) {
-        this.includeGroupingContext = includeGroupingContext;
-        this.reducedResponse = isReducedResponse;
-        this.trackSizes = isTrackSizes;
+    public DocumentProjection(Projection projection) {
         this.projection = projection;
     }
 
