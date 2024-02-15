@@ -102,6 +102,10 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
 
     private static final Logger log = Logger.getLogger(EventMapper.class);
 
+    // for backward compatibility, these DISCARD constants are maintained here as well
+    public static final String DISCARD_INTERVAL = DataTypeDiscardIntervalPredicate.DISCARD_INTERVAL;
+    public static final String DISCARD_FUTURE_INTERVAL = DataTypeDiscardFutureIntervalPredicate.DISCARD_FUTURE_INTERVAL;
+
     public static final String RECORD_PREDICATES = "event.predicates";
 
     public static final String CONTEXT_WRITER_CLASS = "ingest.event.mapper.context.writer.class";
