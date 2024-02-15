@@ -1,4 +1,4 @@
-package datawave.query.tables;
+package datawave.query.tables.ssdeep;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -26,7 +26,7 @@ import datawave.core.query.logic.BaseQueryLogic;
 import datawave.core.query.logic.QueryLogicTransformer;
 import datawave.microservice.query.Query;
 import datawave.query.config.SSDeepSimilarityQueryConfiguration;
-import datawave.query.transformer.SSDeepSimilarityQueryTransformer;
+import datawave.query.tables.ScannerFactory;
 import datawave.util.ssdeep.ChunkSizeEncoding;
 import datawave.util.ssdeep.IntegerEncoding;
 import datawave.util.ssdeep.NGramGenerator;
@@ -109,9 +109,9 @@ public class SSDeepSimilarityQueryLogic extends BaseQueryLogic<Map.Entry<Key,Val
             return pos > 0 ? k.substring(pos + 1) : k;
         }).map(SSDeepHash::parse).collect(Collectors.toSet());
 
-        final NGramGenerator nGramEngine = new NGramGenerator(7);
-        log.info("Pre-processing " + queries.size() + " SSDeepHash queries");
         final int maxRepeatedCharacters = config.getMaxRepeatedCharacters();
+        final NGramGenerator nGramEngine = new NGramGenerator(config.getNGramSize(), maxRepeatedCharacters, config.getMinHashSize());
+        log.info("Pre-processing " + queries.size() + " SSDeepHash queries");
         if (maxRepeatedCharacters > 0) {
             log.info("Normalizing SSDeepHashes to remove long runs of consecutive characters");
             queries = queries.stream().map(h -> h.normalize(maxRepeatedCharacters)).collect(Collectors.toSet());
@@ -170,6 +170,7 @@ public class SSDeepSimilarityQueryLogic extends BaseQueryLogic<Map.Entry<Key,Val
         return AccumuloConnectionFactory.Priority.NORMAL;
     }
 
+    @SuppressWarnings("rawtypes")
     @Override
     public QueryLogicTransformer getTransformer(Query settings) {
         final SSDeepSimilarityQueryConfiguration config = getConfig();

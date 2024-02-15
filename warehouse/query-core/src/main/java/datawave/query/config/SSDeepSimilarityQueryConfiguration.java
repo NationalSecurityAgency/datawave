@@ -13,14 +13,17 @@ import datawave.microservice.query.QueryImpl;
 import datawave.util.ssdeep.BucketAccumuloKeyGenerator;
 import datawave.util.ssdeep.ChunkSizeEncoding;
 import datawave.util.ssdeep.IntegerEncoding;
+import datawave.util.ssdeep.NGramGenerator;
 import datawave.util.ssdeep.NGramTuple;
 import datawave.util.ssdeep.SSDeepHash;
 
 public class SSDeepSimilarityQueryConfiguration extends GenericQueryConfiguration {
 
     int queryThreads = 100;
-    int maxRepeatedCharacters = 3;
 
+    int ngramSize = NGramGenerator.DEFAULT_NGRAM_SIZE;
+    int maxRepeatedCharacters = SSDeepHash.DEFAULT_MAX_REPEATED_CHARACTERS;
+    int minHashSize = NGramGenerator.DEFAULT_MIN_HASH_SIZE;
     int indexBuckets = BucketAccumuloKeyGenerator.DEFAULT_BUCKET_COUNT;
     int bucketEncodingBase = BucketAccumuloKeyGenerator.DEFAULT_BUCKET_ENCODING_BASE;
     int bucketEncodingLength = BucketAccumuloKeyGenerator.DEFAULT_BUCKET_ENCODING_LENGTH;
@@ -89,12 +92,28 @@ public class SSDeepSimilarityQueryConfiguration extends GenericQueryConfiguratio
         this.queryThreads = queryThreads;
     }
 
+    public int getNGramSize() {
+        return ngramSize;
+    }
+
+    public void setNGramSize(int ngramSize) {
+        this.ngramSize = ngramSize;
+    }
+
     public int getMaxRepeatedCharacters() {
         return maxRepeatedCharacters;
     }
 
     public void setMaxRepeatedCharacters(int maxRepeatedCharacters) {
         this.maxRepeatedCharacters = maxRepeatedCharacters;
+    }
+
+    public int getMinHashSize() {
+        return minHashSize;
+    }
+
+    public void setMinHashSize(int minHashSize) {
+        this.minHashSize = minHashSize;
     }
 
     public int getBucketEncodingBase() {

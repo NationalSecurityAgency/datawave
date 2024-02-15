@@ -1,4 +1,4 @@
-package datawave.query.transformer;
+package datawave.query.tables.ssdeep;
 
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -23,6 +23,7 @@ import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
 import datawave.query.config.SSDeepSimilarityQueryConfiguration;
+import datawave.query.tables.ssdeep.SSDeepSimilarityQueryTransformer;
 import datawave.util.ssdeep.NGramTuple;
 import datawave.util.ssdeep.SSDeepHash;
 import datawave.webservice.query.result.event.DefaultEvent;
