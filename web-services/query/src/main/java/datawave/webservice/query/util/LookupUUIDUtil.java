@@ -1077,7 +1077,7 @@ public class LookupUUIDUtil {
      *
      * @param lookupContext additional information about the lookup purpose or type.
      *
-     * @param uuidTypeValueTerm A token to evaluate as a possible UUID field/value term
+     * @param possibleUUIDTerm A token to evaluate as a possible UUID field/value term
      *
      * @param logicName The existing assigned query logic name, if any
      *
