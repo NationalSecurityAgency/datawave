@@ -12,6 +12,7 @@ import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.TableOperations;
+import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.conf.Property;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -21,12 +22,9 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
-import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.helpers.PrintUtility;
-import datawave.ingest.mapreduce.handler.facet.FacetHandler;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
-import datawave.ingest.table.config.FacetTableConfigHelper;
 import datawave.ingest.table.config.MetadataTableConfigHelper;
 import datawave.ingest.table.config.ShardTableConfigHelper;
 import datawave.ingest.table.config.TableConfigHelper;
@@ -64,7 +62,7 @@ public class QueryTestTableHelper {
                     throws AccumuloSecurityException, AccumuloException, TableExistsException, TableNotFoundException {
         // create mock instance and connector
         InMemoryInstance i = new InMemoryInstance(instanceName);
-        this.client = new InMemoryAccumuloClient("root", i);
+        this.client = RebuildingScannerTestHelper.getClient(i, "root", new PasswordToken(""), teardown, interrupt);
         this.log = log;
 
         createTables();
@@ -82,7 +80,6 @@ public class QueryTestTableHelper {
     }
 
     public void dumpTable(String table, Authorizations auths) throws TableNotFoundException {
-        TableOperations tops = client.tableOperations();
         Scanner scanner = client.createScanner(table, auths);
         Iterator<Map.Entry<Key,Value>> iterator = scanner.iterator();
         System.out.println("*************** " + table + " ********************");
@@ -121,7 +118,7 @@ public class QueryTestTableHelper {
     }
 
     /**
-     * Configures all of the default tables and associates a {@link BatchWriterConfig} object for ach table.
+     * Configures all the default tables and associates a {@link BatchWriterConfig} object for ach table.
      *
      * @param writer
      *            a mock writer
