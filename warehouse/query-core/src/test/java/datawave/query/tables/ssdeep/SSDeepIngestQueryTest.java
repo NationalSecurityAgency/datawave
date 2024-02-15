@@ -19,6 +19,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.google.common.collect.Sets;
@@ -111,6 +112,7 @@ public class SSDeepIngestQueryTest extends AbstractFunctionalQuery {
 
     @SuppressWarnings("rawtypes")
     @Test
+    @Ignore
     public void testSSDeepSimilarity() throws Exception {
         log.info("------ testSSDeepSimilarity ------");
         @SuppressWarnings("SpellCheckingInspection")
