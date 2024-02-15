@@ -85,6 +85,7 @@
         <version.json>20231013</version.json>
         <version.jts>1.19.0</version.jts>
         <version.junit>4.13.2</version.junit>
+        <version.junit.bom>5.10.2</version.junit.bom>
         <version.jython>2.7.2b2</version.jython>
         <version.kryo>2.20</version.kryo>
         <version.kryonet>2.20</version.kryonet>
