@@ -14,22 +14,15 @@ import java.util.function.Consumer;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
-import org.apache.accumulo.core.client.BatchDeleter;
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.ConditionalWriter;
 import org.apache.accumulo.core.client.ConditionalWriterConfig;
 import org.apache.accumulo.core.client.IteratorSetting;
-import org.apache.accumulo.core.client.MultiTableBatchWriter;
 import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.accumulo.core.client.admin.InstanceOperations;
-import org.apache.accumulo.core.client.admin.NamespaceOperations;
-import org.apache.accumulo.core.client.admin.ReplicationOperations;
-import org.apache.accumulo.core.client.admin.SecurityOperations;
-import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.core.client.sample.SamplerConfiguration;
 import org.apache.accumulo.core.client.security.tokens.AuthenticationToken;
 import org.apache.accumulo.core.clientImpl.ClientContext;
@@ -72,7 +65,7 @@ public class RebuildingScannerTestHelper {
         RANDOM_SANS_CONSISTENCY(RandomTeardownWithoutConsistency.class),
         EVERY_OTHER_SANS_CONSISTENCY(EveryOtherTeardownWithoutConsistency.class);
 
-        private Class<? extends TeardownListener> tclass;
+        private final Class<? extends TeardownListener> tclass;
 
         TEARDOWN(Class<? extends TeardownListener> tclass) {
             this.tclass = tclass;
@@ -94,7 +87,7 @@ public class RebuildingScannerTestHelper {
         FI_EVERY_OTHER(FiEveryOtherInterrupt.class),
         RANDOM_HIGH(HighRandomInterrupt.class);
 
-        private Class<? extends InterruptListener> iclass;
+        private final Class<? extends InterruptListener> iclass;
 
         INTERRUPT(Class<? extends InterruptListener> iclass) {
             this.iclass = iclass;
@@ -262,22 +255,22 @@ public class RebuildingScannerTestHelper {
     }
 
     public static AccumuloClient getClient(InMemoryInstance i, String user, byte[] pass, TEARDOWN teardown, INTERRUPT interrupt)
-                    throws AccumuloException, AccumuloSecurityException {
+                    throws AccumuloSecurityException {
         return new RebuildingAccumuloClient(user, i, teardown, interrupt);
     }
 
     public static AccumuloClient getClient(InMemoryInstance i, String user, ByteBuffer pass, TEARDOWN teardown, INTERRUPT interrupt)
-                    throws AccumuloException, AccumuloSecurityException {
+                    throws AccumuloSecurityException {
         return new RebuildingAccumuloClient(user, i, teardown, interrupt);
     }
 
     public static AccumuloClient getClient(InMemoryInstance i, String user, CharSequence pass, TEARDOWN teardown, INTERRUPT interrupt)
-                    throws AccumuloException, AccumuloSecurityException {
+                    throws AccumuloSecurityException {
         return new RebuildingAccumuloClient(user, i, teardown, interrupt);
     }
 
     public static AccumuloClient getClient(InMemoryInstance i, String principal, AuthenticationToken token, TEARDOWN teardown, INTERRUPT interrupt)
-                    throws AccumuloException, AccumuloSecurityException {
+                    throws AccumuloSecurityException {
         return new RebuildingAccumuloClient(principal, i, teardown, interrupt);
     }
 
@@ -288,14 +281,14 @@ public class RebuildingScannerTestHelper {
     }
 
     public static class RebuildingIterator implements Iterator<Map.Entry<Key,Value>> {
-        private InMemoryScannerBase baseScanner;
+        private final InMemoryScannerBase baseScanner;
         private Iterator<Map.Entry<Key,Value>> delegate;
         private final ScannerRebuilder scanner;
         private final TeardownListener teardown;
         private final InterruptListener interruptListener;
         private Map.Entry<Key,Value> next = null;
         private Map.Entry<Key,Value> lastKey = null;
-        private KryoDocumentDeserializer deserializer = new KryoDocumentDeserializer();
+        private final KryoDocumentDeserializer deserializer = new KryoDocumentDeserializer();
         private boolean initialized = false;
 
         public RebuildingIterator(InMemoryScannerBase baseScanner, ScannerRebuilder scanner, TeardownListener teardown, InterruptListener interruptListener) {
@@ -390,7 +383,7 @@ public class RebuildingScannerTestHelper {
                             }
                         } else if (hasNext) {
                             if (teardown.checkConsistency()) {
-                                // if we are dealing with a final document, then both prebuild and postbuild must be returning a final document
+                                // if we are dealing with a final document, then both pre-build and post-build must be returning a final document
                                 // otherwise the keys need to be identical save for the timestamp
                                 boolean nextFinal = FinalDocumentTrackingIterator.isFinalDocumentKey(next.getKey());
                                 boolean rebuildNextFinal = FinalDocumentTrackingIterator.isFinalDocumentKey(rebuildNext.getKey());
@@ -682,8 +675,8 @@ public class RebuildingScannerTestHelper {
         }
 
         @Override
-        public void fetchColumn(Text colFam, Text colQual) {
-            delegate.fetchColumn(colFam, colQual);
+        public void fetchColumn(Text colFam, Text colQualifier) {
+            delegate.fetchColumn(colFam, colQualifier);
         }
 
         @Override
