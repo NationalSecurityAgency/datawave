@@ -318,7 +318,9 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
      * Specify the working directory, fs.getWorkingDirectory() doesn't work with ViewFS.
      *
      * @param conf
+     *            the Hadoop configuration object
      * @param path
+     *            path to the Hadoop working directory
      */
     public static void setWorkingDirectory(Configuration conf, String path) {
         conf.set(WORKING_DIRECTORY, path);
@@ -667,6 +669,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
      *            the Hadoop configuration object
      * @return the BASE64-encoded password
      * @throws IOException
+     *             if there is an error reading the file
      * @see #setInputInfo(Job, String, byte[], String, Authorizations)
      */
     protected static byte[] getPassword(Configuration conf) throws IOException {
@@ -804,6 +807,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
          * @param scanner
          *            the scanner to configure
          * @throws AccumuloException
+         *             if there is an error with Accumulo
          */
         protected void setupIterators(Configuration conf, BatchScanner scanner) throws AccumuloException {
             List<AccumuloIterator> iterators = getIterators(conf);
