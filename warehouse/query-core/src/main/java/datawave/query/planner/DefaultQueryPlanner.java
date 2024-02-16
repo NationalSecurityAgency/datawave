@@ -682,7 +682,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
         // now check whether we are over the ivarator limit
         if (maxIvaratorThreshold >= 0) {
-            NodeTypeCount nodeCount = NodeTypeCountVisitor.countNodes(queryTree);
+            NodeTypeCount nodeCount = NodeTypeCountVisitor.countNodes(queryTree, QueryPropertyMarker.MarkerType.EXCEEDED_VALUE.getLabel(),
+                            QueryPropertyMarker.MarkerType.EXCEEDED_OR.getLabel());
             int totalIvarators = nodeCount.getTotal(QueryPropertyMarker.MarkerType.EXCEEDED_VALUE)
                             + nodeCount.getTotal(QueryPropertyMarker.MarkerType.EXCEEDED_OR);
             if (totalIvarators > maxIvaratorThreshold) {

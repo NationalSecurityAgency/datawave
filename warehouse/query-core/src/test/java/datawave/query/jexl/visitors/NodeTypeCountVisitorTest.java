@@ -8,6 +8,12 @@ import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.INDEX_HOLE;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.jexl3.parser.ASTAddNode;
 import org.apache.commons.jexl3.parser.ASTAndNode;
@@ -59,10 +65,12 @@ import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.commons.jexl3.parser.ParserTreeConstants;
+import org.apache.commons.jexl3.parser.RandomTreeBuilder;
 import org.junit.Test;
 
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.NodeTypeCount;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
 
 public class NodeTypeCountVisitorTest {
 
@@ -337,5 +345,21 @@ public class NodeTypeCountVisitorTest {
 
     private NodeTypeCount count(JexlNode script) {
         return NodeTypeCountVisitor.countNodes(script);
+    }
+
+    @Test
+    public void testMassiveTree() {
+        HashMap<String,Integer> expected = new HashMap<>();
+        ASTJexlScript tree = createMassiveTree(expected);
+        NodeTypeCount counts = NodeTypeCountVisitor.countNodes(tree);
+        for (Map.Entry<String,Integer> expectedEntry : expected.entrySet()) {
+            assertTrue("Missing type " + expectedEntry.getKey(), counts.hasAny(expectedEntry.getKey()));
+            assertEquals("Counts mismatch for " + expectedEntry.getKey(), expectedEntry.getValue().intValue(), counts.getTotal(expectedEntry.getKey()));
+        }
+        assertEquals(expected.size(), counts.getTotalDistinctTypes());
+    }
+
+    private ASTJexlScript createMassiveTree(HashMap<String,Integer> counts) {
+        return RandomTreeBuilder.build(counts, 100000);
     }
 }
