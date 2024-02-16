@@ -273,10 +273,13 @@ public class JexlASTHelperTest {
     @Test
     public void testNormalizeLiteral() throws Throwable {
         LcNoDiacriticsType normalizer = new LcNoDiacriticsType();
+        // FOO == '1' and (FOO == '2' and (FOO == '3' or FOO == '4'))
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("F == 'aSTrInG'");
-        if (log.isDebugEnabled()) {
-            PrintingVisitor.printQuery(script);
-        }
+        // ASTJexlScript script = JexlASTHelper.parseJexlQuery(
+        // "FOO == '1' and (FOO == '2' and (FOO == '3' or FOO == '4') and FOO == '5' and F == '6' and H == '7' and I == '8' and J == '9' and K == '10')");
+
+        PrintingVisitor.printQuery(script);
+
         JexlNode literal = script.jjtGetChild(0).jjtGetChild(1);
         ASTStringLiteral stringLiteral = JexlASTHelper.normalizeLiteral(literal, normalizer);
         assertEquals("astring", stringLiteral.getLiteral());

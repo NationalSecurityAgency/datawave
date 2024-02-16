@@ -336,7 +336,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                     if (log.isTraceEnabled()) {
                         DefaultQueryPlanner.logTrace(PrintingVisitor.formattedQueryStringList(script), "VistorFunction::apply method");
                     } else if (log.isDebugEnabled()) {
-                        DefaultQueryPlanner.logDebug(PrintingVisitor.formattedQueryStringList(script, DefaultQueryPlanner.maxChildNodesToPrint),
+                        DefaultQueryPlanner.logDebug(PrintingVisitor.formattedQueryStringList(script, DefaultQueryPlanner.maxChildNodesToPrint, 150),
                                         "VistorFunction::apply method");
                     }
 
