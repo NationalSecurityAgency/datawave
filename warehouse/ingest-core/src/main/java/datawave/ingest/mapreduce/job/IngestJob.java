@@ -682,7 +682,7 @@ public class IngestJob implements Tool {
             } else if (args[i].equals("-cacheBaseDir")) {
                 cacheBaseDir = args[++i];
             } else if (args[i].equals("-cacheJars")) {
-                String[] jars = StringUtils.trimAndRemoveEmptyStrings(args[++i].replaceAll("\\s+", "").split("\\s{0,1},\\s{0,1}"));
+                String[] jars = StringUtils.trimAndRemoveEmptyStrings(args[++i].replaceAll("\\s+", "").split(","));
                 for (String jarString : jars) {
                     File jar = new File(jarString);
                     Path file = new Path(cacheBaseDir, jar.getName());
