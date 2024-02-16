@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.commons.jexl3.parser.Node;
@@ -28,8 +29,22 @@ public class NodeTypeCount {
         this.types = null;
     }
 
-    public NodeTypeCount(Set<String> types) {
-        this.types = types;
+    public NodeTypeCount(Set<Object> types) {
+        this.types = types.stream().map(o -> getLabel(o)).collect(Collectors.toSet());
+    }
+
+    public String getLabel(Object o) {
+        if (o instanceof String) {
+            return ((String) o);
+        } else if (o instanceof Class) {
+            return ((Class) o).getName();
+        } else if (o instanceof MarkerType) {
+            return ((MarkerType) o).getLabel();
+        } else if (o instanceof Node) {
+            return o.getClass().getName();
+        } else {
+            return String.valueOf(o);
+        }
     }
 
     /**
@@ -116,7 +131,7 @@ public class NodeTypeCount {
     }
 
     /**
-     * Return whether or not at least one of the specified node types was found.
+     * Return whether or not the specified node type was found.
      *
      * @param type
      *            the node type
@@ -127,7 +142,7 @@ public class NodeTypeCount {
     }
 
     /**
-     * Return whether or not at least one of the specified node types was found.
+     * Return whether or not the specified node type was found.
      *
      * @param type
      *            the node type
@@ -138,7 +153,7 @@ public class NodeTypeCount {
     }
 
     /**
-     * Return whether or not at least one of the specified types was found.
+     * Return whether or not the specified type was found.
      *
      * @param type
      *            the node type
@@ -149,15 +164,15 @@ public class NodeTypeCount {
     }
 
     @SuppressWarnings("unchecked")
+    /**
+     * Return whether or not the specified type was found.
+     *
+     * @param type
+     *            the node type
+     * @return true if the specified type was found, or false otherwise
+     */
     private boolean isPresent(Object type) {
-        if (type instanceof Class && Node.class.isAssignableFrom((Class<?>) type)) {
-            return isPresent((Class<? extends Node>) type);
-        } else if (type instanceof MarkerType) {
-            return isPresent((MarkerType) type);
-        } else if (type instanceof String) {
-            return isPresent((String) type);
-        }
-        return false;
+        return isPresent(getLabel(type));
     }
 
     /**

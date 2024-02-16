@@ -106,13 +106,13 @@ import datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType;
 public class NodeTypeCountVisitor extends ParserVisitor {
 
     // the types we care about
-    private final Set<String> types;
+    private final Set<Object> types;
 
     public NodeTypeCountVisitor() {
         this.types = Collections.emptySet();
     }
 
-    public NodeTypeCountVisitor(Set<String> types) {
+    public NodeTypeCountVisitor(Set<Object> types) {
         this.types = types;
     }
 
@@ -120,11 +120,11 @@ public class NodeTypeCountVisitor extends ParserVisitor {
         return (NodeTypeCount) script.jjtAccept(new NodeTypeCountVisitor(), null);
     }
 
-    public static <T extends JexlNode> NodeTypeCount countNodes(T script, String... types) {
+    public static <T extends JexlNode> NodeTypeCount countNodes(T script, Object... types) {
         return (NodeTypeCount) script.jjtAccept(new NodeTypeCountVisitor(new HashSet<>(Arrays.asList(types))), null);
     }
 
-    public static <T extends JexlNode> NodeTypeCount countNodes(T script, Collection<String> types) {
+    public static <T extends JexlNode> NodeTypeCount countNodes(T script, Collection<Object> types) {
         return (NodeTypeCount) script.jjtAccept(new NodeTypeCountVisitor(new HashSet<>(types)), null);
     }
 

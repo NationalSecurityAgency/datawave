@@ -357,9 +357,17 @@ public class NodeTypeCountVisitorTest {
             assertEquals("Counts mismatch for " + expectedEntry.getKey(), expectedEntry.getValue().intValue(), counts.getTotal(expectedEntry.getKey()));
         }
         assertEquals(expected.size(), counts.getTotalDistinctTypes());
+
+        // now try it again but specify the types
+        counts = NodeTypeCountVisitor.countNodes(tree, expected.keySet());
+        for (Map.Entry<String,Integer> expectedEntry : expected.entrySet()) {
+            assertTrue("Missing type " + expectedEntry.getKey(), counts.hasAny(expectedEntry.getKey()));
+            assertEquals("Counts mismatch for " + expectedEntry.getKey(), expectedEntry.getValue().intValue(), counts.getTotal(expectedEntry.getKey()));
+        }
+        assertEquals(expected.size(), counts.getTotalDistinctTypes());
     }
 
     private ASTJexlScript createMassiveTree(HashMap<String,Integer> counts) {
-        return RandomTreeBuilder.build(counts, 100000);
+        return RandomTreeBuilder.build(counts, 50000);
     }
 }

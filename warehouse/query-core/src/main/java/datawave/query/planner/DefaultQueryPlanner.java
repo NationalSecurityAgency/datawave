@@ -682,8 +682,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
         // now check whether we are over the ivarator limit
         if (maxIvaratorThreshold >= 0) {
-            NodeTypeCount nodeCount = NodeTypeCountVisitor.countNodes(queryTree, QueryPropertyMarker.MarkerType.EXCEEDED_VALUE.getLabel(),
-                            QueryPropertyMarker.MarkerType.EXCEEDED_OR.getLabel());
+            NodeTypeCount nodeCount = NodeTypeCountVisitor.countNodes(queryTree, QueryPropertyMarker.MarkerType.EXCEEDED_VALUE,
+                            QueryPropertyMarker.MarkerType.EXCEEDED_OR);
             int totalIvarators = nodeCount.getTotal(QueryPropertyMarker.MarkerType.EXCEEDED_VALUE)
                             + nodeCount.getTotal(QueryPropertyMarker.MarkerType.EXCEEDED_OR);
             if (totalIvarators > maxIvaratorThreshold) {
@@ -938,7 +938,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 Map<String,IndexLookup> indexLookupMap = new HashMap<>();
 
                 // Check if there is any regex to expand.
-                NodeTypeCount nodeCount = NodeTypeCountVisitor.countNodes(config.getQueryTree());
+                NodeTypeCount nodeCount = NodeTypeCountVisitor.countNodes(config.getQueryTree(), ASTNRNode.class, ASTERNode.class, BOUNDED_RANGE,
+                                ASTFunctionNode.class, EXCEEDED_VALUE);
                 if (nodeCount.hasAny(ASTNRNode.class, ASTERNode.class)) {
                     config.setQueryTree(
                                     timedExpandRegex(timers, "Expand Regex", config.getQueryTree(), config, metadataHelper, scannerFactory, indexLookupMap));
@@ -1608,7 +1609,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         config.setExpandAllTerms(true);
 
         // Check if there is any regex to expand after pulling up delayed predicates.
-        NodeTypeCount nodeCount = NodeTypeCountVisitor.countNodes(config.getQueryTree());
+        NodeTypeCount nodeCount = NodeTypeCountVisitor.countNodes(config.getQueryTree(), ASTNRNode.class, ASTERNode.class, BOUNDED_RANGE, ASTFunctionNode.class,
+                        EXCEEDED_VALUE);
         if (nodeCount.hasAny(ASTNRNode.class, ASTERNode.class)) {
             config.setQueryTree(RegexIndexExpansionVisitor.expandRegex(config, scannerFactory, helper, indexLookupMap, config.getQueryTree()));
             if (log.isDebugEnabled()) {
