@@ -18,8 +18,8 @@ public class SSDeepHashScorer {
     }
 
     /**
-     * Compare two ssdeep hashes, returning a score between 0 to 100 that indicates similarity. A score of 0 means that the items are not similar at all whereas
-     * a score of 100 indicates a high degree of similarity.
+     * Compare two ssdeep hashes, returning a score between 0 and 100 that indicates similarity. A score of 0 means that the items are not similar at all
+     * whereas a score of 100 indicates a high degree of similarity.
      *
      * @param signature1
      *            the first object to be compared.
@@ -72,6 +72,15 @@ public class SSDeepHashScorer {
     /**
      * This is the low level chunk scoring algorithm. It takes two chunks and scores them on a scale of 0-100 where 0 is a terrible match and 100 is a great
      * match. The chunkSize is used to cope with very small messages.
+     *
+     * @param s1
+     *            chunk 1
+     * @param s2
+     *            chunk 2
+     * @param chunkSize
+     *            size of the chunk
+     *
+     * @return score of 0-100 depending on matching calculation
      */
     private static int scoreChunks(final String s1, final String s2, final long chunkSize) {
         final int len1 = s1.length();
