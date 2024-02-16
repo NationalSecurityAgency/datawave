@@ -11,6 +11,37 @@ import org.junit.Test;
 
 public abstract class BufferedFileBackedRewritableSortedSetTest<K,V> extends BufferedFileBackedSortedSetTest<Map.Entry<K,V>> {
 
+    /**
+     * Create a key given the specified value. This key should sort in the same way the underlying byte array will sort against other byte array.
+     *
+     * @param values
+     * @return The key
+     */
+    public abstract K createKey(byte[] values);
+
+    /**
+     * Create a value given the specified value.
+     *
+     * @param values
+     * @return The value
+     */
+    public abstract V createValue(byte[] values);
+
+    /**
+     * Test whether the key and value match the expected key and value using junit assertions and hence will throw and exeption if they do not match.
+     *
+     * @param expected
+     *            The expected key, value
+     * @param value
+     *            The key, value being tested
+     */
+    public abstract void testFullEquality(Map.Entry<K,V> expected, Map.Entry<K,V> value);
+
+    /**
+     * Get a rewrite strategy. This strategy should allow rewrites if the value is smaller.
+     *
+     * @return the rewrite strategy appropriate for key and value types
+     */
     @Override
     public abstract RewritableSortedSet.RewriteStrategy<Map.Entry<K,V>> getRewriteStrategy();
 
@@ -20,12 +51,6 @@ public abstract class BufferedFileBackedRewritableSortedSetTest<K,V> extends Buf
         Arrays.fill(vbuffer, (byte) (values[0] + 1));
         return new UnmodifiableMapEntry(createKey(values), createValue(vbuffer));
     }
-
-    public abstract K createKey(byte[] values);
-
-    public abstract V createValue(byte[] values);
-
-    public abstract void testFullEquality(Map.Entry<K,V> expected, Map.Entry<K,V> value);
 
     @Test
     public void testRewrite() throws Exception {
@@ -47,6 +72,7 @@ public abstract class BufferedFileBackedRewritableSortedSetTest<K,V> extends Buf
             data2[i + template.length] = datum;
         }
 
+        // create a set with the supplied rewrite strategy
         set = new BufferedFileBackedSortedSet.Builder().withComparator(getComparator()).withRewriteStrategy(getRewriteStrategy()).withBufferPersistThreshold(5)
                         .withMaxOpenFiles(7).withNumRetries(2)
                         .withHandlerFactories(Collections.singletonList(new BufferedFileBackedSortedSet.SortedSetFileHandlerFactory() {
@@ -70,7 +96,7 @@ public abstract class BufferedFileBackedRewritableSortedSetTest<K,V> extends Buf
             addDataRandomly(set, data2);
         }
 
-        // now test the contents
+        // now test the contents making sure we still have a sorted set with the expected values
         int index = 0;
         for (Iterator<Map.Entry<K,V>> it = set.iterator(); it.hasNext();) {
             Map.Entry<K,V> value = it.next();
