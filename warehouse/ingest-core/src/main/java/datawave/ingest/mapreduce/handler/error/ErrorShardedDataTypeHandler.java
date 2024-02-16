@@ -50,7 +50,7 @@ import datawave.marking.MarkingFunctions;
  * This class creates the following Mutations or Key/Values: <br>
  * <br>
  * <table border="1">
- * <caption></caption>
+ * <caption>ErrorShardedDataType</caption>
  * <tr>
  * <th>Schema Type</th>
  * <th>Use</th>
@@ -343,7 +343,7 @@ public class ErrorShardedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends Abstract
      * @return the visibility
      */
     @Override
-    protected byte[] getVisibility(RawRecordContainer event, NormalizedContentInterface value) {
+    public byte[] getVisibility(RawRecordContainer event, NormalizedContentInterface value) {
         byte[] visibility;
         if (value != null && value.getMarkings() != null && !value.getMarkings().isEmpty()) {
             try {

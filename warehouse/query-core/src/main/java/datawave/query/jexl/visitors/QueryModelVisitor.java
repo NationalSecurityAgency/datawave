@@ -474,6 +474,8 @@ public class QueryModelVisitor extends RebuildingVisitor {
      *
      * @param field
      *            the field to be expanded
+     * @param noExpansionFields
+     *            fields to not expand on
      * @return true if the field is excluded
      */
     public static boolean isFieldExcluded(String field, Set<String> noExpansionFields) {

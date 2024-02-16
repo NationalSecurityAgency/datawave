@@ -134,6 +134,9 @@ public class ObjectFactory {
     /**
      * Return primitive for a Primitive wrapper, i.e. int --&gt; Integer
      *
+     * @param clazz
+     *            the class
+     *
      * @return the class requested
      */
     public static Class<?> getPrim(Class<?> clazz) {

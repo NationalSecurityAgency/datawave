@@ -1,191 +1,70 @@
 package datawave.query.tables;
 
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 
-import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
 
 import datawave.marking.MarkingFunctions;
-import datawave.query.config.RemoteQueryConfiguration;
 import datawave.query.tables.remote.RemoteQueryLogic;
 import datawave.query.transformer.EventQueryTransformerSupport;
-import datawave.security.authorization.UserOperations;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
-import datawave.webservice.common.remote.RemoteQueryService;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.exception.EmptyObjectException;
-import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.logic.BaseQueryLogic;
 import datawave.webservice.query.logic.QueryLogicTransformer;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.result.EventQueryResponseBase;
-import datawave.webservice.result.GenericResponse;
 
 /**
  * <h1>Overview</h1> This is a query logic implementation that can handle delegating to a remote event query logic (i.e. one that returns an extension of
  * EventQueryResponseBase).
  */
-public class RemoteEventQueryLogic extends BaseQueryLogic<EventBase> implements RemoteQueryLogic<EventBase> {
+public class RemoteEventQueryLogic extends BaseRemoteQueryLogic<EventBase> implements RemoteQueryLogic<EventBase> {
 
     protected static final Logger log = ThreadConfigurableLogger.getLogger(RemoteEventQueryLogic.class);
-
-    public static final String QUERY_ID = "queryId";
-
-    private RemoteQueryConfiguration config;
-
-    private RemoteQueryService remoteQueryService;
-
-    private UserOperations userOperations;
-
-    private QueryLogicTransformer transformerInstance = null;
 
     /**
      * Basic constructor
      */
     public RemoteEventQueryLogic() {
         super();
-        if (log.isTraceEnabled())
-            log.trace("Creating RemoteQueryLogic: " + System.identityHashCode(this));
     }
 
     /**
      * Copy constructor
      *
      * @param other
-     *            - another ShardQueryLogic object
+     *            - another RemoteEventQueryLogic object
      */
     public RemoteEventQueryLogic(RemoteEventQueryLogic other) {
         super(other);
-
-        if (log.isTraceEnabled())
-            log.trace("Creating Cloned RemoteQueryLogic: " + System.identityHashCode(this) + " from " + System.identityHashCode(other));
-
-        setRemoteQueryService(other.getRemoteQueryService());
-        setUserOperations(other.getUserOperations(other.getSettings()));
-
-        // Set ShardQueryConfiguration variables
-        setConfig(RemoteQueryConfiguration.create(other));
-    }
-
-    public String getRemoteId() {
-        return getConfig().getRemoteId();
-    }
-
-    public void setRemoteId(String id) {
-        getConfig().setRemoteId(id);
-        getConfig().setQueryString("( metrics = '" + remoteQueryService.getQueryMetricsURI(id).toString() + "' )");
-    }
-
-    public String getRemoteQueryLogic() {
-        return getConfig().getRemoteQueryLogic();
-    }
-
-    public void setRemoteQueryLogic(String remoteQueryLogic) {
-        getConfig().setRemoteQueryLogic(remoteQueryLogic);
-    }
-
-    public Object getCallerObject() {
-        return getPrincipal();
-    }
-
-    @Override
-    public GenericQueryConfiguration initialize(AccumuloClient connection, Query settings, Set<Authorizations> auths) throws Exception {
-        Map<String,List<String>> parms = settings.toMap();
-        // we need to ensure that the remote query request includes the local query id for tracking purposes via query metrics.
-        if (!parms.containsKey(QUERY_ID) && settings.getId() != null) {
-            parms.put(QUERY_ID, Collections.singletonList(settings.getId().toString()));
-        }
-        GenericResponse<String> createResponse = remoteQueryService.createQuery(getRemoteQueryLogic(), parms, getCallerObject());
-        setRemoteId(createResponse.getResult());
-        log.info("Local query " + settings.getId() + " maps to remote query " + getRemoteId());
-        return getConfig();
-    }
-
-    @Override
-    public String getPlan(AccumuloClient connection, Query settings, Set<Authorizations> auths, boolean expandFields, boolean expandValues) throws Exception {
-        GenericResponse<String> planResponse = remoteQueryService.planQuery(getRemoteQueryLogic(), settings.toMap(), getCallerObject());
-        return planResponse.getResult();
     }
 
     @Override
     public void setupQuery(GenericQueryConfiguration genericConfig) throws Exception {
-        if (!RemoteQueryConfiguration.class.isAssignableFrom(genericConfig.getClass())) {
-            throw new QueryException("Did not receive a RemoteQueryConfiguration instance!!");
-        }
-
-        config = (RemoteQueryConfiguration) genericConfig;
+        setupConfig(genericConfig);
 
         // Create an iterator that returns a stream of EventBase objects
         iterator = new RemoteQueryLogicIterator();
     }
 
     @Override
-    public QueryLogicTransformer getTransformer(Query settings) {
-        // a transformer that turns EventBase objects into a response
-        if (transformerInstance == null) {
-            transformerInstance = new EventBaseTransformer(settings, getMarkingFunctions(), getResponseObjectFactory());
-        }
-
-        return transformerInstance;
+    public QueryLogicTransformer<EventBase,EventBase> createTransformer(Query settings, MarkingFunctions markingFunctions,
+                    ResponseObjectFactory responseObjectFactory) {
+        return new EventBaseTransformer(settings, markingFunctions, responseObjectFactory);
     }
 
     @Override
     public RemoteEventQueryLogic clone() {
         return new RemoteEventQueryLogic(this);
-    }
-
-    @Override
-    public void close() {
-
-        super.close();
-
-        log.debug("Closing RemoteQueryLogic: " + System.identityHashCode(this));
-
-        if (getRemoteId() != null) {
-            try {
-                remoteQueryService.close(getRemoteId(), getCallerObject());
-            } catch (Exception e) {
-                log.error("Failed to close remote query", e);
-            }
-        }
-    }
-
-    @Override
-    public RemoteQueryConfiguration getConfig() {
-        if (config == null) {
-            config = RemoteQueryConfiguration.create();
-        }
-
-        return config;
-    }
-
-    public void setConfig(RemoteQueryConfiguration config) {
-        this.config = config;
-    }
-
-    public RemoteQueryService getRemoteQueryService() {
-        return remoteQueryService;
-    }
-
-    public void setRemoteQueryService(RemoteQueryService remoteQueryService) {
-        this.remoteQueryService = remoteQueryService;
-    }
-
-    @Override
-    public AccumuloConnectionFactory.Priority getConnectionPriority() {
-        return AccumuloConnectionFactory.Priority.NORMAL;
     }
 
     @Override
@@ -201,14 +80,6 @@ public class RemoteEventQueryLogic extends BaseQueryLogic<EventBase> implements 
     @Override
     public Set<String> getExampleQueries() {
         return new ShardQueryLogic().getExampleQueries();
-    }
-
-    public Query getSettings() {
-        return getConfig().getQuery();
-    }
-
-    public void setSettings(Query settings) {
-        getConfig().setQuery(settings);
     }
 
     private class RemoteQueryLogicIterator implements Iterator<EventBase> {
@@ -268,15 +139,5 @@ public class RemoteEventQueryLogic extends BaseQueryLogic<EventBase> implements 
             return input;
         }
 
-    }
-
-    @Override
-    public void setUserOperations(UserOperations userOperations) {
-        this.userOperations = userOperations;
-    }
-
-    @Override
-    public UserOperations getUserOperations(Query settings) {
-        return userOperations;
     }
 }

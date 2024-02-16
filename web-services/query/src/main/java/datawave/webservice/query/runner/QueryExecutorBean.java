@@ -187,6 +187,7 @@ public class QueryExecutorBean implements QueryExecutor {
      */
     public static final String EXPAND_VALUES = "expand.values";
     public static final String EXPAND_FIELDS = "expand.fields";
+    public static final String CONTEXT_PARAMETER = "context";
 
     private final Logger log = Logger.getLogger(QueryExecutorBean.class);
 
@@ -1159,7 +1160,6 @@ public class QueryExecutorBean implements QueryExecutor {
      *            the ID of the query to reload/reset
      * @return an empty response
      *
-     * @return datawave.webservice.result.VoidResponse
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user, by specifying a chain of DNs of the identities to proxy
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
      * @ResponseHeader query-session-id this header and value will be in the Set-Cookie header, subsequent calls for this session will need to supply the
@@ -1449,13 +1449,18 @@ public class QueryExecutorBean implements QueryExecutor {
             }
             // Create the criteria for looking up the respective events, which we need to get the shard IDs and column families
             // required for the content lookup
+            String lookupContext = queryParameters.getFirst(CONTEXT_PARAMETER);
             final UUIDType matchingType = this.lookupUUIDUtil.getUUIDType(uuidType.toUpperCase());
             final GetUUIDCriteria criteria;
-            final String view = (null != matchingType) ? matchingType.getDefinedView() : null;
+            final String view = (null != matchingType) ? matchingType.getDefinedView(lookupContext) : null;
             if ((LookupUUIDUtil.UID_QUERY.equals(view) || LookupUUIDUtil.LOOKUP_UID_QUERY.equals(view))) {
                 criteria = new UIDQueryCriteria(uuid, uuidType, queryParameters);
             } else {
                 criteria = new GetUUIDCriteria(uuid, uuidType, queryParameters);
+            }
+
+            if (lookupContext != null) {
+                criteria.setUUIDTypeContext(lookupContext);
             }
 
             // Set the HTTP headers if a streamed response is required
@@ -1582,13 +1587,14 @@ public class QueryExecutorBean implements QueryExecutor {
         if (!StringUtils.isEmpty(streaming)) {
             streamingOutput = Boolean.parseBoolean(streaming);
         }
+        String uuidTypeContext = queryParameters.getFirst(CONTEXT_PARAMETER);
         final UUIDType matchingType = this.lookupUUIDUtil.getUUIDType(uuidType);
         String queryId = null;
         T response;
         try {
             // Construct the criteria used to perform the query
             final GetUUIDCriteria criteria;
-            final String view = (null != matchingType) ? matchingType.getDefinedView() : null;
+            final String view = (null != matchingType) ? matchingType.getDefinedView(uuidTypeContext) : null;
             if ((LookupUUIDUtil.UID_QUERY.equals(view) || LookupUUIDUtil.LOOKUP_UID_QUERY.equals(view))) {
                 criteria = new UIDQueryCriteria(uuid, uuidType, queryParameters);
             } else {
@@ -1598,6 +1604,10 @@ public class QueryExecutorBean implements QueryExecutor {
             // Add the HTTP headers in case streaming is required
             if (streamingOutput) {
                 criteria.setStreamingOutputHeaders(httpHeaders);
+            }
+
+            if (!StringUtils.isEmpty(uuidTypeContext)) {
+                criteria.setUUIDTypeContext(uuidTypeContext);
             }
 
             // Perform the query and get the first set of results
