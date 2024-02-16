@@ -9,7 +9,10 @@ import java.util.Objects;
 /** An Immutable SSDeepHash object */
 public final class SSDeepHash implements Serializable, Comparable<SSDeepHash> {
 
-    /** The default number of max repeated characters to produce when normalizing hashes */
+    /**
+     * The paper on Optimizing ssDeep for use at Scale" suggested that any hash with more than this many repeated characters should have that run of characters
+     * reduced to this number of characters and suggested that 3 was a good number. This works well for our purposes as well.
+     */
     public static final int DEFAULT_MAX_REPEATED_CHARACTERS = 3;
 
     public static final int MIN_CHUNK_SIZE = 3;
