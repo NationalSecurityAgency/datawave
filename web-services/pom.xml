@@ -629,6 +629,18 @@
                         <HADOOP_CONF_DIR>/dev/null</HADOOP_CONF_DIR>
                     </environmentVariables>
                 </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.junit.jupiter</groupId>
+                        <artifactId>junit-jupiter-engine</artifactId>
+                        <version>${version.junit.bom}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.junit.vintage</groupId>
+                        <artifactId>junit-vintage-engine</artifactId>
+                        <version>${version.junit.bom}</version>
+                    </dependency>
+                </dependencies>
                 <executions>
                     <execution>
                         <id>integration-test</id>
