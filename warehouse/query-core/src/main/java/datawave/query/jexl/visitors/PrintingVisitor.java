@@ -847,7 +847,6 @@ public class PrintingVisitor extends ParserVisitor {
     protected Object visit(ASTEWNode node, Object data) {
         maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
-            System.out.println("maxTerms: " + maxTermsToPrint);
             output.writeLine(data + node.toString());
             childrenAccept(node, this, data + PREFIX);
         }
@@ -858,7 +857,6 @@ public class PrintingVisitor extends ParserVisitor {
     protected Object visit(ASTNEWNode node, Object data) {
         maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
-            System.out.println("maxTerms: " + maxTermsToPrint);
             output.writeLine(data + node.toString());
             childrenAccept(node, this, data + PREFIX);
         }
@@ -869,7 +867,6 @@ public class PrintingVisitor extends ParserVisitor {
     protected Object visit(ASTAddNode node, Object data) {
         maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
-            System.out.println("maxTerms: " + maxTermsToPrint);
             output.writeLine(data + node.toString());
             childrenAccept(node, this, data + PREFIX);
         }
@@ -880,7 +877,6 @@ public class PrintingVisitor extends ParserVisitor {
     protected Object visit(ASTSubNode node, Object data) {
         maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
-            System.out.println("maxTerms: " + maxTermsToPrint);
             output.writeLine(data + node.toString());
             childrenAccept(node, this, data + PREFIX);
         }
@@ -891,7 +887,6 @@ public class PrintingVisitor extends ParserVisitor {
     protected Object visit(ASTUnaryPlusNode node, Object data) {
         maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
-            System.out.println("maxTerms: " + maxTermsToPrint);
             output.writeLine(data + node.toString());
             childrenAccept(node, this, data + PREFIX);
         }
@@ -902,7 +897,6 @@ public class PrintingVisitor extends ParserVisitor {
     protected Object visit(ASTRegexLiteral node, Object data) {
         maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
-            System.out.println("maxTerms: " + maxTermsToPrint);
             output.writeLine(data + node.toString());
             childrenAccept(node, this, data + PREFIX);
         }
@@ -913,7 +907,6 @@ public class PrintingVisitor extends ParserVisitor {
     protected Object visit(ASTSetLiteral node, Object data) {
         maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
-            System.out.println("maxTerms: " + maxTermsToPrint);
             output.writeLine(data + node.toString());
             childrenAccept(node, this, data + PREFIX);
         }
@@ -924,7 +917,6 @@ public class PrintingVisitor extends ParserVisitor {
     protected Object visit(ASTExtendedLiteral node, Object data) {
         maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
-            System.out.println("maxTerms: " + maxTermsToPrint);
             output.writeLine(data + node.toString());
             childrenAccept(node, this, data + PREFIX);
         }
@@ -935,7 +927,6 @@ public class PrintingVisitor extends ParserVisitor {
     protected Object visit(ASTRangeNode node, Object data) {
         maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
-            System.out.println("maxTerms: " + maxTermsToPrint);
             output.writeLine(data + node.toString());
             childrenAccept(node, this, data + PREFIX);
         }
@@ -946,7 +937,6 @@ public class PrintingVisitor extends ParserVisitor {
     protected Object visit(ASTIdentifierAccess node, Object data) {
         maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
-            System.out.println("maxTerms: " + maxTermsToPrint);
             output.writeLine(data + node.toString());
             childrenAccept(node, this, data + PREFIX);
         }
@@ -957,7 +947,6 @@ public class PrintingVisitor extends ParserVisitor {
     protected Object visit(ASTArguments node, Object data) {
         maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
-            System.out.println("maxTerms: " + maxTermsToPrint);
             output.writeLine(data + node.toString());
             childrenAccept(node, this, data + PREFIX);
         }
@@ -968,7 +957,6 @@ public class PrintingVisitor extends ParserVisitor {
     protected Object visit(ASTSetAddNode node, Object data) {
         maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
-            System.out.println("maxTerms: " + maxTermsToPrint);
             output.writeLine(data + node.toString());
             childrenAccept(node, this, data + PREFIX);
         }
@@ -979,7 +967,6 @@ public class PrintingVisitor extends ParserVisitor {
     protected Object visit(ASTSetSubNode node, Object data) {
         maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
-            System.out.println("maxTerms: " + maxTermsToPrint);
             output.writeLine(data + node.toString());
             childrenAccept(node, this, data + PREFIX);
         }
@@ -990,7 +977,6 @@ public class PrintingVisitor extends ParserVisitor {
     protected Object visit(ASTSetMultNode node, Object data) {
         maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
-            System.out.println("maxTerms: " + maxTermsToPrint);
             output.writeLine(data + node.toString());
             childrenAccept(node, this, data + PREFIX);
         }
@@ -1001,7 +987,6 @@ public class PrintingVisitor extends ParserVisitor {
     protected Object visit(ASTSetDivNode node, Object data) {
         maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
-            System.out.println("maxTerms: " + maxTermsToPrint);
             output.writeLine(data + node.toString());
             childrenAccept(node, this, data + PREFIX);
         }
@@ -1012,7 +997,6 @@ public class PrintingVisitor extends ParserVisitor {
     protected Object visit(ASTSetModNode node, Object data) {
         maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
-            System.out.println("maxTerms: " + maxTermsToPrint);
             output.writeLine(data + node.toString());
             childrenAccept(node, this, data + PREFIX);
         }
@@ -1023,7 +1007,6 @@ public class PrintingVisitor extends ParserVisitor {
     protected Object visit(ASTSetAndNode node, Object data) {
         maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
-            System.out.println("maxTerms: " + maxTermsToPrint);
             output.writeLine(data + node.toString());
             childrenAccept(node, this, data + PREFIX);
         }
@@ -1034,7 +1017,6 @@ public class PrintingVisitor extends ParserVisitor {
     protected Object visit(ASTSetOrNode node, Object data) {
         maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
-            System.out.println("maxTerms: " + maxTermsToPrint);
             output.writeLine(data + node.toString());
             childrenAccept(node, this, data + PREFIX);
         }
@@ -1045,7 +1027,6 @@ public class PrintingVisitor extends ParserVisitor {
     protected Object visit(ASTSetXorNode node, Object data) {
         maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
-            System.out.println("maxTerms: " + maxTermsToPrint);
             output.writeLine(data + node.toString());
             childrenAccept(node, this, data + PREFIX);
         }
@@ -1056,7 +1037,6 @@ public class PrintingVisitor extends ParserVisitor {
     protected Object visit(ASTSetShiftLeftNode node, Object data) {
         maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
-            System.out.println("maxTerms: " + maxTermsToPrint);
             output.writeLine(data + node.toString());
             childrenAccept(node, this, data + PREFIX);
         }
@@ -1067,7 +1047,6 @@ public class PrintingVisitor extends ParserVisitor {
     protected Object visit(ASTSetShiftRightNode node, Object data) {
         maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
-            System.out.println("maxTerms: " + maxTermsToPrint);
             output.writeLine(data + node.toString());
             childrenAccept(node, this, data + PREFIX);
         }
@@ -1078,7 +1057,6 @@ public class PrintingVisitor extends ParserVisitor {
     protected Object visit(ASTSetShiftRightUnsignedNode node, Object data) {
         maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
-            System.out.println("maxTerms: " + maxTermsToPrint);
             output.writeLine(data + node.toString());
             childrenAccept(node, this, data + PREFIX);
         }
@@ -1089,7 +1067,6 @@ public class PrintingVisitor extends ParserVisitor {
     protected Object visit(ASTGetDecrementNode node, Object data) {
         maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
-            System.out.println("maxTerms: " + maxTermsToPrint);
             output.writeLine(data + node.toString());
             childrenAccept(node, this, data + PREFIX);
         }
@@ -1100,7 +1077,6 @@ public class PrintingVisitor extends ParserVisitor {
     protected Object visit(ASTGetIncrementNode node, Object data) {
         maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
-            System.out.println("maxTerms: " + maxTermsToPrint);
             output.writeLine(data + node.toString());
             childrenAccept(node, this, data + PREFIX);
         }
@@ -1111,7 +1087,6 @@ public class PrintingVisitor extends ParserVisitor {
     protected Object visit(ASTDecrementGetNode node, Object data) {
         maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
-            System.out.println("maxTerms: " + maxTermsToPrint);
             output.writeLine(data + node.toString());
             childrenAccept(node, this, data + PREFIX);
         }
@@ -1122,7 +1097,6 @@ public class PrintingVisitor extends ParserVisitor {
     protected Object visit(ASTIncrementGetNode node, Object data) {
         maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
-            System.out.println("maxTerms: " + maxTermsToPrint);
             output.writeLine(data + node.toString());
             childrenAccept(node, this, data + PREFIX);
         }
@@ -1133,7 +1107,6 @@ public class PrintingVisitor extends ParserVisitor {
     protected Object visit(ASTJxltLiteral node, Object data) {
         maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
-            System.out.println("maxTerms: " + maxTermsToPrint);
             output.writeLine(data + node.toString());
             childrenAccept(node, this, data + PREFIX);
         }
@@ -1144,7 +1117,6 @@ public class PrintingVisitor extends ParserVisitor {
     protected Object visit(ASTAnnotation node, Object data) {
         maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
-            System.out.println("maxTerms: " + maxTermsToPrint);
             output.writeLine(data + node.toString());
             childrenAccept(node, this, data + PREFIX);
         }
@@ -1155,7 +1127,6 @@ public class PrintingVisitor extends ParserVisitor {
     protected Object visit(ASTAnnotatedStatement node, Object data) {
         maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
-            System.out.println("maxTerms: " + maxTermsToPrint);
             output.writeLine(data + node.toString());
             childrenAccept(node, this, data + PREFIX);
         }
@@ -1166,7 +1137,6 @@ public class PrintingVisitor extends ParserVisitor {
     protected Object visit(ASTQualifiedIdentifier node, Object data) {
         maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
-            System.out.println("maxTerms: " + maxTermsToPrint);
             output.writeLine(data + node.toString());
             childrenAccept(node, this, data + PREFIX);
         }
