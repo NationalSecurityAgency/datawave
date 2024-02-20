@@ -162,6 +162,8 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("enforceUniqueTermsWithinExpressions", true);
         defaultValues.put("reduceQueryFields", false);
         updatedValues.put("reduceQueryFields", true);
+        defaultValues.put("reduceQueryFieldsPerShard", false);
+        updatedValues.put("reduceQueryFieldsPerShard", true);
         defaultValues.put("reduceTypeMetadata", false);
         updatedValues.put("reduceTypeMetadata", true);
         defaultValues.put("reduceTypeMetadataPerShard", false);

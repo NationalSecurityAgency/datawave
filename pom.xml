@@ -86,8 +86,7 @@
         <version.json>20231013</version.json>
         <version.jts>1.19.0</version.jts>
         <version.junit>4.13.2</version.junit>
-        <version.junit.jupiter>5.5.2</version.junit.jupiter>
-        <version.junit.vintage>5.5.2</version.junit.vintage>
+        <version.junit.bom>5.10.2</version.junit.bom>
         <version.jython>2.7.2b2</version.jython>
         <version.kryo>2.20</version.kryo>
         <version.kryonet>2.20</version.kryonet>
@@ -122,7 +121,7 @@
         <version.spring>5.2.2.RELEASE</version.spring>
         <version.springframework>${version.spring}</version.springframework>
         <version.stream>2.9.6</version.stream>
-        <version.surefire.plugin>3.0.0-M6</version.surefire.plugin>
+        <version.surefire.plugin>3.2.5</version.surefire.plugin>
         <version.thrift>0.17.0</version.thrift>
         <version.weld>3.1.1.Final</version.weld>
         <version.weld-se>3.1.1.Final</version.weld-se>
@@ -1105,6 +1104,13 @@
                 <scope>import</scope>
             </dependency>
             <dependency>
+                <groupId>org.junit</groupId>
+                <artifactId>junit-bom</artifactId>
+                <version>${version.junit.bom}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
                 <groupId>org.springframework</groupId>
                 <artifactId>spring-framework-bom</artifactId>
                 <version>${version.springframework}</version>
@@ -1186,12 +1192,6 @@
                 <groupId>org.jboss.weld</groupId>
                 <artifactId>weld-core</artifactId>
                 <version>${version.weld-test}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.junit.jupiter</groupId>
-                <artifactId>junit-jupiter-api</artifactId>
-                <version>${version.junit.jupiter}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
@@ -1522,9 +1522,14 @@
                     </configuration>
                     <dependencies>
                         <dependency>
-                            <groupId>org.apache.maven.surefire</groupId>
-                            <artifactId>surefire-junit47</artifactId>
-                            <version>${version.surefire.plugin}</version>
+                            <groupId>org.junit.jupiter</groupId>
+                            <artifactId>junit-jupiter-engine</artifactId>
+                            <version>${version.junit.bom}</version>
+                        </dependency>
+                        <dependency>
+                            <groupId>org.junit.vintage</groupId>
+                            <artifactId>junit-vintage-engine</artifactId>
+                            <version>${version.junit.bom}</version>
                         </dependency>
                     </dependencies>
                     <executions>
@@ -1609,9 +1614,14 @@
                     <version>${version.surefire.plugin}</version>
                     <dependencies>
                         <dependency>
-                            <groupId>org.apache.maven.surefire</groupId>
-                            <artifactId>surefire-junit47</artifactId>
-                            <version>${version.surefire.plugin}</version>
+                            <groupId>org.junit.jupiter</groupId>
+                            <artifactId>junit-jupiter-engine</artifactId>
+                            <version>${version.junit.bom}</version>
+                        </dependency>
+                        <dependency>
+                            <groupId>org.junit.vintage</groupId>
+                            <artifactId>junit-vintage-engine</artifactId>
+                            <version>${version.junit.bom}</version>
                         </dependency>
                     </dependencies>
                 </plugin>

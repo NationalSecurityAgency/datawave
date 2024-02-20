@@ -107,6 +107,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private boolean pruneQueryByIngestTypes = false;
     // should this query reduce the set of fields prior to serialization
     private boolean reduceQueryFields = false;
+    private boolean reduceQueryFieldsPerShard = false;
     private boolean reduceTypeMetadata = false;
     private boolean reduceTypeMetadataPerShard = false;
     private boolean sequentialScheduler = false;
@@ -492,6 +493,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setEnforceUniqueTermsWithinExpressions(other.getEnforceUniqueTermsWithinExpressions());
         this.setPruneQueryByIngestTypes(other.getPruneQueryByIngestTypes());
         this.setReduceQueryFields(other.getReduceQueryFields());
+        this.setReduceQueryFieldsPerShard(other.getReduceQueryFieldsPerShard());
         this.setReduceTypeMetadata(other.getReduceTypeMetadata());
         this.setReduceTypeMetadataPerShard(other.getReduceTypeMetadataPerShard());
         this.setParseTldUids(other.getParseTldUids());
@@ -2141,6 +2143,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setReduceQueryFields(boolean reduceQueryFields) {
         this.reduceQueryFields = reduceQueryFields;
+    }
+
+    public boolean getReduceQueryFieldsPerShard() {
+        return reduceQueryFieldsPerShard;
+    }
+
+    public void setReduceQueryFieldsPerShard(boolean reduceQueryFieldsPerShard) {
+        this.reduceQueryFieldsPerShard = reduceQueryFieldsPerShard;
     }
 
     public boolean getReduceTypeMetadata() {
