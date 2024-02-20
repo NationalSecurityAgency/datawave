@@ -1,4 +1,4 @@
-package datawave.query.transformer;
+package datawave.query.tables.ssdeep;
 
 import java.util.AbstractMap;
 import java.util.ArrayList;

@@ -251,6 +251,7 @@
         <!--   enable per-tablet pruning of certain query options     -->
         <property name="pruneQueryOptions" value="false" />
         <property name="reduceQueryFields" value="false" />
+        <property name="reduceQueryFieldsPerShard" value="false" />
         <property name="reduceTypeMetadata" value="false" />
         <property name="reduceTypeMetadataPerShard" value="false" />
         <!--    should the query prune fields by ingest type    -->

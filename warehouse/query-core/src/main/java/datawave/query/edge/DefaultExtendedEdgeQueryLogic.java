@@ -51,6 +51,7 @@ public class DefaultExtendedEdgeQueryLogic extends EdgeQueryLogic {
         summaryInputType = logic.isSummaryInputType();
         summaryOutputType = logic.isSummaryOutputType();
         allowOverrideIO = logic.isAllowOverrideIO();
+        listSelectorExtractor = logic.getSelectorExtractor();
     }
 
     @Override

@@ -38,7 +38,7 @@ public abstract class ResponseObjectFactory {
      * provided here, then a javax.ws.rs.ext.Provider must be created which implements {@code ContextResolver<JAXBContext>}. Therein a resolver for a
      * LookupResponse needs to include the provided implementation within a jaxb context to ensure appropriate serialization.
      *
-     * @return
+     * @return the keybase
      */
     public abstract KeyBase getKey();
 
