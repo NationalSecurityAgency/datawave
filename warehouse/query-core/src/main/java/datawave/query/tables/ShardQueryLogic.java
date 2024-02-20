@@ -2275,6 +2275,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         this.getConfig().setReduceQueryFields(reduceQueryFields);
     }
 
+    public boolean getReduceQueryFieldsPerShard() {
+        return this.getConfig().getReduceQueryFieldsPerShard();
+    }
+
+    public void setReduceQueryFieldsPerShard(boolean reduceQueryFieldsPerShard) {
+        this.getConfig().setReduceQueryFieldsPerShard(reduceQueryFieldsPerShard);
+    }
+
     public boolean getReduceTypeMetadata() {
         return getConfig().getReduceTypeMetadata();
     }
