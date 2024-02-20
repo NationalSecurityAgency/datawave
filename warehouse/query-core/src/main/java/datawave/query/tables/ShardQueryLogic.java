@@ -1581,6 +1581,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         getConfig().setIntermediateMaxTermThreshold(intermediateMaxTermThreshold);
     }
 
+    public int getIndexedMaxTermThreshold() {
+        return getConfig().getIndexedMaxTermThreshold();
+    }
+
+    public void setIndexedMaxTermThreshold(int indexedMaxTermThreshold) {
+        getConfig().setIndexedMaxTermThreshold(indexedMaxTermThreshold);
+    }
+
     public int getFinalMaxTermThreshold() {
         return getConfig().getFinalMaxTermThreshold();
     }
@@ -2310,6 +2318,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
 
     public void setReduceQueryFields(boolean reduceQueryFields) {
         this.getConfig().setReduceQueryFields(reduceQueryFields);
+    }
+
+    public boolean getReduceQueryFieldsPerShard() {
+        return this.getConfig().getReduceQueryFieldsPerShard();
+    }
+
+    public void setReduceQueryFieldsPerShard(boolean reduceQueryFieldsPerShard) {
+        this.getConfig().setReduceQueryFieldsPerShard(reduceQueryFieldsPerShard);
     }
 
     public boolean getReduceTypeMetadata() {
