@@ -112,7 +112,6 @@ public class SSDeepIngestQueryTest extends AbstractFunctionalQuery {
 
     @SuppressWarnings("rawtypes")
     @Test
-    @Ignore
     public void testSSDeepSimilarity() throws Exception {
         log.info("------ testSSDeepSimilarity ------");
         @SuppressWarnings("SpellCheckingInspection")
