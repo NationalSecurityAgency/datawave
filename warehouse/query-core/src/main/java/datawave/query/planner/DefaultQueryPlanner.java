@@ -113,6 +113,7 @@ import datawave.query.jexl.visitors.FixNegativeNumbersVisitor;
 import datawave.query.jexl.visitors.FixUnindexedNumericTerms;
 import datawave.query.jexl.visitors.FunctionIndexQueryExpansionVisitor;
 import datawave.query.jexl.visitors.GeoWavePruningVisitor;
+import datawave.query.jexl.visitors.IndexedTermCountingVisitor;
 import datawave.query.jexl.visitors.IngestTypePruningVisitor;
 import datawave.query.jexl.visitors.InvertNodeVisitor;
 import datawave.query.jexl.visitors.IsNotNullIntentVisitor;
@@ -2103,6 +2104,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             addOption(cfg, QueryOptions.MAX_EVALUATION_PIPELINES, Integer.toString(config.getMaxEvaluationPipelines()), false);
             addOption(cfg, QueryOptions.MAX_PIPELINE_CACHED_RESULTS, Integer.toString(config.getMaxPipelineCachedResults()), false);
             addOption(cfg, QueryOptions.MAX_IVARATOR_SOURCES, Integer.toString(config.getMaxIvaratorSources()), false);
+            addOption(cfg, QueryOptions.MAX_IVARATOR_SOURCE_WAIT, Long.toString(config.getMaxIvaratorSourceWait()), false);
 
             if (config.getYieldThresholdMs() != Long.MAX_VALUE && config.getYieldThresholdMs() > 0) {
                 addOption(cfg, QueryOptions.YIELD_THRESHOLD_MS, Long.toString(config.getYieldThresholdMs()), false);
@@ -2110,7 +2112,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
             addOption(cfg, QueryOptions.SORTED_UIDS, Boolean.toString(config.isSortedUIDs()), false);
 
-            configureTypeMappings(config, cfg, metadataHelper, getCompressOptionMappings());
+            configureTypeMappings(config, cfg, metadataHelper, getCompressOptionMappings(), isPreload);
             configureAdditionalOptions(config, cfg);
 
             loadFields(cfg, config, isPreload);
@@ -2278,6 +2280,11 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
     public static void configureTypeMappings(ShardQueryConfiguration config, IteratorSetting cfg, MetadataHelper metadataHelper, boolean compressMappings)
                     throws DatawaveQueryException {
+        configureTypeMappings(config, cfg, metadataHelper, compressMappings, false);
+    }
+
+    public static void configureTypeMappings(ShardQueryConfiguration config, IteratorSetting cfg, MetadataHelper metadataHelper, boolean compressMappings,
+                    boolean isPreload) throws DatawaveQueryException {
         try {
             addOption(cfg, QueryOptions.QUERY_MAPPING_COMPRESS, Boolean.toString(compressMappings), false);
 
@@ -2291,7 +2298,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
             TypeMetadata typeMetadata = metadataHelper.getTypeMetadata(config.getDatatypeFilter());
 
-            if (config.getReduceTypeMetadata()) {
+            if (config.getReduceTypeMetadata() && !isPreload) {
                 Set<String> fieldsToRetain = ReduceFields.getQueryFields(config.getQueryTree());
                 typeMetadata = typeMetadata.reduce(fieldsToRetain);
             }
@@ -2569,6 +2576,14 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             if (config.getIntermediateMaxTermThreshold() > 0 && termCount > config.getIntermediateMaxTermThreshold()) {
                 throw new DatawaveFatalQueryException(
                                 "Query with " + termCount + " exceeds the initial max term threshold of " + config.getIntermediateMaxTermThreshold());
+            }
+
+            if (config.getIndexedMaxTermThreshold() > 0) {
+                int indexedEqualityTerms = IndexedTermCountingVisitor.countTerms(config.getQueryTree(), config.getIndexedFields());
+                if (indexedEqualityTerms > config.getIndexedMaxTermThreshold()) {
+                    throw new DatawaveQueryException("Query with " + indexedEqualityTerms + " indexed EQ nodes exceeds the indexedMaxTermThreshold of "
+                                    + config.getIndexedMaxTermThreshold());
+                }
             }
 
             if (termCount >= pushdownThreshold) {

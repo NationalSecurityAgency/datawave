@@ -1,3 +1,3 @@
-20150501,ford-eventid-001,ford,explorer,blue,4,4,common description
-20150601,ford-eventid-002,ford,mustang,silver,2,4,common description
-20150701,ford-eventid-003,ford,fusion,magenta,4,4,common description
+20150501,ford-eventid-001,ford,explorer,blue,4,4,common description,public
+20150601,ford-eventid-002,ford,mustang,silver,2,4,common description,public
+20150701,ford-eventid-003,ford,fusion,magenta,4,4,common description,private

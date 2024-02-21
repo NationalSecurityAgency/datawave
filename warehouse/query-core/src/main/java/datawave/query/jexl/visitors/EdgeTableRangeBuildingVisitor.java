@@ -43,6 +43,7 @@ import datawave.webservice.query.exception.DatawaveErrorCode;
  * The high level design of how the parsing works is as follows: There are two data structures that are built during the traversal to keep track of information.
  * Once the traversal is complete and the data structures are built they are sent to the VisitationContext which then builds the ranges and normalized query and
  * gets returned.<br>
+ * </p>
  * <br>
  * <p>
  * All data is expected to be passed up since this is a depth first search nothing will be passed down<br>
@@ -69,7 +70,6 @@ import datawave.webservice.query.exception.DatawaveErrorCode;
  * During the Traversal lists of QueryContexts are built. Once traversal is over we must have 1 or more QueryContexts which are then used to build the
  * ranges/normalized query.<br>
  * <br>
- * <p>
  * <p>
  * The 3 basic rules that are enforced are:<br>
  * for equivalence expressions (== =~)<br>
@@ -168,11 +168,6 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
      */
     @Override
     public Object visit(ASTAndNode node, Object data) {
-        if (termCount > maxTerms) {
-            log.error("Query has too many terms");
-            throw new IllegalArgumentException("Too many search terms " + termCount);
-        }
-
         // run the visitor against all of the children
         List<List<? extends EdgeContext>> childContexts = new ArrayList<>(node.jjtGetNumChildren());
         for (int i = 0; i < node.jjtGetNumChildren(); i++) {
@@ -274,11 +269,6 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
      */
     @Override
     public Object visit(ASTOrNode node, Object data) {
-        if (termCount > maxTerms) {
-            log.error("Query has too many terms");
-            throw new IllegalArgumentException("Too many search terms " + termCount);
-        }
-
         // run the visitor against all of the children
         List<List<? extends EdgeContext>> childContexts = new ArrayList<>(node.jjtGetNumChildren());
         for (int i = 0; i < node.jjtGetNumChildren(); i++) {
@@ -410,8 +400,16 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
      */
     @Override
     public Object visit(ASTEQNode node, Object data) {
-        termCount++;
+        incrementTermCountAndCheck();
         return visitExpresionNode(node, EQUALS);
+    }
+
+    private void incrementTermCountAndCheck() {
+        if (++termCount > maxTerms) {
+            String message = "Exceeded max term limit of " + maxTerms;
+            log.error(message);
+            throw new IllegalArgumentException(message);
+        }
     }
 
     /**
@@ -428,7 +426,7 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
      */
     @Override
     public Object visit(ASTERNode node, Object data) {
-        termCount++;
+        incrementTermCountAndCheck();
         List<IdentityContext> contexts = (List<IdentityContext>) visitExpresionNode(node, EQUALS_REGEX);
         if (contexts.get(0).getIdentity().equals(EDGE_SOURCE)) {
             sawEquivalenceRegexSource = true;
@@ -440,13 +438,13 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
 
     @Override
     public Object visit(ASTNRNode node, Object data) {
-        termCount++;
+        incrementTermCountAndCheck();
         return visitExpresionNode(node, NOT_EQUALS_REGEX);
     }
 
     @Override
     public Object visit(ASTNENode node, Object data) {
-        termCount++;
+        incrementTermCountAndCheck();
         return visitExpresionNode(node, NOT_EQUALS);
     }
 

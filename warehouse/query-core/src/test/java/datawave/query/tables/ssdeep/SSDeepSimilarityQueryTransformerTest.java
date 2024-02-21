@@ -1,4 +1,4 @@
-package datawave.query.transformer;
+package datawave.query.tables.ssdeep;
 
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -21,8 +21,7 @@ import com.google.common.collect.TreeMultimap;
 
 import datawave.marking.MarkingFunctions;
 import datawave.query.config.SSDeepSimilarityQueryConfiguration;
-import datawave.util.ssdeep.ChunkSizeEncoding;
-import datawave.util.ssdeep.IntegerEncoding;
+import datawave.query.tables.ssdeep.SSDeepSimilarityQueryTransformer;
 import datawave.util.ssdeep.NGramTuple;
 import datawave.util.ssdeep.SSDeepHash;
 import datawave.webservice.query.Query;

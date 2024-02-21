@@ -104,6 +104,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private boolean pruneQueryByIngestTypes = false;
     // should this query reduce the set of fields prior to serialization
     private boolean reduceQueryFields = false;
+    private boolean reduceQueryFieldsPerShard = false;
     private boolean reduceTypeMetadata = false;
     private boolean reduceTypeMetadataPerShard = false;
     private boolean sequentialScheduler = false;
@@ -320,6 +321,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private int initialMaxTermThreshold = 2500;
     // the intermediate term threshold is used to enforce a term limit prior to the range stream
     private int intermediateMaxTermThreshold = 2500;
+    // the maximum number of indexed terms to lookup in the global index. Practically this is the number of equality nodes in the query.
+    private int indexedMaxTermThreshold = 2500;
     private int finalMaxTermThreshold = 2500;
     private int maxDepthThreshold = 2500;
     private boolean expandFields = true;
@@ -346,6 +349,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private boolean ivaratorPersistVerify = true;
     private int ivaratorPersistVerifyCount = 100;
     private int maxIvaratorSources = 33;
+    private long maxIvaratorSourceWait = 1000L * 60 * 30;
     private long maxIvaratorResults = -1;
     private int maxEvaluationPipelines = 25;
     private int maxPipelineCachedResults = 25;
@@ -483,6 +487,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setEnforceUniqueTermsWithinExpressions(other.getEnforceUniqueTermsWithinExpressions());
         this.setPruneQueryByIngestTypes(other.getPruneQueryByIngestTypes());
         this.setReduceQueryFields(other.getReduceQueryFields());
+        this.setReduceQueryFieldsPerShard(other.getReduceQueryFieldsPerShard());
         this.setReduceTypeMetadata(other.getReduceTypeMetadata());
         this.setReduceTypeMetadataPerShard(other.getReduceTypeMetadataPerShard());
         this.setParseTldUids(other.getParseTldUids());
@@ -588,6 +593,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setShardsPerDayThreshold(other.getShardsPerDayThreshold());
         this.setInitialMaxTermThreshold(other.getInitialMaxTermThreshold());
         this.setIntermediateMaxTermThreshold(other.getIntermediateMaxTermThreshold());
+        this.setIndexedMaxTermThreshold(other.getIndexedMaxTermThreshold());
         this.setFinalMaxTermThreshold(other.getFinalMaxTermThreshold());
         this.setMaxDepthThreshold(other.getMaxDepthThreshold());
         this.setMaxUnfieldedExpansionThreshold(other.getMaxUnfieldedExpansionThreshold());
@@ -614,6 +620,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setIvaratorPersistVerify(other.isIvaratorPersistVerify());
         this.setIvaratorPersistVerifyCount(other.getIvaratorPersistVerifyCount());
         this.setMaxIvaratorSources(other.getMaxIvaratorSources());
+        this.setMaxIvaratorSourceWait(other.getMaxIvaratorSourceWait());
         this.setMaxIvaratorResults(other.getMaxIvaratorResults());
         this.setMaxEvaluationPipelines(other.getMaxEvaluationPipelines());
         this.setMaxPipelineCachedResults(other.getMaxPipelineCachedResults());
@@ -1212,6 +1219,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.intermediateMaxTermThreshold = intermediateMaxTermThreshold;
     }
 
+    public int getIndexedMaxTermThreshold() {
+        return indexedMaxTermThreshold;
+    }
+
+    public void setIndexedMaxTermThreshold(int indexedMaxTermThreshold) {
+        this.indexedMaxTermThreshold = indexedMaxTermThreshold;
+    }
+
     public int getFinalMaxTermThreshold() {
         return finalMaxTermThreshold;
     }
@@ -1428,6 +1443,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setMaxIvaratorSources(int maxIvaratorSources) {
         this.maxIvaratorSources = maxIvaratorSources;
+    }
+
+    public long getMaxIvaratorSourceWait() {
+        return maxIvaratorSourceWait;
+    }
+
+    public void setMaxIvaratorSourceWait(long maxIvaratorSourceWait) {
+        this.maxIvaratorSourceWait = maxIvaratorSourceWait;
     }
 
     public long getMaxIvaratorResults() {
@@ -2083,6 +2106,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setReduceQueryFields(boolean reduceQueryFields) {
         this.reduceQueryFields = reduceQueryFields;
+    }
+
+    public boolean getReduceQueryFieldsPerShard() {
+        return reduceQueryFieldsPerShard;
+    }
+
+    public void setReduceQueryFieldsPerShard(boolean reduceQueryFieldsPerShard) {
+        this.reduceQueryFieldsPerShard = reduceQueryFieldsPerShard;
     }
 
     public boolean getReduceTypeMetadata() {

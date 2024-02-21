@@ -83,8 +83,11 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
         super();
     }
 
-    public DiscoveryLogic(ShardIndexQueryTable other) {
+    public DiscoveryLogic(DiscoveryLogic other) {
         super(other);
+        this.separateCountsByColVis = other.separateCountsByColVis;
+        this.showReferenceCount = other.showReferenceCount;
+        this.metadataHelper = other.metadataHelper;
     }
 
     @Override

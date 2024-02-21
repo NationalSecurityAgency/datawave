@@ -16,13 +16,16 @@ import java.util.SortedMap;
 import java.util.TimeZone;
 import java.util.TreeMap;
 
+import org.apache.accumulo.core.client.PluginEnvironment;
 import org.apache.accumulo.core.client.SampleNotPresentException;
+import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.sample.SamplerConfiguration;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.conf.DefaultConfiguration;
 import org.apache.accumulo.core.crypto.CryptoFactoryLoader;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.TableId;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.file.rfile.RFileOperations;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
@@ -32,6 +35,7 @@ import org.apache.accumulo.core.iteratorsImpl.system.SortedMapIterator;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.spi.crypto.CryptoEnvironment;
 import org.apache.accumulo.core.spi.crypto.CryptoService;
+import org.apache.accumulo.core.util.ConfigurationImpl;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.junit.Before;
@@ -39,6 +43,8 @@ import org.junit.Test;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+
+import net.bytebuddy.build.Plugin;
 
 public class SourceManagerTest {
     private static final SimpleDateFormat shardFormatter = new SimpleDateFormat("yyyyMMdd HHmmss");
@@ -368,6 +374,11 @@ public class SourceManagerTest {
         }
 
         @Override
+        public PluginEnvironment getPluginEnv() {
+            return new MockPluginEnvironment();
+        }
+
+        @Override
         public AccumuloConfiguration getConfig() {
             return conf;
         }
@@ -405,6 +416,33 @@ public class SourceManagerTest {
         @Override
         public void registerSideChannel(SortedKeyValueIterator<Key,Value> iter) {
             throw new UnsupportedOperationException();
+        }
+
+        public class MockPluginEnvironment implements PluginEnvironment {
+            @Override
+            public Configuration getConfiguration() {
+                return new ConfigurationImpl(conf);
+            }
+
+            @Override
+            public Configuration getConfiguration(TableId tableId) {
+                return new ConfigurationImpl(conf);
+            }
+
+            @Override
+            public String getTableName(TableId tableId) throws TableNotFoundException {
+                return null;
+            }
+
+            @Override
+            public <T> T instantiate(String className, Class<T> base) throws Exception {
+                return null;
+            }
+
+            @Override
+            public <T> T instantiate(TableId tableId, String className, Class<T> base) throws Exception {
+                return null;
+            }
         }
 
     }
