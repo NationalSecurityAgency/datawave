@@ -557,13 +557,15 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
 
         String fieldName = value.getIndexedFieldName();
         String fieldValue = value.getIndexedFieldValue();
-        // produce field index.
-        values.putAll(createShardFieldIndexColumn(event, fieldName, fieldValue, visibility, maskedVisibility, maskedFieldHelper, shardId,
+	if (fieldValue != null) {
+        	// produce field index.
+        	values.putAll(createShardFieldIndexColumn(event, fieldName, fieldValue, visibility, maskedVisibility, maskedFieldHelper, shardId,
                         createBloomFilter(event, fields, reporter)));
 
-        // produce index column
-        values.putAll(createTermIndexColumn(event, fieldName, fieldValue, visibility, maskedVisibility, maskedFieldHelper, shardId,
+        	// produce index column
+        	values.putAll(createTermIndexColumn(event, fieldName, fieldValue, visibility, maskedVisibility, maskedFieldHelper, shardId,
                         this.getShardIndexTableName(), indexValue, Direction.FORWARD));
+	}
 
         return values;
     }
