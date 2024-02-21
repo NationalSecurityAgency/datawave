@@ -1,12 +1,12 @@
 package datawave.query.language.functions.jexl;
 
+import java.text.MessageFormat;
+import java.util.ArrayList;
+
 import datawave.query.jexl.functions.QueryFunctions;
 import datawave.query.language.functions.QueryFunction;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
-
-import java.text.MessageFormat;
-import java.util.ArrayList;
 
 public class Rename extends JexlQueryFunction {
 
