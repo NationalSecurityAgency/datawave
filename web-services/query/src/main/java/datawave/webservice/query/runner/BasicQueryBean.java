@@ -250,7 +250,7 @@ public class BasicQueryBean {
                     QueryLogicDescription d = new QueryLogicDescription(l.getLogicName());
                     d.setAuditType(l.getAuditType(null).toString());
                     d.setLogicDescription(l.getLogicDescription());
-                    userService = l.getUserOperations();
+                    userService = l.getUserOperations(q);
                     theQld = d;
 
                     Set<String> optionalQueryParameters = l.getOptionalQueryParameters();

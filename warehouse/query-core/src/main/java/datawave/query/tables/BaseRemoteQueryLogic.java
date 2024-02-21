@@ -63,7 +63,7 @@ public abstract class BaseRemoteQueryLogic<T> extends BaseQueryLogic<T> implemen
             log.trace("Creating Cloned " + this.getClass().getSimpleName() + ": " + System.identityHashCode(this) + " from " + System.identityHashCode(other));
 
         setRemoteQueryService(other.getRemoteQueryService());
-        setUserOperations(other.getUserOperations());
+        setUserOperations(other.getUserOperations(other.getConfig().getQuery()));
 
         // Set ShardQueryConfiguration variables
         setConfig(RemoteQueryConfiguration.create(other.getConfig()));
@@ -182,7 +182,7 @@ public abstract class BaseRemoteQueryLogic<T> extends BaseQueryLogic<T> implemen
     }
 
     @Override
-    public UserOperations getUserOperations() {
+    public UserOperations getUserOperations(Query settings) {
         return userOperations;
     }
 }
