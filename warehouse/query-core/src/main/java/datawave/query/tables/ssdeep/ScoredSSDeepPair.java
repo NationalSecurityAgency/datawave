@@ -49,6 +49,8 @@ public class ScoredSSDeepPair implements Comparable<ScoredSSDeepPair> {
 
         ScoredSSDeepPair that = (ScoredSSDeepPair) o;
 
+        if (overlapScore != that.overlapScore)
+            return false;
         if (weightedScore != that.weightedScore)
             return false;
         if (!Objects.equals(queryHash, that.queryHash))
@@ -58,11 +60,7 @@ public class ScoredSSDeepPair implements Comparable<ScoredSSDeepPair> {
 
     @Override
     public int hashCode() {
-        int result = queryHash != null ? queryHash.hashCode() : 0;
-        result = 31 * result + (matchingHash != null ? matchingHash.hashCode() : 0);
-        result = 31 * result + weightedScore;
-        result = 31 * result + overlapScore;
-        return result;
+        return Objects.hash(queryHash, matchingHash, weightedScore, overlapScore);
     }
 
     @Override

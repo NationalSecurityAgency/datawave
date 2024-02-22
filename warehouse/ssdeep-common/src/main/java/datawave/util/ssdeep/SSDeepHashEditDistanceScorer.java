@@ -31,8 +31,8 @@ public class SSDeepHashEditDistanceScorer implements SSDeepHashScorer {
         if ((null == signature1) || (null == signature2)) {
             return -1;
         }
-        final long chunkSize1 = signature1.getChunkSize();
-        final long chunkSize2 = signature2.getChunkSize();
+        final int chunkSize1 = signature1.getChunkSize();
+        final int chunkSize2 = signature2.getChunkSize();
 
         // We require the chunk size to either be equal, or for one to be twice the other. If the chunk sizes don't
         // match then we are comparing apples to oranges. This isn't an 'error' per se. We could have two valid
@@ -52,11 +52,11 @@ public class SSDeepHashEditDistanceScorer implements SSDeepHashScorer {
         final String s2doubleChunk = SSDeepHash.normalizeSSDeepChunk(signature2.getDoubleChunk(), maxRepeatedCharacters);
 
         // Each ssdeep has two chunks with different chunk sizes. Choose which ones to use from each hash for scoring.
-        final long score;
+        final int score;
         if (chunkSize1 == chunkSize2) {
             // The ssdeep chunk sizes are equal.
-            final long score1 = scoreChunks(s1chunk, s2chunk, chunkSize1);
-            final long score2 = scoreChunks(s1doubleChunk, s2doubleChunk, chunkSize2);
+            final int score1 = scoreChunks(s1chunk, s2chunk, chunkSize1);
+            final int score2 = scoreChunks(s1doubleChunk, s2doubleChunk, chunkSize2);
             score = Math.max(score1, score2);
         } else if (chunkSize1 == (chunkSize2 * 2)) {
             // The first ssdeep has twice the chunk size of the second.
@@ -66,14 +66,14 @@ public class SSDeepHashEditDistanceScorer implements SSDeepHashScorer {
             score = scoreChunks(s1doubleChunk, s2chunk, chunkSize2);
         }
 
-        return (int) score;
+        return score;
     }
 
     /**
      * This is the low level chunk scoring algorithm. It takes two chunks and scores them on a scale of 0-100 where 0 is a terrible match and 100 is a great
      * match. The chunkSize is used to cope with very small messages.
      */
-    private static int scoreChunks(final String s1, final String s2, final long chunkSize) {
+    private static int scoreChunks(final String s1, final String s2, final int chunkSize) {
         final int len1 = s1.length();
         final int len2 = s2.length();
 

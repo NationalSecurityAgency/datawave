@@ -82,8 +82,8 @@ public class SSDeepScoringFunction implements Function<Map.Entry<Key,Value>,Stre
      *
      * @param query
      *            the query that has the parameters we want to read.
-     * @return the minimum score threshold specified in the query parameter, 0 if none is set or the value of the parameter is outside of the bounds 0 &gt;= n
-     *         &gt;= 100.
+     * @return the minimum score threshold specified in the query parameter, 0 if none is set or the value of the parameter is outside of the bounds 0 &lt;= n
+     *         &lt;= 100.
      */
     private int readOptionalMinScoreThreshold(Query query) {
         QueryImpl.Parameter minScoreParameter = query.findParameter(MIN_SSDEEP_SCORE_PARAMETER);

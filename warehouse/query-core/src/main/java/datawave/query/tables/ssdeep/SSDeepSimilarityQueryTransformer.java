@@ -37,25 +37,33 @@ public class SSDeepSimilarityQueryTransformer extends BaseQueryLogicTransformer<
         final EventBase event = responseObjectFactory.getEvent();
         final List<FieldBase> fields = new ArrayList<>();
 
-        FieldBase f = responseObjectFactory.getField();
-        f.setName("MATCHING_SSDEEP");
-        f.setValue(pair.getMatchingHash().toString());
-        fields.add(f);
+        {
+            FieldBase field = responseObjectFactory.getField();
+            field.setName("MATCHING_SSDEEP");
+            field.setValue(pair.getMatchingHash().toString());
+            fields.add(field);
+        }
 
-        f = responseObjectFactory.getField();
-        f.setName("QUERY_SSDEEP");
-        f.setValue(pair.getQueryHash().toString());
-        fields.add(f);
+        {
+            FieldBase field = responseObjectFactory.getField();
+            field.setName("QUERY_SSDEEP");
+            field.setValue(pair.getQueryHash().toString());
+            fields.add(field);
+        }
 
-        f = responseObjectFactory.getField();
-        f.setName("MATCH_SCORE");
-        f.setValue(String.valueOf(pair.getOverlapScore()));
-        fields.add(f);
+        {
+            FieldBase field = responseObjectFactory.getField();
+            field.setName("MATCH_SCORE");
+            field.setValue(String.valueOf(pair.getOverlapScore()));
+            fields.add(field);
+        }
 
-        f = responseObjectFactory.getField();
-        f.setName("WEIGHTED_SCORE");
-        f.setValue(String.valueOf(pair.getWeightedScore()));
-        fields.add(f);
+        {
+            FieldBase field = responseObjectFactory.getField();
+            field.setName("WEIGHTED_SCORE");
+            field.setValue(String.valueOf(pair.getWeightedScore()));
+            fields.add(field);
+        }
 
         event.setFields(fields);
 
