@@ -1019,52 +1019,50 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
 
         Multimap<BulkIngestKey,Value> values = HashMultimap.create();
 
-        if (StringUtils.isNotEmpty(fieldValue)) {
-            Text colf = new Text("fi");
-            TextUtil.textAppend(colf, fieldName, replaceMalformedUTF8);
-            Text unmaskedColq = new Text(fieldValue);
-            TextUtil.textAppend(unmaskedColq, event.getDataType().outputName(), replaceMalformedUTF8);
-            TextUtil.textAppend(unmaskedColq, event.getId().toString(), replaceMalformedUTF8);
+        Text colf = new Text("fi");
+        TextUtil.textAppend(colf, fieldName, replaceMalformedUTF8);
+        Text unmaskedColq = new Text(fieldValue);
+        TextUtil.textAppend(unmaskedColq, event.getDataType().outputName(), replaceMalformedUTF8);
+        TextUtil.textAppend(unmaskedColq, event.getId().toString(), replaceMalformedUTF8);
 
-            if (value == null) {
-                value = NULL_VALUE;
-            }
+        if (value == null) {
+            value = NULL_VALUE;
+        }
 
-            if (null != maskedFieldHelper && maskedFieldHelper.contains(fieldName)) {
-                if (!StringUtils.isEmpty(fieldValue)) {
-                    // Put unmasked colq with original visibility
-                    Key k = createKey(shardId, colf, unmaskedColq, visibility, event.getDate(), deleteMode);
-                    BulkIngestKey bKey = new BulkIngestKey(this.getShardTableName(), k);
-                    values.put(bKey, value);
-                }
-
-                // We need to use the normalized masked values
-                final String normalizedMaskedValue = helper.getNormalizedMaskedValue(fieldName);
-                if (!StringUtils.isEmpty(normalizedMaskedValue)) {
-                    Text maskedColq = new Text(normalizedMaskedValue);
-                    TextUtil.textAppend(maskedColq, event.getDataType().outputName(), replaceMalformedUTF8);
-                    TextUtil.textAppend(maskedColq, event.getId().toString(), replaceMalformedUTF8);
-
-                    // Put masked colq with masked visibility
-                    Key k = createKey(shardId, colf, maskedColq, maskedVisibility, event.getDate(), deleteMode);
-                    BulkIngestKey bKey = new BulkIngestKey(this.getShardTableName(), k);
-                    values.put(bKey, value);
-                }
-            } else if (!StringUtils.isEmpty(fieldValue)) {
-                /**
-                 * For values that are not being masked, we use the "unmaskedValue" and the masked visibility e.g. release the value as it was in the event at the
-                 * lower visibility
-                 */
-                byte[] refVisibility = visibility;
-
-                if (null != maskedFieldHelper) {
-                    refVisibility = maskedVisibility;
-                }
-
-                Key k = createKey(shardId, colf, unmaskedColq, refVisibility, event.getDate(), deleteMode);
+        if (null != maskedFieldHelper && maskedFieldHelper.contains(fieldName)) {
+            if (!StringUtils.isEmpty(fieldValue)) {
+                // Put unmasked colq with original visibility
+                Key k = createKey(shardId, colf, unmaskedColq, visibility, event.getDate(), deleteMode);
                 BulkIngestKey bKey = new BulkIngestKey(this.getShardTableName(), k);
                 values.put(bKey, value);
             }
+
+            // We need to use the normalized masked values
+            final String normalizedMaskedValue = helper.getNormalizedMaskedValue(fieldName);
+            if (!StringUtils.isEmpty(normalizedMaskedValue)) {
+                Text maskedColq = new Text(normalizedMaskedValue);
+                TextUtil.textAppend(maskedColq, event.getDataType().outputName(), replaceMalformedUTF8);
+                TextUtil.textAppend(maskedColq, event.getId().toString(), replaceMalformedUTF8);
+
+                // Put masked colq with masked visibility
+                Key k = createKey(shardId, colf, maskedColq, maskedVisibility, event.getDate(), deleteMode);
+                BulkIngestKey bKey = new BulkIngestKey(this.getShardTableName(), k);
+                values.put(bKey, value);
+            }
+        } else if (!StringUtils.isEmpty(fieldValue)) {
+            /**
+             * For values that are not being masked, we use the "unmaskedValue" and the masked visibility e.g. release the value as it was in the event at the
+             * lower visibility
+             */
+            byte[] refVisibility = visibility;
+
+            if (null != maskedFieldHelper) {
+                refVisibility = maskedVisibility;
+            }
+
+            Key k = createKey(shardId, colf, unmaskedColq, refVisibility, event.getDate(), deleteMode);
+            BulkIngestKey bKey = new BulkIngestKey(this.getShardTableName(), k);
+            values.put(bKey, value);
         }
 
         return values;

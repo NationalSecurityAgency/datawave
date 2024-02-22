@@ -982,15 +982,15 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
                             n.setError(null);
                             results.put(n.getIndexedFieldName(), n);
                             results.put(failedNormalizationField, new NormalizedFieldAndValue(failedNormalizationField, n.getIndexedFieldName()));
-			    break;
+                            break;
                         case DROP:
                             // for the drop policy, add a failed normalization and clear out indexed field value
                             // field
                             n.setError(null);
-			    n.setIndexedFieldValue(null);
+                            n.setIndexedFieldValue(null);
                             results.put(n.getIndexedFieldName(), n);
                             results.put(failedNormalizationField, new NormalizedFieldAndValue(failedNormalizationField, n.getIndexedFieldName()));
-			    break;
+                            break;
                         case FAIL:
                             // for the fail policy, leave the exception and let the
                             // caller (EventMapper) fail the event
