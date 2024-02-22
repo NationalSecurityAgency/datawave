@@ -94,6 +94,7 @@ import datawave.query.jexl.NodeTypeCount;
 import datawave.query.jexl.functions.EvaluationPhaseFilterFunctions;
 import datawave.query.jexl.functions.QueryFunctions;
 import datawave.query.jexl.lookups.IndexLookup;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.jexl.visitors.AddShardsAndDaysVisitor;
 import datawave.query.jexl.visitors.BoundedRangeDetectionVisitor;
 import datawave.query.jexl.visitors.BoundedRangeIndexExpansionVisitor;
@@ -632,11 +633,13 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      *            the configuration
      */
     public static void validateQuerySize(String lastOperation, final JexlNode queryTree, ShardQueryConfiguration config) {
-        validateQuerySize(lastOperation, queryTree, config.getMaxDepthThreshold(), config.getInitialMaxTermThreshold(), config.getTimers());
+        validateQuerySize(lastOperation, queryTree, config.getMaxDepthThreshold(), config.getInitialMaxTermThreshold(), config.getMaxIvaratorTerms(),
+                        config.getTimers());
     }
 
-    public static void validateQuerySize(String lastOperation, final JexlNode queryTree, int maxDepthThreshold, int maxTermThreshold) {
-        validateQuerySize(lastOperation, queryTree, maxDepthThreshold, maxTermThreshold, null);
+    public static void validateQuerySize(String lastOperation, final JexlNode queryTree, int maxDepthThreshold, int maxTermThreshold,
+                    int maxIvaratorThreshold) {
+        validateQuerySize(lastOperation, queryTree, maxDepthThreshold, maxTermThreshold, maxIvaratorThreshold, null);
     }
 
     /**
@@ -650,10 +653,13 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      *            the max depth threshold
      * @param maxTermThreshold
      *            max term threshold
+     * @param maxIvaratorThreshold
+     *            max ivarators
      * @param timers
      *            timers for metrics
      */
-    public static void validateQuerySize(String lastOperation, final JexlNode queryTree, int maxDepthThreshold, int maxTermThreshold, QueryStopwatch timers) {
+    public static void validateQuerySize(String lastOperation, final JexlNode queryTree, int maxDepthThreshold, int maxTermThreshold, int maxIvaratorThreshold,
+                    QueryStopwatch timers) {
         TraceStopwatch stopwatch = null;
 
         if (timers != null) {
@@ -674,6 +680,19 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.QUERY_TERM_THRESHOLD_EXCEEDED,
                             MessageFormat.format("{0} > {1}, last operation: {2}", termCount, maxTermThreshold, lastOperation));
             throw new DatawaveFatalQueryException(qe);
+        }
+
+        // now check whether we are over the ivarator limit
+        if (maxIvaratorThreshold >= 0) {
+            NodeTypeCount nodeCount = NodeTypeCountVisitor.countNodes(queryTree, QueryPropertyMarker.MarkerType.EXCEEDED_VALUE,
+                            QueryPropertyMarker.MarkerType.EXCEEDED_OR);
+            int totalIvarators = nodeCount.getTotal(QueryPropertyMarker.MarkerType.EXCEEDED_VALUE)
+                            + nodeCount.getTotal(QueryPropertyMarker.MarkerType.EXCEEDED_OR);
+            if (totalIvarators > maxIvaratorThreshold) {
+                QueryException qe = new QueryException(DatawaveErrorCode.EXPAND_QUERY_TERM_SYSTEM_LIMITS, Integer.toString(totalIvarators)
+                                + " terms require server side expansion which is greater than the max of " + maxIvaratorThreshold);
+                throw new DatawaveFatalQueryException(qe);
+            }
         }
 
         if (stopwatch != null) {
@@ -921,7 +940,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 Map<String,IndexLookup> indexLookupMap = new HashMap<>();
 
                 // Check if there is any regex to expand.
-                NodeTypeCount nodeCount = NodeTypeCountVisitor.countNodes(config.getQueryTree());
+                NodeTypeCount nodeCount = NodeTypeCountVisitor.countNodes(config.getQueryTree(), ASTNRNode.class, ASTERNode.class, BOUNDED_RANGE,
+                                ASTFunctionNode.class, EXCEEDED_VALUE);
                 if (nodeCount.hasAny(ASTNRNode.class, ASTERNode.class)) {
                     config.setQueryTree(
                                     timedExpandRegex(timers, "Expand Regex", config.getQueryTree(), config, metadataHelper, scannerFactory, indexLookupMap));
@@ -1591,7 +1611,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         config.setExpandAllTerms(true);
 
         // Check if there is any regex to expand after pulling up delayed predicates.
-        NodeTypeCount nodeCount = NodeTypeCountVisitor.countNodes(config.getQueryTree());
+        NodeTypeCount nodeCount = NodeTypeCountVisitor.countNodes(config.getQueryTree(), ASTNRNode.class, ASTERNode.class, BOUNDED_RANGE, ASTFunctionNode.class,
+                        EXCEEDED_VALUE);
         if (nodeCount.hasAny(ASTNRNode.class, ASTERNode.class)) {
             config.setQueryTree(RegexIndexExpansionVisitor.expandRegex(config, scannerFactory, helper, indexLookupMap, config.getQueryTree()));
             if (log.isDebugEnabled()) {

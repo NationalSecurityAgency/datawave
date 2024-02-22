@@ -1975,6 +1975,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         getConfig().setMaxIvaratorResults(maxIvaratorResults);
     }
 
+    public int getMaxIvaratorTerms() {
+        return getConfig().getMaxIvaratorTerms();
+    }
+
+    public void setMaxIvaratorTerms(int maxIvaratorTerms) {
+        getConfig().setMaxIvaratorTerms(maxIvaratorTerms);
+    }
+
     public int getMaxEvaluationPipelines() {
         return getConfig().getMaxEvaluationPipelines();
     }
