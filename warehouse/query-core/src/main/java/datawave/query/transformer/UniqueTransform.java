@@ -53,6 +53,16 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
      */
     private final long queryExecutionForPageTimeout;
 
+    /**
+     * Create a new {@link UniqueTransform} that will use a bloom filter to return on those results that are unique per the uniqueFields. Special uniqueness can
+     * be requested for date/time fields (@see UniqueFields).
+     *
+     * @param uniqueFields
+     *            The unique fields
+     * @param queryExecutionForPageTimeout
+     *            If this timeout is passed before since the last result was returned, then an "intermediate" result is returned denoting we are still looking
+     *            for the next unique result.
+     */
     public UniqueTransform(UniqueFields uniqueFields, long queryExecutionForPageTimeout) {
         this.queryExecutionForPageTimeout = queryExecutionForPageTimeout;
         this.uniqueFields = uniqueFields;
@@ -64,12 +74,17 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
     }
 
     /**
-     * Create a new {@link UniqueTransform} that will capture the reverse field mapping defined within the model being used by the logic (if present).
+     * Create a new {@link UniqueTransform} that will use a bloom filter to return on those results that are unique per the uniqueFields. Special uniqueness can
+     * be requested for date/time fields (@see UniqueFields). The logic will be used to get a query model to include the reverse mappings in the unique field
+     * set
      *
      * @param logic
-     *            the logic
+     *            The query logic from whih to pull the query model
      * @param uniqueFields
-     *            the set of fields to find unique values for
+     *            The unique fields
+     * @param queryExecutionForPageTimeout
+     *            If this timeout is passed before since the last result was returned, then an "intermediate" result is returned denoting we are still looking
+     *            for the next unique result.
      */
     public UniqueTransform(BaseQueryLogic<Entry<Key,Value>> logic, UniqueFields uniqueFields, long queryExecutionForPageTimeout) {
         this(uniqueFields, queryExecutionForPageTimeout);
