@@ -16,8 +16,8 @@
    <servers>
       <server>
          <id>github-datawave</id>
-         <username>${env.USER_NAME}</username>
-         <password>${env.ACCESS_TOKEN}</password>
+         <username>rdhayes68</username>
+         <password>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</password>
       </server>
    </servers>
 </settings>
