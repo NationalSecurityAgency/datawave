@@ -39,6 +39,7 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.commons.jexl3.parser.ASTAndNode;
 import org.apache.commons.jexl3.parser.ASTERNode;
 import org.apache.commons.jexl3.parser.ASTFunctionNode;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
@@ -113,6 +114,7 @@ import datawave.query.jexl.visitors.FixNegativeNumbersVisitor;
 import datawave.query.jexl.visitors.FixUnindexedNumericTerms;
 import datawave.query.jexl.visitors.FunctionIndexQueryExpansionVisitor;
 import datawave.query.jexl.visitors.GeoWavePruningVisitor;
+import datawave.query.jexl.visitors.IndexedTermCountingVisitor;
 import datawave.query.jexl.visitors.IngestTypePruningVisitor;
 import datawave.query.jexl.visitors.InvertNodeVisitor;
 import datawave.query.jexl.visitors.IsNotNullIntentVisitor;
@@ -1966,7 +1968,11 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             // now for each field, add an expression to filter that date
             List<JexlNode> andChildren = new ArrayList<>();
             for (int i = 0; i < queryTree.jjtGetNumChildren(); i++) {
-                andChildren.add(JexlNodeFactory.createExpression(queryTree.jjtGetChild(i)));
+                if (queryTree.jjtGetChild(i) instanceof ASTAndNode) {
+                    andChildren.add(queryTree.jjtGetChild(i));
+                } else {
+                    andChildren.add(JexlNodeFactory.createExpression(queryTree.jjtGetChild(i)));
+                }
             }
             List<JexlNode> orChildren = new ArrayList<>();
             for (String field : dateIndexData.getFields()) {
@@ -2591,6 +2597,14 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             if (config.getIntermediateMaxTermThreshold() > 0 && termCount > config.getIntermediateMaxTermThreshold()) {
                 throw new DatawaveFatalQueryException(
                                 "Query with " + termCount + " exceeds the initial max term threshold of " + config.getIntermediateMaxTermThreshold());
+            }
+
+            if (config.getIndexedMaxTermThreshold() > 0) {
+                int indexedEqualityTerms = IndexedTermCountingVisitor.countTerms(config.getQueryTree(), config.getIndexedFields());
+                if (indexedEqualityTerms > config.getIndexedMaxTermThreshold()) {
+                    throw new DatawaveQueryException("Query with " + indexedEqualityTerms + " indexed EQ nodes exceeds the indexedMaxTermThreshold of "
+                                    + config.getIndexedMaxTermThreshold());
+                }
             }
 
             if (termCount >= pushdownThreshold) {

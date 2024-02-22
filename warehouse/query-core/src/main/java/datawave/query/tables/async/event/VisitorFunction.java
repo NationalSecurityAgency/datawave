@@ -303,7 +303,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
 
                     pruneEmptyOptions(newIteratorSetting);
 
-                    if (config.getReduceQueryFields()) {
+                    if (config.getReduceQueryFieldsPerShard()) {
                         reduceQueryFields(script, newIteratorSetting);
                     }
 

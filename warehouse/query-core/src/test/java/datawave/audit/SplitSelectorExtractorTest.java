@@ -1,23 +1,23 @@
 package datawave.audit;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 
 import org.apache.commons.lang.math.IntRange;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Lists;
 
 import datawave.webservice.query.QueryImpl;
 
-public class SplitSelectorExtractorTest {
+class SplitSelectorExtractorTest {
 
     @Test
-    public void extractSelectorsLuceneQuery1() {
+    void extractSelectorsLuceneQuery1() {
 
         SplitSelectorExtractor extractor = new SplitSelectorExtractor();
         QueryImpl q = new QueryImpl();
@@ -28,7 +28,7 @@ public class SplitSelectorExtractorTest {
     }
 
     @Test
-    public void extractSelectorsLuceneQuery2() {
+    void extractSelectorsLuceneQuery2() {
 
         SplitSelectorExtractor extractor = new SplitSelectorExtractor();
         extractor.setSeparatorCharacter(";");
@@ -40,7 +40,7 @@ public class SplitSelectorExtractorTest {
     }
 
     @Test
-    public void extractSelectorsLuceneQuery3() {
+    void extractSelectorsLuceneQuery3() {
 
         SplitSelectorExtractor extractor = new SplitSelectorExtractor();
         extractor.setSeparatorCharacter("\0");
@@ -52,7 +52,7 @@ public class SplitSelectorExtractorTest {
     }
 
     @Test
-    public void extractSelectorsLuceneQuery4() {
+    void extractSelectorsLuceneQuery4() {
 
         SplitSelectorExtractor extractor = new SplitSelectorExtractor();
         extractor.setSeparatorParameter("delimiter");
@@ -65,7 +65,7 @@ public class SplitSelectorExtractorTest {
     }
 
     @Test
-    public void rangeTest1() {
+    void rangeTest1() {
         SplitSelectorExtractor extractor = new SplitSelectorExtractor();
         List<IntRange> useSplitRanges = extractor.parseUseSplitsRanges("0");
         //  @formatter:off
@@ -77,7 +77,7 @@ public class SplitSelectorExtractorTest {
     }
 
     @Test
-    public void rangeTest2() {
+    void rangeTest2() {
         SplitSelectorExtractor extractor = new SplitSelectorExtractor();
         List<IntRange> useSplitRanges = extractor.parseUseSplitsRanges("0-2");
         //  @formatter:off
@@ -91,7 +91,7 @@ public class SplitSelectorExtractorTest {
     }
 
     @Test
-    public void rangeTest3() {
+    void rangeTest3() {
         SplitSelectorExtractor extractor = new SplitSelectorExtractor();
         List<IntRange> useSplitRanges = extractor.parseUseSplitsRanges("0-2,4");
         //  @formatter:off
@@ -104,7 +104,7 @@ public class SplitSelectorExtractorTest {
     }
 
     @Test
-    public void rangeTest4() {
+    void rangeTest4() {
         SplitSelectorExtractor extractor = new SplitSelectorExtractor();
         List<IntRange> useSplitRanges = extractor.parseUseSplitsRanges("2,4");
         //  @formatter:off
@@ -117,7 +117,7 @@ public class SplitSelectorExtractorTest {
     }
 
     @Test
-    public void rangeTest5() {
+    void rangeTest5() {
         SplitSelectorExtractor extractor = new SplitSelectorExtractor();
         List<IntRange> useSplitRanges = extractor.parseUseSplitsRanges("2,4,6-");
         //  @formatter:off
@@ -134,7 +134,7 @@ public class SplitSelectorExtractorTest {
     }
 
     @Test
-    public void rangeTest6() {
+    void rangeTest6() {
         SplitSelectorExtractor extractor = new SplitSelectorExtractor();
         List<IntRange> useSplitRanges = extractor.parseUseSplitsRanges(" 2, 4 , 6- ");
         //  @formatter:off
