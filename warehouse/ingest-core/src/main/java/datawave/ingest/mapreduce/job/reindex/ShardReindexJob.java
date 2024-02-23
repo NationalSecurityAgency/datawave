@@ -1,4 +1,4 @@
-package datawave.ingest.mapreduce.job;
+package datawave.ingest.mapreduce.job.reindex;
 
 import static datawave.ingest.mapreduce.job.ShardedTableMapFile.SPLIT_WORK_DIR;
 
@@ -12,9 +12,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
@@ -27,14 +25,11 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.hadoop.mapreduce.AccumuloInputFormat;
-import org.apache.accumulo.hadoopImpl.mapreduce.lib.InputConfigurator;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.io.WritableComparator;
 import org.apache.hadoop.mapreduce.Job;
-import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
@@ -44,14 +39,14 @@ import org.apache.log4j.Logger;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 
-import datawave.ingest.data.Type;
-import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.data.config.ingest.AccumuloHelper;
-import datawave.ingest.data.config.ingest.IngestHelperInterface;
-import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
+import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.ingest.mapreduce.job.DelegatingPartitioner;
+import datawave.ingest.mapreduce.job.IngestJob;
+import datawave.ingest.mapreduce.job.MultiRFileOutputFormatter;
+import datawave.ingest.mapreduce.job.RFileInputFormat;
+import datawave.ingest.mapreduce.job.ShardedTableMapFile;
 import datawave.ingest.mapreduce.job.reduce.BulkIngestKeyAggregatingReducer;
-import datawave.ingest.mapreduce.partition.MultiTableRangePartitioner;
-import datawave.ingest.protobuf.Uid;
 import datawave.util.StringUtils;
 
 /**
@@ -88,7 +83,7 @@ public class ShardReindexJob implements Tool {
     }
 
     private Job setupJob() throws IOException, ParseException, AccumuloException, TableNotFoundException, AccumuloSecurityException, URISyntaxException {
-        configuration.setBoolean("job.cleanupShard", jobConfig.cleanupShard);
+        configuration.setBoolean("cleanupShard", jobConfig.cleanupShard);
         AccumuloClient.ConnectionOptions<Properties> builder = Accumulo.newClientProperties().to(jobConfig.instance, jobConfig.zookeepers)
                         .as(jobConfig.username, getPassword());
 
@@ -181,7 +176,7 @@ public class ShardReindexJob implements Tool {
         // setup the mapper
         j.setMapOutputKeyClass(BulkIngestKey.class);
         j.setMapOutputValueClass(Value.class);
-        j.setMapperClass(FiToGiMapper.class);
+        j.setMapperClass(ShardReindexMapper.class);
 
         // setup a partitioner
         DelegatingPartitioner.configurePartitioner(j, configuration, tableNames.toArray(new String[0]));
@@ -264,196 +259,6 @@ public class ShardReindexJob implements Tool {
         // return;
 
         System.exit(ToolRunner.run(null, new ShardReindexJob(), args));
-    }
-
-    public static class FiToGiMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
-        private static final Logger log = Logger.getLogger(FiToGiMapper.class);
-        private final byte[] FI_START_BYTES = FI_START.getBytes();
-        private final Value UID_VALUE = new Value(buildIndexValue().toByteArray());
-        private final Value EMPTY_VALUE = new Value();
-
-        private TypeRegistry typeRegistry;
-        private Map<String,IngestHelperInterface> datatypeHelperCache;
-        private boolean cleanupShard;
-
-        private Text shardTable;
-        private Text indexTable;
-        private Text reverseIndexTable;
-
-        private byte[] lastFiBytes;
-        private String field;
-
-        private boolean propagateDeletes;
-
-        @Override
-        protected void setup(Context context) throws IOException, InterruptedException {
-            Configuration config = context.getConfiguration();
-            this.typeRegistry = TypeRegistry.getInstance(config);
-
-            this.cleanupShard = config.getBoolean("job.cleanupShard", false);
-
-            this.shardTable = new Text(config.get(ShardedDataTypeHandler.SHARD_TNAME, "shard"));
-            this.indexTable = new Text(config.get(ShardedDataTypeHandler.SHARD_GIDX_TNAME, "shardIndex"));
-            this.reverseIndexTable = new Text(config.get(ShardedDataTypeHandler.SHARD_GRIDX_TNAME, "shardReverseIndex"));
-
-            this.propagateDeletes = config.getBoolean("propagateDeletes", false);
-
-            this.datatypeHelperCache = new HashMap<>();
-        }
-
-        @Override
-        protected void map(Key key, Value value, Context context) throws IOException, InterruptedException {
-            // This is all a bit awkward since DatawaveKey already parses the Key, but is in the datawave-query-core package. Minimally parse the Key for three
-            // purposes
-            // 1. Is it an FI key. Ranges should be created to defeat non fi ranges, but no verify and skip when possible
-            // 2. Get the field name. Necessary for checking how a field is indexed
-            // 3. Get the data type. The data type is used to get the correct IngestHelperInterface which is used to make decisions regarding how a field is
-            // indexed. This may vary from data type to data type
-
-            // this is required for the partitioner, see EventMapper
-            MultiTableRangePartitioner.setContext(context);
-
-            // ensure the key is an fi
-            final byte[] cf = key.getColumnFamilyData().getBackingArray();
-            final int fiBaseLength = FI_START_BYTES.length;
-            if (cf.length <= fiBaseLength || WritableComparator.compareBytes(cf, 0, fiBaseLength, FI_START_BYTES, 0, fiBaseLength) != 0) {
-                // increment count of non-fi key
-                context.getCounter("key types", "non-fi").increment(1l);
-                return;
-            }
-
-            // check if it's the same target field as the last one
-            final int fiBaseOffset = fiBaseLength + 1;
-            if (lastFiBytes == null || WritableComparator.compareBytes(cf, fiBaseOffset, cf.length - fiBaseOffset, lastFiBytes, fiBaseOffset,
-                            lastFiBytes.length - fiBaseOffset) != 0) {
-                // get the field from the cf
-                field = new String(cf, fiBaseLength, cf.length - fiBaseLength);
-                lastFiBytes = cf;
-            }
-
-            // parse the dataType from the cq
-            final byte[] cq = key.getColumnQualifierData().getBackingArray();
-            String uid = null;
-            String dataType = null;
-            StringBuilder fieldValue = new StringBuilder();
-            int cqLen = cq.length;
-            int uidNull = -1;
-            for (int i = cqLen - 1; i >= 0; i--) {
-                if (cq[i] == '\u0000') {
-                    if (uid == null) {
-                        uid = new String(cq, i + 1, cqLen - i - 1);
-                        uidNull = i;
-                    } else if (dataType == null) {
-                        dataType = new String(cq, i + 1, uidNull - i - 1);
-                        fieldValue.append(new String(cq, 0, i));
-                        break;
-                    }
-                }
-            }
-
-            // get the type from the registry or create it if not already created. There is a cache inside the Type class
-            IngestHelperInterface helper = null;
-
-            // check the cache
-            helper = datatypeHelperCache.get(dataType);
-            if (helper == null) {
-                for (Type registeredType : typeRegistry.values()) {
-                    if (registeredType.outputName().equals(dataType)) {
-                        try {
-                            log.info("creating type: " + registeredType.typeName() + " for datatype " + dataType);
-                            Type type = registeredType;
-                            // try to create the type
-                            helper = type.getIngestHelper(context.getConfiguration());
-                            break;
-                        } catch (Exception e) {
-                            log.debug("failed to create type " + registeredType.typeName() + " skipping", e);
-                        }
-                        if (helper != null) {
-                            // put it in the cache
-                            datatypeHelperCache.put(dataType, helper);
-                            break;
-                        }
-                    }
-                }
-            }
-
-            if (helper == null) {
-                log.error(key);
-                throw new IllegalStateException("datatype " + dataType + " not found in Type Registry");
-            }
-
-            Text fieldValueText = null;
-            Text fieldText = null;
-            Text indexCq = null;
-            boolean indexed = false;
-
-            if (key.isDeleted() && !propagateDeletes) {
-                context.getCounter("deletes", "skipped").increment(1l);
-                context.progress();
-                return;
-            } else if (key.isDeleted()) {
-                context.getCounter("deletes", "propagated").increment(1l);
-            }
-
-            // test if the field should have a global index built for it and write to context
-            if (helper.isIndexedField(field) || helper.isIndexOnlyField(field)) {
-                // generate the global index key and emit it
-                fieldValueText = new Text(fieldValue.toString());
-                fieldText = new Text(field);
-                StringBuilder docId = new StringBuilder();
-                docId.append(key.getRowData()).append('\u0000').append(dataType);
-                indexCq = new Text(docId.toString());
-
-                Key globalIndexKey = new Key(fieldValueText, fieldText, indexCq, key.getColumnVisibility(), key.getTimestamp());
-                globalIndexKey.setDeleted(key.isDeleted());
-                BulkIngestKey bik = new BulkIngestKey(indexTable, globalIndexKey);
-                context.write(bik, UID_VALUE);
-                indexed = true;
-                context.getCounter("index", field).increment(1l);
-            }
-
-            // test if the field should have a reverse global index built for it and write to context
-            if (helper.isReverseIndexedField(field)) {
-                // reverse the field value
-                fieldValueText = new Text(fieldValue.reverse().toString());
-                if (fieldText == null) {
-                    fieldText = new Text(field);
-                    StringBuilder docId = new StringBuilder();
-                    docId.append(key.getRowData()).append('\u0000').append(dataType);
-                    indexCq = new Text(docId.toString());
-                }
-
-                Key globalReverseIndexKey = new Key(fieldValueText, fieldText, indexCq, key.getColumnVisibility(), key.getTimestamp());
-                globalReverseIndexKey.setDeleted(key.isDeleted());
-                // generate the global reverse index key and emit it
-                BulkIngestKey bik = new BulkIngestKey(reverseIndexTable, globalReverseIndexKey);
-                context.write(bik, UID_VALUE);
-                indexed = true;
-                context.getCounter("reverse index", field).increment(1l);
-            }
-
-            if (!indexed && cleanupShard) {
-                // generate a delete key for this fi entry
-                Key deleteKey = new Key(key);
-                deleteKey.setDeleted(true);
-                BulkIngestKey bik = new BulkIngestKey(shardTable, deleteKey);
-                context.write(bik, EMPTY_VALUE);
-                context.getCounter("shard cleanup", "fi").increment(1l);
-            }
-
-            // report progress to prevent timeouts
-            context.progress();
-        }
-
-        // create a uid value with no count
-        private static Uid.List buildIndexValue() {
-            Uid.List.Builder uidBuilder = Uid.List.newBuilder();
-
-            uidBuilder.setIGNORE(true);
-            uidBuilder.setCOUNT(1);
-
-            return uidBuilder.build();
-        }
     }
 
     // define all job configuration options
