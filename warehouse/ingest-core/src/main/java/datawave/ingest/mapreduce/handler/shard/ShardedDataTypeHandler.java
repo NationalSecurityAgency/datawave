@@ -1052,8 +1052,8 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
                 }
             } else if (!StringUtils.isEmpty(fieldValue)) {
                 /**
-                 * For values that are not being masked, we use the "unmaskedValue" and the masked visibility e.g. release the value as it was in the event at the
-                 * lower visibility
+                 * For values that are not being masked, we use the "unmaskedValue" and the masked visibility e.g. release the value as it was in the event at
+                 * the lower visibility
                  */
                 byte[] refVisibility = visibility;
 
@@ -1132,8 +1132,8 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
                 }
             } else if (!StringUtils.isEmpty(fieldValue)) {
                 /**
-                 * For values that are not being masked, we use the "unmaskedValue" and the masked visibility e.g. release the value as it was in the event at the
-                 * lower visibility
+                 * For values that are not being masked, we use the "unmaskedValue" and the masked visibility e.g. release the value as it was in the event at
+                 * the lower visibility
                  */
                 byte[] refVisibility = visibility;
 
