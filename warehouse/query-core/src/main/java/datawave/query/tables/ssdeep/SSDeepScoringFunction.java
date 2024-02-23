@@ -117,6 +117,13 @@ public class SSDeepScoringFunction implements Function<Map.Entry<Key,Value>,Stre
     public Stream<ScoredSSDeepPair> apply(Map.Entry<Key,Value> entry) {
         // We will receive entries like the following that follow the SSDeep bucket index format:
         // +++//thPkK 3:3:yionv//thPkKlDtn/rXScG2/uDlhl2UE9FQEul/lldDpZflsup:6v/lhPkKlDtt/6TIPFQEqRDpZ+up []
+        // see: https://github.com/NationalSecurityAgency/datawave/wiki/SSDeep-In-Datawave#ssdeep-table-structure-bucketed
+        // generally, the rowid consists of a:
+        // - bucket; first two characters based on a hash of the original ssdeep
+        // - chunk; third character,
+        // - ngram; the rest of the rowid.
+        // the column family holds the chunk size.
+        // the column qualifier holds the original ssdeep hash from which the ngram was extracted.
         final Key k = entry.getKey();
         final String row = k.getRow().toString();
 
