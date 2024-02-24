@@ -120,7 +120,7 @@ public class DatabaseUserService implements DatawaveUserService {
     public void setup() {
         try (Connection c = ds.getConnection();
                         Statement s = c.createStatement();
-                        ResultSet rs = s.executeQuery("SELECT role, auth FROM " + mappingTableName)) {
+                        ResultSet rs = s.executeQuery(String.format("SELECT role, auth FROM %s", mappingTableName))) {
             while (rs.next()) {
                 roleToAuthorizationMap.put(rs.getString("role"), rs.getString("auth"));
             }
@@ -133,7 +133,7 @@ public class DatabaseUserService implements DatawaveUserService {
     @Override
     public Collection<DatawaveUser> lookup(Collection<SubjectIssuerDNPair> dns) throws AuthorizationException {
         try (Connection c = ds.getConnection();
-                        PreparedStatement ps = c.prepareStatement("SELECT * from " + usersTableName + " where subjectDN = ? and issuerDN = ?")) {
+                        PreparedStatement ps = c.prepareStatement(String.format("SELECT * from %s where subjectDN = ? and issuerDN = ?", usersTableName))) {
             ArrayList<DatawaveUser> users = new ArrayList<>();
             for (SubjectIssuerDNPair dn : dns) {
                 users.add(lookup(ps, dn));
