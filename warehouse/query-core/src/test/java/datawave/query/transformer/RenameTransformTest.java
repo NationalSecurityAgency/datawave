@@ -5,7 +5,9 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.commons.collections.keyvalue.UnmodifiableMapEntry;
@@ -23,10 +25,10 @@ public class RenameTransformTest {
     public void renameFieldMapTest() throws MarkingFunctions.Exception {
         Key key = new Key("shard", "dataType" + Constants.NULL + "uid");
 
-        Map<String,String> fieldMap = new HashMap<>();
+        Set<String> fieldMap = new HashSet<>();
 
-        fieldMap.put("field2", "field3");
-        fieldMap.put("field1", "field3");
+        fieldMap.add("field2=field3");
+        fieldMap.add("field1=field3");
 
         Document d = new Document();
         d.put("field1", new Numeric("1", key, true));
@@ -48,10 +50,10 @@ public class RenameTransformTest {
     public void renameFieldMapPreexistingTest() throws MarkingFunctions.Exception {
         Key key = new Key("shard", "dataType" + Constants.NULL + "uid");
 
-        Map<String,String> fieldMap = new HashMap<>();
+        Set<String> fieldMap = new HashSet<>();
 
-        fieldMap.put("field2", "field3");
-        fieldMap.put("field1", "field3");
+        fieldMap.add("field2=field3");
+        fieldMap.add("field1=field3");
 
         Document d = new Document();
         d.put("field1", new Numeric("1", key, true));
@@ -68,5 +70,32 @@ public class RenameTransformTest {
         assertFalse(d.containsKey("field1"));
         assertTrue(d.get("field3") instanceof Attributes);
         assertEquals(3, d.get("field3").size());
+    }
+
+    @Test
+    public void renameFieldMapWithGroupingContext() throws MarkingFunctions.Exception {
+        Key key = new Key("shard", "dataType" + Constants.NULL + "uid");
+
+        Set<String> fieldMap = new HashSet<>();
+
+        fieldMap.add("field2=field4");
+        fieldMap.add("field1=field5");
+
+        Document d = new Document();
+        d.put("field1.field.11", new Numeric("1", key, true), true, false);
+        d.put("field2.field.12", new Numeric("2", key, true), true, false);
+        d.put("field3.field.13", new Numeric("3", key, true), true, false);
+
+        DocumentTransform transformer = new FieldRenameTransform(fieldMap, true, false);
+
+        Map.Entry<Key,Document> transformed = transformer.apply(new UnmodifiableMapEntry(key, d));
+        assertTrue(transformed.getValue() == d);
+
+        assertFalse(d.containsKey("field1.field.11"));
+        assertFalse(d.containsKey("field2.field.12"));
+
+        assertTrue(d.containsKey("field5.field.11"));
+        assertTrue(d.containsKey("field4.field.12"));
+        assertTrue(d.containsKey("field3.field.13"));
     }
 }

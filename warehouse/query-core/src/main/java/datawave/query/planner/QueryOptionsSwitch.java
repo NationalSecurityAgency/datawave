@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.log4j.Logger;
 
@@ -77,14 +78,8 @@ public class QueryOptionsSwitch {
                     config.setStrictFields(new HashSet<>(Arrays.asList(StringUtils.split(value, Constants.PARAM_VALUE_SEP))));
                     break;
                 case QueryParameters.RENAME_FIELDS:
-                    Map<String,String> renameFieldsMap = new HashMap<>();
-                    Arrays.asList(StringUtils.split(value, Constants.PARAM_VALUE_SEP)).stream().forEach(m -> {
-                        int index = m.indexOf('=');
-                        if (index > 0 && index < m.length() - 1) {
-                            renameFieldsMap.put(m.substring(0, index), m.substring(index + 1));
-                        }
-                    });
-                    config.setRenameFields(renameFieldsMap);
+                    Set<String> renameFieldExpressions = new HashSet<>(Arrays.asList(StringUtils.split(value, Constants.PARAM_VALUE_SEP)));
+                    config.setRenameFields(renameFieldExpressions);
                     break;
                 case QueryParameters.SUM_FIELDS:
                     String[] sumFields = StringUtils.split(value, Constants.PARAM_VALUE_SEP);

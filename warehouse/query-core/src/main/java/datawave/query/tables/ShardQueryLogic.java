@@ -260,7 +260,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
 
     @Override
     public GenericQueryConfiguration initialize(AccumuloClient client, Query settings, Set<Authorizations> auths) throws Exception {
-
+        this.transformerInstance = null;
         this.config = ShardQueryConfiguration.create(this, settings);
         if (log.isTraceEnabled())
             log.trace("Initializing ShardQueryLogic: " + System.identityHashCode(this) + '('
@@ -731,24 +731,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         // Get the list of field rename mappings. May be null.
         String renameFields = settings.findParameter(QueryParameters.RENAME_FIELDS).getParameterValue().trim();
         if (StringUtils.isNotBlank(renameFields)) {
-            Map<String,String> renameFieldsMap = new HashMap<>();
-            Arrays.asList(StringUtils.split(renameFields, Constants.PARAM_VALUE_SEP)).stream().forEach(m -> {
-                int index = m.indexOf('=');
-                if (index > 0 && index < m.length() - 1) {
-                    renameFieldsMap.put(m.substring(0, index), m.substring(index + 1));
-                }
-            });
+            Set<String> renameFieldExpressions = new HashSet<>(Arrays.asList(StringUtils.split(renameFields, Constants.PARAM_VALUE_SEP)));
+            config.setRenameFields(renameFieldExpressions);
 
-            // Only set the rename fields if we were actually given some
-            if (!renameFieldsMap.isEmpty()) {
-                config.setRenameFields(renameFieldsMap);
-
-                if (log.isDebugEnabled()) {
-                    final int maxLen = 100;
-                    // Trim down the projection if it's stupid long
-                    renameFields = maxLen < renameFields.length() ? renameFields.substring(0, maxLen) + "[TRUNCATED]" : renameFields;
-                    log.debug("Rename fields: " + renameFields);
-                }
+            if (log.isDebugEnabled()) {
+                final int maxLen = 100;
+                // Trim down the projection if it's stupid long
+                renameFields = maxLen < renameFields.length() ? renameFields.substring(0, maxLen) + "[TRUNCATED]" : renameFields;
+                log.debug("Rename fields: " + renameFields);
             }
         }
 
