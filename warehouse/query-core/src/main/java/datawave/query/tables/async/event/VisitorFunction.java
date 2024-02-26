@@ -3,6 +3,7 @@ package datawave.query.tables.async.event;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.security.SecureRandom;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -77,7 +78,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
     protected Set<String> indexedFields;
     protected Set<String> indexOnlyFields;
     protected Set<String> nonEventFields;
-    protected Random random = new Random();
+    protected Random random = new SecureRandom();
 
     // thread-safe cache where the key is the original query, and the value is the expanded query
     private Cache<String,String> queryCache;
@@ -303,7 +304,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
 
                     pruneEmptyOptions(newIteratorSetting);
 
-                    if (config.getReduceQueryFields()) {
+                    if (config.getReduceQueryFieldsPerShard()) {
                         reduceQueryFields(script, newIteratorSetting);
                     }
 
@@ -323,7 +324,8 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                     }
 
                     // test the final script for thresholds
-                    DefaultQueryPlanner.validateQuerySize("VisitorFunction", script, config.getMaxDepthThreshold(), config.getFinalMaxTermThreshold());
+                    DefaultQueryPlanner.validateQuerySize("VisitorFunction", script, config.getMaxDepthThreshold(), config.getFinalMaxTermThreshold(),
+                                    config.getMaxIvaratorTerms());
 
                     newIteratorSetting.addOption(QueryOptions.QUERY, newQuery);
                     newOptions.removeScanIterator(setting.getName());

@@ -309,6 +309,8 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
      *            the end index of the excerpt
      * @param range
      *            the range to use when seeking
+     * @param hitTermValues
+     *            the term values to match
      * @return the excerpt
      */
     private String getExcerpt(String field, int start, int end, Range range, ArrayList<String> hitTermValues) {

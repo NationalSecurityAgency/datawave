@@ -64,7 +64,7 @@ import datawave.webservice.results.mr.ResultFile;
  *
  * MapReduce Table
  * <table>
- * <caption></caption>
+ * <caption>MapReduceTable</caption>
  * <tr>
  * <th>Row</th>
  * <th>ColF</th>
@@ -117,7 +117,7 @@ import datawave.webservice.results.mr.ResultFile;
  *
  * MapReduce Index
  * <table>
- * <caption></caption>
+ * <caption>MapReduceIndex</caption>
  * <tr>
  * <th>Row</th>
  * <th>ColF</th>

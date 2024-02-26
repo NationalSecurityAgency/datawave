@@ -56,6 +56,13 @@ public class TextUtil {
 
     /**
      * Appends the UTF-8 bytes of the given string to the given {@link Text}
+     *
+     * @param t
+     *            the Text to which append
+     * @param s
+     *            the String to append
+     * @param replaceBadChar
+     *            flag to replace bad characters
      */
     public static void textAppendNoNull(Text t, String s, boolean replaceBadChar) {
         try {
@@ -90,6 +97,7 @@ public class TextUtil {
      * Converts a UTF-8 encoded byte array back into a String.
      *
      * @param bytes
+     *            UTF8 string of bytes
      * @return string
      */
     public static String fromUtf8(byte[] bytes) {
