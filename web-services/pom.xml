@@ -41,7 +41,7 @@
         <version.asm>4.0</version.asm>
         <version.axiom>1.2.14</version.axiom>
         <version.bcprov>1.46</version.bcprov>
-        <version.commons-compress>1.21</version.commons-compress>
+        <version.commons-compress>1.26.0</version.commons-compress>
         <version.commons-dbutils>1.7</version.commons-dbutils>
         <version.commons-digester>3.2</version.commons-digester>
         <version.commons-net>3.9.0</version.commons-net>
