@@ -1019,7 +1019,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
 
         Multimap<BulkIngestKey,Value> values = HashMultimap.create();
 
-        if (StringUtils.isNotEmpty(fieldValue)) {
+        if (!StringUtils.isEmpty(fieldValue)) {
             Text colf = new Text("fi");
             TextUtil.textAppend(colf, fieldName, replaceMalformedUTF8);
             Text unmaskedColq = new Text(fieldValue);
@@ -1099,7 +1099,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
         boolean replaceMalformedUTF8 = helper.getReplaceMalformedUTF8();
         boolean deleteMode = helper.getDeleteMode();
 
-        if (StringUtils.isNotEmpty(fieldValue)) {
+        if (!StringUtils.isEmpty(fieldValue)) {
             Text colf = new Text("fi");
             TextUtil.textAppend(colf, fieldName, replaceMalformedUTF8);
             Text unmaskedColq = new Text(fieldValue);
