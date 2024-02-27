@@ -339,243 +339,243 @@ public class PrintingVisitor extends ParserVisitor {
     }
 
     public Object visit(ASTJexlScript node, Object data) {
-        maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
             output.writeLine(data + node.toString());
+            maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         }
         return null;
     }
 
     public Object visit(ASTBlock node, Object data) {
-        maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
             output.writeLine(data + node.toString());
+            maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         }
         return null;
     }
 
     public Object visit(ASTIfStatement node, Object data) {
-        maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
             output.writeLine(data + node.toString());
+            maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         }
         return null;
     }
 
     public Object visit(ASTWhileStatement node, Object data) {
-        maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
             output.writeLine(data + node.toString());
+            maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         }
         return null;
     }
 
     public Object visit(ASTForeachStatement node, Object data) {
-        maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
             output.writeLine(data + node.toString());
+            maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         }
         return null;
     }
 
     public Object visit(ASTAssignment node, Object data) {
-        maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
             output.writeLine(data + node.toString());
+            maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         }
         return null;
     }
 
     public Object visit(ASTTernaryNode node, Object data) {
-        maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
             output.writeLine(data + node.toString());
+            maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         }
         return null;
     }
 
     public Object visit(ASTOrNode node, Object data) {
-        maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
             output.writeLine(data + node.toString());
+            maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         }
         return null;
     }
 
     public Object visit(ASTAndNode node, Object data) {
-        maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
             output.writeLine(data + node.toString());
+            maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         }
         return null;
     }
 
     public Object visit(ASTBitwiseOrNode node, Object data) {
-        maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
             output.writeLine(data + node.toString());
+            maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         }
         return null;
     }
 
     public Object visit(ASTBitwiseXorNode node, Object data) {
-        maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
             output.writeLine(data + node.toString());
+            maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         }
         return null;
     }
 
     public Object visit(ASTBitwiseAndNode node, Object data) {
-        maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
             output.writeLine(data + node.toString());
+            maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         }
         return null;
     }
 
     public Object visit(ASTEQNode node, Object data) {
-        maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
             output.writeLine(data + node.toString());
+            maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         }
         return null;
     }
 
     public Object visit(ASTNENode node, Object data) {
-        maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
             output.writeLine(data + node.toString());
+            maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         }
         return null;
     }
 
     public Object visit(ASTLTNode node, Object data) {
-        maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
             output.writeLine(data + node.toString());
+            maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         }
         return null;
     }
 
     public Object visit(ASTGTNode node, Object data) {
-        maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
             output.writeLine(data + node.toString());
+            maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         }
         return null;
     }
 
     public Object visit(ASTLENode node, Object data) {
-        maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
             output.writeLine(data + node.toString());
+            maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         }
         return null;
     }
 
     public Object visit(ASTGENode node, Object data) {
-        maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
             output.writeLine(data + node.toString());
+            maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         }
         return null;
     }
 
     public Object visit(ASTERNode node, Object data) {
-        maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
             output.writeLine(data + node.toString());
+            maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         }
         return null;
     }
 
     public Object visit(ASTNRNode node, Object data) {
-        maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
             output.writeLine(data + node.toString());
+            maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         }
         return null;
     }
 
     public Object visit(ASTMulNode node, Object data) {
-        maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
             output.writeLine(data + node.toString());
+            maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         }
         return null;
     }
 
     public Object visit(ASTDivNode node, Object data) {
-        maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
             output.writeLine(data + node.toString());
+            maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         }
         return null;
     }
 
     public Object visit(ASTModNode node, Object data) {
-        maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
             output.writeLine(data + node.toString());
+            maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         }
         return null;
     }
 
     public Object visit(ASTUnaryMinusNode node, Object data) {
-        maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
             output.writeLine(data + node.toString());
+            maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         }
         return null;
     }
 
     public Object visit(ASTBitwiseComplNode node, Object data) {
-        maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
             output.writeLine(data + node.toString());
+            maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         }
         return null;
     }
 
     public Object visit(ASTNotNode node, Object data) {
-        maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
             output.writeLine(data + node.toString());
+            maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         }
         return null;
     }
 
     public Object visit(ASTIdentifier node, Object data) {
-        maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
             output.writeLine(data + node.toString() + ":" + JexlNodes.getIdentifierOrLiteral(node));
+            maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
             return null;
         } else {
@@ -584,160 +584,162 @@ public class PrintingVisitor extends ParserVisitor {
     }
 
     public Object visit(ASTNullLiteral node, Object data) {
-        maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
             output.writeLine(data + node.toString());
+            maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         }
         return null;
     }
 
     public Object visit(ASTTrueNode node, Object data) {
-        maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
             output.writeLine(data + node.toString());
+            maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         }
         return null;
     }
 
     public Object visit(ASTFalseNode node, Object data) {
-        maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
             output.writeLine(data + node.toString());
+            maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         }
         return null;
     }
 
     public Object visit(ASTStringLiteral node, Object data) {
-        maxTermsToPrint -= 1;
-        output.writeLine(data + node.toString() + ":" + JexlNodes.getIdentifierOrLiteral(node));
-        childrenAccept(node, this, data + PREFIX);
+        if (maxTermsToPrint >= 0) {
+            output.writeLine(data + node.toString() + ":" + JexlNodes.getIdentifierOrLiteral(node));
+            maxTermsToPrint -= 1;
+            childrenAccept(node, this, data + PREFIX);
+        }
         return null;
     }
 
     public Object visit(ASTArrayLiteral node, Object data) {
-        maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
             output.writeLine(data + node.toString());
+            maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         }
         return null;
     }
 
     public Object visit(ASTMapLiteral node, Object data) {
-        maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
             output.writeLine(data + node.toString());
+            maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         }
         return null;
     }
 
     public Object visit(ASTMapEntry node, Object data) {
-        maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
             output.writeLine(data + node.toString());
+            maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         }
         return null;
     }
 
     public Object visit(ASTEmptyFunction node, Object data) {
-        maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
             output.writeLine(data + node.toString());
+            maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         }
         return null;
     }
 
     public Object visit(ASTSizeFunction node, Object data) {
-        maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
             output.writeLine(data + node.toString());
+            maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         }
         return null;
     }
 
     public Object visit(ASTFunctionNode node, Object data) {
-        maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
             output.writeLine(data + node.toString());
+            maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         }
         return null;
     }
 
     public Object visit(ASTMethodNode node, Object data) {
-        maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
             output.writeLine(data + node.toString());
+            maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         }
         return null;
     }
 
     public Object visit(ASTConstructorNode node, Object data) {
-        maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
             output.writeLine(data + node.toString());
+            maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         }
         return null;
     }
 
     public Object visit(ASTArrayAccess node, Object data) {
-        maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
             output.writeLine(data + node.toString());
+            maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         }
         return null;
     }
 
     public Object visit(ASTReference node, Object data) {
-        maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
             output.writeLine(data + node.toString());
+            maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         }
         return null;
     }
 
     public Object visit(ASTReturnStatement node, Object data) {
-        maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
             output.writeLine(data + node.toString());
+            maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         }
         return null;
     }
 
     public Object visit(ASTVar node, Object data) {
-        maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
             output.writeLine(data + node.toString());
+            maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         }
         return null;
     }
 
     public Object visit(ASTNumberLiteral node, Object data) {
-        maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
             output.writeLine(data + node.toString() + ":" + node.getLiteral());
+            maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         }
         return null;
     }
 
     public Object visit(ASTReferenceExpression node, Object data) {
-        maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
             output.writeLine(data + node.toString());
+            maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         }
         return null;
@@ -745,9 +747,9 @@ public class PrintingVisitor extends ParserVisitor {
 
     @Override
     protected Object visit(ASTDoWhileStatement node, Object data) {
-        maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
             output.writeLine(data + node.toString());
+            maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         }
         return null;
@@ -755,9 +757,9 @@ public class PrintingVisitor extends ParserVisitor {
 
     @Override
     protected Object visit(ASTContinue node, Object data) {
-        maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
             output.writeLine(data + node.toString());
+            maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         }
         return null;
@@ -765,9 +767,9 @@ public class PrintingVisitor extends ParserVisitor {
 
     @Override
     protected Object visit(ASTBreak node, Object data) {
-        maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
             output.writeLine(data + node.toString());
+            maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         }
         return null;
@@ -775,9 +777,9 @@ public class PrintingVisitor extends ParserVisitor {
 
     @Override
     protected Object visit(ASTDefineVars node, Object data) {
-        maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
             output.writeLine(data + node.toString());
+            maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         }
         return null;
@@ -785,9 +787,9 @@ public class PrintingVisitor extends ParserVisitor {
 
     @Override
     protected Object visit(ASTNullpNode node, Object data) {
-        maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
             output.writeLine(data + node.toString());
+            maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         }
         return null;
@@ -795,9 +797,9 @@ public class PrintingVisitor extends ParserVisitor {
 
     @Override
     protected Object visit(ASTShiftLeftNode node, Object data) {
-        maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
             output.writeLine(data + node.toString());
+            maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         }
         return null;
@@ -805,9 +807,9 @@ public class PrintingVisitor extends ParserVisitor {
 
     @Override
     protected Object visit(ASTShiftRightNode node, Object data) {
-        maxTermsToPrint -= 1;
         if (maxTermsToPrint >= 0) {
             output.writeLine(data + node.toString());
+            maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         }
         return null;
