@@ -49,6 +49,7 @@ import datawave.query.attributes.ExcerptFields;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.cardinality.CardinalityConfiguration;
 import datawave.query.common.grouping.GroupFields;
+import datawave.query.config.FederatedShardQueryConfiguration;
 import datawave.query.config.IndexHole;
 import datawave.query.config.Profile;
 import datawave.query.config.ShardQueryConfiguration;
@@ -69,6 +70,7 @@ import datawave.query.planner.FederatedQueryPlanner;
 import datawave.query.planner.MetadataHelperQueryModelProvider;
 import datawave.query.planner.QueryModelProvider;
 import datawave.query.planner.QueryPlanner;
+import datawave.query.scheduler.ChainedScheduler;
 import datawave.query.scheduler.PushdownScheduler;
 import datawave.query.scheduler.Scheduler;
 import datawave.query.scheduler.SequentialScheduler;
@@ -189,8 +191,8 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     private QueryPlanner planner = null;
     private QueryParser parser = null;
     private QueryLogicTransformer transformerInstance = null;
-
     private CardinalityConfiguration cardinalityConfiguration = null;
+    private FederatedShardQueryConfiguration federatedConfig = null;
 
     /**
      * Basic constructor
@@ -403,9 +405,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         }
 
         QueryPlanner queryPlanner = getQueryPlanner();
+        DefaultQueryPlanner currentQueryPlanner = null;
         if (queryPlanner instanceof DefaultQueryPlanner) {
-            DefaultQueryPlanner currentQueryPlanner = (DefaultQueryPlanner) queryPlanner;
+            currentQueryPlanner = (DefaultQueryPlanner) queryPlanner;
+        } else if (queryPlanner instanceof FederatedQueryPlanner) {
+            currentQueryPlanner = ((FederatedQueryPlanner) queryPlanner).getQueryPlanner();
+        }
 
+        if (currentQueryPlanner != null) {
             currentQueryPlanner.setMetadataHelper(metadataHelper);
             currentQueryPlanner.setDateIndexHelper(dateIndexHelper);
 
@@ -445,31 +452,17 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
                 config.setProjectFields(getCardinalityConfiguration().getRevisedProjectFields(queryModel, originalProjectFields));
             }
 
-            // If the planner is a DefaultQueryPlanner, delegate the execution to a FederatedQueryPlanner.
-            if (getQueryPlanner().getClass().equals(DefaultQueryPlanner.class)) {
-                log.debug("Executing query via " + FederatedQueryPlanner.class.getSimpleName());
-                FederatedQueryPlanner federatedPlanner = new FederatedQueryPlanner((DefaultQueryPlanner) getQueryPlanner());
-                // Update the iterator.
-                this.queries = federatedPlanner.process(config, jexlQueryString, settings, this.scannerFactory);
-                // Update the planned script in the original planner.
-                ((DefaultQueryPlanner) getQueryPlanner()).setPlannedScript(federatedPlanner.getPlannedScript());
-            } else {
-                this.queries = getQueryPlanner().process(config, jexlQueryString, settings, this.getScannerFactory());
-            }
+            this.queries = getQueryPlanner().process(config, jexlQueryString, settings, this.getScannerFactory());
+
             config.setDisallowlistedFields(originalDisallowlistedFields);
             config.setProjectFields(originalProjectFields);
         } else {
-            // If the planner is a DefaultQueryPlanner, delegate the execution to a FederatedQueryPlanner.
-            if (getQueryPlanner().getClass().equals(DefaultQueryPlanner.class)) {
-                log.debug("Executing query via " + FederatedQueryPlanner.class.getSimpleName());
-                FederatedQueryPlanner federatedPlanner = new FederatedQueryPlanner((DefaultQueryPlanner) getQueryPlanner());
-                // Update the iterator.
-                this.queries = federatedPlanner.process(config, jexlQueryString, settings, this.scannerFactory);
-                // Update the planned script in the original planner.
-                ((DefaultQueryPlanner) getQueryPlanner()).setPlannedScript(federatedPlanner.getPlannedScript());
-            } else {
-                this.queries = getQueryPlanner().process(config, jexlQueryString, settings, this.getScannerFactory());
-            }
+            this.queries = getQueryPlanner().process(config, jexlQueryString, settings, this.getScannerFactory());
+        }
+
+        if (getQueryPlanner() instanceof FederatedQueryPlanner) {
+            log.debug("Query executed as federated query");
+            this.federatedConfig = ((FederatedQueryPlanner) getQueryPlanner()).getFederatedConfig();
         }
 
         TraceStopwatch stopwatch = config.getTimers().newStartedStopwatch("ShardQueryLogic - Get iterator of queries");
@@ -540,17 +533,79 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             throw new QueryException("Did not receive a ShardQueryConfiguration instance!!");
         }
 
-        ShardQueryConfiguration config = (ShardQueryConfiguration) genericConfig;
+        if (this.federatedConfig != null) {
+            log.debug("Setting up federated query");
+            setupFederatedQuery();
+        } else {
+            log.debug("Setting up non-federated query");
+            ShardQueryConfiguration config = (ShardQueryConfiguration) genericConfig;
+            setupQuery(config);
 
+        }
+    }
+
+    private void setupFederatedQuery() {
+        List<ShardQueryConfiguration> configs = federatedConfig.getConfigs();
+        if (configs.size() == 1) {
+            setupQuery(configs.get(0));
+        } else {
+            ShardQueryConfiguration firstConfig = configs.get(0);
+            // If the first query could not be run, assume the remaining could not either. Return no results.
+            // TODO - Is this assumption correct? Should we check all sub-configs if any could be run?
+            if (!firstConfig.canRunQuery()) {
+                log.warn("The given query '" + config + "' could not be run, most likely due to not matching any records in the global index.");
+
+                // Stub out an iterator to correctly present "no results"
+                this.iterator = new Iterator<>() {
+                    @Override
+                    public boolean hasNext() {
+                        return false;
+                    }
+
+                    @Override
+                    public Map.Entry<Key,Value> next() {
+                        return null;
+                    }
+
+                    @Override
+                    public void remove() {}
+                };
+
+                this.scanner = null;
+
+                return;
+            }
+
+            // Instantiate a chained scheduler.
+            ChainedScheduler chainedScheduler = new ChainedScheduler();
+            for (ShardQueryConfiguration config : configs) {
+                Scheduler subScheduler = getScheduler(config, scannerFactory);
+                log.debug("Adding " + subScheduler.getClass().getSimpleName() + " sub-scheduler");
+                chainedScheduler.addScheduler(subScheduler);
+            }
+            this.scheduler = chainedScheduler;
+
+            this.scanner = null;
+            this.iterator = this.scheduler.iterator();
+
+            if (!config.isSortedUIDs()) {
+                this.iterator = new DedupingIterator(this.iterator);
+            }
+
+            // TODO - Reintroduce logging of timers.
+        }
+    }
+
+    private void setupQuery(ShardQueryConfiguration config) {
         final QueryStopwatch timers = config.getTimers();
         TraceStopwatch stopwatch = timers.newStartedStopwatch("ShardQueryLogic - Setup Query");
 
-        // Ensure we have all of the information needed to run a query
+        // Ensure we have all the information needed to run a query
         if (!config.canRunQuery()) {
             log.warn("The given query '" + config + "' could not be run, most likely due to not matching any records in the global index.");
 
             // Stub out an iterator to correctly present "no results"
-            this.iterator = new Iterator<Map.Entry<Key,Value>>() {
+            this.iterator = new Iterator<>() {
                 @Override
                 public boolean hasNext() {
                     return false;
@@ -562,9 +617,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
                 }
 
                 @Override
-                public void remove() {
-                    return;
-                }
+                public void remove() {}
             };
 
             this.scanner = null;
@@ -2690,11 +2743,11 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         getConfig().setPruneQueryOptions(pruneQueryOptions);
     }
 
-    public void setFieldIndexMinThreshold(double fieldIndexMinThreshold) {
-        getConfig().setFieldIndexHoleMinThreshold(fieldIndexMinThreshold);
+    public void setFieldIndexHoleMinThreshold(double fieldIndexHoleMinThreshold) {
+        getConfig().setFieldIndexHoleMinThreshold(fieldIndexHoleMinThreshold);
     }
 
-    public double getFieldIndexMinThreshold(int fieldIndexMinThreshold) {
+    public double getFieldIndexHoleMinThreshold(int fieldIndexHoleMinThreshold) {
         return getConfig().getFieldIndexHoleMinThreshold();
     }
 }

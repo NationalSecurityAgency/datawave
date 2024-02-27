@@ -22,6 +22,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.log4j.Logger;
 
 import datawave.query.CloseableIterable;
+import datawave.query.config.FederatedShardQueryConfiguration;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.DatawaveQueryException;
@@ -47,28 +48,34 @@ public class FederatedQueryPlanner extends QueryPlanner {
     private final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd");
     private final Calendar calendar = Calendar.getInstance();
 
-    private final DefaultQueryPlanner originalPlanner;
+    private DefaultQueryPlanner queryPlanner;
     private String plannedScript;
+    private FederatedShardQueryConfiguration federatedConfig;
 
-    public FederatedQueryPlanner(DefaultQueryPlanner originalPlanner) {
-        this.originalPlanner = originalPlanner;
+    public FederatedQueryPlanner() {
+        this(new DefaultQueryPlanner());
+    }
+
+    public FederatedQueryPlanner(DefaultQueryPlanner queryPlanner) {
+        this.queryPlanner = queryPlanner;
     }
 
     @Override
     public CloseableIterable<QueryData> process(GenericQueryConfiguration genericConfig, String query, Query settings, ScannerFactory scannerFactory)
                     throws DatawaveQueryException {
         // Validate the config type.
-        if (!(genericConfig instanceof ShardQueryConfiguration)) {
+        if (!genericConfig.getClass().equals(ShardQueryConfiguration.class)) {
             throw new ClassCastException("Config must be an instance of " + ShardQueryConfiguration.class.getSimpleName());
         }
+        this.federatedConfig = new FederatedShardQueryConfiguration();
 
         ShardQueryConfiguration originalConfig = (ShardQueryConfiguration) genericConfig;
 
-        log.debug("Query originally set to execute against date range " + dateFormat.format(originalConfig.getBeginDate()) + "-"
-                        + dateFormat.format(originalConfig.getEndDate()));
+        log.debug("Query's original date range " + dateFormat.format(originalConfig.getBeginDate()) + "-" + dateFormat.format(originalConfig.getEndDate()));
 
         // Get the relevant date ranges.
         SortedSet<Pair<Date,Date>> dateRanges = getSubQueryDateRanges(originalConfig, query, scannerFactory);
+        log.debug("Query will search over sub-date ranges: " + dateRanges);
 
         // Execute the same query for each date range and collect the results.
         FederatedQueryIterable results = new FederatedQueryIterable();
@@ -85,20 +92,28 @@ public class FederatedQueryPlanner extends QueryPlanner {
             configCopy.setEndDate(dateRange.getRight());
 
             // Create a copy of the original default query planner, and process the query with the new date range.
-            DefaultQueryPlanner subPlan = new DefaultQueryPlanner(originalPlanner);
+            DefaultQueryPlanner subPlan = new DefaultQueryPlanner(queryPlanner);
 
             // TODO - Check if it's okay to add this to the copy constructor.
             // TODO - Check if anything else needs to be added to the copy constructor.
-            subPlan.setTransformRules(originalPlanner.getTransformRules());
+            subPlan.setTransformRules(queryPlanner.getTransformRules());
 
             // TODO - Verify if we need to make copies of settings or scannerFactory for the sub-plans.
             try {
-                results.addIterable(subPlan.process(configCopy, query, settings, scannerFactory));
+                CloseableIterable<QueryData> queryData = subPlan.process(configCopy, query, settings, scannerFactory);
+                results.addIterable(queryData);
+                ShardQueryConfiguration configCopyCopy = new ShardQueryConfiguration(configCopy);
+                if (queryData != null) {
+                    configCopyCopy.setQueries(queryData.iterator());
+                }
+                configCopyCopy.setQueryString(subPlan.getPlannedScript());
+                federatedConfig.addConfig(configCopyCopy);
             } catch (Exception e) {
                 log.warn("Exception occured when processing sub-plan [" + totalProcessed + " of " + dateRanges.size() + "] against date range (" + subStartDate
                                 + "-" + subEndDate + ")", e);
                 // If an exception occurs, ensure that the planned script and the original config are updated before allowing the exception to bubble up.
                 this.plannedScript = subPlan.getPlannedScript();
+                this.federatedConfig.addConfig(configCopy);
                 originalConfig.copyFrom(configCopy);
                 throw e;
             }
@@ -106,8 +121,10 @@ public class FederatedQueryPlanner extends QueryPlanner {
             // Update the planned script to reflect that of the first query.
             if (this.plannedScript == null) {
                 this.plannedScript = subPlan.getPlannedScript();
+                log.debug("Federated planned script updated to " + subPlan.getPlannedScript());
             }
 
+            // Capture the config of the first sub-plan.
             if (firstConfigCopy == null) {
                 firstConfigCopy = configCopy;
             }
@@ -130,13 +147,24 @@ public class FederatedQueryPlanner extends QueryPlanner {
     private SortedSet<Pair<Date,Date>> getSubQueryDateRanges(ShardQueryConfiguration config, String query, ScannerFactory scannerFactory)
                     throws DatawaveQueryException {
         // Fetch the field index holes for the specified fields and datatypes, using the configured minimum threshold.
-        MetadataHelper metadataHelper = originalPlanner.getMetadataHelper();
+        MetadataHelper metadataHelper = queryPlanner.getMetadataHelper();
         Map<String,Map<String,FieldIndexHole>> fieldIndexHoles;
         try {
             Set<String> fields = getFieldsForQuery(config, query, scannerFactory);
+            log.debug("Fetching field index holes for fields " + fields + " and datatypes " + config.getDatatypeFilter());
             fieldIndexHoles = metadataHelper.getFieldIndexHoles(fields, config.getDatatypeFilter(), config.getFieldIndexHoleMinThreshold());
         } catch (TableNotFoundException | IOException e) {
             throw new DatawaveQueryException("Error occurred when fetching field index holes from metadata table", e);
+        }
+
+        // If no field index holes were found, we can return early with the original query date range.
+        if (fieldIndexHoles.isEmpty()) {
+            log.debug("No field index holes found");
+            SortedSet<Pair<Date,Date>> ranges = new TreeSet<>();
+            ranges.add(Pair.of(config.getBeginDate(), config.getEndDate()));
+            return ranges;
+        } else {
+            log.debug("Field index holes found for fields " + fieldIndexHoles.keySet());
         }
 
         // Collect all field index holes that fall within the original query's target date range.
@@ -156,16 +184,41 @@ public class FederatedQueryPlanner extends QueryPlanner {
         } else {
             // Otherwise, get the valid date ranges.
             // Merge any overlaps.
-            SortedSet<Pair<Date,Date>> mergedHoles = mergeOverlappingRanges(relevantHoles);
+            SortedSet<Pair<Date,Date>> mergedHoles = mergeRanges(relevantHoles);
 
-            // Determine if the first hole starts after the original target start date. If so, add a target date range from the original target start date to
-            // one day before the start of the first hole.
             Iterator<Pair<Date,Date>> it = mergedHoles.iterator();
             Pair<Date,Date> firstHole = it.next();
+
+            // If the start of the first hole occurs after the configured start date, add a range spanning from the start date to one day before the start
+            // of the first hole.
             if (firstHole.getLeft().getTime() > config.getBeginDate().getTime()) {
                 subDateRanges.add(Pair.of(new Date(config.getBeginDate().getTime()), oneDayBefore(firstHole.getLeft())));
-            } else {
-                subDateRanges.add(firstHole);
+                // If the end of the first hole occurs before or on the configured end date, add the entire span for the first hole.
+                if (firstHole.getRight().getTime() <= config.getEndDate().getTime()) {
+                    subDateRanges.add(firstHole);
+                } else {
+                    // Otherwise, add a range from the start of the first hole to the configured end date.
+                    subDateRanges.add(Pair.of(firstHole.getLeft(), new Date(config.getEndDate().getTime())));
+                }
+                // If the start of the first hole is equal to the configured start date, check if the entire hole falls within the query's date range.
+            } else if (firstHole.getLeft().getTime() == config.getBeginDate().getTime()) {
+                // If the end of the first hole occurs before or on the configured end date, add the entire span for the first hole.
+                if (firstHole.getRight().getTime() <= config.getEndDate().getTime()) {
+                    subDateRanges.add(firstHole);
+                } else {
+                    // Otherwise, the first hole spans over the query's date range.
+                    subDateRanges.add(Pair.of(new Date(config.getBeginDate().getTime()), new Date(config.getEndDate().getTime())));
+                }
+                // If the start of the first hole occurs before the configured start date, check how much of the hole falls within the query's date range.
+            } else if (firstHole.getLeft().getTime() < config.getBeginDate().getTime()) {
+                // If the end of the first hole occurs before or on the configured end date, add a range spanning from the configured start date to the end of
+                // the first hole.
+                if (firstHole.getRight().getTime() <= config.getEndDate().getTime()) {
+                    subDateRanges.add(Pair.of(new Date(config.getBeginDate().getTime()), firstHole.getRight()));
+                } else {
+                    // Otherwise, the first hole spans over the query's date range.
+                    subDateRanges.add(Pair.of(new Date(config.getBeginDate().getTime()), new Date(config.getEndDate().getTime())));
+                }
             }
 
             // Track the end of the previous hole.
@@ -207,13 +260,13 @@ public class FederatedQueryPlanner extends QueryPlanner {
      */
     private Set<String> getFieldsForQuery(ShardQueryConfiguration config, String query, ScannerFactory scannerFactory) {
         // Parse the query.
-        ASTJexlScript queryTree = originalPlanner.parseQueryAndValidatePattern(query, null);
+        ASTJexlScript queryTree = queryPlanner.parseQueryAndValidatePattern(query, null);
 
         // Apply the query model.
-        MetadataHelper metadataHelper = originalPlanner.getMetadataHelper();
-        QueryModel queryModel = originalPlanner.loadQueryModel(config);
+        MetadataHelper metadataHelper = queryPlanner.getMetadataHelper();
+        QueryModel queryModel = queryPlanner.loadQueryModel(config);
         if (queryModel != null) {
-            queryTree = originalPlanner.applyQueryModel(metadataHelper, config, queryTree, queryModel);
+            queryTree = queryPlanner.applyQueryModel(metadataHelper, config, queryTree, queryModel);
         } else {
             log.warn("Query model was null, will not apply to query tree.");
         }
@@ -255,7 +308,7 @@ public class FederatedQueryPlanner extends QueryPlanner {
      * Return whether the given date ranges representing the earliest and latest date ranges respectively do not encompass any dates that could fall within the
      */
     private boolean isOutsideDateRange(Date beginDate, Date endDate, Pair<Date,Date> earliestRange, Pair<Date,Date> latestRange) {
-        return earliestRange.getLeft().getTime() > beginDate.getTime() || latestRange.getRight().getTime() < endDate.getTime();
+        return earliestRange.getLeft().getTime() > endDate.getTime() || latestRange.getRight().getTime() < beginDate.getTime();
     }
 
     /**
@@ -269,13 +322,13 @@ public class FederatedQueryPlanner extends QueryPlanner {
      * Return whether the given date falls within the start and end date of the original query's target date range, inclusively.
      */
     private boolean isInDateRange(Date beginDate, Date endDate, Date date) {
-        return beginDate.getTime() >= date.getTime() && date.getTime() <= endDate.getTime();
+        return beginDate.getTime() <= date.getTime() && date.getTime() <= endDate.getTime();
     }
 
     /**
-     * Merge all overlapping date ranges in the given set and return them.
+     * Merge all consecutive/overlapping date ranges in the given set and return them.
      */
-    private SortedSet<Pair<Date,Date>> mergeOverlappingRanges(SortedSet<Pair<Date,Date>> ranges) {
+    private SortedSet<Pair<Date,Date>> mergeRanges(SortedSet<Pair<Date,Date>> ranges) {
         // No merging needs to occur if there is only one date range.
         if (ranges.size() == 1) {
             return ranges;
@@ -288,9 +341,9 @@ public class FederatedQueryPlanner extends QueryPlanner {
         Pair<Date,Date> prev = it.next();
         while (it.hasNext()) {
             Pair<Date,Date> curr = it.next();
-            if (curr.getLeft().getTime() <= prev.getRight().getTime()) {
-                // If the current date range's start date is equal to or before the end date of the previous date range, replace the previous date range
-                // new date range that spans both date ranges.
+            if (curr.getLeft().getTime() <= prev.getRight().getTime() || curr.getLeft().getTime() == oneDayAfter(prev.getRight()).getTime()) {
+                // If the current date range's start date is equal to or before the end date of the previous date range, or is directly consecutive to the
+                // previous date range, replace the previous date range with a new date range that spans both date ranges.
                 prev = Pair.of(prev.getLeft(), curr.getRight());
             } else {
                 // The previous and current date ranges do not overlap. Add the previous date range as a fully-merged range, and replace it with the current
@@ -373,4 +426,15 @@ public class FederatedQueryPlanner extends QueryPlanner {
         return null;
     }
 
+    public DefaultQueryPlanner getQueryPlanner() {
+        return queryPlanner;
+    }
+
+    public void setQueryPlanner(DefaultQueryPlanner queryPlanner) {
+        this.queryPlanner = queryPlanner;
+    }
+
+    public FederatedShardQueryConfiguration getFederatedConfig() {
+        return federatedConfig;
+    }
 }
