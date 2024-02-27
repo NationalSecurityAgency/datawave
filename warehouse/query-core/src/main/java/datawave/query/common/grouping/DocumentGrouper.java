@@ -30,12 +30,13 @@ import datawave.query.attributes.Document;
 import datawave.query.attributes.TypeAttribute;
 
 /**
+ * <P>
  * This class provides the primary functionality needed to group documents and aggregate field values within identified groups (regardless if done server or
  * client-side).
- * <P>
+ * </P>
  * <P>
  * <strong>Grouping</strong>
- * <P>
+ * </P>
  * Grouping fields across documents will result in groupings of distinct value groupings for each specified field to group, as well as the total number of times
  * each particular grouping combination was seen. Fields to group by can be specified by the following options:
  * <ul>
@@ -56,13 +57,11 @@ import datawave.query.attributes.TypeAttribute;
  * matches cannot be determined for values of fields that do not have a context, and as such they will be combined with each possible grouping, effectively a
  * cartesian product. Direct matches are prioritized and found first before indirect matches are combined with them.
  * <P>
- * <P>
  * <strong>Aggregation</strong>
- * <P>
+ * </P>
  * Once all valid groupings have been identified and counted, aggregation can be performed on the values of any specified fields for each grouping. The
  * aggregation fields can differ from the group-by fields. The following aggregation operations are supported:
- * <P>
- * <P>
+ *
  * <strong>SUM</strong>: Sum up all the values for specified fields across groupings. This operation is limited to fields with numerical values. Fields may be
  * specified via:
  * <ul>

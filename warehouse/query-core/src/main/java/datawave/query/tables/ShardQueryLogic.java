@@ -672,7 +672,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             reducedInSettings = Boolean.parseBoolean(reducedResponseStr);
         }
         boolean reduced = (this.isReducedResponse() || reducedInSettings);
-        DocumentTransformer transformer = new DocumentTransformer(this, settings, markingFunctions, responseObjectFactory, reduced);
+        DocumentTransformer transformer = createDocumentTransformer(this, settings, markingFunctions, responseObjectFactory, reduced);
         transformer.setEventQueryDataDecoratorTransformer(eventQueryDataDecoratorTransformer);
         transformer.setContentFieldNames(getConfig().getContentFieldNames());
         transformer.setLogTimingDetails(this.getLogTimingDetails());
@@ -685,8 +685,13 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         return this.transformerInstance;
     }
 
+    protected DocumentTransformer createDocumentTransformer(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions markingFunctions,
+                    ResponseObjectFactory responseObjectFactory, Boolean reducedResponse) {
+        return new DocumentTransformer(logic, settings, markingFunctions, responseObjectFactory, reducedResponse);
+    }
+
     public boolean isLongRunningQuery() {
-        return getConfig().getGroupFields().hasGroupByFields();
+        return getConfig().getGroupFields().hasGroupByFields() || !getUniqueFields().isEmpty();
     }
 
     /**
@@ -702,7 +707,8 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
                 if (alreadyExists != null) {
                     ((UniqueTransform) alreadyExists).updateConfig(getConfig().getUniqueFields(), getQueryModel());
                 } else {
-                    ((DocumentTransformer) this.transformerInstance).addTransform(new UniqueTransform(this, getConfig().getUniqueFields()));
+                    ((DocumentTransformer) this.transformerInstance)
+                                    .addTransform(new UniqueTransform(this, getConfig().getUniqueFields(), this.getQueryExecutionForPageTimeout()));
                 }
             }
 
@@ -1613,6 +1619,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         getConfig().setIntermediateMaxTermThreshold(intermediateMaxTermThreshold);
     }
 
+    public int getIndexedMaxTermThreshold() {
+        return getConfig().getIndexedMaxTermThreshold();
+    }
+
+    public void setIndexedMaxTermThreshold(int indexedMaxTermThreshold) {
+        getConfig().setIndexedMaxTermThreshold(indexedMaxTermThreshold);
+    }
+
     public int getFinalMaxTermThreshold() {
         return getConfig().getFinalMaxTermThreshold();
     }
@@ -2018,12 +2032,28 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         getConfig().setMaxIvaratorSources(maxIvaratorSources);
     }
 
+    public long getMaxIvaratorSourceWait() {
+        return getConfig().getMaxIvaratorSourceWait();
+    }
+
+    public void setMaxIvaratorSourceWait(long maxIvaratorSourceWait) {
+        getConfig().setMaxIvaratorSourceWait(maxIvaratorSourceWait);
+    }
+
     public long getMaxIvaratorResults() {
         return getConfig().getMaxIvaratorResults();
     }
 
     public void setMaxIvaratorResults(long maxIvaratorResults) {
         getConfig().setMaxIvaratorResults(maxIvaratorResults);
+    }
+
+    public int getMaxIvaratorTerms() {
+        return getConfig().getMaxIvaratorTerms();
+    }
+
+    public void setMaxIvaratorTerms(int maxIvaratorTerms) {
+        getConfig().setMaxIvaratorTerms(maxIvaratorTerms);
     }
 
     public int getMaxEvaluationPipelines() {
@@ -2333,6 +2363,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
 
     public void setReduceQueryFields(boolean reduceQueryFields) {
         this.getConfig().setReduceQueryFields(reduceQueryFields);
+    }
+
+    public boolean getReduceQueryFieldsPerShard() {
+        return this.getConfig().getReduceQueryFieldsPerShard();
+    }
+
+    public void setReduceQueryFieldsPerShard(boolean reduceQueryFieldsPerShard) {
+        this.getConfig().setReduceQueryFieldsPerShard(reduceQueryFieldsPerShard);
     }
 
     public boolean getReduceTypeMetadata() {

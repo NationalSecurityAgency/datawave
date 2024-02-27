@@ -3,6 +3,7 @@ package datawave.core.iterators;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -69,7 +70,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
     public static final Text ANY_FINAME = new Text("fi\0" + Constants.ANY_FIELD);
     public static final Text FI_START = new Text("fi\0");
     public static final Text FI_END = new Text("fi\0~");
-    public static final Random RANDOM = new Random();
+    public static final Random RANDOM = new SecureRandom();
 
     public abstract static class Builder<B extends Builder<B>> {
         private String queryId;
@@ -1224,8 +1225,14 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
             }
         };
 
-        return IteratorThreadPoolManager.executeIvarator(runnable, DatawaveFieldIndexCachingIteratorJexl.this + " in " + boundingFiRange, this.initEnv);
-
+        try {
+            return IteratorThreadPoolManager.executeIvarator(runnable, DatawaveFieldIndexCachingIteratorJexl.this + " in " + boundingFiRange, this.initEnv);
+        } catch (Exception e) {
+            log.error("Failed to execute a fill Set", e);
+            // if the execute somehow failed, we need to return the pool source.
+            returnPoolSource(source);
+            throw new RuntimeException(e);
+        }
     }
 
     /**

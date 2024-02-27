@@ -1422,7 +1422,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 .setIvaratorNumRetries(this.getIvaratorNumRetries())
                 .setIvaratorPersistOptions(this.getIvaratorPersistOptions())
                 .setUnsortedIvaratorSource(this.sourceForDeepCopies)
-                .setIvaratorSourcePool(createIvaratorSourcePool(this.maxIvaratorSources))
+                .setIvaratorSourcePool(createIvaratorSourcePool(this.maxIvaratorSources, this.ivaratorCacheScanTimeout))
                 .setMaxIvaratorResults(this.getMaxIvaratorResults())
                 .setIncludes(indexedFields)
                 .setUnindexedFields(nonIndexedFields)
@@ -1445,8 +1445,8 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         // TODO: .setStatsPort(this.statsdHostAndPort);
     }
 
-    protected GenericObjectPool<SortedKeyValueIterator<Key,Value>> createIvaratorSourcePool(int maxIvaratorSources) {
-        return new GenericObjectPool<>(createIvaratorSourceFactory(this), createIvaratorSourcePoolConfig(maxIvaratorSources));
+    protected GenericObjectPool<SortedKeyValueIterator<Key,Value>> createIvaratorSourcePool(int maxIvaratorSources, long maxWait) {
+        return new GenericObjectPool<>(createIvaratorSourceFactory(this), createIvaratorSourcePoolConfig(maxIvaratorSources, maxWait));
     }
 
     private BasePoolableObjectFactory<SortedKeyValueIterator<Key,Value>> createIvaratorSourceFactory(SourceFactory<Key,Value> sourceFactory) {
@@ -1458,12 +1458,13 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         };
     }
 
-    private GenericObjectPool.Config createIvaratorSourcePoolConfig(int maxIvaratorSources) {
+    private GenericObjectPool.Config createIvaratorSourcePoolConfig(int maxIvaratorSources, long maxWait) {
         GenericObjectPool.Config poolConfig = new GenericObjectPool.Config();
         poolConfig.maxActive = maxIvaratorSources;
         poolConfig.maxIdle = maxIvaratorSources;
         poolConfig.minIdle = 0;
         poolConfig.whenExhaustedAction = WHEN_EXHAUSTED_BLOCK;
+        poolConfig.maxWait = maxWait;
         return poolConfig;
     }
 
@@ -1544,7 +1545,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         if (uniqueTransform == null && getUniqueFields() != null && !getUniqueFields().isEmpty()) {
             synchronized (getUniqueFields()) {
                 if (uniqueTransform == null) {
-                    uniqueTransform = new UniqueTransform(getUniqueFields());
+                    uniqueTransform = new UniqueTransform(getUniqueFields(), getResultTimeout());
                 }
             }
         }

@@ -38,6 +38,11 @@ public final class TokenTtlTrie {
 
     /**
      * Scan the specified string for tokens, returning the ttl of the best priority token found, or null if no tokens were found.
+     *
+     * @param rawString
+     *            the raw string
+     *
+     * @return the ttl for the best priority token found
      */
     public Long scan(byte[] rawString) {
         int bestPriority = Integer.MAX_VALUE;
@@ -111,6 +116,11 @@ public final class TokenTtlTrie {
 
         /**
          * Set the delimiter set.
+         *
+         * @param delimiters
+         *            the delimiter set
+         *
+         * @return builder to set the delimiters
          */
         public Builder setDelimiters(byte[] delimiters) {
             this.delimiters.clear();
@@ -122,6 +132,13 @@ public final class TokenTtlTrie {
 
         /**
          * Add a token to the TtlTrie under construction, along with the TTL value the specified token should be associated with.
+         *
+         * @param token
+         *            the token to add
+         * @param ttl
+         *            time to live
+         *
+         * @return builder to add provided token
          */
         @Override
         public Builder addToken(byte[] token, long ttl) {
