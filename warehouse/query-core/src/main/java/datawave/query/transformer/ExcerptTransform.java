@@ -53,8 +53,6 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
 
     private static final String AFTER = "AFTER";
 
-    private static final String BOTH = "BOTH";
-
     private final Map<String,String> excerptIteratorOptions = new HashMap<>();
     private final SortedKeyValueIterator<Key,Value> excerptIterator;
     private final ExcerptFields excerptFields;
@@ -357,7 +355,7 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
         }
 
         // return phrase based on direction
-        String result = String.join(" ", hitPhrase);
+        String result = String.join(" ", hitPhrase); // if no direction given, return everything
         String direction = excerptFields.getDirection(phraseParts[0]).toUpperCase().trim();
         if (direction.equals(BEFORE)) { // remove tokens prior to hit term
             result = StringUtils.substringBeforeLast(result, "]") + "]";
