@@ -27,6 +27,8 @@ public class ExcerptFields implements Serializable {
 
     private static final long serialVersionUID = 5380671489827552579L;
 
+    private static final String BOTH = "both";
+
     private SortedMap<String,SortedMap<Integer,String>> fieldMap;
 
     /**
@@ -60,7 +62,7 @@ public class ExcerptFields implements Serializable {
         String[] fieldParts = string.split(Constants.COMMA);
         for (String fieldPart : fieldParts) {
             String[] parts = StringUtils.split(fieldPart, Constants.FORWARD_SLASH);
-            String direction = parts.length == 3 ? parts[2] : "both";
+            String direction = parts.length == 3 ? parts[2] : BOTH;
             excerptFields.put(parts[0], Integer.valueOf(parts[1]), direction);
         }
         return excerptFields;
@@ -138,7 +140,7 @@ public class ExcerptFields implements Serializable {
      *            the offset
      */
     public void put(String field, Integer offset) {
-        this.put(field, offset, "both");
+        this.put(field, offset, BOTH);
     }
 
     /**
