@@ -5,9 +5,11 @@ import static org.apache.commons.lang3.StringUtils.reverse;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -56,6 +58,7 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
 
     private static final Logger log = Logger.getLogger(ShardReindexMapper.class);
     public static final String BATCH_PROCESSING = "batchProcessing";
+    public static final String GENERATE_METADATA = "generateMetadata";
 
     private final byte[] FI_START_BYTES = ShardReindexJob.FI_START.getBytes();
     private final Value UID_VALUE = new Value(buildIndexValue().toByteArray());
@@ -93,6 +96,7 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
     private boolean exportShard = false;
     private boolean generateTF = false;
     private boolean floorTimestamps = true;
+    private boolean generateMetadata = false;
 
     // data processing/reuse
     private Multimap<String,String> dataMap;
@@ -173,6 +177,8 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
                 throw new IllegalArgumentException("can not create handler for data type handler: " + dataTypeHandler, e);
             }
 
+            this.generateMetadata = config.getBoolean(GENERATE_METADATA, this.generateMetadata);
+
             try {
                 this.event = new RawRecordContainerImpl();
                 if (eventOverride != null) {
@@ -200,7 +206,7 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
     }
 
     @Override
-    protected void cleanup(Context context) {
+    protected void cleanup(Context context) throws IOException, InterruptedException {
         // process any remaining batch data
         if (this.batchProcessing && this.batchValues.size() > 0) {
             try {
@@ -208,6 +214,15 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
             } catch (IOException | InterruptedException e) {
                 throw new RuntimeException("Could not process final batch for field: " + batchField);
             }
+        }
+
+        if (this.generateMetadata && this.indexHandler.getMetadata() != null) {
+            for (BulkIngestKey bik : this.indexHandler.getMetadata().getBulkMetadata().keySet()) {
+                for (Value v : this.indexHandler.getMetadata().getBulkMetadata().get(bik)) {
+                    context.write(bik, v);
+                }
+            }
+
         }
 
         // output counters if used
@@ -536,7 +551,6 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
 
         // TODO check if the batch should be run because
         // A. new field
-        // B. different event
         // C. ???
 
         // determine if this is a tokenized field. If a tokenized field buffer the Key so that all multivalued Keys can be processed together for correct token
@@ -632,6 +646,10 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
         Multimap<BulkIngestKey,Value> keys = this.indexHandler.processBulk(null, this.event, normalizedMap, new ContextWrappedStatusReporter(context));
         endTime = System.currentTimeMillis();
         incrementCounter("reindex", "processBulk", (endTime - startTime));
+
+        if (this.generateMetadata && this.indexHandler.getMetadata() != null) {
+            this.indexHandler.getMetadata().addEventWithoutLoadDates(this.defaultHelper, this.event, normalizedMap);
+        }
 
         for (BulkIngestKey generated : keys.keySet()) {
             if (!generated.getTableName().toString().equals("shard")) {
