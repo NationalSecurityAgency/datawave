@@ -258,6 +258,36 @@ public abstract class ExcerptTest {
     }
 
     @Test
+    public void lessSimpleBeforeTest() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+        extraParameters.put("hit.list", "true");
+        extraParameters.put("return.fields", "HIT_EXCERPT");
+        extraParameters.put("query.syntax", "LUCENE");
+
+        String queryString = "QUOTE:(he cant refuse) #EXCERPT_FIELDS(QUOTE/2/before)";
+
+        Set<String> goodResults = Sets.newHashSet("HIT_EXCERPT:an offer [he] [cant] [refuse]: : [] 9223372036854775807 false");
+
+        runTestQuery(queryString, format.parse("19000101"), format.parse("20240101"), extraParameters, goodResults);
+    }
+
+    @Test
+    public void lessSimpleAfterTest() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+        extraParameters.put("hit.list", "true");
+        extraParameters.put("return.fields", "HIT_EXCERPT");
+        extraParameters.put("query.syntax", "LUCENE");
+
+        String queryString = "QUOTE:(he cant refuse) #EXCERPT_FIELDS(QUOTE/2/after)";
+
+        Set<String> goodResults = Sets.newHashSet("HIT_EXCERPT:[he] [cant] [refuse]: : [] 9223372036854775807 false");
+
+        runTestQuery(queryString, format.parse("19000101"), format.parse("20240101"), extraParameters, goodResults);
+    }
+
+    @Test
     public void lessSimpleTest() throws Exception {
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
@@ -288,6 +318,36 @@ public abstract class ExcerptTest {
     }
 
     @Test
+    public void biggerRangeThanQuoteLengthBeforeTest() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+        extraParameters.put("hit.list", "true");
+        extraParameters.put("return.fields", "HIT_EXCERPT");
+        extraParameters.put("query.syntax", "LUCENE");
+
+        String queryString = "QUOTE:(he cant refuse) #EXCERPT_FIELDS(QUOTE/20/before)";
+
+        Set<String> goodResults = Sets.newHashSet("HIT_EXCERPT:im gonna make him an offer [he] [cant] [refuse]: : [] 9223372036854775807 false");
+
+        runTestQuery(queryString, format.parse("19000101"), format.parse("20240101"), extraParameters, goodResults);
+    }
+
+    @Test
+    public void biggerRangeThanQuoteLengthAfterTest() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+        extraParameters.put("hit.list", "true");
+        extraParameters.put("return.fields", "HIT_EXCERPT");
+        extraParameters.put("query.syntax", "LUCENE");
+
+        String queryString = "QUOTE:(he cant refuse) #EXCERPT_FIELDS(QUOTE/20/after)";
+
+        Set<String> goodResults = Sets.newHashSet("HIT_EXCERPT:[he] [cant] [refuse]: : [] 9223372036854775807 false");
+
+        runTestQuery(queryString, format.parse("19000101"), format.parse("20240101"), extraParameters, goodResults);
+    }
+
+    @Test
     public void wholeQuote() throws Exception {
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
@@ -312,6 +372,38 @@ public abstract class ExcerptTest {
 
         // "if" is the first term for one event
         String queryString = "QUOTE:(if) #EXCERPT_FIELDS(QUOTE/3)";
+
+        Set<String> goodResults = Sets.newHashSet("UUID.0:SOPRANO", "HIT_EXCERPT:[if] you can quote: : [] 9223372036854775807 false");
+
+        runTestQuery(queryString, format.parse("19000101"), format.parse("20240101"), extraParameters, goodResults);
+    }
+
+    @Test
+    public void anotherFirstTermBeforeTest() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+        extraParameters.put("hit.list", "true");
+        extraParameters.put("return.fields", "HIT_EXCERPT,UUID");
+        extraParameters.put("query.syntax", "LUCENE");
+
+        // "if" is the first term for one event
+        String queryString = "QUOTE:(if) #EXCERPT_FIELDS(QUOTE/3/before)";
+
+        Set<String> goodResults = Sets.newHashSet("UUID.0:SOPRANO", "HIT_EXCERPT:[if]: : [] 9223372036854775807 false");
+
+        runTestQuery(queryString, format.parse("19000101"), format.parse("20240101"), extraParameters, goodResults);
+    }
+
+    @Test
+    public void anotherFirstTermAfterTest() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+        extraParameters.put("hit.list", "true");
+        extraParameters.put("return.fields", "HIT_EXCERPT,UUID");
+        extraParameters.put("query.syntax", "LUCENE");
+
+        // "if" is the first term for one event
+        String queryString = "QUOTE:(if) #EXCERPT_FIELDS(QUOTE/3/after)";
 
         Set<String> goodResults = Sets.newHashSet("UUID.0:SOPRANO", "HIT_EXCERPT:[if] you can quote: : [] 9223372036854775807 false");
 
