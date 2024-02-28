@@ -19,6 +19,7 @@ import java.util.Calendar;
 import java.util.Date;
 
 import datawave.data.hash.HashUID;
+import datawave.data.type.NoOpType;
 import datawave.ingest.config.RawRecordContainerImpl;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.config.ingest.AbstractContentIngestHelper;
@@ -825,6 +826,245 @@ public class ShardReindexMapperTest extends EasyMockSupport {
 
         mapper.setup(context);
         mapper.map(fiKey, new Value(), context);
+
+        verifyAll();
+    }
+
+    @Test
+    public void TF_noReprocess_test() throws IOException, InterruptedException {
+        Mapper.Context context = createMock(Mapper.Context.class);
+        ShardReindexMapper mapper = new ShardReindexMapper();
+
+        EasyMock.expect(context.getConfiguration()).andReturn(conf).anyTimes();
+        // set this as the default
+        conf.set(ShardReindexMapper.DEFAULT_DATA_TYPE, "samplecsv");
+
+        Key tfKey = new Key("row", "tf", "samplecsv" + '\u0000' + "1.2.3" + '\u0000' + "abc" + '\u0000' + "FIELDE");
+
+        context.progress();
+
+        replayAll();
+
+        mapper.setup(context);
+        mapper.map(tfKey, new Value(), context);
+
+        verifyAll();
+    }
+
+    @Test
+    public void TF_reprocess_notExported_test() throws IOException, InterruptedException {
+        Mapper.Context context = createMock(Mapper.Context.class);
+        ShardReindexMapper mapper = new ShardReindexMapper();
+
+        EasyMock.expect(context.getConfiguration()).andReturn(conf).anyTimes();
+        // set this as the default
+        conf.set(ShardReindexMapper.DEFAULT_DATA_TYPE, "samplecsv");
+        enableEventProcessing(false);
+
+        Key tfKey = new Key("row", "tf", "samplecsv" + '\u0000' + "1.2.3" + '\u0000' + "abc" + '\u0000' + "FIELDE");
+
+        context.progress();
+
+        replayAll();
+
+        mapper.setup(context);
+        mapper.map(tfKey, new Value(), context);
+
+        verifyAll();
+    }
+
+    @Test
+    public void TF_reprocess_indexOnlyNotGenerateTF_test() throws IOException, InterruptedException {
+        Mapper.Context context = createMock(Mapper.Context.class);
+        ShardReindexMapper mapper = new ShardReindexMapper();
+
+        EasyMock.expect(context.getConfiguration()).andReturn(conf).anyTimes();
+        // set this as the default
+        conf.set(ShardReindexMapper.DEFAULT_DATA_TYPE, "samplecsv");
+        enableEventProcessing(true);
+
+        Key tfKey = new Key("row", "tf", "samplecsv" + '\u0000' + "1.2.3" + '\u0000' + "abc" + '\u0000' + "FIELDE");
+        BulkIngestKey bik = new BulkIngestKey(new Text("shard"), tfKey);
+
+        context.write(EasyMock.eq(bik), EasyMock.isA(Value.class));
+        context.progress();
+
+        replayAll();
+
+        mapper.setup(context);
+        mapper.map(tfKey, new Value(), context);
+
+        verifyAll();
+    }
+
+    @Test
+    public void TF_reprocess_indexOnlyGenerateTF_test() throws IOException, InterruptedException {
+        Mapper.Context context = createMock(Mapper.Context.class);
+        ShardReindexMapper mapper = new ShardReindexMapper();
+
+        EasyMock.expect(context.getConfiguration()).andReturn(conf).anyTimes();
+        // set this as the default
+        conf.set(ShardReindexMapper.DEFAULT_DATA_TYPE, "samplecsv");
+        conf.setBoolean(ShardReindexMapper.GENERATE_TF, true);
+        enableEventProcessing(true);
+
+        Key tfKey = new Key("row", "tf", "samplecsv" + '\u0000' + "1.2.3" + '\u0000' + "abc" + '\u0000' + "FIELDE");
+        BulkIngestKey bik = new BulkIngestKey(new Text("shard"), tfKey);
+
+        context.write(EasyMock.eq(bik), EasyMock.isA(Value.class));
+        context.progress();
+
+        replayAll();
+
+        mapper.setup(context);
+        mapper.map(tfKey, new Value(), context);
+
+        verifyAll();
+    }
+
+    @Test
+    public void TF_reprocess_notIndexOnlyNotGenerateTF_test() throws IOException, InterruptedException {
+        Mapper.Context context = createMock(Mapper.Context.class);
+        ShardReindexMapper mapper = new ShardReindexMapper();
+
+        EasyMock.expect(context.getConfiguration()).andReturn(conf).anyTimes();
+        // set this as the default
+        conf.set(ShardReindexMapper.DEFAULT_DATA_TYPE, "samplecsv");
+        enableEventProcessing(true);
+
+        Key tfKey = new Key("row", "tf", "samplecsv" + '\u0000' + "1.2.3" + '\u0000' + "abc" + '\u0000' + "FIELDF");
+        BulkIngestKey bik = new BulkIngestKey(new Text("shard"), tfKey);
+
+        context.write(EasyMock.eq(bik), EasyMock.isA(Value.class));
+        context.progress();
+
+        replayAll();
+
+        mapper.setup(context);
+        mapper.map(tfKey, new Value(), context);
+
+        verifyAll();
+    }
+
+    @Test
+    public void TF_reprocess_notIndexOnlyGenerateTF_test() throws IOException, InterruptedException {
+        Mapper.Context context = createMock(Mapper.Context.class);
+        ShardReindexMapper mapper = new ShardReindexMapper();
+
+        EasyMock.expect(context.getConfiguration()).andReturn(conf).anyTimes();
+        // set this as the default
+        conf.set(ShardReindexMapper.DEFAULT_DATA_TYPE, "samplecsv");
+        conf.setBoolean(ShardReindexMapper.GENERATE_TF, true);
+        enableEventProcessing(true);
+
+        Key tfKey = new Key("row", "tf", "samplecsv" + '\u0000' + "1.2.3" + '\u0000' + "abc" + '\u0000' + "FIELDF");
+        context.progress();
+
+        replayAll();
+
+        mapper.setup(context);
+        mapper.map(tfKey, new Value(), context);
+
+        verifyAll();
+    }
+
+    @Test
+    public void D_test() throws IOException, InterruptedException {
+        Mapper.Context context = createMock(Mapper.Context.class);
+        ShardReindexMapper mapper = new ShardReindexMapper();
+
+        EasyMock.expect(context.getConfiguration()).andReturn(conf).anyTimes();
+        // set this as the default
+        conf.set(ShardReindexMapper.DEFAULT_DATA_TYPE, "samplecsv");
+
+        Key dKey = new Key("row", "d", "samplecsv" + '\u0000' + "1.2.3" + '\u0000' + "someViewName");
+        context.progress();
+
+        replayAll();
+
+        mapper.setup(context);
+        mapper.map(dKey, new Value(), context);
+
+        verifyAll();
+    }
+
+    @Test
+    public void D_eventProcess_test() throws IOException, InterruptedException {
+        Mapper.Context context = createMock(Mapper.Context.class);
+        ShardReindexMapper mapper = new ShardReindexMapper();
+
+        EasyMock.expect(context.getConfiguration()).andReturn(conf).anyTimes();
+        // set this as the default
+        conf.set(ShardReindexMapper.DEFAULT_DATA_TYPE, "samplecsv");
+        enableEventProcessing(false);
+
+        Key dKey = new Key("row", "d", "samplecsv" + '\u0000' + "1.2.3" + '\u0000' + "someViewName");
+        context.progress();
+
+        replayAll();
+
+        mapper.setup(context);
+        mapper.map(dKey, new Value(), context);
+
+        verifyAll();
+    }
+
+    @Test
+    public void D_eventProcessExport_test() throws IOException, InterruptedException {
+        Mapper.Context context = createMock(Mapper.Context.class);
+        ShardReindexMapper mapper = new ShardReindexMapper();
+
+        EasyMock.expect(context.getConfiguration()).andReturn(conf).anyTimes();
+        // set this as the default
+        conf.set(ShardReindexMapper.DEFAULT_DATA_TYPE, "samplecsv");
+        enableEventProcessing(true);
+
+        Key dKey = new Key("row", "d", "samplecsv" + '\u0000' + "1.2.3" + '\u0000' + "someViewName");
+        BulkIngestKey bik = new BulkIngestKey(new Text("shard"), dKey);
+        context.write(EasyMock.eq(bik), EasyMock.isA(Value.class));
+        context.progress();
+
+        replayAll();
+
+        mapper.setup(context);
+        mapper.map(dKey, new Value(), context);
+
+        verifyAll();
+    }
+
+    @Test
+    public void E_forwardIndex_metadata_test() throws IOException, InterruptedException, ParseException {
+        Mapper.Context context = createMock(Mapper.Context.class);
+
+        conf.setBoolean(ShardReindexMapper.GENERATE_METADATA, true);
+        enableEventProcessing(true);
+        EasyMock.expect(context.getConfiguration()).andReturn(conf).anyTimes();
+        ShardReindexMapper mapper = new ShardReindexMapper();
+
+        Key event = expectIndexed(context, "20240216", "1.2.3", "samplecsv", "FIELDA", "ABC", true);
+        context.progress();
+
+        Key fKey = new Key("FIELDA", "f", "samplecsv" + '\u0000' + "20240216", event.getTimestamp());
+        BulkIngestKey fBik = new BulkIngestKey(new Text("DatawaveMetadata"), fKey);
+        context.write(EasyMock.eq(fBik), EasyMock.isA(Value.class));
+
+        Key iKey = new Key("FIELDA", "i", "samplecsv", event.getTimestamp());
+        BulkIngestKey iBik = new BulkIngestKey(new Text("DatawaveMetadata"), iKey);
+        context.write(EasyMock.eq(iBik), EasyMock.isA(Value.class));
+
+        Key eKey = new Key("FIELDA", "e", "samplecsv", event.getTimestamp());
+        BulkIngestKey eBik = new BulkIngestKey(new Text("DatawaveMetadata"), eKey);
+        context.write(EasyMock.eq(eBik), EasyMock.isA(Value.class));
+
+        Key tKey = new Key("FIELDA", "t", "samplecsv" + '\u0000' + NoOpType.class.getCanonicalName(), event.getTimestamp());
+        BulkIngestKey tBik = new BulkIngestKey(new Text("DatawaveMetadata"), tKey);
+        context.write(EasyMock.eq(tBik), EasyMock.isA(Value.class));
+
+        replayAll();
+
+        mapper.setup(context);
+        mapper.map(event, new Value(), context);
+        mapper.cleanup(context);
 
         verifyAll();
     }
