@@ -113,7 +113,6 @@ public class SSDeepSimilarityQueryLogic extends BaseQueryLogic<ScoredSSDeepPair>
         log.info("Pre-processing " + queries.size() + " SSDeepHash queries");
         final int maxRepeatedCharacters = config.getMaxRepeatedCharacters();
         final NGramGenerator nGramEngine = new NGramGenerator(config.getNGramSize(), maxRepeatedCharacters, config.getMinHashSize());
-        log.info("Pre-processing " + queries.size() + " SSDeepHash queries");
         if (maxRepeatedCharacters > 0) {
             log.info("Normalizing SSDeepHashes to remove long runs of consecutive characters");
             queries = queries.stream().map(h -> h.normalize(maxRepeatedCharacters)).collect(Collectors.toSet());
