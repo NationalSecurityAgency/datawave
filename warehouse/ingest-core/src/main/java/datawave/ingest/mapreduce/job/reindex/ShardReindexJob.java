@@ -12,7 +12,10 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
@@ -20,7 +23,10 @@ import org.apache.accumulo.core.client.Accumulo;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
+import org.apache.accumulo.core.client.Scanner;
+import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
@@ -83,7 +89,6 @@ public class ShardReindexJob implements Tool {
     }
 
     private Job setupJob() throws IOException, ParseException, AccumuloException, TableNotFoundException, AccumuloSecurityException, URISyntaxException {
-        configuration.setBoolean("cleanupShard", jobConfig.cleanupShard);
         AccumuloClient.ConnectionOptions<Properties> builder = Accumulo.newClientProperties().to(jobConfig.instance, jobConfig.zookeepers)
                         .as(jobConfig.username, getPassword());
 
@@ -109,7 +114,19 @@ public class ShardReindexJob implements Tool {
         }
 
         // set the propagate deletes flag
-        configuration.setBoolean("propagateDeletes", jobConfig.propagateDeletes);
+        configuration.setBoolean(ShardReindexMapper.CLEANUP_SHARD, jobConfig.cleanupShard);
+        configuration.setBoolean(ShardReindexMapper.PROPAGATE_DELETES, jobConfig.propagateDeletes);
+        configuration.setBoolean(ShardReindexMapper.REPROCESS_EVENTS, jobConfig.reprocessEvents);
+        configuration.setBoolean(ShardReindexMapper.EXPORT_SHARD, jobConfig.exportShard);
+        configuration.setBoolean(ShardReindexMapper.GENERATE_TF, jobConfig.generateTF);
+        configuration.setBoolean(ShardReindexMapper.GENERATE_METADATA, !jobConfig.skipMetadata);
+        configuration.setBoolean(ShardReindexMapper.FLOOR_TIMESTAMPS, !jobConfig.preserveTimestamps);
+        if (jobConfig.dataTypeHandler != null) {
+            configuration.set(ShardReindexMapper.DATA_TYPE_HANDLER, jobConfig.dataTypeHandler);
+        }
+        if (jobConfig.eventOverride != null) {
+            configuration.set(ShardReindexMapper.EVENT_OVERRIDE, jobConfig.eventOverride);
+        }
 
         // setup the accumulo helper
         AccumuloHelper.setInstanceName(configuration, jobConfig.instance);
@@ -144,14 +161,18 @@ public class ShardReindexJob implements Tool {
 
         // check if using some form of accumulo in input
         if (jobConfig.inputFiles == null) {
-            // build ranges
-            Collection<Range> ranges = buildRanges(jobConfig.startDate, jobConfig.endDate, jobConfig.splitsPerDay);
-
             Properties accumuloProperties = builder.build();
+            if (jobConfig.accumuloMetadata) {
+                // fetch the file list by scanning the accumulo.metadata table
+                jobConfig.inputFiles = org.apache.hadoop.util.StringUtils.join(",", getSplitsFromMetadata(accumuloProperties, jobConfig.table, new Range(new Key(jobConfig.startDate), true, new Key(jobConfig.endDate), true)));
+            } else if (!jobConfig.accumuloData) {
+                // build ranges
+                Collection<Range> ranges = buildRanges(jobConfig.startDate, jobConfig.endDate, jobConfig.splitsPerDay);
 
-            // do not auto adjust ranges because they will be clipped and drop the column qualifier. this will result in full table scans
-            AccumuloInputFormat.configure().clientProperties(accumuloProperties).table(jobConfig.table).autoAdjustRanges(false).batchScan(false).ranges(ranges)
-                            .store(j);
+                // do not auto adjust ranges because they will be clipped and drop the column qualifier. this will result in full table scans
+                AccumuloInputFormat.configure().clientProperties(accumuloProperties).table(jobConfig.table).autoAdjustRanges(false).batchScan(false).ranges(ranges)
+                        .store(j);
+            }
         }
 
         // add to classpath and distributed cache files
@@ -193,6 +214,41 @@ public class ShardReindexJob implements Tool {
         j.setOutputFormatClass(MultiRFileOutputFormatter.class);
 
         return j;
+    }
+
+    private Set<String> getSplitsFromMetadata(Properties accumuloProperties, String tableName, Range r) {
+        Set<String> rangeSplits = new HashSet<>();
+
+        AccumuloClient client = Accumulo.newClient().from(accumuloProperties).build();
+        String tableId = client.tableOperations().tableIdMap().get(tableName);
+
+        if (tableId == null) {
+            throw new RuntimeException("Could not locate table: '" + tableName + "'");
+        }
+
+        try {
+            Scanner s = client.createScanner("accumulo.metadata");
+
+            ScannerBase.ConsistencyLevel consistencyLevel = ScannerBase.ConsistencyLevel.IMMEDIATE;
+            if (jobConfig.useScanServers) {
+                consistencyLevel = ScannerBase.ConsistencyLevel.EVENTUAL;
+            }
+
+            s.setConsistencyLevel(consistencyLevel);
+            s.setRange(new Range(new Key(tableId + ";" + r.getStartKey().getRowData()), true, new Key(tableId + ";" + r.getEndKey().getRowData()), true));
+            Iterator<Map.Entry<Key,Value>> metarator = s.iterator();
+            while (metarator.hasNext()) {
+                Map.Entry<Key,Value> next = metarator.next();
+                ByteSequence file = next.getKey().getColumnQualifierData();
+                rangeSplits.add(file.toString());
+            }
+            s.close();
+            client.close();
+        } catch (TableNotFoundException | AccumuloException | AccumuloSecurityException e) {
+            throw new RuntimeException("Failed to scan metadata for table", e);
+        }
+
+        return rangeSplits;
     }
 
     public static Collection<Range> buildRanges(String start, String end, int splitsPerDay) throws ParseException {
@@ -264,17 +320,29 @@ public class ShardReindexJob implements Tool {
     // define all job configuration options
     private class JobConfig {
         // startDate, endDate, splitsPerDay, and Table are all used with AccumuloInputFormat
-        @Parameter(names = "--startDate", description = "yyyyMMdd start date", required = false)
+        @Parameter(names = "--startDate", description = "yyyyMMdd start date")
         private String startDate;
 
-        @Parameter(names = "--endDate", description = "yyyyMMdd end date", required = false)
+        @Parameter(names = "--endDate", description = "yyyyMMdd end date")
         private String endDate;
 
-        @Parameter(names = "--splitsPerDay", description = "splits for each day", required = false)
+        @Parameter(names = "--splitsPerDay", description = "splits for each day")
         private int splitsPerDay;
 
-        @Parameter(names = "--table", description = "shard table", required = false)
+        @Parameter(names = "--table", description = "shard table")
         private String table = "shard";
+
+        @Parameter(names = "--accumuloMetadata", description = "fetch files from the accumulo.metadata table for the given start/end dates")
+        private boolean accumuloMetadata = false;
+
+        @Parameter(names = "--accumuloData", description = "read ranges from accumulo instead of from files")
+        private boolean accumuloData = false;
+
+        @Parameter(names = "--useScanServers", description = "Use scan servers for any accumulo scans")
+        private boolean useScanServers = false;
+
+        @Parameter(names = "--accumuloLocal", description = "Run the accumulo iterators local in offline mode")
+        private boolean accumuloLocal = false;
 
         // alternatively accept RFileInputFormat
         @Parameter(names = "--inputFiles", description = "When set these files will be used for the job. Should be comma delimited hdfs glob strings",
@@ -296,7 +364,7 @@ public class ShardReindexJob implements Tool {
         private String workDir;
 
         // support for additional resources
-        @Parameter(names = "--resources", description = "configuration resources to be added", required = false)
+        @Parameter(names = "--resources", description = "configuration resources to be added")
         private String resources;
 
         @Parameter(names = "--reducers", description = "number of reducers to use", required = true)
@@ -308,7 +376,7 @@ public class ShardReindexJob implements Tool {
         @Parameter(names = "--destHdfs", description = "HDFS for --outputDir", required = true)
         private String destHdfs;
 
-        @Parameter(names = "--cleanupShard", description = "generate delete keys when unused fi is found", required = false)
+        @Parameter(names = "--cleanupShard", description = "generate delete keys when unused fi is found")
         private boolean cleanupShard;
 
         @Parameter(names = "--instance", description = "accumulo instance name", required = true)
@@ -323,13 +391,40 @@ public class ShardReindexJob implements Tool {
         @Parameter(names = "--password", description = "accumulo password", required = true)
         private String password;
 
-        @Parameter(names = "--queryThreads", description = "batch scanner query threads, defaults to table setting", required = false)
+        @Parameter(names = "--queryThreads", description = "batch scanner query threads, defaults to table setting")
         private int queryThreads = -1;
 
-        @Parameter(names = "--batchSize", description = "accumulo batch size, defaults to table setting", required = false)
+        @Parameter(names = "--batchSize", description = "accumulo batch size, defaults to table setting")
         private int batchSize = -1;
 
-        @Parameter(names = "--propagateDeletes", description = "When true deletes are propagated to the indexes", required = false)
+        @Parameter(names = "--propagateDeletes", description = "When true deletes are propagated to the indexes")
         private boolean propagateDeletes = false;
+
+        @Parameter(names = "--defaultDataType", description = "The datatype to apply to all data that has an unrecognized type, must have configuration for a Type from the TypeRegistry")
+        private String defaultDataType;
+
+        @Parameter(names = "--dataTypeHandler", description = "the DataTypeHandler to use to reprocess events, required with --reprocessEvents")
+        private String dataTypeHandler;
+
+        @Parameter(names = "--reprocessEvents", description = "When set event data will be reprocessed to generate everything except index only fields")
+        private boolean reprocessEvents;
+
+        @Parameter(names = "--eventOverride", description = "Class to create for each RawRecordContainer instance, must implement RawRecordContainer")
+        private String eventOverride;
+
+        @Parameter(names = "--exportShard", description = "exports all sharded data along with the generated indexes. Used in conjunction with --reprocessEvents, and --generateTF")
+        private boolean exportShard = false;
+
+        @Parameter(names = "--generateTF", description = "generates new Term Frequency offsets for any field that is not index only. When false existing TF offsets will be output as long as --exportShard is set")
+        private boolean generateTF = false;
+
+        @Parameter(names = "--skipMetadata", description = "disable writing DatawaveMetadata for job")
+        private boolean skipMetadata = false;
+
+        @Parameter(names = "--preserveTimestamps", description = "preserve event timestamps when generating index entries instead of flooring them to the beginning of the day")
+        private boolean preserveTimestamps = false;
+
+        @Parameter(names = {"-h", "--help"}, description = "display help", help = true)
+        private boolean help;
     }
 }
