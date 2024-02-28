@@ -36,7 +36,7 @@ public class NGramGeneratorTest {
 
     @Test
     public void testGenerateNGrams() {
-        int ngramSize = 7;
+        int ngramSize = NGramGenerator.DEFAULT_NGRAM_SIZE;
         NGramGenerator eng = new NGramGenerator(ngramSize);
         SSDeepHash[] hashes = Arrays.stream(GOOD_HASHES).limit(2).map(SSDeepHash::parse).toArray(SSDeepHash[]::new);
         for (int i = 0; i < hashes.length; i++) {
