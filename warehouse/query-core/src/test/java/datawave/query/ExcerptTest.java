@@ -206,7 +206,7 @@ public abstract class ExcerptTest {
         Assert.assertTrue("unexpected fields returned: " + unexpectedFields.toString(), unexpectedFields.isEmpty());
         Assert.assertTrue(goodResults + " was not empty", goodResults.isEmpty());
 
-        Assert.assertTrue("No docs were returned!", !docs.isEmpty());
+        Assert.assertFalse("No docs were returned!", docs.isEmpty());
     }
 
     @Test
@@ -221,6 +221,38 @@ public abstract class ExcerptTest {
 
         // not sure why the timestamp and delete flag are present
         Set<String> goodResults = Sets.newHashSet("HIT_EXCERPT:get much [farther] with a: : [] 9223372036854775807 false");
+
+        runTestQuery(queryString, format.parse("19000101"), format.parse("20240101"), extraParameters, goodResults);
+    }
+
+    @Test
+    public void simpleTestBefore() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+        extraParameters.put("hit.list", "true");
+        extraParameters.put("return.fields", "HIT_EXCERPT");
+        extraParameters.put("query.syntax", "LUCENE");
+
+        String queryString = "QUOTE:(farther) #EXCERPT_FIELDS(QUOTE/2/before)";
+
+        // not sure why the timestamp and delete flag are present
+        Set<String> goodResults = Sets.newHashSet("HIT_EXCERPT:get much [farther]: : [] 9223372036854775807 false");
+
+        runTestQuery(queryString, format.parse("19000101"), format.parse("20240101"), extraParameters, goodResults);
+    }
+
+    @Test
+    public void simpleTestAfter() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+        extraParameters.put("hit.list", "true");
+        extraParameters.put("return.fields", "HIT_EXCERPT");
+        extraParameters.put("query.syntax", "LUCENE");
+
+        String queryString = "QUOTE:(farther) #EXCERPT_FIELDS(QUOTE/2/after)";
+
+        // not sure why the timestamp and delete flag are present
+        Set<String> goodResults = Sets.newHashSet("HIT_EXCERPT:[farther] with a: : [] 9223372036854775807 false");
 
         runTestQuery(queryString, format.parse("19000101"), format.parse("20240101"), extraParameters, goodResults);
     }
