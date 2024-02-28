@@ -50,7 +50,7 @@ public class ExcerptFieldsTest {
         ExcerptFields excerptFields = new ExcerptFields();
         excerptFields.put("BODY", 10);
         excerptFields.put("CONTENT", 5);
-        assertEquals("BODY/10,CONTENT/5", excerptFields.toString());
+        assertEquals("BODY/10/both,CONTENT/5/both", excerptFields.toString());
     }
 
     /**
@@ -92,7 +92,7 @@ public class ExcerptFieldsTest {
         excerptFields.put("CONTENT", 5);
 
         String json = objectMapper.writeValueAsString(excerptFields);
-        assertEquals("\"BODY/10,CONTENT/5\"", json);
+        assertEquals("\"BODY/10/both,CONTENT/5/both\"", json);
     }
 
     /**
