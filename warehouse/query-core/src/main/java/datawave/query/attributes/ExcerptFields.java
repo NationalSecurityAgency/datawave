@@ -26,7 +26,7 @@ public class ExcerptFields implements Serializable {
 
     private static final long serialVersionUID = 5380671489827552579L;
 
-    private SortedMap<String,Integer> fieldMap;
+    private SortedMap<String,SortedMap<Integer,String>> fieldMap;
 
     /**
      * Returns a new {@link ExcerptFields} parsed from the string. The provided string is expected to have the format returned by
@@ -34,8 +34,8 @@ public class ExcerptFields implements Serializable {
      * <ul>
      * <li>Given null, null will be returned.</li>
      * <li>Given an empty or blank string, an empty {@link ExcerptFields} will be returned.</li>
-     * <li>Given {@code BODY/10,CONTENT/5}, an {@link ExcerptFields} will be returned with the field BODY with an offset of 10, and the field CONTENT with an
-     * offset of 5.
+     * <li>Given {@code BODY/10,CONTENT/5,FOO/20/before}, an {@link ExcerptFields} will be returned with the field BODY with an offset of 10 and a direction of
+     * 'both', the field CONTENT with an offset of 5 and a direction of 'both', and the field FOO with an offset of 20 and a direction of 'before'.
      * </ul>
      *
      * @param string
@@ -59,7 +59,8 @@ public class ExcerptFields implements Serializable {
         String[] fieldParts = string.split(Constants.COMMA);
         for (String fieldPart : fieldParts) {
             String[] parts = StringUtils.split(fieldPart, Constants.FORWARD_SLASH);
-            excerptFields.put(parts[0], Integer.valueOf(parts[1]));
+            String direction = parts.length == 3 ? parts[2] : "both";
+            excerptFields.put(parts[0], Integer.valueOf(parts[1]), direction);
         }
         return excerptFields;
     }
@@ -94,7 +95,7 @@ public class ExcerptFields implements Serializable {
     }
 
     /**
-     * Do we have this field in the list of excerpt fields.
+     * Do we have this field in the list of excerpt fields?
      *
      * @param field
      *            the field
@@ -112,11 +113,23 @@ public class ExcerptFields implements Serializable {
      * @return the offset
      */
     public Integer getOffset(String field) {
-        return fieldMap.get(field);
+        return fieldMap.get(field).firstKey();
     }
 
     /**
-     * Put the offset to use when retrieving excerpts for the specified field.
+     * Return the direction to use when retrieving excerpts for the specified field.
+     *
+     * @param field
+     *            the field
+     * @return the direction
+     */
+    public String getDirection(String field) {
+        SortedMap<Integer,String> offsetMap = fieldMap.get(field);
+        return offsetMap.get(getOffset(field));
+    }
+
+    /**
+     * Put the offset to use when retrieving excerpts for the specified field. When no direction is specified, we default to returning both directions.
      *
      * @param field
      *            the field
@@ -124,7 +137,23 @@ public class ExcerptFields implements Serializable {
      *            the offset
      */
     public void put(String field, Integer offset) {
-        fieldMap.put(field, offset);
+        this.put(field, offset, "both");
+    }
+
+    /**
+     * Put the offset to use when retrieving excerpts for the specified field. In addition, put the direction in which to return excerpts.
+     *
+     * @param field
+     *            the field
+     * @param offset
+     *            the offset
+     * @param direction
+     *            the direction (before/after/both) of the returned excerpts
+     */
+    public void put(String field, Integer offset, String direction) {
+        SortedMap<Integer,String> offsetMap = new TreeMap<>();
+        offsetMap.put(offset, direction);
+        fieldMap.put(field, offsetMap);
     }
 
     /**
@@ -140,8 +169,8 @@ public class ExcerptFields implements Serializable {
      * Replaces any field within this {@link ExcerptFields} with their deconstructed version.
      */
     public void deconstructFields() {
-        SortedMap<String,Integer> deconstructedMap = new TreeMap<>();
-        for (Map.Entry<String,Integer> entry : fieldMap.entrySet()) {
+        SortedMap<String,SortedMap<Integer,String>> deconstructedMap = new TreeMap<>();
+        for (Map.Entry<String,SortedMap<Integer,String>> entry : fieldMap.entrySet()) {
             String deconstructedField = JexlASTHelper.deconstructIdentifier(entry.getKey());
             deconstructedMap.put(deconstructedField, entry.getValue());
         }
@@ -156,9 +185,9 @@ public class ExcerptFields implements Serializable {
      *            the model to find mappings from
      */
     public void expandFields(Multimap<String,String> model) {
-        SortedMap<String,Integer> expandedMap = new TreeMap<>();
+        SortedMap<String,SortedMap<Integer,String>> expandedMap = new TreeMap<>();
         for (String field : fieldMap.keySet()) {
-            int offset = fieldMap.get(field);
+            SortedMap<Integer,String> offset = fieldMap.get(field);
             field = field.toUpperCase();
             // Add the expanded fields.
             if (model.containsKey(field)) {
@@ -175,7 +204,7 @@ public class ExcerptFields implements Serializable {
     /**
      * Returns this {@link ExcerptFields} as a formatted string that can later be parsed back into a {@link ExcerptFields} using
      * {@link ExcerptFields#from(String)}. This is also what will be used when serializing a {@link ExcerptFields} to JSON/XML. The string will have the format
-     * {@code field/offset,field/offset,...}, e.g. {@code BODY/10,CONTENT/5}.
+     * {@code field/offset/direction,field/offset/direction,...}, e.g. {@code BODY/10/before,CONTENT/5/after,FOO/20/both}.
      *
      * @return a formatted string
      */
@@ -183,10 +212,11 @@ public class ExcerptFields implements Serializable {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        Iterator<Map.Entry<String,Integer>> iterator = fieldMap.entrySet().iterator();
+        Iterator<Map.Entry<String,SortedMap<Integer,String>>> iterator = fieldMap.entrySet().iterator();
         while (iterator.hasNext()) {
-            Map.Entry<String,Integer> entry = iterator.next();
-            sb.append(entry.getKey()).append(Constants.FORWARD_SLASH).append(entry.getValue());
+            Map.Entry<String,SortedMap<Integer,String>> entry = iterator.next();
+            sb.append(entry.getKey()).append(Constants.FORWARD_SLASH).append(entry.getValue().firstKey()).append(Constants.FORWARD_SLASH)
+                            .append(entry.getValue().get(entry.getValue().firstKey()));
             if (iterator.hasNext()) {
                 sb.append(Constants.COMMA);
             }

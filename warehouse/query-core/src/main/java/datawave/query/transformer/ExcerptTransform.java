@@ -21,6 +21,7 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.javatuples.Triplet;
 
@@ -47,6 +48,12 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
 
     public static final String PHRASE_INDEXES_ATTRIBUTE = "PHRASE_INDEXES_ATTRIBUTE";
     public static final String HIT_EXCERPT = "HIT_EXCERPT";
+
+    private static final String BEFORE = "BEFORE";
+
+    private static final String AFTER = "AFTER";
+
+    private static final String BOTH = "BOTH";
 
     private final Map<String,String> excerptIteratorOptions = new HashMap<>();
     private final SortedKeyValueIterator<Key,Value> excerptIterator;
@@ -339,7 +346,7 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
         }
     }
 
-    private static String getHitPhrase(ArrayList<String> hitTermValues, String[] phraseParts) {
+    private String getHitPhrase(ArrayList<String> hitTermValues, String[] phraseParts) {
         List<String> hitPhrase = new ArrayList<>();
         for (String phrasePart : phraseParts[1].split(Constants.SPACE)) {
             if (hitTermValues.contains(phrasePart)) {
@@ -348,7 +355,17 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
                 hitPhrase.add(phrasePart);
             }
         }
-        return String.join(" ", hitPhrase);
+
+        // return phrase based on direction
+        String result = String.join(" ", hitPhrase);
+        String direction = excerptFields.getDirection(phraseParts[0]).toUpperCase().trim();
+        if (direction.equals(BEFORE)) { // remove tokens prior to hit term
+            result = StringUtils.substringBeforeLast(result, "]") + "]";
+        } else if (direction.equals(AFTER)) { // remove tokens after hit term
+            result = "[" + StringUtils.substringAfter(result, "[");
+        }
+
+        return result;
     }
 
     /**
