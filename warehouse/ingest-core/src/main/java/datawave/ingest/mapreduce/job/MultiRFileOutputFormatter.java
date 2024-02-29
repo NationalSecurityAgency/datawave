@@ -291,7 +291,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
 
     private void addLoadPlanForFile(SizeTrackingWriter writer, String table, Path filepath) {
         if (writer != null && writer.entries > 0) {
-            log.error(String.format("TMP - Creating load plan for table:[%s], filepath:[%s], startRow:[%s], endRow:[%s], workDir:[%s]", table, filepath,
+            log.debug(String.format("Creating load plan for table:[%s], filepath:[%s], startRow:[%s], endRow:[%s], workDir:[%s]", table, filepath,
                             writer.startRow, writer.endRow, workDir));
             if (!tableLoadPlans.containsKey(table)) {
                 tableLoadPlans.put(table, new HashSet<>());
@@ -302,18 +302,17 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
         }
     }
 
-    private void writeLoadPlans() throws IOException {
-        // Consolidate plans for each table in to a single plan and persist it to file
+    private void writeLoadPlans(TaskAttemptContext context) throws IOException {
+        // Consolidate plans (in case there are multiple) for each table. Write to file
         for (Map.Entry<String,Set<LoadPlan>> entry : tableLoadPlans.entrySet()) {
             var builder = LoadPlan.builder();
-            entry.getValue().stream().forEach(plan -> builder.addPlan(plan));
             var tableName = entry.getKey();
-            var fileName = String.format("loadplan-%s.json", UUID.randomUUID());
-            var path = new Path(String.format("%s/%s", workDir, tableName), fileName);
+            var path = new Path(String.format("%s/%s", workDir, tableName), getUniqueFile(context, "loadplan", ".json"));
             var loadPlan = builder.build();
-            FSDataOutputStream out = fs.create(path);
-            out.write(gson.toJson(loadPlan).getBytes(StandardCharsets.UTF_8));
-            log.error(String.format("TMP - LoadPlan for table:[%s], PLAN:\\n%s\\n", tableName, gson.toJson(loadPlan)));
+            entry.getValue().stream().forEach(plan -> builder.addPlan(plan));
+            try (FSDataOutputStream out = fs.create(path)) {
+                out.write(gson.toJson(loadPlan).getBytes(StandardCharsets.UTF_8));
+            }
         }
     }
 
@@ -603,7 +602,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
 
             @Override
             public void close(TaskAttemptContext context) throws IOException, InterruptedException {
-                // Close all the writers, but add the associated load plan prior to doing so
+                // Close each writer. Add its associated load plan prior to doing so
                 for (Map.Entry<String,SizeTrackingWriter> entry : writers.entrySet()) {
                     var writer = entry.getValue();
                     var table = writerTableNames.get(entry.getKey());
@@ -634,7 +633,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
                     }
                 }
                 
-                writeLoadPlans();
+                writeLoadPlans(context);
                 
                 for (Path path : unusedWriterPaths.values()) {
                     log.info("Nothing written to " + path + ".  Deleting from HDFS.");
