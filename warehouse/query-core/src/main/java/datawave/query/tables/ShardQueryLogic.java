@@ -192,6 +192,11 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     private QueryParser parser = null;
     private QueryLogicTransformer transformerInstance = null;
     private CardinalityConfiguration cardinalityConfiguration = null;
+
+    /**
+     * This is set internally only when the query planner is a {@link FederatedQueryPlanner} instance and {@link #initialize(AccumuloClient, Query, Set)} is
+     * called. It is required later for {@link #setupQuery(GenericQueryConfiguration)}.
+     */
     private FederatedShardQueryConfiguration federatedConfig = null;
 
     /**
@@ -240,6 +245,9 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
 
         if (other.eventQueryDataDecoratorTransformer != null) {
             this.setEventQueryDataDecoratorTransformer(new EventQueryDataDecoratorTransformer(other.getEventQueryDataDecoratorTransformer()));
+        }
+        if (other.federatedConfig != null) {
+            this.federatedConfig = new FederatedShardQueryConfiguration(other.federatedConfig);
         }
     }
 
@@ -533,6 +541,9 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             throw new QueryException("Did not receive a ShardQueryConfiguration instance!!");
         }
 
+        /*
+         * ShardQueryConfiguration config = (ShardQueryConfiguration) genericConfig; setupQuery(config);
+         */
         if (this.federatedConfig != null) {
             log.debug("Setting up federated query");
             setupFederatedQuery();
@@ -545,14 +556,13 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     }
 
     private void setupFederatedQuery() {
+        QueryStopwatch timers = config.getTimers();
+        TraceStopwatch stopwatch = timers.newStartedStopwatch("ShardQueryLogic - Setup Federated Query");
         List<ShardQueryConfiguration> configs = federatedConfig.getConfigs();
-        if (configs.size() == 1) {
-            setupQuery(configs.get(0));
-        } else {
-            ShardQueryConfiguration firstConfig = configs.get(0);
-            // If the first query could not be run, assume the remaining could not either. Return no results.
-            // TODO - Is this assumption correct? Should we check all sub-configs if any could be run?
-            if (!firstConfig.canRunQuery()) {
+
+        // Verify if all queries can be run.
+        for (ShardQueryConfiguration config : configs) {
+            if (!config.canRunQuery()) {
                 log.warn("The given query '" + config + "' could not be run, most likely due to not matching any records in the global index.");
 
                 // Stub out an iterator to correctly present "no results"
@@ -571,28 +581,41 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
                     public void remove() {}
                 };
 
+                stopwatch.stop();
+                log.info(getStopwatchHeader(config));
+                List<String> timings = timers.summarizeAsList();
+                for (String timing : timings) {
+                    log.info(timing);
+                }
                 this.scanner = null;
-
                 return;
             }
+        }
 
-            // Instantiate a chained scheduler.
-            ChainedScheduler chainedScheduler = new ChainedScheduler();
-            for (ShardQueryConfiguration config : configs) {
-                Scheduler subScheduler = getScheduler(config, scannerFactory);
-                log.debug("Adding " + subScheduler.getClass().getSimpleName() + " sub-scheduler");
-                chainedScheduler.addScheduler(subScheduler);
-            }
-            this.scheduler = chainedScheduler;
+        // Instantiate a chained scheduler that will schedule each sub-query.
+        log.debug("Total configs: " + configs.size());
+        ChainedScheduler chainedScheduler = new ChainedScheduler();
+        for (ShardQueryConfiguration config : configs) {
+            Scheduler subScheduler = getScheduler(config, scannerFactory);
+            log.debug("Adding " + subScheduler.getClass().getSimpleName() + " sub-scheduler");
+            chainedScheduler.addScheduler(subScheduler);
+        }
+        this.scheduler = chainedScheduler;
+        this.scanner = null;
+        log.debug("chained - Fetching iterator");
+        this.iterator = this.scheduler.iterator();
+        log.debug("chained - iterator fetched");
+        if (!config.isSortedUIDs()) {
+            log.debug("Wrapping in deduping iterator");
+            this.iterator = new DedupingIterator(this.iterator);
+        }
 
-            this.scanner = null;
-            this.iterator = this.scheduler.iterator();
+        stopwatch.stop();
 
-            if (!config.isSortedUIDs()) {
-                this.iterator = new DedupingIterator(this.iterator);
-            }
-
-            // TODO - Reintroduce logging of timers.
+        log.info(getStopwatchHeader(config));
+        List<String> timings = timers.summarizeAsList();
+        for (String timing : timings) {
+            log.info(timing);
         }
     }
 

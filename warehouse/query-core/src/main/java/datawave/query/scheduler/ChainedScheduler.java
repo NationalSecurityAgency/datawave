@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
-import java.util.NoSuchElementException;
 
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -23,7 +22,6 @@ import datawave.webservice.query.configuration.QueryData;
  */
 public class ChainedScheduler extends Scheduler {
 
-    private static final Logger log = Logger.getLogger(ChainedScheduler.class);
     private final List<Scheduler> schedulers = new ArrayList<>();
 
     public void addScheduler(Scheduler scheduler) {
@@ -51,7 +49,6 @@ public class ChainedScheduler extends Scheduler {
 
     @Override
     public Iterator<Entry<Key,Value>> iterator() {
-        log.debug("total schedulers: " + schedulers.size());
         return new Iter();
     }
 
@@ -61,63 +58,42 @@ public class ChainedScheduler extends Scheduler {
         private final Iterator<Scheduler> schedulerIterator = schedulers.iterator();
 
         // The current scheduler iterator.
-        private Iterator<Entry<Key,Value>> currentSchedulerIterator;
-
-        // Whether seekToNext has ever been called.
-        private boolean everSeeked = false;
+        private Iterator<Entry<Key,Value>> currIterator;
 
         @Override
         public boolean hasNext() {
-            seekToNext();
-            return currentSchedulerIterator != null && currentSchedulerIterator.hasNext();
+            seekToNextAvailableEntry();
+            return currIterator != null && currIterator.hasNext();
         }
 
         @Override
         public Entry<Key,Value> next() {
-            if (!everSeeked) {
-                seekToNext();
-            }
-
-            if (currentSchedulerIterator == null) {
-                throw new NoSuchElementException();
-            } else {
-                return currentSchedulerIterator.next();
-            }
+            return currIterator.next();
         }
 
         /**
          * Seek to the next scheduler that has an entry remaining in it.
          */
-        private void seekToNext() {
-            log.debug("chained: seekToNext");
-            everSeeked = true;
-
-            // If the current scheduler iterator is null, attempt the get the next scheduler iterator, or return early if there are no more iterators.
-            if (currentSchedulerIterator == null) {
+        private void seekToNextAvailableEntry() {
+            if (currIterator == null) {
                 if (schedulerIterator.hasNext()) {
-                    log.debug("chain: Updated iterator to next scheduler 1");
-                    currentSchedulerIterator = schedulerIterator.next().iterator();
+                    currIterator = schedulerIterator.next().iterator();
+                    if (!currIterator.hasNext()) {
+                        seekToNextAvailableEntry();
+                    }
                 } else {
-                    log.debug("chain: No more schedulers");
                     return;
                 }
             }
 
-            // If the current sub-iterator does not have any more elements remaining, move to the next sub-iterator that does have elements.
-            if (!currentSchedulerIterator.hasNext()) {
-                log.debug("chain: current scheduler does not have next");
+            if (!currIterator.hasNext()) {
                 while (schedulerIterator.hasNext()) {
-                    log.debug("chain: updated iterator to next scheduler 2");
-                    currentSchedulerIterator = schedulerIterator.next().iterator();
-                    if (currentSchedulerIterator.hasNext()) {
-                        log.debug("chain: new scheduler has next");
+                    currIterator = schedulerIterator.next().iterator();
+                    if (currIterator.hasNext()) {
                         return;
-                    } else {
-                        log.debug("chain: new scheduler does not have next");
                     }
                 }
             }
         }
     }
-
 }

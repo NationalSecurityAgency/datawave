@@ -301,12 +301,12 @@ public class MockMetadataHelper extends MetadataHelper {
     }
 
     @Override
-    public Long getCountsByFieldForDays(String fieldName, Date begin, Date end, Set<String> ingestTypeFilter) {
+    public Long getCountsByFieldForDays(String fieldName, Date begin, Date end, Set<String> dataTypes) {
         Preconditions.checkNotNull(fieldName);
         Preconditions.checkNotNull(begin);
         Preconditions.checkNotNull(end);
         Preconditions.checkArgument(begin.before(end));
-        Preconditions.checkNotNull(ingestTypeFilter);
+        Preconditions.checkNotNull(dataTypes);
 
         Date truncatedBegin = DateUtils.truncate(begin, Calendar.DATE);
         Date truncatedEnd = DateUtils.truncate(end, Calendar.DATE);
@@ -326,7 +326,7 @@ public class MockMetadataHelper extends MetadataHelper {
             Date curDate = cal.getTime();
             String desiredDate = sdf.format(curDate);
 
-            sum += getCountsByFieldInDayWithTypes(fieldName, desiredDate, ingestTypeFilter);
+            sum += getCountsByFieldInDayWithTypes(fieldName, desiredDate, dataTypes);
             cal.add(Calendar.DATE, 1);
         }
 

@@ -8,7 +8,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -20,8 +19,6 @@ import java.util.UUID;
 import javax.inject.Inject;
 
 import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
 import org.jboss.arquillian.container.test.api.Deployment;
@@ -399,6 +396,30 @@ public abstract class FederatedQueryTest {
     }
 
     /**
+     * Test a query that targets fields with field index holes for different fields that overlap.
+     */
+    @Test
+    public void testOverlappingFieldIndexHolesForDifferentFieldsNoSingleDates() throws Exception {
+        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130101"));
+        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130102").withMetadataCount("GENDER", 10L, 2L));
+        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130103").withMetadataCount("GENDER", 10L, 2L).withMetadataCount("UUID", 10L, 2L));
+        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130104").withMetadataCount("UUID", 10L, 2L));
+        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130105"));
+
+        givenQuery("UUID =~ '^[CS].*' && GENDER == 'MALE'");
+        givenStartDate("20130101");
+        givenEndDate("20130105");
+
+        expectEvents("20130101", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
+        expectEvents("20130102", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
+        expectEvents("20130103", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
+        expectEvents("20130104", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
+        expectEvents("20130105", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
+
+        assertQueryResults();
+    }
+
+    /**
      * Test a query that targets fields with field index holes at the start of the query target range.
      */
     @Test
@@ -426,7 +447,32 @@ public abstract class FederatedQueryTest {
      * Test a field index hole min threshold that some differing counts do and do not meet.
      */
     @Test
-    public void testFieldIndexMinThreshold() throws Exception {
+    public void testFieldIndexMinThresholdWithAllMeeting() throws Exception {
+        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130101").withMetadataCount("UUID", 20L, 19L)); // Meets min threshold.
+        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130102").withMetadataCount("UUID", 20L, 19L)); // Meets min threshold.
+        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130103"));
+        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130104").withMetadataCount("UUID", 20L, 19L)); // Meets min threshold.
+        configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130105"));
+
+        givenQuery("UUID =~ '^[CS].*'");
+        givenStartDate("20130101");
+        givenEndDate("20130105");
+        givenFieldIndexMinThreshold(.9);
+
+        expectEvents("20130101", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
+        expectEvents("20130102", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
+        expectEvents("20130103", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
+        expectEvents("20130104", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
+        expectEvents("20130105", FieldIndexHoleDataIngest.corleoneUID, FieldIndexHoleDataIngest.caponeUID, FieldIndexHoleDataIngest.sopranoUID);
+
+        assertQueryResults();
+    }
+
+    /**
+     * Test a field index hole min threshold that some differing counts do and do not meet.
+     */
+    @Test
+    public void testFieldIndexMinThresholdWithSomeNotMeeting() throws Exception {
         configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130101").withMetadataCount("UUID", 20L, 19L)); // Meets min threshold.
         configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130102").withMetadataCount("UUID", 20L, 19L)); // Meets min threshold.
         configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130103"));

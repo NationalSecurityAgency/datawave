@@ -33,6 +33,7 @@ import datawave.query.model.QueryModel;
 import datawave.query.planner.pushdown.rules.PushDownRule;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MetadataHelper;
+import datawave.query.util.QueryStopwatch;
 import datawave.util.time.TraceStopwatch;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.Query;
@@ -79,7 +80,6 @@ public class FederatedQueryPlanner extends QueryPlanner {
 
         // Execute the same query for each date range and collect the results.
         FederatedQueryIterable results = new FederatedQueryIterable();
-        ShardQueryConfiguration firstConfigCopy = null;
         int totalProcessed = 1;
         for (Pair<Date,Date> dateRange : dateRanges) {
             String subStartDate = dateFormat.format(dateRange.getLeft());
@@ -94,28 +94,34 @@ public class FederatedQueryPlanner extends QueryPlanner {
             // Create a copy of the original default query planner, and process the query with the new date range.
             DefaultQueryPlanner subPlan = new DefaultQueryPlanner(queryPlanner);
 
-            // TODO - Check if it's okay to add this to the copy constructor.
-            // TODO - Check if anything else needs to be added to the copy constructor.
-            subPlan.setTransformRules(queryPlanner.getTransformRules());
-
-            // TODO - Verify if we need to make copies of settings or scannerFactory for the sub-plans.
             try {
                 CloseableIterable<QueryData> queryData = subPlan.process(configCopy, query, settings, scannerFactory);
-                results.addIterable(queryData);
-                ShardQueryConfiguration configCopyCopy = new ShardQueryConfiguration(configCopy);
+                // results.addIterable(queryData);
                 if (queryData != null) {
-                    configCopyCopy.setQueries(queryData.iterator());
+                    Iterator<QueryData> iterator = queryData.iterator();
+                    configCopy.setQueries(iterator);
+                    log.debug("Setting query data for sub-config, query Data has next: " + iterator.hasNext());
                 }
-                configCopyCopy.setQueryString(subPlan.getPlannedScript());
-                federatedConfig.addConfig(configCopyCopy);
-            } catch (Exception e) {
+                configCopy.setQueryString(subPlan.getPlannedScript());
+            } catch (DatawaveQueryException e) {
                 log.warn("Exception occured when processing sub-plan [" + totalProcessed + " of " + dateRanges.size() + "] against date range (" + subStartDate
                                 + "-" + subEndDate + ")", e);
                 // If an exception occurs, ensure that the planned script and the original config are updated before allowing the exception to bubble up.
                 this.plannedScript = subPlan.getPlannedScript();
-                this.federatedConfig.addConfig(configCopy);
+
+                Date originalBeginDate = originalConfig.getBeginDate();
+                Date originalEndDate = originalConfig.getEndDate();
+                QueryStopwatch originalTimers = originalConfig.getTimers();
+                // Ensure the original begin date, end date, and timers are restored after copying over all changes from the sub-config.
                 originalConfig.copyFrom(configCopy);
+                originalConfig.setBeginDate(originalBeginDate);
+                originalConfig.setEndDate(originalEndDate);
+                originalConfig.setTimers(originalTimers);
                 throw e;
+            } finally {
+                // Append the timers from the config copy to the original config for logging later.
+                originalConfig.appendTimers(configCopy.getTimers());
+                federatedConfig.addConfig(configCopy);
             }
 
             // Update the planned script to reflect that of the first query.
@@ -124,17 +130,9 @@ public class FederatedQueryPlanner extends QueryPlanner {
                 log.debug("Federated planned script updated to " + subPlan.getPlannedScript());
             }
 
-            // Capture the config of the first sub-plan.
-            if (firstConfigCopy == null) {
-                firstConfigCopy = configCopy;
-            }
-
             stopwatch.stop();
             totalProcessed++;
         }
-
-        // Copy over all fields from the config of the first executed sub-plan to the original config.
-        originalConfig.copyFrom(firstConfigCopy);
 
         // Return the collected results.
         return results;

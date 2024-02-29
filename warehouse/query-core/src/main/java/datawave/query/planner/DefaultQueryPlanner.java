@@ -336,6 +336,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         setSourceLimit(other.sourceLimit);
         setPushdownThreshold(other.getPushdownThreshold());
         setVisitorManager(other.getVisitorManager());
+        setTransformRules(other.getTransformRules() == null ? null : new ArrayList<>(other.transformRules));
     }
 
     public void setMetadataHelper(final MetadataHelper metadataHelper) {

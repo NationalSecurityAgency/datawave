@@ -1975,6 +1975,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         return timers;
     }
 
+    public void setTimers(QueryStopwatch timers) {
+        this.timers = timers;
+    }
+
+    public void appendTimers(QueryStopwatch timers) {
+        this.timers.appendTimers(timers);
+    }
+
     public Query getQuery() {
         return query;
     }
@@ -2604,4 +2612,5 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     public void setFieldIndexHoleMinThreshold(double fieldIndexHoleMinThreshold) {
         this.fieldIndexHoleMinThreshold = fieldIndexHoleMinThreshold;
     }
+
 }
