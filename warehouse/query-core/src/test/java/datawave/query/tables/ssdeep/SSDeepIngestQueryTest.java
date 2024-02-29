@@ -112,7 +112,6 @@ public class SSDeepIngestQueryTest extends AbstractFunctionalQuery {
 
     @SuppressWarnings("rawtypes")
     @Test
-    @Ignore
     public void testSSDeepSimilarity() throws Exception {
         log.info("------ testSSDeepSimilarity ------");
         @SuppressWarnings("SpellCheckingInspection")
@@ -124,7 +123,7 @@ public class SSDeepIngestQueryTest extends AbstractFunctionalQuery {
         Assert.assertEquals(1, events.size());
         Map<String,Map<String,String>> observedEvents = extractObservedEvents(events);
 
-        SSDeepTestUtil.assertSSDeepSimilarityMatch(testSSDeep, testSSDeep, "38.0", "100", observedEvents);
+        SSDeepTestUtil.assertSSDeepSimilarityMatch(testSSDeep, testSSDeep, "38", "100", observedEvents);
     }
 
     @SuppressWarnings("rawtypes")
