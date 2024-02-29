@@ -61,6 +61,11 @@ public abstract class TokenizingFilterBase extends AppliedRule {
     /**
      * Return a list of delimiters for scans. While the default is to pull this information out of the {@code &lt;delimiters&gt;} tag in the configuration,
      * subclasses may wish to override this to provide fixed delimiter sets.
+     *
+     * @param options
+     *            filter options
+     *
+     * @return list of delimiters for scans
      */
     public byte[] getDelimiters(FilterOptions options) {
         String delimiters = options.getOption(DELIMITERS_TAG);

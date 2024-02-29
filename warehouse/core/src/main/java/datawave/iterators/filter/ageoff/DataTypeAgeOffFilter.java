@@ -242,6 +242,7 @@ public class DataTypeAgeOffFilter extends AppliedRule {
      * @param options
      *            {@code Map} object containing the TTL, TTL_UNITS, and MATCHPATTERN for the filter rule.
      * @param iterEnv
+     *            iterator environment
      * @see datawave.iterators.filter.AgeOffConfigParams
      */
     public void init(FilterOptions options, IteratorEnvironment iterEnv) {

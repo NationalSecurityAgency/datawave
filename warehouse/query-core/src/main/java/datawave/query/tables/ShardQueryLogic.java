@@ -618,7 +618,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     }
 
     public boolean isLongRunningQuery() {
-        return getConfig().getGroupFields().hasGroupByFields();
+        return getConfig().getGroupFields().hasGroupByFields() || !getUniqueFields().isEmpty();
     }
 
     /**
@@ -634,7 +634,8 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
                 if (alreadyExists != null) {
                     ((UniqueTransform) alreadyExists).updateConfig(getConfig().getUniqueFields(), getQueryModel());
                 } else {
-                    ((DocumentTransformer) this.transformerInstance).addTransform(new UniqueTransform(this, getConfig().getUniqueFields()));
+                    ((DocumentTransformer) this.transformerInstance)
+                                    .addTransform(new UniqueTransform(this, getConfig().getUniqueFields(), this.getQueryExecutionForPageTimeout()));
                 }
             }
 
@@ -1545,6 +1546,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         getConfig().setIntermediateMaxTermThreshold(intermediateMaxTermThreshold);
     }
 
+    public int getIndexedMaxTermThreshold() {
+        return getConfig().getIndexedMaxTermThreshold();
+    }
+
+    public void setIndexedMaxTermThreshold(int indexedMaxTermThreshold) {
+        getConfig().setIndexedMaxTermThreshold(indexedMaxTermThreshold);
+    }
+
     public int getFinalMaxTermThreshold() {
         return getConfig().getFinalMaxTermThreshold();
     }
@@ -1950,12 +1959,28 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         getConfig().setMaxIvaratorSources(maxIvaratorSources);
     }
 
+    public long getMaxIvaratorSourceWait() {
+        return getConfig().getMaxIvaratorSourceWait();
+    }
+
+    public void setMaxIvaratorSourceWait(long maxIvaratorSourceWait) {
+        getConfig().setMaxIvaratorSourceWait(maxIvaratorSourceWait);
+    }
+
     public long getMaxIvaratorResults() {
         return getConfig().getMaxIvaratorResults();
     }
 
     public void setMaxIvaratorResults(long maxIvaratorResults) {
         getConfig().setMaxIvaratorResults(maxIvaratorResults);
+    }
+
+    public int getMaxIvaratorTerms() {
+        return getConfig().getMaxIvaratorTerms();
+    }
+
+    public void setMaxIvaratorTerms(int maxIvaratorTerms) {
+        getConfig().setMaxIvaratorTerms(maxIvaratorTerms);
     }
 
     public int getMaxEvaluationPipelines() {
@@ -2251,6 +2276,22 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         this.getConfig().setEnforceUniqueTermsWithinExpressions(enforceUniqueTermsWithinExpressions);
     }
 
+    public boolean getReduceIngestTypes() {
+        return getConfig().getReduceIngestTypes();
+    }
+
+    public void setReduceIngestTypes(boolean reduceIngestTypes) {
+        getConfig().setReduceIngestTypes(reduceIngestTypes);
+    }
+
+    public boolean getReduceIngestTypesPerShard() {
+        return getConfig().getReduceIngestTypesPerShard();
+    }
+
+    public void setReduceIngestTypesPerShard(boolean reduceIngestTypesPerShard) {
+        getConfig().setReduceIngestTypesPerShard(reduceIngestTypesPerShard);
+    }
+
     public boolean getPruneQueryByIngestTypes() {
         return getConfig().getPruneQueryByIngestTypes();
     }
@@ -2265,6 +2306,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
 
     public void setReduceQueryFields(boolean reduceQueryFields) {
         this.getConfig().setReduceQueryFields(reduceQueryFields);
+    }
+
+    public boolean getReduceQueryFieldsPerShard() {
+        return this.getConfig().getReduceQueryFieldsPerShard();
+    }
+
+    public void setReduceQueryFieldsPerShard(boolean reduceQueryFieldsPerShard) {
+        this.getConfig().setReduceQueryFieldsPerShard(reduceQueryFieldsPerShard);
     }
 
     public boolean getReduceTypeMetadata() {
