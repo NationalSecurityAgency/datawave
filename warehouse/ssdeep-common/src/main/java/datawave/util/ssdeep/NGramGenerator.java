@@ -15,11 +15,26 @@ import com.google.common.collect.TreeMultimap;
 /** Generates NGrams of SSDeep Hashes for indexing or query */
 public class NGramGenerator implements Serializable {
 
+    /**
+     * The paper "Optimizing ssDeep for use at Scale" employed an ngram size of 7, and this seems to work well for our purposes based on testing.
+     */
+    public static final int DEFAULT_NGRAM_SIZE = 7;
+
+    /**
+     * the minimum size (chunkSize * chunkLength) required for input hashes, which roughly corresponds to the size of the original object that was hashed. In
+     * this case, we won't generate ngrams for hashes that are based on input smaller than 64 bytes.
+     */
+    public static final int DEFAULT_MIN_HASH_SIZE = 64;
+
     private static final Logger log = LoggerFactory.getLogger(NGramGenerator.class);
 
     final int ngramSize;
     final int maxRepeatedChars;
     final int minHashSize;
+
+    public NGramGenerator() {
+        this(DEFAULT_NGRAM_SIZE, SSDeepHash.DEFAULT_MAX_REPEATED_CHARACTERS, DEFAULT_MIN_HASH_SIZE);
+    }
 
     /**
      * Generate NGrams of the specified size
@@ -28,7 +43,7 @@ public class NGramGenerator implements Serializable {
      *            the size of ngrams to generate.
      */
     public NGramGenerator(int ngramSize) {
-        this(ngramSize, 0, 64);
+        this(ngramSize, SSDeepHash.DEFAULT_MAX_REPEATED_CHARACTERS, DEFAULT_MIN_HASH_SIZE);
     }
 
     /**
