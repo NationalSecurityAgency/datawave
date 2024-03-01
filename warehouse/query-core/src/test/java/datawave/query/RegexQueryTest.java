@@ -106,7 +106,7 @@ public class RegexQueryTest extends AbstractFunctionalQuery {
 
     @Test(expected = DatawaveFatalQueryException.class)
     public void testIndexOnlyFails() throws Exception {
-        log.info("------  testNonEvent  ------");
+        log.info("------  testIndexOnlyFails  ------");
         // should at least match France, but we have no reverse index and the field is indexOnly
         String regex = "'.*?e'";
         for (final TestCities city : TestCities.values()) {
@@ -117,7 +117,7 @@ public class RegexQueryTest extends AbstractFunctionalQuery {
 
     @Test
     public void testNonEventDelayed() throws Exception {
-        log.info("------  testNonEvent  ------");
+        log.info("------  testNonEventDelayed  ------");
         // should at least match edgeville
         String regex = "'f.*?'";
         for (final TestCities city : TestCities.values()) {
