@@ -608,8 +608,8 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
         String fieldName = JexlASTHelper.getIdentifier(node);
 
         // If the identifier is an index-only field, then we must expand it.
-        // This used to check for nonEvent fields, but we decided that tokenization
-        // can be handled not at evaluation time, so we only need to force index-only
+        // This use to check for nonEvent fields, but we decided that tokenization
+        // can be handled now at evaluation time, so we only need to force index-only
         // fields to expand.
         return helper.getIndexOnlyFields(config.getDatatypeFilter()).contains(fieldName);
     }
