@@ -1193,15 +1193,13 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             if (!this.matchingFieldSets.isEmpty()) {
                 this.allowListedFields.addAll(getMatchingFieldList());
             }
-            return new DocumentProjection(this.isIncludeGroupingContext(), this.isReducedResponse(), isTrackSizes(),
-                            new Projection(this.allowListedFields, Projection.ProjectionType.INCLUDES));
+            return new DocumentProjection(new Projection(this.allowListedFields, Projection.ProjectionType.INCLUDES));
         } else if (this.useDisallowListedFields) {
             // make sure we are not excluding any fields being matched in the limit fields mechanism
             if (!this.matchingFieldSets.isEmpty()) {
                 this.disallowListedFields.removeAll(getMatchingFieldList());
             }
-            return new DocumentProjection(this.isIncludeGroupingContext(), this.isReducedResponse(), isTrackSizes(),
-                            new Projection(this.disallowListedFields, Projection.ProjectionType.EXCLUDES));
+            return new DocumentProjection(new Projection(this.disallowListedFields, Projection.ProjectionType.EXCLUDES));
         } else {
             String msg = "Configured to use projection, but no allowlist or disallowlist was provided";
             log.error(msg);
@@ -1224,8 +1222,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         if (!this.matchingFieldSets.isEmpty()) {
             composites.removeAll(getMatchingFieldList());
         }
-        return new DocumentProjection(this.isIncludeGroupingContext(), this.isReducedResponse(), isTrackSizes(), composites,
-                        Projection.ProjectionType.EXCLUDES);
+        return new DocumentProjection(composites, Projection.ProjectionType.EXCLUDES);
     }
 
     /**

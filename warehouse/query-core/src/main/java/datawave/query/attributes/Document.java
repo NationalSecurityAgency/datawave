@@ -17,11 +17,14 @@ import java.util.TreeMap;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang.builder.HashCodeBuilder;
+import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.io.WritableUtils;
 import org.apache.log4j.Logger;
 
 import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.KryoSerializable;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import com.google.common.collect.Iterators;
@@ -39,7 +42,7 @@ import datawave.query.predicate.ValueToAttributes;
 import datawave.query.util.TypeMetadata;
 import datawave.util.time.DateHelper;
 
-public class Document extends AttributeBag<Document> implements Serializable {
+public class Document implements Serializable, AttributeBagMetadata.AttributesGetter, Comparable<Document>, WritableComparable<Document>, KryoSerializable {
     private static final long serialVersionUID = 1L;
 
     private static final Logger log = Logger.getLogger(Document.class);
@@ -47,11 +50,14 @@ public class Document extends AttributeBag<Document> implements Serializable {
     public static final String DOCKEY_FIELD_NAME = "RECORD_ID";
 
     private int _count = 0;
-    long _bytes = 0;
+    private long _bytes = 0;
     private static final long ONE_HUNDRED_M = 1024L * 1000 * 100;
     private static final long ONE_M = 1024L * 1000;
     private static final long FIVE_HUNDRED_K = 1024L * 500;
-    TreeMap<String,Attribute<? extends Comparable<?>>> dict;
+    private TreeMap<String,Attribute<? extends Comparable<?>>> dict;
+    private AttributeBagMetadata metadata;
+    private boolean toKeep;
+    private TimingMetadata timingMetadata;
 
     /**
      * should sizes of the documents be tracked
@@ -86,8 +92,10 @@ public class Document extends AttributeBag<Document> implements Serializable {
     }
 
     public Document(Key key, boolean toKeep, boolean trackSizes) {
-        super(key, toKeep);
         dict = new TreeMap<>();
+        metadata = new AttributeBagMetadata(this);
+        metadata.setMetadata(key);
+        this.toKeep = toKeep;
         this.trackSizes = trackSizes;
     }
 
@@ -109,6 +117,34 @@ public class Document extends AttributeBag<Document> implements Serializable {
         this.consumeRawData(key, docKeys, iter, typeMetadata, compositeMetadata, includeGroupingContext, keepRecordId, attrFilter, fromIndex);
     }
 
+    public boolean isEmpty() {
+        return this.dict.isEmpty();
+    }
+
+    public Key getMetadata() {
+        return metadata.getMetadata();
+    }
+
+    public void invalidateMetadata() {
+        metadata.invalidateMetadata();
+    }
+
+    public ColumnVisibility getColumnVisibility() {
+        return metadata.getColumnVisibility();
+    }
+
+    public void setColumnVisibility(ColumnVisibility vis) {
+        metadata.setColumnVisibility(vis);
+    }
+
+    public long getTimestamp() {
+        return metadata.getTimestamp();
+    }
+
+    public void setTimestamp(long ts) {
+        metadata.setTimestamp(ts);
+    }
+
     @Override
     public Collection<Attribute<? extends Comparable<?>>> getAttributes() {
         return Collections.unmodifiableCollection(this.dict.values());
@@ -128,6 +164,14 @@ public class Document extends AttributeBag<Document> implements Serializable {
 
     public Iterator<Entry<String,Attribute<? extends Comparable<?>>>> iterator() {
         return getDictionary().entrySet().iterator();
+    }
+
+    public boolean isToKeep() {
+        return toKeep;
+    }
+
+    public void setToKeep(boolean toKeep) {
+        this.toKeep = toKeep;
     }
 
     /**
@@ -157,14 +201,14 @@ public class Document extends AttributeBag<Document> implements Serializable {
     public Document consumeRawData(Key docKey, Set<Key> docKeys, Iterator<Entry<Key,Value>> iter, TypeMetadata typeMetadata,
                     CompositeMetadata compositeMetadata, boolean includeGroupingContext, boolean keepRecordId, EventDataQueryFilter attrFilter,
                     boolean fromIndex) {
-        invalidateMetadata();
+        metadata.invalidateMetadata();
         // extract the sharded time from the dockey if possible
         try {
-            this.shardTimestamp = DateHelper.parseWithGMT(docKey.getRow().toString()).getTime();
+            metadata.setShardTimestamp(DateHelper.parseWithGMT(docKey.getRow().toString()).getTime());
         } catch (DateTimeParseException e) {
             log.warn("Unable to parse document key row as a shard id of the form yyyyMMdd...: " + docKey.getRow(), e);
             // leave the shardTimestamp empty
-            this.shardTimestamp = Long.MAX_VALUE;
+            metadata.setShardTimestamp(Long.MAX_VALUE);
         }
 
         // Extract the fieldName from the Key
@@ -316,7 +360,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
                 _bytes += Attribute.sizeInBytes(key);
             }
 
-            invalidateMetadata();
+            metadata.invalidateMetadata();
         } else {
             if (!existingAttr.equals(value)) {
                 Attributes attrs = null;
@@ -393,7 +437,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
                     }
                 }
 
-                invalidateMetadata();
+                metadata.invalidateMetadata();
             }
             // else, a Document cannot contain the same Field:Value, thus
             // when we find a duplicate value in the same field, we ignore it.
@@ -448,7 +492,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
                 this._bytes -= attr.sizeInBytes();
                 this._bytes -= Attribute.sizeInBytes(key);
             }
-            invalidateMetadata();
+            metadata.invalidateMetadata();
 
             return this._getDictionary().remove(key);
         }
@@ -472,62 +516,42 @@ public class Document extends AttributeBag<Document> implements Serializable {
         while (iter.hasNext()) {
             Entry<String,Attribute<? extends Comparable<?>>> entry = iter.next();
 
-            if (entry.getKey().equals(key) || entry.getValue() instanceof Document) {
+            if (entry.getKey().equals(key)) {
                 // Remove the Attribute's size
                 this._count -= entry.getValue().size();
                 if (trackSizes) {
                     this._bytes -= entry.getValue().sizeInBytes();
                 }
-                invalidateMetadata();
+                metadata.invalidateMetadata();
 
-                if (entry.getKey().equals(key)) {
-                    iter.remove();
-                    if (trackSizes) {
-                        this._bytes -= Attribute.sizeInBytes(key);
-                    }
-                } else {
-                    // Recursively delete if it's a Document
-                    Document subDocument = (Document) entry.getValue();
-                    subDocument.invalidateMetadata();
-
-                    // Recursive delete
-                    subDocument.removeAll(key);
-
-                    // Re-add what's left from this subDocument after
-                    // the recursive deletion
-                    this._count += subDocument.size();
-                    if (trackSizes) {
-                        this._bytes += subDocument.sizeInBytes();
-                    }
+                iter.remove();
+                if (trackSizes) {
+                    this._bytes -= Attribute.sizeInBytes(key);
                 }
             }
         }
     }
 
-    @Override
     public int size() {
         return _count;
     }
 
-    @Override
     public long sizeInBytes() {
         if (trackSizes) {
-            return super.sizeInBytes(40) + _bytes + (this.dict.size() * 24) + 40;
-            // 32 for local members
+            return metadata.getSizeInBytes() + _bytes + (this.dict.size() * 24) + 88;
             // 24 for TreeMap.Entry overhead, and members
+            // 32 for local members
             // 56 for TreeMap members and overhead
         } else {
             return 1;
         }
     }
 
-    @Override
     public Object getData() {
         return Collections.unmodifiableMap(this.dict);
     }
 
-    @Override
-    public Attribute<?> reduceToKeep() {
+    public Document reduceToKeep() {
         for (Iterator<Entry<String,Attribute<? extends Comparable<?>>>> it = dict.entrySet().iterator(); it.hasNext();) {
             Entry<String,Attribute<? extends Comparable<?>>> entry = it.next();
             Attribute<?> attr = entry.getValue();
@@ -559,7 +583,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
                 it.remove();
             }
         }
-        invalidateMetadata();
+        metadata.invalidateMetadata();
         return this;
     }
 
@@ -568,7 +592,6 @@ public class Document extends AttributeBag<Document> implements Serializable {
         write(out, false);
     }
 
-    @Override
     public void write(DataOutput out, boolean reducedResponse) throws IOException {
         WritableUtils.writeVInt(out, _count);
         out.writeBoolean(trackSizes);
@@ -588,7 +611,12 @@ public class Document extends AttributeBag<Document> implements Serializable {
             entry.getValue().write(out);
         }
 
-        WritableUtils.writeVLong(out, shardTimestamp);
+        WritableUtils.writeVLong(out, metadata.getShardTimestamp());
+
+        out.writeBoolean(hasTimingMetadata());
+        if (hasTimingMetadata()) {
+            timingMetadata.write(out);
+        }
     }
 
     @Override
@@ -636,9 +664,14 @@ public class Document extends AttributeBag<Document> implements Serializable {
             this.dict.put(fieldName, attr);
         }
 
-        this.shardTimestamp = WritableUtils.readVLong(in);
+        metadata.setShardTimestamp(WritableUtils.readVLong(in));
 
-        invalidateMetadata();
+        metadata.invalidateMetadata();
+
+        if (in.readBoolean()) {
+            timingMetadata = new TimingMetadata();
+            timingMetadata.readFields(in);
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -728,7 +761,6 @@ public class Document extends AttributeBag<Document> implements Serializable {
     }
 
     @SuppressWarnings("unchecked")
-    @Override
     public Collection<ValueTuple> visit(Collection<String> queryFieldNames, DatawaveJexlContext context) {
         if (log.isTraceEnabled()) {
             log.trace("queryFieldNames: " + queryFieldNames);
@@ -804,7 +836,6 @@ public class Document extends AttributeBag<Document> implements Serializable {
         write(kryo, output, false);
     }
 
-    @Override
     public void write(Kryo kryo, Output output, Boolean reducedResponse) {
         output.writeInt(this._count, true);
         output.writeBoolean(trackSizes);
@@ -823,7 +854,12 @@ public class Document extends AttributeBag<Document> implements Serializable {
             attribute.write(kryo, output, reducedResponse);
         }
 
-        output.writeLong(this.shardTimestamp);
+        output.writeLong(this.metadata.getShardTimestamp());
+
+        output.writeBoolean(hasTimingMetadata());
+        if (hasTimingMetadata()) {
+            timingMetadata.write(kryo, output);
+        }
     }
 
     @Override
@@ -870,24 +906,14 @@ public class Document extends AttributeBag<Document> implements Serializable {
             this.dict.put(fieldName, attr);
         }
 
-        this.shardTimestamp = input.readLong();
+        this.metadata.setShardTimestamp(input.readLong());
 
-        this.invalidateMetadata();
-    }
+        this.metadata.invalidateMetadata();
 
-    @Override
-    public Document copy() {
-        Document d = new Document(this.getMetadata(), this.isToKeep(), trackSizes);
-
-        // _count will be set via put operations
-        Set<Entry<String,Attribute<? extends Comparable<?>>>> entries = this._getDictionary().entrySet();
-        for (Entry<String,Attribute<? extends Comparable<?>>> entry : entries) {
-            d.put(entry.getKey(), (Attribute<?>) entry.getValue().copy());
+        if (input.readBoolean()) {
+            this.timingMetadata = new TimingMetadata();
+            this.timingMetadata.read(kryo, input);
         }
-
-        d.shardTimestamp = this.shardTimestamp;
-
-        return d;
     }
 
     public void setIntermediateResult(boolean intermediateResult) {
@@ -898,4 +924,19 @@ public class Document extends AttributeBag<Document> implements Serializable {
         return intermediateResult;
     }
 
+    public TimingMetadata getTimingMetadata() {
+        return timingMetadata;
+    }
+
+    public void setTimingMetadata(TimingMetadata timingMetadata) {
+        this.timingMetadata = timingMetadata;
+    }
+
+    public void clearTimingMetadata() {
+        this.timingMetadata = null;
+    }
+
+    public boolean hasTimingMetadata() {
+        return this.timingMetadata != null;
+    }
 }

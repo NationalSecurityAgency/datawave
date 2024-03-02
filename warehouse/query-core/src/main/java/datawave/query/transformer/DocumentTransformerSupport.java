@@ -35,7 +35,6 @@ import datawave.query.attributes.TimingMetadata;
 import datawave.query.cardinality.CardinalityConfiguration;
 import datawave.query.cardinality.CardinalityRecord;
 import datawave.query.function.JexlEvaluation;
-import datawave.query.function.LogTiming;
 import datawave.query.function.deserializer.DocumentDeserializer;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.iterator.profile.QuerySpan;
@@ -203,10 +202,6 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
         Attribute<?> attribute = null;
         for (Entry<String,Attribute<? extends Comparable<?>>> data : documentData.entrySet()) {
 
-            // skip metadata fields
-            if (data.getValue() instanceof datawave.query.attributes.Metadata) {
-                continue;
-            }
             fn = (documentName == null) ? data.getKey() : documentName;
 
             // Some fields were added by the queryPlanner. This will ensure that the original projectFields and disallowlistFields are honored
@@ -225,10 +220,8 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
 
     protected void extractMetrics(Document document, Key documentKey) {
 
-        Map<String,Attribute<? extends Comparable<?>>> dictionary = document.getDictionary();
-        Attribute<? extends Comparable<?>> timingMetadataAttribute = dictionary.get(LogTiming.TIMING_METADATA);
-        if (timingMetadataAttribute != null && timingMetadataAttribute instanceof TimingMetadata) {
-            TimingMetadata timingMetadata = (TimingMetadata) timingMetadataAttribute;
+        if (document.hasTimingMetadata()) {
+            TimingMetadata timingMetadata = document.getTimingMetadata();
             long currentSourceCount = timingMetadata.getSourceCount();
             long currentNextCount = timingMetadata.getNextCount();
             long currentSeekCount = timingMetadata.getSeekCount();
@@ -257,7 +250,8 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
                     log.info(sb.toString());
                 }
             }
-            if (dictionary.size() == 1) {
+
+            if (document.isEmpty()) {
                 // this document contained only timing metadata
                 throw new EmptyObjectException();
             }
