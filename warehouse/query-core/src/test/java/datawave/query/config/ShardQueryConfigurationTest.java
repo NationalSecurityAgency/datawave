@@ -454,6 +454,10 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("tfAggregationThresholdMs", 10000);
         defaultValues.put("pruneQueryOptions", false);
         updatedValues.put("pruneQueryOptions", true);
+        defaultValues.put("reduceIngestTypes", false);
+        updatedValues.put("reduceIngestTypes", true);
+        defaultValues.put("reduceIngestTypesPerShard", false);
+        updatedValues.put("reduceIngestTypesPerShard", true);
         defaultValues.put("pruneQueryByIngestTypes", false);
         updatedValues.put("pruneQueryByIngestTypes", true);
         defaultValues.put("numIndexLookupThreads", 8);
