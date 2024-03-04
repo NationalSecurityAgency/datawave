@@ -36,7 +36,7 @@ public class QueryOptionsFromQueryVisitorTest {
 
     @Test
     public void testRenameFunction() throws ParseException {
-        // Verify that an empty groupby functions results in an empty parameter value.
+        // Verify that an empty rename function results in an empty parameter value.
         assertResult("f:rename()", "");
         assertOption(QueryParameters.RENAME_FIELDS, "");
 
@@ -46,7 +46,7 @@ public class QueryOptionsFromQueryVisitorTest {
 
     @Test
     public void testGroupByFunction() throws ParseException {
-        // Verify that an empty groupby functions results in an empty parameter value.
+        // Verify that an empty groupby function results in an empty parameter value.
         assertResult("f:groupby()", "");
         assertOption(QueryParameters.GROUP_FIELDS, "");
 
