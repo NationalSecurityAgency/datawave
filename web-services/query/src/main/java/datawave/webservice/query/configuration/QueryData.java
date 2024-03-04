@@ -144,7 +144,7 @@ public class QueryData {
 
     public void addIterator(IteratorSetting cfg) {
         this.settings.add(cfg);
-        hashCode = -1;
+        resetHashCode();
     }
 
     @Override
