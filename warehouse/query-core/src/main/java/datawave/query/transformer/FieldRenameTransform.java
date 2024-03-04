@@ -1,6 +1,7 @@
 package datawave.query.transformer;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -12,6 +13,8 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.commons.lang3.StringUtils;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
 
 import datawave.query.Constants;
 import datawave.query.attributes.Document;
@@ -31,8 +34,8 @@ public class FieldRenameTransform extends DocumentTransform.DefaultDocumentTrans
         this.reducedResponse = reducedResponse;
     }
 
-    private Map<String,String> getFieldMap() {
-        Map<String,String> renameFieldMap = new HashMap<>();
+    private Multimap<String,String> getFieldMap() {
+        Multimap<String,String> renameFieldMap = HashMultimap.create();
         renameFieldExpressions.stream().forEach(m -> {
             int index = m.indexOf('=');
             if (index > 0 && index < m.length() - 1) {
@@ -48,15 +51,21 @@ public class FieldRenameTransform extends DocumentTransform.DefaultDocumentTrans
         if (keyDocumentEntry != null) {
             Document document = keyDocumentEntry.getValue();
 
-            Map<String,String> renameFieldMap = getFieldMap();
+            Multimap<String,String> renameFieldMap = getFieldMap();
 
             for (String field : new HashSet<>(document.getDictionary().keySet())) {
                 String baseField = JexlASTHelper.deconstructIdentifier(field);
-                String mappedField = renameFieldMap.get(baseField);
-                if (mappedField != null) {
-                    String newField = field.replace(baseField, mappedField);
-                    document.put(newField, document.get(field), this.includeGroupingContext, this.reducedResponse);
-                    document.remove(field);
+                Collection<String> mappedFields = renameFieldMap.get(baseField);
+                if (mappedFields != null && !mappedFields.isEmpty()) {
+                    for (String mappedField : mappedFields) {
+                        if (!mappedField.equals(baseField)) {
+                            String newField = field.replace(baseField, mappedField);
+                            document.put(newField, document.get(field), this.includeGroupingContext, this.reducedResponse);
+                        }
+                    }
+                    if (!mappedFields.contains(baseField)) {
+                        document.remove(field);
+                    }
                 }
             }
         }
