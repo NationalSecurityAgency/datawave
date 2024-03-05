@@ -106,7 +106,7 @@ public abstract class Attribute<T extends Comparable<T>> implements WritableComp
         final ByteSequence cf = key.getColumnFamilyData();
         final ByteSequence cv = key.getColumnVisibilityData();
         if (isFieldIndex(cf)) {
-            // CQ is 'value\0datatype\0value
+            // CQ is 'value\0datatype\0uid
             // iterate backwards to avoid problems from values with nulls in them
             final ByteSequence cq = key.getColumnQualifierData();
             int nullOffset = 0;
