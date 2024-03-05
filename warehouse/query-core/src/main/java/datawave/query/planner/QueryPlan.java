@@ -34,6 +34,7 @@ public class QueryPlan {
     protected Collection<Range> ranges = null;
     protected Collection<String> columnFamilies = Lists.newArrayList();
     protected List<IteratorSetting> settings = Lists.newArrayList();
+    protected boolean rebuildHashCode = true;
     protected int hashCode;
 
     public QueryPlan() {
@@ -173,12 +174,12 @@ public class QueryPlan {
      *            the ranges
      * @deprecated
      */
-    @Deprecated(since = "6.5.0", forRemoval = true)
+    @Deprecated(since = "6.9.0", forRemoval = true)
     public QueryPlan(String queryTreeString, JexlNode queryTree, Iterable<Range> ranges) {
         this(queryTreeString, queryTree, ranges, null);
     }
 
-    @Deprecated(since = "6.5.0", forRemoval = true)
+    @Deprecated(since = "6.9.0", forRemoval = true)
     public QueryPlan(String queryTreeString, JexlNode queryTree, Iterable<Range> ranges, List<IteratorSetting> settings) {
         Preconditions.checkNotNull(queryTree);
         this.queryTree = queryTree;
@@ -190,7 +191,7 @@ public class QueryPlan {
         resetHashCode();
     }
 
-    @Deprecated(since = "6.5.0", forRemoval = true)
+    @Deprecated(since = "6.9.0", forRemoval = true)
     public QueryPlan(JexlNode queryTree, Iterable<Range> ranges, Collection<String> columnFamilies) {
         Preconditions.checkNotNull(queryTree);
         this.queryTree = queryTree;
@@ -199,7 +200,7 @@ public class QueryPlan {
         resetHashCode();
     }
 
-    @Deprecated(since = "6.5.0", forRemoval = true)
+    @Deprecated(since = "6.9.0", forRemoval = true)
     public QueryPlan(JexlNode queryTree, Range range) {
         Preconditions.checkNotNull(queryTree);
         this.queryTree = queryTree;
@@ -207,7 +208,7 @@ public class QueryPlan {
         resetHashCode();
     }
 
-    @Deprecated(since = "6.5.0", forRemoval = true)
+    @Deprecated(since = "6.9.0", forRemoval = true)
     public QueryPlan(QueryData currentQueryData) throws ParseException {
         this.queryTreeString = currentQueryData.getQuery();
         this.ranges = Lists.newArrayList(currentQueryData.getRanges());
@@ -216,7 +217,7 @@ public class QueryPlan {
         resetHashCode();
     }
 
-    @Deprecated(since = "6.5.0", forRemoval = true)
+    @Deprecated(since = "6.9.0", forRemoval = true)
     public QueryPlan(JexlNode queryTree, Iterable<Range> rangeIter, List<IteratorSetting> settings, Collection<String> columnFamilies) {
         this.queryTree = queryTree;
         this.ranges = Lists.newArrayList(rangeIter);
@@ -236,7 +237,7 @@ public class QueryPlan {
         resetHashCode();
     }
 
-    @Deprecated(since = "6.5.0", forRemoval = true)
+    @Deprecated(since = "6.9.0", forRemoval = true)
     public QueryPlan(JexlNode queryTree, Iterable<Range> rangeIter, List<IteratorSetting> settings) {
         this(queryTree, rangeIter, settings, null);
     }
@@ -264,14 +265,14 @@ public class QueryPlan {
         resetHashCode();
     }
 
-    @Deprecated(since = "6.5.0", forRemoval = true)
+    @Deprecated(since = "6.9.0", forRemoval = true)
     public void setQuery(String queryString, JexlNode queryTree) {
         this.queryTree = queryTree;
         this.queryTreeString = queryString;
         resetHashCode();
     }
 
-    @Deprecated(since = "6.5.0", forRemoval = true)
+    @Deprecated(since = "6.9.0", forRemoval = true)
     public void setQuery(String queryString, ASTJexlScript queryTree) {
         this.queryTree = queryTree;
         this.queryTreeString = queryString;
@@ -341,7 +342,7 @@ public class QueryPlan {
 
     @Override
     public int hashCode() {
-        if (hashCode == -1) {
+        if (rebuildHashCode) {
             //  @formatter:off
             hashCode = new HashCodeBuilder()
                             .append(queryTree)
@@ -351,6 +352,7 @@ public class QueryPlan {
                             .append(settings)
                             .hashCode();
             //  @formatter:on
+            rebuildHashCode = false;
         }
         return hashCode;
     }
@@ -359,7 +361,7 @@ public class QueryPlan {
      * Resets the hashcode. This method is called when an update is made.
      */
     private void resetHashCode() {
-        hashCode = -1;
+        rebuildHashCode = true;
     }
 
     @Override
