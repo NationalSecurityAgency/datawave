@@ -225,6 +225,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private Set<String> datatypeFilter = UniversalSet.instance();
     // A set of sorted index holes
     private List<IndexHole> indexHoles = new ArrayList<>();
+    // a set of user specified mappings
+    private Set<String> renameFields = new HashSet<>(0);
     // Limit fields returned per event
     private Set<String> projectFields = Collections.emptySet();
     private Set<String> disallowlistedFields = new HashSet<>(0);
@@ -551,6 +553,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setDatatypeFilter(null == other.getDatatypeFilter() ? null : Sets.newHashSet(other.getDatatypeFilter()));
         this.setIndexHoles(null == other.getIndexHoles() ? null : Lists.newArrayList(other.getIndexHoles()));
         this.setProjectFields(null == other.getProjectFields() ? null : Sets.newHashSet(other.getProjectFields()));
+        this.setRenameFields(null == other.getRenameFields() ? null : Sets.newHashSet(other.getRenameFields()));
         this.setDisallowlistedFields(null == other.getDisallowlistedFields() ? null : Sets.newHashSet(other.getDisallowlistedFields()));
         this.setIndexedFields(null == other.getIndexedFields() ? null : Sets.newHashSet(other.getIndexedFields()));
         this.setReverseIndexedFields(null == other.getReverseIndexedFields() ? null : Sets.newHashSet(other.getReverseIndexedFields()));
@@ -914,6 +917,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     @JsonIgnore
     public String getProjectFieldsAsString() {
         return StringUtils.join(this.getProjectFields(), Constants.PARAM_VALUE_SEP);
+    }
+
+    public Set<String> getRenameFields() {
+        return renameFields;
+    }
+
+    public void setRenameFields(Set<String> renameFields) {
+        this.renameFields = renameFields;
     }
 
     public Set<String> getDisallowlistedFields() {
