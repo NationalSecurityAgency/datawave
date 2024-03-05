@@ -116,6 +116,7 @@ import datawave.query.jexl.visitors.FunctionIndexQueryExpansionVisitor;
 import datawave.query.jexl.visitors.GeoWavePruningVisitor;
 import datawave.query.jexl.visitors.IndexedTermCountingVisitor;
 import datawave.query.jexl.visitors.IngestTypePruningVisitor;
+import datawave.query.jexl.visitors.IngestTypeVisitor;
 import datawave.query.jexl.visitors.InvertNodeVisitor;
 import datawave.query.jexl.visitors.IsNotNullIntentVisitor;
 import datawave.query.jexl.visitors.IsNotNullPruningVisitor;
@@ -767,6 +768,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         config.setQueryTree(timedFixQueryPropertyMarkers(timers, config.getQueryTree()));
 
         // Ensure that all ASTIdentifier nodes (field names) are upper-case to be consistent with what is enforced at ingest time
+        // this will also ensure that various configure fields for projections, grouping, etc are upper cased as well
         config.setQueryTree(timedUpperCaseIdentifiers(timers, config.getQueryTree(), config, metadataHelper));
 
         config.setQueryTree(timedRewriteNegations(timers, config.getQueryTree()));
@@ -1272,7 +1274,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
     protected ASTJexlScript timedUpperCaseIdentifiers(QueryStopwatch timers, final ASTJexlScript script, ShardQueryConfiguration config,
                     MetadataHelper metadataHelper) throws DatawaveQueryException {
-        return visitorManager.timedVisit(timers, "Uppercase Field Names", () -> (CaseSensitivityVisitor.upperCaseIdentifiers(config, metadataHelper, script)));
+        return visitorManager.timedVisit(timers, "Uppercase Field Names", () -> (upperCaseIdentifiers(metadataHelper, config, script)));
     }
 
     protected ASTJexlScript timedRewriteNegations(QueryStopwatch timers, final ASTJexlScript script) throws DatawaveQueryException {
@@ -1399,9 +1401,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             throw new DatawaveQueryException("Unable get get data dictionary", e);
         }
 
-        // Fields in the data dictionary is always uppercase. Convert the unique fields to uppercase
-        // so the comparisons are case insensitive
-        List<String> fields = config.getUniqueFields().getFields().stream().map(String::toUpperCase).collect(Collectors.toList());
+        // get the unique fields (should already be normalized / uppercased)
+        Set<String> fields = config.getUniqueFields().getFields();
+
         // for the unique fields we need to also look for any model aliases (forward or reverse) and fields generated post evaluation (e.g. HIT_TERM)
         // this is because unique fields operate on the fields as returned to the user. We essentially leave all variants of the fields
         // in the unique field list to ensure we catch everything
@@ -1729,10 +1731,61 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         }
     }
 
+    protected Set<String> upcase(Set<String> fields) {
+        return fields.stream().map(s -> s.toUpperCase()).collect(Collectors.toSet());
+    }
+
+    protected ASTJexlScript upperCaseIdentifiers(MetadataHelper metadataHelper, ShardQueryConfiguration config, ASTJexlScript script) {
+        GroupFields groupFields = config.getGroupFields();
+        if (groupFields != null && groupFields.hasGroupByFields()) {
+            groupFields.setMaxFields(upcase(groupFields.getMaxFields()));
+            groupFields.setSumFields(upcase(groupFields.getSumFields()));
+            groupFields.setGroupByFields(upcase(groupFields.getGroupByFields()));
+            groupFields.setAverageFields(upcase(groupFields.getAverageFields()));
+            groupFields.setCountFields(upcase(groupFields.getCountFields()));
+            groupFields.setMinFields(upcase(groupFields.getMinFields()));
+
+            // If grouping is set, we must make the projection fields match all the group-by fields and aggregation fields.
+            config.setProjectFields(groupFields.getProjectionFields());
+        } else {
+            Set<String> projectFields = config.getProjectFields();
+
+            if (projectFields != null && !projectFields.isEmpty()) {
+                config.setProjectFields(upcase(projectFields));
+            }
+        }
+
+        UniqueFields uniqueFields = config.getUniqueFields();
+        if (uniqueFields != null && !uniqueFields.isEmpty()) {
+            Sets.newHashSet(uniqueFields.getFields()).stream().forEach(s -> uniqueFields.replace(s, s.toUpperCase()));
+        }
+
+        ExcerptFields excerptFields = config.getExcerptFields();
+        if (excerptFields != null && !excerptFields.isEmpty()) {
+            Sets.newHashSet(excerptFields.getFields()).stream().forEach(s -> excerptFields.replace(s, s.toUpperCase()));
+        }
+
+        Set<String> userProjection = config.getRenameFields();
+        if (userProjection != null && !userProjection.isEmpty()) {
+            config.setRenameFields(upcase(userProjection));
+        }
+
+        Set<String> disallowlistedFields = config.getDisallowlistedFields();
+        if (disallowlistedFields != null && !disallowlistedFields.isEmpty()) {
+            config.setDisallowlistedFields(upcase(disallowlistedFields));
+        }
+
+        Set<String> limitFields = config.getLimitFields();
+        if (limitFields != null && !limitFields.isEmpty()) {
+            config.setLimitFields(upcase(limitFields));
+        }
+
+        return (CaseSensitivityVisitor.upperCaseIdentifiers(config, metadataHelper, script));
+    }
+
     // Overwrite projection and disallowlist properties if the query model is
     // being used
     protected ASTJexlScript applyQueryModel(MetadataHelper metadataHelper, ShardQueryConfiguration config, ASTJexlScript script, QueryModel queryModel) {
-        config.setQueryTree(script);
         // generate the inverse of the reverse mapping; {display field name
         // => db field name}
         // a reverse mapping is always many to one, therefore the inverted
@@ -1780,6 +1833,15 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 log.trace("Updated excerpt fields using query model to " + excerptFields.getFields());
             }
             config.setExcerptFields(excerptFields);
+        }
+
+        Set<String> userProjection = config.getRenameFields();
+        if (userProjection != null && !userProjection.isEmpty()) {
+            userProjection = Sets.newHashSet(queryModel.remapParameterEquation(userProjection, inverseReverseModel));
+            if (log.isTraceEnabled()) {
+                log.trace("Updated user projection fields using query model to " + userProjection);
+            }
+            config.setRenameFields(userProjection);
         }
 
         if (config.getDisallowlistedFields() != null && !config.getDisallowlistedFields().isEmpty()) {
@@ -1836,12 +1898,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             throw new DatawaveFatalQueryException(qe);
         }
 
-        config.setQueryTree(QueryModelVisitor.applyModel(config.getQueryTree(), queryModel, allFields, config.getNoExpansionFields(), config.getLenientFields(),
+        return (QueryModelVisitor.applyModel(config.getQueryTree(), queryModel, allFields, config.getNoExpansionFields(), config.getLenientFields(),
                         config.getStrictFields()));
-
-        if (log.isTraceEnabled())
-            log.trace("queryTree:" + PrintingVisitor.formattedQueryString(config.getQueryTree()));
-        return config.getQueryTree();
     }
 
     /**
@@ -2576,8 +2634,35 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             fullTableScanReason = state.reason;
         }
 
+        Set<String> ingestTypes = null;
+        if (config.getReduceIngestTypes()) {
+            Set<String> userRequestedIngestTypes = config.getDatatypeFilter();
+            if (!userRequestedIngestTypes.isEmpty()) {
+                Set<String> queryIngestTypes = IngestTypeVisitor.getIngestTypes(queryTree, getTypeMetadata());
+                ingestTypes = Sets.intersection(userRequestedIngestTypes, queryIngestTypes);
+
+                if (ingestTypes.isEmpty()) {
+                    throw new DatawaveFatalQueryException(
+                                    "DataTypes did not intersect. User requested types: " + userRequestedIngestTypes + " Query types: " + queryIngestTypes);
+                }
+
+                if (ingestTypes.size() < userRequestedIngestTypes.size()) {
+                    // need to update the user requested ingest types
+                    config.setDatatypeFilter(ingestTypes);
+                }
+            }
+        }
+
         if (config.getPruneQueryByIngestTypes()) {
-            JexlNode pruned = IngestTypePruningVisitor.prune(RebuildingVisitor.copy(queryTree), getTypeMetadata());
+            JexlNode pruned;
+            if (ingestTypes == null) {
+                // perform a self-pruning visit
+                pruned = IngestTypePruningVisitor.prune(RebuildingVisitor.copy(queryTree), getTypeMetadata());
+            } else {
+                // perform an external pruning visit
+                pruned = IngestTypePruningVisitor.prune(RebuildingVisitor.copy(queryTree), getTypeMetadata(), ingestTypes);
+            }
+
             if (config.getFullTableScanEnabled() || ExecutableDeterminationVisitor.isExecutable(pruned, config, metadataHelper)) {
                 // always update the query for full table scans or in cases where the query is still executable
                 queryTree = pruned;
