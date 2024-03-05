@@ -2,12 +2,12 @@ package datawave.query.transformer;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -21,9 +21,9 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.javatuples.Triplet;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Iterators;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -44,17 +44,15 @@ import datawave.query.postprocessing.tf.PhraseIndexes;
 
 public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform {
 
-    private static final Logger log = Logger.getLogger(ExcerptTransform.class);
+    private static final Logger log = LoggerFactory.getLogger(ExcerptTransform.class);
 
     public static final String PHRASE_INDEXES_ATTRIBUTE = "PHRASE_INDEXES_ATTRIBUTE";
     public static final String HIT_EXCERPT = "HIT_EXCERPT";
+    public static final String HIT_EXCERPT_WITH_SCORES = "HIT_EXCERPT_WITH_SCORES";
+    public static final String HIT_EXCERPT_ONE_BEST = "HIT_EXCERPT_ONE_BEST";
+    public static final String EXCERPTERRORSTRING = "Something went wrong generating your excerpt.";
 
-    private static final String BEFORE = "BEFORE";
-
-    private static final String AFTER = "AFTER";
-
-    private final Map<String,String> excerptIteratorOptions = new HashMap<>();
-    private final SortedKeyValueIterator<Key,Value> excerptIterator;
+    private final TermFrequencyExcerptIterator excerptIterator;
     private final ExcerptFields excerptFields;
     private final IteratorEnvironment env;
     private final SortedKeyValueIterator<Key,Value> source;
@@ -71,7 +69,7 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
         this.excerptFields = excerptFields;
         this.env = env;
         this.source = source;
-        this.excerptIterator = excerptIterator;
+        this.excerptIterator = (TermFrequencyExcerptIterator) excerptIterator;
     }
 
     @Nullable
@@ -84,13 +82,13 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
                 PhraseIndexes phraseIndexes = getPhraseIndexes(document);
                 if (!phraseIndexes.isEmpty()) {
                     if (log.isTraceEnabled()) {
-                        log.trace("Fetching phrase excerpts " + excerptFields + " for document " + document.getMetadata());
+                        log.trace("Fetching phrase excerpts {} for document {}", excerptFields, document.getMetadata());
                     }
                     Set<Excerpt> excerpts = getExcerpts(phraseIndexes);
                     addExcerptsToDocument(excerpts, document);
                 } else {
                     if (log.isTraceEnabled()) {
-                        log.trace("Phrase indexes were not added to document " + document.getMetadata() + ", skipping");
+                        log.trace("Phrase indexes were not added to document {}, skipping", document.getMetadata());
                     }
                 }
             }
@@ -108,7 +106,7 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
     private PhraseIndexes getPhraseIndexes(Document document) {
         PhraseIndexes phraseIndexes = null;
         PhraseIndexes allPhraseIndexes = new PhraseIndexes();
-        // first lets find all of the phrase indexes that came from phrase functions
+        // first lets find all the phrase indexes that came from phrase functions
         if (document.containsKey(PHRASE_INDEXES_ATTRIBUTE)) {
             Content content = (Content) document.get(PHRASE_INDEXES_ATTRIBUTE);
             phraseIndexes = PhraseIndexes.from(content.getContent());
@@ -130,7 +128,7 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
                         allPhraseIndexes.addIndexTriplet(String.valueOf(hitTuple.getFieldName()), keyToEventId(attr.getMetadata()), pos.getLowOffset(),
                                         pos.getOffset());
                     }
-                    // save the hit term for later callout
+                    // save the hit term for later call-out
                     Collections.addAll(hitTermValues, ((String) hitTuple.getValue()).split(Constants.SPACE));
                 }
             }
@@ -141,7 +139,7 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
 
     /**
      * Get the term weight position (offset) for the specified hit term. This will return an offset overlapping a phrase in the existing phrase index map first.
-     * Otherwise the first position will be returned.
+     * Otherwise, the first position will be returned.
      *
      * @param hitTuple
      *            The hit term tuple
@@ -188,9 +186,9 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
             }
 
         } catch (InvalidProtocolBufferException e) {
-            log.error("Value passed to aggregator was not of type TermWeight.Info for " + tfKey, e);
+            log.error("Value passed to aggregator was not of type TermWeight.Info for {}", tfKey, e);
         } catch (IOException e) {
-            log.error("Failed to scan for term frequencies at " + tfKey, e);
+            log.error("Failed to scan for term frequencies at {}", tfKey, e);
         }
         return null;
     }
@@ -219,12 +217,27 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
      *            the document
      */
     private void addExcerptsToDocument(Set<Excerpt> excerpts, Document document) {
-        Attributes attributes = new Attributes(true);
+        Attributes attributesWithoutScores = new Attributes(true);
+        Attributes attributesWithScores = new Attributes(true);
+        Attributes attributesOneBest = new Attributes(true);
+        boolean hasScores = false;
         for (Excerpt excerpt : excerpts) {
-            Content content = new Content(excerpt.getExcerpt(), excerpt.getSource(), true);
-            attributes.add(content);
+            Content contentWithoutScores = new Content(excerpt.getExcerptWithoutScores(), excerpt.getSource(), true);
+            attributesWithoutScores.add(contentWithoutScores);
+            String excerptWithScores = excerpt.getExcerptWithScores();
+            if (!excerptWithScores.equals("XXXNOTSCOREDXXX") && !excerptWithScores.isBlank()) {
+                Content contentWithScores = new Content(excerptWithScores, excerpt.getSource(), true);
+                attributesWithScores.add(contentWithScores);
+                hasScores = true;
+                Content contentOneBest = new Content(excerpt.getExcerptOneBest(), excerpt.getSource(), true);
+                attributesOneBest.add(contentOneBest);
+            }
         }
-        document.put(HIT_EXCERPT, attributes);
+        document.put(HIT_EXCERPT, attributesWithoutScores);
+        if (hasScores) {
+            document.put(HIT_EXCERPT_WITH_SCORES, attributesWithScores);
+            document.put(HIT_EXCERPT_ONE_BEST, attributesOneBest);
+        }
     }
 
     /**
@@ -281,21 +294,27 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
                 int start = indexPair.getValue1();
                 int end = indexPair.getValue2();
                 if (log.isTraceEnabled()) {
-                    log.trace("Fetching excerpt [" + start + "," + end + "] for field " + field + " for document " + eventId.replace('\u0000', '/'));
+                    log.trace("Fetching excerpt [{},{}] for field {} for document {}", start, end, field, eventId.replace('\u0000', '/'));
                 }
 
                 // Construct the required range for this document.
                 Key startKey = eventIdToKey(eventId);
-                Key endKey = startKey.followingKey(PartialKey.ROW_COLFAM);
+                Key endKey;
+                if (startKey != null) {
+                    endKey = startKey.followingKey(PartialKey.ROW_COLFAM);
+                } else {
+                    throw new IllegalStateException("eventID string was null");
+                }
                 Range range = new Range(startKey, true, endKey, false);
 
                 String excerpt = getExcerpt(field, start, end, range, hitTermValues);
                 // Only retain non-blank excerpts.
-                if (excerpt != null && !excerpt.isEmpty()) {
-                    excerpts.add(new Excerpt(startKey, excerpt));
+                if (!excerpt.isEmpty()) {
+                    String[] parts = excerpt.split(Constants.NULL);
+                    excerpts.add(new Excerpt(startKey, parts[0], parts[1], parts[2]));
                 } else {
                     if (log.isTraceEnabled()) {
-                        log.trace("Failed to find excerpt [" + start + "," + end + "] for field " + field + "for document " + eventId.replace('\u0000', '/'));
+                        log.trace("Failed to find excerpt [{},{}] for field {} for document {}", start, end, field, eventId.replace('\u0000', '/'));
                     }
                 }
             }
@@ -319,51 +338,92 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
      * @return the excerpt
      */
     private String getExcerpt(String field, int start, int end, Range range, ArrayList<String> hitTermValues) {
+        final Map<String,String> excerptIteratorOptions = new HashMap<>();
+        // if given a beginning offset less than 0, set it to 0
+        if (start < 0) {
+            start = 0;
+        }
+        float origHalfSize = (float) (end - start) / 2; // calculate "1/2 of the original requested excerpt size"
+        int expandSize = 20; // how much we want to expand the start and end offsets by
         excerptIteratorOptions.put(TermFrequencyExcerptIterator.FIELD_NAME, field);
-        excerptIteratorOptions.put(TermFrequencyExcerptIterator.START_OFFSET, String.valueOf(start));
-        excerptIteratorOptions.put(TermFrequencyExcerptIterator.END_OFFSET, String.valueOf(end));
-        try {
-            excerptIterator.init(source, excerptIteratorOptions, env);
-            excerptIterator.seek(range, Collections.emptyList(), false);
-            if (excerptIterator.hasTop()) {
-                Key topKey = excerptIterator.getTopKey();
-                String[] parts = topKey.getColumnQualifier().toString().split(Constants.NULL);
-                // The column qualifier is expected to be field\0phrase.
-                if (parts.length == 2) {
-                    return getHitPhrase(hitTermValues, parts);
+        // We will attempt to create the excerpt we want up to two times.
+        // Currently, the only condition that will cause a second attempt is if we detect stop words in the TFs we scan.
+        // The main difference in the second attempt is that it runs with an expanded range to allow us to remove the stop words and still have a correctly
+        // sized excerpt
+        for (int attempt = 0; attempt <= 1; attempt++) {
+            // if this is the first attempt, set the start and end offsets using the passed in values
+            if (attempt == 0) {
+                excerptIteratorOptions.put(TermFrequencyExcerptIterator.START_OFFSET, String.valueOf(start));
+                excerptIteratorOptions.put(TermFrequencyExcerptIterator.END_OFFSET, String.valueOf(end));
+            } else {
+                // if this is the second attempt, set up the iterator with a bigger range by adding/subtracting the start and end offsets by "expandedSize"
+                if (start - expandSize > 0) {
+                    excerptIteratorOptions.put(TermFrequencyExcerptIterator.START_OFFSET, String.valueOf(start - expandSize));
                 } else {
-                    log.warn(TermFrequencyExcerptIterator.class.getSimpleName() + " returned top key with incorrectly-formatted column qualifier in key: "
-                                    + topKey + " when scanning for excerpt [" + start + "," + end + "] for field " + field + " within range " + range);
-                    return null;
+                    excerptIteratorOptions.put(TermFrequencyExcerptIterator.START_OFFSET, String.valueOf(0));
                 }
-            } else {
-                return null;
+                excerptIteratorOptions.put(TermFrequencyExcerptIterator.END_OFFSET, String.valueOf(end + expandSize));
             }
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to scan for excerpt [" + start + "," + end + "] for field " + field + " within range " + range, e);
-        }
-    }
-
-    private String getHitPhrase(ArrayList<String> hitTermValues, String[] phraseParts) {
-        List<String> hitPhrase = new ArrayList<>();
-        for (String phrasePart : phraseParts[1].split(Constants.SPACE)) {
-            if (hitTermValues.contains(phrasePart)) {
-                hitPhrase.add("[" + phrasePart + "]");
-            } else {
-                hitPhrase.add(phrasePart);
+            if (log.isDebugEnabled() && attempt == 1) {
+                log.debug("size of excerpt requested: {}", excerptFields.getOffset(field) * 2);
+                log.debug("original range is ({},{}) and the expanded range is ({},{})", start, end,
+                                excerptIteratorOptions.get(TermFrequencyExcerptIterator.START_OFFSET),
+                                excerptIteratorOptions.get(TermFrequencyExcerptIterator.END_OFFSET));
+            }
+            try {
+                // set all of our options for the iterator
+                excerptIterator.init(source, excerptIteratorOptions, env);
+                excerptIterator.setHitTermsList(hitTermValues);
+                excerptIterator.setDirection(excerptFields.getDirection(field).toUpperCase().trim());
+                excerptIterator.setOrigHalfSize(origHalfSize);
+                // if this is the second attempt, we want the iterator to trim the excerpt down to the size we want.
+                // (remember we run the iterator with an expanded range the second time so we can potentially have a bigger excerpt than needed even after
+                // removing stop words)
+                if (attempt == 1) {
+                    excerptIterator.setTrim(true);
+                }
+                // run the iterator
+                excerptIterator.seek(range, Collections.emptyList(), false);
+                // if an excerpt is returned...
+                if (excerptIterator.hasTop()) {
+                    // the excerpt will be in the column qualifier of the top key
+                    Key topKey = excerptIterator.getTopKey();
+                    // The column qualifier is expected to be field\0phraseWithScores\0phraseWithoutScores\0oneBestExcerpt.
+                    // split the column qualifier on null bytes to get the different parts
+                    // we should have 4 parts after splitting the column qualifier on the null bytes
+                    String[] parts = topKey.getColumnQualifier().toString().split(Constants.NULL);
+                    // if we don't have 4 parts after splitting the column qualifier...
+                    if (parts.length != 4) {
+                        if (attempt == 0) { // if this is the first attempt, try again
+                            continue;
+                        } else { // if this is the second attempt, log an error
+                            if (log.isErrorEnabled()) {
+                                log.error("{} returned top key with incorrectly-formatted column qualifier in key: {} when scanning for excerpt [{},{}] for field {} within range {} : parts= {}",
+                                                TermFrequencyExcerptIterator.class.getSimpleName(), topKey, start, end, field, range, Arrays.toString(parts));
+                            }
+                            break;
+                        }
+                    }
+                    // if we have reached the limit of times to try, or we have no stop words removed
+                    if (!parts[1].equals("XXXWESKIPPEDAWORDXXX")) {
+                        // return just the excerpt parts
+                        return parts[1] + Constants.NULL + parts[2] + Constants.NULL + parts[3];
+                    }
+                } else { // If no excerpt was returned on the first attempt, try again. If no excerpt was returned on the second attempt, log an error.
+                    if (attempt == 1 && log.isErrorEnabled()) {
+                        log.error("TermFrequencyExcerptIterator returned with hasTop() false: something went wrong in the iterator (or given bad parameters to run with)");
+                        log.error("The iterator options were: Field \"{}\" Range= {} StartOffset= {} EndOffset= {} HitTerms= {}", field, range,
+                                        excerptIteratorOptions.get(TermFrequencyExcerptIterator.START_OFFSET),
+                                        excerptIteratorOptions.get(TermFrequencyExcerptIterator.END_OFFSET), hitTermValues);
+                        break;
+                    }
+                }
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to scan for excerpt [" + start + "," + end + "] for field " + field + " within range " + range, e);
             }
         }
-
-        // return phrase based on direction
-        String result = String.join(" ", hitPhrase); // if no direction given, return everything
-        String direction = excerptFields.getDirection(phraseParts[0]).toUpperCase().trim();
-        if (direction.equals(BEFORE)) { // remove tokens prior to hit term
-            result = StringUtils.substringBeforeLast(result, "]") + "]";
-        } else if (direction.equals(AFTER)) { // remove tokens after hit term
-            result = "[" + StringUtils.substringAfter(result, "[");
-        }
-
-        return result;
+        // when working correctly, it should always return from inside the loop so if this is reached something went very wrong
+        return EXCERPTERRORSTRING + Constants.NULL + EXCERPTERRORSTRING + Constants.NULL + EXCERPTERRORSTRING;
     }
 
     /**
@@ -408,16 +468,28 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
      * A class that holds the info for one excerpt.
      */
     private static class Excerpt {
-        private final String excerpt;
+        private final String excerptWithScores;
+        private final String excerptWithoutScores;
+        private final String excerptOneBest;
         private final Key source;
 
-        public Excerpt(Key source, String excerpt) {
+        public Excerpt(Key source, String excerptWithScores, String excerptWithoutScores, String excerptOneBest) {
             this.source = source;
-            this.excerpt = excerpt;
+            this.excerptWithScores = excerptWithScores;
+            this.excerptWithoutScores = excerptWithoutScores;
+            this.excerptOneBest = excerptOneBest;
         }
 
-        public String getExcerpt() {
-            return excerpt;
+        public String getExcerptWithScores() {
+            return excerptWithScores;
+        }
+
+        public String getExcerptWithoutScores() {
+            return excerptWithoutScores;
+        }
+
+        public String getExcerptOneBest() {
+            return excerptOneBest;
         }
 
         public Key getSource() {
@@ -431,12 +503,13 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
             if (o == null || getClass() != o.getClass())
                 return false;
             Excerpt excerpt1 = (Excerpt) o;
-            return excerpt.equals(excerpt1.excerpt) && source.equals(excerpt1.source);
+            return (excerptWithScores.equals(excerpt1.excerptWithScores) && source.equals(excerpt1.source))
+                            && (excerptWithoutScores.equals(excerpt1.excerptWithoutScores)) && (excerptOneBest.equals(excerpt1.excerptOneBest));
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(excerpt, source);
+            return Objects.hash(excerptWithScores, excerptWithoutScores, excerptOneBest, source);
         }
     }
 

@@ -51,11 +51,14 @@ public class TermFrequencyExcerptIteratorTest extends EasyMockSupport {
     private final TermFrequencyExcerptIterator iterator = new TermFrequencyExcerptIterator();
 
     @BeforeClass
-    public static void beforeClass() throws Exception {
+    public static void beforeClass() {
         givenData("email", "123.456.789", "BODY", "the quick brown fox jumped over the lazy dog ");
         givenData("email", "123.456.789", "CONTENT", "there is no greater divide in fandoms than that between star wars and star trek fans");
         givenData("scan", "987.654.321", "TITLE", "document scan 12345");
         givenData("scan", "987.654.321", "CONTENT", "we've been trying to reach you about your car warranty");
+        givenData("email", "111.222.333", "BODY", "the coldest tale <eps> ever told");
+        givenData("email", "111.222.333", "CONTENT", "somewhere far along <eps> the street they <eps> lost their soul <eps> to a person so mean");
+        givenData("email", "333.222.111", "BODY", "we like to repeat stuff do not ask questions we like to repeat stuff");
     }
 
     private static void givenData(String datatype, String uid, String fieldName, String phrase) {
@@ -66,7 +69,7 @@ public class TermFrequencyExcerptIteratorTest extends EasyMockSupport {
             // @formatter:off
             TermWeight.Info info = TermWeight.Info.newBuilder()
                             .addAllTermOffset(termIndexes.get(term))
-                            .addScore(10000000)
+                            .addScore(-1)
                             .addPrevSkips(0)
                             .setZeroOffsetMatch(true)
                             .build();
@@ -88,7 +91,7 @@ public class TermFrequencyExcerptIteratorTest extends EasyMockSupport {
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         options.clear();
     }
 
@@ -103,6 +106,7 @@ public class TermFrequencyExcerptIteratorTest extends EasyMockSupport {
         Key startKey = new Key(row, new Text("email" + Constants.NULL + "123.456.789"));
         Range range = new Range(startKey, true, startKey.followingKey(PartialKey.ROW_COLFAM), false);
 
+        iterator.setHitTermsList(new ArrayList<>(List.of("")));
         iterator.seek(range, Collections.emptyList(), false);
 
         assertTrue(iterator.hasTop());
@@ -110,7 +114,8 @@ public class TermFrequencyExcerptIteratorTest extends EasyMockSupport {
         Key topKey = iterator.getTopKey();
         assertEquals(row, topKey.getRow());
         assertEquals(new Text("email" + Constants.NULL + "123.456.789"), topKey.getColumnFamily());
-        assertEquals(new Text("BODY" + Constants.NULL + "quick brown fox jumped"), topKey.getColumnQualifier());
+        assertEquals(new Text("BODY" + Constants.NULL + "XXXNOTSCOREDXXX" + Constants.NULL + "quick brown fox jumped" + Constants.NULL + "XXXNOTSCOREDXXX"),
+                        topKey.getColumnQualifier());
     }
 
     /**
@@ -124,6 +129,7 @@ public class TermFrequencyExcerptIteratorTest extends EasyMockSupport {
         Key startKey = new Key(row, new Text("email" + Constants.NULL + "123.456.789"));
         Range range = new Range(startKey, true, startKey.followingKey(PartialKey.ROW_COLFAM), false);
 
+        iterator.setHitTermsList(new ArrayList<>(List.of("")));
         iterator.seek(range, Collections.emptyList(), false);
 
         assertTrue(iterator.hasTop());
@@ -131,7 +137,8 @@ public class TermFrequencyExcerptIteratorTest extends EasyMockSupport {
         Key topKey = iterator.getTopKey();
         assertEquals(row, topKey.getRow());
         assertEquals(new Text("email" + Constants.NULL + "123.456.789"), topKey.getColumnFamily());
-        assertEquals(new Text("CONTENT" + Constants.NULL + "there is no greater divide in fandoms than that between star wars and star trek fans"),
+        assertEquals(new Text("CONTENT" + Constants.NULL + "XXXNOTSCOREDXXX" + Constants.NULL
+                        + "there is no greater divide in fandoms than that between star wars and star trek fans" + Constants.NULL + "XXXNOTSCOREDXXX"),
                         topKey.getColumnQualifier());
     }
 
@@ -146,6 +153,7 @@ public class TermFrequencyExcerptIteratorTest extends EasyMockSupport {
         Key startKey = new Key(row, new Text("email" + Constants.NULL + "123.456.789"));
         Range range = new Range(startKey, true, startKey.followingKey(PartialKey.ROW_COLFAM), false);
 
+        iterator.setHitTermsList(new ArrayList<>(List.of("")));
         iterator.seek(range, Collections.emptyList(), false);
 
         assertTrue(iterator.hasTop());
@@ -153,7 +161,7 @@ public class TermFrequencyExcerptIteratorTest extends EasyMockSupport {
         Key topKey = iterator.getTopKey();
         assertEquals(row, topKey.getRow());
         assertEquals(new Text("email" + Constants.NULL + "123.456.789"), topKey.getColumnFamily());
-        assertEquals(new Text("CONTENT" + Constants.NULL), topKey.getColumnQualifier());
+        assertEquals(new Text("CONTENT" + Constants.NULL + Constants.NULL + Constants.NULL), topKey.getColumnQualifier());
     }
 
     /**
@@ -167,12 +175,13 @@ public class TermFrequencyExcerptIteratorTest extends EasyMockSupport {
         Key startKey = new Key(row, new Text("email" + Constants.NULL + "123.456.789"));
         Range range = new Range(startKey, true, startKey.followingKey(PartialKey.ROW_COLFAM), false);
 
+        iterator.setHitTermsList(new ArrayList<>(List.of("")));
         iterator.seek(range, Collections.emptyList(), false);
 
         Key topKey = iterator.getTopKey();
         assertEquals(row, topKey.getRow());
         assertEquals(new Text("email" + Constants.NULL + "123.456.789"), topKey.getColumnFamily());
-        assertEquals(new Text("BAD_FIELD" + Constants.NULL), topKey.getColumnQualifier());
+        assertEquals(new Text("BAD_FIELD" + Constants.NULL + Constants.NULL + Constants.NULL), topKey.getColumnQualifier());
     }
 
     /**
@@ -186,6 +195,7 @@ public class TermFrequencyExcerptIteratorTest extends EasyMockSupport {
         Key startKey = new Key(row, new Text("other" + Constants.NULL + "111.111.111"));
         Range range = new Range(startKey, true, startKey.followingKey(PartialKey.ROW_COLFAM), false);
 
+        iterator.setHitTermsList(new ArrayList<>(List.of("")));
         iterator.seek(range, Collections.emptyList(), false);
 
         assertFalse(iterator.hasTop());
@@ -208,7 +218,259 @@ public class TermFrequencyExcerptIteratorTest extends EasyMockSupport {
     }
 
     private void initIterator() throws IOException {
-        // noinspection unchecked
         iterator.init(new SortedListKeyValueIterator(source), options, env);
+    }
+
+    @Test
+    public void testMatchFoundWithRemovedStoplistWord() throws IOException {
+        givenOptions("BODY", 1, 5);
+        initIterator();
+
+        Key startKey = new Key(row, new Text("email" + Constants.NULL + "111.222.333"));
+        Range range = new Range(startKey, true, startKey.followingKey(PartialKey.ROW_COLFAM), false);
+
+        iterator.setHitTermsList(new ArrayList<>(List.of("")));
+        iterator.setTrim(true);
+        iterator.setOrigHalfSize(20);
+        iterator.seek(range, Collections.emptyList(), false);
+
+        assertTrue(iterator.hasTop());
+
+        Key topKey = iterator.getTopKey();
+        assertEquals(row, topKey.getRow());
+        assertEquals(new Text("email" + Constants.NULL + "111.222.333"), topKey.getColumnFamily());
+        assertEquals(new Text("BODY" + Constants.NULL + "XXXNOTSCOREDXXX" + Constants.NULL + "coldest tale ever" + Constants.NULL + "XXXNOTSCOREDXXX"),
+                        topKey.getColumnQualifier());
+    }
+
+    @Test
+    public void testMatchFoundWithStoplistWordAndOutOfBoundsRange() throws IOException {
+        givenOptions("CONTENT", -10, 21);
+        initIterator();
+
+        Key startKey = new Key(row, new Text("email" + Constants.NULL + "111.222.333"));
+        Range range = new Range(startKey, true, startKey.followingKey(PartialKey.ROW_COLFAM), false);
+
+        iterator.setHitTermsList(new ArrayList<>(List.of("")));
+        iterator.setTrim(true);
+        iterator.setOrigHalfSize(20);
+        iterator.seek(range, Collections.emptyList(), false);
+
+        assertTrue(iterator.hasTop());
+
+        Key topKey = iterator.getTopKey();
+        assertEquals(row, topKey.getRow());
+        assertEquals(new Text("email" + Constants.NULL + "111.222.333"), topKey.getColumnFamily());
+        assertEquals(new Text("CONTENT" + Constants.NULL + "XXXNOTSCOREDXXX" + Constants.NULL
+                        + "somewhere far along the street they lost their soul to a person so mean" + Constants.NULL + "XXXNOTSCOREDXXX"),
+                        topKey.getColumnQualifier());
+    }
+
+    @Test
+    public void testBracketsAroundSingleHit() throws IOException {
+        givenOptions("CONTENT", -10, 21);
+        initIterator();
+
+        Key startKey = new Key(row, new Text("email" + Constants.NULL + "111.222.333"));
+        Range range = new Range(startKey, true, startKey.followingKey(PartialKey.ROW_COLFAM), false);
+
+        iterator.setHitTermsList(new ArrayList<>(List.of("street")));
+        iterator.setTrim(true);
+        iterator.setOrigHalfSize(20);
+        iterator.seek(range, Collections.emptyList(), false);
+
+        assertTrue(iterator.hasTop());
+
+        Key topKey = iterator.getTopKey();
+        assertEquals(row, topKey.getRow());
+        assertEquals(new Text("email" + Constants.NULL + "111.222.333"), topKey.getColumnFamily());
+        assertEquals(new Text("CONTENT" + Constants.NULL + "XXXNOTSCOREDXXX" + Constants.NULL
+                        + "somewhere far along the [street] they lost their soul to a person so mean" + Constants.NULL + "XXXNOTSCOREDXXX"),
+                        topKey.getColumnQualifier());
+    }
+
+    @Test
+    public void testBracketsAroundMultipleHit() throws IOException {
+        givenOptions("CONTENT", -10, 21);
+        initIterator();
+
+        Key startKey = new Key(row, new Text("email" + Constants.NULL + "111.222.333"));
+        Range range = new Range(startKey, true, startKey.followingKey(PartialKey.ROW_COLFAM), false);
+
+        iterator.setHitTermsList(new ArrayList<>(List.of("street", "person", "the", "the street")));
+        iterator.setTrim(true);
+        iterator.setOrigHalfSize(20);
+        iterator.seek(range, Collections.emptyList(), false);
+
+        assertTrue(iterator.hasTop());
+
+        Key topKey = iterator.getTopKey();
+        assertEquals(row, topKey.getRow());
+        assertEquals(new Text("email" + Constants.NULL + "111.222.333"), topKey.getColumnFamily());
+        assertEquals(new Text("CONTENT" + Constants.NULL + "XXXNOTSCOREDXXX" + Constants.NULL
+                        + "somewhere far along [the street] they lost their soul to a [person] so mean" + Constants.NULL + "XXXNOTSCOREDXXX"),
+                        topKey.getColumnQualifier());
+    }
+
+    @Test
+    public void testDirectionBefore() throws IOException {
+        givenOptions("CONTENT", -10, 21);
+        initIterator();
+
+        Key startKey = new Key(row, new Text("email" + Constants.NULL + "111.222.333"));
+        Range range = new Range(startKey, true, startKey.followingKey(PartialKey.ROW_COLFAM), false);
+
+        iterator.setHitTermsList(new ArrayList<>(List.of("street", "person", "the", "the street")));
+        iterator.setDirection("BEFORE");
+        iterator.setTrim(true);
+        iterator.setOrigHalfSize(20);
+        iterator.seek(range, Collections.emptyList(), false);
+
+        assertTrue(iterator.hasTop());
+
+        Key topKey = iterator.getTopKey();
+        assertEquals(row, topKey.getRow());
+        assertEquals(new Text("email" + Constants.NULL + "111.222.333"), topKey.getColumnFamily());
+        assertEquals(new Text("CONTENT" + Constants.NULL + "XXXNOTSCOREDXXX" + Constants.NULL
+                        + "somewhere far along [the street] they lost their soul to a [person]" + Constants.NULL + "XXXNOTSCOREDXXX"),
+                        topKey.getColumnQualifier());
+    }
+
+    @Test
+    public void testDirectionAfter() throws IOException {
+        givenOptions("CONTENT", -10, 21);
+        initIterator();
+
+        Key startKey = new Key(row, new Text("email" + Constants.NULL + "111.222.333"));
+        Range range = new Range(startKey, true, startKey.followingKey(PartialKey.ROW_COLFAM), false);
+
+        iterator.setHitTermsList(new ArrayList<>(List.of("street", "person", "the", "the street")));
+        iterator.setDirection("AFTER");
+        iterator.setTrim(true);
+        iterator.setOrigHalfSize(20);
+        iterator.seek(range, Collections.emptyList(), false);
+
+        assertTrue(iterator.hasTop());
+
+        Key topKey = iterator.getTopKey();
+        assertEquals(row, topKey.getRow());
+        assertEquals(new Text("email" + Constants.NULL + "111.222.333"), topKey.getColumnFamily());
+        assertEquals(new Text("CONTENT" + Constants.NULL + "XXXNOTSCOREDXXX" + Constants.NULL + "[the street] they lost their soul to a [person] so mean"
+                        + Constants.NULL + "XXXNOTSCOREDXXX"), topKey.getColumnQualifier());
+    }
+
+    @Test
+    public void testTrimBefore() throws IOException {
+        givenOptions("CONTENT", -10, 21);
+        initIterator();
+
+        Key startKey = new Key(row, new Text("email" + Constants.NULL + "111.222.333"));
+        Range range = new Range(startKey, true, startKey.followingKey(PartialKey.ROW_COLFAM), false);
+
+        iterator.setHitTermsList(new ArrayList<>(List.of("street")));
+        iterator.setDirection("BEFORE");
+        iterator.setOrigHalfSize(1);
+        iterator.setTrim(true);
+        iterator.seek(range, Collections.emptyList(), false);
+
+        assertTrue(iterator.hasTop());
+
+        Key topKey = iterator.getTopKey();
+        assertEquals(row, topKey.getRow());
+        assertEquals(new Text("email" + Constants.NULL + "111.222.333"), topKey.getColumnFamily());
+        assertEquals(new Text("CONTENT" + Constants.NULL + "XXXNOTSCOREDXXX" + Constants.NULL + "along the [street]" + Constants.NULL + "XXXNOTSCOREDXXX"),
+                        topKey.getColumnQualifier());
+    }
+
+    @Test
+    public void testTrimAfter() throws IOException {
+        givenOptions("CONTENT", -10, 21);
+        initIterator();
+
+        Key startKey = new Key(row, new Text("email" + Constants.NULL + "111.222.333"));
+        Range range = new Range(startKey, true, startKey.followingKey(PartialKey.ROW_COLFAM), false);
+
+        iterator.setHitTermsList(new ArrayList<>(List.of("street")));
+        iterator.setDirection("AFTER");
+        iterator.setOrigHalfSize(1);
+        iterator.setTrim(true);
+        iterator.seek(range, Collections.emptyList(), false);
+
+        assertTrue(iterator.hasTop());
+
+        Key topKey = iterator.getTopKey();
+        assertEquals(row, topKey.getRow());
+        assertEquals(new Text("email" + Constants.NULL + "111.222.333"), topKey.getColumnFamily());
+        assertEquals(new Text("CONTENT" + Constants.NULL + "XXXNOTSCOREDXXX" + Constants.NULL + "[street] they lost" + Constants.NULL + "XXXNOTSCOREDXXX"),
+                        topKey.getColumnQualifier());
+    }
+
+    @Test
+    public void testTrimBoth() throws IOException {
+        givenOptions("CONTENT", -10, 21);
+        initIterator();
+
+        Key startKey = new Key(row, new Text("email" + Constants.NULL + "111.222.333"));
+        Range range = new Range(startKey, true, startKey.followingKey(PartialKey.ROW_COLFAM), false);
+
+        iterator.setHitTermsList(new ArrayList<>(List.of("street")));
+        iterator.setDirection("BOTH");
+        iterator.setOrigHalfSize(1);
+        iterator.setTrim(true);
+        iterator.seek(range, Collections.emptyList(), false);
+
+        assertTrue(iterator.hasTop());
+
+        Key topKey = iterator.getTopKey();
+        assertEquals(row, topKey.getRow());
+        assertEquals(new Text("email" + Constants.NULL + "111.222.333"), topKey.getColumnFamily());
+        assertEquals(new Text("CONTENT" + Constants.NULL + "XXXNOTSCOREDXXX" + Constants.NULL + "the [street] they" + Constants.NULL + "XXXNOTSCOREDXXX"),
+                        topKey.getColumnQualifier());
+    }
+
+    @Test
+    public void testQuickFailStopWordFound() throws IOException {
+        givenOptions("BODY", 1, 5);
+        initIterator();
+
+        Key startKey = new Key(row, new Text("email" + Constants.NULL + "111.222.333"));
+        Range range = new Range(startKey, true, startKey.followingKey(PartialKey.ROW_COLFAM), false);
+
+        iterator.setHitTermsList(new ArrayList<>(List.of("")));
+        iterator.seek(range, Collections.emptyList(), false);
+
+        assertTrue(iterator.hasTop());
+
+        Key topKey = iterator.getTopKey();
+        assertEquals(row, topKey.getRow());
+        assertEquals(new Text("email" + Constants.NULL + "111.222.333"), topKey.getColumnFamily());
+        assertEquals(new Text(
+                        "BODY" + Constants.NULL + "XXXWESKIPPEDAWORDXXX" + Constants.NULL + "XXXWESKIPPEDAWORDXXX" + Constants.NULL + "XXXWESKIPPEDAWORDXXX"),
+                        topKey.getColumnQualifier());
+        String[] parts = topKey.getColumnQualifier().toString().split(Constants.NULL);
+        assertEquals(4, parts.length);
+    }
+
+    @Test
+    public void testBracketsAroundMultipleHitMultiplePhrases() throws IOException {
+        givenOptions("BODY", -10, 37);
+        initIterator();
+
+        Key startKey = new Key(row, new Text("email" + Constants.NULL + "333.222.111"));
+        Range range = new Range(startKey, true, startKey.followingKey(PartialKey.ROW_COLFAM), false);
+
+        iterator.setHitTermsList(new ArrayList<>(List.of("like to repeat", "ask questions", "stuff")));
+        iterator.setTrim(true);
+        iterator.setOrigHalfSize(20);
+        iterator.seek(range, Collections.emptyList(), false);
+
+        assertTrue(iterator.hasTop());
+
+        Key topKey = iterator.getTopKey();
+        assertEquals(row, topKey.getRow());
+        assertEquals(new Text("email" + Constants.NULL + "333.222.111"), topKey.getColumnFamily());
+        assertEquals(new Text("BODY" + Constants.NULL + "XXXNOTSCOREDXXX" + Constants.NULL
+                        + "we [like to repeat] [stuff] do not [ask questions] we [like to repeat] [stuff]" + Constants.NULL + "XXXNOTSCOREDXXX"),
+                        topKey.getColumnQualifier());
     }
 }
