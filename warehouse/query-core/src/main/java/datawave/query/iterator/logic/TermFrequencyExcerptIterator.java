@@ -2,11 +2,8 @@ package datawave.query.iterator.logic;
 
 import java.io.IOException;
 import java.nio.charset.CharacterCodingException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -65,6 +62,11 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
     protected Key tk;
     // the top value
     protected Value tv;
+
+    // how many words skipped in the lower half of the excerpt
+    private int leftSkippedWords;
+    // how many words skipped in the upper half of the excerpt
+    private int rightSkippedWords;
 
     @Override
     public IteratorOptions describeOptions() {
@@ -135,6 +137,8 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
         this.startOffset = Integer.parseInt(options.get(START_OFFSET));
         this.endOffset = Integer.parseInt(options.get(END_OFFSET));
         this.fieldName = options.get(FIELD_NAME);
+        leftSkippedWords = 0;
+        rightSkippedWords = 0;
     }
 
     @Override
@@ -264,7 +268,8 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
         Text cv = top.getColumnVisibility();
         long ts = top.getTimestamp();
         Text row = top.getRow();
-        List<String>[] terms = new List[endOffset - startOffset];
+        // set the size of the array to the amount of terms we need to choose
+        WordsAndScores[] terms = new WordsAndScores[endOffset - startOffset];
 
         // while we have term frequencies for the same document
         while (source.hasTop() && dtUid.equals(getDtUidFromTfKey(source.getTopKey()))) {
@@ -278,6 +283,8 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
                 try {
                     // parse the offsets from the value
                     TermWeight.Info info = TermWeight.Info.parseFrom(source.getTopValue().get());
+                    // check if the number of scores is equal to the number of offsets
+                    boolean useScores = info.getScoreCount() == info.getTermOffsetCount();
 
                     // for each offset, gather all the terms in our range
                     for (int i = 0; i < info.getTermOffsetCount(); i++) {
@@ -286,12 +293,16 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
                         if (offset >= startOffset && offset < endOffset) {
                             // calculate the index in our value list
                             int index = offset - startOffset;
-                            // if the value is larger than the value for this offset thus far
+                            // if the current index has no words/scores yet, initialize an object at the index
                             if (terms[index] == null) {
-                                terms[index] = new ArrayList<>();
+                                terms[index] = new WordsAndScores();
                             }
-                            // use this value
-                            terms[index].add(fieldAndValue[1]);
+                            // if we are using scores, add the word and score to the object, if not then only add the word
+                            if (useScores) {
+                                terms[index].addTerm(fieldAndValue[1], info.getScore(i));
+                            } else {
+                                terms[index].addTerm(fieldAndValue[1]);
+                            }
                         }
                     }
                 } catch (InvalidProtocolBufferException e) {
@@ -302,9 +313,10 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
             // get the next term frequency
             source.next();
         }
-
         // generate the return key and value
-        tk = new Key(row, new Text(dtUid), new Text(fieldName + Constants.NULL + generatePhrase(terms)), cv, ts);
+        tk = new Key(row, new Text(dtUid),
+                        new Text(fieldName + Constants.NULL + generatePhrase(terms) + Constants.NULL + leftSkippedWords + Constants.NULL + rightSkippedWords),
+                        cv, ts);
         tv = new Value();
     }
 
@@ -315,28 +327,29 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
      *            the terms to create a phrase from
      * @return the phrase
      */
-    protected String generatePhrase(List<String>[] terms) {
-        String[] largestTerms = new String[terms.length];
+    protected String generatePhrase(WordsAndScores[] terms) {
+        // create an array with the same length as the one we just passed in
+        String[] termsToOutput = new String[terms.length];
         for (int i = 0; i < terms.length; i++) {
-            largestTerms[i] = getLongestTerm(terms[i]);
+            // if there is nothing at this position, put nothing in the position in the new one
+            if (terms[i] == null) {
+                termsToOutput[i] = null;
+            } else {
+                // if the term to put in this position is in the stop list, increment the corresponding *skippedWords and put nothing in this position
+                if (WordsAndScores.STOP_WORD_LIST.contains(terms[i].getWordToOutput())) {
+                    if (i <= (terms.length / 2)) {
+                        leftSkippedWords++;
+                    } else {
+                        rightSkippedWords++;
+                    }
+                    termsToOutput[i] = null;
+                } else {
+                    // if the term to output is valid, put it in the same position in the new array
+                    termsToOutput[i] = terms[i].getWordToOutput();
+                }
+            }
         }
-
-        return joiner.join(largestTerms);
-    }
-
-    /**
-     * Get the longest term from a list of terms;
-     *
-     * @param terms
-     *            the terms to create a phrase
-     * @return the longest term (null if empty or null list)
-     */
-    protected String getLongestTerm(List<String> terms) {
-        if (terms == null || terms.isEmpty()) {
-            return null;
-        } else {
-            return terms.stream().max(Comparator.comparingInt(String::length)).get();
-        }
+        return joiner.join(termsToOutput);
     }
 
     /**
@@ -473,15 +486,8 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("TermFrequencyExcerptIterator: ");
-        sb.append(this.fieldName);
-        sb.append(", ");
-        sb.append(this.startOffset);
-        sb.append(", ");
-        sb.append(this.endOffset);
 
-        return sb.toString();
+        return "TermFrequencyExcerptIterator: " + this.fieldName + ", " + this.startOffset + ", " + this.endOffset;
     }
 
 }

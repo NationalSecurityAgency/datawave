@@ -50,12 +50,12 @@ public class WiseGuysIngest {
     protected static final String shard = date + "_0";
     protected static final ColumnVisibility columnVisibility = new ColumnVisibility("ALL");
     protected static final Value emptyValue = new Value(new byte[0]);
-    protected static final long timeStamp = 1356998400000l;
+    protected static final long timeStamp = 1356998400000L;
 
     public static final String corleoneUID = UID.builder().newId("Corleone".getBytes(), (Date) null).toString();
     public static final String corleoneChildUID = UID.builder().newId("Corleone".getBytes(), (Date) null, "1").toString();
-    public static final String sopranoUID = UID.builder().newId("Soprano".toString().getBytes(), (Date) null).toString();
-    public static final String caponeUID = UID.builder().newId("Capone".toString().getBytes(), (Date) null).toString();
+    public static final String sopranoUID = UID.builder().newId("Soprano".getBytes(), (Date) null).toString();
+    public static final String caponeUID = UID.builder().newId("Capone".getBytes(), (Date) null).toString();
 
     protected static String normalizeColVal(Map.Entry<String,String> colVal) throws Exception {
         if ("FROM_ADDRESS".equals(colVal.getKey()) || "TO_ADDRESS".equals(colVal.getKey())) {
