@@ -362,6 +362,8 @@ public class ExcerptTransformTest extends EasyMockSupport {
         if (phrase != null) {
             expect(iterator.hasTop()).andReturn(true);
             Key key = new Key(new Text("row"), new Text("cf"), new Text(field + Constants.NULL + phrase));
+            expect(iterator.getLeftSkippedWords()).andReturn(0);
+            expect(iterator.getRightSkippedWords()).andReturn(0);
             expect(iterator.getTopKey()).andReturn(key);
         } else {
             expect(iterator.hasTop()).andReturn(false);

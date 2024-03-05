@@ -51,11 +51,13 @@ public class TermFrequencyExcerptIteratorTest extends EasyMockSupport {
     private final TermFrequencyExcerptIterator iterator = new TermFrequencyExcerptIterator();
 
     @BeforeClass
-    public static void beforeClass() throws Exception {
+    public static void beforeClass() {
         givenData("email", "123.456.789", "BODY", "the quick brown fox jumped over the lazy dog ");
         givenData("email", "123.456.789", "CONTENT", "there is no greater divide in fandoms than that between star wars and star trek fans");
         givenData("scan", "987.654.321", "TITLE", "document scan 12345");
         givenData("scan", "987.654.321", "CONTENT", "we've been trying to reach you about your car warranty");
+        givenData("email", "111.222.333", "BODY", "the coldest tale <eps> ever told");
+        givenData("email", "111.222.333", "CONTENT", "somewhere far along <eps> the street they <eps> lost their soul <eps> to a person so mean");
     }
 
     private static void givenData(String datatype, String uid, String fieldName, String phrase) {
@@ -210,5 +212,42 @@ public class TermFrequencyExcerptIteratorTest extends EasyMockSupport {
     private void initIterator() throws IOException {
         // noinspection unchecked
         iterator.init(new SortedListKeyValueIterator(source), options, env);
+    }
+
+    @Test
+    public void testMatchFoundWithRemovedStoplistWord() throws IOException {
+        givenOptions("BODY", 1, 5);
+        initIterator();
+
+        Key startKey = new Key(row, new Text("email" + Constants.NULL + "111.222.333"));
+        Range range = new Range(startKey, true, startKey.followingKey(PartialKey.ROW_COLFAM), false);
+
+        iterator.seek(range, Collections.emptyList(), false);
+
+        assertTrue(iterator.hasTop());
+
+        Key topKey = iterator.getTopKey();
+        assertEquals(row, topKey.getRow());
+        assertEquals(new Text("email" + Constants.NULL + "111.222.333"), topKey.getColumnFamily());
+        assertEquals(new Text("BODY" + Constants.NULL + "coldest tale ever"), topKey.getColumnQualifier());
+    }
+
+    @Test
+    public void testMatchFoundWithStoplistWordAndOutOfBoundsRange() throws IOException {
+        givenOptions("CONTENT", -10, 21);
+        initIterator();
+
+        Key startKey = new Key(row, new Text("email" + Constants.NULL + "111.222.333"));
+        Range range = new Range(startKey, true, startKey.followingKey(PartialKey.ROW_COLFAM), false);
+
+        iterator.seek(range, Collections.emptyList(), false);
+
+        assertTrue(iterator.hasTop());
+
+        Key topKey = iterator.getTopKey();
+        assertEquals(row, topKey.getRow());
+        assertEquals(new Text("email" + Constants.NULL + "111.222.333"), topKey.getColumnFamily());
+        assertEquals(new Text("CONTENT" + Constants.NULL + "somewhere far along the street they lost their soul to a person so mean"),
+                        topKey.getColumnQualifier());
     }
 }

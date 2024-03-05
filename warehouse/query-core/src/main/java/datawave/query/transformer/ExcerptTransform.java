@@ -49,7 +49,7 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
     public static final String HIT_EXCERPT = "HIT_EXCERPT";
 
     private final Map<String,String> excerptIteratorOptions = new HashMap<>();
-    private final SortedKeyValueIterator<Key,Value> excerptIterator;
+    private final TermFrequencyExcerptIterator excerptIterator;
     private final ExcerptFields excerptFields;
     private final IteratorEnvironment env;
     private final SortedKeyValueIterator<Key,Value> source;
@@ -66,7 +66,7 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
         this.excerptFields = excerptFields;
         this.env = env;
         this.source = source;
-        this.excerptIterator = excerptIterator;
+        this.excerptIterator = (TermFrequencyExcerptIterator) excerptIterator;
     }
 
     @Nullable
@@ -314,29 +314,62 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
      * @return the excerpt
      */
     private String getExcerpt(String field, int start, int end, Range range, ArrayList<String> hitTermValues) {
+        int prevLeftWordsSkipped = 0;
+        int currLeftWordsSkipped = 0;
+        boolean leftLock = false;
+        int prevRightWordsSkipped = 0;
+        int currRightWordsSkipped = 0;
+        boolean rightLock = false;
+        int timesToTry = 100;
         excerptIteratorOptions.put(TermFrequencyExcerptIterator.FIELD_NAME, field);
-        excerptIteratorOptions.put(TermFrequencyExcerptIterator.START_OFFSET, String.valueOf(start));
-        excerptIteratorOptions.put(TermFrequencyExcerptIterator.END_OFFSET, String.valueOf(end));
-        try {
-            excerptIterator.init(source, excerptIteratorOptions, env);
-            excerptIterator.seek(range, Collections.emptyList(), false);
-            if (excerptIterator.hasTop()) {
-                Key topKey = excerptIterator.getTopKey();
-                String[] parts = topKey.getColumnQualifier().toString().split(Constants.NULL);
-                // The column qualifier is expected to be field\0phrase.
-                if (parts.length == 2) {
-                    return getHitPhrase(hitTermValues, parts);
+        for (int i = 0; i <= timesToTry; i++) {
+            if (!leftLock) {
+                prevLeftWordsSkipped = currLeftWordsSkipped;
+                excerptIteratorOptions.put(TermFrequencyExcerptIterator.START_OFFSET, String.valueOf(start - prevLeftWordsSkipped));
+            }
+            if (!rightLock) {
+                prevRightWordsSkipped = currRightWordsSkipped;
+                excerptIteratorOptions.put(TermFrequencyExcerptIterator.END_OFFSET, String.valueOf(end + prevRightWordsSkipped));
+            }
+            try {
+                excerptIterator.init(source, excerptIteratorOptions, env);
+                excerptIterator.seek(range, Collections.emptyList(), false);
+                if (excerptIterator.hasTop()) {
+                    if (!leftLock) {
+                        currLeftWordsSkipped = excerptIterator.getLeftSkippedWords();
+                        if (currLeftWordsSkipped == prevLeftWordsSkipped) {
+                            leftLock = true;
+                        }
+                    }
+                    if (!rightLock) {
+                        currRightWordsSkipped = excerptIterator.getRightSkippedWords();
+                        if (currRightWordsSkipped == prevRightWordsSkipped) {
+                            rightLock = true;
+                        }
+                    }
+                    if (i == timesToTry || (leftLock && rightLock)) {
+                        Key topKey = excerptIterator.getTopKey();
+                        String[] parts = topKey.getColumnQualifier().toString().split(Constants.NULL);
+                        // The column qualifier is expected to be field\0phrase.
+                        if (parts.length == 2) {
+                            return getHitPhrase(hitTermValues, parts);
+                        } else {
+                            log.warn(TermFrequencyExcerptIterator.class.getSimpleName()
+                                            + " returned top key with incorrectly-formatted column qualifier in key: " + topKey + " when scanning for excerpt ["
+                                            + (start - prevLeftWordsSkipped) + "," + (end + prevRightWordsSkipped) + "] for field " + field + " within range "
+                                            + range);
+                            return null;
+                        }
+                    }
                 } else {
-                    log.warn(TermFrequencyExcerptIterator.class.getSimpleName() + " returned top key with incorrectly-formatted column qualifier in key: "
-                                    + topKey + " when scanning for excerpt [" + start + "," + end + "] for field " + field + " within range " + range);
                     return null;
                 }
-            } else {
-                return null;
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to scan for excerpt [" + (start - prevLeftWordsSkipped) + "," + (end + prevRightWordsSkipped)
+                                + "] for field " + field + " within range " + range, e);
             }
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to scan for excerpt [" + start + "," + end + "] for field " + field + " within range " + range, e);
         }
+        throw new RuntimeException("This should never be reached. Something went wrong!");
     }
 
     private static String getHitPhrase(ArrayList<String> hitTermValues, String[] phraseParts) {
