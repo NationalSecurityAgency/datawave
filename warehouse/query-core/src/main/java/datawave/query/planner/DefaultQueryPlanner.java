@@ -116,6 +116,7 @@ import datawave.query.jexl.visitors.FunctionIndexQueryExpansionVisitor;
 import datawave.query.jexl.visitors.GeoWavePruningVisitor;
 import datawave.query.jexl.visitors.IndexedTermCountingVisitor;
 import datawave.query.jexl.visitors.IngestTypePruningVisitor;
+import datawave.query.jexl.visitors.IngestTypeVisitor;
 import datawave.query.jexl.visitors.InvertNodeVisitor;
 import datawave.query.jexl.visitors.IsNotNullIntentVisitor;
 import datawave.query.jexl.visitors.IsNotNullPruningVisitor;
@@ -2633,8 +2634,35 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             fullTableScanReason = state.reason;
         }
 
+        Set<String> ingestTypes = null;
+        if (config.getReduceIngestTypes()) {
+            Set<String> userRequestedIngestTypes = config.getDatatypeFilter();
+            if (!userRequestedIngestTypes.isEmpty()) {
+                Set<String> queryIngestTypes = IngestTypeVisitor.getIngestTypes(queryTree, getTypeMetadata());
+                ingestTypes = Sets.intersection(userRequestedIngestTypes, queryIngestTypes);
+
+                if (ingestTypes.isEmpty()) {
+                    throw new DatawaveFatalQueryException(
+                                    "DataTypes did not intersect. User requested types: " + userRequestedIngestTypes + " Query types: " + queryIngestTypes);
+                }
+
+                if (ingestTypes.size() < userRequestedIngestTypes.size()) {
+                    // need to update the user requested ingest types
+                    config.setDatatypeFilter(ingestTypes);
+                }
+            }
+        }
+
         if (config.getPruneQueryByIngestTypes()) {
-            JexlNode pruned = IngestTypePruningVisitor.prune(RebuildingVisitor.copy(queryTree), getTypeMetadata());
+            JexlNode pruned;
+            if (ingestTypes == null) {
+                // perform a self-pruning visit
+                pruned = IngestTypePruningVisitor.prune(RebuildingVisitor.copy(queryTree), getTypeMetadata());
+            } else {
+                // perform an external pruning visit
+                pruned = IngestTypePruningVisitor.prune(RebuildingVisitor.copy(queryTree), getTypeMetadata(), ingestTypes);
+            }
+
             if (config.getFullTableScanEnabled() || ExecutableDeterminationVisitor.isExecutable(pruned, config, metadataHelper)) {
                 // always update the query for full table scans or in cases where the query is still executable
                 queryTree = pruned;

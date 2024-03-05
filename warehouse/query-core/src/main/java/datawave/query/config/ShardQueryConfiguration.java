@@ -100,6 +100,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private int collapseUidsThreshold = -1;
     // Should this query dedupe terms within ANDs and ORs
     private boolean enforceUniqueTermsWithinExpressions = false;
+    private boolean reduceIngestTypes = false;
+    private boolean reduceIngestTypesPerShard = false;
     // should this query attempt to prune terms via their ingest types
     private boolean pruneQueryByIngestTypes = false;
     // should this query reduce the set of fields prior to serialization
@@ -488,6 +490,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setCollapseUids(other.getCollapseUids());
         this.setCollapseUidsThreshold(other.getCollapseUidsThreshold());
         this.setEnforceUniqueTermsWithinExpressions(other.getEnforceUniqueTermsWithinExpressions());
+        this.setReduceIngestTypes(other.getReduceIngestTypes());
+        this.setReduceIngestTypesPerShard(other.getReduceIngestTypesPerShard());
         this.setPruneQueryByIngestTypes(other.getPruneQueryByIngestTypes());
         this.setReduceQueryFields(other.getReduceQueryFields());
         this.setReduceQueryFieldsPerShard(other.getReduceQueryFieldsPerShard());
@@ -2589,5 +2593,21 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setPruneQueryOptions(boolean pruneQueryOptions) {
         this.pruneQueryOptions = pruneQueryOptions;
+    }
+
+    public boolean getReduceIngestTypes() {
+        return reduceIngestTypes;
+    }
+
+    public void setReduceIngestTypes(boolean reduceIngestTypes) {
+        this.reduceIngestTypes = reduceIngestTypes;
+    }
+
+    public boolean getReduceIngestTypesPerShard() {
+        return reduceIngestTypesPerShard;
+    }
+
+    public void setReduceIngestTypesPerShard(boolean reduceIngestTypesPerShard) {
+        this.reduceIngestTypesPerShard = reduceIngestTypesPerShard;
     }
 }
