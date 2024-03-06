@@ -49,7 +49,6 @@ import datawave.query.attributes.ExcerptFields;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.cardinality.CardinalityConfiguration;
 import datawave.query.common.grouping.GroupFields;
-import datawave.query.config.FederatedShardQueryConfiguration;
 import datawave.query.config.IndexHole;
 import datawave.query.config.Profile;
 import datawave.query.config.ShardQueryConfiguration;
@@ -70,7 +69,6 @@ import datawave.query.planner.FederatedQueryPlanner;
 import datawave.query.planner.MetadataHelperQueryModelProvider;
 import datawave.query.planner.QueryModelProvider;
 import datawave.query.planner.QueryPlanner;
-import datawave.query.scheduler.ChainedScheduler;
 import datawave.query.scheduler.PushdownScheduler;
 import datawave.query.scheduler.Scheduler;
 import datawave.query.scheduler.SequentialScheduler;
@@ -195,12 +193,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     private CardinalityConfiguration cardinalityConfiguration = null;
 
     /**
-     * This is set internally only when the query planner is a {@link FederatedQueryPlanner} instance and {@link #initialize(AccumuloClient, Query, Set)} is
-     * called. It is required later for {@link #setupQuery(GenericQueryConfiguration)}.
-     */
-    private FederatedShardQueryConfiguration federatedConfig = null;
-
-    /**
      * Basic constructor
      */
     public ShardQueryLogic() {
@@ -246,9 +238,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
 
         if (other.eventQueryDataDecoratorTransformer != null) {
             this.setEventQueryDataDecoratorTransformer(new EventQueryDataDecoratorTransformer(other.getEventQueryDataDecoratorTransformer()));
-        }
-        if (other.federatedConfig != null) {
-            this.federatedConfig = new FederatedShardQueryConfiguration(other.federatedConfig);
         }
     }
 
@@ -467,11 +456,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             config.setProjectFields(originalProjectFields);
         } else {
             this.queries = getQueryPlanner().process(config, jexlQueryString, settings, this.getScannerFactory());
-        }
-
-        if (getQueryPlanner() instanceof FederatedQueryPlanner) {
-            log.debug("Query executed as federated query");
-            this.federatedConfig = ((FederatedQueryPlanner) getQueryPlanner()).getFederatedConfig();
         }
 
         TraceStopwatch stopwatch = config.getTimers().newStartedStopwatch("ShardQueryLogic - Get iterator of queries");

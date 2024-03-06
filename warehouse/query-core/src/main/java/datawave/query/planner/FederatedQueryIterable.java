@@ -5,8 +5,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import org.apache.log4j.Logger;
-
 import datawave.query.CloseableIterable;
 import datawave.webservice.query.configuration.QueryData;
 
@@ -14,8 +12,6 @@ import datawave.webservice.query.configuration.QueryData;
  * Implementation of {@link CloseableIterable} intended to be used by {@link FederatedQueryPlanner}. This iterable
  */
 public class FederatedQueryIterable implements CloseableIterable<QueryData> {
-
-    static Logger log = Logger.getLogger(FederatedQueryIterable.class);
 
     private final List<CloseableIterable<QueryData>> iterables = new ArrayList<>();
 
@@ -74,9 +70,7 @@ public class FederatedQueryIterable implements CloseableIterable<QueryData> {
 
         @Override
         public QueryData next() {
-            QueryData next = currentSubIterator.next();
-            log.trace(next);
-            return next;
+            return currentSubIterator.next();
         }
 
         /**

@@ -22,7 +22,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.log4j.Logger;
 
 import datawave.query.CloseableIterable;
-import datawave.query.config.FederatedShardQueryConfiguration;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.DatawaveQueryException;
@@ -51,7 +50,6 @@ public class FederatedQueryPlanner extends QueryPlanner {
 
     private DefaultQueryPlanner queryPlanner;
     private String plannedScript;
-    private FederatedShardQueryConfiguration federatedConfig;
 
     public FederatedQueryPlanner() {
         this(new DefaultQueryPlanner());
@@ -68,7 +66,6 @@ public class FederatedQueryPlanner extends QueryPlanner {
         if (!genericConfig.getClass().equals(ShardQueryConfiguration.class)) {
             throw new ClassCastException("Config must be an instance of " + ShardQueryConfiguration.class.getSimpleName());
         }
-        this.federatedConfig = new FederatedShardQueryConfiguration();
 
         ShardQueryConfiguration originalConfig = (ShardQueryConfiguration) genericConfig;
 
@@ -81,6 +78,7 @@ public class FederatedQueryPlanner extends QueryPlanner {
         // Execute the same query for each date range and collect the results.
         FederatedQueryIterable results = new FederatedQueryIterable();
         int totalProcessed = 1;
+        ShardQueryConfiguration firstConfigCopy = null;
         for (Pair<Date,Date> dateRange : dateRanges) {
             String subStartDate = dateFormat.format(dateRange.getLeft());
             String subEndDate = dateFormat.format(dateRange.getRight());
@@ -97,26 +95,19 @@ public class FederatedQueryPlanner extends QueryPlanner {
             try {
                 CloseableIterable<QueryData> queryData = subPlan.process(configCopy, query, settings, scannerFactory);
                 results.addIterable(queryData);
-                configCopy.setQueryString(subPlan.getPlannedScript());
             } catch (DatawaveQueryException e) {
                 log.warn("Exception occured when processing sub-plan [" + totalProcessed + " of " + dateRanges.size() + "] against date range (" + subStartDate
                                 + "-" + subEndDate + ")", e);
                 // If an exception occurs, ensure that the planned script and the original config are updated before allowing the exception to bubble up.
                 this.plannedScript = subPlan.getPlannedScript();
-
-                Date originalBeginDate = originalConfig.getBeginDate();
-                Date originalEndDate = originalConfig.getEndDate();
-                QueryStopwatch originalTimers = originalConfig.getTimers();
-                // Ensure the original begin date, end date, and timers are restored after copying over all changes from the sub-config.
-                originalConfig.copyFrom(configCopy);
-                originalConfig.setBeginDate(originalBeginDate);
-                originalConfig.setEndDate(originalEndDate);
-                originalConfig.setTimers(originalTimers);
+    
+                // Copy over any changes in the sub-config to the original config. This will not affect the start date, end date, or timers of the original
+                // config.
+                copySubConfigPropertiesToOriginal(originalConfig, configCopy);
                 throw e;
             } finally {
                 // Append the timers from the config copy to the original config for logging later.
                 originalConfig.appendTimers(configCopy.getTimers());
-                federatedConfig.addConfig(configCopy);
             }
 
             // Update the planned script to reflect that of the first query.
@@ -124,15 +115,38 @@ public class FederatedQueryPlanner extends QueryPlanner {
                 this.plannedScript = subPlan.getPlannedScript();
                 log.debug("Federated planned script updated to " + subPlan.getPlannedScript());
             }
+    
+            if (firstConfigCopy == null) {
+                firstConfigCopy = configCopy;
+            }
 
             stopwatch.stop();
             totalProcessed++;
         }
-
+    
+        // Copy over any changes from the first sub-config to the original config. This will not affect the start date, end date, or timers of the original
+        // config.
+        copySubConfigPropertiesToOriginal(originalConfig, firstConfigCopy);
+        
         // Return the collected results.
         return results;
     }
-
+    
+    /**
+     * Copy over all changes from the sub config to the original config, while preserving the start date, end date, and timers of the original config.
+     */
+    private void copySubConfigPropertiesToOriginal(ShardQueryConfiguration original, ShardQueryConfiguration subConfig) {
+        Date originalBeginDate = original.getBeginDate();
+        Date originalEndDate = original.getEndDate();
+        QueryStopwatch originalTimers = original.getTimers();
+        // Copy over all properties from the sub-config.
+        original.copyFrom(subConfig);
+        // Ensure the original begin date, end date, and timers are restored after copying over all changes from the sub-config.
+        original.setBeginDate(originalBeginDate);
+        original.setEndDate(originalEndDate);
+        original.setTimers(originalTimers);
+    }
+    
     /**
      * Return the set of date ranges that sub-queries should be created for. Each date range will have a consistent index state, meaning that within each date
      * range, we can expect to either encounter no field index holes, or to always encounter a field index hole.
@@ -425,9 +439,5 @@ public class FederatedQueryPlanner extends QueryPlanner {
 
     public void setQueryPlanner(DefaultQueryPlanner queryPlanner) {
         this.queryPlanner = queryPlanner;
-    }
-
-    public FederatedShardQueryConfiguration getFederatedConfig() {
-        return federatedConfig;
     }
 }
