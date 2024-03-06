@@ -102,6 +102,28 @@ datawave:
         # Uncomment the following line to override the query logic beans to load
         # xmlBeansPath: "classpath:MyTestQueryLogicFactory.xml"
 
+        # If desired, you may populate this map to redefine the name for each query logic.
+        # This can also be used to limit the available query logics.
+        queryLogicsByName:
+          "EventQuery": "EventQuery"
+          "ErrorEventQuery": "ErrorEventQuery"
+          "DiscoveryQuery": "DiscoveryQuery"
+          "ErrorDiscoveryQuery": "ErrorDiscoveryQuery"
+          "LuceneUUIDEventQuery": "LuceneUUIDEventQuery"
+          "ContentQuery": "ContentQuery"
+          "EdgeQuery": "EdgeQuery"
+          "CountQuery": "CountQuery"
+          "ErrorCountQuery": "ErrorCountQuery"
+          "FieldIndexCountQuery": "FieldIndexCountQuery"
+          "ErrorFieldIndexCountQuery": "ErrorFieldIndexCountQuery"
+          "TermFrequencyQuery": "TermFrequencyQuery"
+          "IndexStatsQuery": "IndexStatsQuery"
+          "QueryMetricsQuery": "QueryMetricsQuery"
+          "InternalQueryMetricsQuery": "InternalQueryMetricsQuery"
+          "FacetedQuery": "FacetedQuery"
+          "HitHighlights": "HitHighlights"
+          "EdgeEventQuery": "EdgeEventQuery"
+
         # The max page size that a user can request.  0 turns off this feature
         maxPageSize: 10000
 

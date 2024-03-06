@@ -62,7 +62,6 @@ public class QueryLogicFactoryImpl implements QueryLogicFactory {
         QueryLogic<?> logic;
         try {
             logic = (QueryLogic<?>) applicationContext.getBean(beanName);
-            logic.setCurrentUser(currentUser);
         } catch (ClassCastException | NoSuchBeanDefinitionException cce) {
             if (beanName.equals(queryLogic)) {
                 throw new IllegalArgumentException("Logic name '" + queryLogic + "' does not exist in the configuration");
