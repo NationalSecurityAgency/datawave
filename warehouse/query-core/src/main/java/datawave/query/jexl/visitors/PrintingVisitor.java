@@ -170,7 +170,7 @@ public class PrintingVisitor extends ParserVisitor {
     private Output output;
 
     public PrintingVisitor() {
-        this(0, 150);
+        this(0, 100);
     }
 
     public PrintingVisitor(int maxChildNodes, int maxTermsToPrint) {
@@ -222,7 +222,7 @@ public class PrintingVisitor extends ParserVisitor {
      *            maximum number of child nodes
      */
     public static void printQuery(JexlNode query, int maxChildNodes) {
-        PrintingVisitor printer = new PrintingVisitor(maxChildNodes, 150);
+        PrintingVisitor printer = new PrintingVisitor(maxChildNodes, 100);
 
         // visit() and get the root which is the root of a tree of Boolean Logic Iterator<Key>'s
         query.jjtAccept(printer, "");
@@ -238,7 +238,7 @@ public class PrintingVisitor extends ParserVisitor {
      *             for parsing issues
      */
     public static String formattedQueryString(String query) throws ParseException {
-        return formattedQueryString(query, 0, 150);
+        return formattedQueryString(query, 0, 100);
     }
 
     /**
@@ -272,7 +272,7 @@ public class PrintingVisitor extends ParserVisitor {
      * @return formatted string
      */
     public static String formattedQueryString(JexlNode query) {
-        return formattedQueryString(query, 0, 150);
+        return formattedQueryString(query, 0, 100);
     }
 
     /**
@@ -306,7 +306,7 @@ public class PrintingVisitor extends ParserVisitor {
      * @return list of the formatted strings
      */
     public static List<String> formattedQueryStringList(JexlNode query) {
-        return formattedQueryStringList(query, 0, 150);
+        return formattedQueryStringList(query, 0, 100);
     }
 
     /**
