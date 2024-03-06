@@ -96,12 +96,7 @@ public class FederatedQueryPlanner extends QueryPlanner {
 
             try {
                 CloseableIterable<QueryData> queryData = subPlan.process(configCopy, query, settings, scannerFactory);
-                // results.addIterable(queryData);
-                if (queryData != null) {
-                    Iterator<QueryData> iterator = queryData.iterator();
-                    configCopy.setQueries(iterator);
-                    log.debug("Setting query data for sub-config, query Data has next: " + iterator.hasNext());
-                }
+                results.addIterable(queryData);
                 configCopy.setQueryString(subPlan.getPlannedScript());
             } catch (DatawaveQueryException e) {
                 log.warn("Exception occured when processing sub-plan [" + totalProcessed + " of " + dateRanges.size() + "] against date range (" + subStartDate

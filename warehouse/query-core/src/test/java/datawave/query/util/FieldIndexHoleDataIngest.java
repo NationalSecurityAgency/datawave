@@ -1,5 +1,7 @@
 package datawave.query.util;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -67,12 +69,8 @@ public class FieldIndexHoleDataIngest {
     private static final GeometryType geoType = new GeometryType();
 
     protected static final String datatype = "test";
-    protected static final String date = "20130101";
-    protected static final String shard = date + "_0";
     protected static final ColumnVisibility columnVisibility = new ColumnVisibility("ALL");
     protected static final Value emptyValue = new Value(new byte[0]);
-    protected static final long timeStamp = 1356998400000L;
-
     public static final String corleoneUID = UID.builder().newId("Corleone".getBytes(), (Date) null).toString();
     public static final String corleoneChildUID = UID.builder().newId("Corleone".getBytes(), (Date) null, "1").toString();
     public static final String sopranoUID = UID.builder().newId("Soprano".getBytes(), (Date) null).toString();
@@ -80,6 +78,7 @@ public class FieldIndexHoleDataIngest {
 
     public static class EventConfig {
         private String date;
+        private long time;
         private final Map<String,Pair<Long,Long>> metadataCounts = new HashMap<>();
 
         public static EventConfig forDate(String date) {
@@ -88,6 +87,11 @@ public class FieldIndexHoleDataIngest {
 
         public EventConfig withDate(String date) {
             this.date = date;
+            try {
+                this.time = new SimpleDateFormat("yyyyMMdd").parse(date).getTime();
+            } catch (ParseException e) {
+                throw new RuntimeException("Expected yyyyMMdd format for " + date, e);
+            }
             return this;
         }
 
@@ -98,6 +102,10 @@ public class FieldIndexHoleDataIngest {
 
         public String getDate() {
             return date;
+        }
+
+        public long getTime() {
+            return time;
         }
 
         public boolean hasCountsForField(String field) {
@@ -126,6 +134,7 @@ public class FieldIndexHoleDataIngest {
             for (EventConfig config : eventConfigs) {
                 // Create a shard for the date.
                 String shard = config.getDate() + "_0";
+                long timeStamp = config.getTime();
 
                 Mutation mutation = new Mutation(shard);
 
@@ -219,6 +228,7 @@ public class FieldIndexHoleDataIngest {
             for (EventConfig config : eventConfigs) {
                 // Create a shard for the date.
                 String shard = config.getDate() + "_0";
+                long timeStamp = config.getTime();
 
                 // corleones
                 // uuid
@@ -379,9 +389,10 @@ public class FieldIndexHoleDataIngest {
                 bw.addMutation(mutation);
 
                 // add some tokens
-                addTokens(bw, shard, range, "QUOTE", "Im gonna make him an offer he cant refuse", corleoneUID);
-                addTokens(bw, shard, range, "QUOTE", "If you can quote the rules then you can obey them", sopranoUID);
-                addTokens(bw, shard, range, "QUOTE", "You can get much farther with a kind word and a gun than you can with a kind word alone", caponeUID);
+                addTokens(bw, shard, timeStamp, range, "QUOTE", "Im gonna make him an offer he cant refuse", corleoneUID);
+                addTokens(bw, shard, timeStamp, range, "QUOTE", "If you can quote the rules then you can obey them", sopranoUID);
+                addTokens(bw, shard, timeStamp, range, "QUOTE", "You can get much farther with a kind word and a gun than you can with a kind word alone",
+                                caponeUID);
 
                 bw.addMutation(mutation);
             }
@@ -394,6 +405,7 @@ public class FieldIndexHoleDataIngest {
             for (EventConfig config : eventConfigs) {
                 // Create a shard for the date.
                 String shard = config.getDate() + "_0";
+                long timeStamp = config.getTime();
 
                 // corleones
                 Mutation mutation = new Mutation(new StringBuilder(lcNoDiacriticsType.normalize("CORLEONE")).reverse());
@@ -554,6 +566,7 @@ public class FieldIndexHoleDataIngest {
             for (EventConfig config : eventConfigs) {
                 // Create a shard for the date.
                 String shard = config.getDate() + "_0";
+                long timeStamp = config.getTime();
                 Mutation mutation = new Mutation(shard);
 
                 // corleones
@@ -672,9 +685,10 @@ public class FieldIndexHoleDataIngest {
 
                 bw.addMutation(mutation);
 
-                addFiTfTokens(bw, shard, "QUOTE", "Im gonna make him an offer he cant refuse", corleoneUID);
-                addFiTfTokens(bw, shard, "QUOTE", "If you can quote the rules then you can obey them", sopranoUID);
-                addFiTfTokens(bw, shard, "QUOTE", "You can get much farther with a kind word and a gun than you can with a kind word alone", caponeUID);
+                addFiTfTokens(bw, shard, timeStamp, "QUOTE", "Im gonna make him an offer he cant refuse", corleoneUID);
+                addFiTfTokens(bw, shard, timeStamp, "QUOTE", "If you can quote the rules then you can obey them", sopranoUID);
+                addFiTfTokens(bw, shard, timeStamp, "QUOTE", "You can get much farther with a kind word and a gun than you can with a kind word alone",
+                                caponeUID);
             }
         }
     }
@@ -874,6 +888,7 @@ public class FieldIndexHoleDataIngest {
     }
 
     private static void writeForwardModel(AccumuloClient client, BatchWriterConfig bwConfig) throws TableNotFoundException, MutationsRejectedException {
+        long timeStamp = System.currentTimeMillis();
         try (BatchWriter bw = client.createBatchWriter(QueryTestTableHelper.MODEL_TABLE_NAME, bwConfig)) {
             Mutation mutation = new Mutation("NAM");
             mutation.put("DATAWAVE", "NAME" + "\u0000" + "forward", columnVisibility, timeStamp, emptyValue);
@@ -908,6 +923,7 @@ public class FieldIndexHoleDataIngest {
     }
 
     private static void writeReverseModel(AccumuloClient client, BatchWriterConfig bwConfig) throws TableNotFoundException, MutationsRejectedException {
+        long timeStamp = System.currentTimeMillis();
         try (BatchWriter bw = client.createBatchWriter(QueryTestTableHelper.MODEL_TABLE_NAME, bwConfig)) {
             Mutation mutation = new Mutation("NOME");
             mutation.put("DATAWAVE", "NAM" + "\u0000" + "reverse", columnVisibility, timeStamp, emptyValue);
@@ -965,7 +981,8 @@ public class FieldIndexHoleDataIngest {
         }
     }
 
-    private static void addTokens(BatchWriter bw, String shard, Range range, String field, String phrase, String uid) throws MutationsRejectedException {
+    private static void addTokens(BatchWriter bw, String shard, long timeStamp, Range range, String field, String phrase, String uid)
+                    throws MutationsRejectedException {
         Mutation mutation = new Mutation(lcNoDiacriticsType.normalize(phrase));
         mutation.put(field.toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, range.getValue(uid));
         bw.addMutation(mutation);
@@ -978,7 +995,7 @@ public class FieldIndexHoleDataIngest {
         }
     }
 
-    private static void addFiTfTokens(BatchWriter bw, String shard, String field, String phrase, String uid) throws MutationsRejectedException {
+    private static void addFiTfTokens(BatchWriter bw, String shard, long timeStamp, String field, String phrase, String uid) throws MutationsRejectedException {
         Mutation fi = new Mutation(shard);
         fi.put("fi\u0000" + field.toUpperCase(), lcNoDiacriticsType.normalize(phrase) + "\u0000" + datatype + "\u0000" + uid, columnVisibility, timeStamp,
                         emptyValue);

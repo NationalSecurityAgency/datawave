@@ -20,6 +20,7 @@ import javax.inject.Inject;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
@@ -40,6 +41,8 @@ import datawave.configuration.spring.SpringBean;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
 import datawave.query.QueryTestTableHelper;
+import datawave.query.RebuildingScannerTestHelper;
+import datawave.query.function.JexlEvaluation;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
@@ -207,7 +210,8 @@ public abstract class FederatedQueryTest {
     }
 
     private AccumuloClient createClient() throws Exception {
-        AccumuloClient client = new QueryTestTableHelper(getClass().toString(), log).client;
+        AccumuloClient client = new QueryTestTableHelper(getClass().toString(), log, RebuildingScannerTestHelper.TEARDOWN.NEVER,
+                        RebuildingScannerTestHelper.INTERRUPT.NEVER).client;
         FieldIndexHoleDataIngest.writeItAll(client, getRange(), eventConfigs);
         PrintUtility.printTable(client, auths, TableName.SHARD);
         PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
@@ -250,7 +254,27 @@ public abstract class FederatedQueryTest {
             actualEvents.add(new Event(date, event.getMetadata().getInternalId()));
         }
 
-        Assert.assertEquals(expectedEvents, actualEvents);
+        Assert.assertEquals(getDiffs(expectedEvents, actualEvents), expectedEvents, actualEvents);
+    }
+
+    private String getDiffs(Set<Event> expectedEvents, Set<Event> actualEvents) {
+        StringBuilder builder = new StringBuilder();
+        for (Event e : expectedEvents) {
+            if (!actualEvents.contains(e)) {
+                builder.append("\nmissing " + e);
+            }
+        }
+        for (Event e : expectedEvents) {
+            if (actualEvents.contains(e)) {
+                builder.append("\nmatched " + e);
+            }
+        }
+        for (Event e : actualEvents) {
+            if (!expectedEvents.contains(e)) {
+                builder.append("\nextra " + e);
+            }
+        }
+        return builder.toString();
     }
 
     /**
@@ -358,7 +382,7 @@ public abstract class FederatedQueryTest {
         configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130104").withMetadataCount("UUID", 10L, 2L));
         configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130105"));
 
-        givenQuery("UUID =~ '^[CS].*' && GENDER == 'MALE'");
+        givenQuery("UUID =~ '^[CS].*' && GEN == 'MALE'");
         givenStartDate("20130101");
         givenEndDate("20130105");
 
@@ -382,7 +406,7 @@ public abstract class FederatedQueryTest {
         configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130104").withMetadataCount("UUID", 10L, 2L));
         configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130105"));
 
-        givenQuery("UUID =~ '^[CS].*' && GENDER == 'MALE'");
+        givenQuery("UUID =~ '^[CS].*' && GEN == 'MALE'");
         givenStartDate("20130101");
         givenEndDate("20130105");
 
@@ -406,7 +430,7 @@ public abstract class FederatedQueryTest {
         configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130104").withMetadataCount("UUID", 10L, 2L));
         configureEvent(FieldIndexHoleDataIngest.EventConfig.forDate("20130105"));
 
-        givenQuery("UUID =~ '^[CS].*' && GENDER == 'MALE'");
+        givenQuery("UUID =~ '^[CS].*' && GEN == 'MALE'");
         givenStartDate("20130101");
         givenEndDate("20130105");
 

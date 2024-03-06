@@ -541,85 +541,9 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             throw new QueryException("Did not receive a ShardQueryConfiguration instance!!");
         }
 
-        /*
-         * ShardQueryConfiguration config = (ShardQueryConfiguration) genericConfig; setupQuery(config);
-         */
-        if (this.federatedConfig != null) {
-            log.debug("Setting up federated query");
-            setupFederatedQuery();
-        } else {
-            log.debug("Setting up non-federated query");
-            ShardQueryConfiguration config = (ShardQueryConfiguration) genericConfig;
-            setupQuery(config);
+        ShardQueryConfiguration config = (ShardQueryConfiguration) genericConfig;
+        setConfig(config);
 
-        }
-    }
-
-    private void setupFederatedQuery() {
-        QueryStopwatch timers = config.getTimers();
-        TraceStopwatch stopwatch = timers.newStartedStopwatch("ShardQueryLogic - Setup Federated Query");
-        List<ShardQueryConfiguration> configs = federatedConfig.getConfigs();
-
-        // Verify if all queries can be run.
-        for (ShardQueryConfiguration config : configs) {
-            if (!config.canRunQuery()) {
-                log.warn("The given query '" + config + "' could not be run, most likely due to not matching any records in the global index.");
-
-                // Stub out an iterator to correctly present "no results"
-                this.iterator = new Iterator<>() {
-                    @Override
-                    public boolean hasNext() {
-                        return false;
-                    }
-
-                    @Override
-                    public Map.Entry<Key,Value> next() {
-                        return null;
-                    }
-
-                    @Override
-                    public void remove() {}
-                };
-
-                stopwatch.stop();
-                log.info(getStopwatchHeader(config));
-                List<String> timings = timers.summarizeAsList();
-                for (String timing : timings) {
-                    log.info(timing);
-                }
-                this.scanner = null;
-                return;
-            }
-        }
-
-        // Instantiate a chained scheduler that will schedule each sub-query.
-        log.debug("Total configs: " + configs.size());
-        ChainedScheduler chainedScheduler = new ChainedScheduler();
-        for (ShardQueryConfiguration config : configs) {
-            Scheduler subScheduler = getScheduler(config, scannerFactory);
-            log.debug("Adding " + subScheduler.getClass().getSimpleName() + " sub-scheduler");
-            chainedScheduler.addScheduler(subScheduler);
-        }
-        this.scheduler = chainedScheduler;
-        this.scanner = null;
-        log.debug("chained - Fetching iterator");
-        this.iterator = this.scheduler.iterator();
-        log.debug("chained - iterator fetched");
-        if (!config.isSortedUIDs()) {
-            log.debug("Wrapping in deduping iterator");
-            this.iterator = new DedupingIterator(this.iterator);
-        }
-
-        stopwatch.stop();
-
-        log.info(getStopwatchHeader(config));
-        List<String> timings = timers.summarizeAsList();
-        for (String timing : timings) {
-            log.info(timing);
-        }
-    }
-
-    private void setupQuery(ShardQueryConfiguration config) {
         final QueryStopwatch timers = config.getTimers();
         TraceStopwatch stopwatch = timers.newStartedStopwatch("ShardQueryLogic - Setup Query");
 

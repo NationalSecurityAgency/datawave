@@ -92,7 +92,7 @@ public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJex
         // now evaluate
         Object o = script.execute(input.third());
         if (log.isTraceEnabled()) {
-            log.trace("Evaluation of " + query + " against " + input.third() + " returned " + o);
+            log.trace("Evaluation of " + input.first() + " with " + query + " against " + input.third() + " returned " + o);
         }
 
         boolean matched = isMatched(o);
