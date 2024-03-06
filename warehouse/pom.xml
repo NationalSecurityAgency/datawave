@@ -366,6 +366,11 @@
                 <version>${version.jetty}</version>
             </dependency>
             <dependency>
+                <groupId>org.opendjk.jmh</groupId>
+                <artifactId>jmh-core</artifactId>
+                <version>1.37</version>
+            </dependency>
+            <dependency>
                 <groupId>org.ow2.asm</groupId>
                 <artifactId>asm</artifactId>
                 <version>4.0</version>
@@ -437,12 +442,27 @@
                 <version>2.9.0</version>
                 <scope>test</scope>
             </dependency>
+            <dependency>
+                <groupId>org.openjdk.jmh</groupId>
+                <artifactId>jmh-generator-annprocess</artifactId>
+                <version>1.37</version>
+                <scope>test</scope>
+            </dependency>
         </dependencies>
     </dependencyManagement>
     <dependencies>
         <dependency>
             <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-common-test</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.openjdk.jmh</groupId>
+            <artifactId>jmh-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.openjdk.jmh</groupId>
+            <artifactId>jmh-generator-annprocess</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
     <build>
