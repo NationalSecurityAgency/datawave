@@ -1967,7 +1967,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         if (log.isTraceEnabled()) {
             logTrace(PrintingVisitor.formattedQueryStringList(queryTree), message);
         } else if (log.isDebugEnabled()) {
-            logDebug(PrintingVisitor.formattedQueryStringList(queryTree, maxChildNodesToPrint, 150), message);
+            logDebug(PrintingVisitor.formattedQueryStringList(queryTree, maxChildNodesToPrint, 100), message);
         }
     }
 
