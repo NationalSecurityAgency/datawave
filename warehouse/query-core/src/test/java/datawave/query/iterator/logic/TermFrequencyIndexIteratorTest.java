@@ -4,6 +4,7 @@ import static datawave.query.jexl.visitors.EventDataQueryExpressionVisitor.Expre
 import static datawave.query.jexl.visitors.EventDataQueryExpressionVisitor.getExpressionFilters;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -188,8 +189,8 @@ public class TermFrequencyIndexIteratorTest {
         assertTrue(d.getDictionary().get("FOO").getData() != null);
         assertTrue(((Set) d.getDictionary().get("FOO").getData()).size() == 2);
         Iterator<PreNormalizedAttribute> i = ((Set) d.getDictionary().get("FOO").getData()).iterator();
-        assertTrue(i.next().getValue().equals("bar"));
         assertTrue(i.next().getValue().equals("baz"));
+        assertTrue(i.next().getValue().equals("bar"));
 
         iterator.next();
 
@@ -216,8 +217,8 @@ public class TermFrequencyIndexIteratorTest {
         assertTrue(d.getDictionary().get("FOO").getData() != null);
         assertTrue(((Set) d.getDictionary().get("FOO").getData()).size() == 2);
         i = ((Set) d.getDictionary().get("FOO").getData()).iterator();
-        assertTrue(i.next().getValue().equals("alf"));
         assertTrue(i.next().getValue().equals("arm"));
+        assertTrue(i.next().getValue().equals("alf"));
     }
 
     @Test
@@ -232,19 +233,19 @@ public class TermFrequencyIndexIteratorTest {
 
         assertTrue(iterator.hasTop());
         Document d = iterator.document();
-        assertTrue(d != null);
-        assertTrue(d.getDictionary().size() == 2);
-        assertTrue(d.getDictionary().get("FOO") != null);
-        assertTrue(d.getDictionary().get("RECORD_ID") != null);
-        assertTrue(d.getDictionary().get("FOO").getData() != null);
-        assertTrue(((Set) d.getDictionary().get("FOO").getData()).size() == 6);
+        assertNotNull(d);
+        assertEquals(2, d.getDictionary().size());
+        assertNotNull(d.getDictionary().get("FOO"));
+        assertNotNull(d.getDictionary().get("RECORD_ID"));
+        assertNotNull(d.getDictionary().get("FOO").getData());
+        assertEquals(6, ((Set) d.getDictionary().get("FOO").getData()).size());
         Iterator<PreNormalizedAttribute> i = ((Set) d.getDictionary().get("FOO").getData()).iterator();
-        assertTrue(i.next().getValue().equals("bar"));
-        assertTrue(i.next().getValue().equals("baz"));
-        assertTrue(i.next().getValue().equals("buf"));
-        assertTrue(i.next().getValue().equals("buz"));
-        assertTrue(i.next().getValue().equals("alf"));
-        assertTrue(i.next().getValue().equals("arm"));
+        assertEquals("baz", i.next().getValue());
+        assertEquals("bar", i.next().getValue());
+        assertEquals("buf", i.next().getValue());
+        assertEquals("buz", i.next().getValue());
+        assertEquals("alf", i.next().getValue());
+        assertEquals("arm", i.next().getValue());
 
         iterator.next();
         assertFalse(iterator.hasTop());
@@ -291,8 +292,8 @@ public class TermFrequencyIndexIteratorTest {
         assertTrue(d.getDictionary().get("RECORD_ID") != null);
         assertTrue(d.getDictionary().get("FOO").getData() != null);
         Iterator<PreNormalizedAttribute> i = ((Set) d.getDictionary().get("FOO").getData()).iterator();
-        assertTrue(i.next().getValue().equals("bar"));
         assertTrue(i.next().getValue().equals("baz"));
+        assertTrue(i.next().getValue().equals("bar"));
 
         iterator.next();
 
@@ -342,16 +343,16 @@ public class TermFrequencyIndexIteratorTest {
 
         assertTrue(iterator.hasTop());
         Document d = iterator.document();
-        assertTrue(d != null);
-        assertTrue(d.getDictionary().size() == 2);
-        assertTrue(d.getDictionary().get("FOO") != null);
-        assertTrue(d.getDictionary().get("RECORD_ID") != null);
-        assertTrue(d.getDictionary().get("FOO").getData() != null);
+        assertNotNull(d);
+        assertEquals(2, d.getDictionary().size());
+        assertNotNull(d.getDictionary().get("FOO"));
+        assertNotNull(d.getDictionary().get("RECORD_ID"));
+        assertNotNull(d.getDictionary().get("FOO").getData());
         Iterator<PreNormalizedAttribute> i = ((Set) d.getDictionary().get("FOO").getData()).iterator();
-        assertTrue(i.next().getValue().equals("bar"));
-        assertTrue(i.next().getValue().equals("baz"));
-        assertTrue(i.next().getValue().equals("buf"));
-        assertTrue(i.next().getValue().equals("arm"));
+        assertEquals("baz", i.next().getValue());
+        assertEquals("bar", i.next().getValue());
+        assertEquals("buf", i.next().getValue());
+        assertEquals("arm", i.next().getValue());
 
         iterator.next();
         assertFalse(iterator.hasTop());
@@ -374,18 +375,18 @@ public class TermFrequencyIndexIteratorTest {
 
         assertTrue(iterator.hasTop());
         Document d = iterator.document();
-        assertTrue(d != null);
-        assertTrue(d.getDictionary().size() == 2);
-        assertTrue(d.getDictionary().get("FOO") != null);
-        assertTrue(d.getDictionary().get("RECORD_ID") != null);
-        assertTrue(d.getDictionary().get("FOO").getData() != null);
+        assertNotNull(d);
+        assertEquals(2, d.getDictionary().size());
+        assertNotNull(d.getDictionary().get("FOO"));
+        assertNotNull(d.getDictionary().get("RECORD_ID"));
+        assertNotNull(d.getDictionary().get("FOO").getData());
         Iterator<PreNormalizedAttribute> i = ((Set) d.getDictionary().get("FOO").getData()).iterator();
-        assertTrue(i.next().getValue().equals("bar"));
-        assertTrue(i.next().getValue().equals("baz"));
-        assertTrue(i.next().getValue().equals("buf"));
-        assertTrue(i.next().getValue().equals("buz"));
-        assertTrue(i.next().getValue().equals("alf"));
-        assertTrue(i.next().getValue().equals("arm"));
+        assertEquals("baz", i.next().getValue());
+        assertEquals("bar", i.next().getValue());
+        assertEquals("buf", i.next().getValue());
+        assertEquals("buz", i.next().getValue());
+        assertEquals("alf", i.next().getValue());
+        assertEquals("arm", i.next().getValue());
 
         iterator.next();
         assertFalse(iterator.hasTop());
