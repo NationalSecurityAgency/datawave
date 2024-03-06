@@ -2,6 +2,7 @@ package datawave.query.planner;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -276,7 +277,14 @@ public class ThreadedRangeBundlerIterator implements Iterator<QueryData>, Closea
             newSetting.addOptions(setting.getOptions());
             settings.add(newSetting);
         }
-        return new QueryData(queryString, Lists.newArrayList(plan.getRanges()), settings, plan.getColumnFamilies());
+
+        //  @formatter:off
+        return new QueryData()
+                        .withQuery(queryString)
+                        .withRanges(Lists.newArrayList(plan.getRanges()))
+                        .withColumnFamilies(plan.getColumnFamilies())
+                        .withSettings(settings);
+        //  @formatter:on
     }
 
     /*
