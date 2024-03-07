@@ -70,8 +70,13 @@ public class FacetQueryPlanVisitor extends BaseVisitor implements CloseableItera
             fieldPairs.add(facetBuilder.toString());
         }
 
-        QueryPlan plan = new QueryPlan(node, Collections.singleton(new Range(startKey, true, endKey, false)), fieldPairs);
-        // toString of String returns the String
+        //  @formatter:off
+        QueryPlan plan = new QueryPlan()
+                        .withQueryTree(node)
+                        .withRanges(Collections.singleton(new Range(startKey, true, endKey, false)))
+                        .withColumnFamilies(fieldPairs);
+        //  @formatter:on
+
         queryPlans.add(plan);
         return plan;
 
