@@ -1,0 +1,25 @@
+Benchmark                                               Mode  Cnt      Score      Error  Units
+ParseQueryBenchmark.contentAdjacentFunctionThroughput  thrpt    5  54629.408 ±  275.917  ops/s
+ParseQueryBenchmark.contentPhraseFunctionThroughput    thrpt    5  53950.892 ±  203.918  ops/s
+ParseQueryBenchmark.contentWithinFunctionThroughput    thrpt    5  52481.786 ±  180.204  ops/s
+ParseQueryBenchmark.greaterThanEqualsThroughput        thrpt    5  65543.102 ± 1880.405  ops/s
+ParseQueryBenchmark.greaterThanThroughput              thrpt    5  66330.410 ±  452.362  ops/s
+ParseQueryBenchmark.largeQueryThroughput               thrpt    5  25150.693 ± 1855.434  ops/s
+ParseQueryBenchmark.lessThanEqualsThroughput           thrpt    5  64867.910 ± 3437.065  ops/s
+ParseQueryBenchmark.lessThanThroughput                 thrpt    5  66624.725 ±  593.675  ops/s
+ParseQueryBenchmark.notEqualsThroughput                thrpt    5  63754.219 ± 7892.239  ops/s
+ParseQueryBenchmark.regexEqualsThroughput              thrpt    5  66770.026 ±  145.961  ops/s
+ParseQueryBenchmark.regexNotEqualsThroughput           thrpt    5  67088.495 ±  492.171  ops/s
+ParseQueryBenchmark.smallQueryThroughput               thrpt    5  65138.829 ±  648.529  ops/s
+ParseQueryBenchmark.contentAdjacentFunctionAverage      avgt    5  19481.135 ±   81.586  ns/op
+ParseQueryBenchmark.contentPhraseFunctionAverage        avgt    5  18938.308 ±  236.554  ns/op
+ParseQueryBenchmark.contentWithinFunctionAverage        avgt    5  19496.192 ±  341.211  ns/op
+ParseQueryBenchmark.greaterThanAverage                  avgt    5  14938.742 ±  288.799  ns/op
+ParseQueryBenchmark.greaterThanEqualsAverage            avgt    5  14940.961 ±  104.920  ns/op
+ParseQueryBenchmark.largeQueryAverage                   avgt    5  37181.789 ±  473.526  ns/op
+ParseQueryBenchmark.lessThanAverage                     avgt    5  14890.472 ±   98.302  ns/op
+ParseQueryBenchmark.lessThanEqualsAverage               avgt    5  15535.413 ±  320.118  ns/op
+ParseQueryBenchmark.notEqualsAverage                    avgt    5  15827.480 ±  278.717  ns/op
+ParseQueryBenchmark.regexEqualsAverage                  avgt    5  15806.523 ±  170.583  ns/op
+ParseQueryBenchmark.regexNotEqualsAverage               avgt    5  15317.784 ±  208.879  ns/op
+ParseQueryBenchmark.smallQueryAverage                   avgt    5  15520.599 ±  107.653  ns/op
