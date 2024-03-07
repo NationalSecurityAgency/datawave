@@ -166,7 +166,7 @@ public class ExcerptFields implements Serializable {
      * @param replacement
      */
     public void replace(String field, String replacement) {
-        SortedMap<Integer, String> value = fieldMap.remove(field);
+        SortedMap<Integer,String> value = fieldMap.remove(field);
         if (value != null) {
             fieldMap.put(replacement, value);
         }
