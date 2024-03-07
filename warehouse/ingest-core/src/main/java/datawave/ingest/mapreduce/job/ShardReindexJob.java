@@ -1,11 +1,13 @@
 package datawave.ingest.mapreduce.job;
 
+import static datawave.ingest.data.config.DataTypeHelper.Properties.DATA_NAME;
 import static datawave.ingest.mapreduce.job.ShardedTableMapFile.SPLIT_WORK_DIR;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -23,11 +25,12 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.hadoop.mapreduce.AccumuloInputFormat;
-import org.apache.accumulo.hadoopImpl.mapreduce.lib.InputConfigurator;
+import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -43,11 +46,19 @@ import org.apache.log4j.Logger;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
 
+import datawave.data.hash.HashUID;
+import datawave.ingest.config.RawRecordContainerImpl;
+import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
 import datawave.ingest.data.TypeRegistry;
+import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.ingest.data.config.ingest.IngestHelperInterface;
+import datawave.ingest.mapreduce.ContextWrappedStatusReporter;
+import datawave.ingest.mapreduce.handler.DataTypeHandler;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.ingest.mapreduce.job.reduce.BulkIngestKeyAggregatingReducer;
 import datawave.ingest.mapreduce.partition.MultiTableRangePartitioner;
@@ -74,8 +85,13 @@ public class ShardReindexJob implements Tool {
         JCommander cmd = JCommander.newBuilder().addObject(jobConfig).build();
         cmd.parse(args);
 
-        log.setLevel(Level.DEBUG);
-        Logger.getRootLogger().setLevel(Level.DEBUG);
+        if (jobConfig.help) {
+            cmd.usage();
+            return 0;
+        }
+
+        log.setLevel(Level.INFO);
+        Logger.getRootLogger().setLevel(Level.INFO);
 
         Job j = setupJob();
 
@@ -115,6 +131,15 @@ public class ShardReindexJob implements Tool {
 
         // set the propagate deletes flag
         configuration.setBoolean("propagateDeletes", jobConfig.propagateDeletes);
+        configuration.setBoolean("reprocessEvents", jobConfig.reprocessEvents);
+        configuration.setBoolean("floorTimestamps", jobConfig.floorTimestamps);
+        configuration.set("eventClass", jobConfig.eventClass);
+        if (jobConfig.defaultDataType != null) {
+            configuration.set("defaultDataType", jobConfig.defaultDataType);
+        }
+        if (jobConfig.dataTypeHandler != null) {
+            configuration.set("dataTypeHandler", jobConfig.dataTypeHandler);
+        }
 
         // setup the accumulo helper
         AccumuloHelper.setInstanceName(configuration, jobConfig.instance);
@@ -173,10 +198,26 @@ public class ShardReindexJob implements Tool {
         if (jobConfig.inputFiles != null) {
             // direct from rfiles
             RFileInputFormat.addInputPaths(j, jobConfig.inputFiles);
-            j.setInputFormatClass(RFileInputFormat.class);
+            try {
+                Class inputFormatClass = Class.forName(jobConfig.inputFormatClass);
+                if (!RFileInputFormat.class.isAssignableFrom(inputFormatClass)) {
+                    throw new IllegalArgumentException("--inputFormatClass must be a type of RFileInputFormat");
+                }
+                j.setInputFormatClass(inputFormatClass);
+            } catch (ClassNotFoundException e) {
+                throw new IllegalArgumentException("Could not set input format class: " + jobConfig.inputFormatClass);
+            }
         } else {
-            // set the input format
-            j.setInputFormatClass(AccumuloInputFormat.class);
+            if (jobConfig.inputFormatClass != null) {
+                try {
+                    Class inputFormatClass = Class.forName(jobConfig.inputFormatClass);
+                    j.setInputFormatClass(inputFormatClass);
+                } catch (ClassNotFoundException e) {
+                    throw new IllegalArgumentException("Could not set input format class: " + jobConfig.inputFormatClass);
+                }
+            } else {
+                j.setInputFormatClass(AccumuloInputFormat.class);
+            }
         }
         // setup the mapper
         j.setMapOutputKeyClass(BulkIngestKey.class);
@@ -250,19 +291,6 @@ public class ShardReindexJob implements Tool {
     public static void main(String[] args) throws Exception {
         System.out.println("Running ShardReindexJob");
 
-        // this code proves that clip does not keep the cf in the Key
-        // Key start = new Key("a", "fi");
-        // Key end = new Key("z", "fi~");
-        // Range startRange = new Range(start, true, end, true);
-        //
-        // Range subRange = new Range(new Key("c"), true, new Key("d"), true);
-        //
-        // Range clipped = subRange.clip(startRange);
-        //
-        // System.out.println(clipped.getStartKey());
-        //
-        // return;
-
         System.exit(ToolRunner.run(null, new ShardReindexJob(), args));
     }
 
@@ -274,7 +302,8 @@ public class ShardReindexJob implements Tool {
 
         private TypeRegistry typeRegistry;
         private Map<String,IngestHelperInterface> datatypeHelperCache;
-        private boolean cleanupShard;
+        private String defaultDataType;
+        private IngestHelperInterface defaultHelper;
 
         private Text shardTable;
         private Text indexTable;
@@ -283,12 +312,22 @@ public class ShardReindexJob implements Tool {
         private byte[] lastFiBytes;
         private String field;
 
+        private boolean cleanupShard;
         private boolean propagateDeletes;
+        private boolean reprocessEvents;
+        private Multimap<String,String> dataMap;
+        private DataTypeHandler indexHandler;
+        private String eventClass;
+        private boolean floorTimestamps = true;
 
         @Override
         protected void setup(Context context) throws IOException, InterruptedException {
             Configuration config = context.getConfiguration();
             this.typeRegistry = TypeRegistry.getInstance(config);
+
+            for (Type registeredType : typeRegistry.values()) {
+                log.info("Registered type: " + registeredType.typeName() + " as " + registeredType.outputName());
+            }
 
             this.cleanupShard = config.getBoolean("job.cleanupShard", false);
 
@@ -299,6 +338,43 @@ public class ShardReindexJob implements Tool {
             this.propagateDeletes = config.getBoolean("propagateDeletes", false);
 
             this.datatypeHelperCache = new HashMap<>();
+
+            this.defaultDataType = config.get("defaultDataType");
+            if (defaultDataType != null) {
+                this.defaultHelper = typeRegistry.get(defaultDataType).getIngestHelper(config);
+                log.info("default data type: " + defaultDataType);
+            }
+
+            this.reprocessEvents = config.getBoolean("reprocessEvents", false);
+            log.info("reprocessing events: " + this.reprocessEvents);
+
+            floorTimestamps = config.getBoolean("floorTimestamps", floorTimestamps);
+
+            if (reprocessEvents) {
+                dataMap = HashMultimap.create();
+
+                eventClass = config.get("eventClass");
+
+                if (defaultDataType == null) {
+                    throw new IllegalArgumentException("defaultDataType must be set when reprocessing events");
+                }
+
+                // override the data name
+                config.set(DATA_NAME, defaultDataType);
+
+                String dataTypeHandler = config.get("dataTypeHandler");
+                if (dataTypeHandler == null) {
+                    throw new IllegalArgumentException("dataTypeHandler must be set when reprocessing events");
+                }
+
+                try {
+                    Class dataTypeHandlerClass = Class.forName(dataTypeHandler);
+                    this.indexHandler = (DataTypeHandler) dataTypeHandlerClass.newInstance();
+                    indexHandler.setup(context);
+                } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+                    throw new IllegalArgumentException("could not create handler for data type handler: " + dataTypeHandler, e);
+                }
+            }
         }
 
         @Override
@@ -318,9 +394,25 @@ public class ShardReindexJob implements Tool {
             final int fiBaseLength = FI_START_BYTES.length;
             if (cf.length <= fiBaseLength || WritableComparator.compareBytes(cf, 0, fiBaseLength, FI_START_BYTES, 0, fiBaseLength) != 0) {
                 // increment count of non-fi key
-                context.getCounter("key types", "non-fi").increment(1l);
+                context.getCounter("key type", "non-fi").increment(1l);
+                if (cf.length == 2) {
+                    // tf skip
+                    context.getCounter("key type", "tf").increment(1l);
+                    context.progress();
+                    return;
+                }
+                if (this.reprocessEvents) {
+                    try {
+                        reprocessEventData(context, key);
+                    } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
+                        throw new RuntimeException("Cannot process event for: " + key, e);
+                    }
+                }
+                context.progress();
                 return;
             }
+
+            context.getCounter("key type", "fi").increment(1l);
 
             // check if it's the same target field as the last one
             final int fiBaseOffset = fiBaseLength + 1;
@@ -335,7 +427,7 @@ public class ShardReindexJob implements Tool {
             final byte[] cq = key.getColumnQualifierData().getBackingArray();
             String uid = null;
             String dataType = null;
-            StringBuilder fieldValue = new StringBuilder();
+            ByteSequence fieldValue = null;
             int cqLen = cq.length;
             int uidNull = -1;
             for (int i = cqLen - 1; i >= 0; i--) {
@@ -345,42 +437,20 @@ public class ShardReindexJob implements Tool {
                         uidNull = i;
                     } else if (dataType == null) {
                         dataType = new String(cq, i + 1, uidNull - i - 1);
-                        fieldValue.append(new String(cq, 0, i));
+                        fieldValue = key.getColumnQualifierData().subSequence(0, i);
                         break;
                     }
                 }
             }
 
-            // get the type from the registry or create it if not already created. There is a cache inside the Type class
-            IngestHelperInterface helper = null;
-
-            // check the cache
-            helper = datatypeHelperCache.get(dataType);
-            if (helper == null) {
-                for (Type registeredType : typeRegistry.values()) {
-                    if (registeredType.outputName().equals(dataType)) {
-                        try {
-                            log.info("creating type: " + registeredType.typeName() + " for datatype " + dataType);
-                            Type type = registeredType;
-                            // try to create the type
-                            helper = type.getIngestHelper(context.getConfiguration());
-                            break;
-                        } catch (Exception e) {
-                            log.debug("failed to create type " + registeredType.typeName() + " skipping", e);
-                        }
-                        if (helper != null) {
-                            // put it in the cache
-                            datatypeHelperCache.put(dataType, helper);
-                            break;
-                        }
-                    }
-                }
-            }
-
+            // get the type from the registry or create it if not already created
+            IngestHelperInterface helper = getIngestHelper(dataType, context.getConfiguration());
             if (helper == null) {
                 log.error(key);
                 throw new IllegalStateException("datatype " + dataType + " not found in Type Registry");
             }
+
+            context.getCounter("data type", dataType).increment(1l);
 
             Text fieldValueText = null;
             Text fieldText = null;
@@ -396,7 +466,7 @@ public class ShardReindexJob implements Tool {
             }
 
             // test if the field should have a global index built for it and write to context
-            if (helper.isIndexedField(field) || helper.isIndexOnlyField(field)) {
+            if (helper.isIndexedField(field) && (helper.isIndexOnlyField(field) || !reprocessEvents)) {
                 // generate the global index key and emit it
                 fieldValueText = new Text(fieldValue.toString());
                 fieldText = new Text(field);
@@ -404,7 +474,7 @@ public class ShardReindexJob implements Tool {
                 docId.append(key.getRowData()).append('\u0000').append(dataType);
                 indexCq = new Text(docId.toString());
 
-                Key globalIndexKey = new Key(fieldValueText, fieldText, indexCq, key.getColumnVisibility(), key.getTimestamp());
+                Key globalIndexKey = new Key(fieldValueText, fieldText, indexCq, key.getColumnVisibility(), floorTimestamp(key.getTimestamp()));
                 globalIndexKey.setDeleted(key.isDeleted());
                 BulkIngestKey bik = new BulkIngestKey(indexTable, globalIndexKey);
                 context.write(bik, UID_VALUE);
@@ -413,9 +483,9 @@ public class ShardReindexJob implements Tool {
             }
 
             // test if the field should have a reverse global index built for it and write to context
-            if (helper.isReverseIndexedField(field)) {
+            if (helper.isReverseIndexedField(field) && (helper.isIndexOnlyField(field) || !reprocessEvents)) {
                 // reverse the field value
-                fieldValueText = new Text(fieldValue.reverse().toString());
+                fieldValueText = new Text(reverse(fieldValue.toString()));
                 if (fieldText == null) {
                     fieldText = new Text(field);
                     StringBuilder docId = new StringBuilder();
@@ -423,7 +493,7 @@ public class ShardReindexJob implements Tool {
                     indexCq = new Text(docId.toString());
                 }
 
-                Key globalReverseIndexKey = new Key(fieldValueText, fieldText, indexCq, key.getColumnVisibility(), key.getTimestamp());
+                Key globalReverseIndexKey = new Key(fieldValueText, fieldText, indexCq, key.getColumnVisibility(), floorTimestamp(key.getTimestamp()));
                 globalReverseIndexKey.setDeleted(key.isDeleted());
                 // generate the global reverse index key and emit it
                 BulkIngestKey bik = new BulkIngestKey(reverseIndexTable, globalReverseIndexKey);
@@ -445,6 +515,25 @@ public class ShardReindexJob implements Tool {
             context.progress();
         }
 
+        public static String reverse(String value) {
+            return new StringBuilder(value).reverse().toString();
+        }
+
+        private long floorTimestamp(long timestamp) {
+            if (this.floorTimestamps) {
+                Calendar c = Calendar.getInstance();
+                c.setTimeInMillis(timestamp);
+                c.set(Calendar.HOUR_OF_DAY, 0);
+                c.set(Calendar.MINUTE, 0);
+                c.set(Calendar.SECOND, 0);
+                c.set(Calendar.MILLISECOND, 0);
+
+                return c.getTimeInMillis();
+            }
+
+            return timestamp;
+        }
+
         // create a uid value with no count
         private static Uid.List buildIndexValue() {
             Uid.List.Builder uidBuilder = Uid.List.newBuilder();
@@ -454,26 +543,181 @@ public class ShardReindexJob implements Tool {
 
             return uidBuilder.build();
         }
+
+        private void reprocessEventData(Context context, Key eventKey)
+                        throws IOException, InterruptedException, ClassNotFoundException, InstantiationException, IllegalAccessException {
+            // reuse the same map to avoid the object creation time
+            dataMap.clear();
+
+            // cf will be datatype\0uid
+            ByteSequence dataType = null;
+            ByteSequence uid = null;
+            ByteSequence cfByteSequence = eventKey.getColumnFamilyData();
+            byte[] cf = cfByteSequence.getBackingArray();
+            for (int i = 0; i < cf.length; i++) {
+                if (cf[i] == '\u0000') {
+                    dataType = cfByteSequence.subSequence(0, i);
+                    uid = cfByteSequence.subSequence(i + 1, cf.length);
+
+                    break;
+                }
+            }
+
+            // cq will be field\0value
+            ByteSequence field = null;
+            ByteSequence value = null;
+            ByteSequence cqByteSequence = eventKey.getColumnQualifierData();
+            byte[] cq = cqByteSequence.getBackingArray();
+            for (int i = 0; i < cq.length; i++) {
+                if (cq[i] == '\u0000') {
+                    field = cqByteSequence.subSequence(0, i);
+                    value = cqByteSequence.subSequence(i + 1, cq.length);
+
+                    break;
+                }
+            }
+
+            // if any required data is missing malformed data
+            if (dataType == null || uid == null || field == null || value == null) {
+                log.warn("malformed data: " + eventKey);
+                context.getCounter("event", "malformed").increment(1l);
+                return;
+            }
+
+            context.getCounter("event", "reindex").increment(1l);
+
+            // create an event
+            RawRecordContainer event = getEvent(context.getConfiguration());
+            log.debug("Creating uid from: " + uid);
+            event.setId(HashUID.parse(uid.toString()));
+
+            // create a modified type that has the right output name
+            Type type = typeRegistry.get(this.defaultDataType);
+            type = new Type(type.typeName(), dataType.toString(), type.getHelperClass(), type.getReaderClass(), type.getDefaultDataTypeHandlers(),
+                            type.getFilterPriority(), type.getDefaultDataTypeFilters());
+            context.getCounter("event type", dataType.toString()).increment(1l);
+
+            // configure the event
+            event.setDataType(type);
+            event.setDate(eventKey.getTimestamp());
+            event.setVisibility(eventKey.getColumnVisibilityParsed());
+
+            // data in the event is not normalized, set it up for ingest normalization
+            String utfSafeValue = new String(value.toArray(), StandardCharsets.UTF_8);
+            dataMap.put(field.toString(), utfSafeValue);
+
+            long startTime = System.currentTimeMillis();
+            Multimap<String,NormalizedContentInterface> normalizedMap = defaultHelper.normalize(dataMap);
+            long endTime = System.currentTimeMillis();
+            context.getCounter("reindex", "normalizationTime").increment((endTime - startTime));
+            startTime = System.currentTimeMillis();
+            Multimap<BulkIngestKey,Value> keys = indexHandler.processBulk(eventKey, event, normalizedMap, new ContextWrappedStatusReporter(context));
+            endTime = System.currentTimeMillis();
+            context.getCounter("reindex", "processBulkTime").increment((endTime - startTime));
+
+            for (BulkIngestKey generated : keys.keySet()) {
+                context.getCounter("table", generated.getTableName().toString()).increment(1l);
+                if (generated.getTableName().toString().equals(shardTable.toString())) {
+                    // check the type of the key
+                    cf = generated.getKey().getColumnFamilyData().getBackingArray();
+                    // tf is always 2, fi would be longer than 3 and have a null in the correct spot
+                    if (cf.length == 2) {
+                        // tf
+                        context.getCounter("shard", "tf").increment(1l);
+                    } else if (cf.length > 3 && cf[2] == '\u0000') {
+                        context.getCounter("shard", "fi").increment(1l);
+                        context.getCounter("output type", getDataTypeFromFI(generated.getKey())).increment(1l);
+                    } else {
+                        // skip anything that isn't fi/tf
+                        context.getCounter("reindex", "skip").increment(1l);
+                        continue;
+                    }
+                }
+                // write the keys
+                for (Value v : keys.get(generated)) {
+                    context.write(generated, v);
+                }
+            }
+        }
+
+        private String getDataTypeFromFI(Key fi) {
+            final byte[] cq = fi.getColumnQualifierData().getBackingArray();
+            boolean uid = false;
+            String dataType = null;
+            int cqLen = cq.length;
+            int uidNull = -1;
+            for (int i = cqLen - 1; i >= 0; i--) {
+                if (cq[i] == '\u0000') {
+                    if (!uid) {
+                        uid = true;
+                        uidNull = i;
+                    } else if (dataType == null) {
+                        return new String(cq, i + 1, uidNull - i - 1);
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        private RawRecordContainer getEvent(Configuration config) throws ClassNotFoundException, InstantiationException, IllegalAccessException {
+            if (eventClass == null) {
+                throw new IllegalStateException("eventClass must be set");
+            }
+            RawRecordContainer container = (RawRecordContainer) Class.forName(eventClass).newInstance();
+            if (container instanceof Configurable) {
+                ((Configurable) container).setConf(config);
+            }
+
+            return container;
+        }
+
+        private IngestHelperInterface getIngestHelper(String dataType, Configuration config) {
+            // check the cache
+            IngestHelperInterface helper = datatypeHelperCache.get(dataType);
+            if (helper == null) {
+                for (Type registeredType : typeRegistry.values()) {
+                    if (registeredType.outputName().equals(dataType) || registeredType.typeName().equals(dataType)) {
+                        try {
+                            log.info("creating type: " + registeredType.typeName() + " for datatype " + dataType);
+                            helper = registeredType.getIngestHelper(config);
+                            datatypeHelperCache.put(dataType, helper);
+                            break;
+                        } catch (Exception e) {
+                            // exceptions may be thrown when attempting to instantiate a type, this is very expected and not a real error
+                            log.debug("failed to create type " + registeredType.typeName() + " skipping", e);
+                        }
+                    }
+                }
+            }
+
+            // assign a default helper if no helper was found for this data type
+            if (helper == null) {
+                helper = this.defaultHelper;
+                datatypeHelperCache.put(dataType, helper);
+            }
+
+            return helper;
+        }
     }
 
     // define all job configuration options
     private class JobConfig {
         // startDate, endDate, splitsPerDay, and Table are all used with AccumuloInputFormat
-        @Parameter(names = "--startDate", description = "yyyyMMdd start date", required = false)
+        @Parameter(names = "--startDate", description = "yyyyMMdd start date")
         private String startDate;
 
-        @Parameter(names = "--endDate", description = "yyyyMMdd end date", required = false)
+        @Parameter(names = "--endDate", description = "yyyyMMdd end date")
         private String endDate;
 
-        @Parameter(names = "--splitsPerDay", description = "splits for each day", required = false)
+        @Parameter(names = "--splitsPerDay", description = "splits for each day")
         private int splitsPerDay;
 
-        @Parameter(names = "--table", description = "shard table", required = false)
+        @Parameter(names = "--table", description = "shard table")
         private String table = "shard";
 
         // alternatively accept RFileInputFormat
-        @Parameter(names = "--inputFiles", description = "When set these files will be used for the job. Should be comma delimited hdfs glob strings",
-                        required = false)
+        @Parameter(names = "--inputFiles", description = "When set these files will be used for the job. Should be comma delimited hdfs glob strings")
         private String inputFiles;
 
         @Parameter(names = "--sourceHdfs", description = "HDFS for --inputFiles", required = true)
@@ -491,7 +735,7 @@ public class ShardReindexJob implements Tool {
         private String workDir;
 
         // support for additional resources
-        @Parameter(names = "--resources", description = "configuration resources to be added", required = false)
+        @Parameter(names = "--resources", description = "configuration resources to be added")
         private String resources;
 
         @Parameter(names = "--reducers", description = "number of reducers to use", required = true)
@@ -503,7 +747,7 @@ public class ShardReindexJob implements Tool {
         @Parameter(names = "--destHdfs", description = "HDFS for --outputDir", required = true)
         private String destHdfs;
 
-        @Parameter(names = "--cleanupShard", description = "generate delete keys when unused fi is found", required = false)
+        @Parameter(names = "--cleanupShard", description = "generate delete keys when unused fi is found")
         private boolean cleanupShard;
 
         @Parameter(names = "--instance", description = "accumulo instance name", required = true)
@@ -518,13 +762,34 @@ public class ShardReindexJob implements Tool {
         @Parameter(names = "--password", description = "accumulo password", required = true)
         private String password;
 
-        @Parameter(names = "--queryThreads", description = "batch scanner query threads, defaults to table setting", required = false)
+        @Parameter(names = "--queryThreads", description = "batch scanner query threads, defaults to table setting")
         private int queryThreads = -1;
 
-        @Parameter(names = "--batchSize", description = "accumulo batch size, defaults to table setting", required = false)
+        @Parameter(names = "--batchSize", description = "accumulo batch size, defaults to table setting")
         private int batchSize = -1;
 
-        @Parameter(names = "--propagateDeletes", description = "When true deletes are propagated to the indexes", required = false)
+        @Parameter(names = "--propagateDeletes", description = "When true deletes are propagated to the indexes")
         private boolean propagateDeletes = false;
+
+        @Parameter(names = "--defaultDataType", description = "The datatype to apply to all data that has an invalid type")
+        private String defaultDataType;
+
+        @Parameter(names = "--dataTypeHandler", description = "DataTypeHandler to use to reprocess events")
+        private String dataTypeHandler;
+
+        @Parameter(names = "--inputFormatClass", description = "The input format class to apply, defaults to datawave.ingest.mapreduce.job.RFileInputFormat")
+        private String inputFormatClass = RFileInputFormat.class.getCanonicalName();
+
+        @Parameter(names = "--reprocessEvents", description = "When set event data will be reprocessed to produce fi, tf, and global index entries")
+        private boolean reprocessEvents;
+
+        @Parameter(names = "--eventClass", description = "When set use this class to instantiate events, default datawave.ingest.config.RawRecordContainerImpl")
+        private String eventClass = RawRecordContainerImpl.class.getCanonicalName();
+
+        @Parameter(names = "--floorTimestamps", description = "Floor timestamps of generated keys to the current day, default true")
+        private boolean floorTimestamps = true;
+
+        @Parameter(names = {"-h", "--help"}, description = "Display help for input parameters", help = true)
+        private boolean help;
     }
 }
