@@ -86,7 +86,7 @@ public class QueryPlanTest extends AbstractFunctionalQuery {
     @Test
     public void planInMetricsAfterInvalidQueryException() throws Exception {
         String query = "species != " + "'dog'";
-        String expectedPlan = "!(SPECIES == 'dog')";
+        String expectedPlan = "SPECIES != 'dog'";
         try {
             runTestQuery(Collections.emptyList(), query, this.dataManager.getShardStartEndDate()[0], this.dataManager.getShardStartEndDate()[1],
                             Collections.emptyMap());
@@ -99,7 +99,7 @@ public class QueryPlanTest extends AbstractFunctionalQuery {
     @Test
     public void planInMetricsAfterMissingIndexException() throws Exception {
         String query = "CITY == 'london' && CITY != 'london'";
-        String expectedPlan = "CITY == 'london' && !(CITY == 'london')";
+        String expectedPlan = "CITY == 'london' && CITY != 'london'";
         this.logic.setIndexTableName("missing");
         try {
             runTest(query, query);
@@ -112,7 +112,7 @@ public class QueryPlanTest extends AbstractFunctionalQuery {
     @Test
     public void planInMetricsAfterTableNotFoundException() throws Exception {
         String query = Constants.ANY_FIELD + " != " + "'" + TestCities.london + "'";
-        String expectedPlan = "!(_ANYFIELD_ == 'london')";
+        String expectedPlan = "_ANYFIELD_ != 'london'";
 
         this.logic.setMetadataTableName("missing");
         try {

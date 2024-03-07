@@ -25,6 +25,7 @@ import datawave.query.CloseableIterable;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.DatawaveQueryException;
+import datawave.query.index.lookup.UidIntersector;
 import datawave.query.jexl.visitors.QueryFieldsVisitor;
 import datawave.query.jexl.visitors.UnfieldedIndexExpansionVisitor;
 import datawave.query.model.FieldIndexHole;
@@ -41,6 +42,15 @@ import datawave.webservice.query.configuration.QueryData;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 
+/**
+ * Executes a query over a time range while handling the case where a field may be both indexed and not indexed in the time range. A period of time in which a
+ * field is not indexed will be referred to herein as a field index hole. Given a query that matches against fields with field index holes, the query will be
+ * broken up into multiple sub-queries. Each sub-query will query over a span of time within the query's original time range where either no field index holes
+ * are present for that span of time, or there is a field index hole present for each date in that span of time. The results for each sub-query will be
+ * aggregated and returned.
+ *
+ * @see #process(GenericQueryConfiguration, String, Query, ScannerFactory)
+ */
 public class FederatedQueryPlanner extends QueryPlanner {
 
     private static final Logger log = ThreadConfigurableLogger.getLogger(FederatedQueryPlanner.class);
@@ -51,14 +61,211 @@ public class FederatedQueryPlanner extends QueryPlanner {
     private DefaultQueryPlanner queryPlanner;
     private String plannedScript;
 
+    /**
+     * Return a new {@link FederatedQueryPlanner} instance with a new {@link DefaultQueryPlanner} inner query planner instance.
+     */
     public FederatedQueryPlanner() {
         this(new DefaultQueryPlanner());
     }
 
+    /**
+     * Return a new {@link FederatedQueryPlanner} instance with the given inner query planner.
+     *
+     * @param queryPlanner
+     *            the inner query planner
+     */
     public FederatedQueryPlanner(DefaultQueryPlanner queryPlanner) {
         this.queryPlanner = queryPlanner;
     }
 
+    /**
+     * Return a copy of the given {@link FederatedQueryPlanner} instance.
+     *
+     * @param other
+     *            the instance to copy
+     */
+    public FederatedQueryPlanner(FederatedQueryPlanner other) {
+        this.queryPlanner = other.queryPlanner != null ? other.queryPlanner.clone() : null;
+        this.plannedScript = other.plannedScript;
+    }
+
+    /**
+     * Return the inner query planner.
+     *
+     * @return the inner query planner.
+     */
+    public DefaultQueryPlanner getQueryPlanner() {
+        return queryPlanner;
+    }
+
+    /**
+     * Set the inner query planner.
+     *
+     * @param queryPlanner
+     *            the query planner
+     */
+    public void setQueryPlanner(DefaultQueryPlanner queryPlanner) {
+        this.queryPlanner = queryPlanner;
+    }
+
+    /**
+     * Return the planned script resulting from the latest call to
+     * {@link FederatedQueryPlanner#process(GenericQueryConfiguration, String, Query, ScannerFactory)}.
+     *
+     * @return the planned script
+     */
+    @Override
+    public String getPlannedScript() {
+        return this.plannedScript;
+    }
+
+    /**
+     * Returns a copy of this planner.
+     *
+     * @return the copy
+     */
+    @Override
+    public FederatedQueryPlanner clone() {
+        return new FederatedQueryPlanner(this);
+    }
+
+    /**
+     * Calls {@link DefaultQueryPlanner#close(GenericQueryConfiguration, Query)} on the inner query planner instance with the given config and settings.
+     *
+     * @param config
+     *            the config
+     * @param settings
+     *            the settings
+     */
+    @Override
+    public void close(GenericQueryConfiguration config, Query settings) {
+        this.queryPlanner.close(config, settings);
+    }
+
+    /**
+     * Return the max ranges per query piece for the inner query planner instance.
+     *
+     * @return the max ranges per query piece
+     */
+    @Override
+    public long maxRangesPerQueryPiece() {
+        return this.queryPlanner.maxRangesPerQueryPiece();
+    }
+
+    /**
+     * Set the query iterator class for the inner query planner instance.
+     *
+     * @param clazz
+     *            the class to set
+     */
+    @Override
+    public void setQueryIteratorClass(Class<? extends SortedKeyValueIterator<Key,Value>> clazz) {
+        this.queryPlanner.setQueryIteratorClass(clazz);
+    }
+
+    /**
+     * Return the query iterator class for the inner query planner instance.
+     *
+     * @return the class
+     */
+    @Override
+    public Class<? extends SortedKeyValueIterator<Key,Value>> getQueryIteratorClass() {
+        return this.queryPlanner.getQueryIteratorClass();
+    }
+
+    /**
+     * Set the rules for the inner query planner instance.
+     *
+     * @param rules
+     *            the rules to set
+     */
+    @Override
+    public void setRules(Collection<PushDownRule> rules) {
+        this.queryPlanner.setRules(rules);
+    }
+
+    /**
+     * Return the rules for the inner query planner instance.
+     *
+     * @return the rules
+     */
+    @Override
+    public Collection<PushDownRule> getRules() {
+        return this.queryPlanner.getRules();
+    }
+
+    /**
+     * Set the uids iterator class for the inner query planner instance
+     *
+     * @param clazz
+     *            the class to set
+     */
+    @Override
+    public void setCreateUidsIteratorClass(Class<? extends SortedKeyValueIterator<Key,Value>> clazz) {
+        this.queryPlanner.setCreateUidsIteratorClass(clazz);
+    }
+
+    /**
+     * Return the uids iterator class for the inner query planner instance.
+     *
+     * @return the class
+     */
+    @Override
+    public Class<? extends SortedKeyValueIterator<Key,Value>> getCreateUidsIteratorClass() {
+        return this.queryPlanner.getCreateUidsIteratorClass();
+    }
+
+    /**
+     * Set the uid intersector for the inner query planner instance.
+     *
+     * @param uidIntersector
+     *            the intersector
+     */
+    @Override
+    public void setUidIntersector(UidIntersector uidIntersector) {
+        this.queryPlanner.setUidIntersector(uidIntersector);
+    }
+
+    /**
+     * Return the uid intersector for the inner query planner instance.
+     *
+     * @return the intersector
+     */
+    @Override
+    public UidIntersector getUidIntersector() {
+        return this.queryPlanner.getUidIntersector();
+    }
+
+    /**
+     * Not supported for {@link FederatedQueryPlanner} and will result in an {@link UnsupportedOperationException}.
+     *
+     * @throws UnsupportedOperationException
+     *             always
+     */
+    @Override
+    public ASTJexlScript applyRules(ASTJexlScript queryTree, ScannerFactory scannerFactory, MetadataHelper metadataHelper, ShardQueryConfiguration config) {
+        throw new UnsupportedOperationException("applyRules() is not a supported operation for " + getClass().getName());
+    }
+
+    /**
+     * Processes the {@code query} with the given config, settings, and scanner factory. If the query contains any field index holes within its time range, the
+     * query will be broken up into multiple sub-queries where each sub-query will either scan over no field index holes for any dates in its time range, or
+     * will have a field index hole for each date in its time range. The sub-queries will collectively scan over the entire original time range. The query data
+     * returned will return the query data from each sub-query, in chronological order. The configuration will be updated to reflect the resulting configuration
+     * from the first executed sub-query.
+     *
+     * @param genericConfig
+     *            the query configuration config
+     * @param query
+     *            the query string
+     * @param settings
+     *            the query settings
+     * @param scannerFactory
+     *            the scanner factory
+     * @return the query data
+     * @throws DatawaveQueryException
+     *             if an exception occurs
+     */
     @Override
     public CloseableIterable<QueryData> process(GenericQueryConfiguration genericConfig, String query, Query settings, ScannerFactory scannerFactory)
                     throws DatawaveQueryException {
@@ -67,8 +274,12 @@ public class FederatedQueryPlanner extends QueryPlanner {
             throw new ClassCastException("Config must be an instance of " + ShardQueryConfiguration.class.getSimpleName());
         }
 
+        // Reset the planned script.
+        this.plannedScript = null;
+        
+        log.debug("Federated query: " + query);
+        
         ShardQueryConfiguration originalConfig = (ShardQueryConfiguration) genericConfig;
-
         log.debug("Query's original date range " + dateFormat.format(originalConfig.getBeginDate()) + "-" + dateFormat.format(originalConfig.getEndDate()));
 
         // Get the relevant date ranges.
@@ -90,7 +301,7 @@ public class FederatedQueryPlanner extends QueryPlanner {
             configCopy.setEndDate(dateRange.getRight());
 
             // Create a copy of the original default query planner, and process the query with the new date range.
-            DefaultQueryPlanner subPlan = new DefaultQueryPlanner(queryPlanner);
+            DefaultQueryPlanner subPlan = this.queryPlanner.clone();
 
             try {
                 CloseableIterable<QueryData> queryData = subPlan.process(configCopy, query, settings, scannerFactory);
@@ -100,7 +311,7 @@ public class FederatedQueryPlanner extends QueryPlanner {
                                 + "-" + subEndDate + ")", e);
                 // If an exception occurs, ensure that the planned script and the original config are updated before allowing the exception to bubble up.
                 this.plannedScript = subPlan.getPlannedScript();
-    
+
                 // Copy over any changes in the sub-config to the original config. This will not affect the start date, end date, or timers of the original
                 // config.
                 copySubConfigPropertiesToOriginal(originalConfig, configCopy);
@@ -115,23 +326,25 @@ public class FederatedQueryPlanner extends QueryPlanner {
                 this.plannedScript = subPlan.getPlannedScript();
                 log.debug("Federated planned script updated to " + subPlan.getPlannedScript());
             }
-    
+
+            // Track the first sub-config.
             if (firstConfigCopy == null) {
                 firstConfigCopy = configCopy;
+                log.debug("Federated first config query string: " + firstConfigCopy.getQueryString());
             }
 
             stopwatch.stop();
             totalProcessed++;
         }
-    
+
         // Copy over any changes from the first sub-config to the original config. This will not affect the start date, end date, or timers of the original
         // config.
         copySubConfigPropertiesToOriginal(originalConfig, firstConfigCopy);
-        
+
         // Return the collected results.
         return results;
     }
-    
+
     /**
      * Copy over all changes from the sub config to the original config, while preserving the start date, end date, and timers of the original config.
      */
@@ -146,7 +359,7 @@ public class FederatedQueryPlanner extends QueryPlanner {
         original.setEndDate(originalEndDate);
         original.setTimers(originalTimers);
     }
-    
+
     /**
      * Return the set of date ranges that sub-queries should be created for. Each date range will have a consistent index state, meaning that within each date
      * range, we can expect to either encounter no field index holes, or to always encounter a field index hole.
@@ -189,15 +402,13 @@ public class FederatedQueryPlanner extends QueryPlanner {
             // If we found no index holes, we can default to the original target date range.
             subDateRanges.add(Pair.of(config.getBeginDate(), config.getEndDate()));
         } else {
-            // Otherwise, get the valid date ranges.
-            // Merge any overlaps.
+            // Otherwise, get the valid date ranges. First, Merge any overlaps.
             SortedSet<Pair<Date,Date>> mergedHoles = mergeRanges(relevantHoles);
-
             Iterator<Pair<Date,Date>> it = mergedHoles.iterator();
-            Pair<Date,Date> firstHole = it.next();
 
             // If the start of the first hole occurs after the configured start date, add a range spanning from the start date to one day before the start
             // of the first hole.
+            Pair<Date,Date> firstHole = it.next();
             if (firstHole.getLeft().getTime() > config.getBeginDate().getTime()) {
                 subDateRanges.add(Pair.of(new Date(config.getBeginDate().getTime()), oneDayBefore(firstHole.getLeft())));
                 // If the end of the first hole occurs before or on the configured end date, add the entire span for the first hole.
@@ -386,58 +597,5 @@ public class FederatedQueryPlanner extends QueryPlanner {
         calendar.setTime(new Date(date.getTime()));
         calendar.add(Calendar.DATE, daysToAdd);
         return calendar.getTime();
-    }
-
-    @Override
-    public long maxRangesPerQueryPiece() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void close(GenericQueryConfiguration config, Query settings) {
-        // Nothing to do.
-    }
-
-    @Override
-    public void setQueryIteratorClass(Class<? extends SortedKeyValueIterator<Key,Value>> clazz) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public Class<? extends SortedKeyValueIterator<Key,Value>> getQueryIteratorClass() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public String getPlannedScript() {
-        return plannedScript;
-    }
-
-    @Override
-    public FederatedQueryPlanner clone() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void setRules(Collection<PushDownRule> rules) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public Collection<PushDownRule> getRules() {
-        return Collections.emptyList();
-    }
-
-    @Override
-    public ASTJexlScript applyRules(ASTJexlScript queryTree, ScannerFactory scannerFactory, MetadataHelper metadataHelper, ShardQueryConfiguration config) {
-        return null;
-    }
-
-    public DefaultQueryPlanner getQueryPlanner() {
-        return queryPlanner;
-    }
-
-    public void setQueryPlanner(DefaultQueryPlanner queryPlanner) {
-        this.queryPlanner = queryPlanner;
     }
 }

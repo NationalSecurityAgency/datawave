@@ -26,6 +26,7 @@ import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.FullTableScansDisallowedException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.planner.DefaultQueryPlanner;
+import datawave.query.planner.FederatedQueryPlanner;
 import datawave.query.planner.rules.RegexPushdownTransformRule;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetup;
@@ -650,6 +651,8 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
         String expect = "(" + compositeField + EQ_OP + "'rome" + CompositeIngest.DEFAULT_SEPARATOR + "lazio'" + JEXL_OR_OP + compositeField + EQ_OP + "'rome"
                         + CompositeIngest.DEFAULT_SEPARATOR + "ohio')";
         String plan = getPlan(query, true, true);
+        System.out.println("Expected: " + expect);
+        System.out.println("Actual: " + plan);
         assertPlanEquals(expect, plan);
 
         // Test the plan sans value expansion
@@ -958,7 +961,7 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
 
         RegexPushdownTransformRule rule = new RegexPushdownTransformRule();
         rule.setRegexPatterns(Arrays.asList("\\.\\*[0-9a-zA-Z]", "[0-9a-zA-Z]\\.\\*"));
-        ((DefaultQueryPlanner) (logic.getQueryPlanner())).setTransformRules(Collections.singletonList(rule));
+        ((FederatedQueryPlanner) logic.getQueryPlanner()).getQueryPlanner().setTransformRules(Collections.singletonList(rule));
 
         // Test the plan with all expansions
         try {
@@ -1002,7 +1005,7 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
 
         RegexPushdownTransformRule rule = new RegexPushdownTransformRule();
         rule.setRegexPatterns(Arrays.asList("\\.\\*[0-9a-zA-Z]", "[0-9a-zA-Z]\\.\\*"));
-        ((DefaultQueryPlanner) (logic.getQueryPlanner())).setTransformRules(Collections.singletonList(rule));
+        ((FederatedQueryPlanner) logic.getQueryPlanner()).getQueryPlanner().setTransformRules(Collections.singletonList(rule));
 
         // Test the plan with all expansions
         String expect = CityField.CITY.name() + EQ_OP + "'rome'" + JEXL_AND_OP + "((_Eval_ = true) && (" + cityY + "))";

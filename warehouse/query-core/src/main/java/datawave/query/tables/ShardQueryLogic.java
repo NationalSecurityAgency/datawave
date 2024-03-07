@@ -2063,9 +2063,8 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
 
     public QueryPlanner getQueryPlanner() {
         if (null == planner) {
-            planner = new DefaultQueryPlanner();
+            planner = new FederatedQueryPlanner();
         }
-
         return planner;
     }
 
