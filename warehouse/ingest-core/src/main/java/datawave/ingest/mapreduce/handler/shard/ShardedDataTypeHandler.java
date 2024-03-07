@@ -30,9 +30,12 @@ import com.google.common.hash.BloomFilter;
 import datawave.ingest.config.IngestConfiguration;
 import datawave.ingest.config.IngestConfigurationFactory;
 import datawave.ingest.data.RawRecordContainer;
+import datawave.ingest.data.RawRecordContainerDelegate;
 import datawave.ingest.data.Type;
+import datawave.ingest.data.WithAgeOff;
 import datawave.ingest.data.config.MaskedFieldHelper;
 import datawave.ingest.data.config.NormalizedContentInterface;
+import datawave.ingest.data.config.ingest.AgeOffIngest;
 import datawave.ingest.data.config.ingest.IngestHelperInterface;
 import datawave.ingest.mapreduce.MemberShipTest;
 import datawave.ingest.mapreduce.handler.DataTypeHandler;
@@ -46,6 +49,7 @@ import datawave.ingest.util.BloomFilterWrapper;
 import datawave.ingest.util.DiskSpaceStarvationStrategy;
 import datawave.marking.MarkingFunctions;
 import datawave.query.model.Direction;
+import datawave.util.CompositeTimestamp;
 import datawave.util.TextUtil;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 
@@ -392,6 +396,32 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
         return shardIdFactory.getShardIdBytes(event);
     }
 
+    protected static class RawRecordContainerWithAgeoff extends RawRecordContainerDelegate implements WithAgeOff {
+        private final long ageoff;
+
+        public RawRecordContainerWithAgeoff(RawRecordContainer delegate, long ageoff) {
+            super(delegate);
+            this.ageoff = ageoff;
+        }
+
+        @Override
+        public long getAgeOffDate() {
+            return this.ageoff;
+        }
+    }
+
+    /**
+     * Get the timestamp for an event as a composite timestamp
+     *
+     * @param event
+     * @return the composite timestamp
+     */
+    public long getTimestamp(RawRecordContainer event) {
+        long date = event.getDate();
+        long ageoff = (event instanceof WithAgeOff ? ((WithAgeOff) event).getAgeOffDate() : date);
+        return CompositeTimestamp.getCompositeTimeStamp(date, ageoff);
+    }
+
     /**
      * Creates entries for the shard, shardIndex, and shardReverseIndex tables. This method calls the getFieldValues() method to retrieve the field names and
      * values for the shard table, the getGlobalIndexTerms() method to retrieve the field names and values for the shardIndex table, and the
@@ -405,6 +435,16 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
         if (event.fatalError()) {
             return null;
         } else {
+            // create an event that returns its ageoff date
+            if (!(event instanceof WithAgeOff)) {
+                IngestHelperInterface helper = getHelper(event.getDataType());
+                if (helper instanceof AgeOffIngest) {
+                    event = new RawRecordContainerWithAgeoff(event, ((AgeOffIngest) helper).getAgeOffDate(event, eventFields));
+                } else {
+                    event = new RawRecordContainerWithAgeoff(event, event.getDate());
+                }
+            }
+
             if (isReindexEnabled) {
                 Multimap<String,NormalizedContentInterface> filteredEventFields = filterByRequestedFields(eventFields);
                 if (filteredEventFields.isEmpty()) {
@@ -739,13 +779,13 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
                     }
                 }
                 // Create a key for the masked field value with the masked visibility.
-                Key k = this.createIndexKey(normalizedMaskedValue.getBytes(), colf, colq, maskedVisibility, event.getDate(), false);
+                Key k = this.createIndexKey(normalizedMaskedValue.getBytes(), colf, colq, maskedVisibility, getTimestamp(event), false);
                 BulkIngestKey bkey = new BulkIngestKey(tableName, k);
                 values.put(bkey, indexValue);
             }
             if (!StringUtils.isEmpty(fieldValue)) {
                 // Now create a key for the unmasked value with the original visibility
-                Key k = this.createIndexKey(fieldValue.getBytes(), colf, colq, visibility, event.getDate(), deleteMode);
+                Key k = this.createIndexKey(fieldValue.getBytes(), colf, colq, visibility, getTimestamp(event), deleteMode);
                 BulkIngestKey bkey = new BulkIngestKey(tableName, k);
                 values.put(bkey, indexValue);
             }
@@ -765,7 +805,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
                 refVisibility = maskedVisibility;
             }
 
-            Key k = this.createIndexKey(fieldValue.getBytes(), colf, colq, refVisibility, event.getDate(), deleteMode);
+            Key k = this.createIndexKey(fieldValue.getBytes(), colf, colq, refVisibility, getTimestamp(event), deleteMode);
             BulkIngestKey bkey = new BulkIngestKey(tableName, k);
             values.put(bkey, indexValue);
 
@@ -933,7 +973,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
             // Generate a key for the original, unmasked field field value
             if (!StringUtils.isEmpty(fieldValue)) {
                 // One key with the original value and original visibility
-                Key cbKey = createKey(shardId, colf, unmaskedColq, visibility, event.getDate(), deleteMode);
+                Key cbKey = createKey(shardId, colf, unmaskedColq, visibility, getTimestamp(event), deleteMode);
                 BulkIngestKey bKey = new BulkIngestKey(this.getShardTableName(), cbKey);
 
                 values.put(bKey, NULL_VALUE);
@@ -955,7 +995,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
             }
 
             // Else create one key for the field with the original value and the masked visiblity
-            Key cbKey = createKey(shardId, colf, unmaskedColq, refVisibility, event.getDate(), deleteMode);
+            Key cbKey = createKey(shardId, colf, unmaskedColq, refVisibility, getTimestamp(event), deleteMode);
             BulkIngestKey bKey = new BulkIngestKey(this.getShardTableName(), cbKey);
             if (log.isTraceEnabled())
                 log.trace("Creating bulk ingest Key " + bKey);
@@ -974,7 +1014,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
             TextUtil.textAppend(maskedColq, maskedFieldValue, replaceMalformedUTF8);
 
             // Another key with masked value and masked visibility
-            Key cbKey = createKey(shardId, colf, maskedColq, maskedVisibility, event.getDate(), deleteMode);
+            Key cbKey = createKey(shardId, colf, maskedColq, maskedVisibility, getTimestamp(event), deleteMode);
             BulkIngestKey bKey = new BulkIngestKey(this.getShardTableName(), cbKey);
             values.put(bKey, NULL_VALUE);
         }
@@ -1032,7 +1072,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
         if (null != maskedFieldHelper && maskedFieldHelper.contains(fieldName)) {
             if (!StringUtils.isEmpty(fieldValue)) {
                 // Put unmasked colq with original visibility
-                Key k = createKey(shardId, colf, unmaskedColq, visibility, event.getDate(), deleteMode);
+                Key k = createKey(shardId, colf, unmaskedColq, visibility, getTimestamp(event), deleteMode);
                 BulkIngestKey bKey = new BulkIngestKey(this.getShardTableName(), k);
                 values.put(bKey, value);
             }
@@ -1045,7 +1085,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
                 TextUtil.textAppend(maskedColq, event.getId().toString(), replaceMalformedUTF8);
 
                 // Put masked colq with masked visibility
-                Key k = createKey(shardId, colf, maskedColq, maskedVisibility, event.getDate(), deleteMode);
+                Key k = createKey(shardId, colf, maskedColq, maskedVisibility, getTimestamp(event), deleteMode);
                 BulkIngestKey bKey = new BulkIngestKey(this.getShardTableName(), k);
                 values.put(bKey, value);
             }
@@ -1060,7 +1100,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
                 refVisibility = maskedVisibility;
             }
 
-            Key k = createKey(shardId, colf, unmaskedColq, refVisibility, event.getDate(), deleteMode);
+            Key k = createKey(shardId, colf, unmaskedColq, refVisibility, getTimestamp(event), deleteMode);
             BulkIngestKey bKey = new BulkIngestKey(this.getShardTableName(), k);
             values.put(bKey, value);
         }
@@ -1110,7 +1150,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
         if (null != maskedFieldHelper && maskedFieldHelper.contains(fieldName)) {
             if (!StringUtils.isEmpty(fieldValue)) {
                 // Put unmasked colq with original visibility
-                Key k = createKey(shardId, colf, unmaskedColq, visibility, event.getDate(), deleteMode);
+                Key k = createKey(shardId, colf, unmaskedColq, visibility, getTimestamp(event), deleteMode);
                 BulkIngestKey bKey = new BulkIngestKey(this.getShardTableName(), k);
                 values.put(bKey, value);
             }
@@ -1123,7 +1163,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
                 TextUtil.textAppend(maskedColq, event.getId().toString(), replaceMalformedUTF8);
 
                 // Put masked colq with masked visibility
-                Key k = createKey(shardId, colf, maskedColq, maskedVisibility, event.getDate(), deleteMode);
+                Key k = createKey(shardId, colf, maskedColq, maskedVisibility, getTimestamp(event), deleteMode);
                 BulkIngestKey bKey = new BulkIngestKey(this.getShardTableName(), k);
                 values.put(bKey, value);
             }
@@ -1138,7 +1178,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
                 refVisibility = maskedVisibility;
             }
 
-            Key k = createKey(shardId, colf, unmaskedColq, refVisibility, event.getDate(), deleteMode);
+            Key k = createKey(shardId, colf, unmaskedColq, refVisibility, getTimestamp(event), deleteMode);
 
             BulkIngestKey bKey = new BulkIngestKey(this.getShardTableName(), k);
             values.put(bKey, value);
@@ -1234,7 +1274,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
             // Dont create index entries for empty values
             if (!StringUtils.isEmpty(normalizedMaskedValue)) {
                 // Create a key for the masked field value with the masked visibility
-                Key k = this.createIndexKey(normalizedMaskedValue.getBytes(), colf, colq, maskedVisibility, event.getDate(), false);
+                Key k = this.createIndexKey(normalizedMaskedValue.getBytes(), colf, colq, maskedVisibility, getTimestamp(event), false);
 
                 BulkIngestKey bkey = new BulkIngestKey(tableName, k);
                 values.put(bkey, val);
@@ -1242,7 +1282,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
 
             if (!StringUtils.isEmpty(fieldValue)) {
                 // Now create a key for the unmasked value with the original visibility
-                Key k = this.createIndexKey(fieldValue.getBytes(), colf, colq, visibility, event.getDate(), deleteMode);
+                Key k = this.createIndexKey(fieldValue.getBytes(), colf, colq, visibility, getTimestamp(event), deleteMode);
                 BulkIngestKey bkey = new BulkIngestKey(tableName, k);
                 values.put(bkey, val);
             }
@@ -1265,7 +1305,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
                 refVisibility = maskedVisibility;
             }
 
-            Key k = this.createIndexKey(fieldValue.getBytes(), colf, colq, refVisibility, event.getDate(), deleteMode);
+            Key k = this.createIndexKey(fieldValue.getBytes(), colf, colq, refVisibility, getTimestamp(event), deleteMode);
             BulkIngestKey bkey = new BulkIngestKey(tableName, k);
             values.put(bkey, val);
 
@@ -1306,7 +1346,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
         Text colf = new Text(directionColFam);
         Text colq = new Text(fieldName);
 
-        Key k = this.createIndexKey(fieldValue.getBytes(), colf, colq, visibility, event.getDate(), false);
+        Key k = this.createIndexKey(fieldValue.getBytes(), colf, colq, visibility, getTimestamp(event), false);
         Value val = new Value("".getBytes());
 
         BulkIngestKey bKey = new BulkIngestKey(tableName, k);
@@ -1360,7 +1400,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
             // Dont create index entries for empty values
             if (!StringUtils.isEmpty(normalizedMaskedValue)) {
                 // Create a key for the masked field value with the masked visibility
-                Key k = this.createIndexKey(normalizedMaskedValue.getBytes(), colf, colq, maskedVisibility, event.getDate(), false);
+                Key k = this.createIndexKey(normalizedMaskedValue.getBytes(), colf, colq, maskedVisibility, getTimestamp(event), false);
 
                 BulkIngestKey bkey = new BulkIngestKey(tableName, k);
                 values.put(bkey, val);
@@ -1368,7 +1408,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
 
             if (!StringUtils.isEmpty(fieldValue)) {
                 // Now create a key for the unmasked value with the original visibility
-                Key k = this.createIndexKey(fieldValue.getBytes(), colf, colq, visibility, event.getDate(), deleteMode);
+                Key k = this.createIndexKey(fieldValue.getBytes(), colf, colq, visibility, getTimestamp(event), deleteMode);
                 BulkIngestKey bkey = new BulkIngestKey(tableName, k);
                 values.put(bkey, val);
             }
@@ -1390,7 +1430,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
                 refVisibility = maskedVisibility;
             }
 
-            Key k = this.createIndexKey(fieldValue.getBytes(), colf, colq, refVisibility, event.getDate(), deleteMode);
+            Key k = this.createIndexKey(fieldValue.getBytes(), colf, colq, refVisibility, getTimestamp(event), deleteMode);
             BulkIngestKey bkey = new BulkIngestKey(tableName, k);
             values.put(bkey, val);
 
