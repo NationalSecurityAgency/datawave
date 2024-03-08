@@ -322,7 +322,8 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                 }
 
                 // update the query tree with the (potentially) pruned
-                plan.setQuery(JexlStringBuildingVisitor.buildQueryWithoutParse(result), result);
+                plan.setQueryTree(result);
+                plan.setQueryTreeString(JexlStringBuildingVisitor.buildQueryWithoutParse(result));
             }
 
             return true;
