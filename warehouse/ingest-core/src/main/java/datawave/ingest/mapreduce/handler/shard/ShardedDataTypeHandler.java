@@ -881,9 +881,11 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
      */
     protected Key createIndexKey(byte[] row, Text colf, Text colq, byte[] vis, long ts, boolean delete) {
         // Truncate the timestamp to the day
-        long tsToDay = (ts / MS_PER_DAY) * MS_PER_DAY;
+        long tsToDay = (CompositeTimestamp.getEventDate(ts) / MS_PER_DAY) * MS_PER_DAY;
+        long ageOffToDay = (CompositeTimestamp.getAgeOffDate(ts) / MS_PER_DAY) * MS_PER_DAY;
+        long indexComposite = CompositeTimestamp.getCompositeTimeStamp(tsToDay, ageOffToDay);
 
-        Key k = new Key(row, 0, row.length, colf.getBytes(), 0, colf.getLength(), colq.getBytes(), 0, colq.getLength(), vis, 0, vis.length, tsToDay);
+        Key k = new Key(row, 0, row.length, colf.getBytes(), 0, colf.getLength(), colq.getBytes(), 0, colq.getLength(), vis, 0, vis.length, indexComposite);
         k.setDeleted(delete);
         return k;
     }
