@@ -134,7 +134,7 @@ public class JexlASTHelper {
         return TreeFlatteningRebuildingVisitor.flatten(script);
     }
 
-    protected static JexlFeatures jexlFeatures() {
+    public static JexlFeatures jexlFeatures() {
         // @formatter:off
         return new JexlFeatures()
                 // mostly used internally by Jexl
@@ -241,7 +241,7 @@ public class JexlASTHelper {
         // Parse the query with the placeholders
         ASTJexlScript jexlScript;
         try {
-            jexlScript = parser.parse(null, new JexlFeatures(), query, null);
+            jexlScript = parser.parse(null, jexlFeatures(), query, null);
         } catch (TokenMgrException e) {
             throw new ParseException(e.getMessage());
         }
