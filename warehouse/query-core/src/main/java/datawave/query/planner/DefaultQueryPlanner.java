@@ -2587,7 +2587,13 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             log.trace("Produced range is " + r);
         }
 
-        return new CloseableListIterable<>(Collections.singletonList(new QueryPlan(queryTree, r)));
+        //  @formatter:off
+        QueryPlan queryPlan = new QueryPlan()
+                        .withQueryTree(queryTree)
+                        .withRanges(Collections.singleton(r));
+        //  @formatter:on
+
+        return new CloseableListIterable<>(Collections.singletonList(queryPlan));
     }
 
     /**
