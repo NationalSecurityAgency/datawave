@@ -157,6 +157,7 @@ public abstract class UniqueTest {
         URL hadoopConfig = this.getClass().getResource("/testhadoop.config");
         logic.setHdfsSiteConfigURLs(hadoopConfig.toExternalForm());
 
+        logic.setQueryExecutionForPageTimeout(300000000000000L);
         deserializer = new KryoDocumentDeserializer();
     }
 

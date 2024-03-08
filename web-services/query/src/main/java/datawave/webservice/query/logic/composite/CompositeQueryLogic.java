@@ -116,7 +116,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
         public void run() {
             long resultCount = 0L;
 
-            log.trace("Starting thread: " + this.getName());
+            log.debug("Starting thread: " + this.getName());
 
             if (!started) {
                 startLatch.countDown();
@@ -143,19 +143,17 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
 
                             // special logic to deal with intermediate results
                             if (last instanceof EventBase && ((EventBase) last).isIntermediateResult()) {
-                                resetPageProcessingStartTime();
                                 // reset the page processing time to avoid getting spammed with these
+                                resetPageProcessingStartTime();
                                 // let the RunningQuery handle timeouts for long-running queries
-                                if (isLongRunningQuery()) {
-                                    last = null;
-                                }
-                            }
-
-                            if (last != null) {
+                                log.debug(Thread.currentThread().getName() + ": received intermediate result");
+                            } else {
                                 results.add(last);
                                 resultCount++;
                                 log.debug(Thread.currentThread().getName() + ": Added result to queue");
                             }
+                        } else {
+                            log.debug(Thread.currentThread().getName() + ": Got null result");
                         }
                     } catch (InterruptedException e) {
                         // if this was on purpose, then just log and the loop will naturally exit
@@ -177,7 +175,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
                 if (success) {
                     completionLatch.countDown();
                 }
-                log.trace("Finished thread: " + this.getName() + " with success = " + success);
+                log.debug("Finished thread: " + this.getName() + " with success = " + success);
             }
         }
 

@@ -4,14 +4,13 @@
     <parent>
         <groupId>gov.nsa.datawave</groupId>
         <artifactId>datawave-parent</artifactId>
-        <version>6.7.0-SNAPSHOT</version>
+        <version>6.9.0-SNAPSHOT</version>
     </parent>
     <groupId>gov.nsa.datawave.microservice</groupId>
     <artifactId>datawave-microservice-build-parent</artifactId>
     <packaging>pom</packaging>
     <name>${project.artifactId}</name>
     <modules>
-        <module>configcheck</module>
         <module>services</module>
         <module>starters</module>
     </modules>
@@ -36,6 +35,17 @@
             </activation>
             <modules>
                 <module>microservice-service-parent</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>configcheck</id>
+            <activation>
+                <property>
+                    <name>configcheck</name>
+                </property>
+            </activation>
+            <modules>
+                <module>configcheck</module>
             </modules>
         </profile>
     </profiles>

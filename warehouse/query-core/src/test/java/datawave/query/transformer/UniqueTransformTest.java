@@ -528,7 +528,7 @@ public class UniqueTransformTest {
 
     protected UniqueTransform getUniqueTransform() {
         try {
-            return new UniqueTransform.Builder().withUniqueFields(uniqueFields).build();
+            return new UniqueTransform.Builder().withUniqueFields(uniqueFields).withQueryExecutionForPageTimeout(Long.MAX_VALUE).build();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

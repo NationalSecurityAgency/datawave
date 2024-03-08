@@ -24,6 +24,11 @@ import datawave.data.type.NumberType;
 import datawave.data.type.OneToManyNormalizerType;
 import datawave.data.type.Type;
 import datawave.data.type.util.Geometry;
+import datawave.ingest.data.config.NormalizedFieldAndValue;
+import datawave.ingest.mapreduce.handler.shard.content.BoundedOffsetQueue;
+import datawave.ingest.mapreduce.handler.shard.content.OffsetQueue;
+import datawave.ingest.mapreduce.handler.shard.content.TermAndZone;
+import datawave.ingest.protobuf.TermWeight;
 import datawave.ingest.protobuf.Uid;
 import datawave.query.QueryTestTableHelper;
 import datawave.util.TableName;
@@ -1023,15 +1028,27 @@ public class WiseGuysIngest {
     private static void addFiTfTokens(BatchWriter bw, WhatKindaRange range, String field, String phrase, String uid, long timeStampDelta)
                     throws MutationsRejectedException {
         Mutation fi = new Mutation(shard);
-        fi.put("fi\u0000" + field.toUpperCase(), lcNoDiacriticsType.normalize(phrase) + "\u0000" + datatype + "\u0000" + uid, columnVisibility,
-                        timeStamp + timeStampDelta, emptyValue);
-
+        fi.put("fi\u0000" + field.toUpperCase(), lcNoDiacriticsType.normalize(phrase) + "\u0000" + datatype + "\u0000" + uid, columnVisibility, timeStamp + timeStampDelta,
+                        emptyValue);
+        OffsetQueue<Integer> tokenOffsetCache = new BoundedOffsetQueue<>(500);
+        int i = 0;
         String[] tokens = phrase.split(" ");
         for (String token : tokens) {
-            fi.put("fi\u0000" + field.toUpperCase(), lcNoDiacriticsType.normalize(token) + "\u0000" + datatype + "\u0000" + uid, columnVisibility,
-                            timeStamp + timeStampDelta, emptyValue);
-            fi.put("tf", datatype + "\u0000" + uid + "\u0000" + lcNoDiacriticsType.normalize(token) + "\u0000" + field, columnVisibility,
-                            timeStamp + timeStampDelta, emptyValue);
+            fi.put("fi\u0000" + field.toUpperCase(), lcNoDiacriticsType.normalize(token) + "\u0000" + datatype + "\u0000" + uid, columnVisibility, timeStamp + timeStampDelta,
+                            emptyValue);
+            tokenOffsetCache.addOffset(new TermAndZone(token, field.toUpperCase()), i);
+
+            i++;
+        }
+        for (BoundedOffsetQueue.OffsetList<Integer> offsets : tokenOffsetCache.offsets()) {
+            NormalizedFieldAndValue nfv = new NormalizedFieldAndValue(offsets.termAndZone.zone, offsets.termAndZone.term);
+            TermWeight.Info.Builder builder = TermWeight.Info.newBuilder();
+            for (Integer offset : offsets.offsets) {
+                builder.addTermOffset(offset);
+            }
+            Value value = new Value(builder.build().toByteArray());
+            fi.put("tf", datatype + "\u0000" + uid + "\u0000" + lcNoDiacriticsType.normalize(nfv.getIndexedFieldValue()) + "\u0000" + nfv.getIndexedFieldName(),
+                            columnVisibility, timeStamp + timeStampDelta, value);
         }
         bw.addMutation(fi);
     }

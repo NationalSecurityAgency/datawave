@@ -1,8 +1,10 @@
 package datawave.query.planner;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.log4j.Logger;
 
@@ -69,13 +71,17 @@ public class QueryOptionsSwitch {
                     config.setExcerptFields(excerptFields);
                     break;
                 case QueryParameters.NO_EXPANSION_FIELDS:
-                    config.setNoExpansionFields(new HashSet<>(Arrays.asList(StringUtils.split(value, ','))));
+                    config.setNoExpansionFields(new HashSet<>(Arrays.asList(StringUtils.split(value, Constants.PARAM_VALUE_SEP))));
                     break;
                 case QueryParameters.LENIENT_FIELDS:
-                    config.setLenientFields(new HashSet<>(Arrays.asList(StringUtils.split(value, ','))));
+                    config.setLenientFields(new HashSet<>(Arrays.asList(StringUtils.split(value, Constants.PARAM_VALUE_SEP))));
                     break;
                 case QueryParameters.STRICT_FIELDS:
-                    config.setStrictFields(new HashSet<>(Arrays.asList(StringUtils.split(value, ','))));
+                    config.setStrictFields(new HashSet<>(Arrays.asList(StringUtils.split(value, Constants.PARAM_VALUE_SEP))));
+                    break;
+                case QueryParameters.RENAME_FIELDS:
+                    Set<String> renameFieldExpressions = new HashSet<>(Arrays.asList(StringUtils.split(value, Constants.PARAM_VALUE_SEP)));
+                    config.setRenameFields(renameFieldExpressions);
                     break;
                 case QueryParameters.SUM_FIELDS:
                     String[] sumFields = StringUtils.split(value, Constants.PARAM_VALUE_SEP);

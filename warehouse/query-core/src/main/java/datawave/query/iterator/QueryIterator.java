@@ -1547,6 +1547,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                     // @formatter:off
                     uniqueTransform = new UniqueTransform.Builder()
                             .withUniqueFields(getUniqueFields())
+                            .withQueryExecutionForPageTimeout(getResultTimeout())
                             .withBufferPersistThreshold(getUniqueCacheBufferSize())
                             .withIvaratorCacheDirConfigs(getIvaratorCacheDirConfigs())
                             .withHdfsSiteConfigURLs(getHdfsSiteConfigURLs())
