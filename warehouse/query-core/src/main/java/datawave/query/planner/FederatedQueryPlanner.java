@@ -276,9 +276,9 @@ public class FederatedQueryPlanner extends QueryPlanner {
 
         // Reset the planned script.
         this.plannedScript = null;
-        
+
         log.debug("Federated query: " + query);
-        
+
         ShardQueryConfiguration originalConfig = (ShardQueryConfiguration) genericConfig;
         log.debug("Query's original date range " + dateFormat.format(originalConfig.getBeginDate()) + "-" + dateFormat.format(originalConfig.getEndDate()));
 
