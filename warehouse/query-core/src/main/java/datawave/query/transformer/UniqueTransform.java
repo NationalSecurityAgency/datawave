@@ -1,11 +1,34 @@
 package datawave.query.transformer;
 
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.Serializable;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.TreeSet;
+
+import javax.annotation.Nullable;
+
+import org.apache.accumulo.core.data.Key;
+import org.apache.commons.collections4.keyvalue.UnmodifiableMapEntry;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.log4j.Logger;
+
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.hash.BloomFilter;
 import com.google.common.hash.Funnel;
 import com.google.common.hash.PrimitiveSink;
+
 import datawave.core.iterators.filesystem.FileSystemCache;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
@@ -22,26 +45,6 @@ import datawave.query.util.sortedset.FileByteDocumentSortedSet;
 import datawave.query.util.sortedset.FileSortedSet;
 import datawave.query.util.sortedset.HdfsBackedSortedSet;
 import datawave.query.util.sortedset.RewritableSortedSetImpl;
-import org.apache.accumulo.core.data.Key;
-import org.apache.commons.collections4.keyvalue.UnmodifiableMapEntry;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.apache.log4j.Logger;
-
-import javax.annotation.Nullable;
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.Serializable;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.TreeSet;
 
 /**
  * This iterator will filter documents based on uniqueness across a set of configured fields. Only the first instance of an event with a unique set of those
@@ -77,7 +80,6 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
     public UniqueTransform(UniqueFields uniqueFields, long queryExecutionForPageTimeout) {
         this.queryExecutionForPageTimeout = queryExecutionForPageTimeout;
         this.uniqueFields = uniqueFields;
-        this.uniqueFields.deconstructIdentifierFields();
         this.bloom = BloomFilter.create(new ByteFunnel(), 500000, 1e-15);
         if (log.isTraceEnabled()) {
             log.trace("unique fields: " + this.uniqueFields.getFields());
@@ -89,14 +91,13 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
      * be requested for date/time fields (@see UniqueFields). The logic will be used to get a query model to include the reverse mappings in the unique field
      * set
      *
-             * @param logic
-     *            The query logic from whih to pull the query model
-     * @param uniqueFields
-     *            The unique fields
-     * @param queryExecutionForPageTimeout
-     *            If this timeout is passed before since the last result was returned, then an "intermediate" result is returned denoting we are still looking
-     *            for the next unique result.
-            */
+     * @param logic The query logic from whih to pull the query model
+     *
+     * @param uniqueFields The unique fields
+     *
+     * @param queryExecutionForPageTimeout If this timeout is passed before since the last result was returned, then an "intermediate" result is returned
+     * denoting we are still looking for the next unique result.
+     */
     public UniqueTransform(ShardQueryLogic logic, UniqueFields uniqueFields, long queryExecutionForPageTimeout) {
         this(uniqueFields, queryExecutionForPageTimeout);
         QueryModel model = logic.getQueryModel();

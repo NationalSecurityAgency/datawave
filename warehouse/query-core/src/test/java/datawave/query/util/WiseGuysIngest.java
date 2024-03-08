@@ -1028,14 +1028,14 @@ public class WiseGuysIngest {
     private static void addFiTfTokens(BatchWriter bw, WhatKindaRange range, String field, String phrase, String uid, long timeStampDelta)
                     throws MutationsRejectedException {
         Mutation fi = new Mutation(shard);
-        fi.put("fi\u0000" + field.toUpperCase(), lcNoDiacriticsType.normalize(phrase) + "\u0000" + datatype + "\u0000" + uid, columnVisibility, timeStamp + timeStampDelta,
-                        emptyValue);
+        fi.put("fi\u0000" + field.toUpperCase(), lcNoDiacriticsType.normalize(phrase) + "\u0000" + datatype + "\u0000" + uid, columnVisibility,
+                        timeStamp + timeStampDelta, emptyValue);
         OffsetQueue<Integer> tokenOffsetCache = new BoundedOffsetQueue<>(500);
         int i = 0;
         String[] tokens = phrase.split(" ");
         for (String token : tokens) {
-            fi.put("fi\u0000" + field.toUpperCase(), lcNoDiacriticsType.normalize(token) + "\u0000" + datatype + "\u0000" + uid, columnVisibility, timeStamp + timeStampDelta,
-                            emptyValue);
+            fi.put("fi\u0000" + field.toUpperCase(), lcNoDiacriticsType.normalize(token) + "\u0000" + datatype + "\u0000" + uid, columnVisibility,
+                            timeStamp + timeStampDelta, emptyValue);
             tokenOffsetCache.addOffset(new TermAndZone(token, field.toUpperCase()), i);
 
             i++;
