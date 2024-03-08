@@ -284,6 +284,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
         private ShardQueryConfiguration config;
         private MetadataHelper metadataHelper;
         private TypeMetadata typeMetadata;
+        private Set<String> ingestTypes = null;
 
         public EmptyPlanPruner() {
             // no-op
@@ -293,6 +294,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
             this.config = config;
             this.metadataHelper = metadataHelper;
             this.typeMetadata = typeMetadata;
+            this.ingestTypes = config.getDatatypeFilter();
         }
 
         public boolean apply(QueryPlan plan) {
@@ -306,13 +308,22 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
 
             if (typeMetadata != null) {
                 JexlNode node = plan.getQueryTree();
-                JexlNode result = IngestTypePruningVisitor.prune(node, typeMetadata);
+                JexlNode result;
+                if (ingestTypes.isEmpty()) {
+                    // datatype filter was empty signifying a search across all ingest types
+                    result = IngestTypePruningVisitor.prune(node, typeMetadata);
+                } else {
+                    // datatype filter can be used to prune the resulting query tree
+                    result = IngestTypePruningVisitor.prune(node, typeMetadata, ingestTypes);
+                }
+
                 if (!ExecutableDeterminationVisitor.isExecutable(result, config, metadataHelper)) {
                     return false;
                 }
 
                 // update the query tree with the (potentially) pruned
-                plan.setQuery(JexlStringBuildingVisitor.buildQueryWithoutParse(result), result);
+                plan.setQueryTree(result);
+                plan.setQueryTreeString(JexlStringBuildingVisitor.buildQueryWithoutParse(result));
             }
 
             return true;

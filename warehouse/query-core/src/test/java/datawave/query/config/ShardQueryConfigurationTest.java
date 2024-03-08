@@ -454,6 +454,10 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("tfAggregationThresholdMs", 10000);
         defaultValues.put("pruneQueryOptions", false);
         updatedValues.put("pruneQueryOptions", true);
+        defaultValues.put("reduceIngestTypes", false);
+        updatedValues.put("reduceIngestTypes", true);
+        defaultValues.put("reduceIngestTypesPerShard", false);
+        updatedValues.put("reduceIngestTypesPerShard", true);
         defaultValues.put("pruneQueryByIngestTypes", false);
         updatedValues.put("pruneQueryByIngestTypes", true);
         defaultValues.put("numIndexLookupThreads", 8);
@@ -501,6 +505,9 @@ public class ShardQueryConfigurationTest {
         defaultValues.put("projectFieldsAsString", "");
         updatedValues.put("projectFieldsAsString", "FIELD_P,FIELD_Q");
         alreadySet.add("projectFieldsAsString");
+
+        defaultValues.put("renameFields", Sets.newHashSet());
+        updatedValues.put("renameFields", Collections.singleton("UUID=ID"));
 
         defaultValues.put("disallowlistedFields", Sets.newHashSet());
         updatedValues.put("disallowlistedFields", Sets.newHashSet("FIELD_B", "FIELD_C"));

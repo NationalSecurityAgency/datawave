@@ -3,6 +3,7 @@ package datawave.query.tables.async.event;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.security.SecureRandom;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -29,8 +30,10 @@ import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
 
 import com.google.common.base.Function;
+import com.google.common.base.Joiner;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.google.common.collect.Sets;
 
 import datawave.core.iterators.filesystem.FileSystemCache;
 import datawave.query.config.ShardQueryConfiguration;
@@ -41,6 +44,7 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.DateIndexCleanupVisitor;
 import datawave.query.jexl.visitors.ExecutableDeterminationVisitor;
 import datawave.query.jexl.visitors.ExecutableDeterminationVisitor.STATE;
+import datawave.query.jexl.visitors.IngestTypeVisitor;
 import datawave.query.jexl.visitors.IvaratorRequiredVisitor;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.PrintingVisitor;
@@ -77,10 +81,12 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
     protected Set<String> indexedFields;
     protected Set<String> indexOnlyFields;
     protected Set<String> nonEventFields;
-    protected Random random = new Random();
+    protected Random random = new SecureRandom();
 
     // thread-safe cache where the key is the original query, and the value is the expanded query
     private Cache<String,String> queryCache;
+
+    private TypeMetadata cachedTypeMetadata = null;
 
     private static final Logger log = Logger.getLogger(VisitorFunction.class);
 
@@ -307,6 +313,10 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                         reduceQueryFields(script, newIteratorSetting);
                     }
 
+                    if (config.getReduceIngestTypesPerShard()) {
+                        reduceIngestTypes(script, newIteratorSetting);
+                    }
+
                     if (config.getReduceTypeMetadataPerShard()) {
                         reduceTypeMetadata(script, newIteratorSetting);
                     }
@@ -465,6 +475,35 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
         }
 
         newIteratorSetting.addOption(QueryOptions.TYPE_METADATA, serializedTypeMetadata);
+    }
+
+    /**
+     * Optionally update the datatype filter using a pruned query tree
+     *
+     * @param script
+     *            a query tree
+     * @param newIteratorSetting
+     *            the iterator settings
+     */
+    private void reduceIngestTypes(ASTJexlScript script, IteratorSetting newIteratorSetting) {
+        if (cachedTypeMetadata == null) {
+            String serializedTypeMetadata = newIteratorSetting.getOptions().get(QueryOptions.TYPE_METADATA);
+            cachedTypeMetadata = new TypeMetadata(serializedTypeMetadata);
+        }
+
+        Set<String> userRequestedDataTypes = config.getDatatypeFilter();
+        if (!userRequestedDataTypes.isEmpty()) {
+            Set<String> queryDataTypes = IngestTypeVisitor.getIngestTypes(script, cachedTypeMetadata);
+            Set<String> ingestTypes = Sets.intersection(userRequestedDataTypes, queryDataTypes);
+            if (ingestTypes.size() < userRequestedDataTypes.size()) {
+                newIteratorSetting.addOption(QueryOptions.DATATYPE_FILTER, Joiner.on(',').join(ingestTypes));
+            }
+
+            if (ingestTypes.isEmpty()) {
+                // the EmptyPlanPruner in the RangeStream should have handled this situation, this exception indicates a bug exists
+                throw new DatawaveFatalQueryException("Reduced ingest types to zero, cannot execute query sub-plan");
+            }
+        }
     }
 
     /**
