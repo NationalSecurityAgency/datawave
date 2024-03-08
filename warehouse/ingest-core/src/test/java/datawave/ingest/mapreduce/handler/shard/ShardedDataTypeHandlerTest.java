@@ -7,7 +7,6 @@ import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.accumulo.core.data.Value;
@@ -23,11 +22,7 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
 import datawave.data.hash.HashUID;
-import datawave.data.hash.HashUIDBuilder;
-import datawave.data.hash.UIDBuilder;
 import datawave.data.normalizer.DateNormalizer;
-import datawave.data.type.GeometryType;
-import datawave.data.type.NumberType;
 import datawave.ingest.config.RawRecordContainerImpl;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.RawRecordContainerDelegate;
@@ -41,7 +36,6 @@ import datawave.ingest.data.config.NormalizedFieldAndValue;
 import datawave.ingest.data.config.ingest.BaseIngestHelper;
 import datawave.ingest.data.config.ingest.ContentBaseIngestHelper;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
-import datawave.ingest.mapreduce.partition.BalancedShardPartitioner;
 import datawave.ingest.protobuf.Uid;
 import datawave.ingest.table.config.ShardTableConfigHelper;
 import datawave.ingest.table.config.TableConfigHelper;
@@ -325,7 +319,6 @@ public class ShardedDataTypeHandlerTest {
         String ageOffDateString = new SimpleDateFormat(DateNormalizer.ISO_8601_FORMAT_STRING).format(new Date(ageOffDate));
         NormalizedContentInterface ageOffField = new NormalizedFieldAndValue("AGEOFF", ageOffDateString);
         fields.put("AGEOFF", ageOffField);
-
         data = handler.processBulk(null, record, fields, null);
 
         expectedTimestamp = CompositeTimestamp.getCompositeTimeStamp(record.getDate(), ageOffDate);
