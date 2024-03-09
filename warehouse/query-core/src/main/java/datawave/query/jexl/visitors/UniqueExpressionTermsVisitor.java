@@ -99,7 +99,7 @@ public class UniqueExpressionTermsVisitor extends RebuildingVisitor {
         Set<String> childKeys = new HashSet<>();
         List<JexlNode> unique = new ArrayList<>();
         for (JexlNode node : nodes) {
-            String childKey = JexlStringBuildingVisitor.buildQueryWithoutParse(TreeFlatteningRebuildingVisitor.flatten(node), true);
+            String childKey = JexlStringBuildingVisitor.buildQuery(TreeFlatteningRebuildingVisitor.flatten(node), true);
             if (childKeys.add(childKey)) {
                 unique.add(node);
             } else {
