@@ -590,11 +590,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     @Override
     public QueryLogicTransformer getTransformer(Query settings) throws QueryException {
         if (this.transformerInstance != null) {
-            try {
-                addConfigBasedTransformers();
-            } catch (QueryException qe) {
-                throw new RuntimeException("Unable to configure transformers", qe);
-            }
+            addConfigBasedTransformers();
             return this.transformerInstance;
         }
 
