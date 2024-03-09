@@ -73,8 +73,6 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
     private Text shardTable;
     private Text indexTable;
     private Text reverseIndexTable;
-    // TODO process datawaveMetadata Keys
-    private Text datawaveMetadataTable;
 
     // used for caching fi Key data for faster processing
     private byte[] lastFiBytes;
@@ -129,7 +127,6 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
         this.shardTable = new Text(config.get(ShardedDataTypeHandler.SHARD_TNAME, "shard"));
         this.indexTable = new Text(config.get(ShardedDataTypeHandler.SHARD_GIDX_TNAME, "shardIndex"));
         this.reverseIndexTable = new Text(config.get(ShardedDataTypeHandler.SHARD_GRIDX_TNAME, "shardReverseIndex"));
-        this.datawaveMetadataTable = new Text(config.get(ShardedDataTypeHandler.METADATA_TABLE_NAME, "DatawaveMetadata"));
 
         this.propagateDeletes = config.getBoolean(PROPAGATE_DELETES, this.propagateDeletes);
 
