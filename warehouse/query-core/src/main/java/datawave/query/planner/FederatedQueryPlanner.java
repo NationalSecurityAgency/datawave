@@ -284,7 +284,24 @@ public class FederatedQueryPlanner extends QueryPlanner {
 
         // Get the relevant date ranges.
         SortedSet<Pair<Date,Date>> dateRanges = getSubQueryDateRanges(originalConfig, query, scannerFactory);
-        log.debug("Query will search over sub-date ranges: " + dateRanges);
+        
+        if (log.isDebugEnabled()) {
+            if (dateRanges.size() == 1) {
+                log.debug("One query will be executed over original date range " + dateFormat.format(originalConfig.getBeginDate()) + "-" + dateFormat.format(
+                                originalConfig.getEndDate()));
+            } else {
+                StringBuilder sb = new StringBuilder();
+                Iterator<Pair<Date,Date>> it = dateRanges.iterator();
+                while (it.hasNext()) {
+                    Pair<Date,Date> range = it.next();
+                    sb.append(dateFormat.format(range.getLeft())).append("-").append(dateFormat.format(range.getRight()));
+                    if (it.hasNext()) {
+                        sb.append(", ");
+                    }
+                }
+                log.debug(dateRanges.size() + " sub-queries will be executed over date ranges: " + sb);
+            }
+        }
 
         // Execute the same query for each date range and collect the results.
         FederatedQueryIterable results = new FederatedQueryIterable();
@@ -306,7 +323,7 @@ public class FederatedQueryPlanner extends QueryPlanner {
             try {
                 CloseableIterable<QueryData> queryData = subPlan.process(configCopy, query, settings, scannerFactory);
                 results.addIterable(queryData);
-            } catch (DatawaveQueryException e) {
+            } catch (DatawaveQueryException|DatawaveFatalQueryException e) {
                 log.warn("Exception occured when processing sub-plan [" + totalProcessed + " of " + dateRanges.size() + "] against date range (" + subStartDate
                                 + "-" + subEndDate + ")", e);
                 // If an exception occurs, ensure that the planned script and the original config are updated before allowing the exception to bubble up.
@@ -319,6 +336,7 @@ public class FederatedQueryPlanner extends QueryPlanner {
             } finally {
                 // Append the timers from the config copy to the original config for logging later.
                 originalConfig.appendTimers(configCopy.getTimers());
+                log.debug("Query string for config of sub-plan " + totalProcessed + ": " + configCopy.getQueryString());
             }
 
             // Update the planned script to reflect that of the first query.

@@ -4,8 +4,10 @@ import static datawave.query.testframework.RawDataManager.RE_OP;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
+import java.io.IOException;
 import java.util.Collections;
 
+import datawave.query.planner.DefaultQueryPlanner;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.log4j.Logger;
 import org.junit.Before;
@@ -63,7 +65,8 @@ public class QueryPlanTest extends AbstractFunctionalQuery {
     }
 
     @Before
-    public void before() {
+    public void before() throws IOException {
+        super.querySetUp();
         // Use RunningQuery to test that query metrics being updated with plan
         this.useRunningQuery();
 
@@ -86,7 +89,7 @@ public class QueryPlanTest extends AbstractFunctionalQuery {
     @Test
     public void planInMetricsAfterInvalidQueryException() throws Exception {
         String query = "species != " + "'dog'";
-        String expectedPlan = "SPECIES != 'dog'";
+        String expectedPlan = "!(SPECIES == 'dog')";
         try {
             runTestQuery(Collections.emptyList(), query, this.dataManager.getShardStartEndDate()[0], this.dataManager.getShardStartEndDate()[1],
                             Collections.emptyMap());

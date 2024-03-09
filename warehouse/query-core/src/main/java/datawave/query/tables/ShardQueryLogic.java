@@ -402,19 +402,20 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             dateIndexHelper.setTimeTravel(config.isDateIndexTimeTravel());
         }
 
+        // If the current query planner is a DefaultQueryPlanner or a FederatedQueryPlanner, get the query model if possible.
         QueryPlanner queryPlanner = getQueryPlanner();
-        DefaultQueryPlanner currentQueryPlanner = null;
+        DefaultQueryPlanner defaultQueryPlanner = null;
         if (queryPlanner instanceof DefaultQueryPlanner) {
-            currentQueryPlanner = (DefaultQueryPlanner) queryPlanner;
+            defaultQueryPlanner = (DefaultQueryPlanner) queryPlanner;
         } else if (queryPlanner instanceof FederatedQueryPlanner) {
-            currentQueryPlanner = ((FederatedQueryPlanner) queryPlanner).getQueryPlanner();
+            defaultQueryPlanner = ((FederatedQueryPlanner) queryPlanner).getQueryPlanner();
         }
 
-        if (currentQueryPlanner != null) {
-            currentQueryPlanner.setMetadataHelper(metadataHelper);
-            currentQueryPlanner.setDateIndexHelper(dateIndexHelper);
+        if (defaultQueryPlanner != null) {
+            defaultQueryPlanner.setMetadataHelper(metadataHelper);
+            defaultQueryPlanner.setDateIndexHelper(dateIndexHelper);
 
-            QueryModelProvider queryModelProvider = currentQueryPlanner.getQueryModelProviderFactory().createQueryModelProvider();
+            QueryModelProvider queryModelProvider = defaultQueryPlanner.getQueryModelProviderFactory().createQueryModelProvider();
             if (queryModelProvider instanceof MetadataHelperQueryModelProvider) {
                 ((MetadataHelperQueryModelProvider) queryModelProvider).setMetadataHelper(metadataHelper);
                 ((MetadataHelperQueryModelProvider) queryModelProvider).setConfig(config);
