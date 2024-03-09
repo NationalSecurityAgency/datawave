@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
@@ -32,6 +33,7 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.iterator.QueryIterator;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.planner.QueryPlan;
 import datawave.query.tables.SessionOptions;
@@ -77,8 +79,14 @@ public class PushdownFunction implements Function<QueryData,List<ScannerChunk>> 
         Multimap<String,QueryPlan> serverPlan = ArrayListMultimap.create();
         List<ScannerChunk> chunks = Lists.newArrayList();
         try {
-
-            redistributeQueries(serverPlan, tl, new QueryPlan(qd));
+            //  @formatter:off
+            QueryPlan queryPlan = new QueryPlan()
+                            .withQueryString(qd.getQuery())
+                            .withRanges(qd.getRanges())
+                            .withSettings(qd.getSettings())
+                            .withColumnFamilies(qd.getColumnFamilies());
+            //  @formatter:on
+            redistributeQueries(serverPlan, tl, queryPlan);
 
             for (String server : serverPlan.keySet()) {
                 Collection<QueryPlan> plans = serverPlan.get(server);
@@ -128,8 +136,6 @@ public class PushdownFunction implements Function<QueryData,List<ScannerChunk>> 
             throw new RuntimeException(e);
         } catch (TableNotFoundException e) {
             throw new RuntimeException(e);
-        } catch (ParseException e) {
-            throw new RuntimeException(e);
         }
         return chunks;
     }
@@ -152,11 +158,33 @@ public class PushdownFunction implements Function<QueryData,List<ScannerChunk>> 
                     rangeIter = Iterables.concat(rangeIter, rangeEntry.getValue());
                 }
 
-                if (log.isTraceEnabled())
+                if (log.isTraceEnabled()) {
                     log.trace("Adding query tree " + JexlStringBuildingVisitor.buildQuery(currentPlan.getQueryTree()) + " " + currentPlan.getSettings().size()
                                     + " for " + server);
+                }
 
-                serverPlan.put(server, new QueryPlan(currentPlan.getQueryTree(), rangeIter, currentPlan.getSettings(), currentPlan.getColumnFamilies()));
+                // update settings before building new query plan
+                List<IteratorSetting> updatedSettings = new ArrayList<>();
+                for (IteratorSetting setting : currentPlan.getSettings()) {
+                    IteratorSetting next = new IteratorSetting(setting.getPriority(), setting.getName(), setting.getIteratorClass());
+                    next.addOptions(setting.getOptions());
+                    if (next.getOptions().containsKey(QueryIterator.QUERY)) {
+                        next.addOption(QueryIterator.QUERY, JexlStringBuildingVisitor.buildQueryWithoutParse(currentPlan.getQueryTree()));
+                        next.addOption(QueryIterator.RANGES,
+                                        Lists.newArrayList(rangeIter).stream().map(Range::toString).collect(Collectors.joining(",", "[", "]")));
+                    }
+                    updatedSettings.add(next);
+                }
+
+                //  @formatter:off
+                QueryPlan queryPlan = new QueryPlan()
+                                .withQueryTree(currentPlan.getQueryTree())
+                                .withRanges(Lists.newArrayList(rangeIter))
+                                .withSettings(updatedSettings)
+                                .withColumnFamilies(currentPlan.getColumnFamilies());
+                //  @formatter:on
+
+                serverPlan.put(server, queryPlan);
 
             }
         }
