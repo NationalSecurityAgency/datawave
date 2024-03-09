@@ -131,7 +131,7 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
      * @return the original Jexl node if keepOriginalNode is false, otherwise the expanded Jexl node
      */
     protected JexlNode buildIndexLookup(JexlNode node, boolean ignoreComposites, boolean keepOriginalNode, Supplier<IndexLookup> indexLookupSupplier) {
-        String nodeString = JexlStringBuildingVisitor.buildQueryWithoutParse(TreeFlatteningRebuildingVisitor.flatten(node), true);
+        String nodeString = JexlStringBuildingVisitor.buildQuery(TreeFlatteningRebuildingVisitor.flatten(node), true);
 
         IndexLookup lookup = lookupMap.computeIfAbsent(nodeString, k -> indexLookupSupplier.get());
 

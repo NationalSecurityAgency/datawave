@@ -1467,7 +1467,7 @@ public class JexlASTHelper {
      * @return a key for the node.
      */
     public static String nodeToKey(JexlNode node) {
-        return JexlStringBuildingVisitor.buildQueryWithoutParse(node, true);
+        return JexlStringBuildingVisitor.buildQuery(node, true);
     }
 
     /**
