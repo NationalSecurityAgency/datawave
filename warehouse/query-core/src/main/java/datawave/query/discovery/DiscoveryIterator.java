@@ -53,7 +53,7 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
         copy.iterator = iterator.deepCopy(env);
         return copy;
     }
-    
+
     @Override
     public void next() throws IOException {
         this.key = null;
@@ -161,8 +161,8 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
             // If we do not have a count greater than 0, return null.
             if (count <= 0) {
                 if (log.isTraceEnabled()) {
-                    log.trace("Did not aggregate any counts for [" + first.getTerm() + "][" + first.getField() + "][" + first.getDatatype() + "][" + first.getDate()
-                                    + "]. Returning null");
+                    log.trace("Did not aggregate any counts for [" + first.getTerm() + "][" + first.getField() + "][" + first.getDatatype() + "]["
+                                    + first.getDate() + "]. Returning null");
                 }
                 return null;
             } else {
@@ -217,11 +217,13 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
         this.reverseIndex = Boolean.parseBoolean(options.get(DiscoveryLogic.REVERSE_INDEX));
         this.sumCounts = Boolean.parseBoolean(options.get(DiscoveryLogic.SUM_COUNTS));
 
-        log.debug("Source: " + source.getClass().getName());
-        log.debug("Separate counts by column visibility: " + this.separateCountsByColVis);
-        log.debug("Show reference counts only: " + this.showReferenceCount);
-        log.debug("Reverse index: " + this.reverseIndex);
-        log.debug("Sum counts: " + this.sumCounts);
+        if (log.isTraceEnabled()) {
+            log.trace("Source: " + source.getClass().getName());
+            log.trace("Separate counts by column visibility: " + this.separateCountsByColVis);
+            log.trace("Show reference counts only: " + this.showReferenceCount);
+            log.trace("Reverse index: " + this.reverseIndex);
+            log.trace("Sum counts: " + this.sumCounts);
+        }
     }
 
     @Override
