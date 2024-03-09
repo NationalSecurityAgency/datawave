@@ -18,14 +18,6 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 
-import datawave.data.hash.HashUID;
-import datawave.data.type.NoOpType;
-import datawave.ingest.config.RawRecordContainerImpl;
-import datawave.ingest.data.RawRecordContainer;
-import datawave.ingest.data.config.ingest.AbstractContentIngestHelper;
-import datawave.ingest.mapreduce.handler.shard.ShardIdFactory;
-import datawave.ingest.mapreduce.handler.tokenize.ContentIndexingColumnBasedHandler;
-import datawave.ingest.protobuf.TermWeight;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
@@ -37,10 +29,18 @@ import org.easymock.EasyMockSupport;
 import org.junit.Before;
 import org.junit.Test;
 
+import datawave.data.hash.HashUID;
+import datawave.data.type.NoOpType;
+import datawave.ingest.config.RawRecordContainerImpl;
+import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
 import datawave.ingest.data.TypeRegistry;
+import datawave.ingest.data.config.ingest.AbstractContentIngestHelper;
 import datawave.ingest.data.config.ingest.CSVIngestHelper;
+import datawave.ingest.mapreduce.handler.shard.ShardIdFactory;
+import datawave.ingest.mapreduce.handler.tokenize.ContentIndexingColumnBasedHandler;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.ingest.protobuf.TermWeight;
 
 public class ShardReindexMapperTest extends EasyMockSupport {
     private Configuration conf;
@@ -428,7 +428,8 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         enableEventProcessing(true);
         EasyMock.expect(context.getConfiguration()).andReturn(conf).anyTimes();
 
-        Key event = expectTokenized(context, "20240216", "1.2.3", "samplecsv", "FIELDF", "generate some tokens", new String[] {"generate", "some", "tokens"}, false);
+        Key event = expectTokenized(context, "20240216", "1.2.3", "samplecsv", "FIELDF", "generate some tokens", new String[] {"generate", "some", "tokens"},
+                        false);
 
         context.progress();
         // ingest handler may call progress internally
@@ -456,7 +457,8 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         enableEventProcessing(true);
         EasyMock.expect(context.getConfiguration()).andReturn(conf).anyTimes();
 
-        Key event = expectTokenized(context, "20240216", "1.2.3", "samplecsv", "FIELDF", "generate some tokens", new String[] {"generate", "some", "tokens"}, true);
+        Key event = expectTokenized(context, "20240216", "1.2.3", "samplecsv", "FIELDF", "generate some tokens", new String[] {"generate", "some", "tokens"},
+                        true);
 
         context.progress();
         // ingest handler may call progress internally
@@ -554,7 +556,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         ShardReindexMapper mapper = new ShardReindexMapper();
 
         Key event1 = expectTokenized(context, "20240216", "1.2.3", "samplecsv", "FIELDF", "value1", new String[] {"value1"}, true, 11);
-        Key event2 = expectTokenized(context, "20240216", "1.2.3", "samplecsv", "FIELDF", "value2", new String[] {"value2"}, true, 0 );
+        Key event2 = expectTokenized(context, "20240216", "1.2.3", "samplecsv", "FIELDF", "value2", new String[] {"value2"}, true, 0);
         Key event3 = expectTokenized(context, "20240216", "1.2.3", "samplecsv", "FIELDF", "value3", new String[] {"value3"}, true, 22);
 
         context.progress();
@@ -784,8 +786,6 @@ public class ShardReindexMapperTest extends EasyMockSupport {
 
         verifyAll();
     }
-
-
 
     @Test(expected = IllegalStateException.class)
     public void FI_unknownDataType_test() throws IOException, InterruptedException {
@@ -1069,15 +1069,18 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         verifyAll();
     }
 
-    private Key expectTokenized(Mapper.Context context, String date, String uid, String dataType, String field, String fullValue, String[] tokens, boolean writeTF) throws ParseException, IOException, InterruptedException {
+    private Key expectTokenized(Mapper.Context context, String date, String uid, String dataType, String field, String fullValue, String[] tokens,
+                    boolean writeTF) throws ParseException, IOException, InterruptedException {
         return expectTokenized(context, date, uid, dataType, field, fullValue, tokens, writeTF, 0);
     }
 
-    private Key expectTokenized(Mapper.Context context, String date, String uid, String dataType, String field, String fullValue, String[] tokens, boolean writeTF, int tokenOffset) throws ParseException, IOException, InterruptedException {
+    private Key expectTokenized(Mapper.Context context, String date, String uid, String dataType, String field, String fullValue, String[] tokens,
+                    boolean writeTF, int tokenOffset) throws ParseException, IOException, InterruptedException {
         return expectTokenized(context, date, uid, dataType, field, fullValue, tokens, writeTF, tokenOffset, "");
     }
 
-    private Key expectTokenized(Mapper.Context context, String date, String uid, String dataType, String field, String fullValue, String[] tokens, boolean writeTF, int tokenOffset, String vis) throws ParseException, IOException, InterruptedException {
+    private Key expectTokenized(Mapper.Context context, String date, String uid, String dataType, String field, String fullValue, String[] tokens,
+                    boolean writeTF, int tokenOffset, String vis) throws ParseException, IOException, InterruptedException {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
         Date d = sdf.parse(date);
         long eventTime = getTimestamp(d);
@@ -1105,11 +1108,13 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         return event;
     }
 
-    private Key expectIndexed(Mapper.Context context, String date, String uid, String dataType, String field, String value, boolean writeEvent) throws ParseException, IOException, InterruptedException {
+    private Key expectIndexed(Mapper.Context context, String date, String uid, String dataType, String field, String value, boolean writeEvent)
+                    throws ParseException, IOException, InterruptedException {
         return expectIndexed(context, date, uid, dataType, field, value, writeEvent, "");
     }
 
-    private Key expectIndexed(Mapper.Context context, String date, String uid, String dataType, String field, String value, boolean writeEvent, String vis) throws ParseException, IOException, InterruptedException {
+    private Key expectIndexed(Mapper.Context context, String date, String uid, String dataType, String field, String value, boolean writeEvent, String vis)
+                    throws ParseException, IOException, InterruptedException {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
         Date d = sdf.parse(date);
         long eventTime = getTimestamp(d);
@@ -1142,6 +1147,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
 
     /**
      * Simple stub to generate a valid shardId for a given date and uid pair
+     *
      * @param d
      * @param uid
      * @return the shardId that would be generated for the given date and uid given the conf

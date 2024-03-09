@@ -66,7 +66,7 @@ public class ShardReindexJob implements Tool {
     public static final Text FI_START = new Text("fi" + '\u0000');
     public static final Text FI_END = new Text("fi" + '\u0000' + '\uffff');
 
-    private Configuration configuration = new Configuration();
+    private Configuration configuration;
     private JobConfig jobConfig = new JobConfig();
 
     @Override
@@ -164,14 +164,15 @@ public class ShardReindexJob implements Tool {
             Properties accumuloProperties = builder.build();
             if (jobConfig.accumuloMetadata) {
                 // fetch the file list by scanning the accumulo.metadata table
-                jobConfig.inputFiles = org.apache.hadoop.util.StringUtils.join(",", getSplitsFromMetadata(accumuloProperties, jobConfig.table, new Range(new Key(jobConfig.startDate), true, new Key(jobConfig.endDate), true)));
+                jobConfig.inputFiles = org.apache.hadoop.util.StringUtils.join(",", getSplitsFromMetadata(accumuloProperties, jobConfig.table,
+                                new Range(new Key(jobConfig.startDate), true, new Key(jobConfig.endDate), true)));
             } else if (!jobConfig.accumuloData) {
                 // build ranges
                 Collection<Range> ranges = buildRanges(jobConfig.startDate, jobConfig.endDate, jobConfig.splitsPerDay);
 
                 // do not auto adjust ranges because they will be clipped and drop the column qualifier. this will result in full table scans
-                AccumuloInputFormat.configure().clientProperties(accumuloProperties).table(jobConfig.table).autoAdjustRanges(false).batchScan(false).ranges(ranges)
-                        .store(j);
+                AccumuloInputFormat.configure().clientProperties(accumuloProperties).table(jobConfig.table).autoAdjustRanges(false).batchScan(false)
+                                .ranges(ranges).store(j);
             }
         }
 
@@ -400,7 +401,8 @@ public class ShardReindexJob implements Tool {
         @Parameter(names = "--propagateDeletes", description = "When true deletes are propagated to the indexes")
         private boolean propagateDeletes = false;
 
-        @Parameter(names = "--defaultDataType", description = "The datatype to apply to all data that has an unrecognized type, must have configuration for a Type from the TypeRegistry")
+        @Parameter(names = "--defaultDataType",
+                        description = "The datatype to apply to all data that has an unrecognized type, must have configuration for a Type from the TypeRegistry")
         private String defaultDataType;
 
         @Parameter(names = "--dataTypeHandler", description = "the DataTypeHandler to use to reprocess events, required with --reprocessEvents")
@@ -412,16 +414,19 @@ public class ShardReindexJob implements Tool {
         @Parameter(names = "--eventOverride", description = "Class to create for each RawRecordContainer instance, must implement RawRecordContainer")
         private String eventOverride;
 
-        @Parameter(names = "--exportShard", description = "exports all sharded data along with the generated indexes. Used in conjunction with --reprocessEvents, and --generateTF")
+        @Parameter(names = "--exportShard",
+                        description = "exports all sharded data along with the generated indexes. Used in conjunction with --reprocessEvents, and --generateTF")
         private boolean exportShard = false;
 
-        @Parameter(names = "--generateTF", description = "generates new Term Frequency offsets for any field that is not index only. When false existing TF offsets will be output as long as --exportShard is set")
+        @Parameter(names = "--generateTF",
+                        description = "generates new Term Frequency offsets for any field that is not index only. When false existing TF offsets will be output as long as --exportShard is set")
         private boolean generateTF = false;
 
         @Parameter(names = "--skipMetadata", description = "disable writing DatawaveMetadata for job")
         private boolean skipMetadata = false;
 
-        @Parameter(names = "--preserveTimestamps", description = "preserve event timestamps when generating index entries instead of flooring them to the beginning of the day")
+        @Parameter(names = "--preserveTimestamps",
+                        description = "preserve event timestamps when generating index entries instead of flooring them to the beginning of the day")
         private boolean preserveTimestamps = false;
 
         @Parameter(names = {"-h", "--help"}, description = "display help", help = true)
