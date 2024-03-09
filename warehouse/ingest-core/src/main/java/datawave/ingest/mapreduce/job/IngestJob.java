@@ -1,5 +1,7 @@
 package datawave.ingest.mapreduce.job;
 
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
@@ -28,7 +30,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Observer;
 import java.util.Set;
 
 import org.apache.accumulo.core.Constants;
@@ -82,6 +83,7 @@ import org.apache.log4j.ConsoleAppender;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
+import org.opengis.feature.Property;
 
 import datawave.ingest.config.TableConfigCache;
 import datawave.ingest.data.Type;
@@ -199,8 +201,9 @@ public class IngestJob implements Tool {
     protected boolean writeDirectlyToDest = false;
 
     private Configuration hadoopConfiguration;
-    private List<Observer> jobObservers = new ArrayList<>();
+    private List<PropertyChangeListener> jobListeners = new ArrayList<>();
     private JobObservable jobObservable;
+    private PropertyChangeSupport support;
 
     public static void main(String[] args) throws Exception {
         System.out.println("Running main");
@@ -275,11 +278,13 @@ public class IngestJob implements Tool {
         updateConfWithOverrides(conf);
 
         jobObservable = new JobObservable(srcHdfs != null ? getFileSystem(conf, srcHdfs) : null);
-        for (Observer observer : jobObservers) {
-            this.jobObservable.addObserver(observer);
-            if (observer instanceof Configurable) {
+        support = new PropertyChangeSupport(this);
+
+        for (PropertyChangeListener listener : jobListeners) {
+            this.support.addPropertyChangeListener(listener);
+            if (listener instanceof Configurable) {
                 log.info("Applying configuration to observer");
-                ((Configurable) observer).setConf(conf);
+                ((Configurable) listener).setConf(conf);
             }
         }
 
@@ -739,8 +744,8 @@ public class IngestJob implements Tool {
                     for (String jobObserverClass : classes) {
                         log.info("Adding job observer: " + jobObserverClass);
                         Class clazz = Class.forName(jobObserverClass);
-                        Observer o = (Observer) clazz.newInstance();
-                        jobObservers.add(o);
+                        PropertyChangeListener o = (PropertyChangeListener) clazz.newInstance();
+                        jobListeners.add(o);
                     }
                 } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
                     log.error("cannot instantiate job observer class '" + jobObserverClasses + "'", e);
