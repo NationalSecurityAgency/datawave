@@ -53,7 +53,7 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
         copy.iterator = iterator.deepCopy(env);
         return copy;
     }
-
+    
     @Override
     public void next() throws IOException {
         this.key = null;
@@ -65,10 +65,14 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
             if (terms.isEmpty()) {
                 log.trace("Couldn't aggregate index info; moving onto next date/field/term if data is available.");
             } else {
-                log.trace("Received term entry multimap of size [" + terms.size() + "]");
+                if (log.isTraceEnabled()) {
+                    log.trace("Received term entry multimap of size [" + terms.size() + "]");
+                }
                 // Aggregate the entries.
                 List<DiscoveredThing> things = terms.asMap().values().stream().map(this::aggregate).filter(Objects::nonNull).collect(Collectors.toList());
-                log.trace("After conversion to discovery objects, there are [" + things.size() + "] discovery objects.");
+                if (log.isTraceEnabled()) {
+                    log.trace("After conversion to discovery objects, there are [" + things.size() + "] discovery objects.");
+                }
                 // Establish the next top of this iterator.
                 if (!things.isEmpty()) {
                     setTop(things);
@@ -95,7 +99,9 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
             if (termEntry.isValid())
                 terms.put(termEntry.getDatatype(), termEntry);
             else {
-                log.trace("Received invalid term entry from key: " + key);
+                if (log.isTraceEnabled()) {
+                    log.trace("Received invalid term entry from key: " + key);
+                }
             }
             iterator.next();
         }
@@ -154,8 +160,10 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
 
             // If we do not have a count greater than 0, return null.
             if (count <= 0) {
-                log.trace("Did not aggregate any counts for [" + first.getTerm() + "][" + first.getField() + "][" + first.getDatatype() + "][" + first.getDate()
-                                + "]. Returning null");
+                if (log.isTraceEnabled()) {
+                    log.trace("Did not aggregate any counts for [" + first.getTerm() + "][" + first.getField() + "][" + first.getDatatype() + "][" + first.getDate()
+                                    + "]. Returning null");
+                }
                 return null;
             } else {
                 // Otherwise, combine the visibilities, and return the aggregated result.
@@ -165,7 +173,9 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
                     visibilityToCounts.forEach((key, value) -> countsByVis.put(new Text(key), new LongWritable(value)));
                     return new DiscoveredThing(term, first.getField(), first.getDatatype(), date, new String(visibility.flatten()), count, countsByVis);
                 } catch (Exception e) {
-                    log.warn("Invalid column visibilities after combining " + visibilities);
+                    if (log.isTraceEnabled()) {
+                        log.warn("Invalid column visibilities after combining " + visibilities);
+                    }
                     return null;
                 }
             }
@@ -193,7 +203,9 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
     @Override
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
         this.iterator.seek(range, columnFamilies, inclusive);
-        log.trace("My source " + (this.iterator.hasTop() ? "does" : "does not") + " have a top.");
+        if (log.isTraceEnabled()) {
+            log.trace("My source " + (this.iterator.hasTop() ? "does" : "does not") + " have a top.");
+        }
         next();
     }
 
