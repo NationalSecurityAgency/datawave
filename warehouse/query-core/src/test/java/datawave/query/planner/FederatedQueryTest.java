@@ -210,8 +210,7 @@ public abstract class FederatedQueryTest {
     }
 
     private AccumuloClient createClient() throws Exception {
-        AccumuloClient client = new QueryTestTableHelper(getClass().toString(), log, RebuildingScannerTestHelper.TEARDOWN.NEVER,
-                        RebuildingScannerTestHelper.INTERRUPT.NEVER).client;
+        AccumuloClient client = new QueryTestTableHelper(getClass().toString(), log).client;
         FieldIndexHoleDataIngest.writeItAll(client, getRange(), eventConfigs);
         PrintUtility.printTable(client, auths, TableName.SHARD);
         PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
