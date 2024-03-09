@@ -42,6 +42,8 @@ import datawave.query.model.QueryModel;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.util.sortedset.ByteArrayComparator;
 import datawave.query.util.sortedset.FileByteDocumentSortedSet;
+import datawave.query.util.sortedset.FileKeySortedSet;
+import datawave.query.util.sortedset.FileKeyValueSortedSet;
 import datawave.query.util.sortedset.FileSortedSet;
 import datawave.query.util.sortedset.HdfsBackedSortedSet;
 import datawave.query.util.sortedset.RewritableSortedSetImpl;
@@ -59,7 +61,8 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
     private UniqueFields uniqueFields = new UniqueFields();
     private Multimap<String,String> modelMapping;
     private HdfsBackedSortedSet<Entry<byte[],Document>> set;
-    private Iterator<Entry<byte[],Document>> setIterator;
+    private HdfsBackedSortedSet<Entry<Key,Document>> returnSet;
+    private Iterator<Entry<Key,Document>> setIterator;
 
     /**
      * Length of time in milliseconds that a client will wait while results are collected. If a full page is not collected before the timeout, a blank page will
@@ -180,22 +183,20 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
                     synchronized (set) {
                         this.set.add(new UnmodifiableMapEntry(signature, keyDocumentEntry.getValue()));
                     }
-                    keyDocumentEntry = null;
-                } else if (isDuplicate(keyDocumentEntry.getValue())) {
-                    keyDocumentEntry = null;
-                } else {
+                    return null;
+                } else if (!isDuplicate(keyDocumentEntry.getValue())) {
                     return keyDocumentEntry;
                 }
             } catch (IOException ioe) {
                 log.error("Failed to convert document to bytes.  Returning document as unique.", ioe);
             }
-        }
 
-        long elapsedExecutionTimeForCurrentPage = System.currentTimeMillis() - this.queryExecutionForPageStartTime;
-        if (elapsedExecutionTimeForCurrentPage > this.queryExecutionForPageTimeout) {
-            Document intermediateResult = new Document();
-            intermediateResult.setIntermediateResult(true);
-            return Maps.immutableEntry(new Key(), intermediateResult);
+            long elapsedExecutionTimeForCurrentPage = System.currentTimeMillis() - this.queryExecutionForPageStartTime;
+            if (elapsedExecutionTimeForCurrentPage > this.queryExecutionForPageTimeout) {
+                Document intermediateResult = new Document();
+                intermediateResult.setIntermediateResult(true);
+                return Maps.immutableEntry(keyDocumentEntry.getKey(), intermediateResult);
+            }
         }
 
         return null;
@@ -211,16 +212,24 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
         if (set != null) {
             synchronized (set) {
                 if (setIterator == null) {
-                    setIterator = set.iterator();
+                    setupIterator();
                 }
                 if (setIterator.hasNext()) {
-                    Map.Entry<byte[],Document> next = setIterator.next();
-                    Document document = next.getValue();
-                    return new UnmodifiableMapEntry(getDocKey(document), document);
+                    return setIterator.next();
                 }
             }
         }
         return null;
+    }
+
+    /**
+     * This will run through the set and create a new set ordered by Key, Document
+     */
+    private void setupIterator() {
+        for (Map.Entry<byte[],Document> entry : set) {
+            returnSet.add(new UnmodifiableMapEntry<>(getDocKey(entry.getValue()), entry.getValue()));
+        }
+        setIterator = returnSet.iterator();
     }
 
     /**
@@ -452,12 +461,10 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
         private List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs;
         private String hdfsSiteConfigURLs;
         private String subDirectory;
-        private String uniqueSubPath;
         private int maxOpenFiles;
         private int numRetries;
         private long queryExecutionForPageTimeout;
         private FileSortedSet.PersistOptions persistOptions;
-        private FileSortedSet.FileSortedSetFactory<?> setFactory;
 
         public Builder() {
             keyComparator = new Comparator<>() {
@@ -478,9 +485,6 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
                 }
                 return comparison < 0;
             };
-
-            uniqueSubPath = "FinalMostRecentUniqueSet";
-            setFactory = new FileByteDocumentSortedSet.Factory();
         }
 
         /**
@@ -521,16 +525,6 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
             return this;
         }
 
-        public Builder withKeyComparator(Comparator<Entry<byte[],Document>> keyComparator) {
-            this.keyComparator = keyComparator;
-            return this;
-        }
-
-        public Builder withKeyValueComparator(RewritableSortedSetImpl.RewriteStrategy<Entry<byte[],Document>> keyValueComparator) {
-            this.keyValueComparator = keyValueComparator;
-            return this;
-        }
-
         public Builder withModel(QueryModel model) {
             this.model = model;
             return this;
@@ -556,11 +550,6 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
             return this;
         }
 
-        public Builder withUniqueSubPath(String uniqueSubPath) {
-            this.uniqueSubPath = uniqueSubPath;
-            return this;
-        }
-
         public Builder withMaxOpenFiles(int maxOpenFiles) {
             this.maxOpenFiles = maxOpenFiles;
             return this;
@@ -573,11 +562,6 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
 
         public Builder withPersistOptions(FileSortedSet.PersistOptions persistOptions) {
             this.persistOptions = persistOptions;
-            return this;
-        }
-
-        public Builder withSetFactory(FileSortedSet.FileSortedSetFactory<?> setFactory) {
-            this.setFactory = setFactory;
             return this;
         }
 
@@ -601,11 +585,21 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
                         .withRewriteStrategy(keyValueComparator)
                         .withBufferPersistThreshold(bufferPersistThreshold)
                         .withIvaratorCacheDirs(getIvaratorCacheDirs(ivaratorCacheDirConfigs, hdfsSiteConfigURLs, subDirectory))
-                        .withUniqueSubPath(uniqueSubPath)
+                        .withUniqueSubPath("byUniqueKey")
                         .withMaxOpenFiles(maxOpenFiles)
                         .withNumRetries(numRetries)
                         .withPersistOptions(persistOptions)
-                        .withSetFactory(setFactory)
+                        .withSetFactory(new FileByteDocumentSortedSet.Factory())
+                        .build();
+
+                transform.returnSet = (HdfsBackedSortedSet<Entry<Key,Document>>) HdfsBackedSortedSet.builder()
+                        .withBufferPersistThreshold(bufferPersistThreshold)
+                        .withIvaratorCacheDirs(getIvaratorCacheDirs(ivaratorCacheDirConfigs, hdfsSiteConfigURLs, subDirectory))
+                        .withUniqueSubPath("byDocKey")
+                        .withMaxOpenFiles(maxOpenFiles)
+                        .withNumRetries(numRetries)
+                        .withPersistOptions(persistOptions)
+                        .withSetFactory(new FileKeyValueSortedSet.Factory())
                         .build();
                 // @formatter:on
             }

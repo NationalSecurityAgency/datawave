@@ -19,6 +19,8 @@ import java.util.Random;
 import java.util.Set;
 import java.util.Spliterator;
 import java.util.Spliterators;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -34,7 +36,9 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.TreeMultimap;
+import com.google.common.primitives.Longs;
 
+import datawave.ingest.time.Now;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.DiacriticContent;
@@ -44,11 +48,14 @@ import datawave.query.attributes.TimingMetadata;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.attributes.UniqueGranularity;
 import datawave.query.function.LogTiming;
+import datawave.query.iterator.profile.FinalDocumentTrackingIterator;
 import datawave.query.jexl.JexlASTHelper;
 
 public class UniqueTransformTest {
 
     protected static final Random random = new Random(1000);
+    private static final AtomicLong counter = new AtomicLong();
+
     protected static final List<String> randomValues = new ArrayList<>();
 
     protected final List<Document> inputDocuments = new ArrayList<>();
@@ -296,7 +303,7 @@ public class UniqueTransformTest {
         List<Document> input = new ArrayList<>();
         List<Document> expected = new ArrayList<>();
 
-        String MARKER_STRING = "\u2735FinalDocument\u2735";
+        String MARKER_STRING = FinalDocumentTrackingIterator.MARKER_TEXT.toString();
         TimingMetadata timingMetadata = new TimingMetadata();
         timingMetadata.setNextCount(5l);
 
@@ -542,8 +549,8 @@ public class UniqueTransformTest {
         return new InputDocumentBuilder("", 0);
     }
 
-    protected InputDocumentBuilder givenInputDocument(String docKey) {
-        return new InputDocumentBuilder(docKey, 0);
+    protected InputDocumentBuilder givenInputDocument(String cq) {
+        return new InputDocumentBuilder(cq, 0);
     }
 
     protected InputDocumentBuilder givenInputDocument(long ts) {
@@ -562,13 +569,17 @@ public class UniqueTransformTest {
 
         private final Document document;
 
-        InputDocumentBuilder(String docKey, long ts) {
-            Key key = new Key("shardid", "datatype\u0000uid", docKey, ts);
+        InputDocumentBuilder(String cq, long ts) {
+            Key key = new Key("shardid", "datatype\u0000" + getUid(), cq, ts);
             this.document = new Document(key, true);
             inputDocuments.add(document);
             this.document.getMetadata().set(key);
             Attribute<?> docKeyAttributes = new DocumentKey(key, true);
             this.document.put(Document.DOCKEY_FIELD_NAME, docKeyAttributes);
+        }
+
+        String getUid() {
+            return UUID.nameUUIDFromBytes(Longs.toByteArray(counter.incrementAndGet())).toString();
         }
 
         @SuppressWarnings({"UnusedReturnValue", "SameParameterValue"})

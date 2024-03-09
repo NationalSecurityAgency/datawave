@@ -48,6 +48,7 @@ public class UniqueTransformMostRecentTest extends UniqueTransformTest {
             // @formatter:off
             return new UniqueTransform.Builder()
                     .withUniqueFields(uniqueFields)
+                    .withQueryExecutionForPageTimeout(Long.MAX_VALUE)
                     .withBufferPersistThreshold(logic.getUniqueCacheBufferSize())
                     .withIvaratorCacheDirConfigs(logic.getIvaratorCacheDirConfigs())
                     .withHdfsSiteConfigURLs(logic.getHdfsSiteConfigURLs())
