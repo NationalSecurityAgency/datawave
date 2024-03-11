@@ -1,5 +1,7 @@
 package datawave.query.tables.edge;
 
+import static datawave.query.jexl.JexlASTHelper.jexlFeatures;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
@@ -348,7 +350,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         Parser parser = new Parser(new StringProvider(";"));
         ASTJexlScript script;
         try {
-            script = parser.parse(null, new JexlFeatures(), queryString, null);
+            script = parser.parse(null, jexlFeatures(), queryString, null);
         } catch (Exception e) {
             throw new IllegalArgumentException("Invalid jexl supplied. " + e.getMessage());
         }
