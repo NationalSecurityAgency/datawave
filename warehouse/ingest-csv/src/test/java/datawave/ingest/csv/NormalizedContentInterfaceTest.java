@@ -1,16 +1,10 @@
 package datawave.ingest.csv;
 
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Multimaps;
-import datawave.ingest.csv.mr.input.CSVRecordReader;
-import datawave.ingest.data.Type;
-import datawave.ingest.data.TypeRegistry;
-import datawave.ingest.data.config.DataTypeHelper;
-import datawave.ingest.data.config.NormalizedContentInterface;
-import datawave.ingest.data.config.NormalizedFieldAndValue;
-import datawave.ingest.data.config.ingest.BaseIngestHelper;
-import datawave.ingest.data.config.ingest.IngestHelperInterface;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
@@ -23,10 +17,18 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Multimaps;
+
+import datawave.ingest.csv.mr.input.CSVRecordReader;
+import datawave.ingest.data.Type;
+import datawave.ingest.data.TypeRegistry;
+import datawave.ingest.data.config.DataTypeHelper;
+import datawave.ingest.data.config.NormalizedContentInterface;
+import datawave.ingest.data.config.NormalizedFieldAndValue;
+import datawave.ingest.data.config.ingest.BaseIngestHelper;
+import datawave.ingest.data.config.ingest.IngestHelperInterface;
 
 public class NormalizedContentInterfaceTest {
     private static final Logger log = LoggerFactory.getLogger(NormalizedContentInterfaceTest.class);
