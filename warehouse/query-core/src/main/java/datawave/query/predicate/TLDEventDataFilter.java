@@ -17,9 +17,13 @@ import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableComparator;
 
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
 import datawave.query.Constants;
+import datawave.query.function.LimitFields;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor.ExpressionFilter;
 import datawave.query.tld.TLD;
@@ -57,7 +61,7 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
     /**
      * track count limits per field, _ANYFIELD_ implies a constraint on all fields
      */
-    private final Map<String,Integer> limitFieldsMap;
+    private final Multimap<Integer,String> limitFieldsMap;
 
     /**
      * if _ANYFIELD_ appears in the limitFieldsMap this will be set to that value or -1 if not configured
@@ -68,7 +72,7 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
 
     public TLDEventDataFilter(ASTJexlScript script, Set<String> queryFields, Map<String,ExpressionFilter> expressionFilters, Set<String> includedFields,
                     Set<String> excludedFields, long maxFieldsBeforeSeek, long maxKeysBeforeSeek) {
-        this(script, queryFields, expressionFilters, includedFields, excludedFields, maxFieldsBeforeSeek, maxKeysBeforeSeek, Collections.emptyMap(), null,
+        this(script, queryFields, expressionFilters, includedFields, excludedFields, maxFieldsBeforeSeek, maxKeysBeforeSeek, HashMultimap.create(), null,
                         Collections.emptySet());
     }
 
@@ -102,18 +106,20 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
      *            a set of non-event fields
      */
     public TLDEventDataFilter(ASTJexlScript script, Set<String> queryFields, Map<String,ExpressionFilter> filters, Set<String> includedFields,
-                    Set<String> excludedFields, long maxFieldsBeforeSeek, long maxKeysBeforeSeek, Map<String,Integer> limitFieldsMap, String limitFieldsField,
-                    Set<String> nonEventFields) {
+                    Set<String> excludedFields, long maxFieldsBeforeSeek, long maxKeysBeforeSeek, Multimap<Integer,String> limitFieldsMap,
+                    String limitFieldsField, Set<String> nonEventFields) {
         super(filters);
 
         this.maxFieldsBeforeSeek = maxFieldsBeforeSeek;
         this.maxKeysBeforeSeek = maxKeysBeforeSeek;
-        this.limitFieldsMap = Collections.unmodifiableMap(limitFieldsMap);
+        this.limitFieldsMap = limitFieldsMap;
         this.limitFieldsField = limitFieldsField;
         this.nonEventFields = nonEventFields;
 
         // set the anyFieldLimit once if specified otherwise set to -1
-        anyFieldLimit = limitFieldsMap.get(Constants.ANY_FIELD) != null ? limitFieldsMap.get(Constants.ANY_FIELD) : -1;
+        anyFieldLimit = limitFieldsMap.containsValue(Constants.ANY_FIELD)
+                        ? datawave.query.function.LimitFields.reverseGetFieldKey(limitFieldsMap, Constants.ANY_FIELD)
+                        : -1;
 
         setQueryFields(queryFields, script);
         updateLists(includedFields, excludedFields);
@@ -802,7 +808,8 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
      * @return true if the field limit has been reached for this field, false otherwise
      */
     private boolean isFieldLimit(String field) {
-        return ((anyFieldLimit != -1 && fieldCount > anyFieldLimit) || (limitFieldsMap.get(field) != null && fieldCount > limitFieldsMap.get(field)))
+        return ((anyFieldLimit != -1 && fieldCount > anyFieldLimit)
+                        || (limitFieldsMap.containsValue(field) && fieldCount > LimitFields.reverseGetFieldKey(limitFieldsMap, field)))
                         && !queryFields.contains(field);
     }
 

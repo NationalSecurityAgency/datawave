@@ -27,6 +27,8 @@ import org.apache.commons.jexl3.parser.ParseException;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.google.common.collect.HashMultimap;
+
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.query.Constants;
 import datawave.query.attributes.AttributeFactory;
@@ -332,8 +334,7 @@ public class TermFrequencyIndexIteratorTest {
 
         AttributeFactory attributeFactory = new AttributeFactory(typeMetadata);
         Map<String,ExpressionFilter> expressionFilters = getExpressionFilters(script, attributeFactory);
-        filter = new TLDEventDataFilter(script, Collections.singleton("FOO"), expressionFilters, null, null, -1, -1, Collections.emptyMap(), null,
-                        fieldsToKeep);
+        filter = new TLDEventDataFilter(script, Collections.singleton("FOO"), expressionFilters, null, null, -1, -1, HashMultimap.create(), null, fieldsToKeep);
 
         aggregator = new TLDTermFrequencyAggregator(fieldsToKeep, filter, -1);
         TermFrequencyIndexIterator iterator = new TermFrequencyIndexIterator(r, source, null, typeMetadata, true, aggregator);
