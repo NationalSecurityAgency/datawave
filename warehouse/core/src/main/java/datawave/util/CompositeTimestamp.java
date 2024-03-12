@@ -13,14 +13,21 @@ public class CompositeTimestamp {
     private static final long maxDiff = (-1L << (allocationForEventDate + 1)) >>> (allocationForEventDate + 1);
     public static final long MILLIS_PER_DAY = 1000 * 60 * 60 * 24;
 
-    public static final long MIN_EVENT_DATE = (0 - mask);
+    public static final long INVALID_TIMESTAMP = Long.MIN_VALUE;
+    public static final long MIN_EVENT_DATE = (0 - mask); // also equivalent to Long.MIN_VALUE + 1
     public static final long MAX_EVENT_DATE = mask;
 
     public static boolean isCompositeTimestamp(long ts) {
+        if (ts == INVALID_TIMESTAMP) {
+            throw new IllegalArgumentException("Invalid timestamp");
+        }
         return (Math.abs(ts) >>> allocationForEventDate > 0);
     }
 
     public static long getEventDate(long ts) {
+        if (ts == INVALID_TIMESTAMP) {
+            throw new IllegalArgumentException("Invalid timestamp");
+        }
         long eventTs = (Math.abs(ts) & mask);
         if (ts < 0) {
             eventTs = 0 - eventTs;
@@ -29,6 +36,9 @@ public class CompositeTimestamp {
     }
 
     public static long getAgeOffDate(long ts) {
+        if (ts == INVALID_TIMESTAMP) {
+            throw new IllegalArgumentException("Invalid timestamp");
+        }
         long baseTs = Math.abs(ts);
         long eventTs = (baseTs & mask);
         long ageOffDiff = ((baseTs >>> allocationForEventDate) * MILLIS_PER_DAY);

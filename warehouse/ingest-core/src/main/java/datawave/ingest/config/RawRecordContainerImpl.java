@@ -65,7 +65,7 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
     /**
      * This is the composite date for this event
      */
-    private long timestamp = Long.MIN_VALUE;
+    private long timestamp = CompositeTimestamp.INVALID_TIMESTAMP;
     private Type dataType = null;
     private UID uid = null;
     private UIDBuilder<UID> uidBuilder;
@@ -719,7 +719,7 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
      * Resets state for re-use.
      */
     public void clear() {
-        timestamp = Long.MIN_VALUE;
+        timestamp = CompositeTimestamp.INVALID_TIMESTAMP;
         dataType = null;
         uid = null;
         errors.clear();

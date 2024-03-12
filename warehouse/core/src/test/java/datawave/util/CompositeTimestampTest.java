@@ -208,4 +208,26 @@ public class CompositeTimestampTest {
         Assert.assertEquals(event, age);
     }
 
+    @Test
+    public void testInvalid() {
+        try {
+            CompositeTimestamp.getEventDate(CompositeTimestamp.INVALID_TIMESTAMP);
+            Assert.fail("Invalid timestamp not detected");
+        } catch (IllegalArgumentException e) {
+
+        }
+        try {
+            CompositeTimestamp.getAgeOffDate(CompositeTimestamp.INVALID_TIMESTAMP);
+            Assert.fail("Invalid timestamp not detected");
+        } catch (IllegalArgumentException e) {
+
+        }
+        try {
+            CompositeTimestamp.isCompositeTimestamp(CompositeTimestamp.INVALID_TIMESTAMP);
+            Assert.fail("Invalid timestamp not detected");
+        } catch (IllegalArgumentException e) {
+
+        }
+    }
+
 }

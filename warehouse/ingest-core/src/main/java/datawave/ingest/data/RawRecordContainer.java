@@ -47,7 +47,7 @@ public interface RawRecordContainer {
      * @return the date for this raw record
      */
     default long getDate() {
-        return (getTimestamp() == Long.MIN_VALUE ? Long.MIN_VALUE : CompositeTimestamp.getEventDate(getTimestamp()));
+        return CompositeTimestamp.getEventDate(getTimestamp());
     }
 
     /**
@@ -56,7 +56,7 @@ public interface RawRecordContainer {
      * @return the ageoff date for this raw record
      */
     default long getAgeOffDate() {
-        return (getTimestamp() == Long.MIN_VALUE ? Long.MIN_VALUE : CompositeTimestamp.getAgeOffDate(getTimestamp()));
+        return CompositeTimestamp.getAgeOffDate(getTimestamp());
     }
 
     /**
@@ -65,6 +65,13 @@ public interface RawRecordContainer {
      * @return
      */
     long getTimestamp();
+
+    /**
+     * Determine if the timestamp has been set. This avoids having to compare the timestamp with an arbitrary value
+     */
+    default boolean isTimestampSet() {
+        return getTimestamp() != CompositeTimestamp.INVALID_TIMESTAMP;
+    }
 
     /**
      * This is synonomis with setTimestamp(date, date)
