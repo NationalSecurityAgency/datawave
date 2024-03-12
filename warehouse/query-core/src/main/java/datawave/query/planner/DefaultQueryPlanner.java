@@ -406,8 +406,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
     protected CloseableIterable<QueryData> process(ScannerFactory scannerFactory, MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper,
                     ShardQueryConfiguration config, String query, Query settings) throws DatawaveQueryException {
-        final QueryData queryData = new QueryData();
-
         settingFuture = null;
 
         IteratorSetting cfg = null;
@@ -417,7 +415,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         }
 
         try {
-            config.setQueryTree(updateQueryTree(scannerFactory, metadataHelper, dateIndexHelper, config, query, queryData, settings));
+            config.setQueryTree(updateQueryTree(scannerFactory, metadataHelper, dateIndexHelper, config, query, settings));
         } catch (StackOverflowError e) {
             if (log.isTraceEnabled()) {
                 log.trace("Stack trace for overflow " + e);
@@ -466,8 +464,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         stopwatch.stop();
         stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Construct IteratorSettings");
 
-        queryData.setQuery(newQueryString);
-
         if (!config.isGeneratePlanOnly()) {
             while (null == cfg) {
                 cfg = getQueryIterator(metadataHelper, config, settings, "", false, false);
@@ -475,8 +471,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             configureIterator(config, cfg, newQueryString, isFullTable);
         }
 
-        // Load the IteratorSettings into the QueryData instance
-        queryData.setSettings(Lists.newArrayList(cfg));
+        final QueryData queryData = new QueryData().withQuery(newQueryString).withSettings(Lists.newArrayList(cfg));
 
         stopwatch.stop();
 
@@ -511,7 +506,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                     .setRanges(queryRanges.first())
                     .setMaxRanges(maxRangesPerQueryPiece())
                     .setSettings(settings)
-                    .setMaxRangeWaitMillis(maxRangeWaitMillis)
+                    .setMaxRangeWaitMillis(getMaxRangeWaitMillis())
                     .setQueryPlanComparators(queryPlanComparators)
                     .setNumRangesToBuffer(config.getNumRangesToBuffer())
                     .setRangeBufferTimeoutMillis(config.getRangeBufferTimeoutMillis())
@@ -704,7 +699,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     }
 
     protected ASTJexlScript updateQueryTree(ScannerFactory scannerFactory, MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper,
-                    ShardQueryConfiguration config, String query, QueryData queryData, Query settings) throws DatawaveQueryException {
+                    ShardQueryConfiguration config, String query, Query settings) throws DatawaveQueryException {
         final QueryStopwatch timers = config.getTimers();
 
         TraceStopwatch stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Parse query");
@@ -822,7 +817,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             }
         }
 
-        config.setQueryTree(processTree(config.getQueryTree(), config, settings, metadataHelper, scannerFactory, queryData, timers, queryModel));
+        config.setQueryTree(processTree(config.getQueryTree(), config, settings, metadataHelper, scannerFactory, timers, queryModel));
 
         // ExpandCompositeTerms was here
 
@@ -850,7 +845,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     }
 
     protected ASTJexlScript processTree(final ASTJexlScript originalQueryTree, ShardQueryConfiguration config, Query settings, MetadataHelper metadataHelper,
-                    ScannerFactory scannerFactory, QueryData queryData, QueryStopwatch timers, QueryModel queryModel) throws DatawaveQueryException {
+                    ScannerFactory scannerFactory, QueryStopwatch timers, QueryModel queryModel) throws DatawaveQueryException {
         config.setQueryTree(originalQueryTree);
 
         TraceStopwatch stopwatch = null;
@@ -1900,7 +1895,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             throw new DatawaveFatalQueryException(qe);
         }
 
-        return (QueryModelVisitor.applyModel(config.getQueryTree(), queryModel, allFields, config.getNoExpansionFields(), config.getLenientFields(),
+        return (QueryModelVisitor.applyModel(script, queryModel, allFields, config.getNoExpansionFields(), config.getLenientFields(),
                         config.getStrictFields()));
     }
 
@@ -2576,13 +2571,19 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         // Truncate and bump the time on the endKey
         String endKey = config.getShardDateFormatter().format(getEndDateForIndexLookup(config.getEndDate()));
 
-        Range r = new Range(startKey, true, endKey, false);
+        Range range = new Range(startKey, true, endKey, false);
 
         if (log.isTraceEnabled()) {
-            log.trace("Produced range is " + r);
+            log.trace("Produced range is " + range);
         }
 
-        return new CloseableListIterable<>(Collections.singletonList(new QueryPlan(queryTree, r)));
+        //  @formatter:off
+        QueryPlan queryPlan = new QueryPlan()
+                        .withQueryTree(queryTree)
+                        .withRanges(Collections.singleton(range));
+        //  @formatter:on
+
+        return new CloseableListIterable<>(Collections.singletonList(queryPlan));
     }
 
     /**
