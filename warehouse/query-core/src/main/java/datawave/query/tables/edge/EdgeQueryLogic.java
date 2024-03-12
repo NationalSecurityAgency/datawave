@@ -346,7 +346,6 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
      */
     protected QueryData configureRanges(String queryString) throws ParseException {
         queryString = EdgeQueryLogic.fixQueryString(queryString);
-        QueryData qData = new QueryData();
         Parser parser = new Parser(new StringProvider(";"));
         ASTJexlScript script;
         try {
@@ -362,8 +361,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         visitationContext = (VisitationContext) script.jjtAccept(visitor, null);
 
         Set<Range> ranges = visitationContext.getRanges();
-        qData.setRanges(ranges);
-        return qData;
+        return new QueryData().withRanges(ranges);
     }
 
     /**

@@ -6,6 +6,7 @@ import static datawave.query.iterator.QueryOptions.RANGES;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.apache.accumulo.core.client.IteratorSetting;
@@ -32,8 +33,11 @@ public class QueryPlan {
     protected JexlNode queryTree = null;
     protected String queryTreeString = null;
     protected Collection<Range> ranges = null;
-    protected Collection<String> columnFamilies = Lists.newArrayList();
-    protected List<IteratorSetting> settings = Lists.newArrayList();
+    protected Collection<String> columnFamilies = new ArrayList<>();
+    protected List<IteratorSetting> settings = new ArrayList<>();
+    protected Map<String,Long> termCounts;
+    protected Map<String,Long> fieldCounts;
+
     protected boolean rebuildHashCode = true;
     protected int hashCode;
 
@@ -95,72 +99,10 @@ public class QueryPlan {
         this.ranges = new ArrayList<>(other.ranges);
         this.columnFamilies = new ArrayList<>(other.columnFamilies);
         this.settings = new ArrayList<>(other.settings);
-        resetHashCode();
-    }
-
-    /**
-     * Builder style method for setting the query tree
-     *
-     * @param node
-     *            the root node of a query tree
-     * @return this QueryPlan
-     */
-    public QueryPlan withQueryTree(JexlNode node) {
-        this.queryTree = node;
-        resetHashCode();
-        return this;
-    }
-
-    /**
-     * Builder style method for setting the query tree string
-     *
-     * @param queryString
-     *            the query string
-     * @return this QueryPlan
-     */
-    public QueryPlan withQueryString(String queryString) {
-        this.queryTreeString = queryString;
-        resetHashCode();
-        return this;
-    }
-
-    /**
-     * Builder style method for setting the ranges
-     *
-     * @param ranges
-     *            a collection of ranges
-     * @return this QueryPlan
-     */
-    public QueryPlan withRanges(Collection<Range> ranges) {
-        this.ranges = ranges;
-        resetHashCode();
-        return this;
-    }
-
-    /**
-     * Builder style method for setting the column families
-     *
-     * @param columnFamilies
-     *            a collection of column families
-     * @return this QueryPlan
-     */
-    public QueryPlan withColumnFamilies(Collection<String> columnFamilies) {
-        this.columnFamilies = columnFamilies;
-        resetHashCode();
-        return this;
-    }
-
-    /**
-     * Builder style method for setting the IteratorSetting
-     *
-     * @param settings
-     *            a collection of IteratorSetting
-     * @return this QueryPlan
-     */
-    public QueryPlan withSettings(List<IteratorSetting> settings) {
-        this.settings = settings;
-        resetHashCode();
-        return this;
+        this.fieldCounts = other.fieldCounts;
+        this.termCounts = other.termCounts;
+        this.hashCode = other.hashCode;
+        this.rebuildHashCode = other.rebuildHashCode;
     }
 
     /**
@@ -242,10 +184,97 @@ public class QueryPlan {
         this(queryTree, rangeIter, settings, null);
     }
 
+    public QueryPlan(JexlNode queryTree, Collection<Range> ranges) {
+        this.queryTree = queryTree;
+        this.ranges = ranges;
+        this.columnFamilies = new ArrayList<>();
+        this.settings = new ArrayList<>();
+        resetHashCode();
+    }
+
+    // builder methods
+
+    /**
+     * Builder style method for setting the query tree
+     *
+     * @param node
+     *            the root node of a query tree
+     * @return this QueryPlan
+     */
+    public QueryPlan withQueryTree(JexlNode node) {
+        this.queryTree = node;
+        resetHashCode();
+        return this;
+    }
+
+    /**
+     * Builder style method for setting the query tree string
+     *
+     * @param queryString
+     *            the query string
+     * @return this QueryPlan
+     */
+    public QueryPlan withQueryString(String queryString) {
+        this.queryTreeString = queryString;
+        resetHashCode();
+        return this;
+    }
+
+    /**
+     * Builder style method for setting the ranges
+     *
+     * @param ranges
+     *            a collection of ranges
+     * @return this QueryPlan
+     */
+    public QueryPlan withRanges(Collection<Range> ranges) {
+        this.ranges = ranges;
+        resetHashCode();
+        return this;
+    }
+
+    /**
+     * Builder style method for setting the column families
+     *
+     * @param columnFamilies
+     *            a collection of column families
+     * @return this QueryPlan
+     */
+    public QueryPlan withColumnFamilies(Collection<String> columnFamilies) {
+        this.columnFamilies = columnFamilies;
+        resetHashCode();
+        return this;
+    }
+
+    /**
+     * Builder style method for setting the IteratorSetting
+     *
+     * @param settings
+     *            a collection of IteratorSetting
+     * @return this QueryPlan
+     */
+    public QueryPlan withSettings(List<IteratorSetting> settings) {
+        this.settings = settings;
+        resetHashCode();
+        return this;
+    }
+
+    public QueryPlan withFieldCounts(Map<String,Long> fieldCounts) {
+        this.fieldCounts = fieldCounts;
+        resetHashCode();
+        return this;
+    }
+
+    public QueryPlan withTermCounts(Map<String,Long> termCounts) {
+        this.termCounts = termCounts;
+        resetHashCode();
+        return this;
+    }
+
     public JexlNode getQueryTree() {
         if (null == queryTree) {
-            Preconditions.checkNotNull(queryTreeString);
             try {
+                Preconditions.checkNotNull(queryTreeString);
                 queryTree = JexlASTHelper.parseAndFlattenJexlQuery(queryTreeString);
                 resetHashCode();
             } catch (ParseException e) {
@@ -323,10 +352,23 @@ public class QueryPlan {
         return settings;
     }
 
+    public Map<String,Long> getFieldCounts() {
+        return this.fieldCounts;
+    }
+
+    public Map<String,Long> getTermCounts() {
+        return this.termCounts;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof QueryPlan) {
             QueryPlan other = (QueryPlan) obj;
+
+            if (hashCode == other.hashCode) {
+                return true; // short circuit on precomputed hashcode
+            }
+
             //  @formatter:off
             return new EqualsBuilder()
                             .append(queryTree, other.queryTree)
