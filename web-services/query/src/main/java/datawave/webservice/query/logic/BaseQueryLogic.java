@@ -197,7 +197,7 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     }
 
     @Override
-    public final QueryLogicTransformer getEnrichedTransformer(Query settings) throws QueryException {
+    public final QueryLogicTransformer getEnrichedTransformer(Query settings) {
         QueryLogicTransformer transformer = this.getTransformer(settings);
         if (responseEnricherBuilder != null) {
             //@formatter:off
@@ -214,7 +214,7 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     }
 
     @Override
-    public TransformIterator getTransformIterator(Query settings) throws QueryException {
+    public TransformIterator getTransformIterator(Query settings) {
         return new DatawaveTransformIterator(this.iterator(), this.getTransformer(settings));
     }
 

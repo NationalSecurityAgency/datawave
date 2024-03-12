@@ -588,9 +588,13 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     }
 
     @Override
-    public QueryLogicTransformer getTransformer(Query settings) throws QueryException {
+    public QueryLogicTransformer getTransformer(Query settings) {
         if (this.transformerInstance != null) {
-            addConfigBasedTransformers();
+            try {
+                addConfigBasedTransformers();
+            } catch (QueryException e) {
+                throw new DatawaveFatalQueryException("Unable to configure transformers", e);
+            }
             return this.transformerInstance;
         }
 
@@ -611,7 +615,11 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         transformer.setPrimaryToSecondaryFieldMap(primaryToSecondaryFieldMap);
         transformer.setQm(queryModel);
         this.transformerInstance = transformer;
-        addConfigBasedTransformers();
+        try {
+            addConfigBasedTransformers();
+        } catch (QueryException e) {
+            throw new DatawaveFatalQueryException("Unable to configure transformers", e);
+        }
 
         return this.transformerInstance;
     }

@@ -413,7 +413,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
      * Method used to check that the configuration is correct and to get the response class by QueryExecutorBean.listQueryLogic()
      */
     @Override
-    public synchronized QueryLogicTransformer getTransformer(Query settings) throws QueryException {
+    public synchronized QueryLogicTransformer getTransformer(Query settings) {
         ResultsPage emptyList = new ResultsPage();
         Class<? extends BaseResponse> responseClass = null;
         List<QueryLogicTransformer> delegates = new ArrayList<>();

@@ -90,11 +90,8 @@ public class BulkResultsFileOutputMapper extends ApplicationContextAwareMapper<K
         String logicName = context.getConfiguration().get(QUERY_LOGIC_NAME);
 
         QueryLogic<?> logic = (QueryLogic<?>) super.applicationContext.getBean(logicName);
-        try {
-            t = logic.getEnrichedTransformer(query);
-        } catch (QueryException qe) {
-            throw new IOException("Unable to create transformer", qe);
-        }
+        t = logic.getEnrichedTransformer(query);
+
         Assert.notNull(logic.getMarkingFunctions());
         Assert.notNull(logic.getResponseObjectFactory());
         this.format = SerializationFormat.valueOf(context.getConfiguration().get(RESULT_SERIALIZATION_FORMAT));

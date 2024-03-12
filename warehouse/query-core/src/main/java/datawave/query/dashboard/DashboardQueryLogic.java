@@ -47,7 +47,7 @@ public class DashboardQueryLogic extends ShardQueryLogic implements QueryLogicTr
 
     @Override
     @SuppressWarnings("unchecked")
-    public TransformIterator getTransformIterator(Query settings) throws QueryException {
+    public TransformIterator getTransformIterator(Query settings) {
         TransformIterator origIter = super.getTransformIterator(settings);
         DashboardSummary summary = new DashboardSummary(settings.getEndDate());
         while (origIter.hasNext()) {

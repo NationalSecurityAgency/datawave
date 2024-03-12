@@ -49,11 +49,7 @@ public class BulkResultsTableOutputMapper extends ApplicationContextAwareMapper<
                             e);
         }
         QueryLogic<?> logic = (QueryLogic<?>) super.applicationContext.getBean(QUERY_LOGIC_NAME);
-        try {
-            t = logic.getEnrichedTransformer(query);
-        } catch (QueryException qe) {
-            throw new IOException("Unable to create transformer", qe);
-        }
+        t = logic.getEnrichedTransformer(query);
 
         this.tableName = new Text(context.getConfiguration().get(TABLE_NAME));
         this.format = SerializationFormat.valueOf(context.getConfiguration().get(BulkResultsFileOutputMapper.RESULT_SERIALIZATION_FORMAT));

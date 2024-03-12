@@ -101,9 +101,9 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      *            query settings
      * @return Transformer that will convert Key,Value to a Result object
      */
-    QueryLogicTransformer getTransformer(Query settings) throws QueryException;
+    QueryLogicTransformer getTransformer(Query settings);
 
-    QueryLogicTransformer getEnrichedTransformer(Query settings) throws QueryException;
+    QueryLogicTransformer getEnrichedTransformer(Query settings);
 
     default String getResponseClass(Query query) throws QueryException {
         try {
