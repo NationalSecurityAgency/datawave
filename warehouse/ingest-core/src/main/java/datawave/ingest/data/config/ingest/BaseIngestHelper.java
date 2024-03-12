@@ -3,7 +3,6 @@ package datawave.ingest.data.config.ingest;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -26,16 +25,13 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import com.google.common.collect.TreeMultimap;
 
-import datawave.data.normalizer.DateNormalizer;
 import datawave.data.normalizer.NormalizationException;
 import datawave.data.type.NoOpType;
 import datawave.data.type.OneToManyNormalizerType;
 import datawave.ingest.config.IngestConfiguration;
 import datawave.ingest.config.IngestConfigurationFactory;
-import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
 import datawave.ingest.data.TypeRegistry;
-import datawave.ingest.data.WithAgeOff;
 import datawave.ingest.data.config.DataTypeHelperImpl;
 import datawave.ingest.data.config.FieldConfigHelper;
 import datawave.ingest.data.config.MarkingsHelper;
@@ -50,7 +46,7 @@ import datawave.webservice.common.logging.ThreadConfigurableLogger;
  * Specialization of the Helper type that validates the configuration for Ingest purposes. These helper classes also have the logic to parse the field names and
  * fields values from the datatypes that they represent.
  */
-public abstract class BaseIngestHelper extends AbstractIngestHelper implements CompositeIngest, VirtualIngest, AgeOffIngest {
+public abstract class BaseIngestHelper extends AbstractIngestHelper implements CompositeIngest, VirtualIngest {
 
     /**
      * Configuration parameter to specify that data should be marked for delete on ingest.
@@ -143,8 +139,6 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
 
     public static final String FIELD_CONFIG_FILE = ".data.category.field.config.file";
 
-    public static final String AGEOFFDATE_FIELD = ".data.field.ageoff";
-
     private static final Logger log = ThreadConfigurableLogger.getLogger(BaseIngestHelper.class);
 
     private Multimap<String,datawave.data.type.Type<?>> typeFieldMap = null;
@@ -178,36 +172,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     private CompositeIngest compositeIngest;
     private VirtualIngest virtualIngest;
 
-    protected String ageoffDateField = null;
-
     protected boolean useMostPreciseFieldTypeRegex = false;
-
-    @Override
-    public long getAgeOffDate(RawRecordContainer record, Multimap<String,NormalizedContentInterface> fields) {
-        // if the record already provides the ageoff, then return its value
-        if (record instanceof WithAgeOff) {
-            return ((WithAgeOff) record).getAgeOffDate();
-        }
-        // otherwise lets try and pull it from one of the fields
-        long ageOffDate = record.getDate();
-        if (ageoffDateField != null && !ageoffDateField.isBlank()) {
-            Collection<NormalizedContentInterface> values = fields.get(ageoffDateField);
-            if (values != null && !values.isEmpty()) {
-                // take the largest date
-                for (NormalizedContentInterface value : values) {
-                    try {
-                        Date d = new DateNormalizer().denormalize(value.getIndexedFieldValue());
-                        if (d.getTime() > ageOffDate) {
-                            ageOffDate = d.getTime();
-                        }
-                    } catch (IllegalArgumentException e) {
-                        log.error("Unable to parse " + value.getEventFieldName() + " into a date", e);
-                    }
-                }
-            }
-        }
-        return ageOffDate;
-    }
 
     public enum FailurePolicy {
         DROP, LEAVE, FAIL
@@ -257,8 +222,6 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
         this.typeCompiledPatternMap = null;
 
         this.useMostPreciseFieldTypeRegex = config.getBoolean(USE_MOST_PRECISE_FIELD_TYPE_REGEX, false);
-
-        this.ageoffDateField = config.get(this.getType().typeName() + AGEOFFDATE_FIELD, null);
 
         this.getVirtualIngest().setup(config);
 

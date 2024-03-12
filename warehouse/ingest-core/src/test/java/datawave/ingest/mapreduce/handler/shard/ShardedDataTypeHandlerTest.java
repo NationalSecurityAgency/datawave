@@ -4,9 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.nio.charset.StandardCharsets;
-import java.text.SimpleDateFormat;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.accumulo.core.data.Value;
@@ -22,18 +20,14 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
 import datawave.data.hash.HashUID;
-import datawave.data.normalizer.DateNormalizer;
 import datawave.ingest.config.RawRecordContainerImpl;
 import datawave.ingest.data.RawRecordContainer;
-import datawave.ingest.data.RawRecordContainerDelegate;
 import datawave.ingest.data.Type;
 import datawave.ingest.data.TypeRegistry;
-import datawave.ingest.data.WithAgeOff;
 import datawave.ingest.data.config.DataTypeHelper;
 import datawave.ingest.data.config.MaskedFieldHelper;
 import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.NormalizedFieldAndValue;
-import datawave.ingest.data.config.ingest.BaseIngestHelper;
 import datawave.ingest.data.config.ingest.ContentBaseIngestHelper;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.protobuf.Uid;
@@ -107,7 +101,6 @@ public class ShardedDataTypeHandlerTest {
         conf.set(DataTypeHelper.Properties.DATA_NAME, DATA_TYPE_NAME);
         conf.set(TypeRegistry.INGEST_DATA_TYPES, DATA_TYPE_NAME);
         conf.set(DATA_TYPE_NAME + TypeRegistry.INGEST_HELPER, INGEST_HELPER_CLASS);
-        conf.set(DATA_TYPE_NAME + BaseIngestHelper.AGEOFFDATE_FIELD, "AGEOFF");
         conf.set(ShardedDataTypeHandler.METADATA_TABLE_NAME, TableName.METADATA);
         conf.set(ShardedDataTypeHandler.NUM_SHARDS, Integer.toString(NUM_SHARDS));
         conf.set(ShardedDataTypeHandler.SHARDED_TNAMES, TableName.SHARD + "," + TableName.ERROR_SHARD);
@@ -287,15 +280,19 @@ public class ShardedDataTypeHandlerTest {
         record.setRawData(entry.getBytes(StandardCharsets.UTF_8));
         record.setId(HashUID.builder().newId(record.getRawData()));
         record.setVisibility(new ColumnVisibility("PUBLIC"));
-        record.setDate(System.currentTimeMillis());
+        long expectedEventDate = System.currentTimeMillis();
+        record.setDate(expectedEventDate);
         Multimap<String,NormalizedContentInterface> fields = ingestHelper.getEventFields(record);
+
+        assertEquals(expectedEventDate, record.getDate());
+        assertEquals(expectedEventDate, record.getAgeOffDate());
+        assertEquals(expectedEventDate, record.getTimestamp());
 
         Multimap<BulkIngestKey,Value> data = handler.processBulk(null, record, fields, null);
 
-        long expectedTimestamp = CompositeTimestamp.getCompositeTimeStamp(record.getDate(), record.getDate());
-        long tsToDay = (record.getDate() / MS_PER_DAY) * MS_PER_DAY;
-        long ageOffToDay = (record.getDate() / MS_PER_DAY) * MS_PER_DAY;
-        long expectedIndexTimestamp = CompositeTimestamp.getCompositeTimeStamp(tsToDay, ageOffToDay);
+        long expectedTimestamp = CompositeTimestamp.getCompositeTimeStamp(expectedEventDate, expectedEventDate);
+        long tsToDay = (expectedEventDate / MS_PER_DAY) * MS_PER_DAY;
+        long expectedIndexTimestamp = CompositeTimestamp.getCompositeTimeStamp(tsToDay, tsToDay);
         for (BulkIngestKey key : data.keySet()) {
             if (key.getTableName().toString().toUpperCase().contains("INDEX")) {
                 assertEquals(key.toString(), expectedIndexTimestamp, key.getKey().getTimestamp());
@@ -304,30 +301,18 @@ public class ShardedDataTypeHandlerTest {
             }
         }
 
-        // now add an ageoff date by implementing WithAgeOff
-        long ageOffDate = record.getDate() + (MS_PER_DAY * 11);
-        data = handler.processBulk(null, new RawRecordContainerWithAgeOff(record, ageOffDate), fields, null);
+        // now get an ageoff date (must be a multiple of MS_PER_DAY past the event date)
+        long expectedAgeOffDate = expectedEventDate + (MS_PER_DAY * 11);
+        expectedTimestamp = CompositeTimestamp.getCompositeTimeStamp(expectedEventDate, expectedAgeOffDate);
+        record.setTimestamp(expectedTimestamp);
 
-        expectedTimestamp = CompositeTimestamp.getCompositeTimeStamp(record.getDate(), ageOffDate);
-        ageOffToDay = (ageOffDate / MS_PER_DAY) * MS_PER_DAY;
-        expectedIndexTimestamp = CompositeTimestamp.getCompositeTimeStamp(tsToDay, ageOffToDay);
-        for (BulkIngestKey key : data.keySet()) {
-            if (key.getTableName().toString().toUpperCase().contains("INDEX")) {
-                assertEquals(key.toString(), expectedIndexTimestamp, key.getKey().getTimestamp());
-            } else {
-                assertEquals(key.toString(), expectedTimestamp, key.getKey().getTimestamp());
-            }
-        }
+        assertEquals(expectedEventDate, record.getDate());
+        assertEquals(expectedAgeOffDate, record.getAgeOffDate());
+        assertEquals(expectedTimestamp, record.getTimestamp());
 
-        // now add an ageoff date by configuring a field
-        ageOffDate = record.getDate() + (MS_PER_DAY * 42);
-        String ageOffDateString = new SimpleDateFormat(DateNormalizer.ISO_8601_FORMAT_STRING).format(new Date(ageOffDate));
-        NormalizedContentInterface ageOffField = new NormalizedFieldAndValue("AGEOFF", ageOffDateString);
-        fields.put("AGEOFF", ageOffField);
         data = handler.processBulk(null, record, fields, null);
 
-        expectedTimestamp = CompositeTimestamp.getCompositeTimeStamp(record.getDate(), ageOffDate);
-        ageOffToDay = (ageOffDate / MS_PER_DAY) * MS_PER_DAY;
+        long ageOffToDay = (expectedAgeOffDate / MS_PER_DAY) * MS_PER_DAY;
         expectedIndexTimestamp = CompositeTimestamp.getCompositeTimeStamp(tsToDay, ageOffToDay);
         for (BulkIngestKey key : data.keySet()) {
             if (key.getTableName().toString().toUpperCase().contains("INDEX")) {
@@ -335,20 +320,6 @@ public class ShardedDataTypeHandlerTest {
             } else {
                 assertEquals(key.toString(), expectedTimestamp, key.getKey().getTimestamp());
             }
-        }
-    }
-
-    public static class RawRecordContainerWithAgeOff extends RawRecordContainerDelegate implements RawRecordContainer, WithAgeOff {
-        private final long ageoff;
-
-        public RawRecordContainerWithAgeOff(RawRecordContainer delegate, long ageoff) {
-            super(delegate);
-            this.ageoff = ageoff;
-        }
-
-        @Override
-        public long getAgeOffDate() {
-            return ageoff;
         }
     }
 

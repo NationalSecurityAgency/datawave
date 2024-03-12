@@ -200,4 +200,12 @@ public class CompositeTimestampTest {
 
     }
 
+    @Test
+    public void testMin() {
+        long ts = CompositeTimestamp.getCompositeTimeStamp(CompositeTimestamp.MIN_EVENT_DATE, CompositeTimestamp.MIN_EVENT_DATE);
+        long event = CompositeTimestamp.getEventDate(ts);
+        long age = CompositeTimestamp.getEventDate(ts);
+        Assert.assertEquals(event, age);
+    }
+
 }

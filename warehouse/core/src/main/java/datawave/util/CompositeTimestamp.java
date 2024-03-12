@@ -13,6 +13,9 @@ public class CompositeTimestamp {
     private static final long maxDiff = (-1L << (allocationForEventDate + 1)) >>> (allocationForEventDate + 1);
     public static final long MILLIS_PER_DAY = 1000 * 60 * 60 * 24;
 
+    public static final long MIN_EVENT_DATE = (0 - mask);
+    public static final long MAX_EVENT_DATE = mask;
+
     public static boolean isCompositeTimestamp(long ts) {
         return (Math.abs(ts) >>> allocationForEventDate > 0);
     }
