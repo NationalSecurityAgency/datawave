@@ -98,8 +98,7 @@ public class ShardedDataTypeHandlerFailurePolicyTest {
         RawRecordContainer event = reader.getEvent();
         assertEquals("Do expected and actual timestamps equal?", SECOND_TS, event.getDate());
 
-        processEvent(abstractHandler, event, expectedKeys.get("shardKeys"), expectedKeys.get("shardIndexKeys"),
-                        expectedKeys.get("shardReverseIndexKeys"));
+        processEvent(abstractHandler, event, expectedKeys.get("shardKeys"), expectedKeys.get("shardIndexKeys"), expectedKeys.get("shardReverseIndexKeys"));
 
         processThirdRow();
 
@@ -143,8 +142,7 @@ public class ShardedDataTypeHandlerFailurePolicyTest {
         RawRecordContainer event = reader.getEvent();
         assertEquals("Do expected and actual timestamps equal?", SECOND_TS, event.getDate());
 
-        processEvent(abstractHandler, event, expectedKeys.get("shardKeys"), expectedKeys.get("shardIndexKeys"),
-                        expectedKeys.get("shardReverseIndexKeys"));
+        processEvent(abstractHandler, event, expectedKeys.get("shardKeys"), expectedKeys.get("shardIndexKeys"), expectedKeys.get("shardReverseIndexKeys"));
 
         processThirdRow();
 
@@ -186,8 +184,7 @@ public class ShardedDataTypeHandlerFailurePolicyTest {
         RawRecordContainer event = reader.getEvent();
         assertEquals("Do expected and actual timestamps equal?", SECOND_TS, event.getDate());
 
-        processEvent(abstractHandler, event, expectedKeys.get("shardKeys"), expectedKeys.get("shardIndexKeys"),
-                        expectedKeys.get("shardReverseIndexKeys"));
+        processEvent(abstractHandler, event, expectedKeys.get("shardKeys"), expectedKeys.get("shardIndexKeys"), expectedKeys.get("shardReverseIndexKeys"));
 
         processThirdRow();
 
