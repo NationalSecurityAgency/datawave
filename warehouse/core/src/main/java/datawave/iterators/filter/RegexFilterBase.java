@@ -13,6 +13,7 @@ import org.apache.log4j.Logger;
 import datawave.iterators.filter.ageoff.AgeOffPeriod;
 import datawave.iterators.filter.ageoff.AppliedRule;
 import datawave.iterators.filter.ageoff.FilterOptions;
+import datawave.util.CompositeTimestamp;
 
 /**
  * This class provides an abstract base class to be extended to filter based on matching a REGEX to the {@code String} object that represents some portion of a
@@ -69,7 +70,7 @@ public abstract class RegexFilterBase extends AppliedRule {
             String keyField = getKeyField(k, v);
             Matcher matcher = pattern.matcher(keyField);
             if (matcher.find()) {
-                long timeStamp = k.getTimestamp();
+                long timeStamp = CompositeTimestamp.getAgeOffDate(k.getTimestamp());
                 dtFlag = timeStamp > period.getCutOffMilliseconds();
                 if (log.isTraceEnabled()) {
                     log.trace("timeStamp = " + timeStamp);
