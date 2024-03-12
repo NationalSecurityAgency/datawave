@@ -1,5 +1,6 @@
 package datawave.ingest.csv;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
@@ -28,7 +29,7 @@ import datawave.ingest.data.config.ingest.BaseIngestHelper;
 import datawave.ingest.mapreduce.handler.DataTypeHandler;
 import datawave.ingest.mapreduce.handler.shard.AbstractColumnBasedHandler;
 
-public class ShardedDataTypeHandlerTest {
+public class ShardedDataTypeHandlerFailurePolicyTest {
     private static final String CONFIG_FILE = "config/ingest/norm-content-interface.xml";
     private static final String CSV_FILE = "/input/my-nci.csv";
 
@@ -36,7 +37,9 @@ public class ShardedDataTypeHandlerTest {
     private final Text VIS = new Text("PRIVATE");
     private final String NB = "\u0000";
 
-    private final long STAMP = 1709244703000L;
+    private final long FIRST_TS = 1709226107000L;
+    private final long SECOND_TS = 1709244703000L;
+    private final long THIRD_TS = 1709312484000L;
     private final String UID = "-3bjkmz.-h4x7jj.eny3am";
     private final Text ROW = new Text("20240229_9");
     private final String DT_UID = NB + DATA_NAME + NB + UID;
@@ -74,13 +77,13 @@ public class ShardedDataTypeHandlerTest {
         // a failed normalization field
 
         // event keys
-        shardKeys.add(new Key(ROW, C_FAM, new Text("DATE_FIELD\u000020240229 17:11:43"), VIS, STAMP));
-        shardKeys.add(new Key(ROW, C_FAM, new Text("FAILED_NORMALIZATION_FIELD\u0000DATE_FIELD"), VIS, STAMP));
+        shardKeys.add(new Key(ROW, C_FAM, new Text("DATE_FIELD\u000020240229 17:11:43"), VIS, SECOND_TS));
+        shardKeys.add(new Key(ROW, C_FAM, new Text("FAILED_NORMALIZATION_FIELD\u0000DATE_FIELD"), VIS, SECOND_TS));
         // index keys
-        shardKeys.add(new Key(ROW, new Text("fi\u0000DATE_FIELD"), new Text("20240229 17:11:43" + DT_UID), VIS, STAMP));
-        shardKeys.add(new Key(ROW, new Text("fi\u0000FAILED_NORMALIZATION_FIELD"), new Text("DATE_FIELD" + DT_UID), VIS, STAMP));
+        shardKeys.add(new Key(ROW, new Text("fi\u0000DATE_FIELD"), new Text("20240229 17:11:43" + DT_UID), VIS, SECOND_TS));
+        shardKeys.add(new Key(ROW, new Text("fi\u0000FAILED_NORMALIZATION_FIELD"), new Text("DATE_FIELD" + DT_UID), VIS, SECOND_TS));
         // shardIndex keys
-        long stamp = STAMP - (STAMP % 86400000);
+        long stamp = SECOND_TS - (SECOND_TS % 86400000);
         shardIndexKeys.add(new Key(new Text("20240229 17:11:43"), new Text("DATE_FIELD"), SHARD_ID_DT, VIS, stamp));
         shardIndexKeys.add(new Key(new Text("DATE_FIELD"), new Text("FAILED_NORMALIZATION_FIELD"), SHARD_ID_DT, VIS, stamp));
         // reverse shardIndex keys
@@ -92,7 +95,10 @@ public class ShardedDataTypeHandlerTest {
         expectedKeys.get("shardReverseIndexKeys").addAll(shardReverseIndexKeys);
 
         assertTrue("Can you read the second row of records?", reader.nextKeyValue());
-        processEvent(abstractHandler, reader.getEvent(), expectedKeys.get("shardKeys"), expectedKeys.get("shardIndexKeys"),
+        RawRecordContainer event = reader.getEvent();
+        assertEquals("Do expected and actual timestamps equal?", SECOND_TS, event.getDate());
+
+        processEvent(abstractHandler, event, expectedKeys.get("shardKeys"), expectedKeys.get("shardIndexKeys"),
                         expectedKeys.get("shardReverseIndexKeys"));
 
         processThirdRow();
@@ -119,12 +125,12 @@ public class ShardedDataTypeHandlerTest {
         // a failed normalization field
 
         // event keys
-        shardKeys.add(new Key(ROW, C_FAM, new Text("DATE_FIELD\u000020240229 17:11:43"), VIS, STAMP));
-        shardKeys.add(new Key(ROW, C_FAM, new Text("FAILED_NORMALIZATION_FIELD\u0000DATE_FIELD"), VIS, STAMP));
+        shardKeys.add(new Key(ROW, C_FAM, new Text("DATE_FIELD\u000020240229 17:11:43"), VIS, SECOND_TS));
+        shardKeys.add(new Key(ROW, C_FAM, new Text("FAILED_NORMALIZATION_FIELD\u0000DATE_FIELD"), VIS, SECOND_TS));
         // index keys
-        shardKeys.add(new Key(ROW, new Text("fi\u0000FAILED_NORMALIZATION_FIELD"), new Text("DATE_FIELD" + DT_UID), VIS, STAMP));
+        shardKeys.add(new Key(ROW, new Text("fi\u0000FAILED_NORMALIZATION_FIELD"), new Text("DATE_FIELD" + DT_UID), VIS, SECOND_TS));
         // shardIndex keys
-        long stamp = STAMP - (STAMP % 86400000);
+        long stamp = SECOND_TS - (SECOND_TS % 86400000);
         shardIndexKeys.add(new Key(new Text("DATE_FIELD"), new Text("FAILED_NORMALIZATION_FIELD"), SHARD_ID_DT, VIS, stamp));
         // reverse shardIndex keys
         shardReverseIndexKeys.add(new Key(new Text("DLEIF_ETAD"), new Text("FAILED_NORMALIZATION_FIELD"), SHARD_ID_DT, VIS, stamp));
@@ -134,7 +140,10 @@ public class ShardedDataTypeHandlerTest {
         expectedKeys.get("shardReverseIndexKeys").addAll(shardReverseIndexKeys);
 
         assertTrue("Can you read the second row of records?", reader.nextKeyValue());
-        processEvent(abstractHandler, reader.getEvent(), expectedKeys.get("shardKeys"), expectedKeys.get("shardIndexKeys"),
+        RawRecordContainer event = reader.getEvent();
+        assertEquals("Do expected and actual timestamps equal?", SECOND_TS, event.getDate());
+
+        processEvent(abstractHandler, event, expectedKeys.get("shardKeys"), expectedKeys.get("shardIndexKeys"),
                         expectedKeys.get("shardReverseIndexKeys"));
 
         processThirdRow();
@@ -160,11 +169,11 @@ public class ShardedDataTypeHandlerTest {
         // caller (EventMapper) fail the event
 
         // event keys
-        shardKeys.add(new Key(ROW, C_FAM, new Text("DATE_FIELD\u000020240229 17:11:43"), VIS, STAMP));
+        shardKeys.add(new Key(ROW, C_FAM, new Text("DATE_FIELD\u000020240229 17:11:43"), VIS, SECOND_TS));
         // index keys
-        shardKeys.add(new Key(ROW, new Text("fi\u0000DATE_FIELD"), new Text("20240229 17:11:43" + DT_UID), VIS, STAMP));
+        shardKeys.add(new Key(ROW, new Text("fi\u0000DATE_FIELD"), new Text("20240229 17:11:43" + DT_UID), VIS, SECOND_TS));
         // shardIndex keys
-        long stamp = STAMP - (STAMP % 86400000);
+        long stamp = SECOND_TS - (SECOND_TS % 86400000);
         shardIndexKeys.add(new Key(new Text("20240229 17:11:43"), new Text("DATE_FIELD"), SHARD_ID_DT, VIS, stamp));
         // reverse shardIndex keys
         shardReverseIndexKeys.add(new Key(new Text("34:11:71 92204202"), new Text("DATE_FIELD"), SHARD_ID_DT, VIS, stamp));
@@ -174,7 +183,10 @@ public class ShardedDataTypeHandlerTest {
         expectedKeys.get("shardReverseIndexKeys").addAll(shardReverseIndexKeys);
 
         assertTrue("Can you read the second row of records?", reader.nextKeyValue());
-        processEvent(abstractHandler, reader.getEvent(), expectedKeys.get("shardKeys"), expectedKeys.get("shardIndexKeys"),
+        RawRecordContainer event = reader.getEvent();
+        assertEquals("Do expected and actual timestamps equal?", SECOND_TS, event.getDate());
+
+        processEvent(abstractHandler, event, expectedKeys.get("shardKeys"), expectedKeys.get("shardIndexKeys"),
                         expectedKeys.get("shardReverseIndexKeys"));
 
         processThirdRow();
@@ -197,14 +209,22 @@ public class ShardedDataTypeHandlerTest {
 
     private void processFirstRow() throws IOException {
         HashMap<String,Set<Key>> expectedKeys = getExpectedKeysFromFirstRow();
+
         assertTrue("Can you read the first row of records?", reader.nextKeyValue());
+        RawRecordContainer event = reader.getEvent();
+        assertEquals("Do event timestamps equal?", FIRST_TS, event.getDate());
+
         processEvent(abstractHandler, reader.getEvent(), expectedKeys.get("shardKeys"), expectedKeys.get("shardIndexKeys"),
                         expectedKeys.get("shardReverseIndexKeys"));
     }
 
     private void processThirdRow() throws IOException {
         HashMap<String,Set<Key>> expectedKeys = getExpectedKeysFromThirdRow();
+
         assertTrue("Can you read the third row of records?", reader.nextKeyValue());
+        RawRecordContainer event = reader.getEvent();
+        assertEquals("Do event timestamps equal?", THIRD_TS, event.getDate());
+
         processEvent(abstractHandler, reader.getEvent(), expectedKeys.get("shardKeys"), expectedKeys.get("shardIndexKeys"),
                         expectedKeys.get("shardReverseIndexKeys"));
     }
@@ -216,7 +236,6 @@ public class ShardedDataTypeHandlerTest {
         Set<Key> shardIndexKeys = new HashSet<>();
         Set<Key> shardReverseIndexKeys = new HashSet<>();
 
-        long stamp = 1709226107000L;
         String uid = "7cabjd.k6nbu6.-go983l";
         Text row = new Text("20240229_6");
 
@@ -224,19 +243,19 @@ public class ShardedDataTypeHandlerTest {
         Text cFam = new Text(DATA_NAME + NB + uid);
         Text shardIdDt = new Text(row + NB + DATA_NAME);
         // event keys
-        shardKeys.add(new Key(row, cFam, new Text("HEADER_DATE\u00002024-02-29 12:01:47"), VIS, stamp));
-        shardKeys.add(new Key(row, cFam, new Text("HEADER_ID\u0000header_one"), VIS, stamp));
-        shardKeys.add(new Key(row, cFam, new Text("HEADER_NUMBER\u0000111"), VIS, stamp));
-        shardKeys.add(new Key(row, cFam, new Text("HEADER_TEXT_1\u0000text one-one"), VIS, stamp));
-        shardKeys.add(new Key(row, cFam, new Text("HEADER_TEXT_2\u0000text two-one"), VIS, stamp));
-        shardKeys.add(new Key(row, cFam, new Text("DATE_FIELD\u00002024-02-29 12:01:47"), VIS, stamp));
+        shardKeys.add(new Key(row, cFam, new Text("HEADER_DATE\u00002024-02-29 12:01:47"), VIS, FIRST_TS));
+        shardKeys.add(new Key(row, cFam, new Text("HEADER_ID\u0000header_one"), VIS, FIRST_TS));
+        shardKeys.add(new Key(row, cFam, new Text("HEADER_NUMBER\u0000111"), VIS, FIRST_TS));
+        shardKeys.add(new Key(row, cFam, new Text("HEADER_TEXT_1\u0000text one-one"), VIS, FIRST_TS));
+        shardKeys.add(new Key(row, cFam, new Text("HEADER_TEXT_2\u0000text two-one"), VIS, FIRST_TS));
+        shardKeys.add(new Key(row, cFam, new Text("DATE_FIELD\u00002024-02-29 12:01:47"), VIS, FIRST_TS));
         // index keys
-        shardKeys.add(new Key(row, new Text("fi\u0000HEADER_NUMBER"), new Text("+cE1.11" + dtUid), VIS, stamp));
-        shardKeys.add(new Key(row, new Text("fi\u0000HEADER_DATE"), new Text("2024-02-29T12:01:47.000Z" + dtUid), VIS, stamp));
-        shardKeys.add(new Key(row, new Text("fi\u0000HEADER_ID"), new Text("header_one" + dtUid), VIS, stamp));
-        shardKeys.add(new Key(row, new Text("fi\u0000DATE_FIELD"), new Text("2024-02-29T12:01:47.000Z" + dtUid), VIS, stamp));
+        shardKeys.add(new Key(row, new Text("fi\u0000HEADER_NUMBER"), new Text("+cE1.11" + dtUid), VIS, FIRST_TS));
+        shardKeys.add(new Key(row, new Text("fi\u0000HEADER_DATE"), new Text("2024-02-29T12:01:47.000Z" + dtUid), VIS, FIRST_TS));
+        shardKeys.add(new Key(row, new Text("fi\u0000HEADER_ID"), new Text("header_one" + dtUid), VIS, FIRST_TS));
+        shardKeys.add(new Key(row, new Text("fi\u0000DATE_FIELD"), new Text("2024-02-29T12:01:47.000Z" + dtUid), VIS, FIRST_TS));
         // shardIndex keys
-        stamp = stamp - (stamp % 86400000);
+        long stamp = FIRST_TS - (FIRST_TS % 86400000);
         shardIndexKeys.add(new Key(new Text("+cE1.11"), new Text("HEADER_NUMBER"), shardIdDt, VIS, stamp));
         shardIndexKeys.add(new Key(new Text("2024-02-29T12:01:47.000Z"), new Text("HEADER_DATE"), shardIdDt, VIS, stamp));
         shardIndexKeys.add(new Key(new Text("header_one"), new Text("HEADER_ID"), shardIdDt, VIS, stamp));
@@ -262,17 +281,17 @@ public class ShardedDataTypeHandlerTest {
         Set<Key> shardReverseIndexKeys = new HashSet<>();
 
         // event keys
-        shardKeys.add(new Key(ROW, C_FAM, new Text("HEADER_DATE\u00002024-02-29 17:11:43"), VIS, STAMP));
-        shardKeys.add(new Key(ROW, C_FAM, new Text("HEADER_ID\u0000header_two"), VIS, STAMP));
-        shardKeys.add(new Key(ROW, C_FAM, new Text("HEADER_NUMBER\u0000222"), VIS, STAMP));
-        shardKeys.add(new Key(ROW, C_FAM, new Text("HEADER_TEXT_1\u0000text one-two"), VIS, STAMP));
-        shardKeys.add(new Key(ROW, C_FAM, new Text("HEADER_TEXT_2\u0000text two-two"), VIS, STAMP));
+        shardKeys.add(new Key(ROW, C_FAM, new Text("HEADER_DATE\u00002024-02-29 17:11:43"), VIS, SECOND_TS));
+        shardKeys.add(new Key(ROW, C_FAM, new Text("HEADER_ID\u0000header_two"), VIS, SECOND_TS));
+        shardKeys.add(new Key(ROW, C_FAM, new Text("HEADER_NUMBER\u0000222"), VIS, SECOND_TS));
+        shardKeys.add(new Key(ROW, C_FAM, new Text("HEADER_TEXT_1\u0000text one-two"), VIS, SECOND_TS));
+        shardKeys.add(new Key(ROW, C_FAM, new Text("HEADER_TEXT_2\u0000text two-two"), VIS, SECOND_TS));
         // index keys
-        shardKeys.add(new Key(ROW, new Text("fi\u0000HEADER_NUMBER"), new Text("+cE2.22" + DT_UID), VIS, STAMP));
-        shardKeys.add(new Key(ROW, new Text("fi\u0000HEADER_DATE"), new Text("2024-02-29T17:11:43.000Z" + DT_UID), VIS, STAMP));
-        shardKeys.add(new Key(ROW, new Text("fi\u0000HEADER_ID"), new Text("header_two" + DT_UID), VIS, STAMP));
+        shardKeys.add(new Key(ROW, new Text("fi\u0000HEADER_NUMBER"), new Text("+cE2.22" + DT_UID), VIS, SECOND_TS));
+        shardKeys.add(new Key(ROW, new Text("fi\u0000HEADER_DATE"), new Text("2024-02-29T17:11:43.000Z" + DT_UID), VIS, SECOND_TS));
+        shardKeys.add(new Key(ROW, new Text("fi\u0000HEADER_ID"), new Text("header_two" + DT_UID), VIS, SECOND_TS));
         // shardIndex keys
-        long stamp = STAMP - (STAMP % 86400000);
+        long stamp = SECOND_TS - (SECOND_TS % 86400000);
         shardIndexKeys.add(new Key(new Text("+cE2.22"), new Text("HEADER_NUMBER"), SHARD_ID_DT, VIS, stamp));
         shardIndexKeys.add(new Key(new Text("2024-02-29T17:11:43.000Z"), new Text("HEADER_DATE"), SHARD_ID_DT, VIS, stamp));
         shardIndexKeys.add(new Key(new Text("header_two"), new Text("HEADER_ID"), SHARD_ID_DT, VIS, stamp));
@@ -295,7 +314,6 @@ public class ShardedDataTypeHandlerTest {
         Set<Key> shardIndexKeys = new HashSet<>();
         Set<Key> shardReverseIndexKeys = new HashSet<>();
 
-        long stamp = 1709312484000L;
         String uid = "2a6d40.b56k6m.pmeuml";
         Text row = new Text("20240301_2");
 
@@ -303,19 +321,19 @@ public class ShardedDataTypeHandlerTest {
         Text cFam = new Text(DATA_NAME + NB + uid);
         Text shardIdDt = new Text(row + NB + DATA_NAME);
         // event keys
-        shardKeys.add(new Key(row, cFam, new Text("HEADER_DATE\u00002024-03-01 12:01:24"), VIS, stamp));
-        shardKeys.add(new Key(row, cFam, new Text("HEADER_ID\u0000header_three"), VIS, stamp));
-        shardKeys.add(new Key(row, cFam, new Text("HEADER_NUMBER\u0000333"), VIS, stamp));
-        shardKeys.add(new Key(row, cFam, new Text("HEADER_TEXT_1\u0000text one-three"), VIS, stamp));
-        shardKeys.add(new Key(row, cFam, new Text("HEADER_TEXT_2\u0000text two-three"), VIS, stamp));
-        shardKeys.add(new Key(row, cFam, new Text("DATE_FIELD\u00002024-03-01 12:01:24"), VIS, stamp));
+        shardKeys.add(new Key(row, cFam, new Text("HEADER_DATE\u00002024-03-01 12:01:24"), VIS, THIRD_TS));
+        shardKeys.add(new Key(row, cFam, new Text("HEADER_ID\u0000header_three"), VIS, THIRD_TS));
+        shardKeys.add(new Key(row, cFam, new Text("HEADER_NUMBER\u0000333"), VIS, THIRD_TS));
+        shardKeys.add(new Key(row, cFam, new Text("HEADER_TEXT_1\u0000text one-three"), VIS, THIRD_TS));
+        shardKeys.add(new Key(row, cFam, new Text("HEADER_TEXT_2\u0000text two-three"), VIS, THIRD_TS));
+        shardKeys.add(new Key(row, cFam, new Text("DATE_FIELD\u00002024-03-01 12:01:24"), VIS, THIRD_TS));
         // index keys
-        shardKeys.add(new Key(row, new Text("fi\u0000HEADER_NUMBER"), new Text("+cE3.33" + dtUid), VIS, stamp));
-        shardKeys.add(new Key(row, new Text("fi\u0000HEADER_DATE"), new Text("2024-03-01T12:01:24.000Z" + dtUid), VIS, stamp));
-        shardKeys.add(new Key(row, new Text("fi\u0000HEADER_ID"), new Text("header_three" + dtUid), VIS, stamp));
-        shardKeys.add(new Key(row, new Text("fi\u0000DATE_FIELD"), new Text("2024-03-01T12:01:24.000Z" + dtUid), VIS, stamp));
+        shardKeys.add(new Key(row, new Text("fi\u0000HEADER_NUMBER"), new Text("+cE3.33" + dtUid), VIS, THIRD_TS));
+        shardKeys.add(new Key(row, new Text("fi\u0000HEADER_DATE"), new Text("2024-03-01T12:01:24.000Z" + dtUid), VIS, THIRD_TS));
+        shardKeys.add(new Key(row, new Text("fi\u0000HEADER_ID"), new Text("header_three" + dtUid), VIS, THIRD_TS));
+        shardKeys.add(new Key(row, new Text("fi\u0000DATE_FIELD"), new Text("2024-03-01T12:01:24.000Z" + dtUid), VIS, THIRD_TS));
         // shardIndex keys
-        stamp = stamp - (stamp % 86400000);
+        long stamp = THIRD_TS - (THIRD_TS % 86400000);
         shardIndexKeys.add(new Key(new Text("+cE3.33"), new Text("HEADER_NUMBER"), shardIdDt, VIS, stamp));
         shardIndexKeys.add(new Key(new Text("2024-03-01T12:01:24.000Z"), new Text("HEADER_DATE"), shardIdDt, VIS, stamp));
         shardIndexKeys.add(new Key(new Text("header_three"), new Text("HEADER_ID"), shardIdDt, VIS, stamp));
