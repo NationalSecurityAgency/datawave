@@ -79,8 +79,7 @@ public class LuceneQueryTest extends AbstractFunctionalQuery {
         String country = "italy";
         String query = CityField.CITY.name() + ":\"" + city + "\"" + AND_OP + "#EVALUATION_ONLY('" + CityField.COUNTRY.name() + ":\"" + country + "\"')";
 
-        String expect = CityField.CITY.name() + EQ_OP + "'" + city + "'" + AND_OP + "((_Eval_ = true) && " + CityField.COUNTRY.name() + EQ_OP + "'" + country
-                        + "')";
+        String expect = "((plan = 1) && (CITY == 'rome' && ((_Eval_ = true) && (COUNTRY == 'italy')))) || ((plan = 2) && (CITY == 'rome' && ((_Eval_ = true) && (COUNTRY == 'italy'))))";
         String plan = getPlan(query, true, true);
         assertPlanEquals(expect, plan);
 

@@ -2,6 +2,7 @@ package datawave.query.planner;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
@@ -23,7 +24,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.log4j.Logger;
 
 import datawave.query.CloseableIterable;
-import datawave.query.config.FederatedQueryConfiguration;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.DatawaveQueryException;
@@ -60,9 +60,9 @@ public class FederatedQueryPlanner extends QueryPlanner {
     private final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd");
     private final Calendar calendar = Calendar.getInstance();
 
+    private final List<String> plans = new ArrayList<>();
     private DefaultQueryPlanner queryPlanner;
     private String plannedScript;
-    private FederatedQueryConfiguration federatedConfig;
 
     /**
      * Return a new {@link FederatedQueryPlanner} instance with a new {@link DefaultQueryPlanner} inner query planner instance.
@@ -279,7 +279,7 @@ public class FederatedQueryPlanner extends QueryPlanner {
 
         // Reset the planned script.
         this.plannedScript = null;
-        this.federatedConfig = new FederatedQueryConfiguration();
+        this.plans.clear();
 
         log.debug("Federated query: " + query);
 
@@ -327,13 +327,12 @@ public class FederatedQueryPlanner extends QueryPlanner {
             try {
                 CloseableIterable<QueryData> queryData = subPlan.process(configCopy, query, settings, scannerFactory);
                 results.addIterable(queryData);
-                federatedConfig.addConfig(configCopy);
-                federatedConfig.addQueryData(queryData);
             } catch (DatawaveQueryException | DatawaveFatalQueryException e) {
                 log.warn("Exception occured when processing sub-plan [" + totalProcessed + " of " + dateRanges.size() + "] against date range (" + subStartDate
                                 + "-" + subEndDate + ")", e);
                 // If an exception occurs, ensure that the planned script and the original config are updated before allowing the exception to bubble up.
-                this.plannedScript = subPlan.getPlannedScript();
+                plans.add(subPlan.plannedScript);
+                updatePlannedScript();
 
                 // Copy over any changes in the sub-config to the original config. This will not affect the start date, end date, or timers of the original
                 // config.
@@ -345,11 +344,8 @@ public class FederatedQueryPlanner extends QueryPlanner {
                 log.debug("Query string for config of sub-plan " + totalProcessed + ": " + configCopy.getQueryString());
             }
 
-            // Update the planned script to reflect that of the first query.
-            if (this.plannedScript == null) {
-                this.plannedScript = subPlan.getPlannedScript();
-                log.debug("Federated planned script updated to " + subPlan.getPlannedScript());
-            }
+            // Ensure we're tracking the planned script from the sub-plan.
+            plans.add(subPlan.getPlannedScript());
 
             // Track the first sub-config.
             if (firstConfigCopy == null) {
@@ -360,6 +356,9 @@ public class FederatedQueryPlanner extends QueryPlanner {
             stopwatch.stop();
             totalProcessed++;
         }
+
+        // Update the planned script.
+        updatePlannedScript();
 
         // Copy over any changes from the first sub-config to the original config. This will not affect the start date, end date, or timers of the original
         // config.
@@ -381,6 +380,25 @@ public class FederatedQueryPlanner extends QueryPlanner {
 
         // Return the collected results.
         return results;
+    }
+
+    private void updatePlannedScript() {
+        if (plans.isEmpty()) {
+            this.plannedScript = "";
+        } else if (this.plans.size() == 1) {
+            this.plannedScript = this.plans.get(0);
+        } else {
+            int lastIndex = plans.size() - 1;
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < plans.size(); i++) {
+                sb.append("((plan = ").append((i + 1)).append(") && (").append(plans.get(i)).append("))");
+                if (i != lastIndex) {
+                    sb.append(" || ");
+                }
+            }
+            this.plannedScript = sb.toString();
+        }
+
     }
 
     /**
