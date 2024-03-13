@@ -7,7 +7,6 @@ import static org.junit.Assert.fail;
 import java.io.IOException;
 import java.util.Collections;
 
-import datawave.query.planner.DefaultQueryPlanner;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.log4j.Logger;
 import org.junit.Before;
@@ -22,6 +21,7 @@ import datawave.query.exceptions.DoNotPerformOptimizedQueryException;
 import datawave.query.exceptions.FullTableScansDisallowedException;
 import datawave.query.exceptions.InvalidQueryException;
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.CitiesDataType;

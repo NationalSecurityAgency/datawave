@@ -14,7 +14,6 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
-import datawave.query.config.FederatedQueryConfiguration;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -24,6 +23,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.log4j.Logger;
 
 import datawave.query.CloseableIterable;
+import datawave.query.config.FederatedQueryConfiguration;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.DatawaveQueryException;
@@ -63,7 +63,7 @@ public class FederatedQueryPlanner extends QueryPlanner {
     private DefaultQueryPlanner queryPlanner;
     private String plannedScript;
     private FederatedQueryConfiguration federatedConfig;
-    
+
     /**
      * Return a new {@link FederatedQueryPlanner} instance with a new {@link DefaultQueryPlanner} inner query planner instance.
      */
@@ -280,7 +280,7 @@ public class FederatedQueryPlanner extends QueryPlanner {
         // Reset the planned script.
         this.plannedScript = null;
         this.federatedConfig = new FederatedQueryConfiguration();
-        
+
         log.debug("Federated query: " + query);
 
         ShardQueryConfiguration originalConfig = (ShardQueryConfiguration) genericConfig;
@@ -288,11 +288,11 @@ public class FederatedQueryPlanner extends QueryPlanner {
 
         // Get the relevant date ranges.
         SortedSet<Pair<Date,Date>> dateRanges = getSubQueryDateRanges(originalConfig, query, scannerFactory);
-        
+
         if (log.isDebugEnabled()) {
             if (dateRanges.size() == 1) {
-                log.debug("One query will be executed over original date range " + dateFormat.format(originalConfig.getBeginDate()) + "-" + dateFormat.format(
-                                originalConfig.getEndDate()));
+                log.debug("One query will be executed over original date range " + dateFormat.format(originalConfig.getBeginDate()) + "-"
+                                + dateFormat.format(originalConfig.getEndDate()));
             } else {
                 StringBuilder sb = new StringBuilder();
                 Iterator<Pair<Date,Date>> it = dateRanges.iterator();
@@ -329,7 +329,7 @@ public class FederatedQueryPlanner extends QueryPlanner {
                 results.addIterable(queryData);
                 federatedConfig.addConfig(configCopy);
                 federatedConfig.addQueryData(queryData);
-            } catch (DatawaveQueryException|DatawaveFatalQueryException e) {
+            } catch (DatawaveQueryException | DatawaveFatalQueryException e) {
                 log.warn("Exception occured when processing sub-plan [" + totalProcessed + " of " + dateRanges.size() + "] against date range (" + subStartDate
                                 + "-" + subEndDate + ")", e);
                 // If an exception occurs, ensure that the planned script and the original config are updated before allowing the exception to bubble up.
@@ -364,32 +364,21 @@ public class FederatedQueryPlanner extends QueryPlanner {
         // Copy over any changes from the first sub-config to the original config. This will not affect the start date, end date, or timers of the original
         // config.
         copySubConfigPropertiesToOriginal(originalConfig, firstConfigCopy);
-    
+
         // Uncomment the following debug block to see what query strings and query datas resulted from the sub-queries. Note that this will result in an
         // exception being thrown down the line when iterator() is called again on the query data iterables, so this should be uncommented only for debugging
         // purposes.
         // Debug block start
-        /*log.debug("Federated query results:");
-        List<ShardQueryConfiguration> configs = federatedConfig.getConfigs();
-        List<CloseableIterable<QueryData>> queryDatas = federatedConfig.getQueryDatas();
-        for (int i = 0; i < totalProcessed; i++) {
-            ShardQueryConfiguration config = configs.get(i);
-            log.debug("Sub-query " + i + " over " + dateFormat.format(config.getBeginDate()) + "-" + dateFormat.format(config.getEndDate()));
-            log.debug("Query String: " + config.getQueryString());
-            Iterator<QueryData> iter = queryDatas.get(i).iterator();
-            int queryDataCount = 0;
-            if (iter.hasNext()) {
-                while (iter.hasNext()) {
-                    log.debug("Query Data " + queryDataCount + ": " + iter.next());
-                    queryDataCount++;
-                }
-            } else {
-                log.debug("Empty query data iterable returned");
-            }
-        }*/
+        /*
+         * log.debug("Federated query results:"); List<ShardQueryConfiguration> configs = federatedConfig.getConfigs(); List<CloseableIterable<QueryData>>
+         * queryDatas = federatedConfig.getQueryDatas(); for (int i = 0; i < totalProcessed; i++) { ShardQueryConfiguration config = configs.get(i);
+         * log.debug("Sub-query " + i + " over " + dateFormat.format(config.getBeginDate()) + "-" + dateFormat.format(config.getEndDate()));
+         * log.debug("Query String: " + config.getQueryString()); Iterator<QueryData> iter = queryDatas.get(i).iterator(); int queryDataCount = 0; if
+         * (iter.hasNext()) { while (iter.hasNext()) { log.debug("Query Data " + queryDataCount + ": " + iter.next()); queryDataCount++; } } else {
+         * log.debug("Empty query data iterable returned"); } }
+         */
         // Debug block end
-        
-    
+
         // Return the collected results.
         return results;
     }
