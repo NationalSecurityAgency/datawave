@@ -37,9 +37,9 @@ public class ShardedDataTypeHandlerFailurePolicyTest {
     private final Text VIS = new Text("PRIVATE");
     private final String NB = "\u0000";
 
-    private final long FIRST_TS = 1709226107000L;
-    private final long SECOND_TS = 1709244703000L;
-    private final long THIRD_TS = 1709312484000L;
+    private final long FIRST_TS = 1709208107000L;
+    private final long SECOND_TS = 1709226703000L;
+    private final long THIRD_TS = 1709294484000L;
     private final String UID = "-3bjkmz.-h4x7jj.eny3am";
     private final Text ROW = new Text("20240229_9");
     private final String DT_UID = NB + DATA_NAME + NB + UID;
