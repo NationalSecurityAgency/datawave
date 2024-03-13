@@ -301,10 +301,16 @@ datawave:
           metadataTableName: ${warehouse.tables.metadata.name}
           modelTableName: ${warehouse.tables.model.name}
           modelName: ${warehouse.defaults.edgeModelName}
-          queryThreads: 16
-          auditType: "NONE"
           maxResults: 25000
           maxWork: -1
+          queryThreads: 16
+          auditType: "NONE"
+          logicDescription: "Retrieve graph edges matching the search term(s)"
+          querySyntaxParsers:
+            "JEXL": ""
+            "LIST": ""
+            "LIMITED_JEXL": ""
+            "LUCENE": ""
 
         CountQuery:
           checkpointable: ${warehouse.defaults.checkpointable}
