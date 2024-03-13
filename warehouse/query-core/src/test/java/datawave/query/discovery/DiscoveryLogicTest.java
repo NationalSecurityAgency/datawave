@@ -434,14 +434,10 @@ public class DiscoveryLogicTest {
 
     @Test
     public void testSumCountsForPatternAndLiteral() throws Exception {
-        givenQuery("*yx OR b*");
-        givenStartDate("20130101");
-        givenEndDate("20130104");
-        givenParameter(DiscoveryLogic.SUM_COUNTS, "true");
-
         givenQuery("*er OR trophy");
         givenStartDate("20130102");
         givenEndDate("20130104");
+        givenParameter(DiscoveryLogic.SUM_COUNTS, "true");
 
         expect(new DiscoveredThing("trophy", "PRIZE", "idem", "", "FOO", 15L, new MapWritable()));
         expect(new DiscoveredThing("police officer", "JOB", "idem", "", "FOO", 450L, new MapWritable()));
