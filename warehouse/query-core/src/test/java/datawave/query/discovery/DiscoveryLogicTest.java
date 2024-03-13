@@ -25,10 +25,8 @@ import org.apache.accumulo.core.iterators.user.SummingCombiner;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.MapWritable;
-import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 import org.assertj.core.api.Assertions;
-import org.javatuples.Pair;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -242,12 +240,6 @@ public class DiscoveryLogicTest {
             actual.add(iterator.next());
         }
 
-        for (DiscoveredThing thing : actual) {
-            System.out.println("expect(new DiscoveredThing(\"" + thing.getTerm() + "\", \"" + thing.getField() + "\", \"" + thing.getType() + "\", \""
-                            + thing.getDate() + "\", \"" + thing.getColumnVisibility() + "\", " + thing.getCount() + "L, new MapWritable()));");
-            // System.out.println(thing.getCountsByColumnVisibility());
-        }
-
         Assertions.assertThat(actual).hasSize(expected.size());
         for (int i = 0; i < expected.size(); i++) {
             DiscoveredThing actualThing = actual.get(i);
@@ -411,7 +403,7 @@ public class DiscoveryLogicTest {
     }
 
     @Test
-    public void testSumCounts() throws Exception {
+    public void testSumCountsForLiterals() throws Exception {
         givenQuery("bbc OR onyx");
         givenStartDate("20130101");
         givenEndDate("20130102");
@@ -421,6 +413,96 @@ public class DiscoveryLogicTest {
         expect(new DiscoveredThing("onyx", "POKEMON", "csv", "", "FOO", 110L, new MapWritable()));
         expect(new DiscoveredThing("onyx", "ROCK", "csv", "", "FOO", 4L, new MapWritable()));
         expect(new DiscoveredThing("onyx", "ROOSTER", "csv", "", "BAR", 240L, new MapWritable()));
+
+        assertQueryResults();
+    }
+
+    @Test
+    public void testSumCountsForPatterns() throws Exception {
+        givenQuery("*yx OR b*");
+        givenStartDate("20130101");
+        givenEndDate("20130102");
+        givenParameter(DiscoveryLogic.SUM_COUNTS, "true");
+
+        expect(new DiscoveredThing("bbc", "NETWORK", "csv", "", "FOO", 480L, new MapWritable()));
+        expect(new DiscoveredThing("onyx", "POKEMON", "csv", "", "FOO", 110L, new MapWritable()));
+        expect(new DiscoveredThing("onyx", "ROCK", "csv", "", "FOO", 4L, new MapWritable()));
+        expect(new DiscoveredThing("onyx", "ROOSTER", "csv", "", "BAR", 240L, new MapWritable()));
+
+        assertQueryResults();
+    }
+
+    @Test
+    public void testSumCountsForPatternAndLiteral() throws Exception {
+        givenQuery("*yx OR b*");
+        givenStartDate("20130101");
+        givenEndDate("20130104");
+        givenParameter(DiscoveryLogic.SUM_COUNTS, "true");
+
+        givenQuery("*er OR trophy");
+        givenStartDate("20130102");
+        givenEndDate("20130104");
+
+        expect(new DiscoveredThing("trophy", "PRIZE", "idem", "", "FOO", 15L, new MapWritable()));
+        expect(new DiscoveredThing("police officer", "JOB", "idem", "", "FOO", 450L, new MapWritable()));
+        expect(new DiscoveredThing("ranger", "VEHICLE", "stock", "", "BAR&FOO", 631L, new MapWritable()));
+        expect(new DiscoveredThing("rooster", "FLOCK", "stock", "", "BAR", 60L, new MapWritable()));
+        expect(new DiscoveredThing("skydiver", "JOB", "text", "", "BAR", 300L, new MapWritable()));
+        expect(new DiscoveredThing("skydiver", "OCCUPATION", "text", "", "FOO", 300L, new MapWritable()));
+        expect(new DiscoveredThing("xxx.skydiver", "OCCUPATION", "text", "", "FOO", 300L, new MapWritable()));
+        expect(new DiscoveredThing("yyy.skydiver", "OCCUPATION", "text", "", "FOO", 300L, new MapWritable()));
+
+        assertQueryResults();
+    }
+
+    @Test
+    public void testSumCountsForFieldedLiterals() throws Exception {
+        givenQuery("rock:onyx OR pokemon:onyx");
+        givenStartDate("20130101");
+        givenEndDate("20130104");
+        givenParameter(DiscoveryLogic.SUM_COUNTS, "true");
+
+        expect(new DiscoveredThing("onyx", "POKEMON", "csv", "", "FOO", 111L, new MapWritable()));
+        expect(new DiscoveredThing("onyx", "ROCK", "csv", "", "FOO", 7L, new MapWritable()));
+
+        assertQueryResults();
+    }
+
+    @Test
+    public void testSumCountsForFieldedPatterns() throws Exception {
+        givenQuery("rock:*n*x OR bird:*r*k");
+        givenStartDate("20130101");
+        givenEndDate("20130103");
+        givenParameter(DiscoveryLogic.SUM_COUNTS, "true");
+
+        expect(new DiscoveredThing("ruddy duck", "BIRD", "stock", "", "FOO", 900L, new MapWritable()));
+        expect(new DiscoveredThing("onyx", "ROCK", "csv", "", "FOO", 7L, new MapWritable()));
+
+        assertQueryResults();
+    }
+
+    @Test
+    public void testSumCountsForFieldLiteralAndPattern() throws Exception {
+        givenQuery("pokemon:onyx OR bird:*r*k");
+        givenStartDate("20130101");
+        givenEndDate("20130104");
+        givenParameter(DiscoveryLogic.SUM_COUNTS, "true");
+
+        expect(new DiscoveredThing("onyx", "POKEMON", "csv", "", "FOO", 111L, new MapWritable()));
+        expect(new DiscoveredThing("ruddy duck", "BIRD", "stock", "", "FOO", 900L, new MapWritable()));
+
+        assertQueryResults();
+    }
+
+    @Test
+    public void testSumCountsForReverse() throws Exception {
+        givenQuery("*.sky*er");
+        givenStartDate("20130101");
+        givenEndDate("20130104");
+        givenParameter(DiscoveryLogic.SUM_COUNTS, "true");
+
+        expect(new DiscoveredThing("xxx.skydiver", "OCCUPATION", "text", "", "FOO", 400L, new MapWritable()));
+        expect(new DiscoveredThing("yyy.skydiver", "OCCUPATION", "text", "", "FOO", 400L, new MapWritable()));
 
         assertQueryResults();
     }
