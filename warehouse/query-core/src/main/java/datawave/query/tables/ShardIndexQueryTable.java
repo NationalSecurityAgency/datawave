@@ -329,7 +329,7 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
             List<IteratorSetting> settings = getIteratorSettingsForDiscovery(getConfig(), Collections.singleton(termEntry.getValue()), Collections.emptySet(),
                             getConfig().getTableName().equals(getConfig().getReverseIndexTableName()), false);
             List<String> cfs = ShardIndexQueryTableStaticMethods.getColumnFamilies(getConfig(), false, Collections.singleton(termEntry.getKey()));
-            queries.add(new QueryData(config.getIndexTableName(), query, Collections.singleton(range), settings, cfs));
+            queries.add(new QueryData(config.getIndexTableName(), query, Collections.singleton(range), cfs, settings));
         }
 
         for (Entry<String,String> patternEntry : getConfig().getNormalizedPatterns().entries()) {
@@ -340,7 +340,7 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
                             Collections.singleton(patternEntry.getValue()), rangeEntry.getValue(), false);
             List<String> cfs = ShardIndexQueryTableStaticMethods.getColumnFamilies(getConfig(), rangeEntry.getValue(),
                             Collections.singleton(patternEntry.getKey()));
-            queries.add(new QueryData(tName, query, Collections.singleton(rangeEntry.getKey()), settings, cfs));
+            queries.add(new QueryData(tName, query, Collections.singleton(rangeEntry.getKey()), cfs, settings));
         }
         return queries;
     }

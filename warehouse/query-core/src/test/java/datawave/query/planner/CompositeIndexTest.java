@@ -351,6 +351,7 @@ public class CompositeIndexTest {
 
         ShardQueryLogic logic = getShardQueryLogic(false);
         logic.setIntermediateMaxTermThreshold(50);
+        logic.setIndexedMaxTermThreshold(50);
         List<QueryData> queries = getQueryRanges(logic, query, false);
         Assert.assertEquals(12, queries.size());
 

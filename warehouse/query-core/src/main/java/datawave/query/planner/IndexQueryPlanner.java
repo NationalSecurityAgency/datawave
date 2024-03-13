@@ -56,12 +56,12 @@ public class IndexQueryPlanner extends DefaultQueryPlanner {
 
     @Override
     protected ASTJexlScript updateQueryTree(ScannerFactory scannerFactory, MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper,
-                    ShardQueryConfiguration config, String query, QueryData queryData, Query settings) throws DatawaveQueryException {
+                    ShardQueryConfiguration config, String query, Query settings) throws DatawaveQueryException {
         // we want all terms expanded (except when max terms is reached)
         config.setExpandAllTerms(true);
 
         // update the query tree
-        ASTJexlScript script = super.updateQueryTree(scannerFactory, metadataHelper, dateIndexHelper, config, query, queryData, settings);
+        ASTJexlScript script = super.updateQueryTree(scannerFactory, metadataHelper, dateIndexHelper, config, query, settings);
 
         return limitQueryTree(script, config);
     }

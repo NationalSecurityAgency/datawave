@@ -2,6 +2,7 @@ package datawave.query.tables.edge;
 
 import static com.google.common.collect.Iterators.concat;
 import static com.google.common.collect.Iterators.transform;
+import static datawave.query.jexl.JexlASTHelper.jexlFeatures;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -382,7 +383,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements 
         Parser parser = new Parser(new StringProvider(";"));
         ASTJexlScript script;
         try {
-            script = parser.parse(null, new JexlFeatures(), queryString, null);
+            script = parser.parse(null, jexlFeatures(), queryString, null);
         } catch (Exception e) {
             throw new IllegalArgumentException("Invalid jexl supplied. " + e.getMessage());
         }

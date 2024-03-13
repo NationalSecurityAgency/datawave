@@ -103,6 +103,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private int collapseUidsThreshold = -1;
     // Should this query dedupe terms within ANDs and ORs
     private boolean enforceUniqueTermsWithinExpressions = false;
+    private boolean reduceIngestTypes = false;
+    private boolean reduceIngestTypesPerShard = false;
     // should this query attempt to prune terms via their ingest types
     private boolean pruneQueryByIngestTypes = false;
     // should this query reduce the set of fields prior to serialization
@@ -226,6 +228,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private Set<String> datatypeFilter = UniversalSet.instance();
     // A set of sorted index holes
     private List<IndexHole> indexHoles = new ArrayList<>();
+    // a set of user specified mappings
+    private Set<String> renameFields = new HashSet<>(0);
     // Limit fields returned per event
     private Set<String> projectFields = Collections.emptySet();
     private Set<String> disallowlistedFields = new HashSet<>(0);
@@ -324,6 +328,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private int initialMaxTermThreshold = 2500;
     // the intermediate term threshold is used to enforce a term limit prior to the range stream
     private int intermediateMaxTermThreshold = 2500;
+    // the maximum number of indexed terms to lookup in the global index. Practically this is the number of equality nodes in the query.
+    private int indexedMaxTermThreshold = 2500;
     private int finalMaxTermThreshold = 2500;
     private int maxDepthThreshold = 2500;
     private boolean expandFields = true;
@@ -352,6 +358,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private int maxIvaratorSources = 33;
     private long maxIvaratorSourceWait = 1000L * 60 * 30;
     private long maxIvaratorResults = -1;
+    private int maxIvaratorTerms = -1;
     private int maxEvaluationPipelines = 25;
     private int maxPipelineCachedResults = 25;
     private boolean expandAllTerms = false;
@@ -461,6 +468,15 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private boolean pruneQueryOptions = false;
 
     /**
+     * Flag to control gathering field counts from the global index and persisting those to the query iterator. Negated terms and branches are not considered.
+     */
+    private boolean useFieldCounts = false;
+    /**
+     * Flag to control gathering term counts from the global index and persisting those to the query iterator. Negated terms and branches are not considered.
+     */
+    private boolean useTermCounts = false;
+
+    /**
      * Default constructor
      */
     public ShardQueryConfiguration() {
@@ -491,6 +507,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setCollapseUids(other.getCollapseUids());
         this.setCollapseUidsThreshold(other.getCollapseUidsThreshold());
         this.setEnforceUniqueTermsWithinExpressions(other.getEnforceUniqueTermsWithinExpressions());
+        this.setReduceIngestTypes(other.getReduceIngestTypes());
+        this.setReduceIngestTypesPerShard(other.getReduceIngestTypesPerShard());
         this.setPruneQueryByIngestTypes(other.getPruneQueryByIngestTypes());
         this.setReduceQueryFields(other.getReduceQueryFields());
         this.setReduceQueryFieldsPerShard(other.getReduceQueryFieldsPerShard());
@@ -553,6 +571,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                         : (other.getDatatypeFilter() instanceof UniversalSet) ? UniversalSet.instance() : Sets.newHashSet(other.getDatatypeFilter()));
         this.setIndexHoles(null == other.getIndexHoles() ? null : Lists.newArrayList(other.getIndexHoles()));
         this.setProjectFields(null == other.getProjectFields() ? null : Sets.newHashSet(other.getProjectFields()));
+        this.setRenameFields(null == other.getRenameFields() ? null : Sets.newHashSet(other.getRenameFields()));
         this.setDisallowlistedFields(null == other.getDisallowlistedFields() ? null : Sets.newHashSet(other.getDisallowlistedFields()));
         this.setIndexedFields(null == other.getIndexedFields() ? null : Sets.newHashSet(other.getIndexedFields()));
         this.setReverseIndexedFields(null == other.getReverseIndexedFields() ? null : Sets.newHashSet(other.getReverseIndexedFields()));
@@ -600,6 +619,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setShardsPerDayThreshold(other.getShardsPerDayThreshold());
         this.setInitialMaxTermThreshold(other.getInitialMaxTermThreshold());
         this.setIntermediateMaxTermThreshold(other.getIntermediateMaxTermThreshold());
+        this.setIndexedMaxTermThreshold(other.getIndexedMaxTermThreshold());
         this.setFinalMaxTermThreshold(other.getFinalMaxTermThreshold());
         this.setMaxDepthThreshold(other.getMaxDepthThreshold());
         this.setMaxUnfieldedExpansionThreshold(other.getMaxUnfieldedExpansionThreshold());
@@ -628,6 +648,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setMaxIvaratorSources(other.getMaxIvaratorSources());
         this.setMaxIvaratorSourceWait(other.getMaxIvaratorSourceWait());
         this.setMaxIvaratorResults(other.getMaxIvaratorResults());
+        this.setMaxIvaratorTerms(other.getMaxIvaratorTerms());
         this.setMaxEvaluationPipelines(other.getMaxEvaluationPipelines());
         this.setMaxPipelineCachedResults(other.getMaxPipelineCachedResults());
         this.setExpandAllTerms(other.isExpandAllTerms());
@@ -673,6 +694,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setTfAggregationThresholdMs(other.getTfAggregationThresholdMs());
         this.setGroupFields(GroupFields.copyOf(other.getGroupFields()));
         this.setPruneQueryOptions(other.getPruneQueryOptions());
+        this.setUseFieldCounts(other.getUseFieldCounts());
+        this.setUseTermCounts(other.getUseTermCounts());
     }
 
     /**
@@ -986,6 +1009,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         return StringUtils.join(this.getProjectFields(), Constants.PARAM_VALUE_SEP);
     }
 
+    public Set<String> getRenameFields() {
+        return renameFields;
+    }
+
+    public void setRenameFields(Set<String> renameFields) {
+        this.renameFields = renameFields;
+    }
+
     public Set<String> getDisallowlistedFields() {
         return disallowlistedFields;
     }
@@ -1273,6 +1304,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.intermediateMaxTermThreshold = intermediateMaxTermThreshold;
     }
 
+    public int getIndexedMaxTermThreshold() {
+        return indexedMaxTermThreshold;
+    }
+
+    public void setIndexedMaxTermThreshold(int indexedMaxTermThreshold) {
+        this.indexedMaxTermThreshold = indexedMaxTermThreshold;
+    }
+
     public int getFinalMaxTermThreshold() {
         return finalMaxTermThreshold;
     }
@@ -1505,6 +1544,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setMaxIvaratorResults(long maxIvaratorResults) {
         this.maxIvaratorResults = maxIvaratorResults;
+    }
+
+    public int getMaxIvaratorTerms() {
+        return maxIvaratorTerms;
+    }
+
+    public void setMaxIvaratorTerms(int maxIvaratorTerms) {
+        this.maxIvaratorTerms = maxIvaratorTerms;
     }
 
     public int getMaxEvaluationPipelines() {
@@ -2612,6 +2659,38 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setPruneQueryOptions(boolean pruneQueryOptions) {
         this.pruneQueryOptions = pruneQueryOptions;
+    }
+
+    public boolean getReduceIngestTypes() {
+        return reduceIngestTypes;
+    }
+
+    public void setReduceIngestTypes(boolean reduceIngestTypes) {
+        this.reduceIngestTypes = reduceIngestTypes;
+    }
+
+    public boolean getReduceIngestTypesPerShard() {
+        return reduceIngestTypesPerShard;
+    }
+
+    public void setReduceIngestTypesPerShard(boolean reduceIngestTypesPerShard) {
+        this.reduceIngestTypesPerShard = reduceIngestTypesPerShard;
+    }
+
+    public boolean getUseTermCounts() {
+        return useTermCounts;
+    }
+
+    public void setUseTermCounts(boolean useTermCounts) {
+        this.useTermCounts = useTermCounts;
+    }
+
+    public boolean getUseFieldCounts() {
+        return useFieldCounts;
+    }
+
+    public void setUseFieldCounts(boolean useFieldCounts) {
+        this.useFieldCounts = useFieldCounts;
     }
 
     @Override

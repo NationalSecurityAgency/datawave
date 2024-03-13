@@ -137,8 +137,9 @@ public class SequentialScheduler extends Scheduler {
                 if (this.queries.hasNext()) {
                     // Keep track of how many QueryData's we make
                     QueryData qd = this.queries.next();
-                    if (null != qd.getRanges())
+                    if (null != qd.getRanges()) {
                         rangesSeen += qd.getRanges().size();
+                    }
                     count.incrementAndGet();
                     currentQuery = qd;
                 }

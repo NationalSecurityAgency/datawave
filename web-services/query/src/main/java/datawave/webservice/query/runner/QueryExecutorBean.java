@@ -570,12 +570,21 @@ public class QueryExecutorBean implements QueryExecutor {
             throw new BadRequestException(qe, response);
         }
 
-        // validate the max results override relative to the max results on a query logic
-        // privileged users or unlimited max results users however, may ignore this limitation.
-        if (qp.isMaxResultsOverridden() && qd.logic.getMaxResults() >= 0) {
-            if (!ctx.isCallerInRole(PRIVILEGED_USER) || !ctx.isCallerInRole(UNLIMITED_QUERY_RESULTS_USER)) {
-                if (qp.getMaxResultsOverride() < 0 || (qd.logic.getMaxResults() < qp.getMaxResultsOverride())) {
-                    log.error("Invalid max results override: " + qp.getMaxResultsOverride() + " vs " + qd.logic.getMaxResults());
+        // Init a query instance in order to properly compute max results for the user...
+        // TODO: consider refactoring such that query init happens only once here via Persister, and cache in QueryData instance
+        MultivaluedMap<String,String> optionalQueryParameters = new MultivaluedMapImpl<>();
+        optionalQueryParameters.putAll(qp.getUnknownParameters(queryParameters));
+        Query q = responseObjectFactory.getQueryImpl();
+        q.initialize(qd.userDn, qd.dnList, queryLogicName, qp, optionalQueryParameters);
+
+        long resultLimit = qd.logic.getResultLimit(q);
+
+        // validate the user's max results override in the context of all currently configured overrides
+        // privileged users and unlimited max results users are exempt from limitations
+        if (qp.isMaxResultsOverridden() && resultLimit >= 0) {
+            if (!ctx.isCallerInRole(PRIVILEGED_USER) && !ctx.isCallerInRole(UNLIMITED_QUERY_RESULTS_USER)) {
+                if (qp.getMaxResultsOverride() < 0 || (resultLimit < qp.getMaxResultsOverride())) {
+                    log.error("Invalid max results override: " + qp.getMaxResultsOverride() + " vs " + resultLimit);
                     GenericResponse<String> response = new GenericResponse<>();
                     throwBadRequest(DatawaveErrorCode.INVALID_MAX_RESULTS_OVERRIDE, response);
                 }

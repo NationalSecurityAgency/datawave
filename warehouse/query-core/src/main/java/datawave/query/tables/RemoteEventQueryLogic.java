@@ -15,7 +15,6 @@ import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.exception.EmptyObjectException;
 import datawave.core.query.logic.BaseQueryLogic;
 import datawave.core.query.logic.QueryLogicTransformer;
-import datawave.core.query.remote.RemoteQueryLogic;
 import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.Query;
 import datawave.query.transformer.EventQueryTransformerSupport;

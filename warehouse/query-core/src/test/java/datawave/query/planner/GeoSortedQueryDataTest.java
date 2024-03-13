@@ -278,6 +278,7 @@ public class GeoSortedQueryDataTest {
         logic.setMaxDepthThreshold(10);
 
         logic.setIntermediateMaxTermThreshold(50);
+        logic.setIndexedMaxTermThreshold(50);
 
         // set the pushdown threshold really high to avoid collapsing uids into shards (overrides setCollapseUids if #terms is greater than this threshold)
         ((DefaultQueryPlanner) (logic.getQueryPlanner())).setPushdownThreshold(1000000);

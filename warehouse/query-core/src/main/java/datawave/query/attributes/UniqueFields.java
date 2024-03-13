@@ -182,9 +182,22 @@ public class UniqueFields implements Serializable {
     }
 
     /**
+     * Replace a field mapping with another field
+     *
+     * @param field
+     * @param replacement
+     */
+    public void replace(String field, String replacement) {
+        Collection<UniqueGranularity> value = fieldMap.removeAll(field);
+        if (value != null && !value.isEmpty()) {
+            fieldMap.putAll(replacement, value);
+        }
+    }
+
+    /**
      * Return a copy of the fields within this {@link UniqueFields}. Modifications to this set will not modify the fields in this {@link UniqueFields}.
      *
-     * @return the
+     * @return a copy of the fields
      */
     public Set<String> getFields() {
         return Sets.newHashSet(fieldMap.keySet());

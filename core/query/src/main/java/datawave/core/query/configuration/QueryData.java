@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 
 import org.apache.accumulo.core.client.IteratorSetting;
@@ -29,29 +30,71 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 
 /**
  * Class to encapsulate all required information to run a query.
- *
  */
 public class QueryData implements ResultContext, Externalizable {
     private String tableName;
-    @JsonDeserialize(using = IteratorSettingListDeserializer.class)
-    private List<IteratorSetting> settings = Lists.newArrayList();
     private String query;
     @JsonSerialize(using = RangeListSerializer.class)
     @JsonDeserialize(using = RangeListDeserializer.class)
-    private Collection<Range> ranges = Sets.newHashSet();
-    private Collection<String> columnFamilies = Sets.newHashSet();
+    private Collection<Range> ranges = new HashSet<>();
+    private Collection<String> columnFamilies = new HashSet<>();
+    @JsonDeserialize(using = IteratorSettingListDeserializer.class)
+    private List<IteratorSetting> settings = new ArrayList<>();
     @JsonSerialize(using = KeySerializer.class)
     @JsonDeserialize(using = KeyDeserializer.class)
     private Key lastResult;
+    private boolean rebuildHashCode = true;
+    private int hashCode = -1;
     boolean finished = false;
 
-    public QueryData() {}
+    public QueryData() {
+        // empty constructor
+    }
 
+    /**
+     * Full constructor
+     *
+     * @param tableName
+     *            the table name
+     * @param query
+     *            the query string
+     * @param ranges
+     *            a collection of ranges
+     * @param columnFamilies
+     *            a collection of column families
+     * @param settings
+     *            a list of IteratorSetting
+     */
+    public QueryData(String tableName, String query, Collection<Range> ranges, Collection<String> columnFamilies, List<IteratorSetting> settings) {
+        this.tableName = tableName;
+        this.query = query;
+        this.ranges = ranges;
+        this.columnFamilies = columnFamilies;
+        this.settings = settings;
+    }
+
+    /**
+     * Copy constructor
+     *
+     * @param other
+     *            another instance of QueryData
+     */
+    public QueryData(QueryData other) {
+        this.tableName = other.tableName;
+        this.query = other.query;
+        this.ranges = new HashSet<>(other.ranges);
+        this.columnFamilies = new HashSet<>(other.columnFamilies);
+        this.settings = new ArrayList<>(other.settings);
+        this.hashCode = other.hashCode;
+        this.rebuildHashCode = other.rebuildHashCode;
+        this.lastResult = other.lastResult;
+        this.finished = finished;
+    }
+
+    @Deprecated(since = "6.5.0", forRemoval = true)
     public QueryData(String tableName, String query, Collection<Range> ranges, List<IteratorSetting> settings) {
         setTableName(tableName);
         setQuery(query);
@@ -59,24 +102,57 @@ public class QueryData implements ResultContext, Externalizable {
         setSettings(settings);
     }
 
-    public QueryData(QueryData other) {
-        this(other.getTableName(), other.getQuery(), other.getRanges(), other.getSettings(), other.getColumnFamilies());
-        this.lastResult = other.lastResult;
-        this.finished = other.finished;
-    }
-
+    /**
+     * Weak copy constructor that updates the ranges
+     *
+     * @param other
+     *            another QueryData
+     * @param ranges
+     *            a collection of updated ranges
+     * @deprecated
+     */
+    @Deprecated(since = "6.5.0", forRemoval = true)
     public QueryData(QueryData other, Collection<Range> ranges) {
         this(other);
         setRanges(ranges);
     }
 
-    public QueryData(String tableName, String queryString, Collection<Range> ranges, List<IteratorSetting> settings, Collection<String> columnFamilies) {
+    @Deprecated(since = "6.5.0", forRemoval = true)
+    public QueryData(String tableName, String queryString, List<Range> ranges, List<IteratorSetting> settings, Collection<String> columnFamilies) {
         this(tableName, queryString, ranges, settings);
         this.columnFamilies.addAll(columnFamilies);
     }
 
-    public List<IteratorSetting> getSettings() {
-        return settings;
+    // builder style methods
+
+    public QueryData withTableName(String tableName) {
+        this.tableName = tableName;
+        resetHashCode();
+        return this;
+    }
+
+    public QueryData withQuery(String query) {
+        this.query = query;
+        resetHashCode();
+        return this;
+    }
+
+    public QueryData withRanges(Collection<Range> ranges) {
+        this.ranges = ranges;
+        resetHashCode();
+        return this;
+    }
+
+    public QueryData withColumnFamilies(Collection<String> columnFamilies) {
+        this.columnFamilies = columnFamilies;
+        resetHashCode();
+        return this;
+    }
+
+    public QueryData withSettings(List<IteratorSetting> settings) {
+        this.settings = settings;
+        resetHashCode();
+        return this;
     }
 
     public void setSettings(List<IteratorSetting> settings) {
@@ -84,14 +160,20 @@ public class QueryData implements ResultContext, Externalizable {
         if (settings != null) {
             this.settings.addAll(settings);
         }
+        resetHashCode();
     }
 
-    public String getQuery() {
-        return query;
+    public List<IteratorSetting> getSettings() {
+        return settings;
     }
 
     public void setQuery(String query) {
         this.query = query;
+        resetHashCode();
+    }
+
+    public String getQuery() {
+        return query;
     }
 
     public String getTableName() {
@@ -128,14 +210,17 @@ public class QueryData implements ResultContext, Externalizable {
         if (columnFamilies != null) {
             this.columnFamilies.addAll(columnFamilies);
         }
+        resetHashCode();
     }
 
     public void addColumnFamily(String cf) {
         this.columnFamilies.add(cf);
+        resetHashCode();
     }
 
     public void addColumnFamily(Text cf) {
         this.columnFamilies.add(cf.toString());
+        resetHashCode();
     }
 
     public void setRanges(Collection<Range> ranges) {
@@ -143,14 +228,17 @@ public class QueryData implements ResultContext, Externalizable {
         if (null != ranges) {
             this.ranges.addAll(ranges);
         }
+        resetHashCode();
     }
 
     public void addRange(Range range) {
         this.ranges.add(range);
+        resetHashCode();
     }
 
     public void addIterator(IteratorSetting cfg) {
         this.settings.add(cfg);
+        resetHashCode();
     }
 
     public void setLastResult(Key result) {
@@ -158,6 +246,7 @@ public class QueryData implements ResultContext, Externalizable {
         if (this.lastResult == null) {
             this.finished = true;
         }
+        resetHashCode();
     }
 
     public boolean isFinished() {
@@ -170,10 +259,14 @@ public class QueryData implements ResultContext, Externalizable {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder(256);
-        sb.append("Query: '").append(this.query).append("', Ranges: ").append(this.ranges).append(", lastResult: ").append(this.lastResult)
-                        .append(", Settings: ").append(this.settings);
-        return sb.toString();
+        //  @formatter:off
+        return new StringBuilder()
+                .append("Query: '").append(this.query)
+                .append("', Ranges: ").append(this.ranges)
+                .append(", lastResult: ").append(this.lastResult)
+                .append(", Settings: ").append(this.settings)
+                .toString();
+        //  @formatter:on
     }
 
     @Override
@@ -243,18 +336,46 @@ public class QueryData implements ResultContext, Externalizable {
 
     @Override
     public int hashCode() {
-        return new HashCodeBuilder().append(tableName).append(settings).append(query).append(ranges).append(columnFamilies).append(lastResult).append(finished)
-                        .toHashCode();
+        if (rebuildHashCode) {
+            //  @formatter:off
+            hashCode = new HashCodeBuilder()
+                    .append(tableName)
+                    .append(query)
+                    .append(ranges)
+                    .append(columnFamilies)
+                    .append(settings)
+                    .append(lastResult)
+                    .append(finished)
+                    .hashCode();
+            rebuildHashCode = false;
+            //  @formatter:on
+        }
+        return hashCode;
     }
 
-    @Override
-    public boolean equals(Object obj) {
-        if (!(obj instanceof QueryData)) {
-            return false;
+    public boolean equals(Object o) {
+        if (o instanceof QueryData) {
+            QueryData other = (QueryData) o;
+            //  @formatter:off
+            return new EqualsBuilder()
+                    .append(tableName, other.tableName)
+                    .append(query, other.query)
+                    .append(ranges, other.ranges)
+                    .append(columnFamilies, other.columnFamilies)
+                    .append(settings, other.settings)
+                    .append(lastResult, other.lastResult)
+                    .append(finished, other.finished)
+                    .isEquals();
+            //  @formatter:on
         }
-        QueryData other = (QueryData) obj;
-        return new EqualsBuilder().append(tableName, other.tableName).append(settings, other.settings).append(query, other.query).append(ranges, other.ranges)
-                        .append(columnFamilies, other.columnFamilies).append(lastResult, other.lastResult).append(finished, other.finished).isEquals();
+        return false;
+    }
+
+    /**
+     * Method to reset the hashcode when an internal variable is updated
+     */
+    private void resetHashCode() {
+        rebuildHashCode = true;
     }
 
     /**

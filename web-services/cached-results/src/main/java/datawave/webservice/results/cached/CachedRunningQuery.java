@@ -560,7 +560,7 @@ public class CachedRunningQuery extends AbstractRunningQuery {
     private List<String> getViewColumnNames(Connection connection, String view) throws SQLException {
         CachedResultsQueryParameters.validate(view);
         List<String> columns = new ArrayList<>();
-        try (Statement s = connection.createStatement(); ResultSet rs = s.executeQuery("show columns from " + view)) {
+        try (Statement s = connection.createStatement(); ResultSet rs = s.executeQuery(String.format("show columns from %s", view))) {
             Set<String> fixedColumns = CacheableQueryRow.getFixedColumnSet();
 
             while (rs.next()) {
@@ -615,7 +615,7 @@ public class CachedRunningQuery extends AbstractRunningQuery {
         this.crs = RowSetProvider.newFactory().createCachedRowSet();
         this.crs.setCommand(this.sqlQuery);
 
-        String countQuery = "SELECT count(*) FROM (" + this.sqlQuery + ") AS CNT";
+        String countQuery = String.format("SELECT count(*) FROM (%s) AS CNT", this.sqlQuery);
         log.trace("Count query: " + countQuery);
         try (Statement s = connection.createStatement(); ResultSet rs = s.executeQuery(countQuery)) {
             if (rs.next())

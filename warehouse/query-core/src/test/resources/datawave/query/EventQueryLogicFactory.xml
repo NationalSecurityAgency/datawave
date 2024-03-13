@@ -97,6 +97,7 @@
         <!-- The max number of terms BEFORE all expansions -->
         <property name="initialMaxTermThreshold" value="10" />	<!-- was ${beq.initialMaxTermThreshold} -->
         <property name="intermediateMaxTermThreshold" value="10" />
+        <property name="indexedMaxTermThreshold" value="10" />
         <!-- The max number of terms AFTER all expansions -->
         <property name="finalMaxTermThreshold" value="10" />	<!-- was ${beq.finalMaxTermThreshold} -->
         <!-- The max query depth -->

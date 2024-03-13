@@ -88,6 +88,7 @@ import datawave.query.tables.stats.ScanSessionStats;
 import datawave.query.transformer.DocumentTransform;
 import datawave.query.transformer.DocumentTransformer;
 import datawave.query.transformer.EventQueryDataDecoratorTransformer;
+import datawave.query.transformer.FieldRenameTransform;
 import datawave.query.transformer.GroupingTransform;
 import datawave.query.transformer.UniqueTransform;
 import datawave.query.util.DateIndexHelper;
@@ -263,7 +264,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
     @Override
     public GenericQueryConfiguration initialize(AccumuloClient client, Query settings, Set<Authorizations> auths) throws Exception {
-
+        this.transformerInstance = null;
         this.config = ShardQueryConfiguration.create(this, settings);
         if (log.isTraceEnabled())
             log.trace("Initializing ShardQueryLogic: " + System.identityHashCode(this) + '('
@@ -634,7 +635,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
     }
 
     public boolean isLongRunningQuery() {
-        return getConfig().getGroupFields().hasGroupByFields();
+        return getConfig().getGroupFields().hasGroupByFields() || !getUniqueFields().isEmpty();
     }
 
     /**
@@ -650,7 +651,8 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
                 if (alreadyExists != null) {
                     ((UniqueTransform) alreadyExists).updateConfig(getConfig().getUniqueFields(), getQueryModel());
                 } else {
-                    ((DocumentTransformer) this.transformerInstance).addTransform(new UniqueTransform(this, getConfig().getUniqueFields()));
+                    ((DocumentTransformer) this.transformerInstance)
+                                    .addTransform(new UniqueTransform(this, getConfig().getUniqueFields(), this.getQueryExecutionForPageTimeout()));
                 }
             }
 
@@ -664,6 +666,17 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
                                     .addTransform(new GroupingTransform(groupFields, this.markingFunctions, this.getQueryExecutionForPageTimeout()));
                 }
             }
+
+            if (getConfig().getRenameFields() != null && !getConfig().getRenameFields().isEmpty()) {
+                DocumentTransform alreadyExists = ((DocumentTransformer) this.transformerInstance).containsTransform(FieldRenameTransform.class);
+                if (alreadyExists != null) {
+                    ((FieldRenameTransform) alreadyExists).updateConfig(getConfig().getRenameFields());
+                } else {
+                    ((DocumentTransformer) this.transformerInstance)
+                                    .addTransform(new FieldRenameTransform(getConfig().getRenameFields(), getIncludeGroupingContext(), isReducedResponse()));
+                }
+            }
+
         }
         if (getQueryModel() != null) {
             ((DocumentTransformer) this.transformerInstance).setQm(getQueryModel());
@@ -729,6 +742,20 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
             }
 
             config.setDatatypeFilter(typeFilter);
+        }
+
+        // Get the list of field rename mappings. May be null.
+        String renameFields = settings.findParameter(QueryParameters.RENAME_FIELDS).getParameterValue().trim();
+        if (StringUtils.isNotBlank(renameFields)) {
+            Set<String> renameFieldExpressions = new HashSet<>(Arrays.asList(StringUtils.split(renameFields, Constants.PARAM_VALUE_SEP)));
+            config.setRenameFields(renameFieldExpressions);
+
+            if (log.isDebugEnabled()) {
+                final int maxLen = 100;
+                // Trim down the projection if it's stupid long
+                renameFields = maxLen < renameFields.length() ? renameFields.substring(0, maxLen) + "[TRUNCATED]" : renameFields;
+                log.debug("Rename fields: " + renameFields);
+            }
         }
 
         // Get the list of fields to project up the stack. May be null.
@@ -1561,6 +1588,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         getConfig().setIntermediateMaxTermThreshold(intermediateMaxTermThreshold);
     }
 
+    public int getIndexedMaxTermThreshold() {
+        return getConfig().getIndexedMaxTermThreshold();
+    }
+
+    public void setIndexedMaxTermThreshold(int indexedMaxTermThreshold) {
+        getConfig().setIndexedMaxTermThreshold(indexedMaxTermThreshold);
+    }
+
     public int getFinalMaxTermThreshold() {
         return getConfig().getFinalMaxTermThreshold();
     }
@@ -1978,6 +2013,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         getConfig().setMaxIvaratorResults(maxIvaratorResults);
     }
 
+    public int getMaxIvaratorTerms() {
+        return getConfig().getMaxIvaratorTerms();
+    }
+
+    public void setMaxIvaratorTerms(int maxIvaratorTerms) {
+        getConfig().setMaxIvaratorTerms(maxIvaratorTerms);
+    }
+
     public int getMaxEvaluationPipelines() {
         return getConfig().getMaxEvaluationPipelines();
     }
@@ -2153,6 +2196,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         optionalParams.add(QueryParameters.PARAMETER_MODEL_NAME);
         optionalParams.add(QueryParameters.PARAMETER_MODEL_TABLE_NAME);
         optionalParams.add(QueryParameters.DATATYPE_FILTER_SET);
+        optionalParams.add(QueryParameters.RENAME_FIELDS);
         optionalParams.add(QueryParameters.RETURN_FIELDS);
         optionalParams.add(QueryParameters.DISALLOWLISTED_FIELDS);
         optionalParams.add(QueryParameters.FILTER_MASKED_VALUES);
@@ -2269,6 +2313,22 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
     public void setEnforceUniqueTermsWithinExpressions(boolean enforceUniqueTermsWithinExpressions) {
         this.getConfig().setEnforceUniqueTermsWithinExpressions(enforceUniqueTermsWithinExpressions);
+    }
+
+    public boolean getReduceIngestTypes() {
+        return getConfig().getReduceIngestTypes();
+    }
+
+    public void setReduceIngestTypes(boolean reduceIngestTypes) {
+        getConfig().setReduceIngestTypes(reduceIngestTypes);
+    }
+
+    public boolean getReduceIngestTypesPerShard() {
+        return getConfig().getReduceIngestTypesPerShard();
+    }
+
+    public void setReduceIngestTypesPerShard(boolean reduceIngestTypesPerShard) {
+        getConfig().setReduceIngestTypesPerShard(reduceIngestTypesPerShard);
     }
 
     public boolean getPruneQueryByIngestTypes() {
@@ -2767,5 +2827,21 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
     public void setPruneQueryOptions(boolean pruneQueryOptions) {
         getConfig().setPruneQueryOptions(pruneQueryOptions);
+    }
+
+    public boolean getUseFieldCounts() {
+        return getConfig().getUseFieldCounts();
+    }
+
+    public void setUseFieldCounts(boolean useFieldCounts) {
+        getConfig().setUseFieldCounts(useFieldCounts);
+    }
+
+    public boolean getUseTermCounts() {
+        return getConfig().getUseTermCounts();
+    }
+
+    public void setUseTermCounts(boolean useTermCounts) {
+        getConfig().setUseTermCounts(useTermCounts);
     }
 }

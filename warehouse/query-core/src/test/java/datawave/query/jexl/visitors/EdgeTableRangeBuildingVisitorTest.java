@@ -2,6 +2,7 @@ package datawave.query.jexl.visitors;
 
 import static java.util.Collections.emptyList;
 
+import static datawave.query.jexl.JexlASTHelper.jexlFeatures;
 import static org.junit.Assert.assertThrows;
 
 import org.apache.commons.jexl3.JexlFeatures;
@@ -37,6 +38,6 @@ public class EdgeTableRangeBuildingVisitorTest {
     }
 
     private ASTJexlScript parseQuery(String query) {
-        return parser.parse(null, new JexlFeatures(), EdgeQueryLogic.fixQueryString(query), null);
+        return parser.parse(null, jexlFeatures(), EdgeQueryLogic.fixQueryString(query), null);
     }
 }

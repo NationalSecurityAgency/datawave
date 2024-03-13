@@ -11,7 +11,6 @@
     <packaging>pom</packaging>
     <name>${project.artifactId}</name>
     <modules>
-        <module>configcheck</module>
         <module>services</module>
         <module>starters</module>
     </modules>
@@ -36,6 +35,17 @@
             </activation>
             <modules>
                 <module>microservice-service-parent</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>configcheck</id>
+            <activation>
+                <property>
+                    <name>configcheck</name>
+                </property>
+            </activation>
+            <modules>
+                <module>configcheck</module>
             </modules>
         </profile>
     </profiles>

@@ -100,8 +100,13 @@ public class VisitorFunctionTest extends EasyMockSupport {
         iteratorSetting.addOption(QueryOptions.QUERY, "FIELD1 == 'a'");
         options.addScanIterator(iteratorSetting);
 
-        QueryData qd = new QueryData(TableName.SHARD, "FIELD1 == 'a'", Collections.singleton(new Range("20210101_0", "20210101_0")),
-                        Collections.singletonList(iteratorSetting));
+        // @formatter:off
+        QueryData qd = new QueryData()
+                .withTableName(TableName.SHARD)
+                .withQuery("FIELD1 == 'a'")
+                .withRanges(Collections.singleton(new Range("20210101_0", "20210101_0")))
+                .withSettings(Collections.singletonList(iteratorSetting));
+        // @formatter:on
         ScannerChunk chunk = new ScannerChunk(options, qd.getRanges(), qd);
 
         replayAll();
@@ -140,8 +145,14 @@ public class VisitorFunctionTest extends EasyMockSupport {
         iteratorSetting.addOption(QueryOptions.QUERY, query);
         options.addScanIterator(iteratorSetting);
 
-        QueryData qd = new QueryData(TableName.SHARD, query, Collections.singleton(new Range("20210101_0", "20210101_0")),
-                        Collections.singletonList(iteratorSetting));
+        // @formatter:off
+        QueryData qd = new QueryData()
+                .withTableName(TableName.SHARD)
+                .withQuery(query)
+                .withRanges(Collections.singleton(new Range("20210101_0", "20210101_0")))
+                .withSettings(Collections.singletonList(iteratorSetting));
+        // @formatter:on
+
         ScannerChunk chunk = new ScannerChunk(options, qd.getRanges(), qd);
 
         replayAll();
@@ -157,6 +168,61 @@ public class VisitorFunctionTest extends EasyMockSupport {
         Assert.assertTrue(updatedQuery, updatedQuery.contains("_List_"));
         Assert.assertTrue(updatedQuery, updatedQuery.contains("field = 'FIELD1'"));
         Assert.assertTrue(updatedQuery, updatedQuery.contains("values\":[\"a\",\"b\"]"));
+    }
+
+    @Test(expected = DatawaveFatalQueryException.class)
+    public void overIvaratorTermThresholdTest() throws IOException, TableNotFoundException, URISyntaxException {
+        setupExpects();
+
+        config.setCleanupShardsAndDaysQueryHints(false);
+        config.setBypassExecutabilityCheck(true);
+        config.setSerializeQueryIterator(false);
+
+        Query mockQuery = createMock(Query.class);
+        config.setQuery(mockQuery);
+        EasyMock.expect(mockQuery.getId()).andReturn(new UUID(0, 0)).anyTimes();
+        EasyMock.expect(mockQuery.duplicate("testQuery1")).andReturn(mockQuery).anyTimes();
+
+        // set thresholds
+        config.setFinalMaxTermThreshold(10);
+        config.setMaxDepthThreshold(10);
+        config.setMaxOrExpansionFstThreshold(100);
+        config.setMaxOrExpansionThreshold(20);
+        config.setMaxOrRangeThreshold(20);
+        config.setMaxRangesPerRangeIvarator(50);
+        config.setMaxOrRangeThreshold(20);
+        config.setMaxIvaratorTerms(2);
+
+        SessionOptions options = new SessionOptions();
+        IteratorSetting iteratorSetting = new IteratorSetting(10, "itr", QueryIterator.class);
+        String query = "((_Value_ = true) && (FIELD1 =~ 'a.*')) || ((_List_ = true) && (FIELD2 == 'b'))";
+        iteratorSetting.addOption(QueryOptions.QUERY, query);
+        options.addScanIterator(iteratorSetting);
+
+        // @formatter:off
+        QueryData qd = new QueryData()
+                .withTableName(TableName.SHARD)
+                .withQuery(query)
+                .withRanges(Collections.singleton(new Range("20210101_0", "20210101_0")))
+                .withSettings(Collections.singletonList(iteratorSetting));
+        // @formatter:on
+        ScannerChunk chunk = new ScannerChunk(options, Collections.singleton(new Range("20210101_0", "20210101_0")), qd);
+
+        replayAll();
+
+        function = new VisitorFunction(config, helper);
+        try {
+            function.apply(chunk);
+        } catch (Exception e) {
+            Assert.fail("Expected the ivarator threshold to pass");
+        }
+
+        verifyAll();
+
+        config.setMaxIvaratorTerms(1);
+
+        function = new VisitorFunction(config, helper);
+        function.apply(chunk);
     }
 
     @Test(expected = DatawaveFatalQueryException.class)
@@ -188,23 +254,19 @@ public class VisitorFunctionTest extends EasyMockSupport {
         iteratorSetting.addOption(QueryOptions.QUERY, query);
         options.addScanIterator(iteratorSetting);
 
-        QueryData qd = new QueryData(TableName.SHARD, query, Collections.singleton(new Range("20210101_0", "20210101_0")),
-                        Collections.singletonList(iteratorSetting));
+        // @formatter:off
+        QueryData qd = new QueryData()
+                .withTableName(TableName.SHARD)
+                .withQuery(query)
+                .withRanges(Collections.singleton(new Range("20210101_0", "20210101_0")))
+                .withSettings(Collections.singletonList(iteratorSetting));
+        // @formatter:on
         ScannerChunk chunk = new ScannerChunk(options, qd.getRanges(), qd);
 
         replayAll();
 
         function = new VisitorFunction(config, helper);
-        ScannerChunk updatedChunk = function.apply(chunk);
-
-        verifyAll();
-
-        Assert.assertNotEquals(chunk, updatedChunk);
-        String updatedQuery = updatedChunk.getOptions().getIterators().iterator().next().getOptions().get(QueryOptions.QUERY);
-        Assert.assertNotEquals(query, updatedQuery);
-        Assert.assertTrue(updatedQuery, updatedQuery.contains("_List_"));
-        Assert.assertTrue(updatedQuery, updatedQuery.contains("field = 'FIELD1'"));
-        Assert.assertTrue(updatedQuery, updatedQuery.contains("values\":[\"a\",\"b\"]"));
+        function.apply(chunk);
     }
 
     @Test
@@ -236,8 +298,13 @@ public class VisitorFunctionTest extends EasyMockSupport {
         iteratorSetting.addOption(QueryOptions.QUERY, query);
         options.addScanIterator(iteratorSetting);
 
-        QueryData qd = new QueryData(TableName.SHARD, query, Collections.singleton(new Range("20210101_0", "20210101_0")),
-                        Collections.singletonList(iteratorSetting));
+        // @formatter:off
+        QueryData qd = new QueryData()
+                .withTableName(TableName.SHARD)
+                .withQuery(query)
+                .withRanges(Collections.singleton(new Range("20210101_0", "20210101_0")))
+                .withSettings(Collections.singletonList(iteratorSetting));
+        // @formatter:on
         ScannerChunk chunk = new ScannerChunk(options, qd.getRanges(), qd);
 
         replayAll();
@@ -285,8 +352,13 @@ public class VisitorFunctionTest extends EasyMockSupport {
         iteratorSetting.addOption(QueryOptions.QUERY, query);
         options.addScanIterator(iteratorSetting);
 
-        QueryData qd = new QueryData(TableName.SHARD, query, Collections.singleton(new Range("20210101_0", "20210101_0")),
-                        Collections.singletonList(iteratorSetting));
+        // @formatter:off
+        QueryData qd = new QueryData()
+                .withTableName(TableName.SHARD)
+                .withQuery(query)
+                .withRanges(Collections.singleton(new Range("20210101_0", "20210101_0")))
+                .withSettings(Collections.singletonList(iteratorSetting));
+        // @formatter:on
         ScannerChunk chunk = new ScannerChunk(options, qd.getRanges(), qd);
 
         replayAll();

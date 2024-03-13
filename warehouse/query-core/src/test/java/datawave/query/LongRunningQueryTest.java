@@ -6,11 +6,13 @@ import static org.junit.Assert.assertTrue;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
 
@@ -20,6 +22,9 @@ import org.apache.log4j.Logger;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
+import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
 import datawave.core.common.connection.AccumuloConnectionFactory;
@@ -29,7 +34,11 @@ import datawave.core.query.result.event.DefaultResponseObjectFactory;
 import datawave.helpers.PrintUtility;
 import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.QueryImpl;
+import datawave.microservice.query.config.QueryExpirationProperties;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
+import datawave.query.attributes.UniqueFields;
+import datawave.query.attributes.UniqueGranularity;
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.util.DateIndexHelperFactory;
 import datawave.query.util.MetadataHelperFactory;
@@ -38,6 +47,7 @@ import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.util.TableName;
+import datawave.webservice.query.cache.RunningQueryTimingImpl;
 import datawave.webservice.query.runner.RunningQuery;
 
 /**
@@ -124,7 +134,10 @@ public class LongRunningQueryTest {
         GenericQueryConfiguration config = logic.initialize(client, query, Collections.singleton(auths));
         logic.setupQuery(config);
 
-        RunningQuery runningQuery = new RunningQuery(null, client, AccumuloConnectionFactory.Priority.NORMAL, logic, query, "", datawavePrincipal, null, null,
+        QueryExpirationProperties conf = new QueryExpirationProperties();
+        conf.setMaxLongRunningTimeoutRetries(1000);
+        RunningQueryTimingImpl timing = new RunningQueryTimingImpl(conf, 1);
+        RunningQuery runningQuery = new RunningQuery(null, client, AccumuloConnectionFactory.Priority.NORMAL, logic, query, "", datawavePrincipal, timing, null,
                         new QueryMetricFactoryImpl());
         List<ResultsPage> pages = new ArrayList<>();
 
@@ -146,6 +159,66 @@ public class LongRunningQueryTest {
         // check the last page for COMPLETE status and that the total number of results is 8
         assertEquals(8, pages.get(pages.size() - 1).getResults().size());
         assertEquals(ResultsPage.Status.COMPLETE, pages.get(pages.size() - 1).getStatus());
+    }
+
+    /**
+     * A groupBy query is one type of query that is allowed to be "long running", so that type of query is used in this test.
+     *
+     * A long running query will return a ResultsPage with zero results if it has not completed within the query execution page timeout. This test expects at
+     * least 2 pages (the exact number will depend on cpu speed). All but the lsat page should have 0 results and be marked as PARTIAL. The last page should
+     * have 8 results and have a status of COMPLETE.
+     *
+     * @throws Exception
+     *             if there is an issue
+     */
+    @Test
+    public void testLongRunningUniqueQuery() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("unique.fields", "GROUP");
+
+        String queryStr = "UUID =~ '^[CS].*'";
+        Date startDate = format.parse("20091231");
+        Date endDate = format.parse("20150101");
+        QueryImpl query = new QueryImpl();
+        query.setQuery(queryStr);
+        query.setBeginDate(startDate);
+        query.setEndDate(endDate);
+        query.setQueryAuthorizations(auths.serialize());
+        query.setColumnVisibility("A&E&I");
+        query.setPagesize(Integer.MAX_VALUE);
+        query.setParameters(extraParameters);
+        query.setId(UUID.randomUUID());
+
+        // this parameter is what makes the query long running. Failing to set this will let it default to 50 minutes
+        // (and not the 200 milliseconds that it is set to) which will return only 1 page of 8 results, thereby failing this test.
+        // the smaller this timeout, the more pages of results that will be returned.
+        logic.setQueryExecutionForPageTimeout(1);
+        ShardQueryConfiguration config = (ShardQueryConfiguration) logic.initialize(client, query, Collections.singleton(auths));
+        logic.setupQuery(config);
+
+        QueryExpirationProperties conf = new QueryExpirationProperties();
+        conf.setMaxLongRunningTimeoutRetries(1000);
+        RunningQueryTimingImpl timing = new RunningQueryTimingImpl(conf, 1);
+        RunningQuery runningQuery = new RunningQuery(null, client, AccumuloConnectionFactory.Priority.NORMAL, logic, query, "", datawavePrincipal, timing, null,
+                        new QueryMetricFactoryImpl());
+        List<ResultsPage> pages = new ArrayList<>();
+        ResultsPage page = runningQuery.next();
+        Thread.sleep(15);
+        while (page.getStatus() != ResultsPage.Status.NONE) {
+            pages.add(page);
+            page = runningQuery.next();
+        }
+
+        // There should be at least 2 pages, more depending on cpu speed.
+        assertTrue(pages.size() > 1);
+        boolean foundIntermediate = false;
+        for (int i = 0; i < pages.size(); ++i) {
+            // at least one page should be an "intermediate" result (0 results, PARTIAL status
+            if (pages.get(i).getResults().size() == 0 && pages.get(i).getStatus().equals(ResultsPage.Status.PARTIAL)) {
+                foundIntermediate = true;
+            }
+        }
+        assertTrue("Did not find intermediate results", foundIntermediate);
     }
 
     /***
@@ -193,7 +266,7 @@ public class LongRunningQueryTest {
             pages.add(page);
         }
 
-        // There should be at least 2 pages, more depending on cpu speed.
+        // There should be 1 end result
         assertTrue(pages.size() == 1);
 
         // check the last page for COMPLETE status and that the total number of results is 0

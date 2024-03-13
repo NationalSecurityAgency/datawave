@@ -20,6 +20,7 @@ import org.apache.log4j.Logger;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.hash.BloomFilter;
 import com.google.common.hash.Funnel;
@@ -46,7 +47,24 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
     private UniqueFields uniqueFields;
     private Multimap<String,String> modelMapping;
 
-    public UniqueTransform(UniqueFields uniqueFields) {
+    /**
+     * Length of time in milliseconds that a client will wait while results are collected. If a full page is not collected before the timeout, a blank page will
+     * be returned to signal the request is still in progress.
+     */
+    private final long queryExecutionForPageTimeout;
+
+    /**
+     * Create a new {@link UniqueTransform} that will use a bloom filter to return on those results that are unique per the uniqueFields. Special uniqueness can
+     * be requested for date/time fields (@see UniqueFields).
+     *
+     * @param uniqueFields
+     *            The unique fields
+     * @param queryExecutionForPageTimeout
+     *            If this timeout is passed before since the last result was returned, then an "intermediate" result is returned denoting we are still looking
+     *            for the next unique result.
+     */
+    public UniqueTransform(UniqueFields uniqueFields, long queryExecutionForPageTimeout) {
+        this.queryExecutionForPageTimeout = queryExecutionForPageTimeout;
         this.uniqueFields = uniqueFields;
         this.uniqueFields.deconstructIdentifierFields();
         this.bloom = BloomFilter.create(new ByteFunnel(), 500000, 1e-15);
@@ -56,15 +74,20 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
     }
 
     /**
-     * Create a new {@link UniqueTransform} that will capture the reverse field mapping defined within the model being used by the logic (if present).
+     * Create a new {@link UniqueTransform} that will use a bloom filter to return on those results that are unique per the uniqueFields. Special uniqueness can
+     * be requested for date/time fields (@see UniqueFields). The logic will be used to get a query model to include the reverse mappings in the unique field
+     * set
      *
      * @param logic
-     *            the logic
+     *            The query logic from whih to pull the query model
      * @param uniqueFields
-     *            the set of fields to find unique values for
+     *            The unique fields
+     * @param queryExecutionForPageTimeout
+     *            If this timeout is passed before since the last result was returned, then an "intermediate" result is returned denoting we are still looking
+     *            for the next unique result.
      */
-    public UniqueTransform(BaseQueryLogic<Entry<Key,Value>> logic, UniqueFields uniqueFields) {
-        this(uniqueFields);
+    public UniqueTransform(BaseQueryLogic<Entry<Key,Value>> logic, UniqueFields uniqueFields, long queryExecutionForPageTimeout) {
+        this(uniqueFields, queryExecutionForPageTimeout);
         QueryModel model = ((ShardQueryLogic) logic).getQueryModel();
         if (model != null) {
             modelMapping = HashMultimap.create();
@@ -123,12 +146,22 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
             try {
                 if (isDuplicate(keyDocumentEntry.getValue())) {
                     keyDocumentEntry = null;
+                } else {
+                    return keyDocumentEntry;
                 }
             } catch (IOException ioe) {
                 log.error("Failed to convert document to bytes.  Returning document as unique.", ioe);
             }
         }
-        return keyDocumentEntry;
+
+        long elapsedExecutionTimeForCurrentPage = System.currentTimeMillis() - this.queryExecutionForPageStartTime;
+        if (elapsedExecutionTimeForCurrentPage > this.queryExecutionForPageTimeout) {
+            Document intermediateResult = new Document();
+            intermediateResult.setIntermediateResult(true);
+            return Maps.immutableEntry(new Key(), intermediateResult);
+        }
+
+        return null;
     }
 
     /**

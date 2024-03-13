@@ -217,10 +217,10 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
             if (isCheckpointable()) {
                 // if checkpointable, then only one range per query data so that the whole checkpointing thing works correctly
                 for (Range range : forward) {
-                    queries.add(new QueryData(config.getIndexTableName(), null, Collections.singleton(range), settings, familiesToSeek));
+                    queries.add(new QueryData(config.getIndexTableName(), null, Collections.singleton(range), familiesToSeek, settings));
                 }
             } else {
-                queries.add(new QueryData(config.getIndexTableName(), null, forward, settings, familiesToSeek));
+                queries.add(new QueryData(config.getIndexTableName(), null, forward, familiesToSeek, settings));
             }
         }
 
@@ -231,10 +231,10 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
             if (isCheckpointable()) {
                 // if checkpointable, then only one range per query data so that the whole checkpointing thing works correctly
                 for (Range range : reverse) {
-                    queries.add(new QueryData(config.getReverseIndexTableName(), null, Collections.singleton(range), settings, familiesToSeek));
+                    queries.add(new QueryData(config.getReverseIndexTableName(), null, Collections.singleton(range), familiesToSeek, settings));
                 }
             } else {
-                queries.add(new QueryData(config.getReverseIndexTableName(), null, reverse, settings, familiesToSeek));
+                queries.add(new QueryData(config.getReverseIndexTableName(), null, reverse, familiesToSeek, settings));
             }
         }
 

@@ -128,15 +128,15 @@ public class SSDeepSimilarityQueryTest {
         Assert.assertEquals(expectedEventCount, eventCount);
 
         // find the fields for the self match example.
-        SSDeepTestUtil.assertSSDeepSimilarityMatch(TEST_SSDEEPS[2], TEST_SSDEEPS[2], "65.0", "100", observedEvents);
+        SSDeepTestUtil.assertSSDeepSimilarityMatch(TEST_SSDEEPS[2], TEST_SSDEEPS[2], "65", "100", observedEvents);
 
         // find and validate the fields for the partial match example.
-        SSDeepTestUtil.assertSSDeepSimilarityMatch(TEST_SSDEEPS[2], TEST_SSDEEPS[3], "51.0", "96", observedEvents);
+        SSDeepTestUtil.assertSSDeepSimilarityMatch(TEST_SSDEEPS[2], TEST_SSDEEPS[3], "51", "96", observedEvents);
 
         if (applyMinScoreThreshold)
             SSDeepTestUtil.assertNoMatch(TEST_SSDEEPS[2], TEST_SSDEEPS[3], observedEvents);
         else
-            SSDeepTestUtil.assertSSDeepSimilarityMatch(TEST_SSDEEPS[2], TEST_SSDEEPS[4], "9.0", "63", observedEvents);
+            SSDeepTestUtil.assertSSDeepSimilarityMatch(TEST_SSDEEPS[2], TEST_SSDEEPS[4], "9", "63", observedEvents);
     }
 
     @SuppressWarnings("rawtypes")
