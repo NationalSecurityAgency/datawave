@@ -461,6 +461,15 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private boolean pruneQueryOptions = false;
 
     /**
+     * Flag to control gathering field counts from the global index and persisting those to the query iterator. Negated terms and branches are not considered.
+     */
+    private boolean useFieldCounts = false;
+    /**
+     * Flag to control gathering term counts from the global index and persisting those to the query iterator. Negated terms and branches are not considered.
+     */
+    private boolean useTermCounts = false;
+
+    /**
      * The minimum percentage threshold that the count for an index row must meet compared to the count for the corresponding frequency row in the metadata
      * table in order to NOT be considered a field index hole. The value must be between 0.0-1.0, where 1.0 is equivalent to 100%.
      */
@@ -691,6 +700,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setTfAggregationThresholdMs(other.getTfAggregationThresholdMs());
         this.setGroupFields(GroupFields.copyOf(other.getGroupFields()));
         this.setPruneQueryOptions(other.getPruneQueryOptions());
+        this.setUseFieldCounts(other.getUseFieldCounts());
+        this.setUseTermCounts(other.getUseTermCounts());
         this.setFieldIndexHoleMinThreshold(other.getFieldIndexHoleMinThreshold());
     }
 
@@ -2642,5 +2653,21 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setReduceIngestTypesPerShard(boolean reduceIngestTypesPerShard) {
         this.reduceIngestTypesPerShard = reduceIngestTypesPerShard;
+    }
+
+    public boolean getUseTermCounts() {
+        return useTermCounts;
+    }
+
+    public void setUseTermCounts(boolean useTermCounts) {
+        this.useTermCounts = useTermCounts;
+    }
+
+    public boolean getUseFieldCounts() {
+        return useFieldCounts;
+    }
+
+    public void setUseFieldCounts(boolean useFieldCounts) {
+        this.useFieldCounts = useFieldCounts;
     }
 }

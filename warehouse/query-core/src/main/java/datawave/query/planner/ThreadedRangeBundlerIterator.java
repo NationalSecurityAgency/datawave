@@ -23,6 +23,8 @@ import com.google.common.collect.Lists;
 import datawave.common.util.MultiComparator;
 import datawave.common.util.concurrent.BoundedBlockingQueue;
 import datawave.query.CloseableIterable;
+import datawave.query.iterator.QueryIterator;
+import datawave.query.iterator.QueryOptions;
 import datawave.query.tld.TLDQueryIterator;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.Query;
@@ -144,7 +146,8 @@ public class ThreadedRangeBundlerIterator implements Iterator<QueryData>, Closea
 
                     // if the generated query is larger, use the original
                     if (null != queryTree && (plan.getQueryString().length() > original.getQuery().length())) {
-                        plan.setQuery(original.getQuery(), queryTree);
+                        plan.setQueryTree(queryTree);
+                        plan.withQueryString(original.getQuery());
                     }
                     if (log.isTraceEnabled())
                         log.trace("size of ranges is " + plan.getRanges());
@@ -274,6 +277,15 @@ public class ThreadedRangeBundlerIterator implements Iterator<QueryData>, Closea
 
             IteratorSetting newSetting = new IteratorSetting(setting.getPriority(), setting.getName(), iterClazz);
             newSetting.addOptions(setting.getOptions());
+
+            if (plan.getFieldCounts() != null && !plan.getTermCounts().isEmpty()) {
+                newSetting.addOption(QueryOptions.FIELD_COUNTS, QueryOptions.mapToString(plan.getFieldCounts()));
+            }
+
+            if (plan.getTermCounts() != null && !plan.getTermCounts().isEmpty()) {
+                newSetting.addOption(QueryOptions.TERM_COUNTS, QueryOptions.mapToString(plan.getTermCounts()));
+            }
+
             settings.add(newSetting);
         }
 

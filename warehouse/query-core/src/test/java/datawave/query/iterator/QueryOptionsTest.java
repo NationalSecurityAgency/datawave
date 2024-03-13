@@ -215,6 +215,19 @@ public class QueryOptionsTest {
     }
 
     @Test
+    public void testMapSerialization() {
+        Map<String,Long> map = new HashMap<>();
+        map.put("FIELD_A", 23L);
+        map.put("FIELD_B", 146L);
+
+        String serialized = QueryOptions.mapToString(map);
+        assertEquals("FIELD_A,23;FIELD_B,146", serialized);
+
+        Map<String,Long> deserialized = QueryOptions.mapFromString(serialized);
+        assertEquals(map, deserialized);
+    }
+
+    @Test
     public void testNoDataTypeFilter() {
         Map<String,String> noOpts = Collections.emptyMap();
         QueryOptions opts = new QueryOptions();

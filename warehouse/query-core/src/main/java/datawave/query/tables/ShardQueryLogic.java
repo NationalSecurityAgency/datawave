@@ -190,6 +190,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     private QueryPlanner planner = null;
     private QueryParser parser = null;
     private QueryLogicTransformer transformerInstance = null;
+
     private CardinalityConfiguration cardinalityConfiguration = null;
 
     /**
@@ -528,17 +529,16 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         }
 
         ShardQueryConfiguration config = (ShardQueryConfiguration) genericConfig;
-        setConfig(config);
 
         final QueryStopwatch timers = config.getTimers();
         TraceStopwatch stopwatch = timers.newStartedStopwatch("ShardQueryLogic - Setup Query");
 
-        // Ensure we have all the information needed to run a query
+        // Ensure we have all of the information needed to run a query
         if (!config.canRunQuery()) {
             log.warn("The given query '" + config + "' could not be run, most likely due to not matching any records in the global index.");
 
             // Stub out an iterator to correctly present "no results"
-            this.iterator = new Iterator<>() {
+            this.iterator = new Iterator<Map.Entry<Key,Value>>() {
                 @Override
                 public boolean hasNext() {
                     return false;
@@ -550,7 +550,9 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
                 }
 
                 @Override
-                public void remove() {}
+                public void remove() {
+                    return;
+                }
             };
 
             this.scanner = null;
@@ -2753,6 +2755,22 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
 
     public void setPruneQueryOptions(boolean pruneQueryOptions) {
         getConfig().setPruneQueryOptions(pruneQueryOptions);
+    }
+
+    public boolean getUseFieldCounts() {
+        return getConfig().getUseFieldCounts();
+    }
+
+    public void setUseFieldCounts(boolean useFieldCounts) {
+        getConfig().setUseFieldCounts(useFieldCounts);
+    }
+
+    public boolean getUseTermCounts() {
+        return getConfig().getUseTermCounts();
+    }
+
+    public void setUseTermCounts(boolean useTermCounts) {
+        getConfig().setUseTermCounts(useTermCounts);
     }
 
     public void setFieldIndexHoleMinThreshold(double fieldIndexHoleMinThreshold) {

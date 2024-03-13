@@ -18,6 +18,7 @@ public class QueryData {
     private Collection<Range> ranges = new HashSet<>();
     private Collection<String> columnFamilies = new HashSet<>();
     private List<IteratorSetting> settings = new ArrayList<>();
+    private boolean rebuildHashCode = true;
     private int hashCode = -1;
 
     public QueryData() {
@@ -55,26 +56,7 @@ public class QueryData {
         this.columnFamilies = new HashSet<>(other.columnFamilies);
         this.settings = new ArrayList<>(other.settings);
         this.hashCode = other.hashCode;
-    }
-
-    public QueryData withQuery(String query) {
-        setQuery(query);
-        return this;
-    }
-
-    public QueryData withRanges(Collection<Range> ranges) {
-        setRanges(ranges);
-        return this;
-    }
-
-    public QueryData withColumnFamilies(Collection<String> columnFamilies) {
-        setColumnFamilies(columnFamilies);
-        return this;
-    }
-
-    public QueryData withSettings(List<IteratorSetting> settings) {
-        setSettings(settings);
-        return this;
+        this.rebuildHashCode = other.rebuildHashCode;
     }
 
     @Deprecated(since = "6.5.0", forRemoval = true)
@@ -106,8 +88,30 @@ public class QueryData {
         this.columnFamilies.addAll(columnFamilies);
     }
 
-    public List<IteratorSetting> getSettings() {
-        return settings;
+    // builder style methods
+
+    public QueryData withQuery(String query) {
+        this.query = query;
+        resetHashCode();
+        return this;
+    }
+
+    public QueryData withRanges(Collection<Range> ranges) {
+        this.ranges = ranges;
+        resetHashCode();
+        return this;
+    }
+
+    public QueryData withColumnFamilies(Collection<String> columnFamilies) {
+        this.columnFamilies = columnFamilies;
+        resetHashCode();
+        return this;
+    }
+
+    public QueryData withSettings(List<IteratorSetting> settings) {
+        this.settings = settings;
+        resetHashCode();
+        return this;
     }
 
     public void setSettings(List<IteratorSetting> settings) {
@@ -115,13 +119,17 @@ public class QueryData {
         resetHashCode();
     }
 
-    public String getQuery() {
-        return query;
+    public List<IteratorSetting> getSettings() {
+        return settings;
     }
 
     public void setQuery(String query) {
         this.query = query;
         resetHashCode();
+    }
+
+    public String getQuery() {
+        return query;
     }
 
     public Collection<Range> getRanges() {
@@ -175,7 +183,7 @@ public class QueryData {
 
     @Override
     public int hashCode() {
-        if (hashCode == -1) {
+        if (rebuildHashCode) {
             //  @formatter:off
             hashCode = new HashCodeBuilder()
                             .append(query)
@@ -183,6 +191,7 @@ public class QueryData {
                             .append(columnFamilies)
                             .append(settings)
                             .hashCode();
+            rebuildHashCode = false;
             //  @formatter:on
         }
         return hashCode;
@@ -192,6 +201,6 @@ public class QueryData {
      * Method to reset the hashcode when an internal variable is updated
      */
     private void resetHashCode() {
-        hashCode = -1;
+        rebuildHashCode = true;
     }
 }
