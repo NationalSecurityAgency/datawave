@@ -855,14 +855,32 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
      * @return Accumulo Key object
      */
     protected Key createIndexKey(byte[] row, Text colf, Text colq, byte[] vis, long ts, boolean delete) {
-        // Truncate the timestamp to the day
-        long tsToDay = (CompositeTimestamp.getEventDate(ts) / MS_PER_DAY) * MS_PER_DAY;
-        long ageOffToDay = (CompositeTimestamp.getAgeOffDate(ts) / MS_PER_DAY) * MS_PER_DAY;
-        long indexComposite = CompositeTimestamp.getCompositeTimeStamp(tsToDay, ageOffToDay);
-
-        Key k = new Key(row, 0, row.length, colf.getBytes(), 0, colf.getLength(), colq.getBytes(), 0, colq.getLength(), vis, 0, vis.length, indexComposite);
+        Key k = new Key(row, 0, row.length, colf.getBytes(), 0, colf.getLength(), colq.getBytes(), 0, colq.getLength(), vis, 0, vis.length,
+                        getIndexTimestamp(ts));
         k.setDeleted(delete);
         return k;
+    }
+
+    /**
+     * trim the event date and ageoff portions of the ts to the beginning of the day
+     *
+     * @param ts
+     * @return the timestamp to be used for index entries
+     */
+    public static long getIndexTimestamp(long ts) {
+        long tsToDay = trimToBeginningOfDay(CompositeTimestamp.getEventDate(ts));
+        long ageOffToDay = trimToBeginningOfDay(CompositeTimestamp.getAgeOffDate(ts));
+        return CompositeTimestamp.getCompositeTimeStamp(tsToDay, ageOffToDay);
+    }
+
+    /**
+     * Trim ms to the beginning of the day
+     *
+     * @param date
+     * @return the time at the beginning of the day
+     */
+    public static long trimToBeginningOfDay(long date) {
+        return (date / MS_PER_DAY) * MS_PER_DAY;
     }
 
     /**
