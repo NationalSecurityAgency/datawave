@@ -262,9 +262,6 @@ public class QueryExecutorBeanTest {
         QueryParameters qp = new QueryParametersImpl();
         MultivaluedMap<String,String> optionalParameters = new MultivaluedMapImpl<>();
         optionalParameters.putAll(qp.getUnknownParameters(p));
-        optionalParameters.putSingle(PrivateAuditConstants.USER_DN, userDN.toLowerCase());
-        optionalParameters.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, "PRIVATE|PUBLIC");
-        optionalParameters.putSingle(PrivateAuditConstants.LOGIC_CLASS, q.getQueryLogicName());
 
         return optionalParameters;
     }
@@ -299,8 +296,8 @@ public class QueryExecutorBeanTest {
         EasyMock.expect(logic.getMaxResults()).andReturn(-1L);
         logic.preInitialize(q, WSAuthorizationsUtil.buildAuthorizations(Collections.singleton(Sets.newHashSet("PUBLIC", "PRIVATE"))));
         EasyMock.expect(logic.getUserOperations()).andReturn(null);
-        EasyMock.expect(responseObjectFactory.getQueryImpl()).andReturn(new QueryImpl());
         EasyMock.expect(logic.getResultLimit(anyObject(QueryImpl.class))).andReturn(-1L);
+        persister.save(anyObject(QueryImpl.class), anyObject(QueryParameters.class));
         PowerMock.replayAll();
 
         bean.defineQuery(queryLogicName, p);
@@ -374,11 +371,11 @@ public class QueryExecutorBeanTest {
         PowerMock.resetAll();
         EasyMock.expect(ctx.getCallerPrincipal()).andReturn(principal).anyTimes();
         suppress(constructor(QueryParametersImpl.class));
-        EasyMock.expect(persister.create(userDN, dnList, (SecurityMarking) Whitebox.getField(bean.getClass(), "marking").get(bean), queryLogicName,
-                        (QueryParameters) Whitebox.getField(bean.getClass(), "qp").get(bean), optionalParameters)).andReturn(q);
+        EasyMock.expect(persister.create(userDN.toLowerCase(), dnList, (SecurityMarking) Whitebox.getField(bean.getClass(), "marking").get(bean),
+                        queryLogicName, (QueryParameters) Whitebox.getField(bean.getClass(), "qp").get(bean), optionalParameters)).andReturn(q);
 
-        EasyMock.expect(responseObjectFactory.getQueryImpl()).andReturn(new QueryImpl());
         EasyMock.expect(logic.getResultLimit(anyObject(QueryImpl.class))).andReturn(-1L);
+        this.persister.save(anyObject(QueryImpl.class), anyObject(QueryParametersImpl.class));
 
         EasyMock.expect(queryLogicFactory.getQueryLogic(queryLogicName, principal)).andReturn(logic);
         EasyMock.expect(logic.getRequiredQueryParameters()).andReturn(Collections.EMPTY_SET);
@@ -388,10 +385,6 @@ public class QueryExecutorBeanTest {
         EasyMock.expect(logic.getSelectors(anyObject())).andReturn(null);
         Map<String,String> auditParams = new HashMap<>();
         auditParams.put(QueryParameters.QUERY_STRING, p.getFirst(QueryParameters.QUERY_STRING));
-        auditParams.put(AuditParameters.USER_DN, userDN);
-        auditParams.put(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, "PRIVATE|PUBLIC");
-        auditParams.put(AuditParameters.QUERY_AUDIT_TYPE, AuditType.ACTIVE.name());
-        auditParams.put(AuditParameters.QUERY_LOGIC_CLASS, "EventQueryLogic");
         EasyMock.expect(auditService.audit(eq(auditParams))).andReturn(null);
         logic.close();
         EasyMock.expectLastCall();
@@ -486,8 +479,9 @@ public class QueryExecutorBeanTest {
 
         Set<Prediction> predictions = new HashSet<>();
         predictions.add(new Prediction("source", 1));
-        EasyMock.expect(responseObjectFactory.getQueryImpl()).andReturn(new QueryImpl());
         EasyMock.expect(logic.getResultLimit(anyObject(QueryImpl.class))).andReturn(-1L);
+        persister.save(anyObject(QueryImpl.class), anyObject(QueryParametersImpl.class));
+
         EasyMock.expect(predictor.predict(EasyMock.eq(testMetric))).andReturn(predictions);
 
         PowerMock.replayAll();
@@ -682,8 +676,8 @@ public class QueryExecutorBeanTest {
         EasyMock.expect(persister.create(principal.getUserDN().subjectDN(), dnList, Whitebox.getInternalState(bean, SecurityMarking.class), queryLogicName,
                         Whitebox.getInternalState(bean, QueryParameters.class), optionalParameters)).andReturn(q);
         EasyMock.expect(persister.findById(EasyMock.anyString())).andReturn(null).anyTimes();
-        EasyMock.expect(responseObjectFactory.getQueryImpl()).andReturn(new QueryImpl());
         EasyMock.expect(logic.getResultLimit(anyObject(QueryImpl.class))).andReturn(-1L);
+        persister.save(anyObject(QueryImpl.class), anyObject(QueryParametersImpl.class));
         EasyMock.expect(connectionFactory.getTrackingMap(anyObject())).andReturn(Maps.newHashMap()).anyTimes();
 
         BaseQueryMetric metric = new QueryMetricFactoryImpl().createMetric();

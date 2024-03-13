@@ -114,12 +114,15 @@ public class Persister {
         q.setColumnVisibility(marking.toColumnVisibilityString());
         q.setUncaughtExceptionHandler(new QueryUncaughtExceptionHandler());
         Thread.currentThread().setUncaughtExceptionHandler(q.getUncaughtExceptionHandler());
+        return q;
+    }
+
+    public void save(Query q, QueryParameters qp) {
         // Persist the query object if required
         if (qp.getPersistenceMode().equals(QueryPersistence.PERSISTENT)) {
             log.debug("Persisting query with id: " + q.getId());
-            create(q);
+            save(q);
         }
-        return q;
     }
 
     private void tableCheck(AccumuloClient c) throws AccumuloException, AccumuloSecurityException, TableExistsException {
@@ -141,7 +144,7 @@ public class Persister {
      *            the query
      *
      */
-    private void create(Query query) {
+    private void save(Query query) {
         AccumuloClient c = null;
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
@@ -180,7 +183,7 @@ public class Persister {
         // Do we really need to remove first. Won't creating a record with the same key just overwrite with a new timestamp
         // The only time this wouldn't be the case is when the name and/or the visibility changes, which would cause a new row id
         remove(query);
-        create(query);
+        save(query);
     }
 
     /**
