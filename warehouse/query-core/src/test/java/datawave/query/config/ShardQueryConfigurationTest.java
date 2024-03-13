@@ -549,6 +549,11 @@ public class ShardQueryConfigurationTest {
 
         defaultValues.put("groupFields", new GroupFields());
         updatedValues.put("groupFields", GroupFields.from("GROUP(FIELD_G,FIELD_H)"));
+
+        defaultValues.put("useFieldCounts", false);
+        updatedValues.put("useFieldCounts", true);
+        defaultValues.put("useTermCounts", false);
+        updatedValues.put("useTermCounts", true);
     }
 
     private Query createQuery(String query) {
