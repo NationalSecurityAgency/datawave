@@ -1,5 +1,7 @@
 package datawave.util;
 
+import java.util.Comparator;
+
 /**
  * The composite timestamp allows us to encode two values in the timestamp to be used in accumulo keys. The event date will take the first (right hand most) 46
  * bits. The last 17 bits (except for the sign bit) will be used to encode how many days after the event date that we should base the ageoff on. If the
@@ -66,5 +68,34 @@ public class CompositeTimestamp {
         }
         return compositeTS;
 
+    }
+
+    /**
+     * Return a comparator for composite timestamps. Orders firstly on the event date, and if equal then on the ageoff date. Note for values with the same event
+     * date, the timestamps will order naturally for positive event dates, but need to be reversed for negative event dates. This should only be an issue for
+     * the global index and hence this comparator can be used in that case.
+     *
+     * @return a comparison of the timestamps
+     */
+    public static Comparator<Long> comparator() {
+        return (o1, o2) -> {
+            long eventDate1 = CompositeTimestamp.getEventDate(o1);
+            long eventDate2 = CompositeTimestamp.getEventDate(o2);
+            if (eventDate1 < eventDate2) {
+                return -1;
+            } else if (eventDate1 == eventDate2) {
+                long ageOffDate1 = CompositeTimestamp.getAgeOffDate(o1);
+                long ageOffDate2 = CompositeTimestamp.getAgeOffDate(o2);
+                if (ageOffDate1 < ageOffDate2) {
+                    return -1;
+                } else if (ageOffDate1 == ageOffDate2) {
+                    return 0;
+                } else {
+                    return 1;
+                }
+            } else {
+                return 1;
+            }
+        };
     }
 }
