@@ -27,7 +27,7 @@ import datawave.webservice.result.EventQueryResponseBase;
  * <h1>Overview</h1> This is a query logic implementation that can handle delegating to a remote event query logic (i.e. one that returns an extension of
  * EventQueryResponseBase).
  */
-public class RemoteEventQueryLogic extends BaseRemoteQueryLogic<EventBase> implements RemoteQueryLogic<EventBase> {
+public class RemoteEventQueryLogic extends BaseRemoteQueryLogic<EventBase> {
 
     protected static final Logger log = ThreadConfigurableLogger.getLogger(RemoteEventQueryLogic.class);
 
