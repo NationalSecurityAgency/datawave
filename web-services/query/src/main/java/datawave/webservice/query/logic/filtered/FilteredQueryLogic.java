@@ -123,7 +123,7 @@ public class FilteredQueryLogic extends DelegatingQueryLogic implements QueryLog
     }
 
     @Override
-    public TransformIterator getTransformIterator(Query settings) throws QueryException {
+    public TransformIterator getTransformIterator(Query settings) {
         if (!isFiltered()) {
             return super.getTransformIterator(settings);
         } else {

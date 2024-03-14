@@ -96,7 +96,7 @@ public abstract class DelegatingQueryLogic implements QueryLogic<Object> {
     }
 
     @Override
-    public TransformIterator getTransformIterator(Query settings) throws QueryException {
+    public TransformIterator getTransformIterator(Query settings) {
         return delegate.getTransformIterator(settings);
     }
 
