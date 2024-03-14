@@ -21,19 +21,18 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.TableId;
 import org.apache.accumulo.core.dataImpl.KeyExtent;
 import org.apache.accumulo.core.manager.state.tables.TableState;
-import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
 import com.google.common.base.Function;
 import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.iterator.QueryIterator;
+import datawave.query.iterator.QueryOptions;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.planner.QueryPlan;
 import datawave.query.tables.SessionOptions;
@@ -51,12 +50,12 @@ public class PushdownFunction implements Function<QueryData,List<ScannerChunk>> 
     /**
      * Configuration object
      */
-    private ShardQueryConfiguration config;
+    private final ShardQueryConfiguration config;
 
     /**
      * Tablet locator
      */
-    private TabletLocator tl;
+    private final TabletLocator tabletLocator;
 
     /**
      * Set of query plans
@@ -66,10 +65,10 @@ public class PushdownFunction implements Function<QueryData,List<ScannerChunk>> 
 
     protected TableId tableId;
 
-    public PushdownFunction(TabletLocator tl, ShardQueryConfiguration config, Collection<IteratorSetting> settings, TableId tableId) {
-        this.tl = tl;
+    public PushdownFunction(TabletLocator tabletLocator, ShardQueryConfiguration config, Collection<IteratorSetting> settings, TableId tableId) {
+        this.tabletLocator = tabletLocator;
         this.config = config;
-        queryPlanSet = Sets.newHashSet();
+        this.queryPlanSet = Sets.newHashSet();
         this.customSettings = settings;
         this.tableId = tableId;
 
@@ -86,7 +85,7 @@ public class PushdownFunction implements Function<QueryData,List<ScannerChunk>> 
                             .withSettings(qd.getSettings())
                             .withColumnFamilies(qd.getColumnFamilies());
             //  @formatter:on
-            redistributeQueries(serverPlan, tl, queryPlan);
+            redistributeQueries(serverPlan, tabletLocator, queryPlan);
 
             for (String server : serverPlan.keySet()) {
                 Collection<QueryPlan> plans = serverPlan.get(server);
@@ -130,11 +129,7 @@ public class PushdownFunction implements Function<QueryData,List<ScannerChunk>> 
                 }
             }
 
-        } catch (AccumuloException e) {
-            throw new RuntimeException(e);
-        } catch (AccumuloSecurityException e) {
-            throw new RuntimeException(e);
-        } catch (TableNotFoundException e) {
+        } catch (AccumuloException | AccumuloSecurityException | TableNotFoundException e) {
             throw new RuntimeException(e);
         }
         return chunks;
@@ -150,42 +145,39 @@ public class PushdownFunction implements Function<QueryData,List<ScannerChunk>> 
             for (String server : binnedRanges.keySet()) {
                 Map<KeyExtent,List<Range>> hostedExtentMap = binnedRanges.get(server);
 
-                Iterable<Range> rangeIter = Lists.newArrayList();
+                List<Range> allRanges = new ArrayList<>();
 
                 for (Map.Entry<KeyExtent,List<Range>> rangeEntry : hostedExtentMap.entrySet()) {
-                    if (log.isTraceEnabled())
+                    if (log.isTraceEnabled()) {
                         log.trace("Adding range from " + rangeEntry.getValue());
-                    rangeIter = Iterables.concat(rangeIter, rangeEntry.getValue());
+                    }
+                    allRanges.addAll(rangeEntry.getValue());
                 }
 
                 if (log.isTraceEnabled()) {
-                    log.trace("Adding query tree " + JexlStringBuildingVisitor.buildQuery(currentPlan.getQueryTree()) + " " + currentPlan.getSettings().size()
-                                    + " for " + server);
+                    log.trace("Adding query tree " + currentPlan.getQueryString() + " " + currentPlan.getSettings().size() + " for " + server);
                 }
 
-                // update settings before building new query plan
-                List<IteratorSetting> updatedSettings = new ArrayList<>();
+                // copy out the settings, and use the (potentially) pruned query tree
+                List<IteratorSetting> newSettings = new ArrayList<>();
                 for (IteratorSetting setting : currentPlan.getSettings()) {
-                    IteratorSetting next = new IteratorSetting(setting.getPriority(), setting.getName(), setting.getIteratorClass());
-                    next.addOptions(setting.getOptions());
-                    if (next.getOptions().containsKey(QueryIterator.QUERY)) {
-                        next.addOption(QueryIterator.QUERY, JexlStringBuildingVisitor.buildQueryWithoutParse(currentPlan.getQueryTree()));
-                        next.addOption(QueryIterator.RANGES,
-                                        Lists.newArrayList(rangeIter).stream().map(Range::toString).collect(Collectors.joining(",", "[", "]")));
+                    IteratorSetting newSetting = new IteratorSetting(setting.getPriority(), setting.getName(), setting.getIteratorClass());
+                    newSetting.addOptions(setting.getOptions());
+                    if (newSetting.getOptions().containsKey(QueryOptions.QUERY)) {
+                        newSetting.addOption(QueryOptions.QUERY, JexlStringBuildingVisitor.buildQueryWithoutParse(currentPlan.getQueryTree()));
                     }
-                    updatedSettings.add(next);
+                    newSettings.add(newSetting);
                 }
 
                 //  @formatter:off
                 QueryPlan queryPlan = new QueryPlan()
                                 .withQueryTree(currentPlan.getQueryTree())
-                                .withRanges(Lists.newArrayList(rangeIter))
-                                .withSettings(updatedSettings)
+                                .withRanges(allRanges)
+                                .withSettings(newSettings)
                                 .withColumnFamilies(currentPlan.getColumnFamilies());
                 //  @formatter:on
 
                 serverPlan.put(server, queryPlan);
-
             }
         }
 

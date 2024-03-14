@@ -464,6 +464,15 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private boolean pruneQueryOptions = false;
 
     /**
+     * Flag to control gathering field counts from the global index and persisting those to the query iterator. Negated terms and branches are not considered.
+     */
+    private boolean useFieldCounts = false;
+    /**
+     * Flag to control gathering term counts from the global index and persisting those to the query iterator. Negated terms and branches are not considered.
+     */
+    private boolean useTermCounts = false;
+
+    /**
      * Default constructor
      */
     public ShardQueryConfiguration() {
@@ -679,6 +688,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setTfAggregationThresholdMs(other.getTfAggregationThresholdMs());
         this.setGroupFields(GroupFields.copyOf(other.getGroupFields()));
         this.setPruneQueryOptions(other.getPruneQueryOptions());
+        this.setUseFieldCounts(other.getUseFieldCounts());
+        this.setUseTermCounts(other.getUseTermCounts());
     }
 
     /**
@@ -2617,5 +2628,21 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setReduceIngestTypesPerShard(boolean reduceIngestTypesPerShard) {
         this.reduceIngestTypesPerShard = reduceIngestTypesPerShard;
+    }
+
+    public boolean getUseTermCounts() {
+        return useTermCounts;
+    }
+
+    public void setUseTermCounts(boolean useTermCounts) {
+        this.useTermCounts = useTermCounts;
+    }
+
+    public boolean getUseFieldCounts() {
+        return useFieldCounts;
+    }
+
+    public void setUseFieldCounts(boolean useFieldCounts) {
+        this.useFieldCounts = useFieldCounts;
     }
 }
