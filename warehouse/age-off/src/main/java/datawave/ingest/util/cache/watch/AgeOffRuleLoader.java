@@ -7,7 +7,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -15,9 +14,6 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
@@ -30,130 +26,55 @@ import datawave.iterators.filter.AgeOffConfigParams;
 import datawave.iterators.filter.ageoff.FilterOptions;
 import datawave.iterators.filter.ageoff.FilterRule;
 
-/**
- * File Rule Watch
- */
-public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
+public class AgeOffRuleLoader {
+    private static final Logger log = Logger.getLogger(AgeOffRuleLoader.class);
+    private final AgeOffFileLoaderDependencyProvider loaderConfig;
 
-    private static final Logger log = Logger.getLogger(FileRuleWatcher.class);
-
-    private final IteratorEnvironment iterEnv;
-
-    /**
-     * @param fs
-     *            file system
-     * @param filePath
-     *            path to the file
-     * @param configuredDiff
-     *            configured diff
-     * @throws IOException
-     *             if there is a problem reading the file
-     */
-    public FileRuleWatcher(FileSystem fs, Path filePath, long configuredDiff) throws IOException {
-        this(fs, filePath, configuredDiff, null);
+    public AgeOffRuleLoader(AgeOffFileLoaderDependencyProvider loaderConfig) {
+        this.loaderConfig = loaderConfig;
     }
 
-    /**
-     * @param fs
-     *            file system
-     * @param filePath
-     *            path to the file
-     * @param configuredDiff
-     *            configured diff
-     * @param iterEnv
-     *            iterator environment
-     * @throws IOException
-     *             if there is a problem reading the file
-     */
-    public FileRuleWatcher(FileSystem fs, Path filePath, long configuredDiff, IteratorEnvironment iterEnv) throws IOException {
-        super(fs, filePath, configuredDiff);
-        this.iterEnv = iterEnv;
-    }
+    public List<FilterRule> load(InputStream in) throws IOException, java.lang.reflect.InvocationTargetException, NoSuchMethodException {
+        List<RuleConfig> mergedRuleConfigs = loadRuleConfigs(in);
+        List<FilterRule> filterRules = new ArrayList<>();
+        /**
+         * This has been changed to support extended options.
+         */
+        for (RuleConfig ruleConfig : mergedRuleConfigs) {
+            try {
+                FilterRule filter = (FilterRule) Class.forName(ruleConfig.filterClassName).getDeclaredConstructor().newInstance();
 
-    /**
-     * @param filePath
-     *            path to the file
-     * @param configuredDiff
-     *            configured diff
-     * @throws IOException
-     *             if there is an error reading the file
-     */
-    public FileRuleWatcher(Path filePath, long configuredDiff) throws IOException {
-        this(filePath, configuredDiff, null);
-    }
+                FilterOptions option = new FilterOptions();
 
-    /**
-     * @param filePath
-     *            the path to the file
-     * @param configuredDiff
-     *            configured diff
-     * @param iterEnv
-     *            iterator environment
-     * @throws IOException
-     *             if there is an error reading the file
-     */
-    public FileRuleWatcher(Path filePath, long configuredDiff, IteratorEnvironment iterEnv) throws IOException {
-        super(filePath.getFileSystem(new Configuration()), filePath, configuredDiff);
-        this.iterEnv = iterEnv;
-    }
-
-    /*
-     * (non-Javadoc)
-     *
-     * @see datawave.ingest.util.cache.watch.FileSystemWatcher#loadContents(java.io.InputStream)
-     */
-    @Override
-    protected Collection<FilterRule> loadContents(InputStream in) throws IOException {
-
-        try {
-            List<RuleConfig> mergedRuleConfigs = loadRuleConfigs(in);
-            List<FilterRule> filterRules = new ArrayList<>();
-            /**
-             * This has been changed to support extended options.
-             */
-            for (RuleConfig ruleConfig : mergedRuleConfigs) {
-
-                try {
-                    FilterRule filter = (FilterRule) Class.forName(ruleConfig.filterClassName).getDeclaredConstructor().newInstance();
-
-                    FilterOptions option = new FilterOptions();
-
-                    if (ruleConfig.ttlValue != null) {
-                        option.setTTL(Long.parseLong(ruleConfig.ttlValue));
-                    }
-                    if (ruleConfig.ttlUnits != null) {
-                        option.setTTLUnits(ruleConfig.ttlUnits);
-                    }
-                    option.setOption(AgeOffConfigParams.MATCHPATTERN, ruleConfig.matchPattern);
-
-                    StringBuilder extOptions = new StringBuilder();
-
-                    for (Entry<String,String> myOption : ruleConfig.extendedOptions.entrySet()) {
-                        option.setOption(myOption.getKey(), myOption.getValue());
-                        extOptions.append(myOption.getKey()).append(",");
-                    }
-
-                    int extOptionLen = extOptions.length();
-
-                    option.setOption(AgeOffConfigParams.EXTENDED_OPTIONS, extOptions.toString().substring(0, extOptionLen - 1));
-
-                    filter.init(option, iterEnv);
-
-                    filterRules.add(filter);
-
-                } catch (InstantiationException | ClassNotFoundException | IllegalAccessException e) {
-                    log.error(e);
-                    throw new IOException(e);
+                if (ruleConfig.ttlValue != null) {
+                    option.setTTL(Long.parseLong(ruleConfig.ttlValue));
                 }
-            }
-            return filterRules;
-        } catch (Exception ex) {
-            log.error("uh oh: " + ex);
-            throw new IOException(ex);
-        } finally {
-            IOUtils.closeStream(in);
-        }
+                if (ruleConfig.ttlUnits != null) {
+                    option.setTTLUnits(ruleConfig.ttlUnits);
+                }
+                option.setOption(AgeOffConfigParams.MATCHPATTERN, ruleConfig.matchPattern);
 
+                StringBuilder extOptions = new StringBuilder();
+
+                for (Map.Entry<String,String> myOption : ruleConfig.extendedOptions.entrySet()) {
+                    option.setOption(myOption.getKey(), myOption.getValue());
+                    extOptions.append(myOption.getKey()).append(",");
+                }
+
+                int extOptionLen = extOptions.length();
+
+                option.setOption(AgeOffConfigParams.EXTENDED_OPTIONS, extOptions.substring(0, extOptionLen - 1));
+
+                filter.init(option, loaderConfig.getIterEnv());
+
+                filterRules.add(filter);
+
+            } catch (InstantiationException | ClassNotFoundException | IllegalAccessException e) {
+                log.error(e);
+                throw new IOException(e);
+            }
+        }
+        return filterRules;
     }
 
     protected List<RuleConfig> loadRuleConfigs(InputStream in) throws IOException {
@@ -185,8 +106,8 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
             // parse each node in rules and create a rule config
             // @formatter:off
             List<RuleConfig> childRules = IntStream.range(0, rules.getLength())
-                .mapToObj(i -> getRuleConfigForNode(rules, i))
-                .collect(Collectors.toList());
+                    .mapToObj(i -> getRuleConfigForNode(rules, i))
+                    .collect(Collectors.toList());
             // first check if there are any parent rules to merge with
             // no use trying to merge if no parent rules exist
             if (ruleConfigs.isEmpty()) {
@@ -203,9 +124,9 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
             //
             // iterate through child rules and try to merge them into the parent if possible
             List<RuleConfig> mergedRules = childRules.stream()
-                .filter(r -> !r.getLabel().isEmpty())
-                .filter(r -> mergeIfPossible(r, ruleConfigs))
-                .collect(Collectors.toList());
+                    .filter(r -> !r.getLabel().isEmpty())
+                    .filter(r -> mergeIfPossible(r, ruleConfigs))
+                    .collect(Collectors.toList());
 
             childRules.removeAll(mergedRules);
             // what ever is left add to the end of the list
@@ -225,8 +146,8 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
         // @formatter:off
         // find parent with matching label
         List<RuleConfig> candidates = parents.stream()
-            .filter(r -> r.getLabel().equals(child.label))
-            .collect(Collectors.toList());
+                .filter(r -> r.getLabel().equals(child.label))
+                .collect(Collectors.toList());
         // should we be able to have more than one matching parent?
         for (RuleConfig parent : candidates) {
             mergeChildIntoParent(child, parent);
@@ -321,29 +242,21 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
 
         // @formatter:off
         return new RuleConfig(filterClassName, index)
-            .ttlValue(ttlValue)
-            .ttlUnits(ttlUnits)
-            .matchPattern(matchPattern)
-            .label(label)
-            .setIsMerge(isMerge)
-            .extendedOptions(extendedOptions);
+                .ttlValue(ttlValue)
+                .ttlUnits(ttlUnits)
+                .matchPattern(matchPattern)
+                .label(label)
+                .setIsMerge(isMerge)
+                .extendedOptions(extendedOptions);
         // @formatter:on
     }
 
     // Return the RuleConfigs found within the configuration file referenced in the provided Node's text
     private Collection<? extends RuleConfig> loadParentRuleConfigs(Node parent) throws IOException {
         Collection<RuleConfig> rules = new ArrayList<>();
-        String parentPathStr = parent.getTextContent();
+        InputStream parentRuleInputStream = this.loaderConfig.getParentStream(parent);
 
-        if (null == parentPathStr || parentPathStr.isEmpty()) {
-            throw new IllegalArgumentException("Invalid parent config path, none specified!");
-        }
-        // loading parent relative to dir that child is in.
-        Path parentPath = new Path(this.filePath.getParent(), parentPathStr);
-        if (!fs.exists(parentPath)) {
-            throw new IllegalArgumentException("Invalid parent config path specified, " + parentPathStr + " does not exist!");
-        }
-        rules.addAll(loadRuleConfigs(fs.open(parentPath)));
+        rules.addAll(loadRuleConfigs(parentRuleInputStream));
         return rules;
     }
 
@@ -448,5 +361,11 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
             this.extendedOptions = extendedOptions;
             return this;
         }
+    }
+
+    public interface AgeOffFileLoaderDependencyProvider {
+        IteratorEnvironment getIterEnv();
+
+        InputStream getParentStream(Node parent) throws IOException;
     }
 }

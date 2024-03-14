@@ -1,7 +1,5 @@
 package datawave.iterators.filter;
 
-import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.replay;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
@@ -11,59 +9,88 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.accumulo.core.client.PluginEnvironment;
+import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.conf.DefaultConfiguration;
 import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.TableId;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.IteratorUtil;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.util.ConfigurationImpl;
-import org.easymock.EasyMockRunner;
-import org.easymock.EasyMockSupport;
-import org.easymock.Mock;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 import datawave.iterators.filter.ageoff.AppliedRule;
+import datawave.iterators.filter.ageoff.ConfigurableIteratorEnvironment;
 import datawave.iterators.filter.ageoff.FilterOptions;
+import datawave.query.iterator.SortedListKeyValueIterator;
 
-@RunWith(EasyMockRunner.class)
-public class ConfigurableAgeOffFilterTest extends EasyMockSupport {
+public class ConfigurableAgeOffFilterTest {
 
     private static long MILLIS_IN_DAY = 1000L * 60 * 60 * 24L;
     // reused in tests but contents never accessed
     private static Value VALUE = new Value();
 
-    @Mock
-    private IteratorEnvironment env;
-    @Mock
-    private PluginEnvironment pluginEnv;
-    @Mock
-    private SortedKeyValueIterator<Key,Value> source;
-
     private AccumuloConfiguration conf = DefaultConfiguration.getInstance();
+    private ConfigurableIteratorEnvironment env = new ConfigurableIteratorEnvironment() {
 
-    @Before
-    public void setUp() throws Exception {
-        expect(pluginEnv.getConfiguration()).andReturn(new ConfigurationImpl(conf)).anyTimes();
+        @Override
+        public IteratorUtil.IteratorScope getIteratorScope() {
+            return IteratorUtil.IteratorScope.majc;
+        }
 
-        expect(env.getConfig()).andReturn(conf).anyTimes();
-        expect(env.getPluginEnv()).andReturn(pluginEnv).anyTimes();
+        @Override
+        public boolean isFullMajorCompaction() {
+            return false;
+        }
 
-        // These two are only for the disabled test
-        expect(env.getIteratorScope()).andReturn(IteratorUtil.IteratorScope.majc).anyTimes();
-        expect(env.isFullMajorCompaction()).andReturn(false).anyTimes();
-        expect(env.isUserCompaction()).andReturn(false).anyTimes();
+        @Override
+        public boolean isUserCompaction() {
+            return false;
+        }
 
-        replay(env, pluginEnv);
-    }
+        @Override
+        public PluginEnvironment getPluginEnv() {
+            return new PluginEnvironment() {
+
+                @Override
+                public Configuration getConfiguration() {
+                    return null;
+                }
+
+                @Override
+                public Configuration getConfiguration(TableId tableId) {
+                    return new ConfigurationImpl(conf);
+                }
+
+                @Override
+                public String getTableName(TableId tableId) throws TableNotFoundException {
+                    return null;
+                }
+
+                @Override
+                public <T> T instantiate(String s, Class<T> aClass) throws Exception {
+                    return null;
+                }
+
+                @Override
+                public <T> T instantiate(TableId tableId, String s, Class<T> aClass) throws Exception {
+                    return null;
+                }
+            };
+        }
+
+    };
+
+    private SortedKeyValueIterator<Key,Value> source = new SortedListKeyValueIterator(Map.<Key,Value> of().entrySet().iterator());
 
     @Test
     public void testAcceptKeyValue_OnlyUserMajc() throws Exception {
@@ -108,7 +135,7 @@ public class ConfigurableAgeOffFilterTest extends EasyMockSupport {
     public void testAcceptKeyValue_WithFile() throws Exception {
         ConfigurableAgeOffFilter filter = new ConfigurableAgeOffFilter();
         Map<String,String> options = getOptionsMap(30, AgeOffTtlUnits.DAYS);
-        options.put(AgeOffConfigParams.FILTER_CONFIG, pathFromClassloader("/test-root-rules.xml"));
+        options.put(AgeOffConfigParams.FILTER_CONFIG, pathFromClassloader("/filter/test-root-rules.xml"));
         filter.init(source, options, env);
 
         // the file uses TestFilter which always returns false for accept and filter applied

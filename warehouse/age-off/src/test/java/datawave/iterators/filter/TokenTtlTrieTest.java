@@ -107,7 +107,7 @@ public class TokenTtlTrieTest {
         log.info(String.format("Built trie in %d ns/entry", duration / BENCHMARK_SIZE));
 
         for (long entry : trieEntries) {
-            Assert.assertEquals((Long) entry, trie.scan(String.format("%06x00", entry).getBytes()));
+            assertEquals((Long) entry, trie.scan(String.format("%06x00", entry).getBytes()));
             Assert.assertNull(trie.scan(String.format("%06x00", entry - 1).getBytes()));
         }
     }
@@ -118,10 +118,10 @@ public class TokenTtlTrieTest {
                         .parse("" + "\"foo\":2ms\n" + "\"b\\u0061r\":3d,\n" + "\"b\\x61z\":4m,\n\n").build();
 
         Assert.assertNull(trie.scan("foobar,barbaz;bazfoo".getBytes()));
-        Assert.assertEquals((Long) 2L, trie.scan("foobar,foo;barfoo".getBytes()));
-        Assert.assertEquals((Long) 2L, trie.scan("bar;foo".getBytes()));
+        assertEquals((Long) 2L, trie.scan("foobar,foo;barfoo".getBytes()));
+        assertEquals((Long) 2L, trie.scan("bar;foo".getBytes()));
         Assert.assertEquals((long) AgeOffPeriod.getTtlUnitsFactor("d") * 3L, (long) trie.scan("bar,baz,foobar".getBytes()));
-        Assert.assertEquals((Long) (AgeOffPeriod.getTtlUnitsFactor("m") * 4L), trie.scan("buffer,baz".getBytes()));
+        assertEquals((Long) (AgeOffPeriod.getTtlUnitsFactor("m") * 4L), trie.scan("buffer,baz".getBytes()));
         Assert.assertNull(trie.scan("b;ba,banana,bread,apple,pie".getBytes()));
     }
 

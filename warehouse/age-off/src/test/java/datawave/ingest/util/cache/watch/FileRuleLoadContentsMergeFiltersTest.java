@@ -30,8 +30,8 @@ import datawave.iterators.filter.ageoff.FilterRule;
  * Tests to verify capability of merging configs that use filters that inherit from {@code TokenizingFilterBase}
  */
 public class FileRuleLoadContentsMergeFiltersTest {
-    private static final String ROOT_FILTER_CONFIGURATION_FILE = "/test-root-rules.xml";
-    private static final String CHILD_FILTER_CONFIGURATION_FILE = "/test-customized-rules.xml";
+    private static final String ROOT_FILTER_CONFIGURATION_FILE = "/filter/test-root-rules.xml";
+    private static final String CHILD_FILTER_CONFIGURATION_FILE = "/filter/test-customized-rules.xml";
     private static final long MILLIS_IN_DAY = 24 * 60 * 60 * 1000;
     private static final int MILLIS_IN_ONE_SEC = 60 * 1000;
 
