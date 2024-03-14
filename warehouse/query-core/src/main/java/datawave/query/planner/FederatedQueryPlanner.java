@@ -316,11 +316,11 @@ public class FederatedQueryPlanner extends QueryPlanner implements Cloneable {
             // Format the start and end date of the current sub-query to execute.
             String subStartDate = dateFormat.format(dateRange.getLeft());
             String subEndDate = dateFormat.format(dateRange.getRight());
-            
+
             // Start a new stopwatch.
             TraceStopwatch stopwatch = originalConfig.getTimers().newStartedStopwatch("FederatedQueryPlanner - Executing sub-plan [" + totalProcessed + " of "
                             + dateRanges.size() + "] against date range (" + subStartDate + "-" + subEndDate + ")");
-            
+
             // Set the new date range in a copy of the config.
             ShardQueryConfiguration configCopy = new ShardQueryConfiguration(originalConfig);
             configCopy.setBeginDate(dateRange.getLeft());
@@ -372,7 +372,7 @@ public class FederatedQueryPlanner extends QueryPlanner implements Cloneable {
         // Return the collected results.
         return results;
     }
-    
+
     /**
      * Update the planned script to represent a concatenation of the planned scripts from all sub-plans of the most recently executed call to
      * {@link #process(GenericQueryConfiguration, String, Query, ScannerFactory)}.
