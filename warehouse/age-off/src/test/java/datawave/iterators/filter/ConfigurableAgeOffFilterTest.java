@@ -37,7 +37,6 @@ public class ConfigurableAgeOffFilterTest {
 
     private SortedKeyValueIterator<Key,Value> source = new SortedListKeyValueIterator(Map.<Key,Value> of().entrySet().iterator());
 
-
     private ConfigurableIteratorEnvironment env = new ConfigurableIteratorEnvironment(conf, IteratorUtil.IteratorScope.majc) {
         @Override
         public boolean isFullMajorCompaction() {

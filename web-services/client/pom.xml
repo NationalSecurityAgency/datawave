@@ -150,7 +150,7 @@
         <dependency>
             <groupId>com.sun.xml.bind</groupId>
             <artifactId>jaxb-impl</artifactId>
-            <version>2.3.3</version>
+            <version>${version.jaxb-impl}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -171,7 +171,7 @@
         <dependency>
             <groupId>jakarta.xml.bind</groupId>
             <artifactId>jakarta.xml.bind-api</artifactId>
-            <version>2.3.3</version>
+            <version>${version.jakarta}</version>
             <scope>test</scope>
         </dependency>
         <dependency>

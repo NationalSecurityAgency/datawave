@@ -26,7 +26,7 @@
         <dependency>
             <groupId>jakarta.xml.bind</groupId>
             <artifactId>jakarta.xml.bind-api</artifactId>
-            <version>2.3.3</version>
+            <version>${version.jakarta}</version>
             <scope>compile</scope>
             <exclusions>
                 <exclusion>
@@ -63,7 +63,7 @@
         <dependency>
             <groupId>com.sun.xml.bind</groupId>
             <artifactId>jaxb-impl</artifactId>
-            <version>2.3.3</version>
+            <version>${version.jaxb-impl}</version>
             <scope>runtime</scope>
             <exclusions>
                 <exclusion>
@@ -112,7 +112,7 @@
         <dependency>
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest-all</artifactId>
-            <version>1.3</version>
+            <version>${version.hamcrest}</version>
             <scope>test</scope>
             <exclusions>
                 <exclusion>
