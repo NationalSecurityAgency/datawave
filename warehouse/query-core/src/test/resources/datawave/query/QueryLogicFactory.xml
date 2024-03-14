@@ -259,6 +259,9 @@
         <property name="reduceTypeMetadataPerShard" value="false" />
         <!--    should the query prune fields by ingest type    -->
         <property name="pruneQueryByIngestTypes" value="false" />
+        <!--   should the range stream also generate field and term counts    -->
+        <property name="useFieldCounts" value="true" />
+        <property name="useTermCounts" value="true" />
     </bean>
 
     <bean id="TLDEventQuery" scope="prototype" parent="BaseEventQuery" class="datawave.query.tables.TLDQueryLogic">

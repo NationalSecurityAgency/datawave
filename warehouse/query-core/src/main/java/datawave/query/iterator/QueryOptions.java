@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
@@ -272,6 +273,9 @@ public class QueryOptions implements OptionDescriber {
 
     public static final String TERM_FREQUENCY_AGGREGATION_THRESHOLD_MS = "tf.agg.threshold";
 
+    public static final String FIELD_COUNTS = "field.counts";
+    public static final String TERM_COUNTS = "term.counts";
+
     protected Map<String,String> options;
 
     protected String scanId;
@@ -435,6 +439,9 @@ public class QueryOptions implements OptionDescriber {
     private int docAggregationThresholdMs = -1;
     private int tfAggregationThresholdMs = -1;
 
+    private Map<String,Long> fieldCounts;
+    private Map<String,Long> termCounts;
+
     public void deepCopy(QueryOptions other) {
         this.options = other.options;
         this.query = other.query;
@@ -544,6 +551,9 @@ public class QueryOptions implements OptionDescriber {
 
         this.docAggregationThresholdMs = other.docAggregationThresholdMs;
         this.tfAggregationThresholdMs = other.tfAggregationThresholdMs;
+
+        this.fieldCounts = other.fieldCounts;
+        this.termCounts = other.termCounts;
     }
 
     public String getQuery() {
@@ -1266,6 +1276,8 @@ public class QueryOptions implements OptionDescriber {
         options.put(TF_NEXT_SEEK, "The number of next calls made by a Term Frequency data filter or aggregator before a seek is issued");
         options.put(DOC_AGGREGATION_THRESHOLD_MS, "Document aggregations that exceed this threshold are logged as a warning");
         options.put(TERM_FREQUENCY_AGGREGATION_THRESHOLD_MS, "TermFrequency aggregations that exceed this threshold are logged as a warning");
+        options.put(FIELD_COUNTS, "Map of field counts from the global index");
+        options.put(TERM_COUNTS, "Map of term counts from the global index");
         return new IteratorOptions(getClass().getSimpleName(), "Runs a query against the DATAWAVE tables", options, null);
     }
 
@@ -1389,6 +1401,16 @@ public class QueryOptions implements OptionDescriber {
                 this.disallowListedFields = new HashSet<>();
                 Collections.addAll(this.disallowListedFields, StringUtils.split(fieldList, Constants.PARAM_VALUE_SEP));
             }
+        }
+
+        if (options.containsKey(FIELD_COUNTS)) {
+            String serializedMap = options.get(FIELD_COUNTS);
+            this.fieldCounts = mapFromString(serializedMap);
+        }
+
+        if (options.containsKey(TERM_COUNTS)) {
+            String serializedMap = options.get(TERM_COUNTS);
+            this.termCounts = mapFromString(serializedMap);
         }
 
         this.evaluationFilter = null;
@@ -1992,6 +2014,31 @@ public class QueryOptions implements OptionDescriber {
         }
 
         return sb.toString();
+    }
+
+    public static String mapToString(Map<String,Long> map) {
+        StringBuilder sb = new StringBuilder();
+        Iterator<String> keys = new TreeSet<>(map.keySet()).iterator();
+        while (keys.hasNext()) {
+            String key = keys.next();
+            sb.append(key).append(Constants.COMMA).append(map.get(key));
+            if (keys.hasNext()) {
+                sb.append(";");
+            }
+        }
+        return sb.toString();
+    }
+
+    public static Map<String,Long> mapFromString(String serialized) {
+        Map<String,Long> counts = new HashMap<>();
+        String[] parts = serialized.split(";");
+        for (String part : parts) {
+            int index = part.indexOf(Constants.COMMA);
+            String key = part.substring(0, index);
+            Long value = Long.valueOf(part.substring(index + 1));
+            counts.put(key, value);
+        }
+        return counts;
     }
 
     public static Set<String> buildIgnoredColumnFamilies(String colFams) {
