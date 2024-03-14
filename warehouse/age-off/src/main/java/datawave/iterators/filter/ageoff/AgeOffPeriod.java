@@ -12,9 +12,9 @@ import datawave.iterators.filter.AgeOffTtlUnits;
  */
 public class AgeOffPeriod {
 
-    private long cutOffMillis;
-    private long ttl;
-    private String ttlUnits;
+    private final long cutOffMillis;
+    private final long ttl;
+    private final String ttlUnits;
 
     private static final Logger log = Logger.getLogger(AgeOffPeriod.class);
 

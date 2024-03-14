@@ -120,7 +120,7 @@ public class TokenTtlTrieTest {
         Assert.assertNull(trie.scan("foobar,barbaz;bazfoo".getBytes()));
         assertEquals((Long) 2L, trie.scan("foobar,foo;barfoo".getBytes()));
         assertEquals((Long) 2L, trie.scan("bar;foo".getBytes()));
-        Assert.assertEquals((long) AgeOffPeriod.getTtlUnitsFactor("d") * 3L, (long) trie.scan("bar,baz,foobar".getBytes()));
+        Assert.assertEquals(AgeOffPeriod.getTtlUnitsFactor("d") * 3L, (long) trie.scan("bar,baz,foobar".getBytes()));
         assertEquals((Long) (AgeOffPeriod.getTtlUnitsFactor("m") * 4L), trie.scan("buffer,baz".getBytes()));
         Assert.assertNull(trie.scan("b;ba,banana,bread,apple,pie".getBytes()));
     }

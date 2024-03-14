@@ -93,11 +93,11 @@ public final class TokenTtlTrie {
         private final List<Long> stateTtlList = new ArrayList<>();
         private final List<Integer> statePriorityList = new ArrayList<>();
         private final Set<Byte> delimiters = new HashSet<>();
-        private boolean isMerge;
+        private final boolean isMerge;
 
         public enum MERGE_MODE {
             ON, OFF
-        };
+        }
 
         Builder() {
             this(MERGE_MODE.OFF);

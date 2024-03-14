@@ -23,7 +23,7 @@ public class ColumnVisibilityAndFilter extends TokenFilterBase {
     @Override
     public boolean hasToken(Key k, Value v, byte[][] testTokens) {
 
-        boolean found[] = new boolean[testTokens.length];
+        boolean[] found = new boolean[testTokens.length];
         int numFound = 0;
 
         byte[] cv = k.getColumnVisibilityData().getBackingArray();
