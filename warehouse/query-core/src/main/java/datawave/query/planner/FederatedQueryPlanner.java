@@ -53,7 +53,7 @@ import datawave.webservice.query.exception.QueryException;
  *
  * @see #process(GenericQueryConfiguration, String, Query, ScannerFactory)
  */
-public class FederatedQueryPlanner extends QueryPlanner {
+public class FederatedQueryPlanner extends QueryPlanner implements Cloneable {
 
     private static final Logger log = ThreadConfigurableLogger.getLogger(FederatedQueryPlanner.class);
 
@@ -289,6 +289,7 @@ public class FederatedQueryPlanner extends QueryPlanner {
         // Get the relevant date ranges.
         SortedSet<Pair<Date,Date>> dateRanges = getSubQueryDateRanges(originalConfig, query, scannerFactory);
 
+        // If debug is enabled, log the date ranges to be queried over in formatted form.
         if (log.isDebugEnabled()) {
             if (dateRanges.size() == 1) {
                 log.debug("One query will be executed over original date range " + dateFormat.format(originalConfig.getBeginDate()) + "-"
@@ -312,10 +313,14 @@ public class FederatedQueryPlanner extends QueryPlanner {
         int totalProcessed = 1;
         ShardQueryConfiguration firstConfigCopy = null;
         for (Pair<Date,Date> dateRange : dateRanges) {
+            // Format the start and end date of the current sub-query to execute.
             String subStartDate = dateFormat.format(dateRange.getLeft());
             String subEndDate = dateFormat.format(dateRange.getRight());
+            
+            // Start a new stopwatch.
             TraceStopwatch stopwatch = originalConfig.getTimers().newStartedStopwatch("FederatedQueryPlanner - Executing sub-plan [" + totalProcessed + " of "
                             + dateRanges.size() + "] against date range (" + subStartDate + "-" + subEndDate + ")");
+            
             // Set the new date range in a copy of the config.
             ShardQueryConfiguration configCopy = new ShardQueryConfiguration(originalConfig);
             configCopy.setBeginDate(dateRange.getLeft());
@@ -364,24 +369,14 @@ public class FederatedQueryPlanner extends QueryPlanner {
         // config.
         copySubConfigPropertiesToOriginal(originalConfig, firstConfigCopy);
 
-        // Uncomment the following debug block to see what query strings and query datas resulted from the sub-queries. Note that this will result in an
-        // exception being thrown down the line when iterator() is called again on the query data iterables, so this should be uncommented only for debugging
-        // purposes.
-        // Debug block start
-        /*
-         * log.debug("Federated query results:"); List<ShardQueryConfiguration> configs = federatedConfig.getConfigs(); List<CloseableIterable<QueryData>>
-         * queryDatas = federatedConfig.getQueryDatas(); for (int i = 0; i < totalProcessed; i++) { ShardQueryConfiguration config = configs.get(i);
-         * log.debug("Sub-query " + i + " over " + dateFormat.format(config.getBeginDate()) + "-" + dateFormat.format(config.getEndDate()));
-         * log.debug("Query String: " + config.getQueryString()); Iterator<QueryData> iter = queryDatas.get(i).iterator(); int queryDataCount = 0; if
-         * (iter.hasNext()) { while (iter.hasNext()) { log.debug("Query Data " + queryDataCount + ": " + iter.next()); queryDataCount++; } } else {
-         * log.debug("Empty query data iterable returned"); } }
-         */
-        // Debug block end
-
         // Return the collected results.
         return results;
     }
-
+    
+    /**
+     * Update the planned script to represent a concatenation of the planned scripts from all sub-plans of the most recently executed call to
+     * {@link #process(GenericQueryConfiguration, String, Query, ScannerFactory)}.
+     */
     private void updatePlannedScript() {
         if (plans.isEmpty()) {
             this.plannedScript = "";
@@ -398,7 +393,6 @@ public class FederatedQueryPlanner extends QueryPlanner {
             }
             this.plannedScript = sb.toString();
         }
-
     }
 
     /**
