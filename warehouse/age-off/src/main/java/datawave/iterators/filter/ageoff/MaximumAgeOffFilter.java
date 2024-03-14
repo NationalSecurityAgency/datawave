@@ -59,11 +59,7 @@ public class MaximumAgeOffFilter extends AppliedRule {
 
         // this rule determines whether to accept / deny (ageoff) a K/V
         // based solely on whether a timestamp is before (older than) the cutoff for aging off
-        if (k.getTimestamp() > period.getCutOffMilliseconds()) {
-            return true;
-        } else {
-            return false;
-        }
+        return k.getTimestamp() > period.getCutOffMilliseconds();
     }
 
     /**

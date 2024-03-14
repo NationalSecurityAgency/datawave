@@ -1,15 +1,14 @@
 package datawave.iterators.filter;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
 
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,6 +35,9 @@ public class ConfigurableAgeOffFilterTest {
 
     private AccumuloConfiguration conf = DefaultConfiguration.getInstance();
 
+    private SortedKeyValueIterator<Key,Value> source = new SortedListKeyValueIterator(Map.<Key,Value> of().entrySet().iterator());
+
+
     private ConfigurableIteratorEnvironment env = new ConfigurableIteratorEnvironment(conf, IteratorUtil.IteratorScope.majc) {
         @Override
         public boolean isFullMajorCompaction() {
@@ -47,8 +49,6 @@ public class ConfigurableAgeOffFilterTest {
             return false;
         }
     };
-
-    private SortedKeyValueIterator<Key,Value> source = new SortedListKeyValueIterator(Map.<Key,Value> of().entrySet().iterator());
 
     @Test
     public void testAcceptKeyValue_OnlyUserMajc() throws Exception {

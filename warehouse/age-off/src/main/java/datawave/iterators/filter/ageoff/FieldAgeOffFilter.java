@@ -43,7 +43,7 @@ public class FieldAgeOffFilter extends AppliedRule {
     }
 
     public static final String OPTION_PREFIX = "field.";
-    private ColumnVisibilityOrFilter cvOrFilter = new ColumnVisibilityOrFilter();
+    private final ColumnVisibilityOrFilter cvOrFilter = new ColumnVisibilityOrFilter();
     /**
      * Null byte
      */

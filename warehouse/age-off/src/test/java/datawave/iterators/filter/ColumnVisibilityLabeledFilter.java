@@ -47,7 +47,7 @@ public class ColumnVisibilityLabeledFilter extends AppliedRule {
 
         if (options.getOption(AgeOffConfigParams.MATCHPATTERN) != null) {
             String[] lines = StringUtils.split(options.getOption(AgeOffConfigParams.MATCHPATTERN), '\n');
-            patternToTtl = new HashMap(lines.length);
+            patternToTtl = new HashMap<>(lines.length);
             for (String line : lines) {
                 populateMapWithTimeToLiveValue(patternToTtl, line);
             }
