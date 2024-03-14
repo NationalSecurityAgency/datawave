@@ -19,7 +19,7 @@ import org.apache.hadoop.io.WritableComparable;
 /**
  * Iterator that can be used to back a source with a List of Key/Value entries. Useful for small data test sets
  */
-public class SortedListKeyValueIterator implements SortedKeyValueIterator {
+public class SortedListKeyValueIterator implements SortedKeyValueIterator<Key,Value> {
     private List<Map.Entry<Key,Value>> sourceList;
     private int currentIndex;
     private Collection columnFamilies;
@@ -92,7 +92,7 @@ public class SortedListKeyValueIterator implements SortedKeyValueIterator {
     }
 
     @Override
-    public WritableComparable<?> getTopKey() {
+    public Key getTopKey() {
         if (initiated && hasTop()) {
             return sourceList.get(currentIndex).getKey();
         } else {
@@ -101,7 +101,7 @@ public class SortedListKeyValueIterator implements SortedKeyValueIterator {
     }
 
     @Override
-    public Writable getTopValue() {
+    public Value getTopValue() {
         if (initiated && hasTop()) {
             return sourceList.get(currentIndex).getValue();
         } else {

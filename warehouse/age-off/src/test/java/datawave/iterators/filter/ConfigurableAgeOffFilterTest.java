@@ -14,18 +14,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.accumulo.core.client.PluginEnvironment;
-import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.conf.DefaultConfiguration;
 import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.TableId;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.IteratorUtil;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.accumulo.core.util.ConfigurationImpl;
-import org.junit.Before;
 import org.junit.Test;
 
 import datawave.iterators.filter.ageoff.AppliedRule;
@@ -40,13 +35,8 @@ public class ConfigurableAgeOffFilterTest {
     private static Value VALUE = new Value();
 
     private AccumuloConfiguration conf = DefaultConfiguration.getInstance();
-    private ConfigurableIteratorEnvironment env = new ConfigurableIteratorEnvironment() {
 
-        @Override
-        public IteratorUtil.IteratorScope getIteratorScope() {
-            return IteratorUtil.IteratorScope.majc;
-        }
-
+    private ConfigurableIteratorEnvironment env = new ConfigurableIteratorEnvironment(conf, IteratorUtil.IteratorScope.majc) {
         @Override
         public boolean isFullMajorCompaction() {
             return false;
@@ -56,38 +46,6 @@ public class ConfigurableAgeOffFilterTest {
         public boolean isUserCompaction() {
             return false;
         }
-
-        @Override
-        public PluginEnvironment getPluginEnv() {
-            return new PluginEnvironment() {
-
-                @Override
-                public Configuration getConfiguration() {
-                    return null;
-                }
-
-                @Override
-                public Configuration getConfiguration(TableId tableId) {
-                    return new ConfigurationImpl(conf);
-                }
-
-                @Override
-                public String getTableName(TableId tableId) throws TableNotFoundException {
-                    return null;
-                }
-
-                @Override
-                public <T> T instantiate(String s, Class<T> aClass) throws Exception {
-                    return null;
-                }
-
-                @Override
-                public <T> T instantiate(TableId tableId, String s, Class<T> aClass) throws Exception {
-                    return null;
-                }
-            };
-        }
-
     };
 
     private SortedKeyValueIterator<Key,Value> source = new SortedListKeyValueIterator(Map.<Key,Value> of().entrySet().iterator());
