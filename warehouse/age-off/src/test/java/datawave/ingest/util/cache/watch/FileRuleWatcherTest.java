@@ -16,8 +16,8 @@ import datawave.iterators.filter.AgeOffConfigParams;
 import datawave.iterators.filter.ageoff.FilterRule;
 
 public class FileRuleWatcherTest {
-    private static final String FILTER_CONFIGURATION_FILE = "/test-filter-rules.xml";
-    private static final String FILE_WITH_MISSING_FILTER_CLASS = "/missing-filter-class.xml";
+    private static final String FILTER_CONFIGURATION_FILE = "/filter/test-filter-rules.xml";
+    private static final String FILE_WITH_MISSING_FILTER_CLASS = "/filter/missing-filter-class.xml";
     private static final String DEFAULT_UNITS = "d";
     private FileRuleWatcher watcher;
     private FileSystem fs;

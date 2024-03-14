@@ -21,8 +21,8 @@ import datawave.iterators.filter.ageoff.FilterRule;
  * Tests to verify capability of merging configs that use filters that inherit from {@code FieldAgeOffFilter}
  */
 public class FileRuleFieldMergeTest {
-    private static final String ROOT_FILTER_CONFIGURATION_FILE = "/test-root-field.xml";
-    private static final String CHILD_FILTER_CONFIGURATION_FILE = "/test-customized-field.xml";
+    static final String ROOT_FILTER_CONFIGURATION_FILE = "/filter/test-root-field.xml";
+    private static final String CHILD_FILTER_CONFIGURATION_FILE = "/filter/test-customized-field.xml";
 
     private FileRuleWatcher watcher;
     private TestFieldFilter parentFilter;

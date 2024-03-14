@@ -24,8 +24,8 @@ import datawave.iterators.filter.ageoff.FilterRule;
  * Tests to verify capability of merging configs for rules that use different filters with overlapping matchPattern formats
  */
 public class DifferentClassesMergeTest {
-    private static final String ROOT_FILTER_CONFIGURATION_FILE = "/alternate-root.xml";
-    private static final String CHILD_FILTER_CONFIGURATION_FILE = "/alternate-child.xml";
+    private static final String ROOT_FILTER_CONFIGURATION_FILE = "/filter/alternate-root.xml";
+    private static final String CHILD_FILTER_CONFIGURATION_FILE = "/filter/alternate-child.xml";
     private static final long VERY_OLD_TIMESTAMP = -1000L * 60 * 60 * 24 * 365 * 1000; // 1,000 years in the past
     private static final long TIMESTAMP_IN_FUTURE = 1000L * 60 * 60 * 24 * 365 * 1000; // 1,000 years in the future
     public static final long DAYS_AGO = -1000L * 60 * 60 * 24;
