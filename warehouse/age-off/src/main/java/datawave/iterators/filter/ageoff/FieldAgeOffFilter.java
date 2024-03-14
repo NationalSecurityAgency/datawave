@@ -19,7 +19,7 @@ import datawave.iterators.filter.AgeOffConfigParams;
 import datawave.iterators.filter.ColumnVisibilityOrFilter;
 
 /**
- * Field off filter. Traverses through indexed tables and non-indexed tables. Example follows. Note that any data type TTL will follow the same units specified
+ * Field age off filter. Traverses through indexed tables and non-indexed tables. Example follows. Note that any field TTL will follow the same units specified
  * in ttl units
  *
  * <pre>
@@ -29,8 +29,8 @@ import datawave.iterators.filter.ColumnVisibilityOrFilter;
  *     <rule>
  *         <filterClass>datawave.iterators.filter.ageoff.FieldAgeOffFilter</filterClass>
  *         <ttl units="d">720</ttl>
- *         <datatypes>foo,bar</datatypes>
- *         <bar.ttl>44</bar.ttl>
+ *         <datatypes>fieldA,fieldB</datatypes>
+ *         <fieldA.ttl>44</fieldA.ttl>
  *     </rule>
  * </rules>
  * }

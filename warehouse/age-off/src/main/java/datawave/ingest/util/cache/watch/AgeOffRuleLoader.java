@@ -106,8 +106,8 @@ public class AgeOffRuleLoader {
             // parse each node in rules and create a rule config
             // @formatter:off
             List<RuleConfig> childRules = IntStream.range(0, rules.getLength())
-                    .mapToObj(i -> getRuleConfigForNode(rules, i))
-                    .collect(Collectors.toList());
+                .mapToObj(i -> getRuleConfigForNode(rules, i))
+                .collect(Collectors.toList());
             // first check if there are any parent rules to merge with
             // no use trying to merge if no parent rules exist
             if (ruleConfigs.isEmpty()) {
@@ -124,9 +124,9 @@ public class AgeOffRuleLoader {
             //
             // iterate through child rules and try to merge them into the parent if possible
             List<RuleConfig> mergedRules = childRules.stream()
-                    .filter(r -> !r.getLabel().isEmpty())
-                    .filter(r -> mergeIfPossible(r, ruleConfigs))
-                    .collect(Collectors.toList());
+                .filter(r -> !r.getLabel().isEmpty())
+                .filter(r -> mergeIfPossible(r, ruleConfigs))
+                .collect(Collectors.toList());
 
             childRules.removeAll(mergedRules);
             // what ever is left add to the end of the list
@@ -146,8 +146,8 @@ public class AgeOffRuleLoader {
         // @formatter:off
         // find parent with matching label
         List<RuleConfig> candidates = parents.stream()
-                .filter(r -> r.getLabel().equals(child.label))
-                .collect(Collectors.toList());
+            .filter(r -> r.getLabel().equals(child.label))
+            .collect(Collectors.toList());
         // should we be able to have more than one matching parent?
         for (RuleConfig parent : candidates) {
             mergeChildIntoParent(child, parent);
@@ -242,12 +242,12 @@ public class AgeOffRuleLoader {
 
         // @formatter:off
         return new RuleConfig(filterClassName, index)
-                .ttlValue(ttlValue)
-                .ttlUnits(ttlUnits)
-                .matchPattern(matchPattern)
-                .label(label)
-                .setIsMerge(isMerge)
-                .extendedOptions(extendedOptions);
+            .ttlValue(ttlValue)
+            .ttlUnits(ttlUnits)
+            .matchPattern(matchPattern)
+            .label(label)
+            .setIsMerge(isMerge)
+            .extendedOptions(extendedOptions);
         // @formatter:on
     }
 
