@@ -75,6 +75,7 @@ import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.authorization.UserOperations;
+import datawave.security.authorization.remote.RemoteUserOperationsImpl;
 import datawave.security.user.UserOperationsBean;
 import datawave.security.util.WSAuthorizationsUtil;
 import datawave.webservice.common.audit.AuditBean;
@@ -372,6 +373,8 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.query.getPageTimeout()).andReturn(-1).anyTimes();
         expect(this.query.getExpirationDate()).andReturn(null).anyTimes();
         expect(this.query.getParameters()).andReturn((Set) Collections.emptySet()).anyTimes();
+        expect(this.query.findParameter(RemoteUserOperationsImpl.INCLUDE_REMOTE_SERVICES))
+                        .andReturn(new QueryImpl.Parameter(RemoteUserOperationsImpl.INCLUDE_REMOTE_SERVICES, "true")).anyTimes();
         expect(context.getCallerPrincipal()).andReturn(principal);
         expect(this.queryLogicFactory.getQueryLogic("ql1", principal)).andReturn((QueryLogic) this.queryLogic1);
         expect(this.queryLogic1.getConnectionPriority()).andReturn(Priority.NORMAL);
@@ -770,6 +773,8 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.query.getExpirationDate()).andReturn(null).anyTimes();
         expect(this.query.getParameters()).andReturn((Set) Collections.emptySet()).anyTimes();
         expect(this.query.getUncaughtExceptionHandler()).andReturn(new QueryUncaughtExceptionHandler()).anyTimes();
+        expect(this.query.findParameter(RemoteUserOperationsImpl.INCLUDE_REMOTE_SERVICES))
+                        .andReturn(new QueryImpl.Parameter(RemoteUserOperationsImpl.INCLUDE_REMOTE_SERVICES, "true")).anyTimes();
         this.metrics.updateMetric(isA(QueryMetric.class));
         PowerMock.expectLastCall().times(2);
         expect(this.query.getUserDN()).andReturn(userDN).anyTimes();
@@ -949,6 +954,8 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.query.getExpirationDate()).andReturn(null).anyTimes();
         expect(this.query.getParameters()).andReturn((Set) Collections.emptySet()).anyTimes();
         expect(this.query.getUncaughtExceptionHandler()).andReturn(new QueryUncaughtExceptionHandler()).anyTimes();
+        expect(this.query.findParameter(RemoteUserOperationsImpl.INCLUDE_REMOTE_SERVICES))
+                        .andReturn(new QueryImpl.Parameter(RemoteUserOperationsImpl.INCLUDE_REMOTE_SERVICES, "true")).anyTimes();
         this.metrics.updateMetric(isA(QueryMetric.class));
         PowerMock.expectLastCall().times(2);
         expect(this.query.getUserDN()).andReturn(userDN).anyTimes();
@@ -1459,6 +1466,8 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.query.getExpirationDate()).andReturn(null).anyTimes();
         expect(this.query.getParameters()).andReturn((Set) Collections.emptySet()).anyTimes();
         expect(this.query.getUncaughtExceptionHandler()).andReturn(new QueryUncaughtExceptionHandler()).anyTimes();
+        expect(this.query.findParameter(RemoteUserOperationsImpl.INCLUDE_REMOTE_SERVICES))
+                        .andReturn(new QueryImpl.Parameter(RemoteUserOperationsImpl.INCLUDE_REMOTE_SERVICES, "true")).anyTimes();
         this.metrics.updateMetric(isA(QueryMetric.class));
         PowerMock.expectLastCall().times(2);
         expect(this.query.getUserDN()).andReturn(userDN).anyTimes();
@@ -1762,6 +1771,8 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.query.getExpirationDate()).andReturn(null).anyTimes();
         expect(this.query.getParameters()).andReturn((Set) Collections.emptySet()).anyTimes();
         expect(this.query.getUncaughtExceptionHandler()).andReturn(new QueryUncaughtExceptionHandler()).anyTimes();
+        expect(this.query.findParameter(RemoteUserOperationsImpl.INCLUDE_REMOTE_SERVICES))
+                        .andReturn(new QueryImpl.Parameter(RemoteUserOperationsImpl.INCLUDE_REMOTE_SERVICES, "true")).anyTimes();
         this.metrics.updateMetric(isA(QueryMetric.class));
         PowerMock.expectLastCall().times(2);
         expect(this.query.getUserDN()).andReturn(userDN).anyTimes();
@@ -2822,6 +2833,8 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.query.getPageTimeout()).andReturn(-1).anyTimes();
         expect(this.query.getExpirationDate()).andReturn(null).anyTimes();
         expect(this.query.getParameters()).andReturn((Set) Collections.emptySet()).anyTimes();
+        expect(this.query.findParameter(RemoteUserOperationsImpl.INCLUDE_REMOTE_SERVICES))
+                        .andReturn(new QueryImpl.Parameter(RemoteUserOperationsImpl.INCLUDE_REMOTE_SERVICES, "true")).anyTimes();
         expect(this.query.getDnList()).andReturn(dnList).anyTimes();
         expect(this.queryLogic1.getResultLimit(this.query)).andReturn(-1L);
         expect(this.queryLogic1.getMaxResults()).andReturn(-1L);
@@ -3339,6 +3352,8 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.query.getEndDate()).andReturn(null);
         expect(this.query.getQueryName()).andReturn(queryName);
         expect(this.query.getParameters()).andReturn((Set) Collections.emptySet());
+        expect(this.query.findParameter(RemoteUserOperationsImpl.INCLUDE_REMOTE_SERVICES))
+                        .andReturn(new QueryImpl.Parameter(RemoteUserOperationsImpl.INCLUDE_REMOTE_SERVICES, "true")).anyTimes();
         expect(this.query.getColumnVisibility()).andReturn(authorization);
         expect(this.queryLogic1.getSelectors(this.query)).andReturn(null);
         expect(this.auditor.audit(auditMap)).andReturn(null);
