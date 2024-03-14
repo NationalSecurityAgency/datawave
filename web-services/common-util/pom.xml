@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.webservices</groupId>
         <artifactId>datawave-ws-parent</artifactId>
-        <version>6.8.2</version>
+        <version>6.8.3-SNAPSHOT</version>
     </parent>
     <artifactId>datawave-ws-common-util</artifactId>
     <packaging>jar</packaging>
