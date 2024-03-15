@@ -107,7 +107,6 @@ public class PushdownScheduler extends Scheduler {
         }
 
         try {
-
             return concatIterators();
         } catch (AccumuloException | ParseException | TableNotFoundException | AccumuloSecurityException e) {
             throw new RuntimeException(e);
@@ -116,7 +115,6 @@ public class PushdownScheduler extends Scheduler {
     }
 
     protected Iterator<Entry<Key,Value>> concatIterators() throws AccumuloException, AccumuloSecurityException, TableNotFoundException, ParseException {
-
         String tableName = config.getShardTableName();
 
         Set<Authorizations> auths = config.getAuthorizations();
@@ -133,7 +131,7 @@ public class PushdownScheduler extends Scheduler {
             tl = TabletLocator.getLocator(ctx, tableId);
         }
         Iterator<List<ScannerChunk>> chunkIter = Iterators.transform(getQueryDataIterator(), new PushdownFunction(tl, config, settings, tableId));
-
+        log.debug("chunkIter hasnext: " + chunkIter.hasNext());
         try {
             session = scannerFactory.newQueryScanner(tableName, auths, config.getQuery());
 

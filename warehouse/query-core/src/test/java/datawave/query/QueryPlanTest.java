@@ -4,6 +4,7 @@ import static datawave.query.testframework.RawDataManager.RE_OP;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
+import java.io.IOException;
 import java.util.Collections;
 
 import org.apache.commons.jexl3.parser.ParseException;
@@ -20,6 +21,7 @@ import datawave.query.exceptions.DoNotPerformOptimizedQueryException;
 import datawave.query.exceptions.FullTableScansDisallowedException;
 import datawave.query.exceptions.InvalidQueryException;
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.CitiesDataType;
@@ -63,7 +65,8 @@ public class QueryPlanTest extends AbstractFunctionalQuery {
     }
 
     @Before
-    public void before() {
+    public void before() throws IOException {
+        super.querySetUp();
         // Use RunningQuery to test that query metrics being updated with plan
         this.useRunningQuery();
 
@@ -99,7 +102,7 @@ public class QueryPlanTest extends AbstractFunctionalQuery {
     @Test
     public void planInMetricsAfterMissingIndexException() throws Exception {
         String query = "CITY == 'london' && CITY != 'london'";
-        String expectedPlan = "CITY == 'london' && !(CITY == 'london')";
+        String expectedPlan = "CITY == 'london' && CITY != 'london'";
         this.logic.setIndexTableName("missing");
         try {
             runTest(query, query);
@@ -112,7 +115,7 @@ public class QueryPlanTest extends AbstractFunctionalQuery {
     @Test
     public void planInMetricsAfterTableNotFoundException() throws Exception {
         String query = Constants.ANY_FIELD + " != " + "'" + TestCities.london + "'";
-        String expectedPlan = "!(_ANYFIELD_ == 'london')";
+        String expectedPlan = "_ANYFIELD_ != 'london'";
 
         this.logic.setMetadataTableName("missing");
         try {

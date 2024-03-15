@@ -39,6 +39,7 @@ import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.Type;
 import datawave.marking.MarkingFunctions;
 import datawave.query.composite.CompositeMetadataHelper;
+import datawave.query.model.FieldIndexHole;
 import datawave.query.model.QueryModel;
 import datawave.util.TableName;
 
@@ -56,6 +57,7 @@ public class MockMetadataHelper extends MetadataHelper {
     protected Map<Map.Entry<String,String>,Map<String,Long>> cardinalityByDataTypeForFieldAndDate = Maps.newHashMap();
 
     private static final Logger log = Logger.getLogger(MockMetadataHelper.class);
+    protected Map<String,Map<String,FieldIndexHole>> fieldIndexHoles = Collections.emptyMap();
 
     Function<Type<?>,String> function = new Function<Type<?>,String>() {
         @Override
@@ -299,12 +301,12 @@ public class MockMetadataHelper extends MetadataHelper {
     }
 
     @Override
-    public Long getCountsByFieldForDays(String fieldName, Date begin, Date end, Set<String> ingestTypeFilter) {
+    public Long getCountsByFieldForDays(String fieldName, Date begin, Date end, Set<String> dataTypes) {
         Preconditions.checkNotNull(fieldName);
         Preconditions.checkNotNull(begin);
         Preconditions.checkNotNull(end);
         Preconditions.checkArgument(begin.before(end));
-        Preconditions.checkNotNull(ingestTypeFilter);
+        Preconditions.checkNotNull(dataTypes);
 
         Date truncatedBegin = DateUtils.truncate(begin, Calendar.DATE);
         Date truncatedEnd = DateUtils.truncate(end, Calendar.DATE);
@@ -324,7 +326,7 @@ public class MockMetadataHelper extends MetadataHelper {
             Date curDate = cal.getTime();
             String desiredDate = sdf.format(curDate);
 
-            sum += getCountsByFieldInDayWithTypes(fieldName, desiredDate, ingestTypeFilter);
+            sum += getCountsByFieldInDayWithTypes(fieldName, desiredDate, dataTypes);
             cal.add(Calendar.DATE, 1);
         }
 
@@ -404,4 +406,12 @@ public class MockMetadataHelper extends MetadataHelper {
         this.termCounts = counts;
     }
 
+    @Override
+    public Map<String,Map<String,FieldIndexHole>> getFieldIndexHoles(Set<String> fields, Set<String> datatypes, double minThreshold) {
+        return fieldIndexHoles;
+    }
+
+    public void setFieldIndexHoles(Map<String,Map<String,FieldIndexHole>> fieldIndexHoles) {
+        this.fieldIndexHoles = fieldIndexHoles;
+    }
 }

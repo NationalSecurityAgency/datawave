@@ -11,6 +11,7 @@ import org.junit.ClassRule;
 import org.junit.Test;
 
 import datawave.query.planner.DefaultQueryPlanner;
+import datawave.query.planner.FederatedQueryPlanner;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.CitiesDataType;
@@ -60,7 +61,7 @@ public class DelayedIndexOnlyQueryTest extends AbstractFunctionalQuery {
     protected void testInit() {
         this.auths = CitiesDataType.getTestAuths();
         this.documentKey = CitiesDataType.CityField.EVENT_ID.name();
-        ((DefaultQueryPlanner) this.logic.getQueryPlanner()).setExecutableExpansion(false);
+        ((FederatedQueryPlanner) this.logic.getQueryPlanner()).getQueryPlanner().setExecutableExpansion(false);
     }
 
     @Test
