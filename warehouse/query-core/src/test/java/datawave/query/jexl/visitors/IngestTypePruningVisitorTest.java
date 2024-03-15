@@ -511,6 +511,58 @@ public class IngestTypePruningVisitorTest {
         test(query, expected, metadata, externalTypes);
     }
 
+    @Test
+    public void testAndNull() {
+        TypeMetadata metadata = new TypeMetadata();
+        metadata.put("A", "ingestType1", LcType.class.getTypeName());
+        metadata.put("B", "ingestType2", LcType.class.getTypeName());
+        metadata.put("9", "ingestType2", LcType.class.getTypeName());
+
+        String query = "A == '1' && B == null"; // *technically* valid
+        test(query, query, metadata);
+
+        // same form but with an identifier
+        query = "A == '1' && $9 == null";
+        test(query, query, metadata);
+    }
+
+    @Test
+    public void testAndNotNull() {
+        TypeMetadata metadata = new TypeMetadata();
+        metadata.put("A", "ingestType1", LcType.class.getTypeName());
+        metadata.put("B", "ingestType2", LcType.class.getTypeName());
+
+        // in theory this visitor should be smart enough to prune out a negation for an exclusive ingest type
+        String query = "A == '1' && !(B == null)";
+        test(query, query, metadata);
+    }
+
+    @Test
+    public void testSpecificCase() {
+        TypeMetadata metadata = new TypeMetadata();
+        metadata.put("A", "ingestType2", LcType.class.getTypeName());
+        metadata.put("B", "ingestType2", LcType.class.getTypeName());
+        metadata.put("B", "ingestType3", LcType.class.getTypeName());
+        metadata.put("B", "ingestType4", LcType.class.getTypeName());
+        metadata.put("C", "ingestType1", LcType.class.getTypeName());
+        metadata.put("C", "ingestType2", LcType.class.getTypeName());
+        metadata.put("C", "ingestType3", LcType.class.getTypeName());
+        metadata.put("C", "ingestType4", LcType.class.getTypeName());
+        metadata.put("D", "ingestType3", LcType.class.getTypeName());
+        metadata.put("D", "ingestType4", LcType.class.getTypeName());
+        metadata.put("E", "ingestType1", LcType.class.getTypeName());
+        metadata.put("E", "ingestType2", LcType.class.getTypeName());
+        metadata.put("F", "ingestType3", LcType.class.getTypeName());
+        metadata.put("F", "ingestType4", LcType.class.getTypeName());
+        metadata.put("9", "ingestType1", LcType.class.getTypeName());
+        metadata.put("9", "ingestType2", LcType.class.getTypeName());
+        metadata.put("9", "ingestType3", LcType.class.getTypeName());
+        metadata.put("9", "ingestType4", LcType.class.getTypeName());
+
+        String query = "(A == '1' || B == '2') && C == '3' && D == null && $9 == null && !(E == '4') && !(E == '5' || E == '6') && !(F == '7')";
+        test(query, query, metadata);
+    }
+
     private void test(String query, String expected) {
         test(query, expected, typeMetadata, null);
     }
