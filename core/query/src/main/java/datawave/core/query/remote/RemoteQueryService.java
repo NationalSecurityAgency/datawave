@@ -4,6 +4,8 @@ import java.net.URI;
 import java.util.List;
 import java.util.Map;
 
+import datawave.security.authorization.ProxiedUserDetails;
+import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.GenericResponse;
 import datawave.webservice.result.VoidResponse;
@@ -24,7 +26,7 @@ public interface RemoteQueryService {
      *            the caller
      * @return the generic response
      */
-    GenericResponse<String> createQuery(String queryLogicName, Map<String,List<String>> queryParameters, Object callerObject);
+    GenericResponse<String> createQuery(String queryLogicName, Map<String,List<String>> queryParameters, ProxiedUserDetails callerObject) throws QueryException;
 
     /**
      * Call next on a remote query service
@@ -35,7 +37,7 @@ public interface RemoteQueryService {
      *            the caller
      * @return the base query response
      */
-    BaseQueryResponse next(String id, Object callerObject);
+    BaseQueryResponse next(String id, ProxiedUserDetails callerObject) throws QueryException;
 
     /**
      * Call close on a remote query service
@@ -46,7 +48,7 @@ public interface RemoteQueryService {
      *            the caller
      * @return the void response
      */
-    VoidResponse close(String id, Object callerObject);
+    VoidResponse close(String id, ProxiedUserDetails callerObject) throws QueryException;
 
     /**
      * Plan a query using a remote query service
@@ -59,7 +61,7 @@ public interface RemoteQueryService {
      *            the caller
      * @return the generic response
      */
-    GenericResponse<String> planQuery(String queryLogicName, Map<String,List<String>> queryParameters, Object callerObject);
+    GenericResponse<String> planQuery(String queryLogicName, Map<String,List<String>> queryParameters, ProxiedUserDetails callerObject) throws QueryException;
 
     /**
      * Get the plan from a remote query service
@@ -70,7 +72,7 @@ public interface RemoteQueryService {
      *            the caller
      * @return a generic response
      */
-    GenericResponse<String> planQuery(String id, Object callerObject);
+    GenericResponse<String> planQuery(String id, ProxiedUserDetails callerObject) throws QueryException;
 
     /**
      * Get the URI for the query metrics

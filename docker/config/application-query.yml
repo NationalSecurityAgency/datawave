@@ -123,6 +123,7 @@ datawave:
           "FacetedQuery": "FacetedQuery"
           "HitHighlights": "HitHighlights"
           "EdgeEventQuery": "EdgeEventQuery"
+          "FederatedEventQuery": "FederatedEventQuery"
 
         # The max page size that a user can request.  0 turns off this feature
         maxPageSize: 10000

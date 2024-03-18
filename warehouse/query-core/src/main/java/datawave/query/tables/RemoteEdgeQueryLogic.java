@@ -91,7 +91,7 @@ public class RemoteEdgeQueryLogic extends BaseRemoteQueryLogic<EdgeBase> impleme
         public boolean hasNext() {
             if (data.isEmpty() && !complete) {
                 try {
-                    EdgeQueryResponseBase response = (EdgeQueryResponseBase) remoteQueryService.next(getRemoteId(), getCallerObject());
+                    EdgeQueryResponseBase response = (EdgeQueryResponseBase) remoteQueryService.next(getRemoteId(), getCurrentUser());
                     if (response != null) {
                         if (response.getTotalResults() == 0) {
                             if (!response.isPartialResults()) {

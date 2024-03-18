@@ -177,7 +177,7 @@ services:
     image: datawave/authorization-service:4.0.0-SNAPSHOT
     command:
       - --spring.output.ansi.enabled=ALWAYS
-      - --spring.profiles.active=consul,mock,compose
+      - --spring.profiles.active=consul,mock,compose,federation
       - --spring.cloud.consul.host=consul
       - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${random.value}
     ports:
@@ -358,7 +358,7 @@ services:
     image: datawave/query-service:1.0.0-SNAPSHOT
     command:
       - --spring.output.ansi.enabled=ALWAYS
-      - --spring.profiles.active=consul,compose,remoteauth,querymessaging,metricssource,query,mrquery,cachedresults
+      - --spring.profiles.active=consul,compose,remoteauth,querymessaging,metricssource,query,mrquery,cachedresults,federation
       - --spring.cloud.consul.host=consul
       - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${random.value}
     environment:
@@ -442,7 +442,7 @@ services:
       - --spring.application.name=executor-pool1
       - --spring.cloud.config.name=executor
       - --spring.output.ansi.enabled=ALWAYS
-      - --spring.profiles.active=consul,compose,remoteauth,querymessaging,metricssource,query,pool1
+      - --spring.profiles.active=consul,compose,remoteauth,querymessaging,metricssource,query,pool1,federation
       - --spring.cloud.consul.host=consul
       - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${random.value}
     environment:
@@ -491,7 +491,7 @@ services:
       - --spring.application.name=executor-pool2
       - --spring.cloud.config.name=executor
       - --spring.output.ansi.enabled=ALWAYS
-      - --spring.profiles.active=consul,compose,remoteauth,querymessaging,metricssource,query,pool2
+      - --spring.profiles.active=consul,compose,remoteauth,querymessaging,metricssource,query,pool2,federation
       - --spring.cloud.consul.host=consul
       - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${random.value}
     environment:

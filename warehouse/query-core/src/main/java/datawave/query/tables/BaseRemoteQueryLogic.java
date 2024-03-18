@@ -19,6 +19,7 @@ import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.Query;
 import datawave.query.config.RemoteQueryConfiguration;
 import datawave.query.tables.remote.RemoteQueryLogic;
+import datawave.security.authorization.ProxiedUserDetails;
 import datawave.security.authorization.UserOperations;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
@@ -96,10 +97,6 @@ public abstract class BaseRemoteQueryLogic<T> extends BaseQueryLogic<T> implemen
         getConfig().setRemoteQueryLogic(remoteQueryLogic);
     }
 
-    public Object getCallerObject() {
-        return getCurrentUser();
-    }
-
     @Override
     public GenericQueryConfiguration initialize(AccumuloClient connection, Query settings, Set<Authorizations> auths) throws Exception {
         Map<String,List<String>> parms = settings.toMap();
@@ -107,7 +104,7 @@ public abstract class BaseRemoteQueryLogic<T> extends BaseQueryLogic<T> implemen
         if (!parms.containsKey(QUERY_ID) && settings.getId() != null) {
             parms.put(QUERY_ID, Collections.singletonList(settings.getId().toString()));
         }
-        GenericResponse<String> createResponse = remoteQueryService.createQuery(getRemoteQueryLogic(), parms, getCallerObject());
+        GenericResponse<String> createResponse = remoteQueryService.createQuery(getRemoteQueryLogic(), parms, getCurrentUser());
         setRemoteId(createResponse.getResult());
         log.info("Local query " + settings.getId() + " maps to remote query " + getRemoteId());
         RemoteQueryConfiguration config = getConfig();
@@ -117,7 +114,7 @@ public abstract class BaseRemoteQueryLogic<T> extends BaseQueryLogic<T> implemen
 
     @Override
     public String getPlan(AccumuloClient connection, Query settings, Set<Authorizations> auths, boolean expandFields, boolean expandValues) throws Exception {
-        GenericResponse<String> planResponse = remoteQueryService.planQuery(getRemoteQueryLogic(), settings.toMap(), getCallerObject());
+        GenericResponse<String> planResponse = remoteQueryService.planQuery(getRemoteQueryLogic(), settings.toMap(), getCurrentUser());
         return planResponse.getResult();
     }
 
@@ -143,7 +140,7 @@ public abstract class BaseRemoteQueryLogic<T> extends BaseQueryLogic<T> implemen
 
         if (getRemoteId() != null) {
             try {
-                remoteQueryService.close(getRemoteId(), getCallerObject());
+                remoteQueryService.close(getRemoteId(), getCurrentUser());
             } catch (Exception e) {
                 log.error("Failed to close remote query", e);
             }

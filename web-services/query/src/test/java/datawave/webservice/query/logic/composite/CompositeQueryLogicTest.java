@@ -45,6 +45,7 @@ import datawave.security.authorization.AuthorizationException;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUser.UserType;
+import datawave.security.authorization.ProxiedUserDetails;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.authorization.UserOperations;
 import datawave.security.util.DnUtils;
@@ -346,7 +347,7 @@ public class CompositeQueryLogicTest {
     public static class TestUserOperations implements UserOperations {
 
         @Override
-        public AuthorizationsListBase listEffectiveAuthorizations(Object callerObject) throws AuthorizationException {
+        public AuthorizationsListBase listEffectiveAuthorizations(ProxiedUserDetails callerObject) throws AuthorizationException {
             DatawavePrincipal p = (DatawavePrincipal) callerObject;
             DefaultAuthorizationsList authList = new DefaultAuthorizationsList();
             DatawaveUser primaryUser = p.getPrimaryUser();
@@ -361,7 +362,7 @@ public class CompositeQueryLogicTest {
         }
 
         @Override
-        public GenericResponse<String> flushCachedCredentials(Object callerObject) {
+        public GenericResponse<String> flushCachedCredentials(ProxiedUserDetails callerObject) {
             return new GenericResponse<>();
         }
     }

@@ -59,7 +59,7 @@ public class RemoteUserOperationsImpl extends RemoteHttpService implements UserO
 
     @Override
     @Cacheable(value = "listEffectiveAuthorizations", key = "{#callerObject}", cacheManager = "remoteOperationsCacheManager")
-    public AuthorizationsListBase listEffectiveAuthorizations(Object callerObject) throws AuthorizationException {
+    public AuthorizationsListBase listEffectiveAuthorizations(ProxiedUserDetails callerObject) throws AuthorizationException {
         init();
         final DatawavePrincipal principal = getDatawavePrincipal(callerObject);
         log.info("Cache fault: Retrieving effective auths for " + principal.getPrimaryUser().getDn());
@@ -77,7 +77,7 @@ public class RemoteUserOperationsImpl extends RemoteHttpService implements UserO
     }
 
     @Override
-    public GenericResponse<String> flushCachedCredentials(Object callerObject) throws AuthorizationException {
+    public GenericResponse<String> flushCachedCredentials(ProxiedUserDetails callerObject) throws AuthorizationException {
         init();
         final DatawavePrincipal principal = getDatawavePrincipal(callerObject);
         final String suffix = FLUSH_CREDS;

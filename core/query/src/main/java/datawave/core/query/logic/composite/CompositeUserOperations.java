@@ -43,7 +43,7 @@ public class CompositeUserOperations implements UserOperations {
     }
 
     @Override
-    public AuthorizationsListBase listEffectiveAuthorizations(Object callerObject) throws AuthorizationException {
+    public AuthorizationsListBase listEffectiveAuthorizations(ProxiedUserDetails callerObject) throws AuthorizationException {
         AuthorizationsListBase auths = responseObjectFactory.getAuthorizationsList();
         final DatawavePrincipal principal = getDatawavePrincipal(callerObject);
         Map<AuthorizationsListBase.SubjectIssuerDNPair,Set<String>> authMap = new HashMap<>();
@@ -88,7 +88,7 @@ public class CompositeUserOperations implements UserOperations {
     }
 
     @Override
-    public GenericResponse<String> flushCachedCredentials(Object callerObject) throws AuthorizationException {
+    public GenericResponse<String> flushCachedCredentials(ProxiedUserDetails callerObject) throws AuthorizationException {
         GenericResponse<String> response = new GenericResponse<>();
         response.setResult("");
         String separator = "";
