@@ -5,10 +5,10 @@ export LOG_DIR=$2
 export FLAG_DIR=$3
 EXTRA_ARGS=${@:4}
 export JOB_FILE_BASE=${JOB_FILE%%.inprogress}
-export LOG_FILE_BASE=`basename $JOB_FILE .inprogress`
+export LOG_FILE_BASE=$(basename $JOB_FILE .inprogress)
 export LOG_FILE=${LOG_FILE_BASE}.log
 
-CMD=`head -1 $JOB_FILE | envsubst`
+CMD=$(head -1 $JOB_FILE | envsubst)
 CMD="$CMD $EXTRA_ARGS -flagFile $JOB_FILE"
 echo "Executed Command: $CMD" >> $LOG_DIR/$LOG_FILE 2>&1
 $CMD >> $LOG_DIR/$LOG_FILE 2>&1

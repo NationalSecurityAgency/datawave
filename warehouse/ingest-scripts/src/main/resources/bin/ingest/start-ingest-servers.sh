@@ -64,7 +64,7 @@ do
     script=${type}_SCRIPT
     log=${type}_LOG
     text=${type}_TEXT
-    PID=`ps -wwef | egrep "bash .*${!script}" | grep -v grep | awk {'print $2'}`
+    PID=$(ps -wwef | egrep "bash .*${!script}" | grep -v grep | awk {'print $2'})
 
      if [ -z "$PID" ]; then
         echo "starting ${!text} ingest server"
