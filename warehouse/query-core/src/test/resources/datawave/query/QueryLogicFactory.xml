@@ -27,6 +27,7 @@
         <bean class="datawave.query.language.functions.jexl.Jexl"/>
         <bean class="datawave.query.language.functions.jexl.AtomValuesMatchFunction"/>
         <bean class="datawave.query.language.functions.jexl.Options"/>
+        <bean class="datawave.query.language.functions.jexl.Rename"/>
         <bean class="datawave.query.language.functions.jexl.Unique"/>
         <bean class="datawave.query.language.functions.jexl.GroupBy"/>
         <bean class="datawave.query.language.functions.jexl.UniqueByDay"/>
@@ -199,6 +200,7 @@
         <!-- The max number of terms BEFORE all expansions -->
         <property name="initialMaxTermThreshold" value="10" />	<!-- was ${beq.initialMaxTermThreshold} -->
         <property name="intermediateMaxTermThreshold" value="10" />
+        <property name="indexedMaxTermThreshold" value="10" />
         <!-- The max number of terms AFTER all expansions -->
         <property name="finalMaxTermThreshold" value="10" />	<!-- was ${beq.finalMaxTermThreshold} -->
         <!-- The max query depth -->
@@ -249,11 +251,17 @@
         <property name="tfAggregationThresholdMs" value="-1" />
         <!--   enable per-tablet pruning of certain query options     -->
         <property name="pruneQueryOptions" value="false" />
+        <property name="reduceIngestTypes" value="true"/>
+        <property name="reduceIngestTypesPerShard" value="true"/>
         <property name="reduceQueryFields" value="false" />
+        <property name="reduceQueryFieldsPerShard" value="false" />
         <property name="reduceTypeMetadata" value="false" />
         <property name="reduceTypeMetadataPerShard" value="false" />
         <!--    should the query prune fields by ingest type    -->
         <property name="pruneQueryByIngestTypes" value="false" />
+        <!--   should the range stream also generate field and term counts    -->
+        <property name="useFieldCounts" value="true" />
+        <property name="useTermCounts" value="true" />
     </bean>
 
     <bean id="TLDEventQuery" scope="prototype" parent="BaseEventQuery" class="datawave.query.tables.TLDQueryLogic">

@@ -38,7 +38,6 @@ import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.rules.ExternalResource;
 
-import datawave.helpers.PrintUtility;
 import datawave.ingest.config.RawRecordContainerImpl;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.input.reader.event.EventSequenceFileRecordReader;
@@ -47,7 +46,6 @@ import datawave.ingest.test.StandaloneStatusReporter;
 import datawave.query.MockAccumuloRecordWriter;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.RebuildingScannerTestHelper;
-import datawave.util.TableName;
 
 public class AccumuloSetup extends ExternalResource {
 
@@ -166,11 +164,46 @@ public class AccumuloSetup extends ExternalResource {
      *            log of parent
      * @return connector to Accumulo
      * @throws AccumuloException
-     *             , AccumuloSecurityException, IOException, InterruptedException, TableExistsException, TableNotFoundException Accumulo error conditions
+     *             Accumulo error conditions
+     * @throws AccumuloSecurityException
+     *             Accumulo error conditions
+     * @throws IOException
+     *             Accumulo error conditions
+     * @throws InterruptedException
+     *             Accumulo error conditions
+     * @throws TableExistsException
+     *             Accumulo error conditions
+     * @throws TableNotFoundException
+     *             Accumulo error conditions
      */
     public AccumuloClient loadTables(final Logger parentLog, final RebuildingScannerTestHelper.TEARDOWN teardown,
                     RebuildingScannerTestHelper.INTERRUPT interrupt) throws AccumuloException, AccumuloSecurityException, IOException, InterruptedException,
                     TableExistsException, TableNotFoundException, URISyntaxException {
+        final QueryTestTableHelper tableHelper = new QueryTestTableHelper(this.getClass().getName(), parentLog, teardown, interrupt);
+        return this.loadTables(tableHelper);
+    }
+
+    /**
+     * Creates the Accumulo shard ids and ingests the data into the tables. Uses a CSV file for loading test data.
+     *
+     * @param tableHelper
+     *            the table helper to use
+     * @return connector to Accumulo
+     * @throws AccumuloException
+     *             Accumulo error conditions
+     * @throws AccumuloSecurityException
+     *             Accumulo error conditions
+     * @throws IOException
+     *             Accumulo error conditions
+     * @throws InterruptedException
+     *             Accumulo error conditions
+     * @throws TableExistsException
+     *             Accumulo error conditions
+     * @throws TableNotFoundException
+     *             Accumulo error conditions
+     */
+    public AccumuloClient loadTables(final QueryTestTableHelper tableHelper) throws AccumuloException, AccumuloSecurityException, IOException,
+                    InterruptedException, TableExistsException, TableNotFoundException, URISyntaxException {
         log.debug("------------- loadTables -------------");
 
         if (this.fileFormat != FileType.GROUPING) {
@@ -178,7 +211,6 @@ public class AccumuloSetup extends ExternalResource {
             Assert.assertFalse("data types have not been specified", this.dataTypes.isEmpty());
         }
 
-        QueryTestTableHelper tableHelper = new QueryTestTableHelper(AccumuloSetup.class.getName(), parentLog, teardown, interrupt);
         final AccumuloClient client = tableHelper.client;
         tableHelper.configureTables(this.recordWriter);
 
@@ -191,15 +223,7 @@ public class AccumuloSetup extends ExternalResource {
             }
         }
 
-        PrintUtility.printTable(client, auths, QueryTestTableHelper.METADATA_TABLE_NAME);
-        PrintUtility.printTable(client, auths, TableName.SHARD);
-        PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
-        PrintUtility.printTable(client, auths, TableName.SHARD_RINDEX);
-
-        // TODO: elsewhere?
-        PrintUtility.printTable(client, auths, QueryTestTableHelper.FACET_TABLE_NAME);
-        PrintUtility.printTable(client, auths, QueryTestTableHelper.FACET_METADATA_TABLE_NAME);
-        PrintUtility.printTable(client, auths, QueryTestTableHelper.FACET_HASH_TABLE_NAME);
+        tableHelper.printTables(auths);
 
         return client;
     }

@@ -530,7 +530,7 @@ public class UniqueTransformTest {
     }
 
     private UniqueTransform getUniqueTransform() {
-        return new UniqueTransform(uniqueFields);
+        return new UniqueTransform(uniqueFields, Long.MAX_VALUE);
     }
 
     private void updateUniqueTransform(UniqueTransform uniqueTransform) {

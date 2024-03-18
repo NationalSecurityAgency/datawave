@@ -1,5 +1,6 @@
 FROM azul/zulu-openjdk-centos:11.0.18-11.62.17
 
+
 RUN yum -y install deltarpm centos-release-sc && \
     chmod -R 777 /usr/lib/jvm/zulu11/bin/* && \
     groupadd -r jboss -g 1000 && \

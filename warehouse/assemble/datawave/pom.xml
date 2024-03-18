@@ -4,10 +4,10 @@
     <parent>
         <groupId>gov.nsa.datawave</groupId>
         <artifactId>assemble-parent</artifactId>
-        <version>6.6.0-SNAPSHOT</version>
+        <version>6.10.0-SNAPSHOT</version>
     </parent>
     <artifactId>assemble-datawave</artifactId>
-    <packaging>pom</packaging>
+    <packaging>jar</packaging>
     <name>${project.artifactId}</name>
     <dependencies>
         <!-- To ensure a consistent version is loaded -->
@@ -81,6 +81,11 @@
         <dependency>
             <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-ingest-scripts</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave</groupId>
+            <artifactId>datawave-ingest-ssdeep</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave</groupId>
@@ -268,6 +273,19 @@
                         </executions>
                     </plugin>
                     <plugin>
+                        <artifactId>maven-clean-plugin</artifactId>
+                        <version>2.4.1</version>
+                        <executions>
+                            <execution>
+                                <id>auto-clean</id>
+                                <goals>
+                                    <goal>clean</goal>
+                                </goals>
+                                <phase>initialize</phase>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
                         <artifactId>maven-dependency-plugin</artifactId>
                         <executions>
                             <execution>
@@ -404,6 +422,38 @@
                                 </configuration>
                             </execution>
                             <execution>
+                                <id>copy-rpm</id>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <phase>verify</phase>
+                                <configuration>
+                                    <outputDirectory>${project.build.directory}/docker</outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>${project.build.directory}/rpm/datawave-dw-${build.env}/RPMS/noarch/</directory>
+                                            <filtering>false</filtering>
+                                        </resource>
+                                    </resources>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>copy-dockerfile</id>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <phase>verify</phase>
+                                <configuration>
+                                    <outputDirectory>${project.build.directory}/docker</outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>${project.basedir}/src/main/docker</directory>
+                                            <filtering>true</filtering>
+                                        </resource>
+                                    </resources>
+                                </configuration>
+                            </execution>
+                            <execution>
                                 <id>copy-additional-env</id>
                                 <goals>
                                     <goal>copy-resources</goal>
@@ -417,6 +467,48 @@
                                         </resource>
                                     </resources>
                                 </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>docker</id>
+            <activation>
+                <property>
+                    <name>docker-release</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.spotify</groupId>
+                        <artifactId>docker-maven-plugin</artifactId>
+                        <version>1.1.1</version>
+                        <configuration>
+                            <imageName>${docker.image.prefix}datawave/ingest-${build.env}</imageName>
+                            <forceTags>true</forceTags>
+                            <imageTags>
+                                <imageTag>latest</imageTag>
+                                <imageTag>${project.version}</imageTag>
+                            </imageTags>
+                            <dockerDirectory>${project.build.directory}/docker</dockerDirectory>
+                            <resources>
+                                <resource>
+                                    <targetPath>/</targetPath>
+                                    <directory>${project.build.directory}</directory>
+                                    <include>rpm/RPMS/noarch/${project.build.finalName}-${build.env}.rpm</include>
+                                </resource>
+                            </resources>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>tag-image</id>
+                                <goals>
+                                    <goal>build</goal>
+                                </goals>
+                                <phase>install</phase>
                             </execution>
                         </executions>
                     </plugin>
@@ -585,6 +677,7 @@
                                             <include>${project.groupId}:datawave-edge-model-configuration-core</include>
                                             <include>${project.groupId}:datawave-ingest-wikipedia</include>
                                             <include>${project.groupId}:datawave-ingest-nyctlc</include>
+                                            <include>${project.groupId}:datawave-ingest-ssdeep</include>
                                             <include>gov.nsa.datawave.microservice:accumulo-utils</include>
                                             <include>gov.nsa.datawave.microservice:metadata-utils</include>
                                             <include>gov.nsa.datawave.microservice:type-utils</include>
