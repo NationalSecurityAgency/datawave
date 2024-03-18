@@ -60,7 +60,6 @@ import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
-import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
@@ -139,6 +138,8 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
     protected ExecutorService streamExecutor;
 
     protected boolean collapseUids = false;
+    protected boolean fieldCounts = false;
+    protected boolean termCounts = false;
 
     protected Set<String> indexOnlyFields = Sets.newHashSet();
 
@@ -153,6 +154,8 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
         streamExecutor = new ThreadPoolExecutor(executeLookupMin, maxLookup, 100, TimeUnit.MILLISECONDS, runnables);
         fieldDataTypes = config.getQueryFieldsDatatypes();
         collapseUids = config.getCollapseUids();
+        fieldCounts = config.getUseFieldCounts();
+        termCounts = config.getUseTermCounts();
         try {
             Set<String> ioFields = metadataHelper.getIndexOnlyFields(null);
             if (null != ioFields) {
@@ -284,6 +287,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
         private ShardQueryConfiguration config;
         private MetadataHelper metadataHelper;
         private TypeMetadata typeMetadata;
+        private Set<String> ingestTypes = null;
 
         public EmptyPlanPruner() {
             // no-op
@@ -293,6 +297,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
             this.config = config;
             this.metadataHelper = metadataHelper;
             this.typeMetadata = typeMetadata;
+            this.ingestTypes = config.getDatatypeFilter();
         }
 
         public boolean apply(QueryPlan plan) {
@@ -306,44 +311,25 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
 
             if (typeMetadata != null) {
                 JexlNode node = plan.getQueryTree();
-                JexlNode result = IngestTypePruningVisitor.prune(node, typeMetadata);
+                JexlNode result;
+                if (ingestTypes.isEmpty()) {
+                    // datatype filter was empty signifying a search across all ingest types
+                    result = IngestTypePruningVisitor.prune(node, typeMetadata);
+                } else {
+                    // datatype filter can be used to prune the resulting query tree
+                    result = IngestTypePruningVisitor.prune(node, typeMetadata, ingestTypes);
+                }
+
                 if (!ExecutableDeterminationVisitor.isExecutable(result, config, metadataHelper)) {
                     return false;
                 }
 
                 // update the query tree with the (potentially) pruned
-                plan.setQuery(JexlStringBuildingVisitor.buildQueryWithoutParse(result), result);
+                plan.setQueryTree(result);
+                plan.setQueryTreeString(JexlStringBuildingVisitor.buildQueryWithoutParse(result));
             }
 
             return true;
-        }
-    }
-
-    public static class MinimizeRanges implements Function<QueryPlan,QueryPlan> {
-
-        StreamContext myContext;
-
-        public MinimizeRanges(StreamContext myContext) {
-            this.myContext = myContext;
-        }
-
-        public QueryPlan apply(QueryPlan plan) {
-
-            if (StreamContext.EXCEEDED_TERM_THRESHOLD == myContext || StreamContext.EXCEEDED_VALUE_THRESHOLD == myContext) {
-
-                Set<Range> newRanges = Sets.newHashSet();
-
-                for (Range range : plan.getRanges()) {
-                    if (isEventSpecific(range)) {
-                        Key topKey = range.getStartKey();
-                        newRanges.add(new Range(topKey.getRow().toString(), true, topKey.getRow() + Constants.NULL_BYTE_STRING, false));
-                    } else {
-                        newRanges.add(range);
-                    }
-                }
-                plan.setRanges(newRanges);
-            }
-            return plan;
         }
     }
 
@@ -552,8 +538,10 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                                 config.getShardsPerDayThreshold());
 
                 uidSetting = new IteratorSetting(stackStart++, createUidsIteratorClass);
-                uidSetting.addOption(CreateUidsIterator.COLLAPSE_UIDS, Boolean.valueOf(collapseUids).toString());
-                uidSetting.addOption(CreateUidsIterator.PARSE_TLD_UIDS, Boolean.valueOf(config.getParseTldUids()).toString());
+                uidSetting.addOption(CreateUidsIterator.COLLAPSE_UIDS, Boolean.toString(collapseUids));
+                uidSetting.addOption(CreateUidsIterator.PARSE_TLD_UIDS, Boolean.toString(config.getParseTldUids()));
+                uidSetting.addOption(CreateUidsIterator.FIELD_COUNTS, Boolean.toString(fieldCounts));
+                uidSetting.addOption(CreateUidsIterator.TERM_COUNTS, Boolean.toString(termCounts));
 
             } else {
                 // Setup so this is a pass-through
@@ -561,8 +549,10 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                                 config.getShardsPerDayThreshold());
 
                 uidSetting = new IteratorSetting(stackStart++, createUidsIteratorClass);
-                uidSetting.addOption(CreateUidsIterator.COLLAPSE_UIDS, Boolean.valueOf(false).toString());
-                uidSetting.addOption(CreateUidsIterator.PARSE_TLD_UIDS, Boolean.valueOf(false).toString());
+                uidSetting.addOption(CreateUidsIterator.COLLAPSE_UIDS, Boolean.toString(false));
+                uidSetting.addOption(CreateUidsIterator.PARSE_TLD_UIDS, Boolean.toString(false));
+                uidSetting.addOption(CreateUidsIterator.FIELD_COUNTS, Boolean.toString(false));
+                uidSetting.addOption(CreateUidsIterator.TERM_COUNTS, Boolean.toString(false));
             }
 
             /*

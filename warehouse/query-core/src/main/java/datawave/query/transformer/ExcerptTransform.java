@@ -54,7 +54,7 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
     private final IteratorEnvironment env;
     private final SortedKeyValueIterator<Key,Value> source;
 
-    private String hitTermValues = "";
+    private final ArrayList<String> hitTermValues = new ArrayList<>();
 
     public ExcerptTransform(ExcerptFields excerptFields, IteratorEnvironment env, SortedKeyValueIterator<Key,Value> source) {
         this(excerptFields, env, source, new TermFrequencyExcerptIterator());
@@ -126,7 +126,7 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
                                         pos.getOffset());
                     }
                     // save the hit term for later callout
-                    hitTermValues = (String) hitTuple.getValue();
+                    Collections.addAll(hitTermValues, ((String) hitTuple.getValue()).split(Constants.SPACE));
                 }
             }
         }
@@ -313,7 +313,7 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
      *            the term values to match
      * @return the excerpt
      */
-    private String getExcerpt(String field, int start, int end, Range range, String hitTermValues) {
+    private String getExcerpt(String field, int start, int end, Range range, ArrayList<String> hitTermValues) {
         excerptIteratorOptions.put(TermFrequencyExcerptIterator.FIELD_NAME, field);
         excerptIteratorOptions.put(TermFrequencyExcerptIterator.START_OFFSET, String.valueOf(start));
         excerptIteratorOptions.put(TermFrequencyExcerptIterator.END_OFFSET, String.valueOf(end));
@@ -339,28 +339,13 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
         }
     }
 
-    private static String getHitPhrase(String hitTermValues, String[] phraseParts) {
+    private static String getHitPhrase(ArrayList<String> hitTermValues, String[] phraseParts) {
         List<String> hitPhrase = new ArrayList<>();
-        String[] hitTermValuesParts = hitTermValues.split(Constants.SPACE);
-        boolean startedCallout = false;
         for (String phrasePart : phraseParts[1].split(Constants.SPACE)) {
-            // check if we have a multi value term
-            // if we do, call out the first and last term values only
-            if (hitTermValuesParts.length > 1) {
-                if (phrasePart.equals(hitTermValuesParts[0])) {
-                    hitPhrase.add("[" + phrasePart);
-                    startedCallout = true;
-                } else if (startedCallout && phrasePart.equals(hitTermValuesParts[hitTermValuesParts.length - 1])) {
-                    hitPhrase.add(phrasePart + "]");
-                } else {
-                    hitPhrase.add(phrasePart);
-                }
+            if (hitTermValues.contains(phrasePart)) {
+                hitPhrase.add("[" + phrasePart + "]");
             } else {
-                if (hitTermValues.contains(phrasePart)) {
-                    hitPhrase.add("[" + phrasePart + "]");
-                } else {
-                    hitPhrase.add(phrasePart);
-                }
+                hitPhrase.add(phrasePart);
             }
         }
         return String.join(" ", hitPhrase);
