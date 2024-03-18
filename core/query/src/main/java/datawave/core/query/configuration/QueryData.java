@@ -91,7 +91,7 @@ public class QueryData implements ResultContext, Externalizable {
         this.hashCode = other.hashCode;
         this.rebuildHashCode = other.rebuildHashCode;
         this.lastResult = other.lastResult;
-        this.finished = finished;
+        this.finished = other.finished;
     }
 
     @Deprecated(since = "6.5.0", forRemoval = true)
