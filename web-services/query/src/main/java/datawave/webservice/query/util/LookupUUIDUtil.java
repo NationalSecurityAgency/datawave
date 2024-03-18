@@ -35,6 +35,7 @@ import datawave.microservice.query.QueryPersistence;
 import datawave.query.data.UUIDType;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.UserOperations;
+import datawave.security.authorization.remote.RemoteUserOperationsImpl;
 import datawave.security.util.WSAuthorizationsUtil;
 import datawave.util.time.DateHelper;
 import datawave.webservice.common.audit.AuditParameters;
@@ -472,22 +473,27 @@ public class LookupUUIDUtil {
     public String getAuths(String logicName, Map<String,List<String>> queryParameters, String queryAuths, Principal principal) {
         String userAuths;
         try {
-            // the overall principal (the one with combined auths across remote user operations) is our own user operations (probably the UserOperationsBean)
-            DatawavePrincipal overallPrincipal = (DatawavePrincipal) ((userOperations == null) ? principal
-                            : userOperations.getRemoteUser((DatawavePrincipal) principal));
-
             QueryLogic<?> logic = queryLogicFactory.getQueryLogic(logicName, (DatawavePrincipal) principal);
             Query settings = createSettings(queryParameters);
             if (queryAuths == null) {
-                logic.preInitialize(settings, WSAuthorizationsUtil.buildAuthorizations(overallPrincipal.getAuthorizations()));
+                logic.preInitialize(settings, WSAuthorizationsUtil.buildAuthorizations(((DatawavePrincipal) principal).getAuthorizations()));
             } else {
                 logic.preInitialize(settings, WSAuthorizationsUtil.buildAuthorizations(Collections.singleton(WSAuthorizationsUtil.splitAuths(queryAuths))));
             }
 
             // the query principal is our local principal unless the query logic has a different user operations
-            DatawavePrincipal queryPrincipal = (DatawavePrincipal) ((logic.getUserOperations() == null) ? principal
-                            : logic.getUserOperations().getRemoteUser((DatawavePrincipal) principal));
-
+            DatawavePrincipal queryPrincipal = (logic.getUserOperations() == null) ? (DatawavePrincipal) principal
+                            : logic.getUserOperations().getRemoteUser((DatawavePrincipal) principal);
+            // the overall principal (the one with combined auths across remote user operations) is our own user operations (probably the UserOperationsBean)
+            // don't call remote user operations if it's asked not to
+            String includeRemoteServices = "true";
+            if (queryParameters.get(RemoteUserOperationsImpl.INCLUDE_REMOTE_SERVICES) != null && !queryParameters.get(RemoteUserOperationsImpl.INCLUDE_REMOTE_SERVICES).isEmpty()) {
+                includeRemoteServices = queryParameters.get(RemoteUserOperationsImpl.INCLUDE_REMOTE_SERVICES).get(0);
+            }
+            DatawavePrincipal overallPrincipal = (userOperations == null
+                            || "false".equalsIgnoreCase(includeRemoteServices))
+                                            ? (DatawavePrincipal) principal
+                                            : userOperations.getRemoteUser((DatawavePrincipal) principal);
             if (queryAuths != null) {
                 userAuths = WSAuthorizationsUtil.downgradeUserAuths(queryAuths, overallPrincipal, queryPrincipal);
             } else {

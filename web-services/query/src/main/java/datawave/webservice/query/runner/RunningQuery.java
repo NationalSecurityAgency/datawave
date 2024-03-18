@@ -38,6 +38,7 @@ import datawave.microservice.querymetric.QueryMetricFactory;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.UserOperations;
+import datawave.security.authorization.remote.RemoteUserOperationsImpl;
 import datawave.security.util.WSAuthorizationsUtil;
 import datawave.webservice.query.cache.AbstractRunningQuery;
 import datawave.webservice.query.data.ObjectSizeOf;
@@ -130,8 +131,11 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         DatawavePrincipal queryPrincipal = (DatawavePrincipal) ((logic.getUserOperations() == null) ? principal
                         : logic.getUserOperations().getRemoteUser((DatawavePrincipal) principal));
         // the overall principal (the one with combined auths across remote user operations) is our own user operations (probably the UserOperationsBean)
-        DatawavePrincipal overallPrincipal = (DatawavePrincipal) ((userOperations == null) ? principal
-                        : userOperations.getRemoteUser((DatawavePrincipal) principal));
+        // don't call remote user operations if it's asked not to
+        DatawavePrincipal overallPrincipal = (userOperations == null
+                        || "false".equalsIgnoreCase(settings.findParameter(RemoteUserOperationsImpl.INCLUDE_REMOTE_SERVICES).getParameterValue()))
+                                        ? (DatawavePrincipal) principal
+                                        : userOperations.getRemoteUser((DatawavePrincipal) principal);
         this.calculatedAuths = WSAuthorizationsUtil.getDowngradedAuthorizations(methodAuths, overallPrincipal, queryPrincipal);
         this.timing = timing;
         this.executor = Executors.newSingleThreadExecutor();

@@ -31,7 +31,7 @@ public class RemoteUserOperationsImpl extends RemoteHttpService implements UserO
 
     private static final String FLUSH_CREDS = "flushCachedCredentials";
 
-    private static final String INCLUDE_REMOTE_SERVICES = "includeRemoteServices";
+    public static final String INCLUDE_REMOTE_SERVICES = "includeRemoteServices";
 
     private ObjectReader genericResponseReader;
 

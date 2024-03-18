@@ -1,7 +1,5 @@
 package datawave.query.tables.ssdeep;
 
-import static datawave.query.tables.ssdeep.SSDeepSimilarityQueryTransformer.MIN_SSDEEP_SCORE_PARAMETER;
-
 import java.util.Collection;
 import java.util.Map;
 import java.util.function.Function;
@@ -27,6 +25,7 @@ import datawave.util.ssdeep.SSDeepNGramOverlapScorer;
 /** A function that transforms entries retrieved from Accumulo into Scored SSDeep hash matches */
 public class SSDeepScoringFunction implements Function<Map.Entry<Key,Value>,Stream<ScoredSSDeepPair>> {
 
+    public static final String MIN_SSDEEP_SCORE_PARAMETER = "minScore";
     private static final Logger log = Logger.getLogger(SSDeepScoringFunction.class);
 
     /** Used to encode the chunk size as a character which is included in the ranges used to retrieve ngram tuples */

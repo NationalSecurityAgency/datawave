@@ -44,6 +44,7 @@ import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.runner.RunningQuery;
 import datawave.webservice.result.EventQueryResponseBase;
 
+/** Additional unit test against the SSDeepIndex / SSDeepSimilarityLogic code */
 public class SSDeepSimilarityQueryTest {
 
     private static final Logger log = Logger.getLogger(SSDeepSimilarityQueryTest.class);
@@ -149,7 +150,7 @@ public class SSDeepSimilarityQueryTest {
         q.setQueryAuthorizations(auths.toString());
 
         if (minScoreThreshold > 0) {
-            q.addParameter(SSDeepSimilarityQueryTransformer.MIN_SSDEEP_SCORE_PARAMETER, String.valueOf(minScoreThreshold));
+            q.addParameter(SSDeepScoringFunction.MIN_SSDEEP_SCORE_PARAMETER, String.valueOf(minScoreThreshold));
         }
 
         RunningQuery runner = new RunningQuery(accumuloClient, AccumuloConnectionFactory.Priority.NORMAL, this.logic, q, "", principal,

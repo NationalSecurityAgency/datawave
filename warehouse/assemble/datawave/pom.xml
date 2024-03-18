@@ -84,6 +84,11 @@
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave</groupId>
+            <artifactId>datawave-ingest-ssdeep</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-ingest-wikipedia</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -673,6 +678,7 @@
                                             <include>${project.groupId}:datawave-edge-model-configuration-core</include>
                                             <include>${project.groupId}:datawave-ingest-wikipedia</include>
                                             <include>${project.groupId}:datawave-ingest-nyctlc</include>
+                                            <include>${project.groupId}:datawave-ingest-ssdeep</include>
                                             <include>gov.nsa.datawave.core:datawave-core-connection-pool</include>
                                             <include>gov.nsa.datawave.core:datawave-core-common</include>
                                             <include>gov.nsa.datawave.core:datawave-core-common-util</include>
