@@ -487,13 +487,12 @@ public class LookupUUIDUtil {
             // the overall principal (the one with combined auths across remote user operations) is our own user operations (probably the UserOperationsBean)
             // don't call remote user operations if it's asked not to
             String includeRemoteServices = "true";
-            if (queryParameters.get(RemoteUserOperationsImpl.INCLUDE_REMOTE_SERVICES) != null && !queryParameters.get(RemoteUserOperationsImpl.INCLUDE_REMOTE_SERVICES).isEmpty()) {
+            if (queryParameters.get(RemoteUserOperationsImpl.INCLUDE_REMOTE_SERVICES) != null
+                            && !queryParameters.get(RemoteUserOperationsImpl.INCLUDE_REMOTE_SERVICES).isEmpty()) {
                 includeRemoteServices = queryParameters.get(RemoteUserOperationsImpl.INCLUDE_REMOTE_SERVICES).get(0);
             }
-            DatawavePrincipal overallPrincipal = (userOperations == null
-                            || "false".equalsIgnoreCase(includeRemoteServices))
-                                            ? (DatawavePrincipal) principal
-                                            : userOperations.getRemoteUser((DatawavePrincipal) principal);
+            DatawavePrincipal overallPrincipal = (userOperations == null || "false".equalsIgnoreCase(includeRemoteServices)) ? (DatawavePrincipal) principal
+                            : userOperations.getRemoteUser((DatawavePrincipal) principal);
             if (queryAuths != null) {
                 userAuths = WSAuthorizationsUtil.downgradeUserAuths(queryAuths, overallPrincipal, queryPrincipal);
             } else {
