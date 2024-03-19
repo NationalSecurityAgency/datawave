@@ -103,7 +103,8 @@ public class SSDeepIngestQueryTest extends AbstractFunctionalQuery {
         discoveryQueryLogic.setTableName("shardIndex");
         discoveryQueryLogic.setIndexTableName("shardIndex");
         discoveryQueryLogic.setReverseIndexTableName("shardReverseIndex");
-        discoveryQueryLogic.setModelTableName("metadata");
+        discoveryQueryLogic.setMetadataTableName("metadata");
+        discoveryQueryLogic.setModelName("DATAWAVE");
         discoveryQueryLogic.setMarkingFunctions(markingFunctions);
         discoveryQueryLogic.setMetadataHelperFactory(metadataHelperFactory);
         discoveryQueryLogic.setResponseObjectFactory(responseFactory);

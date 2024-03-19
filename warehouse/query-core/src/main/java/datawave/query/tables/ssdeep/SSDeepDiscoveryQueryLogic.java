@@ -148,6 +148,14 @@ public class SSDeepDiscoveryQueryLogic extends BaseQueryLogic<DiscoveredSSDeep> 
         discoveryDelegate.setModelName(modelName);
     }
 
+    public void setMetadataTableName(String metadataTableName) {
+        discoveryDelegate.setMetadataTableName(metadataTableName);
+    }
+
+    public String getIndexTableName() {
+        return discoveryDelegate.getIndexTableName();
+    }
+
     public void setQueryModel(QueryModel model) {
         discoveryDelegate.setQueryModel(model);
     }
