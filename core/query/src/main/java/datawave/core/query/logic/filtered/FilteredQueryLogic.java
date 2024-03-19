@@ -1,4 +1,4 @@
-package datawave.webservice.query.logic.filtered;
+package datawave.core.query.logic.filtered;
 
 import java.util.Collections;
 import java.util.Iterator;
@@ -11,10 +11,10 @@ import org.apache.log4j.Logger;
 
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.iterator.DatawaveTransformIterator;
+import datawave.core.query.logic.DelegatingQueryLogic;
 import datawave.core.query.logic.QueryLogic;
 import datawave.microservice.query.Query;
 import datawave.security.authorization.UserOperations;
-import datawave.webservice.query.logic.DelegatingQueryLogic;
 
 /**
  * A filtered query logic will only actually execute the delegate query logic if the filter passes. Otherwise this will do nothing and return no results.

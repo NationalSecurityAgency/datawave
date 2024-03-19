@@ -1,4 +1,4 @@
-package datawave.webservice.query.predicate;
+package datawave.core.query.predicate;
 
 import java.util.function.Predicate;
 

@@ -1,4 +1,4 @@
-package datawave.webservice.query.logic;
+package datawave.core.query.logic;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -13,8 +13,6 @@ import org.apache.commons.collections4.iterators.TransformIterator;
 import datawave.audit.SelectorExtractor;
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.query.configuration.GenericQueryConfiguration;
-import datawave.core.query.logic.QueryLogic;
-import datawave.core.query.logic.QueryLogicTransformer;
 import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.Query;
 import datawave.security.authorization.ProxiedUserDetails;
