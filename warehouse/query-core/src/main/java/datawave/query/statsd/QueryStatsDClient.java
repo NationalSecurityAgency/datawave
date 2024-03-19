@@ -41,8 +41,9 @@ public class QueryStatsDClient extends ConvenienceMethodProvidingStatsDClient {
     private static final StatsDClientErrorHandler NO_OP_HANDLER = e -> { /* No-op */};
 
     // the client
-    private static NonBlockingUdpSender client = null;
+    private static volatile NonBlockingUdpSender client = null;
     // this monitor controls when the client is being used
+
     private static final Object clientMonitor = new Object();
 
     public QueryStatsDClient(String queryId, String host, int port, int maxCacheSize) {
