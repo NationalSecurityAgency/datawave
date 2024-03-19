@@ -55,7 +55,7 @@ public class TypeRegistry extends HashMap<String,Type> {
 
     private static final long serialVersionUID = 1L;
 
-    private static TypeRegistry registry = null;
+    private static volatile TypeRegistry registry = null;
 
     private static final Object lock = new Object();
 
