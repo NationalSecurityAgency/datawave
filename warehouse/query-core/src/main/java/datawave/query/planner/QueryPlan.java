@@ -65,7 +65,6 @@ public class QueryPlan {
      *            a list of IteratorSetting
      */
     public QueryPlan(String tableName, JexlNode queryTree, Collection<Range> ranges, Collection<String> columnFamilies, List<IteratorSetting> settings) {
-        Preconditions.checkNotNull(queryTree);
         this.tableName = tableName;
         this.queryTree = queryTree;
         this.queryTreeString = JexlStringBuildingVisitor.buildQueryWithoutParse(queryTree);
@@ -90,7 +89,6 @@ public class QueryPlan {
      *            a list of IteratorSetting
      */
     public QueryPlan(String tableName, String queryString, Collection<Range> ranges, Collection<String> columnFamilies, List<IteratorSetting> settings) {
-        Preconditions.checkNotNull(queryTree);
         this.tableName = tableName;
         this.queryTree = null;
         this.queryTreeString = queryString;
