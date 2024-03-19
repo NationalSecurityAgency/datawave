@@ -90,7 +90,7 @@ public class CachedResultsCleanupBean {
                 while (rs.next()) {
                     String objectName = CachedResultsParameters.validate(rs.getString(1));
                     // Drop the table
-                    String dropTable = "DROP TABLE " + objectName;
+                    String dropTable = String.format("DROP TABLE %s", objectName);
                     try (Statement statement = con.createStatement()) {
                         statement.execute(dropTable);
                     }
@@ -98,7 +98,7 @@ public class CachedResultsCleanupBean {
 
                     String viewName = CachedResultsParameters.validate(objectName.replaceFirst("t", "v"));
                     // Drop the associated view
-                    String dropView = "DROP VIEW " + viewName;
+                    String dropView = String.format("DROP VIEW %s", viewName);
                     try (Statement statement = con.createStatement()) {
                         statement.execute(dropView);
                     }

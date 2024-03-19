@@ -1,17 +1,25 @@
 package datawave.query.index.lookup;
 
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DELAYED;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_OR;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_TERM;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.INDEX_HOLE;
+
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
-import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
-import org.apache.commons.jexl2.parser.ASTOrNode;
-import org.apache.commons.jexl2.parser.ASTReference;
-import org.apache.commons.jexl2.parser.ASTReferenceExpression;
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ASTOrNode;
+import org.apache.commons.jexl3.parser.ASTReferenceExpression;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.hadoop.io.MapWritable;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.VIntWritable;
 import org.apache.hadoop.io.VLongWritable;
 import org.apache.hadoop.io.Writable;
@@ -25,10 +33,6 @@ import com.google.common.collect.Sets;
 
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlNodeFactory;
-import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.jexl.visitors.RebuildingVisitor;
 import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
@@ -52,6 +56,9 @@ public class IndexInfo implements Writable, UidIntersector {
     // a set of document uids. In some cases this list is pruned when a threshold is exceeded
     // In the pruned case, the count will exceed the size of the uid set
     protected ImmutableSortedSet<IndexMatch> uids;
+
+    protected Map<String,Long> fieldCounts = new HashMap<>();
+    protected Map<String,Long> termCounts = new HashMap<>();
 
     public IndexInfo() {
         this.count = 0;
@@ -91,8 +98,20 @@ public class IndexInfo implements Writable, UidIntersector {
     public void write(DataOutput out) throws IOException {
         new VLongWritable(count).write(out);
         new VIntWritable(uids.size()).write(out);
-        for (IndexMatch uid : uids)
+        for (IndexMatch uid : uids) {
             uid.write(out);
+        }
+        MapWritable fieldMapWritable = new MapWritable();
+        for (Map.Entry<String,Long> entry : fieldCounts.entrySet()) {
+            fieldMapWritable.put(new Text(entry.getKey()), new VLongWritable(entry.getValue()));
+        }
+        fieldMapWritable.write(out);
+
+        MapWritable termMapWritable = new MapWritable();
+        for (Map.Entry<String,Long> entry : termCounts.entrySet()) {
+            termMapWritable.put(new Text(entry.getKey()), new VLongWritable(entry.getValue()));
+        }
+        termMapWritable.write(out);
     }
 
     public void applyNode(JexlNode node) {
@@ -126,6 +145,20 @@ public class IndexInfo implements Writable, UidIntersector {
             setBuilder.add(index);
         }
         this.uids = setBuilder.build();
+
+        MapWritable fieldMapWritable = new MapWritable();
+        fieldMapWritable.readFields(in);
+        this.fieldCounts = new HashMap<>();
+        for (Writable key : fieldMapWritable.keySet()) {
+            fieldCounts.put(key.toString(), Long.valueOf(fieldMapWritable.get(key).toString()));
+        }
+
+        MapWritable termMapWritable = new MapWritable();
+        termMapWritable.readFields(in);
+        this.termCounts = new HashMap<>();
+        for (Writable key : termMapWritable.keySet()) {
+            termCounts.put(key.toString(), Long.valueOf(termMapWritable.get(key).toString()));
+        }
     }
 
     public IndexInfo union(IndexInfo o) {
@@ -183,8 +216,14 @@ public class IndexInfo implements Writable, UidIntersector {
         if (nodeSet.isEmpty()) {
             merged.myNode = null;
         } else {
-            merged.myNode = JexlNodeFactory.createUnwrappedOrNode(nodeSet.getNodes());
+            merged.myNode = JexlNodeFactory.createOrNode(nodeSet.getNodes());
         }
+
+        merged.setFieldCounts(first.getFieldCounts());
+        merged.mergeFieldCounts(o.getFieldCounts());
+
+        merged.setTermCounts(first.getTermCounts());
+        merged.mergeTermCounts(o.getTermCounts());
 
         return merged;
     }
@@ -192,8 +231,6 @@ public class IndexInfo implements Writable, UidIntersector {
     private JexlNode getOrNode(JexlNode node) {
         if (node instanceof ASTOrNode) {
             return node;
-        } else if (node instanceof ASTReference) {
-            return getOrNode(node.jjtGetChild(0));
         } else if (node instanceof ASTReferenceExpression) {
             return getOrNode(node.jjtGetChild(0));
         }
@@ -202,8 +239,7 @@ public class IndexInfo implements Writable, UidIntersector {
 
     public static JexlNode getSourceNode(JexlNode delayedNode) {
         QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(delayedNode);
-        if (instance.isAnyTypeOf(ASTDelayedPredicate.class, ExceededOrThresholdMarkerJexlNode.class, ExceededValueThresholdMarkerJexlNode.class,
-                        ExceededTermThresholdMarkerJexlNode.class, IndexHoleMarkerJexlNode.class)) {
+        if (instance.isAnyTypeOf(DELAYED, EXCEEDED_OR, EXCEEDED_VALUE, EXCEEDED_TERM, INDEX_HOLE)) {
             return instance.getSource();
         } else {
             return delayedNode;
@@ -292,6 +328,12 @@ public class IndexInfo implements Writable, UidIntersector {
             merged.count = merged.uids.size();
         }
 
+        merged.setFieldCounts(this.getFieldCounts());
+        merged.mergeFieldCounts(o.getFieldCounts());
+
+        merged.setTermCounts(this.getTermCounts());
+        merged.mergeTermCounts(o.getTermCounts());
+
         /*
          * If there are multiple levels within a union we could have an ASTOrNode. We cannot prune OrNodes as we would with an intersection, so propagate the
          * OrNode.
@@ -304,7 +346,7 @@ public class IndexInfo implements Writable, UidIntersector {
         if (nodeSet.isEmpty()) {
             merged.myNode = null;
         } else {
-            merged.myNode = TreeFlatteningRebuildingVisitor.flatten(JexlNodeFactory.createUnwrappedOrNode(nodeSet.getNodes()));
+            merged.myNode = TreeFlatteningRebuildingVisitor.flatten(JexlNodeFactory.createOrNode(nodeSet.getNodes()));
         }
         return merged;
     }
@@ -401,6 +443,12 @@ public class IndexInfo implements Writable, UidIntersector {
             merged.uids = ImmutableSortedSet.of();
         }
 
+        merged.setFieldCounts(this.getFieldCounts());
+        merged.mergeFieldCounts(o.getFieldCounts());
+
+        merged.setTermCounts(this.getTermCounts());
+        merged.mergeTermCounts(o.getTermCounts());
+
         // now handle updating the top level node
         JexlNodeSet nodes = new JexlNodeSet();
         if (this.getNode() != null) {
@@ -491,5 +539,55 @@ public class IndexInfo implements Writable, UidIntersector {
         for (IndexMatch uid : uids) {
             uid.set(myNode);
         }
+    }
+
+    public void setFieldCounts(Map<String,Long> fieldCounts) {
+        this.fieldCounts.putAll(fieldCounts);
+    }
+
+    public void setTermCounts(Map<String,Long> termCounts) {
+        this.termCounts.putAll(termCounts);
+    }
+
+    public void mergeFieldCounts(Map<String,Long> otherCounts) {
+        if (fieldCounts == null || fieldCounts.isEmpty()) {
+            fieldCounts = otherCounts;
+            return;
+        }
+
+        for (String field : otherCounts.keySet()) {
+            if (fieldCounts.containsKey(field)) {
+                Long existingCount = fieldCounts.get(field);
+                Long otherCount = otherCounts.get(field);
+                fieldCounts.put(field, existingCount + otherCount);
+            } else {
+                fieldCounts.put(field, otherCounts.get(field));
+            }
+        }
+    }
+
+    public void mergeTermCounts(Map<String,Long> otherCounts) {
+        if (termCounts == null || termCounts.isEmpty()) {
+            termCounts = otherCounts;
+            return;
+        }
+
+        for (String field : otherCounts.keySet()) {
+            if (termCounts.containsKey(field)) {
+                Long existingCount = termCounts.get(field);
+                Long otherCount = otherCounts.get(field);
+                termCounts.put(field, existingCount + otherCount);
+            } else {
+                termCounts.put(field, otherCounts.get(field));
+            }
+        }
+    }
+
+    public Map<String,Long> getFieldCounts() {
+        return fieldCounts;
+    }
+
+    public Map<String,Long> getTermCounts() {
+        return termCounts;
     }
 }

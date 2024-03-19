@@ -1,19 +1,21 @@
 package datawave.query.planner.pushdown.rules;
 
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DELAYED;
+
 import java.util.List;
 
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
-import org.apache.commons.jexl2.parser.ASTERNode;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.ParserTreeConstants;
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTERNode;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.Lists;
 
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.parser.JavaRegexAnalyzer;
 import datawave.query.parser.JavaRegexAnalyzer.JavaRegexParseException;
 import datawave.query.planner.pushdown.Cost;
@@ -47,7 +49,7 @@ public class FullTableScan extends PushDownRule {
     }
 
     protected JexlNode reverseDepth(JexlNode parentNode, List<JexlNode> delayedPredicates) {
-        JexlNode returnNode = ASTDelayedPredicate.create(parentNode);
+        JexlNode returnNode = QueryPropertyMarker.create(parentNode, DELAYED);
         JexlNode newAnd = new ASTAndNode(ParserTreeConstants.JJTANDNODE);
         int i = 0;
         for (JexlNode delayedNode : delayedPredicates) {
@@ -70,7 +72,7 @@ public class FullTableScan extends PushDownRule {
          */
         if (isParent(node, ASTAndNode.class) && getCost(node) == Cost.INFINITE) {
 
-            return ASTDelayedPredicate.create(node);
+            return QueryPropertyMarker.create(node, DELAYED);
 
         }
 
@@ -85,7 +87,7 @@ public class FullTableScan extends PushDownRule {
     /*
      * (non-Javadoc)
      *
-     * @see datawave.query.planner.pushdown.PushDown#getCost(org.apache.commons.jexl2.parser.JexlNode)
+     * @see datawave.query.planner.pushdown.PushDown#getCost(org.apache.commons.jexl3.parser.JexlNode)
      */
     @Override
     public Cost getCost(JexlNode node) {

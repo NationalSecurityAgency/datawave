@@ -1,10 +1,8 @@
 package datawave.query.jexl;
 
-import static org.apache.commons.jexl2.parser.JexlNodes.children;
-import static org.apache.commons.jexl2.parser.JexlNodes.makeRef;
-import static org.apache.commons.jexl2.parser.JexlNodes.wrap;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.BOUNDED_RANGE;
+import static org.apache.commons.jexl3.parser.JexlNodes.wrap;
 
-import java.io.StringReader;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.text.MessageFormat;
@@ -24,37 +22,37 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTAssignment;
-import org.apache.commons.jexl2.parser.ASTEQNode;
-import org.apache.commons.jexl2.parser.ASTERNode;
-import org.apache.commons.jexl2.parser.ASTFalseNode;
-import org.apache.commons.jexl2.parser.ASTFunctionNode;
-import org.apache.commons.jexl2.parser.ASTGENode;
-import org.apache.commons.jexl2.parser.ASTGTNode;
-import org.apache.commons.jexl2.parser.ASTIdentifier;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ASTLENode;
-import org.apache.commons.jexl2.parser.ASTLTNode;
-import org.apache.commons.jexl2.parser.ASTMethodNode;
-import org.apache.commons.jexl2.parser.ASTNENode;
-import org.apache.commons.jexl2.parser.ASTNRNode;
-import org.apache.commons.jexl2.parser.ASTNotNode;
-import org.apache.commons.jexl2.parser.ASTNullLiteral;
-import org.apache.commons.jexl2.parser.ASTNumberLiteral;
-import org.apache.commons.jexl2.parser.ASTOrNode;
-import org.apache.commons.jexl2.parser.ASTReference;
-import org.apache.commons.jexl2.parser.ASTReferenceExpression;
-import org.apache.commons.jexl2.parser.ASTSizeMethod;
-import org.apache.commons.jexl2.parser.ASTStringLiteral;
-import org.apache.commons.jexl2.parser.ASTTrueNode;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.JexlNode.Literal;
-import org.apache.commons.jexl2.parser.JexlNodes;
-import org.apache.commons.jexl2.parser.ParseException;
-import org.apache.commons.jexl2.parser.Parser;
-import org.apache.commons.jexl2.parser.ParserTreeConstants;
-import org.apache.commons.jexl2.parser.TokenMgrError;
+import org.apache.commons.jexl3.JexlException;
+import org.apache.commons.jexl3.JexlFeatures;
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTArguments;
+import org.apache.commons.jexl3.parser.ASTAssignment;
+import org.apache.commons.jexl3.parser.ASTEQNode;
+import org.apache.commons.jexl3.parser.ASTERNode;
+import org.apache.commons.jexl3.parser.ASTFalseNode;
+import org.apache.commons.jexl3.parser.ASTFunctionNode;
+import org.apache.commons.jexl3.parser.ASTGENode;
+import org.apache.commons.jexl3.parser.ASTGTNode;
+import org.apache.commons.jexl3.parser.ASTIdentifier;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTLENode;
+import org.apache.commons.jexl3.parser.ASTLTNode;
+import org.apache.commons.jexl3.parser.ASTMethodNode;
+import org.apache.commons.jexl3.parser.ASTNENode;
+import org.apache.commons.jexl3.parser.ASTNRNode;
+import org.apache.commons.jexl3.parser.ASTNotNode;
+import org.apache.commons.jexl3.parser.ASTNullLiteral;
+import org.apache.commons.jexl3.parser.ASTNumberLiteral;
+import org.apache.commons.jexl3.parser.ASTOrNode;
+import org.apache.commons.jexl3.parser.ASTReferenceExpression;
+import org.apache.commons.jexl3.parser.ASTStringLiteral;
+import org.apache.commons.jexl3.parser.ASTTrueNode;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNodes;
+import org.apache.commons.jexl3.parser.ParseException;
+import org.apache.commons.jexl3.parser.Parser;
+import org.apache.commons.jexl3.parser.StringProvider;
+import org.apache.commons.jexl3.parser.TokenMgrException;
 import org.apache.commons.lang.RandomStringUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
@@ -75,7 +73,6 @@ import datawave.query.index.lookup.RangeStream;
 import datawave.query.index.stats.IndexStatsClient;
 import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
-import datawave.query.jexl.nodes.BoundedRange;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.jexl.visitors.BaseVisitor;
 import datawave.query.jexl.visitors.InvertNodeVisitor;
@@ -131,10 +128,59 @@ public class JexlASTHelper {
      *            string representation of a query
      * @return a fully parsed and flattened query tree
      * @throws ParseException
+     *             when unable to parse Jexl Query
      */
     public static ASTJexlScript parseAndFlattenJexlQuery(String query) throws ParseException {
         ASTJexlScript script = parseJexlQuery(query);
         return TreeFlatteningRebuildingVisitor.flatten(script);
+    }
+
+    public static JexlFeatures jexlFeatures() {
+        // @formatter:off
+        return new JexlFeatures()
+                // mostly used internally by Jexl
+                .register(false) // default false
+                // allow usage of let, const, and var variables
+                .localVar(false) // default true
+                // allow side-effect operators (e.g. +=, -=, |=, <<=, etc) for global vars.  needed to assign values (e.g. _Value_ = true)
+                .sideEffectGlobal(true) // default true
+                // allow side-effect operators (e.g. +=, -=, |=, <<=, etc).  needed to assign values (e.g. _Value_ = true)
+                .sideEffect(true) // default true
+                // allow array indexing via reference expression (e.g. array[some expression])
+                .arrayReferenceExpr(false) // default true
+                // allow method calls on expressions
+                .methodCall(true) // default true
+                // allow array/map/set literal expressions (e.g. [1, 2, "three"], {"one": 1, "two": 2}, {"one", 2, "more"}
+                .structuredLiteral(false) // default true
+                // allow creation of new instances
+                .newInstance(false) // default true
+                // allow loop constructs
+                .loops(false) // default true
+                // allow lambda/function constructs (not the same as namespaced functions)
+                .lambda(false) // default true
+                // allow thin-arrow lambda syntax (e.g. ->)
+                .thinArrow(false) // default true
+                // allow fat-arrow lambda syntax (e.g. =>)
+                .fatArrow(false) // default false
+                // allow comparator names (e.g. eq, ne, lt, gt, etc)
+                .comparatorNames(false) // default true
+                // allow pragma constructs (e.g. #pragma some.option some-value)
+                .pragma(false) // default true
+                // allow pragma constructs anywhere in the code
+                .pragmaAnywhere(false) // default true
+                // allow namespace pragmas (e.g. '#pragma jexl.namespace.str java.lang.String' to use 'str' in place of 'java.lang.String')
+                .namespacePragma(false) // default true
+                // allow import pragmas (e.g. '#pragma jexl.import java.net' to use new URL() instead of new java.net.URL())
+                .importPragma(false) // default true
+                // allow annotations
+                .annotation(false) // default true
+                // allow multiple semicolon-terminated expressions per jexl string
+                .script(false) // default true
+                // whether redefining local variables is an error
+                .lexical(false) // default false
+                // whether local variables shade global variables
+                .lexicalShade(false); // default false
+        // @formatter: on
     }
 
     /**
@@ -145,10 +191,11 @@ public class JexlASTHelper {
      *            The query string in JEXL syntax to parse
      * @return Root node of the query parse tree.
      * @throws ParseException
+     *             when unable to parse Jexl Query
      */
     public static ASTJexlScript parseJexlQuery(String query) throws ParseException {
         // Instantiate a parser and visitor
-        Parser parser = new Parser(new StringReader(";"));
+        Parser parser = new Parser(new StringProvider(";"));
 
         // lowercase all 'and', 'or', and 'not' portions of the query.
         String caseFixQuery = AND_PATTERN.matcher(query).replaceAll(" and ");
@@ -164,8 +211,8 @@ public class JexlASTHelper {
         } else {
             // Parse the original query
             try {
-                return parser.parse(new StringReader(caseFixQuery), null);
-            } catch (TokenMgrError e) {
+                return parser.parse(null, jexlFeatures(), caseFixQuery, null);
+            } catch (TokenMgrException | JexlException e) {
                 throw new ParseException(e.getMessage());
             }
         }
@@ -196,8 +243,8 @@ public class JexlASTHelper {
         // Parse the query with the placeholders
         ASTJexlScript jexlScript;
         try {
-            jexlScript = parser.parse(new StringReader(query), null);
-        } catch (TokenMgrError e) {
+            jexlScript = parser.parse(null, jexlFeatures(), query, null);
+        } catch (TokenMgrException e) {
             throw new ParseException(e.getMessage());
         }
 
@@ -209,30 +256,28 @@ public class JexlASTHelper {
         while (!workingStack.isEmpty()) {
             JexlNode node = workingStack.pop();
 
-            if (node.image != null) {
-                int numToReplace = StringUtils.countMatches(node.image, placeholder);
+            if (node instanceof ASTStringLiteral) {
+                ASTStringLiteral stringLiteralNode = (ASTStringLiteral) node;
+                int numToReplace = StringUtils.countMatches(stringLiteralNode.getLiteral(), placeholder);
                 if (numToReplace > 0) {
-                    // get the parent node (skipping references)
-                    JexlNode parent = node;
-                    do {
-                        parent = parent.jjtGetParent();
-                    } while (parent instanceof ASTReference);
+                    // get the parent node
+                    JexlNode parent = node.jjtGetParent();
 
                     // if not a regex, use single backslash. otherwise, use double.
                     // this is necessary to ensure that non-regex nodes use the escaped
                     // value when determining equality, and to ensure that regex nodes
                     // use the pre-compiled form of the string literal.
                     if (!(parent instanceof ASTERNode || parent instanceof ASTNRNode))
-                        node.image = node.image.replace(placeholder, SINGLE_BACKSLASH);
+                        JexlNodes.setLiteral(stringLiteralNode, stringLiteralNode.getLiteral().replace(placeholder, SINGLE_BACKSLASH));
                     else
-                        node.image = node.image.replace(placeholder, DOUBLE_BACKSLASH);
-
+                        JexlNodes.setLiteral(stringLiteralNode, stringLiteralNode.getLiteral().replace(placeholder, DOUBLE_BACKSLASH));
                     numReplaced += numToReplace;
                 }
             }
 
             if (node.jjtGetNumChildren() > 0) {
-                for (JexlNode child : children(node)) {
+                for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+                    JexlNode child = node.jjtGetChild(i);
                     if (child != null) {
                         workingStack.push(child);
                     }
@@ -251,8 +296,10 @@ public class JexlASTHelper {
      * Fetch the literal off of the grandchild. Returns null if there is no literal
      *
      * @param node
-     * @return
+     *            to get the literal of
+     * @return literal node
      * @throws NoSuchElementException
+     *             if child doesn't exist
      */
     public static JexlNode getLiteral(JexlNode node) throws NoSuchElementException {
         node = dereference(node);
@@ -268,17 +315,7 @@ public class JexlASTHelper {
                 JexlNode child = node.jjtGetChild(i);
 
                 if (null != child) {
-                    if (child instanceof ASTReference) {
-                        for (int j = 0; j < child.jjtGetNumChildren(); j++) {
-                            JexlNode grandChild = child.jjtGetChild(j);
-
-                            // If the grandchild and its image is non-null and equal to the any-field identifier
-                            //
-                            if (isLiteral(grandChild)) {
-                                return grandChild;
-                            }
-                        }
-                    } else if (isLiteral(child)) {
+                    if (isLiteral(child)) {
                         return child;
                     }
                 }
@@ -291,14 +328,15 @@ public class JexlASTHelper {
      * Helper method to determine if the child is a literal
      *
      * @param child
-     * @return
+     *            the node to check
+     * @return true if the child is a literal
      */
     public static boolean isLiteral(final JexlNode child) {
         //  @formatter:off
         return child instanceof ASTTrueNode ||
                 child instanceof ASTFalseNode ||
                 child instanceof ASTNullLiteral ||
-                child instanceof Literal;   //  also true for ASTNumberLiteral
+                child instanceof JexlNode.Constant;   //  also true for ASTNumberLiteral
         //  @formatter:on
     }
 
@@ -306,15 +344,17 @@ public class JexlASTHelper {
      * Fetch the literal off of the grandchild. Throws an exception if there is no literal
      *
      * @param node
-     * @return
+     *            the node
+     * @return the literal
      * @throws NoSuchElementException
+     *             if the child doesn't exist
      */
     @SuppressWarnings("rawtypes")
     public static Object getLiteralValue(JexlNode node) throws NoSuchElementException {
         Object literal = getLiteral(node);
         // If the grandchild and its image is non-null and equal to the any-field identifier
-        if (literal instanceof JexlNode.Literal) {
-            return ((JexlNode.Literal) literal).getLiteral();
+        if (literal instanceof JexlNode.Constant) {
+            return ((JexlNode.Constant) literal).getLiteral();
         } else if (literal instanceof ASTTrueNode) {
             return true;
         } else if (literal instanceof ASTFalseNode) {
@@ -331,7 +371,8 @@ public class JexlASTHelper {
      * Fetch the literal off of the grandchild safely. Return null if there's an exception.
      *
      * @param node
-     * @return
+     *            the node
+     * @return the literal value
      */
     @SuppressWarnings("rawtypes")
     public static Object getLiteralValueSafely(JexlNode node) {
@@ -347,8 +388,10 @@ public class JexlASTHelper {
      * identifier will be deconstructed
      *
      * @param node
+     *            the node
      * @return the deconstructed identifier
      * @throws NoSuchElementException
+     *             if the child doesn't exist
      */
     public static String getIdentifier(JexlNode node) throws NoSuchElementException {
         return getIdentifier(node, true);
@@ -358,36 +401,33 @@ public class JexlASTHelper {
      * Fetch the identifier off of the grandchild, removing a leading {@link #IDENTIFIER_PREFIX} if present. Throws an exception if there is no identifier
      *
      * @param node
+     *            the node
      * @param deconstruct
+     *            flag to turn on/off option
      * @return the identifier, deconstructed if requested
      * @throws NoSuchElementException
+     *             if the child doesn't exist
      */
     public static String getIdentifier(JexlNode node, boolean deconstruct) throws NoSuchElementException {
         if (null != node && 2 == node.jjtGetNumChildren()) {
-            for (int i = 0; i < node.jjtGetNumChildren(); i++) {
-                JexlNode child = node.jjtGetChild(i);
+            JexlNode child = node.jjtGetChild(0);
 
-                if (child instanceof ASTReference) {
-                    for (int j = 0; j < child.jjtGetNumChildren(); j++) {
-                        JexlNode grandChild = child.jjtGetChild(j);
-
-                        // if the grandChild is an identifier, then return its image/value
-                        if (grandChild instanceof ASTIdentifier) {
-                            return (deconstruct ? deconstructIdentifier(grandChild.image) : grandChild.image);
-                        }
-                    }
-                } else if (child instanceof ASTIdentifier) {
-                    return (deconstruct ? deconstructIdentifier(child.image) : child.image);
-                }
-
+            if (child instanceof ASTIdentifier) {
+                // as of jexl3, identifiers are NOT parented by ASTReference nodes unless they are 'ant-style' and contain '.' characters
+                return getIdentifier((ASTIdentifier) child, deconstruct);
+            } else {
+                return null;
             }
-            return null;
-        } else if (node instanceof ASTIdentifier) {
-            return (deconstruct ? deconstructIdentifier(node.image, deconstruct) : node.image);
+        } else if (node instanceof ASTIdentifier && node.jjtGetNumChildren() == 0) {
+            return deconstructIdentifier(JexlNodes.getIdentifierOrLiteralAsString(node), deconstruct);
         }
 
         NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.IDENTIFIER_MISSING);
         throw (NoSuchElementException) (new NoSuchElementException().initCause(qe));
+    }
+
+    public static String getIdentifier(ASTIdentifier identifier, boolean deconstruct) {
+        return (deconstruct ? deconstructIdentifier(identifier.getName()) : identifier.getName());
     }
 
     /**
@@ -416,12 +456,14 @@ public class JexlASTHelper {
 
     public static List<ASTIdentifier> getFunctionIdentifiers(ASTFunctionNode node) {
         Preconditions.checkNotNull(node);
+        Preconditions.checkArgument(node.jjtGetNumChildren() == 2);
+        Preconditions.checkArgument(node.jjtGetChild(1) instanceof ASTArguments);
 
+        ASTArguments argsNode = (ASTArguments) node.jjtGetChild(1);
         List<ASTIdentifier> identifiers = Lists.newArrayList();
 
-        int numChildren = node.jjtGetNumChildren();
-        for (int i = 2; i < numChildren; i++) {
-            identifiers.addAll(getIdentifiers(node.jjtGetChild(i)));
+        for (int i = 0; i < argsNode.jjtGetNumChildren(); i++) {
+            identifiers.addAll(getIdentifiers(argsNode.jjtGetChild(i)));
         }
 
         return identifiers;
@@ -462,7 +504,7 @@ public class JexlASTHelper {
         getIdentifiers(node, identifiers);
         Set<String> names = new HashSet<>();
         for (ASTIdentifier identifier : identifiers) {
-            names.add(identifier.image);
+            names.add(identifier.getName());
         }
 
         return names;
@@ -495,21 +537,21 @@ public class JexlASTHelper {
     }
 
     /**
-     * Unwraps ASTReference and ASTReferenceExpressions from a JexlNode
+     * Unwraps ASTReferenceExpressions from a JexlNode
      *
      * @param node
      *            a JexlNode
      * @return an unwrapped JexlNode
      */
     public static JexlNode dereference(JexlNode node) {
-        while (node.jjtGetNumChildren() == 1 && (node instanceof ASTReference || node instanceof ASTReferenceExpression)) {
+        while (node.jjtGetNumChildren() == 1 && node instanceof ASTReferenceExpression) {
             node = node.jjtGetChild(0);
         }
         return node;
     }
 
     /**
-     * Unwraps ASTReference and ASTReferenceExpressions from a JexlNode. If the final node is a MarkerNode, wrap it
+     * Unwraps ASTReferenceExpressions from a JexlNode. If the final node is a MarkerNode, wrap it
      *
      * @param node
      *            a JexlNode
@@ -520,21 +562,21 @@ public class JexlASTHelper {
 
         if (QueryPropertyMarker.findInstance(unwrapped).isAnyType()) {
             // ensure we create a proper ref -> refExpr chain
-            unwrapped = makeRef(wrap(unwrapped));
+            unwrapped = wrap(unwrapped);
         }
 
         return unwrapped;
     }
 
     /**
-     * This is the opposite of dereference in that this will climb back up reference and reference expression nodes that only contain one child.
+     * This is the opposite of dereference in that this will climb back up reference expression nodes that only contain one child.
      *
      * @param node
+     *            a JexlNode
      * @return the parent reference/referenceexpression or this node
      */
     public static JexlNode rereference(JexlNode node) {
-        while (node.jjtGetParent() != null && node.jjtGetParent().jjtGetNumChildren() == 1
-                        && (node.jjtGetParent() instanceof ASTReference || node.jjtGetParent() instanceof ASTReferenceExpression)) {
+        while (node.jjtGetParent() != null && node.jjtGetParent().jjtGetNumChildren() == 1 && node.jjtGetParent() instanceof ASTReferenceExpression) {
             node = node.jjtGetParent();
         }
         return node;
@@ -593,14 +635,15 @@ public class JexlASTHelper {
     }
 
     public static String deconstructIdentifier(ASTIdentifier identifier) {
-        return deconstructIdentifier(identifier.image);
+        return deconstructIdentifier(identifier.getName());
     }
 
     /**
      * Remove the {@link #IDENTIFIER_PREFIX} from the beginning of a fieldName if it exists
      *
      * @param fieldName
-     * @return
+     *            fieldName to deconstruct
+     * @return the deconstructed identifier
      */
     public static String deconstructIdentifier(String fieldName) {
         return deconstructIdentifier(fieldName, false);
@@ -611,8 +654,10 @@ public class JexlASTHelper {
      * a fieldName if it exists
      *
      * @param fieldName
+     *            fieldName to deconstruct
      * @param includeGroupingContext
-     * @return
+     *            flag for including/excluding grouping context
+     * @return the deconstructed identifier
      */
     public static String deconstructIdentifier(String fieldName, boolean includeGroupingContext) {
         if (fieldName != null && fieldName.length() > 1) {
@@ -639,7 +684,8 @@ public class JexlASTHelper {
      * Rebuild the identifier with the {@link #IDENTIFIER_PREFIX} if the identifier starts with an invalid character per the Jexl IDENTIFIER definition
      *
      * @param fieldName
-     * @return
+     *            the identifier to rebuild
+     * @return the rebuilt identifier
      */
     public static String rebuildIdentifier(String fieldName) {
         return rebuildIdentifier(fieldName, false);
@@ -649,8 +695,10 @@ public class JexlASTHelper {
      * Rebuild the identifier with the {@link #IDENTIFIER_PREFIX} if the identifier starts with an invalid character per the Jexl IDENTIFIER definition
      *
      * @param fieldName
+     *            the fieldname to rebuild
      * @param includeGroupingContext
-     * @return
+     *            flag to include/exclude grouping context
+     * @return the rebuilt identifier
      */
     public static String rebuildIdentifier(String fieldName, boolean includeGroupingContext) {
         // fieldName may be null if it is from a Function node
@@ -703,23 +751,6 @@ public class JexlASTHelper {
         JexlArgumentDescriptor desc = JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor(function);
 
         return desc.fieldSets(metadata, datatypeFilter);
-    }
-
-    public static List<JexlNode> getFunctionArguments(ASTFunctionNode function) {
-        List<JexlNode> args = Lists.newArrayList();
-
-        for (int i = 0; i < function.jjtGetNumChildren(); i++) {
-            JexlNode child = function.jjtGetChild(i);
-
-            // Arguments for the function are inside of an ASTReference
-            if (child.getClass().equals(ASTReference.class) && child.jjtGetNumChildren() == 1) {
-                JexlNode grandchild = child.jjtGetChild(0);
-
-                args.add(grandchild);
-            }
-        }
-
-        return args;
     }
 
     public static List<ASTEQNode> getPositiveEQNodes(JexlNode node) {
@@ -777,6 +808,7 @@ public class JexlASTHelper {
      * Iterate through provided node and its children, then return a list of nodes that are an instance of ASTEQNode.
      *
      * @param node
+     *            a JexlNode
      * @return List of ASTEQNode nodes.
      */
     public static List<ASTEQNode> getEQNodes(JexlNode node) {
@@ -791,7 +823,9 @@ public class JexlASTHelper {
      * Check if the provided node is an instance of ASTEQNode. If yes, then add the node to the provided list.
      *
      * @param node
+     *            a JexlNode
      * @param eqNodes
+     *            List of nodes to potentially add the provided node to
      */
     private static void getEQNodes(JexlNode node, List<ASTEQNode> eqNodes) {
         if (node instanceof ASTEQNode) {
@@ -807,6 +841,7 @@ public class JexlASTHelper {
      * Iterate through provided node and its children, then return a list of nodes that are an instance of ASTERNode.
      *
      * @param node
+     *            a JexlNode
      * @return List of ASTERNode nodes.
      */
     public static List<ASTERNode> getERNodes(JexlNode node) {
@@ -821,7 +856,9 @@ public class JexlASTHelper {
      * Check if the provided node is an instance of ASTERNode. If yes, then add the node to the provided list.
      *
      * @param node
+     *            a JexlNode
      * @param erNodes
+     *            List of nodes to potentially add the provided node to
      */
     private static void getERNodes(JexlNode node, List<ASTERNode> erNodes) {
         if (node instanceof ASTERNode) {
@@ -836,10 +873,15 @@ public class JexlASTHelper {
     /**
      * Iterate through provided node and its children, then return a list of nodes matching the provided class. The provided class must extend JexlNode.
      *
-     * @see org.apache.commons.jexl2.parser.JexlNode
+     * @see org.apache.commons.jexl3.parser.JexlNode
      *
      * @param node
+     *            a JexlNode
      * @param typeKey
+     *            class type to check node against
+     * @param <T>
+     *            class extending JexlNode
+     *
      * @return List of nodes matching provided class.
      */
     public static <T extends JexlNode> List<T> getNodesOfType(JexlNode node, Class<T> typeKey) {
@@ -853,11 +895,16 @@ public class JexlASTHelper {
     /**
      * Check if the provided node is an instance of the provided class. If yes, then add the node to the provided list. The provided class must extend JexlNode.
      *
-     * @see org.apache.commons.jexl2.parser.JexlNode
+     * @see org.apache.commons.jexl3.parser.JexlNode
      *
      * @param node
+     *            a JexlNode
      * @param nodes
+     *            list of JexlNodes to add node to, potentially
      * @param typeKey
+     *            class to check node against
+     * @param <T>
+     *            class extending JexlNode
      */
     @SuppressWarnings("unchecked")
     private static <T extends JexlNode> void getNodesOfType(JexlNode node, List<T> nodes, Class<T> typeKey) {
@@ -911,6 +958,8 @@ public class JexlASTHelper {
     /**
      * Ranges: A range prior to being "tagged" must be of the form "(term1 &amp;&amp; term2)" where term1 and term2 refer to the same field and denote two sides
      * of the range ((LE or LT) and (GE or GT)). A tagged range is of the form "(BoundedRange=true) &amp;&amp; (term1 &amp;&amp; term2))"
+     *
+     * @return the range
      */
     public static RangeFinder findRange() {
         return new RangeFinder();
@@ -960,13 +1009,13 @@ public class JexlASTHelper {
 
         private LiteralRange<?> _getRange(JexlNode node) {
             QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(node);
-            boolean marked = instance.isType(BoundedRange.class);
+            boolean marked = instance.isType(BOUNDED_RANGE);
 
             // first unwrap any delayed expression except for a tag
             if (includeDelayed && !marked && instance.isAnyType()) {
                 node = instance.getSource();
                 instance = QueryPropertyMarker.findInstance(node);
-                marked = instance.isType(BoundedRange.class);
+                marked = instance.isType(BOUNDED_RANGE);
             }
 
             // It must be marked
@@ -1272,9 +1321,10 @@ public class JexlASTHelper {
     /**
      * Iterate through provided node's ancestors and return true if any are an instance of ASTOrNode.
      *
-     * @see org.apache.commons.jexl2.parser.ASTOrNode
+     * @see org.apache.commons.jexl3.parser.ASTOrNode
      *
      * @param node
+     *            a JexlNode
      * @return True if any ancestor is an instance of ASTOrNode. If not, then False.
      */
     public static boolean isDescendantOfOr(JexlNode node) {
@@ -1294,9 +1344,10 @@ public class JexlASTHelper {
     /**
      * Iterate through provided node's ancestors and return true if any are an instance of ASTNotNode.
      *
-     * @see org.apache.commons.jexl2.parser.ASTNotNode
+     * @see org.apache.commons.jexl3.parser.ASTNotNode
      *
      * @param node
+     *            a JexlNode
      * @return True if any ancestor is an instance of ASTNotNode. If not, then False.
      */
     public static boolean isDescendantOfNot(JexlNode node) {
@@ -1316,9 +1367,10 @@ public class JexlASTHelper {
     /**
      * Iterate through provided node's ancestors and return true if any are an instance of ASTAndNode.
      *
-     * @see org.apache.commons.jexl2.parser.ASTAndNode
+     * @see org.apache.commons.jexl3.parser.ASTAndNode
      *
      * @param node
+     *            a JexlNode
      * @return True if any ancestor is an instance of ASTAndNode. If not, then False.
      */
     public static boolean isDescendantOfAnd(JexlNode node) {
@@ -1338,10 +1390,15 @@ public class JexlASTHelper {
     /**
      * Iterate through provided node's ancestors and return true if any are an instance of the provided class. The provided class must extend JexlNode.
      *
-     * @see org.apache.commons.jexl2.parser.JexlNode
+     * @see org.apache.commons.jexl3.parser.JexlNode
      *
      * @param node
+     *            a JexlNode
      * @param typeKey
+     *            class type to match against
+     * @param <T>
+     *            class extending JexlNode
+     *
      * @return True if any ancestor is an instance of the provided class. If not, then False.
      */
     public static <T extends JexlNode> boolean isDescendantOfNodeType(JexlNode node, Class<T> typeKey) {
@@ -1362,10 +1419,15 @@ public class JexlASTHelper {
      * Iterate through all descendants of the provided node and return true if any are an instance of the provided class. The provided class must extend
      * JexlNode.
      *
-     * @see org.apache.commons.jexl2.parser.JexlNode
+     * @see org.apache.commons.jexl3.parser.JexlNode
      *
      * @param node
+     *            a JexlNode
      * @param typeKey
+     *            class type to match against
+     * @param <T>
+     *            class extending JexlNode
+     *
      * @return True if any descendant is an instance of the provided class. If not, then False.
      */
     public static <T extends JexlNode> boolean descendantsContainNodeType(JexlNode node, Class<T> typeKey) {
@@ -1388,8 +1450,10 @@ public class JexlASTHelper {
      * Performs an order-dependent AST equality check
      *
      * @param one
+     *            a JexlNode
      * @param two
-     * @return
+     *            a JexlNode
+     * @return true if equal, false if not
      */
     public static boolean equals(JexlNode one, JexlNode two) {
         // If we have the same object or they're both null, they're equal
@@ -1423,13 +1487,13 @@ public class JexlASTHelper {
             if (!oneLit.getLiteralClass().equals(twoLit.getLiteralClass()) || !oneLit.getLiteral().equals(twoLit.getLiteral())) {
                 return false;
             }
-        } else if (one instanceof Literal) {
-            Literal<?> oneLit = (Literal<?>) one, twoLit = (Literal<?>) two;
+        } else if (one instanceof JexlNode.Constant) {
+            JexlNode.Constant<?> oneLit = (JexlNode.Constant<?>) one, twoLit = (JexlNode.Constant<?>) two;
             if (!oneLit.getLiteral().equals(twoLit.getLiteral())) {
                 return false;
             }
         } else if (one instanceof ASTIdentifier) {
-            if (!one.image.equals(two.image)) {
+            if (!JexlNodes.getIdentifierOrLiteral(one).equals(JexlNodes.getIdentifierOrLiteral(two))) {
                 return false;
             }
         }
@@ -1447,32 +1511,38 @@ public class JexlASTHelper {
      * </code>
      *
      * @param node
-     *            - a JexlNode.
-     * @return - a key for the node.
+     *            a JexlNode.
+     * @return a key for the node.
      */
     public static String nodeToKey(JexlNode node) {
         return JexlStringBuildingVisitor.buildQueryWithoutParse(node, true);
     }
 
     /**
+     * <p>
      * When at an operand, this method will find the first Identifier and replace its {image} value with the supplied {String}. This is intended to be used when
      * the query model is being supplied and we want to replace the field name in some expression.
+     * </p>
      * <p>
      * This method returns a new operand node with an updated {Identifier}.
-     * <p>
+     * </p>
      * If neither of the operand's children are an {Identifier}, then an {IllegalArgumentException} is thrown.
      *
-     * @param <T>
      * @param operand
+     *            a JexlNode
      * @param field
-     * @return
+     *            the new field name
+     * @param <T>
+     *            class extending JexlNode
+     *
+     * @return node with field set
      */
     public static <T extends JexlNode> T setField(T operand, String field) {
         ASTIdentifier identifier = findIdentifier(operand);
         if (identifier == null) {
             throw new IllegalArgumentException();
         } else {
-            identifier.image = JexlASTHelper.rebuildIdentifier(field);
+            JexlNodes.setIdentifier(identifier, JexlASTHelper.rebuildIdentifier(field));
             return operand;
         }
     }
@@ -1482,8 +1552,8 @@ public class JexlASTHelper {
             return (ASTIdentifier) node;
         }
 
-        for (JexlNode child : JexlNodes.children(node)) {
-            ASTIdentifier test = findIdentifier(child);
+        for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+            ASTIdentifier test = findIdentifier(node.jjtGetChild(i));
             if (test != null) {
                 return test;
             }
@@ -1492,21 +1562,21 @@ public class JexlASTHelper {
         return null;
     }
 
-    public static ASTReference normalizeLiteral(JexlNode literal, Type<?> normalizer) {
-        String normalizedImg = normalizer.normalize(literal.image);
-        ASTStringLiteral normalizedLiteral = new ASTStringLiteral(ParserTreeConstants.JJTSTRINGLITERAL);
-        normalizedLiteral.image = normalizedImg;
-        return JexlNodes.makeRef(normalizedLiteral);
+    public static ASTStringLiteral normalizeLiteral(JexlNode literal, Type<?> normalizer) {
+        String normalizedImg = normalizer.normalize(JexlNodes.getIdentifierOrLiteralAsString(literal));
+        ASTStringLiteral normalizedLiteral = JexlNodes.makeStringLiteral();
+        JexlNodes.setLiteral(normalizedLiteral, normalizedImg);
+        return normalizedLiteral;
     }
 
     public static JexlNode findLiteral(JexlNode node) {
-        if (node instanceof Literal<?>) {
+        if (node instanceof JexlNode.Constant<?>) {
             return node;
         }
 
-        for (JexlNode child : JexlNodes.children(node)) {
-            JexlNode test = findLiteral(child);
-            if (test instanceof Literal<?>) {
+        for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+            JexlNode test = findLiteral(node.jjtGetChild(i));
+            if (test instanceof JexlNode.Constant<?>) {
                 return test;
             }
         }
@@ -1514,7 +1584,7 @@ public class JexlASTHelper {
         return null;
     }
 
-    public static <T extends JexlNode> T swapLiterals(T operand, ASTReference literal) {
+    public static <T extends JexlNode> T swapLiterals(T operand, ASTStringLiteral literal) {
         JexlNode oldLiteral = findLiteral(operand);
         // we need the direct child of this operand (should be at most one level too deep)
         while (oldLiteral.jjtGetParent() != operand) {
@@ -1536,7 +1606,8 @@ public class JexlASTHelper {
      * keywords
      *
      * @param node
-     * @return
+     *            a JexlNode
+     * @return if it is literal or not
      */
     public static boolean isLiteral(Object node) {
         if (null == node) {
@@ -1544,7 +1615,7 @@ public class JexlASTHelper {
         }
 
         Class<?> clz = node.getClass();
-        return Literal.class.isAssignableFrom(clz) || ASTTrueNode.class.isAssignableFrom(clz) || ASTFalseNode.class.isAssignableFrom(clz)
+        return JexlNode.Constant.class.isAssignableFrom(clz) || ASTTrueNode.class.isAssignableFrom(clz) || ASTFalseNode.class.isAssignableFrom(clz)
                         || ASTNullLiteral.class.isAssignableFrom(clz);
 
     }
@@ -1553,7 +1624,8 @@ public class JexlASTHelper {
      * Check if the provided JexlNode is an ASTEQNode and is of the form `identifier eq literal`
      *
      * @param node
-     * @return
+     *            a JexlNode
+     * @return if it is a literal
      */
     public static boolean isLiteralEquality(JexlNode node) {
         Preconditions.checkNotNull(node);
@@ -1571,8 +1643,10 @@ public class JexlASTHelper {
      * Determine if the given ASTEQNode is indexed based off of the Multimap of String fieldname to TextNormalizer.
      *
      * @param node
+     *            a JexlNode
      * @param config
-     * @return
+     *            query configuration
+     * @return if it is indexed
      */
     public static boolean isIndexed(JexlNode node, ShardQueryConfiguration config) {
         Preconditions.checkNotNull(config);
@@ -1598,9 +1672,12 @@ public class JexlASTHelper {
      * Return the selectivity of the node's identifier, or IndexStatsClient.DEFAULT_VALUE if there's an error getting the selectivity
      *
      * @param node
+     *            a JexlNode
      * @param config
+     *            query configuration
      * @param stats
-     * @return
+     *            index stats client
+     * @return the selectivity of the node's identifier
      */
     public static Double getNodeSelectivity(JexlNode node, ShardQueryConfiguration config, IndexStatsClient stats) {
         List<ASTIdentifier> idents = getIdentifiers(node);
@@ -1617,9 +1694,12 @@ public class JexlASTHelper {
      * Return the selectivity of the node's identifier, or IndexStatsClient.DEFAULT_VALUE if there's an error getting the selectivity
      *
      * @param fieldNames
+     *            Set of field names
      * @param config
+     *            shard query configuration
      * @param stats
-     * @return
+     *            the IndexStatsClient
+     * @return the selectivity of the node's identifier
      */
     public static Double getNodeSelectivity(Set<String> fieldNames, ShardQueryConfiguration config, IndexStatsClient stats) {
 
@@ -1685,7 +1765,8 @@ public class JexlASTHelper {
             JexlNode node = workingStack.pop();
 
             if (node.jjtGetNumChildren() > 0) {
-                for (JexlNode child : children(node)) {
+                for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+                    JexlNode child = node.jjtGetChild(i);
                     if (child != null) {
                         if (child.jjtGetParent() == null) {
                             String message = "Tree included child " + child + " with a null parent";
@@ -1806,20 +1887,13 @@ public class JexlASTHelper {
             state.set(true);
             return data;
         }
-
-        @Override
-        public Object visit(ASTSizeMethod node, Object data) {
-            AtomicBoolean state = (AtomicBoolean) data;
-            state.set(true);
-            return data;
-        }
     }
 
     public static class HasUnfieldedTermVisitor extends BaseVisitor {
 
         @Override
         public Object visit(ASTIdentifier node, Object data) {
-            if (node.image != null && Constants.ANY_FIELD.equals(node.image)) {
+            if (node.getName() != null && Constants.ANY_FIELD.equals(node.getName())) {
                 AtomicBoolean state = (AtomicBoolean) data;
                 state.set(true);
             }

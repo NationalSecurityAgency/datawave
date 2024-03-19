@@ -1,11 +1,11 @@
 package datawave.query.ancestor;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.util.AbstractMap;
@@ -19,15 +19,15 @@ import java.util.NoSuchElementException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import datawave.query.Constants;
 import datawave.query.function.AncestorEquality;
 import datawave.query.function.Equality;
 import datawave.query.util.IteratorToSortedKeyValueIterator;
 
-public class AncestorChildExpansionIteratorTest {
+class AncestorChildExpansionIteratorTest {
     private final List<String> children = Arrays.asList("a", "a.1", "a.1.1", "a.1.2", "a.1.2.1", "a.10", "a.2", "a.3", "a.4", "a.4.1", "a.4.1.1", "a.4.1.2",
                     "a.4.2", "a.5", "a.6", "a.7", "a.8", "a.9");
 
@@ -36,7 +36,7 @@ public class AncestorChildExpansionIteratorTest {
     private IteratorToSortedKeyValueIterator baseIterator;
     private Equality equality;
 
-    @Before
+    @BeforeEach
     public void setup() {
         baseValues = new ArrayList<>();
         equality = new AncestorEquality();
@@ -47,62 +47,62 @@ public class AncestorChildExpansionIteratorTest {
     // basic iterator contract verification
 
     @Test
-    public void testUninitializedHasTop() {
+    void testUninitializedHasTop() {
         assertThrows(IllegalStateException.class, () -> {
             iterator.hasTop();
         });
     }
 
     @Test
-    public void testUninitializedgetTopKey() {
+    void testUninitializedgetTopKey() {
         assertThrows(IllegalStateException.class, () -> {
             iterator.getTopKey();
         });
     }
 
     @Test
-    public void testUninitializedgetTopValue() {
+    void testUninitializedgetTopValue() {
         assertThrows(IllegalStateException.class, () -> {
             iterator.getTopValue();
         });
     }
 
     @Test
-    public void testUninitializedNext() {
+    void testUninitializedNext() {
         assertThrows(IllegalStateException.class, () -> {
             iterator.next();
         });
     }
 
     @Test
-    public void testSeekEnablesHasTop() throws IOException {
-        iterator.seek(new Range(), Collections.EMPTY_LIST, false);
+    void testSeekEnablesHasTop() throws IOException {
+        iterator.seek(new Range(), Collections.emptySet(), false);
         assertFalse(iterator.hasTop());
     }
 
     @Test
-    public void testNoTopGetTopKeyError() {
+    void testNoTopGetTopKeyError() {
         assertThrows(NoSuchElementException.class, () -> {
-            iterator.seek(new Range(), Collections.EMPTY_LIST, false);
-            assertFalse(".hasTop() returned true on EMPTY_LIST", iterator.hasTop());
+            iterator.seek(new Range(), Collections.emptySet(), false);
+            assertFalse(iterator.hasTop(), ".hasTop() returned true on EMPTY_LIST");
             iterator.getTopKey();
         });
     }
 
     @Test
-    public void testNoTopGetTopValueError() {
+    void testNoTopGetTopValueError() {
         assertThrows(NoSuchElementException.class, () -> {
-            iterator.seek(new Range(), Collections.EMPTY_LIST, false);
-            assertFalse(".hasTop() returned true on EMPTY_LIST", iterator.hasTop());
+            iterator.seek(new Range(), Collections.emptySet(), false);
+            assertFalse(iterator.hasTop(), ".hasTop() returned true on EMPTY_LIST");
             iterator.getTopValue();
         });
     }
 
     @Test
-    public void testNoTopNextError() {
+    void testNoTopNextError() {
         assertThrows(NoSuchElementException.class, () -> {
-            iterator.seek(new Range(), Collections.EMPTY_LIST, false);
-            assertFalse(".hasTop() returned true on EMPTY_LIST", iterator.hasTop());
+            iterator.seek(new Range(), Collections.emptySet(), false);
+            assertFalse(iterator.hasTop(), ".hasTop() returned true on EMPTY_LIST");
             iterator.next();
         });
     }
@@ -133,12 +133,12 @@ public class AncestorChildExpansionIteratorTest {
     }
 
     @Test
-    public void testSingleChildMatch() throws IOException {
+    void testSingleChildMatch() throws IOException {
         baseValues.add(new AbstractMap.SimpleImmutableEntry<>(generateFiKey("a.3"), new Value()));
         baseIterator = new IteratorToSortedKeyValueIterator(baseValues.iterator());
         iterator = new AncestorChildExpansionIterator(baseIterator, children, equality);
 
-        iterator.seek(new Range(), Collections.EMPTY_LIST, false);
+        iterator.seek(new Range(), Collections.emptySet(), false);
 
         assertTrue(iterator.hasTop());
         Key topKey = iterator.getTopKey();
@@ -151,12 +151,12 @@ public class AncestorChildExpansionIteratorTest {
     }
 
     @Test
-    public void testFamilyMatch() throws IOException {
+    void testFamilyMatch() throws IOException {
         baseValues.add(new AbstractMap.SimpleImmutableEntry<>(generateFiKey("a.1"), new Value()));
         baseIterator = new IteratorToSortedKeyValueIterator(baseValues.iterator());
         iterator = new AncestorChildExpansionIterator(baseIterator, children, equality);
 
-        iterator.seek(new Range(), Collections.EMPTY_LIST, false);
+        iterator.seek(new Range(), Collections.emptySet(), false);
 
         assertTrue(iterator.hasTop());
         Key topKey = iterator.getTopKey();
@@ -190,14 +190,14 @@ public class AncestorChildExpansionIteratorTest {
     }
 
     @Test
-    public void testFamilyMatchWithOverlaps() throws IOException {
+    void testFamilyMatchWithOverlaps() throws IOException {
         baseValues.add(new AbstractMap.SimpleImmutableEntry<>(generateFiKey("a.1"), new Value()));
         baseValues.add(new AbstractMap.SimpleImmutableEntry<>(generateFiKey("a.1.1"), new Value()));
         baseValues.add(new AbstractMap.SimpleImmutableEntry<>(generateFiKey("a.1.2.1"), new Value()));
         baseIterator = new IteratorToSortedKeyValueIterator(baseValues.iterator());
         iterator = new AncestorChildExpansionIterator(baseIterator, children, equality);
 
-        iterator.seek(new Range(), Collections.EMPTY_LIST, false);
+        iterator.seek(new Range(), Collections.emptySet(), false);
 
         assertTrue(iterator.hasTop());
         Key topKey = iterator.getTopKey();
@@ -231,13 +231,13 @@ public class AncestorChildExpansionIteratorTest {
     }
 
     @Test
-    public void testChildIndexAdvanceOnIteratorNext() throws IOException {
+    void testChildIndexAdvanceOnIteratorNext() throws IOException {
         baseValues.add(new AbstractMap.SimpleImmutableEntry<>(generateFiKey("a.3"), new Value()));
         baseValues.add(new AbstractMap.SimpleImmutableEntry<>(generateFiKey("a.4.1"), new Value()));
         baseIterator = new IteratorToSortedKeyValueIterator(baseValues.iterator());
         iterator = new AncestorChildExpansionIterator(baseIterator, children, equality);
 
-        iterator.seek(new Range(), Collections.EMPTY_LIST, false);
+        iterator.seek(new Range(), Collections.emptySet(), false);
 
         assertTrue(iterator.hasTop());
         Key topKey = iterator.getTopKey();
@@ -271,7 +271,7 @@ public class AncestorChildExpansionIteratorTest {
     }
 
     @Test
-    public void testMultipleGappedRanges() throws IOException {
+    void testMultipleGappedRanges() throws IOException {
         baseValues.add(new AbstractMap.SimpleImmutableEntry<>(generateFiKey("a.1"), new Value()));
         baseValues.add(new AbstractMap.SimpleImmutableEntry<>(generateFiKey("a.3"), new Value()));
         baseValues.add(new AbstractMap.SimpleImmutableEntry<>(generateFiKey("a.4.1.1"), new Value()));
@@ -279,7 +279,7 @@ public class AncestorChildExpansionIteratorTest {
         baseIterator = new IteratorToSortedKeyValueIterator(baseValues.iterator());
         iterator = new AncestorChildExpansionIterator(baseIterator, children, equality);
 
-        iterator.seek(new Range(), Collections.EMPTY_LIST, false);
+        iterator.seek(new Range(), Collections.emptySet(), false);
 
         assertTrue(iterator.hasTop());
         Key topKey = iterator.getTopKey();

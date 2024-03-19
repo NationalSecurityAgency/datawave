@@ -1,64 +1,50 @@
 package datawave.query.jexl.visitors;
 
-import static datawave.query.jexl.functions.ContentFunctions.CONTENT_FUNCTION_NAMESPACE;
-import static datawave.query.jexl.functions.ContentFunctionsDescriptor.ContentJexlArgumentDescriptor;
-import static datawave.query.jexl.functions.EvaluationPhaseFilterFunctions.EVAL_PHASE_FUNCTION_NAMESPACE;
-import static datawave.query.jexl.functions.EvaluationPhaseFilterFunctionsDescriptor.EvaluationPhaseFilterJexlArgumentDescriptor;
-import static datawave.query.jexl.functions.GeoWaveFunctionsDescriptor.GeoWaveJexlArgumentDescriptor;
-import static datawave.query.jexl.functions.GroupingRequiredFilterFunctions.GROUPING_REQUIRED_FUNCTION_NAMESPACE;
-import static datawave.query.jexl.functions.GroupingRequiredFilterFunctionsDescriptor.GroupingRequiredFilterJexlArgumentDescriptor;
-import static datawave.query.jexl.functions.QueryFunctionsDescriptor.QueryJexlArgumentDescriptor;
-
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTEQNode;
-import org.apache.commons.jexl2.parser.ASTERNode;
-import org.apache.commons.jexl2.parser.ASTFunctionNode;
-import org.apache.commons.jexl2.parser.ASTGENode;
-import org.apache.commons.jexl2.parser.ASTGTNode;
-import org.apache.commons.jexl2.parser.ASTLENode;
-import org.apache.commons.jexl2.parser.ASTLTNode;
-import org.apache.commons.jexl2.parser.ASTNENode;
-import org.apache.commons.jexl2.parser.ASTNRNode;
-import org.apache.commons.jexl2.parser.ASTNotNode;
-import org.apache.commons.jexl2.parser.ASTOrNode;
-import org.apache.commons.jexl2.parser.ASTReference;
-import org.apache.commons.jexl2.parser.ASTReferenceExpression;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.JexlNodes;
-import org.apache.commons.jexl2.parser.SimpleNode;
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTEQNode;
+import org.apache.commons.jexl3.parser.ASTERNode;
+import org.apache.commons.jexl3.parser.ASTFunctionNode;
+import org.apache.commons.jexl3.parser.ASTGENode;
+import org.apache.commons.jexl3.parser.ASTGTNode;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTLENode;
+import org.apache.commons.jexl3.parser.ASTLTNode;
+import org.apache.commons.jexl3.parser.ASTNENode;
+import org.apache.commons.jexl3.parser.ASTNRNode;
+import org.apache.commons.jexl3.parser.ASTNotNode;
+import org.apache.commons.jexl3.parser.ASTOrNode;
+import org.apache.commons.jexl3.parser.ASTReference;
+import org.apache.commons.jexl3.parser.ASTReferenceExpression;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.Sets;
 
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.functions.ContentFunctionsDescriptor;
-import datawave.query.jexl.functions.EvaluationPhaseFilterFunctionsDescriptor;
-import datawave.query.jexl.functions.FunctionJexlNodeVisitor;
-import datawave.query.jexl.functions.GeoWaveFunctions;
-import datawave.query.jexl.functions.GeoWaveFunctionsDescriptor;
-import datawave.query.jexl.functions.GroupingRequiredFilterFunctionsDescriptor;
-import datawave.query.jexl.functions.QueryFunctions;
-import datawave.query.jexl.functions.QueryFunctionsDescriptor;
-import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.ExceededOr;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.util.TypeMetadata;
 
 /**
+ * <p>
  * This visitor addresses the case when multiple ingest types share some but not all fields in a query
+ * </p>
  * <p>
  * Consider the query <code>(A AND B)</code> where term A maps to ingest type 1 and term B maps to ingest type 2. No document will ever satisfy this
  * intersection. Thus, this should prune to zero terms.
+ * </p>
  * <p>
  * Consider the query <code>(A AND (B OR C))</code> where term A and term B map to ingest type 1 and term C maps to ingest type 2. In this case term C should be
  * pruned from the nested union leaving the intersection <code>(A AND B)</code>
- * <p>
+ * </p>
+ * This visitor can also accept a set of external ingest types and use those to prune the query tree
  */
 public class IngestTypePruningVisitor extends BaseVisitor {
     private static final Logger log = Logger.getLogger(IngestTypePruningVisitor.class);
@@ -72,14 +58,41 @@ public class IngestTypePruningVisitor extends BaseVisitor {
     private int termsPruned = 0;
     private int nodesPruned = 0;
 
+    private final IngestTypeVisitor ingestTypeVisitor;
+
     public IngestTypePruningVisitor(TypeMetadata typeMetadata) {
         this.typeMetadata = typeMetadata;
         this.ingestTypeCache = new HashMap<>();
+        this.ingestTypeVisitor = new IngestTypeVisitor(typeMetadata);
     }
 
+    /**
+     * Constructor for performing a self prune on the query tree
+     *
+     * @param node
+     *            a JexlNode
+     * @param metadataHelper
+     *            an instance of TypeMetadata
+     * @return a pruned query tree
+     */
     public static JexlNode prune(JexlNode node, TypeMetadata metadataHelper) {
+        return prune(node, metadataHelper, null);
+    }
+
+    /**
+     * Constructor for pruning a query given a set of ingest types
+     *
+     * @param node
+     *            a JexlNode
+     * @param metadataHelper
+     *            an instance of TypeMetadata
+     * @param ingestTypes
+     *            a set of ingest types used to prune the query tree
+     * @return a pruned query tree
+     */
+    public static JexlNode prune(JexlNode node, TypeMetadata metadataHelper, Set<String> ingestTypes) {
         IngestTypePruningVisitor visitor = new IngestTypePruningVisitor(metadataHelper);
-        node.jjtAccept(visitor, null);
+        node.jjtAccept(visitor, ingestTypes);
         if (visitor.getTermsPruned() > 0) {
             log.info("pruned " + visitor.getTermsPruned() + " terms and " + visitor.getNodesPruned() + " nodes");
         }
@@ -131,6 +144,11 @@ public class IngestTypePruningVisitor extends BaseVisitor {
     // junction nodes
 
     @Override
+    public Object visit(ASTJexlScript node, Object data) {
+        return node.jjtGetChild(0).jjtAccept(this, data);
+    }
+
+    @Override
     public Object visit(ASTNotNode node, Object data) {
         return visitOrPrune(node, data);
     }
@@ -138,11 +156,6 @@ public class IngestTypePruningVisitor extends BaseVisitor {
     @Override
     public Object visit(ASTFunctionNode node, Object data) {
         return visitOrPrune(node, data);
-    }
-
-    @Override
-    public Object visit(SimpleNode node, Object data) {
-        return visitOrPrune((JexlNode) node, data);
     }
 
     @Override
@@ -198,8 +211,9 @@ public class IngestTypePruningVisitor extends BaseVisitor {
             pruningTypes = ingestTypes;
         }
 
-        for (JexlNode child : JexlNodes.children(node)) {
-            child.jjtAccept(this, pruningTypes);
+        // must traverse the children in reverse order because this visitor prunes as it visits
+        for (int i = node.jjtGetNumChildren() - 1; i >= 0; i--) {
+            node.jjtGetChild(i).jjtAccept(this, pruningTypes);
         }
 
         if (node.jjtGetNumChildren() == 0) {
@@ -228,8 +242,8 @@ public class IngestTypePruningVisitor extends BaseVisitor {
     private Set<String> visitMarker(QueryPropertyMarker.Instance instance, JexlNode node, Object data) {
 
         // ExceededOr marker can be handled on its own
-        if (instance.isType(ExceededOrThresholdMarkerJexlNode.class)) {
-            String field = ExceededOrThresholdMarkerJexlNode.getField(instance.getSource());
+        if (instance.isType(QueryPropertyMarker.MarkerType.EXCEEDED_OR)) {
+            String field = new ExceededOr(instance.getSource()).getField();
             Set<String> ingestTypes = getIngestTypesForField(field);
             if (data instanceof Set<?>) {
                 return pruneLeaf(ingestTypes, node, data);
@@ -238,7 +252,7 @@ public class IngestTypePruningVisitor extends BaseVisitor {
         }
 
         JexlNode source = node.jjtGetChild(1);
-        Set<String> dts = (Set<String>) visit(source, data);
+        Set<String> dts = (Set<String>) source.jjtAccept(this, data);
 
         if (source.jjtGetParent() == null) {
             pruneNodeFromParent(node);
@@ -306,8 +320,9 @@ public class IngestTypePruningVisitor extends BaseVisitor {
     }
 
     private Set<String> pruneJunction(JexlNode node, Object data) {
-        for (JexlNode child : JexlNodes.children(node)) {
-            child.jjtAccept(this, data);
+        // must traverse the children in reverse order because this visitor prunes as it visits
+        for (int i = node.jjtGetNumChildren() - 1; i >= 0; i--) {
+            node.jjtGetChild(i).jjtAccept(this, data);
         }
         return Collections.emptySet();
     }
@@ -343,8 +358,8 @@ public class IngestTypePruningVisitor extends BaseVisitor {
     @SuppressWarnings("unchecked")
     public Set<String> getIngestTypesForJunction(JexlNode node) {
         Set<String> ingestTypes = new HashSet<>();
-        for (JexlNode child : JexlNodes.children(node)) {
-            Set<String> found = (Set<String>) child.jjtAccept(this, null);
+        for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+            Set<String> found = (Set<String>) node.jjtGetChild(i).jjtAccept(this, null);
             ingestTypes.addAll(found);
         }
         return ingestTypes;
@@ -359,72 +374,7 @@ public class IngestTypePruningVisitor extends BaseVisitor {
      * @return a set of ingestTypes
      */
     public Set<String> getIngestTypesForLeaf(JexlNode node) {
-        Set<String> ingestTypes = new HashSet<>();
-        Set<String> fields = getFieldsForLeaf(node);
-        for (String field : fields) {
-            ingestTypes.addAll(getIngestTypesForField(field));
-        }
-        if (fields.isEmpty()) {
-            // could have nodes like arithmetic
-            ingestTypes.add(UNKNOWN_TYPE);
-        }
-        return ingestTypes;
-    }
-
-    /**
-     * Get fields for a leaf node
-     *
-     * @param node
-     *            a leaf node
-     * @return a set of ingest types
-     */
-    public Set<String> getFieldsForLeaf(JexlNode node) {
-        JexlNode deref = JexlASTHelper.dereference(node);
-        if (deref instanceof ASTFunctionNode) {
-            try {
-                return getFieldsForFunctionNode((ASTFunctionNode) deref);
-            } catch (Exception e) {
-                // if a FunctionsDescriptor throws an exception for any reason then return an empty collection
-                // so the node gets treated as an unknown type
-                return Collections.emptySet();
-            }
-        }
-
-        //  @formatter:off
-        return JexlASTHelper.getIdentifierNames(deref)
-                        .stream()
-                        .map(JexlASTHelper::deconstructIdentifier)
-                        .collect(Collectors.toSet());
-        //  @formatter:on
-    }
-
-    private Set<String> getFieldsForFunctionNode(ASTFunctionNode node) {
-        FunctionJexlNodeVisitor visitor = FunctionJexlNodeVisitor.eval(node);
-        switch (visitor.namespace()) {
-            case CONTENT_FUNCTION_NAMESPACE:
-                // all content function fields are added
-                ContentJexlArgumentDescriptor contentDescriptor = new ContentFunctionsDescriptor().getArgumentDescriptor(node);
-                return contentDescriptor.fieldsAndTerms(Collections.emptySet(), Collections.emptySet(), Collections.emptySet(), null)[0];
-            case EVAL_PHASE_FUNCTION_NAMESPACE:
-                // might be able to exclude certain evaluation phase functions from this step
-                EvaluationPhaseFilterJexlArgumentDescriptor evaluationDescriptor = (EvaluationPhaseFilterJexlArgumentDescriptor) new EvaluationPhaseFilterFunctionsDescriptor()
-                                .getArgumentDescriptor(node);
-                return evaluationDescriptor.fields(null, Collections.emptySet());
-            case GeoWaveFunctions.GEOWAVE_FUNCTION_NAMESPACE:
-                GeoWaveJexlArgumentDescriptor descriptor = (GeoWaveJexlArgumentDescriptor) new GeoWaveFunctionsDescriptor().getArgumentDescriptor(node);
-                return descriptor.fields(null, Collections.emptySet());
-            case GROUPING_REQUIRED_FUNCTION_NAMESPACE:
-                GroupingRequiredFilterJexlArgumentDescriptor groupingDescriptor = (GroupingRequiredFilterJexlArgumentDescriptor) new GroupingRequiredFilterFunctionsDescriptor()
-                                .getArgumentDescriptor(node);
-                return groupingDescriptor.fields(null, Collections.emptySet());
-            case QueryFunctions.QUERY_FUNCTION_NAMESPACE:
-                QueryJexlArgumentDescriptor queryDescriptor = (QueryJexlArgumentDescriptor) new QueryFunctionsDescriptor().getArgumentDescriptor(node);
-                return queryDescriptor.fields(null, Collections.emptySet());
-            default:
-                // do nothing
-                log.warn("Unhandled function namespace: " + visitor.namespace());
-                return Collections.emptySet();
-        }
+        return ingestTypeVisitor.getIngestTypes(node);
     }
 
     public Set<String> getIngestTypesForField(String field) {
@@ -441,7 +391,8 @@ public class IngestTypePruningVisitor extends BaseVisitor {
     @SuppressWarnings("unchecked")
     private Set<String> getIngestTypesForIntersection(ASTAndNode node) {
         Set<String> ingestTypes = new HashSet<>();
-        for (JexlNode child : JexlNodes.children(node)) {
+        for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+            JexlNode child = node.jjtGetChild(i);
             Set<String> childIngestTypes = (Set<String>) child.jjtAccept(this, null);
 
             ingestTypes = ingestTypes.isEmpty() ? childIngestTypes : intersectTypes(ingestTypes, childIngestTypes);

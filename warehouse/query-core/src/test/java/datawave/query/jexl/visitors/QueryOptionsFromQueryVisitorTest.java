@@ -6,9 +6,9 @@ import static org.junit.Assert.assertTrue;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.log4j.Logger;
 import org.junit.Test;
 
@@ -35,8 +35,18 @@ public class QueryOptionsFromQueryVisitorTest {
     }
 
     @Test
+    public void testRenameFunction() throws ParseException {
+        // Verify that an empty rename function results in an empty parameter value.
+        assertResult("f:rename()", "");
+        assertOption(QueryParameters.RENAME_FIELDS, "");
+
+        assertResult("f:rename('field1=field2','field3=field4')", "");
+        assertOption(QueryParameters.RENAME_FIELDS, "field1=field2,field3=field4");
+    }
+
+    @Test
     public void testGroupByFunction() throws ParseException {
-        // Verify that an empty groupby functions results in an empty parameter value.
+        // Verify that an empty groupby function results in an empty parameter value.
         assertResult("f:groupby()", "");
         assertOption(QueryParameters.GROUP_FIELDS, "");
 

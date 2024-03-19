@@ -1,23 +1,31 @@
 package datawave.query.index.lookup;
 
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DELAYED;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
-import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ParseException;
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableSortedSet;
 
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.TreeEqualityVisitor;
 
@@ -272,7 +280,7 @@ public class IndexInfoTest {
      */
     @Test
     public void testUnion_OneTermIsDelayedPredicate() {
-        ASTDelayedPredicate delayedPredicate = (ASTDelayedPredicate) ASTDelayedPredicate.create(JexlNodeFactory.buildEQNode("FIELD", "VALUE"));
+        JexlNode delayedPredicate = QueryPropertyMarker.create(JexlNodeFactory.buildEQNode("FIELD", "VALUE"), DELAYED);
 
         IndexInfo left = new IndexInfo(50);
         left.applyNode(delayedPredicate);
@@ -330,7 +338,7 @@ public class IndexInfoTest {
         IndexInfo right = new IndexInfo(345);
         right.applyNode(JexlNodeFactory.buildEQNode("F2", "v2"));
 
-        JexlNode expected = JexlASTHelper.parseJexlQuery("(F == 'v' && F2 == 'v2')").jjtGetChild(0);
+        JexlNode expected = JexlASTHelper.parseJexlQuery("F == 'v' && F2 == 'v2'").jjtGetChild(0);
 
         IndexInfo merged = left.intersect(right);
         assertTrue(merged.uids().isEmpty());
@@ -340,5 +348,48 @@ public class IndexInfoTest {
         merged = right.intersect(left);
         assertTrue(merged.uids().isEmpty());
         assertTrue(TreeEqualityVisitor.isEqual(expected, merged.getNode()));
+    }
+
+    @Test
+    public void testFieldCountSerialization() throws IOException {
+
+        Map<String,Long> counts = new HashMap<>();
+        counts.put("FIELD_A", 23L);
+        counts.put("FIELD_B", 2077L);
+
+        IndexInfo indexInfo = new IndexInfo();
+        indexInfo.setFieldCounts(counts);
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        DataOutputStream out = new DataOutputStream(baos);
+        indexInfo.write(out);
+        out.close();
+
+        ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
+        DataInputStream in = new DataInputStream(bais);
+
+        IndexInfo other = new IndexInfo();
+        other.readFields(in);
+        bais.close();
+
+        assertEquals(counts, other.getFieldCounts());
+    }
+
+    @Test
+    public void testMergeFieldCounts() {
+        Map<String,Long> firstCounts = new HashMap<>();
+        firstCounts.put("FOO", 17L);
+
+        Map<String,Long> secondCounts = new HashMap<>();
+        secondCounts.put("FOO", 23L);
+
+        IndexInfo first = new IndexInfo();
+        IndexInfo second = new IndexInfo();
+
+        first.setFieldCounts(firstCounts);
+        second.setFieldCounts(secondCounts);
+
+        IndexInfo merged = first.union(second);
+        assertEquals(40L, merged.getFieldCounts().get("FOO").longValue());
     }
 }

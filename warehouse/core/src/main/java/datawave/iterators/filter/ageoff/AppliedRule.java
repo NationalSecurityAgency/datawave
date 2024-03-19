@@ -59,7 +59,14 @@ public abstract class AppliedRule implements FilterRule {
         this.iterEnv = iterEnv;
     }
 
-    /** Perform initialization in support of a deepCopy, copying any expensive state from the parent. */
+    /**
+     * Perform initialization in support of a deepCopy, copying any expensive state from the parent.
+     *
+     * @param newOptions
+     *            filter options
+     * @param parentCopy
+     *            appolied rule of parent copy
+     **/
     protected void deepCopyInit(FilterOptions newOptions, AppliedRule parentCopy) {
         init(newOptions, iterEnv);
     }
@@ -115,7 +122,10 @@ public abstract class AppliedRule implements FilterRule {
 
     /**
      * @param scanStart
-     * @return
+     *            scan start time
+     * @param iterEnv
+     *            iterator environment
+     * @return new filter rule
      */
     public FilterRule deepCopy(long scanStart, IteratorEnvironment iterEnv) {
         AppliedRule newFilter;
@@ -136,7 +146,7 @@ public abstract class AppliedRule implements FilterRule {
     }
 
     /**
-     * @return
+     * @return the age off period
      */
     protected AgeOffPeriod getPeriod() {
         return ageOffPeriod;

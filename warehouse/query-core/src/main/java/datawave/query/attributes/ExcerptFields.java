@@ -1,6 +1,7 @@
 package datawave.query.attributes;
 
 import java.io.Serializable;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -125,6 +126,19 @@ public class ExcerptFields implements Serializable {
      */
     public void put(String field, Integer offset) {
         fieldMap.put(field, offset);
+    }
+
+    /**
+     * Replace a field mapping with another field
+     *
+     * @param field
+     * @param replacement
+     */
+    public void replace(String field, String replacement) {
+        Integer value = fieldMap.remove(field);
+        if (value != null) {
+            fieldMap.put(replacement, value);
+        }
     }
 
     /**

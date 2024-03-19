@@ -23,7 +23,7 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iteratorsImpl.system.SortedMapIterator;
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNode;
 import org.junit.Test;
 
 import datawave.ingest.protobuf.Uid;
@@ -311,6 +311,52 @@ public class CreateUidsIteratorTest {
 
         iterator.next();
         assertFalse(iterator.hasTop());
+    }
+
+    @Test
+    public void testTermCounts() throws IOException {
+        List<String> uids = List.of("parent.doc.id", "parent.doc.id.child01", "parent.doc.id.child02");
+        Value value = valueForUids(uids);
+
+        TreeMap<Key,Value> data = new TreeMap<>();
+        data.put(keyForTerm("FIELD", "value"), value);
+
+        Map<String,String> options = new HashMap<>();
+        options.put(CreateUidsIterator.FIELD_COUNTS, "true");
+
+        CreateUidsIterator iterator = iteratorFromOptions(options, data);
+        assertTrue(iterator.hasTop());
+
+        IndexInfo info = infoFromValue(iterator.getTopValue());
+
+        Map<String,Long> expected = new HashMap<>();
+        expected.put("NO_FIELD", 3L); // NO_FIELD because the test framework didn't pass in a real seek range
+        assertEquals(expected, info.getFieldCounts());
+    }
+
+    private Value valueForUids(Collection<String> uids) {
+        Uid.List.Builder builder = Uid.List.newBuilder();
+        builder.addAllUID(uids);
+        builder.setCOUNT(uids.size());
+        builder.setIGNORE(false);
+        return new Value(builder.build().toByteArray());
+    }
+
+    private Key keyForTerm(String field, String value) {
+        return new Key(value, field, "20190314_1\u0000datatypeA");
+    }
+
+    private IndexInfo infoFromValue(Value value) throws IOException {
+        IndexInfo indexInfo = new IndexInfo();
+        indexInfo.readFields(new DataInputStream(new ByteArrayInputStream(value.get())));
+        return indexInfo;
+    }
+
+    private CreateUidsIterator iteratorFromOptions(Map<String,String> options, TreeMap<Key,Value> data) throws IOException {
+        CreateUidsIterator iterator = new CreateUidsIterator();
+        iterator.init(new SortedMapIterator(data), options, null);
+        iterator.seek(new Range(), Collections.emptySet(), false);
+        return iterator;
     }
 
     static void addToExpectedDocs(String dataType, Iterable<String> docIds, Collection<IndexMatch> expected, JexlNode node) {
