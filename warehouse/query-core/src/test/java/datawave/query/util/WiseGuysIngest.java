@@ -53,9 +53,12 @@ public class WiseGuysIngest {
     protected static final long timeStamp = 1356998400000l;
 
     public static final String corleoneUID = UID.builder().newId("Corleone".getBytes(), (Date) null).toString();
+    public static final long corleoneTimeStampDelta = 0;
     public static final String corleoneChildUID = UID.builder().newId("Corleone".getBytes(), (Date) null, "1").toString();
     public static final String sopranoUID = UID.builder().newId("Soprano".toString().getBytes(), (Date) null).toString();
+    public static final long sopranoTimeStampDelta = 10;
     public static final String caponeUID = UID.builder().newId("Capone".toString().getBytes(), (Date) null).toString();
+    public static final long caponeTimeStampDelta = 20;
 
     protected static String normalizeColVal(Map.Entry<String,String> colVal) throws Exception {
         if ("FROM_ADDRESS".equals(colVal.getKey()) || "TO_ADDRESS".equals(colVal.getKey())) {
@@ -88,81 +91,93 @@ public class WiseGuysIngest {
             bw = client.createBatchWriter(TableName.SHARD, bwConfig);
             mutation = new Mutation(shard);
 
-            mutation.put(datatype + "\u0000" + corleoneUID, "NOME.0" + "\u0000" + "SANTINO", columnVisibility, timeStamp, emptyValue);
-            mutation.put(datatype + "\u0000" + corleoneUID, "NOME.1" + "\u0000" + "FREDO", columnVisibility, timeStamp, emptyValue);
-            mutation.put(datatype + "\u0000" + corleoneUID, "NOME.2" + "\u0000" + "MICHAEL", columnVisibility, timeStamp, emptyValue);
-            mutation.put(datatype + "\u0000" + corleoneUID, "NOME.3" + "\u0000" + "CONSTANZIA", columnVisibility, timeStamp, emptyValue);
-            mutation.put(datatype + "\u0000" + corleoneUID, "NOME.4" + "\u0000" + "LUCA", columnVisibility, timeStamp, emptyValue);
-            mutation.put(datatype + "\u0000" + corleoneUID, "NOME.5" + "\u0000" + "VINCENT", columnVisibility, timeStamp, emptyValue);
-            mutation.put(datatype + "\u0000" + corleoneUID, "GENERE.0" + "\u0000" + "MALE", columnVisibility, timeStamp, emptyValue);
-            mutation.put(datatype + "\u0000" + corleoneUID, "GENERE.1" + "\u0000" + "MALE", columnVisibility, timeStamp, emptyValue);
-            mutation.put(datatype + "\u0000" + corleoneUID, "GENERE.2" + "\u0000" + "MALE", columnVisibility, timeStamp, emptyValue);
-            mutation.put(datatype + "\u0000" + corleoneUID, "GENERE.3" + "\u0000" + "FEMALE", columnVisibility, timeStamp, emptyValue);
-            mutation.put(datatype + "\u0000" + corleoneUID, "GENERE.4" + "\u0000" + "MALE", columnVisibility, timeStamp, emptyValue);
-            mutation.put(datatype + "\u0000" + corleoneUID, "GENERE.5" + "\u0000" + "MALE", columnVisibility, timeStamp, emptyValue);
-            mutation.put(datatype + "\u0000" + corleoneUID, "ETA.0" + "\u0000" + "24", columnVisibility, timeStamp, emptyValue);
-            mutation.put(datatype + "\u0000" + corleoneUID, "ETA.1" + "\u0000" + "22", columnVisibility, timeStamp, emptyValue);
-            mutation.put(datatype + "\u0000" + corleoneUID, "ETA.2" + "\u0000" + "20", columnVisibility, timeStamp, emptyValue);
-            mutation.put(datatype + "\u0000" + corleoneUID, "ETA.3" + "\u0000" + "18", columnVisibility, timeStamp, emptyValue);
-            mutation.put(datatype + "\u0000" + corleoneUID, "ETA.4" + "\u0000" + "40", columnVisibility, timeStamp, emptyValue);
-            mutation.put(datatype + "\u0000" + corleoneUID, "ETA.5" + "\u0000" + "22", columnVisibility, timeStamp, emptyValue);
-            mutation.put(datatype + "\u0000" + corleoneUID, "MAGIC.0" + "\u0000" + "18", columnVisibility, timeStamp, emptyValue);
-            mutation.put(datatype + "\u0000" + corleoneUID, "UUID.0" + "\u0000" + "CORLEONE", columnVisibility, timeStamp, emptyValue);
-            // CORLEONE date delta is 70 years
-            mutation.put(datatype + "\u0000" + corleoneUID, "BIRTH_DATE" + "\u0000" + "1930-12-28T00:00:05.000Z", columnVisibility, timeStamp, emptyValue);
-            mutation.put(datatype + "\u0000" + corleoneUID, "DEATH_DATE" + "\u0000" + "2000-12-28T00:00:05.000Z", columnVisibility, timeStamp, emptyValue);
-            mutation.put(datatype + "\u0000" + corleoneUID, "QUOTE" + "\u0000" + "Im gonna make him an offer he cant refuse", columnVisibility, timeStamp,
+            mutation.put(datatype + "\u0000" + corleoneUID, "NOME.0" + "\u0000" + "SANTINO", columnVisibility, timeStamp + corleoneTimeStampDelta, emptyValue);
+            mutation.put(datatype + "\u0000" + corleoneUID, "NOME.1" + "\u0000" + "FREDO", columnVisibility, timeStamp + corleoneTimeStampDelta, emptyValue);
+            mutation.put(datatype + "\u0000" + corleoneUID, "NOME.2" + "\u0000" + "MICHAEL", columnVisibility, timeStamp + corleoneTimeStampDelta, emptyValue);
+            mutation.put(datatype + "\u0000" + corleoneUID, "NOME.3" + "\u0000" + "CONSTANZIA", columnVisibility, timeStamp + corleoneTimeStampDelta,
                             emptyValue);
-            mutation.put(datatype + "\u0000" + corleoneUID, "NUMBER" + "\u0000" + "25", columnVisibility, timeStamp, emptyValue);
-            mutation.put(datatype + "\u0000" + corleoneUID, "GEO" + "\u0000" + "POINT(10 10)", columnVisibility, timeStamp, emptyValue);
+            mutation.put(datatype + "\u0000" + corleoneUID, "NOME.4" + "\u0000" + "LUCA", columnVisibility, timeStamp + corleoneTimeStampDelta, emptyValue);
+            mutation.put(datatype + "\u0000" + corleoneUID, "NOME.5" + "\u0000" + "VINCENT", columnVisibility, timeStamp + corleoneTimeStampDelta, emptyValue);
+            mutation.put(datatype + "\u0000" + corleoneUID, "GENERE.0" + "\u0000" + "MALE", columnVisibility, timeStamp + corleoneTimeStampDelta, emptyValue);
+            mutation.put(datatype + "\u0000" + corleoneUID, "GENERE.1" + "\u0000" + "MALE", columnVisibility, timeStamp + corleoneTimeStampDelta, emptyValue);
+            mutation.put(datatype + "\u0000" + corleoneUID, "GENERE.2" + "\u0000" + "MALE", columnVisibility, timeStamp + corleoneTimeStampDelta, emptyValue);
+            mutation.put(datatype + "\u0000" + corleoneUID, "GENERE.3" + "\u0000" + "FEMALE", columnVisibility, timeStamp + corleoneTimeStampDelta, emptyValue);
+            mutation.put(datatype + "\u0000" + corleoneUID, "GENERE.4" + "\u0000" + "MALE", columnVisibility, timeStamp + corleoneTimeStampDelta, emptyValue);
+            mutation.put(datatype + "\u0000" + corleoneUID, "GENERE.5" + "\u0000" + "MALE", columnVisibility, timeStamp + corleoneTimeStampDelta, emptyValue);
+            mutation.put(datatype + "\u0000" + corleoneUID, "ETA.0" + "\u0000" + "24", columnVisibility, timeStamp + corleoneTimeStampDelta, emptyValue);
+            mutation.put(datatype + "\u0000" + corleoneUID, "ETA.1" + "\u0000" + "22", columnVisibility, timeStamp + corleoneTimeStampDelta, emptyValue);
+            mutation.put(datatype + "\u0000" + corleoneUID, "ETA.2" + "\u0000" + "20", columnVisibility, timeStamp + corleoneTimeStampDelta, emptyValue);
+            mutation.put(datatype + "\u0000" + corleoneUID, "ETA.3" + "\u0000" + "18", columnVisibility, timeStamp + corleoneTimeStampDelta, emptyValue);
+            mutation.put(datatype + "\u0000" + corleoneUID, "ETA.4" + "\u0000" + "40", columnVisibility, timeStamp + corleoneTimeStampDelta, emptyValue);
+            mutation.put(datatype + "\u0000" + corleoneUID, "ETA.5" + "\u0000" + "22", columnVisibility, timeStamp + corleoneTimeStampDelta, emptyValue);
+            mutation.put(datatype + "\u0000" + corleoneUID, "MAGIC.0" + "\u0000" + "18", columnVisibility, timeStamp + corleoneTimeStampDelta, emptyValue);
+            mutation.put(datatype + "\u0000" + corleoneUID, "UUID.0" + "\u0000" + "CORLEONE", columnVisibility, timeStamp + corleoneTimeStampDelta, emptyValue);
+            // CORLEONE date delta is 70 years
+            mutation.put(datatype + "\u0000" + corleoneUID, "BIRTH_DATE" + "\u0000" + "1930-12-28T00:00:05.000Z", columnVisibility,
+                            timeStamp + corleoneTimeStampDelta, emptyValue);
+            mutation.put(datatype + "\u0000" + corleoneUID, "DEATH_DATE" + "\u0000" + "2000-12-28T00:00:05.000Z", columnVisibility,
+                            timeStamp + corleoneTimeStampDelta, emptyValue);
+            mutation.put(datatype + "\u0000" + corleoneUID, "QUOTE" + "\u0000" + "Im gonna make him an offer he cant refuse", columnVisibility,
+                            timeStamp + corleoneTimeStampDelta, emptyValue);
+            mutation.put(datatype + "\u0000" + corleoneUID, "NUMBER" + "\u0000" + "25", columnVisibility, timeStamp + corleoneTimeStampDelta, emptyValue);
+            mutation.put(datatype + "\u0000" + corleoneUID, "GEO" + "\u0000" + "POINT(10 10)", columnVisibility, timeStamp + corleoneTimeStampDelta,
+                            emptyValue);
 
-            mutation.put(datatype + "\u0000" + corleoneChildUID, "UUID.0" + "\u0000" + "ANDOLINI", columnVisibility, timeStamp, emptyValue);
-            mutation.put(datatype + "\u0000" + corleoneChildUID, "ETA.0" + "\u0000" + "12", columnVisibility, timeStamp, emptyValue);
-            mutation.put(datatype + "\u0000" + corleoneChildUID, "BIRTH_DATE" + "\u0000" + "1930-12-28T00:00:05.000Z", columnVisibility, timeStamp, emptyValue);
-            mutation.put(datatype + "\u0000" + corleoneChildUID, "DEATH_DATE" + "\u0000" + "2000-12-28T00:00:05.000Z", columnVisibility, timeStamp, emptyValue);
+            mutation.put(datatype + "\u0000" + corleoneChildUID, "UUID.0" + "\u0000" + "ANDOLINI", columnVisibility, timeStamp + corleoneTimeStampDelta,
+                            emptyValue);
+            mutation.put(datatype + "\u0000" + corleoneChildUID, "ETA.0" + "\u0000" + "12", columnVisibility, timeStamp + corleoneTimeStampDelta, emptyValue);
+            mutation.put(datatype + "\u0000" + corleoneChildUID, "BIRTH_DATE" + "\u0000" + "1930-12-28T00:00:05.000Z", columnVisibility,
+                            timeStamp + corleoneTimeStampDelta, emptyValue);
+            mutation.put(datatype + "\u0000" + corleoneChildUID, "DEATH_DATE" + "\u0000" + "2000-12-28T00:00:05.000Z", columnVisibility,
+                            timeStamp + corleoneTimeStampDelta, emptyValue);
 
-            mutation.put(datatype + "\u0000" + sopranoUID, "NAME.0" + "\u0000" + "ANTHONY", columnVisibility, timeStamp, emptyValue);
-            mutation.put(datatype + "\u0000" + sopranoUID, "NAME.1" + "\u0000" + "MEADOW", columnVisibility, timeStamp, emptyValue);
-            mutation.put(datatype + "\u0000" + sopranoUID, "GENDER.0" + "\u0000" + "MALE", columnVisibility, timeStamp, emptyValue);
-            mutation.put(datatype + "\u0000" + sopranoUID, "GENDER.1" + "\u0000" + "FEMALE", columnVisibility, timeStamp, emptyValue);
+            mutation.put(datatype + "\u0000" + sopranoUID, "NAME.0" + "\u0000" + "ANTHONY", columnVisibility, timeStamp + sopranoTimeStampDelta, emptyValue);
+            mutation.put(datatype + "\u0000" + sopranoUID, "NAME.1" + "\u0000" + "MEADOW", columnVisibility, timeStamp + sopranoTimeStampDelta, emptyValue);
+            mutation.put(datatype + "\u0000" + sopranoUID, "GENDER.0" + "\u0000" + "MALE", columnVisibility, timeStamp + sopranoTimeStampDelta, emptyValue);
+            mutation.put(datatype + "\u0000" + sopranoUID, "GENDER.1" + "\u0000" + "FEMALE", columnVisibility, timeStamp + sopranoTimeStampDelta, emptyValue);
             // to test whether singleton values correctly get matched using the function set methods, only add AGE.1
-            // mutation.put(datatype + "\u0000" + sopranoUID, "AGE.0" + "\u0000" + "16", columnVisibility, timeStamp, emptyValue);
-            mutation.put(datatype + "\u0000" + sopranoUID, "AGE.0" + "\u0000" + "16", columnVisibility, timeStamp, emptyValue);
-            mutation.put(datatype + "\u0000" + sopranoUID, "AGE.1" + "\u0000" + "18", columnVisibility, timeStamp, emptyValue);
-            mutation.put(datatype + "\u0000" + sopranoUID, "MAGIC.0" + "\u0000" + "18", columnVisibility, timeStamp, emptyValue);
-            mutation.put(datatype + "\u0000" + sopranoUID, "UUID.0" + "\u0000" + "SOPRANO", columnVisibility, timeStamp, emptyValue);
+            // mutation.put(datatype + "\u0000" + sopranoUID, "AGE.0" + "\u0000" + "16", columnVisibility, timeStamp + sopranoTimeStampDelta, emptyValue);
+            mutation.put(datatype + "\u0000" + sopranoUID, "AGE.0" + "\u0000" + "16", columnVisibility, timeStamp + sopranoTimeStampDelta, emptyValue);
+            mutation.put(datatype + "\u0000" + sopranoUID, "AGE.1" + "\u0000" + "18", columnVisibility, timeStamp + sopranoTimeStampDelta, emptyValue);
+            mutation.put(datatype + "\u0000" + sopranoUID, "MAGIC.0" + "\u0000" + "18", columnVisibility, timeStamp + sopranoTimeStampDelta, emptyValue);
+            mutation.put(datatype + "\u0000" + sopranoUID, "UUID.0" + "\u0000" + "SOPRANO", columnVisibility, timeStamp + sopranoTimeStampDelta, emptyValue);
             // soprano date delta is 50 years
-            mutation.put(datatype + "\u0000" + sopranoUID, "BIRTH_DATE" + "\u0000" + "1950-12-28T00:00:05.000Z", columnVisibility, timeStamp, emptyValue);
-            mutation.put(datatype + "\u0000" + sopranoUID, "DEATH_DATE" + "\u0000" + "2000-12-28T00:00:05.000Z", columnVisibility, timeStamp, emptyValue);
+            mutation.put(datatype + "\u0000" + sopranoUID, "BIRTH_DATE" + "\u0000" + "1950-12-28T00:00:05.000Z", columnVisibility,
+                            timeStamp + sopranoTimeStampDelta, emptyValue);
+            mutation.put(datatype + "\u0000" + sopranoUID, "DEATH_DATE" + "\u0000" + "2000-12-28T00:00:05.000Z", columnVisibility,
+                            timeStamp + sopranoTimeStampDelta, emptyValue);
             mutation.put(datatype + "\u0000" + sopranoUID, "QUOTE" + "\u0000" + "If you can quote the rules then you can obey them", columnVisibility,
-                            timeStamp, emptyValue);
-            mutation.put(datatype + "\u0000" + sopranoUID, "GEO" + "\u0000" + "POINT(20 20)", columnVisibility, timeStamp, emptyValue);
+                            timeStamp + sopranoTimeStampDelta, emptyValue);
+            mutation.put(datatype + "\u0000" + sopranoUID, "GEO" + "\u0000" + "POINT(20 20)", columnVisibility, timeStamp + sopranoTimeStampDelta, emptyValue);
 
-            mutation.put(datatype + "\u0000" + caponeUID, "NAME.0" + "\u0000" + "ALPHONSE", columnVisibility, timeStamp, emptyValue);
-            mutation.put(datatype + "\u0000" + caponeUID, "NAME.1" + "\u0000" + "FRANK", columnVisibility, timeStamp, emptyValue);
-            mutation.put(datatype + "\u0000" + caponeUID, "NAME.2" + "\u0000" + "RALPH", columnVisibility, timeStamp, emptyValue);
-            mutation.put(datatype + "\u0000" + caponeUID, "NAME.3" + "\u0000" + "MICHAEL", columnVisibility, timeStamp, emptyValue);
-            mutation.put(datatype + "\u0000" + caponeUID, "GENDER.0" + "\u0000" + "MALE", columnVisibility, timeStamp, emptyValue);
-            mutation.put(datatype + "\u0000" + caponeUID, "GENDER.1" + "\u0000" + "MALE", columnVisibility, timeStamp, emptyValue);
-            mutation.put(datatype + "\u0000" + caponeUID, "GENDER.2" + "\u0000" + "MALE", columnVisibility, timeStamp, emptyValue);
-            mutation.put(datatype + "\u0000" + caponeUID, "GENDER.3" + "\u0000" + "MALE", columnVisibility, timeStamp, emptyValue);
-            mutation.put(datatype + "\u0000" + caponeUID, "AGE.0" + "\u0000" + "30", columnVisibility, timeStamp, emptyValue);
-            mutation.put(datatype + "\u0000" + caponeUID, "AGE.1" + "\u0000" + "34", columnVisibility, timeStamp, emptyValue);
-            mutation.put(datatype + "\u0000" + caponeUID, "AGE.2" + "\u0000" + "20", columnVisibility, timeStamp, emptyValue);
-            mutation.put(datatype + "\u0000" + caponeUID, "AGE.3" + "\u0000" + "40", columnVisibility, timeStamp, emptyValue);
-            mutation.put(datatype + "\u0000" + caponeUID, "MAGIC.0" + "\u0000" + "18", columnVisibility, timeStamp, emptyValue);
-            mutation.put(datatype + "\u0000" + caponeUID, "UUID.0" + "\u0000" + "CAPONE", columnVisibility, timeStamp, emptyValue);
+            mutation.put(datatype + "\u0000" + caponeUID, "NAME.0" + "\u0000" + "ALPHONSE", columnVisibility, timeStamp + caponeTimeStampDelta, emptyValue);
+            mutation.put(datatype + "\u0000" + caponeUID, "NAME.1" + "\u0000" + "FRANK", columnVisibility, timeStamp + caponeTimeStampDelta, emptyValue);
+            mutation.put(datatype + "\u0000" + caponeUID, "NAME.2" + "\u0000" + "RALPH", columnVisibility, timeStamp + caponeTimeStampDelta, emptyValue);
+            mutation.put(datatype + "\u0000" + caponeUID, "NAME.3" + "\u0000" + "MICHAEL", columnVisibility, timeStamp + caponeTimeStampDelta, emptyValue);
+            mutation.put(datatype + "\u0000" + caponeUID, "GENDER.0" + "\u0000" + "MALE", columnVisibility, timeStamp + caponeTimeStampDelta, emptyValue);
+            mutation.put(datatype + "\u0000" + caponeUID, "GENDER.1" + "\u0000" + "MALE", columnVisibility, timeStamp + caponeTimeStampDelta, emptyValue);
+            mutation.put(datatype + "\u0000" + caponeUID, "GENDER.2" + "\u0000" + "MALE", columnVisibility, timeStamp + caponeTimeStampDelta, emptyValue);
+            mutation.put(datatype + "\u0000" + caponeUID, "GENDER.3" + "\u0000" + "MALE", columnVisibility, timeStamp + caponeTimeStampDelta, emptyValue);
+            mutation.put(datatype + "\u0000" + caponeUID, "AGE.0" + "\u0000" + "30", columnVisibility, timeStamp + caponeTimeStampDelta, emptyValue);
+            mutation.put(datatype + "\u0000" + caponeUID, "AGE.1" + "\u0000" + "34", columnVisibility, timeStamp + caponeTimeStampDelta, emptyValue);
+            mutation.put(datatype + "\u0000" + caponeUID, "AGE.2" + "\u0000" + "20", columnVisibility, timeStamp + caponeTimeStampDelta, emptyValue);
+            mutation.put(datatype + "\u0000" + caponeUID, "AGE.3" + "\u0000" + "40", columnVisibility, timeStamp + caponeTimeStampDelta, emptyValue);
+            mutation.put(datatype + "\u0000" + caponeUID, "MAGIC.0" + "\u0000" + "18", columnVisibility, timeStamp + caponeTimeStampDelta, emptyValue);
+            mutation.put(datatype + "\u0000" + caponeUID, "UUID.0" + "\u0000" + "CAPONE", columnVisibility, timeStamp + caponeTimeStampDelta, emptyValue);
 
             // capone date delta is 89 or 90 years
-            mutation.put(datatype + "\u0000" + caponeUID, "BIRTH_DATE.0" + "\u0000" + "1910-12-28T00:00:05.000Z", columnVisibility, timeStamp, emptyValue);
+            mutation.put(datatype + "\u0000" + caponeUID, "BIRTH_DATE.0" + "\u0000" + "1910-12-28T00:00:05.000Z", columnVisibility,
+                            timeStamp + caponeTimeStampDelta, emptyValue);
             // add a second date to test function taking an Iterable
-            mutation.put(datatype + "\u0000" + caponeUID, "BIRTH_DATE.1" + "\u0000" + "1911-12-28T00:00:05.000Z", columnVisibility, timeStamp, emptyValue);
-            mutation.put(datatype + "\u0000" + caponeUID, "DEATH_DATE.0" + "\u0000" + "2000-12-28T00:00:05.000Z", columnVisibility, timeStamp, emptyValue);
+            mutation.put(datatype + "\u0000" + caponeUID, "BIRTH_DATE.1" + "\u0000" + "1911-12-28T00:00:05.000Z", columnVisibility,
+                            timeStamp + caponeTimeStampDelta, emptyValue);
+            mutation.put(datatype + "\u0000" + caponeUID, "DEATH_DATE.0" + "\u0000" + "2000-12-28T00:00:05.000Z", columnVisibility,
+                            timeStamp + caponeTimeStampDelta, emptyValue);
             mutation.put(datatype + "\u0000" + caponeUID,
                             "QUOTE" + "\u0000" + "You can get much farther with a kind word and a gun than you can with a kind word alone", columnVisibility,
-                            timeStamp, emptyValue);
-            mutation.put(datatype + "\u0000" + caponeUID, "NUMBER" + "\u0000" + "25", columnVisibility, timeStamp, emptyValue);
-            mutation.put(datatype + "\u0000" + caponeUID, "GEO" + "\u0000" + "POINT(30 30)", columnVisibility, timeStamp, emptyValue);
+                            timeStamp + caponeTimeStampDelta, emptyValue);
+            mutation.put(datatype + "\u0000" + caponeUID, "NUMBER" + "\u0000" + "25", columnVisibility, timeStamp + caponeTimeStampDelta, emptyValue);
+            mutation.put(datatype + "\u0000" + caponeUID, "GEO" + "\u0000" + "POINT(30 30)", columnVisibility, timeStamp + caponeTimeStampDelta, emptyValue);
 
             bw.addMutation(mutation);
 
@@ -379,9 +394,10 @@ public class WiseGuysIngest {
             bw.addMutation(mutation);
 
             // add some tokens
-            addTokens(bw, range, "QUOTE", "Im gonna make him an offer he cant refuse", corleoneUID);
-            addTokens(bw, range, "QUOTE", "If you can quote the rules then you can obey them", sopranoUID);
-            addTokens(bw, range, "QUOTE", "You can get much farther with a kind word and a gun than you can with a kind word alone", caponeUID);
+            addTokens(bw, range, "QUOTE", "Im gonna make him an offer he cant refuse", corleoneUID, corleoneTimeStampDelta);
+            addTokens(bw, range, "QUOTE", "If you can quote the rules then you can obey them", sopranoUID, sopranoTimeStampDelta);
+            addTokens(bw, range, "QUOTE", "You can get much farther with a kind word and a gun than you can with a kind word alone", caponeUID,
+                            caponeTimeStampDelta);
         } finally {
             if (null != bw) {
                 bw.close();
@@ -602,116 +618,130 @@ public class WiseGuysIngest {
             // corleones
             // uuid
             mutation.put("fi\u0000" + "UUID", lcNoDiacriticsType.normalize("CORLEONE") + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility,
-                            timeStamp, emptyValue);
+                            timeStamp + corleoneTimeStampDelta, emptyValue);
 
             // uuid
             mutation.put("fi\u0000" + "UUID", lcNoDiacriticsType.normalize("ANDOLINI") + "\u0000" + datatype + "\u0000" + corleoneChildUID, columnVisibility,
-                            timeStamp, emptyValue);
+                            timeStamp + corleoneTimeStampDelta, emptyValue);
 
             // names
             mutation.put("fi\u0000" + "NOME", lcNoDiacriticsType.normalize("SANTINO") + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility,
-                            timeStamp, emptyValue);
-            mutation.put("fi\u0000" + "NOME", lcNoDiacriticsType.normalize("FREDO") + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility, timeStamp,
-                            emptyValue);
+                            timeStamp + corleoneTimeStampDelta, emptyValue);
+            mutation.put("fi\u0000" + "NOME", lcNoDiacriticsType.normalize("FREDO") + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility,
+                            timeStamp + corleoneTimeStampDelta, emptyValue);
             mutation.put("fi\u0000" + "NOME", lcNoDiacriticsType.normalize("MICHAEL") + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility,
-                            timeStamp, emptyValue);
+                            timeStamp + corleoneTimeStampDelta, emptyValue);
             mutation.put("fi\u0000" + "NOME", lcNoDiacriticsType.normalize("CONSTANZIA") + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility,
-                            timeStamp, emptyValue);
-            mutation.put("fi\u0000" + "NOME", lcNoDiacriticsType.normalize("LUCA") + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility, timeStamp,
-                            emptyValue);
+                            timeStamp + corleoneTimeStampDelta, emptyValue);
+            mutation.put("fi\u0000" + "NOME", lcNoDiacriticsType.normalize("LUCA") + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility,
+                            timeStamp + corleoneTimeStampDelta, emptyValue);
             mutation.put("fi\u0000" + "NOME", lcNoDiacriticsType.normalize("VINCENT") + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility,
-                            timeStamp, emptyValue);
+                            timeStamp + corleoneTimeStampDelta, emptyValue);
             // genders
             mutation.put("fi\u0000" + "GENERE", lcNoDiacriticsType.normalize("MALE") + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility,
-                            timeStamp, emptyValue);
+                            timeStamp + corleoneTimeStampDelta, emptyValue);
             mutation.put("fi\u0000" + "GENERE", lcNoDiacriticsType.normalize("FEMALE") + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility,
-                            timeStamp, emptyValue);
+                            timeStamp + corleoneTimeStampDelta, emptyValue);
             // ages
-            mutation.put("fi\u0000" + "ETA", numberType.normalize("24") + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility, timeStamp,
-                            emptyValue);
-            mutation.put("fi\u0000" + "ETA", numberType.normalize("22") + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility, timeStamp,
-                            emptyValue);
-            mutation.put("fi\u0000" + "ETA", numberType.normalize("20") + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility, timeStamp,
-                            emptyValue);
-            mutation.put("fi\u0000" + "ETA", numberType.normalize("18") + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility, timeStamp,
-                            emptyValue);
-            mutation.put("fi\u0000" + "ETA", numberType.normalize("40") + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility, timeStamp,
-                            emptyValue);
-            mutation.put("fi\u0000" + "ETA", numberType.normalize("12") + "\u0000" + datatype + "\u0000" + corleoneChildUID, columnVisibility, timeStamp,
-                            emptyValue);
+            mutation.put("fi\u0000" + "ETA", numberType.normalize("24") + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility,
+                            timeStamp + corleoneTimeStampDelta, emptyValue);
+            mutation.put("fi\u0000" + "ETA", numberType.normalize("22") + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility,
+                            timeStamp + corleoneTimeStampDelta, emptyValue);
+            mutation.put("fi\u0000" + "ETA", numberType.normalize("20") + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility,
+                            timeStamp + corleoneTimeStampDelta, emptyValue);
+            mutation.put("fi\u0000" + "ETA", numberType.normalize("18") + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility,
+                            timeStamp + corleoneTimeStampDelta, emptyValue);
+            mutation.put("fi\u0000" + "ETA", numberType.normalize("40") + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility,
+                            timeStamp + corleoneTimeStampDelta, emptyValue);
+            mutation.put("fi\u0000" + "ETA", numberType.normalize("12") + "\u0000" + datatype + "\u0000" + corleoneChildUID, columnVisibility,
+                            timeStamp + corleoneTimeStampDelta, emptyValue);
 
             // geo
             for (String normalized : ((OneToManyNormalizerType<Geometry>) geoType).normalizeToMany("POINT(10 10)")) {
-                mutation.put("fi\u0000" + "GEO", normalized + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility, timeStamp, emptyValue);
+                mutation.put("fi\u0000" + "GEO", normalized + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility,
+                                timeStamp + corleoneTimeStampDelta, emptyValue);
             }
 
             // sopranos
             // uuid
             mutation.put("fi\u0000" + "UUID", lcNoDiacriticsType.normalize("SOPRANO") + "\u0000" + datatype + "\u0000" + sopranoUID, columnVisibility,
-                            timeStamp, emptyValue);
+                            timeStamp + sopranoTimeStampDelta, emptyValue);
             // names
             mutation.put("fi\u0000" + "NAME", lcNoDiacriticsType.normalize("ANTHONY") + "\u0000" + datatype + "\u0000" + sopranoUID, columnVisibility,
-                            timeStamp, emptyValue);
-            mutation.put("fi\u0000" + "NAME", lcNoDiacriticsType.normalize("MEADOW") + "\u0000" + datatype + "\u0000" + sopranoUID, columnVisibility, timeStamp,
-                            emptyValue);
+                            timeStamp + sopranoTimeStampDelta, emptyValue);
+            mutation.put("fi\u0000" + "NAME", lcNoDiacriticsType.normalize("MEADOW") + "\u0000" + datatype + "\u0000" + sopranoUID, columnVisibility,
+                            timeStamp + sopranoTimeStampDelta, emptyValue);
             // genders
-            mutation.put("fi\u0000" + "GENDER", lcNoDiacriticsType.normalize("MALE") + "\u0000" + datatype + "\u0000" + sopranoUID, columnVisibility, timeStamp,
-                            emptyValue);
+            mutation.put("fi\u0000" + "GENDER", lcNoDiacriticsType.normalize("MALE") + "\u0000" + datatype + "\u0000" + sopranoUID, columnVisibility,
+                            timeStamp + sopranoTimeStampDelta, emptyValue);
             mutation.put("fi\u0000" + "GENDER", lcNoDiacriticsType.normalize("FEMALE") + "\u0000" + datatype + "\u0000" + sopranoUID, columnVisibility,
-                            timeStamp, emptyValue);
+                            timeStamp + sopranoTimeStampDelta, emptyValue);
             // ages
-            mutation.put("fi\u0000" + "AGE", numberType.normalize("16") + "\u0000" + datatype + "\u0000" + sopranoUID, columnVisibility, timeStamp, emptyValue);
-            mutation.put("fi\u0000" + "AGE", numberType.normalize("18") + "\u0000" + datatype + "\u0000" + sopranoUID, columnVisibility, timeStamp, emptyValue);
+            mutation.put("fi\u0000" + "AGE", numberType.normalize("16") + "\u0000" + datatype + "\u0000" + sopranoUID, columnVisibility,
+                            timeStamp + sopranoTimeStampDelta, emptyValue);
+            mutation.put("fi\u0000" + "AGE", numberType.normalize("18") + "\u0000" + datatype + "\u0000" + sopranoUID, columnVisibility,
+                            timeStamp + sopranoTimeStampDelta, emptyValue);
 
             // geo
             for (String normalized : ((OneToManyNormalizerType<Geometry>) geoType).normalizeToMany("POINT(20 20)")) {
-                mutation.put("fi\u0000" + "GEO", normalized + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility, timeStamp, emptyValue);
+                mutation.put("fi\u0000" + "GEO", normalized + "\u0000" + datatype + "\u0000" + sopranoUID, columnVisibility, timeStamp + sopranoTimeStampDelta,
+                                emptyValue);
             }
 
             // capones
             // uuid
-            mutation.put("fi\u0000" + "UUID", lcNoDiacriticsType.normalize("CAPONE") + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibility, timeStamp,
-                            emptyValue);
+            mutation.put("fi\u0000" + "UUID", lcNoDiacriticsType.normalize("CAPONE") + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibility,
+                            timeStamp + caponeTimeStampDelta, emptyValue);
             // names
             mutation.put("fi\u0000" + "NAME", lcNoDiacriticsType.normalize("ALPHONSE") + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibility,
-                            timeStamp, emptyValue);
-            mutation.put("fi\u0000" + "NAME", lcNoDiacriticsType.normalize("FRANK") + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibility, timeStamp,
-                            emptyValue);
-            mutation.put("fi\u0000" + "NAME", lcNoDiacriticsType.normalize("RALPH") + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibility, timeStamp,
-                            emptyValue);
-            mutation.put("fi\u0000" + "NAME", lcNoDiacriticsType.normalize("MICHAEL") + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibility, timeStamp,
-                            emptyValue);
+                            timeStamp + caponeTimeStampDelta, emptyValue);
+            mutation.put("fi\u0000" + "NAME", lcNoDiacriticsType.normalize("FRANK") + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibility,
+                            timeStamp + caponeTimeStampDelta, emptyValue);
+            mutation.put("fi\u0000" + "NAME", lcNoDiacriticsType.normalize("RALPH") + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibility,
+                            timeStamp + caponeTimeStampDelta, emptyValue);
+            mutation.put("fi\u0000" + "NAME", lcNoDiacriticsType.normalize("MICHAEL") + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibility,
+                            timeStamp + caponeTimeStampDelta, emptyValue);
             // genders
-            mutation.put("fi\u0000" + "GENDER", lcNoDiacriticsType.normalize("MALE") + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibility, timeStamp,
-                            emptyValue);
-            mutation.put("fi\u0000" + "GENDER", lcNoDiacriticsType.normalize("MALE") + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibility, timeStamp,
-                            emptyValue);
-            mutation.put("fi\u0000" + "GENDER", lcNoDiacriticsType.normalize("MALE") + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibility, timeStamp,
-                            emptyValue);
-            mutation.put("fi\u0000" + "GENDER", lcNoDiacriticsType.normalize("MALE") + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibility, timeStamp,
-                            emptyValue);
+            mutation.put("fi\u0000" + "GENDER", lcNoDiacriticsType.normalize("MALE") + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibility,
+                            timeStamp + caponeTimeStampDelta, emptyValue);
+            mutation.put("fi\u0000" + "GENDER", lcNoDiacriticsType.normalize("MALE") + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibility,
+                            timeStamp + caponeTimeStampDelta, emptyValue);
+            mutation.put("fi\u0000" + "GENDER", lcNoDiacriticsType.normalize("MALE") + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibility,
+                            timeStamp + caponeTimeStampDelta, emptyValue);
+            mutation.put("fi\u0000" + "GENDER", lcNoDiacriticsType.normalize("MALE") + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibility,
+                            timeStamp + caponeTimeStampDelta, emptyValue);
             // ages
-            mutation.put("fi\u0000" + "AGE", numberType.normalize("30") + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibility, timeStamp, emptyValue);
-            mutation.put("fi\u0000" + "AGE", numberType.normalize("34") + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibility, timeStamp, emptyValue);
-            mutation.put("fi\u0000" + "AGE", numberType.normalize("20") + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibility, timeStamp, emptyValue);
-            mutation.put("fi\u0000" + "AGE", numberType.normalize("40") + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibility, timeStamp, emptyValue);
+            mutation.put("fi\u0000" + "AGE", numberType.normalize("30") + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibility,
+                            timeStamp + caponeTimeStampDelta, emptyValue);
+            mutation.put("fi\u0000" + "AGE", numberType.normalize("34") + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibility,
+                            timeStamp + caponeTimeStampDelta, emptyValue);
+            mutation.put("fi\u0000" + "AGE", numberType.normalize("20") + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibility,
+                            timeStamp + caponeTimeStampDelta, emptyValue);
+            mutation.put("fi\u0000" + "AGE", numberType.normalize("40") + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibility,
+                            timeStamp + caponeTimeStampDelta, emptyValue);
 
             // geo
             for (String normalized : ((OneToManyNormalizerType<Geometry>) geoType).normalizeToMany("POINT(30 30)")) {
-                mutation.put("fi\u0000" + "GEO", normalized + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility, timeStamp, emptyValue);
+                mutation.put("fi\u0000" + "GEO", normalized + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibility, timeStamp + caponeTimeStampDelta,
+                                emptyValue);
             }
 
             // add some index-only fields
-            mutation.put("fi\u0000" + "LOCATION", "chicago" + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibility, timeStamp, emptyValue);
-            mutation.put("fi\u0000" + "POSIZIONE", "newyork" + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility, timeStamp, emptyValue);
-            mutation.put("fi\u0000" + "LOCATION", "newjersey" + "\u0000" + datatype + "\u0000" + sopranoUID, columnVisibility, timeStamp, emptyValue);
-            mutation.put("fi\u0000" + "SENTENCE", "11y" + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibility, timeStamp, emptyValue);
+            mutation.put("fi\u0000" + "LOCATION", "chicago" + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibility, timeStamp + caponeTimeStampDelta,
+                            emptyValue);
+            mutation.put("fi\u0000" + "POSIZIONE", "newyork" + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility,
+                            timeStamp + corleoneTimeStampDelta, emptyValue);
+            mutation.put("fi\u0000" + "LOCATION", "newjersey" + "\u0000" + datatype + "\u0000" + sopranoUID, columnVisibility,
+                            timeStamp + sopranoTimeStampDelta, emptyValue);
+            mutation.put("fi\u0000" + "SENTENCE", "11y" + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibility, timeStamp + caponeTimeStampDelta,
+                            emptyValue);
 
             bw.addMutation(mutation);
 
-            addFiTfTokens(bw, range, "QUOTE", "Im gonna make him an offer he cant refuse", corleoneUID);
-            addFiTfTokens(bw, range, "QUOTE", "If you can quote the rules then you can obey them", sopranoUID);
-            addFiTfTokens(bw, range, "QUOTE", "You can get much farther with a kind word and a gun than you can with a kind word alone", caponeUID);
+            addFiTfTokens(bw, range, "QUOTE", "Im gonna make him an offer he cant refuse", corleoneUID, corleoneTimeStampDelta);
+            addFiTfTokens(bw, range, "QUOTE", "If you can quote the rules then you can obey them", sopranoUID, sopranoTimeStampDelta);
+            addFiTfTokens(bw, range, "QUOTE", "You can get much farther with a kind word and a gun than you can with a kind word alone", caponeUID,
+                            caponeTimeStampDelta);
         } finally {
             if (null != bw) {
                 bw.close();
@@ -979,31 +1009,33 @@ public class WiseGuysIngest {
         return new Value(builder.build().toByteArray());
     }
 
-    private static void addTokens(BatchWriter bw, WhatKindaRange range, String field, String phrase, String uid) throws MutationsRejectedException {
+    private static void addTokens(BatchWriter bw, WhatKindaRange range, String field, String phrase, String uid, long timeStampDelta)
+                    throws MutationsRejectedException {
         Mutation mutation = new Mutation(lcNoDiacriticsType.normalize(phrase));
-        mutation.put(field.toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp,
+        mutation.put(field.toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp + timeStampDelta,
                         range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(uid));
         bw.addMutation(mutation);
 
         String[] tokens = phrase.split(" ");
         for (String token : tokens) {
             mutation = new Mutation(lcNoDiacriticsType.normalize(token));
-            mutation.put(field.toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp,
+            mutation.put(field.toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp + timeStampDelta,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(uid));
             bw.addMutation(mutation);
         }
     }
 
-    private static void addFiTfTokens(BatchWriter bw, WhatKindaRange range, String field, String phrase, String uid) throws MutationsRejectedException {
+    private static void addFiTfTokens(BatchWriter bw, WhatKindaRange range, String field, String phrase, String uid, long timeStampDelta)
+                    throws MutationsRejectedException {
         Mutation fi = new Mutation(shard);
-        fi.put("fi\u0000" + field.toUpperCase(), lcNoDiacriticsType.normalize(phrase) + "\u0000" + datatype + "\u0000" + uid, columnVisibility, timeStamp,
-                        emptyValue);
+        fi.put("fi\u0000" + field.toUpperCase(), lcNoDiacriticsType.normalize(phrase) + "\u0000" + datatype + "\u0000" + uid, columnVisibility,
+                        timeStamp + timeStampDelta, emptyValue);
         OffsetQueue<Integer> tokenOffsetCache = new BoundedOffsetQueue<>(500);
         int i = 0;
         String[] tokens = phrase.split(" ");
         for (String token : tokens) {
-            fi.put("fi\u0000" + field.toUpperCase(), lcNoDiacriticsType.normalize(token) + "\u0000" + datatype + "\u0000" + uid, columnVisibility, timeStamp,
-                            emptyValue);
+            fi.put("fi\u0000" + field.toUpperCase(), lcNoDiacriticsType.normalize(token) + "\u0000" + datatype + "\u0000" + uid, columnVisibility,
+                            timeStamp + timeStampDelta, emptyValue);
             tokenOffsetCache.addOffset(new TermAndZone(token, field.toUpperCase()), i);
 
             i++;
@@ -1016,7 +1048,7 @@ public class WiseGuysIngest {
             }
             Value value = new Value(builder.build().toByteArray());
             fi.put("tf", datatype + "\u0000" + uid + "\u0000" + lcNoDiacriticsType.normalize(nfv.getIndexedFieldValue()) + "\u0000" + nfv.getIndexedFieldName(),
-                            columnVisibility, timeStamp, value);
+                            columnVisibility, timeStamp + timeStampDelta, value);
         }
         bw.addMutation(fi);
     }

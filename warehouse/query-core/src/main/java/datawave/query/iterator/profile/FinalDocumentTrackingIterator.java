@@ -24,8 +24,8 @@ public class FinalDocumentTrackingIterator implements Iterator<Entry<Key,Documen
     private boolean statsEntryReturned;
     private Key lastKey = null;
 
-    private static final Text MARKER_TEXT = new Text("\u2735FinalDocument\u2735");
-    private static final ByteSequence MARKER_SEQUENCE = new ArrayByteSequence(MARKER_TEXT.getBytes(), 0, MARKER_TEXT.getLength());
+    public static final Text MARKER_TEXT = new Text("\u2735FinalDocument\u2735");
+    public static final ByteSequence MARKER_SEQUENCE = new ArrayByteSequence(MARKER_TEXT.getBytes(), 0, MARKER_TEXT.getLength());
 
     private final Range seekRange;
     private final QuerySpanCollector querySpanCollector;

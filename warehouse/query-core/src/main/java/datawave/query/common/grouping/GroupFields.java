@@ -314,7 +314,7 @@ public class GroupFields implements Serializable {
 
     // Return a copy of the given set with all identifiers deconstructed.
     private Set<String> deconstructIdentifiers(Set<String> set) {
-        return set.stream().map(JexlASTHelper::deconstructIdentifier).collect(Collectors.toSet());
+        return set.stream().map(JexlASTHelper::deconstructIdentifier).map(String::toUpperCase).collect(Collectors.toSet());
     }
 
     /**
