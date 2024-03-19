@@ -335,18 +335,18 @@ public class TermOffsetPopulator {
 
     public static Multimap<String,String> getTermFrequencyFieldValues(ASTJexlScript query, Set<String> contentExpansionFields,
                     Set<String> termFrequencyFields) {
+
         Multimap<String,Function> functions = TermOffsetPopulator.getContentFunctions(query);
 
-        if (!functions.isEmpty()) {
-            Multimap<String,String> queryFieldValues = LiteralNodeSubsetVisitor.getLiterals(termFrequencyFields, query);
-            if (!queryFieldValues.isEmpty()) {
-                // if the content expansion fields is empty, then the term frequency field set will be used instead
-                if (contentExpansionFields == null || contentExpansionFields.isEmpty()) {
-                    contentExpansionFields = termFrequencyFields;
-                }
-                return getTermFrequencyFieldValues(functions, contentExpansionFields, queryFieldValues);
+        Multimap<String,String> queryFieldValues = LiteralNodeSubsetVisitor.getLiterals(termFrequencyFields, query);
+        if (!queryFieldValues.isEmpty()) {
+            // if the content expansion fields is empty, then the term frequency field set will be used instead
+            if (contentExpansionFields == null || contentExpansionFields.isEmpty()) {
+                contentExpansionFields = termFrequencyFields;
             }
+            return getTermFrequencyFieldValues(functions, contentExpansionFields, queryFieldValues);
         }
+
         return HashMultimap.create();
     }
 

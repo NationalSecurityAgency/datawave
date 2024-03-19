@@ -1120,8 +1120,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         // if we may use the term frequencies instead of the fields index in some cases
         Set<String> queryTfFields = Collections.emptySet();
         Set<String> termFrequencyFields;
+        Set<String> indexOnlyFields;
         try {
             termFrequencyFields = metadataHelper.getTermFrequencyFields(config.getDatatypeFilter());
+            indexOnlyFields = metadataHelper.getIndexOnlyFields(config.getDatatypeFilter());
         } catch (TableNotFoundException e) {
             stopwatch.stop();
             QueryException qe = new QueryException(DatawaveErrorCode.TERM_FREQUENCY_FIELDS_RETRIEVAL_ERROR, e);
@@ -1143,6 +1145,16 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         if (!queryTfFields.isEmpty()) {
             Multimap<String,Function> contentFunctions = TermOffsetPopulator.getContentFunctions(config.getQueryTree());
             config.setTermFrequenciesRequired(!contentFunctions.isEmpty());
+
+            if (contentFunctions.isEmpty()) {
+                for (String tfField : queryTfFields) {
+                    if (!indexOnlyFields.contains(tfField)) {
+                        config.setTermFrequenciesRequired(true);
+                        break;
+                    }
+                }
+
+            }
 
             // Print the nice log message
             if (log.isDebugEnabled()) {
