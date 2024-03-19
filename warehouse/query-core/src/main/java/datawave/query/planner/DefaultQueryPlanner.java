@@ -2384,6 +2384,12 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
             if (config.getReduceTypeMetadata() && !isPreload) {
                 Set<String> fieldsToRetain = ReduceFields.getQueryFields(config.getQueryTree());
+                fieldsToRetain.addAll(config.getProjectFields());
+                for (Entry<String,String> entry : config.getCompositeToFieldMap().entries()) {
+                    fieldsToRetain.add(entry.getKey());
+                    fieldsToRetain.add(entry.getValue());
+                }
+
                 typeMetadata = typeMetadata.reduce(fieldsToRetain);
             }
 

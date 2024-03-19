@@ -134,6 +134,8 @@
         <property name="queryPlanner" ref="DefaultQueryPlanner" />
         <!--<property name="queryMacroFunction" ref="queryMacroFunction" />-->
         <property name="markingFunctions" ref="markingFunctions" />
+        <property name="reduceTypeMetadata" value="true" />
+        <property name="reduceTypeMetadataPerShard" value="false" />
     </bean>
 
     <util:list id="IvaratorCacheDirConfigs">

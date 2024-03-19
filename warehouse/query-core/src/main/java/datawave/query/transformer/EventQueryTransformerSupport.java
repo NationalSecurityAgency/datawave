@@ -151,7 +151,6 @@ public abstract class EventQueryTransformerSupport<I,O> extends BaseQueryLogicTr
                 fieldSet.add(f.getName());
             }
             eventList.add(e);
-
         }
         response.setFields(Lists.newArrayList(fieldSet));
         response.setEvents(eventList);
