@@ -36,6 +36,7 @@ import datawave.webservice.query.exception.EmptyObjectException;
 import datawave.webservice.query.logic.BaseQueryLogic;
 import datawave.webservice.query.logic.QueryLogic;
 import datawave.webservice.query.logic.QueryLogicTransformer;
+import datawave.webservice.query.logic.filtered.FilteredQueryLogic;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.result.BaseResponse;
 
@@ -278,15 +279,21 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
                     }
                     logicQueryStringBuilder.append("( ( logic = '").append(logicName).append("' )");
                     logicQueryStringBuilder.append(" && ").append(config.getQueryString()).append(" )");
-                    QueryLogicHolder holder = new QueryLogicHolder(logicName, logic);
-                    holder.setConfig(config);
-                    holder.setSettings(settingsCopy);
-                    holder.setMaxResults(logic.getMaxResults());
-                    logicState.put(logicName, holder);
 
-                    // if doing sequential execution, then stop since we have one initialized
-                    if (isShortCircuitExecution()) {
-                        break;
+                    // only add this query logic to the initialized logic states if it was not simply filtered out
+                    if (logic instanceof FilteredQueryLogic && ((FilteredQueryLogic) logic).isFiltered()) {
+                        log.info("Dropping " + logic.getLogicName() + " as it was filtered out");
+                    } else {
+                        QueryLogicHolder holder = new QueryLogicHolder(logicName, logic);
+                        holder.setConfig(config);
+                        holder.setSettings(settingsCopy);
+                        holder.setMaxResults(logic.getMaxResults());
+                        logicState.put(logicName, holder);
+
+                        // if doing sequential execution, then stop since we have one initialized
+                        if (isShortCircuitExecution()) {
+                            break;
+                        }
                     }
 
                 } catch (Exception e) {
