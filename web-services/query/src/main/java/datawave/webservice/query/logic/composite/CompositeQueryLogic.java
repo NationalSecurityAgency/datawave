@@ -274,16 +274,22 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
                     runtimeQueryAuthorizations = updateRuntimeAuthorizationsAndQueryAuths(logic, settingsCopy);
 
                     config = logic.initialize(client, settingsCopy, runtimeQueryAuthorizations);
-                    if (logicQueryStringBuilder.length() > 0) {
-                        logicQueryStringBuilder.append(" || ");
-                    }
-                    logicQueryStringBuilder.append("( ( logic = '").append(logicName).append("' )");
-                    logicQueryStringBuilder.append(" && ").append(config.getQueryString()).append(" )");
 
                     // only add this query logic to the initialized logic states if it was not simply filtered out
                     if (logic instanceof FilteredQueryLogic && ((FilteredQueryLogic) logic).isFiltered()) {
                         log.info("Dropping " + logic.getLogicName() + " as it was filtered out");
+                        if (logicQueryStringBuilder.length() > 0) {
+                            logicQueryStringBuilder.append(" || ");
+                        }
+                        logicQueryStringBuilder.append("( ( logic = '").append(logicName).append("' )");
+                        logicQueryStringBuilder.append(" && ").append("( filtered = true )").append(" )");
                     } else {
+                        if (logicQueryStringBuilder.length() > 0) {
+                            logicQueryStringBuilder.append(" || ");
+                        }
+                        logicQueryStringBuilder.append("( ( logic = '").append(logicName).append("' )");
+                        logicQueryStringBuilder.append(" && ").append(config.getQueryString()).append(" )");
+
                         QueryLogicHolder holder = new QueryLogicHolder(logicName, logic);
                         holder.setConfig(config);
                         holder.setSettings(settingsCopy);
@@ -299,6 +305,11 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
                 } catch (Exception e) {
                     exceptions.put(logicName, e);
                     log.error("Failed to initialize " + logic.getClass().getName(), e);
+                    if (logicQueryStringBuilder.length() > 0) {
+                        logicQueryStringBuilder.append(" || ");
+                    }
+                    logicQueryStringBuilder.append("( ( logic = '").append(logicName).append("' )");
+                    logicQueryStringBuilder.append(" && ").append("( ( failed = true ) && ( exception = '").append(e.getMessage()).append("' ) ) )");
                     failedQueryLogics.put(logicName, logic);
                 } finally {
                     queryLogics.remove(next.getKey());
