@@ -7,6 +7,7 @@ import java.util.Map;
 
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
@@ -17,6 +18,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
 
 import datawave.ingest.protobuf.Uid;
 import datawave.ingest.protobuf.Uid.List.Builder;
+import datawave.iterators.ValueCombiner;
 
 /**
  * Implementation of an Aggregator that aggregates objects of the type Uid.List. This is an optimization for the shardIndex and shardReverseIndex, where the
@@ -77,6 +79,19 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
         return seenIgnore;
     }
 
+    /**
+     * We want timestamps in the global index to be combined separately. Normally all of the timestamps on the global index are the day at 00:00:00. However we
+     * could have a composite timestamp (@see CompositeTimestamp) in which case we want separate entries.
+     *
+     * @param iterator
+     * @return an iterator of values
+     */
+    @Override
+    public Iterator<Value> getValues(SortedKeyValueIterator<Key,Value> iterator) {
+        return new ValueCombiner(iterator, PartialKey.ROW_COLFAM_COLQUAL_COLVIS_TIME);
+    }
+
+    @Override
     public Value aggregate() {
 
         Builder builder = Uid.List.newBuilder();

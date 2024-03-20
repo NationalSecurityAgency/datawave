@@ -35,6 +35,7 @@ import datawave.ingest.data.config.DataTypeHelperImpl;
 import datawave.ingest.data.config.MarkingsHelper;
 import datawave.policy.IngestPolicyEnforcer;
 import datawave.policy.Policy;
+import datawave.util.CompositeTimestamp;
 
 public abstract class AbstractEventRecordReader<K> extends RecordReader<LongWritable,K> implements EventRecordReader {
 
