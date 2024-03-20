@@ -1273,40 +1273,43 @@ public final class BulkIngestMapFileLoader implements Runnable {
             // We are going to serialize the counters into a file in HDFS.
             // The context was set in the processKeyValues method below, and should not be null. We'll guard against NPE anyway
             FileSystem fs = getFileSystem(seqFileHdfs);
-            RawLocalFileSystem rawFS = new RawLocalFileSystem();
-            rawFS.setConf(conf);
-            CompressionCodec cc = new GzipCodec();
-            CompressionType ct = CompressionType.BLOCK;
+            try (RawLocalFileSystem rawFS = new RawLocalFileSystem()) {
+                rawFS.setConf(conf);
+                CompressionCodec cc = new GzipCodec();
+                CompressionType ct = CompressionType.BLOCK;
 
-            Counters c = reporter.getCounters();
-            if (null != c && c.countCounters() > 0) {
-                // Serialize the counters to a file in HDFS.
-                Path src = new Path(File.createTempFile("MapFileLoader", ".metrics").getAbsolutePath());
-                Writer writer = SequenceFile.createWriter(conf, Writer.file(rawFS.makeQualified(src)), Writer.keyClass(NullWritable.class),
-                                Writer.valueClass(Counters.class), Writer.compression(ct, cc));
-                writer.append(NullWritable.get(), c);
-                writer.close();
+                Counters c = reporter.getCounters();
+                if (null != c && c.countCounters() > 0) {
+                    // Serialize the counters to a file in HDFS.
+                    Path src = new Path(File.createTempFile("MapFileLoader", ".metrics").getAbsolutePath());
+                    try (Writer writer = SequenceFile.createWriter(conf, Writer.file(rawFS.makeQualified(src)), Writer.keyClass(NullWritable.class),
+                                    Writer.valueClass(Counters.class), Writer.compression(ct, cc))) {
+                        writer.append(NullWritable.get(), c);
+                    }
 
-                // Now we will try to move the file to HDFS.
-                // Copy the file to the temp dir
-                try {
-                    Path mDir = new Path(workDir, "MapFileLoaderMetrics");
-                    if (!fs.exists(mDir))
-                        fs.mkdirs(mDir);
-                    Path dst = new Path(mDir, src.getName());
-                    log.info("Copying file " + src + " to " + dst);
-                    fs.copyFromLocalFile(false, true, src, dst);
-                    // If this worked, then remove the local file
-                    rawFS.delete(src, false);
-                    // also remove the residual crc file
-                    rawFS.delete(getCrcFile(src), false);
-                } catch (IOException e) {
-                    // If an error occurs in the copy, then we will leave in the local metrics directory.
-                    log.error("Error copying metrics file into HDFS, will remain in metrics directory.");
+                    // Now we will try to move the file to HDFS.
+                    // Copy the file to the temp dir
+                    try {
+                        Path mDir = new Path(workDir, "MapFileLoaderMetrics");
+                        if (!fs.exists(mDir))
+                            fs.mkdirs(mDir);
+                        Path dst = new Path(mDir, src.getName());
+                        log.info("Copying file " + src + " to " + dst);
+                        fs.copyFromLocalFile(false, true, src, dst);
+                        // If this worked, then remove the local file
+                        rawFS.delete(src, false);
+                        // also remove the residual crc file
+                        rawFS.delete(getCrcFile(src), false);
+                    } catch (IOException e) {
+                        // If an error occurs in the copy, then we will leave in the local metrics directory.
+                        log.error("Error copying metrics file into HDFS, will remain in metrics directory.");
+                    }
+
+                    // reset reporter so that old metrics don't persist over time
+                    this.reporter = new StandaloneStatusReporter();
                 }
-
-                // reset reporter so that old metrics don't persist over time
-                this.reporter = new StandaloneStatusReporter();
+            } finally {
+                fs.close();
             }
         }
     }

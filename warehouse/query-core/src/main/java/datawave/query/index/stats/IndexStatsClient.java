@@ -109,24 +109,23 @@ public class IndexStatsClient {
             Authorizations auths = client.securityOperations().getUserAuthorizations(client.whoami());
             if (fields.isEmpty()) {
                 scanner = client.createScanner(table, auths);
+                return doScanResults(scanner, dataTypes, dates);
             } else {
-                BatchScanner bScanner = client.createBatchScanner(table, auths, fields.size());
-                bScanner.setRanges(buildRanges(fields));
-                scanner = bScanner;
+                try (BatchScanner bScanner = client.createBatchScanner(table, auths, fields.size())) {
+                    bScanner.setRanges(buildRanges(fields));
+                    scanner = bScanner;
+                    return doScanResults(scanner, dataTypes, dates);
+                }
             }
         } catch (Exception e) {
             log.error(e);
             throw new IOException(e);
         }
+    }
 
+    private Map<String,Double> doScanResults(ScannerBase scanner, Set<String> dataTypes, SortedSet<String> dates) throws IOException {
         configureScanIterators(scanner, dataTypes, dates);
-
         Map<String,Double> results = scanResults(scanner);
-
-        if (scanner instanceof BatchScanner) {
-            scanner.close();
-        }
-
         return results;
     }
 

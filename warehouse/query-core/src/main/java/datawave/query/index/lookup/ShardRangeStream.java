@@ -96,7 +96,6 @@ public class ShardRangeStream extends RangeStream {
                 this.context = StreamContext.ABSENT;
 
             }
-
         } catch (TableNotFoundException | DatawaveQueryException e) {
             throw new RuntimeException(e);
         } finally {
