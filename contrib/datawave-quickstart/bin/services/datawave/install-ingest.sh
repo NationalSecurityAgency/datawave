@@ -82,6 +82,8 @@ else
    if [ -d ${DW_DATAWAVE_INGEST_HOME}/accumulo-warehouse/lib/ext ]; then
       cp ${DW_DATAWAVE_INGEST_HOME}/accumulo-warehouse/lib/ext/*.jar ${ACCUMULO_HOME}/lib/ext > /dev/null 2>&1
    fi
+   info "Removing bundled guava jar from ${ACCUMULO_HOME}/lib"
+   rm -f ${ACCUMULO_HOME}/lib/guava.jar
 fi
 
 # Make sure Accumulo service is started.

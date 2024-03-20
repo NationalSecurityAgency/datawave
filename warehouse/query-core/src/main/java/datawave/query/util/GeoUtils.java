@@ -18,7 +18,7 @@ import org.locationtech.jts.geom.GeometryCollection;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.PrecisionModel;
 
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
+import datawave.core.common.logging.ThreadConfigurableLogger;
 
 /**
  * This utility class contains a variety of methods which can be used to perform operations on Geo ranges.
@@ -170,7 +170,6 @@ public class GeoUtils {
             }
             return diff;
         });
-
         // these ranges are sorted by the minimum bound of the range so that we can
         // quickly merge contiguous segments into discrete ranges
         TreeSet<RangeData> positionSortedRanges = new TreeSet<>(Comparator.comparingDouble(o -> o.range[0]));

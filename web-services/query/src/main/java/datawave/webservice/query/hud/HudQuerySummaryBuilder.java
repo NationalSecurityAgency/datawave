@@ -1,6 +1,6 @@
 package datawave.webservice.query.hud;
 
-import datawave.webservice.query.Query;
+import datawave.microservice.query.Query;
 
 /**
  *

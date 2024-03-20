@@ -483,7 +483,6 @@ public class NGramTokenizationStrategyTest {
         int expectedCount = BloomFilterUtil.predictNGramCount(ncis.lastElement().getIndexedFieldValue());
         assertTrue("Should have pruned the n-grams tokenized for field " + fieldName + " but got " + result3.get(fieldName),
                         (null != result3.get(fieldName)) && (result3.get(fieldName) < expectedCount));
-
     }
 
     @Test

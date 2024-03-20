@@ -15,15 +15,15 @@ import org.apache.accumulo.core.security.ColumnVisibility;
 
 import com.esotericsoftware.kryo.io.Input;
 
+import datawave.core.query.cachedresults.CacheableLogic;
+import datawave.core.query.logic.BaseQueryLogic;
 import datawave.marking.MarkingFunctions;
 import datawave.marking.MarkingFunctions.Exception;
+import datawave.microservice.query.Query;
 import datawave.query.Constants;
 import datawave.query.parser.EventFields;
 import datawave.query.parser.EventFields.FieldValue;
 import datawave.util.StringUtils;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.cachedresults.CacheableLogic;
-import datawave.webservice.query.logic.BaseQueryLogic;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
 import datawave.webservice.query.result.event.Metadata;

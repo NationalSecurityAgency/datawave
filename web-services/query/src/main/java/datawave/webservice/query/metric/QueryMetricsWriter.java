@@ -39,6 +39,7 @@ import org.apache.log4j.Logger;
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.configuration.RefreshEvent;
 import datawave.configuration.spring.SpringBean;
+import datawave.core.query.metric.QueryMetricHandler;
 import datawave.metrics.remote.RemoteQueryMetricService;
 import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.BaseQueryMetric.Lifecycle;

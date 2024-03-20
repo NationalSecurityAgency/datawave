@@ -98,7 +98,6 @@ public abstract class ContentBaseIngestHelper extends AbstractContentIngestHelpe
         this.saveRawDataOption = (null != config.get(getType().typeName() + SAVE_RAW_DATA_AS_DOCUMENT))
                         ? Boolean.parseBoolean(config.get(getType().typeName() + SAVE_RAW_DATA_AS_DOCUMENT))
                         : saveRawDataOption;
-
         // If we're saving the raw data in the document column, we need a view name.
         // retrieve this view name if it has been specified, else use default if we
         // are saving the raw record in the doc column.

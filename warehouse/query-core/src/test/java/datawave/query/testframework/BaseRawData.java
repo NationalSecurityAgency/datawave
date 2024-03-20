@@ -10,7 +10,6 @@ import java.util.Objects;
 import java.util.Set;
 
 import org.apache.log4j.Logger;
-import org.bouncycastle.util.Strings;
 import org.junit.Assert;
 
 import datawave.data.normalizer.Normalizer;
@@ -89,7 +88,7 @@ public abstract class BaseRawData implements RawData {
             final Set<String> values = new HashSet<>();
             // convert multi-value fields into a set of values
             if (isMultiValueField(header)) {
-                String[] multi = Strings.split(fields[n], RawDataManager.MULTIVALUE_SEP_CHAR);
+                String[] multi = fields[n].split(RawDataManager.MULTIVALUE_SEP);
                 for (String s : multi) {
                     if (norm instanceof NumberNormalizer) {
                         values.add(s);
@@ -99,7 +98,7 @@ public abstract class BaseRawData implements RawData {
                 }
             } else if (isTokenizedField(header)) {
                 // convert field to a list of tokens that include the complete field
-                String[] multi = Strings.split(fields[n], ' ');
+                String[] multi = fields[n].split(" ");
                 // add full field as an event
                 values.add(fields[n]);
                 for (String s : multi) {

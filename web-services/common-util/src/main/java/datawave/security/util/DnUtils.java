@@ -31,9 +31,11 @@ public class DnUtils {
 
     /** Parsed NPE OU identifiers */
     static final List<String> NPE_OU_LIST;
+
     private static final Logger log = LoggerFactory.getLogger(DnUtils.class);
 
     private static final datawave.microservice.security.util.DnUtils dnUtils;
+
     static {
         InputStream in = null;
         try {

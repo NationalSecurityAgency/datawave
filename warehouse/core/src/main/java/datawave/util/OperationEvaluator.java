@@ -414,7 +414,7 @@ public class OperationEvaluator {
     public static <T extends Comparable<T>> boolean compare(T left, T right, String operator) {
         Preconditions.checkArgument(!StringUtils.isBlank(operator), "operator must not be blank");
         operator = CharMatcher.whitespace().removeFrom(operator);
-        switch (CharMatcher.whitespace().removeFrom(operator)) {
+        switch (operator) {
             case EQUALS:
             case DOUBLE_EQUALS:
                 return left == right || left.compareTo(right) == 0;
@@ -460,7 +460,7 @@ public class OperationEvaluator {
         Preconditions.checkArgument(!StringUtils.isBlank(operator), "operator must not be blank");
         Preconditions.checkNotNull(comparator, "comparator must not be null");
         operator = CharMatcher.whitespace().removeFrom(operator);
-        switch (CharMatcher.whitespace().removeFrom(operator)) {
+        switch (operator) {
             case EQUALS:
             case DOUBLE_EQUALS:
                 return left == right || comparator.compare(left, right) == 0;

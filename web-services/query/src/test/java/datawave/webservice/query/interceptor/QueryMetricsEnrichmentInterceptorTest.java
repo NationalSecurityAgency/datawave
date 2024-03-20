@@ -45,13 +45,13 @@ import org.powermock.reflect.Whitebox;
 
 import com.google.common.io.CountingOutputStream;
 
+import datawave.core.query.logic.BaseQueryLogic;
 import datawave.microservice.querymetric.BaseQueryMetric.PageMetric;
 import datawave.microservice.querymetric.QueryMetric;
 import datawave.security.util.DnUtils;
 import datawave.webservice.query.annotation.EnrichQueryMetrics;
 import datawave.webservice.query.cache.QueryCache;
 import datawave.webservice.query.interceptor.QueryMetricsEnrichmentInterceptor.QueryCall;
-import datawave.webservice.query.logic.BaseQueryLogic;
 import datawave.webservice.query.metric.QueryMetricsBean;
 import datawave.webservice.query.runner.RunningQuery;
 import datawave.webservice.result.BaseQueryResponse;

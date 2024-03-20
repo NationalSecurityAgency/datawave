@@ -282,7 +282,6 @@ public class MetricsIngester extends Configured implements Tool {
 
                     ranges.add(new Range(new Key(new Text("IngestJob_" + outFormat.format(dateObj))),
                                     new Key(new Text("IngestJob_" + outFormat.format(dateObjNext)))));
-
                 } catch (DateTimeParseException e) {
                     log.error(e);
                 }

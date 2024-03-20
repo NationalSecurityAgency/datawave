@@ -70,6 +70,7 @@ public abstract class Loader<K,V> extends CacheLoader<K,V> implements Runnable {
                 log.trace("Reloading synchronously");
             try {
                 build(null);
+
                 return Futures.immediateFuture(load(key));
 
             } catch (Exception e) {

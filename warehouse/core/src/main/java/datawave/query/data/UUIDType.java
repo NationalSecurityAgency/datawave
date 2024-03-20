@@ -7,28 +7,28 @@ import org.apache.commons.lang3.StringUtils;
 
 public class UUIDType {
 
-    public static final String DEFAULT_VIEW = "default";
+    public static final String DEFAULT_LOGIC = "default";
 
     private String fieldName = null;
     private Integer allowWildcardAfter = null;
 
-    private final Map<String,String> definedViews = new HashMap<>();
+    private final Map<String,String> queryLogics = new HashMap<>();
 
     public UUIDType() {}
 
-    public UUIDType(String field, String view, Integer allowWildcardAfter) {
+    public UUIDType(String field, String queryLogic, Integer allowWildcardAfter) {
 
         this.fieldName = field;
         this.allowWildcardAfter = allowWildcardAfter;
 
-        this.definedViews.put(DEFAULT_VIEW, view);
+        this.queryLogics.put(DEFAULT_LOGIC, queryLogic);
     }
 
-    public UUIDType(String field, Map<String,String> views, Integer allowWildcardAfter) {
+    public UUIDType(String field, Map<String,String> queryLogics, Integer allowWildcardAfter) {
         this.fieldName = field;
         this.allowWildcardAfter = allowWildcardAfter;
 
-        this.definedViews.putAll(views);
+        this.queryLogics.putAll(queryLogics);
     }
 
     public Integer getAllowWildcardAfter() {
@@ -47,26 +47,26 @@ public class UUIDType {
         this.fieldName = fieldName;
     }
 
-    public String getDefinedView(String context) {
+    public String getQueryLogic(String context) {
         if (StringUtils.isEmpty(context)) {
-            context = DEFAULT_VIEW;
+            context = DEFAULT_LOGIC;
         }
-        return getDefinedViews().get(context);
+        return getQueryLogics().get(context);
     }
 
-    public Map<String,String> getDefinedViews() {
-        return definedViews;
+    public Map<String,String> getQueryLogics() {
+        return queryLogics;
     }
 
-    public void setDefinedViews(Map<String,String> views) {
-        this.definedViews.clear();
-        this.definedViews.putAll(views);
+    public void setQueryLogics(Map<String,String> queryLogics) {
+        this.queryLogics.clear();
+        this.queryLogics.putAll(queryLogics);
     }
 
-    public void setDefinedView(String context, String view) {
+    public void setQueryLogic(String context, String queryLogic) {
         if (StringUtils.isEmpty(context)) {
-            context = DEFAULT_VIEW;
+            context = DEFAULT_LOGIC;
         }
-        getDefinedViews().put(context, view);
+        getQueryLogics().put(context, queryLogic);
     }
 }

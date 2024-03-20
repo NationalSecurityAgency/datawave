@@ -6,7 +6,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -46,6 +45,7 @@ import com.google.common.collect.Sets;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.core.query.configuration.Result;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NumberType;
 import datawave.data.type.Type;
@@ -389,9 +389,9 @@ public class RangeStreamScannerTest {
             sortedDatas.put(entry.getKey(), entry.getValue());
         }
 
-        Queue<Entry<Key,Value>> datas = Queues.newArrayDeque();
+        Queue<Result> datas = Queues.newArrayDeque();
         for (Key key : sortedDatas.keySet()) {
-            datas.add(new AbstractMap.SimpleEntry<>(key, sortedDatas.get(key)));
+            datas.add(new Result<>(key, sortedDatas.get(key)));
         }
 
         RangeStreamScanner scanner = buildRangeStreamScanner("FOO", "bar");
@@ -428,12 +428,12 @@ public class RangeStreamScannerTest {
     @Test
     public void testTrimTrailingUnderscoreFromEntry() {
         // Expected case.
-        Entry<Key,Value> underscored = new AbstractMap.SimpleEntry<>(new Key("bar", "FOO", "20190314_"), new Value());
-        Entry<Key,Value> expected = new AbstractMap.SimpleEntry<>(new Key("bar", "FOO", "20190314"), new Value());
+        Result underscored = new Result<>(new Key("bar", "FOO", "20190314_"), new Value());
+        Result expected = new Result<>(new Key("bar", "FOO", "20190314"), new Value());
         assertEquals(expected, RangeStreamScanner.trimTrailingUnderscore(underscored));
 
         // Ensure shard ranges are not affected.
-        Entry<Key,Value> shard = new AbstractMap.SimpleEntry<>(new Key("bar", "FOO", "20190314_0"), new Value());
+        Result shard = new Result<>(new Key("bar", "FOO", "20190314_0"), new Value());
         assertEquals(shard, RangeStreamScanner.trimTrailingUnderscore(shard));
     }
 
@@ -442,12 +442,12 @@ public class RangeStreamScannerTest {
         RangeStreamScanner scanner = buildRangeStreamScanner("FOO", "bar");
 
         // Top value is a day
-        Entry<Key,Value> topDay = buildEntry("20190314", "FOO", "bar");
+        Result topDay = buildEntry("20190314", "FOO", "bar");
         scanner.currentEntry = topDay;
         assertEquals("20190314", scanner.currentEntryMatchesShard("20190314"));
 
         // Top value is a shard
-        Entry<Key,Value> topShard = buildEntry("20190314_0", "FOO", "bar");
+        Result topShard = buildEntry("20190314_0", "FOO", "bar");
         scanner.currentEntry = topShard;
         assertEquals("20190314_0", scanner.currentEntryMatchesShard("20190314_0"));
     }
@@ -456,11 +456,11 @@ public class RangeStreamScannerTest {
     public void testCurrentEntryMatchesShard_topShardBeyondSeekShard() throws Exception {
         RangeStreamScanner scanner = buildRangeStreamScanner("FOO", "bar");
 
-        Entry<Key,Value> topDay = buildEntry("20190314", "FOO", "bar");
+        Result topDay = buildEntry("20190314", "FOO", "bar");
         scanner.currentEntry = topDay;
         assertEquals("20190314", scanner.currentEntryMatchesShard("20190310"));
 
-        Entry<Key,Value> topShard = buildEntry("20190314_0", "FOO", "bar");
+        Result topShard = buildEntry("20190314_0", "FOO", "bar");
         scanner.currentEntry = topShard;
         assertEquals("20190314_0", scanner.currentEntryMatchesShard("20190310_0"));
     }
@@ -469,7 +469,7 @@ public class RangeStreamScannerTest {
     public void testCurrentEntryMatchesShard_topShardMatchesDay() throws Exception {
         RangeStreamScanner scanner = buildRangeStreamScanner("FOO", "bar");
 
-        Entry<Key,Value> topShard = buildEntry("20190314_0", "FOO", "bar");
+        Result topShard = buildEntry("20190314_0", "FOO", "bar");
         scanner.currentEntry = topShard;
         assertEquals("20190314_0", scanner.currentEntryMatchesShard("20190310"));
     }
@@ -478,7 +478,7 @@ public class RangeStreamScannerTest {
     public void testCurrentEntryMatchesShard_topDayMatchesShard() throws Exception {
         RangeStreamScanner scanner = buildRangeStreamScanner("FOO", "bar");
 
-        Entry<Key,Value> topDay = buildEntry("20190314", "FOO", "bar");
+        Result topDay = buildEntry("20190314", "FOO", "bar");
         scanner.currentEntry = topDay;
         assertEquals("20190314", scanner.currentEntryMatchesShard("20190310_0"));
     }
@@ -487,17 +487,17 @@ public class RangeStreamScannerTest {
     public void testCurrentEntryMatchesShard_noMatch() throws Exception {
         RangeStreamScanner scanner = buildRangeStreamScanner("FOO", "bar");
 
-        Entry<Key,Value> topDay = buildEntry("20190314", "FOO", "bar");
+        Result topDay = buildEntry("20190314", "FOO", "bar");
         scanner.currentEntry = topDay;
         assertNull(scanner.currentEntryMatchesShard("20190315"));
 
-        Entry<Key,Value> topShard = buildEntry("20190314_0", "FOO", "bar");
+        Result topShard = buildEntry("20190314_0", "FOO", "bar");
         scanner.currentEntry = topShard;
         assertNull("20190314_0", scanner.currentEntryMatchesShard("20190315_0"));
     }
 
     // Assumes entries have the datatype stripped off, per the CreateUidsIterator contract.
-    private Entry<Key,Value> buildEntry(String shard, String field, String value) {
+    private Result buildEntry(String shard, String field, String value) {
         Uid.List.Builder builder = Uid.List.newBuilder();
         builder.addAllUID(Collections.singletonList("uid0"));
         builder.setCOUNT(1);
@@ -507,6 +507,6 @@ public class RangeStreamScannerTest {
         Value uids = new Value(list.toByteArray());
         Key key = new Key(value, field, shard);
 
-        return new AbstractMap.SimpleEntry<>(key, uids);
+        return new Result<>(key, uids);
     }
 }

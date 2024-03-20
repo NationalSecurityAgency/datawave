@@ -7,15 +7,17 @@ import java.util.Set;
 
 import org.apache.log4j.Logger;
 
+import datawave.core.common.logging.ThreadConfigurableLogger;
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.exception.EmptyObjectException;
+import datawave.core.query.logic.QueryLogicTransformer;
+import datawave.edge.model.EdgeModelFields;
+import datawave.edge.model.EdgeModelFieldsFactory;
 import datawave.marking.MarkingFunctions;
+import datawave.microservice.query.Query;
 import datawave.query.tables.edge.EdgeQueryLogic;
 import datawave.query.tables.remote.RemoteQueryLogic;
 import datawave.query.transformer.EdgeQueryTransformerSupport;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
-import datawave.webservice.query.exception.EmptyObjectException;
-import datawave.webservice.query.logic.QueryLogicTransformer;
 import datawave.webservice.query.result.EdgeQueryResponseBase;
 import datawave.webservice.query.result.edge.EdgeBase;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
@@ -27,6 +29,8 @@ import datawave.webservice.query.result.event.ResponseObjectFactory;
 public class RemoteEdgeQueryLogic extends BaseRemoteQueryLogic<EdgeBase> implements RemoteQueryLogic<EdgeBase> {
 
     protected static final Logger log = ThreadConfigurableLogger.getLogger(RemoteEdgeQueryLogic.class);
+
+    protected EdgeModelFields edgeFields;
 
     /**
      * Basic constructor
@@ -56,7 +60,7 @@ public class RemoteEdgeQueryLogic extends BaseRemoteQueryLogic<EdgeBase> impleme
     @Override
     public QueryLogicTransformer<EdgeBase,EdgeBase> createTransformer(Query settings, MarkingFunctions markingFunctions,
                     ResponseObjectFactory responseObjectFactory) {
-        return new EdgeBaseTransformer(settings, markingFunctions, responseObjectFactory);
+        return new EdgeBaseTransformer(settings, markingFunctions, responseObjectFactory, edgeFields);
     }
 
     @Override
@@ -87,7 +91,7 @@ public class RemoteEdgeQueryLogic extends BaseRemoteQueryLogic<EdgeBase> impleme
         public boolean hasNext() {
             if (data.isEmpty() && !complete) {
                 try {
-                    EdgeQueryResponseBase response = (EdgeQueryResponseBase) remoteQueryService.next(getRemoteId(), getCallerObject());
+                    EdgeQueryResponseBase response = (EdgeQueryResponseBase) remoteQueryService.next(getRemoteId(), getCurrentUser());
                     if (response != null) {
                         if (response.getTotalResults() == 0) {
                             if (!response.isPartialResults()) {
@@ -116,10 +120,22 @@ public class RemoteEdgeQueryLogic extends BaseRemoteQueryLogic<EdgeBase> impleme
         }
     }
 
+    public void setEdgeModelFieldsFactory(EdgeModelFieldsFactory edgeModelFieldsFactory) {
+        this.edgeFields = edgeModelFieldsFactory.createFields();
+    }
+
+    public void setEdgeFields(EdgeModelFields edgeFields) {
+        this.edgeFields = edgeFields;
+    }
+
+    public EdgeModelFields getEdgeFields() {
+        return edgeFields;
+    }
+
     private class EdgeBaseTransformer extends EdgeQueryTransformerSupport<EdgeBase,EdgeBase> {
 
-        public EdgeBaseTransformer(Query settings, MarkingFunctions markingFunctions, ResponseObjectFactory responseObjectFactory) {
-            super(settings, markingFunctions, responseObjectFactory);
+        public EdgeBaseTransformer(Query settings, MarkingFunctions markingFunctions, ResponseObjectFactory responseObjectFactory, EdgeModelFields fields) {
+            super(settings, markingFunctions, responseObjectFactory, fields);
         }
 
         @Override

@@ -65,6 +65,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
+import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.data.type.Type;
 import datawave.query.CloseableIterable;
 import datawave.query.Constants;
@@ -95,7 +96,6 @@ import datawave.query.util.Tuples;
 import datawave.query.util.TypeMetadata;
 import datawave.util.StringUtils;
 import datawave.util.time.DateHelper;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.PreConditionFailedQueryException;
 import datawave.webservice.query.exception.QueryException;
@@ -258,7 +258,8 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                     }
                 }
 
-                this.itr = filter(concat(transform(queryStream, new TupleToRange(queryStream.currentNode(), config))), getEmptyPlanPruner());
+                this.itr = filter(concat(transform(queryStream, new TupleToRange(config.getShardTableName(), queryStream.currentNode(), config))),
+                                getEmptyPlanPruner());
             }
         } finally {
             // shut down the executor as all threads have completed

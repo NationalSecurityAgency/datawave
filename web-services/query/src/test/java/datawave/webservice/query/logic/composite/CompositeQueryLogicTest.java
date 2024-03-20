@@ -27,30 +27,31 @@ import org.junit.Test;
 
 import com.google.common.collect.HashMultimap;
 
+import datawave.core.common.connection.AccumuloConnectionFactory.Priority;
+import datawave.core.query.cache.ResultsPage;
+import datawave.core.query.cache.ResultsPage.Status;
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.exception.EmptyObjectException;
+import datawave.core.query.logic.BaseQueryLogic;
+import datawave.core.query.logic.BaseQueryLogicTransformer;
+import datawave.core.query.logic.QueryLogic;
+import datawave.core.query.logic.QueryLogicTransformer;
+import datawave.core.query.logic.composite.CompositeLogicException;
+import datawave.core.query.logic.composite.CompositeQueryLogic;
 import datawave.marking.MarkingFunctions;
+import datawave.microservice.query.Query;
+import datawave.microservice.query.QueryImpl;
 import datawave.security.authorization.AuthorizationException;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUser.UserType;
+import datawave.security.authorization.ProxiedUserDetails;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.authorization.UserOperations;
 import datawave.security.util.DnUtils;
 import datawave.user.AuthorizationsListBase;
 import datawave.user.DefaultAuthorizationsList;
-import datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.cache.ResultsPage;
-import datawave.webservice.query.cache.ResultsPage.Status;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
-import datawave.webservice.query.exception.EmptyObjectException;
 import datawave.webservice.query.exception.QueryException;
-import datawave.webservice.query.logic.BaseQueryLogic;
-import datawave.webservice.query.logic.BaseQueryLogicTransformer;
-import datawave.webservice.query.logic.DatawaveRoleManager;
-import datawave.webservice.query.logic.EasyRoleManager;
-import datawave.webservice.query.logic.QueryLogic;
-import datawave.webservice.query.logic.QueryLogicTransformer;
 import datawave.webservice.query.result.EdgeQueryResponseBase;
 import datawave.webservice.query.result.edge.EdgeBase;
 import datawave.webservice.result.BaseQueryResponse;
@@ -346,7 +347,7 @@ public class CompositeQueryLogicTest {
     public static class TestUserOperations implements UserOperations {
 
         @Override
-        public AuthorizationsListBase listEffectiveAuthorizations(Object callerObject) throws AuthorizationException {
+        public AuthorizationsListBase listEffectiveAuthorizations(ProxiedUserDetails callerObject) throws AuthorizationException {
             DatawavePrincipal p = (DatawavePrincipal) callerObject;
             DefaultAuthorizationsList authList = new DefaultAuthorizationsList();
             DatawaveUser primaryUser = p.getPrimaryUser();
@@ -361,7 +362,7 @@ public class CompositeQueryLogicTest {
         }
 
         @Override
-        public GenericResponse<String> flushCachedCredentials(Object callerObject) {
+        public GenericResponse<String> flushCachedCredentials(ProxiedUserDetails callerObject) {
             return new GenericResponse<>();
         }
     }
@@ -477,7 +478,7 @@ public class CompositeQueryLogicTest {
         c.setQueryLogics(logics);
         c = (CompositeQueryLogic) c.clone();
 
-        c.setPrincipal(principal);
+        c.setCurrentUser(principal);
         c.initialize(null, settings, Collections.singleton(auths));
         c.getTransformer(settings);
 
@@ -501,7 +502,7 @@ public class CompositeQueryLogicTest {
         CompositeQueryLogic c = new CompositeQueryLogic();
         c.setQueryLogics(logics);
 
-        c.setPrincipal(principal);
+        c.setCurrentUser(principal);
         c.initialize(null, settings, Collections.singleton(auths));
         c.getTransformer(settings);
 
@@ -535,7 +536,7 @@ public class CompositeQueryLogicTest {
         CompositeQueryLogic c = new CompositeQueryLogic();
         c.setQueryLogics(logics);
 
-        c.setPrincipal(principal);
+        c.setCurrentUser(principal);
         c.initialize(null, settings, Collections.singleton(auths));
 
         c.getTransformer(settings);
@@ -560,7 +561,7 @@ public class CompositeQueryLogicTest {
         CompositeQueryLogic c = new CompositeQueryLogic();
         c.setQueryLogics(logics);
 
-        c.setPrincipal(principal);
+        c.setCurrentUser(principal);
         c.initialize(null, settings, Collections.singleton(auths));
 
         c.getTransformer(settings);
@@ -591,7 +592,7 @@ public class CompositeQueryLogicTest {
         CompositeQueryLogic c = new CompositeQueryLogic();
         c.setQueryLogics(logics);
 
-        c.setPrincipal(principal);
+        c.setCurrentUser(principal);
         c.initialize(null, settings, Collections.singleton(auths));
 
         Assert.assertEquals(1, c.getInitializedLogics().size());
@@ -621,7 +622,7 @@ public class CompositeQueryLogicTest {
         c.setAllMustInitialize(true);
         c.setQueryLogics(logics);
 
-        c.setPrincipal(principal);
+        c.setCurrentUser(principal);
         c.initialize(null, settings, Collections.singleton(auths));
     }
 
@@ -655,7 +656,7 @@ public class CompositeQueryLogicTest {
         CompositeQueryLogic c = new CompositeQueryLogic();
         c.setQueryLogics(logics);
 
-        c.setPrincipal(principal);
+        c.setCurrentUser(principal);
         c.initialize(null, settings, Collections.singleton(auths));
     }
 
@@ -690,7 +691,7 @@ public class CompositeQueryLogicTest {
         c.setAllMustInitialize(true);
         c.setQueryLogics(logics);
 
-        c.setPrincipal(principal);
+        c.setCurrentUser(principal);
         c.initialize(null, settings, Collections.singleton(auths));
 
         c.getTransformer(settings);
@@ -727,7 +728,7 @@ public class CompositeQueryLogicTest {
         c.setAllMustInitialize(true);
         c.setQueryLogics(logics);
 
-        c.setPrincipal(principal);
+        c.setCurrentUser(principal);
         try {
             c.initialize(null, settings, Collections.singleton(auths));
 
@@ -754,7 +755,7 @@ public class CompositeQueryLogicTest {
         CompositeQueryLogic c = new CompositeQueryLogic();
         c.setQueryLogics(logics);
 
-        c.setPrincipal(principal);
+        c.setCurrentUser(principal);
         c.initialize(null, settings, Collections.singleton(auths));
 
         c.getTransformer(settings);
@@ -777,7 +778,7 @@ public class CompositeQueryLogicTest {
         CompositeQueryLogic c = new CompositeQueryLogic();
         c.setQueryLogics(logics);
 
-        c.setPrincipal(principal);
+        c.setCurrentUser(principal);
         c.initialize(null, settings, Collections.singleton(auths));
 
         c.getTransformer(settings);
@@ -817,7 +818,7 @@ public class CompositeQueryLogicTest {
          * RunningQuery.setupConnection()
          */
         c.setQueryLogics(logics);
-        c.setPrincipal(principal);
+        c.setCurrentUser(principal);
         c.initialize(null, settings, Collections.singleton(auths));
         c.setupQuery(null);
         TransformIterator iter = c.getTransformIterator(settings);
@@ -881,7 +882,7 @@ public class CompositeQueryLogicTest {
          * RunningQuery.setupConnection()
          */
         c.setQueryLogics(logics);
-        c.setPrincipal(principal);
+        c.setCurrentUser(principal);
         c.initialize((AccumuloClient) null, (Query) settings, Collections.singleton(auths));
         c.setupQuery(null);
         TransformIterator iter = c.getTransformIterator((Query) settings);
@@ -945,7 +946,7 @@ public class CompositeQueryLogicTest {
          * RunningQuery.setupConnection()
          */
         c.setQueryLogics(logics);
-        c.setPrincipal(principal);
+        c.setCurrentUser(principal);
         c.setShortCircuitExecution(true);
         c.initialize((AccumuloClient) null, (Query) settings, Collections.singleton(auths));
         c.setupQuery(null);
@@ -1013,7 +1014,7 @@ public class CompositeQueryLogicTest {
          * RunningQuery.setupConnection()
          */
         c.setQueryLogics(logics);
-        c.setPrincipal(principal);
+        c.setCurrentUser(principal);
         c.setShortCircuitExecution(true);
         c.initialize((AccumuloClient) null, (Query) settings, Collections.singleton(auths));
         c.setupQuery(null);
@@ -1078,7 +1079,7 @@ public class CompositeQueryLogicTest {
          * RunningQuery.setupConnection()
          */
         c.setQueryLogics(logics);
-        c.setPrincipal(principal);
+        c.setCurrentUser(principal);
         c.setShortCircuitExecution(true);
         c.initialize((AccumuloClient) null, (Query) settings, Collections.singleton(auths));
         c.setupQuery(null);
@@ -1147,7 +1148,7 @@ public class CompositeQueryLogicTest {
          * RunningQuery.setupConnection()
          */
         c.setQueryLogics(logics);
-        c.setPrincipal(principal);
+        c.setCurrentUser(principal);
         c.initialize(null, settings, Collections.singleton(auths));
         c.setupQuery(null);
         TransformIterator iter = c.getTransformIterator(settings);
@@ -1198,7 +1199,7 @@ public class CompositeQueryLogicTest {
          * RunningQuery.setupConnection()
          */
         c.setQueryLogics(logics);
-        c.setPrincipal(principal);
+        c.setCurrentUser(principal);
         c.initialize(null, settings, Collections.singleton(auths));
         c.setupQuery(null);
         TransformIterator iter = c.getTransformIterator(settings);
@@ -1262,7 +1263,7 @@ public class CompositeQueryLogicTest {
          * RunningQuery.setupConnection()
          */
         c.setQueryLogics(logics);
-        c.setPrincipal(principal);
+        c.setCurrentUser(principal);
         c.initialize(null, settings, Collections.singleton(auths));
         c.setupQuery(null);
         TransformIterator iter = c.getTransformIterator(settings);
@@ -1326,7 +1327,7 @@ public class CompositeQueryLogicTest {
          * RunningQuery.setupConnection()
          */
         c.setQueryLogics(logics);
-        c.setPrincipal(principal);
+        c.setCurrentUser(principal);
         c.initialize(null, settings, Collections.singleton(auths));
         c.setupQuery(null);
         TransformIterator iter = c.getTransformIterator(settings);
@@ -1378,7 +1379,7 @@ public class CompositeQueryLogicTest {
          * RunningQuery.setupConnection()
          */
         c.setQueryLogics(logics);
-        c.setPrincipal(principal);
+        c.setCurrentUser(principal);
         c.initialize(null, settings, Collections.singleton(auths));
         c.setupQuery(null);
         TransformIterator iter = c.getTransformIterator(settings);
@@ -1405,20 +1406,16 @@ public class CompositeQueryLogicTest {
         TestQueryLogic logic1 = new TestQueryLogic();
         HashSet<String> roles = new HashSet<>();
         roles.add("TESTROLE");
-        logic1.setRoleManager(new DatawaveRoleManager(roles));
+        logic1.setRequiredRoles(roles);
         TestQueryLogic2 logic2 = new TestQueryLogic2();
-        logic2.setRoleManager(new EasyRoleManager());
+        logic2.setRequiredRoles(Collections.emptySet());
         logics.put("TestQueryLogic", logic1);
         logics.put("TestQueryLogic2", logic2);
 
         CompositeQueryLogic c = new CompositeQueryLogic();
         c.setQueryLogics(logics);
 
-        DatawaveUser u = new DatawaveUser(SubjectIssuerDNPair.of("CN=Other User Name ouser, OU=acme", "CN=ca, OU=acme"), UserType.USER, null,
-                        Collections.singleton("TESTROLE"), null, 0L);
-        DatawavePrincipal p = new DatawavePrincipal(Collections.singletonList(u));
-
-        Assert.assertTrue(c.canRunQuery(p));
+        Assert.assertTrue(c.canRunQuery(Collections.singleton("TESTROLE")));
         Assert.assertEquals(2, c.getQueryLogics().size());
     }
 
@@ -1428,22 +1425,18 @@ public class CompositeQueryLogicTest {
         TestQueryLogic logic1 = new TestQueryLogic();
         HashSet<String> roles = new HashSet<>();
         roles.add("TESTROLE");
-        logic1.setRoleManager(new DatawaveRoleManager(roles));
+        logic1.setRequiredRoles(roles);
         TestQueryLogic2 logic2 = new TestQueryLogic2();
         HashSet<String> roles2 = new HashSet<>();
         roles2.add("NONTESTROLE");
-        logic2.setRoleManager(new DatawaveRoleManager(roles2));
+        logic2.setRequiredRoles(roles2);
         logics.put("TestQueryLogic", logic1);
         logics.put("TestQueryLogic2", logic2);
 
         CompositeQueryLogic c = new CompositeQueryLogic();
         c.setQueryLogics(logics);
 
-        DatawaveUser u = new DatawaveUser(SubjectIssuerDNPair.of("CN=Other User Name ouser, OU=acme", "CN=ca, OU=acme"), UserType.USER, null,
-                        Collections.singleton("TESTROLE"), null, 0L);
-        DatawavePrincipal p = new DatawavePrincipal(Collections.singletonList(u));
-
-        Assert.assertTrue(c.canRunQuery(p));
+        Assert.assertTrue(c.canRunQuery(Collections.singleton("TESTROLE")));
         Assert.assertEquals(1, c.getQueryLogics().size());
     }
 
@@ -1453,22 +1446,18 @@ public class CompositeQueryLogicTest {
         TestQueryLogic logic1 = new TestQueryLogic();
         HashSet<String> roles = new HashSet<>();
         roles.add("NONTESTROLE");
-        logic1.setRoleManager(new DatawaveRoleManager(roles));
+        logic1.setRequiredRoles(roles);
         TestQueryLogic2 logic2 = new TestQueryLogic2();
         HashSet<String> roles2 = new HashSet<>();
         roles2.add("NONTESTROLE");
-        logic2.setRoleManager(new DatawaveRoleManager(roles2));
+        logic2.setRequiredRoles(roles2);
         logics.put("TestQueryLogic", logic1);
         logics.put("TestQueryLogic2", logic2);
 
         CompositeQueryLogic c = new CompositeQueryLogic();
         c.setQueryLogics(logics);
 
-        DatawaveUser u = new DatawaveUser(SubjectIssuerDNPair.of("CN=Other User Name ouser, OU=acme", "CN=ca, OU=acme"), UserType.USER, null,
-                        Collections.singleton("TESTROLE"), null, 0L);
-        DatawavePrincipal p = new DatawavePrincipal(Collections.singletonList(u));
-
-        Assert.assertFalse(c.canRunQuery(p));
+        Assert.assertFalse(c.canRunQuery(Collections.singleton("TESTROLE")));
         Assert.assertEquals(0, c.getQueryLogics().size());
 
     }
@@ -1531,7 +1520,7 @@ public class CompositeQueryLogicTest {
          * RunningQuery.setupConnection()
          */
         c.setQueryLogics(logics);
-        c.setPrincipal(principal);
+        c.setCurrentUser(principal);
         c.initialize(null, settings, Collections.singleton(auths));
         c.setupQuery(null);
         TransformIterator iter = c.getTransformIterator(settings);

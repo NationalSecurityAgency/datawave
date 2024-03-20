@@ -11,20 +11,23 @@ import org.junit.Test;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
+import datawave.microservice.query.DefaultQueryParameters;
+import datawave.microservice.query.QueryParameters;
+
 public class TestQueryParameters {
 
-    private QueryParametersImpl qp;
+    private DefaultQueryParameters qp;
     private MultiValueMap<String,String> parameters;
 
     @Before
     public void setup() {
-        qp = new QueryParametersImpl();
+        qp = new DefaultQueryParameters();
         parameters = new LinkedMultiValueMap<>();
-        parameters.set(QueryParameters.QUERY_AUTHORIZATIONS, "ALL");
-        parameters.set(QueryParameters.QUERY_NAME, "Test");
-        parameters.set(QueryParameters.QUERY_PERSISTENCE, "TRANSIENT");
-        parameters.set(QueryParameters.QUERY_STRING, "FOO == BAR");
-        parameters.set(QueryParameters.QUERY_LOGIC_NAME, "LogicName");
+        parameters.add(QueryParameters.QUERY_AUTHORIZATIONS, "ALL");
+        parameters.add(QueryParameters.QUERY_NAME, "Test");
+        parameters.add(QueryParameters.QUERY_PERSISTENCE, "TRANSIENT");
+        parameters.add(QueryParameters.QUERY_STRING, "FOO == BAR");
+        parameters.add(QueryParameters.QUERY_LOGIC_NAME, "LogicName");
     }
 
     @Test
@@ -38,7 +41,7 @@ public class TestQueryParameters {
 
     @Test
     public void test24HoursExpirationDate() {
-        parameters.set(QueryParameters.QUERY_EXPIRATION, "+24Hours");
+        parameters.add(QueryParameters.QUERY_EXPIRATION, "+24Hours");
         qp.validate(parameters);
 
         SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd HHmmss");
@@ -51,7 +54,7 @@ public class TestQueryParameters {
         SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd");
         SimpleDateFormat msFormat = new SimpleDateFormat("yyyyMMdd HHmmss.SSS");
         String expDateString = format.format(DateUtils.addDays(new Date(), 1));
-        parameters.set(QueryParameters.QUERY_EXPIRATION, expDateString);
+        parameters.add(QueryParameters.QUERY_EXPIRATION, expDateString);
         qp.validate(parameters);
         assertEquals(expDateString + " 235959.999", msFormat.format(qp.getExpirationDate()));
     }
@@ -61,7 +64,7 @@ public class TestQueryParameters {
         SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd HHmmss");
         SimpleDateFormat msFormat = new SimpleDateFormat("yyyyMMdd HHmmss.SSS");
         String expDateString = format.format(DateUtils.addDays(new Date(), 1));
-        parameters.set(QueryParameters.QUERY_EXPIRATION, expDateString);
+        parameters.add(QueryParameters.QUERY_EXPIRATION, expDateString);
         qp.validate(parameters);
         assertEquals(expDateString + ".999", msFormat.format(qp.getExpirationDate()));
     }
@@ -70,7 +73,7 @@ public class TestQueryParameters {
     public void testTimeMillisExpirationDate() {
         SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd HHmmss.SSS");
         String expDateString = format.format(DateUtils.addDays(new Date(), 1));
-        parameters.set(QueryParameters.QUERY_EXPIRATION, expDateString);
+        parameters.add(QueryParameters.QUERY_EXPIRATION, expDateString);
         qp.validate(parameters);
         assertEquals(expDateString, format.format(qp.getExpirationDate()));
     }
@@ -82,7 +85,7 @@ public class TestQueryParameters {
         String startDateStr = format.format(new Date());
 
         parameters.remove(QueryParameters.QUERY_BEGIN);
-        parameters.set(QueryParameters.QUERY_BEGIN, startDateStr);
+        parameters.add(QueryParameters.QUERY_BEGIN, startDateStr);
         qp.validate(parameters);
         assertEquals(startDateStr + " 000000.000", msFormat.format(qp.getBeginDate()));
     }
@@ -94,7 +97,7 @@ public class TestQueryParameters {
         String startDateStr = format.format(new Date());
 
         parameters.remove(QueryParameters.QUERY_BEGIN);
-        parameters.set(QueryParameters.QUERY_BEGIN, startDateStr);
+        parameters.add(QueryParameters.QUERY_BEGIN, startDateStr);
         qp.validate(parameters);
         assertEquals(startDateStr + ".000", msFormat.format(qp.getBeginDate()));
     }
@@ -106,7 +109,7 @@ public class TestQueryParameters {
         String endDateStr = format.format(new Date());
 
         parameters.remove(QueryParameters.QUERY_END);
-        parameters.set(QueryParameters.QUERY_END, endDateStr);
+        parameters.add(QueryParameters.QUERY_END, endDateStr);
         qp.validate(parameters);
         assertEquals(endDateStr + " 235959.999", msFormat.format(qp.getEndDate()));
     }
@@ -118,7 +121,7 @@ public class TestQueryParameters {
         String endDateStr = format.format(new Date());
 
         parameters.remove(QueryParameters.QUERY_END);
-        parameters.set(QueryParameters.QUERY_END, endDateStr);
+        parameters.add(QueryParameters.QUERY_END, endDateStr);
         qp.validate(parameters);
         assertEquals(endDateStr + ".999", msFormat.format(qp.getEndDate()));
     }

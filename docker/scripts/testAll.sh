@@ -2,6 +2,7 @@
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
+WEBSERVICE="${WEBSERVICE:-false}"
 MAX_ATTEMPTS=30
 TIMEOUT=10
 
@@ -58,16 +59,31 @@ runTest () {
     done
 }
 
-echo "Waiting for webservice to be ready..."
+if [ "$WEBSERVICE" = true ]; then
+    echo "Waiting for webservice to be ready..."
+else
+    echo "Waiting for services to be ready..."
+fi
 
 attempt=0
 while [ $attempt -lt $MAX_ATTEMPTS ]; do
-    echo "Checking webservice status (${attempt}/${MAX_ATTEMPTS})"
+    if [ "$WEBSERVICE" = true ]; then
+        echo "Checking webservice status (${attempt}/${MAX_ATTEMPTS})"
 
-    WEBSERVICE_STATUS=$(curl -s -m 5 -k https://localhost:8443/DataWave/Common/Health/health | grep Status)
-    if [[ "${WEBSERVICE_STATUS}" =~ \"Status\":\"ready\" ]] ; then
-        echo "Webservice ready"
-        break
+        WEBSERVICE_STATUS=$(curl -s -m 5 -k https://localhost:9443/DataWave/Common/Health/health | grep Status)
+        if [[ "${WEBSERVICE_STATUS}" =~ \"Status\":\"ready\" ]] ; then
+            echo "Webservice ready"
+            break
+        fi
+    else
+        echo "Checking query and executor status (${attempt}/${MAX_ATTEMPTS})"
+
+        QUERY_STATUS=$(curl -s -m 5 http://localhost:8080/query/mgmt/health | grep UP)
+        EXEC_STATUS=$(curl -s -m 5 http://localhost:8380/executor/mgmt/health | grep UP)
+        if [ "${QUERY_STATUS}" == "{\"status\":\"UP\"}" ] && [ "${EXEC_STATUS}" == "{\"status\":\"UP\"}" ] ; then
+            echo "Query and Executor Services ready"
+            break
+        fi
     fi
 
     sleep ${TIMEOUT}
@@ -76,7 +92,11 @@ while [ $attempt -lt $MAX_ATTEMPTS ]; do
 done
 
 if [ $attempt == $MAX_ATTEMPTS ]; then
-    echo "FAILURE! Webservice never became ready"
+    if [ "$WEBSERVICE" = true ]; then
+        echo "FAILURE! Webservice never became ready"
+    else
+        echo "FAILURE! Query and/or Executor Services never became ready"
+    fi
     exit 1
 fi
 
@@ -88,6 +108,8 @@ runTest batchLookup.sh 2
 runTest batchLookupContent.sh 4
 runTest count.sh 12 1
 runTest discovery.sh 2 1
+# runTest edge.sh 0 0
+# runTest edgeEvent.sh 1 1
 runTest errorCount.sh 1 1
 runTest errorDiscovery.sh 1 1
 runTest errorFieldIndexCount.sh 1 1
@@ -96,7 +118,10 @@ runTest fieldIndexCount.sh 12 2
 runTest hitHighlights.sh 12 2
 runTest lookup.sh 1
 runTest lookupContent.sh 2
+# runTest metrics.sh 0 0
 runTest query.sh 12 2
+#runTest mapReduceQuery.sh 12 2
+#runTest oozieQuery.sh 0 0
 
 $SCRIPT_DIR/cleanup.sh
 

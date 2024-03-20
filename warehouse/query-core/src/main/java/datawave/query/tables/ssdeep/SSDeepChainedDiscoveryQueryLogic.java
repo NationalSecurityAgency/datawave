@@ -8,10 +8,10 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
 
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.logic.QueryLogicTransformer;
+import datawave.microservice.query.Query;
 import datawave.query.tables.chained.ChainedQueryTable;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
-import datawave.webservice.query.logic.QueryLogicTransformer;
 
 /**
  * Implements a ChainedQueryTable that will first use the SSDeepSimilarityQueryLogic to find similar hashes for a set of query hashes and then run the

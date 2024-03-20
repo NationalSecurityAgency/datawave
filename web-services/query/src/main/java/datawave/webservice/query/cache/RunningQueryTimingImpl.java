@@ -1,5 +1,6 @@
 package datawave.webservice.query.cache;
 
+import datawave.microservice.query.config.QueryExpirationProperties;
 import datawave.webservice.query.runner.RunningQuery.RunningQueryTiming;
 
 public class RunningQueryTimingImpl implements RunningQueryTiming {
@@ -13,9 +14,8 @@ public class RunningQueryTimingImpl implements RunningQueryTiming {
     // The maximum number of times to continue running a long running query after the timeout is reached.
     private int maxLongRunningTimeoutRetries = 3;
 
-    public RunningQueryTimingImpl(QueryExpirationConfiguration conf, int pageTimeout) {
-        this(conf.getCallTimeInMS(), conf.getPageSizeShortCircuitCheckTimeInMS(), conf.getPageShortCircuitTimeoutInMS(),
-                        conf.getMaxLongRunningTimeoutRetries());
+    public RunningQueryTimingImpl(QueryExpirationProperties conf, int pageTimeout) {
+        this(conf.getCallTimeoutMillis(), conf.getShortCircuitCheckTimeMillis(), conf.getShortCircuitTimeoutMillis(), conf.getMaxLongRunningTimeoutRetries());
 
         if (pageTimeout > 0) {
             maxCallMs = pageTimeout * 60 * 1000;

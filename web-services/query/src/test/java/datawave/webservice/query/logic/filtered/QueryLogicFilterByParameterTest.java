@@ -5,7 +5,8 @@ import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
-import datawave.webservice.query.QueryImpl;
+import datawave.core.query.logic.filtered.QueryLogicFilterByParameter;
+import datawave.microservice.query.QueryImpl;
 
 public class QueryLogicFilterByParameterTest {
     @Test

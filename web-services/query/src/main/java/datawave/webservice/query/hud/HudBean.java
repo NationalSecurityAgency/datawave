@@ -25,12 +25,12 @@ import org.jboss.resteasy.annotations.GZIP;
 import com.google.gson.Gson;
 
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
+import datawave.microservice.query.Query;
 import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.BaseQueryMetric.PageMetric;
 import datawave.microservice.querymetric.QueryMetricSummary;
 import datawave.microservice.querymetric.QueryMetricsSummaryResponse;
 import datawave.security.authorization.DatawavePrincipal;
-import datawave.webservice.query.Query;
 import datawave.webservice.query.factory.Persister;
 import datawave.webservice.query.metric.QueryMetricsBean;
 import datawave.webservice.query.runner.QueryExecutorBean;

@@ -11,11 +11,11 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
 
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.microservice.query.Query;
+import datawave.microservice.query.QueryImpl.Parameter;
 import datawave.query.QueryParameters;
 import datawave.query.tables.chunk.Chunker;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.QueryImpl.Parameter;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
 
 public class PartitionedQueryLogic extends ShardQueryLogic {
     protected static final Logger log = Logger.getLogger(PartitionedQueryLogic.class);
@@ -64,7 +64,7 @@ public class PartitionedQueryLogic extends ShardQueryLogic {
 
         if (chunker.preInitializeQueryLogic()) {
             GenericQueryConfiguration config = super.initialize(this.client, this.settings, this.auths);
-            if (!config.getQueries().hasNext()) {
+            if (!config.getQueriesIter().hasNext()) {
                 return config;
             }
 

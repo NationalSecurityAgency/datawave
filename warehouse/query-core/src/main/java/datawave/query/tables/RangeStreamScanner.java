@@ -5,7 +5,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.util.AbstractMap;
 import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Collections;
@@ -20,6 +19,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+
+import javax.annotation.Nullable;
 
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.Scanner;
@@ -36,18 +37,20 @@ import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
+import com.google.common.base.Function;
 import com.google.common.base.Throwables;
-import com.google.common.collect.Maps;
+import com.google.common.collect.Iterators;
 import com.google.common.collect.Queues;
 import com.google.common.util.concurrent.MoreExecutors;
 
+import datawave.core.query.configuration.Result;
+import datawave.microservice.query.Query;
 import datawave.mr.bulk.RfileScanner;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.index.lookup.IndexInfo;
 import datawave.query.index.lookup.IndexMatch;
 import datawave.query.index.lookup.ShardEquality;
 import datawave.query.tables.stats.ScanSessionStats.TIMERS;
-import datawave.webservice.query.Query;
 
 /**
  * Purpose: Extends Scanner session so that we can modify how we build our subsequent ranges. Breaking this out cleans up the code. May require implementation
@@ -75,9 +78,9 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
     // simply compare the strings. no need for a date formatter
     protected static final int dateCfLength = 8;
     protected boolean seenUnexpectedKey = false;
-    protected ArrayDeque<Entry<Key,Value>> currentQueue;
+    protected ArrayDeque<Result> currentQueue;
 
-    protected Entry<Key,Value> prevDay = null;
+    protected Result prevDay = null;
 
     protected ReentrantReadWriteLock queueLock = new ReentrantReadWriteLock(true);
 
@@ -292,8 +295,8 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
      *            shard to seek to
      * @return the matched shard, the next highest shard, or null
      */
-    public String advanceQueueToShard(Queue<Entry<Key,Value>> queue, String shard) {
-        Entry<Key,Value> top;
+    public String advanceQueueToShard(Queue<Result> queue, String shard) {
+        Result top;
         String topShard = null;
 
         boolean advancing = true;
@@ -428,12 +431,12 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
         }
     }
 
-    protected int scannerInvariant(final Iterator<Entry<Key,Value>> iter) {
-        PeekingIterator<Entry<Key,Value>> kvIter = new PeekingIterator<>(iter);
+    protected int scannerInvariant(final Iterator<Result> iter) {
+        PeekingIterator<Result> kvIter = new PeekingIterator<>(iter);
 
         int retrievalCount = 0;
 
-        Entry<Key,Value> myEntry;
+        Result myEntry;
 
         String currentDay = null;
 
@@ -455,7 +458,7 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
         writeLock.lock();
         try {
             while (kvIter.hasNext()) {
-                Entry<Key,Value> currentKeyValue = kvIter.peek();
+                Result currentKeyValue = kvIter.peek();
 
                 // become a pass-through if we've seen an unexpected key.
                 if (seenUnexpectedKey) {
@@ -521,7 +524,7 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
 
             if (currentQueue.size() >= shardsPerDayThreshold && stats.getPercentile(50) > MAX_MEDIAN) {
 
-                Entry<Key,Value> top = currentQueue.poll();
+                Result top = currentQueue.poll();
 
                 Key topKey = top.getKey();
                 if (log.isTraceEnabled())
@@ -530,7 +533,7 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
 
                 Value newValue = writeInfoToValue();
 
-                myEntry = Maps.immutableEntry(newKey, newValue);
+                myEntry = new Result(top.getContext(), newKey, newValue);
                 lastSeenKey = newKey;
 
                 try {
@@ -598,10 +601,11 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
     private int dequeue(boolean forceAll) {
         int count = 0;
 
-        Queue<Entry<Key,Value>> kvIter = Queues.newArrayDeque(currentQueue);
+        Queue<Result> kvIter = Queues.newArrayDeque(currentQueue);
+
         currentQueue.clear();
         boolean result = true;
-        for (Entry<Key,Value> top : kvIter) {
+        for (Result top : kvIter) {
 
             if (result) {
                 do {
@@ -791,8 +795,15 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
             if (baseScanner instanceof Scanner)
                 ((Scanner) baseScanner).setRange(currentRange);
 
-            Iterator<Entry<Key,Value>> iter = baseScanner.iterator();
-
+            Iterator<Result> iter = Iterators.transform(baseScanner.iterator(), new Function<Entry<Key,Value>,Result>() {
+                @Override
+                public Result apply(@Nullable Entry<Key,Value> input) {
+                    if (input == null) {
+                        return null;
+                    }
+                    return new Result(input.getKey(), input.getValue());
+                }
+            });
             // do not continue if we've reached the end of the corpus
 
             if (!iter.hasNext()) {
@@ -867,9 +878,9 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
     }
 
     // Overloaded
-    public static Entry<Key,Value> trimTrailingUnderscore(Entry<Key,Value> entry) {
+    public static Result trimTrailingUnderscore(Result entry) {
         Key nextKey = trimTrailingUnderscore(entry.getKey());
-        return new AbstractMap.SimpleEntry<>(nextKey, entry.getValue());
+        return new Result(entry.getContext(), nextKey, entry.getValue());
     }
 
     /**

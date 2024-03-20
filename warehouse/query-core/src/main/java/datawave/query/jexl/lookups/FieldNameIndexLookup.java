@@ -21,6 +21,7 @@ import org.apache.log4j.Logger;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 
+import datawave.core.query.configuration.Result;
 import datawave.query.Constants;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.tables.ScannerFactory;
@@ -98,7 +99,7 @@ public class FieldNameIndexLookup extends AsyncIndexLookup {
 
                         sessions.add(bs);
 
-                        iter = Iterators.concat(iter, bs);
+                        iter = Iterators.concat(iter, Result.keyValueIterator(bs));
                     }
                 }
 

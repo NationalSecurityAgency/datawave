@@ -1,16 +1,18 @@
 package datawave.query.tables.edge;
 
+import static com.google.common.collect.Iterators.concat;
+import static com.google.common.collect.Iterators.transform;
 import static datawave.query.jexl.JexlASTHelper.jexlFeatures;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.StringReader;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -33,6 +35,7 @@ import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.commons.jexl3.parser.Parser;
 import org.apache.commons.jexl3.parser.StringProvider;
+import org.apache.hadoop.io.DataInputBuffer;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
@@ -40,9 +43,20 @@ import com.google.common.base.Function;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Lists;
 
+import datawave.core.common.connection.AccumuloConnectionFactory.Priority;
 import datawave.core.iterators.ColumnQualifierRangeIterator;
 import datawave.core.iterators.ColumnRangeIterator;
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.configuration.QueryData;
+import datawave.core.query.logic.BaseQueryLogic;
+import datawave.core.query.logic.CheckpointableQueryLogic;
+import datawave.core.query.logic.QueryCheckpoint;
+import datawave.core.query.logic.QueryKey;
+import datawave.core.query.logic.QueryLogicTransformer;
 import datawave.data.type.Type;
+import datawave.edge.model.EdgeModelFields;
+import datawave.edge.model.EdgeModelFieldsFactory;
+import datawave.microservice.query.Query;
 import datawave.query.Constants;
 import datawave.query.QueryParameters;
 import datawave.query.config.EdgeQueryConfiguration;
@@ -58,61 +72,30 @@ import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import datawave.query.language.parser.QueryParser;
 import datawave.query.language.tree.QueryNode;
 import datawave.query.model.edge.EdgeQueryModel;
+import datawave.query.scheduler.SingleRangeQueryDataIterator;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.tables.edge.contexts.VisitationContext;
 import datawave.query.transformer.EdgeQueryTransformer;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.MetadataHelperFactory;
 import datawave.util.time.DateHelper;
-import datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
-import datawave.webservice.query.configuration.QueryData;
-import datawave.webservice.query.logic.BaseQueryLogic;
-import datawave.webservice.query.logic.QueryLogicTransformer;
 
-public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
-
+public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements CheckpointableQueryLogic {
     public static final String PRE_FILTER_DISABLE_KEYWORD = "__DISABLE_PREFILTER__";
-    private static final int DEFAULT_SKIP_LIMIT = 10;
-    private static final long DEFAULT_SCAN_LIMIT = Long.MAX_VALUE;
     private static final Logger log = Logger.getLogger(EdgeQueryLogic.class);
 
-    protected boolean protobufEdgeFormat = true;
     protected EdgeQueryConfiguration config;
 
-    protected Map<Integer,IteratorSetting> iteratorDiscriptors = new HashMap<>();
     protected int currentIteratorPriority;
 
     protected ScannerFactory scannerFactory;
 
-    protected Set<Type<?>> blockedNormalizers = new HashSet<>();
+    protected HashMultimap<EdgeModelFields.FieldKey,String> prefilterValues = null;
 
-    protected List<? extends Type<?>> dataTypes = null;
-    protected List<? extends Type<?>> regexDataTypes = null;
-
-    protected int queryThreads = 8;
-
-    protected int dateFilterSkipLimit = DEFAULT_SKIP_LIMIT;
-
-    protected long dateFilterScanLimit = DEFAULT_SCAN_LIMIT;
-
-    private Collection<Range> ranges;
-
-    protected HashMultimap<String,String> prefilterValues = null;
-
-    private long maxQueryTerms = 10000;
-    private long maxPrefilterValues = 100000;
-
-    private String modelName = null;
-    private String modelTableName = null;
-
-    private EdgeQueryModel edgeQueryModel = null;
-
-    private VisitationContext visitationContext;
-
+    protected VisitationContext visitationContext;
     protected MetadataHelperFactory metadataHelperFactory = null;
 
+    protected EdgeModelFields edgeFields;
     private Map<String,QueryParser> querySyntaxParsers = new HashMap<>();
     protected Function<String,String> queryMacroFunction;
     private Set<String> mandatoryQuerySyntax = null;
@@ -124,24 +107,15 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
 
     public EdgeQueryLogic(EdgeQueryLogic other) {
         super(other);
-        this.protobufEdgeFormat = other.protobufEdgeFormat;
-        this.config = other.config;
-        this.iteratorDiscriptors = other.iteratorDiscriptors;
+        if (log.isTraceEnabled())
+            log.trace("Creating Cloned ShardQueryLogic: " + System.identityHashCode(this) + " from " + System.identityHashCode(other));
+
+        // Set EdgeQueryConfiguration variables
+        this.config = EdgeQueryConfiguration.create(other);
+
         this.currentIteratorPriority = other.currentIteratorPriority;
         this.scannerFactory = other.scannerFactory;
-        this.blockedNormalizers = other.blockedNormalizers;
-        this.dataTypes = other.dataTypes;
-        this.regexDataTypes = other.regexDataTypes;
-        this.queryThreads = other.queryThreads;
-        this.dateFilterSkipLimit = other.dateFilterSkipLimit;
-        this.dateFilterScanLimit = other.dateFilterScanLimit;
-        this.ranges = other.ranges;
         this.prefilterValues = other.prefilterValues;
-        this.maxQueryTerms = other.maxQueryTerms;
-        this.maxPrefilterValues = other.maxPrefilterValues;
-        this.modelName = other.modelName;
-        this.modelTableName = other.modelTableName;
-        this.edgeQueryModel = other.edgeQueryModel;
         this.visitationContext = other.visitationContext;
         this.metadataHelperFactory = other.metadataHelperFactory;
         this.querySyntaxParsers = other.querySyntaxParsers;
@@ -151,28 +125,107 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     }
 
     @Override
+    public EdgeQueryConfiguration getConfig() {
+        if (config == null) {
+            config = new EdgeQueryConfiguration();
+        }
+        return config;
+    }
+
+    @Override
     public GenericQueryConfiguration initialize(AccumuloClient client, Query settings, Set<Authorizations> auths) throws Exception {
 
         currentIteratorPriority = super.getBaseIteratorPriority() + 30;
 
-        EdgeQueryConfiguration cfg = setUpConfig(settings);
+        EdgeQueryConfiguration config = getConfig().parseParameters(settings);
 
-        cfg.setClient(client);
-        cfg.setAuthorizations(auths);
+        config.setClient(client);
+        config.setAuthorizations(auths);
 
-        String jexlQueryString = getJexlQueryString(settings);
+        String queryString = getJexlQueryString(settings);
 
-        if (null == jexlQueryString) {
+        if (null == queryString) {
             throw new IllegalArgumentException("Query cannot be null");
         } else {
-            cfg.setQueryString(jexlQueryString);
+            config.setQueryString(queryString);
         }
-        cfg.setBeginDate(settings.getBeginDate());
-        cfg.setEndDate(settings.getEndDate());
-
+        config.setBeginDate(settings.getBeginDate());
+        config.setEndDate(settings.getEndDate());
         scannerFactory = new ScannerFactory(client);
 
-        return cfg;
+        prefilterValues = null;
+        EdgeQueryConfiguration.dateType dateFilterType = config.getDateRangeType();
+
+        log.debug("Performing edge table query: " + config.getQueryString());
+
+        boolean includeStats = config.includeStats();
+
+        MetadataHelper metadataHelper = prepareMetadataHelper(config.getClient(), config.getMetadataTableName(), config.getAuthorizations());
+
+        loadQueryModel(metadataHelper, config);
+
+        String normalizedQuery = null;
+        String statsNormalizedQuery = null;
+
+        config.setQueryString(queryString = fixQueryString(queryString));
+        Set<Range> ranges = configureRanges(queryString);
+
+        VisitationContext context = null;
+        try {
+            context = normalizeJexlQuery(queryString, false);
+            normalizedQuery = context.getNormalizedQuery().toString();
+            statsNormalizedQuery = context.getNormalizedStatsQuery().toString();
+            log.debug("Jexl after normalizing SOURCE and SINK: " + normalizedQuery);
+        } catch (JexlException ex) {
+            log.error("Error parsing user query.", ex);
+        }
+
+        if ((null == normalizedQuery || normalizedQuery.equals("")) && ranges.size() < 1) {
+            throw new IllegalStateException("Query string is empty after initial processing, no ranges or filters can be generated to execute.");
+        }
+
+        QueryData qData = new QueryData();
+        qData.setTableName(config.getTableName());
+        qData.setRanges(ranges);
+
+        addIterators(qData, getDateBasedIterators(config.getBeginDate(), config.getEndDate(), currentIteratorPriority, config.getDateFilterSkipLimit(),
+                        config.getDateFilterScanLimit(), dateFilterType));
+
+        if (!normalizedQuery.equals("")) {
+            log.debug("Query being sent to the filter iterator: " + normalizedQuery);
+            IteratorSetting edgeIteratorSetting = new IteratorSetting(currentIteratorPriority,
+                            EdgeFilterIterator.class.getSimpleName() + "_" + currentIteratorPriority, EdgeFilterIterator.class);
+            edgeIteratorSetting.addOption(EdgeFilterIterator.JEXL_OPTION, normalizedQuery);
+            edgeIteratorSetting.addOption(EdgeFilterIterator.PROTOBUF_OPTION, "TRUE");
+
+            if (!statsNormalizedQuery.equals("")) {
+                edgeIteratorSetting.addOption(EdgeFilterIterator.JEXL_STATS_OPTION, statsNormalizedQuery);
+            }
+            if (prefilterValues != null) {
+                String value = serializePrefilter();
+                edgeIteratorSetting.addOption(EdgeFilterIterator.PREFILTER_ALLOWLIST, value);
+            }
+
+            if (includeStats) {
+                edgeIteratorSetting.addOption(EdgeFilterIterator.INCLUDE_STATS_OPTION, "TRUE");
+            } else {
+                edgeIteratorSetting.addOption(EdgeFilterIterator.INCLUDE_STATS_OPTION, "FALSE");
+            }
+
+            addIterator(qData, edgeIteratorSetting);
+        }
+
+        if (context != null && context.isHasAllCompleteColumnFamilies()) {
+            for (Text columnFamily : context.getColumnFamilies()) {
+                qData.addColumnFamily(columnFamily);
+            }
+        }
+
+        addCustomFilters(qData, currentIteratorPriority);
+
+        config.setQueries(Collections.singletonList(qData));
+
+        return config;
     }
 
     public String getJexlQueryString(Query settings) throws datawave.query.language.parser.ParseException {
@@ -253,7 +306,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     }
 
     protected EdgeQueryConfiguration setUpConfig(Query settings) {
-        return new EdgeQueryConfiguration(this, settings).parseParameters(settings);
+        return new EdgeQueryConfiguration(this).parseParameters(settings);
     }
 
     /**
@@ -269,9 +322,9 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         String modelTable = config.getModelTableName() == null ? "" : config.getModelTableName();
         if (null == getEdgeQueryModel() && (!model.isEmpty() && !modelTable.isEmpty())) {
             try {
-                setEdgeQueryModel(new EdgeQueryModel(helper.getQueryModel(config.getModelTableName(), config.getModelName())));
+                setEdgeQueryModel(new EdgeQueryModel(helper.getQueryModel(config.getModelTableName(), config.getModelName()), getEdgeFields()));
             } catch (Throwable t) {
-                log.error("Unable to load edgeQueryModel from metadata table", t);
+                log.error("Unable to load edgeQueryModel from model table", t);
             }
         }
     }
@@ -317,25 +370,6 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     }
 
     /**
-     * Are we querying the protobuf edge format
-     *
-     * @return true if querying the protobuf edge format
-     */
-    public boolean isProtobufEdgeFormat() {
-        return protobufEdgeFormat;
-    }
-
-    /**
-     * Set whether we are querying the protobuf edge format. Default is true.
-     *
-     * @param protobufedge
-     *            the flag for the protobuf edge format
-     */
-    public void setProtobufEdgeFormat(boolean protobufedge) {
-        this.protobufEdgeFormat = protobufedge;
-    }
-
-    /**
      * Parses JEXL in query string to create ranges and column family filters
      *
      * @param queryString
@@ -344,7 +378,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
      * @throws ParseException
      *             for issues with parsing
      */
-    protected QueryData configureRanges(String queryString) throws ParseException {
+    protected Set<Range> configureRanges(String queryString) throws ParseException {
         queryString = EdgeQueryLogic.fixQueryString(queryString);
         Parser parser = new Parser(new StringProvider(";"));
         ASTJexlScript script;
@@ -356,12 +390,11 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
 
         script = TreeFlatteningRebuildingVisitor.flatten(script);
 
-        EdgeTableRangeBuildingVisitor visitor = new EdgeTableRangeBuildingVisitor(config.includeStats(), dataTypes, config.getMaxQueryTerms(), regexDataTypes);
-
+        EdgeTableRangeBuildingVisitor visitor = new EdgeTableRangeBuildingVisitor(getConfig().includeStats(), getConfig().getDataTypes(),
+                        getConfig().getMaxQueryTerms(), getConfig().getRegexDataTypes(), getEdgeFields());
         visitationContext = (VisitationContext) script.jjtAccept(visitor, null);
 
-        Set<Range> ranges = visitationContext.getRanges();
-        return new QueryData().withRanges(ranges);
+        return visitationContext.getRanges();
     }
 
     /**
@@ -406,18 +439,18 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
 
         pruneAndSetPreFilterValues(visitationContext.getPreFilterValues());
         long termCount = visitationContext.getTermCount();
-        if (termCount > config.getMaxQueryTerms()) {
-            throw new IllegalArgumentException("Edge query max terms limit (" + config.getMaxQueryTerms() + ") exceeded: " + termCount + ".");
+        if (termCount > getConfig().getMaxQueryTerms()) {
+            throw new IllegalArgumentException("Edge query max terms limit (" + getConfig().getMaxQueryTerms() + ") exceeded: " + termCount + ".");
         }
 
         return visitationContext;
 
     }
 
-    void pruneAndSetPreFilterValues(HashMultimap<String,String> prefilters) {
-        HashMultimap<String,String> newMap = HashMultimap.create();
+    void pruneAndSetPreFilterValues(HashMultimap<EdgeModelFields.FieldKey,String> prefilters) {
+        HashMultimap<EdgeModelFields.FieldKey,String> newMap = HashMultimap.create();
         long count = 0;
-        for (String field : prefilters.keySet()) {
+        for (EdgeModelFields.FieldKey field : prefilters.keySet()) {
             Set<String> values = prefilters.get(field);
             if (values == null) {
                 continue;
@@ -431,7 +464,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             newMap.putAll(field, values);
             count++;
         }
-        if (count <= config.getMaxPrefilterValues()) {
+        if (count <= getConfig().getMaxPrefilterValues()) {
             if (count > 0) {
                 prefilterValues = newMap;
             }
@@ -441,7 +474,6 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     }
 
     protected void addIterator(QueryData qData, IteratorSetting iter) {
-        iteratorDiscriptors.put(currentIteratorPriority, iter);
         qData.addIterator(iter);
         currentIteratorPriority++;
     }
@@ -477,7 +509,8 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
      * @return created iterator (or null if no iterator needed, i.e. dates not specified)
      */
     public static IteratorSetting getDateFilter(Date beginDate, Date endDate, int priority, EdgeQueryConfiguration.dateType dateFilterType) {
-        return getDateFilter(beginDate, endDate, priority, DEFAULT_SKIP_LIMIT, DEFAULT_SCAN_LIMIT, dateFilterType);
+        return getDateFilter(beginDate, endDate, priority, EdgeQueryConfiguration.DEFAULT_SKIP_LIMIT, EdgeQueryConfiguration.DEFAULT_SCAN_LIMIT,
+                        dateFilterType);
     }
 
     /**
@@ -649,91 +682,94 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     @Override
     public void setupQuery(GenericQueryConfiguration configuration) throws Exception {
         config = (EdgeQueryConfiguration) configuration;
-        prefilterValues = null;
-        EdgeQueryConfiguration.dateType dateFilterType = ((EdgeQueryConfiguration) configuration).getDateRangeType();
 
-        log.debug("Performing edge table query: " + config.getQueryString());
+        log.debug("Configuring connections: tableName: " + getConfig().getTableName() + ", auths: " + getConfig().getAuthorizations());
 
-        boolean includeStats = ((EdgeQueryConfiguration) configuration).includeStats();
+        final List<Iterator<Entry<Key,Value>>> iterators = Lists.newArrayList();
 
-        String queryString = config.getQueryString();
-        String normalizedQuery = null;
-        String statsNormalizedQuery = null;
+        for (QueryData qd : config.getQueries()) {
+            // scan the table
+            BatchScanner bs = createBatchScanner(config);
 
-        queryString = fixQueryString(queryString);
-        QueryData qData = configureRanges(queryString);
-        setRanges(qData.getRanges());
+            log.debug("Using the following ranges: " + qd.getRanges());
 
-        VisitationContext context = null;
-        try {
-            context = normalizeJexlQuery(queryString, false);
-            normalizedQuery = context.getNormalizedQuery().toString();
-            statsNormalizedQuery = context.getNormalizedStatsQuery().toString();
-            log.debug("Jexl after normalizing SOURCE and SINK: " + normalizedQuery);
-        } catch (JexlException ex) {
-            log.error("Error parsing user query.", ex);
-        }
-
-        if ((null == normalizedQuery || normalizedQuery.equals("")) && qData.getRanges().size() < 1) {
-            throw new IllegalStateException("Query string is empty after initial processing, no ranges or filters can be generated to execute.");
-        }
-
-        addIterators(qData, getDateBasedIterators(config.getBeginDate(), config.getEndDate(), currentIteratorPriority, dateFilterSkipLimit, dateFilterScanLimit,
-                        dateFilterType));
-
-        if (!normalizedQuery.equals("")) {
-            log.debug("Query being sent to the filter iterator: " + normalizedQuery);
-            IteratorSetting edgeIteratorSetting = new IteratorSetting(currentIteratorPriority,
-                            EdgeFilterIterator.class.getSimpleName() + "_" + currentIteratorPriority, EdgeFilterIterator.class);
-            edgeIteratorSetting.addOption(EdgeFilterIterator.JEXL_OPTION, normalizedQuery);
-            edgeIteratorSetting.addOption(EdgeFilterIterator.PROTOBUF_OPTION, "TRUE");
-
-            if (!statsNormalizedQuery.equals("")) {
-                edgeIteratorSetting.addOption(EdgeFilterIterator.JEXL_STATS_OPTION, statsNormalizedQuery);
-            }
-            if (prefilterValues != null) {
-                String value = serializePrefilter();
-                edgeIteratorSetting.addOption(EdgeFilterIterator.PREFILTER_ALLOWLIST, value);
+            bs.setRanges(qd.getRanges());
+            for (IteratorSetting setting : qd.getSettings()) {
+                bs.addScanIterator(setting);
             }
 
-            if (includeStats) {
-                edgeIteratorSetting.addOption(EdgeFilterIterator.INCLUDE_STATS_OPTION, "TRUE");
-            } else {
-                edgeIteratorSetting.addOption(EdgeFilterIterator.INCLUDE_STATS_OPTION, "FALSE");
+            for (String cf : qd.getColumnFamilies()) {
+                bs.fetchColumnFamily(new Text(cf));
             }
 
-            addIterator(qData, edgeIteratorSetting);
+            iterators.add(transformScanner(bs, qd));
         }
 
-        log.debug("Configuring connection: tableName: " + config.getTableName() + ", auths: " + config.getAuthorizations());
+        this.iterator = concat(iterators.iterator());
+    }
 
-        BatchScanner scanner = createBatchScanner(config);
+    /**
+     * Takes in a batch scanner and returns an iterator over the DiscoveredThing objects contained in the value.
+     *
+     * @param scanner
+     * @return
+     */
+    public static Iterator<Entry<Key,Value>> transformScanner(final BatchScanner scanner, final QueryData queryData) {
+        return transform(scanner.iterator(), new Function<Entry<Key,Value>,Entry<Key,Value>>() {
+            DataInputBuffer in = new DataInputBuffer();
 
-        log.debug("Using the following ranges: " + qData.getRanges());
-
-        if (context != null && context.isHasAllCompleteColumnFamilies()) {
-            for (Text columnFamily : context.getColumnFamilies()) {
-                scanner.fetchColumnFamily(columnFamily);
+            @Override
+            public Entry<Key,Value> apply(Entry<Key,Value> from) {
+                queryData.setLastResult(from.getKey());
+                return from;
             }
+        });
+    }
 
+    @Override
+    public void setupQuery(AccumuloClient client, GenericQueryConfiguration baseConfig, QueryCheckpoint checkpoint) throws Exception {
+        EdgeQueryConfiguration config = (EdgeQueryConfiguration) baseConfig;
+        baseConfig.setQueries(checkpoint.getQueries());
+        config.setClient(client);
+
+        scannerFactory = new ScannerFactory(client);
+
+        setupQuery(config);
+    }
+
+    @Override
+    public List<QueryCheckpoint> checkpoint(QueryKey queryKey) {
+        if (!isCheckpointable()) {
+            throw new UnsupportedOperationException("Cannot checkpoint a query that is not checkpointable.  Try calling setCheckpointable(true) first.");
         }
 
-        scanner.setRanges(qData.getRanges());
+        // if we have started returning results, then capture the state of the query data objects
+        if (this.iterator != null) {
+            List<QueryCheckpoint> checkpoints = Lists.newLinkedList();
+            for (SingleRangeQueryDataIterator it = new SingleRangeQueryDataIterator(getConfig().getQueries().iterator()); it.hasNext();) {
+                QueryData qd = it.next();
 
-        addCustomFilters(qData, currentIteratorPriority);
-
-        for (IteratorSetting setting : qData.getSettings()) {
-            scanner.addScanIterator(setting);
+                checkpoints.add(new QueryCheckpoint(queryKey, Collections.singletonList(qd)));
+            }
+            return checkpoints;
         }
+        // otherwise we still need to plan or there are no results
+        else {
+            return Lists.newArrayList(new QueryCheckpoint(queryKey));
+        }
+    }
 
-        this.scanner = scanner;
-        iterator = scanner.iterator();
+    @Override
+    public QueryCheckpoint updateCheckpoint(QueryCheckpoint checkpoint) {
+        // for the edge query logic, the query data objects automatically get update with
+        // the last result returned, so the checkpoint should already be updated!
+        return checkpoint;
     }
 
     protected BatchScanner createBatchScanner(GenericQueryConfiguration config) {
         EdgeQueryConfiguration conf = (EdgeQueryConfiguration) config;
         try {
-            return scannerFactory.newScanner(config.getTableName(), config.getAuthorizations(), conf.getNumQueryThreads(), conf.getQuery());
+            return scannerFactory.newScanner(config.getTableName(), config.getAuthorizations(), conf.getQueryThreads(), conf.getQuery());
         } catch (TableNotFoundException e) {
             throw new IllegalStateException(e);
         }
@@ -759,7 +795,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
      * @param priority
      *            the priority for the first of iterator filters
      */
-    protected void addCustomFilters(QueryData data, int priority) {}
+    protected void addCustomFilters(QueryData data, int priority) throws Exception {}
 
     @Override
     public Priority getConnectionPriority() {
@@ -773,87 +809,71 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
 
     @Override
     public QueryLogicTransformer getTransformer(Query settings) {
-        return new EdgeQueryTransformer(settings, this.markingFunctions, this.responseObjectFactory);
+        return new EdgeQueryTransformer(settings, this.markingFunctions, this.responseObjectFactory, this.getEdgeFields());
     }
 
     public List<? extends Type<?>> getDataTypes() {
-        return dataTypes;
+        return getConfig().getDataTypes();
     }
 
     public void setDataTypes(List<? extends Type<?>> dataTypes) {
-        this.dataTypes = dataTypes;
+        getConfig().setDataTypes((dataTypes));
     }
 
     public List<? extends Type<?>> getRegexDataTypes() {
-        return regexDataTypes;
+        return getConfig().getRegexDataTypes();
     }
 
     public void setRegexDataTypes(List<? extends Type<?>> regexDataTypes) {
-        this.regexDataTypes = regexDataTypes;
+        getConfig().setRegexDataTypes(regexDataTypes);
     }
 
     public int getQueryThreads() {
-        return queryThreads;
+        return getConfig().getQueryThreads();
     }
 
     public void setQueryThreads(int queryThreads) {
-        this.queryThreads = queryThreads;
+        getConfig().setQueryThreads(queryThreads);
     }
 
     @Override
     public Set<String> getOptionalQueryParameters() {
         Set<String> optionalParams = new TreeSet<>();
-        optionalParams.add(datawave.webservice.query.QueryParameters.QUERY_BEGIN);
-        optionalParams.add(datawave.webservice.query.QueryParameters.QUERY_END);
+        optionalParams.add(datawave.microservice.query.QueryParameters.QUERY_BEGIN);
+        optionalParams.add(datawave.microservice.query.QueryParameters.QUERY_END);
         optionalParams.add(QueryParameters.DATATYPE_FILTER_SET);
         optionalParams.add(EdgeQueryConfiguration.INCLUDE_STATS);
         optionalParams.add(EdgeQueryConfiguration.DATE_RANGE_TYPE);
-        optionalParams.add(datawave.webservice.query.QueryParameters.QUERY_PAGETIMEOUT);
-        optionalParams.add(datawave.webservice.query.QueryParameters.QUERY_EXPIRATION);
-        optionalParams.add(datawave.webservice.query.QueryParameters.QUERY_MAX_RESULTS_OVERRIDE);
+        optionalParams.add(datawave.microservice.query.QueryParameters.QUERY_PAGETIMEOUT);
+        optionalParams.add(datawave.microservice.query.QueryParameters.QUERY_EXPIRATION);
+        optionalParams.add(datawave.microservice.query.QueryParameters.QUERY_MAX_RESULTS_OVERRIDE);
         return optionalParams;
     }
 
-    public Set<Type<?>> getBlockedNormalizers() {
-        return blockedNormalizers;
-    }
-
-    public void setBlockedNormalizers(Set<Type<?>> blockedNormalizers) {
-        this.blockedNormalizers = blockedNormalizers;
-    }
-
-    public Collection<Range> getRanges() {
-        return ranges;
-    }
-
-    public void setRanges(Collection<Range> ranges) {
-        this.ranges = ranges;
-    }
-
     public long getMaxQueryTerms() {
-        return maxQueryTerms;
+        return getConfig().getMaxQueryTerms();
     }
 
     public void setMaxQueryTerms(long maxQueryTerms) {
-        this.maxQueryTerms = maxQueryTerms;
+        getConfig().setMaxQueryTerms(maxQueryTerms);
     }
 
     public long getMaxPrefilterValues() {
-        return maxPrefilterValues;
+        return getConfig().getMaxPrefilterValues();
     }
 
     public void setMaxPrefilterValues(long maxPrefilterValues) {
-        this.maxPrefilterValues = maxPrefilterValues;
+        getConfig().setMaxPrefilterValues(maxPrefilterValues);
     }
 
     @Override
     public Set<String> getRequiredQueryParameters() {
         Set<String> requiredParams = new TreeSet<>();
-        requiredParams.add(datawave.webservice.query.QueryParameters.QUERY_STRING);
-        requiredParams.add(datawave.webservice.query.QueryParameters.QUERY_NAME);
-        requiredParams.add(datawave.webservice.query.QueryParameters.QUERY_PAGESIZE);
-        requiredParams.add(datawave.webservice.query.QueryParameters.QUERY_AUTHORIZATIONS);
-        requiredParams.add(datawave.webservice.query.QueryParameters.QUERY_LOGIC_NAME);
+        requiredParams.add(datawave.microservice.query.QueryParameters.QUERY_STRING);
+        requiredParams.add(datawave.microservice.query.QueryParameters.QUERY_NAME);
+        requiredParams.add(datawave.microservice.query.QueryParameters.QUERY_PAGESIZE);
+        requiredParams.add(datawave.microservice.query.QueryParameters.QUERY_AUTHORIZATIONS);
+        requiredParams.add(datawave.microservice.query.QueryParameters.QUERY_LOGIC_NAME);
         return requiredParams;
     }
 
@@ -863,27 +883,35 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     }
 
     public EdgeQueryModel getEdgeQueryModel() {
-        return this.edgeQueryModel;
+        return getConfig().getEdgeQueryModel();
     }
 
     public void setEdgeQueryModel(EdgeQueryModel model) {
-        this.edgeQueryModel = model;
+        getConfig().setEdgeQueryModel(model);
     }
 
     public String getModelName() {
-        return this.modelName;
+        return getConfig().getModelName();
     }
 
     public void setModelName(String modelName) {
-        this.modelName = modelName;
+        getConfig().setModelName(modelName);
     }
 
     public String getModelTableName() {
-        return this.modelTableName;
+        return getConfig().getModelTableName();
     }
 
     public void setModelTableName(String modelTableName) {
-        this.modelTableName = modelTableName;
+        getConfig().setModelTableName(modelTableName);
+    }
+
+    public String getMetadataTableName() {
+        return getConfig().getMetadataTableName();
+    }
+
+    public void setMetadataTableName(String metadataTableName) {
+        getConfig().setMetadataTableName(metadataTableName);
     }
 
     public MetadataHelperFactory getMetadataHelperFactory() {
@@ -897,20 +925,50 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         this.metadataHelperFactory = metadataHelperFactory;
     }
 
+    public boolean includeStats() {
+        return getConfig().includeStats();
+    }
+
+    public void setIncludeStats(boolean includeStats) {
+        getConfig().setIncludeStats(includeStats);
+    }
+
     public int getDateFilterSkipLimit() {
-        return dateFilterSkipLimit;
+        return getConfig().getDateFilterSkipLimit();
     }
 
     public void setDateFilterSkipLimit(int dateFilterSkipLimit) {
-        this.dateFilterSkipLimit = dateFilterSkipLimit;
+        getConfig().setDateFilterSkipLimit(dateFilterSkipLimit);
     }
 
     public long getDateFilterScanLimit() {
-        return dateFilterScanLimit;
+        return getConfig().getDateFilterScanLimit();
     }
 
     public void setDateFilterScanLimit(long dateFilterScanLimit) {
-        this.dateFilterScanLimit = dateFilterScanLimit;
+        getConfig().setDateFilterScanLimit(dateFilterScanLimit);
+    }
+
+    public void setEdgeModelFieldsFactory(EdgeModelFieldsFactory edgeModelFieldsFactory) {
+        this.edgeFields = edgeModelFieldsFactory.createFields();
+    }
+
+    public void setEdgeFields(EdgeModelFields edgeFields) {
+        this.edgeFields = edgeFields;
+    }
+
+    public EdgeModelFields getEdgeFields() {
+        return edgeFields;
+    }
+
+    @Override
+    public boolean isCheckpointable() {
+        return getConfig().isCheckpointable();
+    }
+
+    @Override
+    public void setCheckpointable(boolean checkpointable) {
+        getConfig().setCheckpointable(checkpointable);
     }
 
     public Map<String,QueryParser> getQuerySyntaxParsers() {

@@ -12,6 +12,8 @@ import org.apache.commons.jexl3.parser.StringProvider;
 import org.junit.Before;
 import org.junit.Test;
 
+import datawave.edge.model.DefaultEdgeModelFieldsFactory;
+import datawave.edge.model.EdgeModelFields;
 import datawave.query.tables.edge.EdgeQueryLogic;
 
 public class EdgeTableRangeBuildingVisitorTest {
@@ -25,7 +27,7 @@ public class EdgeTableRangeBuildingVisitorTest {
     public void setup() {
         parser = new Parser(new StringProvider(";"));
 
-        visitor = new EdgeTableRangeBuildingVisitor(false, emptyList(), termLimit, emptyList());
+        visitor = new EdgeTableRangeBuildingVisitor(false, emptyList(), termLimit, emptyList(), new DefaultEdgeModelFieldsFactory().createFields());
     }
 
     @Test

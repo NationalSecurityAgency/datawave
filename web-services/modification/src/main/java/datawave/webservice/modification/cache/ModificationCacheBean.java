@@ -1,11 +1,6 @@
 package datawave.webservice.modification.cache;
 
-import static datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
-
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -15,7 +10,6 @@ import javax.annotation.PostConstruct;
 import javax.annotation.security.DeclareRoles;
 import javax.annotation.security.RolesAllowed;
 import javax.annotation.security.RunAs;
-import javax.ejb.EJBException;
 import javax.ejb.LocalBean;
 import javax.ejb.Lock;
 import javax.ejb.LockType;
@@ -27,11 +21,6 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 
-import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.client.BatchScanner;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Range;
-import org.apache.accumulo.core.data.Value;
 import org.apache.deltaspike.core.api.jmx.JmxManaged;
 import org.apache.deltaspike.core.api.jmx.MBean;
 import org.apache.hadoop.io.Text;
@@ -39,11 +28,11 @@ import org.apache.log4j.Logger;
 import org.jboss.resteasy.annotations.GZIP;
 
 import datawave.configuration.spring.SpringBean;
+import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.interceptor.RequiredInterceptor;
 import datawave.interceptor.ResponseInterceptor;
-import datawave.security.util.ScannerHelper;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
-import datawave.webservice.modification.configuration.ModificationConfiguration;
+import datawave.modification.cache.ModificationCache;
+import datawave.modification.configuration.ModificationConfiguration;
 import datawave.webservice.result.VoidResponse;
 import datawave.webservice.results.modification.MutableFieldListResponse;
 
@@ -65,7 +54,7 @@ public class ModificationCacheBean {
 
     private Logger log = Logger.getLogger(this.getClass());
 
-    private Map<String,Set<String>> cache = new HashMap<>();
+    private ModificationCache cache;
 
     @Inject
     private AccumuloConnectionFactory connectionFactory;
@@ -76,11 +65,7 @@ public class ModificationCacheBean {
 
     @PostConstruct
     public void init() {
-        if (modificationConfiguration != null) {
-            reloadMutableFieldCache();
-        } else {
-            log.error("modificationConfiguration was null");
-        }
+        cache = new ModificationCache(connectionFactory, modificationConfiguration);
     }
 
     /**
@@ -102,53 +87,13 @@ public class ModificationCacheBean {
     @GZIP
     @JmxManaged
     public VoidResponse reloadMutableFieldCache() {
-        this.clearCache();
-        log.trace("cleared cache");
-        final VoidResponse resp = new VoidResponse();
-        AccumuloClient client = null;
-        BatchScanner s = null;
-        try {
-            Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            log.trace("getting mutable list from table " + this.modificationConfiguration.getTableName());
-            log.trace("modificationConfiguration.getPoolName() = " + modificationConfiguration.getPoolName());
-            client = connectionFactory.getClient(modificationConfiguration.getPoolName(), Priority.ADMIN, trackingMap);
-            log.trace("got connection");
-            s = ScannerHelper.createBatchScanner(client, this.modificationConfiguration.getTableName(),
-                            Collections.singleton(client.securityOperations().getUserAuthorizations(client.whoami())), 8);
-            s.setRanges(Collections.singleton(new Range()));
-            s.fetchColumnFamily(MODIFICATION_COLUMN);
-            for (Entry<Key,Value> e : s) {
-                // Field name is in the row and datatype is in the colq.
-                String datatype = e.getKey().getColumnQualifier().toString();
-                log.trace("datatype = " + datatype);
-                String fieldName = e.getKey().getRow().toString();
-                log.trace("fieldname = " + fieldName);
-                if (null == cache.get(datatype))
-                    cache.put(datatype, new HashSet<>());
-                cache.get(datatype).add(fieldName);
-            }
-            log.trace("cache size = " + cache.size());
-            for (Entry<String,Set<String>> e : cache.entrySet()) {
-                log.trace("datatype = " + e.getKey() + ", fieldcount = " + e.getValue().size());
-            }
-        } catch (Exception e) {
-            log.error("Error during initialization of ModificationCacheBean", e);
-            throw new EJBException("Error during initialization of ModificationCacheBean", e);
-        } finally {
-            if (null != s)
-                s.close();
-            try {
-                connectionFactory.returnClient(client);
-            } catch (Exception e) {
-                log.error("Error returning connection to pool", e);
-            }
-        }
-        return resp;
+        this.cache.reloadMutableFieldCache();
+        return new VoidResponse();
     }
 
     @JmxManaged
     public String listMutableFields() {
-        return cache.toString();
+        return cache.listMutableFields();
     }
 
     /**
@@ -161,8 +106,7 @@ public class ModificationCacheBean {
      * @return true if field is mutable for the given datatype
      */
     public boolean isFieldMutable(String datatype, String field) {
-        log.trace("datatype = " + datatype + ", field = " + field);
-        return cache.get(datatype).contains(field);
+        return cache.isFieldMutable(datatype, field);
     }
 
     @GET
@@ -173,7 +117,7 @@ public class ModificationCacheBean {
     @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
     public List<MutableFieldListResponse> getMutableFieldList() {
         List<MutableFieldListResponse> lists = new ArrayList<>();
-        for (Entry<String,Set<String>> entry : this.cache.entrySet()) {
+        for (Entry<String,Set<String>> entry : this.cache.getCachedMutableFieldList().entrySet()) {
             MutableFieldListResponse r = new MutableFieldListResponse();
             r.setDatatype(entry.getKey());
             r.setMutableFields(entry.getValue());
@@ -183,17 +127,15 @@ public class ModificationCacheBean {
     }
 
     public Map<String,Set<String>> getCachedMutableFieldList() {
-        log.trace("cache = " + cache);
-        return Collections.unmodifiableMap(cache);
+        return cache.getCachedMutableFieldList();
     }
 
     public ModificationConfiguration getModificationConfiguration() {
         return modificationConfiguration;
     }
 
-    protected void clearCache() {
-        log.trace("cleared the cache");
-        this.cache.clear();
+    public ModificationCache getCache() {
+        return cache;
     }
 
 }

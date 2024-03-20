@@ -52,3 +52,6 @@ services/sample_configuration/*-dev.yml
 /.metadata/
 /.dockerignore
 /.maven-dockerignore
+
+/.dockerignore
+/.maven-dockerignore

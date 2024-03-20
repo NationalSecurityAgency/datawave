@@ -12,10 +12,12 @@ import org.junit.Before;
 import org.junit.Test;
 import org.powermock.api.easymock.PowerMock;
 
-import datawave.webservice.query.Query;
-import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
-import datawave.webservice.query.logic.QueryLogic;
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.logic.QueryLogic;
+import datawave.core.query.logic.filtered.FilteredQueryLogic;
+import datawave.core.query.logic.filtered.QueryLogicFilterByAuth;
+import datawave.microservice.query.Query;
+import datawave.microservice.query.QueryImpl;
 
 public class FilteredQueryLogicTest {
 

@@ -21,13 +21,13 @@
 	</bean>
 	-->
 
-	<bean id="ModificationConfiguration" class="datawave.webservice.modification.configuration.ModificationConfiguration">
+	<bean id="ModificationConfiguration" class="datawave.modification.configuration.ModificationConfiguration">
 		<property name="tableName" value="${metadata.table.name}" />
         <property name="poolName" value="WAREHOUSE" />
 		<property name="configurations"> 
-			<map key-type="java.lang.String" value-type="datawave.webservice.modification.ModificationServiceConfiguration">
+			<map key-type="java.lang.String" value-type="datawave.modification.ModificationServiceConfiguration">
 				<entry key="MutableMetadataUUIDService">
-					<bean class="datawave.webservice.modification.MutableMetadataUUIDHandler">
+					<bean class="datawave.modification.MutableMetadataUUIDHandler">
 						<property name="authorizedRoles">
 							<list value-type="java.lang.String">
 								<value>AuthorizedUser</value>
@@ -66,7 +66,7 @@
 					</bean>
 				</entry>
 				<entry key="MutableMetadataService">
-					<bean class="datawave.webservice.modification.MutableMetadataHandler">
+					<bean class="datawave.modification.MutableMetadataHandler">
 						<!-- Description specified in the class
 						<property name="description" value="" />
 						 -->

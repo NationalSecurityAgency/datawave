@@ -19,7 +19,9 @@ import org.powermock.api.easymock.PowerMock;
 import org.powermock.api.easymock.annotation.Mock;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import datawave.webservice.query.logic.BaseQueryLogic;
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.configuration.QueryData;
+import datawave.core.query.logic.BaseQueryLogic;
 
 @RunWith(PowerMockRunner.class)
 public class GenericQueryConfigurationMockTest {
@@ -40,8 +42,8 @@ public class GenericQueryConfigurationMockTest {
     public void setup() {
         this.config = new GenericQueryConfiguration() {
             @Override
-            public Iterator<QueryData> getQueries() {
-                return super.getQueries();
+            public Iterator<QueryData> getQueriesIter() {
+                return super.getQueriesIter();
             }
         };
     }
@@ -68,6 +70,8 @@ public class GenericQueryConfigurationMockTest {
 
     @Test
     public void testCanRunQuery_HappyPath() {
+        expect(this.authorizations.getAuthorizations()).andReturn(Collections.emptyList());
+
         // Run the test
         PowerMock.replayAll();
         GenericQueryConfiguration subject = new GenericQueryConfiguration() {};

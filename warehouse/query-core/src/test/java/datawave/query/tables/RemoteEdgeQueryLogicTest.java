@@ -19,13 +19,14 @@ import org.junit.Test;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.remote.RemoteQueryService;
+import datawave.microservice.query.QueryImpl;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
+import datawave.security.authorization.ProxiedUserDetails;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.webservice.common.remote.RemoteHttpService;
-import datawave.webservice.common.remote.RemoteQueryService;
-import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.result.edge.DefaultEdge;
 import datawave.webservice.query.result.edge.EdgeBase;
 import datawave.webservice.result.BaseQueryResponse;
@@ -136,27 +137,27 @@ public class RemoteEdgeQueryLogicTest {
         }
 
         @Override
-        public GenericResponse<String> createQuery(String queryLogicName, Map<String,List<String>> queryParameters, Object callerObject) {
+        public GenericResponse<String> createQuery(String queryLogicName, Map<String,List<String>> queryParameters, ProxiedUserDetails callerObject) {
             return createResponse;
         }
 
         @Override
-        public BaseQueryResponse next(String id, Object callerObject) {
+        public BaseQueryResponse next(String id, ProxiedUserDetails callerObject) {
             return nextResponses.poll();
         }
 
         @Override
-        public VoidResponse close(String id, Object callerObject) {
+        public VoidResponse close(String id, ProxiedUserDetails callerObject) {
             return new VoidResponse();
         }
 
         @Override
-        public GenericResponse<String> planQuery(String queryLogicName, Map<String,List<String>> queryParameters, Object callerObject) {
+        public GenericResponse<String> planQuery(String queryLogicName, Map<String,List<String>> queryParameters, ProxiedUserDetails callerObject) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public GenericResponse<String> planQuery(String id, Object callerObject) {
+        public GenericResponse<String> planQuery(String id, ProxiedUserDetails callerObject) {
             throw new UnsupportedOperationException();
         }
 

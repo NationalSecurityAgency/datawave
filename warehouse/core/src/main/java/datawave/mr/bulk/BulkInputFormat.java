@@ -956,7 +956,6 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
 
     Map<String,Map<KeyExtent,List<Range>>> binOfflineTable(JobContext job, String tableName, List<Range> ranges)
                     throws TableNotFoundException, AccumuloException, AccumuloSecurityException, IOException {
-
         Map<String,Map<KeyExtent,List<Range>>> binnedRanges = new HashMap<>();
 
         try (AccumuloClient client = getClient(job.getConfiguration())) {

@@ -17,6 +17,11 @@ import org.apache.log4j.Logger;
 
 import com.google.common.collect.Multimap;
 
+import datawave.core.common.connection.AccumuloConnectionFactory;
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.logic.BaseQueryLogic;
+import datawave.core.query.logic.QueryLogicTransformer;
+import datawave.microservice.query.Query;
 import datawave.query.config.SSDeepSimilarityQueryConfiguration;
 import datawave.query.tables.ScannerFactory;
 import datawave.util.ssdeep.ChunkSizeEncoding;
@@ -24,12 +29,7 @@ import datawave.util.ssdeep.IntegerEncoding;
 import datawave.util.ssdeep.NGramGenerator;
 import datawave.util.ssdeep.NGramTuple;
 import datawave.util.ssdeep.SSDeepHash;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.exception.QueryException;
-import datawave.webservice.query.logic.BaseQueryLogic;
-import datawave.webservice.query.logic.QueryLogicTransformer;
 
 public class SSDeepSimilarityQueryLogic extends BaseQueryLogic<ScoredSSDeepPair> {
 
