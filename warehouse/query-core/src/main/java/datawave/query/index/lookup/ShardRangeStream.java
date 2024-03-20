@@ -96,7 +96,6 @@ public class ShardRangeStream extends RangeStream {
                 this.context = StreamContext.ABSENT;
 
             }
-
         } catch (TableNotFoundException | DatawaveQueryException e) {
             throw new RuntimeException(e);
         } finally {
@@ -122,8 +121,15 @@ public class ShardRangeStream extends RangeStream {
         }
 
         public QueryPlan apply(Entry<Key,Value> entry) {
-            return new QueryPlan(node, new Range(new Key(entry.getKey().getRow(), entry.getKey().getColumnFamily()), true,
-                            entry.getKey().followingKey(PartialKey.ROW_COLFAM), false));
+            Key key = entry.getKey();
+            Key start = new Key(key.getRow(), key.getColumnFamily());
+            Key end = start.followingKey(PartialKey.ROW_COLFAM);
+            Range range = new Range(start, true, end, false);
+            //  @formatter:off
+            return new QueryPlan()
+                            .withQueryTree(node)
+                            .withRanges(Collections.singleton(range));
+            //  @formatter:on
         }
     }
 }

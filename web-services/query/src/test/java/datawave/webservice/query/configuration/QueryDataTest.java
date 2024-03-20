@@ -12,8 +12,6 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.junit.Test;
 
-import com.google.common.collect.Lists;
-
 public class QueryDataTest {
 
     @Test

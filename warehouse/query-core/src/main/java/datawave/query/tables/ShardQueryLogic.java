@@ -2750,4 +2750,20 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     public void setPruneQueryOptions(boolean pruneQueryOptions) {
         getConfig().setPruneQueryOptions(pruneQueryOptions);
     }
+
+    public boolean getUseFieldCounts() {
+        return getConfig().getUseFieldCounts();
+    }
+
+    public void setUseFieldCounts(boolean useFieldCounts) {
+        getConfig().setUseFieldCounts(useFieldCounts);
+    }
+
+    public boolean getUseTermCounts() {
+        return getConfig().getUseTermCounts();
+    }
+
+    public void setUseTermCounts(boolean useTermCounts) {
+        getConfig().setUseTermCounts(useTermCounts);
+    }
 }

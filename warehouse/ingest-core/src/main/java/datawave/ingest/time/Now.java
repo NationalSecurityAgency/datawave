@@ -32,7 +32,7 @@ public class Now {
 
     private AtomicLong now = new AtomicLong();
 
-    private static Now instance;
+    private static volatile Now instance;
 
     public static Now getInstance() {
         if (instance == null) {
