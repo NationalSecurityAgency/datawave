@@ -120,7 +120,8 @@ public class PushdownFunction implements Function<QueryData,List<ScannerChunk>> 
 
                             options.setQueryConfig(this.config);
 
-                            chunks.add(new ScannerChunk(options, plan.getRanges(), qd, server));}
+                            chunks.add(new ScannerChunk(options, plan.getRanges(), qd, server));
+                        }
                     } catch (Exception e) {
                         log.error(e);
                         throw new AccumuloException(e);
