@@ -1149,7 +1149,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
 
     protected Key createEdgeKey(EdgeDataBundle edgeValue, VertexValue source, String sourceValue, VertexValue sink, String sinkValue, Text visibility,
                     EdgeKey.DATE_TYPE date_type) {
-        return createEdgeKey(edgeValue, source, sourceValue, sink, sinkValue, visibility, edgeValue.getEventDate(), date_type);
+        return createEdgeKey(edgeValue, source, sourceValue, sink, sinkValue, visibility, edgeValue.getEvent().getTimestamp(), date_type);
     }
 
     private Key createEdgeKey(EdgeDataBundle edgeValue, VertexValue source, String sourceValue, VertexValue sink, String sinkValue, Text visibility,
@@ -1173,7 +1173,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         builder.setSourceData(value).setStatsType(statsType).setType(edgeValue.getEdgeType()).setYyyymmdd(edgeValue.getYyyyMMdd(date_type))
                         .setSourceRelationship(vertex.getRelationshipType()).setSourceAttribute1(vertex.getCollectionType())
                         .setAttribute3(edgeValue.getEdgeAttribute3()).setAttribute2(edgeValue.getEdgeAttribute2()).setColvis(visibility)
-                        .setTimestamp(edgeValue.getEventDate()).setDateType(date_type);
+                        .setTimestamp(edgeValue.getEvent().getTimestamp()).setDateType(date_type);
         builder.setDeleted(edgeValue.isDeleting());
         Key key = builder.build().encode();
         boolean isNewKey = false;

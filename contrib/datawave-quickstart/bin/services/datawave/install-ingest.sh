@@ -159,13 +159,6 @@ function initializeDatawaveTables() {
     fi
 }
 
-function ingestExampleData() {
-    # Ingest some canned, example data files
-    datawaveIngestWikipedia "${DW_DATAWAVE_INGEST_TEST_FILE_WIKI}"
-    datawaveIngestJson "${DW_DATAWAVE_INGEST_TEST_FILE_JSON}"
-    datawaveIngestCsv "${DW_DATAWAVE_INGEST_TEST_FILE_CSV}"
-}
-
 
 initializeDatawaveTables
 
@@ -186,4 +179,4 @@ info "See \$DW_CLOUD_HOME/bin/services/datawave/bootstrap-ingest.sh to view/edit
 
 # Ingest raw data examples, if appropriate...
 
-[ "${DW_REDEPLOY_IN_PROGRESS}" != true ] && [ "${DW_DATAWAVE_INGEST_TEST_SKIP}" == false ] && ingestExampleData
+[ "${DW_REDEPLOY_IN_PROGRESS}" != true ] && [ "${DW_DATAWAVE_INGEST_TEST_SKIP}" == false ] && datawaveIngestExamples

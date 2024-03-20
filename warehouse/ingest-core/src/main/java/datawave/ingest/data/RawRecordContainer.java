@@ -9,6 +9,7 @@ import java.util.Map;
 import org.apache.accumulo.core.security.ColumnVisibility;
 
 import datawave.data.hash.UID;
+import datawave.util.CompositeTimestamp;
 
 /**
  * Generic container used to hold raw source data. It is used in various parts of the ingest framework and is typically persisted as an "event" within DW's
@@ -45,7 +46,43 @@ public interface RawRecordContainer {
      *
      * @return the date for this raw record
      */
-    long getDate();
+    default long getDate() {
+        return CompositeTimestamp.getEventDate(getTimestamp());
+    }
+
+    /**
+     * Gets the ageoff date associated with the record
+     *
+     * @return the ageoff date for this raw record
+     */
+    default long getAgeOffDate() {
+        return CompositeTimestamp.getAgeOffDate(getTimestamp());
+    }
+
+    /**
+     * Get the composite timestamp asociated with this record (@see CompositeTimestamp)
+     *
+     * @return
+     */
+    long getTimestamp();
+
+    /**
+     * Determine if the timestamp has been set. This avoids having to compare the timestamp with an arbitrary value
+     */
+    default boolean isTimestampSet() {
+        return getTimestamp() != CompositeTimestamp.INVALID_TIMESTAMP;
+    }
+
+    /**
+     * This is synonomis with setTimestamp(date, date)
+     *
+     * @param timestamp
+     *            primary date to be associated with the record, a.k.a. the "event date"
+     */
+    @Deprecated
+    default void setDate(long timestamp) {
+        setTimestamp(timestamp);
+    }
 
     /**
      * In the DW data model, this date is often referred to as "event date" and represents the primary date value for the record. At ingest time, it is
@@ -56,11 +93,29 @@ public interface RawRecordContainer {
      * Thus, this date is typically leveraged by DW's query api as the basis for 'begin' / 'end' date ranges for user queries. However, DW also has the ability
      * to leverage other dates within your records at query time, if needed. So, for date filtering concerns, you're not necessarily stuck with your choice of
      * 'event' date in this regard
+     * </p>
      *
-     * @param date
+     * <p>
+     * This date is treated as a composite timestamp which includes the age off date as well. If the ageoff date is identical to the event date (which is
+     * usually the case), then the event date and the timestamp will be the exactly same value. See CompositeTimestamp for more information. The getDate()
+     * method will only return the event date portion of this date and the getAgeOffDate() will return the ageoff portion. This method should eventually be
+     * deprecated and setTimestamp should be used instead.
+     * </p>
+     *
+     * @param timestamp
      *            primary date to be associated with the record, a.k.a. the "event date"
      */
-    void setDate(long date);
+    void setTimestamp(long timestamp);
+
+    /**
+     * Equivalent to setTimestamp(CompositeTimestamp.getCompositeTimestamp(eventDate, ageOffDate));
+     *
+     * @param eventDate
+     * @param ageOffDate
+     */
+    default void setTimestamp(long eventDate, long ageOffDate) {
+        setTimestamp(CompositeTimestamp.getCompositeTimeStamp(eventDate, ageOffDate));
+    }
 
     Collection<String> getErrors();
 

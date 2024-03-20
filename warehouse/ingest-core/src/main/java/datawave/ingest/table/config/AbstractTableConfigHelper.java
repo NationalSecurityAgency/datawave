@@ -25,8 +25,7 @@ import datawave.iterators.PropogatingIterator;
 
 public abstract class AbstractTableConfigHelper implements TableConfigHelper {
 
-    private static final String DISABLE_VERSIONING_ITERATOR = ".disable.versioning.iterator";
-    protected Configuration config;
+    public static final String DISABLE_VERSIONING_ITERATOR = ".disable.versioning.iterator";
 
     protected AbstractTableConfigHelper() {}
 
@@ -82,6 +81,8 @@ public abstract class AbstractTableConfigHelper implements TableConfigHelper {
      *            the aggregators that should be set on {@code tableName}
      * @param tops
      *            accumulo table operations helper for configuring tables
+     * @param config
+     *            the configuration
      * @param log
      *            a {@link Logger} for diagnostic messages
      *
@@ -92,9 +93,9 @@ public abstract class AbstractTableConfigHelper implements TableConfigHelper {
      * @throws TableNotFoundException
      *             if the table is not found
      */
-    protected void setAggregatorConfigurationIfNecessary(String tableName, List<CombinerConfiguration> aggregators, TableOperations tops, Logger log)
-                    throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
-        if (areAggregatorsConfigured(tableName, aggregators, tops)) {
+    protected void setAggregatorConfigurationIfNecessary(String tableName, List<CombinerConfiguration> aggregators, TableOperations tops, Configuration config,
+                    Logger log) throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
+        if (areAggregatorsConfigured(tableName, aggregators, tops, config)) {
             log.debug(tableName + " appears to have its aggregators configured already.");
             return;
         }
@@ -143,12 +144,15 @@ public abstract class AbstractTableConfigHelper implements TableConfigHelper {
      *            the aggregators to check for on {@code tableName}
      * @param tops
      *            accumulo table operations helper for configuring tables
+     * @param config
+     *            the configuration
      * @return {@code true} if {@code aggregators} are configured on {@code tableName} and {@code false} if not
      *
      * @throws TableNotFoundException
      *             if the table is not found
      */
-    protected boolean areAggregatorsConfigured(String tableName, List<CombinerConfiguration> aggregators, TableOperations tops) throws TableNotFoundException {
+    protected boolean areAggregatorsConfigured(String tableName, List<CombinerConfiguration> aggregators, TableOperations tops, Configuration config)
+                    throws TableNotFoundException {
         boolean aggregatorsConfigured = false;
         Map<String,String> props = generateInitialTableProperties(config, tableName);
         props.putAll(generateAggTableProperties(aggregators));

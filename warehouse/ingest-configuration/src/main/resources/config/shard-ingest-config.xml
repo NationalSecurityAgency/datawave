@@ -71,6 +71,15 @@
 </property>
 
 <property>
+	<name>${table.name.shardIndex}.disable.versioning.iterator</name>
+	<value>true</value>
+</property>
+<property>
+	<name>${table.name.shardReverseIndex}.disable.versioning.iterator</name>
+	<value>true</value>
+</property>
+
+<property>
 	<name>markings.setup.iterator.enabled</name>
 	<value>false</value>
 </property>

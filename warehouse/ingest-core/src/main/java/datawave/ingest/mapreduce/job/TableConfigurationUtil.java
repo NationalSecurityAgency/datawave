@@ -1,5 +1,7 @@
 package datawave.ingest.mapreduce.job;
 
+import static datawave.ingest.table.config.AbstractTableConfigHelper.DISABLE_VERSIONING_ITERATOR;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -27,8 +29,10 @@ import org.apache.accumulo.core.client.NamespaceExistsException;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.NamespaceOperations;
+import org.apache.accumulo.core.client.admin.NewTableConfiguration;
 import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.core.conf.Property;
+import org.apache.accumulo.core.data.constraints.DefaultKeySizeConstraint;
 import org.apache.accumulo.core.iterators.Combiner;
 import org.apache.accumulo.core.iterators.IteratorUtil;
 import org.apache.hadoop.conf.Configuration;
@@ -259,7 +263,14 @@ public class TableConfigurationUtil {
             // If the tables don't exist, then create them.
             try {
                 if (!tops.exists(table)) {
-                    tops.create(table);
+                    boolean disableVersioning = conf != null && conf.getBoolean(table + DISABLE_VERSIONING_ITERATOR, false);
+                    if (disableVersioning) {
+                        tops.create(table, new NewTableConfiguration().withoutDefaultIterators());
+                        // withoutDefaultIterators will also skip the default table constraint, so set that
+                        tops.setProperty(table, Property.TABLE_CONSTRAINT_PREFIX + "1", DefaultKeySizeConstraint.class.getName());
+                    } else {
+                        tops.create(table);
+                    }
                 }
             } catch (TableExistsException te) {
                 // in this case, somebody else must have created the table after our existence check

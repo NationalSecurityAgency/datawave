@@ -18,6 +18,7 @@ public class ValueCombiner implements Iterator<Value> {
     Key topKey;
     SortedKeyValueIterator<Key,Value> source;
     boolean hasNext;
+    PartialKey keysToCombine = PartialKey.ROW_COLFAM_COLQUAL_COLVIS;
 
     private static final Logger log = Logger.getLogger(ValueCombiner.class);
 
@@ -28,7 +29,12 @@ public class ValueCombiner implements Iterator<Value> {
      *            The {@code SortedKeyValueIterator<Key,Value>} from which to read data.
      */
     public ValueCombiner(SortedKeyValueIterator<Key,Value> source) {
+        this(source, PartialKey.ROW_COLFAM_COLQUAL_COLVIS);
+    }
+
+    public ValueCombiner(SortedKeyValueIterator<Key,Value> source, PartialKey keysToCombine) {
         this.source = source;
+        this.keysToCombine = keysToCombine;
         topKey = new Key(source.getTopKey());
         hasNext = _hasNext();
     }
@@ -40,7 +46,7 @@ public class ValueCombiner implements Iterator<Value> {
                 log.trace(source.getTopKey());
 
         }
-        return source.hasTop() && topKey.equals(source.getTopKey(), PartialKey.ROW_COLFAM_COLQUAL_COLVIS);
+        return source.hasTop() && topKey.equals(source.getTopKey(), keysToCombine);
     }
 
     /**

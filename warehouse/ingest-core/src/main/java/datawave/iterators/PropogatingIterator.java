@@ -150,7 +150,7 @@ public class PropogatingIterator implements SortedKeyValueIterator<Key,Value>, O
             // reset the state of the combiner.
             aggr.reset();
 
-            aggregatedValue = aggr.reduce(keyToAggregate, new ValueCombiner(iterator));
+            aggregatedValue = aggr.reduce(keyToAggregate, aggr.getValues(iterator));
 
             // always propagate deletes
             if (aggr.propogateKey() || workKey.isDeleted()) {

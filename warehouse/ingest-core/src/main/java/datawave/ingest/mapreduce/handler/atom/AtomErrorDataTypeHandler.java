@@ -161,11 +161,11 @@ public class AtomErrorDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends AtomDataTyp
         for (NormalizedContentInterface nci : allFields.get(ERROR_FIELD)) {
             String columnQualifier = getVisibilityColumnString(record, nci);
             Key k = createKey(nci.getEventFieldValue(), record.getId().toString(), columnQualifier, record.getAltIds().iterator().next(),
-                            record.getVisibility(), record.getDate());
+                            record.getVisibility(), record.getTimestamp());
             BulkIngestKey bk = new BulkIngestKey(tname, k);
             contextWriter.write(bk, NULL_VALUE, context);
             count++;
-            Key categoryKey = new Key(nci.getEventFieldValue(), "", "", record.getVisibility(), record.getDate());
+            Key categoryKey = new Key(nci.getEventFieldValue(), "", "", record.getVisibility(), record.getTimestamp());
             categories.add(categoryKey);
         }
 
