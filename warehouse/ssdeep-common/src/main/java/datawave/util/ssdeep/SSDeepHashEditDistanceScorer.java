@@ -3,8 +3,12 @@ package datawave.util.ssdeep;
 import org.apache.commons.text.similarity.LevenshteinDistance;
 import org.apache.log4j.Logger;
 
-/** Implements functions to calculate a similarity score for a pair of SSDeepHashes */
-public class SSDeepHashEditDistanceScorer implements SSDeepHashScorer {
+/**
+ * Implements functions to calculate a similarity score for a pair of SSDeepHashes. This implementation will calculate an edit distance between two hashes and
+ * the create a normalized score between 0-100, with 100 being a great match and 0 being a horrible match. This is designed to give relatively equal footing to
+ * hash comparisons that have different lenghts.
+ */
+public class SSDeepHashEditDistanceScorer implements SSDeepHashScorer<Integer> {
     private static final Logger log = Logger.getLogger(SSDeepHash.class);
 
     private final int maxRepeatedCharacters;
@@ -27,7 +31,7 @@ public class SSDeepHashEditDistanceScorer implements SSDeepHashScorer {
      *            the second object to be compared.
      * @return an integer between 0 and 100
      */
-    public int apply(SSDeepHash signature1, SSDeepHash signature2) {
+    public Integer apply(SSDeepHash signature1, SSDeepHash signature2) {
         if ((null == signature1) || (null == signature2)) {
             return -1;
         }
