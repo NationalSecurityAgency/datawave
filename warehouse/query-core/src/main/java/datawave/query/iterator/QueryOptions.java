@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
@@ -39,12 +38,7 @@ import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
 
-import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.io.Input;
-import com.esotericsoftware.kryo.io.Output;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
@@ -283,6 +277,12 @@ public class QueryOptions implements OptionDescriber {
     public static final String FIELD_COUNTS = "field.counts";
     public static final String TERM_COUNTS = "term.counts";
 
+
+    /**
+     * Controls whether a query's ID is logged on the tserver using {@link QueryLogIterator}
+     */
+    public static final String TSERVER_LOGGING_ACTIVE = "tserver.logging.active";
+
     protected Map<String,String> options;
 
     protected String scanId;
@@ -450,6 +450,9 @@ public class QueryOptions implements OptionDescriber {
     private CountMap termCounts;
     private CountMapSerDe mapSerDe;
 
+    // Controls whether query IDs are logged on the tserver level via QueryLogIterator.
+    private boolean tserverLoggingActive = false;
+
     public void deepCopy(QueryOptions other) {
         this.options = other.options;
         this.query = other.query;
@@ -562,6 +565,7 @@ public class QueryOptions implements OptionDescriber {
 
         this.fieldCounts = other.fieldCounts;
         this.termCounts = other.termCounts;
+
     }
 
     public String getQuery() {
@@ -1286,6 +1290,7 @@ public class QueryOptions implements OptionDescriber {
         options.put(TERM_FREQUENCY_AGGREGATION_THRESHOLD_MS, "TermFrequency aggregations that exceed this threshold are logged as a warning");
         options.put(FIELD_COUNTS, "Map of field counts from the global index");
         options.put(TERM_COUNTS, "Map of term counts from the global index");
+        options.put(TSERVER_LOGGING_ACTIVE, "Whether the queryID will be logged during queries");
         return new IteratorOptions(getClass().getSimpleName(), "Runs a query against the DATAWAVE tables", options, null);
     }
 
@@ -1782,6 +1787,10 @@ public class QueryOptions implements OptionDescriber {
             }
         }
 
+        if (options.containsKey(TSERVER_LOGGING_ACTIVE)) {
+            this.tserverLoggingActive = Boolean.parseBoolean(options.get(TSERVER_LOGGING_ACTIVE));
+        }
+
         return true;
     }
 
@@ -2265,6 +2274,14 @@ public class QueryOptions implements OptionDescriber {
 
     public void setTfAggregationThresholdMs(int tfAggregationThresholdMs) {
         this.tfAggregationThresholdMs = tfAggregationThresholdMs;
+    }
+
+    public boolean isTserverLoggingActive() {
+        return this.tserverLoggingActive;
+    }
+
+    public void setTserverLoggingActive(boolean tserverLoggingActive) {
+        this.tserverLoggingActive = tserverLoggingActive;
     }
 
     /**
