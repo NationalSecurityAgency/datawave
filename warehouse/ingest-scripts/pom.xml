@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave</groupId>
         <artifactId>datawave-warehouse-parent</artifactId>
-        <version>6.9.1</version>
+        <version>6.9.2-SNAPSHOT</version>
     </parent>
     <artifactId>datawave-ingest-scripts</artifactId>
     <name>${project.artifactId}</name>
