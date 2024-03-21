@@ -323,6 +323,8 @@
         <!--    control when to log warnings for long aggregations    -->
         <property name="docAggregationThresholdMs" value="-1" />
         <property name="tfAggregationThresholdMs" value="-1" />
+        <!--    control if query IDs are logged on the tserver    -->
+        <property name="tserverLoggingActive" value="true" />
     </bean>
 
     <util:list id="IvaratorCacheDirConfigs">

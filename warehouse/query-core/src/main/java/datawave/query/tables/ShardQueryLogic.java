@@ -2929,4 +2929,12 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
     public void setRebuildDatatypeFilterPerShard(boolean rebuildDatatypeFilterPerShard) {
         getConfig().setRebuildDatatypeFilterPerShard(rebuildDatatypeFilterPerShard);
     }
+
+    public boolean isTserverLoggingActive() {
+        return getConfig().isTserverLoggingActive();
+    }
+
+    public void setTserverLoggingActive(boolean tserverLoggingActive) {
+        getConfig().setTserverLoggingActive(tserverLoggingActive);
+    }
 }
