@@ -7,7 +7,7 @@ import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CountDownLatch;
 
-import org.apache.commons.collections.keyvalue.UnmodifiableMapEntry;
+import org.apache.commons.collections4.keyvalue.UnmodifiableMapEntry;
 
 public class CompositeQueryLogicResults implements Iterable<Object>, Thread.UncaughtExceptionHandler {
 
