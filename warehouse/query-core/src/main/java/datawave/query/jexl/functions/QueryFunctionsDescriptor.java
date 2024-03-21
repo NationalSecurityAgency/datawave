@@ -217,6 +217,7 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
             case QueryFunctions.MIN:
             case QueryFunctions.MAX:
             case QueryFunctions.AVERAGE:
+            case QueryFunctions.RENAME_FUNCTION:
                 if (numArgs == 0) {
                     throw new IllegalArgumentException("Expected at least one argument to the " + name + " function");
                 }

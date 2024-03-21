@@ -19,7 +19,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import com.google.common.collect.Sets;
@@ -39,6 +38,7 @@ import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.FileType;
 import datawave.query.testframework.QueryLogicTestHarness;
+import datawave.query.util.MetadataHelperFactory;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
@@ -53,6 +53,9 @@ import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.query.runner.RunningQuery;
 import datawave.webservice.result.EventQueryResponseBase;
 
+/**
+ * Ingests some test data into the ssdeepIndex and shard tables and then tests that various SSDeep query logics against that data produce the expected results
+ */
 public class SSDeepIngestQueryTest extends AbstractFunctionalQuery {
 
     @ClassRule
@@ -61,6 +64,10 @@ public class SSDeepIngestQueryTest extends AbstractFunctionalQuery {
     private static final Logger log = Logger.getLogger(SSDeepIngestQueryTest.class);
 
     SSDeepSimilarityQueryLogic similarityQueryLogic;
+
+    SSDeepDiscoveryQueryLogic discoveryQueryLogic;
+
+    SSDeepChainedDiscoveryQueryLogic similarityDiscoveryQueryLogic;
 
     @BeforeClass
     public static void filterSetup() throws Exception {
@@ -82,6 +89,7 @@ public class SSDeepIngestQueryTest extends AbstractFunctionalQuery {
     public void setupQuery() {
         MarkingFunctions markingFunctions = new MarkingFunctions.Default();
         ResponseObjectFactory responseFactory = new DefaultResponseObjectFactory();
+        MetadataHelperFactory metadataHelperFactory = new MetadataHelperFactory();
 
         similarityQueryLogic = new SSDeepSimilarityQueryLogic();
         similarityQueryLogic.setTableName(SSDeepIndexHandler.DEFAULT_SSDEEP_INDEX_TABLE_NAME);
@@ -90,6 +98,24 @@ public class SSDeepIngestQueryTest extends AbstractFunctionalQuery {
         similarityQueryLogic.setBucketEncodingBase(BUCKET_ENCODING_BASE);
         similarityQueryLogic.setBucketEncodingLength(BUCKET_ENCODING_LENGTH);
         similarityQueryLogic.setIndexBuckets(BUCKET_COUNT);
+
+        discoveryQueryLogic = new SSDeepDiscoveryQueryLogic();
+        discoveryQueryLogic.setTableName("shardIndex");
+        discoveryQueryLogic.setIndexTableName("shardIndex");
+        discoveryQueryLogic.setReverseIndexTableName("shardReverseIndex");
+        discoveryQueryLogic.setModelTableName("metadata");
+        discoveryQueryLogic.setMarkingFunctions(markingFunctions);
+        discoveryQueryLogic.setMetadataHelperFactory(metadataHelperFactory);
+        discoveryQueryLogic.setResponseObjectFactory(responseFactory);
+
+        // FUTURE: Implement a streaming chain strategy for the SSDeepChainedDiscoveryQueryLogic
+        FullSSDeepDiscoveryChainStrategy ssdeepDiscoveryChainStrategy = new FullSSDeepDiscoveryChainStrategy();
+
+        similarityDiscoveryQueryLogic = new SSDeepChainedDiscoveryQueryLogic();
+        similarityDiscoveryQueryLogic.setTableName("ssdeepIndex");
+        similarityDiscoveryQueryLogic.setLogic1(similarityQueryLogic);
+        similarityDiscoveryQueryLogic.setLogic2(discoveryQueryLogic);
+        similarityDiscoveryQueryLogic.setChainStrategy(ssdeepDiscoveryChainStrategy);
 
         // init must set auths
         testInit();
@@ -126,6 +152,56 @@ public class SSDeepIngestQueryTest extends AbstractFunctionalQuery {
         SSDeepTestUtil.assertSSDeepSimilarityMatch(testSSDeep, testSSDeep, "38", "100", observedEvents);
     }
 
+    @Test
+    public void testSSDeepDiscovery() throws Exception {
+        log.info("------ testDiscovery ------");
+        String testSSDeep = "384:nv/fP9FmWVMdRFj2aTgSO+u5QT4ZE1PIVS:nDmWOdRFNTTs504cQS";
+        String query = "CHECKSUM_SSDEEP:\"" + testSSDeep + "\"";
+        EventQueryResponseBase response = runSSDeepQuery(query, discoveryQueryLogic, 0);
+
+        List<EventBase> events = response.getEvents();
+        Assert.assertEquals(1, events.size());
+        Map<String,Map<String,String>> observedEvents = extractObservedEvents(events);
+
+        Map.Entry<String,Map<String,String>> result = observedEvents.entrySet().iterator().next();
+        Map<String,String> resultFields = result.getValue();
+        Assert.assertEquals(testSSDeep, resultFields.get("VALUE"));
+        Assert.assertEquals("CHECKSUM_SSDEEP", resultFields.get("FIELD"));
+        Assert.assertEquals("20201031", resultFields.get("DATE"));
+        Assert.assertEquals("ssdeep", resultFields.get("DATA TYPE"));
+        Assert.assertEquals("4", resultFields.get("RECORD COUNT"));
+
+        // At this point, the results have not been enriched with these fields, so they should not exist.
+        Assert.assertNull(null, resultFields.get("QUERY"));
+        Assert.assertNull(null, resultFields.get("WEIGHTED_SCORE"));
+    }
+
+    @Test
+    public void testChainedSSDeepDiscovery() throws Exception {
+        log.info("------ testSSDeepDiscovery ------");
+        String testSSDeep = "384:nv/fP9FmWVMdRFj2aTgSO+u5QT4ZE1PIVS:nDmWOdRFNTTs504---";
+        String targetSSDeep = "384:nv/fP9FmWVMdRFj2aTgSO+u5QT4ZE1PIVS:nDmWOdRFNTTs504cQS";
+        String query = "CHECKSUM_SSDEEP:" + testSSDeep;
+        EventQueryResponseBase response = runSSDeepQuery(query, similarityDiscoveryQueryLogic, 0);
+
+        List<EventBase> events = response.getEvents();
+        Assert.assertEquals(1, events.size());
+        Map<String,Map<String,String>> observedEvents = extractObservedEvents(events);
+
+        Map.Entry<String,Map<String,String>> result = observedEvents.entrySet().iterator().next();
+        Map<String,String> resultFields = result.getValue();
+        Assert.assertEquals(targetSSDeep, resultFields.get("VALUE"));
+
+        Assert.assertEquals("CHECKSUM_SSDEEP", resultFields.get("FIELD"));
+        Assert.assertEquals("20201031", resultFields.get("DATE"));
+        Assert.assertEquals("ssdeep", resultFields.get("DATA TYPE"));
+        Assert.assertEquals("4", resultFields.get("RECORD COUNT"));
+
+        // The results have been enriched with these fields at this point.
+        Assert.assertEquals(testSSDeep, resultFields.get("QUERY"));
+        Assert.assertEquals("100", resultFields.get("WEIGHTED_SCORE"));
+    }
+
     @SuppressWarnings("rawtypes")
     public EventQueryResponseBase runSSDeepQuery(String query, QueryLogic<?> queryLogic, int minScoreThreshold) throws Exception {
         QueryImpl q = new QueryImpl();
@@ -135,7 +211,7 @@ public class SSDeepIngestQueryTest extends AbstractFunctionalQuery {
         q.setQueryAuthorizations(auths.toString());
 
         if (minScoreThreshold > 0) {
-            q.addParameter(SSDeepSimilarityQueryTransformer.MIN_SSDEEP_SCORE_PARAMETER, String.valueOf(minScoreThreshold));
+            q.addParameter(SSDeepScoringFunction.MIN_SSDEEP_SCORE_PARAMETER, String.valueOf(minScoreThreshold));
         }
 
         RunningQuery runner = new RunningQuery(client, AccumuloConnectionFactory.Priority.NORMAL, queryLogic, q, "", principal, new QueryMetricFactoryImpl());

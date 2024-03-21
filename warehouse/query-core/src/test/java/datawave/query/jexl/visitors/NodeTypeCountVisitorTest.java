@@ -255,16 +255,6 @@ public class NodeTypeCountVisitorTest {
     }
 
     @Test
-    public void testASTArrayLiteral() throws ParseException {
-        assertEquals(1, count("[1, 2, 3]").getTotal(ASTArrayLiteral.class));
-    }
-
-    @Test
-    public void testASTMapLiteral() throws ParseException {
-        assertEquals(1, count("{'one':1, 'two':2, 'three':3}").getTotal(ASTMapLiteral.class));
-    }
-
-    @Test
     public void testASTMapEntry() {
         assertEquals(1, count(new ASTMapEntry(ParserTreeConstants.JJTMAPENTRY)).getTotal(ASTMapEntry.class));
     }

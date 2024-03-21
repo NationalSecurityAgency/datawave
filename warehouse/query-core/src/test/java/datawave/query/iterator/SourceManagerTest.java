@@ -394,6 +394,11 @@ public class SourceManagerTest {
         }
 
         @Override
+        public boolean isUserCompaction() {
+            return false;
+        }
+
+        @Override
         public Authorizations getAuthorizations() {
             throw new UnsupportedOperationException();
         }

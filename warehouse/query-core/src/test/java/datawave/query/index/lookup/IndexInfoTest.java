@@ -4,10 +4,17 @@ import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DELAYED;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.jexl3.parser.JexlNode;
@@ -341,5 +348,48 @@ public class IndexInfoTest {
         merged = right.intersect(left);
         assertTrue(merged.uids().isEmpty());
         assertTrue(TreeEqualityVisitor.isEqual(expected, merged.getNode()));
+    }
+
+    @Test
+    public void testFieldCountSerialization() throws IOException {
+
+        Map<String,Long> counts = new HashMap<>();
+        counts.put("FIELD_A", 23L);
+        counts.put("FIELD_B", 2077L);
+
+        IndexInfo indexInfo = new IndexInfo();
+        indexInfo.setFieldCounts(counts);
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        DataOutputStream out = new DataOutputStream(baos);
+        indexInfo.write(out);
+        out.close();
+
+        ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
+        DataInputStream in = new DataInputStream(bais);
+
+        IndexInfo other = new IndexInfo();
+        other.readFields(in);
+        bais.close();
+
+        assertEquals(counts, other.getFieldCounts());
+    }
+
+    @Test
+    public void testMergeFieldCounts() {
+        Map<String,Long> firstCounts = new HashMap<>();
+        firstCounts.put("FOO", 17L);
+
+        Map<String,Long> secondCounts = new HashMap<>();
+        secondCounts.put("FOO", 23L);
+
+        IndexInfo first = new IndexInfo();
+        IndexInfo second = new IndexInfo();
+
+        first.setFieldCounts(firstCounts);
+        second.setFieldCounts(secondCounts);
+
+        IndexInfo merged = first.union(second);
+        assertEquals(40L, merged.getFieldCounts().get("FOO").longValue());
     }
 }

@@ -83,33 +83,7 @@ public class JexlStringBuildingVisitor extends BaseVisitor {
      * @return a string query
      */
     public static String buildQuery(JexlNode script, boolean sortDedupeChildren) {
-
-        JexlStringBuildingVisitor visitor = new JexlStringBuildingVisitor(sortDedupeChildren);
-
-        String s = null;
-        try {
-            StringBuilder sb = (StringBuilder) script.jjtAccept(visitor, new StringBuilder());
-
-            s = sb.toString();
-
-            try {
-                JexlASTHelper.parseJexlQuery(s);
-            } catch (ParseException e) {
-                log.error("Could not parse JEXL AST after performing transformations to run the query", e);
-
-                for (String line : PrintingVisitor.formattedQueryStringList(script)) {
-                    log.error(line);
-                }
-                log.error("");
-
-                QueryException qe = new QueryException(DatawaveErrorCode.QUERY_EXECUTION_ERROR, e);
-                throw new DatawaveFatalQueryException(qe);
-            }
-        } catch (StackOverflowError e) {
-
-            throw e;
-        }
-        return s;
+        return buildQueryWithoutParse(script, sortDedupeChildren);
     }
 
     /**

@@ -184,16 +184,14 @@ public class DefaultExtendedEdgeQueryLogic extends EdgeQueryLogic {
         }
 
         this.scanner = scanner;
-        iterator = scanner.iterator();
+        this.iterator = scanner.iterator();
     }
 
     @Override
     protected QueryData configureRanges(String queryString) throws ParseException {
-        QueryData qData = new QueryData();
         if (this.summaryInputType) {
             Set<Range> ranges = computeRanges((EdgeExtendedSummaryConfiguration) this.config);
-            qData.setRanges(ranges);
-            return qData;
+            return new QueryData().withRanges(ranges);
         } else {
             return super.configureRanges(queryString);
         }
