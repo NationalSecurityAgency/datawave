@@ -6,6 +6,8 @@ import java.util.function.Predicate;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 
+import datawave.security.authorization.predicate.AuthorizationsPredicate;
+
 /**
  * This is a predicate that will test the auths against a specified visibility (as defined by accumulo's ColumnVisibility). In addition to the visibility, one
  * can specify that only the first of the authorizations is matched (presumably the user).
