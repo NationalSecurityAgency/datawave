@@ -100,28 +100,28 @@ public class PushdownFunction implements Function<QueryData,List<ScannerChunk>> 
                     queryPlanSet.add(hashCode);
                     try {
 
-                        try (SessionOptions options = new SessionOptions()) {
+                        SessionOptions options = new SessionOptions();
 
-                            if (log.isTraceEnabled()) {
-                                log.trace("setting ranges" + plan.getRanges());
-                                log.trace("range set size" + plan.getSettings().size());
-                            }
-                            for (IteratorSetting setting : plan.getSettings()) {
-                                options.addScanIterator(setting);
-                            }
-
-                            for (IteratorSetting setting : customSettings) {
-                                options.addScanIterator(setting);
-                            }
-
-                            for (String cf : plan.getColumnFamilies()) {
-                                options.fetchColumnFamily(new Text(cf));
-                            }
-
-                            options.setQueryConfig(this.config);
-
-                            chunks.add(new ScannerChunk(options, Lists.newArrayList(plan.getRanges()), server));
+                        if (log.isTraceEnabled()) {
+                            log.trace("setting ranges" + plan.getRanges());
+                            log.trace("range set size" + plan.getSettings().size());
                         }
+                        for (IteratorSetting setting : plan.getSettings()) {
+                            options.addScanIterator(setting);
+                        }
+
+                        for (IteratorSetting setting : customSettings) {
+                            options.addScanIterator(setting);
+                        }
+
+                        for (String cf : plan.getColumnFamilies()) {
+                            options.fetchColumnFamily(new Text(cf));
+                        }
+
+                        options.setQueryConfig(this.config);
+
+                        chunks.add(new ScannerChunk(options, Lists.newArrayList(plan.getRanges()), server));
+
                     } catch (Exception e) {
                         log.error(e);
                         throw new AccumuloException(e);

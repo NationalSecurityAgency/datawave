@@ -453,17 +453,17 @@ public class ShardIndexQueryTableStaticMethods {
 
         bs.setRanges(ranges);
 
-        try (SessionOptions options = new SessionOptions()) {
-            IteratorSetting setting = configureDateRangeIterator(config);
+        SessionOptions options = new SessionOptions();
+
+        IteratorSetting setting = configureDateRangeIterator(config);
+        options.addScanIterator(setting);
+
+        setting = configureGlobalIndexTermMatchingIterator(config, literals, patterns, reverseIndex, limitToUniqueTerms);
+        if (setting != null) {
             options.addScanIterator(setting);
-
-            setting = configureGlobalIndexTermMatchingIterator(config, literals, patterns, reverseIndex, limitToUniqueTerms);
-            if (setting != null) {
-                options.addScanIterator(setting);
-            }
-
-            bs.setOptions(options);
         }
+
+        bs.setOptions(options);
 
         return bs;
     }
@@ -481,19 +481,18 @@ public class ShardIndexQueryTableStaticMethods {
 
         bs.setRanges(ranges);
 
-        try (SessionOptions options = new SessionOptions()) {
-            options.addScanIterator(configureDateRangeIterator(config));
-            IteratorSetting setting = configureGlobalIndexDataTypeFilter(config, config.getDatatypeFilter());
-            if (setting != null) {
-                options.addScanIterator(setting);
-            }
-            setting = configureGlobalIndexTermMatchingIterator(config, literals, patterns, reverseIndex, limitToUniqueTerms);
-            if (setting != null) {
-                options.addScanIterator(setting);
-            }
-
-            bs.setOptions(options);
+        SessionOptions options = new SessionOptions();
+        options.addScanIterator(configureDateRangeIterator(config));
+        IteratorSetting setting = configureGlobalIndexDataTypeFilter(config, config.getDatatypeFilter());
+        if (setting != null) {
+            options.addScanIterator(setting);
         }
+        setting = configureGlobalIndexTermMatchingIterator(config, literals, patterns, reverseIndex, limitToUniqueTerms);
+        if (setting != null) {
+            options.addScanIterator(setting);
+        }
+
+        bs.setOptions(options);
 
         return bs;
     }
