@@ -38,6 +38,7 @@ public class QueryFunctions {
     public static final String MIN = "min";
     public static final String COUNT = "count";
     public static final String AVERAGE = "average";
+    public static final String RENAME_FUNCTION = "rename";
 
     protected static Logger log = Logger.getLogger(QueryFunctions.class);
 

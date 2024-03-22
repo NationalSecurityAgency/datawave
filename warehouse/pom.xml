@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave</groupId>
         <artifactId>datawave-parent</artifactId>
-        <version>6.5.0-SNAPSHOT</version>
+        <version>6.10.0-SNAPSHOT</version>
     </parent>
     <artifactId>datawave-warehouse-parent</artifactId>
     <packaging>pom</packaging>
@@ -29,6 +29,8 @@
         <module>ops-tools</module>
         <module>data-dictionary-core</module>
         <module>edge-model-configuration-core</module>
+        <module>ssdeep-common</module>
+        <module>ingest-ssdeep</module>
     </modules>
     <scm>
         <connection>scm:git:https://fixme/git/warehouse/</connection>
@@ -337,7 +339,7 @@
             <dependency>
                 <groupId>org.codehaus.jackson</groupId>
                 <artifactId>jackson-mapper-asl</artifactId>
-                <version>1.9.13</version>
+                <version>${version.jackson-mapper-asl}</version>
             </dependency>
             <dependency>
                 <groupId>org.fusesource.jdbm</groupId>
@@ -357,7 +359,7 @@
             <dependency>
                 <groupId>org.json</groupId>
                 <artifactId>json</artifactId>
-                <version>20080701</version>
+                <version>${version.json}</version>
             </dependency>
             <dependency>
                 <groupId>org.mortbay.jetty</groupId>
@@ -372,7 +374,7 @@
             <dependency>
                 <groupId>org.python</groupId>
                 <artifactId>jython</artifactId>
-                <version>2.5.2b2-callable</version>
+                <version>${version.jython}</version>
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>
@@ -443,6 +445,11 @@
             <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-common-test</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
     <build>
         <pluginManagement>
@@ -474,6 +481,18 @@
                             <log4j.configuration>file:${project.build.testOutputDirectory}/log4j.properties</log4j.configuration>
                         </systemPropertyVariables>
                     </configuration>
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.junit.jupiter</groupId>
+                            <artifactId>junit-jupiter-engine</artifactId>
+                            <version>${version.junit.bom}</version>
+                        </dependency>
+                        <dependency>
+                            <groupId>org.junit.vintage</groupId>
+                            <artifactId>junit-vintage-engine</artifactId>
+                            <version>${version.junit.bom}</version>
+                        </dependency>
+                    </dependencies>
                     <executions>
                         <execution>
                             <id>default-test</id>
@@ -537,6 +556,18 @@
                         <HADOOP_CONF_DIR>/dev/null</HADOOP_CONF_DIR>
                     </environmentVariables>
                 </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.junit.jupiter</groupId>
+                        <artifactId>junit-jupiter-engine</artifactId>
+                        <version>${version.junit.bom}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.junit.vintage</groupId>
+                        <artifactId>junit-vintage-engine</artifactId>
+                        <version>${version.junit.bom}</version>
+                    </dependency>
+                </dependencies>
                 <executions>
                     <execution>
                         <id>integration-test</id>

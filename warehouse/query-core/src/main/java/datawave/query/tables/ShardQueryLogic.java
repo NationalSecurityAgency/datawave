@@ -75,6 +75,7 @@ import datawave.query.tables.stats.ScanSessionStats;
 import datawave.query.transformer.DocumentTransform;
 import datawave.query.transformer.DocumentTransformer;
 import datawave.query.transformer.EventQueryDataDecoratorTransformer;
+import datawave.query.transformer.FieldRenameTransform;
 import datawave.query.transformer.GroupingTransform;
 import datawave.query.transformer.UniqueTransform;
 import datawave.query.util.DateIndexHelper;
@@ -259,7 +260,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
 
     @Override
     public GenericQueryConfiguration initialize(AccumuloClient client, Query settings, Set<Authorizations> auths) throws Exception {
-
+        this.transformerInstance = null;
         this.config = ShardQueryConfiguration.create(this, settings);
         if (log.isTraceEnabled())
             log.trace("Initializing ShardQueryLogic: " + System.identityHashCode(this) + '('
@@ -599,7 +600,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             reducedInSettings = Boolean.parseBoolean(reducedResponseStr);
         }
         boolean reduced = (this.isReducedResponse() || reducedInSettings);
-        DocumentTransformer transformer = new DocumentTransformer(this, settings, markingFunctions, responseObjectFactory, reduced);
+        DocumentTransformer transformer = createDocumentTransformer(this, settings, markingFunctions, responseObjectFactory, reduced);
         transformer.setEventQueryDataDecoratorTransformer(eventQueryDataDecoratorTransformer);
         transformer.setContentFieldNames(getConfig().getContentFieldNames());
         transformer.setLogTimingDetails(this.getLogTimingDetails());
@@ -612,8 +613,13 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         return this.transformerInstance;
     }
 
+    protected DocumentTransformer createDocumentTransformer(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions markingFunctions,
+                    ResponseObjectFactory responseObjectFactory, Boolean reducedResponse) {
+        return new DocumentTransformer(logic, settings, markingFunctions, responseObjectFactory, reducedResponse);
+    }
+
     public boolean isLongRunningQuery() {
-        return getConfig().getGroupFields().hasGroupByFields();
+        return getConfig().getGroupFields().hasGroupByFields() || !getUniqueFields().isEmpty();
     }
 
     /**
@@ -629,7 +635,8 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
                 if (alreadyExists != null) {
                     ((UniqueTransform) alreadyExists).updateConfig(getConfig().getUniqueFields(), getQueryModel());
                 } else {
-                    ((DocumentTransformer) this.transformerInstance).addTransform(new UniqueTransform(this, getConfig().getUniqueFields()));
+                    ((DocumentTransformer) this.transformerInstance)
+                                    .addTransform(new UniqueTransform(this, getConfig().getUniqueFields(), this.getQueryExecutionForPageTimeout()));
                 }
             }
 
@@ -643,6 +650,17 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
                                     .addTransform(new GroupingTransform(groupFields, this.markingFunctions, this.getQueryExecutionForPageTimeout()));
                 }
             }
+
+            if (getConfig().getRenameFields() != null && !getConfig().getRenameFields().isEmpty()) {
+                DocumentTransform alreadyExists = ((DocumentTransformer) this.transformerInstance).containsTransform(FieldRenameTransform.class);
+                if (alreadyExists != null) {
+                    ((FieldRenameTransform) alreadyExists).updateConfig(getConfig().getRenameFields());
+                } else {
+                    ((DocumentTransformer) this.transformerInstance)
+                                    .addTransform(new FieldRenameTransform(getConfig().getRenameFields(), getIncludeGroupingContext(), isReducedResponse()));
+                }
+            }
+
         }
         if (getQueryModel() != null) {
             ((DocumentTransformer) this.transformerInstance).setQm(getQueryModel());
@@ -708,6 +726,20 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             }
 
             config.setDatatypeFilter(typeFilter);
+        }
+
+        // Get the list of field rename mappings. May be null.
+        String renameFields = settings.findParameter(QueryParameters.RENAME_FIELDS).getParameterValue().trim();
+        if (StringUtils.isNotBlank(renameFields)) {
+            Set<String> renameFieldExpressions = new HashSet<>(Arrays.asList(StringUtils.split(renameFields, Constants.PARAM_VALUE_SEP)));
+            config.setRenameFields(renameFieldExpressions);
+
+            if (log.isDebugEnabled()) {
+                final int maxLen = 100;
+                // Trim down the projection if it's stupid long
+                renameFields = maxLen < renameFields.length() ? renameFields.substring(0, maxLen) + "[TRUNCATED]" : renameFields;
+                log.debug("Rename fields: " + renameFields);
+            }
         }
 
         // Get the list of fields to project up the stack. May be null.
@@ -1532,6 +1564,22 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         getConfig().setInitialMaxTermThreshold(initialMaxTermThreshold);
     }
 
+    public int getIntermediateMaxTermThreshold() {
+        return getConfig().getIntermediateMaxTermThreshold();
+    }
+
+    public void setIntermediateMaxTermThreshold(int intermediateMaxTermThreshold) {
+        getConfig().setIntermediateMaxTermThreshold(intermediateMaxTermThreshold);
+    }
+
+    public int getIndexedMaxTermThreshold() {
+        return getConfig().getIndexedMaxTermThreshold();
+    }
+
+    public void setIndexedMaxTermThreshold(int indexedMaxTermThreshold) {
+        getConfig().setIndexedMaxTermThreshold(indexedMaxTermThreshold);
+    }
+
     public int getFinalMaxTermThreshold() {
         return getConfig().getFinalMaxTermThreshold();
     }
@@ -1937,12 +1985,28 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         getConfig().setMaxIvaratorSources(maxIvaratorSources);
     }
 
+    public long getMaxIvaratorSourceWait() {
+        return getConfig().getMaxIvaratorSourceWait();
+    }
+
+    public void setMaxIvaratorSourceWait(long maxIvaratorSourceWait) {
+        getConfig().setMaxIvaratorSourceWait(maxIvaratorSourceWait);
+    }
+
     public long getMaxIvaratorResults() {
         return getConfig().getMaxIvaratorResults();
     }
 
     public void setMaxIvaratorResults(long maxIvaratorResults) {
         getConfig().setMaxIvaratorResults(maxIvaratorResults);
+    }
+
+    public int getMaxIvaratorTerms() {
+        return getConfig().getMaxIvaratorTerms();
+    }
+
+    public void setMaxIvaratorTerms(int maxIvaratorTerms) {
+        getConfig().setMaxIvaratorTerms(maxIvaratorTerms);
     }
 
     public int getMaxEvaluationPipelines() {
@@ -2120,6 +2184,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         optionalParams.add(QueryParameters.PARAMETER_MODEL_NAME);
         optionalParams.add(QueryParameters.PARAMETER_MODEL_TABLE_NAME);
         optionalParams.add(QueryParameters.DATATYPE_FILTER_SET);
+        optionalParams.add(QueryParameters.RENAME_FIELDS);
         optionalParams.add(QueryParameters.RETURN_FIELDS);
         optionalParams.add(QueryParameters.DISALLOWLISTED_FIELDS);
         optionalParams.add(QueryParameters.FILTER_MASKED_VALUES);
@@ -2238,6 +2303,22 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         this.getConfig().setEnforceUniqueTermsWithinExpressions(enforceUniqueTermsWithinExpressions);
     }
 
+    public boolean getReduceIngestTypes() {
+        return getConfig().getReduceIngestTypes();
+    }
+
+    public void setReduceIngestTypes(boolean reduceIngestTypes) {
+        getConfig().setReduceIngestTypes(reduceIngestTypes);
+    }
+
+    public boolean getReduceIngestTypesPerShard() {
+        return getConfig().getReduceIngestTypesPerShard();
+    }
+
+    public void setReduceIngestTypesPerShard(boolean reduceIngestTypesPerShard) {
+        getConfig().setReduceIngestTypesPerShard(reduceIngestTypesPerShard);
+    }
+
     public boolean getPruneQueryByIngestTypes() {
         return getConfig().getPruneQueryByIngestTypes();
     }
@@ -2252,6 +2333,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
 
     public void setReduceQueryFields(boolean reduceQueryFields) {
         this.getConfig().setReduceQueryFields(reduceQueryFields);
+    }
+
+    public boolean getReduceQueryFieldsPerShard() {
+        return this.getConfig().getReduceQueryFieldsPerShard();
+    }
+
+    public void setReduceQueryFieldsPerShard(boolean reduceQueryFieldsPerShard) {
+        this.getConfig().setReduceQueryFieldsPerShard(reduceQueryFieldsPerShard);
     }
 
     public boolean getReduceTypeMetadata() {
@@ -2660,5 +2749,37 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
 
     public void setPruneQueryOptions(boolean pruneQueryOptions) {
         getConfig().setPruneQueryOptions(pruneQueryOptions);
+    }
+
+    public boolean getUseFieldCounts() {
+        return getConfig().getUseFieldCounts();
+    }
+
+    public void setUseFieldCounts(boolean useFieldCounts) {
+        getConfig().setUseFieldCounts(useFieldCounts);
+    }
+
+    public boolean getUseTermCounts() {
+        return getConfig().getUseTermCounts();
+    }
+
+    public void setUseTermCounts(boolean useTermCounts) {
+        getConfig().setUseTermCounts(useTermCounts);
+    }
+
+    public boolean getSortQueryBeforeGlobalIndex() {
+        return getConfig().isSortQueryBeforeGlobalIndex();
+    }
+
+    public void setSortQueryBeforeGlobalIndex(boolean sortQueryBeforeGlobalIndex) {
+        getConfig().setSortQueryBeforeGlobalIndex(sortQueryBeforeGlobalIndex);
+    }
+
+    public boolean getSortQueryByCounts() {
+        return getConfig().isSortQueryByCounts();
+    }
+
+    public void setSortQueryByCounts(boolean sortQueryByCounts) {
+        getConfig().setSortQueryByCounts(sortQueryByCounts);
     }
 }
