@@ -142,6 +142,8 @@ public class StatsJob extends IngestJob {
     protected void configureJob(Job job, Configuration conf, Path workDirPath, FileSystem outputFs) throws Exception {
         super.configureJob(job, conf, workDirPath, outputFs);
 
+        job.setJobName("StatsJob - " + job.getJobName());
+
         job.setReducerClass(StatsHyperLogReducer.class);
     }
 
