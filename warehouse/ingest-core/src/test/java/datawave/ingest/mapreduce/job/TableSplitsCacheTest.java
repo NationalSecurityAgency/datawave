@@ -177,6 +177,7 @@ public class TableSplitsCacheTest {
         Logger.getLogger(TableSplitsCache.class).setLevel(uutLevel);
         Logger.getLogger(ZooCache.class).setLevel(zooCacheLevel);
         Logger.getLogger(ZooKeeper.class).setLevel(zooKeeperLevel);
+        TableSplitsCache.clear();
 
     }
 
@@ -440,7 +441,7 @@ public class TableSplitsCacheTest {
 
         try {
 
-            new TableSplitsCache(null);
+            TableSplitsCache.getCurrentCache(null);
 
             Assert.fail();
 
@@ -457,7 +458,7 @@ public class TableSplitsCacheTest {
 
         try {
 
-            TableSplitsCache uut = new TableSplitsCache(createMockJobConf());
+            TableSplitsCache uut = TableSplitsCache.getCurrentCache(createMockJobConf());
 
             Assert.assertNotNull("TableSplitsCache constructor failed to construct an instance.", uut);
 
@@ -472,7 +473,7 @@ public class TableSplitsCacheTest {
         setupConfiguration();
 
         try {
-            TableSplitsCache uut = new TableSplitsCache(createMockJobConf());
+            TableSplitsCache uut = TableSplitsCache.getCurrentCache(createMockJobConf());
             Assert.assertNotNull("TableSplitsCache constructor failed to construct an instance.", uut);
             Assert.assertNull("TableSplitsCache#getSplits() created a map of tables and their splits when no file should exist", uut.getSplits());
         } finally {
@@ -487,7 +488,7 @@ public class TableSplitsCacheTest {
         setupConfiguration();
         setSplitsCacheDir(String.format("/random/dir%s/must/not/exist", (int) (Math.random() * 100) + 1));
         try {
-            TableSplitsCache uut = new TableSplitsCache(createMockJobConf());
+            TableSplitsCache uut = TableSplitsCache.getCurrentCache(createMockJobConf());
             uut.update();
             Assert.assertNotNull("TableSplitsCache constructor failed to construct an instance.", uut);
             Assert.assertNull("TableSplitsCache should have no splits", uut.getSplits());
@@ -504,7 +505,7 @@ public class TableSplitsCacheTest {
         setSplitsCacheDir();
         setupConfiguration();
         try {
-            TableSplitsCache uut = new TableSplitsCache(createMockJobConf());
+            TableSplitsCache uut = TableSplitsCache.getCurrentCache(createMockJobConf());
             FileStatus fileStatus = uut.getFileStatus();
             Assert.assertNotNull("FileStatus", fileStatus);
         } finally {
@@ -522,7 +523,7 @@ public class TableSplitsCacheTest {
 
         try {
 
-            TableSplitsCache uut = new TableSplitsCache(createMockJobConf());
+            TableSplitsCache uut = TableSplitsCache.getCurrentCache(createMockJobConf());
 
             Assert.assertNotNull("TableSplitsCache constructor failed to construct an instance.", uut);
 
@@ -556,7 +557,7 @@ public class TableSplitsCacheTest {
 
         try {
 
-            TableSplitsCache uut = new TableSplitsCache(createMockJobConf());
+            TableSplitsCache uut = TableSplitsCache.getCurrentCache(createMockJobConf());
 
             Assert.assertNotNull("TableSplitsCache constructor failed to construct an instance.", uut);
 
@@ -579,7 +580,7 @@ public class TableSplitsCacheTest {
 
         try {
 
-            TableSplitsCache uut = new TableSplitsCache(createMockJobConf());
+            TableSplitsCache uut = TableSplitsCache.getCurrentCache(createMockJobConf());
 
             Assert.assertNotNull("TableSplitsCache constructor failed to construct an instance.", uut);
 
@@ -602,7 +603,7 @@ public class TableSplitsCacheTest {
 
         try {
 
-            TableSplitsCache uut = new TableSplitsCache(createMockJobConf());
+            TableSplitsCache uut = TableSplitsCache.getCurrentCache(createMockJobConf());
 
             Assert.assertNotNull("TableSplitsCache constructor failed to construct an instance.", uut);
 
@@ -626,7 +627,7 @@ public class TableSplitsCacheTest {
 
         try {
 
-            TableSplitsCache uut = new TableSplitsCache(createMockJobConf());
+            TableSplitsCache uut = TableSplitsCache.getCurrentCache(createMockJobConf());
 
             Assert.assertNotNull("TableSplitsCache constructor failed to construct an instance.", uut);
 
@@ -663,6 +664,17 @@ public class TableSplitsCacheTest {
             Assert.assertTrue("split size", (split - lastsplit) <= 402);
             lastsplit = split;
         }
+    }
+
+    @Test
+    public void testLocs() throws IOException {
+        setSplitsCacheDir();
+        TableSplitsCache splitsCache = TableSplitsCache.getCurrentCache(createMockJobConf());
+        splitsCache.getSplitsAndLocation();
+        Assert.assertEquals(5, splitsCache.getSplitsAndLocationByTable("shard").size());
+        Assert.assertEquals(1, splitsCache.getSplitsAndLocationByTable("shard1").size());
+        Assert.assertEquals(0, splitsCache.getSplitsAndLocationByTable("someOtherTable").size());
+
     }
 
 }

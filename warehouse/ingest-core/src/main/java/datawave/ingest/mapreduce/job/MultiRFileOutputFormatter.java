@@ -467,7 +467,8 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
         conf.setInt("io.seqfile.compress.blocksize", getSeqFileBlockSize());
 
         // Get the list of tables
-        String[] tableNames = conf.getStrings(ShardedTableMapFile.CONFIGURED_SHARDED_TABLE_NAMES);
+
+        String[] tableNames = conf.getStrings(SplitsFile.CONFIGURED_SHARDED_TABLE_NAMES);
 
         if (null == tableNames) {
             log.warn("Could not find the list of sharded table names");
@@ -669,7 +670,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
         }
 
         if (null == this.tableShardLocations.get(tableName)) {
-            this.tableShardLocations.put(tableName, ShardedTableMapFile.getShardIdToLocations(conf, tableName));
+            this.tableShardLocations.put(tableName, SplitsFile.getSplitsAndLocations(conf, tableName));
         }
 
         return tableShardLocations.get(tableName);

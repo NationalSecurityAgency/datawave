@@ -59,8 +59,4 @@ public class SplitBasedHashPartitioner extends MultiTableRangePartitioner implem
         return super.calculateIndex(index, numPartitions, tableName, cutPointArrayLength) % numPartitions;
     }
 
-    @Override
-    protected boolean isTrimmed() {
-        return false;
-    }
 }
