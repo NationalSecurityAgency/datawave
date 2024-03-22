@@ -1,6 +1,7 @@
 package datawave.query.testframework;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Set;
 
 /**
@@ -53,4 +54,10 @@ public interface FieldConfig {
     void addMultiValueField(String field);
 
     void removeMultiValueField(String field);
+
+    Set<String> getTokenizedFields();
+
+    void addTokenizedField(String field);
+
+    void removeTokenizedField(String field);
 }

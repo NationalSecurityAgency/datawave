@@ -106,4 +106,35 @@ configureTest \
         "" \
         204
 
+
+setCurlData query=$( urlencode "SUMMARY =~ '.*more.*' AND UUID == '0016dd72-0000-827d-dd4d-001b2163ba09'" ) \
+        queryName=EventQueryTestJexlWild \
+        begin=20160301 \
+        end=20160501 \
+        pagesize=1 \
+        auths=PUBLIC \
+        columnVisibility=PRIVATE \
+        query.syntax=JEXL
+
+configureTest \
+        CreateJexlWildFielded \
+        "Creates a valid, fielded EventQuery w/ JEXL query syntax" \
+        "--header 'Content-Type: application/x-www-form-urlencoded' ${DW_CURL_DATA} -X POST ${URI_ROOT}/Query/EventQuery/create" \
+        "application/xml;charset=UTF-8" \
+        200
+
+runTest --set-query-id
+
+################################################################
+# Get 1st page from /Query/${DW_QUERY_ID}/next, in JSON format this time
+
+configureTest \
+        JexlWildFieldedPage1 \
+        "Gets the 1st page of results for the CreateJexlWild test in JSON format" \
+        "--header 'Accept: application/json' -X GET ${URI_ROOT}/Query/${DW_QUERY_ID}/next" \
+        application/json \
+        200
+
+runTest
+
 # This last test is executed by run.sh, as usual

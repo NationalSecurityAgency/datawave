@@ -691,7 +691,7 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
 
     @Test
     public void testEvaluationOnlyReferenceNode() throws ParseException, TableNotFoundException {
-        EasyMock.expect(helper.getNonEventFields(null)).andReturn(Collections.emptySet());
+        EasyMock.expect(helper.getIndexOnlyFields(null)).andReturn(Collections.emptySet());
 
         LinkedList<String> output = new LinkedList<>();
 
