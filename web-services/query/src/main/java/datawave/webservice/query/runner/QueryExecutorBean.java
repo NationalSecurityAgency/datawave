@@ -72,7 +72,7 @@ import javax.xml.bind.Marshaller;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.util.Pair;
-import org.apache.commons.jexl2.parser.TokenMgrError;
+import org.apache.commons.jexl3.parser.TokenMgrException;
 import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.apache.log4j.Logger;
 import org.jboss.resteasy.annotations.GZIP;
@@ -87,7 +87,6 @@ import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.introspect.JacksonAnnotationIntrospector;
 import com.fasterxml.jackson.module.jaxb.JaxbAnnotationIntrospector;
-import com.google.common.base.Throwables;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.io.CountingOutputStream;
@@ -188,6 +187,7 @@ public class QueryExecutorBean implements QueryExecutor {
      */
     public static final String EXPAND_VALUES = "expand.values";
     public static final String EXPAND_FIELDS = "expand.fields";
+    public static final String CONTEXT_PARAMETER = "context";
 
     private final Logger log = Logger.getLogger(QueryExecutorBean.class);
 
@@ -552,12 +552,21 @@ public class QueryExecutorBean implements QueryExecutor {
             throw new BadRequestException(qe, response);
         }
 
-        // validate the max results override relative to the max results on a query logic
-        // privileged users or unlimited max results users however, may ignore this limitation.
-        if (qp.isMaxResultsOverridden() && qd.logic.getMaxResults() >= 0) {
-            if (!ctx.isCallerInRole(PRIVILEGED_USER) || !ctx.isCallerInRole(UNLIMITED_QUERY_RESULTS_USER)) {
-                if (qp.getMaxResultsOverride() < 0 || (qd.logic.getMaxResults() < qp.getMaxResultsOverride())) {
-                    log.error("Invalid max results override: " + qp.getMaxResultsOverride() + " vs " + qd.logic.getMaxResults());
+        // Init a query instance in order to properly compute max results for the user...
+        // TODO: consider refactoring such that query init happens only once here via Persister, and cache in QueryData instance
+        MultivaluedMap<String,String> optionalQueryParameters = new MultivaluedMapImpl<>();
+        optionalQueryParameters.putAll(qp.getUnknownParameters(queryParameters));
+        Query q = responseObjectFactory.getQueryImpl();
+        q.initialize(qd.userDn, qd.dnList, queryLogicName, qp, optionalQueryParameters);
+
+        long resultLimit = qd.logic.getResultLimit(q);
+
+        // validate the user's max results override in the context of all currently configured overrides
+        // privileged users and unlimited max results users are exempt from limitations
+        if (qp.isMaxResultsOverridden() && resultLimit >= 0) {
+            if (!ctx.isCallerInRole(PRIVILEGED_USER) && !ctx.isCallerInRole(UNLIMITED_QUERY_RESULTS_USER)) {
+                if (qp.getMaxResultsOverride() < 0 || (resultLimit < qp.getMaxResultsOverride())) {
+                    log.error("Invalid max results override: " + qp.getMaxResultsOverride() + " vs " + resultLimit);
                     GenericResponse<String> response = new GenericResponse<>();
                     throwBadRequest(DatawaveErrorCode.INVALID_MAX_RESULTS_OVERRIDE, response);
                 }
@@ -780,7 +789,7 @@ public class QueryExecutorBean implements QueryExecutor {
             /*
              * Allow web services to throw their own WebApplicationExceptions
              */
-            if (t instanceof Error && !(t instanceof TokenMgrError)) {
+            if (t instanceof Error && !(t instanceof TokenMgrException)) {
                 log.error(queryId + ": " + t.getMessage(), t);
                 throw (Error) t;
             } else if (t instanceof WebApplicationException) {
@@ -917,7 +926,7 @@ public class QueryExecutorBean implements QueryExecutor {
             /*
              * Allow web services to throw their own WebApplicationExceptions
              */
-            if (t instanceof Error && !(t instanceof TokenMgrError)) {
+            if (t instanceof Error && !(t instanceof TokenMgrException)) {
                 log.error(t.getMessage(), t);
                 throw (Error) t;
             } else if (t instanceof WebApplicationException) {
@@ -1008,7 +1017,7 @@ public class QueryExecutorBean implements QueryExecutor {
                  * Allow web services to throw their own WebApplicationExceptions
                  */
 
-                if (t instanceof Error && !(t instanceof TokenMgrError)) {
+                if (t instanceof Error && !(t instanceof TokenMgrException)) {
                     log.error(t.getMessage(), t);
                     throw (Error) t;
                 } else if (t instanceof WebApplicationException) {
@@ -1165,7 +1174,6 @@ public class QueryExecutorBean implements QueryExecutor {
      *            the ID of the query to reload/reset
      * @return an empty response
      *
-     * @return datawave.webservice.result.VoidResponse
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user, by specifying a chain of DNs of the identities to proxy
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
      * @ResponseHeader query-session-id this header and value will be in the Set-Cookie header, subsequent calls for this session will need to supply the
@@ -1455,13 +1463,18 @@ public class QueryExecutorBean implements QueryExecutor {
             }
             // Create the criteria for looking up the respective events, which we need to get the shard IDs and column families
             // required for the content lookup
+            String lookupContext = queryParameters.getFirst(CONTEXT_PARAMETER);
             final UUIDType matchingType = this.lookupUUIDUtil.getUUIDType(uuidType.toUpperCase());
             final GetUUIDCriteria criteria;
-            final String view = (null != matchingType) ? matchingType.getDefinedView() : null;
+            final String view = (null != matchingType) ? matchingType.getDefinedView(lookupContext) : null;
             if ((LookupUUIDUtil.UID_QUERY.equals(view) || LookupUUIDUtil.LOOKUP_UID_QUERY.equals(view))) {
                 criteria = new UIDQueryCriteria(uuid, uuidType, queryParameters);
             } else {
                 criteria = new GetUUIDCriteria(uuid, uuidType, queryParameters);
+            }
+
+            if (lookupContext != null) {
+                criteria.setUUIDTypeContext(lookupContext);
             }
 
             // Set the HTTP headers if a streamed response is required
@@ -1588,13 +1601,14 @@ public class QueryExecutorBean implements QueryExecutor {
         if (!StringUtils.isEmpty(streaming)) {
             streamingOutput = Boolean.parseBoolean(streaming);
         }
+        String uuidTypeContext = queryParameters.getFirst(CONTEXT_PARAMETER);
         final UUIDType matchingType = this.lookupUUIDUtil.getUUIDType(uuidType);
         String queryId = null;
         T response;
         try {
             // Construct the criteria used to perform the query
             final GetUUIDCriteria criteria;
-            final String view = (null != matchingType) ? matchingType.getDefinedView() : null;
+            final String view = (null != matchingType) ? matchingType.getDefinedView(uuidTypeContext) : null;
             if ((LookupUUIDUtil.UID_QUERY.equals(view) || LookupUUIDUtil.LOOKUP_UID_QUERY.equals(view))) {
                 criteria = new UIDQueryCriteria(uuid, uuidType, queryParameters);
             } else {
@@ -1604,6 +1618,10 @@ public class QueryExecutorBean implements QueryExecutor {
             // Add the HTTP headers in case streaming is required
             if (streamingOutput) {
                 criteria.setStreamingOutputHeaders(httpHeaders);
+            }
+
+            if (!StringUtils.isEmpty(uuidTypeContext)) {
+                criteria.setUUIDTypeContext(uuidTypeContext);
             }
 
             // Perform the query and get the first set of results

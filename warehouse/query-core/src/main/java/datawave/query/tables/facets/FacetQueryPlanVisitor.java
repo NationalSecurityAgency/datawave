@@ -2,16 +2,16 @@ package datawave.query.tables.facets;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
-import org.apache.commons.jexl2.parser.ASTEQNode;
+import org.apache.commons.jexl3.parser.ASTEQNode;
 
 import com.google.common.collect.Multimap;
 
@@ -63,15 +63,20 @@ public class FacetQueryPlanVisitor extends BaseVisitor implements CloseableItera
         Key startKey = new Key(literal + "\u0000");
         Key endKey = new Key(literal + "\uFFFF");
 
-        Collection<String> fieldPairs = new ArrayList<>();
+        List<String> fieldPairs = new ArrayList<>();
         for (String facet : facetedFields) {
             StringBuilder facetBuilder = new StringBuilder(fieldName);
             facetBuilder.append("\u0000").append(facet);
             fieldPairs.add(facetBuilder.toString());
         }
 
-        QueryPlan plan = new QueryPlan(node, Collections.singleton(new Range(startKey, true, endKey, false)), fieldPairs);
-        // toString of String returns the String
+        //  @formatter:off
+        QueryPlan plan = new QueryPlan()
+                        .withQueryTree(node)
+                        .withRanges(Collections.singleton(new Range(startKey, true, endKey, false)))
+                        .withColumnFamilies(fieldPairs);
+        //  @formatter:on
+
         queryPlans.add(plan);
         return plan;
 

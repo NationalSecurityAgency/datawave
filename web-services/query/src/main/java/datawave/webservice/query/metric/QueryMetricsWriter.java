@@ -183,8 +183,10 @@ public class QueryMetricsWriter {
      * Poll the blocking queue for new query metric updates until the number of updates reached batchSize or maxLatency is reached.
      *
      * @param batchSize
+     *            the size of the batch
      * @param maxLatency
-     * @return
+     *            maximum latency
+     * @return list of query metric holders
      */
     private List<QueryMetricHolder> getMetricsFromQueue(int batchSize, long maxLatency) {
         List metricHolderList = new ArrayList<>();
@@ -322,6 +324,7 @@ public class QueryMetricsWriter {
          * Process query metric updates using either the RemoteQueryMetricService or the ShardTableQueryMetricHandler
          *
          * @param metricHolderList
+         *            query metric updates
          */
         private void processQueryMetrics(List<QueryMetricHolder> metricHolderList) {
             if (!metricHolderList.isEmpty()) {
@@ -337,6 +340,7 @@ public class QueryMetricsWriter {
          * Process query metric updates using the RemoteQueryMetricService
          *
          * @param metricHolderList
+         *            query metric updates
          */
         private void processQueryMetricsWithRemoteService(List<QueryMetricHolder> metricHolderList) {
             List<BaseQueryMetric> metricList = metricHolderList.stream().map(QueryMetricHolder::getQueryMetric).collect(Collectors.toList());
@@ -358,6 +362,7 @@ public class QueryMetricsWriter {
          * Process query metric updates using the ShardTableQueryMetricHandler
          *
          * @param metricHolderList
+         *            query metric updates
          */
         private void processQueryMetricsWithHandler(List<QueryMetricHolder> metricHolderList) {
             List<QueryMetricHolder> currentFailures = new ArrayList<>();
@@ -392,7 +397,8 @@ public class QueryMetricsWriter {
          * Attempt to send metrics that previously failed to send
          *
          * @param failedMetrics
-         * @return
+         *            list of metrics that failed
+         * @return if successfully wrote failed metrics
          */
         private boolean writeFailedMetrics(List<FailureRecord> failedMetrics) {
             Iterator<FailureRecord> itr = failedMetrics.iterator();
@@ -426,6 +432,7 @@ public class QueryMetricsWriter {
          * Determine if we should discard failed query metric updates or keep retrying
          *
          * @param anySuccessful
+         *            the any successful
          */
         private void processFailedMetricList(boolean anySuccessful) {
             long discardForFailureCount = 0;
@@ -467,7 +474,9 @@ public class QueryMetricsWriter {
          * Wraps the sending of query metric updates to the RemoteQueryMetricService Failure is indicated by throwing an Exception
          *
          * @param updatedMetrics
+         *            updated metrics
          * @throws Exception
+         *             when probelms arise
          */
         private void writeMetricsToRemoteService(List<BaseQueryMetric> updatedMetrics) throws Exception {
             if (!updatedMetrics.isEmpty()) {
@@ -483,8 +492,10 @@ public class QueryMetricsWriter {
          * Wraps the sending of query metric updates to the ShardTableQueryMetricHandler Failure is indicated by returning a list of failed query metric updates
          *
          * @param queryMetricHandler
+         *            metric handler
          * @param metricQueue
-         * @return
+         *            list of metrics to process
+         * @return list of failed query metrics
          */
         private List<QueryMetricHolder> writeMetricsToHandler(QueryMetricHandler queryMetricHandler, List<QueryMetricHolder> metricQueue) {
             List<QueryMetricHolder> failedMetrics = new ArrayList<>();
@@ -511,6 +522,7 @@ public class QueryMetricsWriter {
          * service handles this for the path that uses the RemoteQueryMetricService
          *
          * @param queryMetric
+         *            query metric
          */
         private synchronized void sendMetricsToTimely(BaseQueryMetric queryMetric) {
 

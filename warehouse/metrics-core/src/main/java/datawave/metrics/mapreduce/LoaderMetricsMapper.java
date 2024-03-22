@@ -16,19 +16,20 @@ import org.apache.hadoop.mapreduce.Counters;
 import org.apache.hadoop.mapreduce.Mapper;
 
 /**
+ * <p>
  * A Map task that imports bulk loader metrics into Accumulo. The inputs are metrics files from MapFileLoader and it places the metrics into an accumulo table
  * with the structure:
- * <p>
+ * </p>
  *
  * <pre>
  *  Row             Colf            Colq               Value
  * ---------------------------------------------------------
  * |end time        |directory      |start time        | job counters file
  * </pre>
+ *
  * <p>
- *
  * Because there is no actual tag for the data, there does not need to be a Structure convenience class that standardizes the strings used to organize data.
- *
+ * </p>
  */
 public class LoaderMetricsMapper extends Mapper<NullWritable,Counters,Text,Mutation> {
 
