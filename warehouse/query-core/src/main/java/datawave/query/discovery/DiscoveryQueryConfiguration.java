@@ -1,5 +1,7 @@
 package datawave.query.discovery;
 
+import java.util.StringJoiner;
+
 import com.google.common.collect.Multimap;
 
 import datawave.query.config.ShardIndexQueryConfiguration;
@@ -13,8 +15,9 @@ import datawave.webservice.query.Query;
 public class DiscoveryQueryConfiguration extends ShardIndexQueryConfiguration {
     private Multimap<String,String> literals, patterns;
     private Multimap<String,LiteralRange<String>> ranges;
-    private Boolean separateCountsByColVis = false;
-    private Boolean showReferenceCount = false;
+    private boolean separateCountsByColVis = false;
+    private boolean showReferenceCount = false;
+    private boolean sumCounts = false;
 
     public DiscoveryQueryConfiguration(ShardIndexQueryTable logic, Query query) {
         super(logic, query);
@@ -44,20 +47,34 @@ public class DiscoveryQueryConfiguration extends ShardIndexQueryConfiguration {
         this.patterns = patterns;
     }
 
-    public Boolean getSeparateCountsByColVis() {
+    public boolean getSeparateCountsByColVis() {
         return separateCountsByColVis;
-    }
-
-    public Boolean getShowReferenceCount() {
-        return showReferenceCount;
     }
 
     public void setSeparateCountsByColVis(boolean separateCountsByColVis) {
         this.separateCountsByColVis = separateCountsByColVis;
     }
 
-    public void setShowReferenceCount(Boolean showReferenceCount) {
-        this.showReferenceCount = showReferenceCount;
+    public boolean getShowReferenceCount() {
+        return showReferenceCount;
+    }
 
+    public void setShowReferenceCount(boolean showReferenceCount) {
+        this.showReferenceCount = showReferenceCount;
+    }
+
+    public boolean getSumCounts() {
+        return sumCounts;
+    }
+
+    public void setSumCounts(boolean summarize) {
+        this.sumCounts = summarize;
+    }
+
+    @Override
+    public String toString() {
+        return new StringJoiner(", ", DiscoveryQueryConfiguration.class.getSimpleName() + "[", "]").add("literals=" + literals).add("patterns=" + patterns)
+                        .add("ranges=" + ranges).add("separateCountsByColVis=" + separateCountsByColVis).add("showReferenceCount=" + showReferenceCount)
+                        .add("sumCounts=" + sumCounts).toString();
     }
 }
