@@ -54,12 +54,6 @@
             <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-age-off</artifactId>
             <version>${project.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave</groupId>

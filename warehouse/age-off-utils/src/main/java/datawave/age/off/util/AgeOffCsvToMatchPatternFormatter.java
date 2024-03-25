@@ -8,8 +8,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Reformats csv input into an age off match pattern.<br/>
- * Expects a header to appear as the first line that's not a comment or whitespace-only. See ConfigurableAgeOffFilter.
+ * Reformats csv input into an age off match pattern. Expects a header to appear as the first line that's not a comment or whitespace-only. See
+ * ConfigurableAgeOffFilter.
  */
 public class AgeOffCsvToMatchPatternFormatter {
     private static final Logger log = LoggerFactory.getLogger(AgeOffCsvToMatchPatternFormatter.class);
