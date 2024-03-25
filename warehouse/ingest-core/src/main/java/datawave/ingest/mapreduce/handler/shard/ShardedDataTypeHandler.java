@@ -1031,12 +1031,10 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
             }
 
             if (null != maskedFieldHelper && maskedFieldHelper.contains(fieldName)) {
-                if (!StringUtils.isEmpty(fieldValue)) {
-                    // Put unmasked colq with original visibility
-                    Key k = createKey(shardId, colf, unmaskedColq, visibility, event.getDate(), deleteMode);
-                    BulkIngestKey bKey = new BulkIngestKey(this.getShardTableName(), k);
-                    values.put(bKey, value);
-                }
+                // Put unmasked colq with original visibility
+                Key k = createKey(shardId, colf, unmaskedColq, visibility, event.getDate(), deleteMode);
+                BulkIngestKey bKey = new BulkIngestKey(this.getShardTableName(), k);
+                values.put(bKey, value);
 
                 // We need to use the normalized masked values
                 final String normalizedMaskedValue = helper.getNormalizedMaskedValue(fieldName);
@@ -1111,12 +1109,10 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
             }
 
             if (null != maskedFieldHelper && maskedFieldHelper.contains(fieldName)) {
-                if (!StringUtils.isEmpty(fieldValue)) {
-                    // Put unmasked colq with original visibility
-                    Key k = createKey(shardId, colf, unmaskedColq, visibility, event.getDate(), deleteMode);
-                    BulkIngestKey bKey = new BulkIngestKey(this.getShardTableName(), k);
-                    values.put(bKey, value);
-                }
+                // Put unmasked colq with original visibility
+                Key k = createKey(shardId, colf, unmaskedColq, visibility, event.getDate(), deleteMode);
+                BulkIngestKey bKey = new BulkIngestKey(this.getShardTableName(), k);
+                values.put(bKey, value);
 
                 // We need to use the normalized masked values
                 final String normalizedMaskedValue = helper.getNormalizedMaskedValue(fieldName);
