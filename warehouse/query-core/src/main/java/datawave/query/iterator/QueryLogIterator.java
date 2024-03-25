@@ -18,17 +18,9 @@ public class QueryLogIterator implements SortedKeyValueIterator<Key, Value>{
 
     protected static final Logger log = Logger.getLogger(QueryLogIterator.class);
 
-    protected SortedKeyValueIterator<Key,Value> source;
-    protected SortedKeyValueIterator<Key,Value> sourceForDeepCopies;
-    protected Map<String,String> queryOptions;
+    protected string queryID;
     protected NestedIterator<Key> initKeySource, seekKeySource;
     protected IteratorEnvironment myEnvironment;
-
-    protected Range range;
-
-    protected Key key;
-    protected Value value;
-    protected YieldCallback<Key> yield;
 
     public QueryLogIterator() { }
 
@@ -45,17 +37,25 @@ public class QueryLogIterator implements SortedKeyValueIterator<Key, Value>{
     public void init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env) throws IOException {
 
         try{
-            if (log.isInfoEnabled()) {
-                log.info("QueryLogIterator: init() Started QueryID: " + options.get(QUERY_ID));
-            }
-            this.queryOptions = options;
+            this.queryID = options.get(QUERY_ID);
             this.myEnvironment = env;
             this.source = source;
+            StartMethod("init()");
         }
         finally{
-            if (log.isInfoEnabled()) {
-                log.info("QueryLogIterator: init() Ended QueryID: " + options.get(QUERY_ID));
-            }
+            EndMethod("init()");
+        }
+    }
+
+    private void StartMethod(string methodName){
+        if (log.isInfoEnabled()) {
+            log.info("QueryLogIterator: " + methodName + " Started QueryID: " + this.queryID);
+        }
+    }
+
+    private void EndMethod(string methodName){
+        if (log.isInfoEnabled()) {
+            log.info("QueryLogIterator: " + methodName + " Ended QueryID: " + this.queryID);
         }
     }
 
@@ -65,15 +65,11 @@ public class QueryLogIterator implements SortedKeyValueIterator<Key, Value>{
         boolean result;
 
         try {
-            if(log.isInfoEnabled()){
-                log.info("QueryLogIterator: hasTop() Started QueryID: " + this.queryOptions.get(QUERY_ID));
-            }
+            StartMethod("hasTop()");
             result = source.hasTop();
         }
         finally {
-            if (log.isInfoEnabled()) {
-                log.info("QueryLogIterator: hasTop() Ended QueryID: " + this.queryOptions.get(QUERY_ID));
-            }
+            EndMethod("hasTop()");
         }
         return result;
     }
@@ -81,15 +77,11 @@ public class QueryLogIterator implements SortedKeyValueIterator<Key, Value>{
     @Override
     public void next() throws IOException {
         try {
-            if(log.isInfoEnabled()){
-                log.info("QueryLogIterator: next() Started QueryID: " + this.queryOptions.get(QUERY_ID));
-            }
+            StartMethod("next()");
             source.next();
         }
         finally {
-            if (log.isInfoEnabled()) {
-                log.info("QueryLogIterator: next() Ended QueryID: " + this.queryOptions.get(QUERY_ID));
-            }
+            EndMethod("next()");
         }
     }
 
@@ -97,15 +89,11 @@ public class QueryLogIterator implements SortedKeyValueIterator<Key, Value>{
     public Key getTopKey() {
         Key k;
         try {
-            if(log.isInfoEnabled()){
-                log.info("QueryLogIterator: getTopKey() Started QueryID: " + this.queryOptions.get(QUERY_ID));
-            }
+            StartMethod("getTopKey()");
             k = source.getTopKey();
         }
         finally {
-            if (log.isInfoEnabled()) {
-                log.info("QueryLogIterator: getTopKey() Ended QueryID: " + this.queryOptions.get(QUERY_ID));
-            }
+            EndMethod("getTopKey()");
         }
         return k;
     }
@@ -114,15 +102,11 @@ public class QueryLogIterator implements SortedKeyValueIterator<Key, Value>{
     public Value getTopValue() {
         Value v;
         try {
-            if(log.isInfoEnabled()){
-                log.info("QueryLogIterator: getTopValue() Started QueryID: " + this.queryOptions.get(QUERY_ID));
-            }
+            StartMethod("getTopValue()");
             v = source.getTopValue();
         }
         finally {
-            if (log.isInfoEnabled()) {
-                log.info("QueryLogIterator: getTopValue() Ended QueryID: " + this.queryOptions.get(QUERY_ID));
-            }
+            EndMethod("getTopValue()");
         }
         return v;
     }
@@ -133,15 +117,11 @@ public class QueryLogIterator implements SortedKeyValueIterator<Key, Value>{
         QueryLogIterator newQLI = null;
 
         try {
-            if(log.isInfoEnabled()){
-                log.info("QueryLogIterator: deepCopy() Started QueryID: " + this.queryOptions.get(QUERY_ID));
-                newQLI = new QueryLogIterator(this, this.myEnvironment);
-            }
+            StartMethod("deepCopy()");
+            newQLI = new QueryLogIterator(this, this.myEnvironment);
         }
         finally {
-            if (log.isInfoEnabled()) {
-                log.info("QueryLogIterator: deepCopy() Ended QueryID: " + this.queryOptions.get(QUERY_ID));
-            }
+            EndMethod("deepCopy()");
         }
         return newQLI;
     }
@@ -150,15 +130,11 @@ public class QueryLogIterator implements SortedKeyValueIterator<Key, Value>{
     public void seek(Range range, Collection<ByteSequence> collection, boolean b) throws IOException {
 
         try {
-            if(log.isInfoEnabled()){
-                log.info("QueryLogIterator: seek() Started QueryID: " + this.queryOptions.get(QUERY_ID));
-                this.source.seek(range, collection, b);
-            }
+            StartMethod("seek()");
+            this.source.seek(range, collection, b);
         }
         finally {
-            if (log.isInfoEnabled()) {
-                log.info("QueryLogIterator: seek() Ended QueryID: " + this.queryOptions.get(QUERY_ID));
-            }
+            EndMethod("seek()");
         }
     }
 }
