@@ -1044,9 +1044,9 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
                     TextUtil.textAppend(maskedColq, event.getId().toString(), replaceMalformedUTF8);
 
                     // Put masked colq with masked visibility
-                    Key k = createKey(shardId, colf, maskedColq, maskedVisibility, event.getDate(), deleteMode);
-                    BulkIngestKey bKey = new BulkIngestKey(this.getShardTableName(), k);
-                    values.put(bKey, value);
+                    Key key = createKey(shardId, colf, maskedColq, maskedVisibility, event.getDate(), deleteMode);
+                    BulkIngestKey bulkIngestKey = new BulkIngestKey(this.getShardTableName(), key);
+                    values.put(bulkIngestKey, value);
                 }
             } else if (!StringUtils.isEmpty(fieldValue)) {
                 /**
@@ -1122,9 +1122,9 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
                     TextUtil.textAppend(maskedColq, event.getId().toString(), replaceMalformedUTF8);
 
                     // Put masked colq with masked visibility
-                    Key k = createKey(shardId, colf, maskedColq, maskedVisibility, event.getDate(), deleteMode);
-                    BulkIngestKey bKey = new BulkIngestKey(this.getShardTableName(), k);
-                    values.put(bKey, value);
+                    Key key = createKey(shardId, colf, maskedColq, maskedVisibility, event.getDate(), deleteMode);
+                    BulkIngestKey bulkIngestKey = new BulkIngestKey(this.getShardTableName(), key);
+                    values.put(bulkIngestKey, value);
                 }
             } else if (!StringUtils.isEmpty(fieldValue)) {
                 /**
