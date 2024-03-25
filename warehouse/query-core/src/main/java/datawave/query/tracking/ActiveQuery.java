@@ -26,6 +26,8 @@ public class ActiveQuery {
     private long lastSourceCount = 0;
     private long lastNextCount = 0;
     private long lastSeekCount = 0;
+    private long lastEvaluatedCount = 0;
+    private long lastRejectedCount = 0;
     private long documentSizeBytes = 0;
     private int windowSize = 0;
 
@@ -48,8 +50,8 @@ public class ActiveQuery {
 
     synchronized public ActiveQuerySnapshot snapshot() {
         return new ActiveQuerySnapshot(this.activeQueryLogName, this.queryId, this.lastSourceCount, this.lastNextCount, this.lastSeekCount,
-                        this.documentSizeBytes, this.activeRanges.size(), this.totalElapsedTime(), this.isInCall(), this.currentCallTime(), this.numCallsMap,
-                        this.timerMap);
+                        this.lastEvaluatedCount, this.lastRejectedCount, this.documentSizeBytes, this.activeRanges.size(), this.totalElapsedTime(),
+                        this.isInCall(), this.currentCallTime(), this.numCallsMap, this.timerMap);
     }
 
     synchronized public void beginCall(Range range, CallType type) {

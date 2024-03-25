@@ -673,7 +673,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
      *            type for the iterator
      * @return an iterator to elements that satisfy the predicate
      */
-    public static <T> UnmodifiableIterator<T> statelessFilter(final Iterator<T> unfiltered, final Predicate<? super T> predicate) {
+    public static <T> UnmodifiableIterator<T> statelessFilter(final Iterator<T> unfiltered, final Predicate<? super T> predicate, QuerySpan trackingSpan) {
         checkNotNull(unfiltered);
         checkNotNull(predicate);
         return new UnmodifiableIterator<T>() {
@@ -683,7 +683,15 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 while (unfiltered.hasNext()) {
                     T element = unfiltered.next();
                     if (predicate.apply(element)) {
+                        if (trackingSpan != null) {
+                            trackingSpan.evaluatedIncrement(1);
+                        }
                         return element;
+                    } else {
+                        if (trackingSpan != null) {
+                            trackingSpan.evaluatedIncrement(1);
+                            trackingSpan.rejectedIncrement(1);
+                        }
                     }
                 }
                 return null;
@@ -816,7 +824,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         documents = mapDocument(deepSourceCopy, documents, compositeMetadata);
 
         // apply any configured post processing
-        documents = getPostProcessingChain(documents);
+        documents = getPostProcessingChain(documents, trackingSpan);
         if (gatherTimingDetails()) {
             documents = new EvaluationTrackingIterator(QuerySpan.Stage.PostProcessing, trackingSpan, documents);
         }
@@ -855,11 +863,11 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         // projection or visibility filtering)
         if (gatherTimingDetails()) {
             documents = statelessFilter(documents,
-                            new EvaluationTrackingPredicate<>(QuerySpan.Stage.EmptyDocumentFilter, trackingSpan, new EmptyDocumentFilter()));
+                            new EvaluationTrackingPredicate<>(QuerySpan.Stage.EmptyDocumentFilter, trackingSpan, new EmptyDocumentFilter()), trackingSpan);
             documents = Iterators.transform(documents,
                             new EvaluationTrackingFunction<>(QuerySpan.Stage.DocumentMetadata, trackingSpan, new DocumentMetadata()));
         } else {
-            documents = statelessFilter(documents, new EmptyDocumentFilter());
+            documents = statelessFilter(documents, new EmptyDocumentFilter(), trackingSpan);
             documents = Iterators.transform(documents, new DocumentMetadata());
         }
 
@@ -955,7 +963,8 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 }
 
                 final Iterator<Tuple3<Key,Document,DatawaveJexlContext>> itrWithDatawaveJexlContext = Iterators.transform(itrWithContext, contextCreator);
-                Iterator<Tuple3<Key,Document,DatawaveJexlContext>> matchedDocuments = statelessFilter(itrWithDatawaveJexlContext, jexlEvaluationFunction);
+                Iterator<Tuple3<Key,Document,DatawaveJexlContext>> matchedDocuments = statelessFilter(itrWithDatawaveJexlContext, jexlEvaluationFunction,
+                                trackingSpan);
                 if (log.isTraceEnabled()) {
                     log.trace("arithmetic:" + arithmetic + " range:" + getDocumentRange(documentSource) + ", thread:" + Thread.currentThread());
                 }

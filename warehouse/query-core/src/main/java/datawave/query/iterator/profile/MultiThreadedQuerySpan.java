@@ -43,6 +43,14 @@ public class MultiThreadedQuerySpan extends QuerySpan {
         return getThreadSpecificQuerySpan().getNextCount();
     }
 
+    public long getEvaluatedCount() {
+        return getThreadSpecificQuerySpan().getEvaluatedCount();
+    }
+
+    public long getRejectedCount() {
+        return getThreadSpecificQuerySpan().getRejectedCount();
+    }
+
     public long getSeekCount() {
         return getThreadSpecificQuerySpan().getSeekCount();
     }
@@ -95,6 +103,14 @@ public class MultiThreadedQuerySpan extends QuerySpan {
     @Override
     public void setSeek(long seek) {
         getThreadSpecificQuerySpan().setSeek(seek);
+    }
+
+    public void setEvaluatedCount(long evaluatedCount) {
+        getThreadSpecificQuerySpan().setEvaluatedCount(evaluatedCount);
+    }
+
+    public void setRejectedCount(long rejectedCount) {
+        getThreadSpecificQuerySpan().setRejectedCount(rejectedCount);
     }
 
     @Override
