@@ -5,7 +5,7 @@ import org.apache.log4j.Logger;
 
 /**
  * Implements functions to calculate a similarity score for a pair of SSDeepHashes. This implementation will calculate an edit distance between two hashes and
- * the create a normalized score between 0-100, with 100 being a great match and 0 being a horrible match. This is designed to give relatively equal footing to
+ * then create a normalized score between 0-100, with 100 being a great match and 0 being a horrible match. This is designed to give relatively equal footing to
  * hash comparisons that have different lenghts.
  */
 public class SSDeepHashEditDistanceScorer implements SSDeepHashScorer<Integer> {

@@ -1,7 +1,7 @@
 package datawave.util.ssdeep;
 
 /**
- * An interface for things that take two hashes and compare the to produce some sort of result.
+ * An interface for things that take two hashes and compare them to produce some sort of result.
  *
  * @param <T>
  */
