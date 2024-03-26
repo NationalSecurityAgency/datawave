@@ -49,6 +49,7 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlASTHelper.IdentifierOpLiteral;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.LiteralRange;
+import datawave.query.jexl.lookups.ExpandedFieldCache;
 import datawave.query.jexl.nodes.DroppedExpression;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.util.MetadataHelper;
@@ -69,6 +70,7 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
     private final ShardQueryConfiguration config;
     private final HashSet<JexlNode> expandedNodes;
     private final MetadataHelper helper;
+    protected ExpandedFieldCache previouslyExpandedFieldCache = new ExpandedFieldCache();
 
     public ExpandMultiNormalizedTerms(ShardQueryConfiguration config, MetadataHelper helper) {
         Preconditions.checkNotNull(config);
@@ -319,6 +321,8 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
                     boolean failedNormalization = false;
                     // Build up a set of normalized terms using each normalizer
                     for (Type<?> normalizer : dataTypes) {
+                        String normalizerType = normalizer.getClass().getTypeName();
+                        boolean foundInCache = previouslyExpandedFieldCache.containsExpansionsFor(fieldName, term, normalizerType);
                         try {
                             if (normalizer instanceof OneToManyNormalizerType && ((OneToManyNormalizerType<?>) normalizer).expandAtQueryTime()) {
                                 List<String> normTerms = ((OneToManyNormalizerType<?>) normalizer).normalizeToMany(term);
@@ -338,14 +342,26 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
                                 }
 
                             } else {
-                                String normTerm = ((node instanceof ASTNRNode || node instanceof ASTERNode) ? normalizer.normalizeRegex(term)
-                                                : normalizer.normalize(term));
-                                if (!normalizedTerms.contains(normTerm)) {
-                                    if (log.isDebugEnabled()) {
-                                        log.debug("normalizedTerm = " + normTerm);
+                                if (foundInCache) {
+                                    String normTerm = previouslyExpandedFieldCache.getNormalizedTerm(fieldName, term, normalizerType);
+                                    if (!normalizedTerms.contains(normTerm)) {
+                                        if (log.isDebugEnabled()) {
+                                            log.debug("normalizedTerm = " + normTerm);
+                                        }
+                                        normalizedTerms.add(normTerm);
+                                        normalizedNodes.add(JexlNodeFactory.buildUntypedNode(node, fieldName, normTerm));
                                     }
-                                    normalizedTerms.add(normTerm);
-                                    normalizedNodes.add(JexlNodeFactory.buildUntypedNode(node, fieldName, normTerm));
+                                } else {
+                                    String normTerm = ((node instanceof ASTNRNode || node instanceof ASTERNode) ? normalizer.normalizeRegex(term)
+                                                    : normalizer.normalize(term));
+                                    if (!normalizedTerms.contains(normTerm)) {
+                                        if (log.isDebugEnabled()) {
+                                            log.debug("normalizedTerm = " + normTerm);
+                                        }
+                                        normalizedTerms.add(normTerm);
+                                        normalizedNodes.add(JexlNodeFactory.buildUntypedNode(node, fieldName, normTerm));
+                                        previouslyExpandedFieldCache.addExpansion(fieldName, term, normTerm, normalizerType);
+                                    }
                                 }
                             }
                         } catch (IpAddressNormalizer.Exception ipex) {

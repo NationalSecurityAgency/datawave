@@ -692,6 +692,22 @@ public class ExpandMultiNormalizedTermsTest {
         expandTerms(original, expected);
     }
 
+    @Test
+    public void testPreviouslyExpandedNormalizedTermsCache() throws ParseException {
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
+        dataTypes.putAll("FOO", Sets.newHashSet(new LcNoDiacriticsType(), new LcType(), new NumberType()));
+
+        helper.setIndexedFields(dataTypes.keySet());
+        helper.addTermFrequencyFields(dataTypes.keySet());
+
+        config.setQueryFieldsDatatypes(dataTypes);
+
+        // this tests for the successful normalization as a simple number can be normalized as a regex
+        String original = "(FOO != '32' && FOO != '42') || FOO == '32'";
+        String expected = "(FOO != '+bE3.2' && FOO != '32' && FOO != '+bE4.2' && FOO != '42') || FOO == '+bE3.2' || FOO == '32'";
+        expandTerms(original, expected);
+    }
+
     private void expandTerms(String original, String expected) throws ParseException {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(original);
         ASTJexlScript expanded = ExpandMultiNormalizedTerms.expandTerms(config, helper, script);

@@ -245,6 +245,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     private static Set<String> cachedIndexedFields = null;
     private static Set<String> cachedReverseIndexedFields = null;
     private static Set<String> cachedNormalizedFields = null;
+    private static Set<String> cachedExpandedFields = null;
 
     protected List<PushDownRule> rules = Lists.newArrayList();
 
@@ -892,7 +893,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         timedFetchDatatypes(timers, "Fetch Required Datatypes", config.getQueryTree(), config);
 
         config.setQueryTree(timedFixUnindexedNumerics(timers, config.getQueryTree(), config));
-
         config.setQueryTree(timedExpandMultiNormalizedTerms(timers, config.getQueryTree(), config, metadataHelper));
 
         // if we have any index holes, then mark em
