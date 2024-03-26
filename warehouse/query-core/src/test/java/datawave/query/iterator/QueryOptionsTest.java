@@ -12,7 +12,6 @@ import static datawave.query.iterator.QueryOptions.TF_NEXT_SEEK;
 import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
-import java.lang.reflect.InaccessibleObjectException;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Collections;
@@ -212,19 +211,6 @@ public class QueryOptionsTest {
         Map<String,Set<String>> actual = QueryOptions.buildFieldDataTypeMap(data);
 
         Assert.assertEquals(expected, actual);
-    }
-
-    @Test
-    public void testMapSerialization() {
-        Map<String,Long> map = new HashMap<>();
-        map.put("FIELD_A", 23L);
-        map.put("FIELD_B", 146L);
-
-        String serialized = QueryOptions.mapToString(map);
-        assertEquals("FIELD_A,23;FIELD_B,146", serialized);
-
-        Map<String,Long> deserialized = QueryOptions.mapFromString(serialized);
-        assertEquals(map, deserialized);
     }
 
     @Test

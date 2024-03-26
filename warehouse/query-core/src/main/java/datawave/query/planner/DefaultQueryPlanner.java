@@ -148,6 +148,7 @@ import datawave.query.jexl.visitors.UnmarkedBoundedRangeDetectionVisitor;
 import datawave.query.jexl.visitors.ValidComparisonVisitor;
 import datawave.query.jexl.visitors.ValidPatternVisitor;
 import datawave.query.jexl.visitors.ValidateFilterFunctionVisitor;
+import datawave.query.jexl.visitors.order.OrderByCostVisitor;
 import datawave.query.jexl.visitors.whindex.WhindexVisitor;
 import datawave.query.model.QueryModel;
 import datawave.query.planner.comparator.DefaultQueryPlanComparator;
@@ -2683,6 +2684,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             } else {
                 throw new DatawaveFatalQueryException("Check query for mutually exclusive ingest types, query was non-executable after pruning by ingest type");
             }
+        }
+
+        if (config.isSortQueryBeforeGlobalIndex()) {
+            queryTree = OrderByCostVisitor.order((ASTJexlScript) queryTree);
         }
 
         // if a simple examination of the query has not forced a full table
