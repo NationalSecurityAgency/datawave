@@ -892,7 +892,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         timedFetchDatatypes(timers, "Fetch Required Datatypes", config.getQueryTree(), config);
 
         config.setQueryTree(timedFixUnindexedNumerics(timers, config.getQueryTree(), config));
-
         config.setQueryTree(timedExpandMultiNormalizedTerms(timers, config.getQueryTree(), config, metadataHelper));
 
         // if we have any index holes, then mark em

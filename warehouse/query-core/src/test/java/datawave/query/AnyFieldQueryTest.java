@@ -1021,7 +1021,6 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
         expect = anyRo + AND_OP + cityY;
         runTest(query, expect);
     }
-
     // ============================================
     // private methods
 

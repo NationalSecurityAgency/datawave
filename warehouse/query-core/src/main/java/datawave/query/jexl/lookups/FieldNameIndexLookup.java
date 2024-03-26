@@ -84,8 +84,8 @@ public class FieldNameIndexLookup extends AsyncIndexLookup {
             try {
                 if (!fields.isEmpty()) {
                     for (String term : terms) {
-                        if (fieldCache.containsExpansionsFor(term)) {
-                            pExpandedTerms.put(term, fieldCache.getExpansions(term));
+                        if (fieldCache.containsExpansionsFor(term, "CHANGE", null)) {
+                            pExpandedTerms.put(term, fieldCache.getExpansions(term, "CHANGE", null));
                         } else {
                             Set<Range> ranges = Collections.singleton(ShardIndexQueryTableStaticMethods.getLiteralRange(term));
                             if (config.getLimitAnyFieldLookups()) {

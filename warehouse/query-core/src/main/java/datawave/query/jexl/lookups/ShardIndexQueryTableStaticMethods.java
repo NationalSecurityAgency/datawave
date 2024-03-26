@@ -129,7 +129,6 @@ public class ShardIndexQueryTableStaticMethods {
                 }
             }
         }
-
         return new FieldNameIndexLookup(config, scannerFactory, getIndexedExpansionFields(expansionFields, false, config.getDatatypeFilter(), helperRef), terms,
                         execService);
     }
@@ -392,7 +391,6 @@ public class ShardIndexQueryTableStaticMethods {
                 log.warn("Encountered literal that was not a String nor a Number: " + literal.getClass().getName() + ", " + literal);
             }
         }
-
         return new RegexIndexLookup(config, scannerFactory, fieldName, patterns, helperRef, execService);
     }
 
