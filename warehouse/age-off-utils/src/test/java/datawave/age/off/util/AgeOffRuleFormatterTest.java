@@ -9,6 +9,7 @@ import java.io.StringWriter;
 
 import javax.xml.bind.JAXBElement;
 import javax.xml.namespace.QName;
+import javax.xml.stream.XMLStreamException;
 
 import org.junit.Test;
 
@@ -53,7 +54,7 @@ public class AgeOffRuleFormatterTest {
                 "     <filterClass>datawave.ingest.util.cache.watch.TestFilter</filterClass>\n" +
                 "     <ttl units=\"ms\">10</ttl>\n" +
                 "     <matchPattern>1</matchPattern>\n" +
-                "     <myTagName ttl=\"1234\"/>\n" +
+                "     <myTagName ttl=\"1234\"></myTagName>\n" +
                 "     <filtersWater>false</filtersWater>\n" +
                 "</rule>\n";
         // @formatter:on
@@ -193,9 +194,13 @@ public class AgeOffRuleFormatterTest {
 
     private String generateRule(AgeOffRuleConfiguration.Builder builder) throws IOException {
         StringWriter out = new StringWriter();
-        builder.setWriter(out);
-        AgeOffRuleFormatter generator = new AgeOffRuleFormatter(builder.build());
-        generator.format();
+        try {
+            AgeOffRuleFormatter generator = new AgeOffRuleFormatter(builder.build());
+            generator.format(out);
+
+        } catch (XMLStreamException e) {
+            throw new IOException(e);
+        }
 
         return out.toString();
     }

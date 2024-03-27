@@ -17,6 +17,7 @@ import java.util.List;
 
 import javax.xml.bind.JAXBElement;
 import javax.xml.namespace.QName;
+import javax.xml.stream.XMLStreamException;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -61,11 +62,11 @@ public class AgeOffFileGeneratorTest {
         "               <filterClass>datawave.ingest.util.cache.watch.TestFilter</filterClass>\n" +
         "               <ttl units=\"ms\">10</ttl>\n" +
         "               <matchPattern>1</matchPattern>\n" +
-        "               <myTagName ttl=\"1234\"/>\n" +
+        "               <myTagName ttl=\"1234\"></myTagName>\n" +
         "               <filtersWater>false</filtersWater>\n" +
         "          </rule>\n" +
         "     </rules>\n" +
-        "</ageoffConfiguration>\n";
+        "</ageoffConfiguration>";
 
     private static final String OTHER_EXPECTED_FILE_CONTENTS =
             "<ageoffConfiguration>\n" +
@@ -195,7 +196,7 @@ public class AgeOffFileGeneratorTest {
             "               </matchPattern>\n" +
             "          </rule>\n" +
             "     </rules>\n" +
-            "</ageoffConfiguration>\n";
+            "</ageoffConfiguration>";
     // @formatter:on
 
     @Test
@@ -356,9 +357,13 @@ public class AgeOffFileGeneratorTest {
 
     private String generateFile(AgeOffFileConfiguration.Builder builder) throws IOException {
         StringWriter out = new StringWriter();
-        builder.setWriter(out);
-        AgeOffFileGenerator generator = new AgeOffFileGenerator(builder.build());
-        generator.format();
+        AgeOffFileGenerator generator = null;
+        try {
+            generator = new AgeOffFileGenerator(builder.build());
+            generator.format(out);
+        } catch (XMLStreamException e) {
+            throw new IOException(e);
+        }
 
         return out.toString();
     }

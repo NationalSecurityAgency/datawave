@@ -4,12 +4,10 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
-import java.io.Writer;
 import java.nio.file.Files;
 import java.util.Map;
 
 public class AgeOffCsvToMatchPatternFormatterConfiguration {
-    private boolean shouldCloseWriter;
     private String staticLabel;
     private char quoteCharacter;
     private boolean shouldQuoteLiteral;
@@ -18,16 +16,11 @@ public class AgeOffCsvToMatchPatternFormatterConfiguration {
     private boolean shouldLowerCaseLiterals;
     private boolean shouldUpperCaseLiterals;
     private Map<String,String> valueMapping;
-    private Writer writer;
     private BufferedReader reader;
     private boolean useOverrides;
     private boolean disableLabel;
 
     private AgeOffCsvToMatchPatternFormatterConfiguration() {}
-
-    public boolean shouldCloseWriter() {
-        return shouldCloseWriter;
-    }
 
     public String getStaticLabel() {
         return staticLabel;
@@ -65,10 +58,6 @@ public class AgeOffCsvToMatchPatternFormatterConfiguration {
         return valueMapping;
     }
 
-    public Writer getWriter() {
-        return writer;
-    }
-
     public BufferedReader getReader() {
         return reader;
     }
@@ -92,17 +81,6 @@ public class AgeOffCsvToMatchPatternFormatterConfiguration {
 
         public Builder setInputFile(File inputFile) throws IOException {
             this.result.reader = Files.newBufferedReader(inputFile.toPath());
-            return this;
-        }
-
-        public Builder setWriter(Writer writer) {
-            this.result.writer = writer;
-            return this;
-        }
-
-        public Builder setOutputFile(File outputFile) throws IOException {
-            this.result.writer = Files.newBufferedWriter(outputFile.toPath());
-            this.result.shouldCloseWriter = true;
             return this;
         }
 
