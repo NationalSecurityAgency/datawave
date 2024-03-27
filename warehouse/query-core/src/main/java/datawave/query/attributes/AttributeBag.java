@@ -23,10 +23,8 @@ public abstract class AttributeBag<T extends Comparable<T>> extends Attribute<T>
 
     private static final long ONE_DAY_MS = 1000l * 60 * 60 * 24;
 
-    protected static final MarkingFunctions markingFunctions = MarkingFunctionsFactory.createMarkingFunctions();
-
     public MarkingFunctions getMarkingFunctions() {
-        return markingFunctions;
+        return MarkingFunctionsFactory.createMarkingFunctions();
     }
 
     protected AttributeBag() {
@@ -83,7 +81,7 @@ public abstract class AttributeBag<T extends Comparable<T>> extends Attribute<T>
         for (Attribute<?> attr : attributes) {
             columnVisibilities.add(attr.getColumnVisibility());
         }
-        return AttributeBag.markingFunctions.combine(columnVisibilities);
+        return MarkingFunctionsFactory.createMarkingFunctions().combine(columnVisibilities);
     }
 
     private long updateTimestamps() {

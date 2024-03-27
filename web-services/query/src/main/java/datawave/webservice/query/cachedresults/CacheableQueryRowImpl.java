@@ -44,8 +44,6 @@ public class CacheableQueryRowImpl extends CacheableQueryRow implements ObjectSi
     private String queryOrigin = null;
     private String resultOrigin = null;
 
-    private static final MarkingFunctions markingFunctions = MarkingFunctionsFactory.createMarkingFunctions();
-
     public void addColumn(String columnName, String columnValueString, Map<String,String> markings, String columnVisibility, Long timestamp) {
         addColumn(columnName, new TypedValue(columnValueString), markings, columnVisibility, timestamp);
     }
@@ -57,6 +55,7 @@ public class CacheableQueryRowImpl extends CacheableQueryRow implements ObjectSi
         // if new markings are the same as the old markings, skip all of this
         // they are the same and the markings value has already been validated
         if (this.markings.equals(markings) == false) {
+            MarkingFunctions markingFunctions = MarkingFunctionsFactory.createMarkingFunctions();
             if (this.markings.isEmpty()) {
                 // validate the markings
                 try {
@@ -138,6 +137,7 @@ public class CacheableQueryRowImpl extends CacheableQueryRow implements ObjectSi
 
             if (currMarkings.equals(markings) == false) {
                 try {
+                    MarkingFunctions markingFunctions = MarkingFunctionsFactory.createMarkingFunctions();
                     Set<ColumnVisibility> columnVisibilities = Sets.newHashSet();
                     columnVisibilities.add(markingFunctions.translateToColumnVisibility(currMarkings));
                     columnVisibilities.add(markingFunctions.translateToColumnVisibility(markings));
@@ -293,6 +293,7 @@ public class CacheableQueryRowImpl extends CacheableQueryRow implements ObjectSi
     public void setMarkings(Map<String,String> markings) {
         // validate the markings
         try {
+            MarkingFunctions markingFunctions = MarkingFunctionsFactory.createMarkingFunctions();
             markingFunctions.translateToColumnVisibility(markings);
             this.markings = markings;
         } catch (MarkingFunctions.Exception e) {
