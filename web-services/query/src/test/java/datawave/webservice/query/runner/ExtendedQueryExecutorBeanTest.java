@@ -206,10 +206,10 @@ public class ExtendedQueryExecutorBeanTest {
     Multimap<String,PatternWrapper> traceInfos;
 
     @Mock
-    QueryLogicTransformer transformer;
+    QueryLogicTransformer<?,?> transformer;
 
     @Mock
-    TransformIterator transformIterator;
+    TransformIterator<?,?> transformIterator;
 
     @Mock
     UserTransaction transaction;
@@ -857,6 +857,7 @@ public class ExtendedQueryExecutorBeanTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     public void testCreateQueryAndNext_BadID() throws Exception {
         // Set local test input
         String queryLogicName = "queryLogicName";
@@ -1024,6 +1025,7 @@ public class ExtendedQueryExecutorBeanTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     public void testCreateQueryAndNext_PageSizeParam() throws Exception {
         // Set local test input
         String queryLogicName = "queryLogicName";
@@ -1182,6 +1184,7 @@ public class ExtendedQueryExecutorBeanTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     public void testCreateQueryAndNext_PageSizeParamTwo() throws Exception {
         // Set local test input
         String queryLogicName = "queryLogicName";

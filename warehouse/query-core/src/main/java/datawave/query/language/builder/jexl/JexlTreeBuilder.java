@@ -34,7 +34,7 @@ public class JexlTreeBuilder extends QueryTreeBuilder {
         Set<BeanDefinition> candidates = p.findCandidateComponents("datawave.query.language.functions.jexl");
         DEFAULT_ALLOWED_FUNCTION_LIST = candidates.stream().map(b -> {
             try {
-                return (JexlQueryFunction) (Class.forName(b.getBeanClassName()).newInstance());
+                return (JexlQueryFunction) (Class.forName(b.getBeanClassName()).getDeclaredConstructor().newInstance());
             } catch (Exception e) {
                 return null;
             }

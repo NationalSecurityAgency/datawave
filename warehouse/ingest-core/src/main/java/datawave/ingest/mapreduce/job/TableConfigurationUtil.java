@@ -143,8 +143,8 @@ public class TableConfigurationUtil {
                     }
                     DataTypeHandler<?> handler;
                     try {
-                        handler = handlerClass.newInstance();
-                    } catch (InstantiationException e) {
+                        handler = handlerClass.getDeclaredConstructor().newInstance();
+                    } catch (InstantiationException | NoSuchMethodException | InvocationTargetException e) {
                         throw new IllegalArgumentException("Unable to instantiate " + handlerClassName, e);
                     } catch (IllegalAccessException e) {
                         throw new IllegalArgumentException("Unable to access default constructor for " + handlerClassName, e);
@@ -364,8 +364,8 @@ public class TableConfigurationUtil {
                     }
                     DataTypeHandler<?> handler;
                     try {
-                        handler = handlerClass.newInstance();
-                    } catch (InstantiationException e) {
+                        handler = handlerClass.getDeclaredConstructor().newInstance();
+                    } catch (InstantiationException | NoSuchMethodException | InvocationTargetException e) {
                         throw new IllegalArgumentException("Unable to instantiate " + handlerClassName, e);
                     } catch (IllegalAccessException e) {
                         throw new IllegalArgumentException("Unable to access default constructor for " + handlerClassName, e);

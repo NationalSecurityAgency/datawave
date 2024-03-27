@@ -34,7 +34,7 @@ public class EventFieldAggregator extends IdentityAggregator {
                         @Override
                         public Type<?> load(String clazz) throws Exception {
                             Class<?> c = Class.forName(clazz);
-                            return (Type<?>) c.newInstance();
+                            return (Type<?>) c.getDeclaredConstructor().newInstance();
                         }
                     });
 

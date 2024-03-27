@@ -128,13 +128,17 @@ public class EnrichingIterator implements SortedKeyValueIterator<Key,Value>, Opt
         try {
             @SuppressWarnings("unchecked")
             Class<SortedKeyValueIterator<Key,Value>> iterClz = (Class<SortedKeyValueIterator<Key,Value>>) Class.forName(subClass);
-            subIter = iterClz.newInstance();
+            subIter = iterClz.getDeclaredConstructor().newInstance();
         } catch (ClassNotFoundException e) {
             log.error("ClassNotFoundException when trying to instantiate the sub iterator.", e);
         } catch (InstantiationException e) {
             log.error("InstantiationException when trying to instantiate the sub iterator.", e);
         } catch (IllegalAccessException e) {
             log.error("IllegalAccessException when trying to instantiate the sub iterator.", e);
+        } catch (InvocationTargetException e) {
+            log.error("InvocationTargetException when trying to instantiate the sub iterator.", e);
+        } catch (NoSuchMethodException e) {
+            log.error("NoSuchMethodException when trying to instantiate the sub iterator", e);
         }
 
         if (subIter == null) {

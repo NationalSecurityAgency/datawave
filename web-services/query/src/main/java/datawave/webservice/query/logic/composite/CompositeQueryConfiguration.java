@@ -7,6 +7,7 @@ import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 
 public class CompositeQueryConfiguration extends GenericQueryConfiguration implements Serializable {
+    private static final long serialVersionUID = 1l;
 
     private Query query = null;
 

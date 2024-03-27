@@ -60,7 +60,7 @@
             <id>clover</id>
             <dependencies>
                 <dependency>
-                    <groupId>com.cenqua.clover</groupId>
+                    <groupId>org.openclover</groupId>
                     <artifactId>clover</artifactId>
                 </dependency>
             </dependencies>

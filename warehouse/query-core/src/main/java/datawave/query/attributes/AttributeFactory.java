@@ -133,7 +133,7 @@ public class AttributeFactory {
     }
 
     protected Attribute<?> getAttribute(Class<?> dataTypeClass, String fieldName, String data, Key key, boolean toKeep) throws Exception {
-        Type<?> type = (Type<?>) dataTypeClass.newInstance();
+        Type<?> type = (Type<?>) dataTypeClass.getDeclaredConstructor().newInstance();
         try {
             type.setDelegateFromString(data);
             return new TypeAttribute(type, key, toKeep);

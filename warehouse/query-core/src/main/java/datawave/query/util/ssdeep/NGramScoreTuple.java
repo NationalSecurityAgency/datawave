@@ -5,6 +5,7 @@ import java.io.Serializable;
 import datawave.util.ssdeep.SSDeepHash;
 
 public class NGramScoreTuple implements Serializable, Comparable<NGramScoreTuple> {
+    private static final long serialVersionUID = 0l;
     final SSDeepHash ssDeepHash;
     final float baseScore;
     final int weightedScore;

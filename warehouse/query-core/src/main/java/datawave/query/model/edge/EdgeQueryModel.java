@@ -28,6 +28,7 @@ import datawave.query.model.util.LoadModelFromXml;
  * (3) Additionally, index-only/unevaluated fields are ignored, as this concept is not applicable to edges.
  */
 public class EdgeQueryModel extends QueryModel implements EdgeModelAware {
+    private static final long serialVersionUID = 0l;
 
     /**
      * This constructor allows the class to be used in conjunction with existing QueryModel loaders.

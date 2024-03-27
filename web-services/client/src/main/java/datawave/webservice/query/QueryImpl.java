@@ -434,7 +434,7 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
         query.setDnList(this.dnList);
         if (MapUtils.isNotEmpty(this.optionalQueryParameters)) {
             Map<String,List<String>> optionalDuplicate = new HashMap<>();
-            this.optionalQueryParameters.entrySet().stream().forEach(e -> optionalDuplicate.put(e.getKey(), new ArrayList(e.getValue())));
+            this.optionalQueryParameters.entrySet().stream().forEach(e -> optionalDuplicate.put(e.getKey(), new ArrayList<>(e.getValue())));
             query.setOptionalQueryParameters(optionalDuplicate);
         }
         query.setUncaughtExceptionHandler(this.getUncaughtExceptionHandler());
@@ -660,6 +660,7 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
                         break;
                     case 16:
                         message.systemFrom = input.readString();
+                        break;
                     default:
                         input.handleUnknownField(number, this);
                         break;

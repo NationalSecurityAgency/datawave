@@ -31,6 +31,7 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.hadoop.mapreduce.AccumuloInputFormat;
 import org.apache.accumulo.hadoop.mapreduce.AccumuloOutputFormat;
 import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.GnuParser;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.ParseException;
@@ -342,7 +343,7 @@ public class MetricsIngester extends Configured implements Tool {
      * Goes through the arguments and attempts to add relevant values to the configuration
      */
     private void _configure(String[] args) {
-        GnuParser parser = new GnuParser();
+        DefaultParser parser = new DefaultParser();
         CommandLine cmd;
         try {
             cmd = parser.parse(new MetricsOptions(), args);

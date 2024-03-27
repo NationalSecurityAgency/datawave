@@ -194,6 +194,7 @@ public abstract class ColumnRangeIterator extends SkippingIterator implements In
     }
 
     public static class ScanLimitReached extends RuntimeException {
+        private static final long serialVersionUID = 0l;
         private final Key lastKey;
 
         public ScanLimitReached(Key key, String message) {

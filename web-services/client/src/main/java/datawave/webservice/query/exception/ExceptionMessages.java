@@ -60,7 +60,7 @@ public final class ExceptionMessages {
      */
     public static final class QueryExceptionType extends com.google.protobuf.GeneratedMessageLite implements QueryExceptionTypeOrBuilder {
         // Use QueryExceptionType.newBuilder() to construct.
-        private QueryExceptionType(com.google.protobuf.GeneratedMessageLite.Builder builder) {
+        private QueryExceptionType(com.google.protobuf.GeneratedMessageLite.Builder<?,?> builder) {
             super(builder);
 
         }

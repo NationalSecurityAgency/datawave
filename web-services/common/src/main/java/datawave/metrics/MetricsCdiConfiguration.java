@@ -1,5 +1,6 @@
 package datawave.metrics;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.TimeUnit;
 
 import javax.annotation.PreDestroy;
@@ -27,14 +28,14 @@ public class MetricsCdiConfiguration {
                     @ConfigProperty(name = "dw.metrics.reporter.class", defaultValue = "datawave.metrics.TimelyMetricsReporterFactory") String reporterClass) {
         MetricRegistry metricRegistry = new MetricRegistry();
         try {
-            MetricsReporterFactory factory = MetricsReporterFactory.class.cast(Class.forName(reporterClass).newInstance());
+            MetricsReporterFactory factory = MetricsReporterFactory.class.cast(Class.forName(reporterClass).getDeclaredConstructor().newInstance());
             statsReporter = factory.forRegistry(metricRegistry).convertRatesTo(TimeUnit.SECONDS).convertDurationsTo(TimeUnit.MILLISECONDS).build(reportHost,
                             reportPort);
             statsReporter.start(reportInterval, TimeUnit.valueOf(reportIntervalTimeUnit));
         } catch (ClassNotFoundException e) {
             throw new IllegalArgumentException(
                             "Metrics reporter class " + reporterClass + " does not exist or is not a " + MetricsReporterFactory.class.getName(), e);
-        } catch (InstantiationException | IllegalAccessException e) {
+        } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
             throw new IllegalArgumentException("Metrics reporter class " + reporterClass + " could not be instantiated: " + e.getMessage(), e);
         }
         return metricRegistry;

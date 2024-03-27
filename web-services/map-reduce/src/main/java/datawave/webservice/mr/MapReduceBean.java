@@ -762,7 +762,9 @@ public class MapReduceBean {
 
         FSDataInputStream fis;
         try {
-            if (!fs.exists(resultFile) || !fs.isFile(resultFile)) {
+            final FileStatus fileStatus = fs.getFileStatus(resultFile);
+
+            if (!fs.exists(resultFile) || !fileStatus.isFile()) {
                 NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.FILE_NOT_FOUND,
                                 MessageFormat.format("{0} at path {1}", fileName, resultsDir));
                 response.addException(qe);

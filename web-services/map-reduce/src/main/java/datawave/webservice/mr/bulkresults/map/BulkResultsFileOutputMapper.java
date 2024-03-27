@@ -1,5 +1,7 @@
 package datawave.webservice.mr.bulkresults.map;
 
+import static org.jgroups.util.Util.assertNotNull;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.StringReader;
@@ -23,7 +25,6 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.log4j.Logger;
 import org.jboss.weld.environment.se.Weld;
-import org.springframework.util.Assert;
 
 import datawave.webservice.query.Query;
 import datawave.webservice.query.cache.ResultsPage;
@@ -57,7 +58,7 @@ public class BulkResultsFileOutputMapper extends ApplicationContextAwareMapper<K
      */
     public static final String RESULT_SERIALIZATION_FORMAT = "bulk.results.serial.format";
 
-    private QueryLogicTransformer t = null;
+    private QueryLogicTransformer<Key,Value> t = null;
     private Map<Key,Value> entries = new HashMap<>();
     private Map<String,Class<? extends BaseQueryResponse>> responseClassMap = new HashMap<>();
     private SerializationFormat format = SerializationFormat.XML;
@@ -90,8 +91,8 @@ public class BulkResultsFileOutputMapper extends ApplicationContextAwareMapper<K
 
         QueryLogic<?> logic = (QueryLogic<?>) super.applicationContext.getBean(logicName);
         t = logic.getEnrichedTransformer(query);
-        Assert.notNull(logic.getMarkingFunctions());
-        Assert.notNull(logic.getResponseObjectFactory());
+        assertNotNull(logic.getMarkingFunctions());
+        assertNotNull(logic.getResponseObjectFactory());
         this.format = SerializationFormat.valueOf(context.getConfiguration().get(RESULT_SERIALIZATION_FORMAT));
     }
 
@@ -110,7 +111,7 @@ public class BulkResultsFileOutputMapper extends ApplicationContextAwareMapper<K
         entries.put(key, value);
         for (Entry<Key,Value> entry : entries.entrySet()) {
             try {
-                Object o = t.transform(entry);
+                Object o = t.transform(entry.getKey());
                 BaseQueryResponse response = t.createResponse(new ResultsPage(Collections.singletonList(o)));
                 Class<? extends BaseQueryResponse> responseClass = null;
                 try {

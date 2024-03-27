@@ -71,11 +71,6 @@ public class FieldAgeOffFilterTest {
         }
 
         @Override
-        public void registerSideChannel(SortedKeyValueIterator<Key,Value> sortedKeyValueIterator) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
         public Authorizations getAuthorizations() {
             throw new UnsupportedOperationException();
         }

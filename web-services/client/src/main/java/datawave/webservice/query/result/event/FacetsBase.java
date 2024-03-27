@@ -28,6 +28,7 @@ public abstract class FacetsBase implements HasMarkings {
     @XmlTransient
     protected ColumnVisibility columnVisibility;
 
+    @SuppressWarnings("unchecked")
     public void setFields(List<? extends FieldCardinalityBase> fields) {
         this.fields = (List<FieldCardinalityBase>) fields;
     }
