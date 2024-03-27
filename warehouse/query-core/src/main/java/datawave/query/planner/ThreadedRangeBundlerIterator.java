@@ -27,6 +27,7 @@ import datawave.query.CloseableIterable;
 import datawave.query.iterator.QueryIterator;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.tld.TLDQueryIterator;
+import datawave.query.util.count.CountMapSerDe;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.configuration.QueryData;
@@ -62,6 +63,8 @@ public class ThreadedRangeBundlerIterator implements Iterator<QueryData>, Closea
     protected long rangeBufferTimeoutMillis;
     protected long rangeBufferPollMillis;
     protected long startTimeMillis;
+
+    private CountMapSerDe mapSerDe;
 
     private ThreadedRangeBundlerIterator(Builder builder) {
 
@@ -280,11 +283,11 @@ public class ThreadedRangeBundlerIterator implements Iterator<QueryData>, Closea
             newSetting.addOptions(setting.getOptions());
 
             if (plan.getFieldCounts() != null && !plan.getTermCounts().isEmpty()) {
-                newSetting.addOption(QueryOptions.FIELD_COUNTS, QueryOptions.mapToString(plan.getFieldCounts()));
+                newSetting.addOption(QueryOptions.FIELD_COUNTS, getMapSerDe().serializeToString(plan.getFieldCounts()));
             }
 
             if (plan.getTermCounts() != null && !plan.getTermCounts().isEmpty()) {
-                newSetting.addOption(QueryOptions.TERM_COUNTS, QueryOptions.mapToString(plan.getTermCounts()));
+                newSetting.addOption(QueryOptions.TERM_COUNTS, getMapSerDe().serializeToString(plan.getTermCounts()));
             }
 
             settings.add(newSetting);
@@ -297,6 +300,13 @@ public class ThreadedRangeBundlerIterator implements Iterator<QueryData>, Closea
                         .withColumnFamilies(plan.getColumnFamilies())
                         .withSettings(settings);
         //  @formatter:on
+    }
+
+    private CountMapSerDe getMapSerDe() {
+        if (mapSerDe == null) {
+            mapSerDe = new CountMapSerDe();
+        }
+        return mapSerDe;
     }
 
     /*
