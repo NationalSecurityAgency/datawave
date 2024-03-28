@@ -2,7 +2,11 @@ package datawave.util.ssdeep;
 
 import java.util.Set;
 
-public class SSDeepNGramOverlapScorer implements SSDeepHashScorer {
+/**
+ * Implements scoring between a pair of hashes based on the number of ngrams they have in common. Returns a unique set of the overlapping ngrams as a result,
+ * the overlap score is calculated based on the size of this set.
+ */
+public class SSDeepNGramOverlapScorer implements SSDeepHashScorer<Set<NGramTuple>> {
 
     NGramGenerator generator;
 
@@ -10,11 +14,11 @@ public class SSDeepNGramOverlapScorer implements SSDeepHashScorer {
         generator = new NGramGenerator(ngramSize, maxRepeatedChars, minHashSize);
     }
 
-    public int apply(SSDeepHash signature1, SSDeepHash signature2) {
+    public Set<NGramTuple> apply(SSDeepHash signature1, SSDeepHash signature2) {
         Set<NGramTuple> ngrams1 = generator.generateNgrams(signature1);
         Set<NGramTuple> ngrams2 = generator.generateNgrams(signature2);
 
         ngrams1.retainAll(ngrams2);
-        return ngrams1.size();
+        return ngrams1;
     }
 }
