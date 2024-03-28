@@ -40,6 +40,7 @@ import datawave.query.function.deserializer.DocumentDeserializer;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.iterator.profile.QuerySpan;
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.util.transformer.AttributeRebuilder;
 import datawave.util.StringUtils;
 import datawave.util.time.DateHelper;
 import datawave.webservice.query.Query;
@@ -85,6 +86,9 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
 
     protected List<DocumentTransform> transforms = new ArrayList<>();
 
+    // used to transform attributes when type metadata reduction is enabled
+    protected AttributeRebuilder rebuilder;
+
     /*
      * The 'HIT_TERM' feature required that an attribute value also contain the attribute's field name. The current implementation does it by prepending the
      * field name to the value with a colon separator, like so: BUDDY:fred. In the case where a data model has been applied to the query, the
@@ -108,19 +112,19 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
      * @param responseObjectFactory
      *            the response object factory
      */
-    public DocumentTransformerSupport(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions markingFunctions,
+    protected DocumentTransformerSupport(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions markingFunctions,
                     ResponseObjectFactory responseObjectFactory) {
         this(logic, settings, markingFunctions, responseObjectFactory, false);
     }
 
-    public DocumentTransformerSupport(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions markingFunctions,
+    protected DocumentTransformerSupport(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions markingFunctions,
                     ResponseObjectFactory responseObjectFactory, Boolean reducedResponse) {
 
         this(null != logic ? logic.getTableName() : null, settings, markingFunctions, responseObjectFactory, reducedResponse);
         this.logic = logic;
     }
 
-    public DocumentTransformerSupport(String tableName, Query settings, MarkingFunctions markingFunctions, ResponseObjectFactory responseObjectFactory,
+    protected DocumentTransformerSupport(String tableName, Query settings, MarkingFunctions markingFunctions, ResponseObjectFactory responseObjectFactory,
                     Boolean reducedResponse) {
         super(tableName, settings, markingFunctions, responseObjectFactory);
 
@@ -196,7 +200,7 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
             }
         }
 
-        Set<FieldBase<?>> Fields = new HashSet<>();
+        Set<FieldBase<?>> fields = new HashSet<>();
         final Map<String,Attribute<? extends Comparable<?>>> documentData = document.getDictionary();
 
         String fn = null;
@@ -217,17 +221,17 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
                     fn = this.getQm().aliasFieldNameReverseModel(fn);
                 }
                 attribute = data.getValue();
-                Fields.addAll(buildDocumentFields(documentKey, fn, attribute, topLevelColumnVisibility, markingFunctions));
+                fields.addAll(buildDocumentFields(documentKey, fn, attribute, topLevelColumnVisibility, markingFunctions));
             }
         }
-        return Fields;
+        return fields;
     }
 
     protected void extractMetrics(Document document, Key documentKey) {
 
         Map<String,Attribute<? extends Comparable<?>>> dictionary = document.getDictionary();
         Attribute<? extends Comparable<?>> timingMetadataAttribute = dictionary.get(LogTiming.TIMING_METADATA);
-        if (timingMetadataAttribute != null && timingMetadataAttribute instanceof TimingMetadata) {
+        if (timingMetadataAttribute instanceof TimingMetadata) {
             TimingMetadata timingMetadata = (TimingMetadata) timingMetadataAttribute;
             long currentSourceCount = timingMetadata.getSourceCount();
             long currentNextCount = timingMetadata.getNextCount();
@@ -312,7 +316,7 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
         String uidField = cardinalityConfiguration.getCardinalityUidField();
         if (org.apache.commons.lang.StringUtils.isNotBlank(uidField)) {
             List<String> documentUidValues = getFieldValues(document, uidField, true);
-            if (documentUidValues.isEmpty() == false) {
+            if (!documentUidValues.isEmpty()) {
                 eventId = documentUidValues.get(0);
             }
         }
@@ -413,6 +417,10 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
             // Use the markings on the Field if we're returning the markings to the client
             if (!this.reducedResponse) {
                 try {
+                    if (rebuilder != null) {
+                        attr = rebuilder.rebuild(fieldName, attr);
+                    }
+
                     Map<String,String> markings = markingFunctions.translateFromColumnVisibility(attr.getColumnVisibility());
                     FieldBase<?> field = this.makeField(fieldName, markings, attr.getColumnVisibility(), attr.getTimestamp(), attr.getData());
                     MarkingFunctions.Util.populate(field, markings);
@@ -606,5 +614,15 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
 
     public void setPrimaryToSecondaryFieldMap(Map<String,List<String>> primaryToSecondaryFieldMap) {
         addTransform(new FieldMappingTransform(primaryToSecondaryFieldMap, false, reducedResponse));
+    }
+
+    /**
+     * Set an {@link AttributeRebuilder}, required when reducing type metadata
+     *
+     * @param rebuilder
+     *            an AttributeRebuilder
+     */
+    public void setAttributeRebuilder(AttributeRebuilder rebuilder) {
+        this.rebuilder = rebuilder;
     }
 }

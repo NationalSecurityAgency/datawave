@@ -83,6 +83,8 @@ import datawave.query.util.DateIndexHelperFactory;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.MetadataHelperFactory;
 import datawave.query.util.QueryStopwatch;
+import datawave.query.util.TypeMetadata;
+import datawave.query.util.transformer.AttributeRebuilder;
 import datawave.util.time.TraceStopwatch;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
@@ -664,6 +666,20 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         }
         if (getQueryModel() != null) {
             ((DocumentTransformer) this.transformerInstance).setQm(getQueryModel());
+        }
+
+        if (getReduceTypeMetadata() || getReduceTypeMetadataPerShard()) {
+            try {
+                MetadataHelperFactory factory = getMetadataHelperFactory();
+                MetadataHelper helper = factory.createMetadataHelper(getConfig().getClient(), getMetadataTableName(), getConfig().getAuthorizations());
+                TypeMetadata typeMetadata = helper.getTypeMetadata(getConfig().getDatatypeFilter());
+                AttributeRebuilder rebuilder = new AttributeRebuilder(typeMetadata, getQueryModel());
+                ((DocumentTransformer) this.transformerInstance).setAttributeRebuilder(rebuilder);
+            } catch (TableNotFoundException e) {
+                log.error("could not build type metadata for responses, disabling type metadata reduction");
+                setReduceTypeMetadata(false);
+                setReduceTypeMetadataPerShard(false);
+            }
         }
     }
 
