@@ -10,6 +10,9 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
@@ -37,6 +40,7 @@ import datawave.query.util.MockDateIndexHelper;
 import datawave.query.util.MockMetadataHelper;
 import datawave.query.util.TypeMetadata;
 import datawave.test.JexlNodeAssert;
+import javassist.bytecode.ByteArray;
 
 public class EventDataQueryExpressionVisitorTest {
 
@@ -903,6 +907,54 @@ public class EventDataQueryExpressionVisitorTest {
     public static void printJexlScript(ASTJexlScript script) {
         PrintingVisitor v = new PrintingVisitor();
         script.jjtAccept(v, "");
+    }
+
+    @Test
+    public void testPrintVisitorDefault() throws Exception {
+        // Between 5 and 12.
+        String originalQuery = "FOO == 'abc' AND ((_Bounded_ = true) && (BAZ >= '+aE5' AND BAZ <= '+bE1.2'))";
+        // @TODO, use ExpandMultiNormalizedTerms to normalize this query?
+
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
+        final Map<String,ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
+
+        final PrintStream stdOut = System.out;
+        final ByteArrayOutputStream streamCaptor = new ByteArrayOutputStream();
+
+        System.setOut(new PrintStream(streamCaptor));
+
+        PrintingVisitor v = new PrintingVisitor();
+        script.jjtAccept(v, "");
+
+        assertTrue(true);
+        assertTrue(streamCaptor.toString().contains("FOO:FOO"));
+        assertTrue(streamCaptor.toString().contains("bE1.2"));
+        assertTrue(streamCaptor.toString().contains("BAZ"));
+
+    }
+
+    @Test
+    public void testPrintVisitorDefault2() throws Exception {
+        // Between 5 and 12.
+        String originalQuery = "FOO == 'abc' AND ((_Bounded_ = true) && (BAZ >= '+aE5' AND BAZ <= '+bE1.2'))";
+        // @TODO, use ExpandMultiNormalizedTerms to normalize this query?
+
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
+        final Map<String,ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
+
+        final PrintStream stdOut = System.out;
+        final ByteArrayOutputStream streamCaptor = new ByteArrayOutputStream();
+
+        System.setOut(new PrintStream(streamCaptor));
+
+        PrintingVisitor v = new PrintingVisitor(0, 5);
+        script.jjtAccept(v, "");
+
+        assertTrue(true);
+        assertTrue(streamCaptor.toString().contains("FOO:FOO"));
+        assertTrue(!streamCaptor.toString().contains("bE1.2"));
+        assertTrue(!streamCaptor.toString().contains("BAZ"));
+
     }
 
     @Test
