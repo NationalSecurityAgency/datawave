@@ -53,7 +53,7 @@ public class IngestTypeVisitor extends BaseVisitor {
 
     private static final Logger log = Logger.getLogger(IngestTypeVisitor.class);
 
-    private static final String UNKNOWN_TYPE = "UNKNOWN_TYPE";
+    protected static final String UNKNOWN_TYPE = "UNKNOWN_TYPE";
     // cache expensive calls to get ingest types per field
     private final TypeMetadata typeMetadata;
     private final Map<String,Set<String>> ingestTypeCache;
@@ -260,6 +260,14 @@ public class IngestTypeVisitor extends BaseVisitor {
      * @return a set of ingestTypes
      */
     public Set<String> getIngestTypesForLeaf(JexlNode node) {
+        node = JexlASTHelper.dereference(node);
+        if (node instanceof ASTEQNode) {
+            Object literal = JexlASTHelper.getLiteralValue(node);
+            if (literal == null) {
+                return Collections.singleton(UNKNOWN_TYPE);
+            }
+        }
+
         Set<String> ingestTypes = new HashSet<>();
         Set<String> fields = getFieldsForLeaf(node);
         for (String field : fields) {
