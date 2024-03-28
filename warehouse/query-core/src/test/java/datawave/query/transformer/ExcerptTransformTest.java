@@ -135,11 +135,11 @@ public class ExcerptTransformTest extends EasyMockSupport {
         givenMockDocumentWithHitTerm("BODY", "word");
         givenMatchingTermFrequencies("BODY", new int[][] {{24, 24}}, "word");
         // end offset is inclusive
-        givenMatchingPhrase("BODY", 22, 26, "and the word from bird");
+        givenMatchingPhrase("BODY", 22, 26, "and the word from bird" + Constants.NULL + 0 + Constants.NULL + 0);
 
         // also setup a phrase to match on either side of the matching phrase
         // end offset is inclusive
-        givenMatchingPhrase("BODY", 8, 16, "the quick brown fox jumped over the lazy dog");
+        givenMatchingPhrase("BODY", 8, 16, "the quick brown fox jumped over the lazy dog" + Constants.NULL + 0 + Constants.NULL + 0);
 
         Capture<Attributes> capturedArg = Capture.newInstance();
         document.put(eq(ExcerptTransform.HIT_EXCERPT), and(capture(capturedArg), isA(Attributes.class)));
@@ -175,7 +175,7 @@ public class ExcerptTransformTest extends EasyMockSupport {
         givenMatchingTermFrequencies("BODY", new int[][] {{1, 2}, {2, 3}, {9, 10}, {20, 21}}, "quick brown");
         // note that the start is relative to index 9 (i.e. 9-2=7) because the overlapping term starts at 9
         // end offset is inclusive
-        givenMatchingPhrase("BODY", 7, 16, "and the quick brown fox jumped over the lazy dog");
+        givenMatchingPhrase("BODY", 7, 16, "and the quick brown fox jumped over the lazy dog" + Constants.NULL + 0 + Constants.NULL + 0);
 
         Capture<Attributes> capturedArg = Capture.newInstance();
         document.put(eq(ExcerptTransform.HIT_EXCERPT), and(capture(capturedArg), isA(Attributes.class)));
@@ -211,10 +211,11 @@ public class ExcerptTransformTest extends EasyMockSupport {
         givenMockDocumentWithHitTerm("BODY", "quick brown");
         givenMatchingTermFrequencies("BODY", new int[][] {{1, 2}, {2, 3}, {9, 10}, {20, 21}}, "quick brown");
         // end offset is inclusive
-        givenMatchingPhrase("BODY", 23, 28, "Jack and Jill jumped over the");
+        givenMatchingPhrase("BODY", 23, 28, "Jack and Jill jumped over the" + Constants.NULL + 0 + Constants.NULL + 0);
         // note that the start is relative to overlapping term index 9 (i.e. 9-2=7) because the overlapping term starts at 9
         // AND then we combined the phrase from 2 to 7 with the one from 7 to 16
-        givenMatchingPhrase("BODY", 2, 16, "the brown chicken layed an egg and the quick brown fox jumped over the lazy dog");
+        givenMatchingPhrase("BODY", 2, 16,
+                        "the brown chicken layed an egg and the quick brown fox jumped over the lazy dog" + Constants.NULL + 0 + Constants.NULL + 0);
 
         Capture<Attributes> capturedArg = Capture.newInstance();
         document.put(eq(ExcerptTransform.HIT_EXCERPT), and(capture(capturedArg), isA(Attributes.class)));
@@ -244,7 +245,7 @@ public class ExcerptTransformTest extends EasyMockSupport {
 
         givenMockDocument();
         // end offset is inclusive
-        givenMatchingPhrase("CONTENT", 0, 7, "the quick brown fox jumped over the lazy dog");
+        givenMatchingPhrase("CONTENT", 0, 7, "the quick brown fox jumped over the lazy dog" + Constants.NULL + 0 + Constants.NULL + 0);
 
         Capture<Attributes> capturedArg = Capture.newInstance();
         document.put(eq(ExcerptTransform.HIT_EXCERPT), and(capture(capturedArg), isA(Attributes.class)));
@@ -273,7 +274,7 @@ public class ExcerptTransformTest extends EasyMockSupport {
         givenMockDocumentWithHitTerm("BODY", "word");
         givenMatchingTermFrequencies("BODY", new int[][] {{24, 24}}, "word");
         // end offset is inclusive
-        givenMatchingPhrase("BODY", 22, 26, "and the word from bird");
+        givenMatchingPhrase("BODY", 22, 26, "and the word from bird" + Constants.NULL + 0 + Constants.NULL + 0);
 
         Capture<Attributes> capturedArg = Capture.newInstance();
         document.put(eq(ExcerptTransform.HIT_EXCERPT), and(capture(capturedArg), isA(Attributes.class)));

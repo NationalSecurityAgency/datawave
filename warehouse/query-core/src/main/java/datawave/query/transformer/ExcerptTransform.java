@@ -319,29 +319,83 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
      * @return the excerpt
      */
     private String getExcerpt(String field, int start, int end, Range range, ArrayList<String> hitTermValues) {
+        int prevLeftWordsSkipped = 0;
+        int currLeftWordsSkipped = 0;
+        boolean leftLock = false;
+        int prevRightWordsSkipped = 0;
+        int currRightWordsSkipped = 0;
+        boolean rightLock = false;
+        int timesToTry = 0;
         excerptIteratorOptions.put(TermFrequencyExcerptIterator.FIELD_NAME, field);
-        excerptIteratorOptions.put(TermFrequencyExcerptIterator.START_OFFSET, String.valueOf(start));
-        excerptIteratorOptions.put(TermFrequencyExcerptIterator.END_OFFSET, String.valueOf(end));
-        try {
-            excerptIterator.init(source, excerptIteratorOptions, env);
-            excerptIterator.seek(range, Collections.emptyList(), false);
-            if (excerptIterator.hasTop()) {
-                Key topKey = excerptIterator.getTopKey();
-                String[] parts = topKey.getColumnQualifier().toString().split(Constants.NULL);
-                // The column qualifier is expected to be field\0phrase.
-                if (parts.length == 2) {
-                    return getHitPhrase(hitTermValues, parts);
+        for (int i = 0; i <= timesToTry; i++) {
+            // if we still need to process the left half...
+            if (!leftLock) {
+                // save the value from the last run (or setting to zero if this is the first run)
+                prevLeftWordsSkipped = currLeftWordsSkipped;
+                // set the start of the range to the one passed in minus the amount of skipped words in the left half in the previous run
+                excerptIteratorOptions.put(TermFrequencyExcerptIterator.START_OFFSET, String.valueOf(start - prevLeftWordsSkipped));
+            }
+            // if we still need to process the right half...
+            if (!rightLock) {
+                // save the value from the last run (or setting to zero if this is the first run)
+                prevRightWordsSkipped = currRightWordsSkipped;
+                // set the end of the range to the one passed in plus the amount of skipped words in the right half in the previous run
+                excerptIteratorOptions.put(TermFrequencyExcerptIterator.END_OFFSET, String.valueOf(end + prevRightWordsSkipped));
+            }
+            try {
+                excerptIterator.init(source, excerptIteratorOptions, env);
+                excerptIterator.seek(range, Collections.emptyList(), false);
+                // if an excerpt is returned...
+                if (excerptIterator.hasTop()) {
+                    Key topKey = excerptIterator.getTopKey();
+                    String[] parts = topKey.getColumnQualifier().toString().split(Constants.NULL);
+                    // The column qualifier is expected to be field\0phrase\0leftSkips\0rightSkips.
+                    if (parts.length != 4) {
+                        log.warn(TermFrequencyExcerptIterator.class.getSimpleName() + " returned top key with incorrectly-formatted column qualifier in key: "
+                                        + topKey + " when scanning for excerpt [" + (start - prevLeftWordsSkipped) + "," + (end + prevRightWordsSkipped)
+                                        + "] for field " + field + " within range " + range);
+                        return null;
+                    }
+                    // if we still need to process the left half...
+                    if (!leftLock) {
+                        // get how many words were skipped in the left half of the excerpt
+                        currLeftWordsSkipped = Integer.parseInt(parts[2]);
+                        // if the amount of words skipped this run is the same as the amount of words skipped last run (zero if this is the first run)
+                        if (currLeftWordsSkipped == prevLeftWordsSkipped) {
+                            // don't expand the range on the left
+                            leftLock = true;
+                        }
+                    }
+                    // if we still need to process the right half...
+                    if (!rightLock) {
+                        // get how many words were skipped in the right half of the excerpt
+                        currRightWordsSkipped = Integer.parseInt(parts[3]);
+                        // if the amount of words skipped this run is the same as the amount of words skipped last run (zero if this is the first run)
+                        if (currRightWordsSkipped == prevRightWordsSkipped) {
+                            // don't expand the range on the right
+                            rightLock = true;
+                        }
+                    }
+
+                    // for testing
+                    if (!leftLock || !rightLock) {
+                        log.warn("**********TESTING we would have retried TESTING**********");
+                    }
+
+                    // if we have reached the limit of times to try, or we have the correct size excerpt
+                    if (i == timesToTry || (leftLock && rightLock)) {
+                        return getHitPhrase(hitTermValues, parts);
+                    }
                 } else {
-                    log.warn(TermFrequencyExcerptIterator.class.getSimpleName() + " returned top key with incorrectly-formatted column qualifier in key: "
-                                    + topKey + " when scanning for excerpt [" + start + "," + end + "] for field " + field + " within range " + range);
                     return null;
                 }
-            } else {
-                return null;
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to scan for excerpt [" + (start - prevLeftWordsSkipped) + "," + (end + prevRightWordsSkipped)
+                                + "] for field " + field + " within range " + range, e);
             }
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to scan for excerpt [" + start + "," + end + "] for field " + field + " within range " + range, e);
         }
+        // it should always return from inside the loop so if this is reached something went very wrong
+        throw new RuntimeException("This should never be reached. Something went wrong!");
     }
 
     private String getHitPhrase(ArrayList<String> hitTermValues, String[] phraseParts) {
