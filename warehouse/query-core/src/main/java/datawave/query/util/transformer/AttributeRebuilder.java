@@ -5,6 +5,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import javax.annotation.Nullable;
+
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.Multimap;
@@ -15,8 +17,6 @@ import datawave.query.attributes.TypeAttribute;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.model.QueryModel;
 import datawave.query.util.TypeMetadata;
-
-import javax.annotation.Nullable;
 
 /**
  * Utility class that handles rebuilding a basic NoOp attribute into an attribute of the correct type, given TypeMetadata and optionally a QueryModel

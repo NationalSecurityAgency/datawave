@@ -1,5 +1,14 @@
 package datawave.query.util.transformer;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.fail;
+
+import org.apache.accumulo.core.data.Key;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
 import datawave.data.type.DateType;
 import datawave.data.type.LcType;
 import datawave.data.type.NoOpType;
@@ -10,14 +19,6 @@ import datawave.query.attributes.Attributes;
 import datawave.query.attributes.TypeAttribute;
 import datawave.query.model.QueryModel;
 import datawave.query.util.TypeMetadata;
-import org.apache.accumulo.core.data.Key;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.fail;
 
 class AttributeRebuilderTest {
 
