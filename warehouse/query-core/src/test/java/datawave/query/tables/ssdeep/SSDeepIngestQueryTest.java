@@ -143,13 +143,14 @@ public class SSDeepIngestQueryTest extends AbstractFunctionalQuery {
         @SuppressWarnings("SpellCheckingInspection")
         String testSSDeep = "384:nv/fP9FmWVMdRFj2aTgSO+u5QT4ZE1PIVS:nDmWOdRFNTTs504cQS";
         String query = "CHECKSUM_SSDEEP:" + testSSDeep;
+        String expectedOverlaps = "384:+u5QT4Z, 384:/fP9FmW, 384:2aTgSO+, 384:4ZE1PIV, 384:5QT4ZE1, 384:9FmWVMd, 384:Fj2aTgS, 384:FmWVMdR, 384:MdRFj2a, 384:O+u5QT4, 384:P9FmWVM, 384:QT4ZE1P, 384:RFj2aTg, 384:SO+u5QT, 384:T4ZE1PI, 384:TgSO+u5, 384:VMdRFj2, 384:WVMdRFj, 384:aTgSO+u, 384:dRFj2aT, 384:fP9FmWV, 384:gSO+u5Q, 384:j2aTgSO, 384:mWVMdRF, 384:nv/fP9F, 384:u5QT4ZE, 384:v/fP9Fm, 768:DmWOdRF, 768:FNTTs50, 768:NTTs504, 768:OdRFNTT, 768:RFNTTs5, 768:TTs504c, 768:Ts504cQ, 768:WOdRFNT, 768:dRFNTTs, 768:mWOdRFN, 768:nDmWOdR";
         EventQueryResponseBase response = runSSDeepQuery(query, similarityQueryLogic, 0);
 
         List<EventBase> events = response.getEvents();
         Assert.assertEquals(1, events.size());
         Map<String,Map<String,String>> observedEvents = extractObservedEvents(events);
 
-        SSDeepTestUtil.assertSSDeepSimilarityMatch(testSSDeep, testSSDeep, "38", "100", observedEvents);
+        SSDeepTestUtil.assertSSDeepSimilarityMatch(testSSDeep, testSSDeep, "38", expectedOverlaps, "100", observedEvents);
     }
 
     @Test
@@ -165,15 +166,17 @@ public class SSDeepIngestQueryTest extends AbstractFunctionalQuery {
 
         Map.Entry<String,Map<String,String>> result = observedEvents.entrySet().iterator().next();
         Map<String,String> resultFields = result.getValue();
-        Assert.assertEquals(testSSDeep, resultFields.get("VALUE"));
-        Assert.assertEquals("CHECKSUM_SSDEEP", resultFields.get("FIELD"));
-        Assert.assertEquals("20201031", resultFields.get("DATE"));
-        Assert.assertEquals("ssdeep", resultFields.get("DATA TYPE"));
-        Assert.assertEquals("4", resultFields.get("RECORD COUNT"));
+        Assert.assertEquals(testSSDeep, resultFields.remove("VALUE"));
+        Assert.assertEquals("CHECKSUM_SSDEEP", resultFields.remove("FIELD"));
+        Assert.assertEquals("20201031", resultFields.remove("DATE"));
+        Assert.assertEquals("ssdeep", resultFields.remove("DATA TYPE"));
+        Assert.assertEquals("4", resultFields.remove("RECORD COUNT"));
 
         // At this point, the results have not been enriched with these fields, so they should not exist.
-        Assert.assertNull(null, resultFields.get("QUERY"));
-        Assert.assertNull(null, resultFields.get("WEIGHTED_SCORE"));
+        Assert.assertNull(null, resultFields.remove("QUERY"));
+        Assert.assertNull(null, resultFields.remove("WEIGHTED_SCORE"));
+
+        Assert.assertTrue("Results had unexpected fields: " + resultFields, resultFields.isEmpty());
     }
 
     @Test
@@ -182,6 +185,8 @@ public class SSDeepIngestQueryTest extends AbstractFunctionalQuery {
         String testSSDeep = "384:nv/fP9FmWVMdRFj2aTgSO+u5QT4ZE1PIVS:nDmWOdRFNTTs504---";
         String targetSSDeep = "384:nv/fP9FmWVMdRFj2aTgSO+u5QT4ZE1PIVS:nDmWOdRFNTTs504cQS";
         String query = "CHECKSUM_SSDEEP:" + testSSDeep;
+        String expectedOverlaps = "384:+u5QT4Z, 384:/fP9FmW, 384:2aTgSO+, 384:4ZE1PIV, 384:5QT4ZE1, 384:9FmWVMd, 384:Fj2aTgS, 384:FmWVMdR, 384:MdRFj2a, 384:O+u5QT4, 384:P9FmWVM, 384:QT4ZE1P, 384:RFj2aTg, 384:SO+u5QT, 384:T4ZE1PI, 384:TgSO+u5, 384:VMdRFj2, 384:WVMdRFj, 384:aTgSO+u, 384:dRFj2aT, 384:fP9FmWV, 384:gSO+u5Q, 384:j2aTgSO, 384:mWVMdRF, 384:nv/fP9F, 384:u5QT4ZE, 384:v/fP9Fm, 768:DmWOdRF, 768:FNTTs50, 768:NTTs504, 768:OdRFNTT, 768:RFNTTs5, 768:WOdRFNT, 768:dRFNTTs, 768:mWOdRFN, 768:nDmWOdR";
+
         EventQueryResponseBase response = runSSDeepQuery(query, similarityDiscoveryQueryLogic, 0);
 
         List<EventBase> events = response.getEvents();
@@ -190,16 +195,21 @@ public class SSDeepIngestQueryTest extends AbstractFunctionalQuery {
 
         Map.Entry<String,Map<String,String>> result = observedEvents.entrySet().iterator().next();
         Map<String,String> resultFields = result.getValue();
-        Assert.assertEquals(targetSSDeep, resultFields.get("VALUE"));
+        Assert.assertEquals(targetSSDeep, resultFields.remove("VALUE"));
 
-        Assert.assertEquals("CHECKSUM_SSDEEP", resultFields.get("FIELD"));
-        Assert.assertEquals("20201031", resultFields.get("DATE"));
-        Assert.assertEquals("ssdeep", resultFields.get("DATA TYPE"));
-        Assert.assertEquals("4", resultFields.get("RECORD COUNT"));
+        Assert.assertEquals("CHECKSUM_SSDEEP", resultFields.remove("FIELD"));
+        Assert.assertEquals("20201031", resultFields.remove("DATE"));
+        Assert.assertEquals("ssdeep", resultFields.remove("DATA TYPE"));
+        Assert.assertEquals("4", resultFields.remove("RECORD COUNT"));
 
         // The results have been enriched with these fields at this point.
-        Assert.assertEquals(testSSDeep, resultFields.get("QUERY"));
-        Assert.assertEquals("100", resultFields.get("WEIGHTED_SCORE"));
+        Assert.assertEquals(testSSDeep, resultFields.remove("QUERY"));
+        Assert.assertEquals("100", resultFields.remove("WEIGHTED_SCORE"));
+        Assert.assertEquals("36", resultFields.remove("OVERLAP_SCORE"));
+        Assert.assertEquals(expectedOverlaps, resultFields.remove("OVERLAP_SSDEEP_NGRAMS"));
+
+        Assert.assertTrue("Results had unexpected fields: " + resultFields, resultFields.isEmpty());
+
     }
 
     @SuppressWarnings("rawtypes")
