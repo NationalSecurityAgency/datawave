@@ -28,9 +28,6 @@ public class EdgeExtendedSummaryConfiguration extends EdgeQueryConfiguration imp
 
     private boolean summaryInputType = false;
 
-    // Use to aggregate results will be false by default
-    private boolean aggregateResults = false;
-
     private boolean overRideInput = false;
     private boolean overRideOutput = false;
 
@@ -150,6 +147,14 @@ public class EdgeExtendedSummaryConfiguration extends EdgeQueryConfiguration imp
     @Override
     public EdgeExtendedSummaryConfiguration parseParameters(Query settings) {
         super.parseParameters(settings);
+
+        // first, reset the params to their defaults
+        overRideInput = false;
+        summaryInputType = false;
+        includeRelationships = true;
+        delimiter = '\0';
+        edgeTypes = null;
+
         if (settings.getParameters() != null) {
 
             QueryImpl.Parameter p = settings.findParameter(SUMMARIZE);
@@ -205,10 +210,6 @@ public class EdgeExtendedSummaryConfiguration extends EdgeQueryConfiguration imp
 
     public boolean isIncludeRelationships() {
         return includeRelationships;
-    }
-
-    public boolean isReduceResults() {
-        return aggregateResults;
     }
 
     public boolean isSummaryInputType() {

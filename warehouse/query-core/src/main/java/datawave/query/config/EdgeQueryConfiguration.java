@@ -60,7 +60,7 @@ public class EdgeQueryConfiguration extends GenericQueryConfiguration implements
     private dateType dateRangeType = dateType.EVENT;
 
     // Use to aggregate results will be false by default
-    private boolean aggregateResults = false;
+    protected boolean aggregateResults = false;
 
     protected int queryThreads = 8;
 
@@ -98,7 +98,7 @@ public class EdgeQueryConfiguration extends GenericQueryConfiguration implements
         setMaxQueryTerms(other.getMaxQueryTerms());
         setMaxPrefilterValues(other.getMaxPrefilterValues());
         setDateRangeType(other.getDateRangeType());
-        setReduceResults(other.isReduceResults());
+        setAggregateResults(other.isAggregateResults());
         setDateFilterScanLimit(other.getDateFilterScanLimit());
         setDateFilterSkipLimit(other.getDateFilterSkipLimit());
         setMaxQueryTerms(other.getMaxQueryTerms());
@@ -214,6 +214,12 @@ public class EdgeQueryConfiguration extends GenericQueryConfiguration implements
      */
     public EdgeQueryConfiguration parseParameters(Query settings) {
         setQuery(settings);
+
+        // first, reset the params to their defaults
+        includeStats = true;
+        dateRangeType = dateType.EVENT;
+        aggregateResults = false;
+
         if (settings.getParameters() != null) {
             QueryImpl.Parameter p = settings.findParameter(INCLUDE_STATS);
             if (p != null && !p.getParameterValue().isEmpty()) {
@@ -270,12 +276,12 @@ public class EdgeQueryConfiguration extends GenericQueryConfiguration implements
         this.maxPrefilterValues = maxPrefilterValues;
     }
 
-    public boolean isReduceResults() {
+    public boolean isAggregateResults() {
         return aggregateResults;
     }
 
-    public void setReduceResults(boolean reduceResults) {
-        this.aggregateResults = reduceResults;
+    public void setAggregateResults(boolean aggregateResults) {
+        this.aggregateResults = aggregateResults;
     }
 
     public EdgeQueryModel getEdgeQueryModel() {
