@@ -27,6 +27,7 @@ import org.junit.Assert;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.ingest.csv.config.helper.ExtendedCSVHelper;
 import datawave.ingest.csv.config.helper.ExtendedCSVIngestHelper;
+import datawave.ingest.csv.mr.handler.ContentCSVColumnBasedHandler;
 import datawave.ingest.csv.mr.input.CSVRecordReader;
 import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.data.config.CSVHelper;
@@ -34,11 +35,14 @@ import datawave.ingest.data.config.DataTypeHelper;
 import datawave.ingest.data.config.MarkingsHelper;
 import datawave.ingest.data.config.ingest.BaseIngestHelper;
 import datawave.ingest.data.config.ingest.CompositeIngest;
+import datawave.ingest.data.config.ingest.ContentBaseIngestHelper;
 import datawave.ingest.data.config.ingest.VirtualIngest;
 import datawave.ingest.json.config.helper.JsonIngestHelper;
+import datawave.ingest.json.mr.handler.ContentJsonColumnBasedHandler;
 import datawave.ingest.json.mr.input.JsonRecordReader;
 import datawave.ingest.mapreduce.handler.shard.AbstractColumnBasedHandler;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
+import datawave.ingest.mapreduce.handler.tokenize.ExtendedContentDataTypeHelper;
 import datawave.policy.IngestPolicyEnforcer;
 
 /**
@@ -169,20 +173,23 @@ public abstract class AbstractDataTypeConfig implements DataTypeHadoopConfig {
 
                 this.hConf.set(this.dataType + ExtendedCSVHelper.Properties.EVENT_SECURITY_MARKING_FIELD_NAMES, getSecurityMarkingFieldNames());
                 this.hConf.set(this.dataType + ExtendedCSVHelper.Properties.EVENT_SECURITY_MARKING_FIELD_DOMAINS, getSecurityMarkingFieldDomains());
+                this.hConf.set(this.dataType + TypeRegistry.HANDLER_CLASSES, ContentCSVColumnBasedHandler.class.getName());
                 break;
             case JSON:
                 // loading of raw data for JSON is postponed until the Accumulo configuration is complete
                 this.hConf.set(this.dataType + TypeRegistry.INGEST_HELPER, JsonIngestHelper.class.getName());
                 this.hConf.set(this.dataType + TypeRegistry.RAW_READER, JsonRecordReader.class.getName());
+                this.hConf.set(this.dataType + TypeRegistry.HANDLER_CLASSES, ContentJsonColumnBasedHandler.class.getName());
                 break;
             case GROUPING:
                 // nothing to do here
+                this.hConf.set(this.dataType + TypeRegistry.HANDLER_CLASSES, AbstractColumnBasedHandler.class.getName());
                 break;
             default:
                 throw new AssertionError("unhandled format type: " + format.name());
         }
 
-        this.hConf.set(this.dataType + TypeRegistry.HANDLER_CLASSES, AbstractColumnBasedHandler.class.getName());
+        this.hConf.set(this.dataType + ContentBaseIngestHelper.TOKEN_FIELDNAME_DESIGNATOR_ENABLED, "false");
         this.hConf.set(this.dataType + BaseIngestHelper.DEFAULT_TYPE, LcNoDiacriticsType.class.getName());
         this.hConf.set(this.dataType + CSVHelper.DATA_SEP, ",");
         this.hConf.set(this.dataType + CSVHelper.MULTI_VALUED_SEPARATOR, RawDataManager.MULTIVALUE_SEP);
@@ -204,6 +211,15 @@ public abstract class AbstractDataTypeConfig implements DataTypeHadoopConfig {
         this.hConf.set(this.dataType + BaseIngestHelper.INDEX_FIELDS, String.join(",", indexEntries));
         this.hConf.set(this.dataType + BaseIngestHelper.INDEX_ONLY_FIELDS, String.join(",", this.fieldConfig.getIndexOnlyFields()));
         this.hConf.set(this.dataType + BaseIngestHelper.REVERSE_INDEX_FIELDS, String.join(",", this.fieldConfig.getReverseIndexFields()));
+
+        // take the intersection of the tokenized fields with the indexed fields to determine what to tokenize
+        Set<String> fields = new HashSet<>(this.fieldConfig.getIndexFields());
+        fields.retainAll(this.fieldConfig.getTokenizedFields());
+        this.hConf.set(this.dataType + ContentBaseIngestHelper.TOKEN_INDEX_ALLOWLIST, String.join(",", fields));
+        fields.clear();
+        fields.addAll(this.fieldConfig.getReverseIndexFields());
+        fields.retainAll(this.fieldConfig.getTokenizedFields());
+        this.hConf.set(this.dataType + ContentBaseIngestHelper.TOKEN_REV_INDEX_ALLOWLIST, String.join(",", fields));
 
         // setup composite field mappings
         Iterator<Set<String>> componentFieldsIter = this.fieldConfig.getCompositeFields().iterator();

@@ -459,20 +459,28 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
                         }
                     }, 1, 10, TimeUnit.SECONDS);
                 }
-
-                Path filePath = new Path(filename);
-                if (null == fs) {
-                    fs = filePath.getFileSystem(new Configuration());
-                } else {
-                    if (log.isTraceEnabled()) {
-                        log.trace("Reusing file system reference.");
-                    }
-                }
-                FileRuleWatcher watcherKey = new FileRuleWatcher(fs, filePath, 1, myEnv);
-
-                copyRules(watcherKey);
             }
         }
+
+        Path filePath = new Path(filename);
+        if (null == fs) {
+            synchronized (ConfigurableAgeOffFilter.class) {
+                if (null == fs) {
+                    if (log.isTraceEnabled()) {
+                        log.trace("Setting FileSystem reference");
+                    }
+                    fs = filePath.getFileSystem(new Configuration());
+                }
+            }
+        } else {
+            if (log.isTraceEnabled()) {
+                log.trace("Reusing file system reference.");
+            }
+        }
+        FileRuleWatcher watcherKey = new FileRuleWatcher(fs, filePath, 1, myEnv);
+
+        copyRules(watcherKey);
+
     }
 
     private long getLongProperty(final String prop, final long defaultValue) {

@@ -26,6 +26,7 @@ import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.core.query.configuration.QueryData;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.query.util.count.CountMap;
 
 /**
  * Base representation of a query plan
@@ -40,8 +41,8 @@ public class QueryPlan {
     protected Collection<Range> ranges = null;
     protected Collection<String> columnFamilies = new ArrayList<>();
     protected List<IteratorSetting> settings = new ArrayList<>();
-    protected Map<String,Long> termCounts;
-    protected Map<String,Long> fieldCounts;
+    protected CountMap termCounts;
+    protected CountMap fieldCounts;
 
     protected boolean rebuildHashCode = true;
     protected int hashCode;
@@ -304,13 +305,13 @@ public class QueryPlan {
         return this;
     }
 
-    public QueryPlan withFieldCounts(Map<String,Long> fieldCounts) {
+    public QueryPlan withFieldCounts(CountMap fieldCounts) {
         this.fieldCounts = fieldCounts;
         resetHashCode();
         return this;
     }
 
-    public QueryPlan withTermCounts(Map<String,Long> termCounts) {
+    public QueryPlan withTermCounts(CountMap termCounts) {
         this.termCounts = termCounts;
         resetHashCode();
         return this;
@@ -408,11 +409,11 @@ public class QueryPlan {
         return settings;
     }
 
-    public Map<String,Long> getFieldCounts() {
+    public CountMap getFieldCounts() {
         return this.fieldCounts;
     }
 
-    public Map<String,Long> getTermCounts() {
+    public CountMap getTermCounts() {
         return this.termCounts;
     }
 

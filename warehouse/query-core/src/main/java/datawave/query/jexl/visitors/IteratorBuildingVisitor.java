@@ -240,6 +240,37 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     }
 
     @Override
+    public Object visit(ASTERNode node, Object data) {
+
+        String identifier = JexlASTHelper.getIdentifier(node);
+        LiteralRange<?> range = buildLiteralRange(node);
+
+        if (limitLookup && !indexOnlyFields.contains(identifier) && termFrequencyFields.contains(identifier)) {
+            NestedIterator<Key> nested = buildExceededFromTermFrequency(identifier, node, node, range, data);
+            if (null != nested && data instanceof AbstractIteratorBuilder) {
+
+                AbstractIteratorBuilder iterators = (AbstractIteratorBuilder) data;
+
+                iterators.addInclude(nested);
+
+            } else {
+                if (isQueryFullySatisfied) {
+                    log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
+                }
+                // if there is no parent
+                if (root == null && data == null) {
+                    // make this nested the root node
+                    root = nested;
+                }
+                return nested;
+
+            }
+        }
+        node.childrenAccept(this, data);
+        return data;
+    }
+
+    @Override
     public Object visit(ASTAndNode and, Object data) {
         QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(and);
         if (instance.isAnyTypeOf(DELAYED, EVALUATION_ONLY, DROPPED)) {

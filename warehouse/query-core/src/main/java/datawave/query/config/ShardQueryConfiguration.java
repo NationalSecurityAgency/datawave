@@ -475,6 +475,17 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      * Flag to control gathering term counts from the global index and persisting those to the query iterator. Negated terms and branches are not considered.
      */
     private boolean useTermCounts = false;
+    /**
+     * Flag to control sorting a query by inferred default costs prior to the global index lookup. This step may reduce time performing a secondary sort as when
+     * {@link #sortQueryByCounts} is enabled.
+     */
+    private boolean sortQueryBeforeGlobalIndex = false;
+
+    /**
+     * Flag to control if a query is sorted by either field or term counts. Either {@link #useFieldCounts} or {@link #useTermCounts} must be set for this option
+     * to take effect.
+     */
+    private boolean sortQueryByCounts = false;
 
     /**
      * Default constructor
@@ -696,6 +707,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setPruneQueryOptions(other.getPruneQueryOptions());
         this.setUseFieldCounts(other.getUseFieldCounts());
         this.setUseTermCounts(other.getUseTermCounts());
+        this.setSortQueryBeforeGlobalIndex(other.isSortQueryBeforeGlobalIndex());
+        this.setSortQueryByCounts(other.isSortQueryByCounts());
     }
 
     /**
@@ -2691,6 +2704,22 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setUseFieldCounts(boolean useFieldCounts) {
         this.useFieldCounts = useFieldCounts;
+    }
+
+    public boolean isSortQueryBeforeGlobalIndex() {
+        return sortQueryBeforeGlobalIndex;
+    }
+
+    public void setSortQueryBeforeGlobalIndex(boolean sortQueryBeforeGlobalIndex) {
+        this.sortQueryBeforeGlobalIndex = sortQueryBeforeGlobalIndex;
+    }
+
+    public boolean isSortQueryByCounts() {
+        return sortQueryByCounts;
+    }
+
+    public void setSortQueryByCounts(boolean sortQueryByCounts) {
+        this.sortQueryByCounts = sortQueryByCounts;
     }
 
     @Override

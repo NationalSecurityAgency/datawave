@@ -22,6 +22,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
@@ -60,6 +61,7 @@ import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
+import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
@@ -85,6 +87,7 @@ import datawave.query.jexl.visitors.ExecutableDeterminationVisitor;
 import datawave.query.jexl.visitors.IngestTypePruningVisitor;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
+import datawave.query.jexl.visitors.order.OrderByCostVisitor;
 import datawave.query.planner.QueryPlan;
 import datawave.query.tables.RangeStreamScanner;
 import datawave.query.tables.ScannerFactory;
@@ -260,6 +263,10 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
 
                 this.itr = filter(concat(transform(queryStream, new TupleToRange(config.getShardTableName(), queryStream.currentNode(), config))),
                                 getEmptyPlanPruner());
+
+                if (config.isSortQueryByCounts() && (config.getUseFieldCounts() || config.getUseTermCounts())) {
+                    this.itr = transform(itr, new OrderingTransform(config.getUseFieldCounts(), config.getUseTermCounts()));
+                }
             }
         } finally {
             // shut down the executor as all threads have completed
@@ -331,6 +338,34 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
             }
 
             return true;
+        }
+    }
+
+    /**
+     * Transform that reorders a query tree according to field or term counts.
+     * <p>
+     * If both flags are set then the more precise term counts are used.
+     */
+    public static class OrderingTransform implements Function<QueryPlan,QueryPlan> {
+
+        private final boolean useFieldCounts;
+        private final boolean useTermCounts;
+
+        public OrderingTransform(boolean useFieldCounts, boolean useTermCounts) {
+            this.useFieldCounts = useFieldCounts;
+            this.useTermCounts = useTermCounts;
+        }
+
+        @Override
+        public QueryPlan apply(QueryPlan plan) {
+            if (useTermCounts) {
+                Map<String,Long> counts = plan.getTermCounts().getCounts();
+                OrderByCostVisitor.orderByTermCount(plan.getQueryTree(), counts);
+            } else if (useFieldCounts) {
+                Map<String,Long> counts = plan.getTermCounts().getCounts();
+                OrderByCostVisitor.orderByFieldCount(plan.getQueryTree(), counts);
+            }
+            return plan;
         }
     }
 

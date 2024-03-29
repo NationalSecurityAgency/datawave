@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
@@ -73,14 +74,21 @@ public class SSDeepDiscoveryQueryLogic extends BaseQueryLogic<DiscoveredSSDeep> 
                 ResponseObjectFactory responseObjectFactory = discoveryDelegate.getResponseObjectFactory();
                 ScoredSSDeepPair scoredSSDeepPair = discoveredSSDeep.getScoredSSDeepPair();
                 if (scoredSSDeepPair != null) {
-                    List<FieldBase<?>> fields = eventBase.getFields();
-                    Optional<FieldBase<?>> valueFieldOptional = fields.stream().filter(field -> "VALUE".equals(field.getName())).findFirst();
+                    List<FieldBase<?>> originalFields = eventBase.getFields();
+                    Optional<FieldBase<?>> valueFieldOptional = originalFields.stream().filter(field -> "VALUE".equals(field.getName())).findFirst();
 
                     if (valueFieldOptional.isEmpty()) {
                         throw new IllegalStateException("Could not find value field in event");
                     }
 
                     FieldBase<?> valueField = valueFieldOptional.get();
+
+                    // Handles the case where the DiscoveryQuery returns a down-cased ssdeep. To do this, we remove the
+                    // original VALUE field from the discovery result and create a new one from the scoredSSDeepPair
+                    // which was returned from the original similarity query. This also updates the list stored in the
+                    // event with the filtered version.
+                    final List<FieldBase<?>> newFields = originalFields.stream().filter(field -> !"VALUE".equals(field.getName())).collect(Collectors.toList());
+                    eventBase.setFields(newFields);
 
                     {
                         FieldBase<?> field = responseObjectFactory.getField();
@@ -89,7 +97,18 @@ public class SSDeepDiscoveryQueryLogic extends BaseQueryLogic<DiscoveredSSDeep> 
                         field.setColumnVisibility(valueField.getColumnVisibility());
                         field.setTimestamp(valueField.getTimestamp());
                         field.setValue(scoredSSDeepPair.getQueryHash().toString());
-                        fields.add(field);
+                        newFields.add(field);
+                    }
+
+                    {
+                        // add a new value field that preserves the case of the original matched ssdeep.
+                        FieldBase<?> field = responseObjectFactory.getField();
+                        field.setName("VALUE");
+                        field.setMarkings(valueField.getMarkings());
+                        field.setColumnVisibility(valueField.getColumnVisibility());
+                        field.setTimestamp(valueField.getTimestamp());
+                        field.setValue(scoredSSDeepPair.getMatchingHash().toString());
+                        newFields.add(field);
                     }
 
                     {
@@ -99,11 +118,29 @@ public class SSDeepDiscoveryQueryLogic extends BaseQueryLogic<DiscoveredSSDeep> 
                         field.setColumnVisibility(valueField.getColumnVisibility());
                         field.setTimestamp(valueField.getTimestamp());
                         field.setValue(scoredSSDeepPair.getWeightedScore());
-                        fields.add(field);
+                        newFields.add(field);
                     }
 
-                }
+                    {
+                        FieldBase<?> field = responseObjectFactory.getField();
+                        field.setName("OVERLAP_SCORE");
+                        field.setMarkings(valueField.getMarkings());
+                        field.setColumnVisibility(valueField.getColumnVisibility());
+                        field.setTimestamp(valueField.getTimestamp());
+                        field.setValue(scoredSSDeepPair.getOverlapScore());
+                        newFields.add(field);
+                    }
 
+                    {
+                        FieldBase field = responseObjectFactory.getField();
+                        field.setName("OVERLAP_SSDEEP_NGRAMS");
+                        field.setMarkings(valueField.getMarkings());
+                        field.setColumnVisibility(valueField.getColumnVisibility());
+                        field.setTimestamp(valueField.getTimestamp());
+                        field.setValue(scoredSSDeepPair.getOverlapsAsString());
+                        newFields.add(field);
+                    }
+                }
                 return eventBase;
             }
         };

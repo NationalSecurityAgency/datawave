@@ -60,7 +60,7 @@
         <version.curator>5.2.0</version.curator>
         <version.curator.test>5.2.0</version.curator.test>
         <version.deltaspike>1.9.0</version.deltaspike>
-        <version.easymock>4.0.2</version.easymock>
+        <version.easymock>5.2.0</version.easymock>
         <version.eclipse.emf>2.15.0</version.eclipse.emf>
         <version.geoserver>2.22.5</version.geoserver>
         <version.geotools>28.1</version.geotools>
