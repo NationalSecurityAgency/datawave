@@ -3,6 +3,9 @@ package datawave.query.tables.ssdeep;
 import static datawave.query.tables.ssdeep.util.SSDeepTestUtil.BUCKET_COUNT;
 import static datawave.query.tables.ssdeep.util.SSDeepTestUtil.BUCKET_ENCODING_BASE;
 import static datawave.query.tables.ssdeep.util.SSDeepTestUtil.BUCKET_ENCODING_LENGTH;
+import static datawave.query.tables.ssdeep.util.SSDeepTestUtil.EXPECTED_2_2_OVERLAPS;
+import static datawave.query.tables.ssdeep.util.SSDeepTestUtil.EXPECTED_2_3_OVERLAPS;
+import static datawave.query.tables.ssdeep.util.SSDeepTestUtil.EXPECTED_2_4_OVERLAPS;
 import static datawave.query.tables.ssdeep.util.SSDeepTestUtil.TEST_SSDEEPS;
 
 import java.util.Collections;
@@ -129,15 +132,15 @@ public class SSDeepSimilarityQueryTest {
         Assert.assertEquals(expectedEventCount, eventCount);
 
         // find the fields for the self match example.
-        SSDeepTestUtil.assertSSDeepSimilarityMatch(TEST_SSDEEPS[2], TEST_SSDEEPS[2], "65", "100", observedEvents);
+        SSDeepTestUtil.assertSSDeepSimilarityMatch(TEST_SSDEEPS[2], TEST_SSDEEPS[2], "65", EXPECTED_2_2_OVERLAPS, "100", observedEvents);
 
         // find and validate the fields for the partial match example.
-        SSDeepTestUtil.assertSSDeepSimilarityMatch(TEST_SSDEEPS[2], TEST_SSDEEPS[3], "51", "96", observedEvents);
+        SSDeepTestUtil.assertSSDeepSimilarityMatch(TEST_SSDEEPS[2], TEST_SSDEEPS[3], "51", EXPECTED_2_3_OVERLAPS, "96", observedEvents);
 
         if (applyMinScoreThreshold)
             SSDeepTestUtil.assertNoMatch(TEST_SSDEEPS[2], TEST_SSDEEPS[3], observedEvents);
         else
-            SSDeepTestUtil.assertSSDeepSimilarityMatch(TEST_SSDEEPS[2], TEST_SSDEEPS[4], "9", "63", observedEvents);
+            SSDeepTestUtil.assertSSDeepSimilarityMatch(TEST_SSDEEPS[2], TEST_SSDEEPS[4], "9", EXPECTED_2_4_OVERLAPS, "63", observedEvents);
     }
 
     @SuppressWarnings("rawtypes")
