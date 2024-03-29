@@ -8,12 +8,15 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import org.apache.accumulo.core.client.Accumulo;
@@ -64,7 +67,6 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
     private static TableSplitsCache cache;
 
     private Path splitsPath = null;
-    private Map<String,List<Text>> splits = new HashMap<>();
     private Map<String,Map<Text,String>> splitLocations = new HashMap<>();
 
     private Map<Text,String> getSplitsWithLocation(String table) throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
@@ -123,7 +125,7 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
         double r = (maxSplits + 1) / (double) (tableSplits.size());
         double pos = 0;
 
-        ArrayList<Text> subset = new ArrayList<>(maxSplits);
+        List<Text> subset = new ArrayList<>();
 
         int numberSplitsUsed = 0;
         for (int i = 0; i < tableSplits.size() && numberSplitsUsed < maxSplits; i++) {
@@ -202,13 +204,11 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
         Map<String,Map<Text,String>> tmpSplitLocations = new HashMap<>();
 
         try (PrintStream out = new PrintStream(new BufferedOutputStream(fs.create(tmpSplitsFile)))) {
-            this.splits = new HashMap<>();
             // gather the splits and write to PrintStream
             for (String table : tableNames) {
                 log.info("Retrieving splits for " + table);
                 Map<Text,String> splitLocations = getSplitsWithLocation(table);
                 List<Text> splits = new ArrayList<>(splitLocations.keySet());
-                this.splits.put(table, splits);
                 splitsPerTable.put(table, splits.size());
                 log.info("Writing " + splits.size() + " splits.");
                 tmpSplitLocations.put(table, splitLocations);
@@ -254,14 +254,14 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
 
     private Map<String,Integer> getCurrentSplitsPerTable() {
         Map<String,Integer> currentSplitsPerTable = new HashMap<>();
-        if (this.splits.isEmpty() || splitLocations.isEmpty())
+        if (splitLocations.isEmpty())
             try {
                 read();
             } catch (IOException ex) {
                 log.warn("No splits file exists");
             }
-        for (String tableName : this.splits.keySet()) {
-            currentSplitsPerTable.put(tableName, this.splits.get(tableName).size());
+        for (String tableName : this.splitLocations.keySet()) {
+            currentSplitsPerTable.put(tableName, this.splitLocations.get(tableName).size());
         }
         return currentSplitsPerTable;
     }
@@ -276,11 +276,9 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
      */
     @Override
     protected void readCache(BufferedReader in) throws IOException {
-        this.splits = new HashMap<>();
         this.splitLocations = new HashMap<>();
         String line;
         String tableName = null;
-        List<Text> splits = null;
         SortedMap<Text,String> tmpSplitLocations = null;
         while ((line = in.readLine()) != null) {
             String[] parts = StringUtils.split(line, this.delimiter);
@@ -289,15 +287,13 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
                     this.splitLocations.remove(tableName);
                 }
                 tableName = parts[0];
-                splits = new ArrayList<>();
                 tmpSplitLocations = new TreeMap<>();
-                this.splits.put(tableName, splits);
                 this.splitLocations.put(tableName, tmpSplitLocations);
             }
-            if (parts.length > 1) {
-                splits.add(new Text(Base64.decodeBase64(parts[1].getBytes())));
+            if (parts.length == 2) {
+                tmpSplitLocations.put(new Text(Base64.decodeBase64(parts[1].getBytes())), NO_LOCATION);
             }
-            if (parts.length > 2) {
+            if (parts.length == 3) {
                 tmpSplitLocations.put(new Text(Base64.decodeBase64(parts[1].getBytes())), parts[2]);
             }
 
@@ -318,12 +314,15 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
      *             for issues with read or write
      */
     public List<Text> getSplits(String table) throws IOException {
-        if (this.splits.isEmpty()) {
+        if (this.splitLocations.isEmpty()) {
             read();
         }
-        List<Text> tableSplits = this.splits.get(table);
+        if (this.splitLocations.get(table) == null) {
+            return new ArrayList<>();
+        }
+        List<Text> tableSplits = new ArrayList<>(this.splitLocations.get(table).keySet());
         if (tableSplits == null) {
-            return Collections.emptyList();
+            return new ArrayList<>();
         }
         return tableSplits;
     }
@@ -347,10 +346,10 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
      * @throws IOException
      *             for issues with read or write
      */
-    public Map<String,List<Text>> getSplits() throws IOException {
-        if (this.splits.isEmpty())
+    public Map<String,Map<Text,String>> getSplits() throws IOException {
+        if (this.splitLocations.isEmpty())
             read();
-        return new HashMap<>(splits);
+        return splitLocations;
     }
 
     /**

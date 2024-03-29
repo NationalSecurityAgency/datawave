@@ -174,12 +174,16 @@ public class SplitsFile {
         return dateIsBalanced;
     }
 
-    public static Map<String,List<Text>> getSplits(Configuration conf) throws IOException {
+    public static Map<String,Map<Text,String>> getSplits(Configuration conf) throws IOException {
         return TableSplitsCache.getCurrentCache(conf).getSplits();
 
     }
 
     public static Map<Text,String> getSplitsAndLocations(Configuration conf, String tableName) throws IOException {
         return TableSplitsCache.getCurrentCache(conf).getSplitsAndLocationByTable(tableName);
+    }
+
+    public static List<Text> getSplits(Configuration conf, String tableName) throws IOException {
+        return TableSplitsCache.getCurrentCache(conf).getSplits(tableName);
     }
 }
