@@ -143,6 +143,12 @@ class IngestTypeVisitorTest {
         assertSingleNode("D == '4' || E == '5'", Collections.emptySet());
     }
 
+    @Test
+    void testEqNull() {
+        assertSingleNode("A == null", Collections.emptySet());
+        assertSingleNode("!(A == null)", Collections.emptySet());
+    }
+
     private void assertSingleNode(String query, Set<String> expectedIngestTypes) {
         assertSingleNode(query, expectedIngestTypes, typeMetadata);
     }
