@@ -17,6 +17,7 @@ DW_ACCUMULO_SERVICE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 # You may override DW_ZOOKEEPER_DIST_URI in your env ahead of time, and set as file:///path/to/file.tar.gz for local tarball, if needed
 # DW_ZOOKEEPER_DIST_URI should, if possible, be using https. There are potential security risks by using http.
 DW_ZOOKEEPER_DIST_URI="${DW_ZOOKEEPER_DIST_URI:-https://archive.apache.org/dist/zookeeper/zookeeper-3.7.1/apache-zookeeper-3.7.1-bin.tar.gz}"
+# The sha512 checksum for the tarball. Value should be the hash value only and does not include the file name. Cannot be left blank.
 DW_ZOOKEEPER_DIST_SHA512_CHECKSUM="9103628a50745fa1a289bca666fda4a9c08ec17c55cf13e66887e7ba76e93dbae60a1f1ffd6c10798be3a16069344ecbc00cebb29bf03d9cd7096ccd098ed011"
 # shellcheck disable=SC2154
 # shellcheck disable=SC2034
@@ -246,8 +247,6 @@ function accumuloUninstall() {
 }
 
 function accumuloInstall() {
-  #eval "${DW_ACCUMULO_DIST_CHECKSUM_TYPE}" "$(basename "$DW_ACCUMULO_DIST_URI")" > "${DW_ACCUMULO_DIST_URI}"/AccumuloChecksumFile
-  #eval "${DW_ACCUMULO_DIST_CHECKSUM_TYPE}" --check "$(basename "$DW_ACCUMULO_DIST_URI")"
   "${DW_ACCUMULO_SERVICE_DIR}/install.sh"
 }
 

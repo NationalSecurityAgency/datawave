@@ -85,7 +85,6 @@ function verifyChecksum() {
   # $2 - service directory
   # $3 - tarball sha512 checksum
   local tarballName="$(basename "$1")"
-  echo "${tarballName}"
   if [[ -f "$2/${tarballName}" ]]; then
       local calculatedChecksum="$( cd $2 && sha512sum ${tarballName} )"
       if [[ "${calculatedChecksum}" = "$3  ${tarballName}" ]] ; then
