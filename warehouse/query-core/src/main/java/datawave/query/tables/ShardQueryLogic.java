@@ -2811,4 +2811,20 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     public void setUseTermCounts(boolean useTermCounts) {
         getConfig().setUseTermCounts(useTermCounts);
     }
+
+    public boolean getSortQueryBeforeGlobalIndex() {
+        return getConfig().isSortQueryBeforeGlobalIndex();
+    }
+
+    public void setSortQueryBeforeGlobalIndex(boolean sortQueryBeforeGlobalIndex) {
+        getConfig().setSortQueryBeforeGlobalIndex(sortQueryBeforeGlobalIndex);
+    }
+
+    public boolean getSortQueryByCounts() {
+        return getConfig().isSortQueryByCounts();
+    }
+
+    public void setSortQueryByCounts(boolean sortQueryByCounts) {
+        getConfig().setSortQueryByCounts(sortQueryByCounts);
+    }
 }

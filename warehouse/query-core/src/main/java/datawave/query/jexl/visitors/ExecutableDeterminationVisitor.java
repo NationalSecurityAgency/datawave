@@ -750,7 +750,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         // negated regex nodes are in general not-executable against the index
         if (isNoFieldOnly(node)) {
             state = STATE.IGNORABLE;
-        } else if (isNonEvent(node)) {
+        } else if (isIndexOnly(node)) {
             state = STATE.ERROR;
         } else {
             state = STATE.NON_EXECUTABLE;
@@ -871,7 +871,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         // results.
         if (isNoFieldOnly(node)) {
             state = STATE.IGNORABLE;
-        } else if (isNonEvent(node)) {
+        } else if (isIndexOnly(node)) {
             state = STATE.ERROR;
         } else {
             state = STATE.NON_EXECUTABLE;
@@ -990,7 +990,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         else if (instance.isAnyTypeOf(DELAYED, EVALUATION_ONLY)) {
             if (isNoFieldOnly(node)) {
                 state = STATE.IGNORABLE;
-            } else if (instance.isType(EVALUATION_ONLY) && isNonEvent(node)) {
+            } else if (instance.isType(EVALUATION_ONLY) && isIndexOnly(node)) {
                 state = STATE.ERROR;
             } else {
                 state = STATE.NON_EXECUTABLE;

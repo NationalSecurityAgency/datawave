@@ -556,6 +556,10 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("useFieldCounts", true);
         defaultValues.put("useTermCounts", false);
         updatedValues.put("useTermCounts", true);
+        defaultValues.put("sortQueryBeforeGlobalIndex", false);
+        updatedValues.put("sortQueryBeforeGlobalIndex", true);
+        defaultValues.put("sortQueryByCounts", false);
+        updatedValues.put("sortQueryByCounts", true);
     }
 
     private Query createQuery(String query) {

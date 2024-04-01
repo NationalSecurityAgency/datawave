@@ -1,5 +1,9 @@
 package datawave.query.tables.ssdeep;
 
+import static datawave.query.tables.ssdeep.util.SSDeepTestUtil.EXPECTED_2_2_OVERLAPS;
+import static datawave.query.tables.ssdeep.util.SSDeepTestUtil.EXPECTED_2_3_OVERLAPS;
+import static datawave.query.tables.ssdeep.util.SSDeepTestUtil.EXPECTED_2_4_OVERLAPS;
+import static datawave.query.tables.ssdeep.util.SSDeepTestUtil.TEST_SSDEEPS;
 import static org.junit.Assert.fail;
 
 import java.util.Collections;
@@ -36,6 +40,7 @@ import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.ingest.mapreduce.handler.ssdeep.SSDeepIndexHandler;
 import datawave.marking.MarkingFunctions;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
+import datawave.query.tables.ssdeep.util.SSDeepTestUtil;
 import datawave.query.testframework.AbstractDataTypeConfig;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
@@ -52,17 +57,10 @@ import datawave.webservice.query.result.event.FieldBase;
 import datawave.webservice.query.runner.RunningQuery;
 import datawave.webservice.result.EventQueryResponseBase;
 
-public class SSDeepQueryTest {
+/** Simple unit test against the SSDeepIndex / SSDeepSimilarityLogic code */
+public class SSDeepIndexQueryTest {
 
-    public static String[] TEST_SSDEEPS = {"12288:002r/VG4GjeZHkwuPikQ7lKH5p5H9x1beZHkwulizQ1lK55pGxlXTd8zbW:002LVG4GjeZEXi37l6Br1beZEdic1lmu",
-            "6144:02C3nq73v1kHGhs6y7ppFj93NRW6/ftZTgC6e8o4toHZmk6ZxoXb0ns:02C4cGCLjj9Swfj9koHEk6/Fns",
-            "3072:02irbxzGAFYDMxud7fKg3dXVmbOn5u46Kjnz/G8VYrs123D6pIJLIOSP:02MKlWQ7Sg3d4bO968rm7JO",
-            "3072:03jscyaGAFYDMxud7fKg3dXVmbOn5u46Kjnz/G8VYrs123D6pIJLIOSP:03NLmXR7Sg3d4bO968rm7JO",
-            "3072:03jscyaZZZZZYYYYXXXWWdXVmbOn5u46KjnzWWWXXXXYYYYYYZZZZZZZ:03NLmXR7ZZZYYXW9WXYYZZZ",
-            "48:1aBhsiUw69/UXX0x0qzNkVkydf2klA8a7Z35:155w69MXAlNkmkWTF5", "196608:wEEE+EEEEE0LEEEEEEEEEEREEEEhEEETEEEEEWUEEEJEEEEcEEEEEEEE3EEEEEEN:",
-            "1536:0YgNvw/OmgPgiQeI+25Nh6+RS5Qa8LmbyfAiIRgizy1cBx76UKYbD+iD/RYgNvw6:", "12288:222222222222222222222222222222222:"};
-
-    private static final Logger log = Logger.getLogger(SSDeepQueryTest.class);
+    private static final Logger log = Logger.getLogger(SSDeepIndexQueryTest.class);
 
     private static final Authorizations auths = AbstractDataTypeConfig.getTestAuths();
 
@@ -153,13 +151,13 @@ public class SSDeepQueryTest {
     }
 
     @Test
-    /** Test that a single query ssdeep with no match score threshold returns the expected results */
+    /* Test that a single query ssdeep with no match score threshold returns the expected results */
     public void testSingleQueryNoMinScore() throws Exception {
         runSingleQuery(false);
     }
 
     @Test
-    /** Test that a single query ssdeep with a min score threshold returns the expected results */
+    /* Test that a single query ssdeep with a min score threshold returns the expected results */
     public void testSingleQueryMinScore() throws Exception {
         runSingleQuery(true);
     }
@@ -189,15 +187,15 @@ public class SSDeepQueryTest {
         Assert.assertEquals(expectedEventCount, eventCount);
 
         // find the fields for the self match example.
-        assertMatch(TEST_SSDEEPS[2], TEST_SSDEEPS[2], "65", "1", "100", observedEvents);
+        SSDeepTestUtil.assertSSDeepSimilarityMatch(TEST_SSDEEPS[2], TEST_SSDEEPS[2], "65", EXPECTED_2_2_OVERLAPS, "100", observedEvents);
 
         // find and validate the fields for the partial match example.
-        assertMatch(TEST_SSDEEPS[2], TEST_SSDEEPS[3], "51", "2", "96", observedEvents);
+        SSDeepTestUtil.assertSSDeepSimilarityMatch(TEST_SSDEEPS[2], TEST_SSDEEPS[3], "51", EXPECTED_2_3_OVERLAPS, "96", observedEvents);
 
         if (applyMinScoreThreshold)
             assertNoMatch(TEST_SSDEEPS[2], TEST_SSDEEPS[3], observedEvents);
         else
-            assertMatch(TEST_SSDEEPS[2], TEST_SSDEEPS[4], "9", "3", "63", observedEvents);
+            SSDeepTestUtil.assertSSDeepSimilarityMatch(TEST_SSDEEPS[2], TEST_SSDEEPS[4], "9", EXPECTED_2_4_OVERLAPS, "63", observedEvents);
     }
 
     public EventQueryResponseBase runSSDeepQuery(String query, int minScoreThreshold) throws Exception {
@@ -209,7 +207,7 @@ public class SSDeepQueryTest {
         q.setQueryAuthorizations(auths.toString());
 
         if (minScoreThreshold > 0) {
-            q.addParameter(SSDeepSimilarityQueryTransformer.MIN_SSDEEP_SCORE_PARAMETER, String.valueOf(minScoreThreshold));
+            q.addParameter(SSDeepScoringFunction.MIN_SSDEEP_SCORE_PARAMETER, String.valueOf(minScoreThreshold));
         }
 
         RunningQuery runner = new RunningQuery(accumuloClient, AccumuloConnectionFactory.Priority.NORMAL, this.logic, q, "", principal,
@@ -247,34 +245,6 @@ public class SSDeepQueryTest {
             }
         }
         return observedEvents;
-    }
-
-    /**
-     * assert that a match exists between the specified query and matching ssdeep and that the match has the expected properties
-     *
-     * @param querySsdeep
-     *            the query ssdeep we expect to find in the match results
-     * @param matchingSsdeep
-     *            the matching ssdeep we expect to find in the match results.
-     * @param matchScore
-     *            the base match score
-     * @param matchRank
-     *            the match rank
-     * @param weightedScore
-     *            the weighted match score.
-     * @param observedEvents
-     *            the map of observed events, created by extractObservedEvents on the event list obtained from query execution.
-     */
-    public static void assertMatch(String querySsdeep, String matchingSsdeep, String matchScore, String matchRank, String weightedScore,
-                    Map<String,Map<String,String>> observedEvents) {
-        final Map<String,String> observedFields = observedEvents.get(querySsdeep + "#" + matchingSsdeep);
-        Assert.assertNotNull("Observed fields was null", observedFields);
-        Assert.assertFalse("Observed fields was unexpectedly empty", observedFields.isEmpty());
-        Assert.assertEquals(matchScore, observedFields.remove("MATCH_SCORE"));
-        Assert.assertEquals(weightedScore, observedFields.remove("WEIGHTED_SCORE"));
-        Assert.assertEquals(querySsdeep, observedFields.remove("QUERY_SSDEEP"));
-        Assert.assertEquals(matchingSsdeep, observedFields.remove("MATCHING_SSDEEP"));
-        Assert.assertTrue("Observed unexpected field(s) in full match: " + observedFields, observedFields.isEmpty());
     }
 
     /**
