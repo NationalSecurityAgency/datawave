@@ -36,6 +36,7 @@ import datawave.webservice.query.exception.EmptyObjectException;
 import datawave.webservice.query.logic.BaseQueryLogic;
 import datawave.webservice.query.logic.QueryLogic;
 import datawave.webservice.query.logic.QueryLogicTransformer;
+import datawave.webservice.query.logic.filtered.FilteredQueryLogic;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.result.BaseResponse;
 
@@ -265,6 +266,13 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
                 String logicName = next.getKey();
                 QueryLogic<?> logic = next.getValue();
                 GenericQueryConfiguration config = null;
+
+                // start the next query logic plan expression
+                if (logicQueryStringBuilder.length() > 0) {
+                    logicQueryStringBuilder.append(" || ");
+                }
+                logicQueryStringBuilder.append("( ( logic = '").append(logicName).append("' )").append(" && ");
+
                 try {
                     // duplicate the settings for this query
                     Query settingsCopy = settings.duplicate(settings.getQueryName() + " -> " + logicName);
@@ -273,29 +281,37 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
                     runtimeQueryAuthorizations = updateRuntimeAuthorizationsAndQueryAuths(logic, settingsCopy);
 
                     config = logic.initialize(client, settingsCopy, runtimeQueryAuthorizations);
-                    if (logicQueryStringBuilder.length() > 0) {
-                        logicQueryStringBuilder.append(" || ");
-                    }
-                    logicQueryStringBuilder.append("( ( logic = '").append(logicName).append("' )");
-                    logicQueryStringBuilder.append(" && ").append(config.getQueryString()).append(" )");
-                    QueryLogicHolder holder = new QueryLogicHolder(logicName, logic);
-                    holder.setConfig(config);
-                    holder.setSettings(settingsCopy);
-                    holder.setMaxResults(logic.getMaxResults());
-                    logicState.put(logicName, holder);
 
-                    // if doing sequential execution, then stop since we have one initialized
-                    if (isShortCircuitExecution()) {
-                        break;
+                    // only add this query logic to the initialized logic states if it was not simply filtered out
+                    if (logic instanceof FilteredQueryLogic && ((FilteredQueryLogic) logic).isFiltered()) {
+                        log.info("Dropping " + logic.getLogicName() + " as it was filtered out");
+                        logicQueryStringBuilder.append("( filtered = true )");
+                    } else {
+                        logicQueryStringBuilder.append(config.getQueryString());
+
+                        QueryLogicHolder holder = new QueryLogicHolder(logicName, logic);
+                        holder.setConfig(config);
+                        holder.setSettings(settingsCopy);
+                        holder.setMaxResults(logic.getMaxResults());
+                        logicState.put(logicName, holder);
+
+                        // if doing sequential execution, then stop since we have one initialized
+                        if (isShortCircuitExecution()) {
+                            break;
+                        }
                     }
 
                 } catch (Exception e) {
                     exceptions.put(logicName, e);
                     log.error("Failed to initialize " + logic.getClass().getName(), e);
+                    logicQueryStringBuilder.append("( failure = '").append(e.getMessage()).append("' )");
                     failedQueryLogics.put(logicName, logic);
                 } finally {
                     queryLogics.remove(next.getKey());
                 }
+
+                // close out the query plan expression
+                logicQueryStringBuilder.append(" )");
             }
 
             // if something failed initialization
