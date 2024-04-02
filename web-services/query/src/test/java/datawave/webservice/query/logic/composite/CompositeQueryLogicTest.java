@@ -38,6 +38,7 @@ import datawave.core.query.logic.QueryLogic;
 import datawave.core.query.logic.QueryLogicTransformer;
 import datawave.core.query.logic.composite.CompositeLogicException;
 import datawave.core.query.logic.composite.CompositeQueryLogic;
+import datawave.core.query.logic.filtered.FilteredQueryLogic;
 import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
@@ -455,6 +456,21 @@ public class CompositeQueryLogicTest {
 
     }
 
+    public static class TestFilteredQueryLogic extends FilteredQueryLogic {
+        private boolean filtered;
+
+        public TestFilteredQueryLogic(boolean filtered) {
+            QueryLogic delegate = new TestQueryLogic();
+            setDelegate(delegate);
+            this.filtered = filtered;
+        }
+
+        @Override
+        public boolean isFiltered() {
+            return filtered;
+        }
+    }
+
     @Before
     public void setup() {
         System.setProperty(DnUtils.NPE_OU_PROPERTY, "iamnotaperson");
@@ -596,6 +612,61 @@ public class CompositeQueryLogicTest {
         c.initialize(null, settings, Collections.singleton(auths));
 
         Assert.assertEquals(1, c.getInitializedLogics().size());
+    }
+
+    @Test
+    public void testInitializeOKWithFilter() throws Exception {
+
+        Map<String,QueryLogic<?>> logics = new HashMap<>();
+        logics.put("TestQueryLogic", new TestQueryLogic());
+        logics.put("TestQueryLogic2", new TestFilteredQueryLogic(true));
+
+        QueryImpl settings = new QueryImpl();
+        settings.setPagesize(100);
+        settings.setQueryAuthorizations(auths.toString());
+        settings.setQuery("FOO == 'BAR'");
+        settings.setParameters(new HashSet<>());
+        settings.setId(UUID.randomUUID());
+
+        CompositeQueryLogic c = new CompositeQueryLogic();
+        c.setQueryLogics(logics);
+
+        c.setCurrentUser(principal);
+        c.initialize(null, settings, Collections.singleton(auths));
+
+        Assert.assertEquals(1, c.getInitializedLogics().size());
+        // ensure the filtered query logic is actually dropped
+        Assert.assertEquals(0, c.getUninitializedLogics().size());
+    }
+
+    @Test(expected = CompositeLogicException.class)
+    public void testInitializeNotOKWithFilter() throws Exception {
+
+        Map<String,QueryLogic<?>> logics = new HashMap<>();
+        logics.put("TestQueryLogic", new TestQueryLogic() {
+            @Override
+            public GenericQueryConfiguration initialize(AccumuloClient connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations)
+                            throws Exception {
+                throw new Exception("initialize failed");
+            }
+        });
+        logics.put("TestQueryLogic2", new TestFilteredQueryLogic(true));
+
+        QueryImpl settings = new QueryImpl();
+        settings.setPagesize(100);
+        settings.setQueryAuthorizations(auths.toString());
+        settings.setQuery("FOO == 'BAR'");
+        settings.setParameters(new HashSet<>());
+        settings.setId(UUID.randomUUID());
+
+        CompositeQueryLogic c = new CompositeQueryLogic();
+        c.setQueryLogics(logics);
+
+        // testing that we fail despite allMustInitialize to false because the filtered logic does not count
+        c.setAllMustInitialize(false);
+
+        c.setCurrentUser(principal);
+        c.initialize(null, settings, Collections.singleton(auths));
     }
 
     @Test(expected = CompositeLogicException.class)
