@@ -54,8 +54,6 @@ public class RegexIndexLookup extends AsyncIndexLookup {
     protected RegexLookupData forwardLookupData = new RegexLookupData();
     protected RegexLookupData reverseLookupData = new RegexLookupData();
 
-    private ExpandedFieldCache fieldCache = new ExpandedFieldCache();
-
     /**
      *
      * @param config

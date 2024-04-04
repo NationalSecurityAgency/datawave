@@ -20,6 +20,7 @@ import org.apache.commons.jexl3.parser.JexlNodes;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.lookups.AsyncIndexLookup;
+import datawave.query.jexl.lookups.ExpandedFieldCache;
 import datawave.query.jexl.lookups.IndexLookup;
 import datawave.query.planner.pushdown.CostEstimator;
 import datawave.query.tables.ScannerFactory;
@@ -49,20 +50,24 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
     protected Map<String,IndexLookup> lookupMap;
     protected List<FutureJexlNode> futureJexlNodes;
 
-    protected BaseIndexExpansionVisitor(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, String threadName)
-                    throws TableNotFoundException {
-        this(config, scannerFactory, helper, null, threadName);
+    protected ExpandedFieldCache previouslyExpandedFieldCache;
+
+    protected BaseIndexExpansionVisitor(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, String threadName,
+                    ExpandedFieldCache previouslyExpandedFieldCache) throws TableNotFoundException {
+        this(config, scannerFactory, helper, null, threadName, previouslyExpandedFieldCache);
     }
 
     // The constructor should not be made public so that we can ensure that the executor is set up and shutdown correctly
     protected BaseIndexExpansionVisitor(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, Map<String,IndexLookup> lookupMap,
-                    String threadName) throws TableNotFoundException {
+                    String threadName, ExpandedFieldCache previouslyExpandedFieldCache) throws TableNotFoundException {
         this.config = config;
         this.scannerFactory = scannerFactory;
         this.helper = helper;
         this.expandFields = config.isExpandFields();
         this.expandValues = config.isExpandValues();
         this.threadName = threadName;
+
+        this.previouslyExpandedFieldCache = previouslyExpandedFieldCache;
 
         this.indexOnlyFields = helper.getIndexOnlyFields(config.getDatatypeFilter());
         this.allFields = helper.getAllFields(config.getDatatypeFilter());
@@ -111,7 +116,6 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
             if (rebuiltScript instanceof FutureJexlNode) {
                 rebuiltScript = (T) ((FutureJexlNode) rebuiltScript).getRebuiltNode();
             }
-
             return rebuiltScript;
         } finally {
             shutdownExecutor();

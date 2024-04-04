@@ -37,6 +37,7 @@ import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.DoNotPerformOptimizedQueryException;
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.lookups.ExpandedFieldCache;
 import datawave.query.model.QueryModel;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MockMetadataHelper;
@@ -218,10 +219,11 @@ public class UnfieldedIndexExpansionVisitorTest {
             String query = "_ANYFIELD_ == 'burrito'";
             String expected = "FIELD1 == 'burrito' || FIELD2 == 'burrito'";
 
+            ExpandedFieldCache previouslyExpandedFieldCache = new ExpandedFieldCache();
             ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
             ScannerFactory scannerFactory = new ScannerFactory(config.getClient());
             metadataHelper.addExpansionFields(ImmutableSet.of("FIELD1", "FIELD2"));
-            ASTJexlScript fixed = UnfieldedIndexExpansionVisitor.expandUnfielded(config, scannerFactory, metadataHelper, script);
+            ASTJexlScript fixed = UnfieldedIndexExpansionVisitor.expandUnfielded(config, scannerFactory, metadataHelper, script, previouslyExpandedFieldCache);
 
             // assert and validate
             assertTrue(JexlASTHelper.validateLineage(fixed, false));
@@ -242,10 +244,11 @@ public class UnfieldedIndexExpansionVisitorTest {
             String query = "_ANYFIELD_ == 'burrito'";
             String expected = "_NOFIELD_ == 'burrito'";
 
+            ExpandedFieldCache previouslyExpandedFieldCache = new ExpandedFieldCache();
             ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
             ScannerFactory scannerFactory = new ScannerFactory(config.getClient());
             metadataHelper.addExpansionFields(ImmutableSet.of("FOOBAR"));
-            ASTJexlScript fixed = UnfieldedIndexExpansionVisitor.expandUnfielded(config, scannerFactory, metadataHelper, script);
+            ASTJexlScript fixed = UnfieldedIndexExpansionVisitor.expandUnfielded(config, scannerFactory, metadataHelper, script, previouslyExpandedFieldCache);
 
             // assert and validate
             assertTrue(JexlASTHelper.validateLineage(fixed, false));
@@ -368,10 +371,11 @@ public class UnfieldedIndexExpansionVisitorTest {
             String query = "_ANYFIELD_ !~ '.*?ly'";
             String expected = "(_ANYFIELD_ !~ '.*?ly' && FIELD8 != 'fearfully' && FIELD9 != 'wonderfully')";
 
+            ExpandedFieldCache previouslyExpandedFieldCache = new ExpandedFieldCache();
             ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
             ScannerFactory scannerFactory = new ScannerFactory(config.getClient());
             metadataHelper.addExpansionFields(ImmutableSet.of("FIELD8", "FIELD9"));
-            ASTJexlScript fixed = UnfieldedIndexExpansionVisitor.expandUnfielded(config, scannerFactory, metadataHelper, script);
+            ASTJexlScript fixed = UnfieldedIndexExpansionVisitor.expandUnfielded(config, scannerFactory, metadataHelper, script, previouslyExpandedFieldCache);
 
             // assert and validate
             assertTrue(JexlASTHelper.validateLineage(fixed, false));
@@ -427,9 +431,10 @@ public class UnfieldedIndexExpansionVisitorTest {
 
     // throw exception to assert failure cases, such as CannotExpandUnfieldedTermFatalException
     public void test(String query, String expected, ShardQueryConfiguration config, MockMetadataHelper metadataHelper) throws Exception {
+        ExpandedFieldCache previouslyExpandedFieldCache = new ExpandedFieldCache();
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
         ScannerFactory scannerFactory = new ScannerFactory(config.getClient());
-        ASTJexlScript fixed = UnfieldedIndexExpansionVisitor.expandUnfielded(config, scannerFactory, metadataHelper, script);
+        ASTJexlScript fixed = UnfieldedIndexExpansionVisitor.expandUnfielded(config, scannerFactory, metadataHelper, script, previouslyExpandedFieldCache);
 
         // assert and validate
         assertTrue(JexlASTHelper.validateLineage(fixed, false));

@@ -40,6 +40,7 @@ import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.EmptyUnfieldedTermExpansionException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
+import datawave.query.jexl.lookups.ExpandedFieldCache;
 import datawave.query.jexl.lookups.IndexLookup;
 import datawave.query.jexl.lookups.IndexLookupMap;
 import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods;
@@ -73,14 +74,14 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
 
     // The constructor should not be made public so that we can ensure that the executor is setup and shutdown correctly
     protected RegexIndexExpansionVisitor(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper,
-                    Map<String,IndexLookup> lookupMap) throws TableNotFoundException {
-        this(config, scannerFactory, helper, lookupMap, "RegexIndexExpansion");
+                    Map<String,IndexLookup> lookupMap, ExpandedFieldCache previouslyExpandedFieldCache) throws TableNotFoundException {
+        this(config, scannerFactory, helper, lookupMap, "RegexIndexExpansion", previouslyExpandedFieldCache);
     }
 
     // The constructor should not be made public so that we can ensure that the executor is setup and shutdown correctly
     protected RegexIndexExpansionVisitor(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper,
-                    Map<String,IndexLookup> lookupMap, String threadName) throws TableNotFoundException {
-        super(config, scannerFactory, helper, lookupMap, threadName);
+                    Map<String,IndexLookup> lookupMap, String threadName, ExpandedFieldCache previouslyExpandedFieldCache) throws TableNotFoundException {
+        super(config, scannerFactory, helper, lookupMap, threadName, previouslyExpandedFieldCache);
 
         this.expandUnfieldedNegations = config.isExpandUnfieldedNegations();
 
@@ -117,8 +118,8 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
      *             if we fail to retrieve fields from the metadata helper
      */
     public static <T extends JexlNode> T expandRegex(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper,
-                    Map<String,IndexLookup> lookupMap, T script) throws TableNotFoundException {
-        RegexIndexExpansionVisitor visitor = new RegexIndexExpansionVisitor(config, scannerFactory, helper, lookupMap);
+                    Map<String,IndexLookup> lookupMap, T script, ExpandedFieldCache previouslyExpandedFieldCache) throws TableNotFoundException {
+        RegexIndexExpansionVisitor visitor = new RegexIndexExpansionVisitor(config, scannerFactory, helper, lookupMap, previouslyExpandedFieldCache);
         return ensureTreeNotEmpty(visitor.expand(script));
     }
 
@@ -147,9 +148,9 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
      * @throws TableNotFoundException
      *             if we fail to retrieve fields from the metadata helper
      */
-    public static <T extends JexlNode> T expandRegex(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, T script)
-                    throws TableNotFoundException {
-        return expandRegex(config, scannerFactory, helper, null, script);
+    public static <T extends JexlNode> T expandRegex(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, T script,
+                    ExpandedFieldCache previouslyExpandedFieldCache) throws TableNotFoundException {
+        return expandRegex(config, scannerFactory, helper, null, script, previouslyExpandedFieldCache);
     }
 
     @Override
@@ -683,6 +684,7 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
     protected void rebuildFutureJexlNode(FutureJexlNode futureJexlNode) {
         JexlNode currentNode = futureJexlNode.getOrigNode();
         IndexLookupMap fieldsToTerms = futureJexlNode.getLookup().lookup();
+        previouslyExpandedFieldCache.addExpansion(fieldsToTerms);
 
         if (futureJexlNode.isIgnoreComposites()) {
             removeCompositeFields(fieldsToTerms);

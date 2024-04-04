@@ -57,6 +57,7 @@ import datawave.query.discovery.DiscoveryIterator;
 import datawave.query.discovery.DiscoveryTransformer;
 import datawave.query.exceptions.EmptyUnfieldedTermExpansionException;
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.lookups.ExpandedFieldCache;
 import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods;
 import datawave.query.jexl.visitors.ExpandMultiNormalizedTerms;
 import datawave.query.jexl.visitors.FetchDataTypesVisitor;
@@ -89,6 +90,7 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
     private String reverseIndexTableName;
     private boolean fullTableScanEnabled = true;
     private boolean allowLeadingWildcard = true;
+    protected ExpandedFieldCache previouslyExpandedFieldCache;
     private List<String> realmSuffixExclusionPatterns = null;
     protected String modelName = "DATAWAVE";
     protected String modelTableName = "DatawaveMetadata";
@@ -110,6 +112,7 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
         this.modelTableName = other.getModelTableName();
         this.metadataHelperFactory = other.getMetadataHelperFactory();
         this.setRealmSuffixExclusionPatterns(other.getRealmSuffixExclusionPatterns());
+        this.previouslyExpandedFieldCache = new ExpandedFieldCache();
     }
 
     @Override
@@ -256,7 +259,7 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
 
         ASTJexlScript script;
         try {
-            script = UnfieldedIndexExpansionVisitor.expandUnfielded(config, this.scannerFactory, metadataHelper, origScript);
+            script = UnfieldedIndexExpansionVisitor.expandUnfielded(config, this.scannerFactory, metadataHelper, origScript, previouslyExpandedFieldCache);
         } catch (EmptyUnfieldedTermExpansionException e) {
             Multimap<String,String> emptyMap = Multimaps.unmodifiableMultimap(HashMultimap.create());
             config.setNormalizedTerms(emptyMap);
@@ -292,7 +295,7 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
             }
         }
 
-        script = ExpandMultiNormalizedTerms.expandTerms(config, metadataHelper, script);
+        script = ExpandMultiNormalizedTerms.expandTerms(config, metadataHelper, script, previouslyExpandedFieldCache);
 
         Multimap<String,String> literals = LiteralNodeVisitor.getLiterals(script);
         Multimap<String,String> patterns = PatternNodeVisitor.getPatterns(script);

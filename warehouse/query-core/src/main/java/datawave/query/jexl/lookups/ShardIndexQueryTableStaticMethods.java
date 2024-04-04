@@ -46,7 +46,6 @@ import datawave.query.exceptions.DoNotPerformOptimizedQueryException;
 import datawave.query.exceptions.IllegalRangeArgumentException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.LiteralRange;
-import datawave.query.jexl.lookups.ExpandedFieldCache;
 import datawave.query.parser.JavaRegexAnalyzer;
 import datawave.query.tables.AnyFieldScanner;
 import datawave.query.tables.ScannerFactory;
@@ -89,16 +88,15 @@ public class ShardIndexQueryTableStaticMethods {
      *             if the table was not found
      */
     public static IndexLookup normalizeQueryTerm(JexlNode node, ShardQueryConfiguration config, ScannerFactory scannerFactory, Set<String> expansionFields,
-                    Set<Type<?>> dataTypes, MetadataHelper helperRef, ExecutorService execService, ExpandedFieldCache fieldCache)
-                    throws TableNotFoundException {
+                    Set<Type<?>> dataTypes, MetadataHelper helperRef, ExecutorService execService) throws TableNotFoundException {
         if (node instanceof ASTEQNode) {
-            return normalizeQueryTerm((ASTEQNode) node, config, scannerFactory, expansionFields, dataTypes, helperRef, execService, fieldCache);
+            return normalizeQueryTerm((ASTEQNode) node, config, scannerFactory, expansionFields, dataTypes, helperRef, execService);
         } else if (node instanceof ASTNENode) {
-            return normalizeQueryTerm((ASTNENode) node, config, scannerFactory, expansionFields, dataTypes, helperRef, execService, fieldCache);
+            return normalizeQueryTerm((ASTNENode) node, config, scannerFactory, expansionFields, dataTypes, helperRef, execService);
         } else if (node instanceof ASTERNode) {
-            return expandRegexFieldName((ASTERNode) node, config, scannerFactory, expansionFields, dataTypes, helperRef, execService, fieldCache);
+            return expandRegexFieldName((ASTERNode) node, config, scannerFactory, expansionFields, dataTypes, helperRef, execService);
         } else if (node instanceof ASTNRNode) {
-            return expandRegexFieldName((ASTNRNode) node, config, scannerFactory, expansionFields, dataTypes, helperRef, execService, fieldCache);
+            return expandRegexFieldName((ASTNRNode) node, config, scannerFactory, expansionFields, dataTypes, helperRef, execService);
         } else if (node instanceof ASTLENode) {
             throw new UnsupportedOperationException("Cannot expand an unbounded range");
         } else if (node instanceof ASTLTNode) {
@@ -113,10 +111,8 @@ public class ShardIndexQueryTableStaticMethods {
     }
 
     public static IndexLookup normalizeQueryTerm(String literal, ShardQueryConfiguration config, ScannerFactory scannerFactory, Set<String> expansionFields,
-                    Set<Type<?>> dataTypes, MetadataHelper helperRef, ExecutorService execService, ExpandedFieldCache fieldCache)
-                    throws TableNotFoundException {
+                    Set<Type<?>> dataTypes, MetadataHelper helperRef, ExecutorService execService) throws TableNotFoundException {
         Set<String> terms = Sets.newHashSet(literal);
-
         for (Type<?> normalizer : dataTypes) {
             try {
                 String normalizedValue = normalizer.normalize(literal);
@@ -182,9 +178,8 @@ public class ShardIndexQueryTableStaticMethods {
      *             if the table was not found
      */
     public static IndexLookup normalizeQueryTerm(ASTEQNode node, ShardQueryConfiguration config, ScannerFactory scannerFactory, Set<String> expansionFields,
-                    Set<Type<?>> dataTypes, MetadataHelper helperRef, ExecutorService execService, ExpandedFieldCache fieldCache)
-                    throws TableNotFoundException {
-        return _normalizeQueryTerm(node, config, scannerFactory, expansionFields, dataTypes, helperRef, execService, fieldCache);
+                    Set<Type<?>> dataTypes, MetadataHelper helperRef, ExecutorService execService) throws TableNotFoundException {
+        return _normalizeQueryTerm(node, config, scannerFactory, expansionFields, dataTypes, helperRef, execService);
     }
 
     /**
@@ -209,20 +204,17 @@ public class ShardIndexQueryTableStaticMethods {
      *             if the table was not found
      */
     public static IndexLookup normalizeQueryTerm(ASTNENode node, ShardQueryConfiguration config, ScannerFactory scannerFactory, Set<String> expansionFields,
-                    Set<Type<?>> dataTypes, MetadataHelper helperRef, ExecutorService execService, ExpandedFieldCache fieldCache)
-                    throws TableNotFoundException {
-        return _normalizeQueryTerm(node, config, scannerFactory, expansionFields, dataTypes, helperRef, execService, fieldCache);
+                    Set<Type<?>> dataTypes, MetadataHelper helperRef, ExecutorService execService) throws TableNotFoundException {
+        return _normalizeQueryTerm(node, config, scannerFactory, expansionFields, dataTypes, helperRef, execService);
     }
 
     protected static IndexLookup _normalizeQueryTerm(JexlNode node, ShardQueryConfiguration config, ScannerFactory scannerFactory, Set<String> expansionFields,
-                    Set<Type<?>> dataTypes, MetadataHelper helperRef, ExecutorService execService, ExpandedFieldCache fieldCache)
-                    throws TableNotFoundException {
+                    Set<Type<?>> dataTypes, MetadataHelper helperRef, ExecutorService execService) throws TableNotFoundException {
         Object literal = JexlASTHelper.getLiteralValue(node);
-
         if (literal instanceof String) {
-            return normalizeQueryTerm((String) literal, config, scannerFactory, expansionFields, dataTypes, helperRef, execService, fieldCache);
+            return normalizeQueryTerm((String) literal, config, scannerFactory, expansionFields, dataTypes, helperRef, execService);
         } else if (literal instanceof Number) {
-            return normalizeQueryTerm(((Number) literal).toString(), config, scannerFactory, expansionFields, dataTypes, helperRef, execService, fieldCache);
+            return normalizeQueryTerm(((Number) literal).toString(), config, scannerFactory, expansionFields, dataTypes, helperRef, execService);
         } else {
             log.error("Encountered literal that was not a String nor a Number: " + literal.getClass().getName() + ", " + literal);
             throw new IllegalArgumentException("Encountered literal that was not a String nor a Number: " + literal.getClass().getName() + ", " + literal);
@@ -251,9 +243,8 @@ public class ShardIndexQueryTableStaticMethods {
      *             if the table was not found
      */
     public static IndexLookup expandRegexFieldName(ASTERNode node, ShardQueryConfiguration config, ScannerFactory scannerFactory, Set<String> expansionFields,
-                    Set<Type<?>> dataTypes, MetadataHelper helperRef, ExecutorService execService, ExpandedFieldCache fieldcache)
-                    throws TableNotFoundException {
-        return _expandRegexFieldName(node, config, scannerFactory, expansionFields, dataTypes, helperRef, execService, fieldcache);
+                    Set<Type<?>> dataTypes, MetadataHelper helperRef, ExecutorService execService) throws TableNotFoundException {
+        return _expandRegexFieldName(node, config, scannerFactory, expansionFields, dataTypes, helperRef, execService);
     }
 
     /**
@@ -278,9 +269,8 @@ public class ShardIndexQueryTableStaticMethods {
      *             if the table was not found
      */
     public static IndexLookup expandRegexFieldName(ASTNRNode node, ShardQueryConfiguration config, ScannerFactory scannerFactory, Set<String> expansionFields,
-                    Set<Type<?>> dataTypes, MetadataHelper helperRef, ExecutorService execService, ExpandedFieldCache fieldCache)
-                    throws TableNotFoundException {
-        return _expandRegexFieldName(node, config, scannerFactory, expansionFields, dataTypes, helperRef, execService, fieldCache);
+                    Set<Type<?>> dataTypes, MetadataHelper helperRef, ExecutorService execService) throws TableNotFoundException {
+        return _expandRegexFieldName(node, config, scannerFactory, expansionFields, dataTypes, helperRef, execService);
     }
 
     /**
@@ -305,8 +295,7 @@ public class ShardIndexQueryTableStaticMethods {
      *             if the table was not found
      */
     protected static IndexLookup _expandRegexFieldName(JexlNode node, ShardQueryConfiguration config, ScannerFactory scannerFactory,
-                    Set<String> expansionFields, Set<Type<?>> dataTypes, MetadataHelper helperRef, ExecutorService execService, ExpandedFieldCache fieldCache)
-                    throws TableNotFoundException {
+                    Set<String> expansionFields, Set<Type<?>> dataTypes, MetadataHelper helperRef, ExecutorService execService) throws TableNotFoundException {
         Set<String> patterns = Sets.newHashSet();
 
         Object literal = JexlASTHelper.getLiteralValue(node);

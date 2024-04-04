@@ -70,15 +70,16 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
     private final ShardQueryConfiguration config;
     private final HashSet<JexlNode> expandedNodes;
     private final MetadataHelper helper;
-    protected ExpandedFieldCache previouslyExpandedFieldCache = new ExpandedFieldCache();
+    private final ExpandedFieldCache previouslyExpandedFieldCache;
 
-    public ExpandMultiNormalizedTerms(ShardQueryConfiguration config, MetadataHelper helper) {
+    public ExpandMultiNormalizedTerms(ShardQueryConfiguration config, MetadataHelper helper, ExpandedFieldCache previouslyExpandedFieldCache) {
         Preconditions.checkNotNull(config);
         Preconditions.checkNotNull(helper);
 
         this.config = config;
         this.helper = helper;
         this.expandedNodes = Sets.newHashSet();
+        this.previouslyExpandedFieldCache = previouslyExpandedFieldCache;
     }
 
     /**
@@ -95,8 +96,9 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
      * @return a reference to the node
      */
     @SuppressWarnings("unchecked")
-    public static <T extends JexlNode> T expandTerms(ShardQueryConfiguration config, MetadataHelper helper, T script) {
-        ExpandMultiNormalizedTerms visitor = new ExpandMultiNormalizedTerms(config, helper);
+    public static <T extends JexlNode> T expandTerms(ShardQueryConfiguration config, MetadataHelper helper, T script,
+                    ExpandedFieldCache prevExpandedFieldCache) {
+        ExpandMultiNormalizedTerms visitor = new ExpandMultiNormalizedTerms(config, helper, prevExpandedFieldCache);
 
         if (null == visitor.config.getQueryFieldsDatatypes()) {
             QueryException qe = new QueryException(DatawaveErrorCode.DATATYPESFORINDEXFIELDS_MULTIMAP_MISSING);
@@ -218,6 +220,42 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
         return false;
     }
 
+    private void applyIpNormalization(Set<String> normalizedTerms, List<JexlNode> normalizedNodes, String fieldName, Type<?> normalizer, String term) {
+        String[] lowHi = ((IpAddressType) normalizer).normalizeCidrToRange(term);
+        String normTerm = Arrays.asList(lowHi).toString();
+        if (!normalizedTerms.contains(normTerm)) {
+            if (log.isDebugEnabled()) {
+                log.debug("normalizedTerm = (" + lowHi[0] + ", " + lowHi[1] + ")");
+            }
+            normalizedTerms.add(normTerm);
+            // node was FIELD == 'cidr'
+            // change to FIELD >= low and FIELD <= hi
+            JexlNode geNode = JexlNodeFactory.buildNode(new ASTGENode(ParserTreeConstants.JJTGENODE), fieldName, lowHi[0]);
+            JexlNode leNode = JexlNodeFactory.buildNode(new ASTLENode(ParserTreeConstants.JJTLENODE), fieldName, lowHi[1]);
+
+            // now link em up
+            normalizedNodes.add(QueryPropertyMarker.create(JexlNodeFactory.createAndNode(Arrays.asList(geNode, leNode)), BOUNDED_RANGE));
+        }
+    }
+
+    private void applyOneToManyNormalization(Type<?> normalizer, String term, Set<String> normalizedTerms, List<JexlNode> normalizedNodes, JexlNode node,
+                    String fieldName) {
+        List<String> normTerms = ((OneToManyNormalizerType<?>) normalizer).normalizeToMany(term);
+        if (normTerms.size() == 1) {
+            String normTerm = normTerms.iterator().next();
+            normalizedTerms.add(normTerm);
+            normalizedNodes.add(JexlNodeFactory.buildUntypedNode(node, fieldName, normTerm));
+        } else {
+            List<JexlNode> normalizedOneToManyNodes = Lists.newArrayList();
+            Iterator<String> iter = normTerms.iterator();
+            while (iter.hasNext()) {
+                normalizedOneToManyNodes.add(JexlNodeFactory.buildUntypedNode(node, fieldName, iter.next()));
+            }
+            JexlNode oneToManyNode = JexlNodeFactory.createAndNode(normalizedOneToManyNodes);
+            normalizedNodes.add(oneToManyNode);
+        }
+    }
+
     private JexlNode expandRangeForNormalizers(LiteralRange<?> range, JexlNode node) {
         Map<String,JexlNode> aliasedBounds = new HashMap<>();
         String field = range.getFieldName();
@@ -225,30 +263,50 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
         // Get all of the indexed or normalized dataTypes for the field name
         Set<Type<?>> dataTypes = Sets.newHashSet(config.getQueryFieldsDatatypes().get(field));
         dataTypes.addAll(config.getNormalizedFieldsDatatypes().get(field));
+        boolean shouldCheckPreviouslyExpandedFieldCache = dataTypes.size() == 1;
 
         for (Type<?> normalizer : dataTypes) {
             JexlNode lowerBound = range.getLowerNode(), upperBound = range.getUpperNode();
+            IdentifierOpLiteral opLowerBound = JexlASTHelper.getIdentifierOpLiteral(lowerBound);
+            IdentifierOpLiteral opUpperBound = JexlASTHelper.getIdentifierOpLiteral(upperBound);
 
             JexlNode left = null;
-            try {
-                left = JexlASTHelper.applyNormalization(copy(lowerBound), normalizer);
-            } catch (Exception ne) {
-                if (log.isTraceEnabled()) {
-                    log.trace("Could not normalize " + PrintingVisitor.formattedQueryString(lowerBound) + " using " + normalizer.getClass() + ". "
-                                    + ne.getMessage());
+            if (opLowerBound != null) {
+                String lowerBoundFieldName = opLowerBound.deconstructIdentifier();
+                final Object lowerBoundLiteral = opLowerBound.getLiteralValue();
+                try {
+                    if (shouldCheckPreviouslyExpandedFieldCache
+                                    && previouslyExpandedFieldCache.containsExpansionsFor(lowerBoundFieldName, lowerBoundLiteral.toString())) {
+                        left = JexlNodeFactory.buildUntypedNode(lowerBound, lowerBoundFieldName, lowerBoundLiteral);
+                    } else {
+                        left = JexlASTHelper.applyNormalization(copy(lowerBound), normalizer);
+                    }
+                } catch (Exception ne) {
+                    if (log.isTraceEnabled()) {
+                        log.trace("Could not normalize " + PrintingVisitor.formattedQueryString(lowerBound) + " using " + normalizer.getClass() + ". "
+                                        + ne.getMessage());
+                    }
+                    continue;
                 }
-                continue;
             }
-
             JexlNode right = null;
-            try {
-                right = JexlASTHelper.applyNormalization(copy(upperBound), normalizer);
-            } catch (Exception ne) {
-                if (log.isTraceEnabled()) {
-                    log.trace("Could not normalize " + PrintingVisitor.formattedQueryString(upperBound) + " using " + normalizer.getClass() + ". "
-                                    + ne.getMessage());
+            if (opUpperBound != null) {
+                String upperBoundFieldName = opUpperBound.deconstructIdentifier();
+                final Object upperBoundLiteral = opUpperBound.getLiteralValue();
+                try {
+                    if (shouldCheckPreviouslyExpandedFieldCache
+                                    && previouslyExpandedFieldCache.containsExpansionsFor(upperBoundFieldName, upperBoundLiteral.toString())) {
+                        right = JexlNodeFactory.buildUntypedNode(upperBound, upperBoundFieldName, upperBoundLiteral);
+                    } else {
+                        right = JexlASTHelper.applyNormalization(copy(upperBound), normalizer);
+                    }
+                } catch (Exception ne) {
+                    if (log.isTraceEnabled()) {
+                        log.trace("Could not normalize " + PrintingVisitor.formattedQueryString(upperBound) + " using " + normalizer.getClass() + ". "
+                                        + ne.getMessage());
+                    }
+                    continue;
                 }
-                continue;
             }
 
             // create the range node
@@ -319,70 +377,49 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
                     Set<String> normalizedTerms = Sets.newHashSet();
                     List<JexlNode> normalizedNodes = Lists.newArrayList();
                     boolean failedNormalization = false;
+                    boolean shouldCheckPreviouslyExpandedFieldCache = dataTypes.size() == 1;
                     // Build up a set of normalized terms using each normalizer
                     for (Type<?> normalizer : dataTypes) {
-                        String normalizerType = normalizer.getClass().getTypeName();
-                        boolean foundInCache = previouslyExpandedFieldCache.containsExpansionsFor(fieldName, term, normalizerType);
                         try {
                             if (normalizer instanceof OneToManyNormalizerType && ((OneToManyNormalizerType<?>) normalizer).expandAtQueryTime()) {
-                                List<String> normTerms = ((OneToManyNormalizerType<?>) normalizer).normalizeToMany(term);
-                                if (normTerms.size() == 1) {
-                                    String normTerm = normTerms.iterator().next();
+                                if (shouldCheckPreviouslyExpandedFieldCache
+                                                && previouslyExpandedFieldCache.containsExpansionsFor(fieldName, literal.toString())) {
+                                    if (!normalizedTerms.contains(term)) {
+                                        normalizedTerms.add(term);
+                                        normalizedNodes.add(JexlNodeFactory.buildUntypedNode(node, fieldName, term));
+                                    }
+                                } else {
+                                    applyOneToManyNormalization(normalizer, term, normalizedTerms, normalizedNodes, node, fieldName);
+                                }
+                            } else {
+                                String normTerm;
+                                if (shouldCheckPreviouslyExpandedFieldCache
+                                                && previouslyExpandedFieldCache.containsExpansionsFor(fieldName, literal.toString())) {
+                                    normTerm = term;
+                                } else {
+                                    normTerm = ((node instanceof ASTNRNode || node instanceof ASTERNode) ? normalizer.normalizeRegex(term)
+                                                    : normalizer.normalize(term));
+                                }
+                                if (!normalizedTerms.contains(normTerm)) {
+                                    if (log.isDebugEnabled()) {
+                                        log.debug("normalizedTerm = " + normTerm);
+                                    }
                                     normalizedTerms.add(normTerm);
                                     normalizedNodes.add(JexlNodeFactory.buildUntypedNode(node, fieldName, normTerm));
-                                } else {
-                                    List<JexlNode> normalizedOneToManyNodes = Lists.newArrayList();
-                                    Iterator<String> iter = normTerms.iterator();
-                                    while (iter.hasNext()) {
-                                        normalizedOneToManyNodes.add(JexlNodeFactory.buildUntypedNode(node, fieldName, iter.next()));
-                                    }
-
-                                    JexlNode oneToManyNode = JexlNodeFactory.createAndNode(normalizedOneToManyNodes);
-                                    normalizedNodes.add(oneToManyNode);
-                                }
-
-                            } else {
-                                if (foundInCache) {
-                                    String normTerm = previouslyExpandedFieldCache.getNormalizedTerm(fieldName, term, normalizerType);
-                                    if (!normalizedTerms.contains(normTerm)) {
-                                        if (log.isDebugEnabled()) {
-                                            log.debug("normalizedTerm = " + normTerm);
-                                        }
-                                        normalizedTerms.add(normTerm);
-                                        normalizedNodes.add(JexlNodeFactory.buildUntypedNode(node, fieldName, normTerm));
-                                    }
-                                } else {
-                                    String normTerm = ((node instanceof ASTNRNode || node instanceof ASTERNode) ? normalizer.normalizeRegex(term)
-                                                    : normalizer.normalize(term));
-                                    if (!normalizedTerms.contains(normTerm)) {
-                                        if (log.isDebugEnabled()) {
-                                            log.debug("normalizedTerm = " + normTerm);
-                                        }
-                                        normalizedTerms.add(normTerm);
-                                        normalizedNodes.add(JexlNodeFactory.buildUntypedNode(node, fieldName, normTerm));
-                                        previouslyExpandedFieldCache.addExpansion(fieldName, term, normTerm, normalizerType);
-                                    }
                                 }
                             }
                         } catch (IpAddressNormalizer.Exception ipex) {
                             if (!(node instanceof ASTNRNode || node instanceof ASTERNode)) {
                                 try {
-                                    // this could be CIDR notation, attempt to expand the node to the cidr range
-                                    String[] lowHi = ((IpAddressType) normalizer).normalizeCidrToRange(term);
-                                    String normTerm = Arrays.asList(lowHi).toString();
-                                    if (!normalizedTerms.contains(normTerm)) {
-                                        if (log.isDebugEnabled()) {
-                                            log.debug("normalizedTerm = (" + lowHi[0] + ", " + lowHi[1] + ")");
+                                    if (shouldCheckPreviouslyExpandedFieldCache
+                                                    && previouslyExpandedFieldCache.containsExpansionsFor(fieldName, literal.toString())) {
+                                        if (!normalizedTerms.contains(term)) {
+                                            normalizedTerms.add(term);
+                                            normalizedNodes.add(JexlNodeFactory.buildUntypedNode(node, fieldName, term));
                                         }
-                                        normalizedTerms.add(normTerm);
-                                        // node was FIELD == 'cidr'
-                                        // change to FIELD >= low and FIELD <= hi
-                                        JexlNode geNode = JexlNodeFactory.buildNode(new ASTGENode(ParserTreeConstants.JJTGENODE), fieldName, lowHi[0]);
-                                        JexlNode leNode = JexlNodeFactory.buildNode(new ASTLENode(ParserTreeConstants.JJTLENODE), fieldName, lowHi[1]);
-
-                                        // now link em up
-                                        normalizedNodes.add(QueryPropertyMarker.create(JexlNodeFactory.createAndNode(Arrays.asList(geNode, leNode)),
-                                                        BOUNDED_RANGE));
+                                    } else {
+                                        // this could be CIDR notation, attempt to expand the node to the cidr range
+                                        applyIpNormalization(normalizedTerms, normalizedNodes, fieldName, normalizer, term);
                                     }
                                 } catch (Exception ex) {
                                     if (log.isTraceEnabled()) {
