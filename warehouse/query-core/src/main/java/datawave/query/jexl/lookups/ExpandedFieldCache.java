@@ -9,13 +9,9 @@ public class ExpandedFieldCache {
     private Multimap<String,ValueSet> previouslyExpandedFieldCache = HashMultimap.create();
 
     private boolean containsExpansionsFor(IndexLookupMap fieldstoterms) {
-        if (!fieldstoterms.isKeyThresholdExceeded()) { // see why this will not catch some of the exceeded thresholds being able to get into the values
-            for (Map.Entry<String,ValueSet> fieldTermPair : fieldstoterms.entrySet()) {
-                if (previouslyExpandedFieldCache.containsEntry(fieldTermPair.getKey(), fieldTermPair.getValue())) {
-                    return true;
-                } else {
-                    return false;
-                }
+        for (Map.Entry<String,ValueSet> fieldTermPair : fieldstoterms.entrySet()) {
+            if (previouslyExpandedFieldCache.containsEntry(fieldTermPair.getKey(), fieldTermPair.getValue())) {
+                return true;
             }
         }
         return false;
@@ -41,7 +37,9 @@ public class ExpandedFieldCache {
     private void addExpansionToCache(IndexLookupMap fieldstoterms) {
         if (!fieldstoterms.isKeyThresholdExceeded()) {
             for (Map.Entry<String,ValueSet> fieldTermPair : fieldstoterms.entrySet()) {
-                previouslyExpandedFieldCache.put(fieldTermPair.getKey(), fieldTermPair.getValue());
+                if (!fieldTermPair.getValue().isThresholdExceeded()) {
+                    previouslyExpandedFieldCache.put(fieldTermPair.getKey(), fieldTermPair.getValue());
+                }
             }
         }
     }
