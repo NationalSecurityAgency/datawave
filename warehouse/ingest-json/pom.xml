@@ -155,7 +155,8 @@
                                 datawave-ws-common-util,
                                 gson,
                                 guava,
-                                hadoop-common,
+                                hadoop-client-api,
+                                hadoop-client-runtime,
                                 hadoop-mapreduce-client-core,
                                 log4j,
                                 slf4j-api</includeArtifactIds>

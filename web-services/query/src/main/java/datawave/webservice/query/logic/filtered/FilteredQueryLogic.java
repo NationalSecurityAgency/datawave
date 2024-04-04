@@ -73,7 +73,7 @@ public class FilteredQueryLogic extends DelegatingQueryLogic implements QueryLog
                 log.debug("Passing through filter " + filter + " for query " + super.getLogicName());
             }
         }
-        return filtered;
+        return filtered || (getDelegate() instanceof FilteredQueryLogic && ((FilteredQueryLogic) getDelegate()).isFiltered());
     }
 
     @Override
