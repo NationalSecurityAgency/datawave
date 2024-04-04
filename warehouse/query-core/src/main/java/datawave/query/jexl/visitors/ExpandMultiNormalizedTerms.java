@@ -276,7 +276,8 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
                 final Object lowerBoundLiteral = opLowerBound.getLiteralValue();
                 try {
                     if (shouldCheckPreviouslyExpandedFieldCache
-                                    && previouslyExpandedFieldCache.containsExpansionsFor(lowerBoundFieldName, lowerBoundLiteral.toString())) {
+                                    && previouslyExpandedFieldCache.containsExpansionsFor(lowerBoundFieldName, lowerBoundLiteral.toString())
+                                    && config.isCachePreviouslyExpandedFields()) {
                         left = JexlNodeFactory.buildUntypedNode(lowerBound, lowerBoundFieldName, lowerBoundLiteral);
                     } else {
                         left = JexlASTHelper.applyNormalization(copy(lowerBound), normalizer);
@@ -295,7 +296,8 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
                 final Object upperBoundLiteral = opUpperBound.getLiteralValue();
                 try {
                     if (shouldCheckPreviouslyExpandedFieldCache
-                                    && previouslyExpandedFieldCache.containsExpansionsFor(upperBoundFieldName, upperBoundLiteral.toString())) {
+                                    && previouslyExpandedFieldCache.containsExpansionsFor(upperBoundFieldName, upperBoundLiteral.toString())
+                                    && config.isCachePreviouslyExpandedFields()) {
                         right = JexlNodeFactory.buildUntypedNode(upperBound, upperBoundFieldName, upperBoundLiteral);
                     } else {
                         right = JexlASTHelper.applyNormalization(copy(upperBound), normalizer);
@@ -382,8 +384,8 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
                     for (Type<?> normalizer : dataTypes) {
                         try {
                             if (normalizer instanceof OneToManyNormalizerType && ((OneToManyNormalizerType<?>) normalizer).expandAtQueryTime()) {
-                                if (shouldCheckPreviouslyExpandedFieldCache
-                                                && previouslyExpandedFieldCache.containsExpansionsFor(fieldName, literal.toString())) {
+                                if (shouldCheckPreviouslyExpandedFieldCache && previouslyExpandedFieldCache.containsExpansionsFor(fieldName, literal.toString())
+                                                && config.isCachePreviouslyExpandedFields()) {
                                     if (!normalizedTerms.contains(term)) {
                                         normalizedTerms.add(term);
                                         normalizedNodes.add(JexlNodeFactory.buildUntypedNode(node, fieldName, term));
@@ -393,8 +395,8 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
                                 }
                             } else {
                                 String normTerm;
-                                if (shouldCheckPreviouslyExpandedFieldCache
-                                                && previouslyExpandedFieldCache.containsExpansionsFor(fieldName, literal.toString())) {
+                                if (shouldCheckPreviouslyExpandedFieldCache && previouslyExpandedFieldCache.containsExpansionsFor(fieldName, literal.toString())
+                                                && config.isCachePreviouslyExpandedFields()) {
                                     normTerm = term;
                                 } else {
                                     normTerm = ((node instanceof ASTNRNode || node instanceof ASTERNode) ? normalizer.normalizeRegex(term)
@@ -412,7 +414,8 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
                             if (!(node instanceof ASTNRNode || node instanceof ASTERNode)) {
                                 try {
                                     if (shouldCheckPreviouslyExpandedFieldCache
-                                                    && previouslyExpandedFieldCache.containsExpansionsFor(fieldName, literal.toString())) {
+                                                    && previouslyExpandedFieldCache.containsExpansionsFor(fieldName, literal.toString())
+                                                    && config.isCachePreviouslyExpandedFields()) {
                                         if (!normalizedTerms.contains(term)) {
                                             normalizedTerms.add(term);
                                             normalizedNodes.add(JexlNodeFactory.buildUntypedNode(node, fieldName, term));

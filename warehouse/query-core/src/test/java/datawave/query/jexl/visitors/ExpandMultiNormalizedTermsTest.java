@@ -717,6 +717,7 @@ public class ExpandMultiNormalizedTermsTest {
         helper.addTermFrequencyFields(dataTypes.keySet());
 
         config.setQueryFieldsDatatypes(dataTypes);
+        config.setCachePreviouslyExpandedFields(true);
 
         // this tests for the successful 'skipping' of normalizing terms that we already have the actual value from the index for.
         String original = "FOO == '32' && FIELD9 == '99' && FIELD2 == '42'";

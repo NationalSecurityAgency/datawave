@@ -104,7 +104,9 @@ public class BoundedRangeIndexExpansionVisitor extends BaseIndexExpansionVisitor
     protected void rebuildFutureJexlNode(FutureJexlNode futureJexlNode) {
         JexlNode currentNode = futureJexlNode.getOrigNode();
         IndexLookupMap fieldsToTerms = futureJexlNode.getLookup().lookup();
-        previouslyExpandedFieldCache.addExpansion(fieldsToTerms);
+        if (config.isCachePreviouslyExpandedFields()) {
+            previouslyExpandedFieldCache.addExpansion(fieldsToTerms);
+        }
         futureJexlNode.setRebuiltNode(JexlNodeFactory.createNodeTreeFromFieldsToValues(JexlNodeFactory.ContainerType.OR_NODE, false, currentNode, fieldsToTerms,
                         expandFields, expandValues, futureJexlNode.isKeepOriginalNode()));
     }

@@ -684,7 +684,9 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
     protected void rebuildFutureJexlNode(FutureJexlNode futureJexlNode) {
         JexlNode currentNode = futureJexlNode.getOrigNode();
         IndexLookupMap fieldsToTerms = futureJexlNode.getLookup().lookup();
-        previouslyExpandedFieldCache.addExpansion(fieldsToTerms);
+        if (config.isCachePreviouslyExpandedFields()) {
+            previouslyExpandedFieldCache.addExpansion(fieldsToTerms);
+        }
 
         if (futureJexlNode.isIgnoreComposites()) {
             removeCompositeFields(fieldsToTerms);
