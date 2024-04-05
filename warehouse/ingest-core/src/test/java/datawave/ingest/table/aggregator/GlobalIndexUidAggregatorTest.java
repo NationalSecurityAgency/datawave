@@ -236,10 +236,9 @@ public class GlobalIndexUidAggregatorTest {
     }
 
     @Test
-    public void testRemoveAndReAddUUID() throws Exception {
+    public void testRemoveAndThenAddUUID() throws Exception {
         GlobalIndexUidAggregator localAgg = new GlobalIndexUidAggregator();
         IteratorSetting is = new IteratorSetting(19, "test", GlobalIndexUidAggregator.class);
-        GlobalIndexUidAggregator.setTimestampsIgnoredOpt(is, false);
         GlobalIndexUidAggregator.setCombineAllColumns(is, true);
         localAgg.validateOptions(is.getOptions());
 
@@ -258,12 +257,12 @@ public class GlobalIndexUidAggregatorTest {
         Collections.reverse(values);
         Value result = localAgg.reduce(new Key("key"), values.iterator());
         Uid.List resultList = Uid.List.parseFrom(result.get());
-        assertEquals(2, resultList.getCOUNT());
-        assertEquals(2, resultList.getUIDCount());
-        assertEquals(2, resultList.getUIDList().size());
-        assertEquals(0, resultList.getREMOVEDUIDList().size());
+        assertEquals(1, resultList.getCOUNT());
+        assertEquals(1, resultList.getUIDCount());
+        assertEquals(1, resultList.getUIDList().size());
+        assertEquals(1, resultList.getREMOVEDUIDList().size());
         assertTrue(resultList.getUIDList().contains(uuid1));
-        assertTrue(resultList.getUIDList().contains(uuid2));
+        assertTrue(resultList.getREMOVEDUIDList().contains(uuid2));
     }
 
     @Test
@@ -298,7 +297,6 @@ public class GlobalIndexUidAggregatorTest {
     public void testNegativeCountWithPartialMajorCompaction() throws Exception {
         GlobalIndexUidAggregator localAgg = new GlobalIndexUidAggregator();
         IteratorSetting is = new IteratorSetting(19, "test", GlobalIndexUidAggregator.class);
-        GlobalIndexUidAggregator.setTimestampsIgnoredOpt(is, false);
         GlobalIndexUidAggregator.setCombineAllColumns(is, true);
         localAgg.validateOptions(is.getOptions());
 
@@ -413,7 +411,6 @@ public class GlobalIndexUidAggregatorTest {
     public void testRemoveAndReAddUUIDWithPartialMajorCompaction() throws Exception {
         GlobalIndexUidAggregator localAgg = new GlobalIndexUidAggregator();
         IteratorSetting is = new IteratorSetting(19, "test", GlobalIndexUidAggregator.class);
-        GlobalIndexUidAggregator.setTimestampsIgnoredOpt(is, false);
         GlobalIndexUidAggregator.setCombineAllColumns(is, true);
         localAgg.validateOptions(is.getOptions());
 
@@ -468,12 +465,12 @@ public class GlobalIndexUidAggregatorTest {
         result = localAgg.reduce(new Key("key"), values.iterator());
         resultList = Uid.List.parseFrom(result.get());
 
-        assertEquals(2, resultList.getCOUNT());
-        assertEquals(2, resultList.getUIDCount());
-        assertEquals(2, resultList.getUIDList().size());
+        assertEquals(1, resultList.getCOUNT());
+        assertEquals(1, resultList.getUIDCount());
+        assertEquals(1, resultList.getUIDList().size());
         assertTrue(resultList.getUIDList().contains(uuid1));
-        assertTrue(resultList.getUIDList().contains(uuid2));
-        assertEquals(0, resultList.getREMOVEDUIDList().size());
+        assertFalse(resultList.getUIDList().contains(uuid2));
+        assertEquals(1, resultList.getREMOVEDUIDList().size());
     }
 
     @Test
@@ -728,7 +725,6 @@ public class GlobalIndexUidAggregatorTest {
     public void testRemoveAndReAdd() throws Exception {
         GlobalIndexUidAggregator localAgg = new GlobalIndexUidAggregator();
         IteratorSetting is = new IteratorSetting(19, "test", GlobalIndexUidAggregator.class);
-        GlobalIndexUidAggregator.setTimestampsIgnoredOpt(is, false);
         GlobalIndexUidAggregator.setCombineAllColumns(is, true);
         localAgg.validateOptions(is.getOptions());
 
@@ -737,20 +733,19 @@ public class GlobalIndexUidAggregatorTest {
         String uuid1 = UUID.randomUUID().toString();
         ArrayList<Value> values = Lists.newArrayList();
 
-        // When we're considering timestamps, an add of a UID, followed by a removal
-        // of that UID, and then a re-add should result in the UID ending up in the
-        // UID list.
+        // an add of a UID, followed by a removal of that UID, and then a re-add
+        // should still result in the UID removed
         values.add(toValue(createNewUidList(uuid1)));
         values.add(toValue(createNewRemoveUidList(uuid1)));
         values.add(toValue(createNewUidList(uuid1)));
 
         Value result = localAgg.reduce(new Key("key"), values.iterator());
         Uid.List resultList = Uid.List.parseFrom(result.get());
-        assertEquals(1, resultList.getUIDCount());
-        assertEquals(1, resultList.getUIDList().size());
-        assertEquals(0, resultList.getREMOVEDUIDCount());
-        assertEquals(0, resultList.getREMOVEDUIDList().size());
-        assertEquals(1, resultList.getCOUNT());
+        assertEquals(0, resultList.getUIDCount());
+        assertEquals(0, resultList.getUIDList().size());
+        assertEquals(1, resultList.getREMOVEDUIDCount());
+        assertEquals(1, resultList.getREMOVEDUIDList().size());
+        assertEquals(0, resultList.getCOUNT());
     }
 
     @Test
