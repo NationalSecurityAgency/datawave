@@ -459,8 +459,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             // now apply the unique iterator if requested
             UniqueTransform uniquify = getUniqueTransform();
             if (uniquify != null) {
-                // pipelineDocuments = uniquify;
-                pipelineDocuments = Iterators.filter(pipelineDocuments, uniquify.getUniquePredicate());
+                pipelineDocuments = uniquify.getIterator(pipelineDocuments);
             }
 
             // apply the grouping iterator if requested and if the batch size is greater than zero
@@ -1540,11 +1539,23 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         return new ValueComparator(from.second().getMetadata());
     }
 
-    protected UniqueTransform getUniqueTransform() {
+    protected UniqueTransform getUniqueTransform() throws IOException {
         if (uniqueTransform == null && getUniqueFields() != null && !getUniqueFields().isEmpty()) {
             synchronized (getUniqueFields()) {
                 if (uniqueTransform == null) {
-                    uniqueTransform = new UniqueTransform(getUniqueFields(), getResultTimeout());
+                    // @formatter:off
+                    uniqueTransform = new UniqueTransform.Builder()
+                            .withUniqueFields(getUniqueFields())
+                            .withQueryExecutionForPageTimeout(getResultTimeout())
+                            .withBufferPersistThreshold(getUniqueCacheBufferSize())
+                            .withIvaratorCacheDirConfigs(getIvaratorCacheDirConfigs())
+                            .withHdfsSiteConfigURLs(getHdfsSiteConfigURLs())
+                            .withSubDirectory(getQueryId() + "-" + getScanId())
+                            .withMaxOpenFiles(getIvaratorMaxOpenFiles())
+                            .withNumRetries(getIvaratorNumRetries())
+                            .withPersistOptions(getIvaratorPersistOptions())
+                            .build();
+                    // @formatter:on
                 }
             }
         }

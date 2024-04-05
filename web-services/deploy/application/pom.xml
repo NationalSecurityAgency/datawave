@@ -572,7 +572,11 @@
                                         </artifactItem>
                                         <artifactItem>
                                             <groupId>org.apache.hadoop</groupId>
-                                            <artifactId>hadoop-common</artifactId>
+                                            <artifactId>hadoop-client-api</artifactId>
+                                        </artifactItem>
+                                        <artifactItem>
+                                            <groupId>org.apache.hadoop</groupId>
+                                            <artifactId>hadoop-client-runtime</artifactId>
                                         </artifactItem>
                                         <dependency>
                                             <groupId>org.apache.hadoop.thirdparty</groupId>
