@@ -11,11 +11,14 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.jexl3.parser.ASTOrNode;
 import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.hadoop.io.MapWritable;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.VIntWritable;
 import org.apache.hadoop.io.VLongWritable;
 import org.apache.hadoop.io.Writable;
@@ -33,6 +36,7 @@ import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.jexl.visitors.RebuildingVisitor;
 import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import datawave.query.language.parser.jexl.JexlNodeSet;
+import datawave.query.util.count.CountMap;
 
 /**
  * This class represents information about hits in the index.
@@ -52,6 +56,9 @@ public class IndexInfo implements Writable, UidIntersector {
     // a set of document uids. In some cases this list is pruned when a threshold is exceeded
     // In the pruned case, the count will exceed the size of the uid set
     protected ImmutableSortedSet<IndexMatch> uids;
+
+    protected CountMap fieldCounts = new CountMap();
+    protected CountMap termCounts = new CountMap();
 
     public IndexInfo() {
         this.count = 0;
@@ -91,8 +98,20 @@ public class IndexInfo implements Writable, UidIntersector {
     public void write(DataOutput out) throws IOException {
         new VLongWritable(count).write(out);
         new VIntWritable(uids.size()).write(out);
-        for (IndexMatch uid : uids)
+        for (IndexMatch uid : uids) {
             uid.write(out);
+        }
+        MapWritable fieldMapWritable = new MapWritable();
+        for (Map.Entry<String,Long> entry : fieldCounts.entrySet()) {
+            fieldMapWritable.put(new Text(entry.getKey()), new VLongWritable(entry.getValue()));
+        }
+        fieldMapWritable.write(out);
+
+        MapWritable termMapWritable = new MapWritable();
+        for (Map.Entry<String,Long> entry : termCounts.entrySet()) {
+            termMapWritable.put(new Text(entry.getKey()), new VLongWritable(entry.getValue()));
+        }
+        termMapWritable.write(out);
     }
 
     public void applyNode(JexlNode node) {
@@ -126,6 +145,20 @@ public class IndexInfo implements Writable, UidIntersector {
             setBuilder.add(index);
         }
         this.uids = setBuilder.build();
+
+        MapWritable fieldMapWritable = new MapWritable();
+        fieldMapWritable.readFields(in);
+        this.fieldCounts = new CountMap();
+        for (Writable key : fieldMapWritable.keySet()) {
+            fieldCounts.put(key.toString(), Long.valueOf(fieldMapWritable.get(key).toString()));
+        }
+
+        MapWritable termMapWritable = new MapWritable();
+        termMapWritable.readFields(in);
+        this.termCounts = new CountMap();
+        for (Writable key : termMapWritable.keySet()) {
+            termCounts.put(key.toString(), Long.valueOf(termMapWritable.get(key).toString()));
+        }
     }
 
     public IndexInfo union(IndexInfo o) {
@@ -185,6 +218,12 @@ public class IndexInfo implements Writable, UidIntersector {
         } else {
             merged.myNode = JexlNodeFactory.createOrNode(nodeSet.getNodes());
         }
+
+        merged.setFieldCounts(first.getFieldCounts());
+        merged.mergeFieldCounts(o.getFieldCounts());
+
+        merged.setTermCounts(first.getTermCounts());
+        merged.mergeTermCounts(o.getTermCounts());
 
         return merged;
     }
@@ -288,6 +327,12 @@ public class IndexInfo implements Writable, UidIntersector {
             merged.uids = ImmutableSortedSet.copyOf(matches);
             merged.count = merged.uids.size();
         }
+
+        merged.setFieldCounts(this.getFieldCounts());
+        merged.mergeFieldCounts(o.getFieldCounts());
+
+        merged.setTermCounts(this.getTermCounts());
+        merged.mergeTermCounts(o.getTermCounts());
 
         /*
          * If there are multiple levels within a union we could have an ASTOrNode. We cannot prune OrNodes as we would with an intersection, so propagate the
@@ -398,6 +443,12 @@ public class IndexInfo implements Writable, UidIntersector {
             merged.uids = ImmutableSortedSet.of();
         }
 
+        merged.setFieldCounts(this.getFieldCounts());
+        merged.mergeFieldCounts(o.getFieldCounts());
+
+        merged.setTermCounts(this.getTermCounts());
+        merged.mergeTermCounts(o.getTermCounts());
+
         // now handle updating the top level node
         JexlNodeSet nodes = new JexlNodeSet();
         if (this.getNode() != null) {
@@ -488,5 +539,55 @@ public class IndexInfo implements Writable, UidIntersector {
         for (IndexMatch uid : uids) {
             uid.set(myNode);
         }
+    }
+
+    public void setFieldCounts(CountMap fieldCounts) {
+        this.fieldCounts.putAll(fieldCounts);
+    }
+
+    public void setTermCounts(CountMap termCounts) {
+        this.termCounts.putAll(termCounts);
+    }
+
+    public void mergeFieldCounts(CountMap otherCounts) {
+        if (fieldCounts == null || fieldCounts.isEmpty()) {
+            fieldCounts = otherCounts;
+            return;
+        }
+
+        for (String field : otherCounts.keySet()) {
+            if (fieldCounts.containsKey(field)) {
+                Long existingCount = fieldCounts.get(field);
+                Long otherCount = otherCounts.get(field);
+                fieldCounts.put(field, existingCount + otherCount);
+            } else {
+                fieldCounts.put(field, otherCounts.get(field));
+            }
+        }
+    }
+
+    public void mergeTermCounts(CountMap otherCounts) {
+        if (termCounts == null || termCounts.isEmpty()) {
+            termCounts = otherCounts;
+            return;
+        }
+
+        for (String field : otherCounts.keySet()) {
+            if (termCounts.containsKey(field)) {
+                Long existingCount = termCounts.get(field);
+                Long otherCount = otherCounts.get(field);
+                termCounts.put(field, existingCount + otherCount);
+            } else {
+                termCounts.put(field, otherCounts.get(field));
+            }
+        }
+    }
+
+    public CountMap getFieldCounts() {
+        return fieldCounts;
+    }
+
+    public CountMap getTermCounts() {
+        return termCounts;
     }
 }

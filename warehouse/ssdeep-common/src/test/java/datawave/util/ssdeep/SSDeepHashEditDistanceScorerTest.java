@@ -3,7 +3,7 @@ package datawave.util.ssdeep;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class SSDeepHashScorerTest {
+public class SSDeepHashEditDistanceScorerTest {
 
     public static final String[][] testData = {
             {"3072:02irbxzGAFYDMxud7fKg3dXVmbOn5u46Kjnz/G8VYrs123D6pIJLIOSP:02MKlWQ7Sg3d4bO968rm7JO",
@@ -29,7 +29,7 @@ public class SSDeepHashScorerTest {
 
     @Test
     public void testCompare() {
-        SSDeepHashScorer scorer = new SSDeepHashScorer();
+        SSDeepHashScorer<Integer> scorer = new SSDeepHashEditDistanceScorer(SSDeepHash.DEFAULT_MAX_REPEATED_CHARACTERS);
         for (int i = 0; i < testData.length; i++) {
             SSDeepHash queryHash = SSDeepHash.parse(testData[i][0]);
             SSDeepHash targetHash = SSDeepHash.parse(testData[i][1]);
