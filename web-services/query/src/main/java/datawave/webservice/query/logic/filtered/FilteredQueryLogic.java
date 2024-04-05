@@ -13,6 +13,7 @@ import datawave.microservice.authorization.util.AuthorizationsUtil;
 import datawave.security.authorization.UserOperations;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
+import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.iterator.DatawaveTransformIterator;
 import datawave.webservice.query.logic.DelegatingQueryLogic;
 import datawave.webservice.query.logic.QueryLogic;
@@ -65,7 +66,7 @@ public class FilteredQueryLogic extends DelegatingQueryLogic implements QueryLog
                 log.debug("Passing through filter " + filter + " for query " + super.getLogicName());
             }
         }
-        return filtered;
+        return filtered || (getDelegate() instanceof FilteredQueryLogic && ((FilteredQueryLogic) getDelegate()).isFiltered());
     }
 
     @Override

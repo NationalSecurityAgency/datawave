@@ -27,6 +27,7 @@ import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import datawave.query.data.UUIDType;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.UserOperations;
+import datawave.security.authorization.remote.RemoteUserOperationsImpl;
 import datawave.security.util.WSAuthorizationsUtil;
 import datawave.util.time.DateHelper;
 import datawave.webservice.common.audit.AuditParameters;
@@ -473,8 +474,11 @@ public class LookupUUIDUtil {
             DatawavePrincipal queryPrincipal = (logic.getUserOperations(settings) == null) ? (DatawavePrincipal) principal
                             : logic.getUserOperations(settings).getRemoteUser((DatawavePrincipal) principal);
             // the overall principal (the one with combined auths across remote user operations) is our own user operations (probably the UserOperationsBean)
-            DatawavePrincipal overallPrincipal = (userOperations == null) ? (DatawavePrincipal) principal
-                            : userOperations.getRemoteUser((DatawavePrincipal) principal);
+            // don't call remote user operations if it's asked not to
+            DatawavePrincipal overallPrincipal = (userOperations == null
+                            || "false".equalsIgnoreCase(queryParameters.getFirst(RemoteUserOperationsImpl.INCLUDE_REMOTE_SERVICES)))
+                                            ? (DatawavePrincipal) principal
+                                            : userOperations.getRemoteUser((DatawavePrincipal) principal);
             if (queryAuths != null) {
                 userAuths = WSAuthorizationsUtil.downgradeUserAuths(queryAuths, overallPrincipal, queryPrincipal);
             } else {

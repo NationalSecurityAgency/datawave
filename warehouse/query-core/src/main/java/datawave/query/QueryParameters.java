@@ -51,6 +51,11 @@ public class QueryParameters {
     public static final String RETURN_FIELDS = "return.fields";
 
     /**
+     * The list of fields to rename (post all model mappings)
+     */
+    public static final String RENAME_FIELDS = "rename.fields";
+
+    /**
      * Should masked values be filtered out when the unmasked variant is available
      */
     public static final String FILTER_MASKED_VALUES = "filter.masked.values";
@@ -174,6 +179,7 @@ public class QueryParameters {
 
     public static final String GROUP_FIELDS_BATCH_SIZE = "group.fields.batch.size";
     public static final String UNIQUE_FIELDS = "unique.fields";
+    public static final String MOST_RECENT_UNIQUE = "most.recent.unique";
 
     /**
      * Used to specify fields which are excluded from QueryModel expansion
