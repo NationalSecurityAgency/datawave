@@ -25,9 +25,9 @@ public class FilteredQueryLogic extends DelegatingQueryLogic implements QueryLog
 
     public static final Logger log = Logger.getLogger(FilteredQueryLogic.class);
 
-    private QueryLogicFilter filter;
+    protected QueryLogicFilter filter;
 
-    private boolean filtered = false;
+    protected volatile boolean filtered = false;
 
     public FilteredQueryLogic() {}
 
@@ -50,7 +50,7 @@ public class FilteredQueryLogic extends DelegatingQueryLogic implements QueryLog
     }
 
     public boolean canRunQuery(Query settings, Set<Authorizations> runtimeQueryAuthorizations) {
-        if (!filtered) {
+        if (!isFiltered()) {
             if (!filter.canRunQuery(settings, runtimeQueryAuthorizations)) {
                 filtered = true;
             }

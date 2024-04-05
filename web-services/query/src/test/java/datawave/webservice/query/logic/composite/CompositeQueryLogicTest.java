@@ -456,17 +456,10 @@ public class CompositeQueryLogicTest {
     }
 
     public static class TestFilteredQueryLogic extends FilteredQueryLogic {
-        private boolean filtered;
-
         public TestFilteredQueryLogic(boolean filtered) {
             QueryLogic delegate = new TestQueryLogic();
             setDelegate(delegate);
             this.filtered = filtered;
-        }
-
-        @Override
-        public boolean isFiltered() {
-            return filtered;
         }
     }
 
