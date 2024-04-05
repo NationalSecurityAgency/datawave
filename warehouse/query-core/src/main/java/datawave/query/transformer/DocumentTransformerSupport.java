@@ -599,6 +599,6 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
     }
 
     public void setPrimaryToSecondaryFieldMap(Map<String,List<String>> primaryToSecondaryFieldMap) {
-        addTransform(new FieldMappingTransform(primaryToSecondaryFieldMap, reducedResponse));
+        addTransform(new FieldMappingTransform(primaryToSecondaryFieldMap, false, reducedResponse));
     }
 }

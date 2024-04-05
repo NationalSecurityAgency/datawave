@@ -85,8 +85,9 @@ public class AttributeMetadata implements Comparable<AttributeMetadata>, Seriali
                 // find the first null byte in the cq and take everything after that (cq = Normalized Field Value\0Data Type\0UID)
                 final ByteSequence cq = key.getColumnQualifierData();
                 int nullOffset = 0;
-                for (int i = 0; i < cq.length(); i++) {
-                    if (cq.byteAt(i) == '\0') {
+                int count = 0;
+                for (int i = cq.length() - 1; i >= 0; i--) {
+                    if (cq.byteAt(i) == '\0' && ++count == 2) {
                         nullOffset = i;
                         break;
                     }
@@ -99,13 +100,10 @@ public class AttributeMetadata implements Comparable<AttributeMetadata>, Seriali
                 final ByteSequence cq = key.getColumnQualifierData();
                 int nullOffset = 0;
                 int count = 0;
-                for (int i = 0; i < cf.length(); i++) {
-                    if (cf.byteAt(i) == '\0') {
-                        count++;
-                        if (count == 2) {
-                            nullOffset = i;
-                            break;
-                        }
+                for (int i = 0; i < cq.length(); i++) {
+                    if (cq.byteAt(i) == '\0' && ++count == 2) {
+                        nullOffset = i;
+                        break;
                     }
                 }
                 this.metadata = new Key(row.getBackingArray(), row.offset(), row.length(), cq.getBackingArray(), cq.offset(), nullOffset,

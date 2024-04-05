@@ -240,6 +240,37 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     }
 
     @Override
+    public Object visit(ASTERNode node, Object data) {
+
+        String identifier = JexlASTHelper.getIdentifier(node);
+        LiteralRange<?> range = buildLiteralRange(node);
+
+        if (limitLookup && !indexOnlyFields.contains(identifier) && termFrequencyFields.contains(identifier)) {
+            NestedIterator<Key> nested = buildExceededFromTermFrequency(identifier, node, node, range, data);
+            if (null != nested && data instanceof AbstractIteratorBuilder) {
+
+                AbstractIteratorBuilder iterators = (AbstractIteratorBuilder) data;
+
+                iterators.addInclude(nested);
+
+            } else {
+                if (isQueryFullySatisfied) {
+                    log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
+                }
+                // if there is no parent
+                if (root == null && data == null) {
+                    // make this nested the root node
+                    root = nested;
+                }
+                return nested;
+
+            }
+        }
+        node.childrenAccept(this, data);
+        return data;
+    }
+
+    @Override
     public Object visit(ASTAndNode and, Object data) {
         QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(and);
         if (instance.isAnyTypeOf(DELAYED, EVALUATION_ONLY, DROPPED)) {
@@ -251,7 +282,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                 if (isQueryFullySatisfied) {
                     log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
                 }
-                log.warn("Will not process ASTDelayedPredicate.");
+                log.trace("Will not process ASTDelayedPredicate.");
             }
             return null;
         } else if (instance.isType(EXCEEDED_OR)) {
@@ -576,10 +607,10 @@ public class IteratorBuildingVisitor extends BaseVisitor {
 
     private String formatIncludesOrExcludes(List<NestedIterator> in) {
         String builder = in.toString();
-        builder = builder.replaceAll("OrIterator:", "\n\tOrIterator:");
-        builder = builder.replaceAll("Includes:", "\n\t\tIncludes:");
-        builder = builder.replaceAll("Excludes:", "\n\t\tExcludes:");
-        builder = builder.replaceAll("Bridge:", "\n\t\t\tBridge:");
+        builder = builder.replace("OrIterator:", "\n\tOrIterator:");
+        builder = builder.replace("Includes:", "\n\t\tIncludes:");
+        builder = builder.replace("Excludes:", "\n\t\tExcludes:");
+        builder = builder.replace("Bridge:", "\n\t\t\tBridge:");
         return builder;
     }
 
@@ -1309,7 +1340,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             if (nodes.size() > 1) {
                 ASTAndNode andNode = new ASTAndNode(ParserTreeConstants.JJTANDNODE);
                 setChildren(script, andNode);
-                setChildren(andNode, nodes.toArray(new JexlNode[nodes.size()]));
+                setChildren(andNode, nodes.toArray(new JexlNode[0]));
             } else {
                 setChildren(script, nodes.get(0));
             }
