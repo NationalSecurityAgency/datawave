@@ -54,15 +54,22 @@ public class SSDeepSimilarityQueryTransformer extends BaseQueryLogicTransformer<
 
         {
             FieldBase field = responseObjectFactory.getField();
-            field.setName("MATCH_SCORE");
+            field.setName("WEIGHTED_SCORE");
+            field.setValue(String.valueOf(pair.getWeightedScore()));
+            fields.add(field);
+        }
+
+        {
+            FieldBase field = responseObjectFactory.getField();
+            field.setName("OVERLAP_SCORE");
             field.setValue(String.valueOf(pair.getOverlapScore()));
             fields.add(field);
         }
 
         {
             FieldBase field = responseObjectFactory.getField();
-            field.setName("WEIGHTED_SCORE");
-            field.setValue(String.valueOf(pair.getWeightedScore()));
+            field.setName("OVERLAP_SSDEEP_NGRAMS");
+            field.setValue(pair.getOverlapsAsString());
             fields.add(field);
         }
 

@@ -345,6 +345,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs = Collections.emptyList();
     private String ivaratorFstHdfsBaseURIs = null;
     private int ivaratorCacheBufferSize = 10000;
+
+    private int uniqueCacheBufferSize = 100;
     private long ivaratorCacheScanPersistThreshold = 100000L;
     private long ivaratorCacheScanTimeout = 1000L * 60 * 60;
     private int maxFieldIndexRangeSplit = 11;
@@ -380,6 +382,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private int groupFieldsBatchSize;
     private boolean accrueStats = false;
     private UniqueFields uniqueFields = new UniqueFields();
+    private boolean mostRecentUnique = false;
     private boolean cacheModel = false;
     /**
      * should the sizes of documents be tracked for this query
@@ -468,6 +471,17 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      * Flag to control gathering term counts from the global index and persisting those to the query iterator. Negated terms and branches are not considered.
      */
     private boolean useTermCounts = false;
+    /**
+     * Flag to control sorting a query by inferred default costs prior to the global index lookup. This step may reduce time performing a secondary sort as when
+     * {@link #sortQueryByCounts} is enabled.
+     */
+    private boolean sortQueryBeforeGlobalIndex = false;
+
+    /**
+     * Flag to control if a query is sorted by either field or term counts. Either {@link #useFieldCounts} or {@link #useTermCounts} must be set for this option
+     * to take effect.
+     */
+    private boolean sortQueryByCounts = false;
 
     /**
      * Default constructor
@@ -654,7 +668,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setCompositeFilterFunctionsEnabled(other.isCompositeFilterFunctionsEnabled());
         this.setGroupFieldsBatchSize(other.getGroupFieldsBatchSize());
         this.setAccrueStats(other.getAccrueStats());
-        this.setUniqueFields(UniqueFields.copyOf(other.getUniqueFields()));
+        this.setUniqueFields(other.getUniqueFields());
+        this.setUniqueCacheBufferSize(other.getUniqueCacheBufferSize());
         this.setCacheModel(other.getCacheModel());
         this.setTrackSizes(other.isTrackSizes());
         this.setContentFieldNames(null == other.getContentFieldNames() ? null : Lists.newArrayList(other.getContentFieldNames()));
@@ -686,6 +701,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setPruneQueryOptions(other.getPruneQueryOptions());
         this.setUseFieldCounts(other.getUseFieldCounts());
         this.setUseTermCounts(other.getUseTermCounts());
+        this.setSortQueryBeforeGlobalIndex(other.isSortQueryBeforeGlobalIndex());
+        this.setSortQueryByCounts(other.isSortQueryByCounts());
     }
 
     /**
@@ -1401,6 +1418,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.ivaratorFstHdfsBaseURIs = ivaratorFstHdfsBaseURIs;
     }
 
+    public int getUniqueCacheBufferSize() {
+        return uniqueCacheBufferSize;
+    }
+
+    public void setUniqueCacheBufferSize(int uniqueCacheBufferSize) {
+        this.uniqueCacheBufferSize = uniqueCacheBufferSize;
+    }
+
     public int getIvaratorCacheBufferSize() {
         return ivaratorCacheBufferSize;
     }
@@ -1761,11 +1786,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     }
 
     public void setUniqueFields(UniqueFields uniqueFields) {
-        this.uniqueFields = uniqueFields;
-        // If unique fields are present, make sure they are deconstructed by this point.
-        if (uniqueFields != null) {
-            uniqueFields.deconstructIdentifierFields();
-        }
+        this.uniqueFields = uniqueFields.clone();
     }
 
     public boolean isHitList() {
@@ -2636,5 +2657,21 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setUseFieldCounts(boolean useFieldCounts) {
         this.useFieldCounts = useFieldCounts;
+    }
+
+    public boolean isSortQueryBeforeGlobalIndex() {
+        return sortQueryBeforeGlobalIndex;
+    }
+
+    public void setSortQueryBeforeGlobalIndex(boolean sortQueryBeforeGlobalIndex) {
+        this.sortQueryBeforeGlobalIndex = sortQueryBeforeGlobalIndex;
+    }
+
+    public boolean isSortQueryByCounts() {
+        return sortQueryByCounts;
+    }
+
+    public void setSortQueryByCounts(boolean sortQueryByCounts) {
+        this.sortQueryByCounts = sortQueryByCounts;
     }
 }
