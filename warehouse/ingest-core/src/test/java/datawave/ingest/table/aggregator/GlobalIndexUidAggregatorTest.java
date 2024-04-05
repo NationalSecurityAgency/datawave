@@ -12,25 +12,36 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import java.io.IOException;
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.Test;
 
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
+import com.google.common.collect.TreeMultimap;
 
 import datawave.ingest.protobuf.Uid;
 import datawave.ingest.protobuf.Uid.List.Builder;
+import datawave.iterators.SortedMultiMapIterator;
+import datawave.util.CompositeTimestamp;
 
 public class GlobalIndexUidAggregatorTest {
 
@@ -884,6 +895,54 @@ public class GlobalIndexUidAggregatorTest {
 
         assertEquals(1, result.getUIDList().size());
         assertTrue(agg.propogateKey());
+    }
+
+    @Test
+    public void testCompositeTimestampsMatter() throws IOException {
+        TreeMultimap<Key,Value> keyValues = TreeMultimap.create();
+
+        long eventDate = Instant.from(DateTimeFormatter.ISO_INSTANT.parse("1960-01-01T00:00:00Z")).toEpochMilli();
+        long ageOff = eventDate + (131071L * CompositeTimestamp.MILLIS_PER_DAY);
+        long negativeCompositeTS = CompositeTimestamp.getCompositeTimeStamp(eventDate, ageOff);
+
+        eventDate = Instant.from(DateTimeFormatter.ISO_INSTANT.parse("2022-10-26T01:00:00Z")).toEpochMilli();
+        ageOff = eventDate + CompositeTimestamp.MILLIS_PER_DAY;
+        long compositeTS = CompositeTimestamp.getCompositeTimeStamp(eventDate, ageOff);
+
+        ageOff = eventDate + (CompositeTimestamp.MILLIS_PER_DAY * 10);
+        long largerCompositeTS = CompositeTimestamp.getCompositeTimeStamp(eventDate, ageOff);
+
+        List<Value> values = new ArrayList<>();
+        for (int i = 0; i < 6; i++) {
+            String uuid = UUID.randomUUID().toString();
+            values.add(toValue(createNewUidList(uuid)));
+        }
+
+        Key key1 = new Key("key", "cf", "cq", "PUBLIC", negativeCompositeTS);
+        Key key2 = new Key("key", "cf", "cq", "PUBLIC", compositeTS);
+        Key key3 = new Key("key", "cf", "cq", "PUBLIC", largerCompositeTS);
+
+        keyValues.put(key1, values.get(0));
+        keyValues.put(key2, values.get(1));
+        keyValues.put(key2, values.get(2));
+        keyValues.put(key3, values.get(3));
+        keyValues.put(key3, values.get(4));
+        keyValues.put(key3, values.get(5));
+
+        // get an iterator of these key/value pairs (sorted)
+        SortedKeyValueIterator<Key,Value> iterator = new SortedMultiMapIterator(keyValues);
+        iterator.seek(new Range(), Collections.emptySet(), false);
+
+        // get a unique list of the keys (sorted
+        Iterator<Key> keys = keyValues.keySet().iterator();
+        while (keys.hasNext()) {
+            Key key = keys.next();
+            Set<Value> expected = Sets.newHashSet(keyValues.get(key));
+            // ensure each call to getValues() returns all of the values for the next key where only the timestamp differs
+            Set<Value> actual = Sets.newHashSet(agg.getValues(iterator));
+            assertEquals(expected, actual);
+        }
+        assertFalse(iterator.hasTop());
     }
 
     private Value agg(List<Value> values) {
