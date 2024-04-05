@@ -1,20 +1,20 @@
 package datawave.query.jexl;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.apache.commons.jexl3.JexlEngine;
 import org.apache.commons.jexl3.internal.Engine;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-public class DatawaveJexlContextTest {
+class DatawaveJexlContextTest {
 
     private final JexlEngine engine = new Engine();
     private final DatawaveJexlContext context = new DatawaveJexlContext();
 
     @Test
-    public void testEscapingSingleQuote() {
+    void testEscapingSingleQuote() {
         // @formatter:off
         assertAll(
                         // an escaped single quote within single quotes will match a single quote in the context
@@ -61,7 +61,7 @@ public class DatawaveJexlContextTest {
     }
 
     @Test
-    public void testEscapingDoubleQuote() {
+    void testEscapingDoubleQuote() {
         // @formatter:off
         assertAll(
                         // an escaped double quote within double quotes will match a double quote in the context
@@ -109,7 +109,7 @@ public class DatawaveJexlContextTest {
     }
 
     @Test
-    public void testEscapingUnicode() {
+    void testEscapingUnicode() {
         // @formatter:off
         assertAll(() -> {
             context.set("F1", "Str∂");
