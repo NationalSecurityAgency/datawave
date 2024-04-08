@@ -9,12 +9,24 @@
     <artifactId>datawave-age-off-utils</artifactId>
     <name>${project.artifactId}</name>
     <dependencies>
+        <!-- Needed for VisibleForTesting -->
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <scope>compile</scope>
+        </dependency>
         <!-- For AppliedRule, etc. -->
         <dependency>
             <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-age-off</artifactId>
             <version>${project.version}</version>
             <scope>compile</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>xml-apis</groupId>
+                    <artifactId>xml-apis</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <!-- For JAXBElement -->
         <dependency>
@@ -23,10 +35,9 @@
             <version>${version.jakarta}</version>
             <scope>compile</scope>
         </dependency>
-        <!-- Needed for org.apache.log4j imports -->
         <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-1.2-api</artifactId>
+            <groupId>org.apache.accumulo</groupId>
+            <artifactId>accumulo-core</artifactId>
             <scope>compile</scope>
         </dependency>
         <!-- Needed for org.slf4j imports -->
@@ -35,24 +46,12 @@
             <artifactId>slf4j-api</artifactId>
             <scope>compile</scope>
         </dependency>
-        <!-- AgeOffRuleFormatter.marshalObject requires implementation of jaxb-api -->
-        <dependency>
-            <groupId>com.sun.xml.bind</groupId>
-            <artifactId>jaxb-impl</artifactId>
-            <version>${version.jaxb-impl}</version>
-            <scope>runtime</scope>
-        </dependency>
         <!-- Test jar for TestFilter, etc. -->
         <dependency>
             <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-age-off</artifactId>
             <version>${project.version}</version>
             <classifier>tests</classifier>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>gov.nsa.datawave.microservice</groupId>
-            <artifactId>common-utils</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

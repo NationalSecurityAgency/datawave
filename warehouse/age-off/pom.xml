@@ -20,6 +20,12 @@
             <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-core</artifactId>
             <scope>compile</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>xml-apis</groupId>
+                    <artifactId>xml-apis</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <!-- Needed for StringUtils and DateHelper -->
         <dependency>
@@ -45,26 +51,6 @@
             <artifactId>log4j-1.2-api</artifactId>
             <scope>compile</scope>
         </dependency>
-        <!-- Required by guava LoadingCache -->
-        <dependency>
-            <!-- this is a runtime dependency of guava, no longer included with guava as of 27.1 -->
-            <groupId>com.google.guava</groupId>
-            <artifactId>failureaccess</artifactId>
-            <version>${version.google-guava-failure}</version>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>gov.nsa.datawave</groupId>
-            <artifactId>datawave-common-test</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <!-- Needed for ThreadPools.getServerThreadPools() in ConfigurableAgeOffFilter -->
-        <dependency>
-            <groupId>io.opentelemetry</groupId>
-            <artifactId>opentelemetry-context</artifactId>
-            <version>1.25.0</version>
-            <scope>test</scope>
-        </dependency>
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
@@ -73,7 +59,7 @@
         <!-- For org.hamcrest.CoreMatchers -->
         <dependency>
             <groupId>org.hamcrest</groupId>
-            <artifactId>hamcrest-all</artifactId>
+            <artifactId>hamcrest-core</artifactId>
             <version>${version.hamcrest}</version>
             <scope>test</scope>
         </dependency>
@@ -81,12 +67,6 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <!-- Required for FileSystem and LogFactory initialization -->
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-jcl</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
