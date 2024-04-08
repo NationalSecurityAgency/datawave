@@ -104,7 +104,7 @@ public class AgeOffCsvToMatchPatternFormatter {
         if (configuration.useOverrides()) {
             if (tokens.length <= columnInformation.overrideColumnNumber) {
                 log.error("Unable to process override {}", Arrays.toString(tokens));
-                throw new IllegalStateException("Not enough tokens");
+                throw new IllegalStateException("Unable to process override from " + Arrays.toString(tokens));
             }
             value = tokens[columnInformation.overrideColumnNumber].trim();
         }
@@ -113,14 +113,14 @@ public class AgeOffCsvToMatchPatternFormatter {
         if (value.length() == 0) {
             if (tokens.length <= columnInformation.durationColumnNumber) {
                 log.error("Unable to process duration {}", Arrays.toString(tokens));
-                throw new IllegalStateException("Not enough tokens");
+                throw new IllegalStateException("Unable to process duration from " + Arrays.toString(tokens));
             }
             value = tokens[columnInformation.durationColumnNumber].trim();
         }
 
         if (value.length() == 0) {
             log.error("Unable to find non-empty override or duration {}", Arrays.toString(tokens));
-            throw new IllegalStateException("Empty token");
+            throw new IllegalStateException("Unable to find non-empty override or duration from tokens: " + Arrays.toString(tokens));
         }
         sb.append(attemptValueMapping(value));
     }
@@ -144,7 +144,7 @@ public class AgeOffCsvToMatchPatternFormatter {
 
         if (tokens.length <= columnInformation.labelColumnNumber) {
             log.error("Unable to process label {}", Arrays.toString(tokens));
-            throw new IllegalStateException("Not enough tokens");
+            throw new IllegalStateException("Unable to process label from " + Arrays.toString(tokens));
         }
 
         String label = "";
@@ -157,7 +157,7 @@ public class AgeOffCsvToMatchPatternFormatter {
 
         if (label.length() == 0) {
             log.error("Unable to apply non-empty label {}", Arrays.toString(tokens));
-            throw new IllegalStateException("Empty token");
+            throw new IllegalStateException("Unable to apply non-empty label from " + Arrays.toString(tokens));
         }
         sb.append(label).append(SPACE);
     }
@@ -174,8 +174,8 @@ public class AgeOffCsvToMatchPatternFormatter {
 
         String literal = tokens[columnInformation.patternColumnNumber].trim();
         if (literal.length() == 0) {
-            log.error("Unable to find non-empty pattern {}", Arrays.toString(tokens));
-            throw new IllegalStateException("Empty token");
+            log.error("Unable to find non-empty literal {}", Arrays.toString(tokens));
+            throw new IllegalStateException("Unable to find non-empty literal from tokens: " + Arrays.toString(tokens));
         }
 
         if (configuration.shouldUpperCaseLiterals()) {
