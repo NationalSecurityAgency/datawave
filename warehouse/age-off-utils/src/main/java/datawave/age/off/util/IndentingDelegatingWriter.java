@@ -19,7 +19,7 @@ public class IndentingDelegatingWriter extends Writer {
 
     @Override
     public void write(char[] cbuf, int off, int len) throws IOException {
-        this.writer.write(cbuf, off, len);
+        throw new UnsupportedOperationException();
     }
 
     @Override
