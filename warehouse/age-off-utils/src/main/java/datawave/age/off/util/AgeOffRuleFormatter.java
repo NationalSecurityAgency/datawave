@@ -1,6 +1,7 @@
 package datawave.age.off.util;
 
 import java.io.IOException;
+import java.io.StringWriter;
 import java.io.Writer;
 import java.util.ArrayList;
 
@@ -8,9 +9,6 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
-import javax.xml.stream.XMLOutputFactory;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamWriter;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,16 +23,11 @@ public class AgeOffRuleFormatter {
 
     private final AgeOffRuleConfiguration configuration;
     private final String indent;
-    private XMLStreamWriter writer;
+    private Writer writer;
 
-    public AgeOffRuleFormatter(AgeOffRuleConfiguration configuration) throws XMLStreamException {
+    public AgeOffRuleFormatter(AgeOffRuleConfiguration configuration) {
         this.configuration = configuration;
         this.indent = this.configuration.getIndentation();
-    }
-
-    @VisibleForTesting
-    void format(Writer writer) throws IOException, XMLStreamException {
-        format(XMLOutputFactory.newDefaultFactory().createXMLStreamWriter(writer));
     }
 
     /**
@@ -43,93 +36,75 @@ public class AgeOffRuleFormatter {
      * @throws IOException
      *             i/o exception with writer
      */
-    public void format(XMLStreamWriter xmlStreamWriter) throws IOException {
-        try {
-            this.writer = xmlStreamWriter;
-            openRuleElement();
-            writeFilterClass();
-            writeTtl();
-            writeMergeElement();
-            writeMatchPattern();
-            writeCustomElements();
-            closeRuleElement();
-        } catch (XMLStreamException e) {
-            throw new IOException(e);
-        }
+    @VisibleForTesting
+    void format(Writer writer) throws IOException {
+        this.writer = writer;
+        openRuleElement();
+        writeFilterClass();
+        writeTtl();
+        writeMergeElement();
+        writeMatchPattern();
+        writeCustomElements();
+        closeRuleElement();
     }
 
-    private void openRuleElement() throws IOException, XMLStreamException {
-        writer.writeStartElement("rule");
+    private void openRuleElement() throws IOException {
+        StringBuilder sb = new StringBuilder();
+        sb.append("<rule");
 
         String ruleLabel = this.configuration.getRuleLabel();
         if (null != ruleLabel) {
             log.debug("Adding label attribute to rule: {}", ruleLabel);
-            writer.writeAttribute("label", ruleLabel);
+            sb.append(" label=\"").append(ruleLabel).append("\"");
         }
 
         if (this.configuration.shouldMerge()) {
             log.debug("Adding merge attribute to rule");
-            writer.writeAttribute("mode", "merge");
+            sb.append(" mode=\"merge\"");
         }
-        this.writer.writeCharacters("\n");
+        sb.append(">\n");
+
+        this.writer.write(sb.toString());
     }
 
-    private void writeFilterClass() throws XMLStreamException {
-        this.writer.writeCharacters(indent); // follows newline so it's adding indentation
-        this.writer.writeStartElement("filterClass"); // also adding indentation...
-        this.writer.writeCharacters(this.configuration.getFilterClass().getName());
-        this.writer.writeEndElement();
-        this.writer.writeCharacters("\n");
+    private void writeFilterClass() throws IOException {
+        this.writer.write(indent + "<filterClass>" + this.configuration.getFilterClass().getName() + "</filterClass>\n");
     }
 
-    private void writeTtl() throws XMLStreamException {
+    private void writeTtl() throws IOException {
         String duration = this.configuration.getTtlDuration();
 
         if (duration != null) {
             String units = configuration.getTtlUnits();
             log.debug("Writing ttl for duration {} and units {}", duration, units);
-            this.writer.writeCharacters(indent);
-            this.writer.writeStartElement("ttl");
-            this.writer.writeAttribute("units", units);
-            this.writer.writeCharacters(duration);
-            this.writer.writeEndElement();
-            this.writer.writeCharacters("\n");
+            this.writer.write(indent + "<ttl units=\"" + units + "\">" + duration + "</ttl>\n");
         }
     }
 
-    private void writeMergeElement() throws XMLStreamException {
+    private void writeMergeElement() throws IOException {
         if (this.configuration.shouldMerge()) {
             log.debug("Writing ismerge element");
-            this.writer.writeCharacters(indent);
-            this.writer.writeStartElement("ismerge");
-            this.writer.writeCharacters("true");
-            this.writer.writeEndElement();
-            this.writer.writeCharacters("\n");
+            this.writer.write(configuration.getIndentation() + "<ismerge>true</ismerge>\n");
         }
     }
 
-    private void writeMatchPattern() throws XMLStreamException, IOException {
+    private void writeMatchPattern() throws IOException {
         if (configuration.getPatternConfiguration() == null) {
             return;
         }
 
         log.debug("Writing match pattern");
 
-        this.writer.writeCharacters(indent);
-        this.writer.writeStartElement("matchPattern");
-        this.writer.writeCharacters("\n");
-        this.writer.flush();
+        this.writer.write(indent + "<matchPattern>\n");
 
         AgeOffCsvToMatchPatternFormatter patternFormatter = new AgeOffCsvToMatchPatternFormatter(configuration.getPatternConfiguration());
         // add two indentations: one for items under the rule element and another for items under the matchPattern element
-        patternFormatter.write(new IndentingDelegatingXMLStreamWriter(this.indent + this.indent, this.writer));
+        patternFormatter.write(new IndentingDelegatingWriter(this.indent + this.indent, this.writer));
 
-        this.writer.writeCharacters(indent);
-        this.writer.writeEndElement();
-        this.writer.writeCharacters("\n");
+        this.writer.write(indent + "</matchPattern>\n");
     }
 
-    private void writeCustomElements() throws IOException, XMLStreamException {
+    private void writeCustomElements() throws IOException {
         ArrayList<JAXBElement<?>> customElements = this.configuration.getCustomElements();
 
         if (null == customElements) {
@@ -141,25 +116,25 @@ public class AgeOffRuleFormatter {
         }
     }
 
-    private void writeCustomElement(JAXBElement<?> customElement) throws IOException, XMLStreamException {
-        this.writer.writeCharacters(indent);
-        marshalObject(customElement);
-        this.writer.writeCharacters("\n");
+    private void writeCustomElement(JAXBElement<?> customElement) throws IOException {
+        StringWriter tempWriter = new StringWriter();
+        marshalObject(customElement, tempWriter);
+        log.debug("Marshalled custom object to String: {}", tempWriter);
+        this.writer.write(indent + tempWriter + "\n");
     }
 
-    private void marshalObject(JAXBElement<?> obj) throws IOException {
+    private void marshalObject(JAXBElement<?> obj, Writer writer) throws IOException {
         try {
             JAXBContext jc = JAXBContext.newInstance(AnyXmlElement.class, obj.getClass());
             Marshaller marshaller = jc.createMarshaller();
             marshaller.setProperty(Marshaller.JAXB_FRAGMENT, Boolean.TRUE);
-            marshaller.marshal(obj, this.writer);
+            marshaller.marshal(obj, writer);
         } catch (JAXBException e) {
             throw new IOException(e);
         }
     }
 
-    private void closeRuleElement() throws XMLStreamException {
-        writer.writeEndElement();
-        this.writer.writeCharacters("\n");
+    private void closeRuleElement() throws IOException {
+        this.writer.write("</rule>\n");
     }
 }

@@ -3,10 +3,6 @@ package datawave.age.off.util;
 import java.io.IOException;
 import java.io.Writer;
 
-import javax.xml.stream.XMLOutputFactory;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamWriter;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,16 +14,11 @@ public class AgeOffFileGenerator {
 
     private final AgeOffFileConfiguration configuration;
     private final String indent;
-    private XMLStreamWriter writer;
-    private IndentingDelegatingXMLStreamWriter ruleXmlStreamWriter;
+    private Writer writer;
 
-    public AgeOffFileGenerator(AgeOffFileConfiguration configuration) throws XMLStreamException {
+    public AgeOffFileGenerator(AgeOffFileConfiguration configuration) {
         this.configuration = configuration;
         this.indent = this.configuration.getIndentation();
-    }
-
-    public void format(Writer writer) throws XMLStreamException, IOException {
-        format(XMLOutputFactory.newDefaultFactory().createXMLStreamWriter(writer));
     }
 
     /**
@@ -36,67 +27,49 @@ public class AgeOffFileGenerator {
      * @throws IOException
      *             i/o exception with writer
      */
-    public void format(XMLStreamWriter xmlStreamWriter) throws IOException {
-        this.writer = xmlStreamWriter;
-        try {
-            openConfigurationElement();
-            writeParentElement();
-            writeRules();
-            closeConfiguration();
-        } catch (XMLStreamException e) {
-            throw new IOException(e);
-        }
+    public void format(Writer writer) throws IOException {
+        this.writer = writer;
+        openConfigurationElement();
+        writeParentElement();
+        writeRules();
+        closeConfiguration();
     }
 
-    private void closeConfiguration() throws IOException, XMLStreamException {
-        this.writer.writeEndElement();
+    private void closeConfiguration() throws IOException {
+        this.writer.write("</ageoffConfiguration>\n");
     }
 
-    private void writeParentElement() throws IOException, XMLStreamException {
+    private void writeParentElement() throws IOException {
         String parentFileName = this.configuration.getParentFileName();
 
         if (null != parentFileName) {
             log.debug("Writing parent file name: {}", parentFileName);
-            this.writer.writeCharacters(this.indent);
-            this.writer.writeStartElement("parent");
-            this.writer.writeCharacters(parentFileName);
-            this.writer.writeEndElement();
-            this.writer.writeCharacters("\n");
+            this.writer.write(this.indent + "<parent>" + parentFileName + "</parent>\n");
         }
     }
 
-    private void writeRules() throws IOException, XMLStreamException {
-        this.writer.writeCharacters(this.indent);
-        this.writer.writeStartElement("rules");
-        this.writer.writeCharacters("\n");
+    private void writeRules() throws IOException {
+        this.writer.write(this.indent + "<rules>\n");
 
         for (AgeOffRuleConfiguration ruleConfiguration : this.configuration.getRuleConfigurations()) {
             writeRule(ruleConfiguration);
         }
 
-        this.writer.writeCharacters(this.indent);
-        this.writer.writeEndElement();
-        this.writer.writeCharacters("\n");
+        this.writer.write(this.indent + "</rules>\n");
     }
 
-    private void writeRule(AgeOffRuleConfiguration ruleConfiguration) throws IOException, XMLStreamException {
+    private void writeRule(AgeOffRuleConfiguration ruleConfiguration) throws IOException {
         log.debug("formatting ruleConfiguration {}", ruleConfiguration.getRuleLabel());
 
         AgeOffRuleFormatter ruleFormatter = new AgeOffRuleFormatter(ruleConfiguration);
 
         // add two indentations: one for under the ageOffConfiguration element and another to go under the rules element
         String ruleIndentation = this.configuration.getIndentation() + this.configuration.getIndentation();
-        if (ruleXmlStreamWriter == null) {
-            ruleXmlStreamWriter = new IndentingDelegatingXMLStreamWriter(ruleIndentation, this.writer);
-        } else {
-            ruleXmlStreamWriter.setIndentation(ruleIndentation);
-        }
-        ruleFormatter.format(ruleXmlStreamWriter);
+        ruleFormatter.format(new IndentingDelegatingWriter(ruleIndentation, this.writer));
 
     }
 
-    private void openConfigurationElement() throws IOException, XMLStreamException {
-        this.writer.writeStartElement("ageoffConfiguration");
-        this.writer.writeCharacters("\n");
+    private void openConfigurationElement() throws IOException {
+        this.writer.write("<ageoffConfiguration>\n");
     }
 }

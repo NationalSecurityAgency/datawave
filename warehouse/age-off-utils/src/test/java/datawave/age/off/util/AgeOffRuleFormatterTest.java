@@ -54,7 +54,7 @@ public class AgeOffRuleFormatterTest {
                 "     <filterClass>datawave.ingest.util.cache.watch.TestFilter</filterClass>\n" +
                 "     <ttl units=\"ms\">10</ttl>\n" +
                 "     <matchPattern>1</matchPattern>\n" +
-                "     <myTagName ttl=\"1234\"></myTagName>\n" +
+                "     <myTagName ttl=\"1234\"/>\n" +
                 "     <filtersWater>false</filtersWater>\n" +
                 "</rule>\n";
         // @formatter:on
@@ -194,14 +194,8 @@ public class AgeOffRuleFormatterTest {
 
     private String generateRule(AgeOffRuleConfiguration.Builder builder) throws IOException {
         StringWriter out = new StringWriter();
-        try {
-            AgeOffRuleFormatter generator = new AgeOffRuleFormatter(builder.build());
-            generator.format(out);
-
-        } catch (XMLStreamException e) {
-            throw new IOException(e);
-        }
-
+        AgeOffRuleFormatter generator = new AgeOffRuleFormatter(builder.build());
+        generator.format(out);
         return out.toString();
     }
 }

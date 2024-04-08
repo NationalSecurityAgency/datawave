@@ -13,8 +13,6 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import javax.xml.stream.XMLStreamException;
-
 import org.junit.Test;
 
 import datawave.age.off.util.AgeOffCsvToMatchPatternFormatterConfiguration.Builder;
@@ -382,12 +380,7 @@ public class AgeOffCsvToMatchPatternFormatterTest {
     private String reformat(Builder builder) throws IOException {
         StringWriter out = new StringWriter();
         AgeOffCsvToMatchPatternFormatter generator = new AgeOffCsvToMatchPatternFormatter(builder.build());
-        try {
-            generator.write(out);
-        } catch (XMLStreamException e) {
-            throw new IOException(e);
-        }
-
+        generator.write(out);
         return out.toString();
     }
 

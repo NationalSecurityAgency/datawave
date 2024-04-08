@@ -4,10 +4,6 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.Arrays;
 
-import javax.xml.stream.XMLOutputFactory;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamWriter;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,15 +23,9 @@ public class AgeOffCsvToMatchPatternFormatter {
     private static final char SPACE = ' ';
     private final AgeOffCsvToMatchPatternFormatterConfiguration configuration;
     private AgeOffCsvColumnInformation columnInformation;
-    private XMLStreamWriter xmlWriter;
 
     public AgeOffCsvToMatchPatternFormatter(AgeOffCsvToMatchPatternFormatterConfiguration configuration) {
         this.configuration = configuration;
-    }
-
-    @VisibleForTesting
-    void write(Writer writer) throws XMLStreamException, IOException {
-        write(XMLOutputFactory.newDefaultFactory().createXMLStreamWriter(writer));
     }
 
     /**
@@ -44,28 +34,24 @@ public class AgeOffCsvToMatchPatternFormatter {
      * @throws IOException
      *             i/o exception with reader or writer
      */
-    public void write(XMLStreamWriter writer) throws IOException {
-        this.xmlWriter = writer;
+    @VisibleForTesting
+    void write(Writer writer) throws IOException {
         String inputLine = configuration.getReader().readLine();
 
         while (null != inputLine) {
-            try {
-                reformat(inputLine);
-            } catch (XMLStreamException e) {
-                throw new IOException(e);
-            }
+            reformat(writer, inputLine);
             inputLine = configuration.getReader().readLine();
         }
         configuration.getReader().close();
     }
 
-    private void reformat(String inputLine) throws XMLStreamException {
+    private void reformat(Writer writer, String inputLine) throws IOException {
         String trimmedLine = inputLine.trim();
 
         if (isWhitespaceOnly(trimmedLine)) {
-            propagateWhitespace(inputLine);
+            writer.write(inputLine + "\n");
         } else if (isComment(trimmedLine)) {
-            writeComment(trimmedLine);
+            writer.write(createComment(trimmedLine));
         } else {
             // Use -1 to prevent chopping of empty tokens
             String[] tokens = inputLine.split(COMMA, -1);
@@ -74,17 +60,13 @@ public class AgeOffCsvToMatchPatternFormatter {
                 log.debug("Attempting to parse header: {}", inputLine);
                 initializeHeader(tokens);
             } else {
-                reformatLine(tokens);
+                writer.write(reformatLine(tokens));
             }
         }
     }
 
     private boolean isWhitespaceOnly(String trimmedLine) {
         return trimmedLine.equals("");
-    }
-
-    private void propagateWhitespace(String inputLine) throws XMLStreamException {
-        this.xmlWriter.writeCharacters(inputLine + "\n");
     }
 
     private void initializeHeader(String[] tokens) {
@@ -96,12 +78,11 @@ public class AgeOffCsvToMatchPatternFormatter {
         return trimmedLine.startsWith("#");
     }
 
-    private void writeComment(String trimmedLine) throws XMLStreamException {
-        this.xmlWriter.writeComment(trimmedLine.substring(1));
-        this.xmlWriter.writeCharacters("\n");
+    private String createComment(String trimmedLine) {
+        return "<!--" + trimmedLine.substring(1) + "-->\n";
     }
 
-    private void reformatLine(String[] tokens) throws XMLStreamException {
+    private String reformatLine(String[] tokens) {
         StringBuilder sb = new StringBuilder();
 
         appendLabel(tokens, sb);
@@ -113,7 +94,8 @@ public class AgeOffCsvToMatchPatternFormatter {
         appendValue(sb, tokens);
 
         sb.append(NEW_LINE);
-        this.xmlWriter.writeCharacters(sb.toString());
+
+        return sb.toString();
     }
 
     private void appendValue(StringBuilder sb, String[] tokens) {

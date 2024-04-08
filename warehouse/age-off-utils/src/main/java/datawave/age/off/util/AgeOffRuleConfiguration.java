@@ -1,13 +1,8 @@
 package datawave.age.off.util;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.util.ArrayList;
 
 import javax.xml.bind.JAXBElement;
-import javax.xml.namespace.NamespaceContext;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamWriter;
 
 import datawave.iterators.filter.ageoff.FilterRule;
 

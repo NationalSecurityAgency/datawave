@@ -62,11 +62,11 @@ public class AgeOffFileGeneratorTest {
         "               <filterClass>datawave.ingest.util.cache.watch.TestFilter</filterClass>\n" +
         "               <ttl units=\"ms\">10</ttl>\n" +
         "               <matchPattern>1</matchPattern>\n" +
-        "               <myTagName ttl=\"1234\"></myTagName>\n" +
+        "               <myTagName ttl=\"1234\"/>\n" +
         "               <filtersWater>false</filtersWater>\n" +
         "          </rule>\n" +
         "     </rules>\n" +
-        "</ageoffConfiguration>";
+        "</ageoffConfiguration>\n";
 
     private static final String OTHER_EXPECTED_FILE_CONTENTS =
             "<ageoffConfiguration>\n" +
@@ -196,7 +196,7 @@ public class AgeOffFileGeneratorTest {
             "               </matchPattern>\n" +
             "          </rule>\n" +
             "     </rules>\n" +
-            "</ageoffConfiguration>";
+            "</ageoffConfiguration>\n";
     // @formatter:on
 
     @Test
@@ -357,14 +357,8 @@ public class AgeOffFileGeneratorTest {
 
     private String generateFile(AgeOffFileConfiguration.Builder builder) throws IOException {
         StringWriter out = new StringWriter();
-        AgeOffFileGenerator generator = null;
-        try {
-            generator = new AgeOffFileGenerator(builder.build());
-            generator.format(out);
-        } catch (XMLStreamException e) {
-            throw new IOException(e);
-        }
-
+        AgeOffFileGenerator generator = new AgeOffFileGenerator(builder.build());
+        generator.format(out);
         return out.toString();
     }
 
