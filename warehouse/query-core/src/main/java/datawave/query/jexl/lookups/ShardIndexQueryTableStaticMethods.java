@@ -113,6 +113,7 @@ public class ShardIndexQueryTableStaticMethods {
     public static IndexLookup normalizeQueryTerm(String literal, ShardQueryConfiguration config, ScannerFactory scannerFactory, Set<String> expansionFields,
                     Set<Type<?>> dataTypes, MetadataHelper helperRef, ExecutorService execService) throws TableNotFoundException {
         Set<String> terms = Sets.newHashSet(literal);
+
         for (Type<?> normalizer : dataTypes) {
             try {
                 String normalizedValue = normalizer.normalize(literal);
@@ -125,6 +126,7 @@ public class ShardIndexQueryTableStaticMethods {
                 }
             }
         }
+
         return new FieldNameIndexLookup(config, scannerFactory, getIndexedExpansionFields(expansionFields, false, config.getDatatypeFilter(), helperRef), terms,
                         execService);
     }
@@ -211,6 +213,7 @@ public class ShardIndexQueryTableStaticMethods {
     protected static IndexLookup _normalizeQueryTerm(JexlNode node, ShardQueryConfiguration config, ScannerFactory scannerFactory, Set<String> expansionFields,
                     Set<Type<?>> dataTypes, MetadataHelper helperRef, ExecutorService execService) throws TableNotFoundException {
         Object literal = JexlASTHelper.getLiteralValue(node);
+
         if (literal instanceof String) {
             return normalizeQueryTerm((String) literal, config, scannerFactory, expansionFields, dataTypes, helperRef, execService);
         } else if (literal instanceof Number) {
@@ -380,6 +383,7 @@ public class ShardIndexQueryTableStaticMethods {
                 log.warn("Encountered literal that was not a String nor a Number: " + literal.getClass().getName() + ", " + literal);
             }
         }
+
         return new RegexIndexLookup(config, scannerFactory, fieldName, patterns, helperRef, execService);
     }
 

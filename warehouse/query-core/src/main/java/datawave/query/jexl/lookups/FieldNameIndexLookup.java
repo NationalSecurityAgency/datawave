@@ -79,6 +79,7 @@ public class FieldNameIndexLookup extends AsyncIndexLookup {
             try {
                 if (!fields.isEmpty()) {
                     for (String term : terms) {
+
                         Set<Range> ranges = Collections.singleton(ShardIndexQueryTableStaticMethods.getLiteralRange(term));
                         if (config.getLimitAnyFieldLookups()) {
                             log.trace("Creating configureTermMatchOnly");
@@ -94,10 +95,13 @@ public class FieldNameIndexLookup extends AsyncIndexLookup {
                         for (String field : fields) {
                             bs.getOptions().fetchColumnFamily(new Text(field));
                         }
+
                         sessions.add(bs);
+
                         iter = Iterators.concat(iter, bs);
                     }
                 }
+
                 timedScanFuture = execService.submit(createTimedCallable(iter));
             } catch (TableNotFoundException e) {
                 log.error(e);
