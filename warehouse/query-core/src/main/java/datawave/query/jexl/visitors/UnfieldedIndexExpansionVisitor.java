@@ -43,12 +43,11 @@ public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
 
     protected Set<String> expansionFields;
     protected Set<Type<?>> allTypes;
-    protected ExpandedFieldCache previouslyExpandedFieldCache;
 
     // The constructor should not be made public so that we can ensure that the executor is setup and shutdown correctly
     protected UnfieldedIndexExpansionVisitor(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper,
-                    ExpandedFieldCache previouslyExpandedFieldCache) throws TableNotFoundException, IllegalAccessException, InstantiationException {
-        super(config, scannerFactory, helper, null, "FieldNameIndexExpansion", previouslyExpandedFieldCache);
+                    ExpandedFieldCache prevExpandedFieldCache) throws TableNotFoundException, IllegalAccessException, InstantiationException {
+        super(config, scannerFactory, helper, null, "FieldNameIndexExpansion", prevExpandedFieldCache);
 
         this.expansionFields = helper.getExpansionFields(config.getDatatypeFilter());
         if (this.expansionFields == null) {
@@ -56,7 +55,6 @@ public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
         }
 
         this.allTypes = helper.getAllDatatypes();
-        this.previouslyExpandedFieldCache = new ExpandedFieldCache();
     }
 
     /**

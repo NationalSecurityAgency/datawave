@@ -37,8 +37,8 @@ public class BoundedRangeIndexExpansionVisitor extends BaseIndexExpansionVisitor
 
     // The constructor should not be made public so that we can ensure that the executor is setup and shutdown correctly
     protected BoundedRangeIndexExpansionVisitor(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper,
-                    ExpandedFieldCache previouslyExpandedFieldCache) throws TableNotFoundException {
-        super(config, scannerFactory, helper, "BoundedRangeIndexExpansion", previouslyExpandedFieldCache);
+                    ExpandedFieldCache prevExpandedFieldCache) throws TableNotFoundException {
+        super(config, scannerFactory, helper, "BoundedRangeIndexExpansion", prevExpandedFieldCache);
 
         rangeFinder = JexlASTHelper.findRange().indexedOnly(this.config.getDatatypeFilter(), this.helper).notDelayed();
     }

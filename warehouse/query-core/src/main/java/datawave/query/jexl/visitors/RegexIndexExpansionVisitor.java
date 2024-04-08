@@ -80,8 +80,8 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
 
     // The constructor should not be made public so that we can ensure that the executor is setup and shutdown correctly
     protected RegexIndexExpansionVisitor(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper,
-                    Map<String,IndexLookup> lookupMap, String threadName, ExpandedFieldCache previouslyExpandedFieldCache) throws TableNotFoundException {
-        super(config, scannerFactory, helper, lookupMap, threadName, previouslyExpandedFieldCache);
+                    Map<String,IndexLookup> lookupMap, String threadName, ExpandedFieldCache prevExpandedFieldCache) throws TableNotFoundException {
+        super(config, scannerFactory, helper, lookupMap, threadName, prevExpandedFieldCache);
 
         this.expandUnfieldedNegations = config.isExpandUnfieldedNegations();
 
