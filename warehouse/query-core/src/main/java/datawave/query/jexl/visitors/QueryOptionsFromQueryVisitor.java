@@ -52,7 +52,7 @@ import datawave.query.jexl.functions.QueryFunctions;
  * {@code unique_by_minute('field1','field2')}</li>
  * <li>{@code f:unique_by_second()}: Expects a comma-delimited list of fields to be unique with a granularity level of by SECOND, e.g.
  * {@code unique_by_second('field1','field2')}</li>
- * <li>{@ccode f:most_recent_unique...} Adding most_recent_ before any unique function will set the most.recent.unique flag to true, e.g.
+ * <li>{@code f:most_recent_unique...} Adding most_recent_ before any unique function will set the most.recent.unique flag to true, e.g.
  * {@code most_recent_unique_by_day('field1','field2')}</li>
  * <li>{@code f:rename}: Expects a comma-delimited list field/field mappings e.g. {@code f:rename('field1=field2','field3=field4')}</li>
  * </ul>
