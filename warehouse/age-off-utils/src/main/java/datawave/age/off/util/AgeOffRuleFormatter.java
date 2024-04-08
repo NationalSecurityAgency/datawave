@@ -33,7 +33,8 @@ public class AgeOffRuleFormatter {
     /**
      * Outputs the configured rule to the writer
      *
-     * @param writer output writer
+     * @param writer
+     *            output writer
      * @throws IOException
      *             i/o exception with writer
      */

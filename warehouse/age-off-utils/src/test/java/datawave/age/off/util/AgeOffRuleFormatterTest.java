@@ -27,6 +27,7 @@ public class AgeOffRuleFormatterTest {
                 "          dryFood coffeeGround=90d\n" +
                 "          dryFood coffeeWholeBean=183d\n" +
                 "          dryFood coffeeInstant=730d\n" +
+                "          dryFood twinkies=" + Integer.MAX_VALUE + "d\n" +
                 "     </matchPattern>\n" +
                 "</rule>\n";
         // @formatter:on

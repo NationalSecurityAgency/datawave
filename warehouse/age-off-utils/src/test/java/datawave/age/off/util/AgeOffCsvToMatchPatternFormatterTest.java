@@ -33,7 +33,8 @@ public class AgeOffCsvToMatchPatternFormatterTest {
             "bakingSoda,\t720d\n" +
             "      coffeeGround       ,        90d\n          " +
             "coffeeWholeBean        ,183d\n" +
-            "         coffeeInstant,730d\n";
+            "         coffeeInstant,730d\n" +
+            "twinkies," + Integer.MAX_VALUE + "d\n";
     // @formatter:on
 
     private static final String INPUT_TEXT_WITH_LABEL = HEADER_WITH_LABEL + "\n" + adjustEachLine(INPUT_TEXT, item -> "dryFood, " + item);
@@ -74,7 +75,8 @@ public class AgeOffCsvToMatchPatternFormatterTest {
                 "dryFood bakingSoda=720d\n"+
                 "dryFood coffeeGround=90d\n"+
                 "dryFood coffeeWholeBean=183d\n"+
-                "dryFood coffeeInstant=730d\n";
+                "dryFood coffeeInstant=730d\n" +
+                "dryFood twinkies=2147483647d\n";
         // @formatter:on
 
         Builder builder = new Builder();
@@ -91,7 +93,8 @@ public class AgeOffCsvToMatchPatternFormatterTest {
                 "\"bakingSoda\" : 720d\n" +
                 "\"coffeeGround\" : 90d\n" +
                 "\"coffeeWholeBean\" : 183d\n" +
-                "\"coffeeInstant\" : 730d\n";
+                "\"coffeeInstant\" : 730d\n" +
+                "\"twinkies\" : 2147483647d\n";
         // @formatter:on
 
         Builder builder = new Builder().quoteLiterals('"').padEquivalencesWithSpace().useColonForEquivalence();
@@ -149,7 +152,8 @@ public class AgeOffCsvToMatchPatternFormatterTest {
                 "dryFood BAKINGSODA=720d\n"+
                 "dryFood COFFEEGROUND=90d\n"+
                 "dryFood COFFEEWHOLEBEAN=183d\n"+
-                "dryFood COFFEEINSTANT=730d\n";
+                "dryFood COFFEEINSTANT=730d\n" +
+                "dryFood TWINKIES=" + Integer.MAX_VALUE + "d\n";
         // @formatter:on
 
         Builder builder = new Builder();
@@ -166,7 +170,8 @@ public class AgeOffCsvToMatchPatternFormatterTest {
                 "dryFood bakingsoda=720d\n"+
                 "dryFood coffeeground=90d\n"+
                 "dryFood coffeewholebean=183d\n"+
-                "dryFood coffeeinstant=730d\n";
+                "dryFood coffeeinstant=730d\n" +
+                "dryFood twinkies=2147483647d\n";
         // @formatter:on
 
         Builder builder = new Builder();
@@ -183,7 +188,8 @@ public class AgeOffCsvToMatchPatternFormatterTest {
                 "dryFood bakingSoda=720d\n"+
                 "dryFood coffeeGround=90d\n"+
                 "dryFood coffeeWholeBean=183d\n"+
-                "dryFood coffeeInstant=730d\n";
+                "dryFood coffeeInstant=730d\n" +
+                "dryFood twinkies=2147483647d\n";
         // @formatter:on
 
         Builder builder = new Builder();
@@ -201,7 +207,8 @@ public class AgeOffCsvToMatchPatternFormatterTest {
                 "bakingSoda=720d\n"+
                 "coffeeGround=90d\n"+
                 "coffeeWholeBean=183d\n"+
-                "coffeeInstant=730d\n";
+                "coffeeInstant=730d\n" +
+                "twinkies=2147483647d\n";
         // @formatter:on
 
         Builder builder = new Builder();
@@ -224,7 +231,8 @@ public class AgeOffCsvToMatchPatternFormatterTest {
                 "bakingSoda=720d\n"+
                 "coffeeGround=90d\n"+
                 "coffeeWholeBean=183d\n"+
-                "coffeeInstant=730d\n";
+                "coffeeInstant=730d\n" +
+                "twinkies=2147483647d\n";
         // @formatter:on
 
         Builder builder = new Builder();
@@ -246,7 +254,8 @@ public class AgeOffCsvToMatchPatternFormatterTest {
                 "bakingSoda=720d\n"+
                 "coffeeGround=90d\n"+
                 "coffeeWholeBean=183d\n"+
-                "coffeeInstant=730d\n";
+                "coffeeInstant=730d\n" +
+                "twinkies=2147483647d\n";
         // @formatter:on
 
         // deliberately not building to use overrides
