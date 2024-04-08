@@ -91,14 +91,14 @@ public class AgeOffCsvToMatchPatternFormatter {
 
         appendEquivalenceSymbol(sb);
 
-        appendValue(sb, tokens);
+        appendValue(tokens, sb);
 
         sb.append(NEW_LINE);
 
         return sb.toString();
     }
 
-    private void appendValue(StringBuilder sb, String[] tokens) {
+    private void appendValue(String[] tokens, StringBuilder sb) {
         String value = "";
 
         // use override value if it exists for this line (it might be empty)
