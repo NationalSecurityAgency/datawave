@@ -8,7 +8,6 @@ import static org.junit.Assert.assertTrue;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.StringReader;
 import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URISyntaxException;
@@ -17,7 +16,6 @@ import java.util.List;
 
 import javax.xml.bind.JAXBElement;
 import javax.xml.namespace.QName;
-import javax.xml.stream.XMLStreamException;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -286,7 +284,7 @@ public class AgeOffFileGeneratorTest {
     private AgeOffRuleConfiguration.Builder defineColVisFilterRule() {
         AgeOffCsvToMatchPatternFormatterConfiguration.Builder patternBuilder = new AgeOffCsvToMatchPatternFormatterConfiguration.Builder();
         patternBuilder.useStaticLabel("dryFood");
-        patternBuilder.setReader(new StringReader(AgeOffCsvToMatchPatternFormatterTest.INPUT_TEXT_WITHOUT_LABEL));
+        patternBuilder.setInput(AgeOffCsvToMatchPatternFormatterTest.INPUT_TEXT_WITHOUT_LABEL.lines().iterator());
 
         AgeOffRuleConfiguration.Builder builder = new AgeOffRuleConfiguration.Builder();
         builder.withPatternConfigurationBuilder(patternBuilder);

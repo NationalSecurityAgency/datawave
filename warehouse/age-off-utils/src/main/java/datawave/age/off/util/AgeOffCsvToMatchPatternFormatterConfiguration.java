@@ -1,10 +1,6 @@
 package datawave.age.off.util;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.Reader;
-import java.nio.file.Files;
+import java.util.Iterator;
 import java.util.Map;
 
 public class AgeOffCsvToMatchPatternFormatterConfiguration {
@@ -16,9 +12,9 @@ public class AgeOffCsvToMatchPatternFormatterConfiguration {
     private boolean shouldLowerCaseLiterals;
     private boolean shouldUpperCaseLiterals;
     private Map<String,String> valueMapping;
-    private BufferedReader reader;
     private boolean useOverrides;
     private boolean disableLabel;
+    private Iterator<String> input;
 
     private AgeOffCsvToMatchPatternFormatterConfiguration() {}
 
@@ -58,31 +54,17 @@ public class AgeOffCsvToMatchPatternFormatterConfiguration {
         return valueMapping;
     }
 
-    public BufferedReader getReader() {
-        return reader;
-    }
-
     public boolean shouldDisableLabel() {
         return disableLabel;
+    }
+
+    public Iterator<String> getInputIterator() {
+        return input;
     }
 
     public static class Builder {
 
         final AgeOffCsvToMatchPatternFormatterConfiguration result = new AgeOffCsvToMatchPatternFormatterConfiguration();
-
-        public Builder setReader(Reader reader) {
-            if (reader instanceof BufferedReader) {
-                this.result.reader = (BufferedReader) reader;
-            } else {
-                this.result.reader = new BufferedReader(reader);
-            }
-            return this;
-        }
-
-        public Builder setInputFile(File inputFile) throws IOException {
-            this.result.reader = Files.newBufferedReader(inputFile.toPath());
-            return this;
-        }
 
         public Builder useStaticLabel(String label) {
             this.result.staticLabel = label;
@@ -131,6 +113,11 @@ public class AgeOffCsvToMatchPatternFormatterConfiguration {
 
         public Builder disableLabel() {
             this.result.disableLabel = true;
+            return this;
+        }
+
+        public Builder setInput(Iterator<String> input) {
+            this.result.input = input;
             return this;
         }
     }

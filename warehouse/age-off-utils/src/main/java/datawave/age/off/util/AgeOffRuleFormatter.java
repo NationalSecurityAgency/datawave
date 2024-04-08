@@ -31,8 +31,9 @@ public class AgeOffRuleFormatter {
     }
 
     /**
-     * Reformats each line from reader and outputs them to writer. Closes both reader and writer when finished.
+     * Outputs the configured rule to the writer
      *
+     * @param writer output writer
      * @throws IOException
      *             i/o exception with writer
      */
@@ -98,8 +99,10 @@ public class AgeOffRuleFormatter {
         this.writer.write(indent + "<matchPattern>\n");
 
         AgeOffCsvToMatchPatternFormatter patternFormatter = new AgeOffCsvToMatchPatternFormatter(configuration.getPatternConfiguration());
+
         // add two indentations: one for items under the rule element and another for items under the matchPattern element
-        patternFormatter.write(new IndentingDelegatingWriter(this.indent + this.indent, this.writer));
+        String extraIndentation = this.indent + this.indent;
+        patternFormatter.write(new IndentingDelegatingWriter(extraIndentation, this.writer));
 
         this.writer.write(indent + "</matchPattern>\n");
     }

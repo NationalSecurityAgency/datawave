@@ -4,11 +4,11 @@ import static org.junit.Assert.assertEquals;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.StringReader;
 import java.io.StringWriter;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -369,11 +369,13 @@ public class AgeOffCsvToMatchPatternFormatterTest {
     }
 
     static Builder setShelfLifeInputFile(Builder builder) throws IOException, URISyntaxException {
-        return builder.setInputFile(new File(AgeOffCsvToMatchPatternFormatterTest.class.getResource(SHELF_LIFE_FILE_IN).toURI()));
+        File file = new File(AgeOffCsvToMatchPatternFormatterTest.class.getResource(SHELF_LIFE_FILE_IN).toURI());
+        Iterator<String> lineIterator = Files.lines(file.toPath()).iterator();
+        return builder.setInput(lineIterator);
     }
 
     private String reformat(Builder builder, String inputText) throws IOException {
-        builder.setReader(new StringReader(inputText));
+        builder.setInput(inputText.lines().iterator());
         return reformat(builder);
     }
 

@@ -29,20 +29,19 @@ public class AgeOffCsvToMatchPatternFormatter {
     }
 
     /**
-     * Reformats each line from reader and outputs them to writer. Closes both reader and writer when finished.
+     * Reformats each input line and outputs to writer
      *
+     * @param writer
+     *            output writer
      * @throws IOException
-     *             i/o exception with reader or writer
+     *             i/o exception with writer
      */
     @VisibleForTesting
     void write(Writer writer) throws IOException {
-        String inputLine = configuration.getReader().readLine();
-
-        while (null != inputLine) {
+        while (configuration.getInputIterator().hasNext()) {
+            String inputLine = configuration.getInputIterator().next();
             reformat(writer, inputLine);
-            inputLine = configuration.getReader().readLine();
         }
-        configuration.getReader().close();
     }
 
     private void reformat(Writer writer, String inputLine) throws IOException {

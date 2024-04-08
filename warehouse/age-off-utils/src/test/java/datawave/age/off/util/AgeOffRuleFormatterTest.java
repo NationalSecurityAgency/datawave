@@ -4,12 +4,10 @@ import static datawave.age.off.util.AnyXmlElement.toJAXBElement;
 import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
-import java.io.StringReader;
 import java.io.StringWriter;
 
 import javax.xml.bind.JAXBElement;
 import javax.xml.namespace.QName;
-import javax.xml.stream.XMLStreamException;
 
 import org.junit.Test;
 
@@ -35,7 +33,7 @@ public class AgeOffRuleFormatterTest {
 
         AgeOffCsvToMatchPatternFormatterConfiguration.Builder patternBuilder = new AgeOffCsvToMatchPatternFormatterConfiguration.Builder();
         patternBuilder.useStaticLabel("dryFood");
-        patternBuilder.setReader(new StringReader(AgeOffCsvToMatchPatternFormatterTest.INPUT_TEXT_WITHOUT_LABEL));
+        patternBuilder.setInput(AgeOffCsvToMatchPatternFormatterTest.INPUT_TEXT_WITHOUT_LABEL.lines().iterator());
 
         AgeOffRuleConfiguration.Builder builder = new AgeOffRuleConfiguration.Builder();
         builder.withPatternConfigurationBuilder(patternBuilder);
