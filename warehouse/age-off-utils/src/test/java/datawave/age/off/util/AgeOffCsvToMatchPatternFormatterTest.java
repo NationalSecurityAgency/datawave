@@ -395,9 +395,7 @@ public class AgeOffCsvToMatchPatternFormatterTest {
         return out.toString();
     }
 
-    private static String adjustEachLine(String input, Function<String,String> function) {
-        return Arrays.stream(input.split("\\n")).map(item -> {
-            return function.apply(item);
-        }).collect(Collectors.joining("\n")) + "\n";
+    private static String adjustEachLine(String input, Function<String,String> lineFormatter) {
+        return Arrays.stream(input.split("\\n")).map(lineFormatter).collect(Collectors.joining("\n")) + "\n";
     }
 }
