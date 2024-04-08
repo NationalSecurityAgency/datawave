@@ -5,6 +5,10 @@ import java.util.Map;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
+/**
+ * A cache for actual values retrieved from the index when an unfielded lookup occurs. Keeps track of whether those field / term pairs have previously been
+ * expanded.
+ */
 public class ExpandedFieldCache {
     private Multimap<String,ValueSet> previouslyExpandedFieldCache = HashMultimap.create();
 

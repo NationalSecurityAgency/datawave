@@ -107,7 +107,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     // should this query reduce the set of fields prior to serialization
     private boolean reduceQueryFields = false;
     // should previously expanded fields be cached to prevent the re-normalizing of actual values
-    private boolean cachePreviouslyExpandedFields = false;
+    private boolean cachePreviouslyExpandedFields = true;
     private boolean reduceQueryFieldsPerShard = false;
     private boolean reduceTypeMetadata = false;
     private boolean reduceTypeMetadataPerShard = false;
