@@ -7,6 +7,7 @@ import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.SortedSet;
@@ -55,7 +56,8 @@ public class MergeSortIteratorTest {
         col.add(set2);
         col.add(set3);
         List<Integer> results = new ArrayList<>();
-        MergeSortIterator<Integer> it = new MergeSortIterator<>(col);
+
+        Iterator<Integer> it = new MultiSetBackedSortedSet(col).iterator();
         try {
             it.remove();
             fail("Expected remove to fail");
@@ -124,7 +126,7 @@ public class MergeSortIteratorTest {
         col.add(set2);
         col.add(set3);
         List<Integer> results = new ArrayList<>();
-        MergeSortIterator<Integer> it = new MergeSortIterator<>(col);
+        Iterator<Integer> it = new MultiSetBackedSortedSet(col).iterator();
         while (true) {
             try {
                 it.remove();
@@ -207,7 +209,7 @@ public class MergeSortIteratorTest {
         col.add(set2);
         col.add(set3);
         List<Integer> results = new ArrayList<>();
-        MergeSortIterator<Integer> it = new MergeSortIterator<>(col);
+        Iterator<Integer> it = new MultiSetBackedSortedSet(col).iterator();
         try {
             it.remove();
             fail("Expected remove to fail");
