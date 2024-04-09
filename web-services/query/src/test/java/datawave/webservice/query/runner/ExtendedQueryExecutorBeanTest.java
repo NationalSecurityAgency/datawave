@@ -1,5 +1,6 @@
 package datawave.webservice.query.runner;
 
+import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.expectLastCall;
@@ -75,6 +76,7 @@ import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.authorization.UserOperations;
+import datawave.security.authorization.remote.RemoteUserOperationsImpl;
 import datawave.security.user.UserOperationsBean;
 import datawave.security.util.WSAuthorizationsUtil;
 import datawave.webservice.common.audit.AuditBean;
@@ -371,6 +373,8 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.query.getPageTimeout()).andReturn(-1).anyTimes();
         expect(this.query.getExpirationDate()).andReturn(null).anyTimes();
         expect(this.query.getParameters()).andReturn((Set) Collections.emptySet()).anyTimes();
+        expect(this.query.findParameter(RemoteUserOperationsImpl.INCLUDE_REMOTE_SERVICES))
+                        .andReturn(new QueryImpl.Parameter(RemoteUserOperationsImpl.INCLUDE_REMOTE_SERVICES, "true")).anyTimes();
         expect(context.getCallerPrincipal()).andReturn(principal);
         expect(this.queryLogicFactory.getQueryLogic("ql1", principal)).andReturn((QueryLogic) this.queryLogic1);
         expect(this.queryLogic1.getConnectionPriority()).andReturn(Priority.NORMAL);
@@ -769,6 +773,8 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.query.getExpirationDate()).andReturn(null).anyTimes();
         expect(this.query.getParameters()).andReturn((Set) Collections.emptySet()).anyTimes();
         expect(this.query.getUncaughtExceptionHandler()).andReturn(new QueryUncaughtExceptionHandler()).anyTimes();
+        expect(this.query.findParameter(RemoteUserOperationsImpl.INCLUDE_REMOTE_SERVICES))
+                        .andReturn(new QueryImpl.Parameter(RemoteUserOperationsImpl.INCLUDE_REMOTE_SERVICES, "true")).anyTimes();
         this.metrics.updateMetric(isA(QueryMetric.class));
         PowerMock.expectLastCall().times(2);
         expect(this.query.getUserDN()).andReturn(userDN).anyTimes();
@@ -806,6 +812,8 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.queryLogic1.getEnrichedTransformer(this.query)).andReturn(this.transformer);
         expect(this.transformer.createResponse(this.resultsPage)).andReturn(this.baseResponse);
         expect(this.resultsPage.getStatus()).andReturn(ResultsPage.Status.COMPLETE).times(2);
+        expect(this.responseObjectFactory.getQueryImpl()).andReturn(new QueryImpl());
+        expect(queryLogic1.getResultLimit(anyObject(QueryImpl.class))).andReturn(-1L);
         this.baseResponse.setHasResults(true);
         this.baseResponse.setPageNumber(pageNumber);
         expect(this.queryLogic1.getLogicName()).andReturn(queryLogicName);
@@ -946,6 +954,8 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.query.getExpirationDate()).andReturn(null).anyTimes();
         expect(this.query.getParameters()).andReturn((Set) Collections.emptySet()).anyTimes();
         expect(this.query.getUncaughtExceptionHandler()).andReturn(new QueryUncaughtExceptionHandler()).anyTimes();
+        expect(this.query.findParameter(RemoteUserOperationsImpl.INCLUDE_REMOTE_SERVICES))
+                        .andReturn(new QueryImpl.Parameter(RemoteUserOperationsImpl.INCLUDE_REMOTE_SERVICES, "true")).anyTimes();
         this.metrics.updateMetric(isA(QueryMetric.class));
         PowerMock.expectLastCall().times(2);
         expect(this.query.getUserDN()).andReturn(userDN).anyTimes();
@@ -960,6 +970,8 @@ public class ExtendedQueryExecutorBeanTest {
         cache.put(eq(queryId.toString()), isA(RunningQuery.class));
         expect(this.genericConfiguration.getQueryString()).andReturn(queryName).once();
         expect(this.qlCache.poll(queryId.toString())).andReturn(null);
+        expect(this.responseObjectFactory.getQueryImpl()).andReturn(new QueryImpl());
+        expect(queryLogic1.getResultLimit(anyObject(QueryImpl.class))).andReturn(-1L);
 
         // Set expectations of the next logic
         expect(this.principal.getName()).andReturn(userName);
@@ -1454,6 +1466,8 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.query.getExpirationDate()).andReturn(null).anyTimes();
         expect(this.query.getParameters()).andReturn((Set) Collections.emptySet()).anyTimes();
         expect(this.query.getUncaughtExceptionHandler()).andReturn(new QueryUncaughtExceptionHandler()).anyTimes();
+        expect(this.query.findParameter(RemoteUserOperationsImpl.INCLUDE_REMOTE_SERVICES))
+                        .andReturn(new QueryImpl.Parameter(RemoteUserOperationsImpl.INCLUDE_REMOTE_SERVICES, "true")).anyTimes();
         this.metrics.updateMetric(isA(QueryMetric.class));
         PowerMock.expectLastCall().times(2);
         expect(this.query.getUserDN()).andReturn(userDN).anyTimes();
@@ -1508,6 +1522,9 @@ public class ExtendedQueryExecutorBeanTest {
         cache.unlock(queryId.toString());
         expect(this.transaction.getStatus()).andReturn(Status.STATUS_ACTIVE).anyTimes();
         this.transaction.commit();
+
+        expect(this.responseObjectFactory.getQueryImpl()).andReturn(new QueryImpl());
+        expect(queryLogic1.getResultLimit(anyObject(QueryImpl.class))).andReturn(-1L);
 
         // Run the test
         PowerMock.replayAll();
@@ -1624,6 +1641,9 @@ public class ExtendedQueryExecutorBeanTest {
         PowerMock.expectLastCall().andThrow(new IOException("INTENTIONALLY THROWN 3RD-LEVEL TEST EXCEPTION"));
         expect(this.query.getId()).andReturn(queryId).anyTimes();
         expect(this.qlCache.poll(queryId.toString())).andReturn(null);
+
+        expect(this.responseObjectFactory.getQueryImpl()).andReturn(new QueryImpl());
+        expect(queryLogic1.getResultLimit(anyObject(QueryImpl.class))).andReturn(-1L);
 
         // Run the test
         PowerMock.replayAll();
@@ -1751,6 +1771,8 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.query.getExpirationDate()).andReturn(null).anyTimes();
         expect(this.query.getParameters()).andReturn((Set) Collections.emptySet()).anyTimes();
         expect(this.query.getUncaughtExceptionHandler()).andReturn(new QueryUncaughtExceptionHandler()).anyTimes();
+        expect(this.query.findParameter(RemoteUserOperationsImpl.INCLUDE_REMOTE_SERVICES))
+                        .andReturn(new QueryImpl.Parameter(RemoteUserOperationsImpl.INCLUDE_REMOTE_SERVICES, "true")).anyTimes();
         this.metrics.updateMetric(isA(QueryMetric.class));
         PowerMock.expectLastCall().times(2);
         expect(this.query.getUserDN()).andReturn(userDN).anyTimes();
@@ -1822,6 +1844,9 @@ public class ExtendedQueryExecutorBeanTest {
         this.closedCache.remove(queryId.toString());
         // expect(this.runningQuery.getTraceInfo()).andReturn(null);
         expect(this.responseObjectFactory.getEventQueryResponse()).andReturn(new DefaultEventQueryResponse());
+
+        expect(this.responseObjectFactory.getQueryImpl()).andReturn(new QueryImpl());
+        expect(queryLogic1.getResultLimit(anyObject(QueryImpl.class))).andReturn(-1L);
 
         // Run the test
         PowerMock.replayAll();
@@ -2809,6 +2834,8 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.query.getPageTimeout()).andReturn(-1).anyTimes();
         expect(this.query.getExpirationDate()).andReturn(null).anyTimes();
         expect(this.query.getParameters()).andReturn((Set) Collections.emptySet()).anyTimes();
+        expect(this.query.findParameter(RemoteUserOperationsImpl.INCLUDE_REMOTE_SERVICES))
+                        .andReturn(new QueryImpl.Parameter(RemoteUserOperationsImpl.INCLUDE_REMOTE_SERVICES, "true")).anyTimes();
         expect(this.query.getDnList()).andReturn(dnList).anyTimes();
         expect(this.queryLogic1.getResultLimit(this.query)).andReturn(-1L);
         expect(this.queryLogic1.getMaxResults()).andReturn(-1L);
@@ -3326,6 +3353,8 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.query.getEndDate()).andReturn(null);
         expect(this.query.getQueryName()).andReturn(queryName);
         expect(this.query.getParameters()).andReturn((Set) Collections.emptySet());
+        expect(this.query.findParameter(RemoteUserOperationsImpl.INCLUDE_REMOTE_SERVICES))
+                        .andReturn(new QueryImpl.Parameter(RemoteUserOperationsImpl.INCLUDE_REMOTE_SERVICES, "true")).anyTimes();
         expect(this.query.getColumnVisibility()).andReturn(authorization);
         expect(this.queryLogic1.getSelectors(this.query)).andReturn(null);
         expect(this.auditor.audit(auditMap)).andReturn(null);
@@ -3919,6 +3948,9 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.query.getUncaughtExceptionHandler()).andReturn(new QueryUncaughtExceptionHandler()).anyTimes();
         expect(this.query.getUserDN()).andReturn(userDN).anyTimes();
 
+        expect(this.responseObjectFactory.getQueryImpl()).andReturn(new QueryImpl());
+        expect(queryLogic1.getResultLimit(anyObject(QueryImpl.class))).andReturn(-1L);
+
         // Set expectations of the plan
         Authorizations queryAuths = new Authorizations(queryAuthorizations);
         expect(this.queryLogic1.getPlan(this.client, this.query, Collections.singleton(queryAuths), true, false)).andReturn("a query plan");
@@ -4064,6 +4096,9 @@ public class ExtendedQueryExecutorBeanTest {
         // expect(this.genericConfiguration.getQueryString()).andReturn(queryName).once();
         // expect(this.qlCache.poll(queryId.toString())).andReturn(null);
 
+        expect(this.responseObjectFactory.getQueryImpl()).andReturn(new QueryImpl());
+        expect(queryLogic1.getResultLimit(anyObject(QueryImpl.class))).andReturn(-1L);
+
         // Set expectations of the plan
         Authorizations queryAuths = new Authorizations(queryAuthorizations);
         expect(this.queryLogic1.getPlan(this.client, this.query, Collections.singleton(queryAuths), true, true)).andReturn("a query plan");
@@ -4154,6 +4189,8 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.principal.getAuthorizations()).andReturn((Collection) Arrays.asList(Arrays.asList(queryAuthorizations)));
         expect(this.queryLogic1.getMaxPageSize()).andReturn(10).anyTimes();
         expect(queryLogic1.getSelectors(null)).andReturn(null);
+        expect(this.responseObjectFactory.getQueryImpl()).andReturn(new QueryImpl());
+        expect(queryLogic1.getResultLimit(anyObject(QueryImpl.class))).andReturn(-1L);
         expect(auditor.audit(queryParameters)).andThrow(new JMSRuntimeException("EXPECTED TESTING EXCEPTION"));
         queryLogic1.close();
 

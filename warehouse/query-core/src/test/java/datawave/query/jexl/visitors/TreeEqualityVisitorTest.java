@@ -46,24 +46,6 @@ public class TreeEqualityVisitorTest {
     }
 
     /**
-     * Verify that two nodes with differing number of children are considered non-equal.
-     */
-    @Test
-    public void testNonEqualChildrenSize() throws ParseException {
-        assertNotEquivalent("[1, 2, 3, 4]", "[1, 2]",
-                        "Did not find a matching child for [ 1, 2, 3, 4 ] in [[ 1, 2 ]]: Num children differ: [1, 2, 3, 4] vs [1, 2]");
-    }
-
-    /**
-     * Verify that two nodes with different children are considered non-equal.
-     */
-    @Test
-    public void testNonEqualChildren() throws ParseException {
-        assertNotEquivalent("[1, 2]", "[1, 3]",
-                        "Did not find a matching child for [ 1, 2 ] in [[ 1, 3 ]]: Did not find a matching child for 2 in [3]: Node images differ: 2 vs 3");
-    }
-
-    /**
      * Verify that two identical trees are considered equal.
      */
     @Test

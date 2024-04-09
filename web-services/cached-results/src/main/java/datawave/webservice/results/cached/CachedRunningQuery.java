@@ -41,6 +41,7 @@ import datawave.webservice.query.cachedresults.CacheableLogic;
 import datawave.webservice.query.cachedresults.CacheableQueryRow;
 import datawave.webservice.query.cachedresults.CacheableQueryRowReader;
 import datawave.webservice.query.data.ObjectSizeOf;
+import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.logic.QueryLogic;
 import datawave.webservice.query.logic.QueryLogicFactory;
 import datawave.webservice.query.logic.QueryLogicTransformer;
@@ -301,7 +302,7 @@ public class CachedRunningQuery extends AbstractRunningQuery {
 
     public CachedRunningQuery(Connection connection, Query query, QueryLogic<?> queryLogic, String queryId, String alias, String user, String view,
                     String fields, String conditions, String grouping, String order, int pagesize, Set<String> variableFields, Set<String> fixedFieldsInEvent,
-                    QueryMetricFactory metricFactory) throws SQLException {
+                    QueryMetricFactory metricFactory) throws SQLException, QueryException {
         super(metricFactory);
 
         this.variableFields.clear();
@@ -555,7 +556,7 @@ public class CachedRunningQuery extends AbstractRunningQuery {
     private List<String> getViewColumnNames(Connection connection, String view) throws SQLException {
         CachedResultsParameters.validate(view);
         List<String> columns = new ArrayList<>();
-        try (Statement s = connection.createStatement(); ResultSet rs = s.executeQuery("show columns from " + view)) {
+        try (Statement s = connection.createStatement(); ResultSet rs = s.executeQuery(String.format("show columns from %s", view))) {
             Set<String> fixedColumns = CacheableQueryRow.getFixedColumnSet();
 
             while (rs.next()) {
@@ -569,7 +570,7 @@ public class CachedRunningQuery extends AbstractRunningQuery {
         return columns;
     }
 
-    public void activate(Connection connection, QueryLogic<?> queryLogic) throws SQLException {
+    public void activate(Connection connection, QueryLogic<?> queryLogic) throws SQLException, QueryException {
 
         this.connection = connection;
         this.transformer = queryLogic.getEnrichedTransformer(this.query);
@@ -610,7 +611,7 @@ public class CachedRunningQuery extends AbstractRunningQuery {
         this.crs = RowSetProvider.newFactory().createCachedRowSet();
         this.crs.setCommand(this.sqlQuery);
 
-        String countQuery = "SELECT count(*) FROM (" + this.sqlQuery + ") AS CNT";
+        String countQuery = String.format("SELECT count(*) FROM (%s) AS CNT", this.sqlQuery);
         log.trace("Count query: " + countQuery);
         try (Statement s = connection.createStatement(); ResultSet rs = s.executeQuery(countQuery)) {
             if (rs.next())

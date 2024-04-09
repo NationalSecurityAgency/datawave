@@ -1,6 +1,7 @@
 package datawave.query.jexl.visitors;
 
 import static datawave.core.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_OR;
+import static datawave.query.jexl.JexlASTHelper.jexlFeatures;
 
 import java.util.Set;
 
@@ -43,7 +44,7 @@ public class VariableNameVisitor extends BaseVisitor {
 
         // Parse the query
         try {
-            return parseQuery(parser.parse(null, new JexlFeatures(), query, null));
+            return parseQuery(parser.parse(null, jexlFeatures(), query, null));
         } catch (TokenMgrException e) {
             throw new ParseException(e.getMessage());
         }

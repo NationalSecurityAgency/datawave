@@ -4,10 +4,16 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.util.Collections;
+import java.util.Set;
+
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.log4j.Logger;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
+
+import com.google.common.collect.Sets;
 
 import datawave.core.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.core.query.jexl.visitors.validate.ASTValidator;
@@ -474,14 +480,106 @@ public class IngestTypePruningVisitorTest {
         test(query, expected, typeMetadata);
     }
 
+    @Test
+    public void testExternalPrune() {
+        testExternalPrune("A == '1' || B == '2'", null, Collections.singleton("ingestType5"));
+        testExternalPrune("A == '1' && B == '2'", null, Collections.singleton("ingestType5"));
+
+        // and with our own type metadata
+        TypeMetadata metadata = new TypeMetadata();
+        metadata.put("A", "ingestType1", LcType.class.getTypeName());
+        metadata.put("B", "ingestType1", LcType.class.getTypeName());
+        metadata.put("C", "ingestType1", LcType.class.getTypeName());
+
+        test("A == '1' && (B == '2' || C == '3')", null, metadata, Collections.singleton("ingestType2"));
+        test("A == '1' || (B == '2' && C == '3')", null, metadata, Collections.singleton("ingestType2"));
+    }
+
+    @Test
+    public void testExternalPruneWithSelfPrune() {
+        TypeMetadata metadata = new TypeMetadata();
+        metadata.put("A", "ingestType1", LcType.class.getTypeName());
+        metadata.put("B", "ingestType2", LcType.class.getTypeName());
+        metadata.put("C", "ingestType3", LcType.class.getTypeName());
+        metadata.put("D", "ingestType4", LcType.class.getTypeName());
+
+        String query = "A == '1' || B == '2' || (C == '3' && D == '4')";
+        String expected = "B == '2'";
+
+        Set<String> externalTypes = Sets.newHashSet("ingestType2", "ingestType3", "ingestType4");
+        // A term pruned by external types
+        // C and D terms should self prune
+        test(query, expected, metadata, externalTypes);
+    }
+
+    @Test
+    public void testAndNull() {
+        TypeMetadata metadata = new TypeMetadata();
+        metadata.put("A", "ingestType1", LcType.class.getTypeName());
+        metadata.put("B", "ingestType2", LcType.class.getTypeName());
+        metadata.put("9", "ingestType2", LcType.class.getTypeName());
+
+        String query = "A == '1' && B == null"; // *technically* valid
+        test(query, query, metadata);
+
+        // same form but with an identifier
+        query = "A == '1' && $9 == null";
+        test(query, query, metadata);
+    }
+
+    @Test
+    public void testAndNotNull() {
+        TypeMetadata metadata = new TypeMetadata();
+        metadata.put("A", "ingestType1", LcType.class.getTypeName());
+        metadata.put("B", "ingestType2", LcType.class.getTypeName());
+
+        // in theory this visitor should be smart enough to prune out a negation for an exclusive ingest type
+        String query = "A == '1' && !(B == null)";
+        test(query, query, metadata);
+    }
+
+    @Test
+    public void testSpecificCase() {
+        TypeMetadata metadata = new TypeMetadata();
+        metadata.put("A", "ingestType2", LcType.class.getTypeName());
+        metadata.put("B", "ingestType2", LcType.class.getTypeName());
+        metadata.put("B", "ingestType3", LcType.class.getTypeName());
+        metadata.put("B", "ingestType4", LcType.class.getTypeName());
+        metadata.put("C", "ingestType1", LcType.class.getTypeName());
+        metadata.put("C", "ingestType2", LcType.class.getTypeName());
+        metadata.put("C", "ingestType3", LcType.class.getTypeName());
+        metadata.put("C", "ingestType4", LcType.class.getTypeName());
+        metadata.put("D", "ingestType3", LcType.class.getTypeName());
+        metadata.put("D", "ingestType4", LcType.class.getTypeName());
+        metadata.put("E", "ingestType1", LcType.class.getTypeName());
+        metadata.put("E", "ingestType2", LcType.class.getTypeName());
+        metadata.put("F", "ingestType3", LcType.class.getTypeName());
+        metadata.put("F", "ingestType4", LcType.class.getTypeName());
+        metadata.put("9", "ingestType1", LcType.class.getTypeName());
+        metadata.put("9", "ingestType2", LcType.class.getTypeName());
+        metadata.put("9", "ingestType3", LcType.class.getTypeName());
+        metadata.put("9", "ingestType4", LcType.class.getTypeName());
+
+        String query = "(A == '1' || B == '2') && C == '3' && D == null && $9 == null && !(E == '4') && !(E == '5' || E == '6') && !(F == '7')";
+        test(query, query, metadata);
+    }
+
     private void test(String query, String expected) {
-        test(query, expected, typeMetadata);
+        test(query, expected, typeMetadata, null);
+    }
+
+    private void testExternalPrune(String query, String expected, Set<String> ingestTypes) {
+        test(query, expected, typeMetadata, ingestTypes);
     }
 
     private void test(String query, String expected, TypeMetadata metadata) {
+        test(query, expected, metadata, null);
+    }
+
+    private void test(String query, String expected, TypeMetadata metadata, Set<String> ingestTypes) {
         try {
             ASTJexlScript script = JexlASTHelper.parseAndFlattenJexlQuery(query);
-            ASTJexlScript pruned = (ASTJexlScript) IngestTypePruningVisitor.prune(script, metadata);
+            ASTJexlScript pruned = (ASTJexlScript) IngestTypePruningVisitor.prune(script, metadata, ingestTypes);
 
             log.info("input   : " + query);
             log.info("output  : " + JexlStringBuildingVisitor.buildQuery(pruned));

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 import org.apache.commons.jexl3.parser.ASTAndNode;
 import org.apache.commons.jexl3.parser.ASTAssignment;
@@ -53,9 +54,13 @@ public class QueryPropertyMarkerVisitor extends BaseVisitor {
     public Object visit(ASTAssignment node, Object data) {
         // Do not search for a marker in any assignment nodes that are not within the first AND node.
         if (visitedFirstAndNode) {
-            String identifier = JexlASTHelper.getIdentifier(node);
-            if (identifier != null) {
-                marker = MarkerType.forLabel(identifier);
+            try {
+                String identifier = JexlASTHelper.getIdentifier(node);
+                if (identifier != null) {
+                    marker = MarkerType.forLabel(identifier);
+                }
+            } catch (NoSuchElementException e) {
+                // no identifier, no marker.
             }
         }
         return null;

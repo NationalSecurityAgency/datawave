@@ -8,7 +8,7 @@ services:
     profiles:
       - quickstart
     command: ["datawave-bootstrap.sh", "--web"]
-    image: datawave/quickstart-compose:6.7.0-SNAPSHOT
+    image: datawave/quickstart-compose:6.11.0-SNAPSHOT
     environment:
       - DW_CONTAINER_HOST=quickstart
       - DW_DATAWAVE_WEB_JAVA_OPTS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:8787 -Duser.timezone=GMT -Dfile.encoding=UTF-8 -Djava.net.preferIPv4Stack=true
@@ -235,7 +235,7 @@ services:
 
   metrics:
     entrypoint: ["java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005","-jar","app.jar"]
-    image: datawave/query-metric-service:3.0.8-SNAPSHOT
+    image: datawave/query-metric-service:3.0.9-SNAPSHOT
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,compose,remoteauth

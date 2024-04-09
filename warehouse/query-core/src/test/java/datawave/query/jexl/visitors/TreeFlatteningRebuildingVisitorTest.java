@@ -1,5 +1,6 @@
 package datawave.query.jexl.visitors;
 
+import static datawave.query.jexl.JexlASTHelper.jexlFeatures;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -166,8 +167,8 @@ public class TreeFlatteningRebuildingVisitorTest {
         for (int i = 2; i <= numTerms; i++) {
             sb.append(" OR ").append(i);
         }
-        assertNotNull(TreeFlatteningRebuildingVisitor.flattenAll(new Parser(new StringProvider(";")).parse(null, new JexlFeatures(),
-                        new LuceneToJexlQueryParser().parse(sb.toString()).toString(), null)));
+        assertNotNull(TreeFlatteningRebuildingVisitor.flattenAll(
+                        new Parser(new StringProvider(";")).parse(null, jexlFeatures(), new LuceneToJexlQueryParser().parse(sb.toString()).toString(), null)));
     }
 
     @Test

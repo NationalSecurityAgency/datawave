@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.microservice</groupId>
         <artifactId>datawave-microservice-service-parent</artifactId>
-        <version>4.0.4-SNAPSHOT</version>
+        <version>4.0.5-SNAPSHOT</version>
         <relativePath>../../../microservice-service-parent/pom.xml</relativePath>
     </parent>
     <artifactId>map-service</artifactId>
@@ -24,10 +24,10 @@
         <npm.downloadRoot>https://registry.npmjs.org/npm/-/</npm.downloadRoot>
         <npm.version>8.19.4</npm.version>
         <start-class>datawave.microservice.map.MapService</start-class>
-        <version.microservice.dictionary-api>3.0.0</version.microservice.dictionary-api>
+        <version.microservice.dictionary-api>3.0.1-SNAPSHOT</version.microservice.dictionary-api>
         <version.microservice.map-api>1.0.0-SNAPSHOT</version.microservice.map-api>
         <version.microservice.starter>3.0.1-SNAPSHOT</version.microservice.starter>
-        <version.microservice.starter-metadata>2.0.0</version.microservice.starter-metadata>
+        <version.microservice.starter-metadata>2.0.1-SNAPSHOT</version.microservice.starter-metadata>
     </properties>
     <dependencyManagement>
         <dependencies>

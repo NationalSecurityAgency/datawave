@@ -1,11 +1,12 @@
 package datawave.core.query.jexl.visitors;
 
+import static datawave.core.query.jexl.JexlASTHelper.jexlFeatures;
+
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.util.Collections;
 import java.util.List;
 
-import org.apache.commons.jexl3.JexlFeatures;
 import org.apache.commons.jexl3.parser.ASTAddNode;
 import org.apache.commons.jexl3.parser.ASTAndNode;
 import org.apache.commons.jexl3.parser.ASTAnnotatedStatement;
@@ -193,7 +194,7 @@ public class PrintingVisitor extends ParserVisitor {
 
         // Parse the query
         try {
-            printQuery(parser.parse(null, new JexlFeatures(), query, null));
+            printQuery(parser.parse(null, jexlFeatures(), query, null));
         } catch (TokenMgrException e) {
             throw new ParseException(e.getMessage());
         }
@@ -254,7 +255,7 @@ public class PrintingVisitor extends ParserVisitor {
 
         // Parse the query
         try {
-            return formattedQueryString(parser.parse(null, new JexlFeatures(), query, null), maxChildNodes);
+            return formattedQueryString(parser.parse(null, jexlFeatures(), query, null), maxChildNodes);
         } catch (TokenMgrException e) {
             throw new ParseException(e.getMessage());
         }

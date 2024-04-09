@@ -295,6 +295,7 @@ public abstract class ExecutableExpansionVisitorTest {
         logic.setMaxDepthThreshold(30);
         logic.setInitialMaxTermThreshold(10000);
         logic.setIntermediateMaxTermThreshold(10000);
+        logic.setIndexedMaxTermThreshold(10000);
         logic.setFinalMaxTermThreshold(10000);
 
         //  @formatter:off

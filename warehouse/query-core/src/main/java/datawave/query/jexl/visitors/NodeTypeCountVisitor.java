@@ -1,5 +1,11 @@
 package datawave.query.jexl.visitors;
 
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+
 import org.apache.commons.jexl3.parser.ASTAddNode;
 import org.apache.commons.jexl3.parser.ASTAndNode;
 import org.apache.commons.jexl3.parser.ASTAnnotatedStatement;
@@ -98,8 +104,28 @@ import datawave.query.jexl.NodeTypeCount;
  * Counts the total number of nodes for each node type present in a query tree.
  */
 public class NodeTypeCountVisitor extends ParserVisitor {
+
+    // the types we care about
+    private final Set<Object> types;
+
+    public NodeTypeCountVisitor() {
+        this.types = Collections.emptySet();
+    }
+
+    public NodeTypeCountVisitor(Set<Object> types) {
+        this.types = types;
+    }
+
     public static <T extends JexlNode> NodeTypeCount countNodes(T script) {
         return (NodeTypeCount) script.jjtAccept(new NodeTypeCountVisitor(), null);
+    }
+
+    public static <T extends JexlNode> NodeTypeCount countNodes(T script, Object... types) {
+        return (NodeTypeCount) script.jjtAccept(new NodeTypeCountVisitor(new HashSet<>(Arrays.asList(types))), null);
+    }
+
+    public static <T extends JexlNode> NodeTypeCount countNodes(T script, Collection<Object> types) {
+        return (NodeTypeCount) script.jjtAccept(new NodeTypeCountVisitor(new HashSet<>(types)), null);
     }
 
     @Override

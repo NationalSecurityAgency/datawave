@@ -17,6 +17,7 @@ import org.apache.hadoop.io.Text;
 import datawave.core.query.cache.ResultsPage;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.exception.EmptyObjectException;
+import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.logic.QueryLogic;
 import datawave.webservice.query.logic.QueryLogicTransformer;
 import datawave.webservice.result.BaseQueryResponse;

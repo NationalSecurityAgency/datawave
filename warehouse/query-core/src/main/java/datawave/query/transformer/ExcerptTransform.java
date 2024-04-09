@@ -21,6 +21,7 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.javatuples.Triplet;
 
@@ -48,13 +49,17 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
     public static final String PHRASE_INDEXES_ATTRIBUTE = "PHRASE_INDEXES_ATTRIBUTE";
     public static final String HIT_EXCERPT = "HIT_EXCERPT";
 
+    private static final String BEFORE = "BEFORE";
+
+    private static final String AFTER = "AFTER";
+
     private final Map<String,String> excerptIteratorOptions = new HashMap<>();
     private final SortedKeyValueIterator<Key,Value> excerptIterator;
     private final ExcerptFields excerptFields;
     private final IteratorEnvironment env;
     private final SortedKeyValueIterator<Key,Value> source;
 
-    private String hitTermValues = "";
+    private final ArrayList<String> hitTermValues = new ArrayList<>();
 
     public ExcerptTransform(ExcerptFields excerptFields, IteratorEnvironment env, SortedKeyValueIterator<Key,Value> source) {
         this(excerptFields, env, source, new TermFrequencyExcerptIterator());
@@ -126,7 +131,7 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
                                         pos.getOffset());
                     }
                     // save the hit term for later callout
-                    hitTermValues = (String) hitTuple.getValue();
+                    Collections.addAll(hitTermValues, ((String) hitTuple.getValue()).split(Constants.SPACE));
                 }
             }
         }
@@ -313,7 +318,7 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
      *            the term values to match
      * @return the excerpt
      */
-    private String getExcerpt(String field, int start, int end, Range range, String hitTermValues) {
+    private String getExcerpt(String field, int start, int end, Range range, ArrayList<String> hitTermValues) {
         excerptIteratorOptions.put(TermFrequencyExcerptIterator.FIELD_NAME, field);
         excerptIteratorOptions.put(TermFrequencyExcerptIterator.START_OFFSET, String.valueOf(start));
         excerptIteratorOptions.put(TermFrequencyExcerptIterator.END_OFFSET, String.valueOf(end));
@@ -339,31 +344,26 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
         }
     }
 
-    private static String getHitPhrase(String hitTermValues, String[] phraseParts) {
+    private String getHitPhrase(ArrayList<String> hitTermValues, String[] phraseParts) {
         List<String> hitPhrase = new ArrayList<>();
-        String[] hitTermValuesParts = hitTermValues.split(Constants.SPACE);
-        boolean startedCallout = false;
         for (String phrasePart : phraseParts[1].split(Constants.SPACE)) {
-            // check if we have a multi value term
-            // if we do, call out the first and last term values only
-            if (hitTermValuesParts.length > 1) {
-                if (phrasePart.equals(hitTermValuesParts[0])) {
-                    hitPhrase.add("[" + phrasePart);
-                    startedCallout = true;
-                } else if (startedCallout && phrasePart.equals(hitTermValuesParts[hitTermValuesParts.length - 1])) {
-                    hitPhrase.add(phrasePart + "]");
-                } else {
-                    hitPhrase.add(phrasePart);
-                }
+            if (hitTermValues.contains(phrasePart)) {
+                hitPhrase.add("[" + phrasePart + "]");
             } else {
-                if (hitTermValues.contains(phrasePart)) {
-                    hitPhrase.add("[" + phrasePart + "]");
-                } else {
-                    hitPhrase.add(phrasePart);
-                }
+                hitPhrase.add(phrasePart);
             }
         }
-        return String.join(" ", hitPhrase);
+
+        // return phrase based on direction
+        String result = String.join(" ", hitPhrase); // if no direction given, return everything
+        String direction = excerptFields.getDirection(phraseParts[0]).toUpperCase().trim();
+        if (direction.equals(BEFORE)) { // remove tokens prior to hit term
+            result = StringUtils.substringBeforeLast(result, "]") + "]";
+        } else if (direction.equals(AFTER)) { // remove tokens after hit term
+            result = "[" + StringUtils.substringAfter(result, "[");
+        }
+
+        return result;
     }
 
     /**

@@ -12,6 +12,7 @@ import datawave.webservice.common.extjs.ExtJsResponse;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.dashboard.DashboardFields;
 import datawave.webservice.query.dashboard.DashboardSummary;
+import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.logic.QueryLogicTransformer;
 import datawave.webservice.query.logic.ResponseEnricher;
 import datawave.webservice.query.result.event.EventBase;

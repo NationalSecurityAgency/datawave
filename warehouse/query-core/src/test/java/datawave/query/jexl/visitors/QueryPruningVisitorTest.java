@@ -504,27 +504,6 @@ public class QueryPruningVisitorTest {
     }
 
     @Test
-    public void dualStatementQueryTest() throws ParseException {
-        String query = "(Expression = 'somevalue'); FIELD == 'x'";
-        ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
-
-        assertEquals(QueryPruningVisitor.TruthState.UNKNOWN, QueryPruningVisitor.getState(script));
-        assertEquals(query, JexlStringBuildingVisitor.buildQuery(QueryPruningVisitor.reduce(script, false)));
-
-        query = "(Expression = 'somevalue'); FIELD == 'x' || true";
-        script = JexlASTHelper.parseJexlQuery(query);
-
-        assertEquals(QueryPruningVisitor.TruthState.TRUE, QueryPruningVisitor.getState(script));
-        assertEquals("(Expression = 'somevalue'); true", JexlStringBuildingVisitor.buildQuery(QueryPruningVisitor.reduce(script, false)));
-
-        query = "(Expression = 'somevalue'); FIELD == 'x' && false";
-        script = JexlASTHelper.parseJexlQuery(query);
-
-        assertEquals(QueryPruningVisitor.TruthState.UNKNOWN, QueryPruningVisitor.getState(script));
-        assertEquals("(Expression = 'somevalue'); false", JexlStringBuildingVisitor.buildQuery(QueryPruningVisitor.reduce(script, false)));
-    }
-
-    @Test
     public void propertyMarkerTest() throws ParseException {
         String query = "((_Value_ = true) && (FIELD = 'x'))";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);

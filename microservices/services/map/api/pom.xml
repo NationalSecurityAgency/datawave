@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.microservice</groupId>
         <artifactId>datawave-microservice-parent</artifactId>
-        <version>3.0.4-SNAPSHOT</version>
+        <version>3.0.5-SNAPSHOT</version>
         <relativePath>../../../microservice-parent/pom.xml</relativePath>
     </parent>
     <artifactId>map-api</artifactId>
@@ -17,11 +17,11 @@
         <url>https://github.com/NationalSecurityAgency/datawave-map-service</url>
     </scm>
     <properties>
-        <version.datawave>6.7.0-SNAPSHOT</version.datawave>
+        <version.datawave>6.11.0-SNAPSHOT</version.datawave>
         <version.geotools>29.0</version.geotools>
         <version.jts>1.19.0</version.jts>
         <version.microservice.metadata-utils>3.0.3-SNAPSHOT</version.microservice.metadata-utils>
-        <version.microservice.type-utils>2.0.2-SNAPSHOT</version.microservice.type-utils>
+        <version.microservice.type-utils>2.0.3-SNAPSHOT</version.microservice.type-utils>
         <version.mockito>4.5.1</version.mockito>
     </properties>
     <dependencyManagement>

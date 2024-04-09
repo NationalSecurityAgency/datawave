@@ -6,8 +6,6 @@ import java.time.Duration;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import datawave.microservice.map.data.GeoFeature;
-import datawave.microservice.map.data.GeoFeatures;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
@@ -30,6 +28,8 @@ import datawave.data.type.PointType;
 import datawave.data.type.Type;
 import datawave.microservice.authorization.user.DatawaveUserDetails;
 import datawave.microservice.map.config.MapServiceProperties;
+import datawave.microservice.map.data.GeoFeature;
+import datawave.microservice.map.data.GeoFeatures;
 import datawave.microservice.map.data.GeoQueryFeatures;
 import datawave.microservice.map.visitor.GeoFeatureVisitor;
 import datawave.query.util.MetadataHelperFactory;
@@ -167,7 +167,7 @@ public class MapOperationsService {
                         log.trace("Class not found: {}", entry[1]);
                     }
                 }
-
+                
                 if (clazz != null) {
                     if (Type.class.isAssignableFrom(clazz)) {
                         try {
@@ -192,7 +192,7 @@ public class MapOperationsService {
     }
     
     public GeoFeatures geoFeaturesFromGeometry(String geometry, String geometryType, Boolean createRanges, String rangeType, Integer maxEnvelopes,
-                                               Integer maxExpansion, Boolean optimizeRanges, Integer rangeSplitThreshold, Double maxRangeOverlap, DatawaveUserDetails currentUser) {
+                    Integer maxExpansion, Boolean optimizeRanges, Integer rangeSplitThreshold, Double maxRangeOverlap, DatawaveUserDetails currentUser) {
         String wkt = geometry;
         if (geometryType.equals("geojson")) {
             try {
@@ -252,14 +252,14 @@ public class MapOperationsService {
         }
         
         GeoQueryFeatures geoQueryFeatures = GeoFeatureVisitor.getGeoFeatures(script, typesByField, geoQueryConfigBuilder.build());
-
+        
         GeoFeatures geoFeatures = new GeoFeatures();
         GeoFeature geoFeature = new GeoFeature();
         geoFeature.setWkt(wkt);
         geoFeature.setGeoJson(DataUtilities.collection(geoQueryFeatures.getFunctions().get(0).getGeoJson()));
         geoFeatures.setGeometry(geoFeature);
         geoFeatures.setQueryRanges(geoQueryFeatures.getGeoByField().get(field));
-
+        
         return geoFeatures;
     }
     
