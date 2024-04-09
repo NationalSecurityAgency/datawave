@@ -299,6 +299,37 @@ services:
       authorization:
         condition: service_healthy
 
+  map:
+    entrypoint: ["java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005","-jar","app.jar"]
+    image: datawave/map-service:1.0.0-SNAPSHOT
+    command:
+        - --spring.output.ansi.enabled=ALWAYS
+        - --spring.profiles.active=consul,compose,remoteauth
+        - --spring.cloud.consul.host=consul
+        - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${random.value}
+    environment:
+        - ZOOKEEPER_HOST=${DW_ZOOKEEPER_HOST}
+        - APP_BASE_PATH=/map
+    ports:
+        - "8780:8080"
+        - "9543:8443"
+        - "51005:5005"
+    volumes:
+        - ${PKI_DIR:-./pki}:/etc/pki:ro
+        - ./logs:/logs
+    networks:
+        - demo
+    healthcheck:
+      test: curl -f http://localhost:8080/map/mgmt/health
+      interval: 10s
+      timeout: 1s
+      start_period: 30s
+      retries: 3
+    depends_on:
+      authorization:
+        condition: service_healthy
+
+
   # If you use the management center, you can connect to the hazelcast cache as follows:
   # In your browser connect to https://localhost:9243/
   # Enable 'dev' mode

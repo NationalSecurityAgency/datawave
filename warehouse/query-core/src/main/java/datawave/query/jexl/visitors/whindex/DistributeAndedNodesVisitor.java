@@ -1,6 +1,6 @@
 package datawave.query.jexl.visitors.whindex;
 
-import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EVALUATION_ONLY;
+import static datawave.core.query.jexl.nodes.QueryPropertyMarker.MarkerType.EVALUATION_ONLY;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -28,9 +28,9 @@ import org.apache.commons.jexl3.parser.JexlNodes;
 
 import com.google.common.collect.Multimap;
 
+import datawave.core.query.jexl.nodes.QueryPropertyMarker;
+import datawave.core.query.jexl.visitors.RebuildingVisitor;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.nodes.QueryPropertyMarker;
-import datawave.query.jexl.visitors.RebuildingVisitor;
 
 /**
  * This is a visitor which is used to fully distribute anded nodes into a given node. The visitor will only distribute the anded nodes to those descendant nodes

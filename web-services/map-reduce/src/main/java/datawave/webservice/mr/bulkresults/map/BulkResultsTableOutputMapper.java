@@ -14,8 +14,8 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
 
+import datawave.core.query.cache.ResultsPage;
 import datawave.webservice.query.Query;
-import datawave.webservice.query.cache.ResultsPage;
 import datawave.webservice.query.exception.EmptyObjectException;
 import datawave.webservice.query.logic.QueryLogic;
 import datawave.webservice.query.logic.QueryLogicTransformer;

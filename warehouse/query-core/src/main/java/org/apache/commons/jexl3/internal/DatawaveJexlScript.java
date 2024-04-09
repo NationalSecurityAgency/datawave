@@ -7,7 +7,7 @@ import org.apache.commons.jexl3.JexlContext;
 import org.apache.commons.jexl3.JexlExpression;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 
-import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
+import datawave.core.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 
 /**
  * Lifted from {@link Script}. Modified to flatten the resulting {@link ASTJexlScript}.

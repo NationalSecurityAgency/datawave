@@ -12,8 +12,8 @@ import java.util.List;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.junit.Test;
 
+import datawave.core.query.jexl.JexlNodeFactory;
 import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.util.Tuple2;
 
 public class ScannerStreamTest {

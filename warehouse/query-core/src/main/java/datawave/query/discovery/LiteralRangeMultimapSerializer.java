@@ -18,7 +18,7 @@ import com.google.gson.JsonParseException;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 
-import datawave.query.jexl.LiteralRange;
+import datawave.core.query.jexl.LiteralRange;
 
 public class LiteralRangeMultimapSerializer
                 implements JsonSerializer<Multimap<String,LiteralRange<String>>>, JsonDeserializer<Multimap<String,LiteralRange<String>>> {

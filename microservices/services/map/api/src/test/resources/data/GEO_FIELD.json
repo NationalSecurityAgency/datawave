@@ -1,0 +1,20 @@
+{
+  "geoByField" : { },
+  "functions" : [ {
+    "function" : "geo:within_bounding_box(GEO_FIELD, '-10_-10', '10_10')",
+    "fields" : [ "GEO_FIELD" ],
+    "geoJson" : {
+      "geometry" : {
+        "coordinates" : [ [ [ -10, -10 ], [ 10, -10 ], [ 10, 10 ], [ -10, 10 ], [ -10, -10 ] ] ],
+        "type" : "Polygon"
+      },
+      "id" : "geo:within_bounding_box(GEO_FIELD, '-10_-10', '10_10')",
+      "type" : "Feature",
+      "properties" : {
+        "wkt" : "POLYGON ((-10 -10, 10 -10, 10 10, -10 10, -10 -10))",
+        "functions" : [ "geo:within_bounding_box(GEO_FIELD, '-10_-10', '10_10')" ],
+        "fields" : [ "GEO_FIELD" ]
+      }
+    }
+  } ]
+}

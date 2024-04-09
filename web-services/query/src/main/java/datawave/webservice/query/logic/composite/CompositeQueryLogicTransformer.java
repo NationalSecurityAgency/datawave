@@ -6,7 +6,7 @@ import org.apache.log4j.Logger;
 
 import com.google.common.base.Throwables;
 
-import datawave.webservice.query.cache.ResultsPage;
+import datawave.core.query.cache.ResultsPage;
 import datawave.webservice.query.cachedresults.CacheableLogic;
 import datawave.webservice.query.cachedresults.CacheableQueryRow;
 import datawave.webservice.query.exception.QueryException;

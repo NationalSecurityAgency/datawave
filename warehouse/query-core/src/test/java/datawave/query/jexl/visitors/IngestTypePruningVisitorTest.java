@@ -9,9 +9,10 @@ import org.apache.log4j.Logger;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import datawave.core.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.core.query.jexl.visitors.validate.ASTValidator;
 import datawave.data.type.LcType;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.visitors.validate.ASTValidator;
 import datawave.query.util.TypeMetadata;
 
 public class IngestTypePruningVisitorTest {

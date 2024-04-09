@@ -24,19 +24,20 @@ import org.springframework.util.StringUtils;
 
 import com.google.common.base.Preconditions;
 
+import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.core.iterators.ColumnQualifierRangeIterator;
 import datawave.core.iterators.CompositeSeekingIterator;
 import datawave.core.iterators.TimeoutExceptionIterator;
 import datawave.core.iterators.TimeoutIterator;
+import datawave.core.query.jexl.LiteralRange;
+import datawave.core.query.jexl.lookups.IndexLookupMap;
 import datawave.data.type.DiscreteIndexType;
 import datawave.query.Constants;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.IllegalRangeArgumentException;
-import datawave.query.jexl.LiteralRange;
 import datawave.query.tables.ScannerFactory;
 import datawave.util.time.DateHelper;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.NotFoundQueryException;
 import datawave.webservice.query.exception.QueryException;

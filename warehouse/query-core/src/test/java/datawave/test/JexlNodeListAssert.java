@@ -11,7 +11,7 @@ import org.apache.commons.jexl3.parser.JexlNode;
 import org.assertj.core.api.AbstractListAssert;
 import org.assertj.core.api.ListAssert;
 
-import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.core.query.jexl.visitors.JexlStringBuildingVisitor;
 
 /**
  * A {@link AbstractListAssert} implementation that supports performing AssertJ assertions on a {@link List} of {@link JexlNode} instances. Equality between

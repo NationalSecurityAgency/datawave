@@ -21,6 +21,7 @@ import org.apache.log4j.Logger;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 
+import datawave.core.query.jexl.lookups.IndexLookupMap;
 import datawave.query.Constants;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.tables.ScannerFactory;

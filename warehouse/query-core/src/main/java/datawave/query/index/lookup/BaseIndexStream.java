@@ -7,7 +7,7 @@ import org.apache.commons.jexl3.parser.JexlNode;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Iterators;
 
-import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.core.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.tables.RangeStreamScanner;
 import datawave.query.util.Tuple2;
 

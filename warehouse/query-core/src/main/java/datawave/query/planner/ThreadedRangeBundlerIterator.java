@@ -22,9 +22,9 @@ import com.google.common.collect.Lists;
 
 import datawave.common.util.MultiComparator;
 import datawave.common.util.concurrent.BoundedBlockingQueue;
+import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.query.CloseableIterable;
 import datawave.query.tld.TLDQueryIterator;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.configuration.QueryData;
 

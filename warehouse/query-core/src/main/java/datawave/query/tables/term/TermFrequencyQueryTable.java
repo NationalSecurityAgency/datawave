@@ -19,6 +19,7 @@ import org.apache.log4j.Logger;
 
 import com.google.common.collect.ImmutableSet;
 
+import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
 import datawave.query.QueryParameters;
 import datawave.query.config.TermFrequencyQueryConfiguration;
@@ -26,7 +27,6 @@ import datawave.query.transformer.TermFrequencyQueryTransformer;
 import datawave.query.util.QueryScannerHelper;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl.Parameter;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;

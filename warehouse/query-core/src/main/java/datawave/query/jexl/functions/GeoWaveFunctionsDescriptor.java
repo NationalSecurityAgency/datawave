@@ -1,11 +1,19 @@
 package datawave.query.jexl.functions;
 
-import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.BOUNDED_RANGE;
+import static datawave.core.geo.utils.GeoWaveUtils.CONTAINS;
+import static datawave.core.geo.utils.GeoWaveUtils.COVERED_BY;
+import static datawave.core.geo.utils.GeoWaveUtils.COVERS;
+import static datawave.core.geo.utils.GeoWaveUtils.CROSSES;
+import static datawave.core.geo.utils.GeoWaveUtils.INTERSECTS;
+import static datawave.core.geo.utils.GeoWaveUtils.OVERLAPS;
+import static datawave.core.geo.utils.GeoWaveUtils.WITHIN;
+import static datawave.core.query.jexl.nodes.QueryPropertyMarker.MarkerType.BOUNDED_RANGE;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -34,6 +42,11 @@ import org.locationtech.jts.geom.GeometryFactory;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 
+import datawave.core.geo.function.AbstractGeoFunctionDetails;
+import datawave.core.query.jexl.JexlNodeFactory;
+import datawave.core.query.jexl.functions.FunctionJexlNodeVisitor;
+import datawave.core.query.jexl.nodes.QueryPropertyMarker;
+import datawave.core.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.data.normalizer.AbstractGeometryNormalizer;
 import datawave.data.normalizer.GeometryNormalizer;
 import datawave.data.normalizer.PointNormalizer;
@@ -45,9 +58,8 @@ import datawave.query.attributes.AttributeFactory;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.ArithmeticJexlEngines;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.JexlNodeFactory;
+import datawave.query.jexl.functions.arguments.GeoFunctionJexlArgumentDescriptor;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
-import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.GeoWaveUtils;
@@ -60,199 +72,36 @@ import datawave.query.util.MetadataHelper;
  */
 public class GeoWaveFunctionsDescriptor implements JexlFunctionArgumentDescriptorFactory {
 
-    private enum IndexType {
-        GEOWAVE_GEOMETRY, GEOWAVE_POINT, GEO_POINT, UNKNOWN
-    }
-
     /**
      * This is the argument descriptor which can be used to normalize and optimize function node queries
      *
      */
-    protected static final String[] SPATIAL_RELATION_OPERATIONS = new String[] {"contains", "covers", "covered_by", "crosses", "intersects", "overlaps",
-            "within"};
 
     private static final Logger LOGGER = Logger.getLogger(GeoWaveFunctionsDescriptor.class);
 
-    public static class GeoWaveJexlArgumentDescriptor implements JexlArgumentDescriptor {
+    public static class GeoWaveJexlArgumentDescriptor implements JexlArgumentDescriptor, GeoFunctionJexlArgumentDescriptor {
         protected final String name;
         protected final List<JexlNode> args;
+        protected final AbstractGeoFunctionDetails geoFunction;
 
-        public GeoWaveJexlArgumentDescriptor(ASTFunctionNode node, String name, List<JexlNode> args) {
+        public GeoWaveJexlArgumentDescriptor(ASTFunctionNode node, String name, List<JexlNode> args, AbstractGeoFunctionDetails geoFunction) {
             this.name = name;
             this.args = args;
+            this.geoFunction = geoFunction;
         }
 
         @Override
         public JexlNode getIndexQuery(ShardQueryConfiguration config, MetadataHelper helper, DateIndexHelper dateIndexHelper, Set<String> datatypeFilter) {
-            int maxEnvelopes = Math.max(1, config.getGeoWaveMaxEnvelopes());
-            if (isSpatialRelationship(name)) {
-                Geometry geom = AbstractGeometryNormalizer.parseGeometry(JexlNodes.getIdentifierOrLiteralAsString(args.get(1)));
-                List<Envelope> envelopes = getSeparateEnvelopes(geom, maxEnvelopes);
-                if (!envelopes.isEmpty()) {
-
-                    JexlNode indexNode;
-                    if (envelopes.size() == 1) {
-                        indexNode = getIndexNode(args.get(0), geom, envelopes.get(0), config, helper);
-                    } else {
-                        indexNode = getIndexNode(args.get(0), geom, envelopes, config, helper);
-                    }
-
-                    return indexNode;
-                }
-            }
-            // return the true node if unable to parse arguments
-            return TRUE_NODE;
-        }
-
-        private static Set<IndexType> getIndexTypes(String field, MetadataHelper helper) {
-            Set<IndexType> dataTypes = new HashSet<>();
             try {
-                for (Type<?> type : helper.getDatatypesForField(field)) {
-                    dataTypes.add(typeToIndexType(type));
+                Map<String,Set<Type<?>>> typesByField = new HashMap<>();
+                for (String field : geoFunction.getFields()) {
+                    typesByField.put(field, helper.getDatatypesForField(field, datatypeFilter));
                 }
-            } catch (IllegalAccessException | InstantiationException | TableNotFoundException e) {
-                LOGGER.debug("Unable to retrieve data types for field " + field);
+
+                return geoFunction.generateIndexNode(typesByField, config.getGeoQueryConfig());
+            } catch (Exception e) {
+                throw new IllegalArgumentException("Unable to create index node for geowave function.", e);
             }
-            return dataTypes;
-        }
-
-        private static IndexType typeToIndexType(Type<?> type) {
-            IndexType indexType = IndexType.UNKNOWN;
-            if (type instanceof GeometryType) {
-                indexType = IndexType.GEOWAVE_GEOMETRY;
-            } else if (type instanceof PointType) {
-                indexType = IndexType.GEOWAVE_POINT;
-            } else if (type instanceof GeoType) {
-                indexType = IndexType.GEO_POINT;
-            }
-            return indexType;
-        }
-
-        protected static JexlNode getIndexNode(JexlNode node, Geometry geometry, Envelope env, ShardQueryConfiguration config, MetadataHelper helper) {
-            if (node.jjtGetNumChildren() > 0) {
-                List<JexlNode> list = Lists.newArrayList();
-                for (int i = 0; i < node.jjtGetNumChildren(); i++) {
-                    JexlNode kid = node.jjtGetChild(i);
-                    if (JexlNodes.getIdentifierOrLiteralAsString(kid) != null) {
-                        list.add(getIndexNode(JexlNodes.getIdentifierOrLiteralAsString(kid), geometry, env, config, helper));
-                    }
-                }
-                if (!list.isEmpty()) {
-                    return JexlNodeFactory.createOrNode(list);
-                }
-            } else if (JexlNodes.getIdentifierOrLiteralAsString(node) != null) {
-                return getIndexNode(JexlNodes.getIdentifierOrLiteralAsString(node), geometry, env, config, helper);
-            }
-            return node;
-        }
-
-        protected static JexlNode getIndexNode(JexlNode node, Geometry geometry, List<Envelope> envs, ShardQueryConfiguration config, MetadataHelper helper) {
-            if (node.jjtGetNumChildren() > 0) {
-                List<JexlNode> list = Lists.newArrayList();
-                for (int i = 0; i < node.jjtGetNumChildren(); i++) {
-                    JexlNode kid = node.jjtGetChild(i);
-                    if (JexlNodes.getIdentifierOrLiteralAsString(kid) != null) {
-                        list.add(getIndexNode(JexlNodes.getIdentifierOrLiteralAsString(kid), geometry, envs, config, helper));
-                    }
-                }
-                if (!list.isEmpty()) {
-                    return JexlNodeFactory.createOrNode(list);
-                }
-            } else if (JexlNodes.getIdentifierOrLiteralAsString(node) != null) {
-                return getIndexNode(JexlNodes.getIdentifierOrLiteralAsString(node), geometry, envs, config, helper);
-            }
-            return node;
-        }
-
-        protected static JexlNode getIndexNode(String fieldName, Geometry geometry, Envelope env, ShardQueryConfiguration config, MetadataHelper helper) {
-            List<Envelope> envs = new ArrayList<>();
-            envs.add(env);
-            return getIndexNode(fieldName, geometry, envs, config, helper);
-        }
-
-        protected static JexlNode getIndexNode(String fieldName, Geometry geometry, List<Envelope> envs, ShardQueryConfiguration config,
-                        MetadataHelper helper) {
-            List<JexlNode> indexNodes = new ArrayList<>();
-            Set<IndexType> indexTypes = getIndexTypes(fieldName, helper);
-            // generate ranges for geowave geometries and points
-            if (indexTypes.remove(IndexType.GEOWAVE_GEOMETRY)) {
-                // point index ranges are covered by geometry index
-                // ranges so we can remove GEOWAVE_POINT
-                indexTypes.remove(IndexType.GEOWAVE_POINT);
-
-                indexNodes.add(generateGeoWaveRanges(fieldName, geometry, envs, config, GeometryNormalizer.getGeometryIndex(),
-                                config.getGeometryMaxExpansion()));
-            }
-            // generate ranges for geowave points
-            else if (indexTypes.remove(IndexType.GEOWAVE_POINT)) {
-                indexNodes.add(generateGeoWaveRanges(fieldName, geometry, envs, config, PointNormalizer.getPointIndex(), config.getPointMaxExpansion()));
-            }
-            // generate ranges for geo points
-            else if (indexTypes.remove(IndexType.GEO_POINT)) {
-                indexNodes.add(generateGeoRanges(fieldName, geometry, envs, config.getGeoMaxExpansion()));
-            }
-
-            JexlNode indexNode;
-            if (!indexNodes.isEmpty()) {
-                if (indexNodes.size() > 1) {
-                    indexNode = JexlNodeFactory.createOrNode(indexNodes);
-                } else {
-                    indexNode = indexNodes.get(0);
-                }
-            } else {
-                throw new IllegalArgumentException("Unable to create index node for geowave function.");
-            }
-
-            return indexNode;
-        }
-
-        protected static JexlNode generateGeoWaveRanges(String fieldName, Geometry geometry, List<Envelope> envs, ShardQueryConfiguration config, Index index,
-                        int maxExpansion) {
-            Collection<ByteArrayRange> allRanges = new ArrayList<>();
-            int maxRanges = maxExpansion / envs.size();
-            for (Envelope env : envs) {
-                for (MultiDimensionalNumericData range : GeometryUtils.basicConstraintsFromEnvelope(env).getIndexConstraints(index)) {
-                    List<ByteArrayRange> byteArrayRanges = index.getIndexStrategy().getQueryRanges(range, maxRanges).getCompositeQueryRanges();
-                    if (config.isOptimizeGeoWaveRanges()) {
-                        byteArrayRanges = GeoWaveUtils.optimizeByteArrayRanges(geometry, byteArrayRanges, config.getGeoWaveRangeSplitThreshold(),
-                                        config.getGeoWaveMaxRangeOverlap());
-                    }
-                    allRanges.addAll(byteArrayRanges);
-                }
-            }
-            allRanges = ByteArrayRange.mergeIntersections(allRanges, ByteArrayRange.MergeOperation.UNION);
-
-            Iterable<JexlNode> rangeNodes = Iterables.transform(allRanges, new ByteArrayRangeToJexlNode(fieldName));
-
-            // now link em up
-            return JexlNodeFactory.createOrNode(rangeNodes);
-        }
-
-        protected static JexlNode generateGeoRanges(String fieldName, Geometry geometry, List<Envelope> envs, int maxExpansion) {
-            JexlNode indexNode;
-            List<JexlNode> indexNodes = new ArrayList<>();
-            for (Envelope env : envs) {
-                // @formatter:off
-                indexNodes.add(
-                        GeoFunctionsDescriptor.GeoJexlArgumentDescriptor.getIndexNode(
-                                geometry,
-                                envs,
-                                Collections.singletonList(fieldName),
-                                maxExpansion));
-                // @formatter:on
-            }
-
-            if (!indexNodes.isEmpty()) {
-                if (indexNodes.size() > 1) {
-                    indexNode = JexlNodeFactory.createOrNode(indexNodes);
-                } else {
-                    indexNode = indexNodes.get(0);
-                }
-            } else {
-                throw new IllegalArgumentException("Failed to generate index nodes for geo field using geowave function.");
-            }
-
-            return indexNode;
         }
 
         @Override
@@ -268,7 +117,11 @@ public class GeoWaveFunctionsDescriptor implements JexlFunctionArgumentDescripto
 
         @Override
         public Set<String> fields(MetadataHelper helper, Set<String> datatypeFilter) {
-            return JexlASTHelper.getIdentifierNames(args.get(0));
+            Set<String> fields = Collections.emptySet();
+            if (geoFunction != null) {
+                fields = geoFunction.getFields();
+            }
+            return fields;
         }
 
         @Override
@@ -291,8 +144,9 @@ public class GeoWaveFunctionsDescriptor implements JexlFunctionArgumentDescripto
             return false;
         }
 
-        public String getWkt() {
-            return JexlNodes.getIdentifierOrLiteralAsString(args.get(1));
+        @Override
+        public AbstractGeoFunctionDetails getGeoFunction() {
+            return geoFunction;
         }
     }
 
@@ -310,117 +164,11 @@ public class GeoWaveFunctionsDescriptor implements JexlFunctionArgumentDescripto
             throw new IllegalArgumentException(
                             "Calling " + this.getClass().getSimpleName() + ".getJexlNodeDescriptor with node for a function in " + functionClass);
 
-        verify(fvis.name(), fvis.args().size());
-
-        return new GeoWaveJexlArgumentDescriptor(node, fvis.name(), fvis.args());
-    }
-
-    protected static void verify(String name, int numArgs) {
-        if (isSpatialRelationship(name)) {
-            // two arguments in the form <spatial_relation_function>(fieldName,
-            // geometryString
-            verify(name, numArgs, new String[] {"fieldName", "geometryString"});
-        } else {
-            throw new IllegalArgumentException("Unknown GeoWave function: " + name);
-        }
-    }
-
-    private static boolean isSpatialRelationship(String name) {
-        for (String op : SPATIAL_RELATION_OPERATIONS) {
-            if (op.equals(name)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    protected static void verify(String name, int numArgs, String[] parameterNames) {
-        if (numArgs != parameterNames.length) {
-            StringBuilder exception = new StringBuilder("Wrong number of arguments to GeoWave's ");
-            exception.append(name).append(" function; correct use is '").append(name).append("(");
-            if (parameterNames.length > 0) {
-                exception.append(parameterNames[0]);
-            }
-            for (int i = 1; i < parameterNames.length; i++) {
-                exception.append(", ").append(parameterNames[i]);
-            }
-            exception.append(")'");
-            throw new IllegalArgumentException(exception.toString());
-        }
-    }
-
-    private static class ByteArrayRangeToJexlNode implements com.google.common.base.Function<ByteArrayRange,JexlNode> {
-        private final String fieldName;
-
-        public ByteArrayRangeToJexlNode(String fieldName) {
-            this.fieldName = fieldName;
+        AbstractGeoFunctionDetails geoFunction = datawave.core.geo.utils.GeoWaveUtils.parseGeoWaveFunction(fvis.name(), fvis.args());
+        if (geoFunction == null) {
+            throw new IllegalArgumentException("Unable to parse geowave function from " + JexlStringBuildingVisitor.buildQuery(node));
         }
 
-        @Override
-        public JexlNode apply(ByteArrayRange input) {
-            if (Arrays.equals(input.getStart(), input.getEnd())) {
-                return JexlNodeFactory.buildNode(new ASTEQNode(ParserTreeConstants.JJTEQNODE), fieldName,
-                                AbstractGeometryNormalizer.getEncodedStringFromIndexBytes(input.getStart()));
-            } else {
-                JexlNode geNode = JexlNodeFactory.buildNode(new ASTGENode(ParserTreeConstants.JJTGENODE), fieldName,
-                                AbstractGeometryNormalizer.getEncodedStringFromIndexBytes(input.getStart()));
-                JexlNode leNode = JexlNodeFactory.buildNode(new ASTLENode(ParserTreeConstants.JJTLENODE), fieldName,
-                                AbstractGeometryNormalizer.getEncodedStringFromIndexBytes(input.getEnd()));
-                // now link em up
-                return QueryPropertyMarker.create(JexlNodeFactory.createAndNode(Arrays.asList(geNode, leNode)), BOUNDED_RANGE);
-            }
-        }
-
+        return new GeoWaveJexlArgumentDescriptor(node, fvis.name(), fvis.args(), geoFunction);
     }
-
-    protected static List<Geometry> getAllEnvelopeGeometries(Geometry geom) {
-        List<Geometry> geometries = new ArrayList<>();
-        if (geom.getNumGeometries() > 1)
-            for (int geoIdx = 0; geoIdx < geom.getNumGeometries(); geoIdx++)
-                geometries.addAll(getAllEnvelopeGeometries(geom.getGeometryN(geoIdx)));
-        else
-            geometries.add(geom.getEnvelope());
-        return geometries;
-    }
-
-    protected static boolean combineIntersectedGeometries(List<Geometry> geometries, List<Geometry> combinedGeometries, int maxEnvelopes) {
-        while (!geometries.isEmpty() && combinedGeometries.size() < maxEnvelopes)
-            combinedGeometries.add(findIntersectedGeoms(geometries.remove(0), geometries));
-        return geometries.isEmpty();
-    }
-
-    protected static Geometry findIntersectedGeoms(Geometry srcGeom, List<Geometry> geometries) {
-        List<Geometry> intersected = new ArrayList<>();
-
-        // find all geometries which intersect with with srcGeom
-        Iterator<Geometry> geomIter = geometries.iterator();
-        while (geomIter.hasNext()) {
-            Geometry geom = geomIter.next();
-            if (geom.intersects(srcGeom)) {
-                geomIter.remove();
-                intersected.add(geom);
-            }
-        }
-
-        // compute the envelope for the intersected geometries and the source geometry, and look for more intersections
-        if (!intersected.isEmpty()) {
-            intersected.add(srcGeom);
-            Geometry mergedGeom = new GeometryCollection(intersected.toArray(new Geometry[0]), new GeometryFactory()).getEnvelope();
-            return findIntersectedGeoms(mergedGeom, geometries);
-        }
-
-        return srcGeom;
-    }
-
-    protected static List<Envelope> getSeparateEnvelopes(Geometry geom, int maxEnvelopes) {
-        if (geom.getNumGeometries() > 0) {
-            List<Geometry> geometries = getAllEnvelopeGeometries(geom);
-            List<Geometry> intersectedGeometries = new ArrayList<>();
-
-            if (combineIntersectedGeometries(geometries, intersectedGeometries, maxEnvelopes))
-                return intersectedGeometries.stream().map(Geometry::getEnvelopeInternal).collect(Collectors.toList());
-        }
-        return Collections.singletonList(geom.getEnvelopeInternal());
-    }
-
 }

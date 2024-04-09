@@ -133,7 +133,7 @@
         <property name="validator" ref="AstValidator"/>
     </bean>
 
-    <bean id="AstValidator" scope="prototype" class="datawave.query.jexl.visitors.validate.ASTValidator">
+    <bean id="AstValidator" scope="prototype" class="datawave.core.query.jexl.visitors.validate.ASTValidator">
         <property name="validateLineage" value="true"/>
         <property name="validateFlatten" value="true"/>
         <property name="validateJunctions" value="true"/>

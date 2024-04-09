@@ -11,7 +11,7 @@ import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 
-import datawave.query.jexl.LiteralRange;
+import datawave.core.query.jexl.LiteralRange;
 
 public class LiteralRangeSerializer implements JsonSerializer<LiteralRange<String>>, JsonDeserializer<LiteralRange<String>> {
 

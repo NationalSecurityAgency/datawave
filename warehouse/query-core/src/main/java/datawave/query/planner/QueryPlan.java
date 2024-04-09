@@ -17,10 +17,10 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 
+import datawave.core.common.logging.ThreadConfigurableLogger;
+import datawave.core.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.iterator.QueryIterator;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.configuration.QueryData;
 
 /**

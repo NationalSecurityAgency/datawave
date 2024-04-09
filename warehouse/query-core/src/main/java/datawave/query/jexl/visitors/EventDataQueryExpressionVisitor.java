@@ -30,6 +30,8 @@ import org.apache.log4j.Logger;
 
 import com.google.common.collect.ImmutableSet;
 
+import datawave.core.query.jexl.LiteralRange;
+import datawave.core.query.jexl.visitors.BaseVisitor;
 import datawave.data.type.NoOpType;
 import datawave.data.type.Type;
 import datawave.query.attributes.Attribute;
@@ -38,7 +40,6 @@ import datawave.query.attributes.AttributeFactory;
 import datawave.query.attributes.TypeAttribute;
 import datawave.query.data.parsers.DatawaveKey;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.LiteralRange;
 import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.predicate.PeekingPredicate;

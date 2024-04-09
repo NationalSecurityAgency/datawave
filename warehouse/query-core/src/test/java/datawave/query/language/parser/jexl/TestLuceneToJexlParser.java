@@ -4,8 +4,8 @@ import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.junit.Assert;
 import org.junit.Test;
 
+import datawave.core.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.language.functions.jexl.EvaluationOnly;
 import datawave.query.language.functions.jexl.JexlQueryFunction;
 import datawave.query.language.parser.ParseException;

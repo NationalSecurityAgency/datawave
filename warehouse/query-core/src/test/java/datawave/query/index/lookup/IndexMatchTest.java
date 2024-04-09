@@ -24,7 +24,7 @@ import org.junit.Test;
 
 import com.google.common.collect.Sets;
 
-import datawave.query.jexl.JexlNodeFactory;
+import datawave.core.query.jexl.JexlNodeFactory;
 
 public class IndexMatchTest {
 

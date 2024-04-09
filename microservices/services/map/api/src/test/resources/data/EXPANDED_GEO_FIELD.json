@@ -1,0 +1,447 @@
+{
+  "geoByField" : {
+    "GEO_FIELD" : {
+      "type" : "Geo Point",
+      "geo" : {
+        "wkt" : "GEOMETRYCOLLECTION(POLYGON ((10 -9, 10 -9, 10 -9, 11 -9, 11 -10, -10 -10, -10 0, 10 0, 10 -9)), POLYGON ((10 -9, 11 -9, 11 -8, 10 -8, 10 -9)), POLYGON ((10 -8, 11 -8, 11 -7, 10 -7, 10 -8)), POLYGON ((10 -7, 11 -7, 11 -6, 10 -6, 10 -7)), POLYGON ((10 -6, 11 -6, 11 -5, 10 -5, 10 -6)), POLYGON ((10 -5, 11 -5, 11 -4, 10 -4, 10 -5)), POLYGON ((10 -4, 11 -4, 11 -3, 10 -3, 10 -4)), POLYGON ((10 -3, 11 -3, 11 -2, 10 -2, 10 -3)), POLYGON ((10 -2, 11 -2, 11 -1, 10 -1, 10 -2)), POLYGON ((10 -1, 11 -1, 11 -0, 10 -0, 10 -1)), POLYGON ((10 1, 10 1, 10 1, 11 1, 11 0, -10 0, -10 10, 10 10, 10 1)), POLYGON ((10 1, 11 1, 11 2, 10 2, 10 1)), POLYGON ((10 2, 11 2, 11 3, 10 3, 10 2)), POLYGON ((10 3, 11 3, 11 4, 10 4, 10 3)), POLYGON ((10 4, 11 4, 11 5, 10 5, 10 4)), POLYGON ((10 5, 11 5, 11 6, 10 6, 10 5)), POLYGON ((10 6, 11 6, 11 7, 10 7, 10 6)), POLYGON ((10 7, 11 7, 11 8, 10 8, 10 7)), POLYGON ((10 8, 11 8, 11 9, 10 9, 10 8)), POLYGON ((10 9, 11 9, 11 10, 10 10, 10 9)), POLYGON ((-10 10, -9 10, -9 10.1, -10 10.1, -10 10)), POLYGON ((-9 10, -8 10, -8 10.1, -9 10.1, -9 10)), POLYGON ((-8 10, -7 10, -7 10.1, -8 10.1, -8 10)), POLYGON ((-4 10.1, -4 10.1, -4 10.1, -3 10.1, -3 10, -7 10, -7 11, -4 11, -4 10.1)), POLYGON ((-3 10, -2 10, -2 10.1, -3 10.1, -3 10)), POLYGON ((-2 10, -1 10, -1 10.1, -2 10.1, -2 10)), POLYGON ((-1 10, -0 10, -0 10.1, -1 10.1, -1 10)), POLYGON ((0 10, 1 10, 1 10.1, 0 10.1, 0 10)), POLYGON ((1 10, 2 10, 2 10.1, 1 10.1, 1 10)), POLYGON ((2 10, 3 10, 3 10.1, 2 10.1, 2 10)), POLYGON ((3 10, 4 10, 4 10.1, 3 10.1, 3 10)), POLYGON ((4 11, 10 11, 10 10, 4 10, 4 11)))",
+        "geoJson" : {
+          "features" : [ {
+            "geometry" : {
+              "coordinates" : [ [ [ 10, -9 ], [ 10, -9 ], [ 10, -9 ], [ 11, -9 ], [ 11, -10 ], [ -10, -10 ], [ -10, 0.0 ], [ 10, 0.0 ], [ 10, -9 ] ] ],
+              "type" : "Polygon"
+            },
+            "id" : "GEO_FIELD >= '018700..0000000000' && GEO_FIELD <= '018901..0000000000'",
+            "type" : "Feature",
+            "properties" : {
+              "wkt" : "POLYGON ((10 -9, 10 -9, 10 -9, 11 -9, 11 -10, -10 -10, -10 0, 10 0, 10 -9))",
+              "functions" : [ "geo:within_bounding_box(GEO_FIELD, '-10_-10', '10_10')" ],
+              "range" : [ "018700..0000000000", "018901..0000000000" ],
+              "fields" : [ "GEO_FIELD" ]
+            }
+          }, {
+            "geometry" : {
+              "coordinates" : [ [ [ 10, -9 ], [ 11, -9 ], [ 11, -8 ], [ 10, -8 ], [ 10, -9 ] ] ],
+              "type" : "Polygon"
+            },
+            "id" : "GEO_FIELD >= '018910..0000000000' && GEO_FIELD <= '018911..0000000000'",
+            "type" : "Feature",
+            "properties" : {
+              "wkt" : "POLYGON ((10 -9, 11 -9, 11 -8, 10 -8, 10 -9))",
+              "functions" : [ "geo:within_bounding_box(GEO_FIELD, '-10_-10', '10_10')" ],
+              "range" : [ "018910..0000000000", "018911..0000000000" ],
+              "fields" : [ "GEO_FIELD" ]
+            }
+          }, {
+            "geometry" : {
+              "coordinates" : [ [ [ 10, -8 ], [ 11, -8 ], [ 11, -7 ], [ 10, -7 ], [ 10, -8 ] ] ],
+              "type" : "Polygon"
+            },
+            "id" : "GEO_FIELD >= '018920..0000000000' && GEO_FIELD <= '018921..0000000000'",
+            "type" : "Feature",
+            "properties" : {
+              "wkt" : "POLYGON ((10 -8, 11 -8, 11 -7, 10 -7, 10 -8))",
+              "functions" : [ "geo:within_bounding_box(GEO_FIELD, '-10_-10', '10_10')" ],
+              "range" : [ "018920..0000000000", "018921..0000000000" ],
+              "fields" : [ "GEO_FIELD" ]
+            }
+          }, {
+            "geometry" : {
+              "coordinates" : [ [ [ 10, -7 ], [ 11, -7 ], [ 11, -6 ], [ 10, -6 ], [ 10, -7 ] ] ],
+              "type" : "Polygon"
+            },
+            "id" : "GEO_FIELD >= '018930..0000000000' && GEO_FIELD <= '018931..0000000000'",
+            "type" : "Feature",
+            "properties" : {
+              "wkt" : "POLYGON ((10 -7, 11 -7, 11 -6, 10 -6, 10 -7))",
+              "functions" : [ "geo:within_bounding_box(GEO_FIELD, '-10_-10', '10_10')" ],
+              "range" : [ "018930..0000000000", "018931..0000000000" ],
+              "fields" : [ "GEO_FIELD" ]
+            }
+          }, {
+            "geometry" : {
+              "coordinates" : [ [ [ 10, -6 ], [ 11, -6 ], [ 11, -5 ], [ 10, -5 ], [ 10, -6 ] ] ],
+              "type" : "Polygon"
+            },
+            "id" : "GEO_FIELD >= '018940..0000000000' && GEO_FIELD <= '018941..0000000000'",
+            "type" : "Feature",
+            "properties" : {
+              "wkt" : "POLYGON ((10 -6, 11 -6, 11 -5, 10 -5, 10 -6))",
+              "functions" : [ "geo:within_bounding_box(GEO_FIELD, '-10_-10', '10_10')" ],
+              "range" : [ "018940..0000000000", "018941..0000000000" ],
+              "fields" : [ "GEO_FIELD" ]
+            }
+          }, {
+            "geometry" : {
+              "coordinates" : [ [ [ 10, -5 ], [ 11, -5 ], [ 11, -4 ], [ 10, -4 ], [ 10, -5 ] ] ],
+              "type" : "Polygon"
+            },
+            "id" : "GEO_FIELD >= '018950..0000000000' && GEO_FIELD <= '018951..0000000000'",
+            "type" : "Feature",
+            "properties" : {
+              "wkt" : "POLYGON ((10 -5, 11 -5, 11 -4, 10 -4, 10 -5))",
+              "functions" : [ "geo:within_bounding_box(GEO_FIELD, '-10_-10', '10_10')" ],
+              "range" : [ "018950..0000000000", "018951..0000000000" ],
+              "fields" : [ "GEO_FIELD" ]
+            }
+          }, {
+            "geometry" : {
+              "coordinates" : [ [ [ 10, -4 ], [ 11, -4 ], [ 11, -3 ], [ 10, -3 ], [ 10, -4 ] ] ],
+              "type" : "Polygon"
+            },
+            "id" : "GEO_FIELD >= '018960..0000000000' && GEO_FIELD <= '018961..0000000000'",
+            "type" : "Feature",
+            "properties" : {
+              "wkt" : "POLYGON ((10 -4, 11 -4, 11 -3, 10 -3, 10 -4))",
+              "functions" : [ "geo:within_bounding_box(GEO_FIELD, '-10_-10', '10_10')" ],
+              "range" : [ "018960..0000000000", "018961..0000000000" ],
+              "fields" : [ "GEO_FIELD" ]
+            }
+          }, {
+            "geometry" : {
+              "coordinates" : [ [ [ 10, -3 ], [ 11, -3 ], [ 11, -2 ], [ 10, -2 ], [ 10, -3 ] ] ],
+              "type" : "Polygon"
+            },
+            "id" : "GEO_FIELD >= '018970..0000000000' && GEO_FIELD <= '018971..0000000000'",
+            "type" : "Feature",
+            "properties" : {
+              "wkt" : "POLYGON ((10 -3, 11 -3, 11 -2, 10 -2, 10 -3))",
+              "functions" : [ "geo:within_bounding_box(GEO_FIELD, '-10_-10', '10_10')" ],
+              "range" : [ "018970..0000000000", "018971..0000000000" ],
+              "fields" : [ "GEO_FIELD" ]
+            }
+          }, {
+            "geometry" : {
+              "coordinates" : [ [ [ 10, -2 ], [ 11, -2 ], [ 11, -1 ], [ 10, -1 ], [ 10, -2 ] ] ],
+              "type" : "Polygon"
+            },
+            "id" : "GEO_FIELD >= '018980..0000000000' && GEO_FIELD <= '018981..0000000000'",
+            "type" : "Feature",
+            "properties" : {
+              "wkt" : "POLYGON ((10 -2, 11 -2, 11 -1, 10 -1, 10 -2))",
+              "functions" : [ "geo:within_bounding_box(GEO_FIELD, '-10_-10', '10_10')" ],
+              "range" : [ "018980..0000000000", "018981..0000000000" ],
+              "fields" : [ "GEO_FIELD" ]
+            }
+          }, {
+            "geometry" : {
+              "coordinates" : [ [ [ 10, -1 ], [ 11, -1 ], [ 11, -3.1741356911569804E-15 ], [ 10, -3.1741356911569804E-15 ], [ 10, -1 ] ] ],
+              "type" : "Polygon"
+            },
+            "id" : "GEO_FIELD >= '018990..0000000000' && GEO_FIELD <= '018991..0000000000'",
+            "type" : "Feature",
+            "properties" : {
+              "wkt" : "POLYGON ((10 -1, 11 -1, 11 -0, 10 -0, 10 -1))",
+              "functions" : [ "geo:within_bounding_box(GEO_FIELD, '-10_-10', '10_10')" ],
+              "range" : [ "018990..0000000000", "018991..0000000000" ],
+              "fields" : [ "GEO_FIELD" ]
+            }
+          }, {
+            "geometry" : {
+              "coordinates" : [ [ [ 10, 1 ], [ 10, 1 ], [ 10, 1 ], [ 11, 1 ], [ 11, 0.0 ], [ -10, 0.0 ], [ -10, 10 ], [ 10, 10 ], [ 10, 1 ] ] ],
+              "type" : "Polygon"
+            },
+            "id" : "GEO_FIELD >= '019700..0000000000' && GEO_FIELD <= '019901..0000000000'",
+            "type" : "Feature",
+            "properties" : {
+              "wkt" : "POLYGON ((10 1, 10 1, 10 1, 11 1, 11 0, -10 0, -10 10, 10 10, 10 1))",
+              "functions" : [ "geo:within_bounding_box(GEO_FIELD, '-10_-10', '10_10')" ],
+              "range" : [ "019700..0000000000", "019901..0000000000" ],
+              "fields" : [ "GEO_FIELD" ]
+            }
+          }, {
+            "geometry" : {
+              "coordinates" : [ [ [ 10, 1 ], [ 11, 1 ], [ 11, 2 ], [ 10, 2 ], [ 10, 1 ] ] ],
+              "type" : "Polygon"
+            },
+            "id" : "GEO_FIELD >= '019910..0000000000' && GEO_FIELD <= '019911..0000000000'",
+            "type" : "Feature",
+            "properties" : {
+              "wkt" : "POLYGON ((10 1, 11 1, 11 2, 10 2, 10 1))",
+              "functions" : [ "geo:within_bounding_box(GEO_FIELD, '-10_-10', '10_10')" ],
+              "range" : [ "019910..0000000000", "019911..0000000000" ],
+              "fields" : [ "GEO_FIELD" ]
+            }
+          }, {
+            "geometry" : {
+              "coordinates" : [ [ [ 10, 2 ], [ 11, 2 ], [ 11, 3 ], [ 10, 3 ], [ 10, 2 ] ] ],
+              "type" : "Polygon"
+            },
+            "id" : "GEO_FIELD >= '019920..0000000000' && GEO_FIELD <= '019921..0000000000'",
+            "type" : "Feature",
+            "properties" : {
+              "wkt" : "POLYGON ((10 2, 11 2, 11 3, 10 3, 10 2))",
+              "functions" : [ "geo:within_bounding_box(GEO_FIELD, '-10_-10', '10_10')" ],
+              "range" : [ "019920..0000000000", "019921..0000000000" ],
+              "fields" : [ "GEO_FIELD" ]
+            }
+          }, {
+            "geometry" : {
+              "coordinates" : [ [ [ 10, 3 ], [ 11, 3 ], [ 11, 4 ], [ 10, 4 ], [ 10, 3 ] ] ],
+              "type" : "Polygon"
+            },
+            "id" : "GEO_FIELD >= '019930..0000000000' && GEO_FIELD <= '019931..0000000000'",
+            "type" : "Feature",
+            "properties" : {
+              "wkt" : "POLYGON ((10 3, 11 3, 11 4, 10 4, 10 3))",
+              "functions" : [ "geo:within_bounding_box(GEO_FIELD, '-10_-10', '10_10')" ],
+              "range" : [ "019930..0000000000", "019931..0000000000" ],
+              "fields" : [ "GEO_FIELD" ]
+            }
+          }, {
+            "geometry" : {
+              "coordinates" : [ [ [ 10, 4 ], [ 11, 4 ], [ 11, 5 ], [ 10, 5 ], [ 10, 4 ] ] ],
+              "type" : "Polygon"
+            },
+            "id" : "GEO_FIELD >= '019940..0000000000' && GEO_FIELD <= '019941..0000000000'",
+            "type" : "Feature",
+            "properties" : {
+              "wkt" : "POLYGON ((10 4, 11 4, 11 5, 10 5, 10 4))",
+              "functions" : [ "geo:within_bounding_box(GEO_FIELD, '-10_-10', '10_10')" ],
+              "range" : [ "019940..0000000000", "019941..0000000000" ],
+              "fields" : [ "GEO_FIELD" ]
+            }
+          }, {
+            "geometry" : {
+              "coordinates" : [ [ [ 10, 5 ], [ 11, 5 ], [ 11, 6 ], [ 10, 6 ], [ 10, 5 ] ] ],
+              "type" : "Polygon"
+            },
+            "id" : "GEO_FIELD >= '019950..0000000000' && GEO_FIELD <= '019951..0000000000'",
+            "type" : "Feature",
+            "properties" : {
+              "wkt" : "POLYGON ((10 5, 11 5, 11 6, 10 6, 10 5))",
+              "functions" : [ "geo:within_bounding_box(GEO_FIELD, '-10_-10', '10_10')" ],
+              "range" : [ "019950..0000000000", "019951..0000000000" ],
+              "fields" : [ "GEO_FIELD" ]
+            }
+          }, {
+            "geometry" : {
+              "coordinates" : [ [ [ 10, 6 ], [ 11, 6 ], [ 11, 7 ], [ 10, 7 ], [ 10, 6 ] ] ],
+              "type" : "Polygon"
+            },
+            "id" : "GEO_FIELD >= '019960..0000000000' && GEO_FIELD <= '019961..0000000000'",
+            "type" : "Feature",
+            "properties" : {
+              "wkt" : "POLYGON ((10 6, 11 6, 11 7, 10 7, 10 6))",
+              "functions" : [ "geo:within_bounding_box(GEO_FIELD, '-10_-10', '10_10')" ],
+              "range" : [ "019960..0000000000", "019961..0000000000" ],
+              "fields" : [ "GEO_FIELD" ]
+            }
+          }, {
+            "geometry" : {
+              "coordinates" : [ [ [ 10, 7 ], [ 11, 7 ], [ 11, 8 ], [ 10, 8 ], [ 10, 7 ] ] ],
+              "type" : "Polygon"
+            },
+            "id" : "GEO_FIELD >= '019970..0000000000' && GEO_FIELD <= '019971..0000000000'",
+            "type" : "Feature",
+            "properties" : {
+              "wkt" : "POLYGON ((10 7, 11 7, 11 8, 10 8, 10 7))",
+              "functions" : [ "geo:within_bounding_box(GEO_FIELD, '-10_-10', '10_10')" ],
+              "range" : [ "019970..0000000000", "019971..0000000000" ],
+              "fields" : [ "GEO_FIELD" ]
+            }
+          }, {
+            "geometry" : {
+              "coordinates" : [ [ [ 10, 8 ], [ 11, 8 ], [ 11, 9 ], [ 10, 9 ], [ 10, 8 ] ] ],
+              "type" : "Polygon"
+            },
+            "id" : "GEO_FIELD >= '019980..0000000000' && GEO_FIELD <= '019981..0000000000'",
+            "type" : "Feature",
+            "properties" : {
+              "wkt" : "POLYGON ((10 8, 11 8, 11 9, 10 9, 10 8))",
+              "functions" : [ "geo:within_bounding_box(GEO_FIELD, '-10_-10', '10_10')" ],
+              "range" : [ "019980..0000000000", "019981..0000000000" ],
+              "fields" : [ "GEO_FIELD" ]
+            }
+          }, {
+            "geometry" : {
+              "coordinates" : [ [ [ 10, 9 ], [ 11, 9 ], [ 11, 10 ], [ 10, 10 ], [ 10, 9 ] ] ],
+              "type" : "Polygon"
+            },
+            "id" : "GEO_FIELD >= '019990..0000000000' && GEO_FIELD <= '019991..0000000000'",
+            "type" : "Feature",
+            "properties" : {
+              "wkt" : "POLYGON ((10 9, 11 9, 11 10, 10 10, 10 9))",
+              "functions" : [ "geo:within_bounding_box(GEO_FIELD, '-10_-10', '10_10')" ],
+              "range" : [ "019990..0000000000", "019991..0000000000" ],
+              "fields" : [ "GEO_FIELD" ]
+            }
+          }, {
+            "geometry" : {
+              "coordinates" : [ [ [ -10, 10 ], [ -9, 10 ], [ -9, 10.1 ], [ -10, 10.1 ], [ -10, 10 ] ] ],
+              "type" : "Polygon"
+            },
+            "id" : "GEO_FIELD >= '110700..0000000000' && GEO_FIELD <= '110700..1000000000'",
+            "type" : "Feature",
+            "properties" : {
+              "wkt" : "POLYGON ((-10 10, -9 10, -9 10.1, -10 10.1, -10 10))",
+              "functions" : [ "geo:within_bounding_box(GEO_FIELD, '-10_-10', '10_10')" ],
+              "range" : [ "110700..0000000000", "110700..1000000000" ],
+              "fields" : [ "GEO_FIELD" ]
+            }
+          }, {
+            "geometry" : {
+              "coordinates" : [ [ [ -9, 10 ], [ -8, 10 ], [ -8, 10.1 ], [ -9, 10.1 ], [ -9, 10 ] ] ],
+              "type" : "Polygon"
+            },
+            "id" : "GEO_FIELD >= '110701..0000000000' && GEO_FIELD <= '110701..1000000000'",
+            "type" : "Feature",
+            "properties" : {
+              "wkt" : "POLYGON ((-9 10, -8 10, -8 10.1, -9 10.1, -9 10))",
+              "functions" : [ "geo:within_bounding_box(GEO_FIELD, '-10_-10', '10_10')" ],
+              "range" : [ "110701..0000000000", "110701..1000000000" ],
+              "fields" : [ "GEO_FIELD" ]
+            }
+          }, {
+            "geometry" : {
+              "coordinates" : [ [ [ -8, 10 ], [ -7, 10 ], [ -7, 10.1 ], [ -8, 10.1 ], [ -8, 10 ] ] ],
+              "type" : "Polygon"
+            },
+            "id" : "GEO_FIELD >= '110702..0000000000' && GEO_FIELD <= '110702..1000000000'",
+            "type" : "Feature",
+            "properties" : {
+              "wkt" : "POLYGON ((-8 10, -7 10, -7 10.1, -8 10.1, -8 10))",
+              "functions" : [ "geo:within_bounding_box(GEO_FIELD, '-10_-10', '10_10')" ],
+              "range" : [ "110702..0000000000", "110702..1000000000" ],
+              "fields" : [ "GEO_FIELD" ]
+            }
+          }, {
+            "geometry" : {
+              "coordinates" : [ [ [ -4, 10.1 ], [ -4, 10.1 ], [ -4, 10.1 ], [ -3, 10.1 ], [ -3, 10 ], [ -7, 10 ], [ -7, 11 ], [ -4, 11 ], [ -4, 10.1 ] ] ],
+              "type" : "Polygon"
+            },
+            "id" : "GEO_FIELD >= '110703..0000000000' && GEO_FIELD <= '110706..1000000000'",
+            "type" : "Feature",
+            "properties" : {
+              "wkt" : "POLYGON ((-4 10.1, -4 10.1, -4 10.1, -3 10.1, -3 10, -7 10, -7 11, -4 11, -4 10.1))",
+              "functions" : [ "geo:within_bounding_box(GEO_FIELD, '-10_-10', '10_10')" ],
+              "range" : [ "110703..0000000000", "110706..1000000000" ],
+              "fields" : [ "GEO_FIELD" ]
+            }
+          }, {
+            "geometry" : {
+              "coordinates" : [ [ [ -3, 10 ], [ -2, 10 ], [ -2, 10.1 ], [ -3, 10.1 ], [ -3, 10 ] ] ],
+              "type" : "Polygon"
+            },
+            "id" : "GEO_FIELD >= '110707..0000000000' && GEO_FIELD <= '110707..1000000000'",
+            "type" : "Feature",
+            "properties" : {
+              "wkt" : "POLYGON ((-3 10, -2 10, -2 10.1, -3 10.1, -3 10))",
+              "functions" : [ "geo:within_bounding_box(GEO_FIELD, '-10_-10', '10_10')" ],
+              "range" : [ "110707..0000000000", "110707..1000000000" ],
+              "fields" : [ "GEO_FIELD" ]
+            }
+          }, {
+            "geometry" : {
+              "coordinates" : [ [ [ -2, 10 ], [ -1, 10 ], [ -1, 10.1 ], [ -2, 10.1 ], [ -2, 10 ] ] ],
+              "type" : "Polygon"
+            },
+            "id" : "GEO_FIELD >= '110708..0000000000' && GEO_FIELD <= '110708..1000000000'",
+            "type" : "Feature",
+            "properties" : {
+              "wkt" : "POLYGON ((-2 10, -1 10, -1 10.1, -2 10.1, -2 10))",
+              "functions" : [ "geo:within_bounding_box(GEO_FIELD, '-10_-10', '10_10')" ],
+              "range" : [ "110708..0000000000", "110708..1000000000" ],
+              "fields" : [ "GEO_FIELD" ]
+            }
+          }, {
+            "geometry" : {
+              "coordinates" : [ [ [ -1, 10 ], [ -3.1741356911569804E-15, 10 ], [ -3.1741356911569804E-15, 10.1 ], [ -1, 10.1 ], [ -1, 10 ] ] ],
+              "type" : "Polygon"
+            },
+            "id" : "GEO_FIELD >= '110709..0000000000' && GEO_FIELD <= '110709..1000000000'",
+            "type" : "Feature",
+            "properties" : {
+              "wkt" : "POLYGON ((-1 10, -0 10, -0 10.1, -1 10.1, -1 10))",
+              "functions" : [ "geo:within_bounding_box(GEO_FIELD, '-10_-10', '10_10')" ],
+              "range" : [ "110709..0000000000", "110709..1000000000" ],
+              "fields" : [ "GEO_FIELD" ]
+            }
+          }, {
+            "geometry" : {
+              "coordinates" : [ [ [ 0.0, 10 ], [ 1, 10 ], [ 1, 10.1 ], [ 0.0, 10.1 ], [ 0.0, 10 ] ] ],
+              "type" : "Polygon"
+            },
+            "id" : "GEO_FIELD >= '110800..0000000000' && GEO_FIELD <= '110800..1000000000'",
+            "type" : "Feature",
+            "properties" : {
+              "wkt" : "POLYGON ((0 10, 1 10, 1 10.1, 0 10.1, 0 10))",
+              "functions" : [ "geo:within_bounding_box(GEO_FIELD, '-10_-10', '10_10')" ],
+              "range" : [ "110800..0000000000", "110800..1000000000" ],
+              "fields" : [ "GEO_FIELD" ]
+            }
+          }, {
+            "geometry" : {
+              "coordinates" : [ [ [ 1, 10 ], [ 2, 10 ], [ 2, 10.1 ], [ 1, 10.1 ], [ 1, 10 ] ] ],
+              "type" : "Polygon"
+            },
+            "id" : "GEO_FIELD >= '110801..0000000000' && GEO_FIELD <= '110801..1000000000'",
+            "type" : "Feature",
+            "properties" : {
+              "wkt" : "POLYGON ((1 10, 2 10, 2 10.1, 1 10.1, 1 10))",
+              "functions" : [ "geo:within_bounding_box(GEO_FIELD, '-10_-10', '10_10')" ],
+              "range" : [ "110801..0000000000", "110801..1000000000" ],
+              "fields" : [ "GEO_FIELD" ]
+            }
+          }, {
+            "geometry" : {
+              "coordinates" : [ [ [ 2, 10 ], [ 3, 10 ], [ 3, 10.1 ], [ 2, 10.1 ], [ 2, 10 ] ] ],
+              "type" : "Polygon"
+            },
+            "id" : "GEO_FIELD >= '110802..0000000000' && GEO_FIELD <= '110802..1000000000'",
+            "type" : "Feature",
+            "properties" : {
+              "wkt" : "POLYGON ((2 10, 3 10, 3 10.1, 2 10.1, 2 10))",
+              "functions" : [ "geo:within_bounding_box(GEO_FIELD, '-10_-10', '10_10')" ],
+              "range" : [ "110802..0000000000", "110802..1000000000" ],
+              "fields" : [ "GEO_FIELD" ]
+            }
+          }, {
+            "geometry" : {
+              "coordinates" : [ [ [ 3, 10 ], [ 4, 10 ], [ 4, 10.1 ], [ 3, 10.1 ], [ 3, 10 ] ] ],
+              "type" : "Polygon"
+            },
+            "id" : "GEO_FIELD >= '110803..0000000000' && GEO_FIELD <= '110803..1000000000'",
+            "type" : "Feature",
+            "properties" : {
+              "wkt" : "POLYGON ((3 10, 4 10, 4 10.1, 3 10.1, 3 10))",
+              "functions" : [ "geo:within_bounding_box(GEO_FIELD, '-10_-10', '10_10')" ],
+              "range" : [ "110803..0000000000", "110803..1000000000" ],
+              "fields" : [ "GEO_FIELD" ]
+            }
+          }, {
+            "geometry" : {
+              "coordinates" : [ [ [ 4, 11 ], [ 10, 11 ], [ 10, 10 ], [ 4, 10 ], [ 4, 11 ] ] ],
+              "type" : "Polygon"
+            },
+            "id" : "GEO_FIELD >= '110804..0000000000' && GEO_FIELD <= '110810..0000000000'",
+            "type" : "Feature",
+            "properties" : {
+              "wkt" : "POLYGON ((4 11, 10 11, 10 10, 4 10, 4 11))",
+              "functions" : [ "geo:within_bounding_box(GEO_FIELD, '-10_-10', '10_10')" ],
+              "range" : [ "110804..0000000000", "110810..0000000000" ],
+              "fields" : [ "GEO_FIELD" ]
+            }
+          } ],
+          "type" : "FeatureCollection"
+        }
+      }
+    }
+  },
+  "functions" : [ {
+    "function" : "geo:within_bounding_box(GEO_FIELD, '-10_-10', '10_10')",
+    "fields" : [ "GEO_FIELD" ],
+    "geoJson" : {
+      "geometry" : {
+        "coordinates" : [ [ [ -10, -10 ], [ 10, -10 ], [ 10, 10 ], [ -10, 10 ], [ -10, -10 ] ] ],
+        "type" : "Polygon"
+      },
+      "id" : "geo:within_bounding_box(GEO_FIELD, '-10_-10', '10_10')",
+      "type" : "Feature",
+      "properties" : {
+        "wkt" : "POLYGON ((-10 -10, 10 -10, 10 10, -10 10, -10 -10))",
+        "functions" : [ "geo:within_bounding_box(GEO_FIELD, '-10_-10', '10_10')" ],
+        "fields" : [ "GEO_FIELD" ]
+      }
+    }
+  } ]
+}

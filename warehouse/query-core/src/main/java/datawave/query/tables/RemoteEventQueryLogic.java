@@ -10,10 +10,10 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.log4j.Logger;
 
+import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.marking.MarkingFunctions;
 import datawave.query.tables.remote.RemoteQueryLogic;
 import datawave.query.transformer.EventQueryTransformerSupport;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.exception.EmptyObjectException;

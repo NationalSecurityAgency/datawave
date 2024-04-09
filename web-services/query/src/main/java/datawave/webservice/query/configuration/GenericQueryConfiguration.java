@@ -13,10 +13,10 @@ import org.apache.log4j.Logger;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.Iterators;
 
+import datawave.core.common.logging.ThreadConfigurableLogger;
+import datawave.core.common.util.EnvProvider;
 import datawave.util.TableName;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.logic.BaseQueryLogic;
-import datawave.webservice.util.EnvProvider;
 
 /**
  * <p>

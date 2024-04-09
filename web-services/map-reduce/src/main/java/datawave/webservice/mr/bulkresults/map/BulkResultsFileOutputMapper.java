@@ -25,8 +25,8 @@ import org.apache.log4j.Logger;
 import org.jboss.weld.environment.se.Weld;
 import org.springframework.util.Assert;
 
+import datawave.core.query.cache.ResultsPage;
 import datawave.webservice.query.Query;
-import datawave.webservice.query.cache.ResultsPage;
 import datawave.webservice.query.exception.EmptyObjectException;
 import datawave.webservice.query.logic.QueryLogic;
 import datawave.webservice.query.logic.QueryLogicTransformer;

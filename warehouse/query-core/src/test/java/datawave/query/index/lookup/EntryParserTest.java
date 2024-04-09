@@ -22,9 +22,9 @@ import org.junit.Test;
 
 import com.google.common.collect.Maps;
 
+import datawave.core.query.jexl.JexlNodeFactory;
+import datawave.core.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.ingest.protobuf.Uid;
-import datawave.query.jexl.JexlNodeFactory;
-import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.util.Tuple2;
 
 public class EntryParserTest {

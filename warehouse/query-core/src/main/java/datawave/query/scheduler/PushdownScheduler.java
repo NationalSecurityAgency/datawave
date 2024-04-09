@@ -29,6 +29,7 @@ import com.google.common.collect.Lists;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.impl.InMemoryTabletLocator;
+import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.mr.bulk.RfileResource;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.tables.BatchScannerSession;
@@ -40,7 +41,6 @@ import datawave.query.tables.stats.ScanSessionStats;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.MetadataHelperFactory;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.configuration.QueryData;
 
 /**

@@ -9,13 +9,17 @@ import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.log4j.Logger;
 import org.geotools.geojson.geom.GeometryJSON;
+import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.io.WKTReader;
 
+import datawave.core.common.logging.ThreadConfigurableLogger;
+import datawave.core.geo.utils.CommonGeoUtils;
+import datawave.core.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.functions.GeoFunctionsDescriptor;
 import datawave.query.jexl.functions.GeoWaveFunctionsDescriptor;
 import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
+import datawave.query.jexl.functions.arguments.GeoFunctionJexlArgumentDescriptor;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.map.QueryGeometry;
 
 /**
@@ -26,7 +30,6 @@ public class GeoFeatureVisitor extends ShortCircuitBaseVisitor {
 
     private Set<QueryGeometry> geoFeatures;
     private GeometryJSON geoJson = new GeometryJSON();
-    private WKTReader wktReader = new WKTReader();
 
     private boolean isLuceneQuery;
 
@@ -54,15 +57,13 @@ public class GeoFeatureVisitor extends ShortCircuitBaseVisitor {
         JexlArgumentDescriptor desc = JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor(node);
 
         try {
-            String wkt = null;
+            Geometry geometry = null;
 
-            if (desc instanceof GeoFunctionsDescriptor.GeoJexlArgumentDescriptor) {
-                wkt = ((GeoFunctionsDescriptor.GeoJexlArgumentDescriptor) desc).getWkt();
-            } else if (desc instanceof GeoWaveFunctionsDescriptor.GeoWaveJexlArgumentDescriptor) {
-                wkt = ((GeoWaveFunctionsDescriptor.GeoWaveJexlArgumentDescriptor) desc).getWkt();
+            if (desc instanceof GeoFunctionJexlArgumentDescriptor) {
+                geometry = CommonGeoUtils.geometriesToGeometry(((GeoFunctionJexlArgumentDescriptor) desc).getGeoFunction().getGeometry());
             }
 
-            if (wkt != null) {
+            if (geometry != null) {
                 String function = JexlStringBuildingVisitor.buildQuery(node);
 
                 // reformat as a lucene function
@@ -79,7 +80,7 @@ public class GeoFeatureVisitor extends ShortCircuitBaseVisitor {
                     }
                 }
 
-                geoFeatures.add(new QueryGeometry(function, geoJson.toString(wktReader.read(wkt))));
+                geoFeatures.add(new QueryGeometry(function, geoJson.toString(geometry)));
             }
         } catch (Exception e) {
             log.error("Unable to extract geo feature from function", e);

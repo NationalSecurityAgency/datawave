@@ -24,6 +24,8 @@ import org.apache.commons.jexl3.parser.ASTTrueNode;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.lang3.mutable.MutableInt;
 
+import datawave.core.query.jexl.visitors.BaseVisitor;
+import datawave.core.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 
 /**

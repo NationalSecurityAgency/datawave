@@ -18,7 +18,7 @@ import org.locationtech.jts.geom.GeometryCollection;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.PrecisionModel;
 
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
+import datawave.core.common.logging.ThreadConfigurableLogger;
 
 /**
  * This utility class contains a variety of methods which can be used to perform operations on Geo ranges.

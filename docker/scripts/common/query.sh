@@ -41,6 +41,10 @@ runQuery() {
         --data-urlencode "systemFrom=${SYSTEM_FROM}" \
         --data-urlencode "queryName=${QUERY_NAME}" \
         --data-urlencode "pagesize=${PAGE_SIZE}" \
+        --data-urlencode "params=excludeSystemTest1:true;excludeSystemTest2" \
+        --data-urlEncode "excludeSystemTest3" \
+        --data-urlEncode "excludeSystemTest4=true" \
+        --data-urlEncode "excludeSystemTest5=false" \
         ${DATAWAVE_ENDPOINT}/${QUERY_LOGIC}/create -o createResponse.xml -w '%{http_code}\n' >> querySummary.txt
 
     i=1

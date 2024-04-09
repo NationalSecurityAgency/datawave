@@ -1,0 +1,82 @@
+name: Tests
+
+on:
+  push:
+    paths-ignore: ['*.md', 'CODEOWNERS', 'LICENSE']
+    branches:
+    - 'master'
+    - 'release/*'
+  pull_request:
+    paths-ignore: ['*.md', 'CODEOWNERS', 'LICENSE']
+
+jobs:
+  # Runs the pom sorter and code formatter to ensure that the code
+  # is formatted and poms are sorted according to project rules. This
+  # will fail if the formatter makes any changes.
+  check-code-formatting:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v1
+    - name: Set up JDK 1.8
+      uses: actions/setup-java@v1
+      with:
+        java-version: 1.8
+    - uses: actions/cache@v1
+      with:
+        path: ~/.m2/repository
+        key: ${{ runner.os }}-maven-format-${{ hashFiles('**/pom.xml') }}
+        restore-keys: |
+          ${{ runner.os }}-maven-format-
+          ${{ runner.os }}-maven-
+    - name: Format code
+      run: |
+        mvn -V -B -e clean formatter:format sortpom:sort -Pautoformat
+        git status
+        git diff-index --quiet HEAD || (echo "Error! There are modified files after formatting." && false)
+      env:
+        MAVEN_OPTS: "-Dhttps.protocols=TLSv1.2 -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN -Djava.awt.headless=true"
+
+  # Build the code and run the unit/integration tests.
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v1
+    - name: Set up JDK 1.8
+      uses: actions/setup-java@v1
+      with:
+        java-version: 1.8
+    - uses: actions/cache@v1
+      with:
+        path: ~/.m2/repository
+        key: ${{ runner.os }}-maven-build-${{ hashFiles('**/pom.xml') }}
+        restore-keys: |
+          ${{ runner.os }}-maven-build-
+          ${{ runner.os }}-maven-format-
+          ${{ runner.os }}-maven-
+    - name: Build and Run Unit Tests
+      run: mvn -V -B -e -Ddist clean verify
+      env:
+        MAVEN_OPTS: "-Dhttps.protocols=TLSv1.2 -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN -Djava.awt.headless=true"
+
+    # Here's an example of how you'd deploy the image to the github package registry.
+    # We don't want to do this by default since packages on github cannot be deleted
+    # or overwritten. So this could only be done for tags, however it seems the quickstart
+    # image may also exceed the maximum size allowed by github.
+    # - name: Image
+    #   env:
+    #     IMAGE_REGISTRY: "docker.pkg.github.com"
+    #     IMAGE_USERNAME: "NationalSecurityAgency"
+    #   run: |
+    #     # Set up env vars
+    #     IMAGE_NAME=$(mvn -q -N -Pdocker -f service/pom.xml -Dexec.executable='echo' -Dexec.args='${project.version}' exec:exec)
+    #     IMAGE_PREFIX=$(mvn -q -N -Pdocker -f service/pom.xml -Dexec.executable='echo' -Dexec.args='${docker.image.prefix}' exec:exec)
+    #     IMAGE_TAG=$(mvn -q -N -Pdocker -f service/pom.xml -Dexec.executable='echo' -Dexec.args='${project.artifactId}' exec:exec)
+    #     REMOTE_IMAGE_NAME="${IMAGE_REGISTRY}/${IMAGE_USERNAME}/${IMAGE_PREFIX}${IMAGE_NAME}"
+    #     # Log in to the package registry
+    #     echo ${{ secrets.GITHUB_TOKEN }} | docker login docker.pkg.github.com --username ${GITHUB_ACTOR} --password-stdin
+    #     # Tag and push the image
+    #     docker tag ${IMAGE_PREFIX}${IMAGE_NAME}:${IMAGE_TAG} ${REMOTE_IMAGE_NAME}:${IMAGE_TAG}
+    #     docker push ${REMOTE_IMAGE_NAME}:${IMAGE_TAG}
+

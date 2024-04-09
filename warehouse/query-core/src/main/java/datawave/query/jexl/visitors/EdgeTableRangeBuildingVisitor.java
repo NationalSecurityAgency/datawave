@@ -25,6 +25,7 @@ import org.apache.log4j.Logger;
 
 import com.google.common.collect.Sets;
 
+import datawave.core.query.jexl.visitors.BaseVisitor;
 import datawave.data.type.Type;
 import datawave.edge.model.EdgeModelAware;
 import datawave.edge.util.EdgeKeyUtil;

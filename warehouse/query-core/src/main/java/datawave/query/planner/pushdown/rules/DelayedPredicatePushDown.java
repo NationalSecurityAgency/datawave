@@ -1,6 +1,6 @@
 package datawave.query.planner.pushdown.rules;
 
-import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DELAYED;
+import static datawave.core.query.jexl.nodes.QueryPropertyMarker.MarkerType.DELAYED;
 
 import java.util.Comparator;
 import java.util.Iterator;
@@ -15,7 +15,7 @@ import org.apache.log4j.Logger;
 
 import com.google.common.base.Preconditions;
 
-import datawave.query.jexl.nodes.QueryPropertyMarker;
+import datawave.core.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.planner.pushdown.Cost;
 import datawave.query.planner.pushdown.CostEstimator;
 import datawave.query.planner.pushdown.PushDownVisitor;

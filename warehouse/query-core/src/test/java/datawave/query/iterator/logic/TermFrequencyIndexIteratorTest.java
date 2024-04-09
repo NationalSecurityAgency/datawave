@@ -26,6 +26,7 @@ import org.apache.commons.jexl3.parser.ParseException;
 import org.junit.Before;
 import org.junit.Test;
 
+import datawave.core.query.jexl.JexlNodeFactory;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.query.Constants;
 import datawave.query.attributes.AttributeFactory;
@@ -33,7 +34,6 @@ import datawave.query.attributes.Document;
 import datawave.query.attributes.PreNormalizedAttribute;
 import datawave.query.iterator.SortedListKeyValueIterator;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.functions.TermFrequencyAggregator;
 import datawave.query.predicate.EventDataQueryExpressionFilter;
 import datawave.query.predicate.EventDataQueryFilter;

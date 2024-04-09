@@ -27,6 +27,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
+import datawave.core.geo.utils.GeoQueryConfig;
 import datawave.data.type.DateType;
 import datawave.data.type.GeometryType;
 import datawave.data.type.LcNoDiacriticsType;
@@ -185,10 +186,23 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("geoWaveRangeSplitThreshold", 14);
         defaultValues.put("geoWaveMaxRangeOverlap", 0.25);
         updatedValues.put("geoWaveMaxRangeOverlap", 0.35);
+        defaultValues.put("optimizeGeoRanges", true);
+        updatedValues.put("optimizeGeoRanges", false);
         defaultValues.put("optimizeGeoWaveRanges", true);
         updatedValues.put("optimizeGeoWaveRanges", false);
+        defaultValues.put("geoMaxEnvelopes", 4);
+        updatedValues.put("geoMaxEnvelopes", 40);
         defaultValues.put("geoWaveMaxEnvelopes", 4);
         updatedValues.put("geoWaveMaxEnvelopes", 40);
+        defaultValues.put("geoQueryConfig",
+                        GeoQueryConfig.builder().setGeowaveMaxEnvelopes(4).setGeometryMaxExpansion(8).setPointMaxExpansion(32).setOptimizeGeoWaveRanges(true)
+                                        .setRangeSplitThreshold(16).setMaxRangeOverlap(0.25).setGeoMaxEnvelopes(4).setGeoMaxExpansion(32)
+                                        .setOptimizeGeoRanges(true).build());
+        updatedValues.put("geoQueryConfig",
+                        GeoQueryConfig.builder().setGeowaveMaxEnvelopes(40).setGeometryMaxExpansion(4).setPointMaxExpansion(36).setOptimizeGeoWaveRanges(false)
+                                        .setRangeSplitThreshold(14).setMaxRangeOverlap(0.35).setGeoMaxEnvelopes(40).setGeoMaxExpansion(39)
+                                        .setOptimizeGeoRanges(false).build());
+        alreadySet.add("geoQueryConfig");
         defaultValues.put("shardTableName", TableName.SHARD);
         updatedValues.put("shardTableName", "datawave." + TableName.SHARD);
         defaultValues.put("indexTableName", TableName.SHARD_INDEX);

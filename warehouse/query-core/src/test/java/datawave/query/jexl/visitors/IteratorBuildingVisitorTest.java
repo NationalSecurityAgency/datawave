@@ -25,6 +25,8 @@ import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import datawave.core.query.jexl.JexlNodeFactory;
+import datawave.core.query.jexl.LiteralRange;
 import datawave.query.Constants;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Document;
@@ -33,8 +35,6 @@ import datawave.query.iterator.NestedIterator;
 import datawave.query.iterator.SeekableNestedIterator;
 import datawave.query.iterator.SortedListKeyValueIterator;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.JexlNodeFactory;
-import datawave.query.jexl.LiteralRange;
 import datawave.query.predicate.TimeFilter;
 import datawave.query.util.TypeMetadata;
 

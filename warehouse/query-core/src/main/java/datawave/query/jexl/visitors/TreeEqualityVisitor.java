@@ -95,7 +95,7 @@ import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.commons.jexl3.parser.ParserVisitor;
 import org.apache.commons.jexl3.parser.SimpleNode;
 
-import datawave.query.jexl.nodes.QueryPropertyMarker;
+import datawave.core.query.jexl.nodes.QueryPropertyMarker;
 
 /**
  * Determine whether two trees are equivalent, accounting for arbitrary order within subtrees.

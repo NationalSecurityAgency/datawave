@@ -40,6 +40,8 @@ import com.google.common.collect.Lists;
 
 import datawave.core.iterators.ColumnQualifierRangeIterator;
 import datawave.core.iterators.ColumnRangeIterator;
+import datawave.core.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.core.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import datawave.data.type.Type;
 import datawave.query.Constants;
 import datawave.query.QueryParameters;
@@ -50,9 +52,7 @@ import datawave.query.iterator.filter.EdgeFilterIterator;
 import datawave.query.iterator.filter.LoadDateFilter;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.EdgeTableRangeBuildingVisitor;
-import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.QueryModelVisitor;
-import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import datawave.query.language.parser.QueryParser;
 import datawave.query.language.tree.QueryNode;
 import datawave.query.model.edge.EdgeQueryModel;

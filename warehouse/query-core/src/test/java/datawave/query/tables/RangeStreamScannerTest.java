@@ -46,6 +46,7 @@ import com.google.common.collect.Sets;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.core.query.jexl.JexlNodeFactory;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NumberType;
 import datawave.data.type.Type;
@@ -56,7 +57,6 @@ import datawave.query.index.lookup.DataTypeFilter;
 import datawave.query.index.lookup.EntryParser;
 import datawave.query.index.lookup.IndexInfo;
 import datawave.query.index.lookup.ScannerStream;
-import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.util.QueryScannerHelper;
 import datawave.query.util.Tuple2;
 import datawave.util.time.DateHelper;

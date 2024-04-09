@@ -24,13 +24,15 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import datawave.core.query.jexl.LiteralRange;
+import datawave.core.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.core.query.jexl.visitors.PrintingVisitor;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NumberType;
 import datawave.data.type.Type;
 import datawave.query.attributes.AttributeFactory;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.LiteralRange;
 import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor.ExpressionFilter;
 import datawave.query.predicate.PeekingPredicate;
 import datawave.query.util.MockDateIndexHelper;

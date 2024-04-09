@@ -21,9 +21,9 @@ import org.apache.commons.jexl3.parser.JexlNode;
 
 import com.google.common.base.Preconditions;
 
+import datawave.core.query.jexl.nodes.QueryPropertyMarker;
+import datawave.core.query.jexl.visitors.RebuildingVisitor;
 import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.jexl.nodes.QueryPropertyMarker;
-import datawave.query.jexl.visitors.RebuildingVisitor;
 import datawave.query.util.MetadataHelper;
 
 public class NodeTransformVisitor extends RebuildingVisitor {
@@ -41,7 +41,7 @@ public class NodeTransformVisitor extends RebuildingVisitor {
 
     public static ASTJexlScript transform(ASTJexlScript tree, List<NodeTransformRule> rules, ShardQueryConfiguration config, MetadataHelper helper) {
         NodeTransformVisitor visitor = new NodeTransformVisitor(config, helper, rules);
-        return visitor.apply(tree);
+        return (ASTJexlScript) visitor.visit(tree, null);
     }
 
     @Override

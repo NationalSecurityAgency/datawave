@@ -13,10 +13,10 @@ import org.apache.log4j.Logger;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
+import datawave.core.query.jexl.LiteralRange;
+import datawave.core.query.jexl.visitors.BaseVisitor;
+import datawave.core.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.LiteralRange;
-import datawave.query.jexl.visitors.BaseVisitor;
-import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 
 public class FindLiteralsAndPatternsVisitor extends BaseVisitor {
 

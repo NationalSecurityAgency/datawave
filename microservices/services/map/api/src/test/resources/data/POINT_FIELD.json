@@ -1,0 +1,20 @@
+{
+  "geoByField" : { },
+  "functions" : [ {
+    "function" : "geowave:intersects(POINT_FIELD, 'POLYGON((10 10, -10 10, -10 -10, 10 -10, 10 10))')",
+    "fields" : [ "POINT_FIELD" ],
+    "geoJson" : {
+      "geometry" : {
+        "coordinates" : [ [ [ 10, 10 ], [ -10, 10 ], [ -10, -10 ], [ 10, -10 ], [ 10, 10 ] ] ],
+        "type" : "Polygon"
+      },
+      "id" : "geowave:intersects(POINT_FIELD, 'POLYGON((10 10, -10 10, -10 -10, 10 -10, 10 10))')",
+      "type" : "Feature",
+      "properties" : {
+        "wkt" : "POLYGON ((10 10, -10 10, -10 -10, 10 -10, 10 10))",
+        "functions" : [ "geowave:intersects(POINT_FIELD, 'POLYGON((10 10, -10 10, -10 -10, 10 -10, 10 10))')" ],
+        "fields" : [ "POINT_FIELD" ]
+      }
+    }
+  } ]
+}

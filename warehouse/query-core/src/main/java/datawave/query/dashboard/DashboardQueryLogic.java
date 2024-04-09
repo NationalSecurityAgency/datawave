@@ -6,10 +6,10 @@ import java.util.List;
 
 import org.apache.commons.collections4.iterators.TransformIterator;
 
+import datawave.core.query.cache.ResultsPage;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.webservice.common.extjs.ExtJsResponse;
 import datawave.webservice.query.Query;
-import datawave.webservice.query.cache.ResultsPage;
 import datawave.webservice.query.dashboard.DashboardFields;
 import datawave.webservice.query.dashboard.DashboardSummary;
 import datawave.webservice.query.logic.QueryLogicTransformer;

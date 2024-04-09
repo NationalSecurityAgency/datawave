@@ -1,0 +1,29 @@
+logging:
+  level:
+    root: TRACE
+  
+datawave:
+  map:
+    dictionaryUri: 'https://dictionary:8443/dictionary/data/v1/'
+    metadataTableName: 'datawave.metadata'
+    geoFields:
+        - GEO_FIELD
+    geowaveFields:
+        - GEOWAVE_FIELD
+        - POINT_FIELD
+    geoTypes:
+        - "Combined latitude, longitude"
+    geowaveTypes:
+        - "Geometry"
+        - "Point Geometry"
+    accumulo:
+      zookeepers: "${accumulo.zookeepers}"
+      instance-name: '${accumulo.instanceName}'
+      username: '${accumulo.username}'
+      password: '${accumulo.password}'
+  
+  metadata:
+    all-metadata-auths:
+        - PRIVATE,PUBLIC
+    type-substitutions:
+      "[datawave.data.type.DateType]": "datawave.data.type.RawDateType"

@@ -19,7 +19,7 @@ DW_DATAWAVE_SOURCE_DIR="$( cd "${DW_DATAWAVE_SERVICE_DIR}/../../../../.." && pwd
 # canned example data. Should be exhaustive for any and all known/required auths. Otherwise, you will not be able to
 # view the data in Accumulo Shell
 
-DW_DATAWAVE_ACCUMULO_AUTHS="${DW_DATAWAVE_ACCUMULO_AUTHS:-PUBLIC,PRIVATE,FOO,BAR,DEF,A,B,C,D,E,F,G,H,I,DW_USER,DW_SERV,DW_ADMIN,JBOSS_ADMIN}"
+DW_DATAWAVE_ACCUMULO_AUTHS="${DW_DATAWAVE_ACCUMULO_AUTHS:-PUBLIC,PRIVATE,FOO,BAR,DEF,A,B,C,D,E,F,G,H,I,DW_USER,DW_SERV,DW_ADMIN,JBOSS_ADMIN,METRICS_ADMIN}"
 
 # Import DataWave Web test user configuration
 

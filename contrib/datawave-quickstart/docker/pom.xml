@@ -290,6 +290,13 @@
                         </executions>
                     </plugin>
                     <plugin>
+                        <groupId>io.github.git-commit-id</groupId>
+                        <artifactId>git-commit-id-maven-plugin</artifactId>
+                        <configuration>
+                            <skipPoms>false</skipPoms>
+                        </configuration>
+                    </plugin>
+                    <plugin>
                         <artifactId>maven-resources-plugin</artifactId>
                         <executions>
                             <execution>
@@ -311,13 +318,6 @@
                                 </configuration>
                             </execution>
                         </executions>
-                    </plugin>
-                    <plugin>
-                        <groupId>pl.project13.maven</groupId>
-                        <artifactId>git-commit-id-plugin</artifactId>
-                        <configuration>
-                            <skipPoms>false</skipPoms>
-                        </configuration>
                     </plugin>
                 </plugins>
             </build>

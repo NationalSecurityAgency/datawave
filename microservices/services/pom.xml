@@ -78,6 +78,17 @@
             </modules>
         </profile>
         <profile>
+            <id>submodule-service-map</id>
+            <activation>
+                <file>
+                    <exists>map/pom.xml</exists>
+                </file>
+            </activation>
+            <modules>
+                <module>map</module>
+            </modules>
+        </profile>
+        <profile>
             <id>submodule-service-query-metric</id>
             <activation>
                 <file>

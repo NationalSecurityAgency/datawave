@@ -27,6 +27,8 @@ import org.junit.Test;
 
 import com.google.common.collect.HashMultimap;
 
+import datawave.core.query.cache.ResultsPage;
+import datawave.core.query.cache.ResultsPage.Status;
 import datawave.marking.MarkingFunctions;
 import datawave.security.authorization.AuthorizationException;
 import datawave.security.authorization.DatawavePrincipal;
@@ -40,8 +42,6 @@ import datawave.user.DefaultAuthorizationsList;
 import datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.cache.ResultsPage;
-import datawave.webservice.query.cache.ResultsPage.Status;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.exception.EmptyObjectException;
 import datawave.webservice.query.exception.QueryException;

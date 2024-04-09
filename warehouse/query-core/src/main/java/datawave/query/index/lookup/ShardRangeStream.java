@@ -18,6 +18,7 @@ import org.apache.commons.jexl3.parser.JexlNode;
 import com.google.common.base.Function;
 import com.google.common.collect.Iterators;
 
+import datawave.core.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.CloseableIterable;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveQueryException;
@@ -25,7 +26,6 @@ import datawave.query.index.lookup.IndexStream.StreamContext;
 import datawave.query.iterator.FieldIndexOnlyQueryIterator;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.iterator.errors.ErrorKey;
-import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.planner.QueryPlan;
 import datawave.query.tables.ScannerFactory;

@@ -649,6 +649,16 @@
             <build>
                 <plugins>
                     <plugin>
+                        <groupId>io.github.git-commit-id</groupId>
+                        <artifactId>git-commit-id-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>default</id>
+                                <phase>none</phase>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
                         <artifactId>maven-compiler-plugin</artifactId>
                         <!-- override execution so compile doesn't run -->
                         <executions>
@@ -668,16 +678,6 @@
                             </execution>
                             <execution>
                                 <id>enforce-no-snapshots</id>
-                                <phase>none</phase>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
-                        <groupId>pl.project13.maven</groupId>
-                        <artifactId>git-commit-id-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>default</id>
                                 <phase>none</phase>
                             </execution>
                         </executions>

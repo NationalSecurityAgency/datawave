@@ -11,6 +11,10 @@
     <packaging>pom</packaging>
     <name>${project.artifactId}</name>
     <modules>
+        <module>common-util</module>
+        <module>exceptions</module>
+        <module>geo</module>
+        <module>jexl</module>
         <module>utils</module>
     </modules>
     <scm>

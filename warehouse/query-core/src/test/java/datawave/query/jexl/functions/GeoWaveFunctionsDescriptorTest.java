@@ -17,11 +17,12 @@ import org.junit.Test;
 import org.locationtech.jts.geom.Envelope;
 import org.powermock.reflect.Whitebox;
 
+import datawave.core.geo.utils.CommonGeoUtils;
+import datawave.core.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.data.normalizer.AbstractGeometryNormalizer;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
-import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.MockMetadataHelper;
 
@@ -79,8 +80,7 @@ public class GeoWaveFunctionsDescriptorTest {
                 "((-5 -5, 5 -5, 5 5, -5 5, -5 -5)))";                 // GROUP 3
         // @formatter:on
 
-        List<Envelope> envelopes = (List<Envelope>) Whitebox.invokeMethod(GeoWaveFunctionsDescriptor.class, "getSeparateEnvelopes",
-                        AbstractGeometryNormalizer.parseGeometry(wkt), 4);
+        List<Envelope> envelopes = CommonGeoUtils.getDisjointEnvelopes(AbstractGeometryNormalizer.parseGeometry(wkt), 4);
 
         Assert.assertEquals(3, envelopes.size());
 

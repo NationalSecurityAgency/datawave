@@ -14,11 +14,11 @@ import org.apache.curator.framework.recipes.locks.InterProcessMutex;
 import org.apache.curator.framework.state.ConnectionState;
 import org.apache.log4j.Logger;
 
+import datawave.core.common.util.EnvProvider;
 import datawave.webservice.common.cache.SharedCacheCoordinator;
 import datawave.webservice.common.cache.SharedTriState;
 import datawave.webservice.common.cache.SharedTriStateListener;
 import datawave.webservice.common.cache.SharedTriStateReader;
-import datawave.webservice.util.EnvProvider;
 
 /**
  * Uses the SharedCacheCoordinator to register listeners so that when an event is fired (for example, when a new model is loaded) the TypeMetadata map will be

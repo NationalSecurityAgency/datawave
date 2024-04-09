@@ -2,6 +2,7 @@ package datawave.query.jexl.lookups;
 
 import java.util.Set;
 
+import datawave.core.query.jexl.lookups.IndexLookupMap;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.tables.ScannerFactory;
 

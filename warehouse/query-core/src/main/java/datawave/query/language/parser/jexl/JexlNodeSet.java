@@ -14,8 +14,8 @@ import org.apache.commons.jexl3.parser.JexlNode;
 
 import com.google.common.collect.Sets;
 
+import datawave.core.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.nodes.QueryPropertyMarker;
 
 /**
  * Utility class that implements the {@link Set} interface for use with a collection of Jexl nodes.
@@ -24,8 +24,8 @@ import datawave.query.jexl.nodes.QueryPropertyMarker;
  *
  * The node keys are built using {@link JexlASTHelper#nodeToKey(JexlNode)}.
  *
- * If the {@link #useSourceNodeForKeys} flag is set then {@link datawave.query.jexl.nodes.QueryPropertyMarker} nodes will generate a node key from the unwrapped
- * source node. NOTE: This flag is enabled by default.
+ * If the {@link #useSourceNodeForKeys} flag is set then {@link datawave.core.query.jexl.nodes.QueryPropertyMarker} nodes will generate a node key from the
+ * unwrapped source node. NOTE: This flag is enabled by default.
  *
  * For example, (ASTDelayedPredicate &amp;&amp; FOO == 'bar') will be unwrapped to FOO == 'bar', generating the node key "FOO == 'bar'".
  */
@@ -259,7 +259,7 @@ public class JexlNodeSet implements Set<JexlNode> {
 
     /**
      * Build a key for the provided Jexl node. If the {@link #useSourceNodeForKeys} flag is set, this method will unwrap
-     * {@link datawave.query.jexl.nodes.QueryPropertyMarker} nodes when generating the node key.
+     * {@link datawave.core.query.jexl.nodes.QueryPropertyMarker} nodes when generating the node key.
      *
      * @param node
      *            the provided node

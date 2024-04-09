@@ -9,12 +9,12 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
 
+import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.marking.MarkingFunctions;
 import datawave.query.config.RemoteQueryConfiguration;
 import datawave.query.tables.remote.RemoteQueryLogic;
 import datawave.security.authorization.UserOperations;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.common.remote.RemoteQueryService;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;

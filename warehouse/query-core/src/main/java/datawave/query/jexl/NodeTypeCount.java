@@ -10,7 +10,7 @@ import java.util.stream.Stream;
 import org.apache.commons.jexl3.parser.Node;
 import org.apache.commons.lang.builder.ToStringBuilder;
 
-import datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType;
+import datawave.core.query.jexl.nodes.QueryPropertyMarker.MarkerType;
 
 public class NodeTypeCount {
 

@@ -24,6 +24,7 @@ import org.junit.Test;
 
 import com.google.common.collect.Sets;
 
+import datawave.core.query.cache.ResultsPage;
 import datawave.helpers.PrintUtility;
 import datawave.marking.MarkingFunctions;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
@@ -37,7 +38,6 @@ import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.util.TableName;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.cache.ResultsPage;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.result.event.DefaultResponseObjectFactory;
 import datawave.webservice.query.runner.RunningQuery;

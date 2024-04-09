@@ -1,6 +1,6 @@
 package datawave.query.jexl.visitors;
 
-import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.BOUNDED_RANGE;
+import static datawave.core.query.jexl.nodes.QueryPropertyMarker.MarkerType.BOUNDED_RANGE;
 
 import org.apache.commons.jexl3.parser.ASTAndNode;
 import org.apache.commons.jexl3.parser.ASTEQNode;
@@ -16,8 +16,10 @@ import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.lang.mutable.MutableInt;
 import org.apache.log4j.Logger;
 
-import datawave.query.jexl.nodes.QueryPropertyMarker;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
+import datawave.core.common.logging.ThreadConfigurableLogger;
+import datawave.core.query.jexl.nodes.QueryPropertyMarker;
+import datawave.core.query.jexl.visitors.BaseVisitor;
+import datawave.core.query.jexl.visitors.QueryPropertyMarkerVisitor;
 
 /**
  * Count the number of terms where bounded ranges count as 1 term

@@ -11,7 +11,7 @@ import org.apache.hadoop.io.WritableComparable;
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 
-import datawave.query.jexl.JexlNodeFactory;
+import datawave.core.query.jexl.JexlNodeFactory;
 import datawave.query.language.parser.jexl.JexlNodeSet;
 
 public class IndexMatch implements WritableComparable<IndexMatch> {

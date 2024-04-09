@@ -14,8 +14,8 @@ import org.apache.log4j.Logger;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimap;
 
+import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.ingest.data.config.NormalizedContentInterface;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
 
 public class MetricsSummaryFormatter {
 

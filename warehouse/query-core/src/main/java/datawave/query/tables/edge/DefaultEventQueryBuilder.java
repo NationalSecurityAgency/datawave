@@ -11,10 +11,10 @@ import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import datawave.core.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import datawave.edge.model.EdgeModelAware;
 import datawave.edge.model.EdgeModelAware.Fields.FieldKey;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import datawave.webservice.dictionary.edge.EdgeDictionaryBase;
 import datawave.webservice.dictionary.edge.EventField;
 import datawave.webservice.dictionary.edge.MetadataBase;
