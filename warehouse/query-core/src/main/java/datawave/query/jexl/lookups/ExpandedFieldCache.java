@@ -13,9 +13,13 @@ public class ExpandedFieldCache {
     private Multimap<String,ValueSet> previouslyExpandedFieldCache = HashMultimap.create();
 
     private boolean containsExpansionsFor(IndexLookupMap fieldstoterms) {
-        for (Map.Entry<String,ValueSet> fieldTermPair : fieldstoterms.entrySet()) {
-            if (previouslyExpandedFieldCache.containsEntry(fieldTermPair.getKey(), fieldTermPair.getValue())) {
-                return true;
+        if (!fieldstoterms.isKeyThresholdExceeded()) {
+            for (Map.Entry<String,ValueSet> fieldTermPair : fieldstoterms.entrySet()) {
+                if (!fieldTermPair.getValue().isThresholdExceeded()) {
+                    if (previouslyExpandedFieldCache.containsEntry(fieldTermPair.getKey(), fieldTermPair.getValue())) {
+                        return true;
+                    }
+                }
             }
         }
         return false;
