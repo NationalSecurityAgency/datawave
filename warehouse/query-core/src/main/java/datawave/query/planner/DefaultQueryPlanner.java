@@ -2222,6 +2222,11 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 throw new DatawaveQueryException(qe);
             }
 
+            if (!preloadOptions && config.isRebuildDatatypeFilter()) {
+                Set<String> datatypes = IngestTypeVisitor.getIngestTypes(config.getQueryTree(), getTypeMetadata());
+                config.setDatatypeFilter(datatypes);
+            }
+
             String datatypeFilter = config.getDatatypeFilterAsString();
 
             addOption(cfg, QueryOptions.DATATYPE_FILTER, datatypeFilter, false);
@@ -2652,6 +2657,12 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             log.warn("After expanding the query, it is determined that the query cannot be executed against the field index and a full table scan is required");
             needsFullTable = true;
             fullTableScanReason = state.reason;
+        }
+
+        // optionally build/rebuild the datatype filter with the fully planned query
+        if (config.isRebuildDatatypeFilter()) {
+            Set<String> ingestTypes = IngestTypeVisitor.getIngestTypes(config.getQueryTree(), getTypeMetadata());
+            config.setDatatypeFilter(ingestTypes);
         }
 
         Set<String> ingestTypes = null;
