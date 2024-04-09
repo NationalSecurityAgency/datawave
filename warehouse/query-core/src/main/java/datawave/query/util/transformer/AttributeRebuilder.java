@@ -1,6 +1,8 @@
 package datawave.query.util.transformer;
 
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -8,8 +10,14 @@ import javax.annotation.Nullable;
 
 import org.apache.log4j.Logger;
 
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
+
+import datawave.data.type.LcNoDiacriticsType;
+import datawave.data.type.NoOpType;
 import datawave.data.type.Type;
 import datawave.query.attributes.Attribute;
+import datawave.query.attributes.AttributeFactory;
 import datawave.query.attributes.TypeAttribute;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.model.QueryModel;
@@ -21,7 +29,7 @@ import datawave.query.util.TypeMetadata;
 public class AttributeRebuilder {
     private static final Logger log = Logger.getLogger(AttributeRebuilder.class);
     private final TypeMetadata typeMetadata;
-    private final Map<String,String> fieldMap;
+    private final Multimap<String,String> fieldMap;
     private final Map<String,Class<?>> classCache;
 
     /**
@@ -33,15 +41,15 @@ public class AttributeRebuilder {
     public AttributeRebuilder(TypeMetadata typeMetadata, @Nullable QueryModel queryModel) {
         this.typeMetadata = typeMetadata;
         if (queryModel == null) {
-            this.fieldMap = new HashMap<>();
+            this.fieldMap = HashMultimap.create();
         } else {
             this.fieldMap = invertMap(queryModel.getReverseQueryMapping());
         }
         this.classCache = new HashMap<>();
     }
 
-    private Map<String,String> invertMap(Map<String,String> map) {
-        Map<String,String> mappings = new HashMap<>();
+    private Multimap<String,String> invertMap(Map<String,String> map) {
+        HashMultimap<String,String> mappings = HashMultimap.create();
         for (Map.Entry<String,String> entry : map.entrySet()) {
             mappings.put(entry.getValue(), entry.getKey());
         }
@@ -65,15 +73,23 @@ public class AttributeRebuilder {
             populateNormalizerFromQueryModel(field, normalizerNames);
         }
 
-        if (normalizerNames.size() > 1 && log.isTraceEnabled()) {
-            log.trace("Found " + normalizerNames.size() + " normalizers for field " + field + ", using first normalizer");
+        // see AttributeFactory#getKeepers
+        if (normalizerNames.size() > 1 && normalizerNames.contains(NoOpType.class.getName())) {
+            normalizerNames.remove(NoOpType.class.getName());
+        }
+
+        if (normalizerNames.size() > 1 && normalizerNames.contains(LcNoDiacriticsType.class.getName())) {
+            normalizerNames.remove(LcNoDiacriticsType.class.getName());
+        }
+
+        if (normalizerNames.size() > 1) {
+            log.warn("Found more than one normalizer, using the first for field " + field + ": " + normalizerNames);
         }
 
         for (String name : normalizerNames) {
             try {
                 Class<?> clazz = getClass(name);
                 Type<?> type = (Type<?>) clazz.getDeclaredConstructor().newInstance();
-
                 type.setDelegateFromString(String.valueOf(attr.getData()));
                 return new TypeAttribute<>(type, attr.getMetadata(), attr.isToKeep());
             } catch (Exception e) {
@@ -97,12 +113,10 @@ public class AttributeRebuilder {
             log.trace("Field " + field + " not found in TypeMetadata, falling back to QueryModel");
         }
 
-        String alias = fieldMap.get(field);
-        if (alias == null) {
-            log.error("Field " + field + " did not have a reverse mapping in the query model");
+        Collection<String> aliases = fieldMap.get(field);
+        for (String alias : aliases) {
+            normalizerNames.addAll(typeMetadata.getNormalizerNamesForField(alias));
         }
-
-        normalizerNames.addAll(typeMetadata.getNormalizerNamesForField(alias));
     }
 
     /**
