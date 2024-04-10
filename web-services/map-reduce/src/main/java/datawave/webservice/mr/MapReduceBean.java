@@ -16,6 +16,7 @@ import java.util.Properties;
 import java.util.Queue;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import javax.annotation.Resource;
 import javax.annotation.security.DeclareRoles;
@@ -63,6 +64,8 @@ import org.apache.oozie.client.OozieClient;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.jboss.security.JSSESecurityDomain;
+
+import com.google.common.base.Joiner;
 
 import datawave.annotation.Required;
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
@@ -163,6 +166,7 @@ public class MapReduceBean {
 
     private static final String PARAMETER_SEPARATOR = ";";
     private static final String PARAMETER_NAME_VALUE_SEPARATOR = ":";
+    private static final String PARAMETERS = "parameters";
     private static final String JOB_ID = "MapReduce.id";
     private static final int BUFFER_SIZE = 16384;
 
@@ -356,11 +360,9 @@ public class MapReduceBean {
     /**
      * Execute a MapReduce job with the given name and runtime parameters
      *
-     * @param jobName
-     *            Name of the map reduce job configuration
      * @param parameters
-     *            A semi-colon separated list name:value pairs. These are the required and optional parameters listed in the MapReduceConfiguration objects
-     *            returned in the call to list()
+     *            The parameters, such as jobName, format, queryId, and outputFormat These are the required and optional parameters listed in the
+     *            MapReduceConfiguration objects returned in the call to list()
      * @return {@code datawave.webservice.result.GenericResponse<String>} job id
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user by specifying a chain of DNs of the identities to proxy
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
@@ -376,7 +378,7 @@ public class MapReduceBean {
             "application/x-protostuff"})
     @javax.ws.rs.Path("/submit")
     @GZIP
-    public GenericResponse<String> submit(@FormParam("jobName") String jobName, @FormParam("parameters") String parameters) {
+    public GenericResponse<String> submit(@FormParam("jobName") String jobName, MultivaluedMap<String,String> parameters) {
         GenericResponse<String> response = new GenericResponse<>();
 
         // Find out who/what called this method
@@ -394,6 +396,9 @@ public class MapReduceBean {
             response.addException(qe);
             throw new DatawaveWebApplicationException(qe, response);
         }
+
+        // Parse the parameters
+        Map<String,String> runtimeParameters = toMap(parameters);
 
         // Get the MapReduceJobConfiguration from the configuration
         MapReduceJobConfiguration job;
@@ -413,18 +418,6 @@ public class MapReduceBean {
                 // user does not have all of the required roles or did not pass the required auths
                 response.addException(qe);
                 throw new UnauthorizedException(qe, response);
-            }
-        }
-
-        // Parse the parameters
-        Map<String,String> runtimeParameters = new HashMap<>();
-        if (null != parameters) {
-            String[] param = parameters.split(PARAMETER_SEPARATOR);
-            for (String yyy : param) {
-                String[] parts = yyy.split(PARAMETER_NAME_VALUE_SEPARATOR);
-                if (parts.length == 2) {
-                    runtimeParameters.put(parts[0], parts[1]);
-                }
             }
         }
 
@@ -464,9 +457,12 @@ public class MapReduceBean {
         // If this job is being restarted, then the jobId will be the same. The restart method
         // puts the id into the runtime parameters
         String id = runtimeParameters.get(JOB_ID);
-        if (null == id)
+        if (null == id) {
             id = UUID.randomUUID().toString();
+            runtimeParameters.put(JOB_ID, id);
+        }
         org.apache.hadoop.conf.Configuration conf = new org.apache.hadoop.conf.Configuration();
+        conf.set("mapreduce.user.classpath.first", "false");
 
         StringBuilder name = new StringBuilder().append(jobName).append("_sid_").append(sid).append("_id_").append(id);
         Job j;
@@ -519,11 +515,12 @@ public class MapReduceBean {
         // Create an entry in the state table
         boolean restarted = (runtimeParameters.get(JOB_ID) != null);
         try {
-            if (!restarted)
-                mapReduceState.create(id, job.getHdfsUri(), job.getJobTracker(), job.getJobDir(), mapReduceJobId.toString(), job.getResultsDir(), parameters,
-                                jobName);
-            else
+            if (!restarted) {
+                mapReduceState.create(id, job.getHdfsUri(), job.getJobTracker(), job.getJobDir(), mapReduceJobId.toString(), job.getResultsDir(),
+                                toString(runtimeParameters), jobName);
+            } else {
                 mapReduceState.addJob(id, mapReduceJobId.toString());
+            }
         } catch (Exception e) {
             QueryException qe = new QueryException(DatawaveErrorCode.MAPREDUCE_STATE_PERSISTENCE_ERROR, e);
             log.error(qe);
@@ -540,6 +537,45 @@ public class MapReduceBean {
         response.setResult(id);
         return response;
 
+    }
+
+    public static Map<String,String> toMap(String parameters) {
+        Map<String,String> runtimeParameters = new HashMap<>();
+        String[] param = parameters.split(PARAMETER_SEPARATOR);
+        for (String yyy : param) {
+            String[] parts = yyy.split(PARAMETER_NAME_VALUE_SEPARATOR);
+            if (parts.length == 2) {
+                runtimeParameters.put(parts[0], parts[1]);
+            }
+        }
+        return runtimeParameters;
+    }
+
+    public static Map<String,String> toMap(MultivaluedMap<String,String> parameters) {
+        Map<String,String> runtimeParameters = new HashMap<>();
+        parameters.entrySet().stream().forEach(e -> runtimeParameters.put(e.getKey(), e.getValue().get(0)));
+
+        // Parse the parameters parameter
+        if (runtimeParameters.containsKey(PARAMETERS)) {
+            runtimeParameters.putAll(toMap(runtimeParameters.remove(PARAMETERS)));
+        }
+        return runtimeParameters;
+    }
+
+    public static String toString(Map<String,String> runtimeParameters) {
+        Joiner nvJoin = Joiner.on(PARAMETER_NAME_VALUE_SEPARATOR);
+        return Joiner.on(PARAMETER_SEPARATOR)
+                        .join(runtimeParameters.entrySet().stream().map(e -> nvJoin.join(e.getKey(), e.getValue())).collect(Collectors.toList()));
+    }
+
+    public static MultivaluedMap<String,String> toMultiMap(Map<String,String> runtimeParameters) {
+        MultivaluedMap<String,String> parameters = new MultivaluedMapImpl<>();
+        runtimeParameters.entrySet().stream().forEach(e -> parameters.putSingle(e.getKey(), e.getValue()));
+        return parameters;
+    }
+
+    public static MultivaluedMap<String,String> toMultiMap(String runtimeParameters) {
+        return toMultiMap(toMap(runtimeParameters));
     }
 
     protected Job createJob(Configuration conf, StringBuilder name) throws IOException {
@@ -691,7 +727,7 @@ public class MapReduceBean {
             // Now re-submit this job after adding the JOB_ID to the runtime parameters to signal that this job has been restarted
             String jobName = thisJob.getJobName();
             // Now call submit
-            return submit(jobName, thisJob.getRuntimeParameters() + PARAMETER_SEPARATOR + JOB_ID + PARAMETER_NAME_VALUE_SEPARATOR + jobId);
+            return submit(jobName, toMultiMap(thisJob.getRuntimeParameters()));
         }
 
     }

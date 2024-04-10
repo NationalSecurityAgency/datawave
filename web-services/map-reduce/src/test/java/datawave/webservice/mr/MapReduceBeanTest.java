@@ -128,7 +128,7 @@ public class MapReduceBeanTest extends EasyMockSupport {
         expect(ctx.getCallerPrincipal()).andReturn(principal);
         replayAll();
 
-        bean.submit("TestJob", "queryId:1243");
+        bean.submit("TestJob", MapReduceBean.toMultiMap("queryId:1243"));
         verifyAll();
     }
 
@@ -147,7 +147,7 @@ public class MapReduceBeanTest extends EasyMockSupport {
         expect(ctx.getCallerPrincipal()).andReturn(principal);
         replayAll();
 
-        bean.submit("TestJob", "queryId:1243;format:XML");
+        bean.submit("TestJob", MapReduceBean.toMultiMap("queryId:1243;format:XML"));
         verifyAll();
     }
 
@@ -173,7 +173,7 @@ public class MapReduceBeanTest extends EasyMockSupport {
         expect(ctx.getCallerPrincipal()).andReturn(principal);
         replayAll();
 
-        bean.submit("TestJob", "queryId:1243;format:XML");
+        bean.submit("TestJob", MapReduceBean.toMultiMap("queryId:1243;format:XML"));
         verifyAll();
     }
 
@@ -187,7 +187,7 @@ public class MapReduceBeanTest extends EasyMockSupport {
         expect(ctx.getCallerPrincipal()).andReturn(p);
         replayAll();
 
-        bean.submit("TestJob", "queryId:1243");
+        bean.submit("TestJob", MapReduceBean.toMultiMap("queryId:1243"));
         verifyAll();
     }
 

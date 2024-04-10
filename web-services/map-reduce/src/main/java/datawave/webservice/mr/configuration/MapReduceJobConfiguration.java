@@ -9,8 +9,6 @@ import java.io.InputStream;
 import java.net.URL;
 import java.text.MessageFormat;
 import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +32,8 @@ import org.apache.hadoop.mapreduce.Job;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Files;
 
@@ -247,6 +247,8 @@ public class MapReduceJobConfiguration {
                 throw new QueryException(DatawaveErrorCode.DFS_DIRECTORY_CREATE_ERROR, MessageFormat.format("Directory: {0}", classpath.toString()));
             }
 
+        Multimap<String,Pattern> vfsPatterns = HashMultimap.create();
+
         // Add all of the jars to the classpath dir and to the DistributedCache
         for (String jarFile : this.classpathJarFiles) {
             int idx = jarFile.indexOf('!');
@@ -263,22 +265,7 @@ public class MapReduceJobConfiguration {
             } else {
                 // Jars within the deployed EAR in Wildfly use the VFS protocol, and need to be handled specially.
                 if (jarFile.startsWith("vfs:")) {
-                    Set<String> files = new LinkedHashSet<>();
-                    try (InputStream urlInputStream = new URL(jarFile).openStream()) {
-                        JarInputStream jarInputStream = (JarInputStream) urlInputStream;
-                        for (JarEntry jarEntry = jarInputStream.getNextJarEntry(); jarEntry != null; jarEntry = jarInputStream.getNextJarEntry()) {
-                            if (pattern.matcher(jarEntry.getName()).matches()) {
-                                String name = jarEntry.getName();
-                                if (name.endsWith("/"))
-                                    name = name.substring(0, name.length() - 1);
-                                files.add(jarFile + "/" + name);
-                            }
-                        }
-                    }
-                    for (String nestedFile : files) {
-                        Path cachedJarPath = new Path(classpath, new File(nestedFile).getName());
-                        addSingleFile(nestedFile, cachedJarPath, jobId, job, fs);
-                    }
+                    vfsPatterns.put(jarFile, pattern);
                 } else if (jarFile.startsWith("archive:")) {
                     jarFile = jarFile.substring("archive:".length());
                     addArchivedDirectory(jarFile, pattern, classpath, jobId, job, fs);
@@ -286,6 +273,28 @@ public class MapReduceJobConfiguration {
                     addArchiveFile(file, pattern, classpath, jobId, job, fs);
                 }
             }
+        }
+
+        Set<String> files = new LinkedHashSet<>();
+        for (String jarFile : vfsPatterns.keySet()) {
+            try (InputStream urlInputStream = new URL(jarFile).openStream()) {
+                JarInputStream jarInputStream = (JarInputStream) urlInputStream;
+                for (JarEntry jarEntry = jarInputStream.getNextJarEntry(); jarEntry != null; jarEntry = jarInputStream.getNextJarEntry()) {
+                    for (Pattern pattern : vfsPatterns.get(jarFile)) {
+                        if (pattern.matcher(jarEntry.getName()).matches()) {
+                            String name = jarEntry.getName();
+                            if (name.endsWith("/"))
+                                name = name.substring(0, name.length() - 1);
+                            files.add(jarFile + "/" + name);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        for (String nestedFile : files) {
+            Path cachedJarPath = new Path(classpath, new File(nestedFile).getName());
+            addSingleFile(nestedFile, cachedJarPath, jobId, job, fs);
         }
 
         String homeDir = System.getProperty("jboss.home.dir");

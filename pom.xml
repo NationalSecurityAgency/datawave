@@ -65,7 +65,6 @@
         <version.geotools>28.1</version.geotools>
         <version.geowave>1.2.0</version.geowave>
         <version.google-guava>31.1-jre</version.google-guava>
-        <version.googlecode-findbugs>2.0.3</version.googlecode-findbugs>
         <version.googlecode-json-simple>1.1.1</version.googlecode-json-simple>
         <version.hadoop>3.3.5</version.hadoop>
         <version.hadoop-shaded>1.1.1</version.hadoop-shaded>
@@ -79,7 +78,7 @@
         <version.javastatsd>3.1.0</version.javastatsd>
         <version.javax-validation>2.0.1.Final</version.javax-validation>
         <version.jcommander>1.72</version.jcommander>
-        <version.jetty>6.1.26</version.jetty>
+        <version.jetty>12.0.7</version.jetty>
         <version.jgroups>4.0.19.Final</version.jgroups>
         <version.jjwt>0.11.2</version.jjwt>
         <version.json>20231013</version.json>
@@ -120,8 +119,9 @@
         <version.stream>2.9.6</version.stream>
         <version.surefire.plugin>3.2.5</version.surefire.plugin>
         <version.thrift>0.17.0</version.thrift>
-        <version.weld>3.1.1.Final</version.weld>
-        <version.weld-se>3.1.1.Final</version.weld-se>
+        <version.weld>3.1.2.Final</version.weld>
+        <version.weld-se>3.1.2.Final</version.weld-se>
+        <version.weld-spi>3.1.Final</version.weld-spi>
         <!-- Different version of weld for tests since the Arquillian embedded EE container needs an older version. -->
         <version.weld-test>2.3.5.Final</version.weld-test>
         <version.wildfly>17.0.1.Final</version.wildfly>
@@ -182,11 +182,6 @@
                 <groupId>com.github.ben-manes.caffeine</groupId>
                 <artifactId>caffeine</artifactId>
                 <version>${version.caffeine}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.google.code.findbugs</groupId>
-                <artifactId>annotations</artifactId>
-                <version>${version.googlecode-findbugs}</version>
             </dependency>
             <dependency>
                 <!-- this is a runtime dependency of guava, no longer included with guava as of 27.1 -->
@@ -434,6 +429,10 @@
                     <exclusion>
                         <groupId>org.apache.hadoop</groupId>
                         <artifactId>hadoop-common</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.geotools</groupId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -998,8 +997,20 @@
             </dependency>
             <dependency>
                 <groupId>org.jboss.weld</groupId>
+                <artifactId>weld-api</artifactId>
+                <version>${version.weld-spi}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.weld</groupId>
                 <artifactId>weld-core-impl</artifactId>
                 <version>${version.weld}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.weld</groupId>
+                <artifactId>weld-spi</artifactId>
+                <version>${version.weld-spi}</version>
                 <scope>provided</scope>
             </dependency>
             <dependency>
