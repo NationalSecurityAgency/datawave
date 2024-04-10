@@ -71,8 +71,10 @@ import datawave.annotation.Required;
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.configuration.spring.SpringBean;
 import datawave.marking.SecurityMarking;
+import datawave.microservice.querymetric.QueryMetricFactory;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.system.ServerPrincipal;
+import datawave.security.user.UserOperationsBean;
 import datawave.security.util.WSAuthorizationsUtil;
 import datawave.webservice.common.audit.AuditBean;
 import datawave.webservice.common.audit.AuditParameters;
@@ -97,14 +99,20 @@ import datawave.webservice.mr.configuration.OozieJobConfiguration;
 import datawave.webservice.mr.configuration.OozieJobConstants;
 import datawave.webservice.mr.state.MapReduceStatePersisterBean;
 import datawave.webservice.mr.state.MapReduceStatePersisterBean.MapReduceState;
+import datawave.webservice.query.Query;
 import datawave.webservice.query.cache.QueryCache;
+import datawave.webservice.query.cache.RunningQueryTimingImpl;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.NotFoundQueryException;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.exception.UnauthorizedQueryException;
 import datawave.webservice.query.factory.Persister;
+import datawave.webservice.query.logic.QueryLogic;
 import datawave.webservice.query.logic.QueryLogicFactory;
+import datawave.webservice.query.metric.QueryMetricsBean;
+import datawave.webservice.query.runner.QueryPredictor;
+import datawave.webservice.query.runner.RunningQuery;
 import datawave.webservice.result.BaseResponse;
 import datawave.webservice.result.GenericResponse;
 import datawave.webservice.result.VoidResponse;
@@ -157,6 +165,18 @@ public class MapReduceBean {
     @Inject
     @ServerPrincipal
     private DatawavePrincipal serverPrincipal;
+
+    @Inject
+    private QueryMetricsBean metrics;
+
+    @Inject
+    private QueryPredictor predictor;
+
+    @Inject
+    private UserOperationsBean userOperationsBean;
+
+    @Inject
+    private QueryMetricFactory metricFactory;
 
     @Inject
     private SecurityMarking marking;
@@ -384,13 +404,11 @@ public class MapReduceBean {
         // Find out who/what called this method
         Principal p = ctx.getCallerPrincipal();
         String sid;
-        Set<Collection<String>> cbAuths = new HashSet<>();
         DatawavePrincipal datawavePrincipal = null;
 
         if (p instanceof DatawavePrincipal) {
             datawavePrincipal = (DatawavePrincipal) p;
             sid = datawavePrincipal.getShortName();
-            cbAuths.addAll(datawavePrincipal.getAuthorizations());
         } else {
             QueryException qe = new QueryException(DatawaveErrorCode.UNEXPECTED_PRINCIPAL_ERROR, MessageFormat.format("Class: {0}", p.getClass().getName()));
             response.addException(qe);
@@ -399,6 +417,77 @@ public class MapReduceBean {
 
         // Parse the parameters
         Map<String,String> runtimeParameters = toMap(parameters);
+
+        // Get the query id
+        String queryId = runtimeParameters.get("queryId");
+        if (queryId == null) {
+            log.error("No query id specified");
+            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_QUERY_ID);
+            response.addException(qe);
+            throw new BadRequestException(qe, response);
+        }
+
+        // find or recreate the running query
+        RunningQuery query;
+        try {
+            query = getQueryById(queryId, p);
+        } catch (Exception e) {
+            log.error("Exception caught setting up map reduce query", e);
+            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_QUERY_ID, e);
+            response.addException(qe);
+            throw new BadRequestException(qe, response);
+        }
+
+        // audit as needed
+        try {
+            // If we have a client, then this was a query already fully created and hence audited.
+            // Otherwise, the define mechanism may have been used or we are truely resubmitting this
+            // closed query and we need to audit.
+            if (query.getClient() != null) {
+                query.closeConnection(connectionFactory);
+            } else {
+                Auditor.AuditType auditType = query.getLogic().getAuditType(query.getSettings());
+                MultivaluedMap<String,String> queryParameters = new MultivaluedMapImpl<>();
+                queryParameters.putAll(query.getSettings().toMap());
+
+                queryParameters.putSingle(PrivateAuditConstants.AUDIT_TYPE, auditType.name());
+                queryParameters.putSingle(PrivateAuditConstants.LOGIC_CLASS, query.getLogic().getLogicName());
+                queryParameters.putSingle(PrivateAuditConstants.USER_DN, query.getSettings().getUserDN());
+                queryParameters.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, query.getSettings().getColumnVisibility());
+
+                if (!auditType.equals(Auditor.AuditType.NONE)) {
+                    try {
+                        try {
+                            List<String> selectors = query.getLogic().getSelectors(query.getSettings());
+                            if (selectors != null && !selectors.isEmpty()) {
+                                queryParameters.put(PrivateAuditConstants.SELECTORS, selectors);
+                            }
+                        } catch (Exception e) {
+                            log.error("Error accessing query selector", e);
+                        }
+                        // if the user didn't set an audit id, use the query id
+                        if (!queryParameters.containsKey(AuditParameters.AUDIT_ID)) {
+                            queryParameters.putSingle(AuditParameters.AUDIT_ID, queryId);
+                        }
+                        auditor.audit(queryParameters);
+                    } catch (IllegalArgumentException e) {
+                        BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.MISSING_REQUIRED_PARAMETER, e);
+                        response.addException(qe);
+                        throw new BadRequestException(qe, response);
+                    } catch (Exception e) {
+                        log.error("Error auditing query", e);
+                        QueryException qe = new QueryException(DatawaveErrorCode.QUERY_AUDITING_ERROR, e);
+                        response.addException(qe);
+                        throw qe;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.error("Exception caught setting up map reduce query", e);
+            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.MAPREDUCE_JOB_START_ERROR, e);
+            response.addException(qe);
+            throw new BadRequestException(qe, response);
+        }
 
         // Get the MapReduceJobConfiguration from the configuration
         MapReduceJobConfiguration job;
@@ -1096,4 +1185,43 @@ public class MapReduceBean {
             }
         }
     }
+
+    private RunningQuery getQueryById(String id, Principal principal) throws Exception {
+        // Find out who/what called this method
+        String userid = principal.getName();
+        if (principal instanceof DatawavePrincipal) {
+            DatawavePrincipal dp = (DatawavePrincipal) principal;
+            userid = dp.getShortName();
+        }
+        log.trace(userid + " has authorizations " + ((principal instanceof DatawavePrincipal) ? ((DatawavePrincipal) principal).getAuthorizations() : ""));
+
+        RunningQuery query = cache.get(id);
+        if (null == query) {
+            log.info("Query not found in cache, retrieving from accumulo");
+            List<Query> queries = queryPersister.findById(id);
+            if (null == queries || queries.isEmpty())
+                throw new NotFoundQueryException(DatawaveErrorCode.NO_QUERY_OBJECT_MATCH);
+            if (queries.size() > 1)
+                throw new NotFoundQueryException(DatawaveErrorCode.TOO_MANY_QUERY_OBJECT_MATCHES);
+            else {
+                Query q = queries.get(0);
+
+                // will throw IllegalArgumentException if not defined
+                QueryLogic<?> logic = queryLogicFactory.getQueryLogic(q.getQueryLogicName(), principal);
+                AccumuloConnectionFactory.Priority priority = logic.getConnectionPriority();
+                query = new RunningQuery(metrics, null, priority, logic, q, q.getQueryAuthorizations(), principal, new RunningQueryTimingImpl(0, 0, 0, 0), null,
+                                this.userOperationsBean, this.metricFactory);
+                // Put in the cache by id and name, we will have two copies that reference the same object
+                cache.put(q.getId().toString(), query);
+            }
+        } else {
+            // Check to make sure that this query belongs to current user.
+            if (!query.getSettings().getOwner().equals(userid)) {
+                throw new UnauthorizedQueryException(DatawaveErrorCode.QUERY_OWNER_MISMATCH,
+                                MessageFormat.format("{0} != {1}", userid, query.getSettings().getOwner()));
+            }
+        }
+        return query;
+    }
+
 }
