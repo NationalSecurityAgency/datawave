@@ -8,7 +8,7 @@ import datawave.query.language.functions.QueryFunction;
 
 /**
  * Function to return a unique result for every hour of the day for a given list of fields. This function is equivalent to
- * {@code #MOST_RECENT_UNIQUE(field[DAY])}.
+ * {@code #MOST_RECENT_UNIQUE(field[HOUR])}.
  */
 public class MostRecentUniqueByHour extends UniqueByFunction {
 
