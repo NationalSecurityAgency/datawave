@@ -531,6 +531,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         addOption(cfg, QueryOptions.GROUP_FIELDS, config.getGroupFields().toString(), true);
         addOption(cfg, QueryOptions.GROUP_FIELDS_BATCH_SIZE, config.getGroupFieldsBatchSizeAsString(), true);
         addOption(cfg, QueryOptions.UNIQUE_FIELDS, config.getUniqueFields().toString(), true);
+        if (config.getUniqueFields().isMostRecent()) {
+            addOption(cfg, QueryOptions.MOST_RECENT_UNIQUE, Boolean.toString(true), false);
+            addOption(cfg, QueryOptions.UNIQUE_CACHE_BUFFER_SIZE, Integer.toString(config.getUniqueCacheBufferSize()), false);
+        }
         addOption(cfg, QueryOptions.HIT_LIST, Boolean.toString(config.isHitList()), false);
         addOption(cfg, QueryOptions.TERM_FREQUENCY_FIELDS, Joiner.on(',').join(config.getQueryTermFrequencyFields()), false);
         addOption(cfg, QueryOptions.TERM_FREQUENCIES_REQUIRED, Boolean.toString(config.isTermFrequenciesRequired()), false);
@@ -2216,6 +2220,11 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 throw new DatawaveQueryException(qe);
             }
 
+            if (!preloadOptions && config.isRebuildDatatypeFilter()) {
+                Set<String> datatypes = IngestTypeVisitor.getIngestTypes(config.getQueryTree(), getTypeMetadata());
+                config.setDatatypeFilter(datatypes);
+            }
+
             String datatypeFilter = config.getDatatypeFilterAsString();
 
             addOption(cfg, QueryOptions.DATATYPE_FILTER, datatypeFilter, false);
@@ -2646,6 +2655,12 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             log.warn("After expanding the query, it is determined that the query cannot be executed against the field index and a full table scan is required");
             needsFullTable = true;
             fullTableScanReason = state.reason;
+        }
+
+        // optionally build/rebuild the datatype filter with the fully planned query
+        if (config.isRebuildDatatypeFilter()) {
+            Set<String> ingestTypes = IngestTypeVisitor.getIngestTypes(config.getQueryTree(), getTypeMetadata());
+            config.setDatatypeFilter(ingestTypes);
         }
 
         Set<String> ingestTypes = null;

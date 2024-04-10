@@ -38,7 +38,7 @@ public class FileSortedSetTest {
             }
         };
         handler = new SortedSetTempFileHandler();
-        set = new FileSerializableSortedSet<>(new TreeSet<>(c), new FileSerializableSortedSet.SerializableFileHandler(handler));
+        set = new FileSerializableSortedSet<>(c, new FileSerializableSortedSet.SerializableFileHandler(handler), false);
         data = new TreeSet<>(c);
         Random r = new Random(123948710248L);
         // data.add(null);
@@ -330,7 +330,7 @@ public class FileSortedSetTest {
         assertNotNull(set.comparator());
         set.load();
         assertNotNull(set.comparator());
-        SortedSet<Integer> tempData = new TreeSet<>();
+        RewritableSortedSet<Integer> tempData = new RewritableSortedSetImpl<>();
         for (Integer i : data) {
             if (i != null) {
                 tempData.add(i);
