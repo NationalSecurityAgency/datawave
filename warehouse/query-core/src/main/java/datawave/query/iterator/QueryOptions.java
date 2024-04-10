@@ -39,7 +39,12 @@ import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
 
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
@@ -93,6 +98,8 @@ import datawave.query.statsd.QueryStatsDClient;
 import datawave.query.tables.async.Scan;
 import datawave.query.tracking.ActiveQueryLog;
 import datawave.query.util.TypeMetadata;
+import datawave.query.util.count.CountMap;
+import datawave.query.util.count.CountMapSerDe;
 import datawave.query.util.sortedset.FileSortedSet;
 import datawave.util.StringUtils;
 import datawave.util.UniversalSet;
@@ -146,6 +153,9 @@ public class QueryOptions implements OptionDescriber {
     public static final String GROUP_FIELDS = "group.fields";
     public static final String GROUP_FIELDS_BATCH_SIZE = "group.fields.batch.size";
     public static final String UNIQUE_FIELDS = "unique.fields";
+    public static final String MOST_RECENT_UNIQUE = "most.recent.unique";
+    public static final String UNIQUE_CACHE_BUFFER_SIZE = "unique.cache.buffer.size";
+
     public static final String HITS_ONLY = "hits.only";
     public static final String HIT_LIST = "hit.list";
     public static final String START_TIME = "start.time";
@@ -306,6 +316,7 @@ public class QueryOptions implements OptionDescriber {
     protected GroupFields groupFields = new GroupFields();
     protected int groupFieldsBatchSize = Integer.MAX_VALUE;
     protected UniqueFields uniqueFields = new UniqueFields();
+    protected int uniqueCacheBufferSize = 100;
 
     protected Set<String> hitsOnlySet = new HashSet<>();
 
@@ -435,8 +446,9 @@ public class QueryOptions implements OptionDescriber {
     private int docAggregationThresholdMs = -1;
     private int tfAggregationThresholdMs = -1;
 
-    private Map<String,Long> fieldCounts;
-    private Map<String,Long> termCounts;
+    private CountMap fieldCounts;
+    private CountMap termCounts;
+    private CountMapSerDe mapSerDe;
 
     public void deepCopy(QueryOptions other) {
         this.options = other.options;
@@ -498,6 +510,7 @@ public class QueryOptions implements OptionDescriber {
         this.ivaratorCacheDirConfigs = (other.ivaratorCacheDirConfigs == null) ? null : new ArrayList<>(other.ivaratorCacheDirConfigs);
         this.hdfsSiteConfigURLs = other.hdfsSiteConfigURLs;
         this.ivaratorCacheBufferSize = other.ivaratorCacheBufferSize;
+        this.uniqueCacheBufferSize = other.uniqueCacheBufferSize;
         this.ivaratorCacheScanPersistThreshold = other.ivaratorCacheScanPersistThreshold;
         this.ivaratorCacheScanTimeout = other.ivaratorCacheScanTimeout;
         this.hdfsFileCompressionCodec = other.hdfsFileCompressionCodec;
@@ -950,6 +963,14 @@ public class QueryOptions implements OptionDescriber {
         this.ivaratorCacheBufferSize = ivaratorCacheBufferSize;
     }
 
+    public int getUniqueCacheBufferSize() {
+        return uniqueCacheBufferSize;
+    }
+
+    public void setUniqueCacheBufferSize(int uniqueCacheBufferSize) {
+        this.uniqueCacheBufferSize = uniqueCacheBufferSize;
+    }
+
     public long getIvaratorCacheScanPersistThreshold() {
         return ivaratorCacheScanPersistThreshold;
     }
@@ -1095,7 +1116,7 @@ public class QueryOptions implements OptionDescriber {
     }
 
     public void setUniqueFields(UniqueFields uniqueFields) {
-        this.uniqueFields = uniqueFields;
+        this.uniqueFields = uniqueFields.clone();
     }
 
     public Set<String> getHitsOnlySet() {
@@ -1392,12 +1413,12 @@ public class QueryOptions implements OptionDescriber {
 
         if (options.containsKey(FIELD_COUNTS)) {
             String serializedMap = options.get(FIELD_COUNTS);
-            this.fieldCounts = mapFromString(serializedMap);
+            this.fieldCounts = getMapSerDe().deserializeFromString(serializedMap);
         }
 
         if (options.containsKey(TERM_COUNTS)) {
             String serializedMap = options.get(TERM_COUNTS);
-            this.termCounts = mapFromString(serializedMap);
+            this.termCounts = getMapSerDe().deserializeFromString(serializedMap);
         }
 
         this.evaluationFilter = null;
@@ -1574,6 +1595,12 @@ public class QueryOptions implements OptionDescriber {
 
         if (options.containsKey(UNIQUE_FIELDS)) {
             this.setUniqueFields(UniqueFields.from(options.get(UNIQUE_FIELDS)));
+            if (options.containsKey(MOST_RECENT_UNIQUE)) {
+                this.getUniqueFields().setMostRecent(Boolean.valueOf(options.get(MOST_RECENT_UNIQUE)));
+                if (options.containsKey(UNIQUE_CACHE_BUFFER_SIZE)) {
+                    this.setUniqueCacheBufferSize(Integer.parseInt(options.get(UNIQUE_CACHE_BUFFER_SIZE)));
+                }
+            }
         }
 
         if (options.containsKey(HIT_LIST)) {
@@ -1997,29 +2024,16 @@ public class QueryOptions implements OptionDescriber {
         return sb.toString();
     }
 
-    public static String mapToString(Map<String,Long> map) {
-        StringBuilder sb = new StringBuilder();
-        Iterator<String> keys = new TreeSet<>(map.keySet()).iterator();
-        while (keys.hasNext()) {
-            String key = keys.next();
-            sb.append(key).append(Constants.COMMA).append(map.get(key));
-            if (keys.hasNext()) {
-                sb.append(";");
-            }
+    /**
+     * Get a serialization and deserialization utility for {@link datawave.query.util.count.CountMap}
+     *
+     * @return count map utility
+     */
+    private CountMapSerDe getMapSerDe() {
+        if (mapSerDe == null) {
+            mapSerDe = new CountMapSerDe();
         }
-        return sb.toString();
-    }
-
-    public static Map<String,Long> mapFromString(String serialized) {
-        Map<String,Long> counts = new HashMap<>();
-        String[] parts = serialized.split(";");
-        for (String part : parts) {
-            int index = part.indexOf(Constants.COMMA);
-            String key = part.substring(0, index);
-            Long value = Long.valueOf(part.substring(index + 1));
-            counts.put(key, value);
-        }
-        return counts;
+        return mapSerDe;
     }
 
     public static Set<String> buildIgnoredColumnFamilies(String colFams) {

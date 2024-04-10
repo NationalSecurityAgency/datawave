@@ -16,9 +16,10 @@ import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.EventQueryResponseBase;
 
+/**
+ * Transforms the results from an SSDeepSimilarityQuery into an EventBase suitable for a datawave web service api response
+ */
 public class SSDeepSimilarityQueryTransformer extends BaseQueryLogicTransformer<ScoredSSDeepPair,EventBase> {
-
-    public static final String MIN_SSDEEP_SCORE_PARAMETER = "minScore";
 
     protected final Authorizations auths;
 
@@ -53,15 +54,22 @@ public class SSDeepSimilarityQueryTransformer extends BaseQueryLogicTransformer<
 
         {
             FieldBase field = responseObjectFactory.getField();
-            field.setName("MATCH_SCORE");
+            field.setName("WEIGHTED_SCORE");
+            field.setValue(String.valueOf(pair.getWeightedScore()));
+            fields.add(field);
+        }
+
+        {
+            FieldBase field = responseObjectFactory.getField();
+            field.setName("OVERLAP_SCORE");
             field.setValue(String.valueOf(pair.getOverlapScore()));
             fields.add(field);
         }
 
         {
             FieldBase field = responseObjectFactory.getField();
-            field.setName("WEIGHTED_SCORE");
-            field.setValue(String.valueOf(pair.getWeightedScore()));
+            field.setName("OVERLAP_SSDEEP_NGRAMS");
+            field.setValue(pair.getOverlapsAsString());
             fields.add(field);
         }
 

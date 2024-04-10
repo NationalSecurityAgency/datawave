@@ -374,6 +374,13 @@ public class IngestTypePruningVisitor extends BaseVisitor {
      * @return a set of ingestTypes
      */
     public Set<String> getIngestTypesForLeaf(JexlNode node) {
+        node = JexlASTHelper.dereference(node);
+        if (node instanceof ASTEQNode) {
+            Object literal = JexlASTHelper.getLiteralValue(node);
+            if (literal == null) {
+                return Collections.singleton(UNKNOWN_TYPE);
+            }
+        }
         return ingestTypeVisitor.getIngestTypes(node);
     }
 

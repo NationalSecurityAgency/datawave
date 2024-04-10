@@ -148,6 +148,7 @@ import datawave.query.jexl.visitors.UnmarkedBoundedRangeDetectionVisitor;
 import datawave.query.jexl.visitors.ValidComparisonVisitor;
 import datawave.query.jexl.visitors.ValidPatternVisitor;
 import datawave.query.jexl.visitors.ValidateFilterFunctionVisitor;
+import datawave.query.jexl.visitors.order.OrderByCostVisitor;
 import datawave.query.jexl.visitors.whindex.WhindexVisitor;
 import datawave.query.model.QueryModel;
 import datawave.query.planner.comparator.DefaultQueryPlanComparator;
@@ -530,6 +531,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         addOption(cfg, QueryOptions.GROUP_FIELDS, config.getGroupFields().toString(), true);
         addOption(cfg, QueryOptions.GROUP_FIELDS_BATCH_SIZE, config.getGroupFieldsBatchSizeAsString(), true);
         addOption(cfg, QueryOptions.UNIQUE_FIELDS, config.getUniqueFields().toString(), true);
+        if (config.getUniqueFields().isMostRecent()) {
+            addOption(cfg, QueryOptions.MOST_RECENT_UNIQUE, Boolean.toString(true), false);
+            addOption(cfg, QueryOptions.UNIQUE_CACHE_BUFFER_SIZE, Integer.toString(config.getUniqueCacheBufferSize()), false);
+        }
         addOption(cfg, QueryOptions.HIT_LIST, Boolean.toString(config.isHitList()), false);
         addOption(cfg, QueryOptions.TERM_FREQUENCY_FIELDS, Joiner.on(',').join(config.getQueryTermFrequencyFields()), false);
         addOption(cfg, QueryOptions.TERM_FREQUENCIES_REQUIRED, Boolean.toString(config.isTermFrequenciesRequired()), false);
@@ -1115,8 +1120,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         // if we may use the term frequencies instead of the fields index in some cases
         Set<String> queryTfFields = Collections.emptySet();
         Set<String> termFrequencyFields;
+        Set<String> indexOnlyFields;
         try {
             termFrequencyFields = metadataHelper.getTermFrequencyFields(config.getDatatypeFilter());
+            indexOnlyFields = metadataHelper.getIndexOnlyFields(config.getDatatypeFilter());
         } catch (TableNotFoundException e) {
             stopwatch.stop();
             QueryException qe = new QueryException(DatawaveErrorCode.TERM_FREQUENCY_FIELDS_RETRIEVAL_ERROR, e);
@@ -1138,6 +1145,16 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         if (!queryTfFields.isEmpty()) {
             Multimap<String,Function> contentFunctions = TermOffsetPopulator.getContentFunctions(config.getQueryTree());
             config.setTermFrequenciesRequired(!contentFunctions.isEmpty());
+
+            if (contentFunctions.isEmpty()) {
+                for (String tfField : queryTfFields) {
+                    if (!indexOnlyFields.contains(tfField)) {
+                        config.setTermFrequenciesRequired(true);
+                        break;
+                    }
+                }
+
+            }
 
             // Print the nice log message
             if (log.isDebugEnabled()) {
@@ -2203,6 +2220,11 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 throw new DatawaveQueryException(qe);
             }
 
+            if (!preloadOptions && config.isRebuildDatatypeFilter()) {
+                Set<String> datatypes = IngestTypeVisitor.getIngestTypes(config.getQueryTree(), getTypeMetadata());
+                config.setDatatypeFilter(datatypes);
+            }
+
             String datatypeFilter = config.getDatatypeFilterAsString();
 
             addOption(cfg, QueryOptions.DATATYPE_FILTER, datatypeFilter, false);
@@ -2635,6 +2657,12 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             fullTableScanReason = state.reason;
         }
 
+        // optionally build/rebuild the datatype filter with the fully planned query
+        if (config.isRebuildDatatypeFilter()) {
+            Set<String> ingestTypes = IngestTypeVisitor.getIngestTypes(config.getQueryTree(), getTypeMetadata());
+            config.setDatatypeFilter(ingestTypes);
+        }
+
         Set<String> ingestTypes = null;
         if (config.getReduceIngestTypes()) {
             Set<String> userRequestedIngestTypes = config.getDatatypeFilter();
@@ -2671,6 +2699,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             } else {
                 throw new DatawaveFatalQueryException("Check query for mutually exclusive ingest types, query was non-executable after pruning by ingest type");
             }
+        }
+
+        if (config.isSortQueryBeforeGlobalIndex()) {
+            queryTree = OrderByCostVisitor.order((ASTJexlScript) queryTree);
         }
 
         // if a simple examination of the query has not forced a full table
