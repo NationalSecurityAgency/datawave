@@ -2,26 +2,27 @@ import { defineStore } from 'pinia';
 import { AppState } from 'src/components/models';
 
 export const appStateStore = defineStore('appState', {
-  state: () => ({
-    configPanel: {
-      enabled: false,
-      selection: ''
-    },
-    content: {
-      geometry: '',
-      editDialog: false,
-      editDialogText: ''
-    }
-  } as AppState),
+  state: () =>
+    ({
+      configPanel: {
+        enabled: false,
+        selection: '',
+      },
+      content: {
+        geometry: '',
+        editDialog: false,
+        editDialogText: '',
+      },
+    } as AppState),
   getters: {
     isConfigPanelEnabled: (state) => state.configPanel.enabled,
     getConfigPanelSelection: (state) => state.configPanel.selection,
     isEditDialogEnabled: (state) => state.content.editDialog,
-    getGeometry: (state) => state.content.geometry
+    getGeometry: (state) => state.content.geometry,
   },
   actions: {
     setConfigPanelSelection(configPanelSelection: string) {
-      this.configPanel.selection = configPanelSelection;      
+      this.configPanel.selection = configPanelSelection;
     },
     toggleConfigPanelEnabled() {
       this.configPanel.enabled = !this.configPanel.enabled;
@@ -45,7 +46,6 @@ export const appStateStore = defineStore('appState', {
     resetContent() {
       this.content.geometry = '';
       this.content.editDialog = false;
-    }
+    },
   },
 });
-

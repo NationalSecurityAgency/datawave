@@ -1,9 +1,15 @@
 <template>
-  <q-layout view="hHh Lpr lFf"
-    style="height: 100vh">
+  <q-layout view="hHh Lpr lFf" style="height: 100vh">
     <q-header elevated>
       <q-toolbar class="bg-grey-9 text-white">
-        <q-btn flat dense round icon="menu" aria-label="Menu" @click="toggleDrawer" />
+        <q-btn
+          flat
+          dense
+          round
+          icon="menu"
+          aria-label="Menu"
+          @click="toggleDrawer"
+        />
 
         <q-toolbar-title>Map Service</q-toolbar-title>
 
@@ -12,14 +18,14 @@
     </q-header>
 
     <q-drawer
-        v-model="drawer"
-        show-if-above
-        :mini="!drawer || mini"
-        bordered
-        style="display: flex; flex-direction: column;"
+      v-model="drawer"
+      show-if-above
+      :mini="!drawer || mini"
+      bordered
+      style="display: flex; flex-direction: column"
     >
       <q-list style="flex-grow: 1">
-        <EssentialLink 
+        <EssentialLink
           v-for="link in essentialLinks"
           :key="link.title"
           v-bind="link"
@@ -29,7 +35,6 @@
       <q-list>
         <q-separator />
         <q-item clickable @click="toggleMini">
-
           <q-item-section avatar>
             <q-icon :name="expandIcon" />
           </q-item-section>
@@ -49,7 +54,9 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import EssentialLink, { EssentialLinkProps } from 'components/EssentialLink.vue';
+import EssentialLink, {
+  EssentialLinkProps,
+} from 'components/EssentialLink.vue';
 import { appStateStore } from 'stores/state-store';
 
 const appState = appStateStore();
@@ -66,7 +73,7 @@ const essentialLinks: EssentialLinkProps[] = [
         appState.enableConfigPanel();
         appState.setConfigPanelSelection('Add');
       }
-    }
+    },
   },
   {
     title: 'Layers',
@@ -79,7 +86,7 @@ const essentialLinks: EssentialLinkProps[] = [
         appState.enableConfigPanel();
         appState.setConfigPanelSelection('Layers');
       }
-    }
+    },
   },
   {
     title: 'Github',
@@ -104,19 +111,18 @@ const essentialLinks: EssentialLinkProps[] = [
   {
     title: 'Quasar Awesome',
     icon: 'close',
-  }
+  },
 ];
 
-const drawer = ref(false)
+const drawer = ref(false);
 function toggleDrawer() {
-  drawer.value = !drawer.value
+  drawer.value = !drawer.value;
 }
 
 const mini = ref(true);
 const expandIcon = ref('chevron_right');
 function toggleMini() {
   mini.value = !mini.value;
-  expandIcon.value = (mini.value) ? 'chevron_right' : 'chevron_left';
+  expandIcon.value = mini.value ? 'chevron_right' : 'chevron_left';
 }
-
 </script>

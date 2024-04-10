@@ -13,7 +13,7 @@ export interface GeoFeatures {
 }
 
 export interface GeoByField {
-  [key: string]: GeoTerms; 
+  [key: string]: GeoTerms;
 }
 
 export interface GeoTerms {
@@ -28,13 +28,13 @@ export interface GeoByTier {
 
 export interface Geo {
   wkt: string;
-  geoJson: Object;
+  geoJson: object;
 }
 
 export interface GeoFunction {
   function: string;
   fields: string[];
-  geoJson: Object;
+  geoJson: object;
 }
 
 export interface AppState {
@@ -54,11 +54,11 @@ export interface Content {
 }
 
 export interface ManualGeometryForm {
-  geometry: string,
-  geometryType: string,
-  createRanges: boolean,
-  rangeType: string,
-  rangeSettings: QueryRangeSettingsMap
+  geometry: string;
+  geometryType: string;
+  createRanges: boolean;
+  rangeType: string;
+  rangeSettings: QueryRangeSettingsMap;
 }
 
 export interface QueryRangeSettingsMap {
@@ -66,16 +66,16 @@ export interface QueryRangeSettingsMap {
 }
 
 export interface QueryRangeSettings {
-  maxEnvelopes: number,
-  maxExpansion: number,
-  optimizeRanges: boolean,
-  rangeSplitThreshold?: number,
-  maxRangeOverlap?: number
+  maxEnvelopes: number;
+  maxExpansion: number;
+  optimizeRanges: boolean;
+  rangeSplitThreshold?: number;
+  maxRangeOverlap?: number;
 }
 
 export interface ManualQueryForm {
-  query: string,
-  fieldTypes: FieldType[]
+  query: string;
+  fieldTypes: FieldType[];
 }
 
 export interface FieldType {
