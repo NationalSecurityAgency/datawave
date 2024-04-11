@@ -42,6 +42,10 @@ public class TestShardGenerator {
         this.daysWithoutCollisions = totalTservers / shardsPerDay;
         registerSomeTServers();
         Map<Text,String> locations = simulateTabletAssignments(tableNames);
+        // adding sorting here since it now happens when we generate the splits file
+        conf.set(TableSplitsCache.SPLITS_CACHE_DIR, tmpDir.getAbsolutePath());
+        TableSplitsCache.getCurrentCache(conf).clear();
+        Map<Text,String> sortedLocations = TableSplitsCache.getCurrentCache(conf).reverseSortByShardIds(locations);
         String tmpDirectory = tmpDir + "/";
         Path splitsPath = new Path(tmpDir.getAbsolutePath() + "/all-splits.txt");
 
@@ -51,27 +55,29 @@ public class TestShardGenerator {
 
             for (String table : tableNames) {
 
-                for (Map.Entry<Text,String> entry : locations.entrySet()) {
+                for (Map.Entry<Text,String> entry : sortedLocations.entrySet()) {
                     out.println(table + "\t" + new String(Base64.encodeBase64(entry.getKey().toString().getBytes())).trim() + "\t" + entry.getValue());
                 }
             }
         }
-        conf.set(TableSplitsCache.SPLITS_CACHE_DIR, tmpDir.getAbsolutePath());
 
         // writeSplits(locations, tmpDirectory, BALANCEDISH_SHARDS_LST);
     }
 
     public TestShardGenerator(Configuration conf, File tmpDir, Map<Text,String> locations, String... tableNames) throws IOException {
         this.conf = conf;
+        TableSplitsCache.getCurrentCache(conf).clear();
         FileSystem fs = new Path(tmpDir.getAbsolutePath()).getFileSystem(conf);
         // constructor that takes a created list of locations
         String tmpDirectory = tmpDir + "/";
         Path splitsPath = new Path(tmpDir.getAbsolutePath() + "/all-splits.txt");
+        conf.set(TableSplitsCache.SPLITS_CACHE_DIR, tmpDir.getAbsolutePath());
+        Map<Text,String> sortedLocations = TableSplitsCache.getCurrentCache(conf).reverseSortByShardIds(locations);
 
         try (PrintStream out = new PrintStream(new BufferedOutputStream(fs.create(splitsPath)))) {
             for (String table : tableNames) {
 
-                for (Map.Entry<Text,String> entry : locations.entrySet()) {
+                for (Map.Entry<Text,String> entry : sortedLocations.entrySet()) {
                     out.println(table + "\t" + new String(Base64.encodeBase64(entry.getKey().toString().getBytes())) + "\t" + entry.getValue());
                 }
             }

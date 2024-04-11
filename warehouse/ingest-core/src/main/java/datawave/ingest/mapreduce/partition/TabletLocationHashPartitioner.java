@@ -99,4 +99,14 @@ public class TabletLocationHashPartitioner extends Partitioner<BulkIngestKey,Val
 
     @Override
     public void initializeJob(Job job) {}
+
+    @Override
+    public boolean needSplits() {
+        return true;
+    }
+
+    @Override
+    public boolean needSplitLocations() {
+        return true;
+    }
 }

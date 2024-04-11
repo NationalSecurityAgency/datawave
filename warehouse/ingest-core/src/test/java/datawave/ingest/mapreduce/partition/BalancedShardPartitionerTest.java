@@ -59,8 +59,9 @@ public class BalancedShardPartitionerTest {
     @Before
     public void setUp() throws IOException {
         conf = new Configuration();
-        conf.setInt(ShardIdFactory.NUM_SHARDS, SHARDS_PER_DAY);
         TableSplitsCache.getCurrentCache(conf).clear();
+
+        conf.setInt(ShardIdFactory.NUM_SHARDS, SHARDS_PER_DAY);
         partitioner = new BalancedShardPartitioner();
         // gotta load this every test, or using different values bleeds into other tests
         new TestShardGenerator(conf, temporaryFolder.newFolder(), NUM_DAYS, SHARDS_PER_DAY, TOTAL_TSERVERS, TableName.SHARD);

@@ -527,18 +527,18 @@ public class TableSplitsCacheTest {
 
             Assert.assertNotNull("TableSplitsCache constructor failed to construct an instance.", uut);
 
-            Map<String,Map<Text,String>> resultsSet = uut.getSplits();
+            Map<String,List<Text>> resultsSet = uut.getAllSplits();
 
             Assert.assertNotNull("TableSplitsCache#getSplits() failed created a map of tables and their splits", resultsSet);
             Assert.assertFalse("TableSplitsCache#getSplits() incorrectly populated map of tables and their splits", resultsSet.isEmpty());
             Assert.assertEquals("TableSplitsCache#getSplits() incorrectly populated map of tables and their splits", 3, resultsSet.size());
 
-            List<Text> listings = new ArrayList(resultsSet.get("shard").keySet());
+            List<Text> listings = new ArrayList(resultsSet.get("shard"));
             Assert.assertNotNull("TableSplitsCache#getSplits() failed to a list of splits", listings);
             Assert.assertFalse("TableSplitsCache#getSplits() incorrectly populated the list of splits", listings.isEmpty());
             Assert.assertEquals("TableSplitsCache#getSplits() incorrectly populated the list of splits", 5, listings.size());
 
-            listings = new ArrayList(resultsSet.get("shard1").keySet());
+            listings = new ArrayList(resultsSet.get("shard1"));
             Assert.assertNotNull("TableSplitsCache#getSplits() failed to a list of splits", listings);
             Assert.assertFalse("TableSplitsCache#getSplits() incorrectly populated the list of splits", listings.isEmpty());
             Assert.assertEquals("TableSplitsCache#getSplits() incorrectly populated the list of splits", 1, listings.size());
@@ -561,7 +561,7 @@ public class TableSplitsCacheTest {
 
             Assert.assertNotNull("TableSplitsCache constructor failed to construct an instance.", uut);
 
-            List<Text> resultsSet = uut.getSplits("shard");
+            List<Text> resultsSet = uut.getAllSplits().get("shard");
 
             Assert.assertNotNull("TableSplitsCache#getSplits() failed to a list of splits", resultsSet);
             Assert.assertFalse("TableSplitsCache#getSplits() incorrectly populated the list of splits", resultsSet.isEmpty());

@@ -21,6 +21,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Job;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -108,7 +109,7 @@ public class SplitsFileTest {
         conf.set(ShardedDataTypeHandler.SHARDED_TNAMES, "shard_ingest_unit_test_table_1,shard_ingest_unit_test_table_2,shard_ingest_unit_test_table_3");
 
         String[] tableNames = new String[] {TABLE_NAME};
-        SplitsFile.setupFile(conf);
+        SplitsFile.setupFile(Job.getInstance(conf), conf);
         SplitsFile.getSplitsAndLocations(conf, TABLE_NAME);
     }
 

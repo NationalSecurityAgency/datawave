@@ -835,7 +835,7 @@ public class IngestJob implements Tool {
         conf.setInt("splits.num.reduce", this.reduceTasks);
         // used by the output formatter and the sharded partitioner
         long before = System.currentTimeMillis();
-        SplitsFile.setupFile(conf);
+        SplitsFile.setupFile(job, conf);
         long after = System.currentTimeMillis();
 
         log.info("Sharded splits files setup time: " + (after - before) + "ms");

@@ -112,4 +112,14 @@ public class ShardIdPartitioner extends Partitioner<BulkIngestKey,Value> impleme
 
     @Override
     public void initializeJob(Job job) {}
+
+    @Override
+    public boolean needSplits() {
+        return false;
+    }
+
+    @Override
+    public boolean needSplitLocations() {
+        return false;
+    }
 }

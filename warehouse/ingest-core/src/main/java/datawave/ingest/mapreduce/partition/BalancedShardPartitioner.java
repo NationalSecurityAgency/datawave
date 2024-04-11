@@ -164,9 +164,8 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
     private HashMap<Text,Integer> assignPartitionsForEachShard(Map<Text,String> shardIdToLocations) {
         int totalNumUniqueTServers = calculateNumberOfUniqueTservers(shardIdToLocations);
 
-        TreeMap<Text,String> sortedShardIdsToTservers = reverseSortByShardIds(shardIdToLocations);
-        HashMap<String,Integer> partitionsByTServer = getTServerAssignments(totalNumUniqueTServers, sortedShardIdsToTservers);
-        HashMap<Text,Integer> partitionsByShardId = getShardIdAssignments(sortedShardIdsToTservers, partitionsByTServer);
+        HashMap<String,Integer> partitionsByTServer = getTServerAssignments(totalNumUniqueTServers, shardIdToLocations);
+        HashMap<Text,Integer> partitionsByShardId = getShardIdAssignments(shardIdToLocations, partitionsByTServer);
 
         if (log.isDebugEnabled())
             log.debug("Number of shardIds assigned: " + partitionsByShardId.size());
@@ -182,16 +181,7 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
         return totalNumUniqueTServers;
     }
 
-    private TreeMap<Text,String> reverseSortByShardIds(Map<Text,String> shardIdToLocations) {
-        // if we need it sorted in reverse order, should we just do this as we're writing the cache file instead of having every partitioner do it every job?
-
-        // drop the dates after today's date
-        TreeMap<Text,String> shardIdsToTservers = Maps.newTreeMap((o1, o2) -> o2.compareTo(o1));
-        shardIdsToTservers.putAll(shardIdToLocations);
-        return shardIdsToTservers;
-    }
-
-    private HashMap<String,Integer> getTServerAssignments(int totalNumTServers, TreeMap<Text,String> shardIdsToTservers) {
+    private HashMap<String,Integer> getTServerAssignments(int totalNumTServers, Map<Text,String> shardIdsToTservers) {
         HashMap<String,Integer> partitionsByTServer = new HashMap<>(totalNumTServers);
         int nextAvailableSlot = 0;
         boolean alreadySkippedFutureShards = false;
@@ -225,7 +215,7 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
         return DateHelper.format(now - (DateUtils.MILLIS_PER_DAY * numDaysBack));
     }
 
-    private HashMap<Text,Integer> getShardIdAssignments(TreeMap<Text,String> shardIdsToTservers, HashMap<String,Integer> partitionsByTServer) {
+    private HashMap<Text,Integer> getShardIdAssignments(Map<Text,String> shardIdsToTservers, HashMap<String,Integer> partitionsByTServer) {
         HashMap<Text,Integer> partitionsByShardId = new HashMap<>();
         for (Map.Entry<Text,String> entry : shardIdsToTservers.entrySet()) {
             partitionsByShardId.put(entry.getKey(), partitionsByTServer.get(entry.getValue()));
@@ -243,6 +233,16 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
 
     @Override
     public void initializeJob(Job job) {}
+
+    @Override
+    public boolean needSplits() {
+        return true;
+    }
+
+    @Override
+    public boolean needSplitLocations() {
+        return true;
+    }
 
     @Override
     public Configuration getConf() {

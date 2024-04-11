@@ -139,7 +139,7 @@ public class ShardReindexJob implements Tool {
             throw new IllegalStateException("split.work.dir and job.output.table.names must be configured");
         }
 
-        SplitsFile.setupFile(configuration);
+        SplitsFile.setupFile(Job.getInstance(getConf()), configuration);
 
         // setup the output format
         IngestJob.configureMultiRFileOutputFormatter(configuration, null, null, 0, 0, false);

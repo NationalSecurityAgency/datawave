@@ -1,6 +1,7 @@
 package datawave.ingest.mapreduce.job;
 
 import java.io.IOException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.List;
@@ -15,7 +16,10 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Job;
 import org.apache.log4j.Logger;
+
+import com.google.common.collect.Table;
 
 import datawave.ingest.mapreduce.handler.shard.ShardIdFactory;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
@@ -29,8 +33,9 @@ public class SplitsFile {
     public static final String SHARD_VALIDATION_ENABLED = "shardedMap.validation.enabled";
     public static final String SHARDS_BALANCED_DAYS_TO_VERIFY = "shards.balanced.days.to.verify";
     public static final String CONFIGURED_SHARDED_TABLE_NAMES = ShardedDataTypeHandler.SHARDED_TNAMES + ".configured";
+    public static final String DIST_CACHE_LABEL = "splitsFile";
 
-    public static void setupFile(Configuration conf) throws IOException, URISyntaxException, AccumuloSecurityException, AccumuloException {
+    public static void setupFile(Job job, Configuration conf) throws IOException, URISyntaxException, AccumuloSecurityException, AccumuloException {
 
         Path baseSplitsPath = TableSplitsCache.getSplitsPath(conf);
         FileSystem sourceFs = baseSplitsPath.getFileSystem(conf);
@@ -48,6 +53,13 @@ public class SplitsFile {
 
             FileUtil.copy(sourceFs, baseSplitsPath, destFs, destSplits, false, conf);
             conf.set(TableSplitsCache.SPLITS_CACHE_DIR, conf.get(SPLIT_WORK_DIR));
+
+            // // if we want the freshest splits, go ahead and update them in the work dir
+            // if (TableSplitsCache.shouldRefreshSplits(conf)) {
+            // TableSplitsCache.getCurrentCache(conf).update();
+            // }
+
+            job.addCacheFile(new URI(destSplits.toString() + "#" + DIST_CACHE_LABEL));
 
             if (doValidation) {
                 validate(conf);
@@ -174,7 +186,7 @@ public class SplitsFile {
         return dateIsBalanced;
     }
 
-    public static Map<String,Map<Text,String>> getSplits(Configuration conf) throws IOException {
+    public static Map<String,List<Text>> getSplits(Configuration conf) throws IOException {
         return TableSplitsCache.getCurrentCache(conf).getSplits();
 
     }

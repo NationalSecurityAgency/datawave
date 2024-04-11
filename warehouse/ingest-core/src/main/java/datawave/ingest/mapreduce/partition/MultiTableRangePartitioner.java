@@ -148,6 +148,16 @@ public class MultiTableRangePartitioner extends Partitioner<BulkIngestKey,Value>
     }
 
     @Override
+    public boolean needSplits() {
+        return true;
+    }
+
+    @Override
+    public boolean needSplitLocations() {
+        return false;
+    }
+
+    @Override
     public Configuration getConf() {
         return this.conf;
     }
