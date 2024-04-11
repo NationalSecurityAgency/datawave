@@ -263,6 +263,8 @@
         <property name="tfAggregationThresholdMs" value="-1" />
         <!--   enable per-tablet pruning of certain query options     -->
         <property name="pruneQueryOptions" value="false" />
+        <property name="rebuildDatatypeFilter" value="true" />
+        <property name="rebuildDatatypeFilterPerShard" value="false" />
         <property name="reduceIngestTypes" value="true"/>
         <property name="reduceIngestTypesPerShard" value="true"/>
         <property name="reduceQueryFields" value="false" />
