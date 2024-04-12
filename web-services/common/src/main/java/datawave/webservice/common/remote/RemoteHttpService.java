@@ -370,11 +370,7 @@ public abstract class RemoteHttpService {
             return null;
         } else {
             VoidResponse response = voidResponseReader.readValue(entity.getContent());
-            if (response.getHasResults()) {
-                return response;
-            } else {
-                throw new RuntimeException(response.getMessages().toString());
-            }
+            return response;
         }
     }
 
