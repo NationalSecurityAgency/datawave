@@ -344,9 +344,10 @@ public class DocumentGrouper {
             }
 
             // Sort the entries by the number of direct matches seen for each grouping context-instance pair.
+            // using secondary key string comparison because Tuple does not handle comparing null values
             SortedSet<Map.Entry<Pair<String,String>,Collection<Field>>> directMatchesSortedByPrevalence = new TreeSet<>(
                             Comparator.comparingInt((Map.Entry<Pair<String,String>,Collection<Field>> left) -> left.getValue().size()).reversed()
-                                            .thenComparing(Map.Entry::getKey));
+                                            .thenComparing(e -> String.valueOf(e.getKey())));
             directMatchesSortedByPrevalence.addAll(groupingContextAndInstanceToField.asMap().entrySet());
 
             // Map of group target field names to the grouping combinations found for them.
