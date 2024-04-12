@@ -5,7 +5,10 @@ import java.util.Iterator;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.Combiner;
+import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.log4j.Logger;
+
+import datawave.iterators.ValueCombiner;
 
 /**
  *
@@ -22,6 +25,16 @@ public abstract class PropogatingCombiner extends Combiner {
      * Flag to determine if we propogate the removals
      */
     protected boolean propogate = true;
+
+    /**
+     * Get the iterator of values to be combined
+     *
+     * @param iterator
+     * @return a value iterator
+     */
+    public Iterator<Value> getValues(SortedKeyValueIterator<Key,Value> iterator) {
+        return new ValueCombiner(iterator);
+    }
 
     /**
      * Shpuld return a thread safe value.

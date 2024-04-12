@@ -37,6 +37,7 @@ import datawave.ingest.data.config.ConfigurationHelper;
 import datawave.ingest.data.config.ingest.IgnorableErrorHelperInterface;
 import datawave.ingest.protobuf.RawRecordContainer.Data;
 import datawave.marking.MarkingFunctions;
+import datawave.util.CompositeTimestamp;
 
 public class RawRecordContainerImpl implements Writable, Configurable, RawRecordContainer {
 
@@ -61,7 +62,10 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
     private Multimap<Type,String> fatalErrors = HashMultimap.create();
     private Multimap<Type,IgnorableErrorHelperInterface> ignorableErrorHelpers = HashMultimap.create();
 
-    private long eventDate = Long.MIN_VALUE;
+    /**
+     * This is the composite date for this event
+     */
+    private long timestamp = CompositeTimestamp.INVALID_TIMESTAMP;
     private Type dataType = null;
     private UID uid = null;
     private UIDBuilder<UID> uidBuilder;
@@ -179,13 +183,13 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
     }
 
     @Override
-    public long getDate() {
-        return this.eventDate;
+    public long getTimestamp() {
+        return this.timestamp;
     }
 
     @Override
-    public void setDate(long date) {
-        this.eventDate = date;
+    public void setTimestamp(long date) {
+        this.timestamp = date;
     }
 
     @Override
@@ -421,7 +425,7 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
         }
         RawRecordContainerImpl e = (RawRecordContainerImpl) other;
         EqualsBuilder equals = new EqualsBuilder();
-        equals.append(this.eventDate, e.eventDate);
+        equals.append(this.timestamp, e.timestamp);
         equals.append(this.dataType, e.dataType);
         equals.append(this.uid, e.uid);
         equals.append(this.errors, e.errors);
@@ -439,7 +443,7 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
 
     @Override
     public int hashCode() {
-        int result = (int) (eventDate ^ (eventDate >>> 32));
+        int result = (int) (timestamp ^ (timestamp >>> 32));
         result = 31 * result + (dataType != null ? dataType.hashCode() : 0);
         result = 31 * result + (uid != null ? uid.hashCode() : 0);
         result = 31 * result + (errors != null ? errors.hashCode() : 0);
@@ -465,7 +469,7 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
     protected RawRecordContainerImpl copyInto(RawRecordContainerImpl rrci) {
         copyConfiguration(rrci);
 
-        rrci.eventDate = this.eventDate;
+        rrci.timestamp = this.timestamp;
         rrci.dataType = this.dataType;
         rrci.uid = this.uid;
         rrci.errors = new ConcurrentSkipListSet<>(this.errors);
@@ -645,7 +649,7 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
     @Override
     public void write(DataOutput out) throws IOException {
         Data.Builder builder = Data.newBuilder();
-        builder.setDate(this.eventDate);
+        builder.setDate(this.timestamp);
         if (null != this.dataType)
             builder.setDataType(this.dataType.typeName());
         if (null != this.uid)
@@ -679,7 +683,7 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
         in.readFully(buf);
         Data data = Data.parseFrom(buf);
 
-        this.eventDate = data.getDate();
+        this.timestamp = data.getDate();
         if (data.hasDataType())
             try {
                 this.dataType = TypeRegistry.getType(data.getDataType());
@@ -715,7 +719,7 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
      * Resets state for re-use.
      */
     public void clear() {
-        eventDate = Long.MIN_VALUE;
+        timestamp = CompositeTimestamp.INVALID_TIMESTAMP;
         dataType = null;
         uid = null;
         errors.clear();
@@ -740,7 +744,7 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
     @Override
     public String toString() {
         ToStringBuilder buf = new ToStringBuilder(this);
-        buf.append("eventDate", this.eventDate);
+        buf.append("timestamp", this.timestamp);
         buf.append("dataType", dataType.typeName());
         buf.append("uid", String.valueOf(this.uid));
         buf.append("errors", errors);

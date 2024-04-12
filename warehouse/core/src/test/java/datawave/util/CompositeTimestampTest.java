@@ -2,7 +2,13 @@ package datawave.util;
 
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.Assert;
@@ -198,6 +204,168 @@ public class CompositeTimestampTest {
             // expected
         }
 
+    }
+
+    @Test
+    public void testMin() {
+        long ts = CompositeTimestamp.getCompositeTimeStamp(CompositeTimestamp.MIN_EVENT_DATE, CompositeTimestamp.MIN_EVENT_DATE);
+        long event = CompositeTimestamp.getEventDate(ts);
+        long age = CompositeTimestamp.getEventDate(ts);
+        Assert.assertEquals(event, age);
+    }
+
+    @Test
+    public void testInvalid() {
+        try {
+            CompositeTimestamp.getEventDate(CompositeTimestamp.INVALID_TIMESTAMP);
+            Assert.fail("Invalid timestamp not detected");
+        } catch (IllegalArgumentException e) {
+
+        }
+        try {
+            CompositeTimestamp.getAgeOffDate(CompositeTimestamp.INVALID_TIMESTAMP);
+            Assert.fail("Invalid timestamp not detected");
+        } catch (IllegalArgumentException e) {
+
+        }
+        try {
+            CompositeTimestamp.isCompositeTimestamp(CompositeTimestamp.INVALID_TIMESTAMP);
+            Assert.fail("Invalid timestamp not detected");
+        } catch (IllegalArgumentException e) {
+
+        }
+    }
+
+    protected boolean isOrdered(Long... times) {
+        List<Long> list1 = new ArrayList<>(Arrays.asList(times));
+        List<Long> list2 = new ArrayList<>(Arrays.asList(times));
+        Collections.sort(list2);
+        return list1.equals(list2);
+    }
+
+    protected boolean isOrdered(Comparator<Long> comparator, Long... times) {
+        List<Long> list1 = new ArrayList<>(Arrays.asList(times));
+        List<Long> list2 = new ArrayList<>(Arrays.asList(times));
+        Collections.sort(list2, comparator);
+        return list1.equals(list2);
+    }
+
+    @Test
+    public void testOrderingAgeOffDates() {
+        Calendar cal = Calendar.getInstance();
+        long twoMonthsLater = cal.getTimeInMillis();
+        cal.add(Calendar.MONTH, -1);
+        long aMonthLater = cal.getTimeInMillis();
+        cal.add(Calendar.MONTH, -1);
+        long aDate = cal.getTimeInMillis();
+
+        // test the same positive eventdate, but different ageoff dates
+        long t1 = CompositeTimestamp.getCompositeTimeStamp(aDate, aDate);
+        long t2 = CompositeTimestamp.getCompositeTimeStamp(aDate, aMonthLater);
+        long t3 = CompositeTimestamp.getCompositeTimeStamp(aDate, twoMonthsLater);
+
+        // in this case the natural ordering will be correct
+        Assert.assertTrue(isOrdered(t1, t2, t3));
+        // and the comparator will maintain that ordering
+        Assert.assertTrue(isOrdered(CompositeTimestamp.comparator(), t1, t2, t3));
+
+        cal = Calendar.getInstance();
+        cal.setTimeInMillis(0);
+        cal.add(Calendar.MONTH, -1);
+        twoMonthsLater = cal.getTimeInMillis();
+        cal.add(Calendar.MONTH, -1);
+        aMonthLater = cal.getTimeInMillis();
+        cal.add(Calendar.MONTH, -1);
+        aDate = cal.getTimeInMillis();
+
+        // test the same negative eventdate, but different ageoff dates
+        t1 = CompositeTimestamp.getCompositeTimeStamp(aDate, aDate);
+        t2 = CompositeTimestamp.getCompositeTimeStamp(aDate, aMonthLater);
+        t3 = CompositeTimestamp.getCompositeTimeStamp(aDate, twoMonthsLater);
+
+        // in this case the natural ordering will be incorrect ( and in fact exactly opposite )
+        Assert.assertFalse(isOrdered(t1, t2, t3));
+        Assert.assertTrue(isOrdered(t2, t2, t1));
+        // but the comparator will maintain the correct ordering
+        Assert.assertTrue(isOrdered(CompositeTimestamp.comparator(), t1, t2, t3));
+    }
+
+    @Test
+    public void testOrderingEventDates() {
+        Calendar cal = Calendar.getInstance();
+        long twoMonthsLater = cal.getTimeInMillis();
+        cal.add(Calendar.MONTH, -1);
+        long aMonthLater = cal.getTimeInMillis();
+        cal.add(Calendar.MONTH, -1);
+        long aDate = cal.getTimeInMillis();
+
+        // test different event dates with the equivalent ageoff dates
+        long t1 = CompositeTimestamp.getCompositeTimeStamp(aDate, aDate);
+        long t2 = CompositeTimestamp.getCompositeTimeStamp(aMonthLater, aMonthLater);
+        long t3 = CompositeTimestamp.getCompositeTimeStamp(twoMonthsLater, twoMonthsLater);
+
+        // in this case the natural ordering will be correct
+        Assert.assertTrue(isOrdered(t1, t2, t3));
+        // and the comparator will maintain that ordering
+        Assert.assertTrue(isOrdered(CompositeTimestamp.comparator(), t1, t2, t3));
+
+        cal = Calendar.getInstance();
+        cal.setTimeInMillis(0);
+        cal.add(Calendar.MONTH, -1);
+        twoMonthsLater = cal.getTimeInMillis();
+        cal.add(Calendar.MONTH, -1);
+        aMonthLater = cal.getTimeInMillis();
+        cal.add(Calendar.MONTH, -1);
+        aDate = cal.getTimeInMillis();
+
+        // test different negative event dates with the equivalent ageoff dates
+        t1 = CompositeTimestamp.getCompositeTimeStamp(aDate, aDate);
+        t2 = CompositeTimestamp.getCompositeTimeStamp(aMonthLater, aMonthLater);
+        t3 = CompositeTimestamp.getCompositeTimeStamp(twoMonthsLater, twoMonthsLater);
+
+        // in this case the natural ordering will be correct
+        Assert.assertTrue(isOrdered(t1, t2, t3));
+        // and the comparator will maintain that ordering
+        Assert.assertTrue(isOrdered(CompositeTimestamp.comparator(), t1, t2, t3));
+    }
+
+    @Test
+    public void testOrderingEventAndAgeoffDates() {
+        Calendar cal = Calendar.getInstance();
+        long twoMonthsLater = cal.getTimeInMillis();
+        cal.add(Calendar.MONTH, -1);
+        long aMonthLater = cal.getTimeInMillis();
+        cal.add(Calendar.MONTH, -1);
+        long aDate = cal.getTimeInMillis();
+
+        // a mix of ageoff dates and event dates
+        long t1 = CompositeTimestamp.getCompositeTimeStamp(aDate, twoMonthsLater);
+        long t2 = CompositeTimestamp.getCompositeTimeStamp(aMonthLater, aMonthLater);
+        long t3 = CompositeTimestamp.getCompositeTimeStamp(twoMonthsLater, twoMonthsLater);
+
+        // in this case the natural ordering will be incorrect
+        Assert.assertFalse(isOrdered(t1, t2, t3));
+        // but the comparator will maintain the correct ordering
+        Assert.assertTrue(isOrdered(CompositeTimestamp.comparator(), t1, t2, t3));
+
+        cal = Calendar.getInstance();
+        cal.setTimeInMillis(0);
+        cal.add(Calendar.MONTH, -1);
+        twoMonthsLater = cal.getTimeInMillis();
+        cal.add(Calendar.MONTH, -1);
+        aMonthLater = cal.getTimeInMillis();
+        cal.add(Calendar.MONTH, -1);
+        aDate = cal.getTimeInMillis();
+
+        // a mix of negative ageoff dates and negative event dates
+        t1 = CompositeTimestamp.getCompositeTimeStamp(aDate, twoMonthsLater);
+        t2 = CompositeTimestamp.getCompositeTimeStamp(aMonthLater, aMonthLater);
+        t3 = CompositeTimestamp.getCompositeTimeStamp(twoMonthsLater, twoMonthsLater);
+
+        // in this case the natural ordering will be correct (surprisingly)
+        Assert.assertTrue(isOrdered(t1, t2, t3));
+        // and the comparator will maintain that ordering
+        Assert.assertTrue(isOrdered(CompositeTimestamp.comparator(), t1, t2, t3));
     }
 
 }

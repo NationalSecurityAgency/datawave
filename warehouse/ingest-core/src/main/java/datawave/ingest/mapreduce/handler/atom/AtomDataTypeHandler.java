@@ -180,20 +180,20 @@ public class AtomDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataT
             if ("".equals(this.fieldOverrides[i])) {
                 for (NormalizedContentInterface nci : fields.get(atomFieldName)) {
                     String columnQualifier = getColumnQualifier(event, nci);
-                    Key k = createKey(keyFieldName, nci.getEventFieldValue(), columnQualifier, id, event.getVisibility(), event.getDate());
+                    Key k = createKey(keyFieldName, nci.getEventFieldValue(), columnQualifier, id, event.getVisibility(), event.getTimestamp());
                     BulkIngestKey bk = new BulkIngestKey(tname, k);
                     contextWriter.write(bk, NULL_VALUE, context);
                     count++;
-                    Key categoryKey = new Key(keyFieldName, "", "", event.getVisibility(), event.getDate());
+                    Key categoryKey = new Key(keyFieldName, "", "", event.getVisibility(), event.getTimestamp());
                     categories.add(categoryKey);
                     if (subCategories.containsKey(atomFieldName)) {
                         if (subCategories.get(atomFieldName).contains(nci.getEventFieldValue())) {
                             Key k2 = createKey(keyFieldName + "/" + nci.getEventFieldValue(), nci.getEventFieldValue(), columnQualifier, id,
-                                            event.getVisibility(), event.getDate());
+                                            event.getVisibility(), event.getTimestamp());
                             BulkIngestKey bk2 = new BulkIngestKey(tname, k2);
                             contextWriter.write(bk2, NULL_VALUE, context);
                             count++;
-                            Key categoryKey2 = new Key(keyFieldName + "/" + nci.getEventFieldValue(), "", "", event.getVisibility(), event.getDate());
+                            Key categoryKey2 = new Key(keyFieldName + "/" + nci.getEventFieldValue(), "", "", event.getVisibility(), event.getTimestamp());
                             categories.add(categoryKey2);
                         }
                     }
@@ -202,21 +202,21 @@ public class AtomDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataT
 
                 String columnQualifier = getColumnQualifier(event, null);
                 // use the override
-                Key k = createKey(keyFieldName, this.fieldOverrides[i], columnQualifier, id, event.getVisibility(), event.getDate());
+                Key k = createKey(keyFieldName, this.fieldOverrides[i], columnQualifier, id, event.getVisibility(), event.getTimestamp());
                 BulkIngestKey bk = new BulkIngestKey(tname, k);
                 contextWriter.write(bk, NULL_VALUE, context);
                 count++;
-                Key categoryKey = new Key(keyFieldName, "", "", event.getVisibility(), event.getDate());
+                Key categoryKey = new Key(keyFieldName, "", "", event.getVisibility(), event.getTimestamp());
                 categories.add(categoryKey);
 
                 if (subCategories.containsKey(atomFieldName)) {
                     if (subCategories.get(atomFieldName).contains(this.fieldOverrides[i])) {
                         Key k2 = createKey(keyFieldName + "/" + this.fieldOverrides[i], this.fieldOverrides[i], columnQualifier, id, event.getVisibility(),
-                                        event.getDate());
+                                        event.getTimestamp());
                         BulkIngestKey bk2 = new BulkIngestKey(tname, k2);
                         contextWriter.write(bk2, NULL_VALUE, context);
                         count++;
-                        Key categoryKey2 = new Key(keyFieldName + "/" + this.fieldOverrides[i], "", "", event.getVisibility(), event.getDate());
+                        Key categoryKey2 = new Key(keyFieldName + "/" + this.fieldOverrides[i], "", "", event.getVisibility(), event.getTimestamp());
                         categories.add(categoryKey2);
                     }
                 }
