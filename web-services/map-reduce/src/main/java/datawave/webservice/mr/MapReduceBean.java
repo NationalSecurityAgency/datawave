@@ -545,10 +545,13 @@ public class MapReduceBean {
 
         // If this job is being restarted, then the jobId will be the same. The restart method
         // puts the id into the runtime parameters
+        boolean restarted = false;
         String id = runtimeParameters.get(JOB_ID);
         if (null == id) {
             id = UUID.randomUUID().toString();
             runtimeParameters.put(JOB_ID, id);
+        } else {
+            restarted = true;
         }
         org.apache.hadoop.conf.Configuration conf = new org.apache.hadoop.conf.Configuration();
         conf.set("mapreduce.user.classpath.first", "false");
@@ -602,7 +605,6 @@ public class MapReduceBean {
         log.info("JOB ID: " + mapReduceJobId);
 
         // Create an entry in the state table
-        boolean restarted = (runtimeParameters.get(JOB_ID) != null);
         try {
             if (!restarted) {
                 mapReduceState.create(id, job.getHdfsUri(), job.getJobTracker(), job.getJobDir(), mapReduceJobId.toString(), job.getResultsDir(),
@@ -1143,7 +1145,7 @@ public class MapReduceBean {
         return response;
     }
 
-    private FileSystem getFS(String hdfs, BaseResponse response) {
+    static FileSystem getFS(String hdfs, BaseResponse response) {
         org.apache.hadoop.conf.Configuration conf = new org.apache.hadoop.conf.Configuration();
         conf.set("fs.defaultFS", hdfs);
         // Override default buffer size (4K) to 16K
@@ -1154,7 +1156,6 @@ public class MapReduceBean {
             return fs;
         } catch (IOException e1) {
             NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.HDFS_CONNECTION_ERROR, e1, MessageFormat.format("Location: {0}", hdfs));
-            log.error(qe);
             response.addException(qe);
             throw new NotFoundException(qe, response);
         }

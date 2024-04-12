@@ -45,15 +45,23 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapred.JobClient;
+import org.apache.hadoop.mapred.JobConf;
+import org.apache.hadoop.mapred.JobStatus;
+import org.apache.hadoop.mapred.RunningJob;
+import org.apache.hadoop.mapreduce.JobID;
 import org.apache.log4j.Logger;
 
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.util.ScannerHelper;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
+import datawave.webservice.common.exception.DatawaveWebApplicationException;
+import datawave.webservice.common.exception.NotFoundException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.NotFoundQueryException;
 import datawave.webservice.query.exception.QueryException;
+import datawave.webservice.result.BaseResponse;
 import datawave.webservice.results.mr.JobExecution;
 import datawave.webservice.results.mr.MapReduceInfoResponse;
 import datawave.webservice.results.mr.MapReduceInfoResponseList;
@@ -240,7 +248,7 @@ public class MapReduceStatePersisterBean {
      *             when zero or more than one result is found for the id
      */
     @PermitAll
-    public void updateState(String mapReduceJobId, MapReduceState state) throws QueryException {
+    public JobExecution updateState(String mapReduceJobId, MapReduceState state) throws QueryException {
         // We have the mapreduce job id and the new state, but we need to find out which id and sid this relates to
         // so that we can create a new mutation to put into the table.
         List<MapReduceServiceJobIndex> results = null;
@@ -280,7 +288,8 @@ public class MapReduceStatePersisterBean {
             MapReduceServiceJobIndex r = results.get(0);
             // We will insert a new history column in the table
             Mutation m = new Mutation(r.getId());
-            m.put(r.getUser(), STATE + NULL + r.getMapReduceJobId(), new Value(r.getState().getBytes()));
+            long ts = System.currentTimeMillis();
+            m.put(r.getUser(), STATE + NULL + r.getMapReduceJobId(), ts, new Value(r.getState().getBytes()));
             c = null;
             BatchWriter writer = null;
             try {
@@ -306,6 +315,12 @@ public class MapReduceStatePersisterBean {
                     log.error("Error creating query", e);
                 }
             }
+
+            JobExecution job = new JobExecution();
+            job.setMapReduceJobId(mapReduceJobId);
+            job.setState(state.name());
+            job.setTimestamp(ts);
+            return job;
         }
     }
 
@@ -434,6 +449,8 @@ public class MapReduceStatePersisterBean {
     private MapReduceInfoResponse populateResponse(Iterable<Entry<Key,Value>> data) throws IOException {
         MapReduceInfoResponse result = null;
         String hdfs = null;
+        String jobTracker = null;
+        Map<String,JobExecution> states = new HashMap<>();
         TreeSet<JobExecution> jobs = null;
         for (Entry<Key,Value> entry : data) {
             if (null == result)
@@ -449,31 +466,104 @@ public class MapReduceStatePersisterBean {
             } else if (colq.equals(PARAMS)) {
                 result.setRuntimeParameters(new String(entry.getValue().get()));
             } else if (colq.equals(HDFS)) {
-                result.setHdfs(new String(entry.getValue().get()));
                 hdfs = new String(entry.getValue().get());
+                result.setHdfs(hdfs);
             } else if (colq.equals(JT)) {
-                result.setJobTracker(new String(entry.getValue().get()));
+                jobTracker = new String(entry.getValue().get());
+                result.setJobTracker(jobTracker);
             } else if (colq.startsWith(STATE)) {
                 if (null == jobs)
                     jobs = new TreeSet<>();
                 JobExecution job = new JobExecution();
-                job.setMapReduceJobId(colq.substring(STATE.length() + 1));
+                String jobId = colq.substring(STATE.length() + 1);
+                job.setMapReduceJobId(jobId);
                 job.setState(new String(entry.getValue().get()));
                 job.setTimestamp(entry.getKey().getTimestamp());
                 jobs.add(job);
+                // update the map of jobid to execution to determine the latest known state
+                if (!states.containsKey(jobId) || states.get(jobId).getTimestamp() < job.getTimestamp()) {
+                    states.put(jobId, job);
+                }
             } else if (colq.equals(NAME)) {
                 result.setJobName(new String(entry.getValue().get()));
             }
         }
+
+        result.setResultFiles(getResults(hdfs, result.getResultsDirectory()));
+
+        // now update the states
+        for (JobExecution execution : states.values()) {
+            if (execution.getState().equals(MapReduceState.STARTED.name()) || execution.getState().equals(MapReduceState.RUNNING.name())) {
+                try {
+                    MapReduceState state = getState(execution.getMapReduceJobId(), hdfs, jobTracker);
+                    if (!execution.getState().equals(state.name())) {
+                        // add the newly discovered state
+                        JobExecution job = updateState(execution.getMapReduceJobId(), state);
+                        jobs.add(job);
+                    }
+                } catch (Exception e) {
+                    log.error("Failed to update state for map reduce job " + execution.getMapReduceJobId(), e);
+                    JobExecution job = new JobExecution();
+                    job.setMapReduceJobId(execution.getMapReduceJobId());
+                    job.setState(e.getMessage());
+                    job.setTimestamp(System.currentTimeMillis());
+                    jobs.add(job);
+                }
+            }
+        }
+
         if (null != jobs)
             result.setJobExecutions(new ArrayList<>(jobs));
+
+        return result;
+    }
+
+    static FileSystem getFS(String hdfs) throws IOException {
+        org.apache.hadoop.conf.Configuration conf = new org.apache.hadoop.conf.Configuration();
+        conf.set("fs.defaultFS", hdfs);
+        // Override default buffer size (4K) to 16K
+        conf.setInt("io.file.buffer.size", 16384);
+        final FileSystem fs;
+        fs = FileSystem.get(conf);
+        return fs;
+    }
+
+    public MapReduceState getState(String mapReduceJobId, String hdfs, String jobTracker) throws IOException {
+        FileSystem fs = getFS(hdfs);
+        fs.getConf().set("mapreduce.jobtracker.address", jobTracker);
+        // Create a Job object
+        try (JobClient job = new JobClient(new JobConf(fs.getConf()))) {
+            JobID jid = JobID.forName(mapReduceJobId);
+            RunningJob rj = job.getJob(new org.apache.hadoop.mapred.JobID(jid.getJtIdentifier(), jid.getId()));
+            if (null != rj) {
+                JobStatus status = rj.getJobStatus();
+                switch (status.getState()) {
+                    case RUNNING:
+                        return MapReduceState.RUNNING;
+                    case SUCCEEDED:
+                        return MapReduceState.SUCCEEDED;
+                    case FAILED:
+                        return MapReduceState.FAILED;
+                    case PREP:
+                        return MapReduceState.STARTED;
+                    default:
+                        return MapReduceState.KILLED;
+                }
+            } else {
+                return MapReduceState.KILLED;
+            }
+        }
+    }
+
+    public List<ResultFile> getResults(String hdfs, String resultsDirectory) {
+        List<ResultFile> resultFiles = new ArrayList<>();
         try {
-            if (null != hdfs && !hdfs.isEmpty() && null != result.getResultsDirectory()) {
+            if (null != hdfs && !hdfs.isEmpty() && null != resultsDirectory) {
                 Configuration conf = new Configuration();
                 conf.set("fs.defaultFS", hdfs);
                 // If we can't talk to HDFS then I want to fail fast, default is to retry 10 times.
                 conf.setInt("ipc.client.connect.max.retries", 0);
-                Path resultDirectoryPath = new Path(result.getResultsDirectory());
+                Path resultDirectoryPath = new Path(resultsDirectory);
                 int resultDirectoryPathLength = resultDirectoryPath.toUri().getPath().length();
                 FileSystem fs = FileSystem.get(resultDirectoryPath.toUri(), conf);
 
@@ -495,7 +585,6 @@ public class MapReduceStatePersisterBean {
                 // FileStatus[] stats = fs.listStatus(p);
 
                 if (!stats.isEmpty()) {
-                    List<ResultFile> resultFiles = new ArrayList<>();
                     for (FileStatus f : stats) {
                         if (!f.isDirectory()) {
                             ResultFile rf = new ResultFile();
@@ -505,13 +594,15 @@ public class MapReduceStatePersisterBean {
                             resultFiles.add(rf);
                         }
                     }
-                    result.setResultFiles(resultFiles);
                 }
             }
         } catch (IOException e) {
             log.warn("Unable to populate result files portion of response", e);
+            ResultFile rf = new ResultFile();
+            rf.setFileName(e.getMessage());
+            resultFiles.add(rf);
         }
-        return result;
+        return resultFiles;
     }
 
     /**
