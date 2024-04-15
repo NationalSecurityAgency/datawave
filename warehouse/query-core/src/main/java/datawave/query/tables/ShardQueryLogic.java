@@ -2905,4 +2905,20 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
     public void setSortQueryByCounts(boolean sortQueryByCounts) {
         getConfig().setSortQueryByCounts(sortQueryByCounts);
     }
+
+    public boolean isRebuildDatatypeFilter() {
+        return getConfig().isRebuildDatatypeFilter();
+    }
+
+    public void setRebuildDatatypeFilter(boolean rebuildDatatypeFilter) {
+        getConfig().setRebuildDatatypeFilter(rebuildDatatypeFilter);
+    }
+
+    public boolean isRebuildDatatypeFilterPerShard() {
+        return getConfig().isRebuildDatatypeFilterPerShard();
+    }
+
+    public void setRebuildDatatypeFilterPerShard(boolean rebuildDatatypeFilterPerShard) {
+        getConfig().setRebuildDatatypeFilterPerShard(rebuildDatatypeFilterPerShard);
+    }
 }

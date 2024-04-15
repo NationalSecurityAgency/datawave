@@ -103,6 +103,12 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private int collapseUidsThreshold = -1;
     // Should this query dedupe terms within ANDs and ORs
     private boolean enforceUniqueTermsWithinExpressions = false;
+    // After query planning rebuild the datatype filter from the remaining query fields.
+    // The actual filter may be a subset of the requested datatypes. This has implications
+    // for the global index lookup and execution of regex terms.
+    private boolean rebuildDatatypeFilter = false;
+    private boolean rebuildDatatypeFilterPerShard = false;
+    // reduces the datatype filter, respecting the user-supplied datatypes
     private boolean reduceIngestTypes = false;
     private boolean reduceIngestTypesPerShard = false;
     // should this query attempt to prune terms via their ingest types
@@ -528,6 +534,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setReduceQueryFieldsPerShard(other.getReduceQueryFieldsPerShard());
         this.setReduceTypeMetadata(other.getReduceTypeMetadata());
         this.setReduceTypeMetadataPerShard(other.getReduceTypeMetadataPerShard());
+        this.setRebuildDatatypeFilter(other.isRebuildDatatypeFilter());
+        this.setRebuildDatatypeFilterPerShard(other.isRebuildDatatypeFilterPerShard());
         this.setParseTldUids(other.getParseTldUids());
         this.setSequentialScheduler(other.getSequentialScheduler());
         this.setCollectTimingDetails(other.getCollectTimingDetails());
@@ -2680,6 +2688,22 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setPruneQueryOptions(boolean pruneQueryOptions) {
         this.pruneQueryOptions = pruneQueryOptions;
+    }
+
+    public boolean isRebuildDatatypeFilter() {
+        return rebuildDatatypeFilter;
+    }
+
+    public void setRebuildDatatypeFilter(boolean rebuildDatatypeFilter) {
+        this.rebuildDatatypeFilter = rebuildDatatypeFilter;
+    }
+
+    public boolean isRebuildDatatypeFilterPerShard() {
+        return rebuildDatatypeFilterPerShard;
+    }
+
+    public void setRebuildDatatypeFilterPerShard(boolean rebuildDatatypeFilterPerShard) {
+        this.rebuildDatatypeFilterPerShard = rebuildDatatypeFilterPerShard;
     }
 
     public boolean getReduceIngestTypes() {

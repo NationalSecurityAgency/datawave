@@ -14,6 +14,11 @@ source "${SERVICES_DIR}/hadoop/bootstrap.sh"
 
 hadoopIsInstalled || fatal "Accumulo requires that Hadoop be installed"
 
+# If Accumulo is not installed, verify that the two checksums match before installing.
+accumuloIsInstalled || verifyChecksum "${DW_ACCUMULO_DIST_URI}" "${DW_ACCUMULO_SERVICE_DIR}" "${DW_ACCUMULO_DIST_SHA512_CHECKSUM}"
+# If Zookeeper is not installed, verify that the two checksums match before installing.
+zookeeperIsInstalled || verifyChecksum "${DW_ZOOKEEPER_DIST_URI}" "${DW_ACCUMULO_SERVICE_DIR}" "${DW_ZOOKEEPER_DIST_SHA512_CHECKSUM}"
+
 if zookeeperIsInstalled ; then
    info "ZooKeeper is already installed"
 else
