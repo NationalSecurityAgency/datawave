@@ -135,6 +135,12 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("enforceUniqueTermsWithinExpressions", true);
         defaultValues.put("reduceQueryFields", false);
         updatedValues.put("reduceQueryFields", true);
+        defaultValues.put("reduceQueryFieldsPerShard", false);
+        updatedValues.put("reduceQueryFieldsPerShard", true);
+        defaultValues.put("rebuildDatatypeFilter", false);
+        updatedValues.put("rebuildDatatypeFilter", true);
+        defaultValues.put("rebuildDatatypeFilterPerShard", false);
+        updatedValues.put("rebuildDatatypeFilterPerShard", true);
         defaultValues.put("reduceTypeMetadata", false);
         updatedValues.put("reduceTypeMetadata", true);
         defaultValues.put("reduceTypeMetadataPerShard", false);
@@ -323,6 +329,8 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("initialMaxTermThreshold", 2540);
         defaultValues.put("intermediateMaxTermThreshold", 2500);
         updatedValues.put("intermediateMaxTermThreshold", 5500);
+        defaultValues.put("indexedMaxTermThreshold", 2500);
+        updatedValues.put("indexedMaxTermThreshold", 5500);
         defaultValues.put("finalMaxTermThreshold", 2500);
         updatedValues.put("finalMaxTermThreshold", 2501);
         defaultValues.put("maxDepthThreshold", 2500);
@@ -377,6 +385,10 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("maxIvaratorSources", 16);
         defaultValues.put("maxIvaratorResults", -1L);
         updatedValues.put("maxIvaratorResults", 10000L);
+        defaultValues.put("maxIvaratorTerms", -1);
+        updatedValues.put("maxIvaratorTerms", 50);
+        defaultValues.put("maxIvaratorSourceWait", 1000L * 60 * 30);
+        updatedValues.put("maxIvaratorSourceWait", 1000L * 60 * 10);
         defaultValues.put("maxEvaluationPipelines", 25);
         updatedValues.put("maxEvaluationPipelines", 24);
         defaultValues.put("maxPipelineCachedResults", 25);
@@ -400,6 +412,8 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("compositeFilterFunctionsEnabled", true);
         defaultValues.put("uniqueFields", new UniqueFields());
         updatedValues.put("uniqueFields", UniqueFields.from("FIELD_U,FIELD_V"));
+        defaultValues.put("uniqueCacheBufferSize", 100);
+        updatedValues.put("uniqueCacheBufferSize", 1000);
         defaultValues.put("cacheModel", false);
         updatedValues.put("cacheModel", true);
         defaultValues.put("trackSizes", true);
@@ -446,6 +460,10 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("tfAggregationThresholdMs", 10000);
         defaultValues.put("pruneQueryOptions", false);
         updatedValues.put("pruneQueryOptions", true);
+        defaultValues.put("reduceIngestTypes", false);
+        updatedValues.put("reduceIngestTypes", true);
+        defaultValues.put("reduceIngestTypesPerShard", false);
+        updatedValues.put("reduceIngestTypesPerShard", true);
         defaultValues.put("pruneQueryByIngestTypes", false);
         updatedValues.put("pruneQueryByIngestTypes", true);
         defaultValues.put("numIndexLookupThreads", 8);
@@ -494,6 +512,9 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("projectFieldsAsString", "FIELD_P,FIELD_Q");
         alreadySet.add("projectFieldsAsString");
 
+        defaultValues.put("renameFields", Sets.newHashSet());
+        updatedValues.put("renameFields", Collections.singleton("UUID=ID"));
+
         defaultValues.put("disallowlistedFields", Sets.newHashSet());
         updatedValues.put("disallowlistedFields", Sets.newHashSet("FIELD_B", "FIELD_C"));
         defaultValues.put("disallowlistedFieldsAsString", "");
@@ -534,6 +555,15 @@ public class ShardQueryConfigurationTest {
 
         defaultValues.put("groupFields", new GroupFields());
         updatedValues.put("groupFields", GroupFields.from("GROUP(FIELD_G,FIELD_H)"));
+
+        defaultValues.put("useFieldCounts", false);
+        updatedValues.put("useFieldCounts", true);
+        defaultValues.put("useTermCounts", false);
+        updatedValues.put("useTermCounts", true);
+        defaultValues.put("sortQueryBeforeGlobalIndex", false);
+        updatedValues.put("sortQueryBeforeGlobalIndex", true);
+        defaultValues.put("sortQueryByCounts", false);
+        updatedValues.put("sortQueryByCounts", true);
     }
 
     private Query createQuery(String query) {
