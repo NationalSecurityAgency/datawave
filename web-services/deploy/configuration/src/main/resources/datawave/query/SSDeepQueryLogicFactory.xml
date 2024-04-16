@@ -31,7 +31,7 @@
         <property name="fullTableScanEnabled" value="false" />
         <property name="allowLeadingWildcard" value="true" />
         <property name="auditType" value="NONE" />
-        <property name="logicDescription" value="Discovery query that returns information from the index about the supplied term(s)" />
+        <property name="logicDescription" value="Discovery query that returns information from the index about the supplied ssdeep hashes" />
     </bean>
 
     <bean id="SSDeepSimilarityDiscoveryQuery" parent="baseQueryLogic" class="datawave.query.tables.ssdeep.SSDeepChainedDiscoveryQueryLogic">
@@ -41,6 +41,20 @@
         <property name="auditType" value="NONE"/>
         <property name="chainStrategy">
             <bean class="datawave.query.tables.ssdeep.FullSSDeepDiscoveryChainStrategy"/>
+        </property>
+    </bean>
+
+    <bean id="SSDeepEventQuery" parent="BaseEventQuery" scope="prototype">
+        <property name="logicDescription" value="Event query that returns information from the index about the supplied ssdeep hashes" />
+    </bean>
+
+    <bean id="SSDeepSimilarityEventQuery" parent="baseQueryLogic" class="datawave.query.tables.ssdeep.SSDeepChainedEventQueryLogic">
+        <property name="tableName" value="ssdeepIndex" />
+        <property name="logic1" ref="SSDeepSimilarityQuery"/>
+        <property name="logic2" ref="SSDeepEventQuery"/>
+        <property name="auditType" value="NONE"/>
+        <property name="chainStrategy">
+            <bean class="datawave.query.tables.ssdeep.FullSSDeepEventChainStrategy"/>
         </property>
     </bean>
 </beans>

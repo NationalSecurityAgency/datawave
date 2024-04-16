@@ -4,6 +4,7 @@ import static datawave.query.tables.ssdeep.util.SSDeepTestUtil.BUCKET_COUNT;
 import static datawave.query.tables.ssdeep.util.SSDeepTestUtil.BUCKET_ENCODING_BASE;
 import static datawave.query.tables.ssdeep.util.SSDeepTestUtil.BUCKET_ENCODING_LENGTH;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -12,6 +13,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import datawave.query.QueryParameters;
+import datawave.query.language.parser.QueryParser;
+import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
+import datawave.query.tables.ShardQueryLogic;
+import datawave.query.util.DateIndexHelperFactory;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -67,6 +73,8 @@ public class SSDeepIngestQueryTest extends AbstractFunctionalQuery {
 
     SSDeepDiscoveryQueryLogic discoveryQueryLogic;
 
+    ShardQueryLogic eventQueryLogic;
+
     SSDeepChainedDiscoveryQueryLogic similarityDiscoveryQueryLogic;
 
     @BeforeClass
@@ -90,6 +98,7 @@ public class SSDeepIngestQueryTest extends AbstractFunctionalQuery {
         MarkingFunctions markingFunctions = new MarkingFunctions.Default();
         ResponseObjectFactory responseFactory = new DefaultResponseObjectFactory();
         MetadataHelperFactory metadataHelperFactory = new MetadataHelperFactory();
+        DateIndexHelperFactory dateIndexHelperFactory = new DateIndexHelperFactory();
 
         similarityQueryLogic = new SSDeepSimilarityQueryLogic();
         similarityQueryLogic.setTableName(SSDeepIndexHandler.DEFAULT_SSDEEP_INDEX_TABLE_NAME);
@@ -107,6 +116,20 @@ public class SSDeepIngestQueryTest extends AbstractFunctionalQuery {
         discoveryQueryLogic.setMarkingFunctions(markingFunctions);
         discoveryQueryLogic.setMetadataHelperFactory(metadataHelperFactory);
         discoveryQueryLogic.setResponseObjectFactory(responseFactory);
+
+        Map<String, QueryParser> parsers = new HashMap<>();
+        parsers.put("LUCENE", new LuceneToJexlQueryParser());
+
+        eventQueryLogic = new ShardQueryLogic();
+        eventQueryLogic.setTableName("shardIndex");
+        eventQueryLogic.setIndexTableName("shardIndex");
+        eventQueryLogic.setReverseIndexTableName("shardReverseIndex");
+        eventQueryLogic.setModelTableName("metadata");
+        eventQueryLogic.setMarkingFunctions(markingFunctions);
+        eventQueryLogic.setMetadataHelperFactory(metadataHelperFactory);
+        eventQueryLogic.setResponseObjectFactory(responseFactory);
+        eventQueryLogic.setDateIndexHelperFactory(dateIndexHelperFactory);
+        eventQueryLogic.setQuerySyntaxParsers(parsers);
 
         // FUTURE: Implement a streaming chain strategy for the SSDeepChainedDiscoveryQueryLogic
         FullSSDeepDiscoveryChainStrategy ssdeepDiscoveryChainStrategy = new FullSSDeepDiscoveryChainStrategy();
@@ -180,6 +203,35 @@ public class SSDeepIngestQueryTest extends AbstractFunctionalQuery {
     }
 
     @Test
+    public void testSSDeepEvent() throws Exception {
+        log.info("------ testEvent ------");
+        String testSSDeep = "384:nv/fP9FmWVMdRFj2aTgSO+u5QT4ZE1PIVS:nDmWOdRFNTTs504cQS";
+        String query = "CHECKSUM_SSDEEP:\"" + testSSDeep + "\"";
+
+        EventQueryResponseBase response = runSSDeepQuery(query, eventQueryLogic, 0);
+
+        List<EventBase> events = response.getEvents();
+        //Assert.assertEquals(1, events.size());
+        Map<String,Map<String,String>> observedEvents = extractObservedEvents(events);
+
+        Map.Entry<String,Map<String,String>> result = observedEvents.entrySet().iterator().next();
+        Map<String,String> resultFields = result.getValue();
+        /*
+        Assert.assertEquals(testSSDeep, resultFields.remove("VALUE"));
+        Assert.assertEquals("CHECKSUM_SSDEEP", resultFields.remove("FIELD"));
+        Assert.assertEquals("20201031", resultFields.remove("DATE"));
+        Assert.assertEquals("ssdeep", resultFields.remove("DATA TYPE"));
+        Assert.assertEquals("4", resultFields.remove("RECORD COUNT"));
+
+        // At this point, the results have not been enriched with these fields, so they should not exist.
+        Assert.assertNull(null, resultFields.remove("QUERY"));
+        Assert.assertNull(null, resultFields.remove("WEIGHTED_SCORE"));
+
+        Assert.assertTrue("Results had unexpected fields: " + resultFields, resultFields.isEmpty());
+        */
+    }
+
+    @Test
     public void testChainedSSDeepDiscovery() throws Exception {
         log.info("------ testSSDeepDiscovery ------");
         String testSSDeep = "384:nv/fP9FmWVMdRFj2aTgSO+u5QT4ZE1PIVS:nDmWOdRFNTTs504---";
@@ -214,11 +266,19 @@ public class SSDeepIngestQueryTest extends AbstractFunctionalQuery {
 
     @SuppressWarnings("rawtypes")
     public EventQueryResponseBase runSSDeepQuery(String query, QueryLogic<?> queryLogic, int minScoreThreshold) throws Exception {
+        Map<String, String> parameters = new HashMap<>();
+        parameters.put(QueryParameters.QUERY_SYNTAX, "LUCENE");
+
         QueryImpl q = new QueryImpl();
         q.setQuery(query);
         q.setId(UUID.randomUUID());
         q.setPagesize(Integer.MAX_VALUE);
         q.setQueryAuthorizations(auths.toString());
+        q.setParameters(parameters);
+
+        final SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd");
+        q.setBeginDate(format.parse("20170402"));
+        q.setEndDate(format.parse("20201031"));
 
         if (minScoreThreshold > 0) {
             q.addParameter(SSDeepScoringFunction.MIN_SSDEEP_SCORE_PARAMETER, String.valueOf(minScoreThreshold));
