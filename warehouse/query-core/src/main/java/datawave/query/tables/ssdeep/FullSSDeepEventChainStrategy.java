@@ -1,6 +1,8 @@
 package datawave.query.tables.ssdeep;
 
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.Spliterator;
@@ -19,6 +21,7 @@ import org.apache.log4j.Logger;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.TreeMultimap;
 
+import datawave.query.QueryParameters;
 import datawave.query.tables.chained.strategy.FullChainStrategy;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
@@ -39,12 +42,18 @@ public class FullSSDeepEventChainStrategy extends FullChainStrategy<ScoredSSDeep
 
         String queryString = captureScoredMatchesAndBuildQuery(initialQueryResults, scoredMatches);
 
+        final Map<String,String> parameters = new HashMap<>();
+        parameters.put(QueryParameters.QUERY_SYNTAX, "LUCENE");
+
         Query q = new QueryImpl(); // TODO, need to use a factory? don't hardcode this.
         q.setQuery(queryString);
         q.setId(UUID.randomUUID());
         q.setPagesize(Integer.MAX_VALUE); // TODO: choose something reasonable.
         q.setQueryAuthorizations(initialQuery.getQueryAuthorizations());
         q.setUserDN(initialQuery.getUserDN());
+        q.setBeginDate(initialQuery.getBeginDate());
+        q.setEndDate(initialQuery.getEndDate());
+        q.setParameters(parameters);
         return q;
     }
 
@@ -107,6 +116,7 @@ public class FullSSDeepEventChainStrategy extends FullChainStrategy<ScoredSSDeep
         // Look for the event key/value that indicates the SSDeep that was matched. When found, add Key/Value for the
         // other event fields.
         // TODO: create a stream of Entry&lt;Key, Value&gt; that the transformer can interpret as fields.
+        // TODO: figure out what form the Value is in - it seems to hold the entire document.
         return Stream.of(eventSSDeep);
     }
 }
