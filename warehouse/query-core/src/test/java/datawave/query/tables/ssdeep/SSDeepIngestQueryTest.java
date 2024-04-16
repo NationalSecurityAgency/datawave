@@ -13,11 +13,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import datawave.query.QueryParameters;
-import datawave.query.language.parser.QueryParser;
-import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
-import datawave.query.tables.ShardQueryLogic;
-import datawave.query.util.DateIndexHelperFactory;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -33,7 +28,11 @@ import datawave.helpers.PrintUtility;
 import datawave.ingest.mapreduce.handler.ssdeep.SSDeepIndexHandler;
 import datawave.marking.MarkingFunctions;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
+import datawave.query.QueryParameters;
 import datawave.query.RebuildingScannerTestHelper;
+import datawave.query.language.parser.QueryParser;
+import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
+import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.ssdeep.testframework.SSDeepDataType;
 import datawave.query.tables.ssdeep.testframework.SSDeepFields;
 import datawave.query.tables.ssdeep.testframework.SSDeepQueryTestTableHelper;
@@ -44,6 +43,7 @@ import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.FileType;
 import datawave.query.testframework.QueryLogicTestHarness;
+import datawave.query.util.DateIndexHelperFactory;
 import datawave.query.util.MetadataHelperFactory;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
@@ -117,7 +117,7 @@ public class SSDeepIngestQueryTest extends AbstractFunctionalQuery {
         discoveryQueryLogic.setMetadataHelperFactory(metadataHelperFactory);
         discoveryQueryLogic.setResponseObjectFactory(responseFactory);
 
-        Map<String, QueryParser> parsers = new HashMap<>();
+        Map<String,QueryParser> parsers = new HashMap<>();
         parsers.put("LUCENE", new LuceneToJexlQueryParser());
 
         eventQueryLogic = new ShardQueryLogic();
@@ -213,24 +213,21 @@ public class SSDeepIngestQueryTest extends AbstractFunctionalQuery {
         EventQueryResponseBase response = runSSDeepQuery(query, eventQueryLogic, 0);
 
         List<EventBase> events = response.getEvents();
-        //Assert.assertEquals(1, events.size());
+        // Assert.assertEquals(1, events.size());
         Map<String,Map<String,String>> observedEvents = extractObservedEvents(events);
 
         Map.Entry<String,Map<String,String>> result = observedEvents.entrySet().iterator().next();
         Map<String,String> resultFields = result.getValue();
         /*
-        Assert.assertEquals(testSSDeep, resultFields.remove("VALUE"));
-        Assert.assertEquals("CHECKSUM_SSDEEP", resultFields.remove("FIELD"));
-        Assert.assertEquals("20201031", resultFields.remove("DATE"));
-        Assert.assertEquals("ssdeep", resultFields.remove("DATA TYPE"));
-        Assert.assertEquals("4", resultFields.remove("RECORD COUNT"));
-
-        // At this point, the results have not been enriched with these fields, so they should not exist.
-        Assert.assertNull(null, resultFields.remove("QUERY"));
-        Assert.assertNull(null, resultFields.remove("WEIGHTED_SCORE"));
-
-        Assert.assertTrue("Results had unexpected fields: " + resultFields, resultFields.isEmpty());
-        */
+         * Assert.assertEquals(testSSDeep, resultFields.remove("VALUE")); Assert.assertEquals("CHECKSUM_SSDEEP", resultFields.remove("FIELD"));
+         * Assert.assertEquals("20201031", resultFields.remove("DATE")); Assert.assertEquals("ssdeep", resultFields.remove("DATA TYPE"));
+         * Assert.assertEquals("4", resultFields.remove("RECORD COUNT"));
+         *
+         * // At this point, the results have not been enriched with these fields, so they should not exist. Assert.assertNull(null,
+         * resultFields.remove("QUERY")); Assert.assertNull(null, resultFields.remove("WEIGHTED_SCORE"));
+         *
+         * Assert.assertTrue("Results had unexpected fields: " + resultFields, resultFields.isEmpty());
+         */
     }
 
     @Test
@@ -268,7 +265,7 @@ public class SSDeepIngestQueryTest extends AbstractFunctionalQuery {
 
     @SuppressWarnings("rawtypes")
     public EventQueryResponseBase runSSDeepQuery(String query, QueryLogic<?> queryLogic, int minScoreThreshold) throws Exception {
-        Map<String, String> parameters = new HashMap<>();
+        Map<String,String> parameters = new HashMap<>();
         parameters.put(QueryParameters.QUERY_SYNTAX, "LUCENE");
 
         QueryImpl q = new QueryImpl();

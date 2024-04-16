@@ -5,21 +5,22 @@ import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import datawave.webservice.query.Query;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
-import datawave.webservice.query.logic.QueryLogicTransformer;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
-import datawave.query.tables.chained.ChainedQueryTable;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
+
+import datawave.query.tables.chained.ChainedQueryTable;
+import datawave.webservice.query.Query;
+import datawave.webservice.query.configuration.GenericQueryConfiguration;
+import datawave.webservice.query.logic.QueryLogicTransformer;
 
 /**
  * Implements a ChainedQueryTable that will first use the SSDeepSimilarityQueryLogic to find similar hashes for a set of query hashes and then run the
  * ShardQueryLogic to retrieve discovery info for those matched hashes.
  */
-public class SSDeepChainedEventQueryLogic extends ChainedQueryTable<ScoredSSDeepPair, Entry<Key, Value>> {
+public class SSDeepChainedEventQueryLogic extends ChainedQueryTable<ScoredSSDeepPair,Entry<Key,Value>> {
     private static final Logger log = Logger.getLogger(SSDeepChainedDiscoveryQueryLogic.class);
 
     private Query eventQuery = null;
