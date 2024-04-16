@@ -231,6 +231,7 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
 
                 log.info("Writing " + splits.size() + " splits.");
 
+                //write splits according to what each table's configured partitioner will need
                 if (partitioner instanceof DelegatePartitioner) {
                     if (!((DelegatePartitioner) partitioner).needSplits()) {
                         log.info("Splits not required for " + partitioner.getClass().getName() + ", " + table);
@@ -286,7 +287,7 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
     private void updatePartitionerCache(Set<String> tableNames) throws ClassNotFoundException {
         ArrayList<Text> tables = new ArrayList<>();
         for (String t : tableNames) {
-            if (null != conf.get(PartitionerCache.PREFIX_DEDICATED_PARTITIONER + t)) {
+            if (partitionerCache.hasPartitionerOverride(new Text(t))) {
                 tables.add(new Text(t));
             }
         }
