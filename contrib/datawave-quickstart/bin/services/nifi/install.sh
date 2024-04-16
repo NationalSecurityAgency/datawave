@@ -8,6 +8,9 @@ BIN_DIR="$( dirname "${SERVICES_DIR}" )"
 source "${BIN_DIR}/env.sh"
 source "${THIS_DIR}/bootstrap.sh"
 
+# If NiFi is not installed, verify that the two checksums match before installing.
+nifiIsInstalled || verifyChecksum "${DW_NIFI_DIST_URI}" "${DW_NIFI_SERVICE_DIR}" "${DW_NIFI_DIST_SHA512_CHECKSUM}"
+
 nifiIsInstalled && info "NiFi is already installed" && exit 1
 
 [ ! -f "${DW_NIFI_SERVICE_DIR}/${DW_NIFI_DIST}" ] && fatal "NiFi tarball not found"
