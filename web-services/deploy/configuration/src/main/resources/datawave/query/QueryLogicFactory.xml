@@ -39,6 +39,7 @@
         <bean class="datawave.query.language.functions.jexl.Jexl"/>
         <bean class="datawave.query.language.functions.jexl.AtomValuesMatchFunction"/>
         <bean class="datawave.query.language.functions.jexl.Options"/>
+        <bean class="datawave.query.language.functions.jexl.Rename"/>
         <bean class="datawave.query.language.functions.jexl.Unique"/>
         <bean class="datawave.query.language.functions.jexl.GroupBy"/>
         <bean class="datawave.query.language.functions.jexl.UniqueByDay"/>
@@ -268,6 +269,8 @@
         <property name="maxFieldIndexRangeSplit" value="${beq.fieldIndexRangeSplit}" />
         <!-- The max number of sources that can be created across ivarators for one scan -->
         <property name="maxIvaratorSources" value="${beq.maxIvaratorSources}" />
+        <!-- The max wait time in ms for an ivarator source (default 30 minutes) -->
+        <property name="maxIvaratorSourceWait" value="${beq.maxIvaratorSourceWait}" />
         <!-- The max number of evaluation pipelines.  They are run in a pool of threads controlled by the tserver.datawave.evaluation.threads accumulo configuration property which defaults to 100 (IteratorThreadPoolManager). -->
         <property name="maxEvaluationPipelines" value="${beq.evaluationPipelines}" />
         <!-- The max number of non-null evaluated results to cache on each tserver beyond the evaluation pipelines in queue -->
@@ -344,12 +347,17 @@
         </property>
     </bean>
 
+    <util:map id="DefaultUUIDViews">
+        <entry key="default" value="LuceneUUIDEventQuery"/>
+    </util:map>
+
     <util:list id="UUIDTypeList" value-type="datawave.query.data.UUIDType">
         ${lookup.uuid.uuidTypes}
     </util:list>
 
     <bean id="LookupUUIDConfiguration" class="datawave.webservice.query.configuration.LookupUUIDConfiguration">
         <property name="uuidTypes" ref="UUIDTypeList" />
+        <property name="contentLookupTypes" ref="contentLookupTypes" />
         <property name="columnVisibility" value="" />
         <property name="beginDate" value="${lookup.uuid.beginDate}" />
     </bean>
@@ -398,7 +406,12 @@
             </list>
         </property>
     </bean>
-    
+
+    <util:map id="contentLookupTypes">
+        <entry key="default" value="ContentQuery"/>
+    </util:map>
+
+
     <!-- Query Logic that returns document content -->
     <bean id="ContentQuery" parent="baseQueryLogic" scope="prototype"  class="datawave.query.tables.content.ContentQueryTable">
         <property name="tableName" value="${shard.table.name}" />
@@ -586,6 +599,8 @@
 
     <bean id="HitHighlights" parent="baseQueryLogic" scope="prototype"  class="datawave.query.tables.IndexQueryLogic">
         <property name="tableName" value="${shard.table.name}" />
+        <property name="dateIndexTableName" value="${date.index.table.name}" />
+        <property name="dateIndexHelperFactory" ref="dateIndexHelperFactory" />
         <property name="metadataTableName" value="${metadata.table.name}" />
         <property name="metadataHelperFactory" ref="metadataHelperFactory" />
         <property name="indexTableName" value="${index.table.name}" />

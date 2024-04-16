@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -36,8 +36,8 @@ public class BooleanChunkingQueryPlanner extends DefaultQueryPlanner {
 
     @Override
     protected ASTJexlScript updateQueryTree(ScannerFactory scannerFactory, MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper,
-                    ShardQueryConfiguration config, String query, QueryData queryData, Query settings) throws DatawaveQueryException {
-        ASTJexlScript queryTree = super.updateQueryTree(scannerFactory, metadataHelper, dateIndexHelper, config, query, queryData, settings);
+                    ShardQueryConfiguration config, String query, Query settings) throws DatawaveQueryException {
+        ASTJexlScript queryTree = super.updateQueryTree(scannerFactory, metadataHelper, dateIndexHelper, config, query, settings);
 
         if (queryTree == null) {
             return null;
@@ -91,10 +91,7 @@ public class BooleanChunkingQueryPlanner extends DefaultQueryPlanner {
     @Override
     protected CloseableIterable<QueryData> process(ScannerFactory scannerFactory, MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper,
                     ShardQueryConfiguration config, String query, Query settings) throws DatawaveQueryException {
-        final QueryData queryData = new QueryData();
-        final ArrayList<QueryData> data = Lists.newArrayList();
-
-        ASTJexlScript queryTree = updateQueryTree(scannerFactory, metadataHelper, dateIndexHelper, config, query, queryData, settings);
+        ASTJexlScript queryTree = updateQueryTree(scannerFactory, metadataHelper, dateIndexHelper, config, query, settings);
         if (queryTree == null) {
             return DefaultQueryPlanner.emptyCloseableIterator();
         }
@@ -108,17 +105,18 @@ public class BooleanChunkingQueryPlanner extends DefaultQueryPlanner {
             log.debug(newQueryString);
         }
 
-        queryData.setQuery(newQueryString);
+        final ArrayList<QueryData> data = Lists.newArrayList();
+        final QueryData queryData = new QueryData().withQuery(newQueryString);
         data.add(queryData);
 
-        return new CloseableIterable<QueryData>() {
+        return new CloseableIterable<>() {
             @Override
             public Iterator<QueryData> iterator() {
                 return data.iterator();
             }
 
             @Override
-            public void close() throws IOException {}
+            public void close() {}
         };
     }
 

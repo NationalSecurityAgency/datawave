@@ -43,7 +43,6 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
     public static final String START_OFFSET = "start.offset";
     // The end offset option
     public static final String END_OFFSET = "end.offset";
-
     // the underlying source
     protected SortedKeyValueIterator<Key,Value> source;
 
@@ -280,7 +279,7 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
                     // parse the offsets from the value
                     TermWeight.Info info = TermWeight.Info.parseFrom(source.getTopValue().get());
 
-                    // for each offset, gather all of the terms in our range
+                    // for each offset, gather all the terms in our range
                     for (int i = 0; i < info.getTermOffsetCount(); i++) {
                         int offset = info.getTermOffset(i);
                         // if the offset is within our range
@@ -321,6 +320,7 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
         for (int i = 0; i < terms.length; i++) {
             largestTerms[i] = getLongestTerm(terms[i]);
         }
+
         return joiner.join(largestTerms);
     }
 
@@ -335,12 +335,7 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
         if (terms == null || terms.isEmpty()) {
             return null;
         } else {
-            return terms.stream().max(new Comparator<String>() {
-                @Override
-                public int compare(String s, String t1) {
-                    return s.length() - t1.length();
-                }
-            }).get();
+            return terms.stream().max(Comparator.comparingInt(String::length)).get();
         }
     }
 
@@ -479,7 +474,7 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("TermFrequencyContextIterator: ");
+        sb.append("TermFrequencyExcerptIterator: ");
         sb.append(this.fieldName);
         sb.append(", ");
         sb.append(this.startOffset);

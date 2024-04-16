@@ -200,14 +200,15 @@ public class XMLFieldConfigHelperTest {
         String input = "<?xml version=\"1.0\"?>\n" + "<fieldConfig>\n"
                         + "    <default stored=\"true\" indexed=\"false\" reverseIndexed=\"false\" tokenized=\"true\" reverseTokenized=\"true\" indexType=\"datawave.data.type.LcNoDiacriticsType\"/>\n"
                         + "    <fieldPattern pattern=\"B*\" indexed=\"true\" indexType=\"datawave.data.type.MacAddressType\"/>\n"
-                        + "    <fieldPattern pattern=\"BANAN*\"  indexType=\"datawave.data.type.DateType\"/>\n"
-                        + "    <fieldPattern pattern=\"BA*\"  indexType=\"datawave.data.type.HexStringType\"/>\n" + "</fieldConfig>";
+                        + "    <fieldPattern pattern=\"BANAN*\" indexType=\"datawave.data.type.DateType\"/>\n"
+                        + "    <fieldPattern pattern=\"BA*\" indexed=\"true\" indexType=\"datawave.data.type.HexStringType\"/>\n" + "</fieldConfig>";
 
         FieldConfigHelper helper = new XMLFieldConfigHelper(new ByteArrayInputStream(input.getBytes()), ingestHelper);
 
         List<Type<?>> types = ingestHelper.getDataTypes("BANANA");
         assertEquals(1, types.size());
         assertTrue(types.get(0) instanceof datawave.data.type.DateType);
+        assertFalse(helper.isIndexedField("BANANA"));
     }
 
     @Test
@@ -217,14 +218,16 @@ public class XMLFieldConfigHelperTest {
 
         String input = "<?xml version=\"1.0\"?>\n" + "<fieldConfig>\n"
                         + "    <default stored=\"true\" indexed=\"false\" reverseIndexed=\"false\" tokenized=\"true\" reverseTokenized=\"true\" indexType=\"datawave.data.type.LcNoDiacriticsType\"/>\n"
-                        + "    <fieldPattern pattern=\"B*\" indexed=\"true\" indexType=\"datawave.data.type.MacAddressType\"/>\n"
-                        + "    <fieldPattern pattern=\"*A\"  indexType=\"datawave.data.type.HexStringType\"/>\n" + "</fieldConfig>";
+                        + "    <fieldPattern pattern=\"B*\" indexType=\"datawave.data.type.HexStringType\"/>\n"
+                        + "    <fieldPattern pattern=\"*A\" indexed=\"true\" indexType=\"datawave.data.type.MacAddressType\"/>\n" + "</fieldConfig>";
 
         FieldConfigHelper helper = new XMLFieldConfigHelper(new ByteArrayInputStream(input.getBytes()), ingestHelper);
 
         List<Type<?>> types = ingestHelper.getDataTypes("BANANA");
         assertEquals(1, types.size());
+        // B* should sort after *A and hence should be the one used.
         assertTrue(types.get(0) instanceof datawave.data.type.HexStringType);
+        assertFalse(helper.isIndexedField("BANANA"));
     }
 
     @Test

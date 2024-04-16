@@ -50,7 +50,7 @@ public class MetadataWithMostRecentDateTest {
         expected.add(new Tuple("sham", "wow2", "sham.wow.pick.up.Messes", 124L));
 
         Collection<Tuple> actual = Lists.newArrayList();
-        for (MetadataWithMostRecentDate.MostRecentEventDateAndKeyComponents m : metadata.entries()) {
+        for (MetadataWithMostRecentDate.Components m : metadata.entries()) {
             actual.add(new Tuple(m.getFieldName(), m.getDataType(), m.getNormalizerClassName(), m.getMostRecentDate()));
         }
 
@@ -62,7 +62,7 @@ public class MetadataWithMostRecentDateTest {
         Assert.assertEquals(expectedDate, getOnlyEntry(counters).getMostRecentDate());
     }
 
-    private MetadataWithMostRecentDate.MostRecentEventDateAndKeyComponents getOnlyEntry(MetadataWithMostRecentDate counters) {
+    private MetadataWithMostRecentDate.Components getOnlyEntry(MetadataWithMostRecentDate counters) {
         return counters.entries().iterator().next();
     }
 
@@ -70,7 +70,7 @@ public class MetadataWithMostRecentDateTest {
     public void testAssignments() {
         MetadataWithMostRecentDate counters = new MetadataWithMostRecentDate(COLUMN_FAMILY);
         counters.createOrUpdate(fieldName, dataTypeName, normalizerClassName, date);
-        MetadataWithMostRecentDate.MostRecentEventDateAndKeyComponents entry = getOnlyEntry(counters);
+        MetadataWithMostRecentDate.Components entry = getOnlyEntry(counters);
         Assert.assertEquals(fieldName, entry.getFieldName());
         Assert.assertEquals(dataTypeName, entry.getDataType());
         Assert.assertEquals(normalizerClassName, entry.getNormalizerClassName());
