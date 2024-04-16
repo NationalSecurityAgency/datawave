@@ -65,14 +65,8 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
             if (terms.isEmpty()) {
                 log.trace("Couldn't aggregate index info; moving onto next date/field/term if data is available.");
             } else {
-                if (log.isTraceEnabled()) {
-                    log.trace("Received term entry multimap of size [" + terms.size() + "]");
-                }
                 // Aggregate the entries.
                 List<DiscoveredThing> things = terms.asMap().values().stream().map(this::aggregate).filter(Objects::nonNull).collect(Collectors.toList());
-                if (log.isTraceEnabled()) {
-                    log.trace("After conversion to discovery objects, there are [" + things.size() + "] discovery objects.");
-                }
                 // Establish the next top of this iterator.
                 if (!things.isEmpty()) {
                     setTop(things);
