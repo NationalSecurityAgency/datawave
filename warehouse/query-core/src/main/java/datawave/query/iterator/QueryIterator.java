@@ -444,6 +444,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             pipelineIter.setCollectTimingDetails(collectTimingDetails);
             // TODO pipelineIter.setStatsdHostAndPort(statsdHostAndPort);
 
+            // 20201031_0 ssdeep%00;ggcuxw.vmh9qv.ec2i6c.2.jpg: [] 9223372036854775807 false
             pipelineIter.startPipeline();
 
             // gather Key,Document Entries from the pipelines

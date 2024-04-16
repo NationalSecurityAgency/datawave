@@ -121,14 +121,16 @@ public class SSDeepIngestQueryTest extends AbstractFunctionalQuery {
         parsers.put("LUCENE", new LuceneToJexlQueryParser());
 
         eventQueryLogic = new ShardQueryLogic();
-        eventQueryLogic.setTableName("shardIndex");
+        eventQueryLogic.setTableName("shard");
         eventQueryLogic.setIndexTableName("shardIndex");
         eventQueryLogic.setReverseIndexTableName("shardReverseIndex");
+        eventQueryLogic.setMetadataTableName("metadata");
         eventQueryLogic.setModelTableName("metadata");
         eventQueryLogic.setMarkingFunctions(markingFunctions);
         eventQueryLogic.setMetadataHelperFactory(metadataHelperFactory);
         eventQueryLogic.setResponseObjectFactory(responseFactory);
         eventQueryLogic.setDateIndexHelperFactory(dateIndexHelperFactory);
+        eventQueryLogic.setLazySetMechanismEnabled(false);
         eventQueryLogic.setQuerySyntaxParsers(parsers);
 
         // FUTURE: Implement a streaming chain strategy for the SSDeepChainedDiscoveryQueryLogic
