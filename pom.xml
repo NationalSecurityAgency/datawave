@@ -121,6 +121,7 @@
         <version.thrift>0.17.0</version.thrift>
         <version.weld>3.1.2.Final</version.weld>
         <version.weld-se>3.1.2.Final</version.weld-se>
+        <!-- The weld-spi dependency version is only needed for the assembly and should not be defined in this pom otherwise the weld tests will get the wrong versions -->
         <version.weld-spi>3.1.Final</version.weld-spi>
         <!-- Different version of weld for tests since the Arquillian embedded EE container needs an older version. -->
         <version.weld-test>2.3.5.Final</version.weld-test>
@@ -997,20 +998,8 @@
             </dependency>
             <dependency>
                 <groupId>org.jboss.weld</groupId>
-                <artifactId>weld-api</artifactId>
-                <version>${version.weld-spi}</version>
-                <scope>provided</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.weld</groupId>
                 <artifactId>weld-core-impl</artifactId>
                 <version>${version.weld}</version>
-                <scope>provided</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.weld</groupId>
-                <artifactId>weld-spi</artifactId>
-                <version>${version.weld-spi}</version>
                 <scope>provided</scope>
             </dependency>
             <dependency>

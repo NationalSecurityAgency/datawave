@@ -416,6 +416,12 @@ public class MapReduceBean {
         }
 
         // Parse the parameters
+        if (parameters == null) {
+            log.error("Null parameters");
+            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_FUNCTION_ARGUMENTS);
+            response.addException(qe);
+            throw new BadRequestException(qe, response);
+        }
         Map<String,String> runtimeParameters = toMap(parameters);
 
         // Get the query id

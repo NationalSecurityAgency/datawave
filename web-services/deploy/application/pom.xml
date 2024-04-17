@@ -643,10 +643,12 @@
                                         <artifactItem>
                                             <groupId>org.jboss.weld</groupId>
                                             <artifactId>weld-api</artifactId>
+					    <version>${version.weld-spi}</version>
                                         </artifactItem>
                                         <artifactItem>
                                             <groupId>org.jboss.weld</groupId>
                                             <artifactId>weld-spi</artifactId>
+					    <version>${version.weld-spi}</version>
                                         </artifactItem>
                                         <artifactItem>
                                             <groupId>org.picketbox</groupId>

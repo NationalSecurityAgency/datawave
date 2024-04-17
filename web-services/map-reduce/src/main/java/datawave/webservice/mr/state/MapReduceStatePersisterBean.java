@@ -230,7 +230,8 @@ public class MapReduceStatePersisterBean {
             throw qe;
         } finally {
             try {
-                connectionFactory.returnClient(c);
+                if (c != null)
+                    connectionFactory.returnClient(c);
             } catch (Exception e) {
                 log.error("Error closing writers", e);
             }
@@ -274,7 +275,8 @@ public class MapReduceStatePersisterBean {
             throw qe;
         } finally {
             try {
-                connectionFactory.returnClient(c);
+                if (c != null)
+                    connectionFactory.returnClient(c);
             } catch (Exception e) {
                 log.error("Error returning connection to pool", e);
             }
@@ -310,7 +312,8 @@ public class MapReduceStatePersisterBean {
                 try {
                     if (null != writer)
                         writer.close();
-                    connectionFactory.returnClient(c);
+                    if (c != null)
+                        connectionFactory.returnClient(c);
                 } catch (Exception e) {
                     log.error("Error creating query", e);
                 }
@@ -371,25 +374,29 @@ public class MapReduceStatePersisterBean {
                         result.getResults().add(response);
                     batch.clear();
                 }
-                return result;
             }
         } catch (IOException ioe) {
             QueryException qe = new QueryException(DatawaveErrorCode.RESPONSE_POPULATION_ERROR, ioe);
             log.error(qe);
             result.addException(qe);
-            return result;
         } catch (Exception e) {
             QueryException qe = new QueryException(DatawaveErrorCode.QUERY_SETUP_ERROR, e);
             log.error(qe);
             result.addException(qe.getBottomQueryException());
-            return result;
         } finally {
             try {
-                connectionFactory.returnClient(c);
+                if (c != null)
+                    connectionFactory.returnClient(c);
             } catch (Exception e) {
                 log.error("Error returning connection to connection pool", e);
             }
         }
+
+        for (MapReduceInfoResponse response : result.getResults()) {
+            response.setJobExecutions(getAndUpdateState(response.getJobExecutions(), response.getHdfs(), response.getJobTracker()));
+        }
+
+        return result;
     }
 
     /**
@@ -425,32 +432,33 @@ public class MapReduceStatePersisterBean {
                 MapReduceInfoResponse response = populateResponse(scanner);
                 if (null != response)
                     result.getResults().add(response);
-                return result;
             }
         } catch (IOException ioe) {
             QueryException qe = new QueryException(DatawaveErrorCode.RESPONSE_POPULATION_ERROR, ioe);
             log.error(qe);
             result.addException(qe);
-            return result;
         } catch (Exception e) {
             QueryException qe = new QueryException(DatawaveErrorCode.QUERY_SETUP_ERROR, e);
             log.error(qe);
             result.addException(qe.getBottomQueryException());
-            return result;
         } finally {
             try {
-                connectionFactory.returnClient(c);
+                if (c != null)
+                    connectionFactory.returnClient(c);
             } catch (Exception e) {
                 log.error("Error returning connection to connection pool", e);
             }
         }
+        for (MapReduceInfoResponse response : result.getResults()) {
+            response.setJobExecutions(getAndUpdateState(response.getJobExecutions(), response.getHdfs(), response.getJobTracker()));
+        }
+        return result;
     }
 
-    private MapReduceInfoResponse populateResponse(Iterable<Entry<Key,Value>> data) throws IOException {
+    private MapReduceInfoResponse populateResponse(Iterable<Entry<Key,Value>> data) {
         MapReduceInfoResponse result = null;
         String hdfs = null;
         String jobTracker = null;
-        Map<String,JobExecution> states = new HashMap<>();
         TreeSet<JobExecution> jobs = null;
         for (Entry<Key,Value> entry : data) {
             if (null == result)
@@ -480,10 +488,6 @@ public class MapReduceStatePersisterBean {
                 job.setState(new String(entry.getValue().get()));
                 job.setTimestamp(entry.getKey().getTimestamp());
                 jobs.add(job);
-                // update the map of jobid to execution to determine the latest known state
-                if (!states.containsKey(jobId) || states.get(jobId).getTimestamp() < job.getTimestamp()) {
-                    states.put(jobId, job);
-                }
             } else if (colq.equals(NAME)) {
                 result.setJobName(new String(entry.getValue().get()));
             }
@@ -491,7 +495,25 @@ public class MapReduceStatePersisterBean {
 
         result.setResultFiles(getResults(hdfs, result.getResultsDirectory()));
 
-        // now update the states
+        if (null != jobs)
+            result.setJobExecutions(new ArrayList<>(jobs));
+
+        return result;
+    }
+
+    public List<JobExecution> getAndUpdateState(List<JobExecution> jobs, String hdfs, String jobTracker) {
+        List<JobExecution> updatedStates = new ArrayList<>(jobs);
+        Map<String,JobExecution> states = new HashMap<>();
+
+        // update the map of jobid to execution to determine the latest known state
+        for (JobExecution job : jobs) {
+            String jobId = job.getMapReduceJobId();
+            if (!states.containsKey(jobId) || states.get(jobId).getTimestamp() < job.getTimestamp()) {
+                states.put(jobId, job);
+            }
+        }
+
+        // now update the states for those started or running
         for (JobExecution execution : states.values()) {
             if (execution.getState().equals(MapReduceState.STARTED.name()) || execution.getState().equals(MapReduceState.RUNNING.name())) {
                 try {
@@ -507,15 +529,11 @@ public class MapReduceStatePersisterBean {
                     job.setMapReduceJobId(execution.getMapReduceJobId());
                     job.setState(e.getMessage());
                     job.setTimestamp(System.currentTimeMillis());
-                    jobs.add(job);
+                    updatedStates.add(job);
                 }
             }
         }
-
-        if (null != jobs)
-            result.setJobExecutions(new ArrayList<>(jobs));
-
-        return result;
+        return updatedStates;
     }
 
     static FileSystem getFS(String hdfs) throws IOException {
@@ -646,7 +664,8 @@ public class MapReduceStatePersisterBean {
             throw qe;
         } finally {
             try {
-                connectionFactory.returnClient(c);
+                if (c != null)
+                    connectionFactory.returnClient(c);
             } catch (Exception e) {
                 log.error("Error closing writers", e);
             }
@@ -729,7 +748,8 @@ public class MapReduceStatePersisterBean {
                 throw new QueryException(qe);
             } finally {
                 try {
-                    connectionFactory.returnClient(c);
+                    if (c != null)
+                        connectionFactory.returnClient(c);
                 } catch (Exception e) {
                     log.error("Error creating query", e);
                 }
