@@ -94,7 +94,7 @@
         <version.maven-install-plugin>2.5.2</version.maven-install-plugin>
         <version.metrics-cdi>1.6.0</version.metrics-cdi>
         <version.microservice.accumulo-api>3.0.0</version.microservice.accumulo-api>
-        <version.microservice.accumulo-utils>3.0.2.scannerHints</version.microservice.accumulo-utils>
+        <version.microservice.accumulo-utils>3.0.2.scannerHints2</version.microservice.accumulo-utils>
         <version.microservice.audit-api>3.0.0</version.microservice.audit-api>
         <version.microservice.authorization-api>3.0.0</version.microservice.authorization-api>
         <version.microservice.base-rest-responses>3.0.0</version.microservice.base-rest-responses>

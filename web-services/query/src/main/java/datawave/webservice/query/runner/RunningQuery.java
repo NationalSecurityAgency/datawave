@@ -197,7 +197,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             applyPrediction(null);
             this.client = client;
             if (this.client instanceof WrappedAccumuloClient && this.logic.getClientConfig() != null) {
-                ((WrappedAccumuloClient) this.client).setClientConfig(this.logic.getClientConfig());
+                ((WrappedAccumuloClient) this.client).updateClientConfig(this.logic.getClientConfig());
             }
             long start = System.currentTimeMillis();
             GenericQueryConfiguration configuration = this.logic.initialize(this.client, this.settings, this.calculatedAuths);
