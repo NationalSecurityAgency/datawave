@@ -231,7 +231,7 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
 
                 log.info("Writing " + splits.size() + " splits.");
 
-                //write splits according to what each table's configured partitioner will need
+                // write splits according to what each table's configured partitioner will need
                 if (partitioner instanceof DelegatePartitioner) {
                     if (!((DelegatePartitioner) partitioner).needSplits()) {
                         log.info("Splits not required for " + partitioner.getClass().getName() + ", " + table);
