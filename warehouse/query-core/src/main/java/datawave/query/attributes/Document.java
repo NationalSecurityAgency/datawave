@@ -60,7 +60,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
     private boolean trackSizes;
 
     /**
-     * Whether or not this document represents an intermediate result. If true, then the document fields should also be empty.
+     * Whether this document represents an intermediate result. If true, then the document fields should also be empty.
      */
     private boolean intermediateResult;
 
@@ -74,7 +74,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
         try {
             MarkingFunctions markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
             return markingFunctions.translateFromColumnVisibility(getColumnVisibility());
-        } catch (MarkingFunctions.Exception e) {}
+        } catch (MarkingFunctions.Exception ignored) {}
         return Collections.emptyMap();
     }
 
@@ -159,11 +159,11 @@ public class Document extends AttributeBag<Document> implements Serializable {
         Iterator<Iterable<Entry<String,Attribute<? extends Comparable<?>>>>> attributes = Iterators.transform(extractedFieldNames,
                         new ValueToAttributes(compositeMetadata, typeMetadata, attrFilter, MarkingFunctions.Factory.createMarkingFunctions(), fromIndex));
 
-        // Add all of the String=>Attribute pairs to this Document
+        // Add all the String=>Attribute pairs to this Document
         while (attributes.hasNext()) {
             Iterable<Entry<String,Attribute<? extends Comparable<?>>>> entries = attributes.next();
             for (Entry<String,Attribute<? extends Comparable<?>>> entry : entries) {
-                this.put(entry, includeGroupingContext);
+                this.put(entry.getKey(), entry.getValue());
             }
         }
 
@@ -357,16 +357,17 @@ public class Document extends AttributeBag<Document> implements Serializable {
                         if (trackSizes) {
                             _bytes += mergedAttributes.sizeInBytes();
                         }
-                    // change the existing attr to an attributes
-                    HashSet<Attribute<? extends Comparable<?>>> attrsSet = Sets.newHashSet();
-                    attrsSet.add(existingAttr);
-                    attrsSet.addAll(((Attributes) value).getAttributes());
-                    attrs = new Attributes(attrsSet, this.isToKeep(), trackSizes);
-                    dict.put(key, attrs);
+                        // change the existing attr to an attributes
+                        HashSet<Attribute<? extends Comparable<?>>> attrsSet = Sets.newHashSet();
+                        attrsSet.add(existingAttr);
+                        attrsSet.addAll(((Attributes) value).getAttributes());
+                        attrs = new Attributes(attrsSet, this.isToKeep(), trackSizes);
+                        dict.put(key, attrs);
 
-                    _count += attrs.size();
-                    if (trackSizes) {
-                        _bytes += attrs.sizeInBytes();
+                        _count += attrs.size();
+                        if (trackSizes) {
+                            _bytes += attrs.sizeInBytes();
+                        }
                     }
                 } else if (existingAttr instanceof Attributes) {
                     // add the value to the set
@@ -389,8 +390,8 @@ public class Document extends AttributeBag<Document> implements Serializable {
                         }
                     } else {
                         // fuzzy matches found, attempt to combine attributes
-                        Set<Attribute<? extends Comparable<?>>> combinedSet = AttributeComparator.combineMultipleAttributes((Attributes) existingAttr,
-                                        (Attribute) value, trackSizes);
+                        Set<Attribute<? extends Comparable<?>>> combinedSet = AttributeComparator.combineMultipleAttributes((Attributes) existingAttr, value,
+                                        trackSizes);
                         Attributes mergedAttributes = new Attributes(combinedSet, this.isToKeep(), trackSizes);
                         dict.put(key, mergedAttributes);
 
@@ -547,7 +548,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
     @Override
     public long sizeInBytes() {
         if (trackSizes) {
-            return super.sizeInBytes(40) + _bytes + (this.dict.size() * 24) + 40;
+            return super.sizeInBytes(40) + _bytes + (this.dict.size() * 24L) + 40;
             // 32 for local members
             // 24 for TreeMap.Entry overhead, and members
             // 56 for TreeMap members and overhead
