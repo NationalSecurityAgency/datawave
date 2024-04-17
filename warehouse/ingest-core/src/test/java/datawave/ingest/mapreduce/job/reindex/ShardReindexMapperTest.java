@@ -5,7 +5,7 @@ import static datawave.ingest.data.config.CSVHelper.DATA_SEP;
 import static datawave.ingest.data.config.ingest.BaseIngestHelper.INDEX_FIELDS;
 import static datawave.ingest.data.config.ingest.BaseIngestHelper.INDEX_ONLY_FIELDS;
 import static datawave.ingest.data.config.ingest.BaseIngestHelper.REVERSE_INDEX_FIELDS;
-import static datawave.ingest.data.config.ingest.ContentBaseIngestHelper.TOKEN_INDEX_WHITELIST;
+import static datawave.ingest.data.config.ingest.ContentBaseIngestHelper.TOKEN_INDEX_ALLOWLIST;
 import static datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler.METADATA_TABLE_NAME;
 import static datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler.SHARD_GIDX_TNAME;
 import static datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler.SHARD_GRIDX_TNAME;
@@ -66,7 +66,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         conf.set("samplecsv" + INDEX_FIELDS, "FIELDA,FIELDB,FIELDC,FIELDE,FIELDF,FIELDG");
         conf.set("samplecsv" + REVERSE_INDEX_FIELDS, "FIELDB,FIELDD");
         conf.set("samplecsv" + INDEX_ONLY_FIELDS, "FIELDE");
-        conf.set("samplecsv" + TOKEN_INDEX_WHITELIST, "FIELDE,FIELDF,FIELDG");
+        conf.set("samplecsv" + TOKEN_INDEX_ALLOWLIST, "FIELDE,FIELDF,FIELDG");
 
         Type t = new Type("samplecsv", CSVIngestHelper.class, null, null, 0, null);
         // this needs to be called each test to clear any static config that may be cached
@@ -477,7 +477,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
 
     // all offsets are at 1 instead of being processed together
     @Test
-    public void E_multiValueToken_noBatch_test() throws ParseException, IOException, InterruptedException {
+    public void E_batchNone_multiValueToken_test() throws ParseException, IOException, InterruptedException {
         Mapper.Context context = createMock(Mapper.Context.class);
 
         conf.setBoolean(ShardReindexMapper.GENERATE_TF, true);
@@ -508,12 +508,12 @@ public class ShardReindexMapperTest extends EasyMockSupport {
 
     // multivalued tokens are offset by being processed together but no cleanup called
     @Test
-    public void E_multiValueToken_noCleanup_test() throws ParseException, IOException, InterruptedException {
+    public void E_batchField_multiValueToken_noCleanup_test() throws ParseException, IOException, InterruptedException {
         Mapper.Context context = createMock(Mapper.Context.class);
 
         enableEventProcessing(true);
         conf.setBoolean(ShardReindexMapper.GENERATE_TF, true);
-        conf.setBoolean(ShardReindexMapper.BATCH_PROCESSING, true);
+        conf.set(ShardReindexMapper.BATCH_MODE, ShardReindexMapper.BatchMode.FIELD.name());
         EasyMock.expect(context.getConfiguration()).andReturn(conf).anyTimes();
 
         ShardReindexMapper mapper = new ShardReindexMapper();
@@ -545,11 +545,11 @@ public class ShardReindexMapperTest extends EasyMockSupport {
     }
 
     @Test
-    public void E_multiValueToken_test() throws ParseException, IOException, InterruptedException {
+    public void E_batchField_multiValueToken_test() throws ParseException, IOException, InterruptedException {
         Mapper.Context context = createMock(Mapper.Context.class);
 
         conf.setBoolean(ShardReindexMapper.GENERATE_TF, true);
-        conf.setBoolean(ShardReindexMapper.BATCH_PROCESSING, true);
+        conf.set(ShardReindexMapper.BATCH_MODE, ShardReindexMapper.BatchMode.FIELD.name());
         enableEventProcessing(true);
         EasyMock.expect(context.getConfiguration()).andReturn(conf).anyTimes();
 
@@ -578,11 +578,11 @@ public class ShardReindexMapperTest extends EasyMockSupport {
     }
 
     @Test
-    public void E_multiValueToken_mixedVis_test() throws ParseException, IOException, InterruptedException {
+    public void E_batchField_multiValueToken_mixedVis_test() throws ParseException, IOException, InterruptedException {
         Mapper.Context context = createMock(Mapper.Context.class);
 
         conf.setBoolean(ShardReindexMapper.GENERATE_TF, true);
-        conf.setBoolean(ShardReindexMapper.BATCH_PROCESSING, true);
+        conf.set(ShardReindexMapper.BATCH_MODE, ShardReindexMapper.BatchMode.FIELD.name());
         enableEventProcessing(true);
         EasyMock.expect(context.getConfiguration()).andReturn(conf).anyTimes();
 
@@ -611,11 +611,11 @@ public class ShardReindexMapperTest extends EasyMockSupport {
     }
 
     @Test
-    public void E_batch_mixedEvent_test() throws ParseException, IOException, InterruptedException {
+    public void E_batchField_mixedEvent_test() throws ParseException, IOException, InterruptedException {
         Mapper.Context context = createMock(Mapper.Context.class);
 
         conf.setBoolean(ShardReindexMapper.GENERATE_TF, true);
-        conf.setBoolean(ShardReindexMapper.BATCH_PROCESSING, true);
+        conf.set(ShardReindexMapper.BATCH_MODE, ShardReindexMapper.BatchMode.FIELD.name());
         enableEventProcessing(true);
         EasyMock.expect(context.getConfiguration()).andReturn(conf).anyTimes();
 
@@ -642,11 +642,11 @@ public class ShardReindexMapperTest extends EasyMockSupport {
     }
 
     @Test
-    public void E_tokenizedBatch_backToBack_test() throws ParseException, IOException, InterruptedException {
+    public void E_batchField_tokenizedBatch_backToBack_test() throws ParseException, IOException, InterruptedException {
         Mapper.Context context = createMock(Mapper.Context.class);
 
         conf.setBoolean(ShardReindexMapper.GENERATE_TF, true);
-        conf.setBoolean(ShardReindexMapper.BATCH_PROCESSING, true);
+        conf.set(ShardReindexMapper.BATCH_MODE, ShardReindexMapper.BatchMode.FIELD.name());
         enableEventProcessing(true);
         EasyMock.expect(context.getConfiguration()).andReturn(conf).anyTimes();
 
@@ -673,11 +673,139 @@ public class ShardReindexMapperTest extends EasyMockSupport {
     }
 
     @Test
-    public void E_tokenizedBatch_followingKey_test() throws ParseException, IOException, InterruptedException {
+    public void E_batchEvent_tokenizedBatch_backToBack_test() throws ParseException, IOException, InterruptedException {
         Mapper.Context context = createMock(Mapper.Context.class);
 
         conf.setBoolean(ShardReindexMapper.GENERATE_TF, true);
-        conf.setBoolean(ShardReindexMapper.BATCH_PROCESSING, true);
+        conf.set(ShardReindexMapper.BATCH_MODE, ShardReindexMapper.BatchMode.EVENT.name());
+        enableEventProcessing(true);
+        EasyMock.expect(context.getConfiguration()).andReturn(conf).anyTimes();
+
+        ShardReindexMapper mapper = new ShardReindexMapper();
+
+        Key event1 = expectTokenized(context, "20240216", "1.2.3", "samplecsv", "FIELDF", "value1", new String[] {"value1"}, true);
+        Key event2 = expectTokenized(context, "20240216", "1.2.3", "samplecsv", "FIELDG", "value1", new String[] {"value1"}, true);
+
+        context.progress();
+        // ingest handler may call progress internally
+        EasyMock.expectLastCall().anyTimes();
+
+        // ingest handler may access counters, this is a catch all
+        EasyMock.expect(context.getCounter(EasyMock.isA(String.class), EasyMock.isA(String.class))).andReturn(new Counters.Counter()).anyTimes();
+
+        replayAll();
+
+        mapper.setup(context);
+        mapper.map(event1, new Value(), context);
+        mapper.map(event2, new Value(), context);
+        mapper.cleanup(context);
+
+        verifyAll();
+    }
+
+    @Test
+    public void E_batchEvent_mixedEvent_test() throws ParseException, IOException, InterruptedException {
+        Mapper.Context context = createMock(Mapper.Context.class);
+
+        conf.setBoolean(ShardReindexMapper.GENERATE_TF, true);
+        conf.set(ShardReindexMapper.BATCH_MODE, ShardReindexMapper.BatchMode.EVENT.name());
+        enableEventProcessing(true);
+        EasyMock.expect(context.getConfiguration()).andReturn(conf).anyTimes();
+
+        ShardReindexMapper mapper = new ShardReindexMapper();
+
+        Key event1 = expectTokenized(context, "20240216", "1.2.3", "samplecsv", "FIELDF", "value1", new String[] {"value1"}, true, 0, "a");
+        Key event2 = expectTokenized(context, "20240216", "1.2.4", "samplecsv", "FIELDF", "value2", new String[] {"value2"}, true, 0, "a");
+
+        context.progress();
+        // ingest handler may call progress internally
+        EasyMock.expectLastCall().anyTimes();
+
+        // ingest handler may access counters, this is a catch all
+        EasyMock.expect(context.getCounter(EasyMock.isA(String.class), EasyMock.isA(String.class))).andReturn(new Counters.Counter()).anyTimes();
+
+        replayAll();
+
+        mapper.setup(context);
+        mapper.map(event1, new Value(), context);
+        mapper.map(event2, new Value(), context);
+        mapper.cleanup(context);
+
+        verifyAll();
+    }
+
+    @Test
+    public void E_batchEvent_longMixedEvent_test() throws ParseException, IOException, InterruptedException {
+        Mapper.Context context = createMock(Mapper.Context.class);
+
+        conf.setBoolean(ShardReindexMapper.GENERATE_TF, true);
+        conf.set(ShardReindexMapper.BATCH_MODE, ShardReindexMapper.BatchMode.EVENT.name());
+        enableEventProcessing(true);
+        EasyMock.expect(context.getConfiguration()).andReturn(conf).anyTimes();
+
+        ShardReindexMapper mapper = new ShardReindexMapper();
+
+        Key event1 = expectTokenized(context, "20240216", "1.2.3.4.6", "samplecsv", "FIELDF", "value1", new String[] {"value1"}, true, 0, "a");
+        Key event2 = expectTokenized(context, "20240216", "1.2.4.2.1", "samplecsv", "FIELDF", "value2", new String[] {"value2"}, true, 0, "a");
+
+        context.progress();
+        // ingest handler may call progress internally
+        EasyMock.expectLastCall().anyTimes();
+
+        // ingest handler may access counters, this is a catch all
+        EasyMock.expect(context.getCounter(EasyMock.isA(String.class), EasyMock.isA(String.class))).andReturn(new Counters.Counter()).anyTimes();
+
+        replayAll();
+
+        mapper.setup(context);
+        mapper.map(event1, new Value(), context);
+        mapper.map(event2, new Value(), context);
+        mapper.cleanup(context);
+
+        verifyAll();
+    }
+
+    @Test
+    public void E_batchEvent_mixedEvents_test() throws ParseException, IOException, InterruptedException {
+        Mapper.Context context = createMock(Mapper.Context.class);
+
+        conf.setBoolean(ShardReindexMapper.GENERATE_TF, true);
+        conf.set(ShardReindexMapper.BATCH_MODE, ShardReindexMapper.BatchMode.EVENT.name());
+        enableEventProcessing(true);
+        EasyMock.expect(context.getConfiguration()).andReturn(conf).anyTimes();
+
+        ShardReindexMapper mapper = new ShardReindexMapper();
+
+        Key event1 = expectTokenized(context, "20240216", "1.2.3", "samplecsv", "FIELDF", "value1", new String[] {"value1"}, true, 0, "a");
+        Key event1a = expectTokenized(context, "20240216", "1.2.3", "samplecsv", "FIELDF", "value3", new String[] {"value3"}, true, 11, "a");
+        Key event2 = expectTokenized(context, "20240216", "1.2.4", "samplecsv", "FIELDF", "value2", new String[] {"value2"}, true, 0, "a");
+        Key event2a = expectTokenized(context, "20240216", "1.2.4", "samplecsv", "FIELDF", "value4", new String[] {"value4"}, true, 11, "a");
+
+        context.progress();
+        // ingest handler may call progress internally
+        EasyMock.expectLastCall().anyTimes();
+
+        // ingest handler may access counters, this is a catch all
+        EasyMock.expect(context.getCounter(EasyMock.isA(String.class), EasyMock.isA(String.class))).andReturn(new Counters.Counter()).anyTimes();
+
+        replayAll();
+
+        mapper.setup(context);
+        mapper.map(event1, new Value(), context);
+        mapper.map(event1a, new Value(), context);
+        mapper.map(event2, new Value(), context);
+        mapper.map(event2a, new Value(), context);
+        mapper.cleanup(context);
+
+        verifyAll();
+    }
+
+    @Test
+    public void E_batchField_tokenizedBatch_followingKey_test() throws ParseException, IOException, InterruptedException {
+        Mapper.Context context = createMock(Mapper.Context.class);
+
+        conf.setBoolean(ShardReindexMapper.GENERATE_TF, true);
+        conf.set(ShardReindexMapper.BATCH_MODE, ShardReindexMapper.BatchMode.FIELD.name());
         enableEventProcessing(true);
         EasyMock.expect(context.getConfiguration()).andReturn(conf).anyTimes();
 
@@ -699,6 +827,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         mapper.setup(context);
         mapper.map(event1, new Value(), context);
         mapper.map(event2, new Value(), context);
+        mapper.cleanup(context);
 
         verifyAll();
     }
@@ -1048,7 +1177,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         BulkIngestKey fBik = new BulkIngestKey(new Text("DatawaveMetadata"), fKey);
         context.write(EasyMock.eq(fBik), EasyMock.isA(Value.class));
 
-        Key iKey = new Key("FIELDA", "i", "samplecsv", event.getTimestamp());
+        Key iKey = new Key("FIELDA", "i", "samplecsv" + '\u0000' + "20240216", event.getTimestamp());
         BulkIngestKey iBik = new BulkIngestKey(new Text("DatawaveMetadata"), iKey);
         context.write(EasyMock.eq(iBik), EasyMock.isA(Value.class));
 
