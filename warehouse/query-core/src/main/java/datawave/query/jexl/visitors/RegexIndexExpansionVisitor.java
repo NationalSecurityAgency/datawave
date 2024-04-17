@@ -198,19 +198,19 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
                 }
             }
 
-            boolean indexOnly;
+            boolean nonEvent;
             try {
-                indexOnly = helper.getNonEventFields(config.getDatatypeFilter()).contains(fieldName);
+                nonEvent = helper.getNonEventFields(config.getDatatypeFilter()).contains(fieldName);
             } catch (TableNotFoundException e) {
                 throw new DatawaveFatalQueryException(e);
             }
 
-            if (evalOnly && !exceededValueMarker && !exceededTermMarker && indexOnly) {
+            if (evalOnly && !exceededValueMarker && !exceededTermMarker && nonEvent) {
                 return QueryPropertyMarker.create(node, EXCEEDED_VALUE);
             } else if (exceededValueMarker || exceededTermMarker) {
                 // already did this expansion
                 return node;
-            } else if (!indexOnly && evalOnly) {
+            } else if (!nonEvent && evalOnly) {
                 // no need to expand its going to come out of the event
                 return node;
             }
@@ -608,8 +608,11 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
     public boolean mustExpand(ASTERNode node) throws TableNotFoundException {
         String fieldName = JexlASTHelper.getIdentifier(node);
 
-        // if the identifier is a non-event field, then we must expand it
-        return helper.getNonEventFields(config.getDatatypeFilter()).contains(fieldName);
+        // If the identifier is an index-only field, then we must expand it.
+        // This use to check for nonEvent fields, but we decided that tokenization
+        // can be handled now at evaluation time, so we only need to force index-only
+        // fields to expand.
+        return helper.getIndexOnlyFields(config.getDatatypeFilter()).contains(fieldName);
     }
 
     public void collapseAndSubtrees(ASTAndNode node, List<JexlNode> subTrees) {

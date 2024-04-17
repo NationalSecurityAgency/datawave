@@ -29,8 +29,6 @@ import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.log4j.Logger;
 
-import com.google.common.collect.Sets;
-
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.ContentFunctionsDescriptor;
 import datawave.query.jexl.functions.EvaluationPhaseFilterFunctionsDescriptor;
@@ -45,15 +43,21 @@ import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.util.TypeMetadata;
 
 /**
- * Visitor that returns the set of all ingest types associated with an arbitrary JexlNode.
+ * Visitor that returns the <b>effective set</b> of ingest types associated with an arbitrary JexlNode.
  * <p>
- * Much of this code is duplicated from the {@link IngestTypePruningVisitor}.
+ * The effective set is calculated by applying union and intersection logic to produce the reduced set of ingest types for complex tree structures. For example:
+ * <p>
+ * <code>(A AND B)</code> when the A term maps to ingest type 1 and the B term maps to ingest types 1, 2, and 3.
+ * <p>
+ * The full set of ingest types is {1, 2, 3}, but the <b>effective set</b> is just ingest type 1.
+ * <p>
+ * Much of this code is originated from the {@link IngestTypePruningVisitor}.
  */
 public class IngestTypeVisitor extends BaseVisitor {
 
     private static final Logger log = Logger.getLogger(IngestTypeVisitor.class);
 
-    private static final String UNKNOWN_TYPE = "UNKNOWN_TYPE";
+    protected static final String UNKNOWN_TYPE = "UNKNOWN_TYPE";
     // cache expensive calls to get ingest types per field
     private final TypeMetadata typeMetadata;
     private final Map<String,Set<String>> ingestTypeCache;
@@ -260,6 +264,14 @@ public class IngestTypeVisitor extends BaseVisitor {
      * @return a set of ingestTypes
      */
     public Set<String> getIngestTypesForLeaf(JexlNode node) {
+        node = JexlASTHelper.dereference(node);
+        if (node instanceof ASTEQNode) {
+            Object literal = JexlASTHelper.getLiteralValueSafely(node);
+            if (literal == null) {
+                return Collections.singleton(UNKNOWN_TYPE);
+            }
+        }
+
         Set<String> ingestTypes = new HashSet<>();
         Set<String> fields = getFieldsForLeaf(node);
         for (String field : fields) {
@@ -348,6 +360,10 @@ public class IngestTypeVisitor extends BaseVisitor {
             JexlNode child = JexlASTHelper.dereference(node.jjtGetChild(i));
             Set<String> childIngestTypes = (Set<String>) child.jjtAccept(this, null);
 
+            if (childIngestTypes == null) {
+                continue; // we could have a malformed query or a query with a _Drop_ marker
+            }
+
             if (ingestTypes.isEmpty()) {
                 ingestTypes = childIngestTypes;
             } else {
@@ -371,6 +387,7 @@ public class IngestTypeVisitor extends BaseVisitor {
         if (typesA.contains(UNKNOWN_TYPE) || typesB.contains(UNKNOWN_TYPE)) {
             return Collections.singleton(UNKNOWN_TYPE);
         }
-        return Sets.intersection(typesA, typesB);
+        typesA.retainAll(typesB);
+        return typesA;
     }
 }

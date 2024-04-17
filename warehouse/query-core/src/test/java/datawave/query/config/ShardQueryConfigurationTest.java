@@ -137,6 +137,10 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("reduceQueryFields", true);
         defaultValues.put("reduceQueryFieldsPerShard", false);
         updatedValues.put("reduceQueryFieldsPerShard", true);
+        defaultValues.put("rebuildDatatypeFilter", false);
+        updatedValues.put("rebuildDatatypeFilter", true);
+        defaultValues.put("rebuildDatatypeFilterPerShard", false);
+        updatedValues.put("rebuildDatatypeFilterPerShard", true);
         defaultValues.put("reduceTypeMetadata", false);
         updatedValues.put("reduceTypeMetadata", true);
         defaultValues.put("reduceTypeMetadataPerShard", false);
@@ -410,6 +414,8 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("compositeFilterFunctionsEnabled", true);
         defaultValues.put("uniqueFields", new UniqueFields());
         updatedValues.put("uniqueFields", UniqueFields.from("FIELD_U,FIELD_V"));
+        defaultValues.put("uniqueCacheBufferSize", 100);
+        updatedValues.put("uniqueCacheBufferSize", 1000);
         defaultValues.put("cacheModel", false);
         updatedValues.put("cacheModel", true);
         defaultValues.put("trackSizes", true);
@@ -556,6 +562,10 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("useFieldCounts", true);
         defaultValues.put("useTermCounts", false);
         updatedValues.put("useTermCounts", true);
+        defaultValues.put("sortQueryBeforeGlobalIndex", false);
+        updatedValues.put("sortQueryBeforeGlobalIndex", true);
+        defaultValues.put("sortQueryByCounts", false);
+        updatedValues.put("sortQueryByCounts", true);
     }
 
     private Query createQuery(String query) {

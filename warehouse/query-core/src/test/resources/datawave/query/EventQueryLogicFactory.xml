@@ -89,6 +89,8 @@
 
         <property name="auditType" value="ACTIVE" />
         <property name="logicDescription" value="Event query with rewritten logic" />
+        <property name="rebuildDatatypeFilter" value="true" />
+        <property name="rebuildDatatypeFilterPerShard" value="false" />
         <!-- Determines how many events in the global index lookup will be
         aggregated into a day range -->
         <property name="eventPerDayThreshold" value="40000" />

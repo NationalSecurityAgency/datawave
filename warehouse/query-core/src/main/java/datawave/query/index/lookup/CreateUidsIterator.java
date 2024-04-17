@@ -28,6 +28,7 @@ import datawave.ingest.protobuf.Uid;
 import datawave.query.tld.TLD;
 import datawave.query.util.Tuple3;
 import datawave.query.util.Tuples;
+import datawave.query.util.count.CountMap;
 
 /**
  * <pre>
@@ -293,14 +294,14 @@ public class CreateUidsIterator implements SortedKeyValueIterator<Key,Value>, Op
                         strippedCq.offset(), strippedCq.length(), cv.getBackingArray(), cv.offset(), cv.length(), k.getTimestamp());
     }
 
-    private Map<String,Long> createFieldCounts(String field, Long count) {
-        Map<String,Long> counts = new HashMap<>();
+    private CountMap createFieldCounts(String field, Long count) {
+        CountMap counts = new CountMap();
         counts.put(field, count);
         return counts;
     }
 
-    private Map<String,Long> createTermCounts(String field, String value, Long count) {
-        Map<String,Long> counts = new HashMap<>();
+    private CountMap createTermCounts(String field, String value, Long count) {
+        CountMap counts = new CountMap();
         counts.put(field + " == '" + value + "'", count);
         return counts;
     }

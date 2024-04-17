@@ -2,7 +2,7 @@ FROM ${docker.image.prefix}datawave-stack-accumulo:2.1.3
 USER root
 COPY --from=${docker.image.prefix}datawave-stack-hadoop:3.3.6  /usr/local/hadoop/  /usr/local/hadoop/
 
-RUN adduser datawave
+RUN adduser datawave --home /opt/datawave-ingest && echo -n "cd" >> /opt/datawave-ingest/.bashrc
 COPY --from=bitnami/zookeeper:3.6.3  /opt/bitnami/zookeeper/  /usr/lib/zookeeper/
 RUN yum -y install epel-release && \
  yum install -y pdsh && \
