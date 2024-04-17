@@ -5,11 +5,9 @@ import static org.apache.commons.lang3.StringUtils.reverse;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,7 +32,6 @@ import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
 import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.data.config.NormalizedContentInterface;
-import datawave.ingest.data.config.ingest.AbstractContentIngestHelper;
 import datawave.ingest.data.config.ingest.IngestHelperInterface;
 import datawave.ingest.mapreduce.ContextWrappedStatusReporter;
 import datawave.ingest.mapreduce.handler.DataTypeHandler;
@@ -55,10 +52,10 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
     public static final String DATA_TYPE_HANDLER = "dataTypeHandler";
     public static final String ENABLE_REINDEX_COUNTERS = "enableReindexCounters";
     public static final String DUMP_COUNTERS = "dumpCounters";
+    public static final String BATCH_MODE = "batchMode";
+    public static final String GENERATE_METADATA = "generateMetadata";
 
     private static final Logger log = Logger.getLogger(ShardReindexMapper.class);
-    public static final String BATCH_PROCESSING = "batchProcessing";
-    public static final String GENERATE_METADATA = "generateMetadata";
 
     private final byte[] FI_START_BYTES = ShardReindexJob.FI_START.getBytes();
     private final Value UID_VALUE = new Value(buildIndexValue().toByteArray());
@@ -81,7 +78,7 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
     // counter processing
     private boolean enableReindexCounters = true;
     private boolean dumpCounters = true;
-    private Map<String,Map<String,Long>> counters;
+    private Map<String,Map<String,Long>> counters = new HashMap<>();
 
     // reprocessing classes
     private DataTypeHandler indexHandler;
@@ -102,14 +99,13 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
 
     // batch field processing
     /**
-     * When batchProcessing is enabled, fields that are tokenized will be processed together instead of independently
+     * batchMode may be NONE, FIELD, or EVENT
      */
-    private boolean batchProcessing = false;
-    private String batchField = null;
+    private BatchMode batchMode = BatchMode.NONE;
     /**
-     * Map contains Visibility -> Values
+     * Map contains Visibility -> Map FIELD -> Values
      */
-    private Map<Text,List<String>> batchValues = null;
+    private Map<Text,Map<String,List<String>>> batchValues = null;
     private RawRecordContainer batchEvent = null;
 
     // TODO javadoc
@@ -195,8 +191,8 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
                 this.counters = new HashMap<>();
             }
 
-            this.batchProcessing = config.getBoolean(BATCH_PROCESSING, this.batchProcessing);
-            if (this.batchProcessing) {
+            this.batchMode = BatchMode.valueOf(config.get(BATCH_MODE, this.batchMode.toString()));
+            if (this.batchMode != BatchMode.NONE) {
                 batchValues = new HashMap<>();
             }
         }
@@ -205,11 +201,11 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
     @Override
     protected void cleanup(Context context) throws IOException, InterruptedException {
         // process any remaining batch data
-        if (this.batchProcessing && this.batchValues.size() > 0) {
+        if (this.batchMode != BatchMode.NONE && this.batchValues.size() > 0) {
             try {
                 processBatch(context);
             } catch (IOException | InterruptedException e) {
-                throw new RuntimeException("Could not process final batch for field: " + batchField);
+                throw new RuntimeException("Could not process final batch", e);
             }
         }
 
@@ -267,7 +263,7 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
 
                 // if reprocessing events and exporting shard and either not generating tf or this is an index only field write it to the context
                 if (this.reprocessEvents && this.exportShard && (!this.generateTF || this.defaultHelper.isIndexOnlyField(tfField))) {
-                    context.write(new BulkIngestKey(new Text("shard"), key), value);
+                    context.write(new BulkIngestKey(shardTable, key), value);
                     incrementCounter("tf", tfField);
                 }
 
@@ -280,7 +276,7 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
             if (cf.length == 1 && cf[0] == 'd') {
                 incrementCounter("key types", "d");
                 if (this.reprocessEvents && this.exportShard) {
-                    context.write(new BulkIngestKey(new Text("shard"), key), value);
+                    context.write(new BulkIngestKey(shardTable, key), value);
                     incrementCounter("export", "d");
                 }
                 context.progress();
@@ -292,7 +288,7 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
                 try {
                     processEvent(context, key);
                     if (exportShard) {
-                        context.write(new BulkIngestKey(new Text("shard"), key), value);
+                        context.write(new BulkIngestKey(shardTable, key), value);
                         incrementCounter("export", "event");
                     }
                 } catch (ClassNotFoundException | InvocationTargetException | InstantiationException | IllegalAccessException | NoSuchMethodException e) {
@@ -546,47 +542,11 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
         this.event.setDate(key.getTimestamp());
         this.event.setVisibility(key.getColumnVisibilityParsed());
 
-        // TODO check if the batch should be run because
-        // A. new field
-        // C. ???
-
-        // determine if this is a tokenized field. If a tokenized field buffer the Key so that all multivalued Keys can be processed together for correct token
-        // offsetting
-        if (this.batchProcessing && this.defaultHelper instanceof AbstractContentIngestHelper) {
-            AbstractContentIngestHelper tokenHelper = (AbstractContentIngestHelper) this.defaultHelper;
-            if (tokenHelper.isContentIndexField(fieldName) || tokenHelper.isReverseContentIndexField(fieldName)) {
-                // delay processing this field
-                // this value needs to be processed with all other values for the same field
-                // check if there is a previous batch that needs to be processed
-                if (this.batchValues.size() > 0) {
-                    if (this.batchField.equals(fieldName) && this.batchEvent.getId().equals(this.event.getId())) {
-                        addToBatch(key.getColumnVisibility(), fieldName, value.toString());
-
-                        // nothing else to do this will be processed later
-                        return;
-                    } else {
-                        // process the previous batch
-                        processBatch(context);
-                    }
-                }
-
-                // define a new batch and add a value to it for future processing
-                this.batchField = fieldName;
-                this.batchEvent = this.event.copy();
-                addToBatch(key.getColumnVisibility(), fieldName, value.toString());
-
-                // nothing else to do
-                return;
-            }
-        }
-
-        if (this.batchProcessing && this.batchValues.size() > 0) {
-            // process the batch
-            processBatch(context);
-        }
+        // check for different batch modes
+        boolean addedToBatch = checkBatch(context, key, dataType, uid, fieldName, value);
 
         // if the dataMap wasn't populated above, use the current fieldName and value
-        if (this.dataMap.keySet().size() == 0) {
+        if (!addedToBatch && this.dataMap.keySet().size() == 0) {
             // process a single key
             this.dataMap.put(fieldName, value.toString());
         }
@@ -594,13 +554,71 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
         processDataMap(context);
     }
 
+    private boolean batchIncludesField(String field) {
+        if (this.batchValues.size() > 0) {
+            for (Text vis : this.batchValues.keySet()) {
+                for (String batchField : this.batchValues.get(vis).keySet()) {
+                    if (batchField.equals(field)) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private boolean checkBatch(Context context, Key key, ByteSequence dataType, ByteSequence uid, String fieldName, ByteSequence value)
+                    throws IOException, InterruptedException {
+        if (this.batchMode == BatchMode.NONE) {
+            return false;
+        } else if (this.batchMode == BatchMode.FIELD) {
+            // check the events match
+            if (this.batchEvent != null && !(this.event.getId().equals(this.batchEvent.getId()) && this.event.getDate() == this.batchEvent.getDate() && this.event.getDataType().equals(this.batchEvent.getDataType()))) {
+                // process the existing batch even though the fields match
+                processBatch(context);
+            } else if (!batchIncludesField(fieldName)) {
+                // fields don't match, process the existing batch
+                processBatch(context);
+            }
+
+            this.batchEvent = this.event.copy();
+            addToBatch(key.getColumnVisibility(), fieldName, value.toString());
+
+            return true;
+        } else if (this.batchMode == BatchMode.EVENT) {
+            if (!this.batchValues.isEmpty()) {
+                if (!this.batchEvent.getId().equals(this.event.getId())) {
+                    processBatch(context);
+                }
+            }
+
+            // set the event
+            this.batchEvent = this.event.copy();
+
+            // add to the existing/new batch
+            addToBatch(key.getColumnVisibility(), fieldName, value.toString());
+
+            return true;
+        }
+
+        return false;
+    }
+
     private void addToBatch(Text visibility, String fieldName, String value) {
         // add to this batch
-        List<String> values = this.batchValues.get(visibility);
+        Map<String,List<String>> fieldValues = this.batchValues.get(visibility);
+
+        if (fieldValues == null) {
+            fieldValues = new HashMap<>();
+            this.batchValues.put(visibility, fieldValues);
+        }
+
+        List<String> values = fieldValues.get(fieldName);
 
         if (values == null) {
             values = new ArrayList<>();
-            this.batchValues.put(visibility, values);
+            fieldValues.put(fieldName, values);
         }
 
         values.add(value);
@@ -618,9 +636,11 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
             ColumnVisibility cv = new ColumnVisibility(visibility);
             this.event.setVisibility(cv);
 
-            List<String> values = this.batchValues.get(visibility);
-            for (String batchValue : values) {
-                this.dataMap.put(this.batchField, batchValue);
+            Map<String,List<String>> fieldValues = this.batchValues.get(visibility);
+            for (String batchField : fieldValues.keySet()) {
+                for(String batchValue : fieldValues.get(batchField)) {
+                    this.dataMap.put(batchField, batchValue);
+                }
             }
 
             // for each visibility process the event
@@ -649,7 +669,7 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
         }
 
         for (BulkIngestKey generated : keys.keySet()) {
-            if (!generated.getTableName().toString().equals("shard")) {
+            if (!generated.getTableName().equals(shardTable)) {
                 // non shard
                 incrementCounter("table", generated.getTableName().toString());
                 writeKey(context, generated, keys.get(generated));
@@ -735,5 +755,9 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
         uidBuilder.setCOUNT(1);
 
         return uidBuilder.build();
+    }
+
+    public enum BatchMode {
+        NONE, FIELD, EVENT
     }
 }
