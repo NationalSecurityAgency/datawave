@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import datawave.query.util.VisibilityWiseGuysNoGroupingIngestWithModel;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.lang.builder.ToStringBuilder;
@@ -342,37 +343,50 @@ public abstract class GroupingTest {
         };
     }
 
+    private void givenNonGroupedModelData() {
+        dataWriter = (client, range) -> {
+            try {
+                VisibilityWiseGuysNoGroupingIngestWithModel.writeItAll(client, range);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        };
+    }
+
     private void assertGroups() {
         for (QueryResult result : queryResults) {
             Map<SortedSet<String>,Group> actualGroups = new HashMap<>();
-            // noinspection rawtypes
-            for (EventBase event : result.response.getEvents()) {
-                Group group = new Group();
-                for (Object field : event.getFields()) {
-                    FieldBase<?> fieldBase = (FieldBase<?>) field;
-                    String fieldName = fieldBase.getName();
-                    if (fieldName.equals(COUNT_FIELD)) {
-                        group.withCount(Integer.parseInt(fieldBase.getValueString()));
-                    } else if (FIELDS_OF_INTEREST.contains(fieldName)) {
-                        group.addGroupValue(fieldBase.getValueString());
-                    } else if (fieldName.endsWith(DocumentGrouper.FIELD_SUM_SUFFIX)) {
-                        fieldName = removeSuffix(fieldName, DocumentGrouper.FIELD_SUM_SUFFIX);
-                        group.withFieldSum(fieldName, fieldBase.getValueString());
-                    } else if (fieldName.endsWith(DocumentGrouper.FIELD_MAX_SUFFIX)) {
-                        fieldName = removeSuffix(fieldName, DocumentGrouper.FIELD_MAX_SUFFIX);
-                        group.withFieldMax(fieldName, fieldBase.getValueString());
-                    } else if (fieldName.endsWith(DocumentGrouper.FIELD_MIN_SUFFIX)) {
-                        fieldName = removeSuffix(fieldName, DocumentGrouper.FIELD_MIN_SUFFIX);
-                        group.withFieldMin(fieldName, fieldBase.getValueString());
-                    } else if (fieldName.endsWith(DocumentGrouper.FIELD_COUNT_SUFFIX)) {
-                        fieldName = removeSuffix(fieldName, DocumentGrouper.FIELD_COUNT_SUFFIX);
-                        group.withFieldCount(fieldName, fieldBase.getValueString());
-                    } else if (fieldName.endsWith(DocumentGrouper.FIELD_AVERAGE_SUFFIX)) {
-                        fieldName = removeSuffix(fieldName, DocumentGrouper.FIELD_AVERAGE_SUFFIX);
-                        group.withFieldAverage(fieldName, fieldBase.getValueString());
+            if (result.response.getReturnedEvents() > 0) {
+                // noinspection rawtypes
+                for (EventBase event : result.response.getEvents()) {
+                    Group group = new Group();
+                    for (Object field : event.getFields()) {
+                        FieldBase<?> fieldBase = (FieldBase<?>) field;
+                        String fieldName = fieldBase.getName();
+                        if (fieldName.equals(COUNT_FIELD)) {
+                            group.withCount(Integer.parseInt(fieldBase.getValueString()));
+                        } else if (FIELDS_OF_INTEREST.contains(fieldName)) {
+                            group.addGroupValue(fieldBase.getValueString());
+                        } else if (fieldName.endsWith(DocumentGrouper.FIELD_SUM_SUFFIX)) {
+                            fieldName = removeSuffix(fieldName, DocumentGrouper.FIELD_SUM_SUFFIX);
+                            group.withFieldSum(fieldName, fieldBase.getValueString());
+                        } else if (fieldName.endsWith(DocumentGrouper.FIELD_MAX_SUFFIX)) {
+                            fieldName = removeSuffix(fieldName, DocumentGrouper.FIELD_MAX_SUFFIX);
+                            group.withFieldMax(fieldName, fieldBase.getValueString());
+                        } else if (fieldName.endsWith(DocumentGrouper.FIELD_MIN_SUFFIX)) {
+                            fieldName = removeSuffix(fieldName, DocumentGrouper.FIELD_MIN_SUFFIX);
+                            group.withFieldMin(fieldName, fieldBase.getValueString());
+                        } else if (fieldName.endsWith(DocumentGrouper.FIELD_COUNT_SUFFIX)) {
+                            fieldName = removeSuffix(fieldName, DocumentGrouper.FIELD_COUNT_SUFFIX);
+                            group.withFieldCount(fieldName, fieldBase.getValueString());
+                        } else if (fieldName.endsWith(DocumentGrouper.FIELD_AVERAGE_SUFFIX)) {
+                            fieldName = removeSuffix(fieldName, DocumentGrouper.FIELD_AVERAGE_SUFFIX);
+                            group.withFieldAverage(fieldName, fieldBase.getValueString());
+                        }
                     }
+                    actualGroups.put(group.groupValues, group);
                 }
-                actualGroups.put(group.groupValues, group);
+
             }
             assertThat(actualGroups).describedAs("Assert group for teardown: %s, interrupt: %s", result.teardown, result.interrupt)
                             .containsExactlyInAnyOrderEntriesOf(expectedGroups);
@@ -777,6 +791,45 @@ public abstract class GroupingTest {
                         .withAggregate(Aggregate.of("AGE").withCount("10").withMax("40").withMin("16").withSum("268").withAverage("26.8")));
         expectGroup(Group.of("FEMALE").withCount(2)
                         .withAggregate(Aggregate.of("AGE").withCount("2").withMax("18").withMin("18").withSum("36").withAverage("18")));
+
+        // Run the test queries and collect their results.
+        collectQueryResults();
+
+        // Verify the results.
+        assertGroups();
+    }
+
+    @Test
+    public void testGroupingWithModelByGenderAndAllAgeMetricsUsingLuceneFunction() throws Exception {
+        givenModelData();
+
+        givenQuery("(UUID:C* or UUID:S* ) and #GROUPBY('GEN') and #SUM('AG') and #MAX('AG') and #MIN('AG') and #AVERAGE('AG') and #COUNT('AG')");
+        givenLuceneParserForLogic();
+
+        expectGroup(Group.of("MALE").withCount(10)
+                .withAggregate(Aggregate.of("AG").withCount("10").withMax("40").withMin("16").withSum("268").withAverage("26.8")));
+        expectGroup(Group.of("FEMALE").withCount(2)
+                .withAggregate(Aggregate.of("AG").withCount("2").withMax("18").withMin("18").withSum("36").withAverage("18")));
+
+        // Run the test queries and collect their results.
+        collectQueryResults();
+
+        // Verify the results.
+        assertGroups();
+    }
+
+    @Test
+    public void testGroupingWithModelByGenderAndAllAgeMetricsUsingLuceneFunctionNoContext() throws Exception {
+        givenNonGroupedModelData();
+
+        givenQuery("(UUID:C* or UUID:S* ) and #GROUPBY('GEN') and #SUM('AG') and #MAX('AG') and #MIN('AG') and #AVERAGE('AG') and #COUNT('AG')");
+        givenLuceneParserForLogic();
+
+        // corleone has ETA and AGE with the same value, and AG is a model mapping to both.  Should they be counted separately ?
+        expectGroup(Group.of("MALE").withCount(2)
+                .withAggregate(Aggregate.of("AG").withCount("3").withMax("40").withMin("24").withSum("88").withAverage("29.33333333")));
+        expectGroup(Group.of("FEMALE").withCount(1)
+                .withAggregate(Aggregate.of("AG").withCount("1").withMax("18").withMin("18").withSum("18").withAverage("18")));
 
         // Run the test queries and collect their results.
         collectQueryResults();

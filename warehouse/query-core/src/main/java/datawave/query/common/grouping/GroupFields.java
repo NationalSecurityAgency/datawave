@@ -346,10 +346,13 @@ public class GroupFields implements Serializable {
         for (String field : allFields) {
             if (reverseModelMap.containsKey(field)) {
                 this.reverseModelMap.put(field, reverseModelMap.get(field));
+            } else {
+                this.reverseModelMap.put(field, field);
             }
         }
 
         // now we can reduce the fields to only those that map to themselves wrt the reverse model map
+        // IS THIS WHAT WE WANT ????
         this.groupByFields = reduce(this.groupByFields, this.reverseModelMap);
         this.sumFields = reduce(this.sumFields, this.reverseModelMap);
         this.countFields = reduce(this.countFields, this.reverseModelMap);
