@@ -10,10 +10,13 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.commons.jexl2.parser.ASTFunctionNode;
-import org.apache.commons.jexl2.parser.ASTIdentifier;
-import org.apache.commons.jexl2.parser.ASTOrNode;
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ASTArguments;
+import org.apache.commons.jexl3.parser.ASTFunctionNode;
+import org.apache.commons.jexl3.parser.ASTIdentifier;
+import org.apache.commons.jexl3.parser.ASTOrNode;
+import org.apache.commons.jexl3.parser.ASTStringLiteral;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.ImmutableSet;
@@ -88,11 +91,13 @@ public class EvaluationPhaseFilterFunctionsDescriptor implements JexlFunctionArg
             try {
                 List<JexlNode> arguments = functionMetadata.args();
                 JexlNode node0 = arguments.get(0);
-                final String beginArg = (arguments.size() == 5 ? arguments.get(2).image : arguments.get(1).image);
-                final String endArg = (arguments.size() == 5 ? arguments.get(3).image : arguments.get(2).image);
+                final String beginArg = arguments.size() == 5 ? JexlNodes.getIdentifierOrLiteralAsString(arguments.get(2))
+                                : JexlNodes.getIdentifierOrLiteralAsString(arguments.get(1));
+                final String endArg = arguments.size() == 5 ? JexlNodes.getIdentifierOrLiteralAsString(arguments.get(3))
+                                : JexlNodes.getIdentifierOrLiteralAsString(arguments.get(2));
                 Date begin, end = null;
                 if (arguments.size() >= 4) {
-                    String formatArg = arguments.get(arguments.size() - 1).image;
+                    String formatArg = JexlNodes.getIdentifierOrLiteralAsString(arguments.get(arguments.size() - 1));
                     DateFormat formatter = EvaluationPhaseFilterFunctions.newSimpleDateFormat(formatArg);
                     begin = new Date(EvaluationPhaseFilterFunctions.getTime(beginArg, formatter));
                     end = new Date(EvaluationPhaseFilterFunctions.getTime(endArg, formatter));
@@ -102,7 +107,7 @@ public class EvaluationPhaseFilterFunctionsDescriptor implements JexlFunctionArg
                 }
                 if (node0 instanceof ASTIdentifier) {
 
-                    final String field = JexlASTHelper.deconstructIdentifier(node0.image);
+                    final String field = JexlASTHelper.deconstructIdentifier(((ASTIdentifier) node0).getName());
 
                     if (log.isDebugEnabled()) {
                         log.debug("Evaluating date index with " + field + ", [" + begin + "," + end + "], " + datatypeFilter);
@@ -126,7 +131,7 @@ public class EvaluationPhaseFilterFunctionsDescriptor implements JexlFunctionArg
                     JexlNode newParent = JexlNodeFactory.shallowCopy(node0);
                     int i = 0;
                     for (ASTIdentifier identifier : JexlASTHelper.getIdentifiers(node0)) {
-                        String field = JexlASTHelper.deconstructIdentifier(identifier.image);
+                        String field = JexlASTHelper.deconstructIdentifier(identifier.getName());
 
                         if (log.isDebugEnabled()) {
                             log.debug("Evaluating date index with " + field + ", [" + begin + "," + end + "], " + datatypeFilter);
@@ -169,7 +174,8 @@ public class EvaluationPhaseFilterFunctionsDescriptor implements JexlFunctionArg
             // Since the getIndexQuery does not supply actual filters on the fields, we need to add those filters here
             Set<String> queryFields = fields(null, null);
             // argument 0 (child 2) is the fieldname, argument 1 (child 3) is the regex
-            String regex = (regexArguments() ? JexlASTHelper.getLiteral(node.jjtGetChild(3)).image : null);
+            ASTArguments argsNode = (ASTArguments) node.jjtGetChild(1);
+            String regex = (regexArguments() ? ((ASTStringLiteral) argsNode.jjtGetChild(1)).getLiteral() : null);
             for (String fieldName : queryFields) {
                 EventDataQueryExpressionVisitor.ExpressionFilter f = filterMap.get(fieldName);
                 if (f == null) {

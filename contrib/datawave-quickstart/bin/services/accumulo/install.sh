@@ -14,6 +14,11 @@ source "${SERVICES_DIR}/hadoop/bootstrap.sh"
 
 hadoopIsInstalled || fatal "Accumulo requires that Hadoop be installed"
 
+# If Accumulo is not installed, verify that the two checksums match before installing.
+accumuloIsInstalled || verifyChecksum "${DW_ACCUMULO_DIST_URI}" "${DW_ACCUMULO_SERVICE_DIR}" "${DW_ACCUMULO_DIST_SHA512_CHECKSUM}"
+# If Zookeeper is not installed, verify that the two checksums match before installing.
+zookeeperIsInstalled || verifyChecksum "${DW_ZOOKEEPER_DIST_URI}" "${DW_ACCUMULO_SERVICE_DIR}" "${DW_ZOOKEEPER_DIST_SHA512_CHECKSUM}"
+
 if zookeeperIsInstalled ; then
    info "ZooKeeper is already installed"
 else
@@ -65,6 +70,11 @@ assertCreateDir "${DW_ACCUMULO_JVM_HEAPDUMP_DIR}"
 sed -i'' -e "s~\(ACCUMULO_TSERVER_OPTS=\).*$~\1\"${DW_ACCUMULO_TSERVER_OPTS}\"~g" "${DW_ACCUMULO_CONF_DIR}/accumulo-env.sh"
 sed -i'' -e "s~\(export JAVA_HOME=\).*$~\1\"${JAVA_HOME}\"~g" "${DW_ACCUMULO_CONF_DIR}/accumulo-env.sh"
 sed -i'' -e "s~\(export ACCUMULO_MONITOR_OPTS=\).*$~\1\"\${POLICY} -Xmx2g -Xms512m\"~g" "${DW_ACCUMULO_CONF_DIR}/accumulo-env.sh"
+
+# Update Accumulo bind host if it's not set to localhost
+if [ "${DW_ACCUMULO_BIND_HOST}" != "localhost" ] ; then
+  sed -i'' -e "s/localhost/${DW_ACCUMULO_BIND_HOST}/g" ${DW_ACCUMULO_CONF_DIR}/cluster.yaml
+fi
 
 # Write zoo.cfg file using our settings in DW_ZOOKEEPER_CONF
 if [ -n "${DW_ZOOKEEPER_CONF}" ] ; then

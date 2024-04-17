@@ -91,6 +91,15 @@ public class CSVIngestHelper extends ContentBaseIngestHelper {
         String[] dataFields = tokenizer.getTokenArray();
         processFields(fields, dataFields);
 
+        // do the same for the aux data if it exists
+        if (event.getAuxData() instanceof String) {
+            String auxData = (String) event.getAuxData();
+            tokenizer.reset(auxData);
+            for (String dataField : tokenizer.getTokenArray()) {
+                processExtraField(fields, dataField);
+            }
+        }
+
         // and return the normalized fields
         return normalize(fields);
     }

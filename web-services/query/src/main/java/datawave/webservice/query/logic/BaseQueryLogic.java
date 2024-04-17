@@ -20,6 +20,7 @@ import datawave.security.authorization.UserOperations;
 import datawave.webservice.common.audit.Auditor.AuditType;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
+import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.iterator.DatawaveTransformIterator;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 
@@ -54,26 +55,24 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     }
 
     public BaseQueryLogic(BaseQueryLogic<T> other) {
-        // Generic Query Config variables
-        setTableName(other.getTableName());
-        setMaxWork(other.getMaxWork());
-        setMaxResults(other.getMaxResults());
-        setBaseIteratorPriority(other.getBaseIteratorPriority());
-        setBypassAccumulo(other.getBypassAccumulo());
-        setAccumuloPassword(other.getAccumuloPassword());
+        // copy base config variables
+        this.baseConfig = new GenericQueryConfiguration(other.getConfig());
 
-        // Other variables
+        // copy other variables
         setMaxResults(other.maxResults);
         setMarkingFunctions(other.getMarkingFunctions());
         setResponseObjectFactory(other.getResponseObjectFactory());
         setLogicName(other.getLogicName());
         setLogicDescription(other.getLogicDescription());
         setAuditType(other.getAuditType(null));
+        this.dnResultLimits = other.dnResultLimits;
+        this.systemFromResultLimits = other.systemFromResultLimits;
         this.scanner = other.scanner;
         this.iterator = other.iterator;
         setMaxPageSize(other.getMaxPageSize());
         setPageByteTrigger(other.getPageByteTrigger());
         setCollectQueryMetrics(other.getCollectQueryMetrics());
+        this.authorizedDNs = other.authorizedDNs;
         setConnPoolName(other.getConnPoolName());
         setPrincipal(other.getPrincipal());
         setRoleManager(other.getRoleManager());

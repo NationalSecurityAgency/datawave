@@ -27,7 +27,6 @@ import datawave.webservice.common.remote.RemoteHttpService;
 import datawave.webservice.common.remote.RemoteQueryService;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
-import datawave.webservice.query.remote.RemoteQueryServiceImpl;
 import datawave.webservice.query.result.event.DefaultEvent;
 import datawave.webservice.query.result.event.DefaultField;
 import datawave.webservice.query.result.event.EventBase;

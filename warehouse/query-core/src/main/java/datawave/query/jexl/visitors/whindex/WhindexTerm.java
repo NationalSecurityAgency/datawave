@@ -4,9 +4,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.commons.jexl2.parser.ASTIdentifier;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.JexlNodes;
+import org.apache.commons.jexl3.parser.ASTIdentifier;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNodes;
 
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.RebuildingVisitor;
@@ -46,7 +46,7 @@ class WhindexTerm {
 
         if (fieldNames.size() == 1) {
             for (ASTIdentifier identifier : identifiers) {
-                JexlNodes.replaceChild(identifier.jjtGetParent(), identifier, JexlNodes.makeIdentifierWithImage(newFieldName));
+                JexlNodes.replaceChild(identifier.jjtGetParent(), identifier, JexlNodes.makeIdentifier(newFieldName));
             }
         } else {
             throw new RuntimeException("Cannot create a Whindex term using multiple identifiers.");

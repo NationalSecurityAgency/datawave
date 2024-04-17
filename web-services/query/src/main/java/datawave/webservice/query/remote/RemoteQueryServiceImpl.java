@@ -50,9 +50,11 @@ public class RemoteQueryServiceImpl extends RemoteHttpService implements RemoteQ
 
     private ObjectReader baseQueryResponseReader;
 
-    private ObjectReader eventQueryResponseReader;
+    private ObjectReader nextQueryResponseReader;
 
     private boolean initialized = false;
+
+    private Class<? extends BaseQueryResponse> nextQueryResponseClass;
 
     @Override
     @PostConstruct
@@ -61,7 +63,11 @@ public class RemoteQueryServiceImpl extends RemoteHttpService implements RemoteQ
             super.init();
             genericResponseReader = objectMapper.readerFor(GenericResponse.class);
             baseQueryResponseReader = objectMapper.readerFor(BaseQueryResponse.class);
-            eventQueryResponseReader = objectMapper.readerFor(responseObjectFactory.getEventQueryResponse().getClass());
+            if (nextQueryResponseClass == null) {
+                nextQueryResponseReader = objectMapper.readerFor(responseObjectFactory.getEventQueryResponse().getClass());
+            } else {
+                nextQueryResponseReader = objectMapper.readerFor(nextQueryResponseClass);
+            }
             initialized = true;
         }
     }
@@ -122,7 +128,7 @@ public class RemoteQueryServiceImpl extends RemoteHttpService implements RemoteQ
             httpGet.setHeader(PROXIED_ENTITIES_HEADER, getProxiedEntities(principal));
             httpGet.setHeader(PROXIED_ISSUERS_HEADER, getProxiedIssuers(principal));
         }, entity -> {
-            return readResponse(entity, eventQueryResponseReader, baseQueryResponseReader);
+            return readResponse(entity, nextQueryResponseReader, baseQueryResponseReader);
         }, () -> suffix);
     }
 
@@ -175,4 +181,11 @@ public class RemoteQueryServiceImpl extends RemoteHttpService implements RemoteQ
         throw new RuntimeException("Cannot handle a " + callerObject.getClass() + ". Only DatawavePrincipal is accepted");
     }
 
+    public Class<? extends BaseQueryResponse> getNextQueryResponseClass() {
+        return nextQueryResponseClass;
+    }
+
+    public void setNextQueryResponseClass(Class<? extends BaseQueryResponse> nextQueryResponseClass) {
+        this.nextQueryResponseClass = nextQueryResponseClass;
+    }
 }

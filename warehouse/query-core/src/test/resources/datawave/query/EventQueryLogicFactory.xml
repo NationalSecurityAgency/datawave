@@ -89,6 +89,8 @@
 
         <property name="auditType" value="ACTIVE" />
         <property name="logicDescription" value="Event query with rewritten logic" />
+        <property name="rebuildDatatypeFilter" value="true" />
+        <property name="rebuildDatatypeFilterPerShard" value="false" />
         <!-- Determines how many events in the global index lookup will be
         aggregated into a day range -->
         <property name="eventPerDayThreshold" value="40000" />
@@ -97,6 +99,8 @@
         <property name="shardsPerDayThreshold" value="4" />	<!-- ${beq.shardsPerDayThreshold} -->
         <!-- The max number of terms BEFORE all expansions -->
         <property name="initialMaxTermThreshold" value="10" />	<!-- was ${beq.initialMaxTermThreshold} -->
+        <property name="intermediateMaxTermThreshold" value="10" />
+        <property name="indexedMaxTermThreshold" value="10" />
         <!-- The max number of terms AFTER all expansions -->
         <property name="finalMaxTermThreshold" value="10" />	<!-- was ${beq.finalMaxTermThreshold} -->
         <!-- The max query depth -->

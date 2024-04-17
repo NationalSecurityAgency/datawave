@@ -5,6 +5,7 @@
 !**/application/src/main/wildfly/overlay/bin
 !**/web-services/deploy/application/src/main/wildfly/overlay/bin
 !**/web-services/examples/http-client/bin
+**/*.env
 **/*.iml
 **/*.orig
 **/*.prefs
@@ -49,3 +50,5 @@ web-services/geoserver/geoserver-application/overlays/
 
 services/sample_configuration/*-dev.yml
 /.metadata/
+/.dockerignore
+/.maven-dockerignore

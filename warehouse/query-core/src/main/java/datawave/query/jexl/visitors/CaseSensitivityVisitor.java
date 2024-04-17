@@ -2,21 +2,20 @@ package datawave.query.jexl.visitors;
 
 import java.util.Set;
 
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTAssignment;
-import org.apache.commons.jexl2.parser.ASTEQNode;
-import org.apache.commons.jexl2.parser.ASTERNode;
-import org.apache.commons.jexl2.parser.ASTFunctionNode;
-import org.apache.commons.jexl2.parser.ASTIdentifier;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ASTMethodNode;
-import org.apache.commons.jexl2.parser.ASTNENode;
-import org.apache.commons.jexl2.parser.ASTNRNode;
-import org.apache.commons.jexl2.parser.ASTOrNode;
-import org.apache.commons.jexl2.parser.ASTReference;
-import org.apache.commons.jexl2.parser.ASTReferenceExpression;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.log4j.Logger;
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTAssignment;
+import org.apache.commons.jexl3.parser.ASTEQNode;
+import org.apache.commons.jexl3.parser.ASTERNode;
+import org.apache.commons.jexl3.parser.ASTFunctionNode;
+import org.apache.commons.jexl3.parser.ASTIdentifier;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTMethodNode;
+import org.apache.commons.jexl3.parser.ASTNENode;
+import org.apache.commons.jexl3.parser.ASTNRNode;
+import org.apache.commons.jexl3.parser.ASTOrNode;
+import org.apache.commons.jexl3.parser.ASTReferenceExpression;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNodes;
 
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
@@ -82,10 +81,10 @@ public class CaseSensitivityVisitor extends ShortCircuitBaseVisitor {
     @SuppressWarnings("unchecked")
     public Object visit(ASTIdentifier node, Object data) {
         // if a field set was passed in, then check for existence before upcasing (@see visit(ASTFunctionNode, Object))
-        if (data == null || ((Set<String>) data).contains(node.image)) {
+        if (data == null || ((Set<String>) data).contains(node.getName())) {
             // don't uppercase an identifier under a ASTMethodNode, it is the method's name
             if (node.jjtGetParent() instanceof ASTMethodNode == false) {
-                node.image = node.image.toUpperCase();
+                JexlNodes.setIdentifier(node, node.getName().toUpperCase());
             }
         }
         node.childrenAccept(this, data);
@@ -132,12 +131,6 @@ public class CaseSensitivityVisitor extends ShortCircuitBaseVisitor {
 
     @Override
     public Object visit(ASTOrNode node, Object data) {
-        node.childrenAccept(this, data);
-        return data;
-    }
-
-    @Override
-    public Object visit(ASTReference node, Object data) {
         node.childrenAccept(this, data);
         return data;
     }

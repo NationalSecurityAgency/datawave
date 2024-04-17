@@ -1,23 +1,23 @@
 package datawave.query.jexl.visitors;
 
 import static datawave.query.jexl.functions.ContentFunctionsDescriptor.ContentJexlArgumentDescriptor.distributeFunctionIntoIndexQuery;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DROPPED;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EVALUATION_ONLY;
 
 import java.util.Arrays;
 
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTERNode;
-import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
-import org.apache.commons.jexl2.parser.ASTFunctionNode;
-import org.apache.commons.jexl2.parser.ASTGENode;
-import org.apache.commons.jexl2.parser.ASTGTNode;
-import org.apache.commons.jexl2.parser.ASTLENode;
-import org.apache.commons.jexl2.parser.ASTLTNode;
-import org.apache.commons.jexl2.parser.ASTNRNode;
-import org.apache.commons.jexl2.parser.ASTReference;
-import org.apache.commons.jexl2.parser.ASTTrueNode;
-import org.apache.commons.jexl2.parser.DroppedExpression;
-import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.log4j.Logger;
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTERNode;
+import org.apache.commons.jexl3.parser.ASTFunctionNode;
+import org.apache.commons.jexl3.parser.ASTGENode;
+import org.apache.commons.jexl3.parser.ASTGTNode;
+import org.apache.commons.jexl3.parser.ASTLENode;
+import org.apache.commons.jexl3.parser.ASTLTNode;
+import org.apache.commons.jexl3.parser.ASTNRNode;
+import org.apache.commons.jexl3.parser.ASTReference;
+import org.apache.commons.jexl3.parser.ASTTrueNode;
+import org.apache.commons.jexl3.parser.JexlNode;
 
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlNodeFactory;
@@ -135,14 +135,12 @@ public class FunctionIndexQueryExpansionVisitor extends RebuildingVisitor {
     @Override
     public Object visit(ASTAndNode node, Object data) {
         // if we know from a parent that this is evaluation only (or ignored), pass that forward. if we don't know, check.
-        return super.visit(node, (data instanceof Boolean && (Boolean) data)
-                        || QueryPropertyMarker.findInstance(node).isAnyTypeOf(ASTEvaluationOnly.class, DroppedExpression.class));
+        return super.visit(node, (data instanceof Boolean && (Boolean) data) || QueryPropertyMarker.findInstance(node).isAnyTypeOf(EVALUATION_ONLY, DROPPED));
     }
 
     @Override
     public Object visit(ASTReference node, Object data) {
         // if we know from a parent that this is evaluation only (or ignored), pass that forward. if we don't know, check.
-        return super.visit(node, (data instanceof Boolean && (Boolean) data)
-                        || QueryPropertyMarker.findInstance(node).isAnyTypeOf(ASTEvaluationOnly.class, DroppedExpression.class));
+        return super.visit(node, (data instanceof Boolean && (Boolean) data) || QueryPropertyMarker.findInstance(node).isAnyTypeOf(EVALUATION_ONLY, DROPPED));
     }
 }

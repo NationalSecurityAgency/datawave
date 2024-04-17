@@ -1,11 +1,13 @@
 package datawave.query.transformer;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -19,6 +21,7 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.javatuples.Triplet;
 
@@ -46,11 +49,17 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
     public static final String PHRASE_INDEXES_ATTRIBUTE = "PHRASE_INDEXES_ATTRIBUTE";
     public static final String HIT_EXCERPT = "HIT_EXCERPT";
 
+    private static final String BEFORE = "BEFORE";
+
+    private static final String AFTER = "AFTER";
+
     private final Map<String,String> excerptIteratorOptions = new HashMap<>();
     private final SortedKeyValueIterator<Key,Value> excerptIterator;
     private final ExcerptFields excerptFields;
     private final IteratorEnvironment env;
     private final SortedKeyValueIterator<Key,Value> source;
+
+    private final ArrayList<String> hitTermValues = new ArrayList<>();
 
     public ExcerptTransform(ExcerptFields excerptFields, IteratorEnvironment env, SortedKeyValueIterator<Key,Value> source) {
         this(excerptFields, env, source, new TermFrequencyExcerptIterator());
@@ -105,7 +114,7 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
             phraseIndexes = PhraseIndexes.from(content.getContent());
             allPhraseIndexes.addAll(phraseIndexes);
         }
-        // now lets find all of the terms for excerpt fields and add them to the list
+        // now lets find all the terms for excerpt fields and add them to the list
         if (document.containsKey(JexlEvaluation.HIT_TERM_FIELD)) {
             Attributes hitList = (Attributes) document.get(JexlEvaluation.HIT_TERM_FIELD);
             // for each hit term
@@ -121,6 +130,8 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
                         allPhraseIndexes.addIndexTriplet(String.valueOf(hitTuple.getFieldName()), keyToEventId(attr.getMetadata()), pos.getLowOffset(),
                                         pos.getOffset());
                     }
+                    // save the hit term for later callout
+                    Collections.addAll(hitTermValues, ((String) hitTuple.getValue()).split(Constants.SPACE));
                 }
             }
         }
@@ -278,7 +289,7 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
                 Key endKey = startKey.followingKey(PartialKey.ROW_COLFAM);
                 Range range = new Range(startKey, true, endKey, false);
 
-                String excerpt = getExcerpt(field, start, end, range);
+                String excerpt = getExcerpt(field, start, end, range, hitTermValues);
                 // Only retain non-blank excerpts.
                 if (excerpt != null && !excerpt.isEmpty()) {
                     excerpts.add(new Excerpt(startKey, excerpt));
@@ -303,9 +314,11 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
      *            the end index of the excerpt
      * @param range
      *            the range to use when seeking
+     * @param hitTermValues
+     *            the term values to match
      * @return the excerpt
      */
-    private String getExcerpt(String field, int start, int end, Range range) {
+    private String getExcerpt(String field, int start, int end, Range range, ArrayList<String> hitTermValues) {
         excerptIteratorOptions.put(TermFrequencyExcerptIterator.FIELD_NAME, field);
         excerptIteratorOptions.put(TermFrequencyExcerptIterator.START_OFFSET, String.valueOf(start));
         excerptIteratorOptions.put(TermFrequencyExcerptIterator.END_OFFSET, String.valueOf(end));
@@ -317,7 +330,7 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
                 String[] parts = topKey.getColumnQualifier().toString().split(Constants.NULL);
                 // The column qualifier is expected to be field\0phrase.
                 if (parts.length == 2) {
-                    return parts[1];
+                    return getHitPhrase(hitTermValues, parts);
                 } else {
                     log.warn(TermFrequencyExcerptIterator.class.getSimpleName() + " returned top key with incorrectly-formatted column qualifier in key: "
                                     + topKey + " when scanning for excerpt [" + start + "," + end + "] for field " + field + " within range " + range);
@@ -329,6 +342,28 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
         } catch (IOException e) {
             throw new RuntimeException("Failed to scan for excerpt [" + start + "," + end + "] for field " + field + " within range " + range, e);
         }
+    }
+
+    private String getHitPhrase(ArrayList<String> hitTermValues, String[] phraseParts) {
+        List<String> hitPhrase = new ArrayList<>();
+        for (String phrasePart : phraseParts[1].split(Constants.SPACE)) {
+            if (hitTermValues.contains(phrasePart)) {
+                hitPhrase.add("[" + phrasePart + "]");
+            } else {
+                hitPhrase.add(phrasePart);
+            }
+        }
+
+        // return phrase based on direction
+        String result = String.join(" ", hitPhrase); // if no direction given, return everything
+        String direction = excerptFields.getDirection(phraseParts[0]).toUpperCase().trim();
+        if (direction.equals(BEFORE)) { // remove tokens prior to hit term
+            result = StringUtils.substringBeforeLast(result, "]") + "]";
+        } else if (direction.equals(AFTER)) { // remove tokens after hit term
+            result = "[" + StringUtils.substringAfter(result, "[");
+        }
+
+        return result;
     }
 
     /**

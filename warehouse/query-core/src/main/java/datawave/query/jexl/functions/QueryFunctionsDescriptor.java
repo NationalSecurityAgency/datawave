@@ -1,5 +1,7 @@
 package datawave.query.jexl.functions;
 
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.BOUNDED_RANGE;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -7,14 +9,15 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.commons.jexl2.parser.ASTEQNode;
-import org.apache.commons.jexl2.parser.ASTERNode;
-import org.apache.commons.jexl2.parser.ASTFunctionNode;
-import org.apache.commons.jexl2.parser.ASTGENode;
-import org.apache.commons.jexl2.parser.ASTIdentifier;
-import org.apache.commons.jexl2.parser.ASTLENode;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.ParserTreeConstants;
+import org.apache.commons.jexl3.parser.ASTEQNode;
+import org.apache.commons.jexl3.parser.ASTERNode;
+import org.apache.commons.jexl3.parser.ASTFunctionNode;
+import org.apache.commons.jexl3.parser.ASTGENode;
+import org.apache.commons.jexl3.parser.ASTIdentifier;
+import org.apache.commons.jexl3.parser.ASTLENode;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNodes;
+import org.apache.commons.jexl3.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.Sets;
@@ -27,7 +30,7 @@ import datawave.query.jexl.ArithmeticJexlEngines;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
-import datawave.query.jexl.nodes.BoundedRange;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor;
 import datawave.query.jexl.visitors.QueryOptionsFromQueryVisitor;
 import datawave.query.util.DateIndexHelper;
@@ -63,14 +66,16 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
                 Set<String> allFields = helper.getAllFields(datatypeFilter);
                 switch (name) {
                     case BETWEEN:
-                        JexlNode geNode = JexlNodeFactory.buildNode(new ASTGENode(ParserTreeConstants.JJTGENODE), args.get(0), args.get(1).image);
-                        JexlNode leNode = JexlNodeFactory.buildNode(new ASTLENode(ParserTreeConstants.JJTLENODE), args.get(0), args.get(2).image);
+                        JexlNode geNode = JexlNodeFactory.buildNode(new ASTGENode(ParserTreeConstants.JJTGENODE), args.get(0),
+                                    JexlNodes.getIdentifierOrLiteralAsString(args.get(1)));
+                        JexlNode leNode = JexlNodeFactory.buildNode(new ASTLENode(ParserTreeConstants.JJTLENODE), args.get(0),
+                                    JexlNodes.getIdentifierOrLiteralAsString(args.get(2)));
                         // Return a bounded range.
-                        return BoundedRange.create(JexlNodeFactory.createAndNode(Arrays.asList(geNode, leNode)));
+                        return QueryPropertyMarker.create(JexlNodeFactory.createAndNode(Arrays.asList(geNode, leNode)), BOUNDED_RANGE);
                     case LENGTH:
                         // Return a regex node with the appropriate number of matching characters
                         return JexlNodeFactory.buildNode(new ASTERNode(ParserTreeConstants.JJTERNODE), args.get(0),
-                                        ".{" + args.get(1).image + ',' + args.get(2).image + '}');
+                                    ".{" + JexlNodes.getIdentifierOrLiteral(args.get(1)) + ',' + JexlNodes.getIdentifierOrLiteral(args.get(2)) + '}');
                     case QueryFunctions.MATCH_REGEX:
                         // Return an index query.
                         return getIndexQuery(allFields);
@@ -89,9 +94,9 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
 
         private JexlNode getIndexQuery(Set<String> allFields) throws TableNotFoundException {
             JexlNode node0 = args.get(0);
-            final String value = args.get(1).image;
+            final String value = JexlNodes.getIdentifierOrLiteralAsString(args.get(1));
             if (node0 instanceof ASTIdentifier) {
-                final String field = JexlASTHelper.deconstructIdentifier(node0.image);
+                final String field = JexlASTHelper.deconstructIdentifier(((ASTIdentifier) node0).getName());
                 if (allFields.contains(field) || field.equals(Constants.ANY_FIELD)) {
                     return JexlNodeFactory.buildNode((ASTERNode) null, field, value);
                 } else {
@@ -103,7 +108,7 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
                 JexlNode newParent = JexlNodeFactory.shallowCopy(node0);
                 int i = 0;
                 for (ASTIdentifier identifier : JexlASTHelper.getIdentifiers(node0)) {
-                    String field = JexlASTHelper.deconstructIdentifier(identifier.image);
+                    String field = JexlASTHelper.deconstructIdentifier(identifier.getName());
                     if (allFields.contains(field)) {
                         JexlNode kid = JexlNodeFactory.buildNode((ASTERNode) null, field, value);
                         kid.jjtSetParent(newParent);
@@ -116,9 +121,9 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
 
         private JexlNode getTextIndexQuery(Set<String> allFields) {
             JexlNode node0 = args.get(0);
-            final String value = args.get(1).image;
+            final String value = JexlNodes.getIdentifierOrLiteralAsString(args.get(1));
             if (node0 instanceof ASTIdentifier) {
-                final String field = JexlASTHelper.deconstructIdentifier(node0.image);
+                final String field = JexlASTHelper.deconstructIdentifier(((ASTIdentifier) node0).getName());
                 if (allFields.contains(field) || field.equals(Constants.ANY_FIELD)) {
                     return JexlNodeFactory.buildNode((ASTEQNode) null, field, value);
                 } else {
@@ -130,7 +135,7 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
                 JexlNode newParent = JexlNodeFactory.shallowCopy(node0);
                 int i = 0;
                 for (ASTIdentifier identifier : JexlASTHelper.getIdentifiers(node0)) {
-                    String field = JexlASTHelper.deconstructIdentifier(identifier.image);
+                    String field = JexlASTHelper.deconstructIdentifier(identifier.getName());
                     JexlNode kid = JexlNodeFactory.buildNode((ASTEQNode) null, field, value);
                     kid.jjtSetParent(newParent);
                     newParent.jjtAddChild(kid, i++);
@@ -239,9 +244,9 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
         FunctionJexlNodeVisitor visitor = FunctionJexlNodeVisitor.eval(node);
         Class<?> functionClass = (Class<?>) ArithmeticJexlEngines.functions().get(visitor.namespace());
 
-        if (!QueryFunctions.QUERY_FUNCTION_NAMESPACE.equals(node.jjtGetChild(0).image))
-            throw new IllegalArgumentException("Calling " + this.getClass().getSimpleName() + ".getJexlNodeDescriptor with an unexpected namespace of "
-                            + node.jjtGetChild(0).image);
+        if (!QueryFunctions.QUERY_FUNCTION_NAMESPACE.equals(visitor.namespace()))
+            throw new IllegalArgumentException(
+                            "Calling " + this.getClass().getSimpleName() + ".getJexlNodeDescriptor with an unexpected namespace of " + visitor.namespace());
         if (!functionClass.equals(QueryFunctions.class))
             throw new IllegalArgumentException(
                             "Calling " + this.getClass().getSimpleName() + ".getJexlNodeDescriptor with node for a function in " + functionClass);
@@ -289,6 +294,7 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
             case QueryFunctions.MIN:
             case QueryFunctions.MAX:
             case QueryFunctions.AVERAGE:
+            case QueryFunctions.RENAME_FUNCTION:
                 if (numArgs == 0) {
                     throw new IllegalArgumentException("Expected at least one argument to the " + name + " function");
                 }
