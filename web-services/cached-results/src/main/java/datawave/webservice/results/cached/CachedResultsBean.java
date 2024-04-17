@@ -67,7 +67,7 @@ import javax.ws.rs.core.Response.Status;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.commons.collections4.Transformer;
 import org.apache.commons.dbutils.DbUtils;
-import org.apache.commons.jexl2.parser.TokenMgrError;
+import org.apache.commons.jexl3.parser.TokenMgrException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -665,7 +665,7 @@ public class CachedResultsBean {
                 response.addException(new PreConditionFailedQueryException(DatawaveErrorCode.CACHED_RESULTS_IMPORT_ERROR, e2));
             }
             // don't log stack trace of parse errors and other IllegalArgumentExceptions
-            if (t instanceof IllegalArgumentException || t instanceof TokenMgrError) {
+            if (t instanceof IllegalArgumentException || t instanceof TokenMgrException) {
                 log.info(t.getMessage());
             } else {
                 log.error(t.getMessage(), t);
@@ -693,7 +693,7 @@ public class CachedResultsBean {
                     DbUtils.closeQuietly(s);
                 }
             }
-            if (t instanceof Error && (t instanceof TokenMgrError) == false) {
+            if (t instanceof Error && (t instanceof TokenMgrException) == false) {
                 throw (Error) t;
             }
 
@@ -738,7 +738,6 @@ public class CachedResultsBean {
      *            a query id
      * @return List of attribute names that can be used in subsequent queries
      *
-     * @return {@code datawave.webservice.result.GenericResponse<String>}
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user by specifying a chain of DNs of the identities to proxy
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
      * @ResponseHeader X-OperationTimeInMS time spent on the server performing the operation, does not account for network or result serialization
@@ -862,7 +861,6 @@ public class CachedResultsBean {
      *            additional name that this query can be retrieved by
      * @return name of the view for this query, use it as the table name in the SQL query
      *
-     * @return {@code datawave.webservice.result.GenericResponse<String>}
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user by specifying a chain of DNs of the identities to proxy
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
      * @ResponseHeader X-OperationTimeInMS time spent on the server performing the operation, does not account for network or result serialization
@@ -1096,7 +1094,6 @@ public class CachedResultsBean {
      *            view, queryId, or alias
      * @return number of results, columns contained in the results
      *
-     * @return {@code datawave.webservice.result.CachedResultsDescribeResponse<Description>}
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user by specifying a chain of DNs of the identities to proxy
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
      * @ResponseHeader X-OperationTimeInMS time spent on the server performing the operation, does not account for network or result serialization
@@ -1140,13 +1137,13 @@ public class CachedResultsBean {
             List<String> columns = new ArrayList<>();
             Integer numRows = null;
             try (Connection con = ds.getConnection(); Statement s = con.createStatement()) {
-                try (ResultSet rs = s.executeQuery("select count(*) from " + view)) {
+                try (ResultSet rs = s.executeQuery(String.format("select count(*) from %s", view))) {
                     if (rs.next()) {
                         numRows = rs.getInt(1);
                     }
                 }
 
-                try (ResultSet rs = s.executeQuery("show columns from " + view)) {
+                try (ResultSet rs = s.executeQuery(String.format("show columns from %s", view))) {
                     Set<String> fixedColumns = CacheableQueryRow.getFixedColumnSet();
                     while (rs.next()) {
                         String column = rs.getString(1);
@@ -1473,7 +1470,6 @@ public class CachedResultsBean {
      *            user defined id for this query
      * @return previous page of results
      *
-     * @return datawave.webservice.result.BaseQueryResponse
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user by specifying a chain of DNs of the identities to proxy
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
      * @RequestHeader query-session-id session id value used for load balancing purposes. query-session-id can be placed in the request in a Cookie header or as
@@ -1681,7 +1677,6 @@ public class CachedResultsBean {
      *            user defined id for this query
      * @return a page of results
      *
-     * @return datawave.webservice.result.BaseQueryResponse
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user by specifying a chain of DNs of the identities to proxy
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
      * @RequestHeader query-session-id session id value used for load balancing purposes. query-session-id can be placed in the request in a Cookie header or as

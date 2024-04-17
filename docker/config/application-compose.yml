@@ -1,0 +1,36 @@
+# This template is for configuring your site-specific properties for all microservices.
+system.name: DOCKER-COMPOSE
+
+server:
+  ssl:
+    trust-store: '/etc/pki/testCA.p12'
+    trust-store-type: PKCS12
+    trust-store-password: 'ChangeIt'
+    key-store: '/etc/pki/testServer.p12'
+    key-store-type: PKCS12
+    key-store-password: 'ChangeIt'
+
+# Define the client certificates (in lower-case subjectDN<issuerDN> form) that are allowed to call a service. Note that you only need to
+# specify one value in the list below.
+# Since enforce-allowed-callers is false, you can skip configuring this section if you want.
+spring:
+  security:
+    datawave:
+      enforce-allowed-callers: false
+      allowed-callers:
+        - "cn=test a. user, ou=example developers, o=example corp, c=us<cn=example corp ca, o=example corp, c=us>"
+  kafka:
+    bootstrap-servers: kafka:9092
+    consumer:
+      autoOffsetReset: earliest
+      enableAutoCommit: false
+      properties:
+        allow.auto.create.topics: false
+
+# This is the accumulo configuration we use in services.  These don't map directly to a properties class, but 
+# they are here to be used as a reference for other properties.
+accumulo:
+  zookeepers: '${ZOOKEEPER_HOST:localhost}:2181'
+  instanceName: 'my-instance-01'
+  username: 'root'
+  password: 'secret'

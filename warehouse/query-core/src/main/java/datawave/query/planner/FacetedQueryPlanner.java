@@ -1,8 +1,8 @@
 package datawave.query.planner;
 
 import org.apache.accumulo.core.client.IteratorSetting;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.log4j.Logger;
 
 import com.google.common.base.Joiner;
@@ -94,13 +94,13 @@ public class FacetedQueryPlanner extends IndexQueryPlanner {
 
     @Override
     protected ASTJexlScript updateQueryTree(ScannerFactory scannerFactory, MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper,
-                    ShardQueryConfiguration config, String query, QueryData queryData, Query settings) throws DatawaveQueryException {
+                    ShardQueryConfiguration config, String query, Query settings) throws DatawaveQueryException {
         // we want all terms expanded (except when max terms is reached)
         config.setExpandAllTerms(true);
 
         // update the query tree
 
-        return super.updateQueryTree(scannerFactory, metadataHelper, dateIndexHelper, config, query, queryData, settings);
+        return super.updateQueryTree(scannerFactory, metadataHelper, dateIndexHelper, config, query, settings);
     }
 
     @Override

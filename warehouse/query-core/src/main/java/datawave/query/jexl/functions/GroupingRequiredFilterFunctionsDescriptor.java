@@ -1,13 +1,13 @@
 package datawave.query.jexl.functions;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.commons.jexl2.parser.ASTFunctionNode;
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ASTFunctionNode;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNodes;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
@@ -79,7 +79,7 @@ public class GroupingRequiredFilterFunctionsDescriptor implements JexlFunctionAr
                         if (f == null) {
                             filterMap.put(fieldName, f = new EventDataQueryExpressionVisitor.ExpressionFilter(attributeFactory, fieldName));
                         }
-                        f.addFieldPattern(valueNode.image);
+                        f.addFieldPattern(JexlNodes.getIdentifierOrLiteralAsString(valueNode));
                     }
                 }
             }

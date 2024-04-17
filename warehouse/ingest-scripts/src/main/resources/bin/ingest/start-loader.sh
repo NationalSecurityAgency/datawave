@@ -73,16 +73,14 @@ for i in ${NUM_MAP_LOADERS_COPY[@]}; do
 done
 TOTAL=$((TOTAL + EXTRA_MAP))
 
-if [[ ${TOTAL} > 0 ]]; then
+if [[ ${TOTAL} -gt 0 ]]; then
   SHUTDOWN_PORT=24100
   for ((LOADER = 0; LOADER < ${#MAP_LOADER_HDFS_NAME_NODES[@]}; LOADER = $((LOADER + 1)))); do
-    #Make sure that there are no active loaders running on the namenode in question before "resetting" perceived stuck files in HDFS
-    currentLoaders =$(ps -eaf | grep [b]ulkIngestMap | grep ${MAP_LOADER_HDFS_NAME_NODES[$LOADER]} | cut -d" " -f1-7)
-    echo "currentLoaders is: " $currentLoaders
+    # Make sure that there are no active loaders running on the namenode in question before "resetting" perceived stuck files in HDFS
+    currentLoaders=$(ps -eaf | grep [b]ulkIngestMap | grep ${MAP_LOADER_HDFS_NAME_NODES[$LOADER]} | cut -d" " -f1-7)
     FILES_STUCK_LOADING=$(${INGEST_HADOOP_HOME}/bin/hadoop fs -ls "${MAP_LOADER_HDFS_NAME_NODES[$LOADER]}$BASE_WORK_DIR/*/job.loading" | awk '{print $NF}')
     if [[ ! -z $FILES_STUCK_LOADING && -z $currentLoaders ]]; then
       echo "About to reset stuck files, no active loaders detected on ${MAP_LOADER_HDFS_NAME_NODES[$LOADER]}"
-      echo "FILES_STUCK_LOADING: " $FILES_STUCK_LOADING
       for stuckFile in $FILES_STUCK_LOADING; do
         echo "Resetting ${stuckFile} to ${stuckFile%.loading}.complete"
         moving=$(${INGEST_HADOOP_HOME}/bin/hadoop fs -mv $stuckFile ${stuckFile%.loading}.complete 2>&1)
@@ -94,18 +92,18 @@ if [[ ${TOTAL} > 0 ]]; then
     COUNT=${NUM_MAP_LOADERS_COPY[$LOADER]}
     MAP_LOADER_HDFS_NAME_NODE=${MAP_LOADER_HDFS_NAME_NODES[$LOADER]}
     export MAP_LOADER_WORKDIR=${MAP_LOADER_HDFS_DIRS[$LOADER]}
-    echo "starting $COUNT map file loaders for ${MAP_LOADER_WORKDIR} on ${MAP_LOADER_HDFS_NAME_NODE} ..."
+    echo "starting $COUNT map file loaders for ${MAP_LOADER_HDFS_NAME_NODE} ..."
     portInUse=$(lsof -i:${SHUTDOWN_PORT} | grep $SHUTDOWN_PORT)
     portUsed=$(ps -eaf | grep [b]ulkIngestMap | grep $SHUTDOWN_PORT)
     for (( x=0; x < $COUNT; x=$((x+1)) )) ; do
-      while [[ ! -z "$portInUse$portUsed"]]
+      while [[ ! -z "$portInUse$portUsed" ]]
       do
           echo "port in use, finding another"
           SHUTDOWN_PORT = $((SHUTDOWN_PORT + 1))
           portInUse=$(lsof -i:${SHUTDOWN_PORT} | grep $SHUTDOWN_PORT)
           portUsed=$(ps -eaf | grep [b]ulkIngestMap | grep $SHUTDOWN_PORT)
       done
-      echo starting $MAPFILE_LOADER_CMD -srcHdfs ${MAP_LOADER_HDFS_NAME_NODE} -destHdfs ${MAP_LOADER_HDFS_NAME_NODE} -shutdownPort ${SHUTDOWN_PORT} with log file $LOG_DIR/map-file-loader.$LOADER$x.log
+      echo starting map file loader with log file map-file-loader.$LOADER$x.log
       $MAPFILE_LOADER_CMD -srcHdfs ${MAP_LOADER_HDFS_NAME_NODE} -destHdfs ${MAP_LOADER_HDFS_NAME_NODE} -shutdownPort ${SHUTDOWN_PORT} >> $LOG_DIR/map-file-loader.$LOADER$x.log 2>&1 &
       SHUTDOWN_PORT=$((SHUTDOWN_PORT + 1))
       portInUse=$(lsof -i:${SHUTDOWN_PORT} | grep $SHUTDOWN_PORT)
@@ -125,7 +123,7 @@ if [[ ${TOTAL} > 0 ]]; then
     LOADER=${#MAP_LOADER_HDFS_NAME_NODES[@]}
     COUNT=0
     export MAP_LOADER_WORKDIR=${BASE_WORK_DIR}
-    echo "starting 1 extra map file loader for ${MAP_LOADER_WORKDIR} on ${EXTRA_MAP_LOADER} ..."
+    echo "starting 1 extra map file loader for ${EXTRA_MAP_LOADER} ..."
     SHUTDOWN_PORT=$((SHUTDOWN_PORT + 1))
     portInUse=$(lsof -i:${SHUTDOWN_PORT} | grep $SHUTDOWN_PORT)
     portUsed=$(ps -eaf | grep [b]ulkIngestMap | grep $SHUTDOWN_PORT)
@@ -135,7 +133,7 @@ if [[ ${TOTAL} > 0 ]]; then
         portInUse=$(lsof -i:${SHUTDOWN_PORT} | grep $SHUTDOWN_PORT)
         portUsed=$(ps -eaf | grep [b]ulkIngestMap | grep $SHUTDOWN_PORT)
     done
-    echo starting $MAPFILE_LOADER_CMD -srcHdfs ${EXTRA_MAP_LOADER} -destHdfs ${EXTRA_MAP_LOADER} -shutdownPort ${SHUTDOWN_PORT} with log file $LOG_DIR/map-file-loader.$LOADER$COUNT.log
+    echo starting map file loader with log file map-file-loader.$LOADER$COUNT.log
     $MAPFILE_LOADER_CMD -srcHdfs ${EXTRA_MAP_LOADER} -destHdfs ${EXTRA_MAP_LOADER} -shutdownPort ${SHUTDOWN_PORT} >>$LOG_DIR/map-file-loader.$LOADER$COUNT.log 2>&1 &
   fi
 
@@ -145,16 +143,16 @@ if [[ ${TOTAL} > 0 ]]; then
       SHUTDOWN_PORT=25100
       portInUse=$(lsof -i:${SHUTDOWN_PORT} | grep $SHUTDOWN_PORT)
       portUsed=$(ps -eaf | grep [b]ulkIngestMap | grep $SHUTDOWN_PORT)
-      while [[ ! -z "$portInUse$portUsed"]]
+      while [[ ! -z "$portInUse$portUsed" ]]
       do
           SHUTDOWN_PORT=$((SHUTDOWN_PORT + 1))
           portInUse=$(lsof -i:${SHUTDOWN_PORT} | grep $SHUTDOWN_PORT)
           portUsed=$(ps -eaf | grep [b]ulkIngestMap | grep $SHUTDOWN_PORT)
       done
-      echo starting ${MAP_LOADER_CUSTOM[$CUSTOM_LOADER]} -shutdownPort ${SHUTDOWN_PORT} with log file $LOG_DIR/map-file-loader-custom.$CUSTOM_LOADER.log
+      echo starting map file loader with log file $LOG_DIR/map-file-loader-custom.$CUSTOM_LOADER.log
       ${MAP_LOADER_CUSTOM[$CUSTOM_LOADER]} -shutdownPort ${SHUTDOWN_PORT} >>$LOG_DIR/map-file-loader-custom.$CUSTOM_LOADER.log 2>&1 &
       done
   fi
 else
-        echo "$COUNT map file loaders already running"
+    echo "$COUNT map file loaders already running"
 fi

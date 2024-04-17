@@ -1,5 +1,9 @@
 package datawave.query.jexl.visitors;
 
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.BOUNDED_RANGE;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.LENIENT;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.STRICT;
+
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -9,35 +13,31 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTEQNode;
-import org.apache.commons.jexl2.parser.ASTERNode;
-import org.apache.commons.jexl2.parser.ASTFunctionNode;
-import org.apache.commons.jexl2.parser.ASTGENode;
-import org.apache.commons.jexl2.parser.ASTGTNode;
-import org.apache.commons.jexl2.parser.ASTIdentifier;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ASTLENode;
-import org.apache.commons.jexl2.parser.ASTLTNode;
-import org.apache.commons.jexl2.parser.ASTMethodNode;
-import org.apache.commons.jexl2.parser.ASTNENode;
-import org.apache.commons.jexl2.parser.ASTNRNode;
-import org.apache.commons.jexl2.parser.ASTNullLiteral;
-import org.apache.commons.jexl2.parser.ASTOrNode;
-import org.apache.commons.jexl2.parser.ASTReference;
-import org.apache.commons.jexl2.parser.ASTReferenceExpression;
-import org.apache.commons.jexl2.parser.ASTSizeMethod;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.JexlNodes;
-import org.apache.commons.jexl2.parser.LenientExpression;
-import org.apache.commons.jexl2.parser.Node;
-import org.apache.commons.jexl2.parser.ParserTreeConstants;
-import org.apache.commons.jexl2.parser.StrictExpression;
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTEQNode;
+import org.apache.commons.jexl3.parser.ASTERNode;
+import org.apache.commons.jexl3.parser.ASTFunctionNode;
+import org.apache.commons.jexl3.parser.ASTGENode;
+import org.apache.commons.jexl3.parser.ASTGTNode;
+import org.apache.commons.jexl3.parser.ASTIdentifier;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTLENode;
+import org.apache.commons.jexl3.parser.ASTLTNode;
+import org.apache.commons.jexl3.parser.ASTMethodNode;
+import org.apache.commons.jexl3.parser.ASTNENode;
+import org.apache.commons.jexl3.parser.ASTNRNode;
+import org.apache.commons.jexl3.parser.ASTNullLiteral;
+import org.apache.commons.jexl3.parser.ASTOrNode;
+import org.apache.commons.jexl3.parser.ASTReference;
+import org.apache.commons.jexl3.parser.ASTReferenceExpression;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNodes;
+import org.apache.commons.jexl3.parser.Node;
+import org.apache.commons.jexl3.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Multimap;
 import com.google.common.collect.SetMultimap;
 import com.google.common.collect.Sets;
 
@@ -45,9 +45,8 @@ import datawave.query.Constants;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
-import datawave.query.jexl.JexlNodeFactory.ContainerType;
 import datawave.query.jexl.LiteralRange;
-import datawave.query.jexl.nodes.BoundedRange;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.model.QueryModel;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.exception.DatawaveErrorCode;
@@ -179,11 +178,6 @@ public class QueryModelVisitor extends RebuildingVisitor {
     }
 
     @Override
-    public Object visit(ASTSizeMethod node, Object data) {
-        return node.jjtAccept(this.simpleQueryModelVisitor, data);
-    }
-
-    @Override
     public Object visit(ASTAndNode node, Object data) {
         if (this.expandedNodes.contains(node)) {
             return node;
@@ -214,9 +208,9 @@ public class QueryModelVisitor extends RebuildingVisitor {
 
         for (String alias : aliases) {
             if (alias != null) {
-                BoundedRange rangeNode = (BoundedRange) BoundedRange.create(JexlNodes.children(new ASTAndNode(ParserTreeConstants.JJTANDNODE),
+                JexlNode rangeNode = QueryPropertyMarker.create(JexlNodes.setChildren(new ASTAndNode(ParserTreeConstants.JJTANDNODE),
                                 JexlASTHelper.setField(RebuildingVisitor.copy(range.getLowerNode()), alias),
-                                JexlASTHelper.setField(RebuildingVisitor.copy(range.getUpperNode()), alias)));
+                                JexlASTHelper.setField(RebuildingVisitor.copy(range.getUpperNode()), alias)), BOUNDED_RANGE);
                 aliasedBounds.add(rangeNode);
                 this.expandedNodes.add((ASTAndNode) JexlASTHelper.dereference(rangeNode));
             }
@@ -227,7 +221,7 @@ public class QueryModelVisitor extends RebuildingVisitor {
             nodeToAdd = JexlASTHelper.dereference(aliasedBounds.get(0));
         } else {
             ASTOrNode unionOfAliases = new ASTOrNode(ParserTreeConstants.JJTORNODE);
-            nodeToAdd = JexlNodes.children(unionOfAliases, aliasedBounds.toArray(new JexlNode[aliasedBounds.size()]));
+            nodeToAdd = JexlNodes.setChildren(unionOfAliases, aliasedBounds.toArray(new JexlNode[aliasedBounds.size()]));
         }
 
         return nodeToAdd;
@@ -351,11 +345,10 @@ public class QueryModelVisitor extends RebuildingVisitor {
                         expanded = JexlNodeFactory.createOrNode(nodes);
                     }
                     if (strict) {
-                        expanded = StrictExpression.create(expanded);
+                        expanded = QueryPropertyMarker.create(expanded, STRICT);
                     } else if (lenient) {
-                        expanded = LenientExpression.create(expanded);
+                        expanded = QueryPropertyMarker.create(expanded, LENIENT);
                     }
-
                 }
                 if (log.isTraceEnabled())
                     log.trace("expanded:" + PrintingVisitor.formattedQueryString(expanded));
@@ -463,7 +456,7 @@ public class QueryModelVisitor extends RebuildingVisitor {
         if (null != node) {
             if (node instanceof ASTIdentifier) {
                 identifiers.add((ASTIdentifier) node);
-            } else if (node instanceof ASTReference || node instanceof ASTReferenceExpression || node instanceof ASTAndNode || node instanceof ASTOrNode) {
+            } else if (node instanceof ASTReferenceExpression || node instanceof ASTAndNode || node instanceof ASTOrNode) {
                 for (int i = 0; i < node.jjtGetNumChildren(); i++) {
                     if (!getIdentifiers(node.jjtGetChild(i), identifiers)) {
                         return false;
@@ -481,6 +474,8 @@ public class QueryModelVisitor extends RebuildingVisitor {
      *
      * @param field
      *            the field to be expanded
+     * @param noExpansionFields
+     *            fields to not expand on
      * @return true if the field is excluded
      */
     public static boolean isFieldExcluded(String field, Set<String> noExpansionFields) {
@@ -598,8 +593,7 @@ public class QueryModelVisitor extends RebuildingVisitor {
                 return super.visit(node, data);
             }
             for (String alias : aliases) {
-                ASTIdentifier newKid = new ASTIdentifier(ParserTreeConstants.JJTIDENTIFIER);
-                newKid.image = JexlASTHelper.rebuildIdentifier(alias);
+                ASTIdentifier newKid = JexlNodes.makeIdentifier(JexlASTHelper.rebuildIdentifier(alias));
                 nodes.add(newKid);
             }
             if (nodes.size() == 1) {

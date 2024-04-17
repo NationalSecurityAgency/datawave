@@ -3,6 +3,7 @@ package datawave.query.index.lookup;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
@@ -27,6 +28,7 @@ import datawave.ingest.protobuf.Uid;
 import datawave.query.tld.TLD;
 import datawave.query.util.Tuple3;
 import datawave.query.util.Tuples;
+import datawave.query.util.count.CountMap;
 
 /**
  * <pre>
@@ -69,12 +71,20 @@ public class CreateUidsIterator implements SortedKeyValueIterator<Key,Value>, Op
 
     public static final String COLLAPSE_UIDS = "index.lookup.collapse";
     public static final String PARSE_TLD_UIDS = "index.lookup.parse.tld.uids";
+    public static final String FIELD_COUNTS = "field.counts";
+    public static final String TERM_COUNTS = "term.counts";
 
     protected boolean collapseUids = false;
     protected boolean parseTldUids = false;
+    protected boolean fieldCounts = false;
+    protected boolean termCounts = false;
+
     protected SortedKeyValueIterator<Key,Value> src;
     protected Key tk;
     protected IndexInfo tv;
+
+    private String field;
+    private String value;
 
     @Override
     public void init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env) throws IOException {
@@ -91,6 +101,14 @@ public class CreateUidsIterator implements SortedKeyValueIterator<Key,Value>, Op
             final String parseTldUidsOption = options.get(PARSE_TLD_UIDS);
             if (null != parseTldUidsOption) {
                 parseTldUids = Boolean.parseBoolean(parseTldUidsOption);
+            }
+            final String fieldCountOpt = options.get(FIELD_COUNTS);
+            if (null != fieldCountOpt) {
+                fieldCounts = Boolean.parseBoolean(fieldCountOpt);
+            }
+            final String termCountsOpt = options.get(TERM_COUNTS);
+            if (null != termCountsOpt) {
+                termCounts = Boolean.parseBoolean(termCountsOpt);
             }
         }
     }
@@ -137,6 +155,14 @@ public class CreateUidsIterator implements SortedKeyValueIterator<Key,Value>, Op
             }
             tk = reference;
         }
+
+        if (fieldCounts && tv != null) {
+            tv.setFieldCounts(createFieldCounts(field, tv.count()));
+        }
+
+        if (termCounts && tv != null) {
+            tv.setTermCounts(createTermCounts(field, value, tv.count()));
+        }
     }
 
     /**
@@ -150,9 +176,35 @@ public class CreateUidsIterator implements SortedKeyValueIterator<Key,Value>, Op
             seekRange = skipKey(range);
         }
 
+        fieldFromRange(seekRange);
+        valueFromRange(seekRange);
+
         src.seek(seekRange, columnFamilies, inclusive);
 
         next();
+    }
+
+    /**
+     * Attempt to extract a field from the seek range.
+     *
+     * @param range
+     *            the range
+     */
+    private void fieldFromRange(Range range) {
+        if (range.getStartKey() != null) {
+            this.field = range.getStartKey().getColumnFamily().toString();
+        } else {
+            this.field = "NO_FIELD";
+        }
+    }
+
+    private void valueFromRange(Range range) {
+        if (range.getStartKey() != null) {
+            this.value = range.getStartKey().getRow().toString();
+        } else {
+            this.value = "NO_VALUE";
+        }
+
     }
 
     /**
@@ -240,6 +292,18 @@ public class CreateUidsIterator implements SortedKeyValueIterator<Key,Value>, Op
         final ByteSequence row = k.getRowData(), cf = k.getColumnFamilyData(), cv = k.getColumnVisibilityData();
         return new Key(row.getBackingArray(), row.offset(), row.length(), cf.getBackingArray(), cf.offset(), cf.length(), strippedCq.getBackingArray(),
                         strippedCq.offset(), strippedCq.length(), cv.getBackingArray(), cv.offset(), cv.length(), k.getTimestamp());
+    }
+
+    private CountMap createFieldCounts(String field, Long count) {
+        CountMap counts = new CountMap();
+        counts.put(field, count);
+        return counts;
+    }
+
+    private CountMap createTermCounts(String field, String value, Long count) {
+        CountMap counts = new CountMap();
+        counts.put(field + " == '" + value + "'", count);
+        return counts;
     }
 
     /*

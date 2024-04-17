@@ -109,44 +109,46 @@ public abstract class Attribute<T extends Comparable<T>> implements WritableComp
     protected void setMetadata(Key key) {
         if (key == null) {
             this.metadata = null;
-        } else {
-            // convert the key to the form shard type\0uid cv, ts. Possible inputs are an event key, a fi key, or a tf key
-            final ByteSequence row = key.getRowData(), cf = key.getColumnFamilyData(), cv = key.getColumnVisibilityData();
-            if (isFieldIndex(cf)) {
-                // find the first null byte in the cq and take everything after that (cq = Normalized Field Value\0Data Type\0UID)
-                final ByteSequence cq = key.getColumnQualifierData();
-                int nullOffset = 0;
-                for (int i = 0; i < cq.length(); i++) {
-                    if (cq.byteAt(i) == '\0') {
-                        nullOffset = i;
-                        break;
-                    }
+            return;
+        }
+
+        // convert the key to the form shard type\0uid cv, ts. Possible inputs are an event key, a fi key, or a tf key
+        final ByteSequence row = key.getRowData();
+        final ByteSequence cf = key.getColumnFamilyData();
+        final ByteSequence cv = key.getColumnVisibilityData();
+        if (isFieldIndex(cf)) {
+            // CQ is 'value\0datatype\0uid
+            // iterate backwards to avoid problems from values with nulls in them
+            final ByteSequence cq = key.getColumnQualifierData();
+            int nullOffset = 0;
+            int count = 0;
+            for (int i = cq.length() - 1; i >= 0; i--) {
+                if (cq.byteAt(i) == '\0' && ++count == 2) {
+                    nullOffset = i;
+                    break;
                 }
-                this.metadata = new Key(row.getBackingArray(), row.offset(), row.length(), cq.getBackingArray(), nullOffset + 1, cq.length() - (nullOffset + 1),
-                                EMPTY_BYTE_SEQUENCE.getBackingArray(), EMPTY_BYTE_SEQUENCE.offset(), EMPTY_BYTE_SEQUENCE.length(), cv.getBackingArray(),
-                                cv.offset(), cv.length(), key.getTimestamp());
-            } else if (isTermFrequency(cf)) {
-                // find the second null byte in the cq and take everything before that (cq = DataType\0UID\0Normalized Field Value\0Field Name)
-                final ByteSequence cq = key.getColumnQualifierData();
-                int nullOffset = 0;
-                int count = 0;
-                for (int i = 0; i < cf.length(); i++) {
-                    if (cf.byteAt(i) == '\0') {
-                        count++;
-                        if (count == 2) {
-                            nullOffset = i;
-                            break;
-                        }
-                    }
-                }
-                this.metadata = new Key(row.getBackingArray(), row.offset(), row.length(), cq.getBackingArray(), cq.offset(), nullOffset,
-                                EMPTY_BYTE_SEQUENCE.getBackingArray(), EMPTY_BYTE_SEQUENCE.offset(), EMPTY_BYTE_SEQUENCE.length(), cv.getBackingArray(),
-                                cv.offset(), cv.length(), key.getTimestamp());
-            } else {
-                this.metadata = new Key(row.getBackingArray(), row.offset(), row.length(), cf.getBackingArray(), cf.offset(), cf.length(),
-                                EMPTY_BYTE_SEQUENCE.getBackingArray(), EMPTY_BYTE_SEQUENCE.offset(), EMPTY_BYTE_SEQUENCE.length(), cv.getBackingArray(),
-                                cv.offset(), cv.length(), key.getTimestamp());
             }
+            this.metadata = new Key(row.getBackingArray(), row.offset(), row.length(), cq.getBackingArray(), nullOffset + 1, cq.length() - (nullOffset + 1),
+                            EMPTY_BYTE_SEQUENCE.getBackingArray(), EMPTY_BYTE_SEQUENCE.offset(), EMPTY_BYTE_SEQUENCE.length(), cv.getBackingArray(),
+                            cv.offset(), cv.length(), key.getTimestamp());
+        } else if (isTermFrequency(cf)) {
+            // find the second null byte in the cq and take everything before that (cq = DataType\0UID\0Normalized Field Value\0Field Name)
+            final ByteSequence cq = key.getColumnQualifierData();
+            int nullOffset = 0;
+            int count = 0;
+            for (int i = 0; i < cq.length(); i++) {
+                if (cq.byteAt(i) == '\0' && ++count == 2) {
+                    nullOffset = i;
+                    break;
+                }
+            }
+            this.metadata = new Key(row.getBackingArray(), row.offset(), row.length(), cq.getBackingArray(), cq.offset(), nullOffset,
+                            EMPTY_BYTE_SEQUENCE.getBackingArray(), EMPTY_BYTE_SEQUENCE.offset(), EMPTY_BYTE_SEQUENCE.length(), cv.getBackingArray(),
+                            cv.offset(), cv.length(), key.getTimestamp());
+        } else {
+            this.metadata = new Key(row.getBackingArray(), row.offset(), row.length(), cf.getBackingArray(), cf.offset(), cf.length(),
+                            EMPTY_BYTE_SEQUENCE.getBackingArray(), EMPTY_BYTE_SEQUENCE.offset(), EMPTY_BYTE_SEQUENCE.length(), cv.getBackingArray(),
+                            cv.offset(), cv.length(), key.getTimestamp());
         }
     }
 
