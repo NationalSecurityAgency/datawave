@@ -26,6 +26,7 @@ import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.accumulo.core.clientImpl.thrift.ThriftTableOperationException;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -42,8 +43,10 @@ import org.apache.hadoop.util.ToolRunner;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
+import com.beust.jcommander.IParameterValidator;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
+import com.beust.jcommander.ParameterException;
 
 import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
@@ -74,9 +77,6 @@ public class ShardReindexJob implements Tool {
         // parse command line options
         JCommander cmd = JCommander.newBuilder().addObject(jobConfig).build();
         cmd.parse(args);
-
-        log.setLevel(Level.DEBUG);
-        Logger.getRootLogger().setLevel(Level.DEBUG);
 
         Job j = setupJob();
 
@@ -121,11 +121,31 @@ public class ShardReindexJob implements Tool {
         configuration.setBoolean(ShardReindexMapper.GENERATE_TF, jobConfig.generateTF);
         configuration.setBoolean(ShardReindexMapper.GENERATE_METADATA, !jobConfig.skipMetadata);
         configuration.setBoolean(ShardReindexMapper.FLOOR_TIMESTAMPS, !jobConfig.preserveTimestamps);
+        configuration.setBoolean(ShardReindexMapper.ENABLE_REINDEX_COUNTERS, jobConfig.enableCounters);
+        configuration.setBoolean(ShardReindexMapper.DUMP_COUNTERS, jobConfig.dumpCounters);
+
+        // Verify the batch mode by converting it to the enum, this will throw an IllegalArgumentException if it cannot be converted
+        ShardReindexMapper.BatchMode.valueOf(jobConfig.batchMode);
+        configuration.set(ShardReindexMapper.BATCH_MODE, jobConfig.batchMode);
+
         if (jobConfig.dataTypeHandler != null) {
             configuration.set(ShardReindexMapper.DATA_TYPE_HANDLER, jobConfig.dataTypeHandler);
         }
+        if (jobConfig.defaultDataType != null) {
+            configuration.set(ShardReindexMapper.DEFAULT_DATA_TYPE, jobConfig.defaultDataType);
+        }
         if (jobConfig.eventOverride != null) {
             configuration.set(ShardReindexMapper.EVENT_OVERRIDE, jobConfig.eventOverride);
+        }
+
+        // validate reprocess events config
+        if (jobConfig.reprocessEvents) {
+            if (jobConfig.defaultDataType == null) {
+                throw new IllegalStateException("--defaultDataType must be set when reprocessing events");
+            }
+            if (jobConfig.dataTypeHandler == null) {
+                throw new IllegalStateException("--dataTypeHandler must be set when reprocessing events");
+            }
         }
 
         // setup the accumulo helper
@@ -151,24 +171,59 @@ public class ShardReindexJob implements Tool {
             throw new IllegalStateException("split.work.dir and job.output.table.names must be configured");
         }
 
+        // test that each of the output table names exist
+        Properties accumuloProperties = builder.build();
+        AccumuloClient client = Accumulo.newClient().from(accumuloProperties).build();
+        for (String table : configuration.get("job.output.table.names").split(",")) {
+            try {
+                Map<String,String> tableProperties = client.tableOperations().getTableProperties(table);
+                if (tableProperties == null) {
+                    throw new IllegalArgumentException("configured output table: " + table + " does not exist");
+                }
+            } catch (TableNotFoundException tnfe) {
+                throw new IllegalArgumentException("configured output table: " + table + " does not exist");
+            }
+        }
+
         ShardedTableMapFile.setupFile(configuration);
 
         // setup the output format
-        IngestJob.configureMultiRFileOutputFormatter(configuration, null, null, 0, 0, false);
-
+        IngestJob.configureMultiRFileOutputFormatter(configuration, jobConfig.compression, null, 0, 0, false);
+        log.info("compression type: " + configuration.get("MultiRFileOutputFormatter.compression", "unknown"));
         // all changes to configuration must be before this line
         Job j = Job.getInstance(getConf());
 
         // check if using some form of accumulo in input
         if (jobConfig.inputFiles == null) {
-            Properties accumuloProperties = builder.build();
+            if (jobConfig.startDate == null) {
+                throw new IllegalArgumentException("startDate cannot be null when inputFiles are not specified");
+            }
+
+            if (jobConfig.endDate == null) {
+                throw new IllegalArgumentException("endDate cannot be null when inputFiles are not specified");
+            }
+
             if (jobConfig.accumuloMetadata) {
+
                 // fetch the file list by scanning the accumulo.metadata table
                 jobConfig.inputFiles = org.apache.hadoop.util.StringUtils.join(",", getSplitsFromMetadata(accumuloProperties, jobConfig.table,
                                 new Range(new Key(jobConfig.startDate), true, new Key(jobConfig.endDate), true)));
             } else if (!jobConfig.accumuloData) {
                 // build ranges
-                Collection<Range> ranges = buildRanges(jobConfig.startDate, jobConfig.endDate, jobConfig.splitsPerDay);
+                Collection<Range> ranges = null;
+                if (jobConfig.reprocessEvents) {
+                    ranges = buildRanges(jobConfig.startDate, jobConfig.endDate, jobConfig.splitsPerDay, new Text(), new Text());
+                } else {
+                    ranges = buildFiRanges(jobConfig.startDate, jobConfig.endDate, jobConfig.splitsPerDay);
+                }
+
+                if (ranges.size() == 0) {
+                    throw new IllegalArgumentException("no ranges created from start: " + jobConfig.startDate + " end: " + jobConfig.endDate);
+                }
+
+                for (Range r : ranges) {
+                    log.info("Range: " + r);
+                }
 
                 // do not auto adjust ranges because they will be clipped and drop the column qualifier. this will result in full table scans
                 AccumuloInputFormat.configure().clientProperties(accumuloProperties).table(jobConfig.table).autoAdjustRanges(false).batchScan(false)
@@ -181,6 +236,7 @@ public class ShardReindexJob implements Tool {
         for (String jarName : jarNames) {
             File jar = new File(jarName);
             Path path = new Path(jobConfig.cacheDir, jar.getName());
+            log.info("jar: " + jar);
             j.addFileToClassPath(path);
         }
 
@@ -252,7 +308,12 @@ public class ShardReindexJob implements Tool {
         return rangeSplits;
     }
 
-    public static Collection<Range> buildRanges(String start, String end, int splitsPerDay) throws ParseException {
+    public static Collection<Range> buildFiRanges(String start, String end, int splitsPerDay) throws ParseException {
+        return buildRanges(start, end, splitsPerDay, FI_START, FI_END);
+    }
+
+    public static Collection<Range> buildRanges(String start, String end, int splitsPerDay, Text cfStart, Text cfEnd) throws ParseException {
+        log.info("building ranges startDate: " + start + " endDate: " + end + " splits: " + splitsPerDay);
         SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyyMMdd");
 
         List<Range> ranges = new ArrayList<>();
@@ -266,9 +327,14 @@ public class ShardReindexJob implements Tool {
             String row = dateFormatter.format(current);
             for (int i = 0; i < splitsPerDay; i++) {
                 Text rowText = new Text(row + "_" + i);
-                Key startKey = new Key(rowText, FI_START);
-                Key endKey = new Key(rowText, FI_END);
+                Key startKey = new Key(rowText, cfStart);
+                Key endKey = new Key(rowText, cfEnd);
                 Range r = new Range(startKey, true, endKey, true);
+                if (cfStart.equals(cfEnd)) {
+                    endKey = new Key(new Text(rowText.toString() + '\u0000'));
+                    r = new Range(startKey, true, endKey, false);
+                }
+
                 ranges.add(r);
             }
 
@@ -428,6 +494,19 @@ public class ShardReindexJob implements Tool {
         @Parameter(names = "--preserveTimestamps",
                         description = "preserve event timestamps when generating index entries instead of flooring them to the beginning of the day")
         private boolean preserveTimestamps = false;
+
+        @Parameter(names = "--counters", description = "Include generated counters in map reduce job")
+        private boolean enableCounters = false;
+
+        @Parameter(names = "--dumpCounters", description = "Write counters to stdout instead of to the task mapred task counters")
+        private boolean dumpCounters;
+
+        @Parameter(names = "--compression", description = "Compression to use for generated rfiles")
+        private String compression = "zstd";
+
+        @Parameter(names = "--batchMode",
+                        description = "if enabled and --reprocessEvents is enabled events will be processed together in batches. NONE,FIELD,EVENT,TLD are valid options")
+        private String batchMode = "NONE";
 
         @Parameter(names = {"-h", "--help"}, description = "display help", help = true)
         private boolean help;

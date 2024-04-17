@@ -63,7 +63,7 @@ public class ShardReindexJobTest extends EasyMockSupport {
     public void oneDayRange_test() throws ParseException {
         replayAll();
 
-        Collection<Range> ranges = ShardReindexJob.buildRanges("20230925", "20230925", 5);
+        Collection<Range> ranges = ShardReindexJob.buildFiRanges("20230925", "20230925", 5);
 
         verifyAll();
 
@@ -77,7 +77,7 @@ public class ShardReindexJobTest extends EasyMockSupport {
     public void twoDayRange_test() throws ParseException {
         replayAll();
 
-        Collection<Range> ranges = ShardReindexJob.buildRanges("20230925", "20230926", 5);
+        Collection<Range> ranges = ShardReindexJob.buildFiRanges("20230925", "20230926", 5);
 
         verifyAll();
 
@@ -92,7 +92,7 @@ public class ShardReindexJobTest extends EasyMockSupport {
     public void oneWeekRange_test() throws ParseException {
         replayAll();
 
-        Collection<Range> ranges = ShardReindexJob.buildRanges("20230901", "20230907", 5);
+        Collection<Range> ranges = ShardReindexJob.buildFiRanges("20230901", "20230907", 5);
 
         verifyAll();
 
@@ -112,7 +112,7 @@ public class ShardReindexJobTest extends EasyMockSupport {
     public void monthRollover_test() throws ParseException {
         replayAll();
 
-        Collection<Range> ranges = ShardReindexJob.buildRanges("20230831", "20230901", 5);
+        Collection<Range> ranges = ShardReindexJob.buildFiRanges("20230831", "20230901", 5);
 
         verifyAll();
 
@@ -127,7 +127,7 @@ public class ShardReindexJobTest extends EasyMockSupport {
     public void singleSplit_test() throws ParseException {
         replayAll();
 
-        Collection<Range> ranges = ShardReindexJob.buildRanges("20230831", "20230831", 1);
+        Collection<Range> ranges = ShardReindexJob.buildFiRanges("20230831", "20230831", 1);
 
         verifyAll();
 
@@ -136,4 +136,10 @@ public class ShardReindexJobTest extends EasyMockSupport {
 
         verifyRanges(ranges, expected);
     }
+
+    @Test
+    public void noInputFiles_noDates_test() {
+        // TODO
+    }
+
 }
