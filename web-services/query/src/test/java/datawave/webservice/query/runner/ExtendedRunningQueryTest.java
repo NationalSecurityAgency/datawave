@@ -173,6 +173,7 @@ public class ExtendedRunningQueryTest {
             expect(this.transformIterator.next()).andReturn(iterator.next());
             expect(this.transformIterator.getTransformer()).andReturn(transformer);
         }
+        expect(this.transformIterator.hasNext()).andReturn(iterator.hasNext());
         expect(this.query.getPagesize()).andReturn(pageSize).anyTimes();
         expect(this.queryLogic.getMaxPageSize()).andReturn(maxPageSize).anyTimes();
         expect(this.queryLogic.getPageByteTrigger()).andReturn(pageByteTrigger).anyTimes();
@@ -265,6 +266,7 @@ public class ExtendedRunningQueryTest {
             expect(this.transformIterator.next()).andReturn(iterator.next());
             count++;
         }
+        expect(this.transformIterator.hasNext()).andReturn(iterator.hasNext());
         expect(this.transformIterator.getTransformer()).andReturn(transformer).times(count);
 
         expect(this.query.getPagesize()).andReturn(pageSize).anyTimes();
@@ -316,6 +318,8 @@ public class ExtendedRunningQueryTest {
         DatawaveUser user = new DatawaveUser(SubjectIssuerDNPair.of("userDN", "issuerDN"), UserType.USER, Collections.singleton(methodAuths), null, null, 0L);
         DatawavePrincipal principal = new DatawavePrincipal(Collections.singletonList(user));
         long maxResults = 100L;
+        int pageSize = 5;
+        int maxPageSize = 5;
 
         // Set expectations
         expect(this.queryLogic.getCollectQueryMetrics()).andReturn(true);
@@ -342,6 +346,8 @@ public class ExtendedRunningQueryTest {
         expect(this.queryLogic.isLongRunningQuery()).andReturn(false);
         expect(this.queryLogic.getResultLimit(eq(this.query))).andReturn(maxResults);
         expect(this.queryLogic.getMaxResults()).andReturn(maxResults);
+        expect(this.query.getPagesize()).andReturn(pageSize).anyTimes();
+        expect(this.queryLogic.getMaxPageSize()).andReturn(maxPageSize).anyTimes();
         this.queryLogic.preInitialize(this.query, WSAuthorizationsUtil.buildAuthorizations(Collections.singleton(Collections.singleton("AUTH_1"))));
         expect(this.queryLogic.getUserOperations()).andReturn(null);
         this.queryLogic.setPageProcessingStartTime(anyLong());
@@ -475,7 +481,7 @@ public class ExtendedRunningQueryTest {
             expect(this.transformIterator.next()).andReturn(iterator.next());
             count++;
         }
-
+        expect(this.transformIterator.hasNext()).andReturn(iterator.hasNext());
         // now that the results thread is separate from the running query thread, we could continue getting stuff
         expect(this.transformIterator.getTransformer()).andReturn(transformer).anyTimes();
         expect(this.transformIterator.hasNext()).andReturn(iterator.hasNext()).anyTimes();
