@@ -252,6 +252,7 @@ public class IngestJob implements Tool {
 
     @Override
     public int run(String[] args) throws Exception {
+        long setupStart = System.currentTimeMillis();
 
         Logger.getLogger(TypeRegistry.class).setLevel(Level.ALL);
 
@@ -324,7 +325,6 @@ public class IngestJob implements Tool {
         conf = job.getConfiguration();
 
         setupHandlers(conf);
-
         if (!useMapOnly || !outputMutations) {
             // Calculate the sampled splits, splits file, and set up the partitioner, but not if only doing only a map phase and outputting mutations
             // if not outputting mutations and only doing a map phase, we still need to go through this logic as the MultiRFileOutputFormatter
@@ -368,6 +368,8 @@ public class IngestJob implements Tool {
 
         startDaemonProcesses(conf);
         long start = System.currentTimeMillis();
+        log.info("JOB SETUP TIME: " + (start - setupStart));
+
         job.submit();
         JobID jobID = job.getJobID();
         log.info("JOB ID: " + jobID);
