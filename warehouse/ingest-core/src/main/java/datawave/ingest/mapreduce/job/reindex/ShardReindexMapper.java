@@ -103,7 +103,7 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
      */
     private BatchMode batchMode = BatchMode.NONE;
     /**
-     * Map contains Visibility -> Map FIELD -> Values
+     * Map from each visibility to all fields and values
      */
     private Map<Text,Map<String,List<String>>> batchValues = null;
     private RawRecordContainer batchEvent = null;
