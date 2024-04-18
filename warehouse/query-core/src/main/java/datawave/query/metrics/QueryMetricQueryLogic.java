@@ -49,6 +49,7 @@ public class QueryMetricQueryLogic extends ShardQueryLogic {
 
     public QueryMetricQueryLogic(QueryMetricQueryLogic other) {
         super(other);
+        this.runAsMetricsAdministrator = other.runAsMetricsAdministrator;
     }
 
     @Override
