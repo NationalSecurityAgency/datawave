@@ -3,17 +3,21 @@ package datawave.age.off.util;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
-import java.util.ArrayList;
 
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBElement;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Marshaller;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.annotations.VisibleForTesting;
+
+import datawave.ingest.util.cache.watch.AgeOffRuleLoader;
 
 /**
  * Formats a rule
@@ -23,7 +27,7 @@ public class AgeOffRuleFormatter {
 
     private final AgeOffRuleConfiguration configuration;
     private final String indent;
-    private Writer writer;
+    private static int index = 0;
 
     public AgeOffRuleFormatter(AgeOffRuleConfiguration configuration) {
         this.configuration = configuration;
@@ -40,105 +44,76 @@ public class AgeOffRuleFormatter {
      */
     @VisibleForTesting
     void format(Writer writer) throws IOException {
-        this.writer = writer;
-        openRuleElement();
-        writeFilterClass();
-        writeTtl();
-        writeMergeElement();
-        writeMatchPattern();
-        writeCustomElements();
-        closeRuleElement();
+
+        AgeOffRuleLoader.RuleConfig ruleConfig = createRuleConfig(this.configuration);
+
+        writer.write(transformToXmlString(ruleConfig));
+        writer.close();
     }
 
-    private void openRuleElement() throws IOException {
-        StringBuilder sb = new StringBuilder();
-        sb.append("<rule");
-
-        String ruleLabel = this.configuration.getRuleLabel();
-        if (null != ruleLabel) {
-            log.debug("Adding label attribute to rule: {}", ruleLabel);
-            sb.append(" label=\"").append(ruleLabel).append("\"");
-        }
-
-        if (this.configuration.shouldMerge()) {
-            log.debug("Adding merge attribute to rule");
-            sb.append(" mode=\"merge\"");
-        }
-        sb.append(">\n");
-
-        this.writer.write(sb.toString());
+    private AgeOffRuleLoader.RuleConfig createRuleConfig(AgeOffRuleConfiguration configuration) throws IOException {
+        AgeOffRuleLoader.RuleConfig ruleConfig = new AgeOffRuleLoader.RuleConfig(this.configuration.getFilterClass().getName(), index++);
+        ruleConfig.label(configuration.getRuleLabel());
+        ruleConfig.setIsMerge(this.configuration.shouldMerge());
+        ruleConfig.ttlValue(this.configuration.getTtlDuration());
+        ruleConfig.ttlUnits(this.configuration.getTtlUnits());
+        ruleConfig.matchPattern(buildMatchPattern());
+        ruleConfig.customElements(this.configuration.getCustomElements());
+        return ruleConfig;
     }
 
-    private void writeFilterClass() throws IOException {
-        this.writer.write(indent + "<filterClass>" + this.configuration.getFilterClass().getName() + "</filterClass>\n");
-    }
+    private String transformToXmlString(AgeOffRuleLoader.RuleConfig ruleConfig) throws IOException {
+        try {
+            Transformer trans = initializeXmlTransformer();
 
-    private void writeTtl() throws IOException {
-        String duration = this.configuration.getTtlDuration();
+            Writer writer = new StringWriter();
 
-        if (duration != null) {
-            String units = configuration.getTtlUnits();
-            log.debug("Writing ttl for duration {} and units {}", duration, units);
-            this.writer.write(indent + "<ttl units=\"" + units + "\">" + duration + "</ttl>\n");
+            StreamResult result = new StreamResult(writer);
+            DOMSource source = new DOMSource(new RuleConfigDocument(ruleConfig));
+            trans.transform(source, result);
+
+            return writer.toString();
+        } catch (TransformerException e) {
+            throw new IOException("Failed to transform to XML", e);
         }
     }
 
-    private void writeMergeElement() throws IOException {
-        if (this.configuration.shouldMerge()) {
-            log.debug("Writing ismerge element");
-            this.writer.write(configuration.getIndentation() + "<ismerge>true</ismerge>\n");
-        }
+    private Transformer initializeXmlTransformer() throws TransformerConfigurationException {
+        Transformer trans = TransformerFactory.newInstance().newTransformer();
+        trans.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
+        trans.setOutputProperty(OutputKeys.METHOD, "xml");
+        trans.setOutputProperty(OutputKeys.INDENT, "yes");
+        trans.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", calculateIndentAmount());
+        return trans;
     }
 
-    private void writeMatchPattern() throws IOException {
+    private String calculateIndentAmount() {
+        int length = configuration.getIndentation().length();
+        // add another four for every tab
+        length += (int) (4 * configuration.getIndentation().chars().filter(character -> character == '\t').count());
+        return Integer.toString(length);
+    }
+
+    private String buildMatchPattern() throws IOException {
         if (configuration.getPatternConfiguration() == null) {
-            return;
+            return "";
         }
 
         log.debug("Writing match pattern");
 
-        this.writer.write(indent + "<matchPattern>\n");
-
+        StringWriter writer = new StringWriter();
         AgeOffCsvToMatchPatternFormatter patternFormatter = new AgeOffCsvToMatchPatternFormatter(configuration.getPatternConfiguration());
 
         // add two indentations: one for items under the rule element and another for items under the matchPattern element
         String extraIndentation = this.indent + this.indent;
-        patternFormatter.write(new IndentingDelegatingWriter(extraIndentation, this.writer));
+        patternFormatter.write(new IndentingDelegatingWriter(extraIndentation, writer));
 
-        this.writer.write(indent + "</matchPattern>\n");
-    }
+        String result = writer.toString();
 
-    private void writeCustomElements() throws IOException {
-        ArrayList<JAXBElement<?>> customElements = this.configuration.getCustomElements();
-
-        if (null == customElements) {
-            return;
+        // final indentation to precede the closing of matchPattern
+        if (result.endsWith("\n")) {
+            return result + this.indent;
         }
-
-        for (JAXBElement<?> customElement : customElements) {
-            writeCustomElement(customElement);
-        }
-    }
-
-    private void writeCustomElement(JAXBElement<?> customElement) throws IOException {
-        StringWriter tempWriter = new StringWriter();
-        marshalObject(customElement, tempWriter);
-        log.debug("Marshalled custom object to String: {}", tempWriter);
-        this.writer.write(indent + tempWriter + "\n");
-    }
-
-    private void marshalObject(JAXBElement<?> obj, Writer writer) throws IOException {
-        try {
-            JAXBContext jc = JAXBContext.newInstance(AnyXmlElement.class, obj.getClass());
-            Marshaller marshaller = jc.createMarshaller();
-            marshaller.setProperty(Marshaller.JAXB_FRAGMENT, Boolean.TRUE);
-            marshaller.marshal(obj, writer);
-        } catch (JAXBException e) {
-            throw new IOException(e);
-        }
-    }
-
-    private void closeRuleElement() throws IOException {
-        this.writer.write("</rule>\n");
+        return result;
     }
 }

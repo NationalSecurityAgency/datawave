@@ -1,18 +1,21 @@
 package datawave.age.off.util;
 
-import static datawave.age.off.util.AnyXmlElement.toJAXBElement;
 import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
 import java.io.StringWriter;
 
-import javax.xml.bind.JAXBElement;
-import javax.xml.namespace.QName;
-
+import org.apache.xerces.dom.DocumentImpl;
 import org.junit.Test;
+import org.w3c.dom.Element;
 
 public class AgeOffRuleFormatterTest {
-
+    /**
+     *
+     * <ttl units="d">720</ttl> <datatypes>foo,bar</datatypes> <bar.ttl>44</bar.ttl>
+     *
+     * @throws IOException
+     */
     @Test
     public void createRuleFromCsv() throws IOException {
         // @formatter:off
@@ -65,13 +68,13 @@ public class AgeOffRuleFormatterTest {
         String units = "ms";
         builder.withTtl(duration, units);
 
-        builder.addCustomElement(new JAXBElement<>(QName.valueOf("matchPattern"), String.class, "1"));
+        builder.addSimpleElement("matchPattern", "1");
 
-        AnyXmlElement any = new AnyXmlElement();
-        any.addAttribute(new QName("ttl"), "1234");
-        builder.addCustomElement(toJAXBElement(new QName("myTagName"), any));
+        Element element = new DocumentImpl().createElement("myTagName");
+        element.setAttribute("ttl", "1234");
+        builder.addCustomElement(element);
 
-        builder.addCustomElement(new JAXBElement<>(QName.valueOf("filtersWater"), Boolean.class, Boolean.FALSE));
+        builder.addSimpleElement("filtersWater", Boolean.FALSE.toString());
 
         assertEquals(expectedOutputText, generateRule(builder));
     }
@@ -81,10 +84,10 @@ public class AgeOffRuleFormatterTest {
         // @formatter:off
         String expectedOutputText =
                 "<rule>\n" +
-                "\t<filterClass>datawave.iterators.filter.ageoff.DataTypeAgeOffFilter</filterClass>\n" +
-                "\t<ttl units=\"d\">720</ttl>\n" +
-                "\t<datatypes>foo,bar</datatypes>\n" +
-                "\t<bar.ttl>44</bar.ttl>\n" +
+                "     <filterClass>datawave.iterators.filter.ageoff.DataTypeAgeOffFilter</filterClass>\n" +
+                "     <ttl units=\"d\">720</ttl>\n" +
+                "     <datatypes>foo,bar</datatypes>\n" +
+                "     <bar.ttl>44</bar.ttl>\n" +
                 "</rule>\n";
         // @formatter:on
 
@@ -96,9 +99,8 @@ public class AgeOffRuleFormatterTest {
         String units = "d";
         builder.withTtl(duration, units);
 
-        builder.addCustomElement(new JAXBElement<>(QName.valueOf("datatypes"), String.class, "foo,bar"));
-
-        builder.addCustomElement(new JAXBElement<>(QName.valueOf("bar.ttl"), Integer.class, 44));
+        builder.addSimpleElement("datatypes", "foo,bar");
+        builder.addSimpleElement("bar.ttl", "44");
 
         assertEquals(expectedOutputText, generateRule(builder));
     }
@@ -119,7 +121,7 @@ public class AgeOffRuleFormatterTest {
         builder.useMerge();
         builder.withFilterClass(datawave.iterators.filter.ageoff.DataTypeAgeOffFilter.class);
 
-        builder.addCustomElement(new JAXBElement<>(QName.valueOf("isindextable"), Boolean.class, true));
+        builder.addSimpleElement("isindextable", Boolean.TRUE.toString());
 
         assertEquals(expectedOutputText, generateRule(builder));
     }
@@ -146,12 +148,12 @@ public class AgeOffRuleFormatterTest {
         String units = "s";
         builder.withTtl(duration, units);
 
-        builder.addCustomElement(new JAXBElement<>(QName.valueOf("isindextable"), Boolean.class, true));
+        builder.addSimpleElement("isindextable", Boolean.TRUE.toString());
 
-        builder.addCustomElement(new JAXBElement<>(QName.valueOf("fields"), String.class, "field_y,field_z"));
+        builder.addSimpleElement("fields", "field_y,field_z");
 
-        builder.addCustomElement(new JAXBElement<>(QName.valueOf("field_y.ttl"), Integer.class, 1));
-        builder.addCustomElement(new JAXBElement<>(QName.valueOf("field_z.ttl"), Integer.class, 2));
+        builder.addSimpleElement("field_y.ttl", "1");
+        builder.addSimpleElement("field_z.ttl", "2");
 
         assertEquals(fieldAgeOffRule, generateRule(builder));
     }
@@ -175,18 +177,14 @@ public class AgeOffRuleFormatterTest {
         builder.withIndentation("  ");
         builder.withFilterClass(datawave.iterators.filter.ageoff.FieldAgeOffFilter.class);
 
-        String units = "s";
-        builder.addCustomElement(new JAXBElement<>(QName.valueOf("ttlUnits"), String.class, units));
+        builder.addSimpleElement("ttlUnits", "s");
 
-        String duration = "5";
-        builder.addCustomElement(new JAXBElement<>(QName.valueOf("ttlValue"), String.class, duration));
+        builder.addSimpleElement("ttlValue", "5");
 
-        builder.addCustomElement(new JAXBElement<>(QName.valueOf("matchPattern"), String.class, "*"));
-
-        builder.addCustomElement(new JAXBElement<>(QName.valueOf("fields"), String.class, "field_y,field_z"));
-
-        builder.addCustomElement(new JAXBElement<>(QName.valueOf("field_y.ttl"), Integer.class, 1));
-        builder.addCustomElement(new JAXBElement<>(QName.valueOf("field_z.ttl"), Integer.class, 2));
+        builder.addSimpleElement("matchPattern", "*");
+        builder.addSimpleElement("fields", "field_y,field_z");
+        builder.addSimpleElement("field_y.ttl", "1");
+        builder.addSimpleElement("field_z.ttl", "2");
 
         assertEquals(fieldAgeOffRule, generateRule(builder));
     }

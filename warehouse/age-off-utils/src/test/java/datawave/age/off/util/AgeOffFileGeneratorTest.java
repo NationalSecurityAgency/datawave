@@ -1,6 +1,5 @@
 package datawave.age.off.util;
 
-import static datawave.age.off.util.AnyXmlElement.toJAXBElement;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -14,13 +13,12 @@ import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
-import javax.xml.bind.JAXBElement;
-import javax.xml.namespace.QName;
-
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
+import org.apache.xerces.dom.DocumentImpl;
 import org.junit.Test;
+import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
 import datawave.ingest.util.cache.watch.AgeOffRuleLoader;
@@ -52,10 +50,10 @@ public class AgeOffFileGeneratorTest {
         "               </matchPattern>\n" +
         "          </rule>\n" +
         "          <rule>\n" +
-        "          \t<filterClass>datawave.iterators.filter.ageoff.DataTypeAgeOffFilter</filterClass>\n" +
-        "          \t<ttl units=\"d\">720</ttl>\n" +
-        "          \t<datatypes>foo,bar</datatypes>\n" +
-        "          \t<bar.ttl>44</bar.ttl>\n" +
+        "               <filterClass>datawave.iterators.filter.ageoff.DataTypeAgeOffFilter</filterClass>\n" +
+        "               <ttl units=\"d\">720</ttl>\n" +
+        "               <datatypes>foo,bar</datatypes>\n" +
+        "               <bar.ttl>44</bar.ttl>\n" +
         "          </rule>\n" +
         "          <rule>\n" +
         "               <filterClass>datawave.ingest.util.cache.watch.TestFilter</filterClass>\n" +
@@ -199,7 +197,7 @@ public class AgeOffFileGeneratorTest {
     // @formatter:on
 
     @Test
-    public void createFileWithTwoRules() throws IOException {
+    public void createFileWithMultipleRules() throws IOException {
         AgeOffRuleConfiguration.Builder colVisFilterRule = defineColVisFilterRule();
         AgeOffRuleConfiguration.Builder testFilterRule = defineTestFilterRule();
         AgeOffRuleConfiguration.Builder dataTypeRule = defineDataTypeRule();
@@ -214,8 +212,7 @@ public class AgeOffFileGeneratorTest {
     }
 
     @Test
-    public void createFileWithThreeRules() throws IOException, URISyntaxException {
-
+    public void createAnotherFileWithMultipleRules() throws IOException, URISyntaxException {
         AgeOffRuleConfiguration.Builder dataTypeIndexTableRule = defineDataTypeRuleIndexTable();
         AgeOffRuleConfiguration.Builder fieldRule = defineFieldAgeOffRule();
 
@@ -272,13 +269,14 @@ public class AgeOffFileGeneratorTest {
         String units = "ms";
         builder.withTtl(duration, units);
 
-        builder.addCustomElement(new JAXBElement<>(QName.valueOf("matchPattern"), String.class, "1"));
+        builder.addSimpleElement("matchPattern", "1");
 
-        AnyXmlElement any = new AnyXmlElement();
-        any.addAttribute(new QName("ttl"), "1234");
-        builder.addCustomElement(toJAXBElement(new QName("myTagName"), any));
+        Element ttlElement = new DocumentImpl().createElement("myTagName");
+        ttlElement.setAttribute("ttl", "1234");
+        builder.addCustomElement(ttlElement);
 
-        builder.addCustomElement(new JAXBElement<>(QName.valueOf("filtersWater"), Boolean.class, Boolean.FALSE));
+        builder.addSimpleElement("filtersWater", Boolean.FALSE.toString());
+
         return builder;
     }
 
@@ -320,9 +318,9 @@ public class AgeOffFileGeneratorTest {
         String units = "d";
         builder.withTtl(duration, units);
 
-        builder.addCustomElement(new JAXBElement<>(QName.valueOf("datatypes"), String.class, "foo,bar"));
+        builder.addSimpleElement("datatypes", "foo,bar");
+        builder.addSimpleElement("bar.ttl", Integer.toString(44));
 
-        builder.addCustomElement(new JAXBElement<>(QName.valueOf("bar.ttl"), Integer.class, 44));
         return builder;
     }
 
@@ -332,7 +330,7 @@ public class AgeOffFileGeneratorTest {
         builder.useMerge();
         builder.withFilterClass(datawave.iterators.filter.ageoff.DataTypeAgeOffFilter.class);
 
-        builder.addCustomElement(new JAXBElement<>(QName.valueOf("isindextable"), Boolean.class, true));
+        builder.addSimpleElement("isindextable", Boolean.TRUE.toString());
         return builder;
     }
 
@@ -345,12 +343,11 @@ public class AgeOffFileGeneratorTest {
         String units = "s";
         builder.withTtl(duration, units);
 
-        builder.addCustomElement(new JAXBElement<>(QName.valueOf("isindextable"), Boolean.class, true));
+        builder.addSimpleElement("isindextable", Boolean.TRUE.toString());
+        builder.addSimpleElement("fields", "field_y,field_z");
+        builder.addSimpleElement("field_y.ttl", Integer.toString(1));
+        builder.addSimpleElement("field_z.ttl", Integer.toString(2));
 
-        builder.addCustomElement(new JAXBElement<>(QName.valueOf("fields"), String.class, "field_y,field_z"));
-
-        builder.addCustomElement(new JAXBElement<>(QName.valueOf("field_y.ttl"), Integer.class, 1));
-        builder.addCustomElement(new JAXBElement<>(QName.valueOf("field_z.ttl"), Integer.class, 2));
         return builder;
     }
 

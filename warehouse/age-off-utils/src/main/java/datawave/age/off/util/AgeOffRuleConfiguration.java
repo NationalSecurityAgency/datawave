@@ -2,7 +2,8 @@ package datawave.age.off.util;
 
 import java.util.ArrayList;
 
-import javax.xml.bind.JAXBElement;
+import org.apache.xerces.dom.DocumentImpl;
+import org.w3c.dom.Element;
 
 import datawave.iterators.filter.ageoff.FilterRule;
 
@@ -15,7 +16,7 @@ public class AgeOffRuleConfiguration {
     private String indentation = DEFAULT_INDENTATION;
     private String ttlDuration;
     private String ttlUnits;
-    private ArrayList<JAXBElement<?>> customElements;
+    private ArrayList<Element> customElements;
 
     private AgeOffRuleConfiguration() {}
 
@@ -23,7 +24,7 @@ public class AgeOffRuleConfiguration {
         return indentation;
     }
 
-    public ArrayList<JAXBElement<?>> getCustomElements() {
+    public ArrayList<Element> getCustomElements() {
         return customElements;
     }
 
@@ -93,11 +94,18 @@ public class AgeOffRuleConfiguration {
             return result;
         }
 
-        public void addCustomElement(JAXBElement<?> customElement) {
+        public Builder addSimpleElement(String elementName, String textContent) {
+            Element element = new DocumentImpl().createElement(elementName);
+            element.setTextContent(textContent);
+            return addCustomElement(element);
+        }
+
+        public Builder addCustomElement(Element customElement) {
             if (result.customElements == null) {
                 result.customElements = new ArrayList<>();
             }
             result.customElements.add(customElement);
+            return this;
         }
     }
 }

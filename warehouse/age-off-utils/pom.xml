@@ -28,13 +28,6 @@
                 </exclusion>
             </exclusions>
         </dependency>
-        <!-- For JAXBElement -->
-        <dependency>
-            <groupId>jakarta.xml.bind</groupId>
-            <artifactId>jakarta.xml.bind-api</artifactId>
-            <version>${version.jakarta}</version>
-            <scope>compile</scope>
-        </dependency>
         <dependency>
             <groupId>org.apache.accumulo</groupId>
             <artifactId>accumulo-core</artifactId>
@@ -44,6 +37,20 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
+            <scope>compile</scope>
+        </dependency>
+        <!-- RuleConfigDocument -->
+        <dependency>
+            <groupId>xerces</groupId>
+            <artifactId>xercesImpl</artifactId>
+            <version>${version.xerces}</version>
+            <scope>compile</scope>
+        </dependency>
+        <!-- RuleConfigDocument -->
+        <dependency>
+            <groupId>xml-apis</groupId>
+            <artifactId>xml-apis</artifactId>
+            <version>1.4.01</version>
             <scope>compile</scope>
         </dependency>
         <!-- Test jar for TestFilter, etc. -->

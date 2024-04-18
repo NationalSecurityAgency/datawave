@@ -312,16 +312,18 @@ public class AgeOffRuleLoader {
 
     /**
      * Temporary holding class for rule configs to allow merges of rules;
+     *
      */
-    private static class RuleConfig {
-        String ttlValue = null;
-        String ttlUnits = null;
-        String matchPattern = "";
-        String filterClassName = null;
-        String label;
-        boolean isMerge = false;
-        Map<String,String> extendedOptions = new HashMap<>();
-        int priority = -1;
+    public static class RuleConfig {
+        private int priority;
+        public String filterClassName;
+        public String ttlValue = null;
+        public String ttlUnits = null;
+        public String matchPattern = null;
+        public String label;
+        public boolean isMerge = false;
+        public Map<String,String> extendedOptions = new HashMap<>();
+        public List<Element> customElements = new ArrayList<>();
 
         public RuleConfig(String filterClassName, int priority) {
             this.filterClassName = filterClassName;
@@ -345,6 +347,11 @@ public class AgeOffRuleLoader {
 
         public RuleConfig label(String label) {
             this.label = label;
+            return this;
+        }
+
+        public RuleConfig customElements(List<Element> customElements) {
+            this.customElements = customElements;
             return this;
         }
 
