@@ -5,6 +5,8 @@
         <groupId>gov.nsa.datawave</groupId>
         <artifactId>datawave-warehouse-parent</artifactId>
         <version>6.7.3-SNAPSHOT</version>
+        <artifactId>datawave-parent</artifactId>
+        <relativePath>../../pom.xml</relativePath>
     </parent>
     <artifactId>datawave-ssdeep-common</artifactId>
     <properties>
