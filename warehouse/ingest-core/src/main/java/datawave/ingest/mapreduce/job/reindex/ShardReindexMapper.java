@@ -574,7 +574,8 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
             return false;
         } else if (this.batchMode == BatchMode.FIELD) {
             // check the events match
-            if (this.batchEvent != null && !(this.event.getId().equals(this.batchEvent.getId()) && this.event.getDate() == this.batchEvent.getDate() && this.event.getDataType().equals(this.batchEvent.getDataType()))) {
+            if (this.batchEvent != null && !(this.event.getId().equals(this.batchEvent.getId()) && this.event.getDate() == this.batchEvent.getDate()
+                            && this.event.getDataType().equals(this.batchEvent.getDataType()))) {
                 // process the existing batch even though the fields match
                 processBatch(context);
             } else if (!batchIncludesField(fieldName)) {
@@ -638,7 +639,7 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
 
             Map<String,List<String>> fieldValues = this.batchValues.get(visibility);
             for (String batchField : fieldValues.keySet()) {
-                for(String batchValue : fieldValues.get(batchField)) {
+                for (String batchValue : fieldValues.get(batchField)) {
                     this.dataMap.put(batchField, batchValue);
                 }
             }
