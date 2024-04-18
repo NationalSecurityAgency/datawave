@@ -1,6 +1,5 @@
 package datawave.query.metrics;
 
-import java.util.Collection;
 import java.util.Set;
 
 import org.apache.accumulo.core.client.AccumuloClient;
@@ -41,26 +40,17 @@ public class QueryMetricQueryLogic extends ShardQueryLogic {
 
     private static final String METRICS_ADMIN_ROLE = "MetricsAdministrator";
 
-    boolean runAsMetricsAdministrator = false;
-
     public QueryMetricQueryLogic() {
         super();
     }
 
     public QueryMetricQueryLogic(QueryMetricQueryLogic other) {
         super(other);
-        this.runAsMetricsAdministrator = other.runAsMetricsAdministrator;
     }
 
     @Override
     public QueryMetricQueryLogic clone() {
         return new QueryMetricQueryLogic(this);
-    }
-
-    @Override
-    public boolean canRunQuery(Collection<String> userRoles) {
-        this.runAsMetricsAdministrator = userRoles.stream().anyMatch(role -> role.equals(METRICS_ADMIN_ROLE));
-        return super.canRunQuery(userRoles);
     }
 
     @Override
@@ -71,7 +61,7 @@ public class QueryMetricQueryLogic extends ShardQueryLogic {
     @Override
     public final String getJexlQueryString(Query settings) throws ParseException {
         String query = super.getJexlQueryString(settings);
-        if (this.runAsMetricsAdministrator) {
+        if (this.getCurrentUser().getPrimaryUser().getRoles().contains(METRICS_ADMIN_ROLE)) {
             return query;
         }
 
