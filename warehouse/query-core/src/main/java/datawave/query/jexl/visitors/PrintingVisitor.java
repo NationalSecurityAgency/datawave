@@ -336,7 +336,7 @@ public class PrintingVisitor extends ParserVisitor {
     }
 
     private void childrenAccept(SimpleNode node, ParserVisitor visitor, Object data) {
-        LOGGER.debug("maxTermsToPrint is now: " + maxTermsToPrint);
+        LOGGER.trace("maxTermsToPrint: " + maxTermsToPrint + " -- maxChildNodes: " + maxChildNodes);
         if (maxChildNodes > 0 && node.jjtGetNumChildren() > maxChildNodes) {
             output.writeLine(data + "(Showing " + maxChildNodes + " of " + node.jjtGetNumChildren() + " child nodes)");
             for (int i = 0; i < maxChildNodes; i++)
