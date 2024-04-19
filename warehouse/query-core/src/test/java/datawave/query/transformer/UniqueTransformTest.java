@@ -542,7 +542,7 @@ public class UniqueTransformTest {
     }
 
     protected void updateUniqueTransform(UniqueTransform uniqueTransform) {
-        uniqueTransform.updateConfig(uniqueFields, null);
+        uniqueTransform.updateConfig(uniqueFields);
     }
 
     protected InputDocumentBuilder givenInputDocument() {
@@ -636,13 +636,16 @@ public class UniqueTransformTest {
             try {
                 ByteArrayOutputStream bytes = new ByteArrayOutputStream();
                 DataOutputStream output = new DataOutputStream(bytes);
-                int count = 0;
                 for (String field : fieldValues.keySet()) {
-                    String separator = "f-" + field + '/' + (count++) + ":";
-                    for (String value : fieldValues.get(field)) {
+                    String separator = "f-" + field + ":";
+                    if (fieldValues.isEmpty()) {
                         output.writeUTF(separator);
-                        output.writeUTF(value);
-                        separator = ",";
+                    } else {
+                        for (String value : fieldValues.get(field)) {
+                            output.writeUTF(separator);
+                            output.writeUTF(value);
+                            separator = ",";
+                        }
                     }
                 }
                 output.flush();
