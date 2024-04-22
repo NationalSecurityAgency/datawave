@@ -261,7 +261,6 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
      *            the list of values
      * @param output
      *            the output stream
-     * @return The next field count
      * @throws IOException
      *             for issues with read/write
      */
