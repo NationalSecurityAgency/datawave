@@ -248,6 +248,9 @@ public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory 
         AccumuloClient mock = new InMemoryAccumuloClient(pool.getFactory().getUsername(), cache.getInstance());
         mock.securityOperations().changeLocalUserPassword(pool.getFactory().getUsername(), new PasswordToken(pool.getFactory().getPassword()));
         WrappedAccumuloClient wrappedAccumuloClient = new WrappedAccumuloClient(c, mock);
+        if (connectionPoolsConfiguration.getClientConfiguration(poolName) != null) {
+            wrappedAccumuloClient.setClientConfig(connectionPoolsConfiguration.getClientConfiguration(poolName).getConfiguration());
+        }
         String classLoaderContext = System.getProperty("dw.accumulo.classLoader.context");
         if (classLoaderContext != null) {
             wrappedAccumuloClient.setScannerClassLoaderContext(classLoaderContext);
