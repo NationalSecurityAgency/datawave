@@ -73,9 +73,6 @@
 [submodule "microservices/services/query-executor"]
 	path = microservices/services/query-executor
 	url = git@github.com:NationalSecurityAgency/datawave-query-executor-service.git
-[submodule "microservices/services/query-storage"]
-	path = microservices/services/query-storage
-	url = git@github.com:NationalSecurityAgency/datawave-query-storage-service.git
 [submodule "microservices/services/modification"]
 	path = microservices/services/modification
 	url = git@github.com:NationalSecurityAgency/datawave-modification-service.git
