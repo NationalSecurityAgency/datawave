@@ -36,7 +36,7 @@ public class LiteralNodeSubsetVisitor extends ShortCircuitBaseVisitor {
         Multimap<String,String> literals = (Multimap<String,String>) data;
 
         String identifier = JexlASTHelper.getIdentifier(node);
-        if (null != expectedFields && expectedFields.contains(identifier)) {
+        if (expectedFields.contains(identifier)) {
             Object literal = JexlASTHelper.getLiteralValue(node);
             literals.put(identifier, (literal == null ? null : literal.toString()));
         }
@@ -53,41 +53,20 @@ public class LiteralNodeSubsetVisitor extends ShortCircuitBaseVisitor {
 
     @Override
     public Object visit(ASTERNode node, Object data) {
-        Multimap<String,String> literals = (Multimap<String,String>) data;
-
-        String identifier = JexlASTHelper.getIdentifier(node);
-        if (expectedFields.contains(identifier)) {
-            Object literal = JexlASTHelper.getLiteralValue(node);
-            literals.put(identifier, (literal == null ? null : literal.toString()));
-        }
-
-        return literals;
+        node.childrenAccept(this, data);
+        return data;
     }
 
     @Override
     public Object visit(ASTNRNode node, Object data) {
-        Multimap<String,String> literals = (Multimap<String,String>) data;
-
-        String identifier = JexlASTHelper.getIdentifier(node);
-        if (expectedFields.contains(identifier)) {
-            Object literal = JexlASTHelper.getLiteralValue(node);
-            literals.put(identifier, (literal == null ? null : literal.toString()));
-        }
-
-        return literals;
+        node.childrenAccept(this, data);
+        return data;
     }
 
     @Override
     public Object visit(ASTNENode node, Object data) {
-        Multimap<String,String> literals = (Multimap<String,String>) data;
-
-        String identifier = JexlASTHelper.getIdentifier(node);
-        if (expectedFields.contains(identifier)) {
-            Object literal = JexlASTHelper.getLiteralValue(node);
-            literals.put(identifier, (literal == null ? null : literal.toString()));
-        }
-
-        return literals;
+        node.childrenAccept(this, data);
+        return data;
     }
 
 }
