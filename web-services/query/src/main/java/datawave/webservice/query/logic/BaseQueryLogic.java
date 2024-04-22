@@ -18,6 +18,7 @@ import datawave.audit.SelectorExtractor;
 import datawave.marking.MarkingFunctions;
 import datawave.security.authorization.UserOperations;
 import datawave.webservice.common.audit.Auditor.AuditType;
+import datawave.webservice.common.connection.AccumuloClientConfiguration;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.iterator.DatawaveTransformIterator;
@@ -46,6 +47,7 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     protected ResponseObjectFactory responseObjectFactory;
     protected SelectorExtractor selectorExtractor;
     protected ResponseEnricherBuilder responseEnricherBuilder = null;
+    protected AccumuloClientConfiguration clientConfig = null;
 
     public static final String BYPASS_ACCUMULO = "rfile.debug";
 
@@ -411,5 +413,15 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     public UserOperations getUserOperations() {
         // null implies that the local user operations/principal is to be used for auths.
         return null;
+    }
+
+    @Override
+    public void setClientConfig(AccumuloClientConfiguration clientConfig) {
+        this.clientConfig = clientConfig;
+    }
+
+    @Override
+    public AccumuloClientConfiguration getClientConfig() {
+        return clientConfig;
     }
 }
