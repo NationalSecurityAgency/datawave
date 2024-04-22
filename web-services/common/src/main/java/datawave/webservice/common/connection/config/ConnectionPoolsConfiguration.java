@@ -22,11 +22,13 @@ public class ConnectionPoolsConfiguration {
     private List<String> poolNames;
 
     private Map<String,ConnectionPoolConfiguration> pools = new HashMap<>();
+    private Map<String,ConnectionPoolClientConfiguration> configs = new HashMap<>();
 
     @PostConstruct
     private void initializePools() {
         for (String poolName : poolNames) {
             pools.put(poolName, new ConnectionPoolConfiguration(poolName.toLowerCase()));
+            configs.put(poolName, new ConnectionPoolClientConfiguration(poolName.toLowerCase()));
         }
     }
 
@@ -38,4 +40,15 @@ public class ConnectionPoolsConfiguration {
         return Collections.unmodifiableMap(pools);
     }
 
+    public ConnectionPoolConfiguration getConfiguration(String pool) {
+        return pools.get(pool);
+    }
+
+    public Map<String,ConnectionPoolClientConfiguration> getClientConfiguration() {
+        return Collections.unmodifiableMap(configs);
+    }
+
+    public ConnectionPoolClientConfiguration getClientConfiguration(String pool) {
+        return configs.get(pool);
+    }
 }
