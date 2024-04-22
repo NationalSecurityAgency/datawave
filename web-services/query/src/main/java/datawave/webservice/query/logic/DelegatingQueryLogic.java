@@ -15,6 +15,7 @@ import datawave.audit.SelectorExtractor;
 import datawave.marking.MarkingFunctions;
 import datawave.security.authorization.UserOperations;
 import datawave.webservice.common.audit.Auditor;
+import datawave.webservice.common.connection.AccumuloClientConfiguration;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
@@ -355,5 +356,15 @@ public abstract class DelegatingQueryLogic implements QueryLogic<Object> {
     @Override
     public UserOperations getUserOperations(Query settings) {
         return delegate.getUserOperations(settings);
+    }
+
+    @Override
+    public void setClientConfig(AccumuloClientConfiguration config) {
+        delegate.setClientConfig(config);
+    }
+
+    @Override
+    public AccumuloClientConfiguration getClientConfig() {
+        return delegate.getClientConfig();
     }
 }

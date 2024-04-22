@@ -15,6 +15,7 @@ import datawave.marking.MarkingFunctions;
 import datawave.security.authorization.UserOperations;
 import datawave.validation.ParameterValidator;
 import datawave.webservice.common.audit.Auditor.AuditType;
+import datawave.webservice.common.connection.AccumuloClientConfiguration;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
@@ -436,4 +437,18 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      * @return A user operations interface implementation. Null if NA (i.e. the local principal is sufficient)
      */
     UserOperations getUserOperations(Query settings);
+
+    /**
+     * Set a client configuration for scanner hints and consistency.
+     *
+     * @param config
+     */
+    void setClientConfig(AccumuloClientConfiguration config);
+
+    /**
+     * Get the client configuration
+     *
+     * @return client configuration
+     */
+    AccumuloClientConfiguration getClientConfig();
 }
