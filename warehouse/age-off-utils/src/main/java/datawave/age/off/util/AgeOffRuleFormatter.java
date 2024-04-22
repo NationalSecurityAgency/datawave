@@ -50,8 +50,13 @@ public class AgeOffRuleFormatter {
         writer.write(transformToXmlString(ruleConfig));
     }
 
+    private static void increment() {
+        index++;
+    }
+
     private AgeOffRuleLoader.RuleConfig createRuleConfig(AgeOffRuleConfiguration configuration) throws IOException {
-        AgeOffRuleLoader.RuleConfig ruleConfig = new AgeOffRuleLoader.RuleConfig(this.configuration.getFilterClass().getName(), index++);
+        AgeOffRuleLoader.RuleConfig ruleConfig = new AgeOffRuleLoader.RuleConfig(this.configuration.getFilterClass().getName(), index);
+        increment();
         ruleConfig.label(configuration.getRuleLabel());
         ruleConfig.setIsMerge(this.configuration.shouldMerge());
         ruleConfig.ttlValue(this.configuration.getTtlDuration());

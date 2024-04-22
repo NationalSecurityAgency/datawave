@@ -713,7 +713,10 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements 
      * Takes in a batch scanner and returns an iterator over the DiscoveredThing objects contained in the value.
      *
      * @param scanner
-     * @return
+     *            the batch scanner
+     * @param queryData
+     *            the query data
+     * @return the transform iterator
      */
     public static Iterator<Entry<Key,Value>> transformScanner(final BatchScanner scanner, final QueryData queryData) {
         return transform(scanner.iterator(), new Function<Entry<Key,Value>,Entry<Key,Value>>() {
@@ -795,6 +798,9 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements 
      *            the QueryData for the query logic to be configured
      * @param priority
      *            the priority for the first of iterator filters
+     *
+     * @throws Exception
+     *             when unable to add custom filter
      */
     protected void addCustomFilters(QueryData data, int priority) throws Exception {}
 

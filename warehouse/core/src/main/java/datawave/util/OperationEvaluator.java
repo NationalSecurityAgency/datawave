@@ -28,6 +28,9 @@ public class OperationEvaluator {
     public static final String GREATER_THAN_EQUALS = ">=";
     public static final String LESS_THAN = "<";
     public static final String LESS_THAN_EQUALS = "<=";
+    private static final String OPERATOR_MUST_NOT_BE_BLANK = "operator must not be blank";
+    private static final String NOT_A_VALID_CALC_OPERATOR = " is not a valid calculation operator";
+    private static final String NOT_A_VALID_COMPARISON_OPERATOR = " is not a valid comparison operator";
 
     /**
      * Return the result of the calculation for the provided integers using the provided calculation operator. Supported operators:
@@ -48,7 +51,7 @@ public class OperationEvaluator {
      * @return the calculation result
      */
     public static int calculate(int left, int right, String operator) {
-        Preconditions.checkArgument(!StringUtils.isBlank(operator), "operator must not be blank");
+        Preconditions.checkArgument(!StringUtils.isBlank(operator), OPERATOR_MUST_NOT_BE_BLANK);
         operator = CharMatcher.whitespace().removeFrom(operator);
         switch (operator) {
             case ADD:
@@ -62,7 +65,7 @@ public class OperationEvaluator {
             case MODULO:
                 return left % right;
             default:
-                throw new IllegalArgumentException(operator + " is not a valid calculation operator");
+                throw new IllegalArgumentException(operator + NOT_A_VALID_CALC_OPERATOR);
         }
     }
 
@@ -85,7 +88,7 @@ public class OperationEvaluator {
      * @return the calculation result
      */
     public static long calculate(long left, long right, String operator) {
-        Preconditions.checkArgument(!StringUtils.isBlank(operator), "operator must not be blank");
+        Preconditions.checkArgument(!StringUtils.isBlank(operator), OPERATOR_MUST_NOT_BE_BLANK);
         operator = CharMatcher.whitespace().removeFrom(operator);
         switch (operator) {
             case ADD:
@@ -99,7 +102,7 @@ public class OperationEvaluator {
             case MODULO:
                 return left % right;
             default:
-                throw new IllegalArgumentException(operator + " is not a valid calculation operator");
+                throw new IllegalArgumentException(operator + NOT_A_VALID_CALC_OPERATOR);
         }
     }
 
@@ -122,7 +125,7 @@ public class OperationEvaluator {
      * @return the calculation result
      */
     public static float calculate(float left, float right, String operator) {
-        Preconditions.checkArgument(!StringUtils.isBlank(operator), "operator must not be blank");
+        Preconditions.checkArgument(!StringUtils.isBlank(operator), OPERATOR_MUST_NOT_BE_BLANK);
         operator = CharMatcher.whitespace().removeFrom(operator);
         switch (operator) {
             case ADD:
@@ -136,7 +139,7 @@ public class OperationEvaluator {
             case MODULO:
                 return left % right;
             default:
-                throw new IllegalArgumentException(operator + " is not a valid calculation operator");
+                throw new IllegalArgumentException(operator + NOT_A_VALID_CALC_OPERATOR);
         }
     }
 
@@ -159,7 +162,7 @@ public class OperationEvaluator {
      * @return the calculation result
      */
     public static double calculate(double left, double right, String operator) {
-        Preconditions.checkArgument(!StringUtils.isBlank(operator), "operator must not be blank");
+        Preconditions.checkArgument(!StringUtils.isBlank(operator), OPERATOR_MUST_NOT_BE_BLANK);
         operator = CharMatcher.whitespace().removeFrom(operator);
         switch (operator) {
             case ADD:
@@ -173,7 +176,7 @@ public class OperationEvaluator {
             case MODULO:
                 return left % right;
             default:
-                throw new IllegalArgumentException(operator + " is not a valid calculation operator");
+                throw new IllegalArgumentException(operator + NOT_A_VALID_CALC_OPERATOR);
         }
     }
 
@@ -196,7 +199,7 @@ public class OperationEvaluator {
      * @return the calculation result
      */
     public static long calculate(Date left, Date right, String operator) {
-        Preconditions.checkArgument(!StringUtils.isBlank(operator), "operator must not be blank");
+        Preconditions.checkArgument(!StringUtils.isBlank(operator), OPERATOR_MUST_NOT_BE_BLANK);
         operator = CharMatcher.whitespace().removeFrom(operator);
         return calculate(left.getTime(), right.getTime(), operator);
     }
@@ -221,7 +224,7 @@ public class OperationEvaluator {
      * @return true if the logical expression evaluates to true, or false otherwise
      */
     public static boolean compare(int left, int right, String operator) {
-        Preconditions.checkArgument(!StringUtils.isBlank(operator), "operator must not be blank");
+        Preconditions.checkArgument(!StringUtils.isBlank(operator), OPERATOR_MUST_NOT_BE_BLANK);
         operator = CharMatcher.whitespace().removeFrom(operator);
         switch (operator) {
             case EQUALS:
@@ -238,7 +241,7 @@ public class OperationEvaluator {
             case GREATER_THAN_EQUALS:
                 return left >= right;
             default:
-                throw new IllegalArgumentException(operator + " is not a valid comparison operator");
+                throw new IllegalArgumentException(operator + NOT_A_VALID_COMPARISON_OPERATOR);
         }
     }
 
@@ -262,7 +265,7 @@ public class OperationEvaluator {
      * @return true if the logical expression evaluates to true, or false otherwise
      */
     public static boolean compare(long left, long right, String operator) {
-        Preconditions.checkArgument(!StringUtils.isBlank(operator), "operator must not be blank");
+        Preconditions.checkArgument(!StringUtils.isBlank(operator), OPERATOR_MUST_NOT_BE_BLANK);
         operator = CharMatcher.whitespace().removeFrom(operator);
         switch (operator) {
             case EQUALS:
@@ -279,7 +282,7 @@ public class OperationEvaluator {
             case GREATER_THAN_EQUALS:
                 return left >= right;
             default:
-                throw new IllegalArgumentException(operator + " is not a valid comparison operator");
+                throw new IllegalArgumentException(operator + NOT_A_VALID_COMPARISON_OPERATOR);
         }
     }
 
@@ -303,7 +306,7 @@ public class OperationEvaluator {
      * @return true if the logical expression evaluates to true, or false otherwise
      */
     public static boolean compare(float left, float right, String operator) {
-        Preconditions.checkArgument(!StringUtils.isBlank(operator), "operator must not be blank");
+        Preconditions.checkArgument(!StringUtils.isBlank(operator), OPERATOR_MUST_NOT_BE_BLANK);
         operator = CharMatcher.whitespace().removeFrom(operator);
         switch (operator) {
             case EQUALS:
@@ -320,7 +323,7 @@ public class OperationEvaluator {
             case GREATER_THAN_EQUALS:
                 return left >= right;
             default:
-                throw new IllegalArgumentException(operator + " is not a valid comparison operator");
+                throw new IllegalArgumentException(operator + NOT_A_VALID_COMPARISON_OPERATOR);
         }
     }
 
@@ -344,7 +347,7 @@ public class OperationEvaluator {
      * @return true if the logical expression evaluates to true, or false otherwise
      */
     public static boolean compare(double left, double right, String operator) {
-        Preconditions.checkArgument(!StringUtils.isBlank(operator), "operator must not be blank");
+        Preconditions.checkArgument(!StringUtils.isBlank(operator), OPERATOR_MUST_NOT_BE_BLANK);
         operator = CharMatcher.whitespace().removeFrom(operator);
         switch (operator) {
             case EQUALS:
@@ -361,7 +364,7 @@ public class OperationEvaluator {
             case GREATER_THAN_EQUALS:
                 return left >= right;
             default:
-                throw new IllegalArgumentException(operator + " is not a valid comparison operator");
+                throw new IllegalArgumentException(operator + NOT_A_VALID_COMPARISON_OPERATOR);
         }
     }
 
@@ -385,7 +388,7 @@ public class OperationEvaluator {
      * @return true if the logical expression evaluates to true, or false otherwise
      */
     public static boolean compare(Date left, Date right, String operator) {
-        Preconditions.checkArgument(!StringUtils.isBlank(operator), "operator must not be blank");
+        Preconditions.checkArgument(!StringUtils.isBlank(operator), OPERATOR_MUST_NOT_BE_BLANK);
         operator = CharMatcher.whitespace().removeFrom(operator);
         return compare(left.getTime(), right.getTime(), operator);
     }
@@ -412,7 +415,7 @@ public class OperationEvaluator {
      * @return true if the logical expression evaluates to true, or false otherwise
      */
     public static <T extends Comparable<T>> boolean compare(T left, T right, String operator) {
-        Preconditions.checkArgument(!StringUtils.isBlank(operator), "operator must not be blank");
+        Preconditions.checkArgument(!StringUtils.isBlank(operator), OPERATOR_MUST_NOT_BE_BLANK);
         operator = CharMatcher.whitespace().removeFrom(operator);
         switch (operator) {
             case EQUALS:
@@ -429,7 +432,7 @@ public class OperationEvaluator {
             case GREATER_THAN_EQUALS:
                 return left.compareTo(right) >= 0;
             default:
-                throw new IllegalArgumentException(operator + " is not a valid comparison operator");
+                throw new IllegalArgumentException(operator + NOT_A_VALID_COMPARISON_OPERATOR);
         }
     }
 
@@ -457,7 +460,7 @@ public class OperationEvaluator {
      * @return true if the logical expression evaluates to true, or false otherwise
      */
     public static <T> boolean compare(T left, T right, String operator, Comparator<T> comparator) {
-        Preconditions.checkArgument(!StringUtils.isBlank(operator), "operator must not be blank");
+        Preconditions.checkArgument(!StringUtils.isBlank(operator), OPERATOR_MUST_NOT_BE_BLANK);
         Preconditions.checkNotNull(comparator, "comparator must not be null");
         operator = CharMatcher.whitespace().removeFrom(operator);
         switch (operator) {
@@ -475,7 +478,7 @@ public class OperationEvaluator {
             case GREATER_THAN_EQUALS:
                 return comparator.compare(left, right) >= 0;
             default:
-                throw new IllegalArgumentException(operator + " is not a valid comparison operator");
+                throw new IllegalArgumentException(operator + NOT_A_VALID_COMPARISON_OPERATOR);
         }
     }
 

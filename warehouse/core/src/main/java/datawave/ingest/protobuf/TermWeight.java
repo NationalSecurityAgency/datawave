@@ -125,7 +125,7 @@ public final class TermWeight {
             return defaultInstance;
         }
 
-        private final com.google.protobuf.UnknownFieldSet unknownFields;
+        private final transient com.google.protobuf.UnknownFieldSet unknownFields;
 
         @java.lang.Override
         public final com.google.protobuf.UnknownFieldSet getUnknownFields() {
@@ -145,12 +145,6 @@ public final class TermWeight {
                         case 0:
                             done = true;
                             break;
-                        default: {
-                            if (!parseUnknownField(input, unknownFields, extensionRegistry, tag)) {
-                                done = true;
-                            }
-                            break;
-                        }
                         case 24: {
                             if (!((mutable_bitField0_ & 0x00000001) == 0x00000001)) {
                                 termOffset_ = new java.util.ArrayList<>();
@@ -217,6 +211,12 @@ public final class TermWeight {
                         case 48: {
                             bitField0_ |= 0x00000001;
                             zeroOffsetMatch_ = input.readBool();
+                            break;
+                        }
+                        default: {
+                            if (!parseUnknownField(input, unknownFields, extensionRegistry, tag)) {
+                                done = true;
+                            }
                             break;
                         }
                     }

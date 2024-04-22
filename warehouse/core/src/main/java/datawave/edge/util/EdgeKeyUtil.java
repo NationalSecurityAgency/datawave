@@ -21,7 +21,7 @@ import datawave.util.StringUtils;
  * Utility class for generating regular expressions to scan various formats of the edge table.
  */
 public class EdgeKeyUtil {
-    protected static final String edgeTypePrefix = "(?:^|STATS/[^/]+/)";
+    protected static final String EDGE_TYPE_PREFIX = "(?:^|STATS/[^/]+/)";
     public static final String MAX_UNICODE_STRING = new String(Character.toChars(Character.MAX_CODE_POINT));
 
     public static Set<String> normalizeSource(String source, List<? extends Type<?>> dataTypes, boolean protobuffEdgeFormat) {
@@ -183,7 +183,7 @@ public class EdgeKeyUtil {
     public static String getEdgeColumnFamilyRegex(String edgeType, String edgeRelationship, String edgeAttribute1) {
         StringBuilder cfsb = new StringBuilder();
         if (edgeType != null) {
-            cfsb.append(edgeTypePrefix).append(edgeType).append("/");
+            cfsb.append(EDGE_TYPE_PREFIX).append(edgeType).append("/");
             if (edgeRelationship != null && edgeAttribute1 == null) {
                 cfsb.append(edgeRelationship);
             } else if (edgeRelationship != null && edgeAttribute1 != null) {
@@ -194,11 +194,11 @@ public class EdgeKeyUtil {
                 cfsb.append(".*");
             }
         } else if (edgeRelationship != null && edgeAttribute1 == null) {
-            cfsb.append(edgeTypePrefix + "[^/]+/").append(edgeRelationship).append(".*");
+            cfsb.append(EDGE_TYPE_PREFIX + "[^/]+/").append(edgeRelationship).append(".*");
         } else if (edgeAttribute1 != null && edgeRelationship == null) {
-            cfsb.append(edgeTypePrefix + "[^/]+/[^/]+/").append(edgeAttribute1).append(".*");
+            cfsb.append(EDGE_TYPE_PREFIX + "[^/]+/[^/]+/").append(edgeAttribute1).append(".*");
         } else if (edgeAttribute1 != null && edgeRelationship != null) {
-            cfsb.append(edgeTypePrefix + "[^/]+/").append(edgeRelationship).append("/").append(edgeAttribute1).append(".*");
+            cfsb.append(EDGE_TYPE_PREFIX + "[^/]+/").append(edgeRelationship).append("/").append(edgeAttribute1).append(".*");
         }
 
         return cfsb.toString();
