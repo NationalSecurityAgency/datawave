@@ -7,7 +7,6 @@ import java.io.PrintStream;
 import java.util.Collections;
 import java.util.List;
 
-import org.apache.commons.jexl3.JexlFeatures;
 import org.apache.commons.jexl3.parser.ASTAddNode;
 import org.apache.commons.jexl3.parser.ASTAndNode;
 import org.apache.commons.jexl3.parser.ASTAnnotatedStatement;
@@ -105,8 +104,6 @@ import org.apache.log4j.Logger;
 
 import com.google.common.collect.Lists;
 
-import datawave.data.hash.AbstractUIDBuilder;
-
 /**
  * Does a pretty print out of a depth first traversal.
  *
@@ -173,6 +170,8 @@ public class PrintingVisitor extends ParserVisitor {
     private int maxChildNodes;
 
     private int maxTermsToPrint;
+
+    private int termsPrinted = 0;
 
     private Output output;
 
@@ -346,978 +345,1318 @@ public class PrintingVisitor extends ParserVisitor {
     }
 
     public Object visit(ASTJexlScript node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null; // return early without printing for each additional node visited after the threshold
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint); // just log the threshold, logging the whole node for a very large
+                                                                                         // query could be less than constructive
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     public Object visit(ASTBlock node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     public Object visit(ASTIfStatement node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     public Object visit(ASTWhileStatement node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     public Object visit(ASTForeachStatement node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     public Object visit(ASTAssignment node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     public Object visit(ASTTernaryNode node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     public Object visit(ASTOrNode node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     public Object visit(ASTAndNode node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     public Object visit(ASTBitwiseOrNode node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     public Object visit(ASTBitwiseXorNode node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     public Object visit(ASTBitwiseAndNode node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     public Object visit(ASTEQNode node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     public Object visit(ASTNENode node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     public Object visit(ASTLTNode node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     public Object visit(ASTGTNode node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     public Object visit(ASTLENode node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     public Object visit(ASTGENode node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     public Object visit(ASTERNode node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     public Object visit(ASTNRNode node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     public Object visit(ASTMulNode node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     public Object visit(ASTDivNode node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     public Object visit(ASTModNode node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     public Object visit(ASTUnaryMinusNode node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     public Object visit(ASTBitwiseComplNode node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     public Object visit(ASTNotNode node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     public Object visit(ASTIdentifier node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString() + ":" + JexlNodes.getIdentifierOrLiteral(node));
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-            return null;
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
             return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
+        return null;
     }
 
     public Object visit(ASTNullLiteral node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     public Object visit(ASTTrueNode node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     public Object visit(ASTFalseNode node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     public Object visit(ASTStringLiteral node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString() + ":" + JexlNodes.getIdentifierOrLiteral(node));
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     public Object visit(ASTArrayLiteral node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     public Object visit(ASTMapLiteral node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     public Object visit(ASTMapEntry node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     public Object visit(ASTEmptyFunction node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     public Object visit(ASTSizeFunction node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     public Object visit(ASTFunctionNode node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     public Object visit(ASTMethodNode node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     public Object visit(ASTConstructorNode node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     public Object visit(ASTArrayAccess node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     public Object visit(ASTReference node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     public Object visit(ASTReturnStatement node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     public Object visit(ASTVar node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     public Object visit(ASTNumberLiteral node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString() + ":" + node.getLiteral());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     public Object visit(ASTReferenceExpression node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     @Override
     protected Object visit(ASTDoWhileStatement node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     @Override
     protected Object visit(ASTContinue node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     @Override
     protected Object visit(ASTBreak node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     @Override
     protected Object visit(ASTDefineVars node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     @Override
     protected Object visit(ASTNullpNode node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     @Override
     protected Object visit(ASTShiftLeftNode node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     @Override
     protected Object visit(ASTShiftRightNode node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     @Override
     protected Object visit(ASTShiftRightUnsignedNode node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     @Override
     protected Object visit(ASTSWNode node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     @Override
     protected Object visit(ASTNSWNode node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     @Override
     protected Object visit(ASTEWNode node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     @Override
     protected Object visit(ASTNEWNode node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     @Override
     protected Object visit(ASTAddNode node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     @Override
     protected Object visit(ASTSubNode node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     @Override
     protected Object visit(ASTUnaryPlusNode node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     @Override
     protected Object visit(ASTRegexLiteral node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     @Override
     protected Object visit(ASTSetLiteral node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     @Override
     protected Object visit(ASTExtendedLiteral node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     @Override
     protected Object visit(ASTRangeNode node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     @Override
     protected Object visit(ASTIdentifierAccess node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     @Override
     protected Object visit(ASTArguments node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     @Override
     protected Object visit(ASTSetAddNode node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     @Override
     protected Object visit(ASTSetSubNode node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     @Override
     protected Object visit(ASTSetMultNode node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     @Override
     protected Object visit(ASTSetDivNode node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     @Override
     protected Object visit(ASTSetModNode node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     @Override
     protected Object visit(ASTSetAndNode node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     @Override
     protected Object visit(ASTSetOrNode node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     @Override
     protected Object visit(ASTSetXorNode node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     @Override
     protected Object visit(ASTSetShiftLeftNode node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     @Override
     protected Object visit(ASTSetShiftRightNode node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     @Override
     protected Object visit(ASTSetShiftRightUnsignedNode node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     @Override
     protected Object visit(ASTGetDecrementNode node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     @Override
     protected Object visit(ASTGetIncrementNode node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     @Override
     protected Object visit(ASTDecrementGetNode node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     @Override
     protected Object visit(ASTIncrementGetNode node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     @Override
     protected Object visit(ASTJxltLiteral node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     @Override
     protected Object visit(ASTAnnotation node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     @Override
     protected Object visit(ASTAnnotatedStatement node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 
     @Override
     protected Object visit(ASTQualifiedIdentifier node, Object data) {
-        if (maxTermsToPrint > 0) {
-            output.writeLine(data + node.toString());
-            maxTermsToPrint -= 1;
-            childrenAccept(node, this, data + PREFIX);
-        } else {
-            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
+        if (termsPrinted > maxTermsToPrint) {
+            return null;
         }
+        termsPrinted++;
+
+        if (termsPrinted > maxTermsToPrint) {
+            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+        }
+
+        output.writeLine(data + node.toString());
+        childrenAccept(node, this, data + PREFIX);
         return null;
     }
 }

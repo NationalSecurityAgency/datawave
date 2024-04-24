@@ -916,9 +916,6 @@ public class EventDataQueryExpressionVisitorTest {
         // @TODO, use ExpandMultiNormalizedTerms to normalize this query?
 
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
-        final Map<String,ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
-
-        final PrintStream stdOut = System.out;
         final ByteArrayOutputStream streamCaptor = new ByteArrayOutputStream();
 
         System.setOut(new PrintStream(streamCaptor));
