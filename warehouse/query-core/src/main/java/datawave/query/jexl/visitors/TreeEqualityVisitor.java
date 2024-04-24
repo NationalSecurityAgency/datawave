@@ -95,7 +95,6 @@ import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.commons.jexl3.parser.ParserVisitor;
 import org.apache.commons.jexl3.parser.SimpleNode;
 
-import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 
 /**

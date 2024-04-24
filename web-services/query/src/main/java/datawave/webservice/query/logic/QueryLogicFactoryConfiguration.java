@@ -4,8 +4,6 @@ import java.util.Map;
 
 import datawave.core.query.logic.QueryLogic;
 
-// TODO: JWO: Remove this once we finally move away from the WildFly Webservice
-@Deprecated
 public class QueryLogicFactoryConfiguration {
     // The logicMap is the list of logics that can be loaded.
     // This is a map of logic name to bean name.

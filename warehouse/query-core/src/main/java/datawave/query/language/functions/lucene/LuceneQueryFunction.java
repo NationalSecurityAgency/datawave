@@ -8,6 +8,7 @@ import datawave.query.language.functions.QueryFunction;
 import datawave.query.search.FieldedTerm;
 import datawave.query.search.WildcardFieldedFilter;
 
+@Deprecated
 public abstract class LuceneQueryFunction implements QueryFunction {
 
     protected String name = null;

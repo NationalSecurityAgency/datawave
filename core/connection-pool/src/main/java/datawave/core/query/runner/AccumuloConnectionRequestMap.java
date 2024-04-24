@@ -24,7 +24,7 @@ public class AccumuloConnectionRequestMap {
     private Map<String,List<Pair<Map<String,String>,Thread>>> getConnectionThreadMap = new HashMap<>();
 
     public boolean cancelConnectionRequest(String id, String userDn) {
-        // this call checks that the Principal used for the connection request and th connection cancel are the same
+        // this call checks that the Principal used for the connection request and the connection cancel are the same
         // if query is waiting for an accumulo connection in create or reset, then interrupt it
         boolean connectionRequestCanceled = false;
         synchronized (getConnectionThreadMap) {

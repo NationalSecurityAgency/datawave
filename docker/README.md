@@ -163,7 +163,7 @@ Docker Compose version v2.21.0
 
 #### Datawave Quickstart
 
-Prior to starting docker compose, you need to use the Qatawave Quickstart to deploy working instances of Hadoop, Zookeeper, and Accumulo, along with some sample datasets for query.
+Prior to starting docker compose, you need to use the Datawave Quickstart to deploy working instances of Hadoop, Zookeeper, and Accumulo, along with some sample datasets for query.
 
 There are two methods for deploying the Datawave Quickstart.  
 

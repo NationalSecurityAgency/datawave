@@ -649,7 +649,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
         CheckpointableQueryLogic logic = (CheckpointableQueryLogic) queryLogics.get(compositeCheckpoint.getDelegateQueryLogic());
         if (logic == null) {
             throw new UnsupportedOperationException(
-                            "Cannot update query checkpoint because delegate query logic [" + compositeCheckpoint.getDelegateQueryLogic() + "]does not exist");
+                            "Cannot update query checkpoint because delegate query logic [" + compositeCheckpoint.getDelegateQueryLogic() + "] does not exist");
         }
 
         return logic.updateCheckpoint(checkpoint);
@@ -668,7 +668,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
         CheckpointableQueryLogic logic = (CheckpointableQueryLogic) queryLogics.get(compositeCheckpoint.getDelegateQueryLogic());
         if (logic == null) {
             throw new UnsupportedOperationException(
-                            "Cannot update query checkpoint because delegate query logic [" + compositeCheckpoint.getDelegateQueryLogic() + "]does not exist");
+                            "Cannot update query checkpoint because delegate query logic [" + compositeCheckpoint.getDelegateQueryLogic() + "] does not exist");
         }
 
         // we are setting up a checkpoint, with a single query data, against a single query logic, so just keep the one we need

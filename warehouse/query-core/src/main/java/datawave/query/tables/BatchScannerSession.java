@@ -52,9 +52,6 @@ import datawave.query.tables.async.ScannerChunk;
 import datawave.query.tables.async.SessionArbiter;
 import datawave.query.tables.async.SpeculativeScan;
 
-/**
- *
- */
 public class BatchScannerSession extends ScannerSession implements Iterator<Result>, FutureCallback<Scan>, SessionArbiter, UncaughtExceptionHandler {
 
     private static final double RANGE_MULTIPLIER = 5;

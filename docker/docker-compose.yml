@@ -528,35 +528,6 @@ services:
       metrics:
         condition: service_healthy
 
-  querystorage:
-    profiles:
-      - storage
-      - full
-    image: datawave/query-storage-service:1.0.0-SNAPSHOT
-    command:
-      - --spring.output.ansi.enabled=ALWAYS
-      - --spring.profiles.active=consul,compose,remoteauth,querymessaging,query
-      - --spring.cloud.consul.host=consul
-      - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${random.value}
-    environment:
-      - ZOOKEEPER_HOST=${DW_ZOOKEEPER_HOST}
-    extra_hosts:
-      - "${DW_HOSTNAME}:${DW_HOST_IP}"
-      - "${DW_HOST_FQDN}:${DW_HOST_IP}"
-    ports:
-      - "8580:8080"
-      - "8943:8443"
-    volumes:
-      - ${PKI_DIR:-./pki}:/etc/pki:ro
-      - ./logs:/logs
-    networks:
-      - demo
-    healthcheck:
-      test: curl -f http://localhost:8080/query-storage/mgmt/health
-    depends_on:
-      authorization:
-        condition: service_healthy
-
   modification:
     entrypoint: ["java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5010","-jar","app.jar"]
     profiles:

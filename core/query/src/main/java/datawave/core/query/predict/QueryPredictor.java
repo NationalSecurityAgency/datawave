@@ -4,13 +4,14 @@ import java.io.Serializable;
 import java.util.Set;
 
 import datawave.microservice.querymetric.BaseQueryMetric;
+import datawave.microservice.querymetric.BaseQueryMetric.Prediction;
 
 /**
  * Created on 7/6/16.
  */
 public interface QueryPredictor<T extends BaseQueryMetric> {
 
-    Set<BaseQueryMetric.Prediction> predict(T query) throws PredictionException;
+    Set<Prediction> predict(T query) throws PredictionException;
 
     class PredictionException extends Exception implements Serializable {
 

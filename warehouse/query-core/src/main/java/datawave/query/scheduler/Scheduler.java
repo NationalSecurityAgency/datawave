@@ -18,9 +18,6 @@ import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.tables.stats.ScanSessionStats;
 
-/**
- *
- */
 public abstract class Scheduler implements CloseableIterable<Result> {
     protected Collection<IteratorSetting> settings = Lists.newArrayList();
 

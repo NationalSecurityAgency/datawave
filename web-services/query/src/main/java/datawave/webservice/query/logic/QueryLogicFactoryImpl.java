@@ -21,8 +21,6 @@ import datawave.security.system.ServerPrincipal;
 import datawave.webservice.common.exception.UnauthorizedException;
 import datawave.webservice.result.VoidResponse;
 
-// TODO: JWO: Remove this once we finally move away from the WildFly Webservice
-@Deprecated
 public class QueryLogicFactoryImpl implements QueryLogicFactory {
 
     /**

@@ -302,7 +302,7 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
     String getConnPoolName();
 
     /**
-     * Check that the user has one of the required roles. userRoles my be null when there is no intent to control access to QueryLogic
+     * Check that the user has one of the required roles. userRoles may be null when there is no intent to control access to QueryLogic
      *
      * @param userRoles
      *            The user's roles

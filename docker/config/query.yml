@@ -58,7 +58,7 @@ datawave:
     config:
       uri: 'https://localhost:8888/configserver'
     authorization:
-            uri: 'https://localhost:8343/authorization'
+      uri: 'https://localhost:8343/authorization'
     audit:
       uri: 'https://localhost:9043/audit'
     metrics:

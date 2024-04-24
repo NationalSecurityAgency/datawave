@@ -173,8 +173,8 @@ public class PushdownFunction implements Function<QueryData,List<ScannerChunk>> 
                                 .withQueryTree(currentPlan.getQueryTree())
                                 .withRanges(allRanges)
                                 .withSettings(newSettings)
-                                .withColumnFamilies(
-                                currentPlan.getColumnFamilies());//  @formatter:on
+                                .withColumnFamilies(currentPlan.getColumnFamilies());
+                //  @formatter:on
 
                 serverPlan.put(server, queryPlan);
             }
