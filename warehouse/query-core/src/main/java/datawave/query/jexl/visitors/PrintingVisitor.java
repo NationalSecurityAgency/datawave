@@ -336,7 +336,6 @@ public class PrintingVisitor extends ParserVisitor {
     }
 
     private void childrenAccept(SimpleNode node, ParserVisitor visitor, Object data) {
-        LOGGER.trace("maxTermsToPrint: " + maxTermsToPrint + " -- maxChildNodes: " + maxChildNodes);
         if (maxChildNodes > 0 && node.jjtGetNumChildren() > maxChildNodes) {
             output.writeLine(data + "(Showing " + maxChildNodes + " of " + node.jjtGetNumChildren() + " child nodes)");
             for (int i = 0; i < maxChildNodes; i++)
@@ -352,7 +351,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -363,7 +362,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -374,7 +373,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -385,7 +384,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -396,7 +395,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -407,7 +406,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -418,7 +417,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -429,7 +428,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -440,7 +439,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -451,7 +450,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -462,7 +461,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -473,7 +472,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -484,7 +483,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -495,7 +494,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -506,7 +505,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -517,7 +516,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -528,7 +527,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -539,7 +538,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -550,7 +549,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -561,7 +560,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -572,7 +571,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -583,7 +582,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -594,7 +593,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -605,7 +604,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -616,7 +615,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -627,7 +626,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -639,7 +638,7 @@ public class PrintingVisitor extends ParserVisitor {
             childrenAccept(node, this, data + PREFIX);
             return null;
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
             return null;
         }
     }
@@ -650,7 +649,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -661,7 +660,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -672,7 +671,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -683,7 +682,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -694,7 +693,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -705,7 +704,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -716,7 +715,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -727,7 +726,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -738,7 +737,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -749,7 +748,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -760,7 +759,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -771,7 +770,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -782,7 +781,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -793,7 +792,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -804,7 +803,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -815,7 +814,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -826,7 +825,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -837,7 +836,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -849,7 +848,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -861,7 +860,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -873,7 +872,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -885,7 +884,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -897,7 +896,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -909,7 +908,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -921,7 +920,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -933,7 +932,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -945,7 +944,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -957,7 +956,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -969,7 +968,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -981,7 +980,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -993,7 +992,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -1005,7 +1004,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -1017,7 +1016,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -1029,7 +1028,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -1041,7 +1040,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -1053,7 +1052,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -1065,7 +1064,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -1077,7 +1076,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -1089,7 +1088,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -1101,7 +1100,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -1113,7 +1112,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -1125,7 +1124,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -1137,7 +1136,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -1149,7 +1148,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -1161,7 +1160,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -1173,7 +1172,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -1185,7 +1184,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -1197,7 +1196,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -1209,7 +1208,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -1221,7 +1220,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -1233,7 +1232,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -1245,7 +1244,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -1257,7 +1256,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -1269,7 +1268,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -1281,7 +1280,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -1293,7 +1292,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -1305,7 +1304,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }
@@ -1317,7 +1316,7 @@ public class PrintingVisitor extends ParserVisitor {
             maxTermsToPrint -= 1;
             childrenAccept(node, this, data + PREFIX);
         } else {
-            LOGGER.debug("maxTermsToPrint is exhausted. Not printing node: " + node);
+            LOGGER.trace("maxTermsToPrint is exhausted. Ignoring: " + node);
         }
         return null;
     }

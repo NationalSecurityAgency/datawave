@@ -1978,7 +1978,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     }
 
     public static void logQuery(final ASTJexlScript queryTree, String message) {
-        log.debug("Calling PrintingVisitor, with " + maxChildNodesToPrint + " maxChildNodes and " + maxTermsToPrint + " maxTermsToPrint...");
         if (log.isTraceEnabled()) {
             logTrace(PrintingVisitor.formattedQueryStringList(queryTree, maxChildNodesToPrint, maxTermsToPrint), message);
         } else if (log.isDebugEnabled()) {
