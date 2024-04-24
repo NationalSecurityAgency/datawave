@@ -51,6 +51,7 @@ import datawave.webservice.query.logic.DatawaveRoleManager;
 import datawave.webservice.query.logic.EasyRoleManager;
 import datawave.webservice.query.logic.QueryLogic;
 import datawave.webservice.query.logic.QueryLogicTransformer;
+import datawave.webservice.query.logic.filtered.FilteredQueryLogic;
 import datawave.webservice.query.result.EdgeQueryResponseBase;
 import datawave.webservice.query.result.edge.EdgeBase;
 import datawave.webservice.result.BaseQueryResponse;
@@ -454,6 +455,21 @@ public class CompositeQueryLogicTest {
 
     }
 
+    public static class TestFilteredQueryLogic extends FilteredQueryLogic {
+        private boolean filtered;
+
+        public TestFilteredQueryLogic(boolean filtered) {
+            QueryLogic delegate = new TestQueryLogic();
+            setDelegate(delegate);
+            this.filtered = filtered;
+        }
+
+        @Override
+        public boolean isFiltered() {
+            return filtered;
+        }
+    }
+
     @Before
     public void setup() {
         System.setProperty(DnUtils.NPE_OU_PROPERTY, "iamnotaperson");
@@ -595,6 +611,61 @@ public class CompositeQueryLogicTest {
         c.initialize(null, settings, Collections.singleton(auths));
 
         Assert.assertEquals(1, c.getInitializedLogics().size());
+    }
+
+    @Test
+    public void testInitializeOKWithFilter() throws Exception {
+
+        Map<String,QueryLogic<?>> logics = new HashMap<>();
+        logics.put("TestQueryLogic", new TestQueryLogic());
+        logics.put("TestQueryLogic2", new TestFilteredQueryLogic(true));
+
+        QueryImpl settings = new QueryImpl();
+        settings.setPagesize(100);
+        settings.setQueryAuthorizations(auths.toString());
+        settings.setQuery("FOO == 'BAR'");
+        settings.setParameters(new HashSet<>());
+        settings.setId(UUID.randomUUID());
+
+        CompositeQueryLogic c = new CompositeQueryLogic();
+        c.setQueryLogics(logics);
+
+        c.setPrincipal(principal);
+        c.initialize(null, settings, Collections.singleton(auths));
+
+        Assert.assertEquals(1, c.getInitializedLogics().size());
+        // ensure the filtered query logic is actually dropped
+        Assert.assertEquals(0, c.getUninitializedLogics().size());
+    }
+
+    @Test(expected = CompositeLogicException.class)
+    public void testInitializeNotOKWithFilter() throws Exception {
+
+        Map<String,QueryLogic<?>> logics = new HashMap<>();
+        logics.put("TestQueryLogic", new TestQueryLogic() {
+            @Override
+            public GenericQueryConfiguration initialize(AccumuloClient connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations)
+                            throws Exception {
+                throw new Exception("initialize failed");
+            }
+        });
+        logics.put("TestQueryLogic2", new TestFilteredQueryLogic(true));
+
+        QueryImpl settings = new QueryImpl();
+        settings.setPagesize(100);
+        settings.setQueryAuthorizations(auths.toString());
+        settings.setQuery("FOO == 'BAR'");
+        settings.setParameters(new HashSet<>());
+        settings.setId(UUID.randomUUID());
+
+        CompositeQueryLogic c = new CompositeQueryLogic();
+        c.setQueryLogics(logics);
+
+        // testing that we fail despite allMustInitialize to false because the filtered logic does not count
+        c.setAllMustInitialize(false);
+
+        c.setPrincipal(principal);
+        c.initialize(null, settings, Collections.singleton(auths));
     }
 
     @Test(expected = CompositeLogicException.class)
@@ -1560,45 +1631,6 @@ public class CompositeQueryLogicTest {
         }
 
         c.close();
-    }
-
-    @Test
-    public void testDnResultLimit() {
-        TestQueryLogic logic1 = new TestQueryLogic();
-        TestQueryLogic logic2 = new TestQueryLogic();
-
-        logic1.setMaxResults(150L);
-        logic2.setMaxResults(-1L);
-
-        Map<String,QueryLogic<?>> logicMap = new HashMap<>();
-        logicMap.put("LogicOne", logic1);
-        logicMap.put("LogicTwo", logic2);
-
-        // set up DN limits
-        QueryImpl settings = new QueryImpl();
-        settings.setPagesize(100);
-        settings.setUserDN("dn=user");
-        settings.setDnList(Collections.singletonList("dn=user"));
-        settings.setQueryAuthorizations(auths.toString());
-
-        CompositeQueryLogic composite = new CompositeQueryLogic();
-        composite.setQueryLogics(logicMap);
-        composite.setPrincipal(principal);
-        composite.setDnResultLimits(Collections.singletonMap("dn=user", 300L));
-
-        // initial state
-        Assert.assertEquals(-1L, composite.getMaxResults());
-        Assert.assertEquals(150L, logic1.getMaxResults());
-        Assert.assertEquals(-1L, logic2.getMaxResults());
-
-        // should update max results as part of this call
-        long resultLimit = composite.getResultLimit(settings);
-        Assert.assertEquals(300L, resultLimit);
-        composite.setMaxResults(resultLimit);
-
-        Assert.assertEquals(300L, composite.getMaxResults());
-        Assert.assertEquals(300L, logic1.getMaxResults());
-        Assert.assertEquals(300L, logic2.getMaxResults());
     }
 
 }

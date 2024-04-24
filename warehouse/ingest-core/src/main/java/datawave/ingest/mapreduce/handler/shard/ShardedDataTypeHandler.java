@@ -58,7 +58,7 @@ import datawave.webservice.common.logging.ThreadConfigurableLogger;
  * This class creates the following Mutations or Key/Values: <br>
  * <br>
  * <table border="1">
- * <caption></caption>
+ * <caption>SgardedDataType</caption>
  * <tr>
  * <th>Schema Type</th>
  * <th>Use</th>
@@ -783,7 +783,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
      *            the entry value
      * @return the visibility
      */
-    protected byte[] getVisibility(RawRecordContainer event, NormalizedContentInterface value) {
+    public byte[] getVisibility(RawRecordContainer event, NormalizedContentInterface value) {
         ColumnVisibility visibility = event.getVisibility();
         if (value.getMarkings() != null && !value.getMarkings().isEmpty()) {
             try {

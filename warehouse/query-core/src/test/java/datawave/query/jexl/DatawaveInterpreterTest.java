@@ -10,13 +10,15 @@ import java.util.List;
 import java.util.UUID;
 
 import org.apache.accumulo.core.data.Key;
-import org.apache.commons.jexl2.DatawaveJexlScript;
-import org.apache.commons.jexl2.ExpressionImpl;
-import org.apache.commons.jexl2.JexlContext;
-import org.apache.commons.jexl2.JexlEngine;
-import org.apache.commons.jexl2.JexlException;
-import org.apache.commons.jexl2.Script;
-import org.apache.commons.jexl2.parser.ASTStringLiteral;
+import org.apache.commons.jexl3.JexlContext;
+import org.apache.commons.jexl3.JexlEngine;
+import org.apache.commons.jexl3.JexlException;
+import org.apache.commons.jexl3.JexlOptions;
+import org.apache.commons.jexl3.JexlScript;
+import org.apache.commons.jexl3.internal.DatawaveJexlScript;
+import org.apache.commons.jexl3.internal.Engine;
+import org.apache.commons.jexl3.internal.Script;
+import org.apache.commons.jexl3.parser.JexlNodes;
 import org.easymock.EasyMock;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -43,7 +45,7 @@ public class DatawaveInterpreterTest {
 
         DatawaveJexlContext context = new DatawaveJexlContext();
 
-        Script script = ArithmeticJexlEngines.getEngine(new DefaultArithmetic()).createScript(query);
+        JexlScript script = ArithmeticJexlEngines.getEngine(new DefaultArithmetic()).createScript(query);
 
         context.set("GEO", "0321􏿿+bE4.4");
         context.set("WKT_BYTE_LENGTH", "+bE4.4");
@@ -63,7 +65,7 @@ public class DatawaveInterpreterTest {
 
         DatawaveJexlContext context = new DatawaveJexlContext();
 
-        Script script = ArithmeticJexlEngines.getEngine(new DefaultArithmetic()).createScript(query);
+        JexlScript script = ArithmeticJexlEngines.getEngine(new DefaultArithmetic()).createScript(query);
 
         Object o = script.execute(context);
         assertTrue(matchResult(o));
@@ -71,18 +73,21 @@ public class DatawaveInterpreterTest {
 
     @Test
     public void invocationFails_alwaysThrowsException() {
-        JexlEngine engine = mock(JexlEngine.class);
+        Engine engine = new DatawaveJexlEngine();
         JexlContext context = mock(JexlContext.class);
-        DatawaveInterpreter interpreter = new DatawaveInterpreter(engine, context, false, false);
-        JexlException exception = new JexlException(new ASTStringLiteral(1), "Function failure");
+        JexlOptions opts = new JexlOptions();
+        opts.setStrict(false);
+        opts.setSilent(false);
+        DatawaveInterpreter interpreter = new DatawaveInterpreter(engine, opts, context, null);
+        JexlException exception = new JexlException(JexlNodes.makeStringLiteral(), "Function failure");
 
         // Make mocks available.
-        EasyMock.replay(engine, context);
+        EasyMock.replay(context);
 
         // Capture the expected exception.
         Exception thrown = null;
         try {
-            interpreter.invocationFailed(exception);
+            interpreter.invocationException(null, null, exception);
         } catch (Exception e) {
             thrown = e;
         }
@@ -588,14 +593,14 @@ public class DatawaveInterpreterTest {
     public void testAssignments() {
         //  @formatter:off
         Object[][] array = {
-                        {"(_Value_ = true)", false},    //  plain assignment will return false
+                        {"(_Value_ = true)", true},    //  plain assignment will return whatever is assigned
                         {"FOO == 'bar'", true}, //  verify simple query hits
                         {"((_Value_ = true) && FOO == 'bar')", true}, //  verify intersection hits with assignment
                         {"((_Value_ = true) || FOO == 'bar')", true}, //  verify union hits with assignment
                         //  verify misses
                         {"FOO == 'barbar'", false}, //  verify simple query misses
                         {"((_Value_ = true) && FOO == 'barbar')", false}, //  verify intersection misses with assignment
-                        {"((_Value_ = true) || FOO == 'barbar')", false}  //  verify union misses with assignment
+                        {"((_Value_ = true) || FOO == 'barbar')", true}  //  verify union hits with assignment set to true
 
         };
         //  @formatter:on
@@ -730,13 +735,13 @@ public class DatawaveInterpreterTest {
      */
     protected void test(JexlContext context, String query, boolean expectedResult) {
         // create binary tree and execute the query
-        Script script = getJexlEngine().createScript(query);
+        JexlScript script = getJexlEngine().createScript(query);
         Object executed = script.execute(context);
         boolean isMatched = matchResult(executed);
         assertEquals("Unexpected result for query (binary tree): " + query, expectedResult, isMatched);
 
         // create flattened tree and execute the query
-        DatawaveJexlScript dwScript = DatawaveJexlScript.create((ExpressionImpl) script);
+        DatawaveJexlScript dwScript = DatawaveJexlScript.create((Script) script);
         executed = dwScript.execute(context);
         isMatched = matchResult(executed);
         assertEquals("Unexpected result for query (flattened tree): " + query, expectedResult, isMatched);

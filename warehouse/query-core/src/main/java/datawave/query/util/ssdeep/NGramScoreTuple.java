@@ -2,6 +2,8 @@ package datawave.query.util.ssdeep;
 
 import java.io.Serializable;
 
+import datawave.util.ssdeep.SSDeepHash;
+
 public class NGramScoreTuple implements Serializable, Comparable<NGramScoreTuple> {
     final SSDeepHash ssDeepHash;
     final float baseScore;

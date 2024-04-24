@@ -9,12 +9,24 @@ import datawave.iterators.filter.ageoff.AgeOffPeriod;
 
 public abstract class TokenSpecParser<B extends TokenSpecParser> {
     /**
-     * Add a new token with its TTL to the the structure.
+     * Add a new token with its TTL to the structure.
+     *
+     * @param token
+     *            byte array token
+     * @param ttl
+     *            time to live
+     *
+     * @return a TokenSpecParser child object
      */
     public abstract B addToken(byte[] token, long ttl);
 
     /**
      * Parse additional token configurations from a string.
+     *
+     * @param configuration
+     *            figuration string for the parser
+     *
+     * @return TokenSpecParser child object
      */
     public B parse(String configuration) {
         ParserState parser = new ParserState(configuration);
@@ -129,6 +141,8 @@ public abstract class TokenSpecParser<B extends TokenSpecParser> {
 
         /**
          * Return the next token without advancing.
+         *
+         * @return the next token
          */
         protected ParseToken peek() {
             if (nextTokenPos >= parseTokens.size()) {
@@ -139,6 +153,11 @@ public abstract class TokenSpecParser<B extends TokenSpecParser> {
 
         /**
          * Consume the next token, assuming it's of the specified type, and return its content.
+         *
+         * @param type
+         *            the parse token type
+         *
+         * @return the content of the next token
          */
         protected String expect(ParseTokenType type) {
             ParseToken next = peek();
@@ -153,6 +172,9 @@ public abstract class TokenSpecParser<B extends TokenSpecParser> {
 
         /**
          * Parse the entire input and add it to the TtlTrieBuilder.
+         *
+         * @param builder
+         *            token spec parser
          */
         protected void parseTo(TokenSpecParser builder) {
             ParseToken initialToken;
@@ -175,6 +197,8 @@ public abstract class TokenSpecParser<B extends TokenSpecParser> {
 
         /**
          * Read a string literal.
+         *
+         * @return the parsed string literal
          */
         protected String parseStrliteral() {
             ParseToken token = peek();

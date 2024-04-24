@@ -3,7 +3,10 @@
 DW_NIFI_SERVICE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # You may override DW_NIFI_DIST_URI in your env ahead of time, and set as file:///path/to/file.tar.gz for local tarball, if needed
-DW_NIFI_DIST_URI="${DW_NIFI_DIST_URI:-http://apache.claz.org/nifi/1.1.1/nifi-1.1.1-bin.tar.gz}"
+# DW_NIFI_DIST_URI should, if possible, be using https. There are potential security risks by using http.
+DW_NIFI_DIST_URI="${DW_NIFI_DIST_URI:-https://archive.apache.org/dist/nifi/1.1.1/nifi-1.1.1-bin.tar.gz}"
+# The sha512 checksum for the tarball. Value should be the hash value only and does not include the file name. Cannot be left blank.
+DW_NIFI_DIST_SHA512_CHECKSUM="${DW_NIFI_DIST_SHA512_CHECKSUM:-2d37810985bda230180aac82f9fcf7a23a2e7a2257cf8b3c31d18280a2c67ba165061ba801389d6bb12cdb261d4a9aeef29e931e434144bc3ee5a3d6cfd6cdfa}"
 DW_NIFI_DIST="$( downloadTarball "${DW_NIFI_DIST_URI}" "${DW_NIFI_SERVICE_DIR}" && echo "${tarball}" )"
 DW_NIFI_BASEDIR="nifi-install"
 DW_NIFI_SYMLINK="nifi"

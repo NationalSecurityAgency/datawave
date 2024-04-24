@@ -1,20 +1,22 @@
 package datawave.query.jexl.visitors;
 
-import static org.apache.commons.jexl2.parser.JexlNodes.children;
-import static org.apache.commons.jexl2.parser.JexlNodes.negate;
-import static org.apache.commons.jexl2.parser.JexlNodes.swap;
+import static org.apache.commons.jexl3.parser.JexlNodes.negate;
+import static org.apache.commons.jexl3.parser.JexlNodes.setChildren;
+import static org.apache.commons.jexl3.parser.JexlNodes.swap;
 
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTEQNode;
-import org.apache.commons.jexl2.parser.ASTERNode;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ASTNENode;
-import org.apache.commons.jexl2.parser.ASTNRNode;
-import org.apache.commons.jexl2.parser.ASTOrNode;
-import org.apache.commons.jexl2.parser.ASTReference;
-import org.apache.commons.jexl2.parser.ASTReferenceExpression;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.ParserTreeConstants;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTEQNode;
+import org.apache.commons.jexl3.parser.ASTERNode;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTNENode;
+import org.apache.commons.jexl3.parser.ASTNRNode;
+import org.apache.commons.jexl3.parser.ASTOrNode;
+import org.apache.commons.jexl3.parser.ASTReferenceExpression;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ParserTreeConstants;
 
 /**
  * <pre>
@@ -34,7 +36,11 @@ public class RewriteNegationsVisitor extends ShortCircuitBaseVisitor {
     @Override
     public Object visit(ASTNENode notEquals, Object data) {
         final JexlNode root = notEquals.jjtGetParent();
-        final JexlNode equals = children(new ASTEQNode(ParserTreeConstants.JJTEQNODE), children(notEquals));
+        List<JexlNode> children = new ArrayList<>();
+        for (int i = 0; i < notEquals.jjtGetNumChildren(); i++) {
+            children.add(notEquals.jjtGetChild(i));
+        }
+        final JexlNode equals = setChildren(new ASTEQNode(ParserTreeConstants.JJTEQNODE), children.toArray(new JexlNode[0]));
         swap(root, notEquals, negate(equals));
         return null;
     }
@@ -42,7 +48,11 @@ public class RewriteNegationsVisitor extends ShortCircuitBaseVisitor {
     @Override
     public Object visit(ASTNRNode notEquals, Object data) {
         final JexlNode root = notEquals.jjtGetParent();
-        final JexlNode equals = children(new ASTERNode(ParserTreeConstants.JJTERNODE), children(notEquals));
+        List<JexlNode> children = new ArrayList<>();
+        for (int i = 0; i < notEquals.jjtGetNumChildren(); i++) {
+            children.add(notEquals.jjtGetChild(i));
+        }
+        final JexlNode equals = setChildren(new ASTERNode(ParserTreeConstants.JJTERNODE), children.toArray(new JexlNode[0]));
         swap(root, notEquals, negate(equals));
         return null;
     }
@@ -62,12 +72,6 @@ public class RewriteNegationsVisitor extends ShortCircuitBaseVisitor {
 
     @Override
     public Object visit(ASTOrNode node, Object data) {
-        node.childrenAccept(this, data);
-        return data;
-    }
-
-    @Override
-    public Object visit(ASTReference node, Object data) {
         node.childrenAccept(this, data);
         return data;
     }

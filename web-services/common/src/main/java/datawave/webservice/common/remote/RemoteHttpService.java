@@ -347,7 +347,7 @@ public abstract class RemoteHttpService {
                     log.error("Failed to read entity content.  Trying as a VoidResponse.", ioe);
                     log.error(content);
                     VoidResponse response = voidResponseReader.readValue(content);
-                    throw new RuntimeException(response.getMessages().toString());
+                    throw new RuntimeException(String.valueOf(response.getMessages()), ioe1);
                 }
             }
         }
@@ -370,11 +370,7 @@ public abstract class RemoteHttpService {
             return null;
         } else {
             VoidResponse response = voidResponseReader.readValue(entity.getContent());
-            if (response.getHasResults()) {
-                return response;
-            } else {
-                throw new RuntimeException(response.getMessages().toString());
-            }
+            return response;
         }
     }
 

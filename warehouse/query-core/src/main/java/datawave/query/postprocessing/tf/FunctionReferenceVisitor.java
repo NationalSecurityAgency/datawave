@@ -4,8 +4,10 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.Set;
 
-import org.apache.commons.jexl2.parser.ASTFunctionNode;
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ASTArguments;
+import org.apache.commons.jexl3.parser.ASTFunctionNode;
+import org.apache.commons.jexl3.parser.ASTNamespaceIdentifier;
+import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.ArrayListMultimap;
@@ -96,22 +98,20 @@ public class FunctionReferenceVisitor extends BaseVisitor {
      */
     @Override
     public Object visit(ASTFunctionNode node, Object data) {
-        final int nChildren = node.jjtGetNumChildren();
-        if (nChildren < 3) {
-            log.error("Function node does have 3 children-- must supply a namespace, function name and at least one argument.");
+        if (node.jjtGetNumChildren() < 2) {
+            log.error("Function node does have 2 children-- must supply an ASTNamespaceIdentifier, and ASTArguments.");
             return null;
         }
 
-        int child = 0;
-        String namespace = node.jjtGetChild(child++).image;
-        String functionName = node.jjtGetChild(child++).image;
+        ASTNamespaceIdentifier namespaceNode = (ASTNamespaceIdentifier) node.jjtGetChild(0);
+        ASTArguments argNodes = (ASTArguments) node.jjtGetChild(1);
         LinkedList<JexlNode> args = Lists.newLinkedList();
-        for (; child < node.jjtGetNumChildren(); ++child) {
-            args.add(node.jjtGetChild(child));
+        for (int i = 0; i < argNodes.jjtGetNumChildren(); i++) {
+            args.add(argNodes.jjtGetChild(i));
         }
 
-        if (namespaceFilter.isEmpty() || namespaceFilter.contains(namespace)) {
-            functions.put(namespace, new Function(functionName, args));
+        if (namespaceFilter.isEmpty() || namespaceFilter.contains(namespaceNode.getNamespace())) {
+            functions.put(namespaceNode.getNamespace(), new Function(namespaceNode.getName(), args));
         }
 
         return null;

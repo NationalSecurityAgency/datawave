@@ -39,15 +39,24 @@
         <bean class="datawave.query.language.functions.jexl.Jexl"/>
         <bean class="datawave.query.language.functions.jexl.AtomValuesMatchFunction"/>
         <bean class="datawave.query.language.functions.jexl.Options"/>
-        <bean class="datawave.query.language.functions.jexl.Unique"/>
+        <bean class="datawave.query.language.functions.jexl.Rename"/>
         <bean class="datawave.query.language.functions.jexl.GroupBy"/>
+        <bean class="datawave.query.language.functions.jexl.Unique"/>
         <bean class="datawave.query.language.functions.jexl.UniqueByDay"/>
         <bean class="datawave.query.language.functions.jexl.UniqueByHour"/>
         <bean class="datawave.query.language.functions.jexl.UniqueByMinute"/>
         <bean class="datawave.query.language.functions.jexl.UniqueByMonth"/>
-        <bean class="datawave.query.language.functions.jexl.UniqueByYear"/>
         <bean class="datawave.query.language.functions.jexl.UniqueBySecond"/>
         <bean class="datawave.query.language.functions.jexl.UniqueByTenthOfHour"/>
+        <bean class="datawave.query.language.functions.jexl.UniqueByYear"/>
+        <bean class="datawave.query.language.functions.jexl.MostRecentUnique"/>
+        <bean class="datawave.query.language.functions.jexl.MostRecentUniqueByDay"/>
+        <bean class="datawave.query.language.functions.jexl.MostRecentUniqueByHour"/>
+        <bean class="datawave.query.language.functions.jexl.MostRecentUniqueByMinute"/>
+        <bean class="datawave.query.language.functions.jexl.MostRecentUniqueByMonth"/>
+        <bean class="datawave.query.language.functions.jexl.MostRecentUniqueBySecond"/>
+        <bean class="datawave.query.language.functions.jexl.MostRecentUniqueByTenthOfHour"/>
+        <bean class="datawave.query.language.functions.jexl.MostRecentUniqueByYear"/>
         <bean class="datawave.query.language.functions.jexl.NoExpansion"/>
         <bean class="datawave.query.language.functions.jexl.Compare"/>
         <bean class="datawave.query.language.functions.jexl.Geowave.Contains"/>
@@ -268,6 +277,8 @@
         <property name="maxFieldIndexRangeSplit" value="${beq.fieldIndexRangeSplit}" />
         <!-- The max number of sources that can be created across ivarators for one scan -->
         <property name="maxIvaratorSources" value="${beq.maxIvaratorSources}" />
+        <!-- The max wait time in ms for an ivarator source (default 30 minutes) -->
+        <property name="maxIvaratorSourceWait" value="${beq.maxIvaratorSourceWait}" />
         <!-- The max number of evaluation pipelines.  They are run in a pool of threads controlled by the tserver.datawave.evaluation.threads accumulo configuration property which defaults to 100 (IteratorThreadPoolManager). -->
         <property name="maxEvaluationPipelines" value="${beq.evaluationPipelines}" />
         <!-- The max number of non-null evaluated results to cache on each tserver beyond the evaluation pipelines in queue -->
@@ -344,12 +355,17 @@
         </property>
     </bean>
 
+    <util:map id="DefaultUUIDViews">
+        <entry key="default" value="LuceneUUIDEventQuery"/>
+    </util:map>
+
     <util:list id="UUIDTypeList" value-type="datawave.query.data.UUIDType">
         ${lookup.uuid.uuidTypes}
     </util:list>
 
     <bean id="LookupUUIDConfiguration" class="datawave.webservice.query.configuration.LookupUUIDConfiguration">
         <property name="uuidTypes" ref="UUIDTypeList" />
+        <property name="contentLookupTypes" ref="contentLookupTypes" />
         <property name="columnVisibility" value="" />
         <property name="beginDate" value="${lookup.uuid.beginDate}" />
     </bean>
@@ -398,7 +414,12 @@
             </list>
         </property>
     </bean>
-    
+
+    <util:map id="contentLookupTypes">
+        <entry key="default" value="ContentQuery"/>
+    </util:map>
+
+
     <!-- Query Logic that returns document content -->
     <bean id="ContentQuery" parent="baseQueryLogic" scope="prototype"  class="datawave.query.tables.content.ContentQueryTable">
         <property name="tableName" value="${shard.table.name}" />

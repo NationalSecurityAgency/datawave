@@ -3,14 +3,14 @@ package datawave.query.jexl.visitors;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ASTOrNode;
-import org.apache.commons.jexl2.parser.ASTReference;
-import org.apache.commons.jexl2.parser.ASTReferenceExpression;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.JexlNodes;
-import org.apache.commons.jexl2.parser.ParserTreeConstants;
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTOrNode;
+import org.apache.commons.jexl3.parser.ASTReference;
+import org.apache.commons.jexl3.parser.ASTReferenceExpression;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNodes;
+import org.apache.commons.jexl3.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
 
 import datawave.query.config.ShardQueryConfiguration;
@@ -55,7 +55,7 @@ public class ExecutableExpansionVisitor extends BaseVisitor {
             // flatten the tree first
             JexlNode copy = TreeFlatteningRebuildingVisitor.flatten(node);
             // see if we can find a place where expanding the query will make it executable
-            super.visit(copy, new ExpansionTracker(null));
+            copy.childrenAccept(this, new ExpansionTracker(null));
 
             // if the query is now executable, return it otherwise ignore the work done
             if (ExecutableDeterminationVisitor.isExecutable(copy, config, helper)) {
@@ -85,11 +85,7 @@ public class ExecutableExpansionVisitor extends BaseVisitor {
             // as long as there are more children, and this node is still valid (has a parent) keep visiting children as long as we haven't already failed
             while (childCount < node.jjtGetNumChildren() && node.jjtGetParent() != null && !tracker.isFailedExpansion()) {
                 JexlNode child = node.jjtGetChild(childCount);
-                if (child instanceof ASTOrNode) {
-                    visit((ASTOrNode) child, tracker);
-                } else {
-                    visit(child, tracker);
-                }
+                child.jjtAccept(this, tracker);
                 childCount++;
             }
         }

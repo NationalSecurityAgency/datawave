@@ -14,9 +14,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.JexlNodes;
-import org.apache.commons.jexl2.parser.ParserTreeConstants;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNodes;
 
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
@@ -204,7 +203,7 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
         private JexlNode rebuiltNode;
 
         public FutureJexlNode(JexlNode origNode, IndexLookup lookup, boolean ignoreComposites, boolean keepOriginalNode) {
-            super(ParserTreeConstants.JJTREFERENCE);
+            super(origNode.getId());
             this.origNode = origNode;
             this.lookup = lookup;
             this.ignoreComposites = ignoreComposites;
