@@ -143,7 +143,7 @@ function configureModification() {
 
 function modificationHelp() {
     echo
-    echo " The $( printGreen "datawaveModification" ) shell function allows you submit modification requestson demand to DataWave's"
+    echo " The $( printGreen "datawaveModification" ) shell function allows you submit modification requests on demand to DataWave's"
     echo " Rest API and to inspect the results. It automatically configures curl and sets"
     echo " reasonable defaults for most required query parameters"
     echo

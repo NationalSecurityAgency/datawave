@@ -132,16 +132,5 @@
                 <module>query-metric</module>
             </modules>
         </profile>
-        <profile>
-            <id>submodule-service-query-storage</id>
-            <activation>
-                <file>
-                    <exists>query-storage/pom.xml</exists>
-                </file>
-            </activation>
-            <modules>
-                <module>query-storage</module>
-            </modules>
-        </profile>
     </profiles>
 </project>
