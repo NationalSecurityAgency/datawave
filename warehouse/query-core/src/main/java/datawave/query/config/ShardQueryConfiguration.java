@@ -770,6 +770,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setMaxOrRangeIvarators(other.getMaxOrRangeIvarators());
         this.setMaxOrRangeThreshold(other.getMaxOrRangeThreshold());
         this.setInitialMaxTermThreshold(other.getInitialMaxTermThreshold());
+        this.setIntermediateMaxTermThreshold(other.getIntermediateMaxTermThreshold());
         this.setFinalMaxTermThreshold(other.getFinalMaxTermThreshold());
         this.setMaxDepthThreshold(other.getMaxDepthThreshold());
         this.setMaxRangesPerRangeIvarator(other.getMaxRangesPerRangeIvarator());
@@ -2762,145 +2763,412 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
             return false;
         if (!super.equals(o))
             return false;
+        // @formatter:off
         ShardQueryConfiguration that = (ShardQueryConfiguration) o;
-        return isTldQuery() == that.isTldQuery() && isDisableIndexOnlyDocuments() == that.isDisableIndexOnlyDocuments()
-                        && getMaxScannerBatchSize() == that.getMaxScannerBatchSize() && getMaxIndexBatchSize() == that.getMaxIndexBatchSize()
-                        && isAllTermsIndexOnly() == that.isAllTermsIndexOnly() && getMaxIndexScanTimeMillis() == that.getMaxIndexScanTimeMillis()
-                        && getParseTldUids() == that.getParseTldUids() && getCollapseUids() == that.getCollapseUids()
-                        && getCollapseUidsThreshold() == that.getCollapseUidsThreshold()
-                        && getEnforceUniqueTermsWithinExpressions() == that.getEnforceUniqueTermsWithinExpressions()
-                        && getSequentialScheduler() == that.getSequentialScheduler() && getCollectTimingDetails() == that.getCollectTimingDetails()
-                        && getLogTimingDetails() == that.getLogTimingDetails() && getSendTimingToStatsd() == that.getSendTimingToStatsd()
-                        && getStatsdPort() == that.getStatsdPort() && getStatsdMaxQueueSize() == that.getStatsdMaxQueueSize()
-                        && getLimitAnyFieldLookups() == that.getLimitAnyFieldLookups() && isBypassExecutabilityCheck() == that.isBypassExecutabilityCheck()
-                        && isGeneratePlanOnly() == that.isGeneratePlanOnly() && getBackoffEnabled() == that.getBackoffEnabled()
-                        && getUnsortedUIDsEnabled() == that.getUnsortedUIDsEnabled() && getSerializeQueryIterator() == that.getSerializeQueryIterator()
-                        && isDebugMultithreadedSources() == that.isDebugMultithreadedSources() && isSortGeoWaveQueryRanges() == that.isSortGeoWaveQueryRanges()
-                        && getNumRangesToBuffer() == that.getNumRangesToBuffer() && getRangeBufferTimeoutMillis() == that.getRangeBufferTimeoutMillis()
-                        && getRangeBufferPollMillis() == that.getRangeBufferPollMillis() && getGeometryMaxExpansion() == that.getGeometryMaxExpansion()
-                        && getPointMaxExpansion() == that.getPointMaxExpansion() && getGeoWaveRangeSplitThreshold() == that.getGeoWaveRangeSplitThreshold()
-                        && Double.compare(that.getGeoWaveMaxRangeOverlap(), getGeoWaveMaxRangeOverlap()) == 0
-                        && isOptimizeGeoWaveRanges() == that.isOptimizeGeoWaveRanges() && getGeoWaveMaxEnvelopes() == that.getGeoWaveMaxEnvelopes()
-                        && isCleanupShardsAndDaysQueryHints() == that.isCleanupShardsAndDaysQueryHints()
-                        && Float.compare(that.getCollapseDatePercentThreshold(), getCollapseDatePercentThreshold()) == 0
-                        && isSortedUIDs() == that.isSortedUIDs() && isTermFrequenciesRequired() == that.isTermFrequenciesRequired()
-                        && isLimitFieldsPreQueryEvaluation() == that.isLimitFieldsPreQueryEvaluation() && isHitList() == that.isHitList()
-                        && isDateIndexTimeTravel() == that.isDateIndexTimeTravel() && getBeginDateCap() == that.getBeginDateCap()
-                        && isFailOutsideValidDateRange() == that.isFailOutsideValidDateRange() && isRawTypes() == that.isRawTypes()
-                        && Double.compare(that.getMinSelectivity(), getMinSelectivity()) == 0 && getIncludeDataTypeAsField() == that.getIncludeDataTypeAsField()
-                        && getIncludeRecordId() == that.getIncludeRecordId() && getIncludeHierarchyFields() == that.getIncludeHierarchyFields()
-                        && getIncludeGroupingContext() == that.getIncludeGroupingContext() && getFilterMaskedValues() == that.getFilterMaskedValues()
-                        && isReducedResponse() == that.isReducedResponse() && getAllowShortcutEvaluation() == that.getAllowShortcutEvaluation()
-                        && getSpeculativeScanning() == that.getSpeculativeScanning() && isDisableEvaluation() == that.isDisableEvaluation()
-                        && isContainsIndexOnlyTerms() == that.isContainsIndexOnlyTerms() && isContainsCompositeTerms() == that.isContainsCompositeTerms()
-                        && isAllowFieldIndexEvaluation() == that.isAllowFieldIndexEvaluation()
-                        && isAllowTermFrequencyLookup() == that.isAllowTermFrequencyLookup()
-                        && isExpandUnfieldedNegations() == that.isExpandUnfieldedNegations() && getEventPerDayThreshold() == that.getEventPerDayThreshold()
-                        && getShardsPerDayThreshold() == that.getShardsPerDayThreshold() && getInitialMaxTermThreshold() == that.getInitialMaxTermThreshold()
-                        && getFinalMaxTermThreshold() == that.getFinalMaxTermThreshold() && getMaxDepthThreshold() == that.getMaxDepthThreshold()
-                        && isExpandFields() == that.isExpandFields() && getMaxUnfieldedExpansionThreshold() == that.getMaxUnfieldedExpansionThreshold()
-                        && isExpandValues() == that.isExpandValues() && getMaxValueExpansionThreshold() == that.getMaxValueExpansionThreshold()
-                        && getMaxOrExpansionThreshold() == that.getMaxOrExpansionThreshold() && getMaxOrRangeThreshold() == that.getMaxOrRangeThreshold()
-                        && getMaxOrRangeIvarators() == that.getMaxOrRangeIvarators() && getMaxRangesPerRangeIvarator() == that.getMaxRangesPerRangeIvarator()
-                        && getMaxOrExpansionFstThreshold() == that.getMaxOrExpansionFstThreshold() && getYieldThresholdMs() == that.getYieldThresholdMs()
-                        && getIvaratorCacheBufferSize() == that.getIvaratorCacheBufferSize()
-                        && getIvaratorCacheScanPersistThreshold() == that.getIvaratorCacheScanPersistThreshold()
-                        && getIvaratorCacheScanTimeout() == that.getIvaratorCacheScanTimeout()
-                        && getMaxFieldIndexRangeSplit() == that.getMaxFieldIndexRangeSplit() && getIvaratorMaxOpenFiles() == that.getIvaratorMaxOpenFiles()
-                        && getIvaratorNumRetries() == that.getIvaratorNumRetries() && isIvaratorPersistVerify() == that.isIvaratorPersistVerify()
-                        && getIvaratorPersistVerifyCount() == that.getIvaratorPersistVerifyCount() && getMaxIvaratorSources() == that.getMaxIvaratorSources()
-                        && getMaxIvaratorResults() == that.getMaxIvaratorResults() && getMaxEvaluationPipelines() == that.getMaxEvaluationPipelines()
-                        && getMaxPipelineCachedResults() == that.getMaxPipelineCachedResults() && isExpandAllTerms() == that.isExpandAllTerms()
-                        && shouldLimitTermExpansionToModel == that.shouldLimitTermExpansionToModel
-                        && isCompressServerSideResults() == that.isCompressServerSideResults()
-                        && isIndexOnlyFilterFunctionsEnabled() == that.isIndexOnlyFilterFunctionsEnabled()
-                        && isCompositeFilterFunctionsEnabled() == that.isCompositeFilterFunctionsEnabled()
-                        && getGroupFieldsBatchSize() == that.getGroupFieldsBatchSize() && getAccrueStats() == that.getAccrueStats()
-                        && getCacheModel() == that.getCacheModel() && isTrackSizes() == that.isTrackSizes()
-                        && getEnforceUniqueConjunctionsWithinExpression() == that.getEnforceUniqueConjunctionsWithinExpression()
-                        && getEnforceUniqueDisjunctionsWithinExpression() == that.getEnforceUniqueDisjunctionsWithinExpression()
-                        && Objects.equals(getFilterOptions(), that.getFilterOptions()) && Objects.equals(getAccumuloPassword(), that.getAccumuloPassword())
-                        && Objects.equals(getStatsdHost(), that.getStatsdHost()) && Objects.equals(getShardTableName(), that.getShardTableName())
-                        && Objects.equals(getIndexTableName(), that.getIndexTableName())
-                        && Objects.equals(getReverseIndexTableName(), that.getReverseIndexTableName())
-                        && Objects.equals(getMetadataTableName(), that.getMetadataTableName())
-                        && Objects.equals(getDateIndexTableName(), that.getDateIndexTableName())
-                        && Objects.equals(getIndexStatsTableName(), that.getIndexStatsTableName())
-                        && Objects.equals(getDefaultDateTypeName(), that.getDefaultDateTypeName())
-                        && Objects.equals(getNumQueryThreads(), that.getNumQueryThreads()) && Objects.equals(numLookupThreads, that.numLookupThreads)
-                        && Objects.equals(getNumDateIndexThreads(), that.getNumDateIndexThreads())
-                        && Objects.equals(getMaxDocScanTimeout(), that.getMaxDocScanTimeout())
-                        && Objects.equals(getFullTableScanEnabled(), that.getFullTableScanEnabled())
-                        && Objects.equals(getRealmSuffixExclusionPatterns(), that.getRealmSuffixExclusionPatterns())
-                        && Objects.equals(getDefaultType(), that.getDefaultType()) && Objects.equals(getShardDateFormat(), that.getShardDateFormat())
-                        && Objects.equals(getUseEnrichers(), that.getUseEnrichers()) && Objects.equals(getEnricherClassNames(), that.getEnricherClassNames())
-                        && Objects.equals(getUseFilters(), that.getUseFilters()) && Objects.equals(getFilterClassNames(), that.getFilterClassNames())
-                        && Objects.equals(getIndexFilteringClassNames(), that.getIndexFilteringClassNames())
-                        && Objects.equals(getNonEventKeyPrefixes(), that.getNonEventKeyPrefixes())
-                        && Objects.equals(getUnevaluatedFields(), that.getUnevaluatedFields()) && Objects.equals(getDatatypeFilter(), that.getDatatypeFilter())
-                        && Objects.equals(getIndexHoles(), that.getIndexHoles()) && Objects.equals(getProjectFields(), that.getProjectFields())
-                        && Objects.equals(getDisallowlistedFields(), that.getDisallowlistedFields())
-                        && Objects.equals(getIndexedFields(), that.getIndexedFields())
-                        && Objects.equals(getReverseIndexedFields(), that.getReverseIndexedFields())
-                        && Objects.equals(getNormalizedFields(), that.getNormalizedFields()) && Objects.equals(getDataTypes(), that.getDataTypes())
-                        && Objects.equals(getQueryFieldsDatatypes(), that.getQueryFieldsDatatypes())
-                        && Objects.equals(getNormalizedFieldsDatatypes(), that.getNormalizedFieldsDatatypes())
-                        && Objects.equals(getFieldToDiscreteIndexTypes(), that.getFieldToDiscreteIndexTypes())
-                        && Objects.equals(getCompositeToFieldMap(), that.getCompositeToFieldMap())
-                        && Objects.equals(getCompositeTransitionDates(), that.getCompositeTransitionDates())
-                        && Objects.equals(getCompositeFieldSeparators(), that.getCompositeFieldSeparators())
-                        && Objects.equals(getEvaluationOnlyFields(), that.getEvaluationOnlyFields())
-                        && Objects.equals(getQueryTermFrequencyFields(), that.getQueryTermFrequencyFields())
-                        && Objects.equals(getLimitFields(), that.getLimitFields()) && Objects.equals(getLimitFieldsField(), that.getLimitFieldsField())
-                        && Objects.equals(getHierarchyFieldOptions(), that.getHierarchyFieldOptions())
-                        && Objects.equals(getDocumentPermutations(), that.getDocumentPermutations()) && getReturnType() == that.getReturnType()
-                        && Objects.equals(getHdfsSiteConfigURLs(), that.getHdfsSiteConfigURLs())
-                        && Objects.equals(getHdfsFileCompressionCodec(), that.getHdfsFileCompressionCodec())
-                        && Objects.equals(getZookeeperConfig(), that.getZookeeperConfig())
-                        && Objects.equals(getIvaratorCacheDirConfigs(), that.getIvaratorCacheDirConfigs())
-                        && Objects.equals(getIvaratorFstHdfsBaseURIs(), that.getIvaratorFstHdfsBaseURIs())
-                        && Objects.equals(getQueryModel(), that.getQueryModel()) && Objects.equals(getModelName(), that.getModelName())
-                        && Objects.equals(getModelTableName(), that.getModelTableName()) && Objects.equals(getGroupFields(), that.getGroupFields())
-                        && Objects.equals(getUniqueFields(), that.getUniqueFields()) && Objects.equals(getContentFieldNames(), that.getContentFieldNames())
-                        && Objects.equals(getActiveQueryLogNameSource(), that.getActiveQueryLogNameSource()) && Objects.equals(getBloom(), that.getBloom())
-                        && Objects.equals(getNoExpansionFields(), that.getNoExpansionFields());
+        return isTldQuery() == that.isTldQuery() &&
+                isDisableIndexOnlyDocuments() == that.isDisableIndexOnlyDocuments() &&
+                getMaxScannerBatchSize() == that.getMaxScannerBatchSize() &&
+                getMaxIndexBatchSize() == that.getMaxIndexBatchSize() &&
+                isAllTermsIndexOnly() == that.isAllTermsIndexOnly() &&
+                getMaxIndexScanTimeMillis() == that.getMaxIndexScanTimeMillis() &&
+                getParseTldUids() == that.getParseTldUids() &&
+                getCollapseUids() == that.getCollapseUids() &&
+                getCollapseUidsThreshold() == that.getCollapseUidsThreshold() &&
+                getEnforceUniqueTermsWithinExpressions() == that.getEnforceUniqueTermsWithinExpressions() &&
+                getReduceIngestTypes() == that.getReduceIngestTypes() &&
+                getReduceIngestTypesPerShard() == that.getReduceIngestTypesPerShard() &&
+                getPruneQueryByIngestTypes() == that.getPruneQueryByIngestTypes() &&
+                getReduceQueryFields() == that.getReduceQueryFields() &&
+                getReduceQueryFieldsPerShard() == that.getReduceQueryFieldsPerShard() &&
+                getReduceTypeMetadata() == that.getReduceTypeMetadata() &&
+                getReduceTypeMetadataPerShard() == that.getReduceTypeMetadataPerShard() &&
+                isRebuildDatatypeFilter() == that.isRebuildDatatypeFilter() &&
+                isRebuildDatatypeFilterPerShard() == that.isRebuildDatatypeFilterPerShard() &&
+                getSequentialScheduler() == that.getSequentialScheduler() &&
+                getCollectTimingDetails() == that.getCollectTimingDetails() &&
+                getLogTimingDetails() == that.getLogTimingDetails() &&
+                getSendTimingToStatsd() == that.getSendTimingToStatsd() &&
+                getStatsdPort() == that.getStatsdPort() &&
+                getStatsdMaxQueueSize() == that.getStatsdMaxQueueSize() &&
+                getLimitAnyFieldLookups() == that.getLimitAnyFieldLookups() &&
+                isBypassExecutabilityCheck() == that.isBypassExecutabilityCheck() &&
+                isGeneratePlanOnly() == that.isGeneratePlanOnly() &&
+                getBackoffEnabled() == that.getBackoffEnabled() &&
+                getUnsortedUIDsEnabled() == that.getUnsortedUIDsEnabled() &&
+                getSerializeQueryIterator() == that.getSerializeQueryIterator() &&
+                isDebugMultithreadedSources() == that.isDebugMultithreadedSources() &&
+                isSortGeoWaveQueryRanges() == that.isSortGeoWaveQueryRanges() &&
+                getNumRangesToBuffer() == that.getNumRangesToBuffer() &&
+                getRangeBufferTimeoutMillis() == that.getRangeBufferTimeoutMillis() &&
+                getRangeBufferPollMillis() == that.getRangeBufferPollMillis() &&
+                getGeometryMaxExpansion() == that.getGeometryMaxExpansion() &&
+                getPointMaxExpansion() == that.getPointMaxExpansion() &&
+                getGeoMaxExpansion() == that.getGeoMaxExpansion() &&
+                getGeoWaveRangeSplitThreshold() == that.getGeoWaveRangeSplitThreshold() &&
+                Double.compare(that.getGeoWaveMaxRangeOverlap(), getGeoWaveMaxRangeOverlap()) == 0 &&
+                isOptimizeGeoWaveRanges() == that.isOptimizeGeoWaveRanges() &&
+                getGeoWaveMaxEnvelopes() == that.getGeoWaveMaxEnvelopes() &&
+                isCleanupShardsAndDaysQueryHints() == that.isCleanupShardsAndDaysQueryHints() &&
+                Float.compare(that.getCollapseDatePercentThreshold(), getCollapseDatePercentThreshold()) == 0 &&
+                isSortedUIDs() == that.isSortedUIDs() &&
+                isTermFrequenciesRequired() == that.isTermFrequenciesRequired() &&
+                isLimitFieldsPreQueryEvaluation() == that.isLimitFieldsPreQueryEvaluation() &&
+                isHitList() == that.isHitList() &&
+                isDateIndexTimeTravel() == that.isDateIndexTimeTravel() &&
+                getIgnoreNonExistentFields() == that.getIgnoreNonExistentFields() &&
+                getBeginDateCap() == that.getBeginDateCap() &&
+                isFailOutsideValidDateRange() == that.isFailOutsideValidDateRange() &&
+                isRawTypes() == that.isRawTypes() &&
+                Double.compare(that.getMinSelectivity(), getMinSelectivity()) == 0 &&
+                getIncludeDataTypeAsField() == that.getIncludeDataTypeAsField() &&
+                getIncludeRecordId() == that.getIncludeRecordId() &&
+                getIncludeHierarchyFields() == that.getIncludeHierarchyFields() &&
+                getIncludeGroupingContext() == that.getIncludeGroupingContext() &&
+                getFilterMaskedValues() == that.getFilterMaskedValues() &&
+                isReducedResponse() == that.isReducedResponse() &&
+                getAllowShortcutEvaluation() == that.getAllowShortcutEvaluation() &&
+                getSpeculativeScanning() == that.getSpeculativeScanning() &&
+                isDisableEvaluation() == that.isDisableEvaluation() &&
+                isContainsIndexOnlyTerms() == that.isContainsIndexOnlyTerms() &&
+                isContainsCompositeTerms() == that.isContainsCompositeTerms() &&
+                isAllowFieldIndexEvaluation() == that.isAllowFieldIndexEvaluation() &&
+                isAllowTermFrequencyLookup() == that.isAllowTermFrequencyLookup() &&
+                isExpandUnfieldedNegations() == that.isExpandUnfieldedNegations() &&
+                getEventPerDayThreshold() == that.getEventPerDayThreshold() &&
+                getShardsPerDayThreshold() == that.getShardsPerDayThreshold() &&
+                getInitialMaxTermThreshold() == that.getInitialMaxTermThreshold() &&
+                getIntermediateMaxTermThreshold() == that.getIntermediateMaxTermThreshold() &&
+                getIndexedMaxTermThreshold() == that.getIndexedMaxTermThreshold() &&
+                getFinalMaxTermThreshold() == that.getFinalMaxTermThreshold() &&
+                getMaxDepthThreshold() == that.getMaxDepthThreshold() &&
+                isExpandFields() == that.isExpandFields() &&
+                getMaxUnfieldedExpansionThreshold() == that.getMaxUnfieldedExpansionThreshold() &&
+                isExpandValues() == that.isExpandValues() &&
+                getMaxValueExpansionThreshold() == that.getMaxValueExpansionThreshold() &&
+                getMaxOrExpansionThreshold() == that.getMaxOrExpansionThreshold() &&
+                getMaxOrRangeThreshold() == that.getMaxOrRangeThreshold() &&
+                getMaxOrRangeIvarators() == that.getMaxOrRangeIvarators() &&
+                getMaxRangesPerRangeIvarator() == that.getMaxRangesPerRangeIvarator() &&
+                getMaxOrExpansionFstThreshold() == that.getMaxOrExpansionFstThreshold() &&
+                getYieldThresholdMs() == that.getYieldThresholdMs() &&
+                getIvaratorCacheBufferSize() == that.getIvaratorCacheBufferSize() &&
+                getIvaratorCacheScanPersistThreshold() == that.getIvaratorCacheScanPersistThreshold() &&
+                getIvaratorCacheScanTimeout() == that.getIvaratorCacheScanTimeout() &&
+                getMaxFieldIndexRangeSplit() == that.getMaxFieldIndexRangeSplit() &&
+                getIvaratorMaxOpenFiles() == that.getIvaratorMaxOpenFiles() &&
+                getIvaratorNumRetries() == that.getIvaratorNumRetries() &&
+                isIvaratorPersistVerify() == that.isIvaratorPersistVerify() &&
+                getIvaratorPersistVerifyCount() == that.getIvaratorPersistVerifyCount() &&
+                getMaxIvaratorSources() == that.getMaxIvaratorSources() &&
+                getMaxIvaratorSourceWait() == that.getMaxIvaratorSourceWait() &&
+                getMaxIvaratorResults() == that.getMaxIvaratorResults() &&
+                getMaxIvaratorTerms() == that.getMaxIvaratorTerms() &&
+                getMaxEvaluationPipelines() == that.getMaxEvaluationPipelines() &&
+                getMaxPipelineCachedResults() == that.getMaxPipelineCachedResults() &&
+                isExpandAllTerms() == that.isExpandAllTerms() &&
+                shouldLimitTermExpansionToModel == that.shouldLimitTermExpansionToModel &&
+                isCompressServerSideResults() == that.isCompressServerSideResults() &&
+                isIndexOnlyFilterFunctionsEnabled() == that.isIndexOnlyFilterFunctionsEnabled() &&
+                isCompositeFilterFunctionsEnabled() == that.isCompositeFilterFunctionsEnabled() &&
+                getGroupFieldsBatchSize() == that.getGroupFieldsBatchSize() &&
+                getAccrueStats() == that.getAccrueStats() &&
+                Objects.equals(getUniqueFields(), that.getUniqueFields()) &&
+                getUniqueCacheBufferSize() == that.getUniqueCacheBufferSize() &&
+                getCacheModel() == that.getCacheModel() &&
+                isTrackSizes() == that.isTrackSizes() &&
+                getEnforceUniqueConjunctionsWithinExpression() == that.getEnforceUniqueConjunctionsWithinExpression() &&
+                getEnforceUniqueDisjunctionsWithinExpression() == that.getEnforceUniqueDisjunctionsWithinExpression() &&
+                Objects.equals(getFilterOptions(), that.getFilterOptions()) &&
+                Objects.equals(getAccumuloPassword(), that.getAccumuloPassword()) &&
+                Objects.equals(getStatsdHost(), that.getStatsdHost()) &&
+                Objects.equals(getShardTableName(), that.getShardTableName()) &&
+                Objects.equals(getIndexTableName(), that.getIndexTableName()) &&
+                Objects.equals(getReverseIndexTableName(), that.getReverseIndexTableName()) &&
+                Objects.equals(getMetadataTableName(), that.getMetadataTableName()) &&
+                Objects.equals(getDateIndexTableName(), that.getDateIndexTableName()) &&
+                Objects.equals(getIndexStatsTableName(), that.getIndexStatsTableName()) &&
+                Objects.equals(getDefaultDateTypeName(), that.getDefaultDateTypeName()) &&
+                Objects.equals(getNumQueryThreads(), that.getNumQueryThreads()) &&
+                Objects.equals(numLookupThreads, that.numLookupThreads) &&
+                Objects.equals(getNumDateIndexThreads(), that.getNumDateIndexThreads()) &&
+                Objects.equals(getMaxDocScanTimeout(), that.getMaxDocScanTimeout()) &&
+                Objects.equals(getFullTableScanEnabled(), that.getFullTableScanEnabled()) &&
+                Objects.equals(getRealmSuffixExclusionPatterns(), that.getRealmSuffixExclusionPatterns()) &&
+                Objects.equals(getDefaultType(), that.getDefaultType()) &&
+                Objects.equals(getShardDateFormat(), that.getShardDateFormat()) &&
+                Objects.equals(getUseEnrichers(), that.getUseEnrichers()) &&
+                Objects.equals(getEnricherClassNames(), that.getEnricherClassNames()) &&
+                Objects.equals(getUseFilters(), that.getUseFilters()) &&
+                Objects.equals(getFilterClassNames(), that.getFilterClassNames()) &&
+                Objects.equals(getIndexFilteringClassNames(), that.getIndexFilteringClassNames()) &&
+                Objects.equals(getNonEventKeyPrefixes(), that.getNonEventKeyPrefixes()) &&
+                Objects.equals(getUnevaluatedFields(), that.getUnevaluatedFields()) &&
+                Objects.equals(getDatatypeFilter(), that.getDatatypeFilter()) &&
+                Objects.equals(getIndexHoles(), that.getIndexHoles()) &&
+                Objects.equals(getProjectFields(), that.getProjectFields()) &&
+                Objects.equals(getRenameFields(), that.getRenameFields()) &&
+                Objects.equals(getDisallowlistedFields(), that.getDisallowlistedFields()) &&
+                Objects.equals(getIndexedFields(), that.getIndexedFields()) &&
+                Objects.equals(getReverseIndexedFields(), that.getReverseIndexedFields()) &&
+                Objects.equals(getNormalizedFields(), that.getNormalizedFields()) &&
+                Objects.equals(getDataTypes(), that.getDataTypes()) &&
+                Objects.equals(getQueryFieldsDatatypes(), that.getQueryFieldsDatatypes()) &&
+                Objects.equals(getNormalizedFieldsDatatypes(), that.getNormalizedFieldsDatatypes()) &&
+                Objects.equals(getFieldToDiscreteIndexTypes(), that.getFieldToDiscreteIndexTypes()) &&
+                Objects.equals(getCompositeToFieldMap(), that.getCompositeToFieldMap()) &&
+                Objects.equals(getCompositeTransitionDates(), that.getCompositeTransitionDates()) &&
+                Objects.equals(getCompositeFieldSeparators(), that.getCompositeFieldSeparators()) &&
+                Objects.equals(getWhindexCreationDates(), that.getWhindexCreationDates()) &&
+                isDisableWhindexFieldMappings() == that.isDisableWhindexFieldMappings() &&
+                Objects.equals(getWhindexMappingFields(), that.getWhindexMappingFields()) &&
+                Objects.equals(getWhindexFieldMappings(), that.getWhindexFieldMappings()) &&
+                Objects.equals(getEvaluationOnlyFields(), that.getEvaluationOnlyFields()) &&
+                Objects.equals(getQueryTermFrequencyFields(), that.getQueryTermFrequencyFields()) &&
+                Objects.equals(getLimitFields(), that.getLimitFields()) &&
+                Objects.equals(getMatchingFieldSets(), that.getMatchingFieldSets()) &&
+                Objects.equals(getLimitFieldsField(), that.getLimitFieldsField()) &&
+                Objects.equals(getHierarchyFieldOptions(), that.getHierarchyFieldOptions()) &&
+                Objects.equals(getDocumentPermutations(), that.getDocumentPermutations()) &&
+                getReturnType() == that.getReturnType() &&
+                Objects.equals(getHdfsSiteConfigURLs(), that.getHdfsSiteConfigURLs()) &&
+                Objects.equals(getHdfsFileCompressionCodec(), that.getHdfsFileCompressionCodec()) &&
+                Objects.equals(getZookeeperConfig(), that.getZookeeperConfig()) &&
+                Objects.equals(getIvaratorCacheDirConfigs(), that.getIvaratorCacheDirConfigs()) &&
+                Objects.equals(getIvaratorFstHdfsBaseURIs(), that.getIvaratorFstHdfsBaseURIs()) &&
+                Objects.equals(getQueryModel(), that.getQueryModel()) &&
+                Objects.equals(getModelName(), that.getModelName()) &&
+                Objects.equals(getModelTableName(), that.getModelTableName()) &&
+                Objects.equals(getGroupFields(), that.getGroupFields()) &&
+                Objects.equals(getUniqueFields(), that.getUniqueFields()) &&
+                Objects.equals(getContentFieldNames(), that.getContentFieldNames()) &&
+                Objects.equals(getActiveQueryLogNameSource(), that.getActiveQueryLogNameSource()) &&
+                Objects.equals(getBloom(), that.getBloom()) &&
+                Objects.equals(getNoExpansionFields(), that.getNoExpansionFields()) &&
+                Objects.equals(getLenientFields(), that.getLenientFields()) &&
+                Objects.equals(getStrictFields(), that.getStrictFields()) &&
+                Objects.equals(getExcerptFields(), that.getExcerptFields()) &&
+                getFiFieldSeek() == that.getFiFieldSeek() &&
+                getFiNextSeek() == that.getFiNextSeek() &&
+                getEventFieldSeek() == that.getEventFieldSeek() &&
+                getEventNextSeek() == that.getEventNextSeek() &&
+                getTfFieldSeek() == that.getTfFieldSeek() &&
+                getTfNextSeek() == that.getTfNextSeek() &&
+                getVisitorFunctionMaxWeight() == that.getVisitorFunctionMaxWeight() &&
+                getQueryExecutionForPageTimeout() == that.getQueryExecutionForPageTimeout() &&
+                isLazySetMechanismEnabled() == that.isLazySetMechanismEnabled() &&
+                getDocAggregationThresholdMs() == that.getDocAggregationThresholdMs() &&
+                getTfAggregationThresholdMs() == that.getTfAggregationThresholdMs() &&
+                getPruneQueryOptions() == that.getPruneQueryOptions() &&
+                getUseFieldCounts() == that.getUseFieldCounts() &&
+                getUseTermCounts() == that.getUseTermCounts() &&
+                isSortQueryBeforeGlobalIndex() == that.isSortQueryBeforeGlobalIndex() &&
+                isSortQueryByCounts() == that.isSortQueryByCounts();
+        // @formatter:on
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), isTldQuery(), getFilterOptions(), isDisableIndexOnlyDocuments(), getMaxScannerBatchSize(), getMaxIndexBatchSize(),
-                        isAllTermsIndexOnly(), getAccumuloPassword(), getMaxIndexScanTimeMillis(), getParseTldUids(), getCollapseUids(),
-                        getCollapseUidsThreshold(), getEnforceUniqueTermsWithinExpressions(), getSequentialScheduler(), getCollectTimingDetails(),
-                        getLogTimingDetails(), getSendTimingToStatsd(), getStatsdHost(), getStatsdPort(), getStatsdMaxQueueSize(), getLimitAnyFieldLookups(),
-                        isBypassExecutabilityCheck(), isGeneratePlanOnly(), getBackoffEnabled(), getUnsortedUIDsEnabled(), getSerializeQueryIterator(),
-                        isDebugMultithreadedSources(), isSortGeoWaveQueryRanges(), getNumRangesToBuffer(), getRangeBufferTimeoutMillis(),
-                        getRangeBufferPollMillis(), getGeometryMaxExpansion(), getPointMaxExpansion(), getGeoWaveRangeSplitThreshold(),
-                        getGeoWaveMaxRangeOverlap(), isOptimizeGeoWaveRanges(), getGeoWaveMaxEnvelopes(), getShardTableName(), getIndexTableName(),
-                        getReverseIndexTableName(), getMetadataTableName(), getDateIndexTableName(), getIndexStatsTableName(), getDefaultDateTypeName(),
-                        isCleanupShardsAndDaysQueryHints(), getNumQueryThreads(), numLookupThreads, getNumDateIndexThreads(), getMaxDocScanTimeout(),
-                        getCollapseDatePercentThreshold(), getFullTableScanEnabled(), getRealmSuffixExclusionPatterns(), getDefaultType(), getShardDateFormat(),
-                        getUseEnrichers(), getEnricherClassNames(), getUseFilters(), getFilterClassNames(), getIndexFilteringClassNames(),
-                        getNonEventKeyPrefixes(), getUnevaluatedFields(), getDatatypeFilter(), getIndexHoles(), getProjectFields(), getDisallowlistedFields(),
-                        getIndexedFields(), getReverseIndexedFields(), getNormalizedFields(), getDataTypes(), getQueryFieldsDatatypes(),
-                        getNormalizedFieldsDatatypes(), getFieldToDiscreteIndexTypes(), getCompositeToFieldMap(), getCompositeTransitionDates(),
-                        getCompositeFieldSeparators(), getEvaluationOnlyFields(), isSortedUIDs(), getQueryTermFrequencyFields(), isTermFrequenciesRequired(),
-                        getLimitFields(), isLimitFieldsPreQueryEvaluation(), getLimitFieldsField(), isHitList(), isDateIndexTimeTravel(), getBeginDateCap(),
-                        isFailOutsideValidDateRange(), isRawTypes(), getMinSelectivity(), getIncludeDataTypeAsField(), getIncludeRecordId(),
-                        getIncludeHierarchyFields(), getHierarchyFieldOptions(), getIncludeGroupingContext(), getDocumentPermutations(),
-                        getFilterMaskedValues(), isReducedResponse(), getAllowShortcutEvaluation(), getSpeculativeScanning(), isDisableEvaluation(),
-                        isContainsIndexOnlyTerms(), isContainsCompositeTerms(), isAllowFieldIndexEvaluation(), isAllowTermFrequencyLookup(),
-                        isExpandUnfieldedNegations(), getReturnType(), getEventPerDayThreshold(), getShardsPerDayThreshold(), getInitialMaxTermThreshold(),
-                        getFinalMaxTermThreshold(), getMaxDepthThreshold(), isExpandFields(), getMaxUnfieldedExpansionThreshold(), isExpandValues(),
-                        getMaxValueExpansionThreshold(), getMaxOrExpansionThreshold(), getMaxOrRangeThreshold(), getMaxOrRangeIvarators(),
-                        getMaxRangesPerRangeIvarator(), getMaxOrExpansionFstThreshold(), getYieldThresholdMs(), getHdfsSiteConfigURLs(),
-                        getHdfsFileCompressionCodec(), getZookeeperConfig(), getIvaratorCacheDirConfigs(), getIvaratorFstHdfsBaseURIs(),
-                        getIvaratorCacheBufferSize(), getIvaratorCacheScanPersistThreshold(), getIvaratorCacheScanTimeout(), getMaxFieldIndexRangeSplit(),
-                        getIvaratorMaxOpenFiles(), getIvaratorNumRetries(), isIvaratorPersistVerify(), getIvaratorPersistVerifyCount(), getMaxIvaratorSources(),
-                        getMaxIvaratorResults(), getMaxEvaluationPipelines(), getMaxPipelineCachedResults(), isExpandAllTerms(), getQueryModel(),
-                        getModelName(), getModelTableName(), shouldLimitTermExpansionToModel, isCompressServerSideResults(),
-                        isIndexOnlyFilterFunctionsEnabled(), isCompositeFilterFunctionsEnabled(), getGroupFieldsBatchSize(), getAccrueStats(), getGroupFields(),
-                        getUniqueFields(), getCacheModel(), isTrackSizes(), getContentFieldNames(), getActiveQueryLogNameSource(),
-                        getEnforceUniqueConjunctionsWithinExpression(), getEnforceUniqueDisjunctionsWithinExpression(), getNoExpansionFields(), getBloom());
+        // @formatter:off
+        return Objects.hash(
+                super.hashCode(),
+                isTldQuery(),
+                getFilterOptions(),
+                isDisableIndexOnlyDocuments(),
+                getMaxScannerBatchSize(),
+                getMaxIndexBatchSize(),
+                isAllTermsIndexOnly(),
+                getAccumuloPassword(),
+                getMaxIndexScanTimeMillis(),
+                getParseTldUids(),
+                getCollapseUids(),
+                getCollapseUidsThreshold(),
+                getEnforceUniqueTermsWithinExpressions(),
+                getReduceIngestTypes(),
+                getReduceIngestTypesPerShard(),
+                getPruneQueryByIngestTypes(),
+                getReduceQueryFields(),
+                getReduceQueryFieldsPerShard(),
+                getReduceTypeMetadata(),
+                getReduceTypeMetadataPerShard(),
+                isRebuildDatatypeFilter(),
+                isRebuildDatatypeFilterPerShard(),
+                getSequentialScheduler(),
+                getCollectTimingDetails(),
+                getLogTimingDetails(),
+                getSendTimingToStatsd(),
+                getStatsdHost(),
+                getStatsdPort(),
+                getStatsdMaxQueueSize(),
+                getLimitAnyFieldLookups(),
+                isBypassExecutabilityCheck(),
+                isGeneratePlanOnly(),
+                getBackoffEnabled(),
+                getUnsortedUIDsEnabled(),
+                getSerializeQueryIterator(),
+                isDebugMultithreadedSources(),
+                isSortGeoWaveQueryRanges(),
+                getNumRangesToBuffer(),
+                getRangeBufferTimeoutMillis(),
+                getRangeBufferPollMillis(),
+                getGeometryMaxExpansion(),
+                getPointMaxExpansion(),
+                getGeoMaxExpansion(),
+                getGeoWaveRangeSplitThreshold(),
+                getGeoWaveMaxRangeOverlap(),
+                isOptimizeGeoWaveRanges(),
+                getGeoWaveMaxEnvelopes(),
+                getShardTableName(),
+                getIndexTableName(),
+                getReverseIndexTableName(),
+                getMetadataTableName(),
+                getDateIndexTableName(),
+                getIndexStatsTableName(),
+                getDefaultDateTypeName(),
+                isCleanupShardsAndDaysQueryHints(),
+                getNumQueryThreads(),
+                numLookupThreads,
+                getNumDateIndexThreads(),
+                getMaxDocScanTimeout(),
+                getCollapseDatePercentThreshold(),
+                getFullTableScanEnabled(),
+                getRealmSuffixExclusionPatterns(),
+                getDefaultType(),
+                getShardDateFormat(),
+                getUseEnrichers(),
+                getEnricherClassNames(),
+                getUseFilters(),
+                getFilterClassNames(),
+                getIndexFilteringClassNames(),
+                getNonEventKeyPrefixes(),
+                getUnevaluatedFields(),
+                getDatatypeFilter(),
+                getIndexHoles(),
+                getProjectFields(),
+                getRenameFields(),
+                getDisallowlistedFields(),
+                getIndexedFields(),
+                getReverseIndexedFields(),
+                getNormalizedFields(),
+                getDataTypes(),
+                getQueryFieldsDatatypes(),
+                getNormalizedFieldsDatatypes(),
+                getFieldToDiscreteIndexTypes(),
+                getCompositeToFieldMap(),
+                getCompositeTransitionDates(),
+                getCompositeFieldSeparators(),
+                getWhindexCreationDates(),
+                isDisableWhindexFieldMappings(),
+                getWhindexMappingFields(),
+                getWhindexFieldMappings(),
+                getEvaluationOnlyFields(),
+                isSortedUIDs(),
+                getQueryTermFrequencyFields(),
+                isTermFrequenciesRequired(),
+                getLimitFields(),
+                getMatchingFieldSets(),
+                isLimitFieldsPreQueryEvaluation(),
+                getLimitFieldsField(),
+                isHitList(),
+                isDateIndexTimeTravel(),
+                getIgnoreNonExistentFields(),
+                getBeginDateCap(),
+                isFailOutsideValidDateRange(),
+                isRawTypes(),
+                getMinSelectivity(),
+                getIncludeDataTypeAsField(),
+                getIncludeRecordId(),
+                getIncludeHierarchyFields(),
+                getHierarchyFieldOptions(),
+                getIncludeGroupingContext(),
+                getDocumentPermutations(),
+                getFilterMaskedValues(),
+                isReducedResponse(),
+                getAllowShortcutEvaluation(),
+                getSpeculativeScanning(),
+                isDisableEvaluation(),
+                isContainsIndexOnlyTerms(),
+                isContainsCompositeTerms(),
+                isAllowFieldIndexEvaluation(),
+                isAllowTermFrequencyLookup(),
+                isExpandUnfieldedNegations(),
+                getReturnType(),
+                getEventPerDayThreshold(),
+                getShardsPerDayThreshold(),
+                getInitialMaxTermThreshold(),
+                getIntermediateMaxTermThreshold(),
+                getIndexedMaxTermThreshold(),
+                getFinalMaxTermThreshold(),
+                getMaxDepthThreshold(),
+                isExpandFields(),
+                getMaxUnfieldedExpansionThreshold(),
+                isExpandValues(),
+                getMaxValueExpansionThreshold(),
+                getMaxOrExpansionThreshold(),
+                getMaxOrRangeThreshold(),
+                getMaxOrRangeIvarators(),
+                getMaxRangesPerRangeIvarator(),
+                getMaxOrExpansionFstThreshold(),
+                getYieldThresholdMs(),
+                getHdfsSiteConfigURLs(),
+                getHdfsFileCompressionCodec(),
+                getZookeeperConfig(),
+                getIvaratorCacheDirConfigs(),
+                getIvaratorFstHdfsBaseURIs(),
+                getIvaratorCacheBufferSize(),
+                getIvaratorCacheScanPersistThreshold(),
+                getIvaratorCacheScanTimeout(),
+                getMaxFieldIndexRangeSplit(),
+                getIvaratorMaxOpenFiles(),
+                getIvaratorNumRetries(),
+                isIvaratorPersistVerify(),
+                getIvaratorPersistVerifyCount(),
+                getMaxIvaratorSources(),
+                getMaxIvaratorSourceWait(),
+                getMaxIvaratorResults(),
+                getMaxIvaratorTerms(),
+                getMaxEvaluationPipelines(),
+                getMaxPipelineCachedResults(),
+                isExpandAllTerms(),
+                getQueryModel(),
+                getModelName(),
+                getModelTableName(),
+                shouldLimitTermExpansionToModel,
+                isCompressServerSideResults(),
+                isIndexOnlyFilterFunctionsEnabled(),
+                isCompositeFilterFunctionsEnabled(),
+                getGroupFieldsBatchSize(),
+                getAccrueStats(),
+                getGroupFields(),
+                getUniqueFields(),
+                getUniqueCacheBufferSize(),
+                getCacheModel(),
+                isTrackSizes(),
+                getContentFieldNames(),
+                getActiveQueryLogNameSource(),
+                getEnforceUniqueConjunctionsWithinExpression(),
+                getEnforceUniqueDisjunctionsWithinExpression(),
+                getNoExpansionFields(),
+                getBloom(),
+                getLenientFields(),
+                getStrictFields(),
+                getExcerptFields(),
+                getFiFieldSeek(),
+                getFiNextSeek(),
+                getEventFieldSeek(),
+                getEventNextSeek(),
+                getTfFieldSeek(),
+                getTfNextSeek(),
+                getVisitorFunctionMaxWeight(),
+                getQueryExecutionForPageTimeout(),
+                isLazySetMechanismEnabled(),
+                getDocAggregationThresholdMs(),
+                getTfAggregationThresholdMs(),
+                getPruneQueryOptions(),
+                getUseFieldCounts(),
+                getUseTermCounts(),
+                isSortQueryBeforeGlobalIndex(),
+                isSortQueryByCounts());
+        // @formatter:on
     }
 
     // Part of the Serializable interface used to initialize any transient members during deserialization
