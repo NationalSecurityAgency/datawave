@@ -17,22 +17,22 @@ public class PrintingVisitorTest {
             "JexlScript\n" +
             "  AndNode\n" +
             "    EQNode\n" +
-            "      FOO\n" +
-            "      abc\n" +
+            "      FOO:FOO\n" +
+            "      abc:abc\n" +
             "    ReferenceExpression\n" +
             "      AndNode\n" +
             "        ReferenceExpression\n" +
             "          Assignment\n" +
-            "            _Bounded\n" +
+            "            _Bounded_:_Bounded_\n" +
             "            TrueNode\n" +
             "        ReferenceExpression\n" +
             "          AndNode\n" +
             "            GENode\n" +
-            "              BAZ\n" +
-            "              +aE5\n" +
+            "              BAZ:BAZ\n" +
+            "              +aE5:+aE5\n" +
             "            LENode\n" +
-            "              BAZ\n" +
-            "              +bE1.2\n";
+            "              BAZ:BAZ\n" +
+            "              +bE1.2:+bE1.2\n";
     // @formatter:on
 
     private ASTJexlScript script;
@@ -58,7 +58,7 @@ public class PrintingVisitorTest {
     public void maxNineteenPrintsAll() {
         String result = PrintingVisitor.formattedQueryString(script, 0, 19);
         assertEquals(FULL_RESULT, result);
-        assertNumberOfLines(22, result);
+        assertNumberOfLines(21, result);
     }
 
     @Test
@@ -75,8 +75,8 @@ public class PrintingVisitorTest {
                 "JexlScript\n" +
                 "  AndNode\n" +
                 "    EQNode\n" +
-                "      FOO\n" +
-                "      abc\n" +
+                "      FOO:FOO\n" +
+                "      abc:abc\n" +
                 "    ReferenceExpression\n";
         // @formatter:on
         assertEquals(expectedOutput, result);
@@ -91,8 +91,8 @@ public class PrintingVisitorTest {
                 "JexlScript\n" +
                 "  AndNode\n" +
                 "    EQNode\n" +
-                "      FOO\n" +
-                "      abc\n";
+                "      FOO:FOO\n" +
+                "      abc:abc\n";
         // @formatter:on
         assertEquals(expectedOutput, result);
         assertNumberOfLines(7, result);
@@ -106,7 +106,7 @@ public class PrintingVisitorTest {
                 "JexlScript\n" +
                 "  AndNode\n" +
                 "    EQNode\n" +
-                "      FOO\n";
+                "      FOO:FOO\n";
         // @formatter:on
         assertEquals(expectedOutput, result);
         assertNumberOfLines(6, result);

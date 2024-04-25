@@ -745,7 +745,7 @@ public class PrintingVisitor extends ParserVisitor {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
-        output.writeLine(data + node.toString());
+        output.writeLine(data + node.toString() + ":" + JexlNodes.getIdentifierOrLiteral(node));
         childrenAccept(node, this, data + PREFIX);
         return null;
     }
@@ -805,7 +805,7 @@ public class PrintingVisitor extends ParserVisitor {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
-        output.writeLine(data + node.toString());
+        output.writeLine(data + node.toString() + ":" + JexlNodes.getIdentifierOrLiteral(node));
         childrenAccept(node, this, data + PREFIX);
         return null;
     }
@@ -1000,7 +1000,7 @@ public class PrintingVisitor extends ParserVisitor {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
-        output.writeLine(data + node.toString());
+        output.writeLine(data + node.toString() + ":" + node.getLiteral());
         childrenAccept(node, this, data + PREFIX);
         return null;
     }
