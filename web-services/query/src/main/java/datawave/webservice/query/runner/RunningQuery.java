@@ -40,6 +40,7 @@ import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.UserOperations;
 import datawave.security.authorization.remote.RemoteUserOperationsImpl;
 import datawave.security.util.WSAuthorizationsUtil;
+import datawave.webservice.common.connection.WrappedAccumuloClient;
 import datawave.webservice.query.cache.AbstractRunningQuery;
 import datawave.webservice.query.data.ObjectSizeOf;
 import datawave.webservice.query.exception.DatawaveErrorCode;
@@ -194,6 +195,9 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             addNDC();
             applyPrediction(null);
             this.client = client;
+            if (this.client instanceof WrappedAccumuloClient && this.logic.getClientConfig() != null) {
+                ((WrappedAccumuloClient) this.client).updateClientConfig(this.logic.getClientConfig());
+            }
             long start = System.currentTimeMillis();
             GenericQueryConfiguration configuration = this.logic.initialize(this.client, this.settings, this.calculatedAuths);
             this.lastPageNumber = 0;

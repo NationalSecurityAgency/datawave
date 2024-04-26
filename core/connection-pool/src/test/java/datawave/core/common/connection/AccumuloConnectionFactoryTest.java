@@ -91,6 +91,7 @@ public class AccumuloConnectionFactoryTest extends EasyMockSupport {
             pools.put(entry.getKey(), Collections.unmodifiableMap(p));
         }
         Whitebox.setInternalState(factory, "log", Logger.getLogger(AccumuloConnectionFactoryImpl.class));
+        Whitebox.setInternalState(factory, ConnectionPoolsProperties.class, conf);
         Whitebox.setInternalState(factory, "defaultPoolName", conf.getDefaultPool());
         Whitebox.setInternalState(factory, "pools", pools);
         Whitebox.setInternalState(factory, "cache", cache);

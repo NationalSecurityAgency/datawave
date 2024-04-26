@@ -18,6 +18,7 @@ import datawave.microservice.query.Query;
 import datawave.security.authorization.ProxiedUserDetails;
 import datawave.security.authorization.UserOperations;
 import datawave.webservice.common.audit.Auditor;
+import datawave.webservice.common.connection.AccumuloClientConfiguration;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 
@@ -375,5 +376,15 @@ public abstract class DelegatingQueryLogic implements QueryLogic<Object> {
     @Override
     public void preInitialize(Query settings, Set<Authorizations> queryAuths) {
         delegate.preInitialize(settings, queryAuths);
+    }
+
+    @Override
+    public void setClientConfig(AccumuloClientConfiguration config) {
+        delegate.setClientConfig(config);
+    }
+
+    @Override
+    public AccumuloClientConfiguration getClientConfig() {
+        return delegate.getClientConfig();
     }
 }

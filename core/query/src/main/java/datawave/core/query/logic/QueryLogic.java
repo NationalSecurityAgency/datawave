@@ -19,6 +19,7 @@ import datawave.security.authorization.ProxiedUserDetails;
 import datawave.security.authorization.UserOperations;
 import datawave.validation.ParameterValidator;
 import datawave.webservice.common.audit.Auditor.AuditType;
+import datawave.webservice.common.connection.AccumuloClientConfiguration;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
@@ -457,6 +458,20 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
     default void preInitialize(Query settings, Set<Authorizations> userAuthorizations) {
         // noop
     }
+
+    /**
+     * Set a client configuration for scanner hints and consistency.
+     *
+     * @param config
+     */
+    void setClientConfig(AccumuloClientConfiguration config);
+
+    /**
+     * Get the client configuration
+     *
+     * @return client configuration
+     */
+    AccumuloClientConfiguration getClientConfig();
 
     ProxiedUserDetails getCurrentUser();
 

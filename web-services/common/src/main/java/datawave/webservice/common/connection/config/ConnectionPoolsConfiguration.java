@@ -1,6 +1,8 @@
 package datawave.webservice.common.connection.config;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import datawave.core.common.result.ConnectionPoolsProperties;
 
@@ -10,6 +12,7 @@ public class ConnectionPoolsConfiguration extends ConnectionPoolsProperties {
     public ConnectionPoolsConfiguration build() {
         for (String poolName : poolNames) {
             pools.put(poolName, new ConnectionPoolConfiguration(poolName.toLowerCase()));
+            configs.put(poolName, new ConnectionPoolClientConfiguration(poolName.toLowerCase()));
         }
         return this;
     }
@@ -23,5 +26,4 @@ public class ConnectionPoolsConfiguration extends ConnectionPoolsProperties {
         this.defaultPool = defaultPool;
         return this;
     }
-
 }
