@@ -67,8 +67,6 @@ datawave:
       uri: 'https://localhost:8643/dictionary'
     executor:
       uri: 'https://localhost:8743/executor'
-    storage:
-      uri: 'https://localhost:8943/query-storage'
 
 audit-client:
   discovery:
