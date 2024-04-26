@@ -22,7 +22,7 @@
         <url.hadoop>https://dlcdn.apache.org/hadoop/common/hadoop-3.3.6/${dist.hadoop}</url.hadoop>
         <url.maven>https://dlcdn.apache.org/maven/maven-3/3.8.8/binaries/${dist.maven}</url.maven>
         <url.wildfly>https://download.jboss.org/wildfly/17.0.1.Final/${dist.wildfly}</url.wildfly>
-        <url.zookeeper>https://www.apache.org/dyn/closer.lua/zookeeper/zookeeper-3.7.2/${dist.zookeeper}</url.zookeeper>
+        <url.zookeeper>https://dlcdn.apache.org/zookeeper/zookeeper-3.7.2/${dist.zookeeper}</url.zookeeper>
     </properties>
     <dependencies>
         <dependency>
