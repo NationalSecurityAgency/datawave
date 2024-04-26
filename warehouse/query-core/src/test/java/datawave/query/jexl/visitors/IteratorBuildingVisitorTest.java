@@ -1,17 +1,16 @@
 package datawave.query.jexl.visitors;
 
-import datawave.query.Constants;
-import datawave.query.attributes.Attribute;
-import datawave.query.attributes.Document;
-import datawave.query.exceptions.DatawaveFatalQueryException;
-import datawave.query.iterator.NestedIterator;
-import datawave.query.iterator.SeekableNestedIterator;
-import datawave.query.iterator.SortedListKeyValueIterator;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.JexlNodeFactory;
-import datawave.query.jexl.LiteralRange;
-import datawave.query.predicate.TimeFilter;
-import datawave.query.util.TypeMetadata;
+import java.io.IOException;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
@@ -28,16 +27,18 @@ import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.io.IOException;
-import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import datawave.query.Constants;
+import datawave.query.attributes.Attribute;
+import datawave.query.attributes.Document;
+import datawave.query.exceptions.DatawaveFatalQueryException;
+import datawave.query.iterator.NestedIterator;
+import datawave.query.iterator.SeekableNestedIterator;
+import datawave.query.iterator.SortedListKeyValueIterator;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.JexlNodeFactory;
+import datawave.query.jexl.LiteralRange;
+import datawave.query.predicate.TimeFilter;
+import datawave.query.util.TypeMetadata;
 
 public class IteratorBuildingVisitorTest {
 
@@ -952,7 +953,7 @@ public class IteratorBuildingVisitorTest {
         }
     }
 
-    private static class SourceFactory implements datawave.query.iterator.SourceFactory<WritableComparable<?>, Writable> {
+    private static class SourceFactory implements datawave.query.iterator.SourceFactory<WritableComparable<?>,Writable> {
         private final Iterator<Map.Entry<Key,Value>> iterator;
 
         public SourceFactory(Iterator<Map.Entry<Key,Value>> iterator) {
@@ -960,7 +961,7 @@ public class IteratorBuildingVisitorTest {
         }
 
         @Override
-        public SortedKeyValueIterator<WritableComparable<?>, Writable> getSourceDeepCopy() {
+        public SortedKeyValueIterator<WritableComparable<?>,Writable> getSourceDeepCopy() {
             return new SortedListKeyValueIterator(iterator);
         }
     }
