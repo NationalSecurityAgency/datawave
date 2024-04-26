@@ -16,9 +16,9 @@ DW_ACCUMULO_SERVICE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # You may override DW_ZOOKEEPER_DIST_URI in your env ahead of time, and set as file:///path/to/file.tar.gz for local tarball, if needed
 # DW_ZOOKEEPER_DIST_URI should, if possible, be using https. There are potential security risks by using http.
-DW_ZOOKEEPER_DIST_URI="${DW_ZOOKEEPER_DIST_URI:-https://www.apache.org/dyn/closer.lua/zookeeper/zookeeper-3.7.2/apache-zookeeper-3.7.2-bin.tar.gz}"
+DW_ZOOKEEPER_DIST_URI="${DW_ZOOKEEPER_DIST_URI:-https://dlcdn.apache.org/zookeeper/zookeeper-3.7.2/apache-zookeeper-3.7.2-bin.tar.gz}"
 # The sha512 checksum for the tarball. Value should be the hash value only and does not include the file name. Cannot be left blank.
-DW_ZOOKEEPER_DIST_SHA512_CHECKSUM="${DW_ZOOKEEPER_DIST_SHA512_CHECKSUM:-e74b062b4fd8aa8da97c72a23f14d23f8185d09752b509fc24323317e4e0d0200bc74ac01af48f3940c51fa8e7d94a7b35cd3c98eaa19a9466ff42c6d9a25e97}"
+DW_ZOOKEEPER_DIST_SHA512_CHECKSUM="${DW_ZOOKEEPER_DIST_SHA512_CHECKSUM:-6afbfc1afc8b9370281bd9862f37dbb1cb95ec54bb2ed4371831aa5c0f08cfee775050bd57ce5fc0836e61af27eed9f0076f54b98997dd0e15159196056e52ea}"
 # shellcheck disable=SC2154
 # shellcheck disable=SC2034
 DW_ZOOKEEPER_DIST="$( downloadTarball "${DW_ZOOKEEPER_DIST_URI}" "${DW_ACCUMULO_SERVICE_DIR}" && echo "${tarball}" )"
