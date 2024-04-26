@@ -19,7 +19,7 @@ import datawave.query.iterator.logic.IndexIteratorBridge;
  *
  */
 public class IndexRegexIteratorBuilder extends IvaratorBuilder implements IteratorBuilder {
-    private static Logger log = Logger.getLogger(IndexRegexIteratorBuilder.class);
+    private static final Logger log = Logger.getLogger(IndexRegexIteratorBuilder.class);
 
     protected Boolean negated;
 
@@ -107,9 +107,7 @@ public class IndexRegexIteratorBuilder extends IvaratorBuilder implements Iterat
             timeFilter = null;
             datatypeFilter = null;
             keyTform = null;
-            timeFilter = null;
             ivaratorCacheDirs = null;
-            field = null;
             node = null;
             return itr;
         } else {

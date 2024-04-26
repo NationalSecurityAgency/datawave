@@ -74,7 +74,7 @@ import datawave.webservice.query.configuration.GenericQueryConfiguration;
  */
 public class ShardQueryConfiguration extends GenericQueryConfiguration implements Serializable {
 
-    public static final String PARAM_VALUE_SEP_STR = new String(new char[] {Constants.PARAM_VALUE_SEP});
+    public static final String PARAM_VALUE_SEP_STR = String.valueOf(Constants.PARAM_VALUE_SEP);
     public static final String TABLE_NAME_SOURCE = "tableName";
     public static final String QUERY_LOGIC_NAME_SOURCE = "queryLogic";
 
@@ -790,7 +790,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     /**
      * A convenience method that determines whether we can handle when we have exceeded the value threshold on some node. We can handle this if the Ivarators
-     * can be used which required a hadoop config and a base hdfs cache directory.
+     * can be used which require a hadoop config and a base hdfs cache directory.
      *
      * @return if we can handle the exceeded value
      */
@@ -799,12 +799,13 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     }
 
     /**
-     * A convenience method that determines whether we can handle when we have exceeded the term threshold on some node. Currently we cannot.
+     * A convenience method that determines whether we can handle when we have exceeded the term threshold on some node. We can handle this if the Ivarators can
+     * be used which require a hadoop config and a base hdfs cache directory.
      *
      * @return if we can handle exceeding the term threshold
      */
     public boolean canHandleExceededTermThreshold() {
-        return false;
+        return this.hdfsSiteConfigURLs != null && (null != this.ivaratorCacheDirConfigs && !this.ivaratorCacheDirConfigs.isEmpty());
     }
 
     public String getShardTableName() {
