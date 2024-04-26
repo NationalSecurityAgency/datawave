@@ -4,6 +4,7 @@ import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DELAYED;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DROPPED;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EVALUATION_ONLY;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_OR;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_TERM;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
 import static org.apache.commons.jexl3.parser.JexlNodes.setChildren;
 
@@ -273,12 +274,41 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             // index checking has already been done, otherwise we would not have
             // an "ExceededValueThresholdMarker"
             // hence the "IndexAgnostic" method can be used here
-            LiteralRange range = JexlASTHelper.findRange().recursively().getRange(and);
+            LiteralRange<?> range = JexlASTHelper.findRange().recursively().getRange(and);
             if (range == null) {
                 QueryException qe = new QueryException(DatawaveErrorCode.MULTIPLE_RANGES_IN_EXPRESSION);
                 throw new DatawaveFatalQueryException(qe);
             }
             ((IndexRangeIteratorBuilder) data).setRange(range);
+        } else if (instance.isType(EXCEEDED_TERM)) {
+            // since an ExceededTermThresholdMarker can stand in place of a regex OR a range we have to cover both cases
+            JexlNode source = instance.getSource();
+            if (source instanceof ASTAndNode) { // the case for a range
+                try {
+                    // @formatter:off
+                    List<ASTFunctionNode> functionNodes = JexlASTHelper
+                            .getFunctionNodes(source)
+                            .stream()
+                            .filter(node -> JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor(node).allowIvaratorFiltering())
+                            .collect(Collectors.toList());
+                    // @formatter:on
+                    if (functionNodes.isEmpty()) {
+                        ivarateRange(and, source, data);
+                    }
+                } catch (IOException ioe) {
+                    throw new DatawaveFatalQueryException("Unable to ivarate", ioe);
+                }
+            } else if (source instanceof ASTERNode || source instanceof ASTNRNode) { // the case for a regex
+                try {
+                    ivarateRegex(and, source, data);
+                } catch (IOException ioe) {
+                    throw new DatawaveFatalQueryException("Unable to ivarate", ioe);
+                }
+            } else {
+                QueryException qe = new QueryException(DatawaveErrorCode.UNEXPECTED_SOURCE_NODE,
+                                MessageFormat.format("{0}", "Limited ExceededTermThresholdMarkerJexlNode"));
+                throw new DatawaveFatalQueryException(qe);
+            }
         } else if (instance.isType(EXCEEDED_VALUE)) {
             // if the parent is our ExceededValueThreshold marker, then use an
             // Ivarator to get the job done unless we don't have to
@@ -337,7 +367,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                 if (termFrequencyFields.contains(identifier)) {
                     nested = buildExceededFromTermFrequency(identifier, and, source, range, data);
                 } else {
-                    /**
+                    /*
                      * This is okay since 1) We are doc specific 2) We are not index only or tf 3) Therefore, we must evaluate against the document for this
                      * expression 4) Return a stubbed range in case we have a disjunction that breaks the current doc.
                      */
@@ -653,7 +683,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             throw new RuntimeException(e);
         }
 
-        /**
+        /*
          * If we have an unindexed type enforced, we've been configured to assert whether the field is indexed.
          */
         if (isUnindexed(node)) {
@@ -923,7 +953,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             throw new RuntimeException(e);
         }
 
-        /**
+        /*
          * If we have an unindexed type enforced, we've been configured to assert whether the field is indexed.
          */
         if (isUnindexed(node)) {
@@ -1187,7 +1217,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         // "ExceededValueThresholdMarker"
         // hence the "IndexAgnostic" method can be used here
         if (source instanceof ASTAndNode) {
-            LiteralRange range = JexlASTHelper.findRange().recursively().getRange(source);
+            LiteralRange<?> range = JexlASTHelper.findRange().recursively().getRange(source);
             if (range == null) {
                 QueryException qe = new QueryException(DatawaveErrorCode.MULTIPLE_RANGES_IN_EXPRESSION);
                 throw new DatawaveFatalQueryException(qe);

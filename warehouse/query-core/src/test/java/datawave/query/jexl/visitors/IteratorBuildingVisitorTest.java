@@ -1,30 +1,5 @@
 package datawave.query.jexl.visitors;
 
-import java.io.IOException;
-import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Range;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.IteratorEnvironment;
-import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.commons.jexl3.parser.ASTEQNode;
-import org.apache.commons.jexl3.parser.ASTERNode;
-import org.apache.commons.jexl3.parser.ASTJexlScript;
-import org.apache.commons.jexl3.parser.JexlNodes;
-import org.apache.commons.jexl3.parser.ParseException;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
-
 import datawave.query.Constants;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Document;
@@ -37,6 +12,32 @@ import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.LiteralRange;
 import datawave.query.predicate.TimeFilter;
 import datawave.query.util.TypeMetadata;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.IteratorEnvironment;
+import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.commons.jexl3.parser.ASTEQNode;
+import org.apache.commons.jexl3.parser.ASTERNode;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.JexlNodes;
+import org.apache.commons.jexl3.parser.ParseException;
+import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.io.WritableComparable;
+import org.junit.Assert;
+import org.junit.Ignore;
+import org.junit.Test;
+
+import java.io.IOException;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class IteratorBuildingVisitorTest {
 
@@ -58,7 +59,7 @@ public class IteratorBuildingVisitorTest {
 
         IteratorBuildingVisitor visitor = getDefault();
 
-        Assert.assertEquals(null, node.jjtAccept(visitor, null));
+        Assert.assertNull(node.jjtAccept(visitor, null));
     }
 
     /**
@@ -75,7 +76,7 @@ public class IteratorBuildingVisitorTest {
         node.jjtAccept(visitor, null);
 
         // this should never be reached
-        Assert.assertFalse(true);
+        Assert.fail();
     }
 
     /**
@@ -88,7 +89,7 @@ public class IteratorBuildingVisitorTest {
         IteratorBuildingVisitor visitor = getDefault();
 
         query.jjtAccept(visitor, null);
-        NestedIterator nestedIterator = visitor.root();
+        NestedIterator<Object> nestedIterator = visitor.root();
 
         // the only leaf in the iterator is FOO == 'bar'
         Assert.assertNotEquals(null, nestedIterator);
@@ -109,7 +110,7 @@ public class IteratorBuildingVisitorTest {
         query.jjtAccept(visitor, null);
 
         // this should never be reached
-        Assert.assertFalse(true);
+        Assert.fail();
     }
 
     @Test
@@ -118,9 +119,9 @@ public class IteratorBuildingVisitorTest {
         List<ASTERNode> erNodes = JexlASTHelper.getERNodes(query);
         LiteralRange<?> range = IteratorBuildingVisitor.buildLiteralRange(erNodes.get(0));
 
-        Assert.assertTrue(range.getLower().equals("bar"));
+        Assert.assertEquals("bar", range.getLower());
         Assert.assertTrue(range.isLowerInclusive());
-        Assert.assertTrue(range.getUpper().equals("bar" + Constants.MAX_UNICODE_STRING));
+        Assert.assertEquals(range.getUpper(), "bar" + Constants.MAX_UNICODE_STRING);
         Assert.assertTrue(range.isUpperInclusive());
     }
 
@@ -136,9 +137,9 @@ public class IteratorBuildingVisitorTest {
         List<ASTERNode> erNodes = JexlASTHelper.getERNodes(query);
         LiteralRange<?> range = IteratorBuildingVisitor.buildLiteralRange(erNodes.get(0));
 
-        Assert.assertTrue(range.getLower().equals(Constants.NULL_BYTE_STRING));
+        Assert.assertEquals(Constants.NULL_BYTE_STRING, range.getLower());
         Assert.assertTrue(range.isLowerInclusive());
-        Assert.assertTrue(range.getUpper().equals(Constants.MAX_UNICODE_STRING));
+        Assert.assertEquals(range.getUpper(), Constants.MAX_UNICODE_STRING);
         Assert.assertTrue(range.isUpperInclusive());
     }
 
@@ -148,9 +149,9 @@ public class IteratorBuildingVisitorTest {
         List<ASTERNode> erNodes = JexlASTHelper.getERNodes(query);
         LiteralRange<?> range = IteratorBuildingVisitor.buildLiteralRange(erNodes.get(0));
 
-        Assert.assertTrue(range.getLower().equals("bar"));
+        Assert.assertEquals("bar", range.getLower());
         Assert.assertTrue(range.isLowerInclusive());
-        Assert.assertTrue(range.getUpper().equals("bar" + Constants.MAX_UNICODE_STRING));
+        Assert.assertEquals(range.getUpper(), "bar" + Constants.MAX_UNICODE_STRING);
         Assert.assertTrue(range.isUpperInclusive());
     }
 
@@ -160,9 +161,9 @@ public class IteratorBuildingVisitorTest {
         List<ASTERNode> erNodes = JexlASTHelper.getERNodes(query);
         LiteralRange<?> range = IteratorBuildingVisitor.buildLiteralRange(erNodes.get(0));
 
-        Assert.assertTrue(range.getLower().equals("barbaz"));
+        Assert.assertEquals("barbaz", range.getLower());
         Assert.assertTrue(range.isLowerInclusive());
-        Assert.assertTrue(range.getUpper().equals("barbaz"));
+        Assert.assertEquals("barbaz", range.getUpper());
         Assert.assertTrue(range.isUpperInclusive());
     }
 
@@ -173,9 +174,9 @@ public class IteratorBuildingVisitorTest {
         Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
 
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "fi" + Constants.NULL + "F1", "v0" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "fi" + Constants.NULL + "F1", "v1" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
 
         vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, false, null, Collections.EMPTY_SET, Collections.EMPTY_SET,
@@ -190,9 +191,9 @@ public class IteratorBuildingVisitorTest {
         Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
 
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "fi" + Constants.NULL + "F1", "v1" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "fi" + Constants.NULL + "F2", "v2" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
 
         vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, false, null, Collections.EMPTY_SET, Collections.EMPTY_SET,
@@ -206,9 +207,9 @@ public class IteratorBuildingVisitorTest {
         Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
 
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "fi" + Constants.NULL + "F1", "v1" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "fi" + Constants.NULL + "F2", "v3" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
 
         vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, false, null, Collections.EMPTY_SET, Collections.EMPTY_SET,
@@ -221,9 +222,9 @@ public class IteratorBuildingVisitorTest {
         Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
 
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "f" + Constants.NULL + "FOO"), new Value()));
 
         Set<String> termFrequencyFields = new HashSet<>();
@@ -249,9 +250,9 @@ public class IteratorBuildingVisitorTest {
         Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
 
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "f" + Constants.NULL + "FOO"), new Value()));
 
         Set<String> termFrequencyFields = new HashSet<>();
@@ -277,9 +278,9 @@ public class IteratorBuildingVisitorTest {
         Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
 
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "e" + Constants.NULL + "FOO"), new Value()));
 
         Set<String> termFrequencyFields = new HashSet<>();
@@ -305,9 +306,9 @@ public class IteratorBuildingVisitorTest {
         Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
 
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "e" + Constants.NULL + "FOO"), new Value()));
 
         Set<String> termFrequencyFields = new HashSet<>();
@@ -333,9 +334,9 @@ public class IteratorBuildingVisitorTest {
         Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
 
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "m" + Constants.NULL + "FOO"), new Value()));
 
         Set<String> termFrequencyFields = new HashSet<>();
@@ -361,9 +362,9 @@ public class IteratorBuildingVisitorTest {
         Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
 
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "m" + Constants.NULL + "FOO"), new Value()));
 
         Set<String> termFrequencyFields = new HashSet<>();
@@ -388,9 +389,9 @@ public class IteratorBuildingVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("BAZ == 'woot' && ((_Value_ = true) && ((_Bounded_ = true) && (FOO >= 'e' && FOO <= 'm')))");
 
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "mn" + Constants.NULL + "FOO"), new Value()));
 
         Set<String> termFrequencyFields = new HashSet<>();
@@ -407,9 +408,9 @@ public class IteratorBuildingVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("BAZ == 'woot' && ((_Value_ = true) && ((_Bounded_ = true) && (FOO >= 'e' && FOO <= 'm')))");
 
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "mn" + Constants.NULL + "FOO"), new Value()));
 
         Set<String> termFrequencyFields = new HashSet<>();
@@ -426,9 +427,9 @@ public class IteratorBuildingVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("BAZ == 'woot' && ((_Value_ = true) && ((_Bounded_ = true) && (FOO >= 'e' && FOO <= 'm')))");
 
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "de" + Constants.NULL + "FOO"), new Value()));
 
         Set<String> termFrequencyFields = new HashSet<>();
@@ -445,9 +446,9 @@ public class IteratorBuildingVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("BAZ == 'woot' && ((_Value_ = true) && ((_Bounded_ = true) && (FOO >= 'e' && FOO <= 'm')))");
 
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "de" + Constants.NULL + "FOO"), new Value()));
 
         Set<String> termFrequencyFields = new HashSet<>();
@@ -465,9 +466,9 @@ public class IteratorBuildingVisitorTest {
         Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
 
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "de" + Constants.NULL + "FOO"), new Value()));
 
         Set<String> termFrequencyFields = new HashSet<>();
@@ -485,9 +486,9 @@ public class IteratorBuildingVisitorTest {
         Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
 
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "de" + Constants.NULL + "FOO"), new Value()));
 
         Set<String> termFrequencyFields = new HashSet<>();
@@ -505,13 +506,13 @@ public class IteratorBuildingVisitorTest {
         Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
 
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "cd" + Constants.NULL + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "de" + Constants.NULL + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "e" + Constants.NULL + "FOO"), new Value()));
 
         Map<String,List<String>> expectedDocValues = new HashMap<>();
@@ -529,13 +530,13 @@ public class IteratorBuildingVisitorTest {
         Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
 
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "cd" + Constants.NULL + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "de" + Constants.NULL + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "e" + Constants.NULL + "FOO"), new Value()));
 
         Map<String,List<String>> expectedDocValues = new HashMap<>();
@@ -553,15 +554,15 @@ public class IteratorBuildingVisitorTest {
         Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
 
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "cd" + Constants.NULL + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "de" + Constants.NULL + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "dd" + Constants.NULL + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "e" + Constants.NULL + "FOO"), new Value()));
 
         Map<String,List<String>> expectedDocValues = new HashMap<>();
@@ -580,15 +581,15 @@ public class IteratorBuildingVisitorTest {
         Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
 
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "cd" + Constants.NULL + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "de" + Constants.NULL + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "dd" + Constants.NULL + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "e" + Constants.NULL + "FOO"), new Value()));
 
         Map<String,List<String>> expectedDocValues = new HashMap<>();
@@ -607,17 +608,17 @@ public class IteratorBuildingVisitorTest {
         Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
 
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "cd" + Constants.NULL + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "de" + Constants.NULL + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "ddfoo" + Constants.NULL + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "dzzzzfoo" + Constants.NULL + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "e" + Constants.NULL + "FOO"), new Value()));
 
         Map<String,List<String>> expectedDocValues = new HashMap<>();
@@ -636,17 +637,17 @@ public class IteratorBuildingVisitorTest {
         Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
 
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "cd" + Constants.NULL + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "de" + Constants.NULL + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "ddfoo" + Constants.NULL + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "dzzzzfoo" + Constants.NULL + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "e" + Constants.NULL + "FOO"), new Value()));
 
         Map<String,List<String>> expectedDocValues = new HashMap<>();
@@ -665,17 +666,17 @@ public class IteratorBuildingVisitorTest {
         Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
 
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "cd" + Constants.NULL + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "de" + Constants.NULL + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "ddfoo" + Constants.NULL + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "dzzzzfoo" + Constants.NULL + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "e" + Constants.NULL + "FOO"), new Value()));
 
         Map<String,List<String>> expectedDocValues = new HashMap<>();
@@ -694,17 +695,17 @@ public class IteratorBuildingVisitorTest {
         Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
 
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "cd" + Constants.NULL + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "de" + Constants.NULL + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "ddfoo" + Constants.NULL + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "dzzzzfoo" + Constants.NULL + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "e" + Constants.NULL + "FOO"), new Value()));
 
         Map<String,List<String>> expectedDocValues = new HashMap<>();
@@ -723,17 +724,17 @@ public class IteratorBuildingVisitorTest {
         Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
 
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "cd" + Constants.NULL + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "de" + Constants.NULL + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "ddfoo" + Constants.NULL + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "dzzzzfoo" + Constants.NULL + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "e" + Constants.NULL + "FOO"), new Value()));
 
         // leading wildcard match foo values must have doc including those values
@@ -746,17 +747,17 @@ public class IteratorBuildingVisitorTest {
         Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
 
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "cd" + Constants.NULL + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "de" + Constants.NULL + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "ddfoo" + Constants.NULL + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "dzzzzfoo" + Constants.NULL + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "e" + Constants.NULL + "FOO"), new Value()));
 
         // leading wildcard match foo values must have doc including those values
@@ -768,17 +769,17 @@ public class IteratorBuildingVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("BAZ == 'woot' && !((_Value_ = true) && (FOO =~ '.*foo'))");
 
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "cd" + Constants.NULL + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "de" + Constants.NULL + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "ddfoo" + Constants.NULL + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "dzzzzfoo" + Constants.NULL + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "e" + Constants.NULL + "FOO"), new Value()));
 
         // doc contains the regex so should not be evaluated
@@ -790,17 +791,17 @@ public class IteratorBuildingVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("BAZ == 'woot' && !((_Value_ = true) && (FOO =~ '.*foo'))");
 
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "cd" + Constants.NULL + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "de" + Constants.NULL + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "ddfoo" + Constants.NULL + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "dzzzzfoo" + Constants.NULL + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "e" + Constants.NULL + "FOO"), new Value()));
 
         // doc contains the regex so should not be evaluated
@@ -813,15 +814,15 @@ public class IteratorBuildingVisitorTest {
         Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
 
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "cd" + Constants.NULL + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "de" + Constants.NULL + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "dd" + Constants.NULL + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "dzzzz" + Constants.NULL + "FOO"), new Value()));
 
         // empty document because it didn't find the pattern match (.*foo)
@@ -836,15 +837,15 @@ public class IteratorBuildingVisitorTest {
         Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
 
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "cd" + Constants.NULL + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "de" + Constants.NULL + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "dd" + Constants.NULL + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
+        source.add(new AbstractMap.SimpleEntry<>(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "dzzzz" + Constants.NULL + "FOO"), new Value()));
 
         // empty document because it didn't find the pattern match (.*foo)
@@ -855,7 +856,7 @@ public class IteratorBuildingVisitorTest {
 
     private void vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(ASTJexlScript query, Key docKeyHit, List<Map.Entry<Key,Value>> source,
                     boolean buildDoc, Map<String,List<String>> docKeys, boolean indexOnly) throws Exception {
-        Set<String> termFrequencyFields = new HashSet();
+        Set<String> termFrequencyFields = new HashSet<>();
         termFrequencyFields.add("FOO");
 
         Set<String> indexOnlyFields = null;
@@ -896,8 +897,8 @@ public class IteratorBuildingVisitorTest {
         visitor.setTypeMetadata(typeMetadata);
 
         query.jjtAccept(visitor, null);
-        NestedIterator result = visitor.root();
-        Assert.assertTrue(result != null);
+        NestedIterator<Object> result = visitor.root();
+        Assert.assertNotNull(result);
         SeekableNestedIterator seekableNestedIterator = new SeekableNestedIterator(result, env);
         seekableNestedIterator.seek(docRange, null, true);
         seekableNestedIterator.initialize();
@@ -908,42 +909,42 @@ public class IteratorBuildingVisitorTest {
         } else {
             Assert.assertTrue(seekableNestedIterator.hasNext());
             Key next = (Key) seekableNestedIterator.next();
-            Assert.assertTrue(next != null);
-            Assert.assertTrue(next.getRow().toString().equals(docKeyHit.getRow().toString()));
-            Assert.assertTrue(next.getColumnFamily().toString().equals(docKeyHit.getColumnFamily().toString()));
+            Assert.assertNotNull(next);
+            Assert.assertEquals(next.getRow().toString(), docKeyHit.getRow().toString());
+            Assert.assertEquals(next.getColumnFamily().toString(), docKeyHit.getColumnFamily().toString());
 
             // asserts for document build
             Document d = seekableNestedIterator.document();
-            Assert.assertTrue(d != null);
+            Assert.assertNotNull(d);
 
             if (buildDoc) {
                 // +1 is for RECORD_ID field
-                Assert.assertTrue(docKeys.keySet().size() + 1 == d.getDictionary().size());
+                Assert.assertEquals(docKeys.keySet().size() + 1, d.getDictionary().size());
 
                 // verify hits for each specified field
                 for (String field : docKeys.keySet()) {
                     List<String> expected = docKeys.get(field);
                     if (expected.size() == 1) {
                         // verify the only doc
-                        Assert.assertTrue(d.getDictionary().get(field).getData().equals(expected.get(0)));
+                        Assert.assertEquals(d.getDictionary().get(field).getData(), expected.get(0));
                     } else {
                         // the data should be a set, verify it matches expected
                         Object dictData = d.getDictionary().get(field).getData();
-                        Assert.assertTrue(dictData != null);
+                        Assert.assertNotNull(dictData);
                         Assert.assertTrue(dictData instanceof Set);
                         Set dictSet = (Set) dictData;
-                        Assert.assertTrue(dictSet.size() == expected.size());
+                        Assert.assertEquals(dictSet.size(), expected.size());
                         Iterator<Attribute> dictIterator = dictSet.iterator();
                         while (dictIterator.hasNext()) {
                             Assert.assertTrue(expected.remove(dictIterator.next().getData()));
                         }
                         // verify that the expected set is now empty
-                        Assert.assertTrue(expected.size() == 0);
+                        Assert.assertEquals(0, expected.size());
                     }
                 }
             } else {
                 // doc should be empty
-                Assert.assertTrue(d.getDictionary().size() == 0);
+                Assert.assertEquals(0, d.getDictionary().size());
             }
 
             // there should be no other hits
@@ -951,15 +952,15 @@ public class IteratorBuildingVisitorTest {
         }
     }
 
-    private static class SourceFactory implements datawave.query.iterator.SourceFactory<Key,Value> {
-        private Iterator<Map.Entry<Key,Value>> iterator;
+    private static class SourceFactory implements datawave.query.iterator.SourceFactory<WritableComparable<?>, Writable> {
+        private final Iterator<Map.Entry<Key,Value>> iterator;
 
         public SourceFactory(Iterator<Map.Entry<Key,Value>> iterator) {
             this.iterator = iterator;
         }
 
         @Override
-        public SortedKeyValueIterator<Key,Value> getSourceDeepCopy() {
+        public SortedKeyValueIterator<WritableComparable<?>, Writable> getSourceDeepCopy() {
             return new SortedListKeyValueIterator(iterator);
         }
     }

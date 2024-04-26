@@ -967,12 +967,15 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     public Object visit(ASTAndNode node, Object data) {
         STATE state;
         QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(node);
-        // until we implement an ivarator that can handle an ExceededTermThreshold node, and ensure that the JexlContext gets
-        // _ANYFIELD_ values, then we cannot execute these nodes
+        // if exceeded term threshold and index only, ivarate - otherwise set as non-executable
         if (instance.isType(EXCEEDED_TERM)) {
-            state = STATE.NON_EXECUTABLE;
-            if (output != null) {
-                output.writeLine(data, node, "( Exceeded Term Threshold )", state, true);
+            if (isIndexOnly(node)) {
+                state = STATE.EXECUTABLE;
+            } else {
+                state = STATE.NON_EXECUTABLE;
+                if (output != null) {
+                    output.writeLine(data, node, "( Exceeded Term Threshold )", state, true);
+                }
             }
         }
         // if an ivarator then return true, else check out children

@@ -1730,7 +1730,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     }
 
     protected Set<String> upcase(Set<String> fields) {
-        return fields.stream().map(s -> s.toUpperCase()).collect(Collectors.toSet());
+        return fields.stream().map(String::toUpperCase).collect(Collectors.toSet());
     }
 
     protected ASTJexlScript upperCaseIdentifiers(MetadataHelper metadataHelper, ShardQueryConfiguration config, ASTJexlScript script) {
@@ -1755,12 +1755,12 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
         UniqueFields uniqueFields = config.getUniqueFields();
         if (uniqueFields != null && !uniqueFields.isEmpty()) {
-            Sets.newHashSet(uniqueFields.getFields()).stream().forEach(s -> uniqueFields.replace(s, s.toUpperCase()));
+            Sets.newHashSet(uniqueFields.getFields()).forEach(s -> uniqueFields.replace(s, s.toUpperCase()));
         }
 
         ExcerptFields excerptFields = config.getExcerptFields();
         if (excerptFields != null && !excerptFields.isEmpty()) {
-            Sets.newHashSet(excerptFields.getFields()).stream().forEach(s -> excerptFields.replace(s, s.toUpperCase()));
+            Sets.newHashSet(excerptFields.getFields()).forEach(s -> excerptFields.replace(s, s.toUpperCase()));
         }
 
         Set<String> userProjection = config.getRenameFields();
@@ -2768,9 +2768,15 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             }
 
             // check for the case where we cannot handle an ivarator but the query requires an ivarator
-            if (IvaratorRequiredVisitor.isIvaratorRequired(queryTree) && !config.canHandleExceededValueThreshold()) {
-                log.debug("Needs full table scan because we exceeded the value threshold and config.canHandleExceededValueThreshold() is false");
-                needsFullTable = true;
+            if (IvaratorRequiredVisitor.isIvaratorRequired(queryTree)) {
+                if (!config.canHandleExceededValueThreshold()) {
+                    log.debug("Needs full table scan because we exceeded the value threshold and config.canHandleExceededValueThreshold() is false");
+                    needsFullTable = true;
+                }
+                if (!config.canHandleExceededTermThreshold()) {
+                    log.debug("Needs full table scan because we exceeded the term threshold and config.canHandleExceededTermThreshold() is false");
+                    needsFullTable = true;
+                }
             }
 
             stopwatch.stop();
@@ -2901,7 +2907,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
             @Override
             public Iterator<T> iterator() {
-                return Collections.<T> emptyList().iterator();
+                return Collections.emptyIterator();
             }
 
             @Override
