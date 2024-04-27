@@ -402,7 +402,7 @@ services:
     image: datawave/mapreduce-query-service:1.0.0-SNAPSHOT
     command:
       - --spring.output.ansi.enabled=ALWAYS
-      - --spring.profiles.active=consul,compose,remoteauth,query,mrquery
+      - --spring.profiles.active=consul,compose,remoteauth,query,mrquery,federation
       - --spring.cloud.consul.host=consul
       - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${random.value}
     environment:
