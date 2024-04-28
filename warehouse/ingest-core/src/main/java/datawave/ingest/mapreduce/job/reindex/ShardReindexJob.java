@@ -72,6 +72,8 @@ public class ShardReindexJob implements Tool {
     private Configuration configuration;
     private JobConfig jobConfig = new JobConfig();
 
+    private AccumuloClient accumuloClient;
+
     @Override
     public int run(String[] args) throws Exception {
         // parse command line options
@@ -113,7 +115,7 @@ public class ShardReindexJob implements Tool {
             }
         }
 
-        // set the propagate deletes flag
+        // set all ShardReindexMapper flags
         configuration.setBoolean(ShardReindexMapper.CLEANUP_SHARD, jobConfig.cleanupShard);
         configuration.setBoolean(ShardReindexMapper.PROPAGATE_DELETES, jobConfig.propagateDeletes);
         configuration.setBoolean(ShardReindexMapper.REPROCESS_EVENTS, jobConfig.reprocessEvents);
@@ -173,17 +175,9 @@ public class ShardReindexJob implements Tool {
 
         // test that each of the output table names exist
         Properties accumuloProperties = builder.build();
-        AccumuloClient client = Accumulo.newClient().from(accumuloProperties).build();
-        for (String table : configuration.get("job.output.table.names").split(",")) {
-            try {
-                Map<String,String> tableProperties = client.tableOperations().getTableProperties(table);
-                if (tableProperties == null) {
-                    throw new IllegalArgumentException("configured output table: " + table + " does not exist");
-                }
-            } catch (TableNotFoundException tnfe) {
-                throw new IllegalArgumentException("configured output table: " + table + " does not exist");
-            }
-        }
+        accumuloClient = Accumulo.newClient().from(accumuloProperties).build();
+        String[] outputTableNames = configuration.get("job.output.table.names").split(",");
+        validateTablesExist(outputTableNames);
 
         ShardedTableMapFile.setupFile(configuration);
 
@@ -204,10 +198,9 @@ public class ShardReindexJob implements Tool {
             }
 
             if (jobConfig.accumuloMetadata) {
-
                 // fetch the file list by scanning the accumulo.metadata table
-                jobConfig.inputFiles = org.apache.hadoop.util.StringUtils.join(",", getSplitsFromMetadata(accumuloProperties, jobConfig.table,
-                                new Range(new Key(jobConfig.startDate), true, new Key(jobConfig.endDate), true)));
+                jobConfig.inputFiles = org.apache.hadoop.util.StringUtils.join(",",
+                                getSplitsFromMetadata(jobConfig.table, new Range(new Key(jobConfig.startDate), true, new Key(jobConfig.endDate), true)));
             } else if (!jobConfig.accumuloData) {
                 // build ranges
                 Collection<Range> ranges = null;
@@ -222,12 +215,17 @@ public class ShardReindexJob implements Tool {
                 }
 
                 for (Range r : ranges) {
-                    log.info("Range: " + r);
+                    log.debug("Accumulo map task table: " + jobConfig.table + " for range: " + r);
+                }
+
+                ScannerBase.ConsistencyLevel consistencyLevel = ScannerBase.ConsistencyLevel.IMMEDIATE;
+                if (jobConfig.useScanServers) {
+                    consistencyLevel = ScannerBase.ConsistencyLevel.EVENTUAL;
                 }
 
                 // do not auto adjust ranges because they will be clipped and drop the column qualifier. this will result in full table scans
                 AccumuloInputFormat.configure().clientProperties(accumuloProperties).table(jobConfig.table).autoAdjustRanges(false).batchScan(false)
-                                .ranges(ranges).store(j);
+                                .ranges(ranges).consistencyLevel(consistencyLevel).store(j);
             }
         }
 
@@ -270,22 +268,35 @@ public class ShardReindexJob implements Tool {
         FileOutputFormat.setOutputPath(j, new Path(jobConfig.outputDir));
         j.setOutputFormatClass(MultiRFileOutputFormatter.class);
 
+        // finished with the accumulo client
+        this.accumuloClient.close();
+
         return j;
     }
 
-    private Set<String> getSplitsFromMetadata(Properties accumuloProperties, String tableName, Range r) {
+    private void validateTablesExist(String[] tableNames) throws AccumuloException {
+        for (String table : tableNames) {
+            try {
+                Map<String,String> tableProperties = accumuloClient.tableOperations().getTableProperties(table);
+                if (tableProperties == null) {
+                    throw new IllegalArgumentException("configured output table: " + table + " does not exist");
+                }
+            } catch (TableNotFoundException tnfe) {
+                throw new IllegalArgumentException("configured output table: " + table + " does not exist");
+            }
+        }
+    }
+
+    private Set<String> getSplitsFromMetadata(String tableName, Range r) {
         Set<String> rangeSplits = new HashSet<>();
 
-        AccumuloClient client = Accumulo.newClient().from(accumuloProperties).build();
-        String tableId = client.tableOperations().tableIdMap().get(tableName);
+        String tableId = this.accumuloClient.tableOperations().tableIdMap().get(tableName);
 
         if (tableId == null) {
             throw new RuntimeException("Could not locate table: '" + tableName + "'");
         }
 
-        try {
-            Scanner s = client.createScanner("accumulo.metadata");
-
+        try (Scanner s = this.accumuloClient.createScanner("accumulo.metadata")) {
             ScannerBase.ConsistencyLevel consistencyLevel = ScannerBase.ConsistencyLevel.IMMEDIATE;
             if (jobConfig.useScanServers) {
                 consistencyLevel = ScannerBase.ConsistencyLevel.EVENTUAL;
@@ -299,8 +310,6 @@ public class ShardReindexJob implements Tool {
                 ByteSequence file = next.getKey().getColumnQualifierData();
                 rangeSplits.add(file.toString());
             }
-            s.close();
-            client.close();
         } catch (TableNotFoundException | AccumuloException | AccumuloSecurityException e) {
             throw new RuntimeException("Failed to scan metadata for table", e);
         }
