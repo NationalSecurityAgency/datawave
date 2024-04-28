@@ -79,7 +79,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         shardIdFactory = new ShardIdFactory(conf);
 
         // disable timestamp
-        conf.setBoolean("floorTimestamps", false);
+        conf.setBoolean(ShardReindexMapper.FLOOR_TIMESTAMPS, false);
     }
 
     @Test
@@ -163,6 +163,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
 
         // enable cleanup keys
         conf.setBoolean(ShardReindexMapper.CLEANUP_SHARD, true);
+
         mapper.setup(context);
 
         mapper.map(fiKey, new Value(), context);
@@ -246,6 +247,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
 
         // enable cleanup keys
         conf.setBoolean(ShardReindexMapper.CLEANUP_SHARD, true);
+
         mapper.setup(context);
 
         mapper.map(fiKey, new Value(), context);
@@ -271,6 +273,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
 
         // enable cleanup keys
         conf.setBoolean(ShardReindexMapper.CLEANUP_SHARD, true);
+
         mapper.setup(context);
 
         mapper.map(fiKey, new Value(), context);
@@ -293,6 +296,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         context.write(EasyMock.eq(bik2), EasyMock.isA(Value.class));
         context.progress();
 
+        conf.setBoolean(ShardReindexMapper.FLOOR_TIMESTAMPS, false);
         conf.setBoolean(ShardReindexMapper.PROPAGATE_DELETES, true);
 
         replayAll();

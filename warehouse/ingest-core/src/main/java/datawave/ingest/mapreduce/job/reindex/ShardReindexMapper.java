@@ -21,6 +21,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableComparator;
 import org.apache.hadoop.mapreduce.Mapper;
+import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.HashMultimap;
@@ -41,19 +42,19 @@ import datawave.ingest.mapreduce.partition.MultiTableRangePartitioner;
 import datawave.ingest.protobuf.Uid;
 
 public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
-    public static final String CLEANUP_SHARD = "cleanupShard";
-    public static final String PROPAGATE_DELETES = "propagateDeletes";
-    public static final String DEFAULT_DATA_TYPE = "defaultDataType";
-    public static final String REPROCESS_EVENTS = "reprocessEvents";
-    public static final String FLOOR_TIMESTAMPS = "floorTimestamps";
-    public static final String EVENT_OVERRIDE = "eventOverride";
-    public static final String EXPORT_SHARD = "exportShard";
-    public static final String GENERATE_TF = "generateTF";
-    public static final String DATA_TYPE_HANDLER = "dataTypeHandler";
-    public static final String ENABLE_REINDEX_COUNTERS = "enableReindexCounters";
-    public static final String DUMP_COUNTERS = "dumpCounters";
-    public static final String BATCH_MODE = "batchMode";
-    public static final String GENERATE_METADATA = "generateMetadata";
+    public static final String CLEANUP_SHARD = "ShardReindexMapper.cleanupShard";
+    public static final String PROPAGATE_DELETES = "ShardReindexMapper.propagateDeletes";
+    public static final String DEFAULT_DATA_TYPE = "ShardReindexMapper.defaultDataType";
+    public static final String REPROCESS_EVENTS = "ShardReindexMapper.reprocessEvents";
+    public static final String FLOOR_TIMESTAMPS = "ShardReindexMapper.floorTimestamps";
+    public static final String EVENT_OVERRIDE = "ShardReindexMapper.eventOverride";
+    public static final String EXPORT_SHARD = "ShardReindexMapper.exportShard";
+    public static final String GENERATE_TF = "ShardReindexMapper.generateTF";
+    public static final String DATA_TYPE_HANDLER = "ShardReindexMapper.dataTypeHandler";
+    public static final String ENABLE_REINDEX_COUNTERS = "ShardReindexMapper.enableReindexCounters";
+    public static final String DUMP_COUNTERS = "ShardReindexMapper.dumpCounters";
+    public static final String BATCH_MODE = "ShardReindexMapper.batchMode";
+    public static final String GENERATE_METADATA = "ShardReindexMapper.generateMetadata";
 
     private static final Logger log = Logger.getLogger(ShardReindexMapper.class);
 
@@ -78,7 +79,7 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
     // counter processing
     private boolean enableReindexCounters = true;
     private boolean dumpCounters = true;
-    private Map<String,Map<String,Long>> counters = new HashMap<>();
+    private Map<String,Map<String,Long>> counters = null;
 
     // reprocessing classes
     private DataTypeHandler indexHandler;
@@ -108,7 +109,13 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
     private Map<Text,Map<String,List<String>>> batchValues = null;
     private RawRecordContainer batchEvent = null;
 
-    // TODO javadoc
+    /**
+     * Setup the mapper and check for all required and inconsistent settings
+     *
+     * @param context
+     * @throws IOException
+     * @throws InterruptedException
+     */
     @Override
     protected void setup(Context context) throws IOException, InterruptedException {
         Configuration config = context.getConfiguration();
@@ -140,6 +147,11 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
         this.floorTimestamps = config.getBoolean(FLOOR_TIMESTAMPS, this.floorTimestamps);
 
         if (this.reprocessEvents) {
+            // check for consistency with cleanup shard settings
+            if (this.cleanupShard) {
+                throw new IllegalStateException(CLEANUP_SHARD + " and " + REPROCESS_EVENTS + " cannot both be set");
+            }
+
             // do this here because it can take awhile
             this.dataMap = HashMultimap.create();
 
@@ -163,10 +175,9 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
             }
 
             try {
-                Class dataTypeHandlerClass = Class.forName(dataTypeHandler);
-                this.indexHandler = (DataTypeHandler) dataTypeHandlerClass.getDeclaredConstructor().newInstance();
+                this.indexHandler = (DataTypeHandler) ReflectionUtils.newInstance(Class.forName(dataTypeHandler), config);
                 this.indexHandler.setup(context);
-            } catch (ClassNotFoundException | InvocationTargetException | InstantiationException | IllegalAccessException | NoSuchMethodException e) {
+            } catch (ClassNotFoundException e) {
                 throw new IllegalArgumentException("can not create handler for data type handler: " + dataTypeHandler, e);
             }
 
@@ -176,12 +187,9 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
                 this.event = new RawRecordContainerImpl();
                 if (eventOverride != null) {
                     log.info("creating event override: " + this.eventOverride);
-                    this.event = (RawRecordContainer) Class.forName(this.eventOverride).getDeclaredConstructor().newInstance();
-                    if (this.event instanceof Configurable) {
-                        ((Configurable) this.event).setConf(config);
-                    }
+                    this.event = (RawRecordContainer) ReflectionUtils.newInstance(Class.forName(this.eventOverride), config);
                 }
-            } catch (ClassNotFoundException | InvocationTargetException | InstantiationException | IllegalAccessException | NoSuchMethodException e) {
+            } catch (ClassNotFoundException e) {
                 throw new RuntimeException("Could not create event of type: " + this.eventOverride, e);
             }
 
@@ -224,7 +232,7 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
                 Map<String,Long> groupCounters = this.counters.get(counterGroup);
                 for (String counter : groupCounters.keySet()) {
                     Long value = groupCounters.get(counter);
-                    // optionally dump the counters to logs
+                    // optionally dump the counters to logs instead of the MR framework
                     if (this.dumpCounters) {
                         log.info("COUNTER " + counterGroup + " " + counter + " " + value);
                     } else {
@@ -235,83 +243,137 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
         }
     }
 
+    /**
+     * Only sharded column family length of one is d
+     *
+     * @param cf
+     * @return
+     */
+    private boolean isKeyD(ByteSequence cf) {
+        return cf.length() == 1;
+    }
+
+    /**
+     *
+     * @param key
+     * @param value
+     * @param context
+     * @throws IOException
+     * @throws InterruptedException
+     */
+    private void processDKey(Key key, Value value, Context context) throws IOException, InterruptedException {
+        if (this.reprocessEvents && this.exportShard) {
+            context.write(new BulkIngestKey(shardTable, key), value);
+            incrementCounter("export", "d");
+        }
+    }
+
+    /**
+     * Only sharded column family length of two is tf
+     *
+     * @param cf
+     * @return
+     */
+    private boolean isKeyTF(ByteSequence cf) {
+        return cf.length() == 2;
+    }
+
+    private void processTFKey(Key key, Value value, Context context) throws IOException, InterruptedException {
+        // get the tf field
+        final String tfField = getFieldFromTF(key);
+
+        // if reprocessing events and exporting shard and either not generating tf or this is an index only field write it to the context
+        if (this.reprocessEvents && this.exportShard && (!this.generateTF || this.defaultHelper.isIndexOnlyField(tfField))) {
+            context.write(new BulkIngestKey(shardTable, key), value);
+            incrementCounter("tf", tfField);
+            incrementCounter("export", "tf");
+        }
+    }
+
+    /**
+     * The key must be at least 4 characters and begin with {@link #FI_START_BYTES}
+     *
+     * @param cf
+     * @return
+     */
+    private boolean isKeyFI(ByteSequence cf) {
+        return cf.length() > 3 && WritableComparator.compareBytes(cf.getBackingArray(), 0, 3, FI_START_BYTES, 0, 3) == 0;
+    }
+
+    private void processFIKey(Key key, Value value, Context context) throws IOException, InterruptedException {
+        if (!this.reprocessEvents || (this.reprocessEvents && this.defaultHelper.isIndexOnlyField(getFieldFromFI(key)))) {
+            processFI(context, key);
+        }
+    }
+
+    private void processEventKey(Key key, Value value, Context context) throws IOException, InterruptedException {
+        if (this.reprocessEvents) {
+            processEvent(context, key);
+            if (exportShard) {
+                context.write(new BulkIngestKey(shardTable, key), value);
+                incrementCounter("export", "e");
+            }
+        }
+    }
+
+    /**
+     * Expects key/value pairs from the shard table {@link ShardedDataTypeHandler}. The key will be parsed to determine Sharded key type and processed according
+     * to configuration options. <br>
+     *
+     * @param key
+     *            shard table key
+     * @param value
+     *            shard table value
+     * @param context
+     * @throws IOException
+     * @throws InterruptedException
+     */
     @Override
     protected void map(Key key, Value value, Context context) throws IOException, InterruptedException {
-        // TODO rewrite all of this to make sense
-        // This is all a bit awkward since DatawaveKey already parses the Key, but is in the datawave-query-core package. Minimally parse the Key for three
-        // purposes
-        // 1. Is it an FI key. Ranges should be created to defeat non fi ranges, but no verify and skip when possible
-        // 2. Get the field name. Necessary for checking how a field is indexed
-        // 3. Get the data type. The data type is used to get the correct IngestHelperInterface which is used to make decisions regarding how a field is
-        // indexed. This may vary from data type to data type
-
         // this is required for the partitioner, see EventMapper
         MultiTableRangePartitioner.setContext(context);
 
-        // ensure the key is an fi
-        final byte[] cf = key.getColumnFamilyData().getBackingArray();
-        final int fiBaseLength = FI_START_BYTES.length;
-        if (cf.length <= fiBaseLength || WritableComparator.compareBytes(cf, 0, fiBaseLength, FI_START_BYTES, 0, fiBaseLength) != 0) {
-            // increment count of non-fi key
-            incrementCounter("key types", "non-fi");
-            if (cf.length == 2) {
-                // tf is the only shard Key of length 2
-                incrementCounter("key types", "tf");
-
-                // get the tf field
-                final String tfField = getFieldFromTF(key);
-
-                // if reprocessing events and exporting shard and either not generating tf or this is an index only field write it to the context
-                if (this.reprocessEvents && this.exportShard && (!this.generateTF || this.defaultHelper.isIndexOnlyField(tfField))) {
-                    context.write(new BulkIngestKey(shardTable, key), value);
-                    incrementCounter("tf", tfField);
-                }
-
-                context.progress();
-                // nothing else to do for this Key
-                return;
-            }
-
-            // check for d column
-            if (cf.length == 1 && cf[0] == 'd') {
-                incrementCounter("key types", "d");
-                if (this.reprocessEvents && this.exportShard) {
-                    context.write(new BulkIngestKey(shardTable, key), value);
-                    incrementCounter("export", "d");
-                }
-                context.progress();
-                return;
-            }
-
-            // everything else should be an event
-            if (this.reprocessEvents) {
-                try {
-                    processEvent(context, key);
-                    if (exportShard) {
-                        context.write(new BulkIngestKey(shardTable, key), value);
-                        incrementCounter("export", "event");
-                    }
-                } catch (ClassNotFoundException | InvocationTargetException | InstantiationException | IllegalAccessException | NoSuchMethodException e) {
-                    throw new RuntimeException("Could not process event for: " + key, e);
-                }
-            }
-            context.progress();
-            return;
+        ByteSequence cf = key.getColumnFamilyData();
+        String keyType;
+        if (isKeyD(cf)) {
+            keyType = "d";
+            processDKey(key, value, context);
+        } else if (isKeyTF(cf)) {
+            keyType = "tf";
+            processTFKey(key, value, context);
+        } else if (isKeyFI(cf)) {
+            keyType = "fi";
+            processFIKey(key, value, context);
+        } else {
+            keyType = "e";
+            processEventKey(key, value, context);
         }
 
-        // if none of the key types above, Key is an fi Key type
-        processFI(context, key);
+        incrementCounter("shard", key.getRowData().toString());
+        incrementCounter("key types", keyType);
+
         context.progress();
     }
 
-    // TODO add javadoc
+    /**
+     * To process an FI by looking up the associated {@link IngestHelperInterface} and checking its indexed state. Index only fields will always have index
+     * entries generated. Indexed fields that are not index only will only be generated if {@link #reprocessEvents} is false. When {@link #cleanupShard} is true
+     * if the field is no longer indexed a delete key will be generated for the fi entry. When {@link #exportShard} is enabled the fi entry will be written as
+     * long as the field is still indexed
+     *
+     * @param context
+     * @param key
+     * @throws IOException
+     * @throws InterruptedException
+     */
     private void processFI(Context context, Key key) throws IOException, InterruptedException {
         final byte[] cf = key.getColumnFamilyData().getBackingArray();
 
         // check if it's the same target field as the last one
         final int fiBaseLength = FI_START_BYTES.length;
         final int fiBaseOffset = fiBaseLength + 1;
-        // TODO add comment here
+
+        // quickly compare the bytes against the last processed bytes to save on parse time if possible
         if (this.lastFiBytes == null || WritableComparator.compareBytes(cf, fiBaseOffset, cf.length - fiBaseOffset, this.lastFiBytes, fiBaseOffset,
                         this.lastFiBytes.length - fiBaseOffset) != 0) {
             // get the field from the cf
@@ -348,12 +410,10 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
             throw new IllegalStateException("cannot find IngestHelperInterface for dataType: " + dataType + " key: " + key);
         }
 
-        // TODO review all counter names for consistency
-        incrementCounter("type", dataType);
-        incrementCounter("fi", this.normalizedFieldName);
-        incrementCounter("shard", key.getRowData().toString());
+        incrementCounter("fi.dataTypes", dataType);
+        incrementCounter("fi.fields", this.normalizedFieldName);
 
-        Text fieldValueText = null;
+        Text fieldValueText;
         Text fieldText = null;
         Text indexCq = null;
         boolean indexed = false;
@@ -365,9 +425,8 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
             incrementCounter("deletes", "propagated");
         }
 
-        // TODO update comment
-        // test if the field should have a global index built for it and write to context
-        if ((!this.reprocessEvents && helper.isIndexedField(this.normalizedFieldName)) || helper.isIndexOnlyField(this.normalizedFieldName)) {
+        // if the field is indexed and index only or events aren't being reprocessed
+        if (helper.isIndexedField(this.normalizedFieldName) && (!this.reprocessEvents || helper.isIndexOnlyField(this.normalizedFieldName))) {
             // generate the global index key and emit it
             fieldValueText = new Text(fieldValue.toString());
             fieldText = new Text(this.normalizedFieldName);
@@ -381,13 +440,11 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
             BulkIngestKey bik = new BulkIngestKey(this.indexTable, globalIndexKey);
             context.write(bik, UID_VALUE);
             indexed = true;
-            incrementCounter("index", this.normalizedFieldName);
+            incrementCounter("index.fields", this.normalizedFieldName);
         }
 
-        // TODO update comment
-        // TODO make logic uniform with forward index check
-        // test if the field should have a reverse global index built for it and write to context
-        if (helper.isReverseIndexedField(this.normalizedFieldName) && (helper.isIndexOnlyField(this.normalizedFieldName) || !this.reprocessEvents)) {
+        // if the field is reverse indexed and index only or events aren't being reprocessed
+        if (helper.isReverseIndexedField(this.normalizedFieldName) && (!this.reprocessEvents || helper.isIndexOnlyField(this.normalizedFieldName))) {
             // reverse the field value
             fieldValueText = new Text(reverse(fieldValue.toString()));
             if (fieldText == null) {
@@ -413,13 +470,12 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
             deleteKey.setDeleted(true);
             BulkIngestKey bik = new BulkIngestKey(this.shardTable, deleteKey);
             context.write(bik, EMPTY_VALUE);
-            incrementCounter("shard cleanup", "fi");
+            incrementCounter("shard cleanup", normalizedFieldName);
         } else if (indexed && this.exportShard) {
             // write the FI back out so the export is complete
             BulkIngestKey bik = new BulkIngestKey(this.shardTable, key);
             context.write(bik, EMPTY_VALUE);
             incrementCounter("export", "fi");
-            incrementCounter("fi", this.normalizedFieldName);
         }
     }
 
@@ -444,7 +500,15 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
         return timestamp;
     }
 
-    // todo document
+    /**
+     * Select an ingest helper from the {@link TypeRegistry} that matches the dataType. If the TypeRegistry has a {@link Type} that matches either the
+     * outputName or the typeName and can be successfully created cache it for future use of this type. If no type can be instantiated from the TypeRegistry and
+     * a {@link #defaultDataType} has been defined, use it.
+     *
+     * @param dataType
+     * @param config
+     * @return
+     */
     private IngestHelperInterface getIngestHelper(String dataType, Configuration config) {
         // check the cache
         IngestHelperInterface helper = datatypeHelperCache.get(dataType);
@@ -473,8 +537,7 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
         return helper;
     }
 
-    private void processEvent(Context context, Key key) throws ClassNotFoundException, InvocationTargetException, InstantiationException,
-                    IllegalAccessException, NoSuchMethodException, IOException, InterruptedException {
+    private void processEvent(Context context, Key key) throws IOException, InterruptedException {
         // cleanup from any previous processing
         this.dataMap.clear();
         this.event.clear();
@@ -726,16 +789,26 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
         return null;
     }
 
+    /**
+     * FI keys will always have a column family of the form fi\x00NORMALIZED_FIELD_NAME
+     *
+     * @param fi
+     * @return
+     */
+    private String getFieldFromFI(Key fi) {
+        return fi.getColumnFamilyData().subSequence(3, fi.getColumnFamilyData().length()).toString();
+    }
+
     private void incrementCounter(String group, String counter) {
         incrementCounter(group, counter, 1l);
     }
 
     private void incrementCounter(String group, String counter, long increment) {
-        if (counters != null) {
-            Map<String,Long> groupCounters = counters.get(group);
+        if (this.counters != null) {
+            Map<String,Long> groupCounters = this.counters.get(group);
             if (groupCounters == null) {
                 groupCounters = new HashMap<>();
-                counters.put(group, groupCounters);
+                this.counters.put(group, groupCounters);
             }
 
             Long count = groupCounters.get(counter);
