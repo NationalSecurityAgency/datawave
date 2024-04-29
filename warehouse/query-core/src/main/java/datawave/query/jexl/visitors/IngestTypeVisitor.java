@@ -86,7 +86,7 @@ public class IngestTypeVisitor extends BaseVisitor {
                 return ingestTypes;
             }
         }
-        return Collections.emptySet();
+        return new HashSet<>();
     }
 
     /**
@@ -195,7 +195,7 @@ public class IngestTypeVisitor extends BaseVisitor {
             return visitMarker(instance, node, data);
         }
 
-        // getting ingest types for an intersection is different
+        // special logic for getting types from an intersection
         return getIngestTypesForIntersection(node);
     }
 
@@ -265,12 +265,6 @@ public class IngestTypeVisitor extends BaseVisitor {
      */
     public Set<String> getIngestTypesForLeaf(JexlNode node) {
         node = JexlASTHelper.dereference(node);
-        if (node instanceof ASTEQNode) {
-            Object literal = JexlASTHelper.getLiteralValueSafely(node);
-            if (literal == null) {
-                return Collections.singleton(UNKNOWN_TYPE);
-            }
-        }
 
         Set<String> ingestTypes = new HashSet<>();
         Set<String> fields = getFieldsForLeaf(node);
@@ -292,20 +286,22 @@ public class IngestTypeVisitor extends BaseVisitor {
      * @return a set of ingest types
      */
     public Set<String> getFieldsForLeaf(JexlNode node) {
+        Set<String> identifiers;
         JexlNode deref = JexlASTHelper.dereference(node);
         if (deref instanceof ASTFunctionNode) {
             try {
-                return getFieldsForFunctionNode((ASTFunctionNode) deref);
+                identifiers = getFieldsForFunctionNode((ASTFunctionNode) deref);
             } catch (Exception e) {
                 // if a FunctionsDescriptor throws an exception for any reason then return an empty collection
                 // so the node gets treated as an unknown type
-                return Collections.emptySet();
+                return new HashSet<>();
             }
+        } else {
+            identifiers = JexlASTHelper.getIdentifierNames(deref);
         }
 
         //  @formatter:off
-        return JexlASTHelper.getIdentifierNames(deref)
-                        .stream()
+        return identifiers.stream()
                         .map(JexlASTHelper::deconstructIdentifier)
                         .collect(Collectors.toSet());
         //  @formatter:on
@@ -338,7 +334,7 @@ public class IngestTypeVisitor extends BaseVisitor {
             default:
                 // do nothing
                 log.warn("Unhandled function namespace: " + visitor.namespace());
-                return Collections.emptySet();
+                return new HashSet<>();
         }
     }
 
@@ -354,25 +350,29 @@ public class IngestTypeVisitor extends BaseVisitor {
     }
 
     @SuppressWarnings("unchecked")
-    private Set<String> getIngestTypesForIntersection(ASTAndNode node) {
+    public Set<String> getIngestTypesForIntersection(ASTAndNode node) {
         Set<String> ingestTypes = new HashSet<>();
         for (int i = 0; i < node.jjtGetNumChildren(); i++) {
             JexlNode child = JexlASTHelper.dereference(node.jjtGetChild(i));
+
+            boolean negated = child instanceof ASTNotNode;
+            boolean isNullLiteral = child instanceof ASTEQNode && JexlASTHelper.getLiteralValueSafely(child) == null;
+            if (negated || isNullLiteral) {
+                continue;
+            }
+
             Set<String> childIngestTypes = (Set<String>) child.jjtAccept(this, null);
 
-            if (childIngestTypes == null) {
-                continue; // we could have a malformed query or a query with a _Drop_ marker
+            if (childIngestTypes == null || (ingestTypes.isEmpty() && childIngestTypes.contains(UNKNOWN_TYPE))) {
+                // we could have a malformed query or a query with a _Drop_ marker
+                // or, the first term could be UNKNOWN
+                continue;
             }
 
             if (ingestTypes.isEmpty()) {
                 ingestTypes = childIngestTypes;
             } else {
-                if (child instanceof ASTNotNode) {
-                    // special handling of negations. negated ingest types get OR'd together
-                    ingestTypes.addAll(childIngestTypes);
-                } else {
-                    ingestTypes = intersectTypes(ingestTypes, childIngestTypes);
-                }
+                ingestTypes = intersectTypes(ingestTypes, childIngestTypes);
             }
 
             if (ingestTypes.isEmpty()) {
@@ -385,7 +385,9 @@ public class IngestTypeVisitor extends BaseVisitor {
 
     private Set<String> intersectTypes(Set<String> typesA, Set<String> typesB) {
         if (typesA.contains(UNKNOWN_TYPE) || typesB.contains(UNKNOWN_TYPE)) {
-            return Collections.singleton(UNKNOWN_TYPE);
+            Set<String> unknown = new HashSet<>();
+            unknown.add(UNKNOWN_TYPE);
+            return unknown;
         }
         typesA.retainAll(typesB);
         return typesA;

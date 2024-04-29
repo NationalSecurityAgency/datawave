@@ -146,7 +146,7 @@ public abstract class CompositeFunctionsTest {
 
     protected Authorizations auths = new Authorizations("ALL");
 
-    private Set<Authorizations> authSet = Collections.singleton(auths);
+    private final Set<Authorizations> authSet = Collections.singleton(auths);
 
     @Inject
     @SpringBean(name = "EventQuery")
@@ -461,11 +461,13 @@ public abstract class CompositeFunctionsTest {
                 Arrays.asList("CORLEONE", "CAPONE", "SOPRANO", "ANDOLINI"),
                 Collections.emptyList(),
                 Collections.emptyList(),
-                Collections.emptyList()};
+                Collections.emptyList()
+        };
         //  @formatter:on
 
         for (int i = 0; i < queryStrings.length; i++) {
-            System.out.println("query: " + i);
+            // filter must be reset between each run when pruning ingest types
+            eventQueryLogic.getConfig().setDatatypeFilter(Collections.emptySet());
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
         }
     }
@@ -491,7 +493,7 @@ public abstract class CompositeFunctionsTest {
                 "filter:isNotNull(UUID) || filter:isNotNull(NULL1)",
                 "filter:isNotNull(ONE_NULL)",
                 "UUID =~ '^[CS].*' AND filter:isNotNull(UUID)",
-                "UUID =~ '^[CS].*' AND filter:isNotNull(NULL1)",
+                "UUID =~ '^[CS].*' AND filter:isNotNull(NULL1)",    //  dis guy
                 "UUID =~ '^[CS].*' AND filter:isNotNull(NULL1||NULL2)",
                 "UUID =~ '^[CS].*' AND filter:isNotNull(BOTH_NULL)",
                 "UUID =~ '^[CS].*' AND filter:isNotNull(UUID||NULL1)",
@@ -514,10 +516,13 @@ public abstract class CompositeFunctionsTest {
                 Collections.emptyList(),
                 Collections.emptyList(),
                 Arrays.asList("CORLEONE", "CAPONE", "SOPRANO"),
-                Arrays.asList("CORLEONE", "CAPONE", "SOPRANO")};
+                Arrays.asList("CORLEONE", "CAPONE", "SOPRANO")
+        };
         //  @formatter:on
 
         for (int i = 0; i < queryStrings.length; i++) {
+            // filter must be reset between each run when pruning ingest types
+            eventQueryLogic.getConfig().setDatatypeFilter(Collections.emptySet());
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
         }
     }

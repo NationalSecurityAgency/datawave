@@ -10,7 +10,6 @@ import java.util.Set;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.log4j.Logger;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import com.google.common.collect.Sets;
@@ -86,10 +85,8 @@ public class IngestTypePruningVisitorTest {
                         "A == '1' && C == '3'",
                         "A == '1' && B == '2' && C == '3'",
                         "A == '1' && C != '3'",
-                        "A == '1' && !(C == '3')",
                         "A == '1' && C =~ '3'",
                         "A == '1' && C !~ '3'",
-                        "A == '1' && !(C =~ '3')",
                         "A == '1' && C < '3'",
                         "A == '1' && C <= '3'",
                         "A == '1' && C > '3'",
@@ -100,6 +97,12 @@ public class IngestTypePruningVisitorTest {
         for (String query : queries) {
             test(query, null);
         }
+    }
+
+    @Test
+    public void testIntersectionWithExclusiveNegation() {
+        test("A == '1' && !(C == '3')", "A == '1'");
+        test("A == '1' && !(C =~ '3')", "A == '1'");
     }
 
     // A && (B || C)
@@ -438,7 +441,7 @@ public class IngestTypePruningVisitorTest {
     @Test
     public void testPruneNegation() {
         String query = "A == '1' || !((_Delayed_ = true) && (A == '1' && C == '2'))";
-        test(query, "A == '1'");
+        test(query, query);
     }
 
     @Test
@@ -518,12 +521,13 @@ public class IngestTypePruningVisitorTest {
         metadata.put("B", "ingestType2", LcType.class.getTypeName());
         metadata.put("9", "ingestType2", LcType.class.getTypeName());
 
-        String query = "A == '1' && B == null"; // *technically* valid
-        test(query, query, metadata);
+        // *technically* valid because B will always be null for any document that matches A
+        // practically the B term is superfluous
+        String query = "A == '1' && B == null";
+        test(query, "A == '1'", metadata);
 
-        // same form but with an identifier
-        query = "A == '1' && $9 == null";
-        test(query, query, metadata);
+        query = "A == '1' && $9 == null"; // same form but with an identifier
+        test(query, "A == '1'", metadata);
     }
 
     @Test
@@ -531,10 +535,14 @@ public class IngestTypePruningVisitorTest {
         TypeMetadata metadata = new TypeMetadata();
         metadata.put("A", "ingestType1", LcType.class.getTypeName());
         metadata.put("B", "ingestType2", LcType.class.getTypeName());
+        metadata.put("9", "ingestType2", LcType.class.getTypeName());
 
-        // in theory this visitor should be smart enough to prune out a negation for an exclusive ingest type
+        // visitor is smart enough to prune out a negation for an exclusive ingest type
         String query = "A == '1' && !(B == null)";
-        test(query, query, metadata);
+        test(query, "A == '1'", metadata);
+
+        query = "A == '1' && !($B == null)"; // same form but with an identifier
+        test(query, "A == '1'", metadata);
     }
 
     @Test
@@ -560,6 +568,41 @@ public class IngestTypePruningVisitorTest {
         metadata.put("9", "ingestType4", LcType.class.getTypeName());
 
         String query = "(A == '1' || B == '2') && C == '3' && D == null && $9 == null && !(E == '4') && !(E == '5' || E == '6') && !(F == '7')";
+        test(query, query, metadata);
+    }
+
+    @Test
+    public void testNotNullAndNestedUnion() {
+        String query = "!(A == null) && B == '1' || ((C == '2' || D == '2' || E == '2' || F == '2'))";
+
+        TypeMetadata metadata = new TypeMetadata();
+        metadata.put("A", "type1", LcType.class.getTypeName());
+        metadata.put("A", "type2", LcType.class.getTypeName());
+        metadata.put("A", "type3", LcType.class.getTypeName());
+        metadata.put("A", "type4", LcType.class.getTypeName());
+
+        metadata.put("B", "type1", LcType.class.getTypeName());
+        metadata.put("B", "type2", LcType.class.getTypeName());
+        metadata.put("B", "type3", LcType.class.getTypeName());
+        metadata.put("B", "type4", LcType.class.getTypeName());
+
+        metadata.put("C", "type1", LcType.class.getTypeName());
+        metadata.put("C", "type2", LcType.class.getTypeName());
+        metadata.put("C", "type3", LcType.class.getTypeName());
+        metadata.put("C", "type4", LcType.class.getTypeName());
+        metadata.put("C", "type5", LcType.class.getTypeName());
+        metadata.put("C", "type6", LcType.class.getTypeName());
+
+        metadata.put("D", "type1", LcType.class.getTypeName());
+        metadata.put("D", "type2", LcType.class.getTypeName());
+        metadata.put("D", "type3", LcType.class.getTypeName());
+        metadata.put("D", "type4", LcType.class.getTypeName());
+        metadata.put("D", "type5", LcType.class.getTypeName());
+        metadata.put("D", "type6", LcType.class.getTypeName());
+
+        metadata.put("E", "type3", LcType.class.getTypeName());
+        metadata.put("F", "type3", LcType.class.getTypeName());
+
         test(query, query, metadata);
     }
 
@@ -590,7 +633,7 @@ public class IngestTypePruningVisitorTest {
             // we might be expecting nothing as a result
             if (expected == null) {
                 log.trace("expected null! " + JexlStringBuildingVisitor.buildQuery(pruned));
-                assertEquals(0, pruned.jjtGetNumChildren());
+                assertEquals("failed for query: " + query, 0, pruned.jjtGetNumChildren());
                 return;
             }
 
