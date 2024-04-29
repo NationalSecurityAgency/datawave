@@ -77,6 +77,10 @@ import datawave.query.Constants;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
+import datawave.query.jexl.visitors.BaseVisitor;
+import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.query.jexl.visitors.PrintingVisitor;
+import datawave.query.jexl.visitors.PushdownNegationVisitor;
 import datawave.query.util.MetadataHelper;
 
 /**
@@ -110,6 +114,11 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     }
 
     private static final Logger log = Logger.getLogger(ExecutableDeterminationVisitor.class);
+
+    private static final String EXCEEDED_MAX_TERMS_MESSAGE = "Exceeded max terms to print threshold of ";
+    private static final String TERMS_PRINTED_MESSAGE = "; terms printed: ";
+    private int maxTermsToPrint;
+    private int termsPrinted = 0;
 
     /**
      * The output interface which allows us to write lines into the output, and provides for handling a stack of summary contributors that in the end will
@@ -382,6 +391,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         if (debugOutput != null) {
             output = newStringListOutput(debugOutput);
         }
+        this.maxTermsToPrint = (this.config.getMaxTermsToPrint() == -1) ? 100 : this.config.getMaxTermsToPrint();
     }
 
     /**
@@ -556,8 +566,13 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
             }
         }
         if (output != null) {
-            output.writeLine(data, node, state, false);
+            termsPrinted++;
+            if (termsPrinted > maxTermsToPrint) {
+                log.trace(EXCEEDED_MAX_TERMS_MESSAGE + maxTermsToPrint + TERMS_PRINTED_MESSAGE + termsPrinted);
+            } else {
 
+                output.writeLine(data, node, state, false);
+            }
             // determine which states to pass up. Should be the state determined.
             states.clear();
             states.add(state);
@@ -640,8 +655,13 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
             }
         }
         if (output != null) {
-            output.writeLine(data, node, state, false);
+            termsPrinted++;
+            if (termsPrinted > maxTermsToPrint) {
+                log.trace(EXCEEDED_MAX_TERMS_MESSAGE + maxTermsToPrint + TERMS_PRINTED_MESSAGE + termsPrinted);
 
+            } else {
+                output.writeLine(data, node, state, false);
+            }
             // determine which states to pass up. Should be the state determined.
             states.clear();
             states.add(state);
@@ -918,6 +938,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     public Object visit(ASTNotNode node, Object data) {
         // grab the recursive state because its either necessary directly or the error state of the branch needs to be checked
         STATE state = allOrNone(node, negateData(data + PREFIX));
+
         // if there is no error and executability is being checked against the global index just return non-executable
         if (state == STATE.EXECUTABLE) {
             if (output != null) {
@@ -972,14 +993,24 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         if (instance.isType(EXCEEDED_TERM)) {
             state = STATE.NON_EXECUTABLE;
             if (output != null) {
-                output.writeLine(data, node, "( Exceeded Term Threshold )", state, true);
+                termsPrinted++;
+                if (termsPrinted > maxTermsToPrint) {
+                    log.trace(EXCEEDED_MAX_TERMS_MESSAGE + maxTermsToPrint + TERMS_PRINTED_MESSAGE + termsPrinted);
+                } else {
+                    output.writeLine(data, node, "( Exceeded Term Threshold )", state, true);
+                }
             }
         }
         // if an ivarator then return true, else check out children
         else if (instance.isAnyTypeOf(EXCEEDED_VALUE, EXCEEDED_OR)) {
             state = STATE.EXECUTABLE;
             if (output != null) {
-                output.writeLine(data, node, "( Exceeded Or / Value Threshold )", state, true);
+                termsPrinted++;
+                if (termsPrinted > maxTermsToPrint) {
+                    log.trace(EXCEEDED_MAX_TERMS_MESSAGE + maxTermsToPrint + TERMS_PRINTED_MESSAGE + termsPrinted);
+                } else {
+                    output.writeLine(data, node, "( Exceeded Or / Value Threshold )", state, true);
+                }
             }
         }
         // if ignored expression, then ignore it
@@ -996,19 +1027,34 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
                 state = STATE.NON_EXECUTABLE;
             }
             if (output != null) {
-                output.writeLine(data, node, "( delayed/eval only predicate )", state, true);
+                termsPrinted++;
+                if (termsPrinted > maxTermsToPrint) {
+                    log.trace(EXCEEDED_MAX_TERMS_MESSAGE + maxTermsToPrint + TERMS_PRINTED_MESSAGE + termsPrinted);
+                } else {
+                    output.writeLine(data, node, "( delayed/eval only predicate )", state, true);
+                }
             }
         }
         // if we got to a bounded range, then this was expanded and is not executable against the index
         else if (instance.isType(BOUNDED_RANGE)) {
             state = STATE.NON_EXECUTABLE;
             if (output != null) {
-                output.writeLine(data, node, "( bounded range )", state, true);
+                termsPrinted++;
+                if (termsPrinted > maxTermsToPrint) {
+                    log.trace(EXCEEDED_MAX_TERMS_MESSAGE + maxTermsToPrint + TERMS_PRINTED_MESSAGE + termsPrinted);
+                } else {
+                    output.writeLine(data, node, "( bounded range )", state, true);
+                }
             }
         } else if (instance.isType(INDEX_HOLE)) {
             state = STATE.NON_EXECUTABLE;
             if (output != null) {
-                output.writeLine(data, node, "( index hole )", state, true);
+                termsPrinted++;
+                if (termsPrinted > maxTermsToPrint) {
+                    log.trace(EXCEEDED_MAX_TERMS_MESSAGE + maxTermsToPrint + TERMS_PRINTED_MESSAGE + termsPrinted);
+                } else {
+                    output.writeLine(data, node, "( index hole )", state, true);
+                }
             }
         } else {
             if (isNegated(data)) {
@@ -1171,7 +1217,12 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     public Object visit(ASTIdentifier node, Object data) {
         STATE state = STATE.IGNORABLE;
         if (output != null) {
-            output.writeLine(data, node, ":" + node.getName(), state, true);
+            termsPrinted++;
+            if (termsPrinted > maxTermsToPrint) {
+                log.trace(EXCEEDED_MAX_TERMS_MESSAGE + maxTermsToPrint + TERMS_PRINTED_MESSAGE + termsPrinted);
+            } else {
+                output.writeLine(data, node, ":" + node.getName(), state, true);
+            }
         }
         return state;
     }
@@ -1180,7 +1231,12 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     public Object visit(ASTNullLiteral node, Object data) {
         STATE state = STATE.NON_EXECUTABLE;
         if (output != null) {
-            output.writeLine(data, node, state, true);
+            termsPrinted++;
+            if (termsPrinted > maxTermsToPrint) {
+                log.trace(EXCEEDED_MAX_TERMS_MESSAGE + maxTermsToPrint + TERMS_PRINTED_MESSAGE + termsPrinted);
+            } else {
+                output.writeLine(data, node, state, true);
+            }
         }
         return state;
     }
@@ -1189,7 +1245,12 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     public Object visit(ASTTrueNode node, Object data) {
         STATE state = STATE.IGNORABLE;
         if (output != null) {
-            output.writeLine(data, node, state, true);
+            termsPrinted++;
+            if (termsPrinted > maxTermsToPrint) {
+                log.trace(EXCEEDED_MAX_TERMS_MESSAGE + maxTermsToPrint + TERMS_PRINTED_MESSAGE + termsPrinted);
+            } else {
+                output.writeLine(data, node, state, true);
+            }
         }
         return state;
     }
@@ -1198,7 +1259,12 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     public Object visit(ASTFalseNode node, Object data) {
         STATE state = STATE.IGNORABLE;
         if (output != null) {
-            output.writeLine(data, node, state, true);
+            termsPrinted++;
+            if (termsPrinted > maxTermsToPrint) {
+                log.trace(EXCEEDED_MAX_TERMS_MESSAGE + maxTermsToPrint + TERMS_PRINTED_MESSAGE + termsPrinted);
+            } else {
+                output.writeLine(data, node, state, true);
+            }
         }
         return state;
     }
@@ -1207,7 +1273,12 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     public Object visit(ASTStringLiteral node, Object data) {
         STATE state = STATE.IGNORABLE;
         if (output != null) {
-            output.writeLine(data, node, ":" + node.getLiteral(), state, true);
+            termsPrinted++;
+            if (termsPrinted > maxTermsToPrint) {
+                log.trace(EXCEEDED_MAX_TERMS_MESSAGE + maxTermsToPrint + TERMS_PRINTED_MESSAGE + termsPrinted);
+            } else {
+                output.writeLine(data, node, ":" + node.getLiteral(), state, true);
+            }
         }
         return state;
     }
@@ -1243,7 +1314,12 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     public Object visit(ASTEmptyFunction node, Object data) {
         STATE state = STATE.IGNORABLE;
         if (output != null) {
-            output.writeLine(data, node, state, true);
+            termsPrinted++;
+            if (termsPrinted > maxTermsToPrint) {
+                log.trace(EXCEEDED_MAX_TERMS_MESSAGE + maxTermsToPrint + TERMS_PRINTED_MESSAGE + termsPrinted);
+            } else {
+                output.writeLine(data, node, state, true);
+            }
         }
         return state;
     }
@@ -1261,7 +1337,12 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     public Object visit(ASTMethodNode node, Object data) {
         STATE state = STATE.NON_EXECUTABLE;
         if (output != null) {
-            output.writeLine(data, node, ":" + JexlNodes.getIdentifierOrLiteral(node), state, true);
+            termsPrinted++;
+            if (termsPrinted > maxTermsToPrint) {
+                log.trace(EXCEEDED_MAX_TERMS_MESSAGE + maxTermsToPrint + TERMS_PRINTED_MESSAGE + termsPrinted);
+            } else {
+                output.writeLine(data, node, ":" + JexlNodes.getIdentifierOrLiteral(node), state, true);
+            }
         }
         return state;
     }
@@ -1270,7 +1351,12 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     public Object visit(ASTConstructorNode node, Object data) {
         STATE state = STATE.IGNORABLE;
         if (output != null) {
-            output.writeLine(data, node, state, true);
+            termsPrinted++;
+            if (termsPrinted > maxTermsToPrint) {
+                log.trace(EXCEEDED_MAX_TERMS_MESSAGE + maxTermsToPrint + TERMS_PRINTED_MESSAGE + termsPrinted);
+            } else {
+                output.writeLine(data, node, state, true);
+            }
         }
         return state;
     }
@@ -1279,7 +1365,12 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     public Object visit(ASTArrayAccess node, Object data) {
         STATE state = STATE.IGNORABLE;
         if (output != null) {
-            output.writeLine(data, node, state, true);
+            termsPrinted++;
+            if (termsPrinted > maxTermsToPrint) {
+                log.trace(EXCEEDED_MAX_TERMS_MESSAGE + maxTermsToPrint + TERMS_PRINTED_MESSAGE + termsPrinted);
+            } else {
+                output.writeLine(data, node, state, true);
+            }
         }
         return state;
     }
@@ -1288,7 +1379,12 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     public Object visit(ASTReturnStatement node, Object data) {
         STATE state = STATE.IGNORABLE;
         if (output != null) {
-            output.writeLine(data, node, state, true);
+            termsPrinted++;
+            if (termsPrinted > maxTermsToPrint) {
+                log.trace(EXCEEDED_MAX_TERMS_MESSAGE + maxTermsToPrint + TERMS_PRINTED_MESSAGE + termsPrinted);
+            } else {
+                output.writeLine(data, node, state, true);
+            }
         }
         return state;
     }
@@ -1297,7 +1393,12 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     public Object visit(ASTVar node, Object data) {
         STATE state = STATE.IGNORABLE;
         if (output != null) {
-            output.writeLine(data, node, state, true);
+            termsPrinted++;
+            if (termsPrinted > maxTermsToPrint) {
+                log.trace(EXCEEDED_MAX_TERMS_MESSAGE + maxTermsToPrint + TERMS_PRINTED_MESSAGE + termsPrinted);
+            } else {
+                output.writeLine(data, node, state, true);
+            }
         }
         return state;
     }
@@ -1306,7 +1407,12 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     public Object visit(ASTNumberLiteral node, Object data) {
         STATE state = STATE.IGNORABLE;
         if (output != null) {
-            output.writeLine(data, node, ":" + node.getLiteral(), state, true);
+            termsPrinted++;
+            if (termsPrinted > maxTermsToPrint) {
+                log.trace(EXCEEDED_MAX_TERMS_MESSAGE + maxTermsToPrint + TERMS_PRINTED_MESSAGE + termsPrinted);
+            } else {
+                output.writeLine(data, node, ":" + node.getLiteral(), state, true);
+            }
         }
         return state;
     }

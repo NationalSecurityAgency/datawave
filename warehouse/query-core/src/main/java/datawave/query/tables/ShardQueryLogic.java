@@ -1649,6 +1649,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         getConfig().setMaxDepthThreshold(maxDepthThreshold);
     }
 
+    public int getMaxTermsToPrint() {
+        return getConfig().getMaxTermsToPrint();
+    }
+
+    public void setMaxTermsToPrint(int maxTermsToPrint) {
+        getConfig().setMaxTermsToPrint(maxTermsToPrint);
+    }
+
     public int getMaxUnfieldedExpansionThreshold() {
         return getConfig().getMaxUnfieldedExpansionThreshold();
     }

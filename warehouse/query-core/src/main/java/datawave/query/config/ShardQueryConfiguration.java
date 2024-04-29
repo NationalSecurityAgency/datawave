@@ -339,6 +339,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private int finalMaxTermThreshold = 2500;
     private int maxDepthThreshold = 2500;
     private boolean expandFields = true;
+    private int maxTermsToPrint = 100;
     private int maxUnfieldedExpansionThreshold = 500;
     private boolean expandValues = true;
     private int maxValueExpansionThreshold = 5000;
@@ -643,6 +644,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setIndexedMaxTermThreshold(other.getIndexedMaxTermThreshold());
         this.setFinalMaxTermThreshold(other.getFinalMaxTermThreshold());
         this.setMaxDepthThreshold(other.getMaxDepthThreshold());
+        this.setMaxTermsToPrint(other.getMaxTermsToPrint());
         this.setMaxUnfieldedExpansionThreshold(other.getMaxUnfieldedExpansionThreshold());
         this.setExpandFields(other.isExpandFields());
         this.setMaxValueExpansionThreshold(other.getMaxValueExpansionThreshold());
@@ -1345,6 +1347,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setMaxDepthThreshold(int maxDepthThreshold) {
         this.maxDepthThreshold = maxDepthThreshold;
+    }
+
+    public int getMaxTermsToPrint() {
+        return this.maxTermsToPrint;
+    }
+
+    public void setMaxTermsToPrint(int maxTermsToPrint) {
+        this.maxTermsToPrint = maxTermsToPrint;
     }
 
     public boolean isExpandFields() {

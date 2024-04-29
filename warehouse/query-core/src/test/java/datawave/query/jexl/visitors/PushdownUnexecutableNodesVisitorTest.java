@@ -222,6 +222,8 @@ public class PushdownUnexecutableNodesVisitorTest extends EasyMockSupport {
     private HashSet<String> indexOnlyFields;
     private HashSet<String> nonEventFields;
 
+    private int maxTermsToPrint;
+
     public PushdownUnexecutableNodesVisitorTest(String testName, String baseQuery, ExecutableDeterminationVisitor.STATE expectedPreGlobalState,
                     ExecutableDeterminationVisitor.STATE expectedPostGlobalState, String expectedGlobalIndexPushdown,
                     ExecutableDeterminationVisitor.STATE expectedPreFieldState, ExecutableDeterminationVisitor.STATE expectedPostFieldState,
@@ -255,6 +257,7 @@ public class PushdownUnexecutableNodesVisitorTest extends EasyMockSupport {
         nonEventFields.add("TF_FIELD");
 
         EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
+        EasyMock.expect(config.getMaxTermsToPrint()).andReturn(maxTermsToPrint).anyTimes();
         EasyMock.expect(helper.getIndexOnlyFields(null)).andReturn(indexOnlyFields).anyTimes();
         EasyMock.expect(helper.getNonEventFields(null)).andReturn(nonEventFields).anyTimes();
     }

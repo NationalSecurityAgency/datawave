@@ -84,6 +84,8 @@ public class ShardQueryConfigurationTest {
     // The set of fields that are already set via one of the other fields.
     private final Set<String> alreadySet = new HashSet<>();
 
+    private int maxTermsToPrint;
+
     @Before
     public void setUp() throws Exception {
         // The set of default values (optionally as predicates,
@@ -112,6 +114,8 @@ public class ShardQueryConfigurationTest {
         defaultValues.put("shardDateFormat", "yyyyMMdd");
         updatedValues.put("shardDateFormat", "yyyyMMddHHmmss");
 
+        defaultValues.put("maxTermsToPrint", 100);
+        updatedValues.put("maxTermsToPrint", 150);
         defaultValues.put("authorizations", Collections.singleton(Authorizations.EMPTY));
         updatedValues.put("authorizations", Collections.singleton(new Authorizations("FOO", "BAR")));
 

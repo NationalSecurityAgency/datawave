@@ -8,6 +8,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
@@ -17,11 +18,16 @@ import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.commons.jexl3.parser.ParserTreeConstants;
+import org.apache.logging.log4j.core.Appender;
+import org.apache.logging.log4j.core.LogEvent;
+import org.apache.logging.log4j.core.appender.AbstractAppender;
+import org.apache.logging.log4j.core.layout.PatternLayout;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockSupport;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
 
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
@@ -32,6 +38,8 @@ import datawave.query.util.MetadataHelper;
 public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
     private ShardQueryConfiguration config;
     private MetadataHelper helper;
+
+    private final int maxTermsToPrint = 100;
 
     @Before
     public void setup() {
@@ -52,6 +60,7 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
         indexOnlyFields.add("INDEXONLYFIELD");
 
         EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
+        EasyMock.expect(config.getMaxTermsToPrint()).andReturn(maxTermsToPrint).anyTimes();
         EasyMock.expect(helper.getIndexOnlyFields(null)).andReturn(indexOnlyFields).anyTimes();
 
         replayAll();
@@ -91,6 +100,7 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
         indexOnlyFields.add("INDEXONLYFIELD");
 
         EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
+        EasyMock.expect(config.getMaxTermsToPrint()).andReturn(maxTermsToPrint).anyTimes();
         EasyMock.expect(helper.getIndexOnlyFields(null)).andReturn(indexOnlyFields).anyTimes();
 
         LinkedList<String> output = new LinkedList<>();
@@ -132,6 +142,7 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
         indexOnlyFields.add("INDEXONLYFIELD");
 
         EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
+        EasyMock.expect(config.getMaxTermsToPrint()).andReturn(maxTermsToPrint).anyTimes();
         EasyMock.expect(helper.getIndexOnlyFields(null)).andReturn(indexOnlyFields).anyTimes();
 
         replayAll();
@@ -172,6 +183,7 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
         indexOnlyFields.add("INDEXONLYFIELD");
 
         EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
+        EasyMock.expect(config.getMaxTermsToPrint()).andReturn(maxTermsToPrint).anyTimes();
         EasyMock.expect(helper.getIndexOnlyFields(null)).andReturn(indexOnlyFields).anyTimes();
 
         replayAll();
@@ -212,6 +224,7 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
         indexOnlyFields.add("INDEXONLYFIELD");
 
         EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
+        EasyMock.expect(config.getMaxTermsToPrint()).andReturn(maxTermsToPrint).anyTimes();
         EasyMock.expect(helper.getIndexOnlyFields(null)).andReturn(indexOnlyFields).anyTimes();
 
         replayAll();
@@ -259,6 +272,7 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
         indexOnlyFields.add("INDEXONLYFIELD");
 
         EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
+        EasyMock.expect(config.getMaxTermsToPrint()).andReturn(maxTermsToPrint).anyTimes();
         EasyMock.expect(helper.getIndexOnlyFields(null)).andReturn(indexOnlyFields).anyTimes();
 
         replayAll();
@@ -306,6 +320,7 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
         indexOnlyFields.add("INDEXONLYFIELD");
 
         EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
+        EasyMock.expect(config.getMaxTermsToPrint()).andReturn(maxTermsToPrint).anyTimes();
         EasyMock.expect(helper.getIndexOnlyFields(null)).andReturn(indexOnlyFields).anyTimes();
 
         replayAll();
@@ -353,6 +368,7 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
         indexOnlyFields.add("INDEXONLYFIELD");
 
         EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
+        EasyMock.expect(config.getMaxTermsToPrint()).andReturn(maxTermsToPrint).anyTimes();
         EasyMock.expect(helper.getIndexOnlyFields(null)).andReturn(indexOnlyFields).anyTimes();
 
         replayAll();
@@ -400,6 +416,7 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
         indexOnlyFields.add("INDEXONLYFIELD");
 
         EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
+        EasyMock.expect(config.getMaxTermsToPrint()).andReturn(maxTermsToPrint).anyTimes();
         EasyMock.expect(helper.getIndexOnlyFields(null)).andReturn(indexOnlyFields).anyTimes();
 
         replayAll();
@@ -447,6 +464,7 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
         indexOnlyFields.add("INDEXONLYFIELD");
 
         EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
+        EasyMock.expect(config.getMaxTermsToPrint()).andReturn(maxTermsToPrint).anyTimes();
         EasyMock.expect(helper.getIndexOnlyFields(null)).andReturn(indexOnlyFields).anyTimes();
 
         replayAll();
@@ -496,6 +514,7 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
         indexOnlyFields.add("INDEXONLYFIELD");
 
         EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
+        EasyMock.expect(config.getMaxTermsToPrint()).andReturn(maxTermsToPrint).anyTimes();
         EasyMock.expect(helper.getIndexOnlyFields(null)).andReturn(indexOnlyFields).anyTimes();
 
         replayAll();
@@ -579,6 +598,7 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
         indexOnlyFields.add("INDEXONLYFIELD");
 
         EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
+        EasyMock.expect(config.getMaxTermsToPrint()).andReturn(maxTermsToPrint).anyTimes();
         EasyMock.expect(helper.getIndexOnlyFields(null)).andReturn(indexOnlyFields).anyTimes();
 
         replayAll();
@@ -613,6 +633,7 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
         indexOnlyFields.add("INDEXONLYFIELD");
 
         EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
+        EasyMock.expect(config.getMaxTermsToPrint()).andReturn(maxTermsToPrint).anyTimes();
         EasyMock.expect(helper.getIndexOnlyFields(null)).andReturn(indexOnlyFields).anyTimes();
 
         replayAll();
@@ -645,6 +666,7 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
         indexOnlyFields.add("INDEXONLYFIELD");
 
         EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
+        EasyMock.expect(config.getMaxTermsToPrint()).andReturn(maxTermsToPrint).anyTimes();
         EasyMock.expect(helper.getIndexOnlyFields(null)).andReturn(indexOnlyFields).anyTimes();
 
         replayAll();
@@ -679,6 +701,7 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
         indexOnlyFields.add("INDEXONLYFIELD");
 
         EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
+        EasyMock.expect(config.getMaxTermsToPrint()).andReturn(maxTermsToPrint).anyTimes();
         EasyMock.expect(helper.getIndexOnlyFields(null)).andReturn(indexOnlyFields).anyTimes();
 
         replayAll();
@@ -691,6 +714,7 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
 
     @Test
     public void testEvaluationOnlyReferenceNode() throws ParseException, TableNotFoundException {
+        EasyMock.expect(config.getMaxTermsToPrint()).andReturn(maxTermsToPrint).anyTimes();
         EasyMock.expect(helper.getIndexOnlyFields(null)).andReturn(Collections.emptySet());
 
         LinkedList<String> output = new LinkedList<>();
@@ -698,6 +722,54 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
         replayAll();
 
         JexlNode query = QueryPropertyMarker.create(JexlASTHelper.parseJexlQuery("FOO == FOO2"), EVALUATION_ONLY);
+        Assert.assertEquals(ExecutableDeterminationVisitor.STATE.NON_EXECUTABLE, ExecutableDeterminationVisitor.getState(query, config, helper, output));
+        Assert.assertEquals("Summary: NON_EXECUTABLE:[AndNode( delayed/eval only predicate )]", output.get(0));
+    }
+
+    @Test
+    public void testHugeQueryTermEvaluationOnly() throws ParseException, TableNotFoundException {
+        EasyMock.expect(config.getMaxTermsToPrint()).andReturn(maxTermsToPrint).anyTimes();
+        EasyMock.expect(helper.getIndexOnlyFields(null)).andReturn(Collections.emptySet());
+
+        LinkedList<String> output = new LinkedList<>();
+
+        replayAll();
+
+        String QueryString = "v1 == 'foo' || v1 == 'bar' || v1 == 'baz' || " + "v1 == 'qux' || v1 == 'quux' || v1 == 'corge' || "
+                        + "v1 == 'grault' || v1 == 'garply' || v1 == 'waldo' || " + "v1 == 'fred' || v1 == 'plugh' || v1 == 'xyzzy' || "
+                        + "v1 == 'thud' || v1 == 'mumble' || v1 == 'frotz' || " + "v1 == 'blorb' || v1 == 'plover' || v1 == 'xyzzy' || "
+                        + "v1 == 'anteater' || v1 == 'beetle' || v1 == 'cobra' || " + "v1 == 'dingo' || v1 == 'eel' || v1 == 'frog' || "
+                        + "v1 == 'gopher' || v1 == 'hippo' || v1 == 'iguana' || " + "v1 == 'jaguar' || v1 == 'koala' || v1 == 'lemur' || "
+                        + "v1 == 'mongoose' || v1 == 'newt' || v1 == 'octopus' || " + "v1 == 'python' || v1 == 'quail' || v1 == 'rabbit' || "
+                        + "v1 == 'shark' || v1 == 'tiger' || v1 == 'urchin' || " + "v1 == 'viper' || v1 == 'wombat' || v1 == 'xiphos' || "
+                        + "v1 == 'yak' || v1 == 'zebra' || v1 == 'apple' || " + "v1 == 'banana' || v1 == 'cherry' || v1 == 'date' || "
+                        + "v1 == 'elderberry' || v1 == 'fig' || v1 == 'grape' || " + "v1 == 'honeydew' || v1 == 'kiwi' || v1 == 'lemon' || "
+                        + "v1 == 'mango' || v1 == 'nectarine' || v1 == 'orange' || " + "v1 == 'papaya' || v1 == 'quince' || v1 == 'raspberry' || "
+                        + "v1 == 'strawberry' || v1 == 'tangerine' || v1 == 'ugli' || " + "v1 == 'vanilla' || v1 == 'watermelon' || v1 == 'xigua' || "
+                        + "v1 == 'yuzu' || v1 == 'zucchini' || v1 == 'almond' || " + "v1 == 'brazilnut' || v1 == 'cashew' || v1 == 'doughnut' || "
+                        + "v1 == 'espresso' || v1 == 'frappuccino' || v1 == 'granola' || " + "v1 == 'halva' || v1 == 'icecream' || v1 == 'jellybean' || "
+                        + "v1 == 'kale' || v1 == 'lettuce' || v1 == 'mushroom' || " + "v1 == 'nougat' || v1 == 'olive' || v1 == 'peanut' || "
+                        + "v1 == 'quiche' || v1 == 'radish' || v1 == 'spinach' || " + "v1 == 'tofu' || v1 == 'udon' || v1 == 'vinegar' || "
+                        + "v1 == 'waffle' || v1 == 'xouba' || v1 == 'yogurt' || " + "v1 == 'ziti' || v1 == 'acorn' || v1 == 'birch' || "
+                        + "v1 == 'cedar' || v1 == 'douglas' || v1 == 'elm' || " + "v1 == 'fir' || v1 == 'ginkgo' || v1 == 'hawthorn' || "
+                        + "v1 == 'ironwood' || v1 == 'juniper' || v1 == 'kudzu' || " + "v1 == 'larch' || v1 == 'maple' || v1 == 'nutmeg' || "
+                        + "v1 == 'oak' || v1 == 'pine' || v1 == 'quaking' || " + "v1 == 'redwood' || v1 == 'spruce' || v1 == 'teak' || "
+                        + "v1 == 'upas' || v1 == 'vinewood' || v1 == 'willow' || " + "v1 == 'xylem' || v1 == 'yellowwood' || v1 == 'zephyr' || "
+                        + "v1 == 'amber' || v1 == 'bronze' || v1 == 'copper' || " + "v1 == 'diamond' || v1 == 'emerald' || v1 == 'feldspar' || "
+                        + "v1 == 'gold' || v1 == 'hematite' || v1 == 'iron' || " + "v1 == 'jade' || v1 == 'kryptonite' || v1 == 'lapis' || "
+                        + "v1 == 'malachite' || v1 == 'nickel' || v1 == 'obsidian' || " + "v1 == 'pyrite' || v1 == 'quartz' || v1 == 'ruby' || "
+                        + "v1 == 'sapphire' || v1 == 'topaz' || v1 == 'uranium' || " + "v1 == 'vanadium' || v1 == 'wolfram' || v1 == 'xenotime' || "
+                        + "v1 == 'yttrium' || v1 == 'zinc' || v1 == 'argon' || " + "v1 == 'boron' || v1 == 'chlorine' || v1 == 'dysprosium' || "
+                        + "v1 == 'erbium' || v1 == 'fluorine' || v1 == 'gallium' || " + "v1 == 'helium' || v1 == 'iodine' || v1 == 'krypton' || "
+                        + "v1 == 'lithium' || v1 == 'molybdenum' || v1 == 'neon' || " + "v1 == 'oxygen' || v1 == 'plutonium' || v1 == 'radon' || "
+                        + "v1 == 'silicon' || v1 == 'thorium' || v1 == 'uranus' || " + "v1 == 'vanilla' || v1 == 'wolfram' || v1 == 'xenon' || "
+                        + "v1 == 'ytterbium' || v1 == 'zirconium' || v1 == 'arch' || " + "v1 == 'bridge' || v1 == 'castle' || v1 == 'dungeon' || "
+                        + "v1 == 'estate' || v1 == 'fort' || v1 == 'gateway' || " + "v1 == 'harbor' || v1 == 'island' || v1 == 'jetty' || "
+                        + "v1 == 'keep' || v1 == 'lighthouse' || v1 == 'monastery' || " + "v1 == 'nunnery' || v1 == 'observatory' || v1 == 'palace' || "
+                        + "v1 == 'quarry' || v1 == 'reservoir' || v1 == 'synagogue' || " + "v1 == 'temple' || v1 == 'university' || v1 == 'vault' || "
+                        + "v1 == 'wharf' || v1 == 'xyst' || v1 == 'yard' || " + "v1 == 'ziggurat'";
+
+        JexlNode query = QueryPropertyMarker.create(JexlASTHelper.parseJexlQuery(QueryString), EVALUATION_ONLY);
         Assert.assertEquals(ExecutableDeterminationVisitor.STATE.NON_EXECUTABLE, ExecutableDeterminationVisitor.getState(query, config, helper, output));
         Assert.assertEquals("Summary: NON_EXECUTABLE:[AndNode( delayed/eval only predicate )]", output.get(0));
     }
