@@ -16,7 +16,7 @@ datawave:
       queryURI: https://query:8443/query/v1
       queryPool: pool1
       remoteQueryTimeout: 1
-      remoteQueryTimeUnit: MINUTES
+      remoteQueryTimeoutUnit: MINUTES
     data:
       tableName: ${warehouse.tables.metadata.name}
       poolName: "default"

@@ -34,7 +34,7 @@ datawave:
       statusUpdateInterval: 500
     expiration:
       callTimeout: 1
-      callTimeUnit: HOURS
+      callTimeoutUnit: HOURS
       shortCircuitCheckTime: 60
       shortCircuitCheckTimeUnit: MINUTES
       shortCircuitTimeout: 55
@@ -43,7 +43,7 @@ datawave:
       longRunningQueryTimeoutUnit: HOURS
     monitor:
       monitorInterval: 30
-      monitorIntervalTimeUnit: SECONDS
+      monitorIntervalUnit: SECONDS
   doc:
     menu:
       extras: '<li><a href="http://localhost:9995">Accumulo</a></li>'

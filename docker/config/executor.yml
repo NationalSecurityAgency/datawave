@@ -58,7 +58,7 @@ datawave:
       checkpointFlushResults: 2
       orphanThresholdMs: 60000
       monitorTaskLease: 30
-      monitorTaskLeaseTimeUnit: SECONDS
+      monitorTaskLeaseUnit: SECONDS
       monitor:
         enabled: true
         scheduler-crontab: '* * * * * ?'
