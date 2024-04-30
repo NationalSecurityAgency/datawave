@@ -328,7 +328,6 @@ public class MutableMetadataUUIDHandler extends MutableMetadataHandler {
                                     if (log != null)
                                         log.trace("Submitting request to MutableMetadataHandler from MutableMetadataUUIDHandler: " + modReq);
 
-                                    // make sure user isn't null or empty
                                     super.process(client, modReq, mutableFieldList, userAuths, userDetails);
                                 }
                             }

@@ -182,6 +182,7 @@ public class QueryData implements ResultContext, Externalizable {
 
     public void setTableName(String tableName) {
         this.tableName = tableName;
+        resetHashCode();
     }
 
     public Collection<Range> getRanges() {
