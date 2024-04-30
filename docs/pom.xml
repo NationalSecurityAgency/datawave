@@ -279,6 +279,7 @@
                             <goal>docs</goal>
                         </goals>
                         <configuration>
+                            <skipEnunciate>true</skipEnunciate>
                             <docsDir>${project.build.outputDirectory}/enunciate</docsDir>
                             <sourcepath-includes>
                                 <include>
