@@ -4,7 +4,7 @@
     xsi:noNamespaceSchemaLocation="http://enunciate.webcohesion.com/schemas/enunciate-2.9.1.xsd">
     <api-classes>
         <include pattern="datawave.**" />
-        <exclude pattern="datawave.webservice.atom.AtomServiceBean"/>
+        <exclude pattern="datawave.webservice.atom.AtomServiceBean" />
     </api-classes>
     <modules>
         <docs includeApplicationPath="true" apiRelativePath="/" />
