@@ -21,14 +21,14 @@ public class AccumuloConnectionRequestMap {
     /**
      * This maps the query-id to a pair containing the tracking map (see the AccumuloConnectionFactory) and the thread handling the request
      */
-    private Map<String,List<Pair<Map<String,String>,Thread>>> getConnectionThreadMap = new HashMap<>();
+    private Map<String,List<Pair<Map<String,String>,Thread>>> connectionThreadMap = new HashMap<>();
 
     public boolean cancelConnectionRequest(String id, String userDn) {
         // this call checks that the Principal used for the connection request and the connection cancel are the same
         // if query is waiting for an accumulo connection in create or reset, then interrupt it
         boolean connectionRequestCanceled = false;
-        synchronized (getConnectionThreadMap) {
-            List<Pair<Map<String,String>,Thread>> connectionRequestPairs = getConnectionThreadMap.get(id);
+        synchronized (connectionThreadMap) {
+            List<Pair<Map<String,String>,Thread>> connectionRequestPairs = connectionThreadMap.get(id);
             if (connectionRequestPairs != null) {
                 for (Pair<Map<String,String>,Thread> connectionRequestPair : connectionRequestPairs) {
                     try {
@@ -53,7 +53,7 @@ public class AccumuloConnectionRequestMap {
         // it is assumed that admin status is already checked, so this call does not check the calling Principals
         // if query is waiting for an accumulo connection in create or reset, then interrupt it
         boolean connectionRequestCanceled = false;
-        List<Pair<Map<String,String>,Thread>> connectionRequestPairs = getConnectionThreadMap.get(id);
+        List<Pair<Map<String,String>,Thread>> connectionRequestPairs = connectionThreadMap.get(id);
         if (connectionRequestPairs != null) {
             for (Pair<Map<String,String>,Thread> connectionRequestPair : connectionRequestPairs) {
                 try {
@@ -71,11 +71,11 @@ public class AccumuloConnectionRequestMap {
     }
 
     public void requestBegin(String id, String userDN, Map<String,String> trackingMap) {
-        synchronized (getConnectionThreadMap) {
-            List<Pair<Map<String,String>,Thread>> connectionRequestPairs = getConnectionThreadMap.get(id);
+        synchronized (connectionThreadMap) {
+            List<Pair<Map<String,String>,Thread>> connectionRequestPairs = connectionThreadMap.get(id);
             if (connectionRequestPairs == null) {
                 connectionRequestPairs = new ArrayList<>();
-                getConnectionThreadMap.put(id, connectionRequestPairs);
+                connectionThreadMap.put(id, connectionRequestPairs);
             }
             Pair<Map<String,String>,Thread> connectionRequestPair = new Pair<>(trackingMap, Thread.currentThread());
             if (userDN != null && trackingMap != null)
@@ -85,8 +85,8 @@ public class AccumuloConnectionRequestMap {
     }
 
     public void requestEnd(String id) {
-        synchronized (getConnectionThreadMap) {
-            List<Pair<Map<String,String>,Thread>> connectionRequestPairs = getConnectionThreadMap.get(id);
+        synchronized (connectionThreadMap) {
+            List<Pair<Map<String,String>,Thread>> connectionRequestPairs = connectionThreadMap.get(id);
             Thread t = Thread.currentThread();
             Iterator<Pair<Map<String,String>,Thread>> it = connectionRequestPairs.iterator();
             boolean found = false;
@@ -98,7 +98,7 @@ public class AccumuloConnectionRequestMap {
                 }
             }
             if (connectionRequestPairs.isEmpty()) {
-                getConnectionThreadMap.remove(id);
+                connectionThreadMap.remove(id);
             }
         }
     }
