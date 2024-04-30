@@ -345,12 +345,12 @@ public class PrintingVisitor extends ParserVisitor {
     }
 
     public Object visit(ASTJexlScript node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null; // return early without printing for each additional node visited after the threshold
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint); // just log the threshold, logging the whole node for a very large
                                                                                          // query could be less than constructive
         }
@@ -361,12 +361,12 @@ public class PrintingVisitor extends ParserVisitor {
     }
 
     public Object visit(ASTBlock node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -376,12 +376,12 @@ public class PrintingVisitor extends ParserVisitor {
     }
 
     public Object visit(ASTIfStatement node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -391,12 +391,12 @@ public class PrintingVisitor extends ParserVisitor {
     }
 
     public Object visit(ASTWhileStatement node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -406,12 +406,12 @@ public class PrintingVisitor extends ParserVisitor {
     }
 
     public Object visit(ASTForeachStatement node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -421,12 +421,12 @@ public class PrintingVisitor extends ParserVisitor {
     }
 
     public Object visit(ASTAssignment node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -436,12 +436,12 @@ public class PrintingVisitor extends ParserVisitor {
     }
 
     public Object visit(ASTTernaryNode node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -451,12 +451,12 @@ public class PrintingVisitor extends ParserVisitor {
     }
 
     public Object visit(ASTOrNode node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -466,12 +466,12 @@ public class PrintingVisitor extends ParserVisitor {
     }
 
     public Object visit(ASTAndNode node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -481,12 +481,12 @@ public class PrintingVisitor extends ParserVisitor {
     }
 
     public Object visit(ASTBitwiseOrNode node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -496,12 +496,12 @@ public class PrintingVisitor extends ParserVisitor {
     }
 
     public Object visit(ASTBitwiseXorNode node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -511,12 +511,12 @@ public class PrintingVisitor extends ParserVisitor {
     }
 
     public Object visit(ASTBitwiseAndNode node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -526,12 +526,12 @@ public class PrintingVisitor extends ParserVisitor {
     }
 
     public Object visit(ASTEQNode node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -541,12 +541,12 @@ public class PrintingVisitor extends ParserVisitor {
     }
 
     public Object visit(ASTNENode node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -556,12 +556,12 @@ public class PrintingVisitor extends ParserVisitor {
     }
 
     public Object visit(ASTLTNode node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -571,12 +571,12 @@ public class PrintingVisitor extends ParserVisitor {
     }
 
     public Object visit(ASTGTNode node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -586,12 +586,12 @@ public class PrintingVisitor extends ParserVisitor {
     }
 
     public Object visit(ASTLENode node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -601,12 +601,12 @@ public class PrintingVisitor extends ParserVisitor {
     }
 
     public Object visit(ASTGENode node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -616,12 +616,12 @@ public class PrintingVisitor extends ParserVisitor {
     }
 
     public Object visit(ASTERNode node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -631,12 +631,12 @@ public class PrintingVisitor extends ParserVisitor {
     }
 
     public Object visit(ASTNRNode node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -646,12 +646,12 @@ public class PrintingVisitor extends ParserVisitor {
     }
 
     public Object visit(ASTMulNode node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -661,12 +661,12 @@ public class PrintingVisitor extends ParserVisitor {
     }
 
     public Object visit(ASTDivNode node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -676,12 +676,12 @@ public class PrintingVisitor extends ParserVisitor {
     }
 
     public Object visit(ASTModNode node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -691,12 +691,12 @@ public class PrintingVisitor extends ParserVisitor {
     }
 
     public Object visit(ASTUnaryMinusNode node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -706,12 +706,12 @@ public class PrintingVisitor extends ParserVisitor {
     }
 
     public Object visit(ASTBitwiseComplNode node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -721,12 +721,12 @@ public class PrintingVisitor extends ParserVisitor {
     }
 
     public Object visit(ASTNotNode node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -736,12 +736,12 @@ public class PrintingVisitor extends ParserVisitor {
     }
 
     public Object visit(ASTIdentifier node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -751,12 +751,12 @@ public class PrintingVisitor extends ParserVisitor {
     }
 
     public Object visit(ASTNullLiteral node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -766,12 +766,12 @@ public class PrintingVisitor extends ParserVisitor {
     }
 
     public Object visit(ASTTrueNode node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -781,12 +781,12 @@ public class PrintingVisitor extends ParserVisitor {
     }
 
     public Object visit(ASTFalseNode node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -796,12 +796,12 @@ public class PrintingVisitor extends ParserVisitor {
     }
 
     public Object visit(ASTStringLiteral node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -811,12 +811,12 @@ public class PrintingVisitor extends ParserVisitor {
     }
 
     public Object visit(ASTArrayLiteral node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -826,12 +826,12 @@ public class PrintingVisitor extends ParserVisitor {
     }
 
     public Object visit(ASTMapLiteral node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -841,12 +841,12 @@ public class PrintingVisitor extends ParserVisitor {
     }
 
     public Object visit(ASTMapEntry node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -856,12 +856,12 @@ public class PrintingVisitor extends ParserVisitor {
     }
 
     public Object visit(ASTEmptyFunction node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -871,12 +871,12 @@ public class PrintingVisitor extends ParserVisitor {
     }
 
     public Object visit(ASTSizeFunction node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -886,12 +886,12 @@ public class PrintingVisitor extends ParserVisitor {
     }
 
     public Object visit(ASTFunctionNode node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -901,12 +901,12 @@ public class PrintingVisitor extends ParserVisitor {
     }
 
     public Object visit(ASTMethodNode node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -916,12 +916,12 @@ public class PrintingVisitor extends ParserVisitor {
     }
 
     public Object visit(ASTConstructorNode node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -931,12 +931,12 @@ public class PrintingVisitor extends ParserVisitor {
     }
 
     public Object visit(ASTArrayAccess node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -946,12 +946,12 @@ public class PrintingVisitor extends ParserVisitor {
     }
 
     public Object visit(ASTReference node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -961,12 +961,12 @@ public class PrintingVisitor extends ParserVisitor {
     }
 
     public Object visit(ASTReturnStatement node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -976,12 +976,12 @@ public class PrintingVisitor extends ParserVisitor {
     }
 
     public Object visit(ASTVar node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -991,12 +991,12 @@ public class PrintingVisitor extends ParserVisitor {
     }
 
     public Object visit(ASTNumberLiteral node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -1006,12 +1006,12 @@ public class PrintingVisitor extends ParserVisitor {
     }
 
     public Object visit(ASTReferenceExpression node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -1022,12 +1022,12 @@ public class PrintingVisitor extends ParserVisitor {
 
     @Override
     protected Object visit(ASTDoWhileStatement node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -1038,12 +1038,12 @@ public class PrintingVisitor extends ParserVisitor {
 
     @Override
     protected Object visit(ASTContinue node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -1054,12 +1054,12 @@ public class PrintingVisitor extends ParserVisitor {
 
     @Override
     protected Object visit(ASTBreak node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -1070,12 +1070,12 @@ public class PrintingVisitor extends ParserVisitor {
 
     @Override
     protected Object visit(ASTDefineVars node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -1086,12 +1086,12 @@ public class PrintingVisitor extends ParserVisitor {
 
     @Override
     protected Object visit(ASTNullpNode node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -1102,12 +1102,12 @@ public class PrintingVisitor extends ParserVisitor {
 
     @Override
     protected Object visit(ASTShiftLeftNode node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -1118,12 +1118,12 @@ public class PrintingVisitor extends ParserVisitor {
 
     @Override
     protected Object visit(ASTShiftRightNode node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -1134,12 +1134,12 @@ public class PrintingVisitor extends ParserVisitor {
 
     @Override
     protected Object visit(ASTShiftRightUnsignedNode node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -1150,12 +1150,12 @@ public class PrintingVisitor extends ParserVisitor {
 
     @Override
     protected Object visit(ASTSWNode node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -1166,12 +1166,12 @@ public class PrintingVisitor extends ParserVisitor {
 
     @Override
     protected Object visit(ASTNSWNode node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -1182,12 +1182,12 @@ public class PrintingVisitor extends ParserVisitor {
 
     @Override
     protected Object visit(ASTEWNode node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -1198,12 +1198,12 @@ public class PrintingVisitor extends ParserVisitor {
 
     @Override
     protected Object visit(ASTNEWNode node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -1214,12 +1214,12 @@ public class PrintingVisitor extends ParserVisitor {
 
     @Override
     protected Object visit(ASTAddNode node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -1230,12 +1230,12 @@ public class PrintingVisitor extends ParserVisitor {
 
     @Override
     protected Object visit(ASTSubNode node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -1246,12 +1246,12 @@ public class PrintingVisitor extends ParserVisitor {
 
     @Override
     protected Object visit(ASTUnaryPlusNode node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -1262,12 +1262,12 @@ public class PrintingVisitor extends ParserVisitor {
 
     @Override
     protected Object visit(ASTRegexLiteral node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -1278,12 +1278,12 @@ public class PrintingVisitor extends ParserVisitor {
 
     @Override
     protected Object visit(ASTSetLiteral node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -1294,12 +1294,12 @@ public class PrintingVisitor extends ParserVisitor {
 
     @Override
     protected Object visit(ASTExtendedLiteral node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -1310,12 +1310,12 @@ public class PrintingVisitor extends ParserVisitor {
 
     @Override
     protected Object visit(ASTRangeNode node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -1326,12 +1326,12 @@ public class PrintingVisitor extends ParserVisitor {
 
     @Override
     protected Object visit(ASTIdentifierAccess node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -1342,12 +1342,12 @@ public class PrintingVisitor extends ParserVisitor {
 
     @Override
     protected Object visit(ASTArguments node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -1358,12 +1358,12 @@ public class PrintingVisitor extends ParserVisitor {
 
     @Override
     protected Object visit(ASTSetAddNode node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -1374,12 +1374,12 @@ public class PrintingVisitor extends ParserVisitor {
 
     @Override
     protected Object visit(ASTSetSubNode node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -1390,12 +1390,12 @@ public class PrintingVisitor extends ParserVisitor {
 
     @Override
     protected Object visit(ASTSetMultNode node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -1406,12 +1406,12 @@ public class PrintingVisitor extends ParserVisitor {
 
     @Override
     protected Object visit(ASTSetDivNode node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -1422,12 +1422,12 @@ public class PrintingVisitor extends ParserVisitor {
 
     @Override
     protected Object visit(ASTSetModNode node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -1438,12 +1438,12 @@ public class PrintingVisitor extends ParserVisitor {
 
     @Override
     protected Object visit(ASTSetAndNode node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -1454,12 +1454,12 @@ public class PrintingVisitor extends ParserVisitor {
 
     @Override
     protected Object visit(ASTSetOrNode node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -1470,12 +1470,12 @@ public class PrintingVisitor extends ParserVisitor {
 
     @Override
     protected Object visit(ASTSetXorNode node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -1486,12 +1486,12 @@ public class PrintingVisitor extends ParserVisitor {
 
     @Override
     protected Object visit(ASTSetShiftLeftNode node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -1502,12 +1502,12 @@ public class PrintingVisitor extends ParserVisitor {
 
     @Override
     protected Object visit(ASTSetShiftRightNode node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -1518,12 +1518,12 @@ public class PrintingVisitor extends ParserVisitor {
 
     @Override
     protected Object visit(ASTSetShiftRightUnsignedNode node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -1534,12 +1534,12 @@ public class PrintingVisitor extends ParserVisitor {
 
     @Override
     protected Object visit(ASTGetDecrementNode node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -1550,12 +1550,12 @@ public class PrintingVisitor extends ParserVisitor {
 
     @Override
     protected Object visit(ASTGetIncrementNode node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -1566,12 +1566,12 @@ public class PrintingVisitor extends ParserVisitor {
 
     @Override
     protected Object visit(ASTDecrementGetNode node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -1582,12 +1582,12 @@ public class PrintingVisitor extends ParserVisitor {
 
     @Override
     protected Object visit(ASTIncrementGetNode node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -1598,12 +1598,12 @@ public class PrintingVisitor extends ParserVisitor {
 
     @Override
     protected Object visit(ASTJxltLiteral node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -1614,12 +1614,12 @@ public class PrintingVisitor extends ParserVisitor {
 
     @Override
     protected Object visit(ASTAnnotation node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -1630,12 +1630,12 @@ public class PrintingVisitor extends ParserVisitor {
 
     @Override
     protected Object visit(ASTAnnotatedStatement node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 
@@ -1646,12 +1646,12 @@ public class PrintingVisitor extends ParserVisitor {
 
     @Override
     protected Object visit(ASTQualifiedIdentifier node, Object data) {
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             return null;
         }
         termsPrinted++;
 
-        if (termsPrinted > maxTermsToPrint) {
+        if (termsPrinted >= maxTermsToPrint) {
             LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
         }
 

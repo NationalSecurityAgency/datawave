@@ -64,28 +64,12 @@ public class PrintingVisitorTest {
     @Test
     public void maxEighteen() {
         String result = PrintingVisitor.formattedQueryString(script, 0, 18);
-        assertNumberOfLines(21, result);
+        assertNumberOfLines(20, result);
     }
 
     @Test
     public void maxFive() {
         String result = PrintingVisitor.formattedQueryString(script, 0, 5);
-        // @formatter:off
-        String expectedOutput = "\n" +
-                "JexlScript\n" +
-                "  AndNode\n" +
-                "    EQNode\n" +
-                "      FOO:FOO\n" +
-                "      abc:abc\n" +
-                "    ReferenceExpression\n";
-        // @formatter:on
-        assertEquals(expectedOutput, result);
-        assertNumberOfLines(8, result);
-    }
-
-    @Test
-    public void maxFour() {
-        String result = PrintingVisitor.formattedQueryString(script, 0, 4);
         // @formatter:off
         String expectedOutput = "\n" +
                 "JexlScript\n" +
@@ -99,8 +83,8 @@ public class PrintingVisitorTest {
     }
 
     @Test
-    public void maxThree() {
-        String result = PrintingVisitor.formattedQueryString(script, 0, 3);
+    public void maxFour() {
+        String result = PrintingVisitor.formattedQueryString(script, 0, 4);
         // @formatter:off
         String expectedOutput = "\n" +
                 "JexlScript\n" +
@@ -110,6 +94,19 @@ public class PrintingVisitorTest {
         // @formatter:on
         assertEquals(expectedOutput, result);
         assertNumberOfLines(6, result);
+    }
+
+    @Test
+    public void maxThree() {
+        String result = PrintingVisitor.formattedQueryString(script, 0, 3);
+        // @formatter:off
+        String expectedOutput = "\n" +
+                "JexlScript\n" +
+                "  AndNode\n" +
+                "    EQNode\n";
+        // @formatter:on
+        assertEquals(expectedOutput, result);
+        assertNumberOfLines(5, result);
     }
 
     private void assertNumberOfLines(int expectedNumberOfLines, String result) {
