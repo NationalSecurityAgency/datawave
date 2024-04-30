@@ -137,10 +137,10 @@ class IngestTypeVisitorTest {
 
     @Test
     void testUnknownType() {
-        assertSingleNode("A == '1' && D == '4'", Collections.emptySet());
-        assertSingleNode("A == '1' || D == '4'", Collections.emptySet());
-        assertSingleNode("D == '4' && E == '5'", Collections.emptySet());
-        assertSingleNode("D == '4' || E == '5'", Collections.emptySet());
+        assertSingleNode("A == '1' && D == '4'", Collections.singleton(IngestTypeVisitor.UNKNOWN_TYPE));
+        assertSingleNode("A == '1' || D == '4'", Collections.singleton(IngestTypeVisitor.UNKNOWN_TYPE));
+        assertSingleNode("D == '4' && E == '5'", Collections.singleton(IngestTypeVisitor.UNKNOWN_TYPE));
+        assertSingleNode("D == '4' || E == '5'", Collections.singleton(IngestTypeVisitor.UNKNOWN_TYPE));
     }
 
     @Test

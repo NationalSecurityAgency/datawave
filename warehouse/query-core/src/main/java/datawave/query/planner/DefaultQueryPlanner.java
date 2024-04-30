@@ -2644,7 +2644,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         // optionally build/rebuild the datatype filter with the fully planned query
         if (config.isRebuildDatatypeFilter()) {
             Set<String> ingestTypes = IngestTypeVisitor.getIngestTypes(config.getQueryTree(), getTypeMetadata());
-            if (config.getDatatypeFilter().isEmpty()) {
+
+            if (ingestTypes.contains(IngestTypeVisitor.UNKNOWN_TYPE)) {
+                // could not reduce ingest types based on the query structure, do nothing
+            } else if (config.getDatatypeFilter().isEmpty()) {
                 // if no filter specified, build and set filter from query fields
                 config.setDatatypeFilter(ingestTypes);
             } else {
@@ -2666,15 +2669,18 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         if (!config.getDatatypeFilter().isEmpty() && !config.isRebuildDatatypeFilter() && config.getReduceIngestTypes()) {
             Set<String> parameterTypes = config.getDatatypeFilter();
             Set<String> ingestTypes = IngestTypeVisitor.getIngestTypes(queryTree, getTypeMetadata());
-            Set<String> intersectedTypes = Sets.intersection(ingestTypes, parameterTypes);
 
-            if (intersectedTypes.isEmpty()) {
-                throw new DatawaveQueryException("User requested datatypes did not overlap with query fields");
-            }
+            if (!ingestTypes.contains(IngestTypeVisitor.UNKNOWN_TYPE)) {
+                Set<String> intersectedTypes = Sets.intersection(ingestTypes, parameterTypes);
 
-            // only update filter if it is smaller
-            if (intersectedTypes.size() < parameterTypes.size()) {
-                config.setDatatypeFilter(intersectedTypes);
+                if (intersectedTypes.isEmpty()) {
+                    throw new DatawaveQueryException("User requested datatypes did not overlap with query fields");
+                }
+
+                // only update filter if it is smaller
+                if (intersectedTypes.size() < parameterTypes.size()) {
+                    config.setDatatypeFilter(intersectedTypes);
+                }
             }
         }
 
@@ -2688,10 +2694,13 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 config.setQueryTree((ASTJexlScript) pruned);
 
                 Set<String> types = IngestTypeVisitor.getIngestTypes(pruned, getTypeMetadata());
-                if (config.getDatatypeFilter().isEmpty() || (types.size() < config.getDatatypeFilter().size())) {
-                    config.setDatatypeFilter(types);
+                if (!types.contains(IngestTypeVisitor.UNKNOWN_TYPE)) {
+                    if (types.isEmpty()) {
+                        throw new DatawaveQueryException("User requested datatypes did not overlap with query fields");
+                    } else if (config.getDatatypeFilter().isEmpty() || (types.size() < config.getDatatypeFilter().size())) {
+                        config.setDatatypeFilter(types);
+                    }
                 }
-
             } else {
                 throw new DatawaveFatalQueryException("Check query for mutually exclusive ingest types, query was non-executable after pruning by ingest type");
             }

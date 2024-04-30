@@ -4,6 +4,7 @@ import static datawave.query.jexl.functions.ContentFunctions.CONTENT_FUNCTION_NA
 import static datawave.query.jexl.functions.EvaluationPhaseFilterFunctions.EVAL_PHASE_FUNCTION_NAMESPACE;
 import static datawave.query.jexl.functions.GroupingRequiredFilterFunctions.GROUPING_REQUIRED_FUNCTION_NAMESPACE;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -57,7 +58,7 @@ public class IngestTypeVisitor extends BaseVisitor {
 
     private static final Logger log = Logger.getLogger(IngestTypeVisitor.class);
 
-    protected static final String UNKNOWN_TYPE = "UNKNOWN_TYPE";
+    public static final String UNKNOWN_TYPE = "UNKNOWN_TYPE";
     // cache expensive calls to get ingest types per field
     private final TypeMetadata typeMetadata;
     private final Map<String,Set<String>> ingestTypeCache;
@@ -82,9 +83,11 @@ public class IngestTypeVisitor extends BaseVisitor {
         Object o = node.jjtAccept(visitor, null);
         if (o instanceof Set) {
             Set<String> ingestTypes = (Set<String>) o;
-            if (!ingestTypes.contains(UNKNOWN_TYPE)) {
+            if (ingestTypes.contains(UNKNOWN_TYPE)) {
+                ingestTypes.retainAll(Collections.singleton(UNKNOWN_TYPE));
                 return ingestTypes;
             }
+            return ingestTypes;
         }
         return new HashSet<>();
     }
@@ -363,9 +366,8 @@ public class IngestTypeVisitor extends BaseVisitor {
 
             Set<String> childIngestTypes = (Set<String>) child.jjtAccept(this, null);
 
-            if (childIngestTypes == null || (ingestTypes.isEmpty() && childIngestTypes.contains(UNKNOWN_TYPE))) {
+            if (childIngestTypes == null) {
                 // we could have a malformed query or a query with a _Drop_ marker
-                // or, the first term could be UNKNOWN
                 continue;
             }
 
