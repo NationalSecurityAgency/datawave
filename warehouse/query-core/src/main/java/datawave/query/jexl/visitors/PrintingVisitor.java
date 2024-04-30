@@ -351,7 +351,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint); // just log the threshold, logging the whole node for a very large
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint); // just log the threshold, logging the whole node for a very large
                                                                                          // query could be less than constructive
         }
 
@@ -367,7 +367,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -382,7 +382,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -397,7 +397,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -412,7 +412,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -427,7 +427,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -442,7 +442,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -457,7 +457,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -472,7 +472,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -487,7 +487,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -502,7 +502,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -517,7 +517,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -532,7 +532,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -547,7 +547,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -562,7 +562,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -577,7 +577,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -592,7 +592,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -607,7 +607,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -622,7 +622,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -637,7 +637,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -652,7 +652,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -667,7 +667,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -682,7 +682,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -697,7 +697,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -712,7 +712,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -727,7 +727,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -742,7 +742,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString() + ":" + JexlNodes.getIdentifierOrLiteral(node));
@@ -757,7 +757,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -772,7 +772,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -787,7 +787,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -802,7 +802,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString() + ":" + JexlNodes.getIdentifierOrLiteral(node));
@@ -817,7 +817,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -832,7 +832,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -847,7 +847,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -862,7 +862,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -877,7 +877,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -892,7 +892,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -907,7 +907,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -922,7 +922,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -937,7 +937,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -952,7 +952,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -967,7 +967,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -982,7 +982,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -997,7 +997,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString() + ":" + node.getLiteral());
@@ -1012,7 +1012,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -1028,7 +1028,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -1044,7 +1044,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -1060,7 +1060,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -1076,7 +1076,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -1092,7 +1092,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -1108,7 +1108,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -1124,7 +1124,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -1140,7 +1140,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -1156,7 +1156,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -1172,7 +1172,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -1188,7 +1188,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -1204,7 +1204,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -1220,7 +1220,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -1236,7 +1236,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -1252,7 +1252,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -1268,7 +1268,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -1284,7 +1284,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -1300,7 +1300,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -1316,7 +1316,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -1332,7 +1332,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -1348,7 +1348,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -1364,7 +1364,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -1380,7 +1380,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -1396,7 +1396,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -1412,7 +1412,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -1428,7 +1428,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -1444,7 +1444,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -1460,7 +1460,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -1476,7 +1476,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -1492,7 +1492,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -1508,7 +1508,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -1524,7 +1524,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -1540,7 +1540,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -1556,7 +1556,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -1572,7 +1572,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -1588,7 +1588,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -1604,7 +1604,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -1620,7 +1620,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -1636,7 +1636,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
@@ -1652,7 +1652,7 @@ public class PrintingVisitor extends ParserVisitor {
         termsPrinted++;
 
         if (termsPrinted >= maxTermsToPrint) {
-            LOGGER.trace("exceeded max terms to print threshold of " + maxTermsToPrint);
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint);
         }
 
         output.writeLine(data + node.toString());
