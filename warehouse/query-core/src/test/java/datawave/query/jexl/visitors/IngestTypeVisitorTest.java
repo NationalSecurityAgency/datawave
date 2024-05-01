@@ -275,6 +275,21 @@ class IngestTypeVisitorTest {
         test(query, Collections.singleton("type1"), metadata);
     }
 
+    @Test
+    void testFilterFunctionExcludeExpandedIntoMutuallyExclusiveFields() {
+        // there might be an exclude like #EXCLUDE(MODEL_FIELD, '.*.*')
+        // which is expanded like so #EXCLUDE((F1||F2||F3), '.*.*')
+        // and is then rewritten as a filter function like so !((F1 == null && F2 == null && F3 == null))
+        TypeMetadata metadata = new TypeMetadata();
+        metadata.put("A", "type1", LcType.class.getTypeName());
+        metadata.put("B", "type1", LcType.class.getTypeName());
+        metadata.put("C", "type2", LcType.class.getTypeName());
+        metadata.put("D", "type3", LcType.class.getTypeName());
+
+        String query = "A == '1' && !((B == null || C == null || D == null))";
+        test(query, Collections.singleton("type1"), metadata);
+    }
+
     private void assertSingleNode(String query, Set<String> expectedIngestTypes) {
         assertSingleNode(query, expectedIngestTypes, typeMetadata);
     }
