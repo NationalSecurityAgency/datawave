@@ -1,10 +1,8 @@
 package datawave.ingest.table.aggregator;
 
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-
+import com.google.protobuf.InvalidProtocolBufferException;
+import datawave.ingest.protobuf.Uid;
+import datawave.ingest.protobuf.Uid.List.Builder;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -13,10 +11,10 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.protobuf.InvalidProtocolBufferException;
-
-import datawave.ingest.protobuf.Uid;
-import datawave.ingest.protobuf.Uid.List.Builder;
+import java.io.IOException;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
 
 /**
  * Implementation of an Aggregator that aggregates objects of the type Uid.List. This is an optimization for the shardIndex and shardReverseIndex, where the
@@ -200,7 +198,7 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
 
             } catch (InvalidProtocolBufferException e) {
                 if (key.isDeleted()) {
-                    log.warn("Value passed to aggregator for a delete key was not of type Uid.List");
+                    log.trace("Value passed to aggregator for a delete key was not of type Uid.List");
                 } else {
                     log.error("Value passed to aggregator was not of type Uid.List", e);
                 }
