@@ -74,8 +74,8 @@ public class MultiTableRangePartitioner extends Partitioner<BulkIngestKey,Value>
                 }
             } catch (IOException e) {
                 log.error("Failed to read splits in MultiTableRangePartitioner: cache files: " + Arrays.toString(localCacheFiles), e);
-                throw new RuntimeException(
-                                "Failed to read splits in MultiTableRangePartitioner, fatal error. cache files: " + Arrays.toString(localCacheFiles));
+                throw new RuntimeException("Failed to read splits in MultiTableRangePartitioner, fatal error. cache files: " + Arrays.toString(localCacheFiles),
+                                e);
 
             }
             cacheFilesRead = true;
