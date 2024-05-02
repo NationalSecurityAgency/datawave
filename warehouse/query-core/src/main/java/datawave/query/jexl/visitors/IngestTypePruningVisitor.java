@@ -141,7 +141,11 @@ public class IngestTypePruningVisitor extends BaseVisitor {
 
     @Override
     public Object visit(ASTNotNode node, Object data) {
-        return visitOrPrune(node, data);
+        Object o = node.jjtGetChild(0).jjtAccept(this, data);
+        if (node.jjtGetNumChildren() == 0) {
+            pruneNodeFromParent(node);
+        }
+        return o;
     }
 
     @Override
@@ -151,7 +155,11 @@ public class IngestTypePruningVisitor extends BaseVisitor {
 
     @Override
     public Object visit(ASTReference node, Object data) {
-        return visitOrPrune(node, data);
+        Object o = node.jjtGetChild(0).jjtAccept(this, data);
+        if (node.jjtGetNumChildren() == 0) {
+            pruneNodeFromParent(node);
+        }
+        return o;
     }
 
     @Override
@@ -164,25 +172,34 @@ public class IngestTypePruningVisitor extends BaseVisitor {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public Object visit(ASTOrNode node, Object data) {
 
+        Set<String> types;
         if (data == null) {
-            // just a visit
-            return ingestTypeVisitor.getIngestTypesForJunction(node);
+            // normal visit
+            types = new HashSet<>();
+            // must traverse the children in reverse order because of pruning
+            for (int i = node.jjtGetNumChildren() - 1; i >= 0; i--) {
+                Set<String> childTypes = (Set<String>) node.jjtGetChild(i).jjtAccept(this, data);
+                types.addAll(childTypes);
+            }
+        } else {
+            // pruning visit
+            Set<String> pruningTypes = (Set<String>) data;
+            // must traverse the children in reverse order because of pruning
+            for (int i = node.jjtGetNumChildren() - 1; i >= 0; i--) {
+                node.jjtGetChild(i).jjtAccept(this, pruningTypes);
+            }
+            types = pruningTypes;
         }
 
-        Set<String> pruningTypes = (Set<String>) data;
-
-        // must traverse the children in reverse order because of pruning
-        for (int i = node.jjtGetNumChildren() - 1; i >= 0; i--) {
-            node.jjtGetChild(i).jjtAccept(this, pruningTypes);
-        }
-
+        // all children could self-prune, for example (A && B) || (C && D) when no term maps to the same datatype
         if (node.jjtGetNumChildren() == 0) {
             pruneNodeFromParent(node);
         }
 
-        return pruningTypes;
+        return types;
     }
 
     /**

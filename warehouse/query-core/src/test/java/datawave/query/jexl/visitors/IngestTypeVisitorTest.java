@@ -290,6 +290,18 @@ class IngestTypeVisitorTest {
         test(query, Collections.singleton("type1"), metadata);
     }
 
+    @Test
+    void testUnionOfNegatedTerms() {
+        String query = "!(A == '1') || !(B == '2') || !(C == '3')";
+        test(query, Sets.union(aTypes, bTypes));
+    }
+
+    @Test
+    void testUnionOfNotNullTerms() {
+        String query = "!(A == null) || !(B == null) || !(C == null)";
+        test(query, Sets.union(aTypes, bTypes));
+    }
+
     private void assertSingleNode(String query, Set<String> expectedIngestTypes) {
         assertSingleNode(query, expectedIngestTypes, typeMetadata);
     }

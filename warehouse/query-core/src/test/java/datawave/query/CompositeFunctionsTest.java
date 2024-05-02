@@ -493,7 +493,7 @@ public abstract class CompositeFunctionsTest {
                 "filter:isNotNull(UUID) || filter:isNotNull(NULL1)",
                 "filter:isNotNull(ONE_NULL)",
                 "UUID =~ '^[CS].*' AND filter:isNotNull(UUID)",
-                "UUID =~ '^[CS].*' AND filter:isNotNull(NULL1)",    //  dis guy
+                "UUID =~ '^[CS].*' AND filter:isNotNull(NULL1)",
                 "UUID =~ '^[CS].*' AND filter:isNotNull(NULL1||NULL2)",
                 "UUID =~ '^[CS].*' AND filter:isNotNull(BOTH_NULL)",
                 "UUID =~ '^[CS].*' AND filter:isNotNull(UUID||NULL1)",

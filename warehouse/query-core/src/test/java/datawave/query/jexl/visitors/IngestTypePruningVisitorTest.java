@@ -440,8 +440,12 @@ public class IngestTypePruningVisitorTest {
 
     @Test
     public void testPruneNegation() {
-        String query = "A == '1' || !((_Delayed_ = true) && (A == '1' && C == '2'))";
-        test(query, query);
+        // internal prune
+        String query = "A == '1' || !((_Delayed_ = true) && (A == '2' && C == '3'))";
+        test(query, "A == '1'");
+
+        query = "A == '0' && (A == '1' || !((_Delayed_ = true) && (A == '2' && C == '3')))";
+        test(query, "A == '0' && (A == '1')");
     }
 
     @Test
@@ -620,6 +624,18 @@ public class IngestTypePruningVisitorTest {
         String query = "A == '1' && !((B == null || C == null || D == null))";
         String expected = "A == '1' && !((B == null))";
         test(query, expected, metadata);
+    }
+
+    @Test
+    public void testUnionOfNegatedTerms() {
+        String query = "!(A == '1') || !(B == '2') || !(C == '3')";
+        test(query, query);
+    }
+
+    @Test
+    public void testUnionOfNotNullTerms() {
+        String query = "!(A == null) || !(B == null) || !(C == null)";
+        test(query, query);
     }
 
     private void test(String query, String expected) {

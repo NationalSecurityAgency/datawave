@@ -4,7 +4,6 @@ import static datawave.query.jexl.functions.ContentFunctions.CONTENT_FUNCTION_NA
 import static datawave.query.jexl.functions.EvaluationPhaseFilterFunctions.EVAL_PHASE_FUNCTION_NAMESPACE;
 import static datawave.query.jexl.functions.GroupingRequiredFilterFunctions.GROUPING_REQUIRED_FUNCTION_NAMESPACE;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -53,6 +52,8 @@ import datawave.query.util.TypeMetadata;
  * The full set of ingest types is {1, 2, 3}, but the <b>effective set</b> is just ingest type 1.
  * <p>
  * Much of this code is originated from the {@link IngestTypePruningVisitor}.
+ * <p>
+ * Note: IngestType and Datatype are used interchangeably, but Datatype does not refer to a data type such as {@link datawave.data.type.LcType}
  */
 public class IngestTypeVisitor extends BaseVisitor {
 
@@ -84,6 +85,7 @@ public class IngestTypeVisitor extends BaseVisitor {
         if (o instanceof Set) {
             Set<String> ingestTypes = (Set<String>) o;
             if (ingestTypes.contains(UNKNOWN_TYPE)) {
+                // return just the UNKNOWN_TYPE
                 ingestTypes.retainAll(Collections.singleton(UNKNOWN_TYPE));
                 return ingestTypes;
             }
@@ -310,6 +312,13 @@ public class IngestTypeVisitor extends BaseVisitor {
         //  @formatter:on
     }
 
+    /**
+     * Use the functions descriptor when getting fields for an {@link ASTFunctionNode}.
+     *
+     * @param node
+     *            a function node
+     * @return the function fields
+     */
     private Set<String> getFieldsForFunctionNode(ASTFunctionNode node) {
         FunctionJexlNodeVisitor visitor = FunctionJexlNodeVisitor.eval(node);
         switch (visitor.namespace()) {
@@ -341,6 +350,13 @@ public class IngestTypeVisitor extends BaseVisitor {
         }
     }
 
+    /**
+     * Wrapper around {@link TypeMetadata#getDataTypesForField(String)} that supports caching the results of a potentially expensive call.
+     *
+     * @param field
+     *            the query field
+     * @return the ingest types associated with the provided field
+     */
     public Set<String> getIngestTypesForField(String field) {
         if (!ingestTypeCache.containsKey(field)) {
             Set<String> types = typeMetadata.getDataTypesForField(field);
@@ -352,6 +368,26 @@ public class IngestTypeVisitor extends BaseVisitor {
         return ingestTypeCache.get(field);
     }
 
+    /**
+     * Get the effective ingest types for an intersection. This is not as simple as it first appears.
+     * <p>
+     * Consider the following queries where field A maps to datatype 1 and field B maps to datatype 2:
+     * <p>
+     * <code>A == '1' &amp;&amp; !(B == '2')</code>
+     * </p>
+     * <p>
+     * <code>A == '1' &amp;&amp; B == null</code>
+     * </p>
+     * <p>
+     * The both queries appear to be non-executable due to exclusive datatypes. A normal intersection of the A and B terms should produce an empty set. However,
+     * the A term is executable while in both cases the B term acts as a filter. The B term is always true by definition of being an exclusive datatype, so this
+     * visitor will return ingest type 1 for this intersection. The IngestTypePruningVisitor will correctly detect that the B term is prunable and remove it
+     * from the query.
+     *
+     * @param node
+     *            an AndNode
+     * @return the effective ingest types for this intersection
+     */
     @SuppressWarnings("unchecked")
     public Set<String> getIngestTypesForIntersection(ASTAndNode node) {
         Set<String> ingestTypes = new HashSet<>();
@@ -385,6 +421,15 @@ public class IngestTypeVisitor extends BaseVisitor {
         return ingestTypes;
     }
 
+    /**
+     * If either side of the intersection contains an UNKNOWN_TYPE we must persist that.
+     *
+     * @param typesA
+     *            types for left side
+     * @param typesB
+     *            types for right side
+     * @return the intersection of two sets of types, with special handling if an UNKNOWN type is present on either side.
+     */
     private Set<String> intersectTypes(Set<String> typesA, Set<String> typesB) {
         if (typesA.contains(UNKNOWN_TYPE) || typesB.contains(UNKNOWN_TYPE)) {
             Set<String> unknown = new HashSet<>();
