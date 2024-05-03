@@ -229,6 +229,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      */
     public static int maxChildNodesToPrint = 10;
 
+    public static int maxTermsToPrint = 100;
+
     private final long maxRangesPerQueryPiece;
 
     private static Cache<String,Set<String>> allFieldTypeMap = CacheBuilder.newBuilder().maximumSize(100).concurrencyLevel(100)
@@ -1120,10 +1122,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         // if we may use the term frequencies instead of the fields index in some cases
         Set<String> queryTfFields = Collections.emptySet();
         Set<String> termFrequencyFields;
-        Set<String> indexOnlyFields;
         try {
             termFrequencyFields = metadataHelper.getTermFrequencyFields(config.getDatatypeFilter());
-            indexOnlyFields = metadataHelper.getIndexOnlyFields(config.getDatatypeFilter());
         } catch (TableNotFoundException e) {
             stopwatch.stop();
             QueryException qe = new QueryException(DatawaveErrorCode.TERM_FREQUENCY_FIELDS_RETRIEVAL_ERROR, e);
@@ -1145,16 +1145,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         if (!queryTfFields.isEmpty()) {
             Multimap<String,Function> contentFunctions = TermOffsetPopulator.getContentFunctions(config.getQueryTree());
             config.setTermFrequenciesRequired(!contentFunctions.isEmpty());
-
-            if (contentFunctions.isEmpty()) {
-                for (String tfField : queryTfFields) {
-                    if (!indexOnlyFields.contains(tfField)) {
-                        config.setTermFrequenciesRequired(true);
-                        break;
-                    }
-                }
-
-            }
 
             // Print the nice log message
             if (log.isDebugEnabled()) {
@@ -1977,9 +1967,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
     public static void logQuery(final ASTJexlScript queryTree, String message) {
         if (log.isTraceEnabled()) {
-            logTrace(PrintingVisitor.formattedQueryStringList(queryTree), message);
+            logTrace(PrintingVisitor.formattedQueryStringList(queryTree, maxChildNodesToPrint, maxTermsToPrint), message);
         } else if (log.isDebugEnabled()) {
-            logDebug(PrintingVisitor.formattedQueryStringList(queryTree, maxChildNodesToPrint), message);
+            logDebug(PrintingVisitor.formattedQueryStringList(queryTree, maxChildNodesToPrint, maxTermsToPrint), message);
         }
     }
 
@@ -3121,6 +3111,14 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
     public static void setMaxChildNodesToPrint(int maxChildNodesToPrint) {
         DefaultQueryPlanner.maxChildNodesToPrint = maxChildNodesToPrint;
+    }
+
+    public static int getMaxTermsToPrint() {
+        return maxTermsToPrint;
+    }
+
+    public static void setMaxTermsToPrint(int maxTermsToPrint) {
+        DefaultQueryPlanner.maxTermsToPrint = maxTermsToPrint;
     }
 
     /**
