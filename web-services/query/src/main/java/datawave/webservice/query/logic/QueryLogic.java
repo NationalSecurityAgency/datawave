@@ -15,6 +15,7 @@ import datawave.marking.MarkingFunctions;
 import datawave.security.authorization.UserOperations;
 import datawave.validation.ParameterValidator;
 import datawave.webservice.common.audit.Auditor.AuditType;
+import datawave.webservice.common.connection.AccumuloClientConfiguration;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
@@ -433,4 +434,31 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      * @return A user operations interface implementation. Null if NA (i.e. the local principal is sufficient)
      */
     UserOperations getUserOperations();
+
+    /**
+     * This is to be used prior to requesting user operations for a logic that is not yet initialized. The main use case is for the FilteredQueryLogic to allow
+     * it to filter this call as well. Most query logics will not implement this.
+     *
+     * @param settings
+     *            query settings
+     * @param userAuthorizations
+     *            a set of user authorizations
+     */
+    default void preInitialize(Query settings, Set<Authorizations> userAuthorizations) {
+        // noop
+    }
+
+    /**
+     * Set a client configuration for scanner hints and consistency.
+     *
+     * @param config
+     */
+    void setClientConfig(AccumuloClientConfiguration config);
+
+    /**
+     * Get the client configuration
+     *
+     * @return client configuration
+     */
+    AccumuloClientConfiguration getClientConfig();
 }

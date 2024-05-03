@@ -109,6 +109,7 @@ public abstract class RegexFilterBase extends AppliedRule {
      * @param options
      *            {@code Map} object containing the TTL, TTL_UNITS, and MATCHPATTERN for the filter rule.
      * @param iterEnv
+     *            iterator environment
      * @see datawave.iterators.filter.AgeOffConfigParams
      */
     @Override

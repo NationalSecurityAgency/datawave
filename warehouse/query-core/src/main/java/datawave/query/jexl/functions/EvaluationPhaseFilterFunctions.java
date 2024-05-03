@@ -212,12 +212,15 @@ public class EvaluationPhaseFilterFunctions {
      * <li>{@code args[2,...]}: the regexes to use to find matches</li>
      * </ul>
      *
+     * Note: As of jexl3, jexl does not consider array parameters to be the same as varargs, so if you expect a variable number of arguments, you must use
+     * varargs.
+     *
      * @param args
      *            the arguments array
      *
      * @return the {@link FunctionalSet} of matches.
      */
-    public static FunctionalSet<ValueTuple> matchesAtLeastCountOf(Object[] args) {
+    public static FunctionalSet<ValueTuple> matchesAtLeastCountOf(Object... args) {
         Object minimumRequired = args[0];
         Object fieldValue = args[1];
         Object[] regexes = Arrays.copyOfRange(args, 2, args.length);

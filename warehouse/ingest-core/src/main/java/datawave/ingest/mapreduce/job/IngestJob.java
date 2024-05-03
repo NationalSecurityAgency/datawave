@@ -255,6 +255,7 @@ public class IngestJob implements Tool {
 
     @Override
     public int run(String[] args) throws Exception {
+        long setupStart = System.currentTimeMillis();
 
         Logger.getLogger(TypeRegistry.class).setLevel(Level.ALL);
 
@@ -329,7 +330,6 @@ public class IngestJob implements Tool {
         conf = job.getConfiguration();
 
         setupHandlers(conf);
-
         if (!useMapOnly || !outputMutations) {
             // Calculate the sampled splits, splits file, and set up the partitioner, but not if only doing only a map phase and outputting mutations
             // if not outputting mutations and only doing a map phase, we still need to go through this logic as the MultiRFileOutputFormatter
@@ -373,6 +373,8 @@ public class IngestJob implements Tool {
 
         startDaemonProcesses(conf);
         long start = System.currentTimeMillis();
+        log.info("JOB SETUP TIME: " + (start - setupStart));
+
         job.submit();
         JobID jobID = job.getJobID();
         log.info("JOB ID: " + jobID);
@@ -687,7 +689,7 @@ public class IngestJob implements Tool {
             } else if (args[i].equals("-cacheBaseDir")) {
                 cacheBaseDir = args[++i];
             } else if (args[i].equals("-cacheJars")) {
-                String[] jars = StringUtils.trimAndRemoveEmptyStrings(args[++i].split("\\s*,\\s*"));
+                String[] jars = StringUtils.trimAndRemoveEmptyStrings(args[++i].replaceAll("\\s+", "").split(","));
                 for (String jarString : jars) {
                     File jar = new File(jarString);
                     Path file = new Path(cacheBaseDir, jar.getName());

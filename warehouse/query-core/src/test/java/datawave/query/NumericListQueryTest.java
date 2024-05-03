@@ -373,6 +373,56 @@ public abstract class NumericListQueryTest {
     }
 
     @Test
+    public void testPushDown() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+        extraParameters.put("hit.list", "true");
+        extraParameters.put("limit.fields", "SIZE=-1,CANINE=-1");
+        extraParameters.put("return.fields", "SIZE,CANINE");
+
+        String queryString = "((_Eval_ = true) && (SIZE == 90)) && CANINE == 'coyote'";
+        String expectedQueryPlan = "((_Eval_ = true) && (SIZE == '+bE9')) && CANINE == 'coyote'";
+
+        Set<String> goodResults = Sets.newHashSet("SIZE.CANINE.WILD.1:90,26.5", "CANINE.WILD.1:coyote");
+
+        runTestQuery(queryString, expectedQueryPlan, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
+    }
+
+    @Test
+    public void testWildcards() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+        extraParameters.put("hit.list", "true");
+        extraParameters.put("limit.fields", "SIZE=-1,BIRD=-1,CAT=-1,CANINE=-1,FISH=-1");
+
+        // this only works because the entire string '90,26.5' is included in the jexl context and we match against that
+        String queryString = "SIZE =~'.*0.*' AND CANINE == 'coyote'";
+        String expectedQueryPlan = "((_Eval_ = true) && (SIZE =~ '.*0.*')) && CANINE == 'coyote'";
+
+        Set<String> goodResults = Sets.newHashSet("REPTILE.PET.1:snake", "DOG.WILD.1:coyote", "CAT.WILD.1:tiger", "SIZE.CANINE.3:20,12.5",
+                        "CANINE.WILD.1:coyote", "FISH.WILD.1:tuna", "BIRD.WILD.1:hawk");
+
+        runTestQuery(queryString, expectedQueryPlan, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
+    }
+
+    @Test
+    public void testLeadingWildcardNonReverseIndexed() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+        extraParameters.put("limit.fields", "SIZE=-1,BIRD=-1,CAT=-1,CANINE=-1,FISH=-1");
+
+        // this only works because the entire string '90,26.5' ends in a 5. A query of .*0 will not return anything because the full string does not match and
+        // 90 only exists by itself in the jexl context in its normalized form. Numeric regex handling should some day rectify this or perhaps we should
+        // consider adding the non-normalized tokens to the context for certain OneToMany types.
+        String queryString = "SIZE =~'.*5' AND CANINE == 'coyote'";
+        String expectedQueryPlan = "((_Eval_ = true) && (SIZE =~ '.*5')) && CANINE == 'coyote'";
+
+        Set<String> goodResults = Sets.newHashSet("REPTILE.PET.1:snake", "DOG.WILD.1:coyote");
+
+        runTestQuery(queryString, expectedQueryPlan, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
+    }
+
+    @Test
     public void testMatchesInGroupAcrossLists() throws Exception {
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");

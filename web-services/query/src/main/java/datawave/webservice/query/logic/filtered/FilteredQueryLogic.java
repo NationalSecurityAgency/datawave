@@ -12,6 +12,7 @@ import org.apache.log4j.Logger;
 import datawave.security.authorization.UserOperations;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
+import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.iterator.DatawaveTransformIterator;
 import datawave.webservice.query.logic.DelegatingQueryLogic;
 import datawave.webservice.query.logic.QueryLogic;
@@ -47,6 +48,14 @@ public class FilteredQueryLogic extends DelegatingQueryLogic implements QueryLog
         boolean canRunQuery(Query settings, Set<Authorizations> auths);
     }
 
+    @Override
+    public void preInitialize(Query settings, Set<Authorizations> userAuthorizations) {
+        // setup the filter
+        if (canRunQuery(settings, userAuthorizations)) {
+            super.preInitialize(settings, userAuthorizations);
+        }
+    }
+
     public boolean canRunQuery(Query settings, Set<Authorizations> runtimeQueryAuthorizations) {
         if (!filtered) {
             if (!filter.canRunQuery(settings, runtimeQueryAuthorizations)) {
@@ -64,7 +73,7 @@ public class FilteredQueryLogic extends DelegatingQueryLogic implements QueryLog
                 log.debug("Passing through filter " + filter + " for query " + super.getLogicName());
             }
         }
-        return filtered;
+        return filtered || (getDelegate() instanceof FilteredQueryLogic && ((FilteredQueryLogic) getDelegate()).isFiltered());
     }
 
     @Override

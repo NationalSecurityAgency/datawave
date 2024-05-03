@@ -118,9 +118,10 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
 
     public static void setCompressionType(Configuration conf, String compressionType) {
         if (compressionType != null) {
-            if (!("snappy".equals(compressionType) || "lzo".equals(compressionType) || "gz".equals(compressionType) || "none".equals(compressionType)))
+            if (!("snappy".equals(compressionType) || "lzo".equals(compressionType) || "gz".equals(compressionType) || "zstd".equals(compressionType)
+                            || "none".equals(compressionType)))
 
-                throw new IllegalArgumentException("compressionType must be one of snappy, lzo, gz, or none");
+                throw new IllegalArgumentException("compressionType must be one of snappy, lzo, gz, zstd, or none");
             conf.set(COMPRESSION_TYPE, compressionType);
         }
     }

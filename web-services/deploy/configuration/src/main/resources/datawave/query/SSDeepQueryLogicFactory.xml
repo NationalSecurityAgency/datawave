@@ -6,7 +6,7 @@
     http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
 
     <!-- Query Logic that returns document content -->
-    <bean id="SSDeepSimilarityQuery" parent="baseQueryLogic" scope="prototype"  class="datawave.query.tables.SSDeepSimilarityQueryLogic">
+    <bean id="SSDeepSimilarityQuery" parent="baseQueryLogic" scope="prototype"  class="datawave.query.tables.ssdeep.SSDeepSimilarityQueryLogic">
         <property name="tableName" value="ssdeepIndex" />
         <property name="maxResults" value="-1" />
         <property name="maxWork" value="-1" />
@@ -17,5 +17,30 @@
         <property name="bucketEncodingBase" value="32" />
         <property name="bucketEncodingLength" value="2" />
         <property name="logicDescription" value="Query that will retrieve similar ssdeep hashes" />
+    </bean>
+
+    <bean id="SSDeepDiscoveryQuery" parent="baseQueryLogic" scope="prototype" class="datawave.query.tables.ssdeep.SSDeepDiscoveryQueryLogic">
+        <property name="tableName" value="${index.table.name}" />
+        <property name="indexTableName" value="${index.table.name}" />
+        <property name="reverseIndexTableName" value="${rindex.table.name}" />
+        <property name="maxResults" value="-1" />
+        <property name="maxWork" value="-1" />
+        <property name="modelTableName" value="${metadata.table.name}" />
+        <property name="modelName" value="DATAWAVE" />
+        <property name="metadataHelperFactory" ref="metadataHelperFactory" />
+        <property name="fullTableScanEnabled" value="false" />
+        <property name="allowLeadingWildcard" value="true" />
+        <property name="auditType" value="NONE" />
+        <property name="logicDescription" value="Discovery query that returns information from the index about the supplied term(s)" />
+    </bean>
+
+    <bean id="SSDeepSimilarityDiscoveryQuery" parent="baseQueryLogic" class="datawave.query.tables.ssdeep.SSDeepChainedDiscoveryQueryLogic">
+        <property name="tableName" value="ssdeepIndex" />
+        <property name="logic1" ref="SSDeepSimilarityQuery"/>
+        <property name="logic2" ref="SSDeepDiscoveryQuery"/>
+        <property name="auditType" value="NONE"/>
+        <property name="chainStrategy">
+            <bean class="datawave.query.tables.ssdeep.FullSSDeepDiscoveryChainStrategy"/>
+        </property>
     </bean>
 </beans>

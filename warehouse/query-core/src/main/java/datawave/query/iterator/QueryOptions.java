@@ -20,8 +20,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Queue;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
@@ -33,13 +33,18 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.OptionDescriber;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.jexl2.JexlArithmetic;
+import org.apache.commons.jexl3.JexlArithmetic;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
 
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
@@ -51,10 +56,8 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
-import com.google.common.collect.Queues;
 import com.google.common.collect.Sets;
 
-import datawave.core.iterators.ColumnRangeIterator;
 import datawave.core.iterators.DatawaveFieldIndexCachingIteratorJexl.HdfsBackedControl;
 import datawave.core.iterators.filesystem.FileSystemCache;
 import datawave.core.iterators.querylock.QueryLock;
@@ -73,6 +76,10 @@ import datawave.query.function.Equality;
 import datawave.query.function.GetStartKey;
 import datawave.query.function.JexlEvaluation;
 import datawave.query.function.PrefixEquality;
+import datawave.query.function.serializer.DocumentSerializer;
+import datawave.query.function.serializer.KryoDocumentSerializer;
+import datawave.query.function.serializer.ToStringDocumentSerializer;
+import datawave.query.function.serializer.WritableDocumentSerializer;
 import datawave.query.iterator.filter.EventKeyDataTypeFilter;
 import datawave.query.iterator.filter.FieldIndexKeyDataTypeFilter;
 import datawave.query.iterator.filter.KeyIdentity;
@@ -91,6 +98,8 @@ import datawave.query.statsd.QueryStatsDClient;
 import datawave.query.tables.async.Scan;
 import datawave.query.tracking.ActiveQueryLog;
 import datawave.query.util.TypeMetadata;
+import datawave.query.util.count.CountMap;
+import datawave.query.util.count.CountMapSerDe;
 import datawave.query.util.sortedset.FileSortedSet;
 import datawave.util.StringUtils;
 import datawave.util.UniversalSet;
@@ -98,7 +107,7 @@ import datawave.util.UniversalSet;
 /**
  * QueryOptions are set on the iterators.
  * <p>
- * Some options are passed through from the QueryParemeters.
+ * Some options are passed through from the QueryParameters.
  */
 public class QueryOptions implements OptionDescriber {
     private static final Logger log = Logger.getLogger(QueryOptions.class);
@@ -112,7 +121,6 @@ public class QueryOptions implements OptionDescriber {
     public static final String SCAN_ID = Scan.SCAN_ID;
     public static final String DISABLE_EVALUATION = "disable.evaluation";
     public static final String DISABLE_FIELD_INDEX_EVAL = "disable.fi";
-    public static final String LIMIT_OVERRIDE = "disable.fi.override";
     public static final String LIMIT_SOURCES = "sources.limit.count";
     public static final String DISABLE_DOCUMENTS_WITHOUT_EVENTS = "disable.index.only.documents";
     public static final String QUERY = "query";
@@ -145,6 +153,9 @@ public class QueryOptions implements OptionDescriber {
     public static final String GROUP_FIELDS = "group.fields";
     public static final String GROUP_FIELDS_BATCH_SIZE = "group.fields.batch.size";
     public static final String UNIQUE_FIELDS = "unique.fields";
+    public static final String MOST_RECENT_UNIQUE = "most.recent.unique";
+    public static final String UNIQUE_CACHE_BUFFER_SIZE = "unique.cache.buffer.size";
+
     public static final String HITS_ONLY = "hits.only";
     public static final String HIT_LIST = "hit.list";
     public static final String START_TIME = "start.time";
@@ -227,6 +238,7 @@ public class QueryOptions implements OptionDescriber {
     public static final String IVARATOR_PERSIST_VERIFY_COUNT = "ivarator.persist.verify.count";
 
     public static final String MAX_IVARATOR_SOURCES = "max.ivarator.sources";
+    public static final String MAX_IVARATOR_SOURCE_WAIT = "max.ivarator.source.wait";
 
     public static final String MAX_IVARATOR_RESULTS = "max.ivarator.results";
 
@@ -237,12 +249,6 @@ public class QueryOptions implements OptionDescriber {
     public static final String SERIAL_EVALUATION_PIPELINE = "serial.evaluation.pipeline";
 
     public static final String MAX_PIPELINE_CACHED_RESULTS = "max.pipeline.cached.results";
-
-    public static final String BATCHED_QUERY = "query.iterator.batch";
-
-    public static final String BATCHED_QUERY_RANGE_PREFIX = "query.iterator.batch.range.";
-
-    public static final String BATCHED_QUERY_PREFIX = "query.iterator.batch.query.";
 
     public static final String DATE_INDEX_TIME_TRAVEL = "date.index.time.travel";
 
@@ -258,6 +264,8 @@ public class QueryOptions implements OptionDescriber {
 
     public static final String EXCERPT_FIELDS = "excerpt.fields";
 
+    public static final String EXCERPT_FIELDS_NO_HIT_CALLOUT = "excerpt.fields.no.hit.callout";
+
     public static final String EXCERPT_ITERATOR = "excerpt.iterator.class";
 
     // field and next thresholds before a seek is issued
@@ -271,6 +279,9 @@ public class QueryOptions implements OptionDescriber {
     public static final String DOC_AGGREGATION_THRESHOLD_MS = "doc.agg.threshold";
 
     public static final String TERM_FREQUENCY_AGGREGATION_THRESHOLD_MS = "tf.agg.threshold";
+
+    public static final String FIELD_COUNTS = "field.counts";
+    public static final String TERM_COUNTS = "term.counts";
 
     protected Map<String,String> options;
 
@@ -286,6 +297,8 @@ public class QueryOptions implements OptionDescriber {
     protected CompositeMetadata compositeMetadata = null;
     protected int compositeSeekThreshold = 10;
     protected DocumentSerialization.ReturnType returnType = DocumentSerialization.ReturnType.kryo;
+    private DocumentSerializer documentSerializer;
+
     protected boolean reducedResponse = false;
     protected boolean fullTableScanOnly = false;
     protected JexlArithmetic arithmetic = new DefaultArithmetic();
@@ -303,6 +316,7 @@ public class QueryOptions implements OptionDescriber {
     protected GroupFields groupFields = new GroupFields();
     protected int groupFieldsBatchSize = Integer.MAX_VALUE;
     protected UniqueFields uniqueFields = new UniqueFields();
+    protected int uniqueCacheBufferSize = 100;
 
     protected Set<String> hitsOnlySet = new HashSet<>();
 
@@ -363,6 +377,7 @@ public class QueryOptions implements OptionDescriber {
     protected FileSortedSet.PersistOptions ivaratorPersistOptions = new FileSortedSet.PersistOptions();
 
     protected int maxIvaratorSources = 33;
+    protected long maxIvaratorSourceWait = 1000L * 60 * 30;
 
     protected long maxIvaratorResults = -1;
 
@@ -382,7 +397,6 @@ public class QueryOptions implements OptionDescriber {
     protected boolean compressResults = false;
 
     protected Boolean compressedMappings = false;
-    protected boolean limitOverride = false;
 
     // determine whether sortedUIDs are required. Normally they are, however if the query contains
     // only one indexed term, then there is no need to sort which can be a lot faster if an ivarator
@@ -397,10 +411,6 @@ public class QueryOptions implements OptionDescriber {
     protected QueryStatsDClient statsdClient = null;
 
     protected boolean serialEvaluationPipeline = false;
-
-    protected Queue<Entry<Range,String>> batchStack;
-
-    protected int batchedQueries = 0;
 
     protected String metadataTableName;
 
@@ -420,6 +430,8 @@ public class QueryOptions implements OptionDescriber {
 
     protected ExcerptFields excerptFields;
 
+    protected boolean excerptFieldsNoHitCallout;
+
     protected Class<? extends SortedKeyValueIterator<Key,Value>> excerptIterator = TermFrequencyExcerptIterator.class;
 
     // off by default, controls when to issue a seek
@@ -433,6 +445,10 @@ public class QueryOptions implements OptionDescriber {
     // aggregation thresholds
     private int docAggregationThresholdMs = -1;
     private int tfAggregationThresholdMs = -1;
+
+    private CountMap fieldCounts;
+    private CountMap termCounts;
+    private CountMapSerDe mapSerDe;
 
     public void deepCopy(QueryOptions other) {
         this.options = other.options;
@@ -494,12 +510,14 @@ public class QueryOptions implements OptionDescriber {
         this.ivaratorCacheDirConfigs = (other.ivaratorCacheDirConfigs == null) ? null : new ArrayList<>(other.ivaratorCacheDirConfigs);
         this.hdfsSiteConfigURLs = other.hdfsSiteConfigURLs;
         this.ivaratorCacheBufferSize = other.ivaratorCacheBufferSize;
+        this.uniqueCacheBufferSize = other.uniqueCacheBufferSize;
         this.ivaratorCacheScanPersistThreshold = other.ivaratorCacheScanPersistThreshold;
         this.ivaratorCacheScanTimeout = other.ivaratorCacheScanTimeout;
         this.hdfsFileCompressionCodec = other.hdfsFileCompressionCodec;
         this.maxIndexRangeSplit = other.maxIndexRangeSplit;
         this.ivaratorMaxOpenFiles = other.ivaratorMaxOpenFiles;
         this.maxIvaratorSources = other.maxIvaratorSources;
+        this.maxIvaratorSourceWait = other.maxIvaratorSourceWait;
         this.maxIvaratorResults = other.maxIvaratorResults;
 
         this.yieldThresholdMs = other.yieldThresholdMs;
@@ -514,16 +532,12 @@ public class QueryOptions implements OptionDescriber {
         this.hitsOnlySet = other.hitsOnlySet;
 
         this.compressedMappings = other.compressedMappings;
-        this.limitOverride = other.limitOverride;
-
         this.sortedUIDs = other.sortedUIDs;
 
         this.termFrequenciesRequired = other.termFrequenciesRequired;
         this.termFrequencyFields = other.termFrequencyFields;
         this.contentExpansionFields = other.contentExpansionFields;
 
-        this.batchedQueries = other.batchedQueries;
-        this.batchStack = other.batchStack;
         this.maxEvaluationPipelines = other.maxEvaluationPipelines;
 
         this.dateIndexTimeTravel = other.dateIndexTimeTravel;
@@ -533,6 +547,7 @@ public class QueryOptions implements OptionDescriber {
         this.trackSizes = other.trackSizes;
         this.activeQueryLogName = other.activeQueryLogName;
         this.excerptFields = other.excerptFields;
+        this.excerptFieldsNoHitCallout = other.excerptFieldsNoHitCallout;
         this.excerptIterator = other.excerptIterator;
 
         this.fiFieldSeek = other.fiFieldSeek;
@@ -544,6 +559,9 @@ public class QueryOptions implements OptionDescriber {
 
         this.docAggregationThresholdMs = other.docAggregationThresholdMs;
         this.tfAggregationThresholdMs = other.tfAggregationThresholdMs;
+
+        this.fieldCounts = other.fieldCounts;
+        this.termCounts = other.termCounts;
     }
 
     public String getQuery() {
@@ -630,6 +648,35 @@ public class QueryOptions implements OptionDescriber {
 
     public void setReturnType(DocumentSerialization.ReturnType returnType) {
         this.returnType = returnType;
+    }
+
+    /**
+     * Get the document serializer. If no serializer exists, create one based on the return type
+     *
+     * @return the document serializer
+     */
+    public DocumentSerializer getDocumentSerializer() {
+        if (documentSerializer == null) {
+            switch (returnType) {
+                case kryo:
+                    documentSerializer = new KryoDocumentSerializer(isReducedResponse(), isCompressResults());
+                    break;
+                case writable:
+                    documentSerializer = new WritableDocumentSerializer(isReducedResponse());
+                    break;
+                case tostring:
+                    documentSerializer = new ToStringDocumentSerializer(isReducedResponse());
+                    break;
+                case noop:
+                default:
+                    throw new IllegalArgumentException("Unknown return type of: " + returnType);
+            }
+        }
+        return documentSerializer;
+    }
+
+    public void setDocumentSerializer(DocumentSerializer documentSerializer) {
+        this.documentSerializer = documentSerializer;
     }
 
     public boolean isReducedResponse() {
@@ -916,6 +963,14 @@ public class QueryOptions implements OptionDescriber {
         this.ivaratorCacheBufferSize = ivaratorCacheBufferSize;
     }
 
+    public int getUniqueCacheBufferSize() {
+        return uniqueCacheBufferSize;
+    }
+
+    public void setUniqueCacheBufferSize(int uniqueCacheBufferSize) {
+        this.uniqueCacheBufferSize = uniqueCacheBufferSize;
+    }
+
     public long getIvaratorCacheScanPersistThreshold() {
         return ivaratorCacheScanPersistThreshold;
     }
@@ -978,6 +1033,14 @@ public class QueryOptions implements OptionDescriber {
 
     public void setMaxIvaratorSources(int maxIvaratorSources) {
         this.maxIvaratorSources = maxIvaratorSources;
+    }
+
+    public long getMaxIvaratorSourceWait() {
+        return maxIvaratorSourceWait;
+    }
+
+    public void setMaxIvaratorSourceWait(long maxIvaratorSourceWait) {
+        this.maxIvaratorSourceWait = maxIvaratorSourceWait;
     }
 
     public long getMaxIvaratorResults() {
@@ -1053,7 +1116,7 @@ public class QueryOptions implements OptionDescriber {
     }
 
     public void setUniqueFields(UniqueFields uniqueFields) {
-        this.uniqueFields = uniqueFields;
+        this.uniqueFields = uniqueFields.clone();
     }
 
     public Set<String> getHitsOnlySet() {
@@ -1104,6 +1167,14 @@ public class QueryOptions implements OptionDescriber {
         this.excerptFields = excerptFields;
     }
 
+    public boolean getExcerptFieldsNoHitCallout() {
+        return excerptFieldsNoHitCallout;
+    }
+
+    public void setExcerptFieldsNoHitCallout(boolean excerptFieldsNoHitCallout) {
+        this.excerptFieldsNoHitCallout = excerptFieldsNoHitCallout;
+    }
+
     public Class<? extends SortedKeyValueIterator<Key,Value>> getExcerptIterator() {
         return excerptIterator;
     }
@@ -1119,7 +1190,6 @@ public class QueryOptions implements OptionDescriber {
         options.put(DISABLE_EVALUATION, "If provided, JEXL evaluation is not performed against any document.");
         options.put(DISABLE_FIELD_INDEX_EVAL,
                         "If provided, a query tree is not evaluated against the field index. Only used in the case of doc specific ranges");
-        options.put(LIMIT_OVERRIDE, "If provided, we will not assume the FI ranges can be constructed from the query");
         options.put(LIMIT_SOURCES, "Allows client to limit the number of sources used for this scan");
         options.put(DISABLE_DOCUMENTS_WITHOUT_EVENTS, "Removes documents in which only hits against the index were found, and no event");
         options.put(QUERY, "The JEXL query to evaluate documents against");
@@ -1204,6 +1274,7 @@ public class QueryOptions implements OptionDescriber {
         options.put(ACTIVE_QUERY_LOG_NAME, "If not provided or set to '" + ActiveQueryLog.DEFAULT_NAME
                         + "', will use the default shared Active Query Log instance. If provided otherwise, uses a separate distinct Active Query Log that will include the unique name in log messages.");
         options.put(EXCERPT_FIELDS, "excerpt fields");
+        options.put(EXCERPT_FIELDS_NO_HIT_CALLOUT, "excerpt fields no hit callout");
         options.put(EXCERPT_ITERATOR, "excerpt iterator class (default datawave.query.iterator.logic.TermFrequencyExcerptIterator");
         options.put(FI_FIELD_SEEK, "The number of fields traversed by a Field Index data filter or aggregator before a seek is issued");
         options.put(FI_NEXT_SEEK, "The number of next calls made by a Field Index data filter or aggregator before a seek is issued");
@@ -1213,6 +1284,8 @@ public class QueryOptions implements OptionDescriber {
         options.put(TF_NEXT_SEEK, "The number of next calls made by a Term Frequency data filter or aggregator before a seek is issued");
         options.put(DOC_AGGREGATION_THRESHOLD_MS, "Document aggregations that exceed this threshold are logged as a warning");
         options.put(TERM_FREQUENCY_AGGREGATION_THRESHOLD_MS, "TermFrequency aggregations that exceed this threshold are logged as a warning");
+        options.put(FIELD_COUNTS, "Map of field counts from the global index");
+        options.put(TERM_COUNTS, "Map of term counts from the global index");
         return new IteratorOptions(getClass().getSimpleName(), "Runs a query against the DATAWAVE tables", options, null);
     }
 
@@ -1225,17 +1298,13 @@ public class QueryOptions implements OptionDescriber {
         this.options = options;
 
         // If we don't have a query, make sure it's because
-        // we don't aren't performing any Jexl evaluation
+        // we aren't performing any Jexl evaluation
         if (options.containsKey(DISABLE_EVALUATION)) {
             this.disableEvaluation = Boolean.parseBoolean(options.get(DISABLE_EVALUATION));
         }
 
         if (options.containsKey(DISABLE_FIELD_INDEX_EVAL)) {
             this.disableFiEval = Boolean.parseBoolean(options.get(DISABLE_FIELD_INDEX_EVAL));
-        }
-
-        if (options.containsKey(LIMIT_OVERRIDE)) {
-            this.limitOverride = Boolean.parseBoolean(options.get(LIMIT_OVERRIDE));
         }
 
         if (options.containsKey(LIMIT_SOURCES)) {
@@ -1340,6 +1409,16 @@ public class QueryOptions implements OptionDescriber {
                 this.disallowListedFields = new HashSet<>();
                 Collections.addAll(this.disallowListedFields, StringUtils.split(fieldList, Constants.PARAM_VALUE_SEP));
             }
+        }
+
+        if (options.containsKey(FIELD_COUNTS)) {
+            String serializedMap = options.get(FIELD_COUNTS);
+            this.fieldCounts = getMapSerDe().deserializeFromString(serializedMap);
+        }
+
+        if (options.containsKey(TERM_COUNTS)) {
+            String serializedMap = options.get(TERM_COUNTS);
+            this.termCounts = getMapSerDe().deserializeFromString(serializedMap);
         }
 
         this.evaluationFilter = null;
@@ -1516,6 +1595,12 @@ public class QueryOptions implements OptionDescriber {
 
         if (options.containsKey(UNIQUE_FIELDS)) {
             this.setUniqueFields(UniqueFields.from(options.get(UNIQUE_FIELDS)));
+            if (options.containsKey(MOST_RECENT_UNIQUE)) {
+                this.getUniqueFields().setMostRecent(Boolean.valueOf(options.get(MOST_RECENT_UNIQUE)));
+                if (options.containsKey(UNIQUE_CACHE_BUFFER_SIZE)) {
+                    this.setUniqueCacheBufferSize(Integer.parseInt(options.get(UNIQUE_CACHE_BUFFER_SIZE)));
+                }
+            }
         }
 
         if (options.containsKey(HIT_LIST)) {
@@ -1631,6 +1716,10 @@ public class QueryOptions implements OptionDescriber {
             this.setMaxIvaratorSources(Integer.parseInt(options.get(MAX_IVARATOR_SOURCES)));
         }
 
+        if (options.containsKey(MAX_IVARATOR_SOURCE_WAIT)) {
+            this.setMaxIvaratorSourceWait(Long.parseLong(options.get(MAX_IVARATOR_SOURCE_WAIT)));
+        }
+
         if (options.containsKey(MAX_IVARATOR_RESULTS)) {
             this.setMaxIvaratorResults(Long.parseLong(options.get(MAX_IVARATOR_RESULTS)));
         }
@@ -1661,36 +1750,6 @@ public class QueryOptions implements OptionDescriber {
         this.setTermFrequencyFields(parseTermFrequencyFields(options));
         this.setContentExpansionFields(parseContentExpansionFields(options));
 
-        if (options.containsKey(BATCHED_QUERY)) {
-            this.batchedQueries = Integer.parseInt(options.get(BATCHED_QUERY));
-
-            if (this.batchedQueries > 0) {
-
-                // override query options since this is a mismatch of options
-                // combining is only meant to be used when threading is enabled
-                if (maxEvaluationPipelines == 1) {
-                    maxEvaluationPipelines = 2;
-                }
-
-                batchStack = Queues.newArrayDeque();
-                for (int i = 0; i < batchedQueries; i++) {
-                    String rangeValue = options.get(BATCHED_QUERY_RANGE_PREFIX + i);
-                    String queryValue = options.get(BATCHED_QUERY_PREFIX + i);
-                    if (null != rangeValue && null != queryValue) {
-                        try {
-                            Range decodedRange = ColumnRangeIterator.decodeRange(rangeValue);
-                            if (log.isTraceEnabled()) {
-                                log.trace("Adding batch " + decodedRange + " " + queryValue);
-                            }
-                            batchStack.offer(Maps.immutableEntry(decodedRange, queryValue));
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
-                    }
-                }
-            }
-        }
-
         if (options.containsKey(DATE_INDEX_TIME_TRAVEL)) {
             this.dateIndexTimeTravel = Boolean.parseBoolean(options.get(DATE_INDEX_TIME_TRAVEL));
         }
@@ -1709,6 +1768,10 @@ public class QueryOptions implements OptionDescriber {
 
         if (options.containsKey(EXCERPT_FIELDS)) {
             setExcerptFields(ExcerptFields.from(options.get(EXCERPT_FIELDS)));
+        }
+
+        if (options.containsKey(EXCERPT_FIELDS_NO_HIT_CALLOUT)) {
+            setExcerptFieldsNoHitCallout(Boolean.parseBoolean(options.get(EXCERPT_FIELDS_NO_HIT_CALLOUT)));
         }
 
         if (options.containsKey(EXCERPT_ITERATOR)) {
@@ -1959,6 +2022,18 @@ public class QueryOptions implements OptionDescriber {
         }
 
         return sb.toString();
+    }
+
+    /**
+     * Get a serialization and deserialization utility for {@link datawave.query.util.count.CountMap}
+     *
+     * @return count map utility
+     */
+    private CountMapSerDe getMapSerDe() {
+        if (mapSerDe == null) {
+            mapSerDe = new CountMapSerDe();
+        }
+        return mapSerDe;
     }
 
     public static Set<String> buildIgnoredColumnFamilies(String colFams) {

@@ -10,7 +10,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.accumulo.core.client.PluginEnvironment;
@@ -21,7 +24,6 @@ import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.IteratorUtil;
 import org.apache.accumulo.core.iterators.OptionDescriber;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.accumulo.core.util.threads.ThreadPools;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -31,6 +33,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Lists;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 import datawave.ingest.util.cache.ReloadableCacheBuilder;
 import datawave.ingest.util.cache.watch.FileRuleWatcher;
@@ -50,15 +53,17 @@ import datawave.iterators.filter.ageoff.FilterRule;
  * {@code AgeOffConfigParams.FILTER_CONFIG} {@code AgeOffConfigParams.TTL_SHORT_CIRCUIT} can be optionally used to short circuit invoking the filters and will
  * allow all records younger thatn that interval to be passed through. The units definition is used for both {@code AgeOffConfigParams.TTL} and
  * {@code AgeOffConfigParams.TTL_SHORT_CIRCUIT}.
- *
+ * </p>
  *
  * <p>
  * The filtering rules are stored in a configuration file, which may be stored in the local file system, or in HDFS. If it is stored in the local filesystem,
  * then it must be available on all of the tablet servers' filesystems. The configuration file should be specified as a full URL such as
  * {@code file:///opt/accumulo/config/configFilter.xml} or {@code hdfs://config/filters/configFilter.xml}.
+ * </p>
  *
  * <p>
  * The TTL Units may be the following values:
+ * </p>
  * <ul>
  * <li>{@code ms} - milliseconds
  * <li>{@code s} - seconds
@@ -69,8 +74,7 @@ import datawave.iterators.filter.ageoff.FilterRule;
  *
  * <p>
  * Sample Configuration File:
- *
- * <p>
+ * </p>
  *
  * <pre>
  * &lt;ageoffConfiguration&gt;
@@ -105,8 +109,10 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
 
     private static final Logger log = Logger.getLogger(ConfigurableAgeOffFilter.class);
 
-    private static final ScheduledThreadPoolExecutor SIMPLE_TIMER = ThreadPools.getServerThreadPools().createScheduledExecutorService(1,
-                    ConfigurableAgeOffFilter.class.getSimpleName() + "-ruleCache-refresh", false);
+    private static final ThreadFactory TIMER_THREAD_FACTORY = new ThreadFactoryBuilder()
+                    .setNameFormat(ConfigurableAgeOffFilter.class.getSimpleName() + "-ruleCache-refresh-%d").build();
+
+    private static final ScheduledExecutorService SIMPLE_TIMER = Executors.newSingleThreadScheduledExecutor(TIMER_THREAD_FACTORY);
 
     public static final String UPDATE_INTERVAL_MS_PROP = "tserver.datawave.ageoff.cache.update.interval.ms";
     protected static final long DEFAULT_UPDATE_INTERVAL_MS = 5;
@@ -206,6 +212,11 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
 
     /**
      * initialize the object via some other configurable age off filter.
+     *
+     * @param other
+     *            another filter to base this one off
+     *
+     * @return the configurable age off filter
      */
     protected ConfigurableAgeOffFilter initialize(ConfigurableAgeOffFilter other) {
 
@@ -228,11 +239,20 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
      * Initialize this object with a set of string parameters representing the configuration options for this iterator.
      *
      * @param ttl
+     *            time to live
      * @param ttlUnits
+     *            time to live units
+     *
+     * @param ttlShortCircuitStr
+     *            time to live short circuit string
      * @param scanStart
+     *            scan start time
      * @param fileName
+     *            file name
      * @throws IOException
+     *             if error reading the file
      * @throws IllegalArgumentException
+     *             if illegal arguments passed
      */
     protected void initialize(final String ttl, final String ttlUnits, final String ttlShortCircuitStr, final long scanStart, final String fileName)
                     throws IllegalArgumentException, IOException {
@@ -293,20 +313,15 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
     }
 
     /**
-     * return true if this is a system initiated majc (a majc that is not a full major compaction)
-     *
-     * @param env
-     */
-    private boolean isSystemInitiatedMajC(IteratorEnvironment env) {
-        return (env != null && env.getIteratorScope().equals(IteratorUtil.IteratorScope.majc) && !env.isFullMajorCompaction());
-    }
-
-    /**
      * Used to initialize the default parameters used by this implementation of {@code Filter}, as well as the sub-filters specified in the configuration file.
      *
+     * @param source
+     *            the source key values
      * @param options
      *            {@code Map<String, String>} object contain the configuration parameters for this {@code Filter} implementation. The parameters required are
      *            specified in the {@code AgeOffConfigParams.TTL}, {@code AgeOffConfigParams.TTL_UNITS}, and {@code AgeOffConfigParams.FILTER_CONFIG}.
+     * @param env
+     *            the iterator environment
      * @see org.apache.accumulo.core.iterators.Filter#init(SortedKeyValueIterator, Map, IteratorEnvironment)
      */
     @Override
@@ -315,15 +330,7 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
 
         myEnv = env;
         pluginEnv = env == null ? null : env.getPluginEnv();
-
-        // disabled if this is a system initialized major compaction and we are configured to disable as such
-        String disableOnNonFullMajcStr = options.get(AgeOffConfigParams.DISABLE_ON_NON_FULL_MAJC);
-        disabled = (disableOnNonFullMajcStr != null) && Boolean.parseBoolean(disableOnNonFullMajcStr) && isSystemInitiatedMajC(env);
-
-        // if disabled, then no need to do any further initialization
-        if (disabled) {
-            return;
-        }
+        disabled = shouldDisableForNonFullCompaction(options, env) || shouldDisableForNonUserCompaction(options, env);
 
         Preconditions.checkNotNull(options, "Configuration filename and " + "the default ttl must be set for the ConfigurableAgeOffFilter");
 
@@ -337,12 +344,97 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
     }
 
     /**
-     * This method instantiates the the necessary implementations of the {@code Filter} interface, as they are defined in the configuration file specified by
+     * enabled if any of the following are true:
+     * <ul>
+     * <li>we're not configured to disable non-full majcs</li>
+     * <li>this is not a major compaction</li>
+     * <li>we're doing a full majc compaction</li>
+     * </ul>
+     *
+     * @param options
+     *            map of options
+     * @param env
+     *            the iterator environment
+     * @return true only if we should disable filtering
+     */
+    private boolean shouldDisableForNonFullCompaction(Map<String,String> options, IteratorEnvironment env) {
+        if (!validatePropertyIsBoolean(options, AgeOffConfigParams.DISABLE_ON_NON_FULL_MAJC)) {
+            throw new IllegalArgumentException(
+                            "Invalid for " + AgeOffConfigParams.DISABLE_ON_NON_FULL_MAJC + ": " + options.get(AgeOffConfigParams.DISABLE_ON_NON_FULL_MAJC));
+        }
+
+        // if the configuration property is missing, we should apply the filter
+        if (!options.containsKey(AgeOffConfigParams.DISABLE_ON_NON_FULL_MAJC)) {
+            return false;
+        }
+
+        // if the property is set to false, we should apply the filter
+        if (!Boolean.parseBoolean(options.get(AgeOffConfigParams.DISABLE_ON_NON_FULL_MAJC))) {
+            return false;
+        }
+
+        // if this isn't a major compaction, we should apply the filter
+        if (env == null || !env.getIteratorScope().equals(IteratorUtil.IteratorScope.majc)) {
+            return false;
+        }
+
+        if (env.isFullMajorCompaction()) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * enabled if any of the following are true:
+     * <ul>
+     * <li>we're not configured to disable non-user majcs</li>
+     * <li>this is not a major compaction</li>
+     * <li>we're doing a user majc compaction</li>
+     * </ul>
+     *
+     * @param options
+     *            map of options
+     * @param env
+     *            the iterator environment
+     * @return true only if we should disable filtering
+     */
+    private boolean shouldDisableForNonUserCompaction(Map<String,String> options, IteratorEnvironment env) {
+        if (!validatePropertyIsBoolean(options, AgeOffConfigParams.ONLY_ON_USER_COMPACTION)) {
+            throw new IllegalArgumentException(
+                            "Invalid for " + AgeOffConfigParams.ONLY_ON_USER_COMPACTION + ": " + options.get(AgeOffConfigParams.ONLY_ON_USER_COMPACTION));
+        }
+
+        // if the configuration property is missing, we should apply the filter
+        if (!options.containsKey(AgeOffConfigParams.ONLY_ON_USER_COMPACTION)) {
+            return false;
+        }
+
+        // if the property is set to false, we should apply the filter
+        if (!Boolean.parseBoolean(options.get(AgeOffConfigParams.ONLY_ON_USER_COMPACTION))) {
+            return false;
+        }
+
+        // if this isn't a major compaction, we should apply the filter
+        if (env == null || !env.getIteratorScope().equals(IteratorUtil.IteratorScope.majc)) {
+            return false;
+        }
+
+        if (env.isUserCompaction()) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * This method instantiates the necessary implementations of the {@code Filter} interface, as they are defined in the configuration file specified by
      * {@code this.filename}.
      *
      * @throws IllegalArgumentException
      *             if there is an error in the configuration file
      * @throws IOException
+     *             if there is an error reading the configuration file
      */
     private void initFilterRules() throws IllegalArgumentException, IOException {
         // filename
@@ -418,7 +510,7 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
                 for (FilterRule rule : rules) {
                     // NOTE: this propagates the anchor time (scanStart) to all of the applied rules
                     // This is used to calculate the AgeOffPeriod for all of the rules
-                    filterList.add((AppliedRule) rule.deepCopy(this.scanStart));
+                    filterList.add((AppliedRule) rule.deepCopy(this.scanStart, myEnv));
                 }
             }
 
@@ -441,7 +533,10 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
         options.put(AgeOffConfigParams.TTL_SHORT_CIRCUIT, "Interval after which no data is aged off allowing this filter to bypass calling the filters");
         options.put(AgeOffConfigParams.FILTER_CONFIG, "URL to the age off filter configuration file.");
         options.put(AgeOffConfigParams.DISABLE_ON_NON_FULL_MAJC,
-                        "If set to 'true', then filters will be disabled for system-initialized full major compactions (non-full majc)");
+                        "If set to 'true', then filters will be disabled for system-initialized full major compactions (non-full majc).  Deprecated.  Use "
+                                        + AgeOffConfigParams.ONLY_ON_USER_COMPACTION);
+        options.put(AgeOffConfigParams.ONLY_ON_USER_COMPACTION,
+                        "If set to 'true' then filters will only be used for user-initiated major compactions and not system initiated ones. [default = false]");
         return new IteratorOptions("cfgAgeoff", "ConfigurableAgeOffFilter removes entries with timestamps more than <ttl> milliseconds old", options, null);
     }
 
@@ -473,11 +568,27 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
         }
 
         String ttlUnits = options.get(AgeOffConfigParams.TTL_UNITS);
+
+        if (!validatePropertyIsBoolean(options, AgeOffConfigParams.ONLY_ON_USER_COMPACTION)) {
+            return false;
+        }
+
         // @formatter:off
         List<String> allUnits = Arrays.asList(
             AgeOffTtlUnits.DAYS, AgeOffTtlUnits.HOURS, AgeOffTtlUnits.MINUTES, AgeOffTtlUnits.SECONDS, AgeOffTtlUnits.MILLISECONDS);
         // @formatter:on
         return (ttlUnits != null) && allUnits.contains(ttlUnits);
+    }
+
+    private boolean validatePropertyIsBoolean(Map<String,String> options, String propertyName) {
+        if (options.containsKey(propertyName)) {
+            String propertyValue = options.get(propertyName);
+            if (!"true".equals(propertyValue) && !"false".equals(propertyValue)) {
+                log.error(propertyName + " was present, but not a valid boolean." + " Value was: " + propertyValue);
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
