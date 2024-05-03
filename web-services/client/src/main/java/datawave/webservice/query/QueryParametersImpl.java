@@ -68,6 +68,7 @@ public class QueryParametersImpl implements QueryParameters {
      * @param parameters
      *            - a Map of QueryParameters
      * @throws IllegalArgumentException
+     *             when a bad argument is encountered
      */
     public void validate(Map<String,List<String>> parameters) throws IllegalArgumentException {
         for (String param : KNOWN_PARAMS) {
@@ -281,7 +282,7 @@ public class QueryParametersImpl implements QueryParameters {
      * @param queryName
      *            - client-supplied name of query
      * @param queryVisibility
-     *            -
+     *            - query
      * @param beginDate
      *            - start date
      * @param endDate
@@ -289,18 +290,22 @@ public class QueryParametersImpl implements QueryParameters {
      * @param queryAuthorizations
      *            - what auths the query should run with
      * @param expirationDate
-     *            -
+     *            - expiration date
      * @param pagesize
-     *            -
+     *            - page size
      * @param pageTimeout
+     *            - page timeout
      * @param maxResultsOverride
+     *            - max results override
      * @param persistenceMode
-     *            -
+     *            - persistence mode
+     * @param systemFrom
+     *            - system from
      * @param parameters
      *            - additional parameters passed in as map
      * @param trace
-     *            -
-     * @return
+     *            - trace flag
+     * @return parameter map
      * @throws ParseException
      *             on date parse/format error
      */

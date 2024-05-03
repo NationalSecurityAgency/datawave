@@ -8,14 +8,15 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.TreeMap;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.accumulo.core.client.PluginEnvironment;
-import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.Filter;
@@ -23,7 +24,6 @@ import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.IteratorUtil;
 import org.apache.accumulo.core.iterators.OptionDescriber;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.accumulo.core.util.threads.ThreadPools;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -33,6 +33,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Lists;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 import datawave.ingest.util.cache.ReloadableCacheBuilder;
 import datawave.ingest.util.cache.watch.FileRuleWatcher;
@@ -52,15 +53,17 @@ import datawave.iterators.filter.ageoff.FilterRule;
  * {@code AgeOffConfigParams.FILTER_CONFIG} {@code AgeOffConfigParams.TTL_SHORT_CIRCUIT} can be optionally used to short circuit invoking the filters and will
  * allow all records younger thatn that interval to be passed through. The units definition is used for both {@code AgeOffConfigParams.TTL} and
  * {@code AgeOffConfigParams.TTL_SHORT_CIRCUIT}.
- *
+ * </p>
  *
  * <p>
  * The filtering rules are stored in a configuration file, which may be stored in the local file system, or in HDFS. If it is stored in the local filesystem,
  * then it must be available on all of the tablet servers' filesystems. The configuration file should be specified as a full URL such as
  * {@code file:///opt/accumulo/config/configFilter.xml} or {@code hdfs://config/filters/configFilter.xml}.
+ * </p>
  *
  * <p>
  * The TTL Units may be the following values:
+ * </p>
  * <ul>
  * <li>{@code ms} - milliseconds
  * <li>{@code s} - seconds
@@ -71,8 +74,7 @@ import datawave.iterators.filter.ageoff.FilterRule;
  *
  * <p>
  * Sample Configuration File:
- *
- * <p>
+ * </p>
  *
  * <pre>
  * &lt;ageoffConfiguration&gt;
@@ -107,8 +109,10 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
 
     private static final Logger log = Logger.getLogger(ConfigurableAgeOffFilter.class);
 
-    private static final ScheduledThreadPoolExecutor SIMPLE_TIMER = ThreadPools.getServerThreadPools().createScheduledExecutorService(1,
-                    ConfigurableAgeOffFilter.class.getSimpleName() + "-ruleCache-refresh", false);
+    private static final ThreadFactory TIMER_THREAD_FACTORY = new ThreadFactoryBuilder()
+                    .setNameFormat(ConfigurableAgeOffFilter.class.getSimpleName() + "-ruleCache-refresh-%d").build();
+
+    private static final ScheduledExecutorService SIMPLE_TIMER = Executors.newSingleThreadScheduledExecutor(TIMER_THREAD_FACTORY);
 
     public static final String UPDATE_INTERVAL_MS_PROP = "tserver.datawave.ageoff.cache.update.interval.ms";
     protected static final long DEFAULT_UPDATE_INTERVAL_MS = 5;
@@ -137,6 +141,8 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
     protected static FileSystem fs = null;
 
     protected IteratorEnvironment myEnv;
+
+    private PluginEnvironment pluginEnv;
 
     // Adding the ability to disable the filter checks in the case of a system-initialized major compaction for example.
     // The thought is that we force compactions where we want the data to aged off.
@@ -200,11 +206,17 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
     public SortedKeyValueIterator<Key,Value> deepCopy(IteratorEnvironment env) {
 
         myEnv = env;
+        pluginEnv = env == null ? null : env.getPluginEnv();
         return ((ConfigurableAgeOffFilter) super.deepCopy(env)).initialize(this);
     }
 
     /**
      * initialize the object via some other configurable age off filter.
+     *
+     * @param other
+     *            another filter to base this one off
+     *
+     * @return the configurable age off filter
      */
     protected ConfigurableAgeOffFilter initialize(ConfigurableAgeOffFilter other) {
 
@@ -227,11 +239,20 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
      * Initialize this object with a set of string parameters representing the configuration options for this iterator.
      *
      * @param ttl
+     *            time to live
      * @param ttlUnits
+     *            time to live units
+     *
+     * @param ttlShortCircuitStr
+     *            time to live short circuit string
      * @param scanStart
+     *            scan start time
      * @param fileName
+     *            file name
      * @throws IOException
+     *             if error reading the file
      * @throws IllegalArgumentException
+     *             if illegal arguments passed
      */
     protected void initialize(final String ttl, final String ttlUnits, final String ttlShortCircuitStr, final long scanStart, final String fileName)
                     throws IllegalArgumentException, IOException {
@@ -294,9 +315,13 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
     /**
      * Used to initialize the default parameters used by this implementation of {@code Filter}, as well as the sub-filters specified in the configuration file.
      *
+     * @param source
+     *            the source key values
      * @param options
      *            {@code Map<String, String>} object contain the configuration parameters for this {@code Filter} implementation. The parameters required are
      *            specified in the {@code AgeOffConfigParams.TTL}, {@code AgeOffConfigParams.TTL_UNITS}, and {@code AgeOffConfigParams.FILTER_CONFIG}.
+     * @param env
+     *            the iterator environment
      * @see org.apache.accumulo.core.iterators.Filter#init(SortedKeyValueIterator, Map, IteratorEnvironment)
      */
     @Override
@@ -304,6 +329,7 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
         super.init(source, options, env);
 
         myEnv = env;
+        pluginEnv = env == null ? null : env.getPluginEnv();
         disabled = shouldDisableForNonFullCompaction(options, env) || shouldDisableForNonUserCompaction(options, env);
 
         Preconditions.checkNotNull(options, "Configuration filename and " + "the default ttl must be set for the ConfigurableAgeOffFilter");
@@ -326,7 +352,9 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
      * </ul>
      *
      * @param options
+     *            map of options
      * @param env
+     *            the iterator environment
      * @return true only if we should disable filtering
      */
     private boolean shouldDisableForNonFullCompaction(Map<String,String> options, IteratorEnvironment env) {
@@ -366,7 +394,9 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
      * </ul>
      *
      * @param options
+     *            map of options
      * @param env
+     *            the iterator environment
      * @return true only if we should disable filtering
      */
     private boolean shouldDisableForNonUserCompaction(Map<String,String> options, IteratorEnvironment env) {
@@ -398,12 +428,13 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
     }
 
     /**
-     * This method instantiates the the necessary implementations of the {@code Filter} interface, as they are defined in the configuration file specified by
+     * This method instantiates the necessary implementations of the {@code Filter} interface, as they are defined in the configuration file specified by
      * {@code this.filename}.
      *
      * @throws IllegalArgumentException
      *             if there is an error in the configuration file
      * @throws IOException
+     *             if there is an error reading the configuration file
      */
     private void initFilterRules() throws IllegalArgumentException, IOException {
         // filename
@@ -458,12 +489,10 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
     }
 
     private long getLongProperty(final String prop, final long defaultValue) {
-        if (this.myEnv != null && this.myEnv.getConfig() != null) {
-            AccumuloConfiguration conf = this.myEnv.getConfig();
-            Map<String,String> properties = new TreeMap<>();
-            conf.getProperties(properties, p -> Objects.equals(prop, p));
-            if (properties.containsKey(prop)) {
-                return Long.parseLong(properties.get(prop));
+        if (pluginEnv != null && pluginEnv.getConfiguration() != null) {
+            String propValue = pluginEnv.getConfiguration().get(prop);
+            if (propValue != null) {
+                return Long.parseLong(propValue);
             }
         }
         return defaultValue;

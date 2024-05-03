@@ -2,8 +2,8 @@ package datawave.query.planner;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
@@ -11,12 +11,11 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.LockSupport;
 
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
@@ -24,11 +23,11 @@ import com.google.common.collect.Lists;
 
 import datawave.common.util.MultiComparator;
 import datawave.common.util.concurrent.BoundedBlockingQueue;
-import datawave.core.iterators.ColumnQualifierRangeIterator;
 import datawave.query.CloseableIterable;
 import datawave.query.iterator.QueryIterator;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.tld.TLDQueryIterator;
+import datawave.query.util.count.CountMapSerDe;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.configuration.QueryData;
@@ -45,21 +44,18 @@ public class ThreadedRangeBundlerIterator implements Iterator<QueryData>, Closea
     private final BlockingQueue<QueryPlan> rangeQueue;
 
     private QueryData next = null;
-    private Object producerLock = new Object();
+    private final Object producerLock = new Object();
 
     private RangeConsumer rangeConsumer;
     private Thread rangeConsumerThread;
 
     private int producerCount = 0;
     private long rangesProcessed = 0;
-    private int docsToCombine;
 
     private final Text holder = new Text();
     private long eventRanges = 0, shardDatatypeRanges = 0, shardRanges = 0, dayRanges = 0;
 
     private ASTJexlScript queryTree;
-
-    private boolean docSpecificLimitOverride;
 
     protected boolean isTld = false;
 
@@ -67,6 +63,8 @@ public class ThreadedRangeBundlerIterator implements Iterator<QueryData>, Closea
     protected long rangeBufferTimeoutMillis;
     protected long rangeBufferPollMillis;
     protected long startTimeMillis;
+
+    private CountMapSerDe mapSerDe;
 
     private ThreadedRangeBundlerIterator(Builder builder) {
 
@@ -79,12 +77,8 @@ public class ThreadedRangeBundlerIterator implements Iterator<QueryData>, Closea
         this.settings = builder.getSettings();
         this.queryTree = builder.getQueryTree();
 
-        this.docsToCombine = builder.getDocsToCombine();
-
         this.maxWaitValue = builder.getMaxWaitValue();
         this.maxWaitUnit = builder.getMaxWaitUnit();
-
-        this.docSpecificLimitOverride = builder.isDocSpecificLimitOverride();
 
         // TODO Make this smarter based on num-concurrent queries, 'max' size of
         // a range, etc
@@ -156,14 +150,13 @@ public class ThreadedRangeBundlerIterator implements Iterator<QueryData>, Closea
 
                     // if the generated query is larger, use the original
                     if (null != queryTree && (plan.getQueryString().length() > original.getQuery().length())) {
-                        plan.setQuery(original.getQuery(), queryTree);
+                        plan.setQueryTree(queryTree);
+                        plan.withQueryString(original.getQuery());
                     }
                     if (log.isTraceEnabled())
                         log.trace("size of ranges is " + plan.getRanges());
                     // if the generated query is larger, use the original
 
-                    boolean docSpecific = true;
-                    Text row = null;
                     for (Range r : plan.getRanges()) {
                         if (log.isTraceEnabled())
                             log.trace("Adding range" + r);
@@ -179,14 +172,10 @@ public class ThreadedRangeBundlerIterator implements Iterator<QueryData>, Closea
                             if (holder.getLength() > 0) {
                                 if (holder.find("\0") > 0) {
                                     eventRanges++;
-                                    row = sk.getRow();
-                                    docSpecific &= true;
                                 } else {
-                                    docSpecific &= false;
                                     shardDatatypeRanges++;
                                 }
                             } else {
-                                docSpecific &= false;
                                 sk.getRow(holder);
                                 if (holder.find("_") > 0) {
                                     shardRanges++;
@@ -195,81 +184,6 @@ public class ThreadedRangeBundlerIterator implements Iterator<QueryData>, Closea
                                 }
                             }
 
-                        }
-                    }
-
-                    if (docsToCombine > 1 && docSpecific) {
-                        List<QueryPlan> plansToCombine = Lists.newArrayList();
-                        plansToCombine.add(plan);
-                        boolean matchedDocumentRange = true;
-                        // wait 1 ms before we pull the rest
-                        LockSupport.parkNanos(1000);
-                        if (Thread.interrupted()) {
-                            throw new InterruptedException("Interrupted while parking");
-                        }
-                        do {
-                            /**
-                             * We use an arbitrarily small poll time so that we don't cause pull ids too quickly if they aren't there.
-                             */
-                            QueryPlan nextPlan = this.rangeQueue.peek();
-                            // attempt to merge upcoming ranges
-                            if (null != nextPlan) {
-                                for (Range r : nextPlan.getRanges()) {
-                                    if (log.isTraceEnabled())
-                                        log.trace("Adding range" + r);
-                                    if (null == r) {
-
-                                        if (!this.rangeConsumer.isStopped()) {
-                                            log.warn("Consumer is still running, but could not fetch a range in " + this.maxWaitValue + this.maxWaitUnit);
-                                        }
-
-                                    } else {
-                                        Key sk = r.getStartKey();
-                                        sk.getColumnFamily(holder);
-                                        if (holder.getLength() > 0) {
-                                            if (holder.find("\0") > 0) {
-                                                // ensure we are within the same
-                                                // row
-                                                if (row != null && sk.getRow().equals(row)) {
-                                                    matchedDocumentRange &= true;
-                                                } else
-                                                    matchedDocumentRange &= false;
-                                            } else {
-                                                matchedDocumentRange &= false;
-                                                break;
-                                            }
-                                        } else {
-                                            matchedDocumentRange &= false;
-                                            break;
-                                        }
-                                    }
-                                }
-                                if (!matchedDocumentRange) {
-                                    if (plansToCombine.size() > 1) {
-                                        plan = combineDocSpecificPlans(plansToCombine);
-                                    }
-                                    plansToCombine = null;
-                                    break;
-                                    // combine doc specific
-                                } else {
-                                    plansToCombine.add(nextPlan);
-                                    // pop the previous new plan off
-                                    this.rangeQueue.poll();
-                                }
-
-                            } else {
-
-                                if (plansToCombine.size() > 1) {
-                                    plan = combineDocSpecificPlans(plansToCombine);
-                                }
-                                plansToCombine = null;
-                                matchedDocumentRange = false;
-                                break;
-                            }
-                        } while (matchedDocumentRange == true && plansToCombine.size() < docsToCombine);
-
-                        if (null != plansToCombine && plansToCombine.size() > 1) {
-                            plan = combineDocSpecificPlans(plansToCombine);
                         }
                     }
 
@@ -334,59 +248,6 @@ public class ThreadedRangeBundlerIterator implements Iterator<QueryData>, Closea
     }
 
     /**
-     * It is expected that the ranges supplied by plans are in sorted order. In the ThreadedRAngeBundlerIterator, this will always be the case
-     *
-     * @param plans
-     *            incoming list of plans to combine.
-     * @return combined plans
-     * @throws IOException
-     *             Exception produced by the encode range function
-     */
-    private QueryPlan combineDocSpecificPlans(List<QueryPlan> plans) throws IOException {
-        int count = 0;
-        QueryPlan firstPlan = null;
-        IteratorSetting firstQueryIterator = null;
-        if (isTld) {
-            firstQueryIterator = new IteratorSetting(1, TLDQueryIterator.class);
-        } else {
-            firstQueryIterator = new IteratorSetting(1, QueryIterator.class);
-        }
-        for (QueryPlan plan : plans) {
-            if (null == firstPlan) {
-                firstPlan = plan;
-
-                if (null == firstQueryIterator) {
-                    throw new RuntimeException("Expect query iterator");
-                }
-
-                String prevQuery = plan.getQueryString();
-                for (Range range : plan.getRanges()) {
-
-                    firstQueryIterator.addOption(QueryOptions.BATCHED_QUERY_PREFIX + count, prevQuery);
-                    firstQueryIterator.addOption(QueryOptions.BATCHED_QUERY_RANGE_PREFIX + count, ColumnQualifierRangeIterator.encodeRange(range));
-                    count++;
-                }
-            } else {
-                String query = plan.getQueryString();
-                for (Range range : plan.getRanges()) {
-                    firstQueryIterator.addOption(QueryOptions.BATCHED_QUERY_PREFIX + count, query);
-                    firstQueryIterator.addOption(QueryOptions.BATCHED_QUERY_RANGE_PREFIX + count, ColumnQualifierRangeIterator.encodeRange(range));
-                    count++;
-                }
-
-            }
-        }
-        if (null != firstPlan) {
-            Text row = firstPlan.getRanges().iterator().next().getStartKey().getRow();
-            firstPlan.setRanges(Collections.singleton(new Range(row)));
-        }
-        firstQueryIterator.addOption(QueryOptions.BATCHED_QUERY, Integer.toString(count));
-        firstPlan.getSettings().add(firstQueryIterator);
-        return firstPlan;
-
-    }
-
-    /**
      * Determines if we are running a tld query
      *
      * @param settings
@@ -415,50 +276,37 @@ public class ThreadedRangeBundlerIterator implements Iterator<QueryData>, Closea
         final String queryString = plan.getQueryString();
         List<IteratorSetting> settings = Lists.newArrayList();
 
-        IteratorSetting querySettings = null;
-        for (IteratorSetting setting : plan.getSettings()) {
-            String iterClazz = setting.getIteratorClass();
-
-            IteratorSetting newSetting = new IteratorSetting(setting.getPriority(), setting.getName(), iterClazz);
-            newSetting.addOptions(setting.getOptions());
-            if (iterClazz.equals(QueryIterator.class.getCanonicalName()) || iterClazz.equals(TLDQueryIterator.class.getCanonicalName())) {
-                querySettings = setting;
-                break;
-            }
-        }
-
         for (IteratorSetting setting : this.original.getSettings()) {
             String iterClazz = setting.getIteratorClass();
 
             IteratorSetting newSetting = new IteratorSetting(setting.getPriority(), setting.getName(), iterClazz);
             newSetting.addOptions(setting.getOptions());
-            if (iterClazz.equals(QueryIterator.class.getCanonicalName()) || iterClazz.equals(TLDQueryIterator.class.getCanonicalName())) {
-                if (iterClazz.equals(QueryIterator.class.getCanonicalName())) {
-                    if (docSpecificLimitOverride) {
-                        newSetting.addOption(QueryOptions.LIMIT_OVERRIDE, "true");
-                    }
-                }
-                if (null != querySettings) {
-                    if (querySettings.getOptions().get(QueryOptions.BATCHED_QUERY) != null) {
-                        newSetting.addOption(QueryOptions.QUERY, "true==false");
-                        int batches = Integer.parseInt(querySettings.getOptions().get(QueryOptions.BATCHED_QUERY));
-                        newSetting.addOption(QueryOptions.BATCHED_QUERY, querySettings.getOptions().get(QueryOptions.BATCHED_QUERY));
-                        for (int i = 0; i < batches; i++) {
-                            newSetting.addOption(QueryOptions.BATCHED_QUERY_PREFIX + i, querySettings.getOptions().get(QueryOptions.BATCHED_QUERY_PREFIX + i));
-                            newSetting.addOption(QueryOptions.BATCHED_QUERY_RANGE_PREFIX + i,
-                                            querySettings.getOptions().get(QueryOptions.BATCHED_QUERY_RANGE_PREFIX + i));
-                        }
 
-                    } else {
-                        newSetting.addOption(QueryOptions.QUERY, queryString);
-                    }
-                } else
-                    newSetting.addOption(QueryOptions.QUERY, queryString);
-
+            if (plan.getFieldCounts() != null && !plan.getTermCounts().isEmpty()) {
+                newSetting.addOption(QueryOptions.FIELD_COUNTS, getMapSerDe().serializeToString(plan.getFieldCounts()));
             }
+
+            if (plan.getTermCounts() != null && !plan.getTermCounts().isEmpty()) {
+                newSetting.addOption(QueryOptions.TERM_COUNTS, getMapSerDe().serializeToString(plan.getTermCounts()));
+            }
+
             settings.add(newSetting);
         }
-        return new QueryData(queryString, Lists.newArrayList(plan.getRanges()), settings, plan.getColumnFamilies());
+
+        //  @formatter:off
+        return new QueryData()
+                        .withQuery(queryString)
+                        .withRanges(Lists.newArrayList(plan.getRanges()))
+                        .withColumnFamilies(plan.getColumnFamilies())
+                        .withSettings(settings);
+        //  @formatter:on
+    }
+
+    private CountMapSerDe getMapSerDe() {
+        if (mapSerDe == null) {
+            mapSerDe = new CountMapSerDe();
+        }
+        return mapSerDe;
     }
 
     /*
@@ -556,11 +404,9 @@ public class ThreadedRangeBundlerIterator implements Iterator<QueryData>, Closea
         protected ASTJexlScript queryTree;
         protected CloseableIterable<QueryPlan> ranges;
         protected long maxRanges;
-        protected int docsToCombine = -1;
         protected long maxWaitValue;
         protected TimeUnit maxWaitUnit;
         protected Query settings;
-        protected boolean docSpecificLimitOverride = false;
         protected Collection<Comparator<QueryPlan>> queryPlanComparators = null;
         protected int numRangesToBuffer = 0;
         protected long rangeBufferTimeoutMillis = 0;
@@ -602,15 +448,6 @@ public class ThreadedRangeBundlerIterator implements Iterator<QueryData>, Closea
             return this;
         }
 
-        public int getDocsToCombine() {
-            return docsToCombine;
-        }
-
-        public Builder setDocsToCombine(int docsToCombine) {
-            this.docsToCombine = docsToCombine;
-            return this;
-        }
-
         public long getMaxWaitValue() {
             return maxWaitValue;
         }
@@ -635,15 +472,6 @@ public class ThreadedRangeBundlerIterator implements Iterator<QueryData>, Closea
 
         public Builder setSettings(Query settings) {
             this.settings = settings;
-            return this;
-        }
-
-        public boolean isDocSpecificLimitOverride() {
-            return docSpecificLimitOverride;
-        }
-
-        public Builder setDocSpecificLimitOverride(boolean docSpecificLimitOverride) {
-            this.docSpecificLimitOverride = docSpecificLimitOverride;
             return this;
         }
 

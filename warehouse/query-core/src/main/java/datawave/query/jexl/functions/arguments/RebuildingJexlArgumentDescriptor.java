@@ -2,8 +2,8 @@ package datawave.query.jexl.functions.arguments;
 
 import java.util.Set;
 
-import org.apache.commons.jexl2.parser.ASTFunctionNode;
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ASTFunctionNode;
+import org.apache.commons.jexl3.parser.JexlNode;
 
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.util.DateIndexHelper;

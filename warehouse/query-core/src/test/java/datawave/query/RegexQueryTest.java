@@ -15,6 +15,8 @@ import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
 
+import datawave.helpers.PrintUtility;
+import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.DoNotPerformOptimizedQueryException;
 import datawave.query.exceptions.FullTableScansDisallowedException;
 import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods;
@@ -40,12 +42,21 @@ public class RegexQueryTest extends AbstractFunctionalQuery {
 
     @BeforeClass
     public static void filterSetup() throws Exception {
+        Logger.getLogger(PrintUtility.class).setLevel(Level.DEBUG);
         Collection<DataTypeHadoopConfig> dataTypes = new ArrayList<>();
         FieldConfig generic = new GenericCityFields();
+
         generic.addIndexField(CityField.CODE.name());
-        generic.removeIndexField(CityField.CONTINENT.name());
+
         generic.addReverseIndexField(CityField.STATE.name());
+        generic.addTokenizedField(CityField.STATE.name());
+
+        generic.removeIndexField(CityField.CONTINENT.name());
         generic.addReverseIndexField(CityField.CONTINENT.name());
+
+        generic.addIndexField(CityField.COUNTRY.name());
+        generic.addIndexOnlyField(CityField.COUNTRY.name());
+
         dataTypes.add(new CitiesDataType(CityEntry.generic, generic));
 
         accumuloSetup.setData(FileType.CSV, dataTypes);
@@ -86,9 +97,31 @@ public class RegexQueryTest extends AbstractFunctionalQuery {
     public void testMissingIndex() throws Exception {
         log.info("------  testMissingIndex  ------");
         // should at least match France
+        String regex = "'.*?o'";
+        for (final TestCities city : TestCities.values()) {
+            String query = CityField.CITY.name() + " == " + "'" + city.name() + "'" + AND_OP + CityField.ACCESS.name() + RE_OP + regex;
+            runTest(query, query);
+        }
+    }
+
+    @Test(expected = DatawaveFatalQueryException.class)
+    public void testIndexOnlyFails() throws Exception {
+        log.info("------  testIndexOnlyFails  ------");
+        // should at least match France, but we have no reverse index and the field is indexOnly
         String regex = "'.*?e'";
         for (final TestCities city : TestCities.values()) {
             String query = CityField.CITY.name() + " == " + "'" + city.name() + "'" + AND_OP + CityField.COUNTRY.name() + RE_OP + regex;
+            runTest(query, query);
+        }
+    }
+
+    @Test
+    public void testNonEventDelayed() throws Exception {
+        log.info("------  testNonEventDelayed  ------");
+        // should at least match edgeville
+        String regex = "'f.*?'";
+        for (final TestCities city : TestCities.values()) {
+            String query = CityField.CITY.name() + " == " + "'" + city.name() + "'" + AND_OP + CityField.STATE.name() + RE_OP + regex;
             runTest(query, query);
         }
     }
@@ -168,7 +201,7 @@ public class RegexQueryTest extends AbstractFunctionalQuery {
     @Test
     public void testAndNotAgain() throws Exception {
         String query = "(NUM == '2' || NUM == '3') && CITY !~ '.*iSs.*'";
-        String expected = "(NUM == '+aE2' || NUM == '+aE3') && !(((_Delayed_ = true) && (CITY =~ '.*iss.*')))";
+        String expected = "(NUM == '+aE2' || NUM == '+aE3') && !((_Delayed_ = true) && (CITY =~ '.*iss.*'))";
         String plan = getPlan(query, false, false);
         assertEquals(expected, plan);
     }

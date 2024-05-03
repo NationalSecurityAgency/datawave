@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave</groupId>
         <artifactId>datawave-parent</artifactId>
-        <version>6.5.0-SNAPSHOT</version>
+        <version>6.12.0-SNAPSHOT</version>
     </parent>
     <groupId>gov.nsa.datawave.webservices</groupId>
     <artifactId>datawave-ws-parent</artifactId>
@@ -44,7 +44,7 @@
         <version.commons-compress>1.21</version.commons-compress>
         <version.commons-dbutils>1.7</version.commons-dbutils>
         <version.commons-digester>3.2</version.commons-digester>
-        <version.commons-net>3.6</version.commons-net>
+        <version.commons-net>3.9.0</version.commons-net>
         <version.commons-pool2>2.6.1</version.commons-pool2>
         <version.geronimo-activation>1.1</version.geronimo-activation>
         <version.geronimo-stax>1.0.1</version.geronimo-stax>
@@ -506,6 +506,11 @@
             <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-common-test</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
     <build>
         <pluginManagement>
@@ -624,6 +629,18 @@
                         <HADOOP_CONF_DIR>/dev/null</HADOOP_CONF_DIR>
                     </environmentVariables>
                 </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.junit.jupiter</groupId>
+                        <artifactId>junit-jupiter-engine</artifactId>
+                        <version>${version.junit.bom}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.junit.vintage</groupId>
+                        <artifactId>junit-vintage-engine</artifactId>
+                        <version>${version.junit.bom}</version>
+                    </dependency>
+                </dependencies>
                 <executions>
                     <execution>
                         <id>integration-test</id>

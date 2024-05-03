@@ -13,7 +13,7 @@ import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.util.PeekingIterator;
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNode;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Iterators;
@@ -122,8 +122,15 @@ public class ShardRangeStream extends RangeStream {
         }
 
         public QueryPlan apply(Entry<Key,Value> entry) {
-            return new QueryPlan(node, new Range(new Key(entry.getKey().getRow(), entry.getKey().getColumnFamily()), true,
-                            entry.getKey().followingKey(PartialKey.ROW_COLFAM), false));
+            Key key = entry.getKey();
+            Key start = new Key(key.getRow(), key.getColumnFamily());
+            Key end = start.followingKey(PartialKey.ROW_COLFAM);
+            Range range = new Range(start, true, end, false);
+            //  @formatter:off
+            return new QueryPlan()
+                            .withQueryTree(node)
+                            .withRanges(Collections.singleton(range));
+            //  @formatter:on
         }
     }
 }

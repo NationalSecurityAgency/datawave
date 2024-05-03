@@ -1,5 +1,11 @@
 package datawave.query.index.lookup;
 
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DELAYED;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_OR;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_TERM;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.INDEX_HOLE;
+
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
@@ -8,18 +14,13 @@ import java.util.Set;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
-import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
-import org.apache.commons.jexl2.parser.ASTEQNode;
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ASTEQNode;
+import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.log4j.Logger;
 
 import com.google.common.base.Function;
 
 import datawave.query.jexl.JexlNodeFactory;
-import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.util.Tuple2;
@@ -96,7 +97,7 @@ public class EntryParser implements Function<Entry<Key,Value>,Tuple2<String,Inde
                     log.trace("delaying " + currNode + " because it is already delayed" + currNode.jjtGetParent() + "<- parent "
                                     + JexlStringBuildingVisitor.buildQuery(currNode) + " " + date + " " + info.uids.size());
                 }
-                info.applyNode(ASTDelayedPredicate.create(JexlNodeFactory.buildEQNode(fieldName, literal)));
+                info.applyNode(QueryPropertyMarker.create(JexlNodeFactory.buildEQNode(fieldName, literal), DELAYED));
             }
         } else {
             if (log.isTraceEnabled()) {
@@ -108,7 +109,6 @@ public class EntryParser implements Function<Entry<Key,Value>,Tuple2<String,Inde
     }
 
     protected boolean isDelayedPredicate(JexlNode currNode) {
-        return QueryPropertyMarker.findInstance(currNode).isAnyTypeOf(IndexHoleMarkerJexlNode.class, ASTDelayedPredicate.class,
-                        ExceededOrThresholdMarkerJexlNode.class, ExceededTermThresholdMarkerJexlNode.class, ExceededValueThresholdMarkerJexlNode.class);
+        return QueryPropertyMarker.findInstance(currNode).isAnyTypeOf(INDEX_HOLE, DELAYED, EXCEEDED_OR, EXCEEDED_TERM, EXCEEDED_VALUE);
     }
 }

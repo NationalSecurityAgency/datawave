@@ -10,7 +10,8 @@ import java.util.List;
 import java.util.SortedSet;
 import java.util.concurrent.ExecutorService;
 
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.log4j.Logger;
 
 import com.google.common.base.Function;
@@ -144,7 +145,7 @@ public class Intersection extends BaseIndexStream {
                     case DELAYED_FIELD:
                     case UNKNOWN_FIELD:
                     case EXCEEDED_TERM_THRESHOLD:
-                        this.delayedNodes.add(stream.currentNode());
+                        this.delayedNodes.add(JexlNodes.wrap(stream.currentNode()));
                         break;
                     case NO_OP:
                         // this intersection is going to be merged with a parent intersection, do nothing

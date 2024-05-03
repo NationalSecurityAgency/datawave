@@ -230,4 +230,134 @@ public abstract class ShardQueryLogicTest {
         expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID, "MAGIC_COPY:18"));
         runTestQuery(expected, queryString, startDate, endDate, extraParameters);
     }
+
+    @Test
+    public void testRegex() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+
+        String queryString = "UUID=='CAPONE' AND QUOTE=~'.*kind'";
+        Set<Set<String>> expected = new HashSet<>();
+        // todo: make this work someday
+        // expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
+
+        runTestQuery(expected, queryString, format.parse("20091231"), format.parse("20150101"), extraParameters);
+
+    }
+
+    @Test
+    public void testFwdRegex() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+
+        String queryString = "UUID=='CAPONE' AND QUOTE=~'kin.*'";
+        Set<Set<String>> expected = new HashSet<>();
+        // todo: make this work someday
+        // expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
+
+        runTestQuery(expected, queryString, format.parse("20091231"), format.parse("20150101"), extraParameters);
+
+    }
+
+    @Test
+    public void testEvalRegex() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+
+        String queryString = "UUID=='CAPONE' AND ((_Eval_ = true) && QUOTE=~'.*alone')";
+        Set<Set<String>> expected = new HashSet<>();
+        expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
+
+        runTestQuery(expected, queryString, format.parse("20091231"), format.parse("20150101"), extraParameters);
+    }
+
+    @Test
+    public void testNegativeEvalRegex() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+
+        String queryString = "UUID=='CAPONE' AND ((_Eval_ = true) && QUOTE!~'.*alone')";
+        Set<Set<String>> expected = new HashSet<>();
+        runTestQuery(expected, queryString, format.parse("20091231"), format.parse("20150101"), extraParameters);
+
+    }
+
+    @Test
+    public void testNegativeEvalRegexV2() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+
+        String queryString = "UUID=='CAPONE' AND ((_Eval_ = true) && !(QUOTE=~'.*alone'))";
+        Set<Set<String>> expected = new HashSet<>();
+        runTestQuery(expected, queryString, format.parse("20091231"), format.parse("20150101"), extraParameters);
+
+    }
+
+    @Test
+    public void testDoubeWildcard() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+
+        String queryString = "UUID=='CAPONE' AND QUOTE=~'.*ind.*'";
+        Set<Set<String>> expected = new HashSet<>();
+        expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
+
+        runTestQuery(expected, queryString, format.parse("20091231"), format.parse("20150101"), extraParameters);
+    }
+
+    @Test
+    public void testNegativeRegex() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+
+        String queryString = "UUID=='CAPONE' AND QUOTE!~'.*ind'";
+        Set<Set<String>> expected = new HashSet<>();
+        runTestQuery(expected, queryString, format.parse("20091231"), format.parse("20150101"), extraParameters);
+
+    }
+
+    @Test
+    public void testNegativeRegexV2() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+
+        String queryString = "UUID=='CAPONE' AND !(QUOTE=~'.*ind')";
+        Set<Set<String>> expected = new HashSet<>();
+        runTestQuery(expected, queryString, format.parse("20091231"), format.parse("20150101"), extraParameters);
+
+    }
+
+    @Test
+    public void testFilterRegex() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+
+        String queryString = "UUID=='CAPONE' AND filter:includeRegex(QUOTE,'.*kind word alone.*')";
+        Set<Set<String>> expected = new HashSet<>();
+        expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
+
+        runTestQuery(expected, queryString, format.parse("20091231"), format.parse("20150101"), extraParameters);
+    }
+
+    @Test
+    public void testNegativeFilterRegex() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+
+        String queryString = "UUID=='CAPONE' AND !filter:includeRegex(QUOTE,'.*kind word alone.*')";
+        Set<Set<String>> expected = new HashSet<>();
+
+        runTestQuery(expected, queryString, format.parse("20091231"), format.parse("20150101"), extraParameters);
+    }
+
+    @Test
+    public void testNegativeFilterRegexV2() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+
+        String queryString = "UUID=='CAPONE' AND !(filter:includeRegex(QUOTE,'.*kind word alone.*'))";
+        Set<Set<String>> expected = new HashSet<>();
+
+        runTestQuery(expected, queryString, format.parse("20091231"), format.parse("20150101"), extraParameters);
+    }
 }
