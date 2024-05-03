@@ -47,7 +47,6 @@ function no_ctrlc() {
   echo
   if [[ $count == 1 ]]; then
     echo "Are you sure you want to stop the load-job-cache.sh process? Giving you a warning."
-  fi
   else
     echo "Second SIGTERM received, dipping out"
     rm -r -f "$tmpdir"
