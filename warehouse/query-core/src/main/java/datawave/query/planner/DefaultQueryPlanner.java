@@ -229,6 +229,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      */
     public static int maxChildNodesToPrint = 10;
 
+    public static int maxTermsToPrint = 100;
+
     private final long maxRangesPerQueryPiece;
 
     private static Cache<String,Set<String>> allFieldTypeMap = CacheBuilder.newBuilder().maximumSize(100).concurrencyLevel(100)
@@ -1968,9 +1970,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
     public static void logQuery(final ASTJexlScript queryTree, String message) {
         if (log.isTraceEnabled()) {
-            logTrace(PrintingVisitor.formattedQueryStringList(queryTree), message);
+            logTrace(PrintingVisitor.formattedQueryStringList(queryTree, maxChildNodesToPrint, maxTermsToPrint), message);
         } else if (log.isDebugEnabled()) {
-            logDebug(PrintingVisitor.formattedQueryStringList(queryTree, maxChildNodesToPrint), message);
+            logDebug(PrintingVisitor.formattedQueryStringList(queryTree, maxChildNodesToPrint, maxTermsToPrint), message);
         }
     }
 
@@ -3112,6 +3114,14 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
     public static void setMaxChildNodesToPrint(int maxChildNodesToPrint) {
         DefaultQueryPlanner.maxChildNodesToPrint = maxChildNodesToPrint;
+    }
+
+    public static int getMaxTermsToPrint() {
+        return maxTermsToPrint;
+    }
+
+    public static void setMaxTermsToPrint(int maxTermsToPrint) {
+        DefaultQueryPlanner.maxTermsToPrint = maxTermsToPrint;
     }
 
     /**
