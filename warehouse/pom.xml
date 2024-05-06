@@ -13,6 +13,8 @@
         <module>accumulo-extensions</module>
         <module>common</module>
         <module>core</module>
+        <module>age-off</module>
+        <module>age-off-utils</module>
         <module>edge-dictionary-core</module>
         <module>ingest-core</module>
         <module>query-core</module>
