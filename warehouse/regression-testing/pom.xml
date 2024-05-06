@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave</groupId>
         <artifactId>datawave-warehouse-parent</artifactId>
-        <version>6.12.0</version>
+        <version>6.12.1-SNAPSHOT</version>
     </parent>
     <artifactId>datawave-regression-testing</artifactId>
     <name>${project.artifactId}</name>
