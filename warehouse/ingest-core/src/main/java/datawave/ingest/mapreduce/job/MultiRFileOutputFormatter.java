@@ -1,17 +1,13 @@
 package datawave.ingest.mapreduce.job;
 
-import static org.apache.accumulo.core.conf.Property.TABLE_CRYPTO_PREFIX;
-
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-
+import com.google.common.base.Joiner;
+import com.google.common.base.Splitter;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Maps;
+import datawave.ingest.data.config.ingest.AccumuloHelper;
+import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
+import datawave.marking.MarkingFunctions;
+import datawave.util.StringUtils;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.conf.ConfigurationCopy;
@@ -40,17 +36,20 @@ import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputCommitter;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import org.apache.hadoop.mapreduce.v2.api.records.Locality;
 import org.apache.log4j.Logger;
 
-import com.google.common.base.Joiner;
-import com.google.common.base.Splitter;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Maps;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
-import datawave.ingest.data.config.ingest.AccumuloHelper;
-import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
-import datawave.marking.MarkingFunctions;
-import datawave.util.StringUtils;
+import static org.apache.accumulo.core.conf.Property.TABLE_CRYPTO_PREFIX;
 
 public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Value> {
 
@@ -524,7 +523,13 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
         }
 
         return new RecordWriter<BulkIngestKey,Value>() {
+            private LocalityGroupSupport lgSupport;
+            private LocalityGroupSupport.ColumnFamilyToLocalityGroup localColfToLg;
             private String currentLocalityGroup = null;
+            private Text tablePreviousHolder;
+            private Text colfHolder;
+            private Text colfPreviousHolder;
+            private boolean lgResetState;
 
             @Override
             public void write(BulkIngestKey key, Value value) throws IOException {
@@ -539,15 +544,25 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
                     log.trace("Appending " + key.getKey());
                 }
 
-                final Text keyCf = key.getKey().getColumnFamily();
+                final Text tableCurrent = key.getTableName();
+
+                if (!tablePreviousHolder.equals(tableCurrent)) {
+                    tablePreviousHolder.set(tableCurrent);
+                    localColfToLg = lgSupport.getColumnFamilyToLocalityGroup(tableCurrent);
+                }
+
+                key.getKey().getColumnFamily(colfHolder);
+
+                if (colfPreviousHolder == null || )
+
                 final Map<Text,String> cftlg = columnFamilyToLocalityGroup.get(tableName);
                 if (null != cftlg) {
                     String localityGroup = cftlg.get(keyCf);
                     boolean create = false;
-                    if (null == currentLocalityGroup) // defaultLocalityGroup
-                    {
+                    if (null == currentLocalityGroup) {
+                        // defaultLocalityGroup
                         create = true;
-                    } else if (currentLocalityGroup.compareTo(localityGroup) <= 0) {
+                    } else if (!currentLocalityGroup.equals(localityGroup)) {
                         create = true;
                     }
 
