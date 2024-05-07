@@ -66,19 +66,24 @@
         <version.geotools>28.1</version.geotools>
         <version.geowave>1.2.0</version.geowave>
         <version.google-guava>31.1-jre</version.google-guava>
+        <version.google-guava-failure>1.0.1</version.google-guava-failure>
         <version.googlecode-findbugs>2.0.3</version.googlecode-findbugs>
         <version.googlecode-json-simple>1.1.1</version.googlecode-json-simple>
         <version.hadoop>3.3.5</version.hadoop>
         <version.hadoop-shaded>1.1.1</version.hadoop-shaded>
+        <version.hamcrest>1.3</version.hamcrest>
         <version.httpcomponents-httpclient>4.5.13</version.httpcomponents-httpclient>
         <version.httpcomponents-httpcore>4.4.8</version.httpcomponents-httpcore>
         <version.in-memory-accumulo>4.0.0-SNAPSHOT</version.in-memory-accumulo>
         <version.infinispan>9.4.21.Final</version.infinispan>
         <version.jackson>2.10.0.pr1</version.jackson>
         <version.jackson-mapper-asl>1.9.13</version.jackson-mapper-asl>
+        <version.jakarta>2.3.3</version.jakarta>
         <version.javassist>3.24.0-GA</version.javassist>
         <version.javastatsd>3.1.0</version.javastatsd>
         <version.javax-validation>2.0.1.Final</version.javax-validation>
+        <version.jaxb-api>2.3.1</version.jaxb-api>
+        <version.jaxb-impl>2.3.3</version.jaxb-impl>
         <version.jcommander>1.72</version.jcommander>
         <version.jetty>6.1.26</version.jetty>
         <version.jgroups>4.0.19.Final</version.jgroups>
@@ -195,7 +200,7 @@
                 <!-- this is a runtime dependency of guava, no longer included with guava as of 27.1 -->
                 <groupId>com.google.guava</groupId>
                 <artifactId>failureaccess</artifactId>
-                <version>1.0.1</version>
+                <version>${version.google-guava-failure}</version>
             </dependency>
             <dependency>
                 <groupId>com.google.guava</groupId>
@@ -1505,6 +1510,12 @@
                                     <artifactId>log4j</artifactId>
                                 </exclusion>
                             </exclusions>
+                        </dependency>
+                        <!-- Workaround for error: Execution default-cli of goal org.apache.maven.plugins:maven-dependency-plugin:3.1.1:analyze failed: Unsupported class file major version 55 -->
+                        <dependency>
+                            <groupId>org.apache.maven.shared</groupId>
+                            <artifactId>maven-dependency-analyzer</artifactId>
+                            <version>1.11.1</version>
                         </dependency>
                     </dependencies>
                 </plugin>
