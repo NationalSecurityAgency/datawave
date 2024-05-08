@@ -56,6 +56,8 @@ module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.ap
 /system-property=dw.hornetq.system.password:add(value=${hornetq.system.password})
 /system-property=dw.modification.cache.mdb.pool.size:add(value=${modification.cache.mdb.pool.size})
 /system-property=dw.trusted.header.authentication:add(value=${trusted.header.login})
+/system-property=dw.trusted.header.issuerDn:add(value=${trusted.header.issuer-header-name})
+/system-property=dw.trusted.header.subjectDn:add(value=${trusted.header.subject-header-name})
 /system-property=dw.transport.guarantee:add(value=${webapp.transport.guarantee})
 /system-property=dw.connectionPool.default:add(value=WAREHOUSE)
 /system-property=dw.connectionPool.pools:add(value="WAREHOUSE,METRICS,UUID")
@@ -115,6 +117,20 @@ module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.ap
 /system-property=dw.remoteDatawaveUserService.scheme:add(value=${security.remoteuserservice.scheme})
 /system-property=dw.remoteDatawaveUserService.host:add(value=${security.remoteuserservice.host})
 /system-property=dw.remoteDatawaveUserService.port:add(value=${security.remoteuserservice.port})
+
+# Audit microservice config
+/system-property=dw.audit.use.remoteauditservice:add(value=${auditing.use.remoteauditservice})
+/system-property=dw.remoteDatawaveAuditService.useSrvDnsLookup:add(value=${auditing.remoteauditservice.srv.lookup.enabled})
+/system-property=dw.remoteDatawaveAuditService.srvDnsServers:add(value=${auditing.remoteauditservice.srv.lookup.servers})
+/system-property=dw.remoteDatawaveAuditService.srvDnsPort:add(value=${auditing.remoteauditservice.srv.lookup.port})
+/system-property=dw.remoteDatawaveAuditService.scheme:add(value=${auditing.remoteauditservice.scheme})
+/system-property=dw.remoteDatawaveAuditService.host:add(value=${auditing.remoteauditservice.host})
+/system-property=dw.remoteDatawaveAuditService.port:add(value=${auditing.remoteauditservice.port})
+
+# Dictionary microservice config
+/system-property=dw.remoteDictionary.scheme:add(value=${dictionary.remoteservice.scheme})
+/system-property=dw.remoteDictionary.host:add(value=${dictionary.remoteservice.host})
+/system-property=dw.remoteDictionary.port:add(value=${dictionary.remoteservice.port})
 
 # Accumulo microservice config
 /system-property=dw.remoteAccumuloService.useSrvDnsLookup:add(value=${accumulo.remoteservice.srv.lookup.enabled})
@@ -179,7 +195,6 @@ module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.ap
 #
 jms-topic add --topic-address=AccumuloTableCache --entries=topic/AccumuloTableCache
 jms-queue add --queue-address=AccumuloTableCacheDLQ --entries=queue/AccumuloTableCache.DLQ
-jms-queue add --queue-address=QueryMetricsQueue --entries=queue/QueryMetrics
 #/subsystem=messaging-activemq/server=default/:write-attribute(name=security-domain,value=datawave)
 /subsystem=messaging-activemq/server=default/pooled-connection-factory=activemq-ra/:write-attribute(name=max-pool-size,value=${hornetq.datasource.max.pool.size})
 /subsystem=messaging-activemq/server=default/:write-attribute(name=cluster-user,value="${hornetq.cluster.username}")

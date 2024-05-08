@@ -1,32 +1,38 @@
 package datawave.query.jexl.visitors;
 
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.BOUNDED_RANGE;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DROPPED;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EVALUATION_ONLY;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_TERM;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.LENIENT;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.STRICT;
+
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTEQNode;
-import org.apache.commons.jexl2.parser.ASTERNode;
-import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
-import org.apache.commons.jexl2.parser.ASTFunctionNode;
-import org.apache.commons.jexl2.parser.ASTGENode;
-import org.apache.commons.jexl2.parser.ASTGTNode;
-import org.apache.commons.jexl2.parser.ASTLENode;
-import org.apache.commons.jexl2.parser.ASTLTNode;
-import org.apache.commons.jexl2.parser.ASTNENode;
-import org.apache.commons.jexl2.parser.ASTNRNode;
-import org.apache.commons.jexl2.parser.ASTOrNode;
-import org.apache.commons.jexl2.parser.ASTReference;
-import org.apache.commons.jexl2.parser.ASTReferenceExpression;
-import org.apache.commons.jexl2.parser.DroppedExpression;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.JexlNodes;
-import org.apache.commons.jexl2.parser.LenientExpression;
-import org.apache.commons.jexl2.parser.ParserTreeConstants;
-import org.apache.commons.jexl2.parser.StrictExpression;
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTEQNode;
+import org.apache.commons.jexl3.parser.ASTERNode;
+import org.apache.commons.jexl3.parser.ASTFunctionNode;
+import org.apache.commons.jexl3.parser.ASTGENode;
+import org.apache.commons.jexl3.parser.ASTGTNode;
+import org.apache.commons.jexl3.parser.ASTLENode;
+import org.apache.commons.jexl3.parser.ASTLTNode;
+import org.apache.commons.jexl3.parser.ASTNENode;
+import org.apache.commons.jexl3.parser.ASTNRNode;
+import org.apache.commons.jexl3.parser.ASTOrNode;
+import org.apache.commons.jexl3.parser.ASTReferenceExpression;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNodes;
+import org.apache.commons.jexl3.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
 
 import com.google.common.base.Preconditions;
@@ -35,6 +41,7 @@ import com.google.common.collect.Sets;
 
 import datawave.data.normalizer.IpAddressNormalizer;
 import datawave.data.type.IpAddressType;
+import datawave.data.type.OneToManyNormalizerType;
 import datawave.data.type.Type;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
@@ -42,9 +49,7 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlASTHelper.IdentifierOpLiteral;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.LiteralRange;
-import datawave.query.jexl.nodes.BoundedRange;
-import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.DroppedExpression;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.util.MetadataHelper;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
@@ -146,12 +151,12 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
     }
 
     @Override
-    public Object visit(ASTReference node, Object data) {
+    public Object visit(ASTAndNode node, Object data) {
         /**
          * If we have an exceeded value or term predicate we can safely assume that expansion has occurred in the unfielded expansion along with all types
          */
         QueryPropertyMarker.Instance marker = QueryPropertyMarker.findInstance(node);
-        if (marker.isAnyTypeOf(ExceededValueThresholdMarkerJexlNode.class, ExceededTermThresholdMarkerJexlNode.class) || this.expandedNodes.contains(node)) {
+        if (marker.isAnyTypeOf(EXCEEDED_VALUE, EXCEEDED_TERM) || this.expandedNodes.contains(node)) {
             return node;
         }
 
@@ -159,11 +164,11 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
         boolean strict = false;
         boolean lenient = false;
         JexlNode originalSource = null;
-        if (marker.isType(StrictExpression.class)) {
+        if (marker.isType(STRICT)) {
             strict = true;
             data = marker;
             originalSource = copy(marker.getSource());
-        } else if (marker.isType(LenientExpression.class)) {
+        } else if (marker.isType(LENIENT)) {
             lenient = true;
             data = marker;
             originalSource = copy(marker.getSource());
@@ -172,7 +177,7 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
         JexlNode returnNode = null;
         LiteralRange<?> range = JexlASTHelper.findRange().getRange(node);
         if (range != null) {
-            returnNode = expandRangeForNormalizers(range, node, data);
+            returnNode = expandRangeForNormalizers(range, node);
         } else {
             returnNode = (JexlNode) (super.visit(node, data));
         }
@@ -184,7 +189,7 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
 
             // if everything was dropped and we are strict, then wrap the original node with eval only
             if (strict && isAllDropped(returnNode)) {
-                returnNode = ASTEvaluationOnly.create(originalSource);
+                returnNode = QueryPropertyMarker.create(originalSource, EVALUATION_ONLY);
             }
         }
 
@@ -195,10 +200,10 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
         if (node instanceof ASTAndNode) {
             QueryPropertyMarker.Instance marker = QueryPropertyMarker.findInstance(node);
             if (marker.isAnyType()) {
-                return (marker.isType(DroppedExpression.class));
+                return (marker.isType(DROPPED));
             }
         }
-        if (node instanceof ASTAndNode || node instanceof ASTOrNode || node instanceof ASTReferenceExpression || node instanceof ASTReference) {
+        if (node instanceof ASTAndNode || node instanceof ASTOrNode || node instanceof ASTReferenceExpression) {
             for (int i = 0; i < node.jjtGetNumChildren(); i++) {
                 JexlNode child = node.jjtGetChild(i);
                 if (!isAllDropped(child)) {
@@ -211,8 +216,8 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
         return false;
     }
 
-    private JexlNode expandRangeForNormalizers(LiteralRange<?> range, JexlNode node, Object data) {
-        Set<BoundedRange> aliasedBounds = new HashSet<>();
+    private JexlNode expandRangeForNormalizers(LiteralRange<?> range, JexlNode node) {
+        Map<String,JexlNode> aliasedBounds = new HashMap<>();
         String field = range.getFieldName();
 
         // Get all of the indexed or normalized dataTypes for the field name
@@ -244,21 +249,30 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
                 continue;
             }
 
-            aliasedBounds.add(new BoundedRange(JexlNodes.children(new ASTAndNode(ParserTreeConstants.JJTANDNODE), left, right)));
+            // create the range node
+            JexlNode rangeNode = JexlNodes.setChildren(new ASTAndNode(ParserTreeConstants.JJTANDNODE), left, right);
+            rangeNode.jjtSetParent(node.jjtGetParent());
+
+            // create a marked bounded range node
+            JexlNode boundedRange = QueryPropertyMarker.create(rangeNode, BOUNDED_RANGE);
+
+            String rangeString = JexlStringBuildingVisitor.buildQueryWithoutParse(boundedRange);
+            aliasedBounds.putIfAbsent(rangeString, boundedRange);
         }
 
         if (aliasedBounds.isEmpty()) {
             return node;
         } else {
-            this.expandedNodes.addAll(aliasedBounds);
+            this.expandedNodes.addAll(aliasedBounds.values());
 
             // Avoid extra parens around the expansion
             if (1 == aliasedBounds.size()) {
-                return aliasedBounds.iterator().next();
+                return aliasedBounds.values().iterator().next();
             } else {
                 // ensure we wrap bounded ranges in parens for certain edge cases
-                List<ASTReferenceExpression> var = JexlASTHelper.wrapInParens(new ArrayList(aliasedBounds));
-                return JexlNodes.wrap(JexlNodes.children(new ASTOrNode(ParserTreeConstants.JJTORNODE), var.toArray(new JexlNode[var.size()])));
+                List<ASTReferenceExpression> var = JexlASTHelper.wrapInParens(new ArrayList(aliasedBounds.values()));
+                JexlNode finalNode = JexlNodes.setChildren(new ASTOrNode(ParserTreeConstants.JJTORNODE), var.toArray(new JexlNode[0]));
+                return (node.jjtGetParent() instanceof ASTReferenceExpression) ? finalNode : JexlNodes.wrap(finalNode);
             }
         }
     }
@@ -281,10 +295,10 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
 
             // Determine whether this was explicitly marked as strict.
             boolean strict = config.getStrictFields().contains(fieldName)
-                            || (data instanceof QueryPropertyMarker.Instance && ((QueryPropertyMarker.Instance) data).isType(StrictExpression.class));
+                            || (data instanceof QueryPropertyMarker.Instance && ((QueryPropertyMarker.Instance) data).isType(STRICT));
             // Determine whether this was explicitly marked as lenient.
             boolean lenient = config.getLenientFields().contains(fieldName)
-                            || (data instanceof QueryPropertyMarker.Instance && ((QueryPropertyMarker.Instance) data).isType(LenientExpression.class));
+                            || (data instanceof QueryPropertyMarker.Instance && ((QueryPropertyMarker.Instance) data).isType(LENIENT));
 
             if (strict && lenient) {
                 log.warn("Field " + fieldName + " marked both as strict and lenient.  Applying neither");
@@ -306,14 +320,33 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
                     // Build up a set of normalized terms using each normalizer
                     for (Type<?> normalizer : dataTypes) {
                         try {
-                            String normTerm = ((node instanceof ASTNRNode || node instanceof ASTERNode) ? normalizer.normalizeRegex(term)
-                                            : normalizer.normalize(term));
-                            if (!normalizedTerms.contains(normTerm)) {
-                                if (log.isDebugEnabled()) {
-                                    log.debug("normalizedTerm = " + normTerm);
+                            if (normalizer instanceof OneToManyNormalizerType && ((OneToManyNormalizerType<?>) normalizer).expandAtQueryTime()) {
+                                List<String> normTerms = ((OneToManyNormalizerType<?>) normalizer).normalizeToMany(term);
+                                if (normTerms.size() == 1) {
+                                    String normTerm = normTerms.iterator().next();
+                                    normalizedTerms.add(normTerm);
+                                    normalizedNodes.add(JexlNodeFactory.buildUntypedNode(node, fieldName, normTerm));
+                                } else {
+                                    List<JexlNode> normalizedOneToManyNodes = Lists.newArrayList();
+                                    Iterator<String> iter = normTerms.iterator();
+                                    while (iter.hasNext()) {
+                                        normalizedOneToManyNodes.add(JexlNodeFactory.buildUntypedNode(node, fieldName, iter.next()));
+                                    }
+
+                                    JexlNode oneToManyNode = JexlNodeFactory.createAndNode(normalizedOneToManyNodes);
+                                    normalizedNodes.add(oneToManyNode);
                                 }
-                                normalizedTerms.add(normTerm);
-                                normalizedNodes.add(JexlNodeFactory.buildUntypedNode(node, fieldName, normTerm));
+
+                            } else {
+                                String normTerm = ((node instanceof ASTNRNode || node instanceof ASTERNode) ? normalizer.normalizeRegex(term)
+                                                : normalizer.normalize(term));
+                                if (!normalizedTerms.contains(normTerm)) {
+                                    if (log.isDebugEnabled()) {
+                                        log.debug("normalizedTerm = " + normTerm);
+                                    }
+                                    normalizedTerms.add(normTerm);
+                                    normalizedNodes.add(JexlNodeFactory.buildUntypedNode(node, fieldName, normTerm));
+                                }
                             }
                         } catch (IpAddressNormalizer.Exception ipex) {
                             if (!(node instanceof ASTNRNode || node instanceof ASTERNode)) {
@@ -332,7 +365,8 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
                                         JexlNode leNode = JexlNodeFactory.buildNode(new ASTLENode(ParserTreeConstants.JJTLENODE), fieldName, lowHi[1]);
 
                                         // now link em up
-                                        normalizedNodes.add(BoundedRange.create(JexlNodeFactory.createAndNode(Arrays.asList(geNode, leNode))));
+                                        normalizedNodes.add(QueryPropertyMarker.create(JexlNodeFactory.createAndNode(Arrays.asList(geNode, leNode)),
+                                                        BOUNDED_RANGE));
                                     }
                                 } catch (Exception ex) {
                                     if (log.isTraceEnabled()) {
@@ -403,9 +437,12 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
 
                     // wrap the node if required
                     if (evaluationOnly) {
-                        nodeToReturn = ASTEvaluationOnly.create(nodeToReturn);
+                        nodeToReturn = QueryPropertyMarker.create(nodeToReturn, EVALUATION_ONLY);
                     } else if (droppedExpression) {
-                        nodeToReturn = DroppedExpression.create(nodeToReturn, "Normalizations failed and not strict");
+                        nodeToReturn = QueryPropertyMarker.create(
+                                        new DroppedExpression(JexlStringBuildingVisitor.buildQuery(nodeToReturn), "Normalizations failed and not strict")
+                                                        .getJexlNode(),
+                                        DROPPED);
                     }
 
                 } catch (Exception e) {

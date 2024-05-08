@@ -5,7 +5,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
 
 import datawave.query.CloseableIterable;
 import datawave.webservice.query.Query;
@@ -142,6 +142,8 @@ public class ThreadedRangeBundler implements CloseableIterable<QueryData> {
         private long maxRanges;
         private Query settings;
         private ASTJexlScript queryTree;
+        private boolean docSpecificLimitOverride;
+        private int docsToCombine = -1;
         private long maxRangeWaitMillis = 50L;
         private Collection<Comparator<QueryPlan>> queryPlanComparators;
         private int numRangesToBuffer;

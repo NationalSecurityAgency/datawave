@@ -2,6 +2,7 @@ package datawave.query.planner;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -14,7 +15,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
@@ -23,7 +24,10 @@ import com.google.common.collect.Lists;
 import datawave.common.util.MultiComparator;
 import datawave.common.util.concurrent.BoundedBlockingQueue;
 import datawave.query.CloseableIterable;
+import datawave.query.iterator.QueryIterator;
+import datawave.query.iterator.QueryOptions;
 import datawave.query.tld.TLDQueryIterator;
+import datawave.query.util.count.CountMapSerDe;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.configuration.QueryData;
@@ -40,7 +44,7 @@ public class ThreadedRangeBundlerIterator implements Iterator<QueryData>, Closea
     private final BlockingQueue<QueryPlan> rangeQueue;
 
     private QueryData next = null;
-    private Object producerLock = new Object();
+    private final Object producerLock = new Object();
 
     private RangeConsumer rangeConsumer;
     private Thread rangeConsumerThread;
@@ -59,6 +63,8 @@ public class ThreadedRangeBundlerIterator implements Iterator<QueryData>, Closea
     protected long rangeBufferTimeoutMillis;
     protected long rangeBufferPollMillis;
     protected long startTimeMillis;
+
+    private CountMapSerDe mapSerDe;
 
     private ThreadedRangeBundlerIterator(Builder builder) {
 
@@ -144,7 +150,8 @@ public class ThreadedRangeBundlerIterator implements Iterator<QueryData>, Closea
 
                     // if the generated query is larger, use the original
                     if (null != queryTree && (plan.getQueryString().length() > original.getQuery().length())) {
-                        plan.setQuery(original.getQuery(), queryTree);
+                        plan.setQueryTree(queryTree);
+                        plan.withQueryString(original.getQuery());
                     }
                     if (log.isTraceEnabled())
                         log.trace("size of ranges is " + plan.getRanges());
@@ -268,14 +275,38 @@ public class ThreadedRangeBundlerIterator implements Iterator<QueryData>, Closea
 
         final String queryString = plan.getQueryString();
         List<IteratorSetting> settings = Lists.newArrayList();
+
         for (IteratorSetting setting : this.original.getSettings()) {
             String iterClazz = setting.getIteratorClass();
 
             IteratorSetting newSetting = new IteratorSetting(setting.getPriority(), setting.getName(), iterClazz);
             newSetting.addOptions(setting.getOptions());
+
+            if (plan.getFieldCounts() != null && !plan.getTermCounts().isEmpty()) {
+                newSetting.addOption(QueryOptions.FIELD_COUNTS, getMapSerDe().serializeToString(plan.getFieldCounts()));
+            }
+
+            if (plan.getTermCounts() != null && !plan.getTermCounts().isEmpty()) {
+                newSetting.addOption(QueryOptions.TERM_COUNTS, getMapSerDe().serializeToString(plan.getTermCounts()));
+            }
+
             settings.add(newSetting);
         }
-        return new QueryData(queryString, Lists.newArrayList(plan.getRanges()), settings, plan.getColumnFamilies());
+
+        //  @formatter:off
+        return new QueryData()
+                        .withQuery(queryString)
+                        .withRanges(Lists.newArrayList(plan.getRanges()))
+                        .withColumnFamilies(plan.getColumnFamilies())
+                        .withSettings(settings);
+        //  @formatter:on
+    }
+
+    private CountMapSerDe getMapSerDe() {
+        if (mapSerDe == null) {
+            mapSerDe = new CountMapSerDe();
+        }
+        return mapSerDe;
     }
 
     /*

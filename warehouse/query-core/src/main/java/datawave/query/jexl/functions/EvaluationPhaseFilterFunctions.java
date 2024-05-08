@@ -15,6 +15,7 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -25,6 +26,7 @@ import org.apache.log4j.Logger;
 import com.google.common.base.CharMatcher;
 import com.google.common.collect.Sets;
 
+import datawave.data.type.util.NumericalEncoder;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.ValueTuple;
 import datawave.query.collections.FunctionalSet;
@@ -210,12 +212,15 @@ public class EvaluationPhaseFilterFunctions {
      * <li>{@code args[2,...]}: the regexes to use to find matches</li>
      * </ul>
      *
+     * Note: As of jexl3, jexl does not consider array parameters to be the same as varargs, so if you expect a variable number of arguments, you must use
+     * varargs.
+     *
      * @param args
      *            the arguments array
      *
      * @return the {@link FunctionalSet} of matches.
      */
-    public static FunctionalSet<ValueTuple> matchesAtLeastCountOf(Object[] args) {
+    public static FunctionalSet<ValueTuple> matchesAtLeastCountOf(Object... args) {
         Object minimumRequired = args[0];
         Object fieldValue = args[1];
         Object[] regexes = Arrays.copyOfRange(args, 2, args.length);
@@ -257,10 +262,20 @@ public class EvaluationPhaseFilterFunctions {
      */
     public static FunctionalSet<ValueTuple> includeRegex(Object fieldValue, String regex) {
         if (fieldValue != null) {
-            Pattern pattern = JexlPatternCache.getPattern(regex);
-            boolean caseInsensitive = regex.matches(CASE_INSENSITIVE);
-            if (isMatchForPattern(pattern, caseInsensitive, fieldValue)) {
-                return FunctionalSet.singleton(getHitTerm(fieldValue));
+            try {
+                Pattern pattern = JexlPatternCache.getPattern(regex);
+                boolean caseInsensitive = regex.matches(CASE_INSENSITIVE);
+                if (isMatchForPattern(pattern, caseInsensitive, fieldValue)) {
+                    return FunctionalSet.singleton(getHitTerm(fieldValue));
+                }
+            } catch (PatternSyntaxException e) {
+                if (NumericalEncoder.isPossiblyEncoded(regex)) {
+                    if (regex.equals(ValueTuple.getNormalizedStringValue(fieldValue))) {
+                        return FunctionalSet.singleton(getHitTerm(fieldValue));
+                    }
+                } else {
+                    throw e;
+                }
             }
         }
         return FunctionalSet.emptySet();
@@ -281,8 +296,9 @@ public class EvaluationPhaseFilterFunctions {
      */
     public static FunctionalSet<ValueTuple> includeRegex(Iterable<?> values, String regex) {
         if (values != null) {
-            final Pattern pattern = JexlPatternCache.getPattern(regex);
-            final boolean caseInsensitive = regex.matches(CASE_INSENSITIVE);
+            try {
+                final Pattern pattern = JexlPatternCache.getPattern(regex);
+                final boolean caseInsensitive = regex.matches(CASE_INSENSITIVE);
             // @formatter:off
             return StreamSupport.stream(values.spliterator(), false)
                             .filter(Objects::nonNull)
@@ -292,6 +308,21 @@ public class EvaluationPhaseFilterFunctions {
                             .map(FunctionalSet::singleton)
                             .orElseGet(FunctionalSet::emptySet);
             // @formatter:on
+            } catch (PatternSyntaxException e) {
+                if (NumericalEncoder.isPossiblyEncoded(regex)) {
+                // @formatter:off
+                return StreamSupport.stream(values.spliterator(), false)
+                        .filter(Objects::nonNull)
+                        .filter((value) -> regex.equals(ValueTuple.getNormalizedStringValue(value)))
+                        .findFirst()
+                        .map(EvaluationPhaseFilterFunctions::getHitTerm)
+                        .map(FunctionalSet::singleton)
+                        .orElseGet(FunctionalSet::emptySet);
+                // @formatter:on
+                } else {
+                    throw e;
+                }
+            }
         }
         return FunctionalSet.emptySet();
     }
@@ -324,15 +355,29 @@ public class EvaluationPhaseFilterFunctions {
      */
     static Stream<ValueTuple> getAllMatchesStream(Iterable<?> values, String regex) {
         if (values != null) {
-            final Pattern pattern = JexlPatternCache.getPattern(regex);
-            final boolean caseInsensitive = regex.matches(CASE_INSENSITIVE);
-            // @formatter:off
-            Stream<ValueTuple> matches = StreamSupport.stream(values.spliterator(), false)
+            try {
+                final Pattern pattern = JexlPatternCache.getPattern(regex);
+                final boolean caseInsensitive = regex.matches(CASE_INSENSITIVE);
+                // @formatter:off
+                Stream<ValueTuple> matches = StreamSupport.stream(values.spliterator(), false)
+                        .filter(Objects::nonNull)
+                        .filter((value) -> isMatchForPattern(pattern, caseInsensitive, value))
+                        .map(EvaluationPhaseFilterFunctions::getHitTerm);
+                // @formatter:on
+                return matches;
+            } catch (PatternSyntaxException e) {
+                if (NumericalEncoder.isPossiblyEncoded(regex)) {
+                    // @formatter:off
+                    Stream<ValueTuple> matches = StreamSupport.stream(values.spliterator(), false)
                             .filter(Objects::nonNull)
-                            .filter((value) -> isMatchForPattern(pattern, caseInsensitive, value))
+                            .filter((value) -> regex.equals(ValueTuple.getNormalizedStringValue(value)))
                             .map(EvaluationPhaseFilterFunctions::getHitTerm);
-            // @formatter:on
-            return matches;
+                    // @formatter:on
+                    return matches;
+                } else {
+                    throw e;
+                }
+            }
         }
         return Collections.EMPTY_LIST.stream();
     }

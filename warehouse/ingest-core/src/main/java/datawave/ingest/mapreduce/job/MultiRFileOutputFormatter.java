@@ -70,7 +70,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
     protected static final String ZOOKEEPERS = PREFIX + ".zookeepers";
     protected static final String FILE_TYPE = MultiRFileOutputFormatter.class.getSimpleName() + ".file_type";
     protected static final String COMPRESSION_TYPE = PREFIX + ".compression";
-    protected static final String COMPRESSION_BLACKLIST = PREFIX + ".compression.table.blacklist";
+    protected static final String COMPRESSION_DISALLOWLIST = PREFIX + ".compression.table.disallowlist";
     protected static final String MAX_RFILE_UNCOMPRESSED_SIZE = PREFIX + ".maxRFileUncompressedSize";
     protected static final String MAX_RFILE_UNDEDUPPED_ENTRIES = PREFIX + ".maxRFileUndeduppedEntries";
     protected static final String GENERATE_MAP_FILE_ROW_KEYS = PREFIX + ".generateMapFileRowKeys";
@@ -118,9 +118,10 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
 
     public static void setCompressionType(Configuration conf, String compressionType) {
         if (compressionType != null) {
-            if (!("snappy".equals(compressionType) || "lzo".equals(compressionType) || "gz".equals(compressionType) || "none".equals(compressionType)))
+            if (!("snappy".equals(compressionType) || "lzo".equals(compressionType) || "gz".equals(compressionType) || "zstd".equals(compressionType)
+                            || "none".equals(compressionType)))
 
-                throw new IllegalArgumentException("compressionType must be one of snappy, lzo, gz, or none");
+                throw new IllegalArgumentException("compressionType must be one of snappy, lzo, gz, zstd, or none");
             conf.set(COMPRESSION_TYPE, compressionType);
         }
     }
@@ -129,21 +130,21 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
         return conf.get(COMPRESSION_TYPE, "gz");
     }
 
-    public static void setCompressionTableBlackList(Configuration conf, Set<String> compressionTableBlackList) {
-        if (compressionTableBlackList != null) {
+    public static void setCompressionTableDisallowList(Configuration conf, Set<String> compressionTableDisallowList) {
+        if (compressionTableDisallowList != null) {
             StringBuilder tableList = new StringBuilder();
-            for (String table : compressionTableBlackList) {
+            for (String table : compressionTableDisallowList) {
                 if (tableList.length() > 0) {
                     tableList.append(',');
                 }
                 tableList.append(table);
             }
-            conf.set(COMPRESSION_BLACKLIST, tableList.toString());
+            conf.set(COMPRESSION_DISALLOWLIST, tableList.toString());
         }
     }
 
-    protected static Set<String> getCompressionTableBlackList(Configuration conf) {
-        String tableListString = conf.get(COMPRESSION_BLACKLIST);
+    protected static Set<String> getCompressionTableDisallowList(Configuration conf) {
+        String tableListString = conf.get(COMPRESSION_DISALLOWLIST);
         if (tableListString == null) {
             return Collections.EMPTY_SET;
         } else {
@@ -398,7 +399,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
         TableConfigurationUtil tcu = new TableConfigurationUtil(conf);
 
         tableIds = tcu.getJobOutputTableNames(conf);
-        Set<String> compressionTableBlackList = getCompressionTableBlackList(conf);
+        Set<String> compressionTableDisallowList = getCompressionTableDisallowList(conf);
         String compressionType = getCompressionType(conf);
         for (String tableName : tableIds) {
             Map<String,String> properties = tcu.getTableProperties(tableName);
@@ -407,7 +408,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
             } else {
                 ConfigurationCopy tableConfig = new ConfigurationCopy(properties);
                 tableConfig.set(Property.TABLE_FILE_COMPRESSION_TYPE.getKey(),
-                                (compressionTableBlackList.contains(tableName) ? new NoCompression().getName() : compressionType));
+                                (compressionTableDisallowList.contains(tableName) ? new NoCompression().getName() : compressionType));
 
                 // the locality groups feature is broken and will be removed in a future MR
                 if (Iterables.contains(localityGroupTables, tableName)) {

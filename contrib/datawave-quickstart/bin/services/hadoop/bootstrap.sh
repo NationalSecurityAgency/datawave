@@ -3,26 +3,39 @@
 DW_HADOOP_SERVICE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # You may override DW_HADOOP_DIST_URI in your env ahead of time, and set as file:///path/to/file.tar.gz for local tarball, if needed
-DW_HADOOP_DIST_URI="${DW_HADOOP_DIST_URI:-http://archive.apache.org/dist/hadoop/common/hadoop-3.3.4/hadoop-3.3.4.tar.gz}"
+# DW_HADOOP_DIST_URI should, if possible, be using https. There are potential security risks by using http.
+DW_HADOOP_DIST_URI="${DW_HADOOP_DIST_URI:-https://dlcdn.apache.org/hadoop/common/hadoop-3.3.6/hadoop-3.3.6.tar.gz}"
+# The sha512 checksum for the tarball. Value should be the hash value only and does not include the file name. Cannot be left blank.
+DW_HADOOP_DIST_SHA512_CHECKSUM="${DW_HADOOP_DIST_SHA512_CHECKSUM:-de3eaca2e0517e4b569a88b63c89fae19cb8ac6c01ff990f1ff8f0cc0f3128c8e8a23db01577ca562a0e0bb1b4a3889f8c74384e609cd55e537aada3dcaa9f8a}"
 DW_HADOOP_DIST="$( downloadTarball "${DW_HADOOP_DIST_URI}" "${DW_HADOOP_SERVICE_DIR}" && echo "${tarball}" )"
 DW_HADOOP_BASEDIR="hadoop-install"
 DW_HADOOP_SYMLINK="hadoop"
 
-DW_HADOOP_DFS_URI="hdfs://localhost:9000"
+# You may override DW_BIND_HOST in your env ahead of time, if needed
+DW_BIND_HOST="${DW_BIND_HOST:-localhost}"
+
+DW_HADOOP_DFS_URI_SERVER="hdfs://${DW_BIND_HOST}:9000"
+DW_HADOOP_DFS_URI_CLIENT="hdfs://${DW_BIND_HOST}:9000"
 DW_HADOOP_MR_INTER_DIR="/jobhist/inter"
 DW_HADOOP_MR_DONE_DIR="/jobhist/done"
-DW_HADOOP_RESOURCE_MANAGER_ADDRESS="localhost:8050"
+DW_HADOOP_RESOURCE_MANAGER_ADDRESS_SERVER="${DW_BIND_HOST}:8050"
+DW_HADOOP_RESOURCE_MANAGER_ADDRESS_CLIENT="${DW_BIND_HOST}:8050"
+
+if [ "${DW_BIND_HOST}" == "0.0.0.0" ] ; then
+  DW_HADOOP_DFS_URI_CLIENT="hdfs://localhost:9000"
+  DW_HADOOP_RESOURCE_MANAGER_ADDRESS_CLIENT="localhost:8050"
+fi
 
 HADOOP_HOME="${DW_CLOUD_HOME}/${DW_HADOOP_SYMLINK}"
 
 # core-site.xml (Format: <property-name><space><property-value>{<newline>})
-DW_HADOOP_CORE_SITE_CONF="fs.defaultFS ${DW_HADOOP_DFS_URI}
-hadoop.tmp.dir file:/${DW_CLOUD_DATA}/hadoop/tmp
+DW_HADOOP_CORE_SITE_CONF="fs.defaultFS ${DW_HADOOP_DFS_URI_SERVER}
+hadoop.tmp.dir file://${DW_CLOUD_DATA}/hadoop/tmp
 io.compression.codecs org.apache.hadoop.io.compress.GzipCodec"
 
 # hdfs-site.xml (Format: <property-name><space><property-value>{<newline>})
 DW_HADOOP_HDFS_SITE_CONF="dfs.namenode.name.dir file://${DW_CLOUD_DATA}/hadoop/nn
-dfs.namenode.secondary.http-address localhost
+dfs.namenode.secondary.http-address ${DW_BIND_HOST}
 dfs.namenode.checkpoint.dir file://${DW_CLOUD_DATA}/hadoop/nnchk
 dfs.datanode.data.dir file://${DW_CLOUD_DATA}/hadoop/dn
 dfs.datanode.handler.count 10
@@ -31,8 +44,8 @@ dfs.replication 1"
 
 DW_HADOOP_MR_HEAPDUMP_DIR="${DW_CLOUD_DATA}/heapdumps"
 # mapred-site.xml (Format: <property-name><space><property-value>{<newline>})
-DW_HADOOP_MAPRED_SITE_CONF="mapreduce.jobhistory.address http://localhost:8020
-mapreduce.jobhistory.webapp.address http://localhost:8021
+DW_HADOOP_MAPRED_SITE_CONF="mapreduce.jobhistory.address http://${DW_BIND_HOST}:8020
+mapreduce.jobhistory.webapp.address http://${DW_BIND_HOST}:8021
 mapreduce.jobhistory.intermediate-done-dir ${DW_HADOOP_MR_INTER_DIR}
 mapreduce.jobhistory.done-dir ${DW_HADOOP_MR_DONE_DIR}
 mapreduce.map.memory.mb 2048
@@ -45,12 +58,12 @@ mapreduce.map.env HADOOP_MAPRED_HOME=${HADOOP_HOME}
 mapreduce.reduce.env HADOOP_MAPRED_HOME=${HADOOP_HOME}"
 
 # yarn-site.xml (Format: <property-name><space><property-value>{<newline>})
-DW_HADOOP_YARN_SITE_CONF="yarn.resourcemanager.scheduler.address localhost:8030
+DW_HADOOP_YARN_SITE_CONF="yarn.resourcemanager.scheduler.address ${DW_BIND_HOST}:8030
 yarn.resourcemanager.scheduler.class org.apache.hadoop.yarn.server.resourcemanager.scheduler.capacity.CapacityScheduler
-yarn.resourcemanager.resource-tracker.address localhost:8025
-yarn.resourcemanager.address ${DW_HADOOP_RESOURCE_MANAGER_ADDRESS}
-yarn.resourcemanager.admin.address localhost:8033
-yarn.resourcemanager.webapp.address localhost:8088
+yarn.resourcemanager.resource-tracker.address ${DW_BIND_HOST}:8025
+yarn.resourcemanager.address ${DW_HADOOP_RESOURCE_MANAGER_ADDRESS_SERVER}
+yarn.resourcemanager.admin.address ${DW_BIND_HOST}:8033
+yarn.resourcemanager.webapp.address ${DW_BIND_HOST}:8088
 yarn.nodemanager.local-dirs ${DW_CLOUD_DATA}/hadoop/yarn/local
 yarn.nodemanager.log-dirs ${DW_CLOUD_DATA}/hadoop/yarn/log
 yarn.nodemanager.aux-services mapreduce_shuffle
@@ -85,6 +98,7 @@ yarn.scheduler.capacity.node-locality-delay 40"
 export HADOOP_HOME
 export HADOOP_CONF_DIR="${HADOOP_HOME}/etc/hadoop"
 export HADOOP_LOG_DIR="${HADOOP_HOME}/logs"
+export YARN_LOG_DIR="${DW_CLOUD_DATA}/hadoop/yarn/log"
 export HADOOP_YARN_HOME="${HADOOP_HOME}"
 export HADOOP_MAPRED_HOME="${HADOOP_HOME}"
 export HADOOP_PID_DIR="${DW_CLOUD_DATA}/hadoop/pids"
@@ -95,7 +109,7 @@ export PATH=${HADOOP_HOME}/bin:$PATH
 
 DW_HADOOP_CMD_START="( cd ${HADOOP_HOME}/sbin && ./start-dfs.sh && ./start-yarn.sh && mapred --daemon start historyserver )"
 DW_HADOOP_CMD_STOP="( cd ${HADOOP_HOME}/sbin && mapred --daemon stop historyserver && ./stop-yarn.sh && ./stop-dfs.sh )"
-DW_HADOOP_CMD_FIND_ALL_PIDS="pgrep -d ' ' -f 'proc_datanode|proc_namenode|proc_secondarynamenode|proc_nodemanager|proc_resourcemanager|mapreduce.v2.hs.JobHistoryServer'"
+DW_HADOOP_CMD_FIND_ALL_PIDS="pgrep -u ${USER} -d ' ' -f 'proc_datanode|proc_namenode|proc_secondarynamenode|proc_nodemanager|proc_resourcemanager|mapreduce.v2.hs.JobHistoryServer'"
 
 function hadoopIsRunning() {
     DW_HADOOP_PID_LIST="$(eval "${DW_HADOOP_CMD_FIND_ALL_PIDS}")"
@@ -105,7 +119,7 @@ function hadoopIsRunning() {
 function hadoopStart() {
     hadoopIsRunning && echo "Hadoop is already running" || eval "${DW_HADOOP_CMD_START}"
     echo
-    info "For detailed status visit 'http://localhost:50070/dfshealth.html#tab-overview' in your browser"
+    info "For detailed status visit 'http://localhost:9870/dfshealth.html#tab-overview' in your browser"
     # Wait for Hadoop to come out of safemode
     ${HADOOP_HOME}/bin/hdfs dfsadmin -safemode wait
 }
@@ -191,7 +205,7 @@ function hadoopUninstall() {
 }
 
 function hadoopInstall() {
-   "${DW_HADOOP_SERVICE_DIR}"/install.sh
+  "${DW_HADOOP_SERVICE_DIR}"/install.sh
 }
 
 function hadoopPrintenv() {

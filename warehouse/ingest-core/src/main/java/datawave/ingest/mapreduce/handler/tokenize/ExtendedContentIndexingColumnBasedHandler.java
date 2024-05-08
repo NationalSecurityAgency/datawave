@@ -68,7 +68,7 @@ import datawave.util.TextUtil;
  * This class creates the following Mutations or Key/Values in addition to those created by the {@link ShardedDataTypeHandler}: <br>
  * <br>
  * <table border="1">
- * <caption></caption>
+ * <caption>ExtendedContentIndexingColumnBased</caption>
  * <tr>
  * <th>Schema Type</th>
  * <th>Use</th>
@@ -147,7 +147,7 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
 
     protected boolean useBase64Encoding = true;
 
-    protected Set<String> termTypeBlacklist = Collections.emptySet();
+    protected Set<String> termTypeDisallowlist = Collections.emptySet();
 
     protected TokenSearch searchUtil;
     protected CharArraySet stopWords;
@@ -162,7 +162,7 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
         conf = context.getConfiguration();
         ingestHelper = (ExtendedContentIngestHelper) getHelper(null);
         tokenHelper = new TokenizationHelper(helper, conf);
-        termTypeBlacklist = new HashSet<>(Arrays.asList(tokenHelper.getTermTypeBlacklist()));
+        termTypeDisallowlist = new HashSet<>(Arrays.asList(tokenHelper.getTermTypeDisallowlist()));
 
         counters = new ContentIndexCounters();
 
@@ -218,9 +218,7 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
     }
 
     /**
-     * This method will block until all of the documents have been written to Accumulo, or a timeout has been reached.
-     *
-     * TODO make the timeout configurable
+     * This method will block until all of the documents have been written to Accumulo, or a timeout has been reached. TODO make the timeout configurable
      */
     @Override
     public void close(TaskAttemptContext context) {

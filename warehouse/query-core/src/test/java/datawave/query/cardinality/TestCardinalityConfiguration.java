@@ -56,7 +56,7 @@ public class TestCardinalityConfiguration {
     }
 
     @Test
-    public void testRemoveCardinalityFieldsFromBlacklist1() {
+    public void testRemoveCardinalityFieldsFromDisallowlist1() {
 
         CardinalityConfiguration config = new CardinalityConfiguration();
         config.setCardinalityUidField("UUID");
@@ -65,15 +65,15 @@ public class TestCardinalityConfiguration {
                 "FIELD_4B", "QUERY_USER|PROTOCOL"}));
 
         // FIELD_2A is in the forward AND reverse model for field FIELD_2
-        Set<String> originalBlacklistFieldsSet = asSet(new String[] {"FIELD1", "FIELD2", "FIELD_2A", "FIELD3"});
-        Set<String> revisedBlacklist = config.getRevisedBlacklistFields(QUERY_MODEL, originalBlacklistFieldsSet);
+        Set<String> originalDisallowlistFieldsSet = asSet(new String[] {"FIELD1", "FIELD2", "FIELD_2A", "FIELD3"});
+        Set<String> revisedDisallowlist = config.getRevisedDisallowlistFields(QUERY_MODEL, originalDisallowlistFieldsSet);
 
-        Assert.assertEquals(3, revisedBlacklist.size());
-        Assert.assertFalse(revisedBlacklist.contains("FIELD_2A"));
+        Assert.assertEquals(3, revisedDisallowlist.size());
+        Assert.assertFalse(revisedDisallowlist.contains("FIELD_2A"));
     }
 
     @Test
-    public void testRemoveCardinalityFieldsFromBlacklist2() {
+    public void testRemoveCardinalityFieldsFromDisalllowlist2() {
 
         CardinalityConfiguration config = new CardinalityConfiguration();
         config.setCardinalityUidField("UUID");
@@ -82,15 +82,15 @@ public class TestCardinalityConfiguration {
                 "FIELD_4B", "QUERY_USER|PROTOCOL"}));
 
         // FIELD_2B is only in the forward model for field FIELD_2
-        Set<String> originalBlacklistFieldsSet = asSet(new String[] {"FIELD1", "FIELD2", "FIELD_2B", "FIELD3"});
-        Set<String> revisedBlacklist = config.getRevisedBlacklistFields(QUERY_MODEL, originalBlacklistFieldsSet);
+        Set<String> originalDisallowlistFieldsSet = asSet(new String[] {"FIELD1", "FIELD2", "FIELD_2B", "FIELD3"});
+        Set<String> revisedDisallowlist = config.getRevisedDisallowlistFields(QUERY_MODEL, originalDisallowlistFieldsSet);
 
-        Assert.assertEquals(3, revisedBlacklist.size());
-        Assert.assertFalse(revisedBlacklist.contains("FIELD_2B"));
+        Assert.assertEquals(3, revisedDisallowlist.size());
+        Assert.assertFalse(revisedDisallowlist.contains("FIELD_2B"));
     }
 
     @Test
-    public void testRemoveCardinalityFieldsFromBlacklist3() {
+    public void testRemoveCardinalityFieldsFromDisallowlist3() {
 
         CardinalityConfiguration config = new CardinalityConfiguration();
         config.setCardinalityUidField("UUID");
@@ -101,13 +101,13 @@ public class TestCardinalityConfiguration {
         // FIELD_2B is only in the forward model for field FIELD_2
         // FIELD_3A is only in the forward model for FIELD_3
         // FIELD_3 included twice -- once directly and once by model
-        Set<String> originalBlacklistFieldsSet = asSet(new String[] {"FIELD1", "FIELD2", "FIELD_3", "FIELD_2B", "FIELD_3A", "FIELD3"});
-        Set<String> revisedBlacklist = config.getRevisedBlacklistFields(QUERY_MODEL, originalBlacklistFieldsSet);
+        Set<String> originalDisallowlistFieldsSet = asSet(new String[] {"FIELD1", "FIELD2", "FIELD_3", "FIELD_2B", "FIELD_3A", "FIELD3"});
+        Set<String> revisedDisallowlist = config.getRevisedDisallowlistFields(QUERY_MODEL, originalDisallowlistFieldsSet);
 
-        Assert.assertEquals(3, revisedBlacklist.size());
-        Assert.assertFalse(revisedBlacklist.contains("FIELD_2B"));
-        Assert.assertFalse(revisedBlacklist.contains("FIELD_3A"));
-        Assert.assertFalse(revisedBlacklist.contains("FIELD_3"));
+        Assert.assertEquals(3, revisedDisallowlist.size());
+        Assert.assertFalse(revisedDisallowlist.contains("FIELD_2B"));
+        Assert.assertFalse(revisedDisallowlist.contains("FIELD_3A"));
+        Assert.assertFalse(revisedDisallowlist.contains("FIELD_3"));
     }
 
     @Test
@@ -164,7 +164,7 @@ public class TestCardinalityConfiguration {
     }
 
     @Test
-    public void testAddCardinalityFieldsToProjectFieldsNoWhitelist() {
+    public void testAddCardinalityFieldsToProjectFieldsNoAllowlist() {
 
         CardinalityConfiguration config = new CardinalityConfiguration();
         config.setCardinalityUidField("UUID");

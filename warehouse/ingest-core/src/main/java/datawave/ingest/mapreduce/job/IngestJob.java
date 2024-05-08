@@ -32,10 +32,12 @@ import java.util.Observer;
 import java.util.Set;
 
 import org.apache.accumulo.core.Constants;
+import org.apache.accumulo.core.client.Accumulo;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.ColumnUpdate;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.KeyValue;
@@ -171,7 +173,7 @@ public class IngestJob implements Tool {
     private String metricsLabelOverride = null;
     protected boolean generateMapFileRowKeys = false;
     protected String compressionType = null;
-    protected final Set<String> compressionTableBlackList = new HashSet<>();
+    protected final Set<String> compressionTableDisallowList = new HashSet<>();
     protected int maxRFileEntries = 0;
     protected long maxRFileSize = 0;
     @SuppressWarnings("rawtypes")
@@ -241,7 +243,7 @@ public class IngestJob implements Tool {
         System.out.println("                     [-ingestMetricsDisabled]");
         System.out.println("                     [-ingestMetricsLabel label]");
         System.out.println("                     [-compressionType lzo|gz]");
-        System.out.println("                     [-compressionTableBlackList table,table,...");
+        System.out.println("                     [-compressionTableDisallowList table,table,...");
         System.out.println("                     [-maxRFileUndeduppedEntries maxEntries]");
         System.out.println("                     [-maxRFileUncompressedSize maxSize]");
         System.out.println("                     [-jobObservers jobObserverClasses]");
@@ -250,6 +252,7 @@ public class IngestJob implements Tool {
 
     @Override
     public int run(String[] args) throws Exception {
+        long setupStart = System.currentTimeMillis();
 
         Logger.getLogger(TypeRegistry.class).setLevel(Level.ALL);
 
@@ -299,19 +302,10 @@ public class IngestJob implements Tool {
             return -1;
         }
 
-        TableConfigurationUtil tableConfigUtil = new TableConfigurationUtil(conf);
-        tableConfigUtil.registerTableNamesFromConfigFiles(conf);
-        tableNames = tableConfigUtil.getJobOutputTableNames(conf);
-
+        this.tableNames = setupAndCacheTables(conf, createTables);
         if (createTables) {
-            boolean wasConfigureTablesSuccessful = tableConfigUtil.configureTables(conf);
-            if (!wasConfigureTablesSuccessful) {
-                return -1;
-            } else
-                log.info("Created tables: " + tableNames + " successfully!");
+            log.info("Created tables: " + tableNames + " successfully!");
         }
-
-        tableConfigUtil.serializeTableConfgurationIntoConf(conf);
 
         // get the source and output hadoop file systems
         FileSystem inputFs = getFileSystem(conf, srcHdfs);
@@ -331,7 +325,6 @@ public class IngestJob implements Tool {
         conf = job.getConfiguration();
 
         setupHandlers(conf);
-
         if (!useMapOnly || !outputMutations) {
             // Calculate the sampled splits, splits file, and set up the partitioner, but not if only doing only a map phase and outputting mutations
             // if not outputting mutations and only doing a map phase, we still need to go through this logic as the MultiRFileOutputFormatter
@@ -375,6 +368,8 @@ public class IngestJob implements Tool {
 
         startDaemonProcesses(conf);
         long start = System.currentTimeMillis();
+        log.info("JOB SETUP TIME: " + (start - setupStart));
+
         job.submit();
         JobID jobID = job.getJobID();
         log.info("JOB ID: " + jobID);
@@ -588,11 +583,11 @@ public class IngestJob implements Tool {
      *            the args
      * @param conf
      *            the config
+     * @return the configuration
      * @throws ClassNotFoundException
      *             if class is not found
      * @throws URISyntaxException
      *             if there are issues with URI syntax
-     * @return the configuration
      */
     protected Configuration parseArguments(String[] args, Configuration conf) throws ClassNotFoundException, URISyntaxException, IllegalArgumentException {
         List<String> activeResources = new ArrayList<>();
@@ -689,7 +684,7 @@ public class IngestJob implements Tool {
             } else if (args[i].equals("-cacheBaseDir")) {
                 cacheBaseDir = args[++i];
             } else if (args[i].equals("-cacheJars")) {
-                String[] jars = StringUtils.trimAndRemoveEmptyStrings(args[++i].split("\\s*,\\s*"));
+                String[] jars = StringUtils.trimAndRemoveEmptyStrings(args[++i].replaceAll("\\s+", "").split(","));
                 for (String jarString : jars) {
                     File jar = new File(jarString);
                     Path file = new Path(cacheBaseDir, jar.getName());
@@ -716,9 +711,9 @@ public class IngestJob implements Tool {
                 generateMapFileRowKeys = true;
             } else if (args[i].equals("-compressionType")) {
                 compressionType = args[++i];
-            } else if (args[i].equals("-compressionTableBlackList")) {
+            } else if (args[i].equals("-compressionTableDisallowList")) {
                 String[] tables = StringUtils.split(args[++i], ',');
-                compressionTableBlackList.addAll(Arrays.asList(tables));
+                compressionTableDisallowList.addAll(Arrays.asList(tables));
             } else if (args[i].equals("-maxRFileUndeduppedEntries")) {
                 maxRFileEntries = Integer.parseInt(args[++i]);
             } else if (args[i].equals("-maxRFileUncompressedSize")) {
@@ -843,7 +838,7 @@ public class IngestJob implements Tool {
         ShardedTableMapFile.setupFile(conf);
 
         conf.setInt(MultiRFileOutputFormatter.EVENT_PARTITION_COUNT, this.reduceTasks * 2);
-        configureMultiRFileOutputFormatter(conf, compressionType, compressionTableBlackList, maxRFileEntries, maxRFileSize, generateMapFileRowKeys);
+        configureMultiRFileOutputFormatter(conf, compressionType, compressionTableDisallowList, maxRFileEntries, maxRFileSize, generateMapFileRowKeys);
         String[] tables = tableNames.toArray(new String[tableNames.size()]);
         DelegatingPartitioner.configurePartitioner(job, conf, tables); // sets the partitioner
     }
@@ -1331,29 +1326,47 @@ public class IngestJob implements Tool {
      *            hadoop configuration
      * @param compressionType
      *            type of compression to use for the output format
-     * @param compressionTableBlackList
+     * @param compressionTableDisallowList
      *            a set of table names for which we will not compress the rfile output
      * @param maxEntries
      *            the max entries
      * @param maxSize
      *            the max size
      */
-    public static void configureMultiRFileOutputFormatter(Configuration config, String compressionType, Set<String> compressionTableBlackList, int maxEntries,
-                    long maxSize) {
-        IngestJob.configureMultiRFileOutputFormatter(config, compressionType, compressionTableBlackList, maxEntries, maxSize, false);
+    public static void configureMultiRFileOutputFormatter(Configuration config, String compressionType, Set<String> compressionTableDisallowList,
+                    int maxEntries, long maxSize) {
+        IngestJob.configureMultiRFileOutputFormatter(config, compressionType, compressionTableDisallowList, maxEntries, maxSize, false);
     }
 
-    public static void configureMultiRFileOutputFormatter(Configuration config, String compressionType, Set<String> compressionTableBlackList, int maxEntries,
-                    long maxSize, boolean generateMapFileRowKeys) {
+    public static void configureMultiRFileOutputFormatter(Configuration config, String compressionType, Set<String> compressionTableDisallowList,
+                    int maxEntries, long maxSize, boolean generateMapFileRowKeys) {
         MultiRFileOutputFormatter.setAccumuloConfiguration(config);
         if (compressionType != null) {
             MultiRFileOutputFormatter.setCompressionType(config, compressionType);
         }
-        if (compressionTableBlackList != null) {
-            MultiRFileOutputFormatter.setCompressionTableBlackList(config, compressionTableBlackList);
+        if (compressionTableDisallowList != null) {
+            MultiRFileOutputFormatter.setCompressionTableDisallowList(config, compressionTableDisallowList);
         }
         MultiRFileOutputFormatter.setRFileLimits(config, maxEntries, maxSize);
         MultiRFileOutputFormatter.setGenerateMapFileRowKeys(config, generateMapFileRowKeys);
+    }
+
+    public static Set<String> setupAndCacheTables(Configuration conf, boolean createTables)
+                    throws IOException, AccumuloException, TableNotFoundException, AccumuloSecurityException {
+        TableConfigurationUtil tableConfigUtil = new TableConfigurationUtil(conf);
+        tableConfigUtil.registerTableNamesFromConfigFiles(conf);
+        Set<String> tableNames = tableConfigUtil.getJobOutputTableNames(conf);
+
+        if (createTables) {
+            boolean wasConfigureTablesSuccessful = tableConfigUtil.configureTables(conf);
+            if (!wasConfigureTablesSuccessful) {
+                throw new RuntimeException("Could not create tables");
+            }
+        }
+
+        tableConfigUtil.serializeTableConfgurationIntoConf(conf);
+
+        return tableNames;
     }
 
     protected void startDaemonProcesses(Configuration configuration) {

@@ -44,12 +44,14 @@ import datawave.webservice.query.cache.ResultsPage;
 import datawave.webservice.query.cache.ResultsPage.Status;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.exception.EmptyObjectException;
+import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.logic.BaseQueryLogic;
 import datawave.webservice.query.logic.BaseQueryLogicTransformer;
 import datawave.webservice.query.logic.DatawaveRoleManager;
 import datawave.webservice.query.logic.EasyRoleManager;
 import datawave.webservice.query.logic.QueryLogic;
 import datawave.webservice.query.logic.QueryLogicTransformer;
+import datawave.webservice.query.logic.filtered.FilteredQueryLogic;
 import datawave.webservice.query.result.EdgeQueryResponseBase;
 import datawave.webservice.query.result.edge.EdgeBase;
 import datawave.webservice.result.BaseQueryResponse;
@@ -453,6 +455,21 @@ public class CompositeQueryLogicTest {
 
     }
 
+    public static class TestFilteredQueryLogic extends FilteredQueryLogic {
+        private boolean filtered;
+
+        public TestFilteredQueryLogic(boolean filtered) {
+            QueryLogic delegate = new TestQueryLogic();
+            setDelegate(delegate);
+            this.filtered = filtered;
+        }
+
+        @Override
+        public boolean isFiltered() {
+            return filtered;
+        }
+    }
+
     @Before
     public void setup() {
         System.setProperty(DnUtils.NPE_OU_PROPERTY, "iamnotaperson");
@@ -596,6 +613,61 @@ public class CompositeQueryLogicTest {
         Assert.assertEquals(1, c.getInitializedLogics().size());
     }
 
+    @Test
+    public void testInitializeOKWithFilter() throws Exception {
+
+        Map<String,QueryLogic<?>> logics = new HashMap<>();
+        logics.put("TestQueryLogic", new TestQueryLogic());
+        logics.put("TestQueryLogic2", new TestFilteredQueryLogic(true));
+
+        QueryImpl settings = new QueryImpl();
+        settings.setPagesize(100);
+        settings.setQueryAuthorizations(auths.toString());
+        settings.setQuery("FOO == 'BAR'");
+        settings.setParameters(new HashSet<>());
+        settings.setId(UUID.randomUUID());
+
+        CompositeQueryLogic c = new CompositeQueryLogic();
+        c.setQueryLogics(logics);
+
+        c.setPrincipal(principal);
+        c.initialize(null, settings, Collections.singleton(auths));
+
+        Assert.assertEquals(1, c.getInitializedLogics().size());
+        // ensure the filtered query logic is actually dropped
+        Assert.assertEquals(0, c.getUninitializedLogics().size());
+    }
+
+    @Test(expected = CompositeLogicException.class)
+    public void testInitializeNotOKWithFilter() throws Exception {
+
+        Map<String,QueryLogic<?>> logics = new HashMap<>();
+        logics.put("TestQueryLogic", new TestQueryLogic() {
+            @Override
+            public GenericQueryConfiguration initialize(AccumuloClient connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations)
+                            throws Exception {
+                throw new Exception("initialize failed");
+            }
+        });
+        logics.put("TestQueryLogic2", new TestFilteredQueryLogic(true));
+
+        QueryImpl settings = new QueryImpl();
+        settings.setPagesize(100);
+        settings.setQueryAuthorizations(auths.toString());
+        settings.setQuery("FOO == 'BAR'");
+        settings.setParameters(new HashSet<>());
+        settings.setId(UUID.randomUUID());
+
+        CompositeQueryLogic c = new CompositeQueryLogic();
+        c.setQueryLogics(logics);
+
+        // testing that we fail despite allMustInitialize to false because the filtered logic does not count
+        c.setAllMustInitialize(false);
+
+        c.setPrincipal(principal);
+        c.initialize(null, settings, Collections.singleton(auths));
+    }
+
     @Test(expected = CompositeLogicException.class)
     public void testInitializeNotOKWithFailure() throws Exception {
 
@@ -693,6 +765,47 @@ public class CompositeQueryLogicTest {
         c.initialize(null, settings, Collections.singleton(auths));
 
         c.getTransformer(settings);
+    }
+
+    @Test
+    public void testInitializeAllFailQueryExceptionCause() throws Exception {
+
+        Map<String,QueryLogic<?>> logics = new HashMap<>();
+        logics.put("TestQueryLogic", new TestQueryLogic() {
+            @Override
+            public GenericQueryConfiguration initialize(AccumuloClient connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations)
+                            throws Exception {
+                throw new Exception("initialize failed");
+            }
+        });
+
+        logics.put("TestQueryLogic2", new TestQueryLogic2() {
+            @Override
+            public GenericQueryConfiguration initialize(AccumuloClient connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations)
+                            throws Exception {
+                throw new RuntimeException(new QueryException("query initialize failed"));
+            }
+        });
+
+        QueryImpl settings = new QueryImpl();
+        settings.setPagesize(100);
+        settings.setQueryAuthorizations(auths.toString());
+        settings.setQuery("FOO == 'BAR'");
+        settings.setParameters(new HashSet<>());
+        settings.setId(UUID.randomUUID());
+
+        CompositeQueryLogic c = new CompositeQueryLogic();
+        c.setAllMustInitialize(true);
+        c.setQueryLogics(logics);
+
+        c.setPrincipal(principal);
+        try {
+            c.initialize(null, settings, Collections.singleton(auths));
+
+            c.getTransformer(settings);
+        } catch (CompositeLogicException e) {
+            Assert.assertEquals("query initialize failed", e.getCause().getCause().getMessage());
+        }
     }
 
     @Test(expected = RuntimeException.class)
@@ -1150,8 +1263,8 @@ public class CompositeQueryLogicTest {
 
         CompositeQueryLogic c = new CompositeQueryLogic();
         // max.results.override is set to -1 when it is not passed in as it is an optional parameter
-        logic1.setMaxResults(1);
-        logic2.setMaxResults(4);
+        logic1.setMaxResults(2); // it can return 4, so this will cap it at 3 (1 more than max)
+        logic2.setMaxResults(1); // it cat return 4, so this will cap it at 2 (1 more than max)
         /**
          * RunningQuery.setupConnection()
          */

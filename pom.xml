@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>gov.nsa.datawave</groupId>
     <artifactId>datawave-parent</artifactId>
-    <version>6.3.0-SNAPSHOT</version>
+    <version>6.13.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>DataWave</name>
     <description>DataWave is a Java-based ingest and query framework that leverages Apache Accumulo to provide fast, secure access to your data.</description>
@@ -26,16 +26,23 @@
         <tag>HEAD</tag>
         <url>https://github.com/NationalSecurityAgency/datawave</url>
     </scm>
+    <distributionManagement>
+        <repository>
+            <id>github-datawave</id>
+            <name>GitHub Datawave Apache Maven Packages</name>
+            <url>https://maven.pkg.github.com/NationalSecurityAgency/datawave</url>
+        </repository>
+    </distributionManagement>
     <properties>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <surefire.forkCount>1C</surefire.forkCount>
-        <version.accumulo>2.1.1</version.accumulo>
+        <version.accumulo>2.1.2</version.accumulo>
         <version.arquillian>1.4.1.Final</version.arquillian>
         <version.arquillian-weld-ee-embedded>1.0.0.Final</version.arquillian-weld-ee-embedded>
         <version.assertj>3.20.2</version.assertj>
-        <version.avro>1.8.2</version.avro>
+        <version.avro>1.11.3</version.avro>
         <version.caffeine>3.1.0</version.caffeine>
         <version.commons-beanutils>1.9.4</version.commons-beanutils>
         <version.commons-cli>1.4</version.commons-cli>
@@ -43,41 +50,48 @@
         <version.commons-collections>3.2.2</version.commons-collections>
         <version.commons-collections4>4.3</version.commons-collections4>
         <version.commons-configuration>1.10</version.commons-configuration>
-        <version.commons-configuration2>2.7</version.commons-configuration2>
+        <version.commons-configuration2>2.8.0</version.commons-configuration2>
         <version.commons-io>2.6</version.commons-io>
-        <version.commons-jexl>2.1.1</version.commons-jexl>
+        <version.commons-jexl3>3.3</version.commons-jexl3>
         <version.commons-lang>2.6</version.commons-lang>
         <version.commons-logging>1.2</version.commons-logging>
         <version.commons-pool>1.6</version.commons-pool>
         <version.commons-text>1.8</version.commons-text>
         <version.curator>5.2.0</version.curator>
         <version.deltaspike>1.9.0</version.deltaspike>
-        <version.easymock>4.0.2</version.easymock>
+        <version.easymock>5.2.0</version.easymock>
         <version.eclipse.emf>2.15.0</version.eclipse.emf>
-        <version.geoserver>2.22.1</version.geoserver>
+        <version.geoserver>2.22.5</version.geoserver>
         <version.geotools>28.1</version.geotools>
         <version.geowave>1.2.0</version.geowave>
         <version.google-guava>31.1-jre</version.google-guava>
+        <version.google-guava-failure>1.0.1</version.google-guava-failure>
         <version.googlecode-findbugs>2.0.3</version.googlecode-findbugs>
         <version.googlecode-json-simple>1.1.1</version.googlecode-json-simple>
         <version.hadoop>3.3.5</version.hadoop>
         <version.hadoop-shaded>1.1.1</version.hadoop-shaded>
+        <version.hamcrest>1.3</version.hamcrest>
         <version.httpcomponents-httpclient>4.5.13</version.httpcomponents-httpclient>
         <version.httpcomponents-httpcore>4.4.8</version.httpcomponents-httpcore>
         <version.in-memory-accumulo>3.0.1</version.in-memory-accumulo>
         <version.infinispan>9.4.21.Final</version.infinispan>
         <version.jackson>2.10.0.pr1</version.jackson>
+        <version.jackson-mapper-asl>1.9.13</version.jackson-mapper-asl>
+        <version.jakarta>2.3.3</version.jakarta>
         <version.javassist>3.24.0-GA</version.javassist>
         <version.javastatsd>3.1.0</version.javastatsd>
         <version.javax-validation>2.0.1.Final</version.javax-validation>
+        <version.jaxb-api>2.3.1</version.jaxb-api>
+        <version.jaxb-impl>2.3.3</version.jaxb-impl>
         <version.jcommander>1.72</version.jcommander>
         <version.jetty>6.1.26</version.jetty>
         <version.jgroups>4.0.19.Final</version.jgroups>
         <version.jjwt>0.11.2</version.jjwt>
+        <version.json>20231013</version.json>
         <version.jts>1.19.0</version.jts>
         <version.junit>4.13.2</version.junit>
-        <version.junit.jupiter>5.5.2</version.junit.jupiter>
-        <version.junit.vintage>5.5.2</version.junit.vintage>
+        <version.junit.bom>5.10.2</version.junit.bom>
+        <version.jython>2.7.2b2</version.jython>
         <version.kryo>2.20</version.kryo>
         <version.kryonet>2.20</version.kryonet>
         <version.log4j2>2.17.2</version.log4j2>
@@ -85,41 +99,41 @@
         <version.maven-install-plugin>2.5.2</version.maven-install-plugin>
         <version.metrics-cdi>1.6.0</version.metrics-cdi>
         <version.microservice.accumulo-api>3.0.0</version.microservice.accumulo-api>
-        <version.microservice.accumulo-utils>3.0.1</version.microservice.accumulo-utils>
+        <version.microservice.accumulo-utils>3.0.2</version.microservice.accumulo-utils>
         <version.microservice.audit-api>3.0.0</version.microservice.audit-api>
         <version.microservice.authorization-api>3.0.0</version.microservice.authorization-api>
         <version.microservice.base-rest-responses>3.0.0</version.microservice.base-rest-responses>
-        <version.microservice.common-utils>2.0.0</version.microservice.common-utils>
+        <version.microservice.common-utils>2.0.1</version.microservice.common-utils>
         <version.microservice.dictionary-api>3.0.0</version.microservice.dictionary-api>
         <version.microservice.metadata-utils>3.0.0</version.microservice.metadata-utils>
         <version.microservice.metrics-reporter>2.0.0</version.microservice.metrics-reporter>
         <version.microservice.query-metric-api>3.0.1-SNAPSHOT</version.microservice.query-metric-api>
-        <version.microservice.type-utils>2.0.1</version.microservice.type-utils>
+        <version.microservice.type-utils>2.0.2</version.microservice.type-utils>
         <version.minlog>1.2</version.minlog>
         <version.mockito>2.23.0</version.mockito>
-        <version.mysql-connector>8.0.16</version.mysql-connector>
+        <version.mysql-connector>8.0.28</version.mysql-connector>
         <version.netty>4.1.42.Final</version.netty>
         <version.objenesis>2.1</version.objenesis>
         <version.picketbox>5.0.3.Final</version.picketbox>
         <version.powermock>2.0.9</version.powermock>
-        <version.protobuf>3.7.1</version.protobuf>
+        <version.protobuf>3.16.3</version.protobuf>
         <version.protostuff>1.6.2</version.protostuff>
         <version.slf4j>1.7.36</version.slf4j>
         <version.spotify-dns>3.1.5</version.spotify-dns>
         <version.spring>5.2.2.RELEASE</version.spring>
         <version.springframework>${version.spring}</version.springframework>
         <version.stream>2.9.6</version.stream>
-        <version.surefire.plugin>3.0.0-M6</version.surefire.plugin>
+        <version.surefire.plugin>3.2.5</version.surefire.plugin>
         <version.thrift>0.17.0</version.thrift>
         <version.weld>3.1.1.Final</version.weld>
         <version.weld-se>3.1.1.Final</version.weld-se>
         <!-- Different version of weld for tests since the Arquillian embedded EE container needs an older version. -->
         <version.weld-test>2.3.5.Final</version.weld-test>
         <version.wildfly>17.0.1.Final</version.wildfly>
-        <version.woodstox-core>5.0.3</version.woodstox-core>
+        <version.woodstox-core>5.4.0</version.woodstox-core>
         <version.woodstox-stax2>3.1.4</version.woodstox-stax2>
         <version.xerces>2.12.2</version.xerces>
-        <version.zookeeper>3.8.1</version.zookeeper>
+        <version.zookeeper>3.8.3</version.zookeeper>
         <!-- Unless a version is duplicated multiple times, just place the version on the dependency in dependencyManagement. -->
     </properties>
     <dependencyManagement>
@@ -183,7 +197,7 @@
                 <!-- this is a runtime dependency of guava, no longer included with guava as of 27.1 -->
                 <groupId>com.google.guava</groupId>
                 <artifactId>failureaccess</artifactId>
-                <version>1.0.1</version>
+                <version>${version.google-guava-failure}</version>
             </dependency>
             <dependency>
                 <groupId>com.google.guava</groupId>
@@ -422,6 +436,10 @@
                         <groupId>org.slf4j</groupId>
                         <artifactId>slf4j-log4j12</artifactId>
                     </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.hadoop</groupId>
+                        <artifactId>hadoop-common</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
             <dependency>
@@ -593,8 +611,8 @@
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
-                <artifactId>commons-jexl</artifactId>
-                <version>${version.commons-jexl}</version>
+                <artifactId>commons-jexl3</artifactId>
+                <version>${version.commons-jexl3}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
@@ -670,17 +688,6 @@
                 <groupId>org.apache.hadoop</groupId>
                 <artifactId>hadoop-client-runtime</artifactId>
                 <version>${version.hadoop}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.hadoop</groupId>
-                <artifactId>hadoop-common</artifactId>
-                <version>${version.hadoop}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>*</groupId>
-                        <artifactId>*</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.apache.hadoop</groupId>
@@ -1050,6 +1057,13 @@
                 <scope>import</scope>
             </dependency>
             <dependency>
+                <groupId>org.junit</groupId>
+                <artifactId>junit-bom</artifactId>
+                <version>${version.junit.bom}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
                 <groupId>org.springframework</groupId>
                 <artifactId>spring-framework-bom</artifactId>
                 <version>${version.springframework}</version>
@@ -1134,12 +1148,6 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>org.junit.jupiter</groupId>
-                <artifactId>junit-jupiter-api</artifactId>
-                <version>${version.junit.jupiter}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-core</artifactId>
                 <version>${version.mockito}</version>
@@ -1167,18 +1175,14 @@
     </dependencyManagement>
     <repositories>
         <repository>
-            <!--
-                This repository is a temporary work-around until we can public artifacts to maven central.
-                This allows us to retrieve released microservice artifacts from our github repository.
-            -->
             <releases>
                 <enabled>true</enabled>
             </releases>
             <snapshots>
                 <enabled>false</enabled>
             </snapshots>
-            <id>datawave-github-mvn-repo</id>
-            <url>https://raw.githubusercontent.com/NationalSecurityAgency/datawave/mvn-repo</url>
+            <id>github-datawave</id>
+            <url>https://maven.pkg.github.com/NationalSecurityAgency/datawave</url>
         </repository>
         <repository>
             <snapshots>
@@ -1197,11 +1201,6 @@
         </repository>
     </repositories>
     <pluginRepositories>
-        <!--
-            This is a temporary work-around until we can publish artifacts to maven central.
-            This allows us to download the read-properties and assert-properties plugins, as
-            well as the datawave code style template for the formatter-maven-plugin.
-        -->
         <pluginRepository>
             <releases>
                 <enabled>true</enabled>
@@ -1209,8 +1208,8 @@
             <snapshots>
                 <enabled>false</enabled>
             </snapshots>
-            <id>datawave-github-mvn-repo</id>
-            <url>https://raw.githubusercontent.com/NationalSecurityAgency/datawave/mvn-repo</url>
+            <id>github-datawave</id>
+            <url>https://maven.pkg.github.com/NationalSecurityAgency/datawave</url>
         </pluginRepository>
     </pluginRepositories>
     <build>
@@ -1358,9 +1357,25 @@
                     </configuration>
                     <dependencies>
                         <dependency>
+                            <groupId>ch.qos.reload4j</groupId>
+                            <artifactId>reload4j</artifactId>
+                            <version>1.2.22</version>
+                        </dependency>
+                        <dependency>
                             <groupId>com.puppycrawl.tools</groupId>
                             <artifactId>checkstyle</artifactId>
                             <version>8.29</version>
+                        </dependency>
+                        <dependency>
+                            <groupId>org.apache.maven.doxia</groupId>
+                            <artifactId>doxia-site-renderer</artifactId>
+                            <version>1.4</version>
+                            <exclusions>
+                                <exclusion>
+                                    <groupId>log4j</groupId>
+                                    <artifactId>log4j</artifactId>
+                                </exclusion>
+                            </exclusions>
                         </dependency>
                     </dependencies>
                     <executions>
@@ -1412,6 +1427,30 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-dependency-plugin</artifactId>
                     <version>3.1.1</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>ch.qos.reload4j</groupId>
+                            <artifactId>reload4j</artifactId>
+                            <version>1.2.22</version>
+                        </dependency>
+                        <dependency>
+                            <groupId>org.apache.maven.doxia</groupId>
+                            <artifactId>doxia-site-renderer</artifactId>
+                            <version>1.4</version>
+                            <exclusions>
+                                <exclusion>
+                                    <groupId>log4j</groupId>
+                                    <artifactId>log4j</artifactId>
+                                </exclusion>
+                            </exclusions>
+                        </dependency>
+                        <!-- Workaround for error: Execution default-cli of goal org.apache.maven.plugins:maven-dependency-plugin:3.1.1:analyze failed: Unsupported class file major version 55 -->
+                        <dependency>
+                            <groupId>org.apache.maven.shared</groupId>
+                            <artifactId>maven-dependency-analyzer</artifactId>
+                            <version>1.11.1</version>
+                        </dependency>
+                    </dependencies>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -1470,9 +1509,14 @@
                     </configuration>
                     <dependencies>
                         <dependency>
-                            <groupId>org.apache.maven.surefire</groupId>
-                            <artifactId>surefire-junit47</artifactId>
-                            <version>${version.surefire.plugin}</version>
+                            <groupId>org.junit.jupiter</groupId>
+                            <artifactId>junit-jupiter-engine</artifactId>
+                            <version>${version.junit.bom}</version>
+                        </dependency>
+                        <dependency>
+                            <groupId>org.junit.vintage</groupId>
+                            <artifactId>junit-vintage-engine</artifactId>
+                            <version>${version.junit.bom}</version>
                         </dependency>
                     </dependencies>
                     <executions>
@@ -1519,6 +1563,24 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-javadoc-plugin</artifactId>
                     <version>3.1.1</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>ch.qos.reload4j</groupId>
+                            <artifactId>reload4j</artifactId>
+                            <version>1.2.22</version>
+                        </dependency>
+                        <dependency>
+                            <groupId>org.apache.maven.doxia</groupId>
+                            <artifactId>doxia-site-renderer</artifactId>
+                            <version>1.7.4</version>
+                            <exclusions>
+                                <exclusion>
+                                    <groupId>log4j</groupId>
+                                    <artifactId>log4j</artifactId>
+                                </exclusion>
+                            </exclusions>
+                        </dependency>
+                    </dependencies>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -1536,6 +1598,7 @@
                     <version>2.7</version>
                     <configuration>
                         <encoding>UTF-8</encoding>
+                        <escapeString>\</escapeString>
                     </configuration>
                     <dependencies>
                         <dependency>
@@ -1556,9 +1619,14 @@
                     <version>${version.surefire.plugin}</version>
                     <dependencies>
                         <dependency>
-                            <groupId>org.apache.maven.surefire</groupId>
-                            <artifactId>surefire-junit47</artifactId>
-                            <version>${version.surefire.plugin}</version>
+                            <groupId>org.junit.jupiter</groupId>
+                            <artifactId>junit-jupiter-engine</artifactId>
+                            <version>${version.junit.bom}</version>
+                        </dependency>
+                        <dependency>
+                            <groupId>org.junit.vintage</groupId>
+                            <artifactId>junit-vintage-engine</artifactId>
+                            <version>${version.junit.bom}</version>
                         </dependency>
                     </dependencies>
                 </plugin>
@@ -1845,6 +1913,17 @@
             </build>
         </profile>
         <profile>
+            <id>quickstart</id>
+            <activation>
+                <property>
+                    <name>quickstart-docker</name>
+                </property>
+            </activation>
+            <modules>
+                <module>contrib/datawave-quickstart/docker</module>
+            </modules>
+        </profile>
+        <profile>
             <id>microservices</id>
             <activation>
                 <property>
@@ -1874,6 +1953,54 @@
                                 <files>
                                     <file>dev.properties</file>
                                     <file>dev-passwords.properties</file>
+                                </files>
+                            </configuration>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
+        </profile>
+        <profile>
+            <id>compose</id>
+            <properties>
+                <build.env>compose</build.env>
+                <env>compose</env>
+            </properties>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>gov.nsa.datawave.plugins</groupId>
+                            <artifactId>read-properties</artifactId>
+                            <configuration>
+                                <files>
+                                    <file>compose.properties</file>
+                                </files>
+                            </configuration>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
+        </profile>
+        <profile>
+            <id>kubernetes</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <properties>
+                <build.env>kubernetes</build.env>
+                <env>kubernetes</env>
+            </properties>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>gov.nsa.datawave.plugins</groupId>
+                            <artifactId>read-properties</artifactId>
+                            <configuration>
+                                <files>
+                                    <file>kubernetes.properties</file>
+                                    <file>kubernetes-passwords.properties</file>
                                 </files>
                             </configuration>
                         </plugin>

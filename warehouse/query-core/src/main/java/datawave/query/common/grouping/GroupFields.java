@@ -1,7 +1,6 @@
 package datawave.query.common.grouping;
 
 import java.io.Serializable;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -13,9 +12,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang.StringUtils;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonValue;
-import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
@@ -314,7 +311,7 @@ public class GroupFields implements Serializable {
 
     // Return a copy of the given set with all identifiers deconstructed.
     private Set<String> deconstructIdentifiers(Set<String> set) {
-        return set.stream().map(JexlASTHelper::deconstructIdentifier).collect(Collectors.toSet());
+        return set.stream().map(JexlASTHelper::deconstructIdentifier).map(String::toUpperCase).collect(Collectors.toSet());
     }
 
     /**
@@ -322,6 +319,8 @@ public class GroupFields implements Serializable {
      *
      * @param modelMap
      *            the map to retrieve alternative field mappings from
+     * @param reverseModelMap
+     *            the reverse model map
      */
     public void remapFields(Multimap<String,String> modelMap, Map<String,String> reverseModelMap) {
         this.groupByFields = remap(this.groupByFields, modelMap);
