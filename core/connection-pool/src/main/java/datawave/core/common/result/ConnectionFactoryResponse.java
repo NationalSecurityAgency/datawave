@@ -77,7 +77,7 @@ public class ConnectionFactoryResponse extends BaseResponse implements HtmlProvi
 
         builder.append("\n");
 
-        builder.append("table.connectionRequests td, table.connectionRequests th {");
+        builder.append("table.connectionRequests td, table.connectionPools th {");
         builder.append("border-colapse: collapse;\n");
         builder.append("border: 1px black solid;\n");
         builder.append("word-wrap: break-word;\n");
