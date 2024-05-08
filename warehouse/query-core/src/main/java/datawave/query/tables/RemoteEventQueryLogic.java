@@ -68,19 +68,16 @@ public class RemoteEventQueryLogic extends BaseRemoteQueryLogic<EventBase> {
 
     @Override
     public Set<String> getOptionalQueryParameters() {
-        // @TODO Get an instanceof the underlying query logic?
         return new ShardQueryLogic().getOptionalQueryParameters();
     }
 
     @Override
     public Set<String> getRequiredQueryParameters() {
-        // @TODO Get an instanceof the underlying query logic?
         return new ShardQueryLogic().getRequiredQueryParameters();
     }
 
     @Override
     public Set<String> getExampleQueries() {
-        // @TODO Get an instanceof the underlying query logic?
         return new ShardQueryLogic().getExampleQueries();
     }
 
