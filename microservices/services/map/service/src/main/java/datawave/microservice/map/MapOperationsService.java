@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.time.Duration;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import org.apache.accumulo.core.client.AccumuloClient;
@@ -16,6 +17,8 @@ import org.geotools.geojson.geom.GeometryJSON;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -32,11 +35,15 @@ import datawave.microservice.map.data.GeoFeature;
 import datawave.microservice.map.data.GeoFeatures;
 import datawave.microservice.map.data.GeoQueryFeatures;
 import datawave.microservice.map.visitor.GeoFeatureVisitor;
+import datawave.microservice.querymetric.BaseQueryMetric;
+import datawave.microservice.querymetric.BaseQueryMetricListResponse;
 import datawave.query.util.MetadataHelperFactory;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.JWTTokenHandler;
 import datawave.webservice.dictionary.data.DataDictionaryBase;
 import datawave.webservice.metadata.MetadataFieldBase;
+import datawave.webservice.query.exception.QueryException;
+import datawave.webservice.query.exception.QueryExceptionType;
 
 @Service
 public class MapOperationsService {
@@ -129,7 +136,7 @@ public class MapOperationsService {
         return "Bearer " + jwtTokenHandler.createTokenFromUsers(userDetails.getPrimaryUser().getName(), userDetails.getProxiedUsers());
     }
     
-    public GeoQueryFeatures getGeoFeatures(String plan, List<String> fieldTypes, boolean expand, DatawaveUserDetails currentUser) {
+    public GeoQueryFeatures getGeoFeaturesForQuery(String plan, List<String> fieldTypes, boolean expand, DatawaveUserDetails currentUser) {
         ASTJexlScript script;
         try {
             script = JexlASTHelper.parseAndFlattenJexlQuery(plan);
@@ -191,7 +198,61 @@ public class MapOperationsService {
         return GeoFeatureVisitor.getGeoFeatures(script, typesByField, geoQueryConfig);
     }
     
-    public GeoFeatures geoFeaturesFromGeometry(String geometry, String geometryType, Boolean createRanges, String rangeType, Integer maxEnvelopes,
+    public GeoQueryFeatures getGeoFeaturesForQueryId(String queryId, DatawaveUserDetails currentUser) throws QueryException {
+        BaseQueryMetricListResponse queryMetricResponse = loadQueryFromMetricsService(queryId, currentUser);
+        
+        GeoQueryFeatures geoQueryFeatures = null;
+        if (queryMetricResponse.getResult().size() == 1) {
+            BaseQueryMetric queryMetric = (BaseQueryMetric) queryMetricResponse.getResult().get(0);
+            String query = queryMetric.getPlan();
+            
+            geoQueryFeatures = getGeoFeaturesForQuery(query, null, false, currentUser);
+        }
+        
+        return geoQueryFeatures;
+    }
+    
+    private BaseQueryMetricListResponse loadQueryFromMetricsService(String queryId, DatawaveUserDetails currentUser) throws QueryException {
+        try {
+            // @formatter:off
+            ResponseEntity<BaseQueryMetricListResponse> responseEntity = webClient
+                    .get()
+                    .uri(UriComponentsBuilder
+                            .fromHttpUrl(mapServiceProperties.getMetricsUri() + queryId)
+                            .toUriString())
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + jwtTokenHandler.createTokenFromUsers(currentUser.getPrimaryUser().getName(), currentUser.getProxiedUsers()))
+                    .retrieve()
+                    .toEntity(BaseQueryMetricListResponse.class)
+                    .doOnError(e -> log.warn("Encountered error while attempting to load query from query metric service", e))
+                    .block(Duration.ofMillis(TimeUnit.SECONDS.toMillis(30)));
+            // @formatter:on
+            
+            QueryException queryException;
+            if (responseEntity != null) {
+                BaseQueryMetricListResponse queryMetricListResponse = responseEntity.getBody();
+                
+                if (responseEntity.getStatusCode() == HttpStatus.OK) {
+                    return queryMetricListResponse;
+                } else {
+                    if (queryMetricListResponse != null && queryMetricListResponse.getExceptions().size() > 0) {
+                        QueryExceptionType exceptionType = queryMetricListResponse.getExceptions().get(0);
+                        queryException = new QueryException(exceptionType.getCode(), exceptionType.getCause(), exceptionType.getMessage());
+                    } else {
+                        queryException = new QueryException("Unknown error occurred while retrieving query metrics for query " + queryId,
+                                        responseEntity.getStatusCodeValue());
+                    }
+                }
+            } else {
+                queryException = new QueryException("Unknown error occurred while retrieving query metrics for query " + queryId);
+            }
+            throw queryException;
+        } catch (Exception e) {
+            log.error("Timed out waiting for query metrics response");
+            throw new QueryException("Timed out waiting for query metrics response", e);
+        }
+    }
+    
+    public GeoFeatures geoFeaturesForGeometry(String geometry, String geometryType, Boolean createRanges, String rangeType, Integer maxEnvelopes,
                     Integer maxExpansion, Boolean optimizeRanges, Integer rangeSplitThreshold, Double maxRangeOverlap, DatawaveUserDetails currentUser) {
         String wkt = geometry;
         if (geometryType.equals("geojson")) {

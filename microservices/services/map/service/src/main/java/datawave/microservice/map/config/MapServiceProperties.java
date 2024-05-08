@@ -8,6 +8,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class MapServiceProperties {
     private String authorizationUri = "https://authorization:8443/authorization/v1/authorize";
     private String dictionaryUri = "https://dictionary:8443/dictionary/data/v1/";
+    private String metricsUri = "https://metrics:8443/querymetric/v1/id/";
     private String metadataTableName;
     private Set<String> geoFields;
     private Set<String> geoWaveFields;
@@ -28,6 +29,14 @@ public class MapServiceProperties {
     
     public void setDictionaryUri(String dictionaryUri) {
         this.dictionaryUri = dictionaryUri;
+    }
+    
+    public String getMetricsUri() {
+        return metricsUri;
+    }
+    
+    public void setMetricsUri(String metricsUri) {
+        this.metricsUri = metricsUri;
     }
     
     public String getMetadataTableName() {

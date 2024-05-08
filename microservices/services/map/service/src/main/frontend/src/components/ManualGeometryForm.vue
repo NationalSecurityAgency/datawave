@@ -230,7 +230,7 @@ function loadFile(selectedFile: File) {
 
 function submitGeometry() {
   console.log('not empty anymore am i');
-  geoQueryFeatures.loadGeoFeaturesFromGeometry(manualGeometryForm.$state);
+  geoQueryFeatures.loadGeoFeaturesForGeometry(manualGeometryForm.$state);
 }
 
 onUnmounted(() => {

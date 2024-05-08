@@ -100,8 +100,6 @@
   </q-dialog>
 </template>
 
-<!-- TODO: ADD FORM VALIDATION -->
-
 <script setup lang="ts">
 import { getActivePinia } from 'pinia';
 import axios from 'axios';
@@ -177,7 +175,6 @@ function getFieldTypeMap() {
 }
 
 function submitQuery() {
-  console.log('not empty anymore am i');
   geoQueryFeatures.loadGeoFeaturesForQuery(
     manualQueryForm.query,
     getFieldTypeMap()

@@ -16,14 +16,12 @@ export const geoFeaturesStore = defineStore('geoQueryFeatures', {
   actions: {
     async loadGeoFeaturesForQuery(
       query: string,
-      fieldTypes?: Map<string, string[]>
+      fieldTypes?: Map<string, string[]>,
+      expand?: boolean
     ) {
-      console.log('backend base path: ' + process.env.BACKEND_BASE_PATH);
-      console.log('query: ' + query);
-
-      const params: { plan: string; fieldTypes?: string; expand: boolean } = {
+      const params: { plan: string; fieldTypes?: string; expand?: boolean } = {
         plan: query,
-        expand: true,
+        expand: expand || false,
       };
 
       let fieldTypesString = '';
@@ -38,7 +36,7 @@ export const geoFeaturesStore = defineStore('geoQueryFeatures', {
       }
 
       api
-        .post('/map/v1/getGeoFeatures', null, {
+        .post('/map/v1/getGeoFeaturesForQuery', null, {
           params: params,
         })
         .then((response) => {
@@ -48,9 +46,25 @@ export const geoFeaturesStore = defineStore('geoQueryFeatures', {
           console.log('Something went wrong? ' + reason);
         });
     },
-    async loadGeoFeaturesFromGeometry(geometryFormData: ManualGeometryForm) {
+    async loadGeoFeaturesForQueryId(queryId: string) {
+      const params: { queryId: string } = {
+        queryId: queryId
+      };
+
       api
-        .post('/map/v1/geoFeaturesFromGeometry', null, {
+        .post('/map/v1/getGeoFeaturesForQueryId', null, {
+          params: params,
+        })
+        .then((response) => {
+          this.geoQueryFeatures[queryId] = response.data;
+        })
+        .catch((reason) => {
+          console.log('Something went wrong? ' + reason);
+        });
+    },
+    async loadGeoFeaturesForGeometry(geometryFormData: ManualGeometryForm) {
+      api
+        .post('/map/v1/geoFeaturesForGeometry', null, {
           params: {
             geometry: geometryFormData.geometry,
             geometryType: geometryFormData.geometryType,
