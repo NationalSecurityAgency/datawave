@@ -138,6 +138,10 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("reduceQueryFields", true);
         defaultValues.put("reduceQueryFieldsPerShard", false);
         updatedValues.put("reduceQueryFieldsPerShard", true);
+        defaultValues.put("rebuildDatatypeFilter", false);
+        updatedValues.put("rebuildDatatypeFilter", true);
+        defaultValues.put("rebuildDatatypeFilterPerShard", false);
+        updatedValues.put("rebuildDatatypeFilterPerShard", true);
         defaultValues.put("reduceTypeMetadata", false);
         updatedValues.put("reduceTypeMetadata", true);
         defaultValues.put("reduceTypeMetadataPerShard", false);

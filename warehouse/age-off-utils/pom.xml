@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>gov.nsa.datawave</groupId>
+        <artifactId>datawave-warehouse-parent</artifactId>
+        <version>6.13.0-SNAPSHOT</version>
+    </parent>
+    <artifactId>datawave-age-off-utils</artifactId>
+    <name>${project.artifactId}</name>
+    <dependencies>
+        <!-- Needed for VisibleForTesting -->
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <scope>compile</scope>
+        </dependency>
+        <!-- For AppliedRule, etc. -->
+        <dependency>
+            <groupId>gov.nsa.datawave</groupId>
+            <artifactId>datawave-age-off</artifactId>
+            <version>${project.version}</version>
+            <scope>compile</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>xml-apis</groupId>
+                    <artifactId>xml-apis</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.accumulo</groupId>
+            <artifactId>accumulo-core</artifactId>
+            <scope>compile</scope>
+        </dependency>
+        <!-- Needed for org.slf4j imports -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <scope>compile</scope>
+        </dependency>
+        <!-- RuleConfigDocument -->
+        <dependency>
+            <groupId>xerces</groupId>
+            <artifactId>xercesImpl</artifactId>
+            <version>${version.xerces}</version>
+            <scope>compile</scope>
+        </dependency>
+        <!-- RuleConfigDocument -->
+        <dependency>
+            <groupId>xml-apis</groupId>
+            <artifactId>xml-apis</artifactId>
+            <version>1.4.01</version>
+            <scope>compile</scope>
+        </dependency>
+        <!-- Test jar for TestFilter, etc. -->
+        <dependency>
+            <groupId>gov.nsa.datawave</groupId>
+            <artifactId>datawave-age-off</artifactId>
+            <version>${project.version}</version>
+            <classifier>tests</classifier>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+</project>

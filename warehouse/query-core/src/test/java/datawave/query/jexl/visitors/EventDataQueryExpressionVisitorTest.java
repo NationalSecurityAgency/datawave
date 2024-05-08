@@ -34,7 +34,6 @@ import datawave.query.attributes.AttributeFactory;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor.ExpressionFilter;
-import datawave.query.predicate.PeekingPredicate;
 import datawave.query.util.MockDateIndexHelper;
 import datawave.query.util.MockMetadataHelper;
 import datawave.query.util.TypeMetadata;

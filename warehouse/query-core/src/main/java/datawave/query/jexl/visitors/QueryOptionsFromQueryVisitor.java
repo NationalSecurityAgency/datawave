@@ -4,9 +4,7 @@ import static org.apache.commons.jexl3.parser.ParserTreeConstants.JJTANDNODE;
 import static org.apache.commons.jexl3.parser.ParserTreeConstants.JJTORNODE;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -22,13 +20,10 @@ import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.ASTStringLiteral;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
-import org.apache.commons.lang3.StringUtils;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableSet;
 
-import datawave.core.query.jexl.visitors.RebuildingVisitor;
-import datawave.query.Constants;
 import datawave.query.QueryParameters;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.attributes.UniqueGranularity;
@@ -53,6 +48,8 @@ import datawave.query.jexl.functions.QueryFunctions;
  * {@code unique_by_minute('field1','field2')}</li>
  * <li>{@code f:unique_by_second()}: Expects a comma-delimited list of fields to be unique with a granularity level of by SECOND, e.g.
  * {@code unique_by_second('field1','field2')}</li>
+ * <li>{@code f:most_recent_unique...} Adding most_recent_ before any unique function will set the most.recent.unique flag to true, e.g.
+ * {@code most_recent_unique_by_day('field1','field2')}</li>
  * <li>{@code f:rename}: Expects a comma-delimited list field/field mappings e.g. {@code f:rename('field1=field2','field3=field4')}</li>
  * </ul>
  */
@@ -64,9 +61,18 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
                     QueryFunctions.UNIQUE_FUNCTION, UniqueFunction.UNIQUE_BY_DAY_FUNCTION, UniqueFunction.UNIQUE_BY_HOUR_FUNCTION,
                     UniqueFunction.UNIQUE_BY_MINUTE_FUNCTION, UniqueFunction.UNIQUE_BY_TENTH_OF_HOUR_FUNCTION, UniqueFunction.UNIQUE_BY_MONTH_FUNCTION,
                     UniqueFunction.UNIQUE_BY_SECOND_FUNCTION, UniqueFunction.UNIQUE_BY_MILLISECOND_FUNCTION, UniqueFunction.UNIQUE_BY_YEAR_FUNCTION,
-                    QueryFunctions.GROUPBY_FUNCTION, QueryFunctions.EXCERPT_FIELDS_FUNCTION, QueryFunctions.NO_EXPANSION,
-                    QueryFunctions.LENIENT_FIELDS_FUNCTION, QueryFunctions.STRICT_FIELDS_FUNCTION, QueryFunctions.SUM, QueryFunctions.MIN, QueryFunctions.MAX,
-                    QueryFunctions.AVERAGE, QueryFunctions.COUNT, QueryFunctions.RENAME_FUNCTION);
+                    QueryFunctions.MOST_RECENT_PREFIX + QueryFunctions.UNIQUE_FUNCTION,
+                    QueryFunctions.MOST_RECENT_PREFIX + UniqueFunction.UNIQUE_BY_DAY_FUNCTION,
+                    QueryFunctions.MOST_RECENT_PREFIX + UniqueFunction.UNIQUE_BY_HOUR_FUNCTION,
+                    QueryFunctions.MOST_RECENT_PREFIX + UniqueFunction.UNIQUE_BY_MINUTE_FUNCTION,
+                    QueryFunctions.MOST_RECENT_PREFIX + UniqueFunction.UNIQUE_BY_TENTH_OF_HOUR_FUNCTION,
+                    QueryFunctions.MOST_RECENT_PREFIX + UniqueFunction.UNIQUE_BY_MONTH_FUNCTION,
+                    QueryFunctions.MOST_RECENT_PREFIX + UniqueFunction.UNIQUE_BY_SECOND_FUNCTION,
+                    QueryFunctions.MOST_RECENT_PREFIX + UniqueFunction.UNIQUE_BY_MILLISECOND_FUNCTION,
+                    QueryFunctions.MOST_RECENT_PREFIX + UniqueFunction.UNIQUE_BY_YEAR_FUNCTION, QueryFunctions.GROUPBY_FUNCTION,
+                    QueryFunctions.EXCERPT_FIELDS_FUNCTION, QueryFunctions.NO_EXPANSION, QueryFunctions.LENIENT_FIELDS_FUNCTION,
+                    QueryFunctions.STRICT_FIELDS_FUNCTION, QueryFunctions.SUM, QueryFunctions.MIN, QueryFunctions.MAX, QueryFunctions.AVERAGE,
+                    QueryFunctions.COUNT, QueryFunctions.RENAME_FUNCTION);
 
     @SuppressWarnings("unchecked")
     public static <T extends JexlNode> T collect(T node, Object data) {
@@ -193,7 +199,16 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
         ASTNamespaceIdentifier nsIdentifier = (ASTNamespaceIdentifier) node.jjtGetChild(0);
         // if this is the f:options function, create a List for the userData to be passed to the child nodes
         if (nsIdentifier.getNamespace().equals(QueryFunctions.QUERY_FUNCTION_NAMESPACE)) {
-            switch (String.valueOf(nsIdentifier.getName())) {
+            String function = String.valueOf(nsIdentifier.getName());
+
+            // check for the most recent flag for the unique functions only
+            boolean mostRecent = function.startsWith(QueryFunctions.MOST_RECENT_PREFIX + QueryFunctions.UNIQUE_FUNCTION);
+            if (mostRecent) {
+                function = function.substring(QueryFunctions.MOST_RECENT_PREFIX.length());
+                optionsMap.put(QueryParameters.MOST_RECENT_UNIQUE, "true");
+            }
+
+            switch (function) {
                 case QueryFunctions.OPTIONS_FUNCTION: {
                     List<String> optionsList = new ArrayList<>();
                     this.visit(node, optionsList);
@@ -239,7 +254,7 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
                 case UniqueFunction.UNIQUE_BY_SECOND_FUNCTION:
                 case UniqueFunction.UNIQUE_BY_TENTH_OF_HOUR_FUNCTION: {
                     UniqueFields uniqueFields = new UniqueFields();
-                    updateUniqueFields(node, uniqueFields, optionsMap, UniqueFunction.findByName(nsIdentifier.getName()));
+                    updateUniqueFields(node, uniqueFields, optionsMap, UniqueFunction.findByName(function));
                     return null;
                 }
                 case QueryFunctions.GROUPBY_FUNCTION: {
