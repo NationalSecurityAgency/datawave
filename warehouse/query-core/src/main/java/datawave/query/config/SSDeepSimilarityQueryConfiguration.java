@@ -33,15 +33,13 @@ public class SSDeepSimilarityQueryConfiguration extends GenericQueryConfiguratio
     /** Used to encode the chunk size as a character which is included in the ranges used to retrieve ngram tuples */
     private ChunkSizeEncoding chunkSizeEncoder;
 
-    private Query query;
-
     private Collection<Range> ranges;
 
     private Multimap<NGramTuple,SSDeepHash> queryMap;
 
     public SSDeepSimilarityQueryConfiguration() {
         super();
-        query = new QueryImpl();
+        setQuery(new QueryImpl());
     }
 
     public SSDeepSimilarityQueryConfiguration(BaseQueryLogic<?> configuredLogic) {
@@ -50,14 +48,6 @@ public class SSDeepSimilarityQueryConfiguration extends GenericQueryConfiguratio
 
     public static SSDeepSimilarityQueryConfiguration create() {
         return new SSDeepSimilarityQueryConfiguration();
-    }
-
-    public Query getQuery() {
-        return query;
-    }
-
-    public void setQuery(Query query) {
-        this.query = query;
     }
 
     public Collection<Range> getRanges() {

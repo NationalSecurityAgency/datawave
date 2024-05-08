@@ -26,8 +26,6 @@ public class RemoteQueryConfiguration extends GenericQueryConfiguration implemen
 
     private String remoteQueryLogic;
 
-    private Query query;
-
     /**
      * Default constructor
      */
@@ -49,7 +47,6 @@ public class RemoteQueryConfiguration extends GenericQueryConfiguration implemen
         // RemoteQueryConfiguration copy
         this.remoteId = other.getRemoteId();
         this.remoteQueryLogic = other.getRemoteQueryLogic();
-        this.query = other.getQuery();
     }
 
     /**
@@ -112,14 +109,6 @@ public class RemoteQueryConfiguration extends GenericQueryConfiguration implemen
 
     public void setRemoteQueryLogic(String remoteQueryLogic) {
         this.remoteQueryLogic = remoteQueryLogic;
-    }
-
-    public Query getQuery() {
-        return query;
-    }
-
-    public void setQuery(Query query) {
-        this.query = query;
     }
 
     @Override

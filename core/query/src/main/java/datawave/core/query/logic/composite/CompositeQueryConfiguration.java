@@ -12,8 +12,6 @@ public class CompositeQueryConfiguration extends GenericQueryConfiguration imple
 
     private Map<String,GenericQueryConfiguration> configs = new HashMap<>();
 
-    private Query query = null;
-
     // Specifies whether all queries must succeed initialization
     private boolean allMustInitialize = false;
 
@@ -22,7 +20,7 @@ public class CompositeQueryConfiguration extends GenericQueryConfiguration imple
 
     public CompositeQueryConfiguration() {
         super();
-        query = new QueryImpl();
+        setQuery(new QueryImpl());
     }
 
     /**
@@ -96,14 +94,6 @@ public class CompositeQueryConfiguration extends GenericQueryConfiguration imple
 
     public void setConfigs(Map<String,GenericQueryConfiguration> configs) {
         this.configs = configs;
-    }
-
-    public Query getQuery() {
-        return query;
-    }
-
-    public void setQuery(Query query) {
-        this.query = query;
     }
 
     public boolean isAllMustInitialize() {

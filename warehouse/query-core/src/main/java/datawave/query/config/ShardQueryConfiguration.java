@@ -378,7 +378,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     // limit expanded terms to only those fields that are defined in the chosen
     // model. drop others
     private boolean shouldLimitTermExpansionToModel = false;
-    private Query query = null;
     private transient ASTJexlScript queryTree = null;
     private boolean compressServerSideResults = false;
     private boolean indexOnlyFilterFunctionsEnabled = false;
@@ -739,17 +738,11 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         // iterator based off of the queries collection if queriesIter is null
         this.setQueriesIter(null);
 
-        this.setTableName(other.getTableName());
         this.setShardTableName(other.getShardTableName());
         this.setModelTableName(other.getModelTableName());
         this.setModelName(other.getModelName());
         this.setMetadataTableName(other.getMetadataTableName());
 
-        this.setAccumuloPassword(other.getAccumuloPassword());
-        this.setBypassAccumulo(other.getBypassAccumulo());
-
-        this.setQuery(other.getQuery());
-        this.setCheckpointable(other.isCheckpointable());
         this.setSpeculativeScanning(other.getSpeculativeScanning());
         this.setMaxDocScanTimeout(other.getMaxDocScanTimeout());
         this.setBackoffEnabled(other.getBackoffEnabled());
@@ -2064,14 +2057,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public QueryStopwatch getTimers() {
         return timers;
-    }
-
-    public Query getQuery() {
-        return query;
-    }
-
-    public void setQuery(Query query) {
-        this.query = query;
     }
 
     public ASTJexlScript getQueryTree() {
