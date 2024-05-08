@@ -10,6 +10,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.data.Key;
@@ -408,25 +409,32 @@ public class QueryData implements ResultContext, Externalizable {
         }
 
         private IteratorSetting getIteratorSetting(JsonNode node) throws JsonProcessingException {
-            IteratorSetting setting = new IteratorSetting(1, "a", "a");
+            int priority = -1;
+            String name = null;
+            String iteratorClass = null;
+            Map<String,String> options = null;
             JsonNode child = node.get("priority");
             if (child != null) {
-                setting.setPriority(child.asInt());
+                priority = child.asInt();
             }
             child = node.get("name");
             if (child != null) {
-                setting.setName(child.asText());
+                name = child.asText();
             }
             child = node.get("iteratorClass");
             if (child != null) {
-                setting.setIteratorClass(child.asText());
+                iteratorClass = child.asText();
             }
             child = node.get("options");
             if (child == null) {
                 child = node.get("properties");
             }
             if (child != null) {
-                setting.addOptions(mapper.treeToValue(child, HashMap.class));
+                options = mapper.treeToValue(child, HashMap.class);
+            }
+            IteratorSetting setting = new IteratorSetting(priority, name, iteratorClass);
+            if (options != null) {
+                setting.addOptions(options);
             }
             return setting;
         }
