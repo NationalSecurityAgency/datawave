@@ -1,16 +1,7 @@
 package datawave.ingest.mapreduce.job;
 
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
+import datawave.ingest.data.config.ingest.AccumuloHelper;
+import datawave.util.TableName;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
@@ -39,8 +30,16 @@ import org.junit.Before;
 import org.junit.Test;
 import org.powermock.api.easymock.PowerMock;
 
-import datawave.ingest.data.config.ingest.AccumuloHelper;
-import datawave.util.TableName;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class MultiRFileOutputFormatterTest {
 
@@ -375,6 +374,23 @@ public class MultiRFileOutputFormatterTest {
                 tableConfigs.put(TableName.SHARD_INDEX, null);
                 tableIds = new HashSet<>(Arrays.asList(TableName.SHARD, TableName.SHARD_INDEX));
 
+                try {
+                    lgSupport = LocalityGroupSupport.builder()
+                        .withLocalityGroupConfiguration(new LocalityGroupConfiguration() {
+                            @Override
+                            public Set<String> getSupportedTables() throws IOException {
+                                return tableConfigs.keySet();
+                            }
+
+                            @Override
+                            public Map<String, Set<Text>> getLocalityGroups(String tableName) throws IOException {
+                                return Map.of();
+                            }
+                        })
+                        .build();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
             }
 
             @Override

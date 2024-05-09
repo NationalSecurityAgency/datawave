@@ -2,14 +2,11 @@ package datawave.ingest.mapreduce.job;
 
 import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 
 import java.io.IOException;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -41,32 +38,27 @@ public class LocalityGroupSupport {
         return new LocalityGroupSupport();
     }
 
+    public static LocalityGroupSupport.Builder builder() {
+        return new Builder();
+    }
+
     public static class Builder {
-        private Configuration conf;
-        private Collection<String> tableNames;
-        private TableConfigurationUtil tcu;
+        private LocalityGroupConfiguration lgConf;
+        private String[] tableNames;
 
-        public Builder(Configuration conf) {
-            this.conf = conf;
-        }
-
-        public Builder withTableNames(Collection<String> tableNames) {
-            this.tableNames = List.copyOf(tableNames);
-            return this;
-        }
-
-        public Builder withTableConfigurationUtil(TableConfigurationUtil tcu) {
-            this.tcu = tcu;
+        public Builder withLocalityGroupConfiguration(LocalityGroupConfiguration lgConf) {
+            this.lgConf = lgConf;
             return this;
         }
 
         public LocalityGroupSupport build() throws IOException {
             LocalityGroupSupport lgs = new LocalityGroupSupport();
-            if (tcu == null) {
-                tcu = new TableConfigurationUtil(conf);
+            if (lgConf == null) {
+                throw new IllegalArgumentException("A locality group configuration is required");
             }
-            for (String tableName : tableNames) {
-                Map<String, Set<Text>> localityGroups = tcu.getLocalityGroups(tableName);
+            Set<String> supportedTables = lgConf.getSupportedTables();
+            for (String tableName : supportedTables) {
+                Map<String, Set<Text>> localityGroups = lgConf.getLocalityGroups(tableName);
                 // pull the locality groups for this table.
                 Map<Text, String> cftlg = new HashMap<>();
                 Map<String, Set<ByteSequence>> lgtcf = new HashMap<>();
@@ -89,11 +81,17 @@ public class LocalityGroupSupport {
         private final Map<Text, String> colfToLg;
         private final int colfMaxLength;
         private final int colfMinLength;
+        private final boolean empty;
 
         ColumnFamilyToLocalityGroup(Map<Text, String> colfToLg) {
             this.colfToLg = colfToLg;
-            this.colfMinLength = colfToLg.keySet().stream().mapToInt(Text::getLength).min().orElseThrow();
-            this.colfMaxLength = colfToLg.keySet().stream().mapToInt(Text::getLength).max().orElseThrow();
+            this.empty = colfToLg.isEmpty();
+            this.colfMinLength = empty ? 0 : colfToLg.keySet().stream().mapToInt(Text::getLength).min().orElseThrow();
+            this.colfMaxLength = empty ? 0 : colfToLg.keySet().stream().mapToInt(Text::getLength).max().orElseThrow();
+        }
+
+        public boolean isEmpty() {
+            return empty;
         }
 
         public int columnFamilyMaxLength() {

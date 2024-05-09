@@ -63,6 +63,9 @@ public class TableConfigurationUtil {
     public static final String TABLE_CONFIGURATION_PROPERTY = ".table.accumulo.configuration";
     public static final String JOB_INPUT_TABLE_NAMES = "job.input.table.names";
     public static final String JOB_OUTPUT_TABLE_NAMES = "job.output.table.names";
+    public final static String JOB_OUTPUT_LOCALITY_GROUP_TABLES_INCLUDE = "job.output.lg.tables.include";
+    public final static String JOB_OUTPUT_LOCALITY_GROUP_TABLES_EXCLUDE = "job.output.lg.tables.exclude";
+
     private AccumuloHelper accumuloHelper;
     private TreeMap<String,Map<Integer,Map<String,String>>> combiners = new TreeMap<>();
     private TreeMap<String,Map<Integer,Map<String,String>>> aggregators = new TreeMap<>();
@@ -90,6 +93,12 @@ public class TableConfigurationUtil {
         }
 
         return tableNames;
+    }
+
+    public static LocalityGroupConfiguration getJobOutputLocalityGroupConfiguration(Configuration conf) {
+        LocalityGroupTableConfiguration lgConf = new LocalityGroupTableConfiguration();
+        lgConf.setConf(conf);
+        return lgConf;
     }
 
     /**

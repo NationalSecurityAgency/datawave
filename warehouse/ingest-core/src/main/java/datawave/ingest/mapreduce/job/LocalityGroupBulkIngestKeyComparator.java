@@ -1,5 +1,6 @@
 package datawave.ingest.mapreduce.job;
 
+import com.google.common.annotations.VisibleForTesting;
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
@@ -8,25 +9,25 @@ import org.apache.hadoop.io.WritableUtils;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.Map;
 
 public class LocalityGroupBulkIngestKeyComparator extends WritableComparator implements Configurable {
     private final static int IDX_TABLE = 0;
     private final static int IDX_COLF = 2;
 
     private final Text tableHolder;
+    private final Text tablePreviousHolder;
     private final Text colfHolder;
 
     private Configuration conf;
     private LocalityGroupSupport lgSupport;
-    private boolean resetState;
-
+    private LocalityGroupConfiguration lgConf;
     private LocalityGroupSupport.ColumnFamilyToLocalityGroup colfLg;
 
     public LocalityGroupBulkIngestKeyComparator() {
         super(BulkIngestKey.class);
         this.tableHolder = new Text();
+        this.tablePreviousHolder = new Text();
         this.colfHolder = new Text();
         this.lgSupport = LocalityGroupSupport.emptyLocalityGroupSupport();
     }
@@ -39,6 +40,13 @@ public class LocalityGroupBulkIngestKeyComparator extends WritableComparator imp
     @Override
     public void setConf(Configuration conf) {
         this.conf = conf;
+        try {
+            this.lgSupport = LocalityGroupSupport.builder()
+                .withLocalityGroupConfiguration(TableConfigurationUtil.getJobOutputLocalityGroupConfiguration(conf))
+                .build();
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     @Override
@@ -62,16 +70,21 @@ public class LocalityGroupBulkIngestKeyComparator extends WritableComparator imp
 
             if (result != 0 && i == IDX_TABLE) {
                 colfLg = null;
-                resetState = true;
-            } else if (resetState && result == 0 && i == IDX_TABLE) {
+                tablePreviousHolder.clear();
+            } else if (result == 0 && i == IDX_TABLE) {
                 tableHolder.set(b1, o1, tl1);
-                colfLg = lgSupport.getColumnFamilyToLocalityGroup(tableHolder);
-                if (colfLg == null) {
-                    lgSupport = computeLocalityGroupSupport(tableHolder.toString());
-                    colfLg = lgSupport.getColumnFamilyToLocalityGroup(tableHolder);
-                }
-                resetState = false;
             } else if (result != 0 && i == IDX_COLF) {
+                if (!tablePreviousHolder.equals(tableHolder)) {
+                    tablePreviousHolder.set(tableHolder);
+                    colfLg = lgSupport.getColumnFamilyToLocalityGroup(tableHolder);
+
+                    // no colf/lg mapping - this can mean the table is not configured
+                    // and may have been excluded on purpose
+                    // assume default lg and create an empty mapping
+                    if (colfLg == null) {
+                        colfLg = new LocalityGroupSupport.ColumnFamilyToLocalityGroup(Map.of());
+                    }
+                }
                 String lg1 = computeColumnFamilyLocalityGroup(b1, o1, tl1);
                 String lg2 = computeColumnFamilyLocalityGroup(b2, o2, tl2);
                 if (lg1 != null && lg2 != null) {
@@ -123,24 +136,18 @@ public class LocalityGroupBulkIngestKeyComparator extends WritableComparator imp
         return 0;
     }
 
+    @VisibleForTesting
+    void setLocalityGroupConfiguration(LocalityGroupConfiguration lgConf) {
+        this.lgConf = lgConf;
+    }
+
     private @Nullable String computeColumnFamilyLocalityGroup(byte[] buffer, int offset, int len) {
         String lg = null;
-        if (len < colfLg.columnFamilyMaxLength() && len > colfLg.columnFamilyMinLength()) {
+        if (!colfLg.isEmpty() && len <= colfLg.columnFamilyMaxLength() && len >= colfLg.columnFamilyMinLength()) {
             colfHolder.set(buffer, offset, len);
             lg = colfLg.columnFamilyToLocalityGroup().get(colfHolder);
         }
         return lg;
-    }
-
-    private LocalityGroupSupport computeLocalityGroupSupport(String tableName) {
-        Stream<String> existingTables = lgSupport.getTables().stream().map(Text::toString);
-        try {
-            return new LocalityGroupSupport.Builder(conf)
-                .withTableNames(Stream.concat(existingTables, Stream.of(tableName)).collect(Collectors.toList()))
-                .build();
-        } catch (IOException e) {
-            throw new IllegalStateException(e);
-        }
     }
 
     public static boolean readBoolean(byte[] bytes, int start) {

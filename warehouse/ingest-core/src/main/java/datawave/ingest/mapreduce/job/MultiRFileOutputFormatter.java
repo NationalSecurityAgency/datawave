@@ -1,9 +1,5 @@
 package datawave.ingest.mapreduce.job;
 
-import com.google.common.base.Joiner;
-import com.google.common.base.Splitter;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Maps;
 import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.marking.MarkingFunctions;
@@ -13,7 +9,6 @@ import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.conf.ConfigurationCopy;
 import org.apache.accumulo.core.conf.Property;
 import org.apache.accumulo.core.crypto.CryptoFactoryLoader;
-import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -36,7 +31,6 @@ import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputCommitter;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
-import org.apache.hadoop.mapreduce.v2.api.records.Locality;
 import org.apache.log4j.Logger;
 
 import java.io.DataOutputStream;
@@ -46,7 +40,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 
 import static org.apache.accumulo.core.conf.Property.TABLE_CRYPTO_PREFIX;
@@ -76,7 +69,6 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
     protected static final String GENERATE_MAP_FILE_PER_SHARD_LOCATION = PREFIX + ".generateMapFilePerShardLocation";
 
     protected static final String BASE = "bulk.output.partition.count.";
-    public static final String CONFIGURE_LOCALITY_GROUPS = PREFIX + ".tables";
     public static final String EVENT_PARTITION_COUNT = BASE + "Event";
     public static final String EDGE_PARTITION_COUNT = BASE + "Edge";
     public static final String INDEX_PARTITION_COUNT = BASE + "Index";
@@ -95,15 +87,12 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
     protected Configuration conf;
     protected Map<String,ConfigurationCopy> tableConfigs;
     protected Set<String> tableIds = null;
+    protected LocalityGroupSupport lgSupport = null;
     protected long maxRFileSize = 0;
     protected int maxRFileEntries = 0;
     protected boolean generateMapFileRowKeys = false;
     protected boolean generateMapFilePerShardLocation = false;
     private long startWriteTime = 0L;
-
-    protected Map<String,Map<Text,String>> columnFamilyToLocalityGroup;
-
-    protected Map<String,Map<String,Set<ByteSequence>>> localityGroupToColumnFamilies;
 
     public static final String CONFIGURED_TABLE_NAMES = PREFIX + ".configTableNames";
 
@@ -167,12 +156,6 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
     public static void setRFileLimits(Configuration conf, int maxEntries, long maxSize) {
         conf.setInt(MAX_RFILE_UNDEDUPPED_ENTRIES, maxEntries);
         conf.setLong(MAX_RFILE_UNCOMPRESSED_SIZE, maxSize);
-    }
-
-    public static void addTableToLocalityGroupConfiguration(Configuration conf, String tableName) {
-        String locs = conf.get(CONFIGURE_LOCALITY_GROUPS, "");
-        Iterable<String> splits = Splitter.on(",").split(locs);
-        conf.set(CONFIGURE_LOCALITY_GROUPS, Joiner.on(",").join(splits, tableName));
     }
 
     /**
@@ -393,7 +376,13 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
     protected void setTableIdsAndConfigs() throws IOException {
 
         tableConfigs = new HashMap<>();
-        Iterable<String> localityGroupTables = Splitter.on(",").split(conf.get(CONFIGURE_LOCALITY_GROUPS, ""));
+
+        // locality group configuration is configured for job
+        // there is a correlation between the locality group awareness and r-file output
+        // i.e. data must be sorted before arriving into the output
+        lgSupport = LocalityGroupSupport.builder()
+            .withLocalityGroupConfiguration(TableConfigurationUtil.getJobOutputLocalityGroupConfiguration(conf))
+            .build();
 
         TableConfigurationUtil tcu = new TableConfigurationUtil(conf);
 
@@ -408,23 +397,6 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
                 ConfigurationCopy tableConfig = new ConfigurationCopy(properties);
                 tableConfig.set(Property.TABLE_FILE_COMPRESSION_TYPE.getKey(),
                                 (compressionTableDisallowList.contains(tableName) ? new NoCompression().getName() : compressionType));
-
-                // the locality groups feature is broken and will be removed in a future MR
-                if (Iterables.contains(localityGroupTables, tableName)) {
-                    Map<String,Set<Text>> localityGroups = tcu.getLocalityGroups(tableName);
-                    // pull the locality groups for this table.
-                    Map<Text,String> cftlg = Maps.newHashMap();
-                    Map<String,Set<ByteSequence>> lgtcf = Maps.newHashMap();
-                    for (Entry<String,Set<Text>> locs : localityGroups.entrySet()) {
-                        lgtcf.put(locs.getKey(), new HashSet<>());
-                        for (Text loc : locs.getValue()) {
-                            cftlg.put(loc, locs.getKey());
-                            lgtcf.get(locs.getKey()).add(new ArrayByteSequence(loc.getBytes()));
-                        }
-                    }
-                    columnFamilyToLocalityGroup.put(tableName, cftlg);
-                    localityGroupToColumnFamilies.put(tableName, lgtcf);
-                }
                 tableConfigs.put(tableName, tableConfig);
             }
         }
@@ -454,9 +426,6 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
         setTableIdsAndConfigs();
 
         fs = workDir.getFileSystem(conf);
-
-        columnFamilyToLocalityGroup = Maps.newHashMap();
-        localityGroupToColumnFamilies = Maps.newHashMap();
 
         extension = conf.get(FILE_TYPE);
         if (extension == null || extension.isEmpty())
@@ -523,23 +492,20 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
         }
 
         return new RecordWriter<BulkIngestKey,Value>() {
-            private LocalityGroupSupport lgSupport;
+            private SizeTrackingWriter writer;
             private LocalityGroupSupport.ColumnFamilyToLocalityGroup localColfToLg;
-            private String currentLocalityGroup = null;
-            private Text tablePreviousHolder;
-            private Text colfHolder;
-            private Text colfPreviousHolder;
-            private boolean lgResetState;
+            private final Text rowHolder = new Text();
+            private final Text rowPreviousHolder = new Text();
+            private final Text tablePreviousHolder = new Text();
+            private final Text colfHolder = new Text();
+            private final Text colfPreviousHolder = new Text();
+
+            private String localityGroup;
+            private boolean defaultLg;
 
             @Override
             public void write(BulkIngestKey key, Value value) throws IOException {
                 String tableName = key.getTableName().toString();
-                SizeTrackingWriter writer;
-                try {
-                    writer = getOrCreateWriter(context, tableName, key.getKey().getRow());
-                } catch (AccumuloException e1) {
-                    throw new IOException("Unable to create writer", e1);
-                }
                 if (log.isTraceEnabled()) {
                     log.trace("Appending " + key.getKey());
                 }
@@ -547,32 +513,51 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
                 final Text tableCurrent = key.getTableName();
 
                 if (!tablePreviousHolder.equals(tableCurrent)) {
+                    rowPreviousHolder.clear();
+                    colfPreviousHolder.clear();
                     tablePreviousHolder.set(tableCurrent);
                     localColfToLg = lgSupport.getColumnFamilyToLocalityGroup(tableCurrent);
                 }
 
-                key.getKey().getColumnFamily(colfHolder);
+                key.getKey().getRow(rowHolder);
 
-                if (colfPreviousHolder == null || )
-
-                final Map<Text,String> cftlg = columnFamilyToLocalityGroup.get(tableName);
-                if (null != cftlg) {
-                    String localityGroup = cftlg.get(keyCf);
-                    boolean create = false;
-                    if (null == currentLocalityGroup) {
-                        // defaultLocalityGroup
-                        create = true;
-                    } else if (!currentLocalityGroup.equals(localityGroup)) {
-                        create = true;
+                if (!rowPreviousHolder.equals(rowHolder)) {
+                    rowPreviousHolder.set(rowHolder);
+                    try {
+                        writer = getOrCreateWriter(context, tableName, rowHolder);
+                    } catch (AccumuloException e1) {
+                        throw new IOException("Unable to create writer", e1);
                     }
+                }
 
-                    if (create) {
-                        writer.startNewLocalityGroup(localityGroup, localityGroupToColumnFamilies.get(tableName).get(localityGroup));
-                        currentLocalityGroup = localityGroup;
+                // Once the default-lg has been started the colf processing no longer needs to be checked
+                // Until that point, check if the current lg can transition to the default-lg
+                if (!defaultLg) {
+                    key.getKey().getColumnFamily(colfHolder);
+
+                    if (!colfPreviousHolder.equals(colfHolder)) {
+                        colfPreviousHolder.set(colfHolder);
+                        boolean create = false;
+                        final String localityGroupNew = localColfToLg.columnFamilyToLocalityGroup().get(colfHolder);
+                        if (localityGroup == null) {
+                            localityGroup = localityGroupNew;
+                            create = true;
+                        } else if (!localityGroup.equals(localityGroupNew)) {
+                            localityGroup = localityGroupNew;
+                            create = true;
+                        }
+                        if (create) {
+                            if (localityGroup != null) {
+                                final Set<ByteSequence> lgCf = lgSupport.getLocalityGroupToColumnFamily(tableCurrent).get(localityGroup);
+                                writer.startNewLocalityGroup(localityGroup, lgCf);
+                            } else {
+                                writer.startDefaultLocalityGroup();
+                                defaultLg = true;
+                            }
+                        }
                     }
                 }
                 writer.append(key.getKey(), value);
-
             }
 
             @Override
@@ -624,10 +609,11 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
             private SizeTrackingWriter getOrCreateWriter(TaskAttemptContext context, String tableName, Text rowKey) throws IOException, AccumuloException {
                 SizeTrackingWriter writer;
                 if (shardedTableNames.contains(tableName)) {
-                    if (!shardedTablesConfigured.contains(tableName)) {
-                        throw new IOException("Asked to create writer for sharded table " + tableName
-                                        + ", however this table was not in the configured set of ingest job tables");
-                    }
+                    // TODO: check if we can remove
+//                    if (!shardedTablesConfigured.contains(tableName)) {
+//                        throw new IOException("Asked to create writer for sharded table " + tableName
+//                                        + ", however this table was not in the configured set of ingest job tables");
+//                    }
                     // By default, throw all shards for a table into one output rfile. If the number of tservers is small enough, we may want to
                     // produce one rfile per shard location (tserver) in order to be more efficient. However, when the number of tservers is large
                     // enough, the overhead of dealing with the large number of files over a large number of jobs may overwhelm HDFS, so we're better
@@ -637,7 +623,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
                         // Look up the shard location (tablet server serving shard ID rowKey)
                         // If we don't have a location, then just use the rowKey itself.
                         Map<Text,String> shardLocs = getShardLocations(tableName);
-                        shardLocation = shardLocs.containsKey(rowKey) ? shardLocs.get(rowKey) : null;
+                        shardLocation = shardLocs.get(rowKey);
                         if (shardLocation == null) {
                             // in this case we have a shard id that has no split. Lets put this in one "extra" file
                             shardLocation = "extra";
@@ -683,11 +669,11 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
         if (this.tableShardLocations == null) {
             this.tableShardLocations = new HashMap<>();
         }
-
-        if (null == this.tableShardLocations.get(tableName)) {
-            this.tableShardLocations.put(tableName, SplitsFile.getSplitsAndLocations(conf, tableName));
+        Map<Text,String> shardIdLocations = this.tableShardLocations.get(tableName);
+        if (shardIdLocations == null) {
+            shardIdLocations = SplitsFile.getSplitsAndLocations(conf, tableName)
+            this.tableShardLocations.put(tableName, shardIdLocations);
         }
-
-        return tableShardLocations.get(tableName);
+        return shardIdLocations;
     }
 }
