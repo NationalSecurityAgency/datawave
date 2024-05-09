@@ -59,12 +59,11 @@ public class SSDeepSimilarityQueryLogic extends BaseQueryLogic<ScoredSSDeepPair>
 
     @Override
     public GenericQueryConfiguration initialize(AccumuloClient accumuloClient, Query settings, Set<Authorizations> auths) throws Exception {
-        this.scannerFactory = new ScannerFactory(accumuloClient);
-
         final SSDeepSimilarityQueryConfiguration config = getConfig();
         config.setQuery(settings);
         config.setClient(accumuloClient);
         config.setAuthorizations(auths);
+        this.scannerFactory = new ScannerFactory(config);
         setupRanges(settings, config);
         return config;
     }

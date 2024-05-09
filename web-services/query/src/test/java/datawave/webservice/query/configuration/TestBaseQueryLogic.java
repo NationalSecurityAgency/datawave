@@ -82,6 +82,8 @@ public class TestBaseQueryLogic {
         expect(config.getClient()).andReturn(null).anyTimes();
         expect(config.getQueries()).andReturn(Collections.emptyList()).anyTimes();
         expect(config.getQueriesIter()).andReturn(Collections.emptyIterator()).anyTimes();
+        expect(config.getConsistencyLevels()).andReturn(Collections.emptyMap()).anyTimes();
+        expect(config.getHints()).andReturn(Collections.emptyMap()).anyTimes();
         expect(this.copy.getConfig()).andReturn(config).anyTimes();
 
         // Run the test

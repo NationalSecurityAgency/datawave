@@ -5,13 +5,16 @@ import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchScanner;
+import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.security.Authorizations;
 
 import com.google.common.collect.Iterators;
@@ -70,6 +73,10 @@ public class GenericQueryConfiguration implements Serializable {
     // Whether or not this query emits every result or performs some kind of result reduction
     protected boolean reduceResults = false;
 
+    // either IMMEDIATE or EVENTUAL
+    private Map<String,ScannerBase.ConsistencyLevel> consistencyLevels = new HashMap<>();
+    private Map<String,Map<String,String>> hints = new HashMap<>();
+
     /**
      * Empty default constructor
      */
@@ -103,6 +110,8 @@ public class GenericQueryConfiguration implements Serializable {
         this.setQueryString(genericConfig.getQueryString());
         this.setTableName(genericConfig.getTableName());
         this.setReduceResults(genericConfig.isReduceResults());
+        this.setConsistencyLevels(genericConfig.getConsistencyLevels());
+        this.setHints(genericConfig.getHints());
     }
 
     public Collection<QueryData> getQueries() {
@@ -267,6 +276,22 @@ public class GenericQueryConfiguration implements Serializable {
      */
     public void setAccumuloPassword(String password) {
         this.accumuloPassword = EnvProvider.resolve(password);
+    }
+
+    public Map<String,ScannerBase.ConsistencyLevel> getConsistencyLevels() {
+        return consistencyLevels;
+    }
+
+    public void setConsistencyLevels(Map<String,ScannerBase.ConsistencyLevel> consistencyLevels) {
+        this.consistencyLevels = consistencyLevels;
+    }
+
+    public Map<String,Map<String,String>> getHints() {
+        return hints;
+    }
+
+    public void setHints(Map<String,Map<String,String>> hints) {
+        this.hints = hints;
     }
 
     /**

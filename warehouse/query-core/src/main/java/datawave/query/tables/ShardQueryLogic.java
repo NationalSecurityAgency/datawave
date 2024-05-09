@@ -260,6 +260,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
             bs.addScanIterator(cfg);
         }
 
+        if (config.getConsistencyLevels().containsKey(config.getTableName())) {
+            bs.setConsistencyLevel(config.getConsistencyLevels().get(config.getTableName()));
+        }
+
+        if (config.getHints().containsKey(config.getTableName())) {
+            bs.setExecutionHints(config.getHints().get(config.getTableName()));
+        }
+
         return bs;
     }
 
