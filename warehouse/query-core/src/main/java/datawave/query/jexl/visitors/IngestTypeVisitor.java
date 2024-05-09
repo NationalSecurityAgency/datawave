@@ -29,6 +29,10 @@ import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.log4j.Logger;
 
+import datawave.core.query.jexl.functions.FunctionJexlNodeVisitor;
+import datawave.core.query.jexl.nodes.ExceededOr;
+import datawave.core.query.jexl.nodes.QueryPropertyMarker;
+import datawave.core.query.jexl.visitors.BaseVisitor;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.ContentFunctionsDescriptor;
 import datawave.query.jexl.functions.EvaluationPhaseFilterFunctionsDescriptor;

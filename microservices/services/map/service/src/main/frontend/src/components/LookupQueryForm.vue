@@ -29,10 +29,7 @@ const geoQueryFeatures = geoFeaturesStore();
 const queryId = ref('');
 
 function submitQuery() {
-  geoQueryFeatures.loadGeoFeaturesForQuery(
-    manualQueryForm.query,
-    getFieldTypeMap()
-  );
+  console.log('submit query');
 }
 </script>
 

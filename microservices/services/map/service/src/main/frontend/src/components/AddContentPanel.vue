@@ -45,7 +45,7 @@
         header-class="text-teal"
       >
         <q-card>
-          <q-card-section> Add some geo json </q-card-section>
+          <LookupQueryForm />
         </q-card>
       </q-expansion-item>
     </q-list>
@@ -96,6 +96,7 @@
 import { appStateStore } from 'stores/state-store';
 import ManualGeometryForm from 'components/ManualGeometryForm.vue';
 import ManualQueryForm from 'components/ManualQueryForm.vue';
+import LookupQueryForm from 'components/LookupQueryForm.vue';
 
 const appState = appStateStore();
 </script>

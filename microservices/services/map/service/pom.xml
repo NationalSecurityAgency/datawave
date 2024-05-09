@@ -24,11 +24,13 @@
         <npm.downloadRoot>https://registry.npmjs.org/npm/-/</npm.downloadRoot>
         <npm.version>8.19.4</npm.version>
         <start-class>datawave.microservice.map.MapService</start-class>
+        <version.accumulo>2.1.1</version.accumulo>
         <version.microservice.dictionary-api>3.0.1-SNAPSHOT</version.microservice.dictionary-api>
         <version.microservice.map-api>1.0.0-SNAPSHOT</version.microservice.map-api>
         <version.microservice.query-metric-api>3.0.9-SNAPSHOT</version.microservice.query-metric-api>
         <version.microservice.starter>3.0.1-SNAPSHOT</version.microservice.starter>
         <version.microservice.starter-metadata>2.0.1-SNAPSHOT</version.microservice.starter-metadata>
+        <version.zookeeper>3.8.3</version.zookeeper>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -56,6 +58,40 @@
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>spring-boot-starter-datawave-metadata</artifactId>
                 <version>${version.microservice.starter-metadata}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.accumulo</groupId>
+                <artifactId>accumulo-core</artifactId>
+                <version>${version.accumulo}</version>
+                <exclusions>
+                    <exclusion>
+                        <artifactId>guava</artifactId>
+                        <groupId>com.google.guava</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>hadoop-client</artifactId>
+                        <groupId>org.apache.hadoop</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>junit</artifactId>
+                        <groupId>junit</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>zookeeper</artifactId>
+                        <groupId>org.apache.zookeeper</groupId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.zookeeper</groupId>
+                <artifactId>zookeeper</artifactId>
+                <version>${version.zookeeper}</version>
+                <exclusions>
+                    <exclusion>
+                        <artifactId>*</artifactId>
+                        <groupId>ch.qos.logback</groupId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
@@ -93,6 +129,14 @@
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
             <artifactId>spring-boot-starter-datawave-metadata</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.accumulo</groupId>
+            <artifactId>accumulo-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.zookeeper</groupId>
+            <artifactId>zookeeper</artifactId>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
