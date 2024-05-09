@@ -56,9 +56,6 @@ entries:
     - title: Development
       url: /docs/6.x/ingest/development
 
-    - title: Administration
-      url: /docs/6.x/ingest/administration
-
     - title: Configuration
       url: /docs/6.x/ingest/configuration
 
@@ -73,11 +70,3 @@ entries:
 
     - title: Development
       url: /docs/6.x/query/development
-
-    - title: Administration
-      url: /docs/6.x/query/administration
-
-    - title: Configuration
-      url: /docs/6.x/query/configuration
-
-
