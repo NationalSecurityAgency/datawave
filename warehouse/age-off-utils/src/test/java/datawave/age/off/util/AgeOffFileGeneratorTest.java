@@ -44,7 +44,6 @@ public class AgeOffFileGeneratorTest {
         "     <rules>\n" +
         "          <rule label=\"labeledPatternsFormat\" mode=\"merge\">\n" +
         "               <filterClass>datawave.iterators.filter.ColumnVisibilityLabeledFilter</filterClass>\n" +
-        "               <ismerge>true</ismerge>\n" +
         "               <matchPattern>\n" +
         "                    dryFood bakingPowder=365d\n" +
         "                    dryFood driedBeans=548d\n" +
@@ -77,7 +76,6 @@ public class AgeOffFileGeneratorTest {
             "     <rules>\n" +
             "          <rule mode=\"merge\">\n" +
             "            <filterClass>datawave.iterators.filter.ageoff.DataTypeAgeOffFilter</filterClass>\n" +
-            "            <ismerge>true</ismerge>\n" +
             "            <isindextable>true</isindextable>\n" +
             "          </rule>\n" +
             "          <rule>\n" +
