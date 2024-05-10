@@ -39,6 +39,7 @@ public class AgeOffFileGeneratorTest {
 
     // @formatter:off
     private static final String EXPECTED_FILE_CONTENTS =
+        "<?xml version=\"1.0\"?>\n" +
         "<ageoffConfiguration>\n" +
         "     <parent>" + PARENT_FILE_NAME + "</parent>\n" +
         "     <rules>\n" +
@@ -71,6 +72,7 @@ public class AgeOffFileGeneratorTest {
         "</ageoffConfiguration>\n";
 
     private static final String OTHER_EXPECTED_FILE_CONTENTS =
+            "<?xml version=\"1.0\"?>\n" +
             "<ageoffConfiguration>\n" +
             "     <parent>test-root-field.xml</parent>\n" +
             "     <rules>\n" +
