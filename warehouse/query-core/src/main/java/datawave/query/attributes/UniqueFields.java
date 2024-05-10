@@ -4,8 +4,10 @@ import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.NavigableSet;
 import java.util.Objects;
 import java.util.Set;
+import java.util.SortedSet;
 
 import org.apache.commons.lang.StringUtils;
 
@@ -28,7 +30,7 @@ import datawave.query.jexl.JexlASTHelper;
  */
 public class UniqueFields implements Serializable, Cloneable {
 
-    private final SortedSetMultimap<String,UniqueGranularity> fieldMap = TreeMultimap.create();
+    private final TreeMultimap<String,UniqueGranularity> fieldMap = TreeMultimap.create();
     private boolean mostRecent = false;
 
     /**
@@ -213,12 +215,12 @@ public class UniqueFields implements Serializable, Cloneable {
     }
 
     /**
-     * Return a copy of the fields within this {@link UniqueFields}. Modifications to this set will not modify the fields in this {@link UniqueFields}.
+     * Return the fields within this {@link UniqueFields}. Modifications to this set will modify the fields in this {@link UniqueFields}.
      *
      * @return a copy of the fields
      */
-    public Set<String> getFields() {
-        return Sets.newHashSet(fieldMap.keySet());
+    public NavigableSet<String> getFields() {
+        return fieldMap.keySet();
     }
 
     /**
@@ -226,8 +228,8 @@ public class UniqueFields implements Serializable, Cloneable {
      *
      * @return the field map
      */
-    public Multimap<String,UniqueGranularity> getFieldMap() {
-        return TreeMultimap.create(fieldMap);
+    public TreeMultimap<String,UniqueGranularity> getFieldMap() {
+        return fieldMap;
     }
 
     /**
