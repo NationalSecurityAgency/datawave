@@ -2,6 +2,7 @@ package datawave.query.transformer;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
@@ -25,6 +26,7 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import org.apache.accumulo.core.data.Key;
+import org.apache.commons.collections.keyvalue.UnmodifiableMapEntry;
 import org.apache.commons.collections4.Transformer;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.commons.lang.RandomStringUtils;
@@ -35,6 +37,7 @@ import org.junit.Test;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
+import com.google.common.collect.SortedSetMultimap;
 import com.google.common.collect.TreeMultimap;
 import com.google.common.primitives.Longs;
 
@@ -479,6 +482,35 @@ public class UniqueTransformTest {
         assertOrderedFieldValues();
     }
 
+    @Test
+    public void testFinalDocIgnored() {
+        SortedSetMultimap<String,UniqueGranularity> fieldMap = TreeMultimap.create();
+        fieldMap.put("FIELD", UniqueGranularity.ALL);
+        UniqueFields fields = new UniqueFields(fieldMap);
+        UniqueTransform transform = new UniqueTransform(fields, 10000000L);
+        Key key = new Key("shard", "dt\u0000uid", FinalDocumentTrackingIterator.MARKER_TEXT.toString());
+        Document doc = new Document();
+        Map.Entry<Key,Document> entry = new UnmodifiableMapEntry(key, doc);
+        for (int i = 0; i < 10; i++) {
+            assertTrue(entry == transform.apply(entry));
+        }
+    }
+
+    @Test
+    public void testIntermediateIgnored() {
+        SortedSetMultimap<String,UniqueGranularity> fieldMap = TreeMultimap.create();
+        fieldMap.put("FIELD", UniqueGranularity.ALL);
+        UniqueFields fields = new UniqueFields(fieldMap);
+        UniqueTransform transform = new UniqueTransform(fields, 10000000L);
+        Key key = new Key("shard", "dt\u0000uid");
+        Document doc = new Document();
+        doc.setIntermediateResult(true);
+        Map.Entry<Key,Document> entry = new UnmodifiableMapEntry(key, doc);
+        for (int i = 0; i < 10; i++) {
+            assertTrue(entry == transform.apply(entry));
+        }
+    }
+
     protected void assertUniqueDocuments() {
         List<Document> actual = getUniqueDocumentsWithUpdateConfigCalls(inputDocuments);
         Collections.sort(expectedUniqueDocuments);
@@ -540,7 +572,7 @@ public class UniqueTransformTest {
     }
 
     protected void updateUniqueTransform(UniqueTransform uniqueTransform) {
-        uniqueTransform.updateConfig(uniqueFields, null);
+        uniqueTransform.updateConfig(uniqueFields);
     }
 
     protected InputDocumentBuilder givenInputDocument() {
@@ -639,13 +671,16 @@ public class UniqueTransformTest {
             try {
                 ByteArrayOutputStream bytes = new ByteArrayOutputStream();
                 DataOutputStream output = new DataOutputStream(bytes);
-                int count = 0;
                 for (String field : fieldValues.keySet()) {
-                    String separator = "f-" + field + '/' + (count++) + ":";
-                    for (String value : fieldValues.get(field)) {
+                    String separator = "f-" + field + ":";
+                    if (fieldValues.isEmpty()) {
                         output.writeUTF(separator);
-                        output.writeUTF(value);
-                        separator = ",";
+                    } else {
+                        for (String value : fieldValues.get(field)) {
+                            output.writeUTF(separator);
+                            output.writeUTF(value);
+                            separator = ",";
+                        }
                     }
                 }
                 output.flush();
