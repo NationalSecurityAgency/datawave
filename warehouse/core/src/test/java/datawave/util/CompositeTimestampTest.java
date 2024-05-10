@@ -144,21 +144,21 @@ public class CompositeTimestampTest {
         Assert.assertEquals(CompositeTimestamp.getAgeOffDate(compositeTS), eventDate + ageOffEventDelta);
 
         try {
-            CompositeTimestamp.getCompositeTimeStamp(eventDate, eventDate - 1);
+            CompositeTimestamp.getCompositeTimeStamp(eventDate, eventDate - CompositeTimestamp.MILLIS_PER_DAY);
             Assert.fail("Expected ageoff date less than event date to fail");
         } catch (IllegalArgumentException e) {
             // expected
         }
 
         try {
-            CompositeTimestamp.getCompositeTimeStamp(1, 0);
+            CompositeTimestamp.getCompositeTimeStamp(CompositeTimestamp.MILLIS_PER_DAY, 0);
             Assert.fail("Expected ageoff date less than event date to fail");
         } catch (IllegalArgumentException e) {
             // expected
         }
 
         try {
-            CompositeTimestamp.getCompositeTimeStamp(eventDate, eventDate + ageOffEventDelta + 1);
+            CompositeTimestamp.getCompositeTimeStamp(eventDate, eventDate + ageOffEventDelta + CompositeTimestamp.MILLIS_PER_DAY);
             Assert.fail("Expected age off date greater than " + ageOffEventDays + " days from event date to fail");
         } catch (IllegalArgumentException e) {
             // expected
