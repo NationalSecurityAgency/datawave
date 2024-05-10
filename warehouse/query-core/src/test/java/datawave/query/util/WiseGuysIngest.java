@@ -36,7 +36,7 @@ import datawave.util.TableName;
 public class WiseGuysIngest {
 
     public enum WhatKindaRange {
-        SHARD, DOCUMENT;
+        SHARD, DOCUMENT
     }
 
     private static final Type<?> lcNoDiacriticsType = new LcNoDiacriticsType();
@@ -50,33 +50,39 @@ public class WiseGuysIngest {
     protected static final String shard = date + "_0";
     protected static final ColumnVisibility columnVisibility = new ColumnVisibility("ALL");
     protected static final Value emptyValue = new Value(new byte[0]);
-    protected static final long timeStamp = 1356998400000l;
+    protected static final long timeStamp = 1356998400000L;
 
     public static final String corleoneUID = UID.builder().newId("Corleone".getBytes(), (Date) null).toString();
     public static final long corleoneTimeStampDelta = 0;
     public static final String corleoneChildUID = UID.builder().newId("Corleone".getBytes(), (Date) null, "1").toString();
-    public static final String sopranoUID = UID.builder().newId("Soprano".toString().getBytes(), (Date) null).toString();
+    public static final String sopranoUID = UID.builder().newId("Soprano".getBytes(), (Date) null).toString();
     public static final long sopranoTimeStampDelta = 10;
-    public static final String caponeUID = UID.builder().newId("Capone".toString().getBytes(), (Date) null).toString();
+    public static final String caponeUID = UID.builder().newId("Capone".getBytes(), (Date) null).toString();
     public static final long caponeTimeStampDelta = 20;
 
-    protected static String normalizeColVal(Map.Entry<String,String> colVal) throws Exception {
-        if ("FROM_ADDRESS".equals(colVal.getKey()) || "TO_ADDRESS".equals(colVal.getKey())) {
-            return ipAddressType.normalize(colVal.getValue());
-        } else {
-            return lcNoDiacriticsType.normalize(colVal.getValue());
+    protected static String normalizeColVal(Map.Entry<String,String> colVal) {
+        switch (colVal.getKey()) {
+            case "FROM_ADDRESS":
+            case "TO_ADDRESS":
+                return ipAddressType.normalize(colVal.getValue());
+            default:
+                return lcNoDiacriticsType.normalize(colVal.getValue());
         }
     }
 
     protected static String normalizerForColumn(String column) {
-        if ("AGE".equals(column) || "MAGIC".equals(column) || "ETA".equals(column)) {
-            return numberType.getClass().getName();
-        } else if ("FROM_ADDRESS".equals(column) || "TO_ADDRESS".equals(column)) {
-            return ipAddressType.getClass().getName();
-        } else if ("GEO".equals(column)) {
-            return geoType.getClass().getName();
-        } else {
-            return lcNoDiacriticsType.getClass().getName();
+        switch (column) {
+            case "AGE":
+            case "MAGIC":
+            case "ETA":
+                return numberType.getClass().getName();
+            case "FROM_ADDRESS":
+            case "TO_ADDRESS":
+                return ipAddressType.getClass().getName();
+            case "GEO":
+                return geoType.getClass().getName();
+            default:
+                return lcNoDiacriticsType.getClass().getName();
         }
     }
 
