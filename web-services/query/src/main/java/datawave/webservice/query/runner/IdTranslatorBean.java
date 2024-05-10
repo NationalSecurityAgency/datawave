@@ -275,8 +275,8 @@ public class IdTranslatorBean {
         try {
             QueryLogic<?> logic = queryLogicFactory.getQueryLogic(logicName, principal);
             // the query principal is our local principal unless the query logic has a different user operations
-            DatawavePrincipal queryPrincipal = (logic.getUserOperations() == null) ? (DatawavePrincipal) principal
-                            : logic.getUserOperations().getRemoteUser((DatawavePrincipal) principal);
+            DatawavePrincipal queryPrincipal = (logic.getUserOperations(null) == null) ? (DatawavePrincipal) principal
+                            : logic.getUserOperations(null).getRemoteUser((DatawavePrincipal) principal);
             userAuths = WSAuthorizationsUtil.buildUserAuthorizationString(queryPrincipal);
         } catch (Exception e) {
             log.error("Failed to get user query authorizations", e);

@@ -348,8 +348,8 @@ public class BulkResultsJobConfiguration extends MapReduceJobConfiguration imple
 
             // Merge user auths with the auths that they use in the Query
             // the query principal is our local principal unless the query logic has a different user operations
-            DatawavePrincipal queryPrincipal = (logic.getUserOperations() == null) ? (DatawavePrincipal) principal
-                            : logic.getUserOperations().getRemoteUser((DatawavePrincipal) principal);
+            DatawavePrincipal queryPrincipal = (logic.getUserOperations(q) == null) ? (DatawavePrincipal) principal
+                            : logic.getUserOperations(q).getRemoteUser((DatawavePrincipal) principal);
             // the overall principal (the one with combined auths across remote user operations) is our own user operations (probably the UserOperationsBean)
             DatawavePrincipal overallPrincipal = (userOperations == null) ? (DatawavePrincipal) principal
                             : userOperations.getRemoteUser((DatawavePrincipal) principal);

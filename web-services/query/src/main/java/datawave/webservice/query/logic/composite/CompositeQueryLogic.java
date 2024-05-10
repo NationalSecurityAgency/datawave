@@ -222,13 +222,12 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
         // determine the valid authorizations for this call to be the user's auths for this logic
         DatawavePrincipal principal = (DatawavePrincipal) logic.getPrincipal();
         DatawavePrincipal queryPrincipal = principal;
-        UserOperations userOperations = getUserOperations();
+        UserOperations userOperations = getUserOperations(settings);
         if (userOperations != null) {
             principal = userOperations.getRemoteUser(principal);
         }
-        logic.preInitialize(settings, WSAuthorizationsUtil.buildAuthorizations(Collections.singleton(requestedAuths)));
-        if (logic.getUserOperations() != null) {
-            queryPrincipal = logic.getUserOperations().getRemoteUser(queryPrincipal);
+        if (logic.getUserOperations(settings) != null) {
+            queryPrincipal = logic.getUserOperations(settings).getRemoteUser(queryPrincipal);
         }
 
         // get the valid auths from the query user
@@ -530,20 +529,14 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
     }
 
     @Override
-    public void preInitialize(Query settings, Set<Authorizations> queryAuths) {
-        for (QueryLogic logic : getUninitializedLogics().values()) {
-            logic.preInitialize(settings, queryAuths);
-        }
-    }
-
-    public UserOperations getUserOperations() {
+    public UserOperations getUserOperations(Query settings) {
         // if any of the underlying logics have a non-null user operations, then
         // we need to return an instance that combines auths across the underlying
         // query logics
         boolean includeLocal = false;
         List<UserOperations> userOperations = new ArrayList<>();
         for (QueryLogic<?> logic : getQueryLogics().values()) {
-            UserOperations ops = logic.getUserOperations();
+            UserOperations ops = logic.getUserOperations(settings);
             if (ops == null) {
                 includeLocal = true;
             } else {

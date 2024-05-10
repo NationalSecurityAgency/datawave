@@ -499,8 +499,8 @@ public class SSDeepDiscoveryQueryLogic extends BaseQueryLogic<DiscoveredSSDeep> 
     }
 
     @Override
-    public UserOperations getUserOperations() {
-        return discoveryDelegate.getUserOperations();
+    public UserOperations getUserOperations(Query settings) {
+        return discoveryDelegate.getUserOperations(settings);
     }
 
     @Override
