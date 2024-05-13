@@ -107,7 +107,7 @@
         <version.microservice.dictionary-api>3.0.0</version.microservice.dictionary-api>
         <version.microservice.metadata-utils>3.0.0</version.microservice.metadata-utils>
         <version.microservice.metrics-reporter>2.0.0</version.microservice.metrics-reporter>
-        <version.microservice.query-metric-api>3.0.1-SNAPSHOT</version.microservice.query-metric-api>
+        <version.microservice.query-metric-api>3.0.11-SNAPSHOT</version.microservice.query-metric-api>
         <version.microservice.type-utils>2.0.2</version.microservice.type-utils>
         <version.minlog>1.2</version.minlog>
         <version.mockito>2.23.0</version.mockito>
