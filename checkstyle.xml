@@ -2,13 +2,13 @@
 <!DOCTYPE module PUBLIC "-//Puppy Crawl//DTD Check Configuration 1.3//EN" "http://www.puppycrawl.com/dtds/configuration_1_3.dtd">
 <module name="Checker">
   <property name="charset" value="UTF-8"/>
+  <property name="severity" value="info"/>
   <module name="TreeWalker">
-    <!--check that only Accumulo 1.9 public APIs are imported-->
-    <module name="RegexpSinglelineJava">
-<!--      <property name="format" value="import\s+org\.apache\.accumulo\.(.*\.(impl|thrift|crypto)\..*|(?!core|minicluster|testing).*|core\.(?!client|conf|data|security|spi|iterators).*)"/>-->
-      <property name="format" value="import\s+org\.apache\.accumulo\.(?!(core\.(client|data|iterators|security)|minicluster|hadoop)\.).*" />
-      <property name="ignoreComments" value="true" />
-      <property name="message" value="Accumulo non-public classes imported" />
+    <!--check that only Accumulo 2.1.x public APIs are imported-->
+    <module name="ImportControl">
+        <!--Allows per-package enforcement for importing Accumulo 2.1.x public APIs -->
+        <property name="file" value="import-control-accumulo.xml"/>
+        <property name="severity" value="error"/>
     </module>
   </module>
 </module>
