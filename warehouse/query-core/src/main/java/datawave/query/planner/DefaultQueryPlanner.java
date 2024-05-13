@@ -1298,7 +1298,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
     protected ASTJexlScript timedValidateFilterFunctions(QueryStopwatch timers, ASTJexlScript queryTree, Set<String> indexOnlyFields)
                     throws DatawaveQueryException {
-        return visitorManager.timedVisit(timers, "Rewrite Null Functions",
+        return visitorManager.timedVisit(timers, "Validate Filter Functions",
                         () -> (ASTJexlScript) ValidateFilterFunctionVisitor.validate(queryTree, indexOnlyFields));
     }
 
