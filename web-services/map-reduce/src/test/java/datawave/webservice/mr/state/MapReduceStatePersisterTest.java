@@ -1,6 +1,7 @@
 package datawave.webservice.mr.state;
 
 import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.expectLastCall;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -237,9 +238,10 @@ public class MapReduceStatePersisterTest {
 
         EasyMock.expect(ctx.getCallerPrincipal()).andReturn(principal);
         HashMap<String,String> trackingMap = new HashMap<>();
-        expect(connectionFactory.getTrackingMap(EasyMock.anyObject())).andReturn(trackingMap);
-        expect(connectionFactory.getClient(EasyMock.eq(AccumuloConnectionFactory.Priority.ADMIN), EasyMock.eq(trackingMap))).andReturn(client);
+        expect(connectionFactory.getTrackingMap(EasyMock.anyObject())).andReturn(trackingMap).anyTimes();
+        expect(connectionFactory.getClient(EasyMock.eq(AccumuloConnectionFactory.Priority.ADMIN), EasyMock.eq(trackingMap))).andReturn(client).anyTimes();
         connectionFactory.returnClient(client);
+        expectLastCall().anyTimes();
         replayAll();
 
         MapReduceInfoResponseList result = bean.find();
@@ -324,9 +326,10 @@ public class MapReduceStatePersisterTest {
 
         EasyMock.expect(ctx.getCallerPrincipal()).andReturn(principal);
         HashMap<String,String> trackingMap = new HashMap<>();
-        expect(connectionFactory.getTrackingMap(EasyMock.anyObject())).andReturn(trackingMap);
-        expect(connectionFactory.getClient(EasyMock.eq(AccumuloConnectionFactory.Priority.ADMIN), EasyMock.eq(trackingMap))).andReturn(client);
+        expect(connectionFactory.getTrackingMap(EasyMock.anyObject())).andReturn(trackingMap).anyTimes();
+        expect(connectionFactory.getClient(EasyMock.eq(AccumuloConnectionFactory.Priority.ADMIN), EasyMock.eq(trackingMap))).andReturn(client).anyTimes();
         connectionFactory.returnClient(client);
+        expectLastCall().anyTimes();
         replayAll();
         MapReduceInfoResponseList result = bean.findById(id);
         verifyAll();
@@ -355,14 +358,11 @@ public class MapReduceStatePersisterTest {
 
         // Get ready to call remove
         HashMap<String,String> trackingMap = new HashMap<>();
-        expect(connectionFactory.getTrackingMap(EasyMock.anyObject())).andReturn(trackingMap);
-        expect(connectionFactory.getClient(EasyMock.eq(AccumuloConnectionFactory.Priority.ADMIN), EasyMock.eq(trackingMap))).andReturn(client);
+        EasyMock.expect(ctx.getCallerPrincipal()).andReturn(principal).anyTimes();
+        expect(connectionFactory.getTrackingMap(EasyMock.anyObject())).andReturn(trackingMap).anyTimes();
+        expect(connectionFactory.getClient(EasyMock.eq(AccumuloConnectionFactory.Priority.ADMIN), EasyMock.eq(trackingMap))).andReturn(client).anyTimes();
         connectionFactory.returnClient(client);
-        EasyMock.expect(ctx.getCallerPrincipal()).andReturn(principal);
-        EasyMock.expect(ctx.getCallerPrincipal()).andReturn(principal);
-        expect(connectionFactory.getTrackingMap(EasyMock.anyObject())).andReturn(trackingMap);
-        expect(connectionFactory.getClient(EasyMock.eq(AccumuloConnectionFactory.Priority.ADMIN), EasyMock.eq(trackingMap))).andReturn(client);
-        connectionFactory.returnClient(client);
+        expectLastCall().anyTimes();
         replayAll();
 
         bean.remove(id);

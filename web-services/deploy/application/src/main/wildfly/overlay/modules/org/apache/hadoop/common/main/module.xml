@@ -8,6 +8,8 @@
         <resource-root path="hadoop-shaded-protobuf_3_7-${version.hadoop-shaded}.jar"/>
         <resource-root path="protobuf-java-${version.protobuf}.jar"/>
         <resource-root path="commons-beanutils-${version.commons-beanutils}.jar"/>
+        <resource-root path="commons-compress-${version.commons-compress}.jar"/>
+        <resource-root path="avro-${version.avro}.jar"/>
         <resource-root path="commons-configuration2-${version.commons-configuration2}.jar"/>
         <resource-root path="commons-text-${version.commons-text}.jar"/>
         <resource-root path="woodstox-core-${version.woodstox-core}.jar"/>

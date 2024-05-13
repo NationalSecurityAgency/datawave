@@ -34,12 +34,12 @@
 						<property name="classpathJarFiles">
 							<list value-type="java.lang.String">
                                 <!-- Add EJB jars that we need in order to run queries. -->
-								<value>vfs:/content/datawave-web-service-${project.version}-${build.env}.ear!datawave-ws-query-${version.datawave}.jar/</value>
-								<value>vfs:/content/datawave-web-service-${project.version}-${build.env}.ear!datawave-ws-map-reduce-${version.datawave}.jar/</value>
-								<value>vfs:/content/datawave-web-service-${project.version}-${build.env}.ear!datawave-ws-common-${version.datawave}.jar/</value>
-								<value>vfs:/content/datawave-web-service-${project.version}-${build.env}.ear!datawave-ws-security-${version.datawave}.jar/</value>
+								<value>vfs:/content/datawave-ws-deploy-application-${project.version}-${build.env}.ear!datawave-ws-query-${version.datawave}.jar/</value>
+								<value>vfs:/content/datawave-ws-deploy-application-${project.version}-${build.env}.ear!datawave-ws-map-reduce-${version.datawave}.jar/</value>
+								<value>vfs:/content/datawave-ws-deploy-application-${project.version}-${build.env}.ear!datawave-ws-common-${version.datawave}.jar/</value>
+								<value>vfs:/content/datawave-ws-deploy-application-${project.version}-${build.env}.ear!datawave-ws-security-${version.datawave}.jar/</value>
 								<!-- Add every jar in the EAR's lib folder. -->
-								<value>vfs:/content/datawave-web-service-${project.version}-${build.env}.ear!lib/.*\.jar/</value>
+								<value>vfs:/content/datawave-ws-deploy-application-${project.version}-${build.env}.ear!lib/(?!(hadoop)).*\.jar/</value>
 								<!-- Now package up the config module's conf files and include them. -->
 								<value>archive:${jboss.modules.dir}/datawave/webservice/configuration/main/conf/!.*</value>
 								<!-- Note that all jar files in ${jboss.home.dir}/client/lib and ${jboss.home.dir}/tools/mapreduce/lib are added to the classpath too. -->

@@ -16,6 +16,7 @@ import java.util.Properties;
 import java.util.Queue;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import javax.annotation.Resource;
 import javax.annotation.security.DeclareRoles;
@@ -64,12 +65,16 @@ import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.jboss.security.JSSESecurityDomain;
 
+import com.google.common.base.Joiner;
+
 import datawave.annotation.Required;
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.configuration.spring.SpringBean;
 import datawave.marking.SecurityMarking;
+import datawave.microservice.querymetric.QueryMetricFactory;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.system.ServerPrincipal;
+import datawave.security.user.UserOperationsBean;
 import datawave.security.util.WSAuthorizationsUtil;
 import datawave.webservice.common.audit.AuditBean;
 import datawave.webservice.common.audit.AuditParameters;
@@ -94,14 +99,20 @@ import datawave.webservice.mr.configuration.OozieJobConfiguration;
 import datawave.webservice.mr.configuration.OozieJobConstants;
 import datawave.webservice.mr.state.MapReduceStatePersisterBean;
 import datawave.webservice.mr.state.MapReduceStatePersisterBean.MapReduceState;
+import datawave.webservice.query.Query;
 import datawave.webservice.query.cache.QueryCache;
+import datawave.webservice.query.cache.RunningQueryTimingImpl;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.NotFoundQueryException;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.exception.UnauthorizedQueryException;
 import datawave.webservice.query.factory.Persister;
+import datawave.webservice.query.logic.QueryLogic;
 import datawave.webservice.query.logic.QueryLogicFactory;
+import datawave.webservice.query.metric.QueryMetricsBean;
+import datawave.webservice.query.runner.QueryPredictor;
+import datawave.webservice.query.runner.RunningQuery;
 import datawave.webservice.result.BaseResponse;
 import datawave.webservice.result.GenericResponse;
 import datawave.webservice.result.VoidResponse;
@@ -156,6 +167,18 @@ public class MapReduceBean {
     private DatawavePrincipal serverPrincipal;
 
     @Inject
+    private QueryMetricsBean metrics;
+
+    @Inject
+    private QueryPredictor predictor;
+
+    @Inject
+    private UserOperationsBean userOperationsBean;
+
+    @Inject
+    private QueryMetricFactory metricFactory;
+
+    @Inject
     private SecurityMarking marking;
 
     @Inject
@@ -163,6 +186,7 @@ public class MapReduceBean {
 
     private static final String PARAMETER_SEPARATOR = ";";
     private static final String PARAMETER_NAME_VALUE_SEPARATOR = ":";
+    private static final String PARAMETERS = "parameters";
     private static final String JOB_ID = "MapReduce.id";
     private static final int BUFFER_SIZE = 16384;
 
@@ -356,11 +380,9 @@ public class MapReduceBean {
     /**
      * Execute a MapReduce job with the given name and runtime parameters
      *
-     * @param jobName
-     *            Name of the map reduce job configuration
      * @param parameters
-     *            A semi-colon separated list name:value pairs. These are the required and optional parameters listed in the MapReduceConfiguration objects
-     *            returned in the call to list()
+     *            The parameters, such as jobName, format, queryId, and outputFormat These are the required and optional parameters listed in the
+     *            MapReduceConfiguration objects returned in the call to list()
      * @return {@code datawave.webservice.result.GenericResponse<String>} job id
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user by specifying a chain of DNs of the identities to proxy
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
@@ -376,23 +398,101 @@ public class MapReduceBean {
             "application/x-protostuff"})
     @javax.ws.rs.Path("/submit")
     @GZIP
-    public GenericResponse<String> submit(@FormParam("jobName") String jobName, @FormParam("parameters") String parameters) {
+    public GenericResponse<String> submit(@FormParam("jobName") String jobName, MultivaluedMap<String,String> parameters) {
         GenericResponse<String> response = new GenericResponse<>();
 
         // Find out who/what called this method
         Principal p = ctx.getCallerPrincipal();
         String sid;
-        Set<Collection<String>> cbAuths = new HashSet<>();
         DatawavePrincipal datawavePrincipal = null;
 
         if (p instanceof DatawavePrincipal) {
             datawavePrincipal = (DatawavePrincipal) p;
             sid = datawavePrincipal.getShortName();
-            cbAuths.addAll(datawavePrincipal.getAuthorizations());
         } else {
             QueryException qe = new QueryException(DatawaveErrorCode.UNEXPECTED_PRINCIPAL_ERROR, MessageFormat.format("Class: {0}", p.getClass().getName()));
             response.addException(qe);
             throw new DatawaveWebApplicationException(qe, response);
+        }
+
+        // Parse the parameters
+        if (parameters == null) {
+            log.error("Null parameters");
+            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_FUNCTION_ARGUMENTS);
+            response.addException(qe);
+            throw new BadRequestException(qe, response);
+        }
+        Map<String,String> runtimeParameters = toMap(parameters);
+
+        // Get the query id
+        String queryId = runtimeParameters.get("queryId");
+        if (queryId == null) {
+            log.error("No query id specified");
+            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_QUERY_ID);
+            response.addException(qe);
+            throw new BadRequestException(qe, response);
+        }
+
+        // find or recreate the running query
+        RunningQuery query;
+        try {
+            query = getQueryById(queryId, p);
+        } catch (Exception e) {
+            log.error("Exception caught setting up map reduce query", e);
+            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_QUERY_ID, e);
+            response.addException(qe);
+            throw new BadRequestException(qe, response);
+        }
+
+        // audit as needed
+        try {
+            // If we have a client, then this was a query already fully created and hence audited.
+            // Otherwise, the define mechanism may have been used or we are truely resubmitting this
+            // closed query and we need to audit.
+            if (query.getClient() != null) {
+                query.closeConnection(connectionFactory);
+            } else {
+                Auditor.AuditType auditType = query.getLogic().getAuditType(query.getSettings());
+                MultivaluedMap<String,String> queryParameters = new MultivaluedMapImpl<>();
+                queryParameters.putAll(query.getSettings().toMap());
+
+                queryParameters.putSingle(PrivateAuditConstants.AUDIT_TYPE, auditType.name());
+                queryParameters.putSingle(PrivateAuditConstants.LOGIC_CLASS, query.getLogic().getLogicName());
+                queryParameters.putSingle(PrivateAuditConstants.USER_DN, query.getSettings().getUserDN());
+                queryParameters.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, query.getSettings().getColumnVisibility());
+
+                if (!auditType.equals(Auditor.AuditType.NONE)) {
+                    try {
+                        try {
+                            List<String> selectors = query.getLogic().getSelectors(query.getSettings());
+                            if (selectors != null && !selectors.isEmpty()) {
+                                queryParameters.put(PrivateAuditConstants.SELECTORS, selectors);
+                            }
+                        } catch (Exception e) {
+                            log.error("Error accessing query selector", e);
+                        }
+                        // if the user didn't set an audit id, use the query id
+                        if (!queryParameters.containsKey(AuditParameters.AUDIT_ID)) {
+                            queryParameters.putSingle(AuditParameters.AUDIT_ID, queryId);
+                        }
+                        auditor.audit(queryParameters);
+                    } catch (IllegalArgumentException e) {
+                        BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.MISSING_REQUIRED_PARAMETER, e);
+                        response.addException(qe);
+                        throw new BadRequestException(qe, response);
+                    } catch (Exception e) {
+                        log.error("Error auditing query", e);
+                        QueryException qe = new QueryException(DatawaveErrorCode.QUERY_AUDITING_ERROR, e);
+                        response.addException(qe);
+                        throw qe;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.error("Exception caught setting up map reduce query", e);
+            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.MAPREDUCE_JOB_START_ERROR, e);
+            response.addException(qe);
+            throw new BadRequestException(qe, response);
         }
 
         // Get the MapReduceJobConfiguration from the configuration
@@ -413,18 +513,6 @@ public class MapReduceBean {
                 // user does not have all of the required roles or did not pass the required auths
                 response.addException(qe);
                 throw new UnauthorizedException(qe, response);
-            }
-        }
-
-        // Parse the parameters
-        Map<String,String> runtimeParameters = new HashMap<>();
-        if (null != parameters) {
-            String[] param = parameters.split(PARAMETER_SEPARATOR);
-            for (String yyy : param) {
-                String[] parts = yyy.split(PARAMETER_NAME_VALUE_SEPARATOR);
-                if (parts.length == 2) {
-                    runtimeParameters.put(parts[0], parts[1]);
-                }
             }
         }
 
@@ -463,10 +551,16 @@ public class MapReduceBean {
 
         // If this job is being restarted, then the jobId will be the same. The restart method
         // puts the id into the runtime parameters
+        boolean restarted = false;
         String id = runtimeParameters.get(JOB_ID);
-        if (null == id)
+        if (null == id) {
             id = UUID.randomUUID().toString();
+            runtimeParameters.put(JOB_ID, id);
+        } else {
+            restarted = true;
+        }
         org.apache.hadoop.conf.Configuration conf = new org.apache.hadoop.conf.Configuration();
+        conf.set("mapreduce.user.classpath.first", "false");
 
         StringBuilder name = new StringBuilder().append(jobName).append("_sid_").append(sid).append("_id_").append(id);
         Job j;
@@ -517,13 +611,13 @@ public class MapReduceBean {
         log.info("JOB ID: " + mapReduceJobId);
 
         // Create an entry in the state table
-        boolean restarted = (runtimeParameters.get(JOB_ID) != null);
         try {
-            if (!restarted)
-                mapReduceState.create(id, job.getHdfsUri(), job.getJobTracker(), job.getJobDir(), mapReduceJobId.toString(), job.getResultsDir(), parameters,
-                                jobName);
-            else
+            if (!restarted) {
+                mapReduceState.create(id, job.getHdfsUri(), job.getJobTracker(), job.getJobDir(), mapReduceJobId.toString(), job.getResultsDir(),
+                                toString(runtimeParameters), jobName);
+            } else {
                 mapReduceState.addJob(id, mapReduceJobId.toString());
+            }
         } catch (Exception e) {
             QueryException qe = new QueryException(DatawaveErrorCode.MAPREDUCE_STATE_PERSISTENCE_ERROR, e);
             log.error(qe);
@@ -540,6 +634,45 @@ public class MapReduceBean {
         response.setResult(id);
         return response;
 
+    }
+
+    public static Map<String,String> toMap(String parameters) {
+        Map<String,String> runtimeParameters = new HashMap<>();
+        String[] param = parameters.split(PARAMETER_SEPARATOR);
+        for (String yyy : param) {
+            String[] parts = yyy.split(PARAMETER_NAME_VALUE_SEPARATOR);
+            if (parts.length == 2) {
+                runtimeParameters.put(parts[0], parts[1]);
+            }
+        }
+        return runtimeParameters;
+    }
+
+    public static Map<String,String> toMap(MultivaluedMap<String,String> parameters) {
+        Map<String,String> runtimeParameters = new HashMap<>();
+        parameters.entrySet().stream().forEach(e -> runtimeParameters.put(e.getKey(), e.getValue().get(0)));
+
+        // Parse the parameters parameter
+        if (runtimeParameters.containsKey(PARAMETERS)) {
+            runtimeParameters.putAll(toMap(runtimeParameters.remove(PARAMETERS)));
+        }
+        return runtimeParameters;
+    }
+
+    public static String toString(Map<String,String> runtimeParameters) {
+        Joiner nvJoin = Joiner.on(PARAMETER_NAME_VALUE_SEPARATOR);
+        return Joiner.on(PARAMETER_SEPARATOR)
+                        .join(runtimeParameters.entrySet().stream().map(e -> nvJoin.join(e.getKey(), e.getValue())).collect(Collectors.toList()));
+    }
+
+    public static MultivaluedMap<String,String> toMultiMap(Map<String,String> runtimeParameters) {
+        MultivaluedMap<String,String> parameters = new MultivaluedMapImpl<>();
+        runtimeParameters.entrySet().stream().forEach(e -> parameters.putSingle(e.getKey(), e.getValue()));
+        return parameters;
+    }
+
+    public static MultivaluedMap<String,String> toMultiMap(String runtimeParameters) {
+        return toMultiMap(toMap(runtimeParameters));
     }
 
     protected Job createJob(Configuration conf, StringBuilder name) throws IOException {
@@ -691,7 +824,7 @@ public class MapReduceBean {
             // Now re-submit this job after adding the JOB_ID to the runtime parameters to signal that this job has been restarted
             String jobName = thisJob.getJobName();
             // Now call submit
-            return submit(jobName, thisJob.getRuntimeParameters() + PARAMETER_SEPARATOR + JOB_ID + PARAMETER_NAME_VALUE_SEPARATOR + jobId);
+            return submit(jobName, toMultiMap(thisJob.getRuntimeParameters()));
         }
 
     }
@@ -1018,7 +1151,7 @@ public class MapReduceBean {
         return response;
     }
 
-    private FileSystem getFS(String hdfs, BaseResponse response) {
+    static FileSystem getFS(String hdfs, BaseResponse response) {
         org.apache.hadoop.conf.Configuration conf = new org.apache.hadoop.conf.Configuration();
         conf.set("fs.defaultFS", hdfs);
         // Override default buffer size (4K) to 16K
@@ -1029,7 +1162,6 @@ public class MapReduceBean {
             return fs;
         } catch (IOException e1) {
             NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.HDFS_CONNECTION_ERROR, e1, MessageFormat.format("Location: {0}", hdfs));
-            log.error(qe);
             response.addException(qe);
             throw new NotFoundException(qe, response);
         }
@@ -1060,4 +1192,43 @@ public class MapReduceBean {
             }
         }
     }
+
+    private RunningQuery getQueryById(String id, Principal principal) throws Exception {
+        // Find out who/what called this method
+        String userid = principal.getName();
+        if (principal instanceof DatawavePrincipal) {
+            DatawavePrincipal dp = (DatawavePrincipal) principal;
+            userid = dp.getShortName();
+        }
+        log.trace(userid + " has authorizations " + ((principal instanceof DatawavePrincipal) ? ((DatawavePrincipal) principal).getAuthorizations() : ""));
+
+        RunningQuery query = cache.get(id);
+        if (null == query) {
+            log.info("Query not found in cache, retrieving from accumulo");
+            List<Query> queries = queryPersister.findById(id);
+            if (null == queries || queries.isEmpty())
+                throw new NotFoundQueryException(DatawaveErrorCode.NO_QUERY_OBJECT_MATCH);
+            if (queries.size() > 1)
+                throw new NotFoundQueryException(DatawaveErrorCode.TOO_MANY_QUERY_OBJECT_MATCHES);
+            else {
+                Query q = queries.get(0);
+
+                // will throw IllegalArgumentException if not defined
+                QueryLogic<?> logic = queryLogicFactory.getQueryLogic(q.getQueryLogicName(), principal);
+                AccumuloConnectionFactory.Priority priority = logic.getConnectionPriority();
+                query = new RunningQuery(metrics, null, priority, logic, q, q.getQueryAuthorizations(), principal, new RunningQueryTimingImpl(0, 0, 0, 0), null,
+                                this.userOperationsBean, this.metricFactory);
+                // Put in the cache by id and name, we will have two copies that reference the same object
+                cache.put(q.getId().toString(), query);
+            }
+        } else {
+            // Check to make sure that this query belongs to current user.
+            if (!query.getSettings().getOwner().equals(userid)) {
+                throw new UnauthorizedQueryException(DatawaveErrorCode.QUERY_OWNER_MISMATCH,
+                                MessageFormat.format("{0} != {1}", userid, query.getSettings().getOwner()));
+            }
+        }
+        return query;
+    }
+
 }

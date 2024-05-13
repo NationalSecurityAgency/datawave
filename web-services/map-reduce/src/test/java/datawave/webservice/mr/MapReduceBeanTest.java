@@ -12,12 +12,14 @@ import java.util.Map;
 
 import javax.ejb.EJBContext;
 
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.Job;
 import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
 import org.easymock.Mock;
 import org.easymock.TestSubject;
+import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -25,10 +27,14 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.reflect.Whitebox;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
+import com.google.common.collect.HashMultimap;
+
+import datawave.microservice.querymetric.QueryMetricFactory;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUser.UserType;
 import datawave.security.authorization.SubjectIssuerDNPair;
+import datawave.security.user.UserOperationsBean;
 import datawave.security.util.DnUtils;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.connection.config.ConnectionPoolsConfiguration;
@@ -39,11 +45,16 @@ import datawave.webservice.common.exception.UnauthorizedException;
 import datawave.webservice.mr.configuration.MapReduceConfiguration;
 import datawave.webservice.mr.configuration.MapReduceJobConfiguration;
 import datawave.webservice.mr.state.MapReduceStatePersisterBean;
+import datawave.webservice.query.Query;
+import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.cache.QueryCache;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.factory.Persister;
 import datawave.webservice.query.logic.QueryLogicFactory;
+import datawave.webservice.query.metric.QueryMetricsBean;
+import datawave.webservice.query.runner.QueryPredictor;
+import datawave.webservice.query.runner.RunningQuery;
 import datawave.webservice.results.mr.MapReduceJobDescription;
 
 @RunWith(EasyMockRunner.class)
@@ -61,11 +72,23 @@ public class MapReduceBeanTest extends EasyMockSupport {
     @Mock
     private AccumuloConnectionFactory connectionFactory;
     @Mock
+    private AccumuloClient accumuloClient;
+    @Mock
     private QueryLogicFactory queryLogicFactory;
     @Mock
     private MapReduceStatePersisterBean mapReduceState;
     @Mock
     private ConnectionPoolsConfiguration connectionPoolsConfiguration;
+    @Mock
+    private UserOperationsBean userOperationBean;
+    @Mock
+    private QueryMetricsBean queryMetricsBean;
+    @Mock
+    private QueryPredictor queryPredictor;
+    @Mock
+    private QueryMetricFactory queryMetricFactory;
+    @Mock
+    private RunningQuery runningQuery;
 
     private DatawavePrincipal principal;
     private ClassPathXmlApplicationContext applicationContext;
@@ -106,15 +129,15 @@ public class MapReduceBeanTest extends EasyMockSupport {
     }
 
     @Test(expected = BadRequestException.class)
-    public void testSubmitInvalidJobName() throws Exception {
+    public void testMissingQueryId() throws Exception {
         expect(ctx.getCallerPrincipal()).andReturn(principal);
         replayAll();
 
-        bean.submit("BadJobName", null);
+        bean.submit("BadJobName", new MultivaluedMapImpl<>());
         verifyAll();
     }
 
-    @Test(expected = DatawaveWebApplicationException.class)
+    @Test(expected = BadRequestException.class)
     public void testSubmitWithNullRequiredParameters() throws Exception {
         expect(ctx.getCallerPrincipal()).andReturn(principal);
         replayAll();
@@ -125,10 +148,17 @@ public class MapReduceBeanTest extends EasyMockSupport {
 
     @Test(expected = DatawaveWebApplicationException.class)
     public void testSubmitWithMissingRequiredParameters() throws Exception {
+        // setup the path that does not require further auditing
+        Query query = new QueryImpl();
+        query.setOwner(principal.getShortName());
         expect(ctx.getCallerPrincipal()).andReturn(principal);
+        expect(cache.get("1243")).andReturn(runningQuery);
+        expect(runningQuery.getSettings()).andReturn(query);
+        expect(runningQuery.getClient()).andReturn(accumuloClient);
+        runningQuery.closeConnection(connectionFactory);
         replayAll();
 
-        bean.submit("TestJob", "queryId:1243");
+        bean.submit("TestJob", MapReduceBean.toMultiMap("queryId:1243"));
         verifyAll();
     }
 
@@ -144,10 +174,17 @@ public class MapReduceBeanTest extends EasyMockSupport {
         // BulkResultsJob uses AccumuloInputFormat, MapReduceJobs.xml in
         // src/test/resources specifies something else
 
+        // setup the path that does not require further auditing
+        Query query = new QueryImpl();
+        query.setOwner(principal.getShortName());
         expect(ctx.getCallerPrincipal()).andReturn(principal);
+        expect(cache.get("1243")).andReturn(runningQuery);
+        expect(runningQuery.getSettings()).andReturn(query);
+        expect(runningQuery.getClient()).andReturn(accumuloClient);
+        runningQuery.closeConnection(connectionFactory);
         replayAll();
 
-        bean.submit("TestJob", "queryId:1243;format:XML");
+        bean.submit("TestJob", MapReduceBean.toMultiMap("queryId:1243;format:XML"));
         verifyAll();
     }
 
@@ -170,24 +207,39 @@ public class MapReduceBeanTest extends EasyMockSupport {
         // BulkResultsJob uses AccumuloInputFormat, MapReduceJobs.xml in
         // src/test/resources specifies something else
 
+        // setup the path that does not require further auditing
+        Query query = new QueryImpl();
+        query.setOwner(principal.getShortName());
         expect(ctx.getCallerPrincipal()).andReturn(principal);
+        expect(cache.get("1243")).andReturn(runningQuery);
+        expect(runningQuery.getSettings()).andReturn(query);
+        expect(runningQuery.getClient()).andReturn(accumuloClient);
+        runningQuery.closeConnection(connectionFactory);
+
         replayAll();
 
-        bean.submit("TestJob", "queryId:1243;format:XML");
+        bean.submit("TestJob", MapReduceBean.toMultiMap("queryId:1243;format:XML"));
         verifyAll();
     }
 
-    @Test(expected = UnauthorizedException.class)
+    @Test(expected = DatawaveWebApplicationException.class)
     public void testInvalidUserAuthorization() throws Exception {
         // Create principal that does not have AuthorizedUser role
         DatawaveUser user = new DatawaveUser(SubjectIssuerDNPair.of(userDN, "CN=ca, OU=acme"), UserType.USER, Arrays.asList(auths),
                         Collections.singleton("Administrator"), null, 0L);
         DatawavePrincipal p = new DatawavePrincipal(Collections.singletonList(user));
 
-        expect(ctx.getCallerPrincipal()).andReturn(p);
+        // setup the path that does not require further auditing
+        Query query = new QueryImpl();
+        query.setOwner(principal.getShortName());
+        expect(ctx.getCallerPrincipal()).andReturn(principal);
+        expect(cache.get("1243")).andReturn(runningQuery);
+        expect(runningQuery.getSettings()).andReturn(query);
+        expect(runningQuery.getClient()).andReturn(accumuloClient);
+        runningQuery.closeConnection(connectionFactory);
         replayAll();
 
-        bean.submit("TestJob", "queryId:1243");
+        bean.submit("TestJob", MapReduceBean.toMultiMap("queryId:1243"));
         verifyAll();
     }
 
