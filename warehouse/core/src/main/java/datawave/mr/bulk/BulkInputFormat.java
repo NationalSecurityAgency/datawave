@@ -54,10 +54,6 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.TablePermission;
 import org.apache.accumulo.core.singletons.SingletonReservation;
 import org.apache.accumulo.core.util.Pair;
-import org.apache.accumulo.core.util.TextUtil;
-import org.apache.accumulo.core.util.UtilWaitThread;
-import org.apache.accumulo.core.util.format.DefaultFormatter;
-import org.apache.accumulo.core.util.threads.Threads;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
@@ -73,6 +69,7 @@ import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
+import org.apache.hadoop.service.launcher.HadoopUncaughtExceptionHandler;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
@@ -82,6 +79,7 @@ import com.google.common.collect.Multimap;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.accumulo.inmemory.impl.InMemoryTabletLocator;
+import datawave.accumulo.util.TextUtil;
 import datawave.common.util.ArgumentChecker;
 import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.mr.bulk.split.DefaultLocationStrategy;
@@ -1085,7 +1083,10 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
         Properties props = Accumulo.newClientProperties().to(conf.get(INSTANCE_NAME), conf.get(ZOOKEEPERS))
                         .as(getUsername(conf), new PasswordToken(getPassword(conf))).build();
         ClientInfo info = ClientInfo.from(props);
-        ClientContext context = new ClientContext(SingletonReservation.noop(), info, ClientConfConverter.toAccumuloConf(info.getProperties()), Threads.UEH);
+        ClientContext context = new ClientContext(SingletonReservation.noop(), info, ClientConfConverter.toAccumuloConf(info.getProperties()),
+                        new HadoopUncaughtExceptionHandler(
+
+                        ));
         return TabletLocator.getLocator(context, context.getTableId(tableName));
     }
 
@@ -1116,7 +1117,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
                 binnedRanges = binOfflineTable(job, tableName, ranges);
                 while (binnedRanges == null) {
                     // Some tablets were still online, try again
-                    UtilWaitThread.sleep(100L + (int) (Math.random() * 100)); // sleep randomly between 100 and 200 ms
+                    randomSleep();
                     binnedRanges = binOfflineTable(job, tableName, ranges);
                 }
             } else {
@@ -1127,7 +1128,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
                     tl.invalidateCache();
                     ClientInfo info = ClientInfo.from(cbHelper.newClientProperties());
                     ClientContext context = new ClientContext(SingletonReservation.noop(), info, ClientConfConverter.toAccumuloConf(info.getProperties()),
-                                    Threads.UEH);
+                                    new HadoopUncaughtExceptionHandler());
                     while (!tl.binRanges(context, ranges, binnedRanges).isEmpty()) {
                         if (!(client instanceof InMemoryAccumuloClient)) {
                             if (tableId == null)
@@ -1139,7 +1140,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
                         }
                         binnedRanges.clear();
                         log.warn("Unable to locate bins for specified ranges. Retrying.");
-                        UtilWaitThread.sleep(100 + (int) (Math.random() * 100)); // sleep randomly between 100 and 200 ms
+                        randomSleep();
                         tl.invalidateCache();
                     }
 
@@ -1200,6 +1201,17 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
 
         log.info("Returning splits " + splits.size());
         return splits;
+    }
+
+    /**
+     * sleep randomly between 100 and 200 ms
+     */
+    private static void randomSleep() {
+        try {
+            Thread.sleep(100 + (int) (Math.random() * 100)); // sleep randomly between 100 and 200 ms
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private void clipRanges(Map<String,Map<KeyExtent,List<Range>>> binnedRanges) {
@@ -1331,7 +1343,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
                     currentK = currentKey = entry.getKey();
                     currentV = currentValue = entry.getValue();
                     if (log.isTraceEnabled())
-                        log.trace("Processing key/value pair: " + DefaultFormatter.formatEntry(entry, true));
+                        log.trace("Processing key/value pair: " + entry.toString());
                     return true;
                 } else if (numKeysRead < 0) {
                     numKeysRead = 0;
