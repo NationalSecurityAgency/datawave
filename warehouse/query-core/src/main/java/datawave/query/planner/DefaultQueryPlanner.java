@@ -148,6 +148,7 @@ import datawave.query.jexl.visitors.UnmarkedBoundedRangeDetectionVisitor;
 import datawave.query.jexl.visitors.ValidComparisonVisitor;
 import datawave.query.jexl.visitors.ValidPatternVisitor;
 import datawave.query.jexl.visitors.ValidateFilterFunctionVisitor;
+import datawave.query.jexl.visitors.order.OrderByCostVisitor;
 import datawave.query.jexl.visitors.whindex.WhindexVisitor;
 import datawave.query.model.QueryModel;
 import datawave.query.planner.comparator.DefaultQueryPlanComparator;
@@ -168,7 +169,6 @@ import datawave.query.util.TypeMetadata;
 import datawave.util.time.TraceStopwatch;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.Query;
-import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.QueryImpl.Parameter;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.configuration.QueryData;
@@ -227,6 +227,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      * The max number of child nodes that we will print with the PrintingVisitor. If trace is enabled, all nodes will be printed.
      */
     public static int maxChildNodesToPrint = 10;
+
+    public static int maxTermsToPrint = 100;
 
     private final long maxRangesPerQueryPiece;
 
@@ -404,8 +406,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
     protected CloseableIterable<QueryData> process(ScannerFactory scannerFactory, MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper,
                     ShardQueryConfiguration config, String query, Query settings) throws DatawaveQueryException {
-        final QueryData queryData = new QueryData();
-
         settingFuture = null;
 
         IteratorSetting cfg = null;
@@ -415,7 +415,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         }
 
         try {
-            config.setQueryTree(updateQueryTree(scannerFactory, metadataHelper, dateIndexHelper, config, query, queryData, settings));
+            config.setQueryTree(updateQueryTree(scannerFactory, metadataHelper, dateIndexHelper, config, query, settings));
         } catch (StackOverflowError e) {
             if (log.isTraceEnabled()) {
                 log.trace("Stack trace for overflow " + e);
@@ -464,8 +464,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         stopwatch.stop();
         stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Construct IteratorSettings");
 
-        queryData.setQuery(newQueryString);
-
         if (!config.isGeneratePlanOnly()) {
             while (null == cfg) {
                 cfg = getQueryIterator(metadataHelper, config, settings, "", false, false);
@@ -473,8 +471,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             configureIterator(config, cfg, newQueryString, isFullTable);
         }
 
-        // Load the IteratorSettings into the QueryData instance
-        queryData.setSettings(Lists.newArrayList(cfg));
+        final QueryData queryData = new QueryData().withQuery(newQueryString).withSettings(Lists.newArrayList(cfg));
 
         stopwatch.stop();
 
@@ -509,7 +506,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                     .setRanges(queryRanges.first())
                     .setMaxRanges(maxRangesPerQueryPiece())
                     .setSettings(settings)
-                    .setMaxRangeWaitMillis(maxRangeWaitMillis)
+                    .setMaxRangeWaitMillis(getMaxRangeWaitMillis())
                     .setQueryPlanComparators(queryPlanComparators)
                     .setNumRangesToBuffer(config.getNumRangesToBuffer())
                     .setRangeBufferTimeoutMillis(config.getRangeBufferTimeoutMillis())
@@ -535,6 +532,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         addOption(cfg, QueryOptions.GROUP_FIELDS, config.getGroupFields().toString(), true);
         addOption(cfg, QueryOptions.GROUP_FIELDS_BATCH_SIZE, config.getGroupFieldsBatchSizeAsString(), true);
         addOption(cfg, QueryOptions.UNIQUE_FIELDS, config.getUniqueFields().toString(), true);
+        if (config.getUniqueFields().isMostRecent()) {
+            addOption(cfg, QueryOptions.MOST_RECENT_UNIQUE, Boolean.toString(true), false);
+            addOption(cfg, QueryOptions.UNIQUE_CACHE_BUFFER_SIZE, Integer.toString(config.getUniqueCacheBufferSize()), false);
+        }
         addOption(cfg, QueryOptions.HIT_LIST, Boolean.toString(config.isHitList()), false);
         addOption(cfg, QueryOptions.TERM_FREQUENCY_FIELDS, Joiner.on(',').join(config.getQueryTermFrequencyFields()), false);
         addOption(cfg, QueryOptions.TERM_FREQUENCIES_REQUIRED, Boolean.toString(config.isTermFrequenciesRequired()), false);
@@ -702,7 +703,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     }
 
     protected ASTJexlScript updateQueryTree(ScannerFactory scannerFactory, MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper,
-                    ShardQueryConfiguration config, String query, QueryData queryData, Query settings) throws DatawaveQueryException {
+                    ShardQueryConfiguration config, String query, Query settings) throws DatawaveQueryException {
         final QueryStopwatch timers = config.getTimers();
 
         TraceStopwatch stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Parse query");
@@ -768,6 +769,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         config.setQueryTree(timedFixQueryPropertyMarkers(timers, config.getQueryTree()));
 
         // Ensure that all ASTIdentifier nodes (field names) are upper-case to be consistent with what is enforced at ingest time
+        // this will also ensure that various configure fields for projections, grouping, etc are upper cased as well
         config.setQueryTree(timedUpperCaseIdentifiers(timers, config.getQueryTree(), config, metadataHelper));
 
         config.setQueryTree(timedRewriteNegations(timers, config.getQueryTree()));
@@ -819,7 +821,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             }
         }
 
-        config.setQueryTree(processTree(config.getQueryTree(), config, settings, metadataHelper, scannerFactory, queryData, timers, queryModel));
+        config.setQueryTree(processTree(config.getQueryTree(), config, settings, metadataHelper, scannerFactory, timers, queryModel));
 
         // ExpandCompositeTerms was here
 
@@ -847,7 +849,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     }
 
     protected ASTJexlScript processTree(final ASTJexlScript originalQueryTree, ShardQueryConfiguration config, Query settings, MetadataHelper metadataHelper,
-                    ScannerFactory scannerFactory, QueryData queryData, QueryStopwatch timers, QueryModel queryModel) throws DatawaveQueryException {
+                    ScannerFactory scannerFactory, QueryStopwatch timers, QueryModel queryModel) throws DatawaveQueryException {
         config.setQueryTree(originalQueryTree);
 
         TraceStopwatch stopwatch = null;
@@ -1273,7 +1275,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
     protected ASTJexlScript timedUpperCaseIdentifiers(QueryStopwatch timers, final ASTJexlScript script, ShardQueryConfiguration config,
                     MetadataHelper metadataHelper) throws DatawaveQueryException {
-        return visitorManager.timedVisit(timers, "Uppercase Field Names", () -> (CaseSensitivityVisitor.upperCaseIdentifiers(config, metadataHelper, script)));
+        return visitorManager.timedVisit(timers, "Uppercase Field Names", () -> (upperCaseIdentifiers(metadataHelper, config, script)));
     }
 
     protected ASTJexlScript timedRewriteNegations(QueryStopwatch timers, final ASTJexlScript script) throws DatawaveQueryException {
@@ -1296,7 +1298,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
     protected ASTJexlScript timedValidateFilterFunctions(QueryStopwatch timers, ASTJexlScript queryTree, Set<String> indexOnlyFields)
                     throws DatawaveQueryException {
-        return visitorManager.timedVisit(timers, "Rewrite Null Functions",
+        return visitorManager.timedVisit(timers, "Validate Filter Functions",
                         () -> (ASTJexlScript) ValidateFilterFunctionVisitor.validate(queryTree, indexOnlyFields));
     }
 
@@ -1400,9 +1402,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             throw new DatawaveQueryException("Unable get get data dictionary", e);
         }
 
-        // Fields in the data dictionary is always uppercase. Convert the unique fields to uppercase
-        // so the comparisons are case insensitive
-        List<String> fields = config.getUniqueFields().getFields().stream().map(String::toUpperCase).collect(Collectors.toList());
+        // get the unique fields (should already be normalized / uppercased)
+        Set<String> fields = config.getUniqueFields().getFields();
+
         // for the unique fields we need to also look for any model aliases (forward or reverse) and fields generated post evaluation (e.g. HIT_TERM)
         // this is because unique fields operate on the fields as returned to the user. We essentially leave all variants of the fields
         // in the unique field list to ensure we catch everything
@@ -1730,10 +1732,61 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         }
     }
 
+    protected Set<String> upcase(Set<String> fields) {
+        return fields.stream().map(s -> s.toUpperCase()).collect(Collectors.toSet());
+    }
+
+    protected ASTJexlScript upperCaseIdentifiers(MetadataHelper metadataHelper, ShardQueryConfiguration config, ASTJexlScript script) {
+        GroupFields groupFields = config.getGroupFields();
+        if (groupFields != null && groupFields.hasGroupByFields()) {
+            groupFields.setMaxFields(upcase(groupFields.getMaxFields()));
+            groupFields.setSumFields(upcase(groupFields.getSumFields()));
+            groupFields.setGroupByFields(upcase(groupFields.getGroupByFields()));
+            groupFields.setAverageFields(upcase(groupFields.getAverageFields()));
+            groupFields.setCountFields(upcase(groupFields.getCountFields()));
+            groupFields.setMinFields(upcase(groupFields.getMinFields()));
+
+            // If grouping is set, we must make the projection fields match all the group-by fields and aggregation fields.
+            config.setProjectFields(groupFields.getProjectionFields());
+        } else {
+            Set<String> projectFields = config.getProjectFields();
+
+            if (projectFields != null && !projectFields.isEmpty()) {
+                config.setProjectFields(upcase(projectFields));
+            }
+        }
+
+        UniqueFields uniqueFields = config.getUniqueFields();
+        if (uniqueFields != null && !uniqueFields.isEmpty()) {
+            Sets.newHashSet(uniqueFields.getFields()).stream().forEach(s -> uniqueFields.replace(s, s.toUpperCase()));
+        }
+
+        ExcerptFields excerptFields = config.getExcerptFields();
+        if (excerptFields != null && !excerptFields.isEmpty()) {
+            Sets.newHashSet(excerptFields.getFields()).stream().forEach(s -> excerptFields.replace(s, s.toUpperCase()));
+        }
+
+        Set<String> userProjection = config.getRenameFields();
+        if (userProjection != null && !userProjection.isEmpty()) {
+            config.setRenameFields(upcase(userProjection));
+        }
+
+        Set<String> disallowlistedFields = config.getDisallowlistedFields();
+        if (disallowlistedFields != null && !disallowlistedFields.isEmpty()) {
+            config.setDisallowlistedFields(upcase(disallowlistedFields));
+        }
+
+        Set<String> limitFields = config.getLimitFields();
+        if (limitFields != null && !limitFields.isEmpty()) {
+            config.setLimitFields(upcase(limitFields));
+        }
+
+        return (CaseSensitivityVisitor.upperCaseIdentifiers(config, metadataHelper, script));
+    }
+
     // Overwrite projection and disallowlist properties if the query model is
     // being used
     protected ASTJexlScript applyQueryModel(MetadataHelper metadataHelper, ShardQueryConfiguration config, ASTJexlScript script, QueryModel queryModel) {
-        config.setQueryTree(script);
         // generate the inverse of the reverse mapping; {display field name
         // => db field name}
         // a reverse mapping is always many to one, therefore the inverted
@@ -1781,6 +1834,15 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 log.trace("Updated excerpt fields using query model to " + excerptFields.getFields());
             }
             config.setExcerptFields(excerptFields);
+        }
+
+        Set<String> userProjection = config.getRenameFields();
+        if (userProjection != null && !userProjection.isEmpty()) {
+            userProjection = Sets.newHashSet(queryModel.remapParameterEquation(userProjection, inverseReverseModel));
+            if (log.isTraceEnabled()) {
+                log.trace("Updated user projection fields using query model to " + userProjection);
+            }
+            config.setRenameFields(userProjection);
         }
 
         if (config.getDisallowlistedFields() != null && !config.getDisallowlistedFields().isEmpty()) {
@@ -1837,12 +1899,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             throw new DatawaveFatalQueryException(qe);
         }
 
-        config.setQueryTree(QueryModelVisitor.applyModel(config.getQueryTree(), queryModel, allFields, config.getNoExpansionFields(), config.getLenientFields(),
+        return (QueryModelVisitor.applyModel(script, queryModel, allFields, config.getNoExpansionFields(), config.getLenientFields(),
                         config.getStrictFields()));
-
-        if (log.isTraceEnabled())
-            log.trace("queryTree:" + PrintingVisitor.formattedQueryString(config.getQueryTree()));
-        return config.getQueryTree();
     }
 
     /**
@@ -1908,9 +1966,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
     public static void logQuery(final ASTJexlScript queryTree, String message) {
         if (log.isTraceEnabled()) {
-            logTrace(PrintingVisitor.formattedQueryStringList(queryTree), message);
+            logTrace(PrintingVisitor.formattedQueryStringList(queryTree, maxChildNodesToPrint, maxTermsToPrint), message);
         } else if (log.isDebugEnabled()) {
-            logDebug(PrintingVisitor.formattedQueryStringList(queryTree, maxChildNodesToPrint), message);
+            logDebug(PrintingVisitor.formattedQueryStringList(queryTree, maxChildNodesToPrint, maxTermsToPrint), message);
         }
     }
 
@@ -2517,13 +2575,19 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         // Truncate and bump the time on the endKey
         String endKey = config.getShardDateFormatter().format(getEndDateForIndexLookup(config.getEndDate()));
 
-        Range r = new Range(startKey, true, endKey, false);
+        Range range = new Range(startKey, true, endKey, false);
 
         if (log.isTraceEnabled()) {
-            log.trace("Produced range is " + r);
+            log.trace("Produced range is " + range);
         }
 
-        return new CloseableListIterable<>(Collections.singletonList(new QueryPlan(queryTree, r)));
+        //  @formatter:off
+        QueryPlan queryPlan = new QueryPlan()
+                        .withQueryTree(queryTree)
+                        .withRanges(Collections.singleton(range));
+        //  @formatter:on
+
+        return new CloseableListIterable<>(Collections.singletonList(queryPlan));
     }
 
     /**
@@ -2577,42 +2641,73 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             fullTableScanReason = state.reason;
         }
 
-        Set<String> ingestTypes = null;
-        if (config.getReduceIngestTypes()) {
-            Set<String> userRequestedIngestTypes = config.getDatatypeFilter();
-            if (!userRequestedIngestTypes.isEmpty()) {
-                Set<String> queryIngestTypes = IngestTypeVisitor.getIngestTypes(queryTree, getTypeMetadata());
-                ingestTypes = Sets.intersection(userRequestedIngestTypes, queryIngestTypes);
+        // optionally build/rebuild the datatype filter with the fully planned query
+        if (config.isRebuildDatatypeFilter()) {
+            Set<String> ingestTypes = IngestTypeVisitor.getIngestTypes(config.getQueryTree(), getTypeMetadata());
 
-                if (ingestTypes.isEmpty()) {
-                    throw new DatawaveFatalQueryException(
-                                    "DataTypes did not intersect. User requested types: " + userRequestedIngestTypes + " Query types: " + queryIngestTypes);
+            if (ingestTypes.contains(IngestTypeVisitor.UNKNOWN_TYPE)) {
+                // could not reduce ingest types based on the query structure, do nothing
+            } else if (config.getDatatypeFilter().isEmpty()) {
+                // if no filter specified, build and set filter from query fields
+                config.setDatatypeFilter(ingestTypes);
+            } else {
+                Set<String> parameterTypes = config.getDatatypeFilter();
+                Set<String> intersectedTypes = Sets.intersection(ingestTypes, parameterTypes);
+
+                if (intersectedTypes.isEmpty()) {
+                    throw new DatawaveQueryException("User requested datatypes did not overlap with query fields");
                 }
 
-                if (ingestTypes.size() < userRequestedIngestTypes.size()) {
-                    // need to update the user requested ingest types
-                    config.setDatatypeFilter(ingestTypes);
+                // only update filter if it is smaller
+                if (intersectedTypes.size() < parameterTypes.size()) {
+                    config.setDatatypeFilter(intersectedTypes);
                 }
             }
         }
 
-        if (config.getPruneQueryByIngestTypes()) {
-            JexlNode pruned;
-            if (ingestTypes == null) {
-                // perform a self-pruning visit
-                pruned = IngestTypePruningVisitor.prune(RebuildingVisitor.copy(queryTree), getTypeMetadata());
-            } else {
-                // perform an external pruning visit
-                pruned = IngestTypePruningVisitor.prune(RebuildingVisitor.copy(queryTree), getTypeMetadata(), ingestTypes);
+        // only reduce datatype filter if not rebuilding and there's a filter to reduce
+        if (!config.getDatatypeFilter().isEmpty() && !config.isRebuildDatatypeFilter() && config.getReduceIngestTypes()) {
+            Set<String> parameterTypes = config.getDatatypeFilter();
+            Set<String> ingestTypes = IngestTypeVisitor.getIngestTypes(queryTree, getTypeMetadata());
+
+            if (!ingestTypes.contains(IngestTypeVisitor.UNKNOWN_TYPE)) {
+                Set<String> intersectedTypes = Sets.intersection(ingestTypes, parameterTypes);
+
+                if (intersectedTypes.isEmpty()) {
+                    throw new DatawaveQueryException("User requested datatypes did not overlap with query fields");
+                }
+
+                // only update filter if it is smaller
+                if (intersectedTypes.size() < parameterTypes.size()) {
+                    config.setDatatypeFilter(intersectedTypes);
+                }
             }
+        }
+
+        // prune query by ingest types
+        if (config.getPruneQueryByIngestTypes()) {
+            JexlNode pruned = IngestTypePruningVisitor.prune(RebuildingVisitor.copy(queryTree), getTypeMetadata());
 
             if (config.getFullTableScanEnabled() || ExecutableDeterminationVisitor.isExecutable(pruned, config, metadataHelper)) {
                 // always update the query for full table scans or in cases where the query is still executable
                 queryTree = pruned;
                 config.setQueryTree((ASTJexlScript) pruned);
+
+                Set<String> types = IngestTypeVisitor.getIngestTypes(pruned, getTypeMetadata());
+                if (!types.contains(IngestTypeVisitor.UNKNOWN_TYPE)) {
+                    if (types.isEmpty()) {
+                        throw new DatawaveQueryException("User requested datatypes did not overlap with query fields");
+                    } else if (config.getDatatypeFilter().isEmpty() || (types.size() < config.getDatatypeFilter().size())) {
+                        config.setDatatypeFilter(types);
+                    }
+                }
             } else {
                 throw new DatawaveFatalQueryException("Check query for mutually exclusive ingest types, query was non-executable after pruning by ingest type");
             }
+        }
+
+        if (config.isSortQueryBeforeGlobalIndex()) {
+            queryTree = OrderByCostVisitor.order((ASTJexlScript) queryTree);
         }
 
         // if a simple examination of the query has not forced a full table
@@ -3031,6 +3126,14 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
     public static void setMaxChildNodesToPrint(int maxChildNodesToPrint) {
         DefaultQueryPlanner.maxChildNodesToPrint = maxChildNodesToPrint;
+    }
+
+    public static int getMaxTermsToPrint() {
+        return maxTermsToPrint;
+    }
+
+    public static void setMaxTermsToPrint(int maxTermsToPrint) {
+        DefaultQueryPlanner.maxTermsToPrint = maxTermsToPrint;
     }
 
     /**

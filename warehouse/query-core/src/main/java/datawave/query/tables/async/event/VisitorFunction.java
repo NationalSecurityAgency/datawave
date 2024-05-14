@@ -7,6 +7,7 @@ import java.security.SecureRandom;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -28,9 +29,11 @@ import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
+import org.geotools.data.Join;
 
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
+import com.google.common.base.Splitter;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Sets;
@@ -313,7 +316,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                         reduceQueryFields(script, newIteratorSetting);
                     }
 
-                    if (config.getReduceIngestTypesPerShard()) {
+                    if (config.isRebuildDatatypeFilterPerShard() || config.getReduceIngestTypesPerShard()) {
                         reduceIngestTypes(script, newIteratorSetting);
                     }
 
@@ -345,10 +348,11 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                     }
 
                     if (log.isTraceEnabled()) {
-                        DefaultQueryPlanner.logTrace(PrintingVisitor.formattedQueryStringList(script), "VistorFunction::apply method");
+                        DefaultQueryPlanner.logTrace(PrintingVisitor.formattedQueryStringList(script, DefaultQueryPlanner.getMaxChildNodesToPrint(),
+                                        DefaultQueryPlanner.getMaxTermsToPrint()), "VistorFunction::apply method");
                     } else if (log.isDebugEnabled()) {
-                        DefaultQueryPlanner.logDebug(PrintingVisitor.formattedQueryStringList(script, DefaultQueryPlanner.maxChildNodesToPrint),
-                                        "VistorFunction::apply method");
+                        DefaultQueryPlanner.logDebug(PrintingVisitor.formattedQueryStringList(script, DefaultQueryPlanner.getMaxChildNodesToPrint(),
+                                        DefaultQueryPlanner.getMaxTermsToPrint()), "VistorFunction::apply method");
                     }
 
                 } catch (ParseException e) {
@@ -411,7 +415,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
      *            an {@link IteratorSetting}
      */
     protected void pruneIvaratorConfigs(ASTJexlScript script, IteratorSetting settings) {
-        if (script != null && !IvaratorRequiredVisitor.isIvaratorRequired(script)) {
+        if (script != null && !settings.getOptions().containsKey(QueryOptions.MOST_RECENT_UNIQUE) && !IvaratorRequiredVisitor.isIvaratorRequired(script)) {
             settings.removeOption(QueryOptions.IVARATOR_CACHE_BUFFER_SIZE);
             settings.removeOption(QueryOptions.IVARATOR_CACHE_DIR_CONFIG);
             settings.removeOption(QueryOptions.IVARATOR_NUM_RETRIES);
@@ -491,17 +495,32 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
             cachedTypeMetadata = new TypeMetadata(serializedTypeMetadata);
         }
 
-        Set<String> userRequestedDataTypes = config.getDatatypeFilter();
-        if (!userRequestedDataTypes.isEmpty()) {
-            Set<String> queryDataTypes = IngestTypeVisitor.getIngestTypes(script, cachedTypeMetadata);
-            Set<String> ingestTypes = Sets.intersection(userRequestedDataTypes, queryDataTypes);
-            if (ingestTypes.size() < userRequestedDataTypes.size()) {
-                newIteratorSetting.addOption(QueryOptions.DATATYPE_FILTER, Joiner.on(',').join(ingestTypes));
+        // get requested types
+        Set<String> requestedDatatypes;
+        String opt = newIteratorSetting.getOptions().get(QueryOptions.DATATYPE_FILTER);
+        if (opt == null) {
+            requestedDatatypes = Collections.emptySet();
+        } else {
+            requestedDatatypes = new HashSet<>(Splitter.on(',').splitToList(opt));
+        }
+
+        // get existing types from the query
+        Set<String> datatypes = IngestTypeVisitor.getIngestTypes(script, cachedTypeMetadata);
+        if (datatypes.contains(IngestTypeVisitor.UNKNOWN_TYPE)) {
+            return;
+        }
+
+        if (config.isRebuildDatatypeFilterPerShard()) {
+            newIteratorSetting.addOption(QueryOptions.DATATYPE_FILTER, Joiner.on(',').join(datatypes));
+        } else if (config.getReduceIngestTypesPerShard() && !requestedDatatypes.isEmpty() && !datatypes.isEmpty()) {
+            Set<String> intersectedTypes = Sets.intersection(requestedDatatypes, datatypes);
+            if (intersectedTypes.isEmpty()) {
+                // the EmptyPlanPruner in the RangeStream should have handled this situation, this exception indicates a bug exists
+                throw new DatawaveFatalQueryException("Ingest types reduced to zero, cannot execute query sub-plan");
             }
 
-            if (ingestTypes.isEmpty()) {
-                // the EmptyPlanPruner in the RangeStream should have handled this situation, this exception indicates a bug exists
-                throw new DatawaveFatalQueryException("Reduced ingest types to zero, cannot execute query sub-plan");
+            if (intersectedTypes.size() <= requestedDatatypes.size()) {
+                newIteratorSetting.addOption(QueryOptions.DATATYPE_FILTER, Joiner.on(',').join(intersectedTypes));
             }
         }
     }
