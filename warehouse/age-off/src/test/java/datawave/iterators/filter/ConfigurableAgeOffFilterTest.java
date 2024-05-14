@@ -25,8 +25,8 @@ import org.junit.Test;
 import datawave.iterators.filter.ageoff.AppliedRule;
 import datawave.iterators.filter.ageoff.ConfigurableIteratorEnvironment;
 import datawave.iterators.filter.ageoff.FilterOptions;
-import datawave.util.CompositeTimestamp;
 import datawave.query.iterator.SortedListKeyValueIterator;
+import datawave.util.CompositeTimestamp;
 
 public class ConfigurableAgeOffFilterTest {
 
