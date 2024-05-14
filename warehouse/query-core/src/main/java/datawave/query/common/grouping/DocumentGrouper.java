@@ -34,10 +34,8 @@ import datawave.query.attributes.Document;
 import datawave.query.attributes.TypeAttribute;
 
 /**
- * <P>
  * This class provides the primary functionality needed to group documents and aggregate field values within identified groups (regardless if done server or
  * client-side).
- * </P>
  * <H2>Grouping</H2>
  * <P>
  * Grouping fields across documents will result in groupings of distinct value groupings for each specified field to group, as well as the total number of times
@@ -59,14 +57,11 @@ import datawave.query.attributes.TypeAttribute;
  * Values of fields with the same context and instance are considered direct one-to-one grouping matches, and will be placed within the same groupings. Direct
  * matches cannot be determined for values of fields that do not have a context, and as such they will be combined with each possible grouping, effectively a
  * cartesian product. Direct matches are prioritized and found first before indirect matches are combined with them.
- * </P>
  * <H2>Aggregation</H2>
  * <P>
  * Once all valid groupings have been identified and counted, aggregation can be performed on the values of any specified fields for each grouping. The
  * aggregation fields can differ from the group-by fields. The following aggregation operations are supported:
- * </P>
  * <P>
- * </P>
  * <strong>SUM</strong>: Sum up all the values for specified fields across groupings. This operation is limited to fields with numerical values. Fields may be
  * specified via:
  * <ul>
@@ -116,7 +111,6 @@ import datawave.query.attributes.TypeAttribute;
  * <li>{@code AGE -> AG}</li>
  * <li>{@code ETA -> AG}</li>
  * </ul>
- * </P>
  * Then, after applying model mapping we would have two instances of {@code AG -> 23} and one instance of {@code AG -> 10}. Only one instance of the
  * {@code AG -> 23} field-value pairing will be counted towards grouping and aggregation along with {@code AG -> 10}, and the remaining duplicate of
  * {@code AG -> 23} will be disregarded.
