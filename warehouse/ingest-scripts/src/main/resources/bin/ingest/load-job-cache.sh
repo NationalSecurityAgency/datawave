@@ -46,11 +46,12 @@ function no_ctrlc() {
   let count++
   echo
   if [[ $count == 1 ]]; then
-    echo "Are you sure you want to stop the load-job-cache.sh process? Giving you a warning."
+    echo "WARNING: Killing this script will leave the job cache in a most-likely unusable state. You will need to rerun this script.
+    To continue stopping, please issue another SIGTERM."
   else
-    echo "Second SIGTERM received, dipping out"
+    echo "Second SIGTERM received, exiting script."
     rm -r -f "$tmpdir"
-    exit $?
+    exit 1
   fi
 }
 
