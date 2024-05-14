@@ -1,9 +1,16 @@
 package datawave.ingest.mapreduce.job;
 
-import datawave.ingest.data.config.ingest.AccumuloHelper;
-import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
-import datawave.marking.MarkingFunctions;
-import datawave.util.StringUtils;
+import static org.apache.accumulo.core.conf.Property.TABLE_CRYPTO_PREFIX;
+
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.conf.ConfigurationCopy;
@@ -33,16 +40,10 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputCommitter;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.log4j.Logger;
 
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
-import static org.apache.accumulo.core.conf.Property.TABLE_CRYPTO_PREFIX;
+import datawave.ingest.data.config.ingest.AccumuloHelper;
+import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
+import datawave.marking.MarkingFunctions;
+import datawave.util.StringUtils;
 
 public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Value> {
 
@@ -380,9 +381,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
         // locality group configuration is configured for job
         // there is a correlation between the locality group awareness and r-file output
         // i.e. data must be sorted before arriving into the output
-        lgSupport = LocalityGroupSupport.builder()
-            .withLocalityGroupConfiguration(TableConfigurationUtil.getJobOutputLocalityGroupConfiguration(conf))
-            .build();
+        lgSupport = LocalityGroupSupport.builder().withLocalityGroupConfiguration(TableConfigurationUtil.getJobOutputLocalityGroupConfiguration(conf)).build();
 
         TableConfigurationUtil tcu = new TableConfigurationUtil(conf);
 
@@ -610,10 +609,10 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
                 SizeTrackingWriter writer;
                 if (shardedTableNames.contains(tableName)) {
                     // TODO: check if we can remove
-//                    if (!shardedTablesConfigured.contains(tableName)) {
-//                        throw new IOException("Asked to create writer for sharded table " + tableName
-//                                        + ", however this table was not in the configured set of ingest job tables");
-//                    }
+                    // if (!shardedTablesConfigured.contains(tableName)) {
+                    // throw new IOException("Asked to create writer for sharded table " + tableName
+                    // + ", however this table was not in the configured set of ingest job tables");
+                    // }
                     // By default, throw all shards for a table into one output rfile. If the number of tservers is small enough, we may want to
                     // produce one rfile per shard location (tserver) in order to be more efficient. However, when the number of tservers is large
                     // enough, the overhead of dealing with the large number of files over a large number of jobs may overwhelm HDFS, so we're better

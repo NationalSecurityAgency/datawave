@@ -1,14 +1,14 @@
 package datawave.ingest.mapreduce.job;
 
-import org.apache.hadoop.conf.Configurable;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.io.Text;
-
 import java.io.IOException;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import org.apache.hadoop.conf.Configurable;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.io.Text;
 
 class LocalityGroupTableConfiguration implements LocalityGroupConfiguration, Configurable {
     private Configuration conf;
@@ -44,7 +44,7 @@ class LocalityGroupTableConfiguration implements LocalityGroupConfiguration, Con
     }
 
     @Override
-    public Map<String, Set<Text>> getLocalityGroups(String tableName) throws IOException {
+    public Map<String,Set<Text>> getLocalityGroups(String tableName) throws IOException {
         return tcu.getLocalityGroups(tableName);
     }
 
@@ -53,4 +53,3 @@ class LocalityGroupTableConfiguration implements LocalityGroupConfiguration, Con
         return value != null ? Stream.of(value.split(",")).collect(Collectors.toSet()) : Set.of();
     }
 }
-

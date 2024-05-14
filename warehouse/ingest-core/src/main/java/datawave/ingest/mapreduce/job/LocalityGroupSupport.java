@@ -1,9 +1,5 @@
 package datawave.ingest.mapreduce.job;
 
-import org.apache.accumulo.core.data.ArrayByteSequence;
-import org.apache.accumulo.core.data.ByteSequence;
-import org.apache.hadoop.io.Text;
-
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -11,10 +7,14 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import org.apache.accumulo.core.data.ArrayByteSequence;
+import org.apache.accumulo.core.data.ByteSequence;
+import org.apache.hadoop.io.Text;
+
 public class LocalityGroupSupport {
     private Set<Text> tables;
-    private Map<Text, ColumnFamilyToLocalityGroup> tableToColfLg;
-    private Map<Text, Map<String, Set<ByteSequence>>> tableToLgColf;
+    private Map<Text,ColumnFamilyToLocalityGroup> tableToColfLg;
+    private Map<Text,Map<String,Set<ByteSequence>>> tableToLgColf;
 
     LocalityGroupSupport() {
         this.tables = new HashSet<>();
@@ -30,7 +30,7 @@ public class LocalityGroupSupport {
         return tableToColfLg.get(table);
     }
 
-    public Map<String, Set<ByteSequence>> getLocalityGroupToColumnFamily(Text table) {
+    public Map<String,Set<ByteSequence>> getLocalityGroupToColumnFamily(Text table) {
         return tableToLgColf.get(table);
     }
 
@@ -58,11 +58,11 @@ public class LocalityGroupSupport {
             }
             Set<String> supportedTables = lgConf.getSupportedTables();
             for (String tableName : supportedTables) {
-                Map<String, Set<Text>> localityGroups = lgConf.getLocalityGroups(tableName);
+                Map<String,Set<Text>> localityGroups = lgConf.getLocalityGroups(tableName);
                 // pull the locality groups for this table.
-                Map<Text, String> cftlg = new HashMap<>();
-                Map<String, Set<ByteSequence>> lgtcf = new HashMap<>();
-                for (Map.Entry<String, Set<Text>> locs : localityGroups.entrySet()) {
+                Map<Text,String> cftlg = new HashMap<>();
+                Map<String,Set<ByteSequence>> lgtcf = new HashMap<>();
+                for (Map.Entry<String,Set<Text>> locs : localityGroups.entrySet()) {
                     lgtcf.put(locs.getKey(), new HashSet<>());
                     for (Text loc : locs.getValue()) {
                         cftlg.put(loc, locs.getKey());
@@ -78,12 +78,12 @@ public class LocalityGroupSupport {
     }
 
     public static class ColumnFamilyToLocalityGroup {
-        private final Map<Text, String> colfToLg;
+        private final Map<Text,String> colfToLg;
         private final int colfMaxLength;
         private final int colfMinLength;
         private final boolean empty;
 
-        ColumnFamilyToLocalityGroup(Map<Text, String> colfToLg) {
+        ColumnFamilyToLocalityGroup(Map<Text,String> colfToLg) {
             this.colfToLg = colfToLg;
             this.empty = colfToLg.isEmpty();
             this.colfMinLength = empty ? 0 : colfToLg.keySet().stream().mapToInt(Text::getLength).min().orElseThrow();
@@ -102,7 +102,7 @@ public class LocalityGroupSupport {
             return colfMinLength;
         }
 
-        public Map<Text, String> columnFamilyToLocalityGroup() {
+        public Map<Text,String> columnFamilyToLocalityGroup() {
             return colfToLg;
         }
 

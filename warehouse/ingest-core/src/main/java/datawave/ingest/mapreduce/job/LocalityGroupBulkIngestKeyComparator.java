@@ -1,6 +1,5 @@
 package datawave.ingest.mapreduce.job;
 
-import com.google.common.annotations.VisibleForTesting;
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
@@ -41,9 +40,8 @@ public class LocalityGroupBulkIngestKeyComparator extends WritableComparator imp
     public void setConf(Configuration conf) {
         this.conf = conf;
         try {
-            this.lgSupport = LocalityGroupSupport.builder()
-                .withLocalityGroupConfiguration(TableConfigurationUtil.getJobOutputLocalityGroupConfiguration(conf))
-                .build();
+            LocalityGroupConfiguration localLgConf = lgConf == null ? TableConfigurationUtil.getJobOutputLocalityGroupConfiguration(conf) : lgConf;
+            this.lgSupport = LocalityGroupSupport.builder().withLocalityGroupConfiguration(localLgConf).build();
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }
@@ -136,8 +134,7 @@ public class LocalityGroupBulkIngestKeyComparator extends WritableComparator imp
         return 0;
     }
 
-    @VisibleForTesting
-    void setLocalityGroupConfiguration(LocalityGroupConfiguration lgConf) {
+    public void setLocalityGroupConfiguration(LocalityGroupConfiguration lgConf) {
         this.lgConf = lgConf;
     }
 
@@ -169,8 +166,8 @@ public class LocalityGroupBulkIngestKeyComparator extends WritableComparator imp
     }
 
     /**
-     * Reads a Variable Long from a byte[]. Also returns the variable int size in the second position (index 1) of the startAndLen array. This allows the
-     * caller to have access to the VInt size without having to call decode again.
+     * Reads a Variable Long from a byte[]. Also returns the variable int size in the second position (index 1) of the startAndLen array. This allows the caller
+     * to have access to the VInt size without having to call decode again.
      *
      * @param bytes
      *            payload containing variable long
