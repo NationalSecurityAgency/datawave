@@ -58,7 +58,8 @@ import datawave.query.attributes.TypeAttribute;
  * </ul>
  * Values of fields with the same context and instance are considered direct one-to-one grouping matches, and will be placed within the same groupings. Direct
  * matches cannot be determined for values of fields that do not have a context, and as such they will be combined with each possible grouping, effectively a
- * cartesian product. Direct matches are prioritized and found first before indirect matches are combined with them. <\P>
+ * cartesian product. Direct matches are prioritized and found first before indirect matches are combined with them.
+ * </P>
  * <H2>Aggregation</H2>
  * <P>
  * Once all valid groupings have been identified and counted, aggregation can be performed on the values of any specified fields for each grouping. The
@@ -98,8 +99,7 @@ import datawave.query.attributes.TypeAttribute;
  * <li>The JEXL function {@code f:average()}.</li>
  * <li>The query parameter {@code average.fields}.</li>
  * </ul>
- * <H2>Model Mapping Notes
- * <H2>
+ * <H2>Model Mapping Notes</H2>
  * <P>
  * It is possible to supply a mapping model mappings derived from the query model. If supplied, the field names of entries will be mapped to their respective
  * root model mapping (if one exists) before they are grouped or aggregated. It is important to note that it is possible for multiple fields in a document to be
