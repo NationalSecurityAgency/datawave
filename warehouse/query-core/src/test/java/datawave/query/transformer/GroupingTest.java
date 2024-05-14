@@ -1036,7 +1036,7 @@ public abstract class GroupingTest {
     }
 
     /**
-     * Verify that when grouping and aggregating with model mapping, if a multiple fields with the same value are mapped to the same root model mapping in a
+     * Verify that when grouping and aggregating with model mapping, if multiple fields with the same value are mapped to the same root model mapping in a
      * document, that only one instance of the field-value pairing is counted towards grouping and aggregation.
      */
     @Test
