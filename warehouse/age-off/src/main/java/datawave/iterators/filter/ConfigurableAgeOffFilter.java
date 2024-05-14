@@ -40,6 +40,7 @@ import datawave.ingest.util.cache.watch.FileRuleWatcher;
 import datawave.iterators.filter.ageoff.AgeOffPeriod;
 import datawave.iterators.filter.ageoff.AppliedRule;
 import datawave.iterators.filter.ageoff.FilterRule;
+import datawave.util.CompositeTimestamp;
 
 /**
  * This class provides a subclass of the {@code org.apache.accumulo.core.iterators.Filter} class and implements the {@code Option Describer} interface. It
@@ -177,7 +178,7 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
             return true;
 
         // short circuit check
-        long timeStamp = k.getTimestamp();
+        long timeStamp = CompositeTimestamp.getAgeOffDate(k.getTimestamp());
         if (timeStamp > this.shortCircuitDateMillis)
             return true;
 

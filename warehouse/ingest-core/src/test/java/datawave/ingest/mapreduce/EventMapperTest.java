@@ -79,7 +79,7 @@ public class EventMapperTest {
         record = new SimpleRawRecord();
         record.setRawFileTimestamp(eventTime);
         record.setDataType(type);
-        record.setDate(eventTime);
+        record.setTimestamp(eventTime);
         record.setRawFileName("/some/filename");
         record.setRawData("some data".getBytes());
         record.generateId(null);
@@ -87,7 +87,7 @@ public class EventMapperTest {
         errorRecord = new SimpleRawRecord();
         errorRecord.setRawFileTimestamp(0);
         errorRecord.setDataType(type);
-        errorRecord.setDate(eventTime);
+        errorRecord.setTimestamp(eventTime);
         errorRecord.setRawFileName("/some/filename");
         errorRecord.setRawData("some data".getBytes());
         errorRecord.generateId(null);

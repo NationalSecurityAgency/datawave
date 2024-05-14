@@ -6,6 +6,7 @@ import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.log4j.Logger;
 
 import datawave.iterators.filter.AgeOffConfigParams;
+import datawave.util.CompositeTimestamp;
 
 /**
  * Data type age off filter. Traverses through indexed tables
@@ -59,7 +60,11 @@ public class MaximumAgeOffFilter extends AppliedRule {
 
         // this rule determines whether to accept / deny (ageoff) a K/V
         // based solely on whether a timestamp is before (older than) the cutoff for aging off
-        return k.getTimestamp() > period.getCutOffMilliseconds();
+        if (CompositeTimestamp.getAgeOffDate(k.getTimestamp()) > period.getCutOffMilliseconds()) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     /**

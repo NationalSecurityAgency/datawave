@@ -172,7 +172,7 @@ public class ShardTableConfigHelper extends AbstractTableConfigHelper {
         CombinerConfiguration tfConf = new CombinerConfiguration(new Column("tf"),
                         new IteratorSetting(10, "TF", datawave.ingest.table.aggregator.TextIndexAggregator.class.getName()));
 
-        setAggregatorConfigurationIfNecessary(tableName, Collections.singletonList(tfConf), tops, log);
+        setAggregatorConfigurationIfNecessary(tableName, Collections.singletonList(tfConf), tops, conf, log);
 
         if (markingsSetupIteratorEnabled) {
             for (IteratorScope scope : IteratorScope.values()) {
