@@ -1,10 +1,18 @@
 package datawave.iterators.filter;
 
+import java.util.Arrays;
 import java.util.Date;
+import java.util.concurrent.TimeUnit;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
+import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
 import datawave.iterators.filter.ageoff.AgeOffPeriod;
@@ -24,13 +32,11 @@ public abstract class TokenFilterBase extends AppliedRule {
     private byte[][] patternBytes;
     private boolean ruleApplied;
 
-    // record if the column visibility contained the tokens specified by the filter
-    protected byte[] prevCVBytes;
-    protected boolean prevDecision;
-
     // These are the possible delimiters in a column visibility exception for the double quote. NOTE, this is fragile
     // but currently there is no way to get this list out of the accumulo ColumnVisibility class.
     private static final byte[] DELIMITERS = "|&()".getBytes();
+
+    private final Cache<Text,Boolean> cvCache = CacheBuilder.newBuilder().maximumSize(50).expireAfterAccess(30, TimeUnit.MINUTES).build();
 
     /**
      * This method is to be implemented by sub-classes of this class. Child classes should test the provided tokens against the provided key's column visibility
@@ -44,6 +50,7 @@ public abstract class TokenFilterBase extends AppliedRule {
      *            the tokens to search for (or vs and rules defined by the underlying class)
      * @return {@code boolean} True if the key satisfies the pattern(s)
      */
+
     public abstract boolean hasToken(Key k, Value v, byte[][] testTokens);
 
     /**
@@ -72,6 +79,15 @@ public abstract class TokenFilterBase extends AppliedRule {
             log.trace("patternBytes == null");
             dtFlag = true;
         } else {
+
+            Boolean bool = cvCache.getIfPresent(k.getColumnVisibility());
+            if (bool != null) {
+                if (bool) {
+                    ruleApplied = true;
+                }
+                return bool;
+            }
+
             if (hasToken(k, v, patternBytes)) {
                 long timeStamp = k.getTimestamp();
                 dtFlag = timeStamp > period.getCutOffMilliseconds();
@@ -80,12 +96,14 @@ public abstract class TokenFilterBase extends AppliedRule {
                     log.trace("timeStamp = " + period.getCutOffMilliseconds());
                     log.trace("timeStamp as Date = " + new Date(timeStamp));
                 }
+                cvCache.put(k.getColumnVisibility(), true);
                 ruleApplied = true;
             } else {
                 if (log.isTraceEnabled()) {
                     log.trace("did not match the patterns:" + toString(patternBytes));
                 }
                 // if the pattern did not match anything, then go ahead and accept this record
+                cvCache.put(k.getColumnVisibility(), false);
                 dtFlag = true;
             }
 
@@ -132,8 +150,6 @@ public abstract class TokenFilterBase extends AppliedRule {
             }
         }
         ruleApplied = false;
-        prevCVBytes = null;
-        prevDecision = false;
     }
 
     protected void setRuleApplied(boolean ruleApplied) {

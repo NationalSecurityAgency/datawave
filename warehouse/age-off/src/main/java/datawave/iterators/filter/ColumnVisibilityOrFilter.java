@@ -6,8 +6,6 @@ package datawave.iterators.filter;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 
-import java.util.Arrays;
-
 /**
  * This subclass of the {@code RegexFilterBase} class is used to filter based on the column visibility of the {@code Key} object {@code k}.
  */
@@ -27,16 +25,6 @@ public class ColumnVisibilityOrFilter extends TokenFilterBase {
         boolean found = false;
 
         byte[] cv = k.getColumnVisibilityData().getBackingArray();
-
-        if (prevCVBytes == null) {
-            prevCVBytes = cv; // first time, record cv
-        } else if (Arrays.equals(prevCVBytes, cv)) {
-            // ruleApplied was reset before the call to hasToken
-            setRuleApplied(true);
-            return prevDecision; // return cached decision
-        } else {
-            prevCVBytes = cv; // new cv found, record it
-        }
 
         // find the start of the first token to test
         int start = findNextNonDelimiter(cv, 0);
@@ -64,8 +52,7 @@ public class ColumnVisibilityOrFilter extends TokenFilterBase {
             }
         }
 
-        prevDecision = found;
-        return prevDecision;
+        return found;
     }
 
 }
