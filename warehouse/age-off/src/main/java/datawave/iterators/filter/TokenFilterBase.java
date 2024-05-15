@@ -1,17 +1,13 @@
 package datawave.iterators.filter;
 
-import java.util.Arrays;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
-import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
@@ -24,6 +20,9 @@ import datawave.util.StringUtils;
  * This class provides an abstract base class to be extended to filter based on matching a STRING to the {@code Strings} tokens that represents some portion of
  * a ACCUMULO record's {@code Key} or {@code Value}. For example, a subclass could be used to filter on all or a portion of each record's: Row, Column Family,
  * Column Qualifier, or Column Visibility
+ * <P>
+ * This filter base caches the result of column visibility parsing. By default, the last 50 unique column visibilities are kept. The
+ * {@link AgeOffConfigParams#COLUMN_VISIBILITY_CACHE_SIZE} pay be specified to override the default value.
  *
  */
 public abstract class TokenFilterBase extends AppliedRule {
@@ -36,7 +35,7 @@ public abstract class TokenFilterBase extends AppliedRule {
     // but currently there is no way to get this list out of the accumulo ColumnVisibility class.
     private static final byte[] DELIMITERS = "|&()".getBytes();
 
-    private final Cache<Text,Boolean> cvCache = CacheBuilder.newBuilder().maximumSize(50).expireAfterAccess(30, TimeUnit.MINUTES).build();
+    private Cache<Text,Boolean> cvCache;
 
     /**
      * This method is to be implemented by sub-classes of this class. Child classes should test the provided tokens against the provided key's column visibility
@@ -149,6 +148,19 @@ public abstract class TokenFilterBase extends AppliedRule {
                 patternBytes[i] = patternStrs[i].trim().getBytes();
             }
         }
+
+        int size = 50;
+        if (options.getOption(AgeOffConfigParams.COLUMN_VISIBILITY_CACHE_SIZE) != null) {
+            size = Integer.parseInt(options.getOption(AgeOffConfigParams.COLUMN_VISIBILITY_CACHE_SIZE));
+        }
+
+        //  @formatter:off
+        cvCache = Caffeine.newBuilder()
+                        .maximumSize(size)
+                        .expireAfterAccess(30, TimeUnit.MINUTES)
+                        .build();
+        //  @formatter:on
+
         ruleApplied = false;
     }
 
@@ -217,5 +229,9 @@ public abstract class TokenFilterBase extends AppliedRule {
 
     public byte[][] getPatternBytes() {
         return patternBytes;
+    }
+
+    public Cache<Text,Boolean> getCvCache() {
+        return cvCache;
     }
 }

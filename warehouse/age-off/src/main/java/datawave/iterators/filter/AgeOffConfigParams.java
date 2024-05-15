@@ -63,4 +63,9 @@ public class AgeOffConfigParams {
      * Exclude schema components from age-off
      */
     public static final String EXCLUDE_DATA = "excludeData";
+
+    /**
+     * How many column visibilities should be cached. Parsing column visibilities is an expensive operation, so cache the decision.
+     */
+    public static final String COLUMN_VISIBILITY_CACHE_SIZE = "columnVisibilityCacheSize";
 }

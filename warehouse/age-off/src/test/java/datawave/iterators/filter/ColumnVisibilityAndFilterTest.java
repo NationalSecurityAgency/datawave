@@ -1,15 +1,16 @@
 package datawave.iterators.filter;
 
-import datawave.iterators.filter.ageoff.AgeOffPeriod;
-import datawave.iterators.filter.ageoff.FilterOptions;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import datawave.iterators.filter.ageoff.AgeOffPeriod;
+import datawave.iterators.filter.ageoff.FilterOptions;
 
 /**
  * Test for the {@link ColumnVisibilityAndFilter}
@@ -34,7 +35,7 @@ public class ColumnVisibilityAndFilterTest {
     @Before
     public void setup() {
         start = System.currentTimeMillis();
-        period = new AgeOffPeriod(start, 60, "ms");
+        period = new AgeOffPeriod(start, 60L, "ms");
     }
 
     private void createKeysWithTimeStamp(long ts) {
@@ -62,10 +63,21 @@ public class ColumnVisibilityAndFilterTest {
         filter.init(filterOptions);
     }
 
+    private void createFilterWithCacheSize(String pattern, long ttl, int size) {
+        FilterOptions filterOptions = new FilterOptions();
+        filterOptions.setOption(AgeOffConfigParams.MATCHPATTERN, pattern);
+        filterOptions.setTTL(ttl);
+        filterOptions.setTTLUnits(AgeOffTtlUnits.MILLISECONDS);
+        filterOptions.setOption(AgeOffConfigParams.COLUMN_VISIBILITY_CACHE_SIZE, String.valueOf(size));
+
+        filter = new ColumnVisibilityAndFilter();
+        filter.init(filterOptions);
+    }
+
     @Test
     public void testSingleMatchPattern() {
-        createFilter("A", 60);
-        createKeysWithTimeStamp(start - 45);
+        createFilter("A", 60L);
+        createKeysWithTimeStamp(start - 45L);
 
         assertKeyAccepted(a);
         assertRuleAppliedState(true);
@@ -88,8 +100,8 @@ public class ColumnVisibilityAndFilterTest {
 
     @Test
     public void testMultiPattern() {
-        createFilter("A,B", 60);
-        createKeysWithTimeStamp(start - 45);
+        createFilter("A,B", 60L);
+        createKeysWithTimeStamp(start - 45L);
 
         assertKeyAccepted(a);
         assertRuleAppliedState(false);
@@ -108,6 +120,25 @@ public class ColumnVisibilityAndFilterTest {
 
         assertKeyAccepted(AorBandBorC);
         assertRuleAppliedState(true);
+    }
+
+    @Test
+    public void testFilterWithCacheSize() {
+        createFilterWithCacheSize("A,B", 60L, 1);
+        createKeysWithTimeStamp(start - 45);
+
+        assertKeyAccepted(a);
+        assertKeyAccepted(b);
+        assertKeyAccepted(c);
+        assertKeyAccepted(AandB);
+        assertKeyAccepted(BandC);
+        assertKeyAccepted(AorBandBorC);
+
+        // the cache will 'burst' above the configured maximum
+        // issue a cleanup call to reduce the cache to the last
+        // accessed key
+        filter.getCvCache().cleanUp();
+        assertEquals(1, filter.getCvCache().estimatedSize());
     }
 
     private void assertKeyAccepted(Key k) {

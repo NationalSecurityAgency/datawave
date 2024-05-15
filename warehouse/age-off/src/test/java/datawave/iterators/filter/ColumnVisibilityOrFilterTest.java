@@ -1,15 +1,16 @@
 package datawave.iterators.filter;
 
-import datawave.iterators.filter.ageoff.AgeOffPeriod;
-import datawave.iterators.filter.ageoff.FilterOptions;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import datawave.iterators.filter.ageoff.AgeOffPeriod;
+import datawave.iterators.filter.ageoff.FilterOptions;
 
 /**
  * Test for the {@link ColumnVisibilityOrFilter}
@@ -31,7 +32,7 @@ public class ColumnVisibilityOrFilterTest {
     @Before
     public void setup() {
         start = System.currentTimeMillis();
-        period = new AgeOffPeriod(start, 60, "ms");
+        period = new AgeOffPeriod(start, 60L, "ms");
     }
 
     private void createKeysWithTimeStamp(long ts) {
@@ -60,8 +61,8 @@ public class ColumnVisibilityOrFilterTest {
     @Test
     public void testKeysWithinAgeOffPeriod() {
         // for keys within the AgeOffPeriod
-        createKeysWithTimeStamp(start - 45);
-        createFilter("A", 60);
+        createKeysWithTimeStamp(start - 45L);
+        createFilter("A", 60L);
 
         // rule is applied to key that has the target column visibility and falls within the time range
         assertKeyAccepted(keyA);
@@ -84,8 +85,8 @@ public class ColumnVisibilityOrFilterTest {
     @Test
     public void testKeysOutsideOfAgeOffPeriod() {
         // for keys that fall outside the AgeOffPeriod
-        createKeysWithTimeStamp(start - 85);
-        createFilter("A", 60);
+        createKeysWithTimeStamp(start - 85L);
+        createFilter("A", 60L);
 
         // rule is applied to key that has the target column visibility and falls within the time range
         assertKeyRejected(keyA);
@@ -108,8 +109,8 @@ public class ColumnVisibilityOrFilterTest {
     @Test
     public void testMultiFilterWithinAgeOffPeriod() {
         // for keys within the AgeOffPeriod
-        createKeysWithTimeStamp(start - 45);
-        createFilter("A,Y", 60);
+        createKeysWithTimeStamp(start - 45L);
+        createFilter("A,Y", 60L);
 
         // rule is applied to key that has the target column visibility and falls within the time range
         assertKeyAccepted(keyA);
