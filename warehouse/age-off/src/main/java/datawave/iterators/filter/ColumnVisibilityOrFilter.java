@@ -6,9 +6,7 @@ package datawave.iterators.filter;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 
-/**
- * This subclass of the {@code RegexFilterBase} class is used to filter based on the column visibility of the {@code Key} object {@code k}.
- */
+@Deprecated
 public class ColumnVisibilityOrFilter extends TokenFilterBase {
 
     /**

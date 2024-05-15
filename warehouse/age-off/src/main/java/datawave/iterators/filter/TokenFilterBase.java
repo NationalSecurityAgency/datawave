@@ -3,13 +3,14 @@ package datawave.iterators.filter;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
+
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 
 import datawave.iterators.filter.ageoff.AgeOffPeriod;
 import datawave.iterators.filter.ageoff.AppliedRule;
@@ -69,45 +70,52 @@ public abstract class TokenFilterBase extends AppliedRule {
      */
     @Override
     public boolean accept(AgeOffPeriod period, Key k, Value v) {
-        // Keep the pair if its date is after the cutoff date
-        boolean dtFlag = false;
         ruleApplied = false;
 
-        if (this.patternBytes == null) // patterns are not being used
-        {
+        if (this.patternBytes == null) {
+            // patterns are not being used
             log.trace("patternBytes == null");
-            dtFlag = true;
-        } else {
-
-            Boolean bool = cvCache.getIfPresent(k.getColumnVisibility());
-            if (bool != null) {
-                if (bool) {
-                    ruleApplied = true;
-                }
-                return bool;
-            }
-
-            if (hasToken(k, v, patternBytes)) {
-                long timeStamp = k.getTimestamp();
-                dtFlag = timeStamp > period.getCutOffMilliseconds();
-                if (log.isTraceEnabled()) {
-                    log.trace("timeStamp = " + timeStamp);
-                    log.trace("timeStamp = " + period.getCutOffMilliseconds());
-                    log.trace("timeStamp as Date = " + new Date(timeStamp));
-                }
-                cvCache.put(k.getColumnVisibility(), true);
-                ruleApplied = true;
-            } else {
-                if (log.isTraceEnabled()) {
-                    log.trace("did not match the patterns:" + toString(patternBytes));
-                }
-                // if the pattern did not match anything, then go ahead and accept this record
-                cvCache.put(k.getColumnVisibility(), false);
-                dtFlag = true;
-            }
-
+            return true;
         }
+
+        Boolean bool = cvCache.getIfPresent(k.getColumnVisibility());
+        if (bool != null) {
+            if (bool) {
+                ruleApplied = true;
+            }
+            // the same visibility could be on keys with different timestamps, therefore recalculate the cutoff
+            return calculateCutoff(k, period);
+        }
+
+        if (hasToken(k, v, patternBytes)) {
+            ruleApplied = true;
+            cvCache.put(k.getColumnVisibility(), true);
+            return calculateCutoff(k, period);
+        } else {
+            if (log.isTraceEnabled()) {
+                log.trace("did not match the patterns:" + toString(patternBytes));
+            }
+            // if the pattern did not match anything, then go ahead and accept this record
+            cvCache.put(k.getColumnVisibility(), false);
+            return true;
+        }
+    }
+
+    /**
+     * Calculates if the key falls within the cutoff period
+     *
+     * @param key
+     *            the key
+     * @param period
+     *            the {@link AgeOffPeriod}
+     * @return true if the key is not excluded by the age off period
+     */
+    protected boolean calculateCutoff(Key key, AgeOffPeriod period) {
+        boolean dtFlag = key.getTimestamp() > period.getCutOffMilliseconds();
         if (log.isTraceEnabled()) {
+            log.trace("timeStamp = " + key.getTimestamp());
+            log.trace("timeStamp = " + period.getCutOffMilliseconds());
+            log.trace("timeStamp as Date = " + new Date(key.getTimestamp()));
             log.trace("dtFlag = " + dtFlag);
         }
         return dtFlag;

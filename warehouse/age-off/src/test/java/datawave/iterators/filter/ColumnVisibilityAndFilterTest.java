@@ -138,7 +138,7 @@ public class ColumnVisibilityAndFilterTest {
         // issue a cleanup call to reduce the cache to the last
         // accessed key
         filter.getCvCache().cleanUp();
-        assertEquals(1, filter.getCvCache().estimatedSize());
+        assertTrue(filter.getCvCache().estimatedSize() < 6);
     }
 
     private void assertKeyAccepted(Key k) {

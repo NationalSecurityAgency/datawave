@@ -58,6 +58,17 @@ public class ColumnVisibilityOrFilterTest {
         filter.init(filterOptions);
     }
 
+    private void createFilterWithCacheSize(String pattern, long ttl, int size) {
+        FilterOptions filterOptions = new FilterOptions();
+        filterOptions.setOption(AgeOffConfigParams.MATCHPATTERN, pattern);
+        filterOptions.setTTL(ttl);
+        filterOptions.setTTLUnits(AgeOffTtlUnits.MILLISECONDS);
+        filterOptions.setOption(AgeOffConfigParams.COLUMN_VISIBILITY_CACHE_SIZE, String.valueOf(size));
+
+        filter = new ColumnVisibilityOrFilter();
+        filter.init(filterOptions);
+    }
+
     @Test
     public void testKeysWithinAgeOffPeriod() {
         // for keys within the AgeOffPeriod
@@ -128,6 +139,33 @@ public class ColumnVisibilityOrFilterTest {
 
         assertKeyAccepted(keyXorY);
         assertRuleAppliedState(true); // Y portion matches
+    }
+
+    @Test
+    public void testFilterWithDifferentTimeStampsAndDifferentCacheSizes() {
+        Key first = createKey("(A)", start + 75L);
+        Key second = createKey("(A)", start - 75L);
+
+        createFilter("A,B", 60L); // default cache size of 50
+
+        assertKeyAccepted(first);
+        assertRuleAppliedState(true);
+        assertKeyRejected(second);
+        assertRuleAppliedState(true);
+
+        filter.getCvCache().cleanUp();
+        assertEquals(1, filter.getCvCache().estimatedSize());
+
+        // now disable the cache
+        createFilterWithCacheSize("A,B", 60L, 0);
+
+        assertKeyAccepted(first);
+        assertRuleAppliedState(true);
+        assertKeyRejected(second);
+        assertRuleAppliedState(true);
+
+        filter.getCvCache().cleanUp();
+        assertEquals(0, filter.getCvCache().estimatedSize());
     }
 
     private void assertKeyAccepted(Key k) {

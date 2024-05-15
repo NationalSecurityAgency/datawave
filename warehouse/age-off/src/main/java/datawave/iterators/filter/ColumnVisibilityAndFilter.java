@@ -9,6 +9,7 @@ import org.apache.accumulo.core.data.Value;
 /**
  * This subclass of the {@code RegexFilterBase} class is used to filter based on the column visibility of the {@code Key} object {@code k}.
  */
+@Deprecated
 public class ColumnVisibilityAndFilter extends TokenFilterBase {
 
     /**
