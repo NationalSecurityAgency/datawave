@@ -1,10 +1,15 @@
 package datawave.iterators.filter;
 
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
+import org.apache.hadoop.io.Text;
+
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 
 import datawave.iterators.filter.TokenTtlTrie.Builder.MERGE_MODE;
 import datawave.iterators.filter.ageoff.AgeOffPeriod;
@@ -55,6 +60,8 @@ public abstract class TokenizingFilterBase extends AppliedRule {
     private TokenTtlTrie scanTrie = null;
     private boolean ruleApplied;
 
+    private Cache<byte[],Long> cvCache;
+
     public abstract byte[] getKeyField(Key k, Value V);
 
     /**
@@ -89,6 +96,18 @@ public abstract class TokenizingFilterBase extends AppliedRule {
             this.scanTrie = new TokenTtlTrie.Builder(mode).setDelimiters(getDelimiters(options)).parse(confPattern).build();
             this.matchPattern = confPattern;
         }
+
+        int size = 50;
+        if (options.getOption(AgeOffConfigParams.COLUMN_VISIBILITY_CACHE_SIZE) != null) {
+            size = Integer.parseInt(options.getOption(AgeOffConfigParams.COLUMN_VISIBILITY_CACHE_SIZE));
+        }
+
+        //  @formatter:off
+        cvCache = Caffeine.newBuilder()
+                        .maximumSize(size)
+                        .expireAfterAccess(30, TimeUnit.MINUTES)
+                        .build();
+        //  @formatter:on
     }
 
     @Override
@@ -96,12 +115,23 @@ public abstract class TokenizingFilterBase extends AppliedRule {
         TokenizingFilterBase parent = (TokenizingFilterBase) parentCopy;
         this.matchPattern = parent.matchPattern;
         this.scanTrie = parent.scanTrie;
+        this.cvCache = parent.cvCache;
         super.deepCopyInit(newOptions, parentCopy);
     }
 
     @Override
-    public boolean accept(AgeOffPeriod period, Key k, Value V) {
-        Long calculatedTTL = scanTrie.scan(getKeyField(k, V));
+    public boolean accept(AgeOffPeriod period, Key k, Value v) {
+        byte[] backing = getKeyField(k, v);
+
+        Long calculatedTTL = cvCache.getIfPresent(backing);
+
+        if (calculatedTTL == null) {
+            calculatedTTL = scanTrie.scan(backing);
+            if (calculatedTTL != null) {
+                cvCache.put(backing, calculatedTTL);
+            }
+        }
+
         // no match found
         if (calculatedTTL == null) {
             ruleApplied = false;
