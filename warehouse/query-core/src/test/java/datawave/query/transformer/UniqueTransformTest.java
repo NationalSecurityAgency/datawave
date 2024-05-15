@@ -85,7 +85,7 @@ public class UniqueTransformTest {
 
         UniqueTransform uniqueTransform = getUniqueTransform();
 
-        assertNull(uniqueTransform.apply(null));
+        assertNull(uniqueTransform.apply((Map.Entry<Key,Document>)null));
     }
 
     @Test
@@ -542,7 +542,7 @@ public class UniqueTransformTest {
     }
 
     protected void updateUniqueTransform(UniqueTransform uniqueTransform) {
-        uniqueTransform.updateConfig(uniqueFields, null);
+        uniqueTransform.updateConfig(uniqueFields);
     }
 
     protected InputDocumentBuilder givenInputDocument() {
