@@ -7,6 +7,7 @@ import org.apache.accumulo.core.data.Value;
 import org.junit.Before;
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -18,6 +19,8 @@ public class ColumnVisibilityOrFilterTest {
     private ColumnVisibilityOrFilter filter;
 
     private AgeOffPeriod period;
+    private final Value value = new Value();
+    private long start;
 
     private Key keyA;
     private Key keyAandB;
@@ -25,78 +28,117 @@ public class ColumnVisibilityOrFilterTest {
     private Key keyX;
     private Key keyXorY;
 
-    private Value value = new Value();
-
-    private long start;
-
     @Before
     public void setup() {
         start = System.currentTimeMillis();
-
-        FilterOptions filterOptions = new FilterOptions();
-        filterOptions.setOption(AgeOffConfigParams.MATCHPATTERN, "A");
-        filterOptions.setTTL(60L);
-        filterOptions.setTTLUnits(AgeOffTtlUnits.MILLISECONDS);
-
-        filter = new ColumnVisibilityOrFilter();
-        filter.init(filterOptions);
-
         period = new AgeOffPeriod(start, 60, "ms");
     }
 
     private void createKeysWithTimeStamp(long ts) {
-        keyA = new Key("row", "cf", "cq", "(A)", ts);
-        keyAandB = new Key("row", "cf", "cq", "(A&B)", ts);
-        keyAorB = new Key("row", "cf", "cq", "(A|B)", ts);
+        keyA = createKey("(A)", ts);
+        keyAandB = createKey("(A&B)", ts);
+        keyAorB = createKey("(A|B)", ts);
 
-        keyX = new Key("row", "cf", "cq", "(X)", ts);
-        keyXorY = new Key("row", "cf", "cq", "(X|Y)", ts);
+        keyX = createKey("(X)", ts);
+        keyXorY = createKey("(X|Y)", ts);
+    }
+
+    private Key createKey(String viz, long ts) {
+        return new Key("row", "cf", "cq", viz, ts);
+    }
+
+    private void createFilter(String pattern, long ttl) {
+        FilterOptions filterOptions = new FilterOptions();
+        filterOptions.setOption(AgeOffConfigParams.MATCHPATTERN, pattern);
+        filterOptions.setTTL(ttl);
+        filterOptions.setTTLUnits(AgeOffTtlUnits.MILLISECONDS);
+
+        filter = new ColumnVisibilityOrFilter();
+        filter.init(filterOptions);
     }
 
     @Test
     public void testKeysWithinAgeOffPeriod() {
         // for keys within the AgeOffPeriod
         createKeysWithTimeStamp(start - 45);
+        createFilter("A", 60);
 
         // rule is applied to key that has the target column visibility and falls within the time range
-        assertTrue(filter.accept(period, keyA, value));
-        assertTrue(filter.isFilterRuleApplied());
+        assertKeyAccepted(keyA);
+        assertRuleAppliedState(true);
 
-        assertTrue(filter.accept(period, keyAandB, value));
-        assertTrue(filter.isFilterRuleApplied());
+        assertKeyAccepted(keyAandB);
+        assertRuleAppliedState(true);
 
-        assertTrue(filter.accept(period, keyAorB, value));
-        assertTrue(filter.isFilterRuleApplied());
+        assertKeyAccepted(keyAorB);
+        assertRuleAppliedState(true);
 
         // rule is NOT applied to key that has different column visibility and falls within the time range
-        assertTrue(filter.accept(period, keyX, value));
-        assertFalse(filter.isFilterRuleApplied());
+        assertKeyAccepted(keyX);
+        assertRuleAppliedState(false);
 
-        assertTrue(filter.accept(period, keyXorY, value));
-        assertFalse(filter.isFilterRuleApplied());
+        assertKeyAccepted(keyXorY);
+        assertRuleAppliedState(false);
     }
 
     @Test
     public void testKeysOutsideOfAgeOffPeriod() {
         // for keys that fall outside the AgeOffPeriod
         createKeysWithTimeStamp(start - 85);
+        createFilter("A", 60);
 
         // rule is applied to key that has the target column visibility and falls within the time range
-        assertFalse(filter.accept(period, keyA, value));
-        assertTrue(filter.isFilterRuleApplied());
+        assertKeyRejected(keyA);
+        assertRuleAppliedState(true);
 
-        assertFalse(filter.accept(period, keyAandB, value));
-        assertTrue(filter.isFilterRuleApplied());
+        assertKeyRejected(keyAandB);
+        assertRuleAppliedState(true);
 
-        assertFalse(filter.accept(period, keyAorB, value));
-        assertTrue(filter.isFilterRuleApplied());
+        assertKeyRejected(keyAorB);
+        assertRuleAppliedState(true);
 
         // rule is NOT applied to key that has different column visibility and falls within the time range
-        assertTrue(filter.accept(period, keyX, value));
-        assertFalse(filter.isFilterRuleApplied());
+        assertKeyAccepted(keyX);
+        assertRuleAppliedState(false);
 
-        assertTrue(filter.accept(period, keyXorY, value));
-        assertFalse(filter.isFilterRuleApplied());
+        assertKeyAccepted(keyXorY);
+        assertRuleAppliedState(false);
+    }
+
+    @Test
+    public void testMultiFilterWithinAgeOffPeriod() {
+        // for keys within the AgeOffPeriod
+        createKeysWithTimeStamp(start - 45);
+        createFilter("A,Y", 60);
+
+        // rule is applied to key that has the target column visibility and falls within the time range
+        assertKeyAccepted(keyA);
+        assertRuleAppliedState(true);
+
+        assertKeyAccepted(keyAandB);
+        assertRuleAppliedState(true);
+
+        assertKeyAccepted(keyAorB);
+        assertRuleAppliedState(true);
+
+        // rule is NOT applied to key that has different column visibility and falls within the time range
+        assertKeyAccepted(keyX);
+        assertRuleAppliedState(false);
+
+        assertKeyAccepted(keyXorY);
+        assertRuleAppliedState(true); // Y portion matches
+    }
+
+    private void assertKeyAccepted(Key k) {
+        assertTrue(filter.accept(period, k, value));
+    }
+
+    private void assertKeyRejected(Key k) {
+        assertFalse(filter.accept(period, k, value));
+    }
+
+    private void assertRuleAppliedState(boolean state) {
+        assertEquals(state, filter.isFilterRuleApplied());
     }
 
 }
