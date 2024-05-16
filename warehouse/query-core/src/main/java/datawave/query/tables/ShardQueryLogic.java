@@ -18,8 +18,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import datawave.core.query.logic.ResultPostprocessor;
-import datawave.query.tables.shard.ListResultPostprocessor;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.IteratorSetting;
@@ -51,6 +49,7 @@ import datawave.core.query.logic.CheckpointableQueryLogic;
 import datawave.core.query.logic.QueryCheckpoint;
 import datawave.core.query.logic.QueryKey;
 import datawave.core.query.logic.QueryLogicTransformer;
+import datawave.core.query.logic.ResultPostprocessor;
 import datawave.core.query.logic.WritesQueryMetrics;
 import datawave.data.type.Type;
 import datawave.marking.MarkingFunctions;
@@ -86,6 +85,7 @@ import datawave.query.planner.QueryPlanner;
 import datawave.query.scheduler.PushdownScheduler;
 import datawave.query.scheduler.Scheduler;
 import datawave.query.scheduler.SequentialScheduler;
+import datawave.query.tables.shard.ListResultPostprocessor;
 import datawave.query.tables.stats.ScanSessionStats;
 import datawave.query.transformer.DocumentTransform;
 import datawave.query.transformer.DocumentTransformer;
@@ -644,26 +644,27 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
     @Override
     public ResultPostprocessor getResultPostprocessor(GenericQueryConfiguration genericConfig) {
-        ShardQueryConfiguration config = (ShardQueryConfiguration)genericConfig;
+        ShardQueryConfiguration config = (ShardQueryConfiguration) genericConfig;
 
         ListResultPostprocessor processor = new ListResultPostprocessor();
 
         if (config.getUniqueFields() != null && !config.getUniqueFields().isEmpty()) {
+            log.info("Creating unique result post processor for " + config.getUniqueFields());
             try {
                 // @formatter:off
                 processor.addProcessor(new UniqueTransform.Builder()
                         .withUniqueFields(config.getUniqueFields())
-                        .withQueryExecutionForPageTimeout(this.getQueryExecutionForPageTimeout())
-                        .withBufferPersistThreshold(getUniqueCacheBufferSize())
-                        .withIvaratorCacheDirConfigs(getIvaratorCacheDirConfigs())
-                        .withHdfsSiteConfigURLs(getHdfsSiteConfigURLs())
+                        .withQueryExecutionForPageTimeout(config.getQueryExecutionForPageTimeout())
+                        .withBufferPersistThreshold(config.getUniqueCacheBufferSize())
+                        .withIvaratorCacheDirConfigs(config.getIvaratorCacheDirConfigs())
+                        .withHdfsSiteConfigURLs(config.getHdfsSiteConfigURLs())
                         .withSubDirectory(config.getQuery().getId().toString())
-                        .withMaxOpenFiles(getIvaratorMaxOpenFiles())
-                        .withNumRetries(getIvaratorNumRetries())
+                        .withMaxOpenFiles(config.getIvaratorMaxOpenFiles())
+                        .withNumRetries(config.getIvaratorNumRetries())
                         .withPersistOptions(new FileSortedSet.PersistOptions(
-                                isIvaratorPersistVerify(),
-                                isIvaratorPersistVerify(),
-                                getIvaratorPersistVerifyCount()))
+                                config.isIvaratorPersistVerify(),
+                                config.isIvaratorPersistVerify(),
+                                config.getIvaratorPersistVerifyCount()))
                         .withFilter(config.getBloom())
                         .build());
                 // @formatter:on
@@ -672,13 +673,15 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
             }
         }
 
-        GroupFields groupFields = getGroupByFields();
+        GroupFields groupFields = config.getGroupFields();
         if (groupFields != null && groupFields.hasGroupByFields()) {
-            processor.addProcessor(new GroupingTransform(groupFields, this.markingFunctions, this.getQueryExecutionForPageTimeout()));
+            log.info("Creating grouping result post processor for " + groupFields);
+            processor.addProcessor(new GroupingTransform(groupFields, getMarkingFunctions(), config.getQueryExecutionForPageTimeout()));
         }
 
         if (config.getRenameFields() != null && !config.getRenameFields().isEmpty()) {
-            processor.addProcessor(new FieldRenameTransform(config.getRenameFields(), getIncludeGroupingContext(), isReducedResponse()));
+            log.info("Creating rename result post processor for " + config.getRenameFields());
+            processor.addProcessor(new FieldRenameTransform(config.getRenameFields(), config.getIncludeGroupingContext(), config.isReducedResponse()));
         }
 
         return processor;
@@ -687,10 +690,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
     protected DocumentTransformer createDocumentTransformer(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions markingFunctions,
                     ResponseObjectFactory responseObjectFactory, Boolean reducedResponse) {
         return new DocumentTransformer(logic, settings, markingFunctions, responseObjectFactory, reducedResponse);
-    }
-
-    public boolean isLongRunningQuery() {
-        return getConfig().getGroupFields().hasGroupByFields() || !getUniqueFields().isEmpty();
     }
 
     /**
@@ -1361,10 +1360,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         }
 
         return config;
-    }
-
-    public void setConfig(ShardQueryConfiguration config) {
-        this.config = config;
     }
 
     @Override

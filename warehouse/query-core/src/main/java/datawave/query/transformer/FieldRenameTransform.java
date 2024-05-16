@@ -11,8 +11,6 @@ import java.util.Set;
 
 import javax.annotation.Nullable;
 
-import datawave.core.query.configuration.GenericQueryConfiguration;
-import datawave.core.query.logic.ResultPostprocessor;
 import org.apache.accumulo.core.data.Key;
 import org.apache.commons.lang3.StringUtils;
 
@@ -20,6 +18,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.logic.ResultPostprocessor;
 import datawave.query.Constants;
 import datawave.query.attributes.Document;
 import datawave.query.jexl.JexlASTHelper;

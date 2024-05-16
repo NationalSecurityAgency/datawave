@@ -1882,6 +1882,16 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         return true;
     }
 
+    @Override
+    public boolean isLongRunningQuery() {
+        return getGroupFields().hasGroupByFields() || !getUniqueFields().isEmpty();
+    }
+
+    @Override
+    public void setLongRunningQuery(boolean b) {
+        throw new UnsupportedOperationException();
+    }
+
     public boolean getFilterMaskedValues() {
         return filterMaskedValues;
     }

@@ -11,13 +11,13 @@ import java.util.Map.Entry;
 
 import javax.annotation.Nullable;
 
-import datawave.core.query.configuration.GenericQueryConfiguration;
-import datawave.core.query.logic.ResultPostprocessor;
 import org.apache.accumulo.core.data.Key;
 import org.slf4j.Logger;
 
 import com.google.common.collect.Maps;
 
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.logic.ResultPostprocessor;
 import datawave.marking.MarkingFunctions;
 import datawave.query.attributes.Document;
 import datawave.query.common.grouping.DocumentGrouper;

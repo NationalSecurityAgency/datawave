@@ -70,6 +70,8 @@ public class GenericQueryConfiguration implements Serializable {
     // Whether or not this query emits every result or performs some kind of result reduction
     protected boolean reduceResults = false;
 
+    protected boolean longRunningQuery = false;
+
     /**
      * Empty default constructor
      */
@@ -267,6 +269,14 @@ public class GenericQueryConfiguration implements Serializable {
      */
     public void setAccumuloPassword(String password) {
         this.accumuloPassword = EnvProvider.resolve(password);
+    }
+
+    public boolean isLongRunningQuery() {
+        return longRunningQuery;
+    }
+
+    public void setLongRunningQuery(boolean longRunningQuery) {
+        this.longRunningQuery = longRunningQuery;
     }
 
     /**
