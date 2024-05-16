@@ -660,7 +660,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
             if (getConfig().getUniqueFields() != null && !getConfig().getUniqueFields().isEmpty()) {
                 DocumentTransform alreadyExists = ((DocumentTransformer) this.transformerInstance).containsTransform(UniqueTransform.class);
                 if (alreadyExists != null) {
-                    ((UniqueTransform) alreadyExists).updateConfig(getConfig().getUniqueFields(), getQueryModel());
+                    ((UniqueTransform) alreadyExists).updateConfig(getConfig().getUniqueFields());
                 } else {
                     try {
                         // @formatter:off

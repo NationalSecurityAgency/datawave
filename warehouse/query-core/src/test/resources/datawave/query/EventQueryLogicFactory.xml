@@ -88,6 +88,7 @@
 
         <property name="auditType" value="ACTIVE" />
         <property name="logicDescription" value="Event query with rewritten logic" />
+        <property name="reduceIngestTypes" value="true"/>
         <property name="rebuildDatatypeFilter" value="true" />
         <property name="rebuildDatatypeFilterPerShard" value="false" />
         <!-- Determines how many events in the global index lookup will be
