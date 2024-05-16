@@ -269,7 +269,7 @@
         <property name="reduceIngestTypesPerShard" value="true"/>
         <property name="reduceQueryFields" value="false" />
         <property name="reduceQueryFieldsPerShard" value="false" />
-        <property name="reduceTypeMetadata" value="false" />
+        <property name="reduceTypeMetadata" value="true" />
         <property name="reduceTypeMetadataPerShard" value="false" />
         <!--    should the query prune fields by ingest type    -->
         <property name="pruneQueryByIngestTypes" value="false" />

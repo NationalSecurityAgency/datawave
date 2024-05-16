@@ -36,9 +36,11 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
 import datawave.core.iterators.filesystem.FileSystemCache;
+import datawave.query.composite.CompositeMetadata;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.InvalidQueryException;
@@ -463,6 +465,23 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
         TypeMetadata typeMetadata = new TypeMetadata(serializedTypeMetadata);
 
         Set<String> fieldsToRetain = ReduceFields.getQueryFields(script);
+
+        // add projection fields
+        if (newIteratorSetting.getOptions().containsKey(QueryOptions.PROJECTION_FIELDS)) {
+            String opt = newIteratorSetting.getOptions().get(QueryOptions.PROJECTION_FIELDS);
+            fieldsToRetain.addAll(Splitter.on(',').splitToList(opt));
+        }
+
+        // add composite fields
+        if (newIteratorSetting.getOptions().containsKey(QueryOptions.COMPOSITE_METADATA)) {
+            String opt = newIteratorSetting.getOptions().get(QueryOptions.COMPOSITE_METADATA);
+            CompositeMetadata compositeMetadata = CompositeMetadata.fromBytes(java.util.Base64.getDecoder().decode(opt));
+            for (Multimap<String,String> multimap : compositeMetadata.getCompositeFieldMapByType().values()) {
+                fieldsToRetain.addAll(multimap.keySet());
+                fieldsToRetain.addAll(multimap.values());
+            }
+        }
+
         typeMetadata = typeMetadata.reduce(fieldsToRetain);
 
         serializedTypeMetadata = typeMetadata.toString();
@@ -492,6 +511,10 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
     private void reduceIngestTypes(ASTJexlScript script, IteratorSetting newIteratorSetting) {
         if (cachedTypeMetadata == null) {
             String serializedTypeMetadata = newIteratorSetting.getOptions().get(QueryOptions.TYPE_METADATA);
+            if (org.apache.commons.lang3.StringUtils.isBlank(serializedTypeMetadata)) {
+                log.warn("Could not deserialize type metadata, will not attempt datatype reduction");
+                return;
+            }
             cachedTypeMetadata = new TypeMetadata(serializedTypeMetadata);
         }
 
