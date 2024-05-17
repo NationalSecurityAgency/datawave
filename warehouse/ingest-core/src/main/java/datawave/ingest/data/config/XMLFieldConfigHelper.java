@@ -41,6 +41,7 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
     private String noMatchFieldType = null;
 
     private final Map<String,FieldInfo> knownFields = new HashMap<>();
+    private final Map<String,String[]> combinedFields = new HashMap<>();
     private TreeMap<Matcher,String> patterns = new TreeMap<>(new BaseIngestHelper.MatcherComparator());
 
     public static class FieldInfo {
@@ -49,6 +50,7 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
         boolean reverseIndexed;
         boolean tokenized;
         boolean reverseTokenized;
+        boolean combined;
     }
 
     /**
@@ -116,6 +118,10 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
     public boolean addKnownField(String fieldName, FieldInfo info) {
         // must track the fields we've seen so we can properly apply default rules.
         return (knownFields.put(fieldName, info) == null);
+    }
+
+    public boolean addCombinedField(String fieldName, String combine) {
+        return (combinedFields.put(fieldName, combine.split(".")) == null);
     }
 
     public boolean addKnownFieldPattern(String fieldName, FieldInfo info, Matcher pattern) {
@@ -202,6 +208,16 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
         return isNoMatchReverseTokenized();
     }
 
+    @Override
+    public boolean isCombinedField(String fieldName) {
+        return combinedFields.containsKey(fieldName);
+    }
+
+    @Override
+    public Map<String,String[]> getVirtualFieldMap() {
+        return combinedFields;
+    }
+
     public boolean isNoMatchStored() {
         return noMatchStored;
     }
@@ -261,6 +277,7 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
         public static final String INDEX_TYPE = "indexType";
         public static final String TOKENIZED = "tokenized";
         public static final String REVERSE_TOKENIZED = "reverseTokenized";
+        public static final String COMBINE = "combine";
 
         static final Set<String> expectedDefaultAttributes;
         static final Set<String> expectedNoMatchAttributes;
@@ -273,6 +290,7 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
             attr.add(TOKENIZED);
             attr.add(REVERSE_TOKENIZED);
             attr.add(INDEX_TYPE);
+            attr.add(COMBINE);
             expectedDefaultAttributes = ImmutableSet.copyOf(attr);
             expectedNoMatchAttributes = ImmutableSet.copyOf(attr);
         }
@@ -406,6 +424,7 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
             fieldInfo.tokenized = this.defaultTokenized;
             fieldInfo.reverseTokenized = this.defaultReverseTokenized;
             String fieldType = this.defaultFieldType;
+            String combineFields = null;
 
             for (int i = 0; i < sz; i++) {
                 final String qn = attributes.getQName(i);
@@ -425,6 +444,8 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
                     name = lv;
                 } else if (INDEX_TYPE.equals(qn)) {
                     fieldType = lv;
+                } else if (COMBINE.equals(qn)) {
+                    this.fieldHelper.addCombinedField(name, lv);
                 } else {
                     throw new IllegalArgumentException("Unexpected attribute encounteded in: " + uri + " in 'field' tag: '" + qn + "'");
                 }

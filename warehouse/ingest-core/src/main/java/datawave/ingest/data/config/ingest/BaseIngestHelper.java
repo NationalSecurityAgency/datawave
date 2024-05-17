@@ -258,6 +258,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
                 log.debug("Field config file " + fieldConfigFile + " specified for: " + this.getType().typeName() + FIELD_CONFIG_FILE);
             }
             this.fieldConfigHelper = XMLFieldConfigHelper.load(fieldConfigFile, this);
+            this.getVirtualIngest().setVirtualFieldDefinitions(getVirtualFieldMap());
         }
 
         // Process the indexed fields
@@ -604,6 +605,10 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     public boolean isDataTypeField(String fieldName) {
         return this.typeFieldMap.containsKey(fieldName);
 
+    }
+
+    public Map<String,String[]> getVirtualFieldMap() {
+        return fieldConfigHelper.getVirtualFieldMap();
     }
 
     private void compilePatterns() {
