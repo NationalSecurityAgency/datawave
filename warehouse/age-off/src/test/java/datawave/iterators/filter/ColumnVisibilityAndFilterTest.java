@@ -18,6 +18,7 @@ import datawave.iterators.filter.ageoff.FilterOptions;
 public class ColumnVisibilityAndFilterTest {
 
     private ColumnVisibilityAndFilter filter;
+    private ColumnVisibilityAndFilter filterWithCache;
     private AgeOffPeriod period;
 
     private final Value value = new Value();
@@ -63,20 +64,21 @@ public class ColumnVisibilityAndFilterTest {
         filter.init(filterOptions);
     }
 
-    private void createFilterWithCacheSize(String pattern, long ttl, int size) {
+    private void createFilter(String pattern, long ttl, int size) {
         FilterOptions filterOptions = new FilterOptions();
         filterOptions.setOption(AgeOffConfigParams.MATCHPATTERN, pattern);
         filterOptions.setTTL(ttl);
         filterOptions.setTTLUnits(AgeOffTtlUnits.MILLISECONDS);
         filterOptions.setOption(AgeOffConfigParams.COLUMN_VISIBILITY_CACHE_SIZE, String.valueOf(size));
 
-        filter = new ColumnVisibilityAndFilter();
-        filter.init(filterOptions);
+        filterWithCache = new ColumnVisibilityAndFilter();
+        filterWithCache.init(filterOptions);
     }
 
     @Test
     public void testSingleMatchPattern() {
         createFilter("A", 60L);
+        createFilter("A", 60L, 50);
         createKeysWithTimeStamp(start - 45L);
 
         assertKeyAccepted(a);
@@ -101,6 +103,7 @@ public class ColumnVisibilityAndFilterTest {
     @Test
     public void testMultiPattern() {
         createFilter("A,B", 60L);
+        createFilter("A,B", 60L, 50);
         createKeysWithTimeStamp(start - 45L);
 
         assertKeyAccepted(a);
@@ -124,7 +127,8 @@ public class ColumnVisibilityAndFilterTest {
 
     @Test
     public void testFilterWithCacheSize() {
-        createFilterWithCacheSize("A,B", 60L, 1);
+        createFilter("A,B", 60L);
+        createFilter("A,B", 60L, 1);
         createKeysWithTimeStamp(start - 45);
 
         assertKeyAccepted(a);
@@ -137,12 +141,13 @@ public class ColumnVisibilityAndFilterTest {
         // the cache will 'burst' above the configured maximum
         // issue a cleanup call to reduce the cache to the last
         // accessed key
-        filter.getCvCache().cleanUp();
-        assertTrue(filter.getCvCache().estimatedSize() < 6);
+        filterWithCache.getCvCache().cleanUp();
+        assertTrue(filterWithCache.getCvCache().estimatedSize() < 6);
     }
 
     private void assertKeyAccepted(Key k) {
         assertTrue(filter.accept(period, k, value));
+        assertTrue(filterWithCache.accept(period, k, value));
     }
 
     private void assertKeyRejected(Key k) {
@@ -151,6 +156,7 @@ public class ColumnVisibilityAndFilterTest {
 
     private void assertRuleAppliedState(boolean state) {
         assertEquals(state, filter.isFilterRuleApplied());
+        assertEquals(state, filterWithCache.isFilterRuleApplied());
     }
 
 }

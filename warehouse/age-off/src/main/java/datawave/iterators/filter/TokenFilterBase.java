@@ -22,9 +22,8 @@ import datawave.util.StringUtils;
  * a ACCUMULO record's {@code Key} or {@code Value}. For example, a subclass could be used to filter on all or a portion of each record's: Row, Column Family,
  * Column Qualifier, or Column Visibility
  * <P>
- * This filter base caches the result of column visibility parsing. By default, the last 50 unique column visibilities are kept. The
- * {@link AgeOffConfigParams#COLUMN_VISIBILITY_CACHE_SIZE} pay be specified to override the default value.
- *
+ * This filter supports ColumnVisibility caching to avoid expensive parse operations. To enable the cache set the
+ * {@link AgeOffConfigParams#COLUMN_VISIBILITY_CACHE_SIZE} to a positive integer.
  */
 public abstract class TokenFilterBase extends AppliedRule {
 
@@ -78,25 +77,31 @@ public abstract class TokenFilterBase extends AppliedRule {
             return true;
         }
 
-        Boolean bool = cvCache.getIfPresent(k.getColumnVisibility());
-        if (bool != null) {
-            if (bool) {
-                ruleApplied = true;
+        if (cvCache != null) {
+            Boolean bool = cvCache.getIfPresent(k.getColumnVisibility());
+            if (bool != null) {
+                if (bool) {
+                    ruleApplied = true;
+                }
+                // the same visibility could be on keys with different timestamps, therefore recalculate the cutoff
+                return calculateCutoff(k, period);
             }
-            // the same visibility could be on keys with different timestamps, therefore recalculate the cutoff
-            return calculateCutoff(k, period);
         }
 
         if (hasToken(k, v, patternBytes)) {
             ruleApplied = true;
-            cvCache.put(k.getColumnVisibility(), true);
+            if (cvCache != null) {
+                cvCache.put(k.getColumnVisibility(), true);
+            }
             return calculateCutoff(k, period);
         } else {
             if (log.isTraceEnabled()) {
                 log.trace("did not match the patterns:" + toString(patternBytes));
             }
+            if (cvCache != null) {
+                cvCache.put(k.getColumnVisibility(), false);
+            }
             // if the pattern did not match anything, then go ahead and accept this record
-            cvCache.put(k.getColumnVisibility(), false);
             return true;
         }
     }
@@ -157,17 +162,16 @@ public abstract class TokenFilterBase extends AppliedRule {
             }
         }
 
-        int size = 50;
         if (options.getOption(AgeOffConfigParams.COLUMN_VISIBILITY_CACHE_SIZE) != null) {
-            size = Integer.parseInt(options.getOption(AgeOffConfigParams.COLUMN_VISIBILITY_CACHE_SIZE));
-        }
+            int size = Integer.parseInt(options.getOption(AgeOffConfigParams.COLUMN_VISIBILITY_CACHE_SIZE));
 
-        //  @formatter:off
-        cvCache = Caffeine.newBuilder()
-                        .maximumSize(size)
-                        .expireAfterAccess(30, TimeUnit.MINUTES)
-                        .build();
-        //  @formatter:on
+            //  @formatter:off
+            cvCache = Caffeine.newBuilder()
+                            .maximumSize(size)
+                            .expireAfterAccess(30, TimeUnit.MINUTES)
+                            .build();
+            //  @formatter:on
+        }
 
         ruleApplied = false;
     }

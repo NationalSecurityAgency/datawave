@@ -6,7 +6,6 @@ import java.util.concurrent.TimeUnit;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
-import org.apache.hadoop.io.Text;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -52,7 +51,8 @@ import datawave.iterators.filter.ageoff.FilterOptions;
  * <li>a cell with column qualifier baz,bar would be aged off after 300 ms ('bar' wins, since it appears first in configuration), and</li>
  * <li>a cell with column qualifier foobar,barbaz would not be assigned a TTL by this filter.
  * </ul>
- *
+ * This filter supports ColumnVisibility caching to avoid expensive parse operations. To enable the cache set the
+ * {@link AgeOffConfigParams#COLUMN_VISIBILITY_CACHE_SIZE} to a positive integer.
  */
 public abstract class TokenizingFilterBase extends AppliedRule {
     public static final String DELIMITERS_TAG = "delimiters";
@@ -97,17 +97,16 @@ public abstract class TokenizingFilterBase extends AppliedRule {
             this.matchPattern = confPattern;
         }
 
-        int size = 50;
         if (options.getOption(AgeOffConfigParams.COLUMN_VISIBILITY_CACHE_SIZE) != null) {
-            size = Integer.parseInt(options.getOption(AgeOffConfigParams.COLUMN_VISIBILITY_CACHE_SIZE));
-        }
+            int size = Integer.parseInt(options.getOption(AgeOffConfigParams.COLUMN_VISIBILITY_CACHE_SIZE));
 
-        //  @formatter:off
-        cvCache = Caffeine.newBuilder()
-                        .maximumSize(size)
-                        .expireAfterAccess(30, TimeUnit.MINUTES)
-                        .build();
-        //  @formatter:on
+            //  @formatter:off
+            cvCache = Caffeine.newBuilder()
+                            .maximumSize(size)
+                            .expireAfterAccess(30, TimeUnit.MINUTES)
+                            .build();
+            //  @formatter:on
+        }
     }
 
     @Override
@@ -123,11 +122,15 @@ public abstract class TokenizingFilterBase extends AppliedRule {
     public boolean accept(AgeOffPeriod period, Key k, Value v) {
         byte[] backing = getKeyField(k, v);
 
-        Long calculatedTTL = cvCache.getIfPresent(backing);
+        Long calculatedTTL = null;
+
+        if (cvCache != null) {
+            calculatedTTL = cvCache.getIfPresent(backing);
+        }
 
         if (calculatedTTL == null) {
             calculatedTTL = scanTrie.scan(backing);
-            if (calculatedTTL != null) {
+            if (cvCache != null && calculatedTTL != null) {
                 cvCache.put(backing, calculatedTTL);
             }
         }

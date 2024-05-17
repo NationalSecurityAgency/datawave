@@ -18,6 +18,7 @@ import datawave.iterators.filter.ageoff.FilterOptions;
 public class ColumnVisibilityOrFilterTest {
 
     private ColumnVisibilityOrFilter filter;
+    private ColumnVisibilityOrFilter filterWithCache;
 
     private AgeOffPeriod period;
     private final Value value = new Value();
@@ -58,15 +59,15 @@ public class ColumnVisibilityOrFilterTest {
         filter.init(filterOptions);
     }
 
-    private void createFilterWithCacheSize(String pattern, long ttl, int size) {
+    private void createFilter(String pattern, long ttl, int size) {
         FilterOptions filterOptions = new FilterOptions();
         filterOptions.setOption(AgeOffConfigParams.MATCHPATTERN, pattern);
         filterOptions.setTTL(ttl);
         filterOptions.setTTLUnits(AgeOffTtlUnits.MILLISECONDS);
         filterOptions.setOption(AgeOffConfigParams.COLUMN_VISIBILITY_CACHE_SIZE, String.valueOf(size));
 
-        filter = new ColumnVisibilityOrFilter();
-        filter.init(filterOptions);
+        filterWithCache = new ColumnVisibilityOrFilter();
+        filterWithCache.init(filterOptions);
     }
 
     @Test
@@ -74,6 +75,7 @@ public class ColumnVisibilityOrFilterTest {
         // for keys within the AgeOffPeriod
         createKeysWithTimeStamp(start - 45L);
         createFilter("A", 60L);
+        createFilter("A", 60L, 50);
 
         // rule is applied to key that has the target column visibility and falls within the time range
         assertKeyAccepted(keyA);
@@ -98,6 +100,7 @@ public class ColumnVisibilityOrFilterTest {
         // for keys that fall outside the AgeOffPeriod
         createKeysWithTimeStamp(start - 85L);
         createFilter("A", 60L);
+        createFilter("A", 60L, 50);
 
         // rule is applied to key that has the target column visibility and falls within the time range
         assertKeyRejected(keyA);
@@ -122,6 +125,7 @@ public class ColumnVisibilityOrFilterTest {
         // for keys within the AgeOffPeriod
         createKeysWithTimeStamp(start - 45L);
         createFilter("A,Y", 60L);
+        createFilter("A,Y", 60L, 50);
 
         // rule is applied to key that has the target column visibility and falls within the time range
         assertKeyAccepted(keyA);
@@ -146,38 +150,31 @@ public class ColumnVisibilityOrFilterTest {
         Key first = createKey("(A)", start + 75L);
         Key second = createKey("(A)", start - 75L);
 
-        createFilter("A,B", 60L); // default cache size of 50
+        createFilter("A,B", 60L);
+        createFilter("A,B", 60L, 50);
 
         assertKeyAccepted(first);
         assertRuleAppliedState(true);
         assertKeyRejected(second);
         assertRuleAppliedState(true);
 
-        filter.getCvCache().cleanUp();
-        assertEquals(1, filter.getCvCache().estimatedSize());
-
-        // now disable the cache
-        createFilterWithCacheSize("A,B", 60L, 0);
-
-        assertKeyAccepted(first);
-        assertRuleAppliedState(true);
-        assertKeyRejected(second);
-        assertRuleAppliedState(true);
-
-        filter.getCvCache().cleanUp();
-        assertEquals(0, filter.getCvCache().estimatedSize());
+        filterWithCache.getCvCache().cleanUp();
+        assertEquals(1, filterWithCache.getCvCache().estimatedSize());
     }
 
     private void assertKeyAccepted(Key k) {
         assertTrue(filter.accept(period, k, value));
+        assertTrue(filterWithCache.accept(period, k, value));
     }
 
     private void assertKeyRejected(Key k) {
         assertFalse(filter.accept(period, k, value));
+        assertFalse(filterWithCache.accept(period, k, value));
     }
 
     private void assertRuleAppliedState(boolean state) {
         assertEquals(state, filter.isFilterRuleApplied());
+        assertEquals(state, filterWithCache.isFilterRuleApplied());
     }
 
 }
