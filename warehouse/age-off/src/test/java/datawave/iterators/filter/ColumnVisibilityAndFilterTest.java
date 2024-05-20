@@ -1,162 +1,79 @@
 package datawave.iterators.filter;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import java.util.List;
 
 import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
 import org.junit.Before;
 import org.junit.Test;
-
-import datawave.iterators.filter.ageoff.AgeOffPeriod;
-import datawave.iterators.filter.ageoff.FilterOptions;
 
 /**
  * Test for the {@link ColumnVisibilityAndFilter}
  */
-public class ColumnVisibilityAndFilterTest {
+public class ColumnVisibilityAndFilterTest extends VisibilityFilterTest {
 
-    private ColumnVisibilityAndFilter filter;
-    private ColumnVisibilityAndFilter filterWithCache;
-    private AgeOffPeriod period;
-
-    private final Value value = new Value();
-
-    private long start;
-
-    private Key a;
-    private Key b;
-    private Key c;
-    private Key AandB;
-    private Key BandC;
-
-    private Key AorBandBorC;
+    private final int max = 5;
 
     @Before
     public void setup() {
-        start = System.currentTimeMillis();
-        period = new AgeOffPeriod(start, 60L, "ms");
+        createAgeOffPeriod(100L, 50L);
+        createFilters("A,B", 50L, 25);
     }
 
-    private void createKeysWithTimeStamp(long ts) {
-        a = createKey("(A)", ts);
-        b = createKey("(B)", ts);
-        c = createKey("(C)", ts);
-
-        AandB = createKey("(A&B)", ts);
-        BandC = createKey("(B&C)", ts);
-
-        AorBandBorC = createKey("(A|B)&(B|C)", ts);
-    }
-
-    private Key createKey(String viz, long ts) {
-        return new Key("row", "cf", "cq", viz, ts);
-    }
-
-    private void createFilter(String pattern, long ttl) {
-        FilterOptions filterOptions = new FilterOptions();
-        filterOptions.setOption(AgeOffConfigParams.MATCHPATTERN, pattern);
-        filterOptions.setTTL(ttl);
-        filterOptions.setTTLUnits(AgeOffTtlUnits.MILLISECONDS);
-
+    private void createFilters(String pattern, long ttl, int size) {
         filter = new ColumnVisibilityAndFilter();
-        filter.init(filterOptions);
-    }
-
-    private void createFilter(String pattern, long ttl, int size) {
-        FilterOptions filterOptions = new FilterOptions();
-        filterOptions.setOption(AgeOffConfigParams.MATCHPATTERN, pattern);
-        filterOptions.setTTL(ttl);
-        filterOptions.setTTLUnits(AgeOffTtlUnits.MILLISECONDS);
-        filterOptions.setOption(AgeOffConfigParams.COLUMN_VISIBILITY_CACHE_SIZE, String.valueOf(size));
+        filter.init(createOptions(pattern, ttl));
 
         filterWithCache = new ColumnVisibilityAndFilter();
-        filterWithCache.init(filterOptions);
+        filterWithCache.init(createOptions(pattern, ttl, size));
     }
 
     @Test
-    public void testSingleMatchPattern() {
-        createFilter("A", 60L);
-        createFilter("A", 60L, 50);
-        createKeysWithTimeStamp(start - 45L);
+    public void testVisibilityFullMatchTimeStampMatch() {
+        Key key = createKey("(A&B)", 75L);
 
-        assertKeyAccepted(a);
-        assertRuleAppliedState(true);
-
-        assertKeyAccepted(b);
-        assertRuleAppliedState(false);
-
-        assertKeyAccepted(c);
-        assertRuleAppliedState(false);
-
-        assertKeyAccepted(AandB);
-        assertRuleAppliedState(true);
-
-        assertKeyAccepted(BandC);
-        assertRuleAppliedState(false);
-
-        assertKeyAccepted(AorBandBorC);
-        assertRuleAppliedState(true);
+        for (int i = 0; i < max; i++) {
+            assertKeyAccepted(key);
+            assertRuleAppliedState(true);
+        }
     }
 
     @Test
-    public void testMultiPattern() {
-        createFilter("A,B", 60L);
-        createFilter("A,B", 60L, 50);
-        createKeysWithTimeStamp(start - 45L);
+    public void testVisibilityPartialMatchTimeStampMatch() {
+        Key key = createKey("(A|C)", 75L);
 
-        assertKeyAccepted(a);
-        assertRuleAppliedState(false);
-
-        assertKeyAccepted(b);
-        assertRuleAppliedState(false);
-
-        assertKeyAccepted(c);
-        assertRuleAppliedState(false);
-
-        assertKeyAccepted(AandB);
-        assertRuleAppliedState(true);
-
-        assertKeyAccepted(BandC);
-        assertRuleAppliedState(false);
-
-        assertKeyAccepted(AorBandBorC);
-        assertRuleAppliedState(true);
+        for (int i = 0; i < max; i++) {
+            assertKeyAccepted(key);
+            assertRuleAppliedState(false);
+        }
     }
 
     @Test
-    public void testFilterWithCacheSize() {
-        createFilter("A,B", 60L);
-        createFilter("A,B", 60L, 1);
-        createKeysWithTimeStamp(start - 45);
+    public void testVisibilityFullMatchTimeStampMiss() {
+        Key key = createKey("(A&B)", 25L);
 
-        assertKeyAccepted(a);
-        assertKeyAccepted(b);
-        assertKeyAccepted(c);
-        assertKeyAccepted(AandB);
-        assertKeyAccepted(BandC);
-        assertKeyAccepted(AorBandBorC);
-
-        // the cache will 'burst' above the configured maximum
-        // issue a cleanup call to reduce the cache to the last
-        // accessed key
-        filterWithCache.getCvCache().cleanUp();
-        assertTrue(filterWithCache.getCvCache().estimatedSize() < 6);
+        for (int i = 0; i < max; i++) {
+            assertKeyRejected(key);
+            assertRuleAppliedState(true);
+        }
     }
 
-    private void assertKeyAccepted(Key k) {
-        assertTrue(filter.accept(period, k, value));
-        assertTrue(filterWithCache.accept(period, k, value));
+    @Test
+    public void testVisibilityMissTimeStampMatch() {
+        Key key = createKey("(X&Y)", 75L);
+
+        for (int i = 0; i < max; i++) {
+            assertKeyAccepted(key);
+            assertRuleAppliedState(false);
+        }
     }
 
-    private void assertKeyRejected(Key k) {
-        assertFalse(filter.accept(period, k, value));
-    }
+    @Test
+    public void testVisibilityMissTimeStampMiss() {
+        Key key = createKey("(X&Y)", 25L);
 
-    private void assertRuleAppliedState(boolean state) {
-        assertEquals(state, filter.isFilterRuleApplied());
-        assertEquals(state, filterWithCache.isFilterRuleApplied());
+        for (int i = 0; i < max; i++) {
+            assertKeyAccepted(key);
+            assertRuleAppliedState(false);
+        }
     }
-
 }

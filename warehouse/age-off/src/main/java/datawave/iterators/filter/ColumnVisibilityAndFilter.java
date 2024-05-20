@@ -1,6 +1,3 @@
-/**
- *
- */
 package datawave.iterators.filter;
 
 import org.apache.accumulo.core.data.Key;

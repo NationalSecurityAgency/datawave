@@ -6,7 +6,6 @@ import java.util.concurrent.TimeUnit;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
-import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
 import com.github.benmanes.caffeine.cache.Cache;
@@ -35,7 +34,7 @@ public abstract class TokenFilterBase extends AppliedRule {
     // but currently there is no way to get this list out of the accumulo ColumnVisibility class.
     private static final byte[] DELIMITERS = "|&()".getBytes();
 
-    private Cache<Text,Boolean> cvCache;
+    private Cache<byte[],Boolean> cvCache;
 
     /**
      * This method is to be implemented by sub-classes of this class. Child classes should test the provided tokens against the provided key's column visibility
@@ -77,29 +76,35 @@ public abstract class TokenFilterBase extends AppliedRule {
             return true;
         }
 
+        byte[] backing = new byte[0];
+
         if (cvCache != null) {
-            Boolean bool = cvCache.getIfPresent(k.getColumnVisibility());
+            backing = k.getColumnVisibilityData().getBackingArray();
+            Boolean bool = cvCache.getIfPresent(backing);
             if (bool != null) {
                 if (bool) {
                     ruleApplied = true;
+                    // the same visibility could be on keys with different timestamps, therefore recalculate the cutoff
+                    return calculateCutoff(k, period);
+                } else {
+                    return true;
                 }
-                // the same visibility could be on keys with different timestamps, therefore recalculate the cutoff
-                return calculateCutoff(k, period);
             }
         }
 
         if (hasToken(k, v, patternBytes)) {
             ruleApplied = true;
             if (cvCache != null) {
-                cvCache.put(k.getColumnVisibility(), true);
+                cvCache.put(backing, true);
             }
+
             return calculateCutoff(k, period);
         } else {
             if (log.isTraceEnabled()) {
                 log.trace("did not match the patterns:" + toString(patternBytes));
             }
             if (cvCache != null) {
-                cvCache.put(k.getColumnVisibility(), false);
+                cvCache.put(backing, false);
             }
             // if the pattern did not match anything, then go ahead and accept this record
             return true;
@@ -168,7 +173,8 @@ public abstract class TokenFilterBase extends AppliedRule {
             //  @formatter:off
             cvCache = Caffeine.newBuilder()
                             .maximumSize(size)
-                            .expireAfterAccess(30, TimeUnit.MINUTES)
+                            .expireAfterWrite(5, TimeUnit.MINUTES)
+                            .expireAfterAccess(5, TimeUnit.MINUTES)
                             .build();
             //  @formatter:on
         }
@@ -243,7 +249,7 @@ public abstract class TokenFilterBase extends AppliedRule {
         return patternBytes;
     }
 
-    public Cache<Text,Boolean> getCvCache() {
+    public Cache<byte[],Boolean> getCvCache() {
         return cvCache;
     }
 }

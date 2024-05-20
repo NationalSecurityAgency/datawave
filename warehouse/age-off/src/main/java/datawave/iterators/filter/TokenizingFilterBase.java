@@ -103,7 +103,8 @@ public abstract class TokenizingFilterBase extends AppliedRule {
             //  @formatter:off
             cvCache = Caffeine.newBuilder()
                             .maximumSize(size)
-                            .expireAfterAccess(30, TimeUnit.MINUTES)
+                            .expireAfterWrite(5, TimeUnit.MINUTES)
+                            .expireAfterAccess(5, TimeUnit.MINUTES)
                             .build();
             //  @formatter:on
         }
@@ -173,5 +174,9 @@ public abstract class TokenizingFilterBase extends AppliedRule {
     @Override
     public String toString() {
         return this.getClass().getSimpleName() + "[size=" + (scanTrie == null ? null : scanTrie.size()) + "]";
+    }
+
+    public Cache<byte[],Long> getCvCache() {
+        return cvCache;
     }
 }
