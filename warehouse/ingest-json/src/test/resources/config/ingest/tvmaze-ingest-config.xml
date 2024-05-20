@@ -228,11 +228,11 @@
         <description>ColumnVisibility expression to be applied to the "SUMMARY" field</description>
     </property>
 
-    <!--<property>-->
-    <!--<name>myjson.data.category.date</name>-->
-    <!--<value>PREMIERED</value>-->
-    <!--<description>Known date field to be used, if found, for the shard row id. Otherwise, current date will be used</description>-->
-    <!--</property>-->
+    <property>
+        <name>myjson.data.category.date</name>
+        <value>PREMIERED</value>
+        <description>Known date field to be used, if found, for the shard row id. Otherwise, current date will be used</description>
+    </property>
 
     <property>
         <name>myjson.data.category.date.formats</name>

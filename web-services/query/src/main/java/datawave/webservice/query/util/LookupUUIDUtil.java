@@ -24,6 +24,14 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 
+import datawave.core.query.logic.QueryLogic;
+import datawave.core.query.logic.QueryLogicFactory;
+import datawave.core.query.util.QueryUtil;
+import datawave.microservice.query.DefaultQueryParameters;
+import datawave.microservice.query.Query;
+import datawave.microservice.query.QueryImpl;
+import datawave.microservice.query.QueryParameters;
+import datawave.microservice.query.QueryPersistence;
 import datawave.query.data.UUIDType;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.UserOperations;
@@ -33,16 +41,9 @@ import datawave.util.time.DateHelper;
 import datawave.webservice.common.audit.AuditParameters;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.webservice.common.exception.NoResultsException;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.QueryParameters;
-import datawave.webservice.query.QueryParametersImpl;
-import datawave.webservice.query.QueryPersistence;
 import datawave.webservice.query.configuration.LookupUUIDConfiguration;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
-import datawave.webservice.query.logic.QueryLogic;
-import datawave.webservice.query.logic.QueryLogicFactory;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
 import datawave.webservice.query.result.event.Metadata;
@@ -381,7 +382,7 @@ public class LookupUUIDUtil {
             queryParameters.putSingle(QueryParameters.QUERY_NAME, queryName);
 
             try {
-                queryParameters.putSingle(QueryParameters.QUERY_BEGIN, QueryParametersImpl.formatDate(this.beginAsDate));
+                queryParameters.putSingle(QueryParameters.QUERY_BEGIN, DefaultQueryParameters.formatDate(this.beginAsDate));
             } catch (ParseException e) {
                 throw new RuntimeException("Unable to format new query begin date: " + this.beginAsDate);
             }
@@ -391,7 +392,7 @@ public class LookupUUIDUtil {
                 queryParameters.remove(QueryParameters.QUERY_END);
             }
             try {
-                queryParameters.putSingle(QueryParameters.QUERY_END, QueryParametersImpl.formatDate(endDate));
+                queryParameters.putSingle(QueryParameters.QUERY_END, DefaultQueryParameters.formatDate(endDate));
             } catch (ParseException e) {
                 throw new RuntimeException("Unable to format new query end date: " + endDate);
             }
@@ -401,7 +402,7 @@ public class LookupUUIDUtil {
                 queryParameters.remove(QueryParameters.QUERY_EXPIRATION);
             }
             try {
-                queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, QueryParametersImpl.formatDate(expireDate));
+                queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, DefaultQueryParameters.formatDate(expireDate));
             } catch (ParseException e) {
                 throw new RuntimeException("Unable to format new query expr date: " + expireDate);
             }
@@ -439,7 +440,7 @@ public class LookupUUIDUtil {
         return response;
     }
 
-    public Query createSettings(MultivaluedMap<String,String> queryParameters) {
+    public Query createSettings(Map<String,List<String>> queryParameters) {
         log.debug("Initial query parameters: " + queryParameters);
         Query query = responseObjectFactory.getQueryImpl();
         if (queryParameters != null) {
@@ -447,7 +448,11 @@ public class LookupUUIDUtil {
             if (defaultOptionalParams != null) {
                 expandedQueryParameters.putAll(defaultOptionalParams);
             }
-            String delimitedParams = queryParameters.getFirst(QueryParameters.QUERY_PARAMS);
+            List<String> params = queryParameters.get(QueryParameters.QUERY_PARAMS);
+            String delimitedParams = null;
+            if (params != null && !params.isEmpty()) {
+                delimitedParams = params.get(0);
+            }
             if (delimitedParams != null) {
                 for (QueryImpl.Parameter pm : QueryUtil.parseParameters(delimitedParams)) {
                     expandedQueryParameters.putSingle(pm.getParameterName(), pm.getParameterValue());
@@ -465,25 +470,29 @@ public class LookupUUIDUtil {
         return query;
     }
 
-    public String getAuths(String logicName, MultivaluedMap<String,String> queryParameters, String queryAuths, Principal principal) {
+    public String getAuths(String logicName, Map<String,List<String>> queryParameters, String queryAuths, Principal principal) {
         String userAuths;
         try {
-            QueryLogic<?> logic = queryLogicFactory.getQueryLogic(logicName, principal);
+            QueryLogic<?> logic = queryLogicFactory.getQueryLogic(logicName, (DatawavePrincipal) principal);
             Query settings = createSettings(queryParameters);
             if (queryAuths == null) {
                 logic.preInitialize(settings, WSAuthorizationsUtil.buildAuthorizations(((DatawavePrincipal) principal).getAuthorizations()));
             } else {
                 logic.preInitialize(settings, WSAuthorizationsUtil.buildAuthorizations(Collections.singleton(WSAuthorizationsUtil.splitAuths(queryAuths))));
             }
+
             // the query principal is our local principal unless the query logic has a different user operations
             DatawavePrincipal queryPrincipal = (logic.getUserOperations() == null) ? (DatawavePrincipal) principal
                             : logic.getUserOperations().getRemoteUser((DatawavePrincipal) principal);
             // the overall principal (the one with combined auths across remote user operations) is our own user operations (probably the UserOperationsBean)
             // don't call remote user operations if it's asked not to
-            DatawavePrincipal overallPrincipal = (userOperations == null
-                            || "false".equalsIgnoreCase(queryParameters.getFirst(RemoteUserOperationsImpl.INCLUDE_REMOTE_SERVICES)))
-                                            ? (DatawavePrincipal) principal
-                                            : userOperations.getRemoteUser((DatawavePrincipal) principal);
+            String includeRemoteServices = "true";
+            if (queryParameters.get(RemoteUserOperationsImpl.INCLUDE_REMOTE_SERVICES) != null
+                            && !queryParameters.get(RemoteUserOperationsImpl.INCLUDE_REMOTE_SERVICES).isEmpty()) {
+                includeRemoteServices = queryParameters.get(RemoteUserOperationsImpl.INCLUDE_REMOTE_SERVICES).get(0);
+            }
+            DatawavePrincipal overallPrincipal = (userOperations == null || "false".equalsIgnoreCase(includeRemoteServices)) ? (DatawavePrincipal) principal
+                            : userOperations.getRemoteUser((DatawavePrincipal) principal);
             if (queryAuths != null) {
                 userAuths = WSAuthorizationsUtil.downgradeUserAuths(queryAuths, overallPrincipal, queryPrincipal);
             } else {
@@ -753,18 +762,18 @@ public class LookupUUIDUtil {
             queryParameters.putSingle(QueryParameters.QUERY_NAME, queryName);
             queryParameters.putSingle(QueryParameters.QUERY_STRING, contentQuery.toString());
             try {
-                queryParameters.putSingle(QueryParameters.QUERY_BEGIN, QueryParametersImpl.formatDate(this.beginAsDate));
+                queryParameters.putSingle(QueryParameters.QUERY_BEGIN, DefaultQueryParameters.formatDate(this.beginAsDate));
             } catch (ParseException e1) {
                 throw new RuntimeException("Error formatting begin date: " + this.beginAsDate);
             }
             try {
-                queryParameters.putSingle(QueryParameters.QUERY_END, QueryParametersImpl.formatDate(endDate));
+                queryParameters.putSingle(QueryParameters.QUERY_END, DefaultQueryParameters.formatDate(endDate));
             } catch (ParseException e1) {
                 throw new RuntimeException("Error formatting end date: " + endDate);
             }
             queryParameters.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, userAuths);
             try {
-                queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, QueryParametersImpl.formatDate(expireDate));
+                queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, DefaultQueryParameters.formatDate(expireDate));
             } catch (ParseException e1) {
                 throw new RuntimeException("Error formatting expr date: " + expireDate);
             }
@@ -868,18 +877,18 @@ public class LookupUUIDUtil {
         queryParameters.putSingle(QueryParameters.QUERY_NAME, queryName);
         queryParameters.putSingle(QueryParameters.QUERY_STRING, contentQuery.toString());
         try {
-            queryParameters.putSingle(QueryParameters.QUERY_BEGIN, QueryParametersImpl.formatDate(this.beginAsDate));
+            queryParameters.putSingle(QueryParameters.QUERY_BEGIN, DefaultQueryParameters.formatDate(this.beginAsDate));
         } catch (ParseException e1) {
             throw new RuntimeException("Error formatting begin date: " + this.beginAsDate);
         }
         try {
-            queryParameters.putSingle(QueryParameters.QUERY_END, QueryParametersImpl.formatDate(endDate));
+            queryParameters.putSingle(QueryParameters.QUERY_END, DefaultQueryParameters.formatDate(endDate));
         } catch (ParseException e1) {
             throw new RuntimeException("Error formatting end date: " + endDate);
         }
         queryParameters.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, userAuths);
         try {
-            queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, QueryParametersImpl.formatDate(expireDate));
+            queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, DefaultQueryParameters.formatDate(expireDate));
         } catch (ParseException e1) {
             throw new RuntimeException("Error formatting expr date: " + expireDate);
         }
@@ -987,7 +996,7 @@ public class LookupUUIDUtil {
                 if (null != uuidType) {
                     // Assign the query logic name if undefined
                     if (null == logicName) {
-                        logicName = uuidType.getDefinedView(criteria.getUUIDTypeContext());
+                        logicName = uuidType.getQueryLogic(criteria.getUUIDTypeContext());
                     }
 
                     // Increment the UUID type/value count
@@ -1047,7 +1056,7 @@ public class LookupUUIDUtil {
             params = params + ';' + PARAM_HIT_LIST + ':' + true;
         }
 
-        criteria.getQueryParameters().putSingle(QueryParameters.QUERY_PARAMS, params);
+        criteria.getQueryParameters().set(QueryParameters.QUERY_PARAMS, params);
 
         // All is well, so return the validated criteria
         return criteria;
@@ -1112,8 +1121,8 @@ public class LookupUUIDUtil {
                 throw new DatawaveWebApplicationException(new IllegalArgumentException(message), errorReponse);
             }
             // Reject conflicting logic name
-            else if ((null != logicName) && !logicName.equals(matchingUuidType.getDefinedView(lookupContext))) {
-                final String message = "Multiple UUID types '" + logicName + "' and '" + matchingUuidType.getDefinedView(lookupContext) + "' not "
+            else if ((null != logicName) && !logicName.equals(matchingUuidType.getQueryLogic(lookupContext))) {
+                final String message = "Multiple UUID types '" + logicName + "' and '" + matchingUuidType.getQueryLogic(lookupContext) + "' not "
                                 + " supported within the same lookup request";
                 final GenericResponse<String> errorReponse = new GenericResponse<>();
                 errorReponse.addMessage(message);

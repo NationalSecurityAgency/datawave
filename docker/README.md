@@ -63,25 +63,77 @@ You will need to build the docker image for this service on your local machine f
 
 You will need to build the docker image for this service on your local machine following the instructions in the audit service README.
 
-### Dictionary
-
-[Datawave Dictionary Service](https://github.com/NationalSecurityAgency/datawave-dictionary-service/tree/main) provides access to the data dictionary and edge dictionary for Datawave.
-
-You will need to build the docker image for this service on your local machine following the instructions in the dictionary service README.
-
 ### Metrics
 
 [Datawave Query Metric Service](https://github.com/NationalSecurityAgency/datawave-query-metric-service/tree/main) provides metrics caching, storage, and retrieval capabilities for Datawave.
 
 You will need to build the docker image for this service on your local machine following the instructions in the query metrics service README.
 
+### Zookeeper
+
+Zookeeper is a prepacked docker image used for distributed synchronization.
+
+### Kafka
+
+Kafka is a prepacked docker image used for messaging between the various services.
+
+### Query
+
+Datawave Query Service v1.0-SNAPSHOT is a user-facing interface for Datawave query.
+
+This microservice is in development, and can be found in this repo. 
+
+You will need to build the docker image for this service on your local machine following the instructions in the config service README.
+
+### Executor Pool 1
+
+Datawave Executor Service v1.0-SNAPSHOT is the back-end worker for Datawave queries.
+
+This microservice is in development, and can be found in this repo.
+
+You will need to build the docker image for this service on your local machine following the instructions in the config service README.
+
+### Executor Pool 2
+
+Enabled via the 'pool2', or 'full' profile.
+
+Datawave Executor Service v1.0-SNAPSHOT is the back-end worker for Datawave queries.
+
+This microservice is in development, and can be found in this repo.
+
+You will need to build the docker image for this service on your local machine following the instructions in the config service README.
+
+### Query Storage
+
+Enabled via the 'storage', or 'full' profile.
+
+Datawave Query Storage Service v1.0-SNAPSHOT is a utility service used to inspect the storage cache.
+
+This microservice is in development, and can be found in this repo.
+
+You will need to build the docker image for this service on your local machine following the instructions in the config service README.
+
 ## Optional Components
+
+### Kafdrop
+
+Enabled via the 'management', or 'full' profile.
+
+Kafdrop is a prepacked docker image used for kafka cluster management.
 
 ### Hazelcast Management Center
 
 Enabled via the 'management', or 'full' profile.
 
 Hazelcast Management Center v4.2021.06 is a prepacked docker image used for hazelcast cluster management.
+
+### Dictionary
+
+Enabled via the 'dictionary', or 'full' profile.
+
+[Datawave Dictionary Service](https://github.com/NationalSecurityAgency/datawave-dictionary-service/tree/main) provides access to the data dictionary and edge dictionary for Datawave.
+
+You will need to build the docker image for this service on your local machine following the instructions in the dictionary service README.
 
 ## Usage
 
@@ -197,7 +249,7 @@ This command can be combined with default Datawave Quickstart build command to b
 
 ### Bootstrap
 
-The audit, dictionary, and query metric services all need to connect to Zookeeper, Hadoop and/or Accumulo.  In order to make that work, there are some environment variables which need to be configured.  
+The audit, dictionary, query executor, and query metric services all need to connect to Zookeeper, Hadoop and/or Accumulo.  In order to make that work, there are some environment variables which need to be configured.  
 
 #### Default Bootstrap
 
@@ -255,13 +307,25 @@ DW_HADOOP_HOST="<Your hostname>"
 
 ### Start services
 
-Start the default services:
+Start the default services (with the Kafka as the backend):
 
 ```docker compose up -d```
+
+Start the default services (with RabbitMQ as the backend):
+
+```BACKEND=rabbitmq docker compose up -d```
+
+Start the default services (with Hazelcast as the backend):
+
+```BACKEND=hazelcast docker compose up -d```
 
 Start the default services, and the dictionary service:
 
 ```docker compose --profile quickstart --profile dictionary up -d```
+
+Start the default services, the kafka services, and the dictionary service:
+
+```docker compose --profile quickstart --profile dictionary --profile kafka up -d```
 
 Start all services:
 
