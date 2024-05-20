@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave</groupId>
         <artifactId>assemble-parent</artifactId>
-        <version>6.14.0-SNAPSHOT</version>
+        <version>7.0.0-SNAPSHOT</version>
     </parent>
     <artifactId>assemble-datawave</artifactId>
     <packaging>jar</packaging>
@@ -664,6 +664,7 @@
                                             <include>com.github.ben-manes.caffeine:caffeine</include>
                                             <include>org.apache.commons:commons-collections4</include>
                                             <include>org.apache.commons:commons-jexl3</include>
+                                            <include>org.apache.curator:curator-client</include>
                                             <include>${project.groupId}:datawave-core</include>
                                             <include>${project.groupId}:datawave-accumulo-extensions</include>
                                             <include>${project.groupId}:datawave-ingest-csv</include>
@@ -678,6 +679,10 @@
                                             <include>${project.groupId}:datawave-ingest-wikipedia</include>
                                             <include>${project.groupId}:datawave-ingest-nyctlc</include>
                                             <include>${project.groupId}:datawave-ingest-ssdeep</include>
+                                            <include>gov.nsa.datawave.core:datawave-core-connection-pool</include>
+                                            <include>gov.nsa.datawave.core:datawave-core-common</include>
+                                            <include>gov.nsa.datawave.core:datawave-core-common-util</include>
+                                            <include>gov.nsa.datawave.core:datawave-core-query</include>
                                             <include>gov.nsa.datawave.microservice:accumulo-utils</include>
                                             <include>gov.nsa.datawave.microservice:metadata-utils</include>
                                             <include>gov.nsa.datawave.microservice:type-utils</include>
@@ -724,6 +729,9 @@
                                             <include>${project.groupId}:datawave-core</include>
                                             <include>${project.groupId}:datawave-query-core</include>
                                             <include>${project.groupId}:datawave-metrics-core</include>
+                                            <include>gov.nsa.datawave.core:datawave-core-connection-pool</include>
+                                            <include>gov.nsa.datawave.core:datawave-core-common</include>
+                                            <include>gov.nsa.datawave.core:datawave-core-common-util</include>
                                             <include>gov.nsa.datawave.microservice:accumulo-utils</include>
                                             <include>gov.nsa.datawave.microservice:metadata-utils</include>
                                             <include>gov.nsa.datawave.microservice:type-utils</include>

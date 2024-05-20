@@ -128,6 +128,7 @@ public class ShardRangeStream extends RangeStream {
             Range range = new Range(start, true, end, false);
             //  @formatter:off
             return new QueryPlan()
+                            .withTableName(config.getShardTableName())
                             .withQueryTree(node)
                             .withRanges(Collections.singleton(range));
             //  @formatter:on

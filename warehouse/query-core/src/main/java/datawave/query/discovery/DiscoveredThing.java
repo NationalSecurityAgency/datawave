@@ -11,7 +11,10 @@ import org.apache.hadoop.io.WritableComparable;
 
 import com.google.common.base.Objects;
 
+import datawave.core.query.configuration.ResultContext;
+
 public class DiscoveredThing implements WritableComparable<DiscoveredThing> {
+    private ResultContext context;
     private String term, field, type, date, columnVisibility;
     private final VLongWritable count;
     private final MapWritable countsByColumnVisibility;
