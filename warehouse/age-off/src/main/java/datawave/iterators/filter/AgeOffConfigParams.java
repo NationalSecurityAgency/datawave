@@ -65,7 +65,7 @@ public class AgeOffConfigParams {
     public static final String EXCLUDE_DATA = "excludeData";
 
     /**
-     * How many column visibilities should be cached. Parsing column visibilities is an expensive operation, so cache the decision.
+     * Enable caching the previous column visibility.
      */
-    public static final String COLUMN_VISIBILITY_CACHE_SIZE = "columnVisibilityCacheSize";
+    public static final String COLUMN_VISIBILITY_CACHE_ENABLED = "columnVisibilityCacheEnabled";
 }

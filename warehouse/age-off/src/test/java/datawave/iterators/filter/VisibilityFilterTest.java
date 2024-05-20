@@ -60,30 +60,26 @@ public class VisibilityFilterTest {
      * @return an instance of FilterOptions
      */
     protected FilterOptions createOptions(String pattern, long ttl) {
-        return createOptions(pattern, ttl, 0);
+        return createOptions(pattern, ttl, false);
     }
 
     /**
-     * Create a {@link FilterOptions} with a pattern, ttl, and column visibility cache size
+     * Create a {@link FilterOptions} with a pattern, ttl, and column visibility cache
      *
      * @param pattern
      *            the pattern
      * @param ttl
      *            the ttl
-     * @param cacheSize
-     *            the size of the column visibility cache
+     * @param enableCache
+     *            enable the column visibility cache
      * @return an instance of FilterOptions
      */
-    protected FilterOptions createOptions(String pattern, long ttl, int cacheSize) {
+    protected FilterOptions createOptions(String pattern, long ttl, boolean enableCache) {
         FilterOptions filterOptions = new FilterOptions();
         filterOptions.setOption(AgeOffConfigParams.MATCHPATTERN, pattern);
         filterOptions.setTTL(ttl);
         filterOptions.setTTLUnits(AgeOffTtlUnits.MILLISECONDS);
-
-        if (cacheSize > 0) {
-            filterOptions.setOption(AgeOffConfigParams.COLUMN_VISIBILITY_CACHE_SIZE, String.valueOf(cacheSize));
-        }
-
+        filterOptions.setOption(AgeOffConfigParams.COLUMN_VISIBILITY_CACHE_ENABLED, String.valueOf(enableCache));
         return filterOptions;
     }
 

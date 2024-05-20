@@ -1,15 +1,12 @@
 package datawave.iterators.filter;
 
+import java.util.Arrays;
 import java.util.Date;
-import java.util.concurrent.TimeUnit;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.log4j.Logger;
-
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
 
 import datawave.iterators.filter.ageoff.AgeOffPeriod;
 import datawave.iterators.filter.ageoff.AppliedRule;
@@ -21,8 +18,7 @@ import datawave.util.StringUtils;
  * a ACCUMULO record's {@code Key} or {@code Value}. For example, a subclass could be used to filter on all or a portion of each record's: Row, Column Family,
  * Column Qualifier, or Column Visibility
  * <P>
- * This filter supports ColumnVisibility caching to avoid expensive parse operations. To enable the cache set the
- * {@link AgeOffConfigParams#COLUMN_VISIBILITY_CACHE_SIZE} to a positive integer.
+ * This filter caches the previous column visibility to avoid expensive parse operations.
  */
 public abstract class TokenFilterBase extends AppliedRule {
 
@@ -30,11 +26,13 @@ public abstract class TokenFilterBase extends AppliedRule {
     private byte[][] patternBytes;
     private boolean ruleApplied;
 
+    private boolean cacheEnabled = false;
+    private byte[] prevBytes;
+    private boolean prevState;
+
     // These are the possible delimiters in a column visibility exception for the double quote. NOTE, this is fragile
     // but currently there is no way to get this list out of the accumulo ColumnVisibility class.
     private static final byte[] DELIMITERS = "|&()".getBytes();
-
-    private Cache<byte[],Boolean> cvCache;
 
     /**
      * This method is to be implemented by sub-classes of this class. Child classes should test the provided tokens against the provided key's column visibility
@@ -76,36 +74,33 @@ public abstract class TokenFilterBase extends AppliedRule {
             return true;
         }
 
-        byte[] backing = new byte[0];
+        byte[] backing = k.getColumnVisibilityData().getBackingArray();
 
-        if (cvCache != null) {
-            backing = k.getColumnVisibilityData().getBackingArray();
-            Boolean bool = cvCache.getIfPresent(backing);
-            if (bool != null) {
-                if (bool) {
-                    ruleApplied = true;
-                    // the same visibility could be on keys with different timestamps, therefore recalculate the cutoff
-                    return calculateCutoff(k, period);
-                } else {
-                    return true;
-                }
+        if (prevBytes == null) {
+            prevBytes = backing;
+        } else if (cacheEnabled && Arrays.equals(prevBytes, backing)) {
+            if (prevState) {
+                ruleApplied = true;
+                // still need to check timestamps, same viz could be loaded at a different time
+                return calculateCutoff(k, period);
+            } else {
+                return true;
             }
         }
 
         if (hasToken(k, v, patternBytes)) {
             ruleApplied = true;
-            if (cvCache != null) {
-                cvCache.put(backing, true);
-            }
-
-            return calculateCutoff(k, period);
+            boolean keyAccepted = calculateCutoff(k, period);
+            prevBytes = backing;
+            prevState = true;
+            return keyAccepted;
         } else {
             if (log.isTraceEnabled()) {
                 log.trace("did not match the patterns:" + toString(patternBytes));
             }
-            if (cvCache != null) {
-                cvCache.put(backing, false);
-            }
+
+            prevBytes = backing;
+            prevState = false;
             // if the pattern did not match anything, then go ahead and accept this record
             return true;
         }
@@ -167,16 +162,9 @@ public abstract class TokenFilterBase extends AppliedRule {
             }
         }
 
-        if (options.getOption(AgeOffConfigParams.COLUMN_VISIBILITY_CACHE_SIZE) != null) {
-            int size = Integer.parseInt(options.getOption(AgeOffConfigParams.COLUMN_VISIBILITY_CACHE_SIZE));
-
-            //  @formatter:off
-            cvCache = Caffeine.newBuilder()
-                            .maximumSize(size)
-                            .expireAfterWrite(5, TimeUnit.MINUTES)
-                            .expireAfterAccess(5, TimeUnit.MINUTES)
-                            .build();
-            //  @formatter:on
+        String opt = options.getOption(AgeOffConfigParams.COLUMN_VISIBILITY_CACHE_ENABLED);
+        if (org.apache.commons.lang3.StringUtils.isNotBlank(opt)) {
+            cacheEnabled = Boolean.parseBoolean(opt);
         }
 
         ruleApplied = false;
@@ -247,9 +235,5 @@ public abstract class TokenFilterBase extends AppliedRule {
 
     public byte[][] getPatternBytes() {
         return patternBytes;
-    }
-
-    public Cache<byte[],Boolean> getCvCache() {
-        return cvCache;
     }
 }

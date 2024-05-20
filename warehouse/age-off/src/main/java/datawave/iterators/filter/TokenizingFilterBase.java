@@ -1,14 +1,11 @@
 package datawave.iterators.filter;
 
+import java.util.Arrays;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
-
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
 
 import datawave.iterators.filter.TokenTtlTrie.Builder.MERGE_MODE;
 import datawave.iterators.filter.ageoff.AgeOffPeriod;
@@ -51,8 +48,7 @@ import datawave.iterators.filter.ageoff.FilterOptions;
  * <li>a cell with column qualifier baz,bar would be aged off after 300 ms ('bar' wins, since it appears first in configuration), and</li>
  * <li>a cell with column qualifier foobar,barbaz would not be assigned a TTL by this filter.
  * </ul>
- * This filter supports ColumnVisibility caching to avoid expensive parse operations. To enable the cache set the
- * {@link AgeOffConfigParams#COLUMN_VISIBILITY_CACHE_SIZE} to a positive integer.
+ * This filter will cache the previous column visibility along with the calculated TTL to avoid calls to the {@link TokenTtlTrie}.
  */
 public abstract class TokenizingFilterBase extends AppliedRule {
     public static final String DELIMITERS_TAG = "delimiters";
@@ -60,9 +56,11 @@ public abstract class TokenizingFilterBase extends AppliedRule {
     private TokenTtlTrie scanTrie = null;
     private boolean ruleApplied;
 
-    private Cache<byte[],Long> cvCache;
+    private boolean cacheEnabled = false;
+    private byte[] prevBytes;
+    private long prevTTL;
 
-    public abstract byte[] getKeyField(Key k, Value V);
+    public abstract byte[] getKeyField(Key k, Value v);
 
     /**
      * Return a list of delimiters for scans. While the default is to pull this information out of the {@code &lt;delimiters&gt;} tag in the configuration,
@@ -97,16 +95,9 @@ public abstract class TokenizingFilterBase extends AppliedRule {
             this.matchPattern = confPattern;
         }
 
-        if (options.getOption(AgeOffConfigParams.COLUMN_VISIBILITY_CACHE_SIZE) != null) {
-            int size = Integer.parseInt(options.getOption(AgeOffConfigParams.COLUMN_VISIBILITY_CACHE_SIZE));
-
-            //  @formatter:off
-            cvCache = Caffeine.newBuilder()
-                            .maximumSize(size)
-                            .expireAfterWrite(5, TimeUnit.MINUTES)
-                            .expireAfterAccess(5, TimeUnit.MINUTES)
-                            .build();
-            //  @formatter:on
+        String opt = options.getOption(AgeOffConfigParams.COLUMN_VISIBILITY_CACHE_ENABLED);
+        if (org.apache.commons.lang3.StringUtils.isNotBlank(opt)) {
+            cacheEnabled = Boolean.parseBoolean(opt);
         }
     }
 
@@ -115,7 +106,6 @@ public abstract class TokenizingFilterBase extends AppliedRule {
         TokenizingFilterBase parent = (TokenizingFilterBase) parentCopy;
         this.matchPattern = parent.matchPattern;
         this.scanTrie = parent.scanTrie;
-        this.cvCache = parent.cvCache;
         super.deepCopyInit(newOptions, parentCopy);
     }
 
@@ -125,14 +115,13 @@ public abstract class TokenizingFilterBase extends AppliedRule {
 
         Long calculatedTTL = null;
 
-        if (cvCache != null) {
-            calculatedTTL = cvCache.getIfPresent(backing);
-        }
-
-        if (calculatedTTL == null) {
+        if (cacheEnabled && prevBytes != null && Arrays.equals(prevBytes, backing)) {
+            calculatedTTL = prevTTL;
+        } else {
             calculatedTTL = scanTrie.scan(backing);
-            if (cvCache != null && calculatedTTL != null) {
-                cvCache.put(backing, calculatedTTL);
+            if (calculatedTTL != null) {
+                prevBytes = backing;
+                prevTTL = calculatedTTL;
             }
         }
 
@@ -174,9 +163,5 @@ public abstract class TokenizingFilterBase extends AppliedRule {
     @Override
     public String toString() {
         return this.getClass().getSimpleName() + "[size=" + (scanTrie == null ? null : scanTrie.size()) + "]";
-    }
-
-    public Cache<byte[],Long> getCvCache() {
-        return cvCache;
     }
 }
