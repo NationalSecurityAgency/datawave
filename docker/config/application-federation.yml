@@ -1,0 +1,16 @@
+# This serves as a set of sensible defaults for authorization and query federation.
+
+datawave:
+  authorization:
+    federation:
+      # Each entry in the following map will be registered as a FederatedAuthorizationService bean, named after the key
+      services:
+        FederatedAuthorizationService:
+          federatedAuthorizationUri: "https://authorization:8443/authorization/v2"
+  query:
+    federation:
+      # Each entry in the following map will be registered as a FederatedQueryService (RemoteQueryService) bean, named after the key
+      services:
+        FederatedQueryService:
+          queryServiceUri: 'https://query:8443/query/v1'
+          queryMetricServiceUri: 'https://querymetric:8443/querymetric/v1/id'

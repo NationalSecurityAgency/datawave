@@ -5,11 +5,11 @@ import java.util.Set;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 
-import datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
-import datawave.webservice.query.logic.BaseQueryLogic;
-import datawave.webservice.query.logic.QueryLogicTransformer;
+import datawave.core.common.connection.AccumuloConnectionFactory;
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.logic.BaseQueryLogic;
+import datawave.core.query.logic.QueryLogicTransformer;
+import datawave.microservice.query.Query;
 
 public class TestQueryLogic extends BaseQueryLogic<Object> {
 
@@ -28,8 +28,8 @@ public class TestQueryLogic extends BaseQueryLogic<Object> {
     }
 
     @Override
-    public Priority getConnectionPriority() {
-        return Priority.NORMAL;
+    public AccumuloConnectionFactory.Priority getConnectionPriority() {
+        return AccumuloConnectionFactory.Priority.NORMAL;
     }
 
     @Override

@@ -27,8 +27,8 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
-import datawave.webservice.query.logic.QueryLogic;
+import datawave.core.common.connection.AccumuloConnectionFactory;
+import datawave.core.query.logic.QueryLogic;
 
 @Startup
 @Singleton
