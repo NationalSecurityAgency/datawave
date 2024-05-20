@@ -57,8 +57,9 @@ function no_ctrlc() {
 
 # prepare a directory with links to all of the files/directories to put into the jobcache
 tmpdir=`mktemp -d $MKTEMP_OPTS`
-trap 'rm -r -f "$tmpdir"; exit 1' INT EXIT
+trap 'rm -r -f "$tmpdir"; exit 1' INT
 trap no_ctrlc TERM
+trap 'rm -r -f "$tmpdir"; exit $?' EXIT
 for f in ${CLASSPATH//:/ }; do
     if [ -e $f ]; then
         fname=${f/*\//}
