@@ -4,11 +4,14 @@
     <parent>
         <groupId>gov.nsa.datawave.webservices</groupId>
         <artifactId>datawave-ws-deploy-parent</artifactId>
-        <version>6.14.0-SNAPSHOT</version>
+        <version>7.0.1-SNAPSHOT</version>
     </parent>
     <artifactId>datawave-ws-deploy-application</artifactId>
     <packaging>ear</packaging>
     <name>${project.artifactId}</name>
+    <properties>
+        <allowIncompleteProjects>true</allowIncompleteProjects>
+    </properties>
     <dependencies>
         <dependency>
             <groupId>commons-configuration</groupId>
@@ -33,6 +36,12 @@
             <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-ingest-configuration</artifactId>
             <version>${project.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>gov.nsa.datawave.core</groupId>
+                    <artifactId>datawave-core-common-util</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave</groupId>
@@ -43,12 +52,28 @@
             <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-query-core</artifactId>
             <version>${project.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>gov.nsa.datawave.core</groupId>
+                    <artifactId>datawave-core-common-util</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>gov.nsa.datawave.core</groupId>
+                    <artifactId>datawave-core-connection-pool</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-accumulo</artifactId>
             <version>${project.version}</version>
             <type>ejb</type>
+            <exclusions>
+                <exclusion>
+                    <groupId>gov.nsa.datawave.core</groupId>
+                    <artifactId>datawave-core-common-util</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.webservices</groupId>
@@ -82,6 +107,12 @@
             <artifactId>datawave-ws-common</artifactId>
             <version>${project.version}</version>
             <type>ejb</type>
+            <exclusions>
+                <exclusion>
+                    <groupId>gov.nsa.datawave.core</groupId>
+                    <artifactId>datawave-core-connection-pool</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.webservices</groupId>
@@ -108,6 +139,12 @@
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.webservices</groupId>
+            <artifactId>datawave-ws-metrics</artifactId>
+            <version>${project.version}</version>
+            <type>ejb</type>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-model</artifactId>
             <version>${project.version}</version>
             <type>ejb</type>
@@ -117,12 +154,32 @@
             <artifactId>datawave-ws-modification</artifactId>
             <version>${project.version}</version>
             <type>ejb</type>
+            <exclusions>
+                <exclusion>
+                    <groupId>gov.nsa.datawave.core</groupId>
+                    <artifactId>datawave-core-common-util</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>gov.nsa.datawave.core</groupId>
+                    <artifactId>datawave-core-connection-pool</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-query</artifactId>
             <version>${project.version}</version>
             <type>ejb</type>
+            <exclusions>
+                <exclusion>
+                    <groupId>gov.nsa.datawave.core</groupId>
+                    <artifactId>datawave-core-common-util</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>gov.nsa.datawave.core</groupId>
+                    <artifactId>datawave-core-connection-pool</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.webservices</groupId>
@@ -521,6 +578,14 @@
                                             <groupId>org.apache.hadoop</groupId>
                                             <artifactId>hadoop-client-runtime</artifactId>
                                         </artifactItem>
+                                        <dependency>
+                                            <groupId>org.apache.hadoop.thirdparty</groupId>
+                                            <artifactId>hadoop-shaded-guava</artifactId>
+                                        </dependency>
+                                        <dependency>
+                                            <groupId>org.apache.hadoop.thirdparty</groupId>
+                                            <artifactId>hadoop-shaded-protobuf_3_7</artifactId>
+                                        </dependency>
                                         <artifactItem>
                                             <groupId>org.apache.hadoop.thirdparty</groupId>
                                             <artifactId>hadoop-shaded-guava</artifactId>

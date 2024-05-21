@@ -39,8 +39,10 @@ import org.junit.runner.RunWith;
 import com.google.common.collect.Sets;
 
 import datawave.configuration.spring.SpringBean;
+import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
+import datawave.microservice.query.QueryImpl;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.TypeAttribute;
@@ -53,8 +55,6 @@ import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.util.ShapesIngest;
 import datawave.util.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
-import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
 
 /**
  * A set of tests that emphasize the influence of datatypes on query planning and execution
@@ -148,7 +148,6 @@ public abstract class ShapesTest {
                         .deleteClass(DefaultEdgeEventQueryLogic.class)
                         .deleteClass(RemoteEdgeDictionary.class)
                         .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
-                        .deleteClass(datawave.query.metrics.ShardTableQueryMetricHandler.class)
                         .addAsManifestResource(new StringAsset(
                                         "<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>" + "</alternatives>"),
                                         "beans.xml");

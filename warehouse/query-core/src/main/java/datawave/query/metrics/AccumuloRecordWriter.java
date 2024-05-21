@@ -17,6 +17,7 @@ import org.apache.accumulo.core.client.MultiTableBatchWriter;
 import org.apache.accumulo.core.client.MutationsRejectedException;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.accumulo.core.client.ZooKeeperInstance;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.ColumnUpdate;
 import org.apache.accumulo.core.data.Mutation;
@@ -33,9 +34,9 @@ import org.apache.log4j.Logger;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.common.util.ArgumentChecker;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
-import datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
-import datawave.webservice.util.EnvProvider;
+import datawave.core.common.connection.AccumuloConnectionFactory;
+import datawave.core.common.connection.AccumuloConnectionFactory.Priority;
+import datawave.core.common.util.EnvProvider;
 
 public class AccumuloRecordWriter extends RecordWriter<Text,Mutation> {
     private MultiTableBatchWriter mtbw = null;
@@ -100,7 +101,7 @@ public class AccumuloRecordWriter extends RecordWriter<Text,Mutation> {
                 } else {
                     this.connFactory = connectionFactory;
                     Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-                    this.client = connectionFactory.getClient(Priority.ADMIN, trackingMap);
+                    this.client = connectionFactory.getClient(null, null, Priority.ADMIN, trackingMap);
                 }
                 mtbw = client.createMultiTableBatchWriter(new BatchWriterConfig().setMaxMemory(getMaxMutationBufferSize(conf))
                                 .setMaxLatency(getMaxLatency(conf), TimeUnit.MILLISECONDS).setMaxWriteThreads(getMaxWriteThreads(conf)));

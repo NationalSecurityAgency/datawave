@@ -39,8 +39,21 @@ import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 
+import datawave.core.common.connection.AccumuloConnectionFactory;
+import datawave.core.common.logging.ThreadConfigurableLogger;
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.configuration.QueryData;
+import datawave.core.query.configuration.Result;
+import datawave.core.query.logic.BaseQueryLogic;
+import datawave.core.query.logic.CheckpointableQueryLogic;
+import datawave.core.query.logic.QueryCheckpoint;
+import datawave.core.query.logic.QueryKey;
+import datawave.core.query.logic.QueryLogicTransformer;
+import datawave.core.query.logic.WritesQueryMetrics;
 import datawave.data.type.Type;
 import datawave.marking.MarkingFunctions;
+import datawave.microservice.query.Query;
+import datawave.microservice.query.QueryImpl.Parameter;
 import datawave.query.CloseableIterable;
 import datawave.query.Constants;
 import datawave.query.DocumentSerialization;
@@ -85,16 +98,7 @@ import datawave.query.util.MetadataHelperFactory;
 import datawave.query.util.QueryStopwatch;
 import datawave.query.util.sortedset.FileSortedSet;
 import datawave.util.time.TraceStopwatch;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.QueryImpl.Parameter;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
-import datawave.webservice.query.configuration.QueryData;
 import datawave.webservice.query.exception.QueryException;
-import datawave.webservice.query.logic.BaseQueryLogic;
-import datawave.webservice.query.logic.QueryLogicTransformer;
-import datawave.webservice.query.logic.WritesQueryMetrics;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 
 /**
@@ -162,7 +166,7 @@ import datawave.webservice.query.result.event.ResponseObjectFactory;
  *
  * @see datawave.query.enrich
  */
-public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
+public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements CheckpointableQueryLogic {
 
     public static final String NULL_BYTE = "\0";
     public static final Class<? extends ShardQueryConfiguration> tableConfigurationType = ShardQueryConfiguration.class;
@@ -398,9 +402,50 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             config.setEndDate(endDate);
         }
 
-        MetadataHelper metadataHelper = prepareMetadataHelper(client, this.getMetadataTableName(), auths, config.isRawTypes());
+        setupQueryPlanner(config);
 
-        DateIndexHelper dateIndexHelper = prepareDateIndexHelper(client, this.getDateIndexTableName(), auths);
+        validateConfiguration(config);
+
+        if (getCardinalityConfiguration() != null && (!config.getDisallowlistedFields().isEmpty() || !config.getProjectFields().isEmpty())) {
+            // Ensure that fields used for resultCardinalities are returned. They will be removed in the DocumentTransformer.
+            // Modify the projectFields and disallowlistFields only for this stage, then return to the original values.
+            // Not advisable to create a copy of the config object due to the embedded timers.
+            Set<String> originalDisallowlistedFields = new HashSet<>(config.getDisallowlistedFields());
+            Set<String> originalProjectFields = new HashSet<>(config.getProjectFields());
+
+            // either projectFields or disallowlistedFields can be used, but not both
+            // this will be caught when loadQueryParameters is called
+            if (!config.getDisallowlistedFields().isEmpty()) {
+                config.setDisallowlistedFields(getCardinalityConfiguration().getRevisedDisallowlistFields(queryModel, originalDisallowlistedFields));
+            }
+            if (!config.getProjectFields().isEmpty()) {
+                config.setProjectFields(getCardinalityConfiguration().getRevisedProjectFields(queryModel, originalProjectFields));
+            }
+
+            setQueries(getQueryPlanner().process(config, jexlQueryString, settings, this.getScannerFactory()));
+
+            config.setDisallowlistedFields(originalDisallowlistedFields);
+            config.setProjectFields(originalProjectFields);
+        } else {
+            setQueries(getQueryPlanner().process(config, jexlQueryString, settings, this.getScannerFactory()));
+        }
+
+        TraceStopwatch stopwatch = config.getTimers().newStartedStopwatch("ShardQueryLogic - Get iterator of queries");
+
+        if (this.queries != null) {
+            config.setQueriesIter(this.queries.iterator());
+        }
+
+        config.setQueryString(getQueryPlanner().getPlannedScript());
+
+        stopwatch.stop();
+    }
+
+    private void setupQueryPlanner(ShardQueryConfiguration config)
+                    throws TableNotFoundException, ExecutionException, InstantiationException, IllegalAccessException {
+        MetadataHelper metadataHelper = prepareMetadataHelper(config.getClient(), this.getMetadataTableName(), config.getAuthorizations(), config.isRawTypes());
+
+        DateIndexHelper dateIndexHelper = prepareDateIndexHelper(config.getClient(), this.getDateIndexTableName(), config.getAuthorizations());
         if (config.isDateIndexTimeTravel()) {
             dateIndexHelper.setTimeTravel(config.isDateIndexTimeTravel());
         }
@@ -430,41 +475,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         getQueryPlanner().setCreateUidsIteratorClass(createUidsIteratorClass);
         getQueryPlanner().setUidIntersector(uidIntersector);
 
-        validateConfiguration(config);
-
-        if (getCardinalityConfiguration() != null && (!config.getDisallowlistedFields().isEmpty() || !config.getProjectFields().isEmpty())) {
-            // Ensure that fields used for resultCardinalities are returned. They will be removed in the DocumentTransformer.
-            // Modify the projectFields and disallowlistFields only for this stage, then return to the original values.
-            // Not advisable to create a copy of the config object due to the embedded timers.
-            Set<String> originalDisallowlistedFields = new HashSet<>(config.getDisallowlistedFields());
-            Set<String> originalProjectFields = new HashSet<>(config.getProjectFields());
-
-            // either projectFields or disallowlistedFields can be used, but not both
-            // this will be caught when loadQueryParameters is called
-            if (!config.getDisallowlistedFields().isEmpty()) {
-                config.setDisallowlistedFields(getCardinalityConfiguration().getRevisedDisallowlistFields(queryModel, originalDisallowlistedFields));
-            }
-            if (!config.getProjectFields().isEmpty()) {
-                config.setProjectFields(getCardinalityConfiguration().getRevisedProjectFields(queryModel, originalProjectFields));
-            }
-
-            this.queries = getQueryPlanner().process(config, jexlQueryString, settings, this.getScannerFactory());
-
-            config.setDisallowlistedFields(originalDisallowlistedFields);
-            config.setProjectFields(originalProjectFields);
-        } else {
-            this.queries = getQueryPlanner().process(config, jexlQueryString, settings, this.getScannerFactory());
-        }
-
-        TraceStopwatch stopwatch = config.getTimers().newStartedStopwatch("ShardQueryLogic - Get iterator of queries");
-
-        if (this.queries != null) {
-            config.setQueries(this.queries.iterator());
-        }
-
-        config.setQueryString(getQueryPlanner().getPlannedScript());
-
-        stopwatch.stop();
     }
 
     /**
@@ -524,7 +534,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             throw new QueryException("Did not receive a ShardQueryConfiguration instance!!");
         }
 
-        ShardQueryConfiguration config = (ShardQueryConfiguration) genericConfig;
+        config = (ShardQueryConfiguration) genericConfig;
 
         final QueryStopwatch timers = config.getTimers();
         TraceStopwatch stopwatch = timers.newStartedStopwatch("ShardQueryLogic - Setup Query");
@@ -568,11 +578,15 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         this.scheduler = getScheduler(config, scannerFactory);
 
         this.scanner = null;
-        this.iterator = this.scheduler.iterator();
+        Iterator<Result> resultIterator = this.scheduler.iterator();
 
         if (!config.isSortedUIDs()) {
-            this.iterator = new DedupingIterator(this.iterator);
+            DedupingIterator dedupIterator = new DedupingIterator(resultIterator, config.getBloom());
+            config.setBloom(dedupIterator.getBloom());
+            resultIterator = dedupIterator;
         }
+
+        this.iterator = Result.keyValueIterator(resultIterator);
 
         stopwatch.stop();
 
@@ -611,7 +625,9 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         transformer.setEventQueryDataDecoratorTransformer(eventQueryDataDecoratorTransformer);
         transformer.setContentFieldNames(getConfig().getContentFieldNames());
         transformer.setLogTimingDetails(this.getLogTimingDetails());
-        transformer.setCardinalityConfiguration(cardinalityConfiguration);
+        if (cardinalityConfiguration != null && cardinalityConfiguration.isEnabled()) {
+            transformer.setCardinalityConfiguration(cardinalityConfiguration);
+        }
         transformer.setPrimaryToSecondaryFieldMap(primaryToSecondaryFieldMap);
         transformer.setQm(queryModel);
         this.transformerInstance = transformer;
@@ -1877,10 +1893,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         return getConfig().getUnevaluatedFields();
     }
 
-    public void setUnevaluatedFields(String unevaluatedFieldList) {
-        getConfig().setUnevaluatedFields(unevaluatedFieldList);
-    }
-
     public void setUnevaluatedFields(Collection<String> unevaluatedFields) {
         getConfig().setUnevaluatedFields(unevaluatedFields);
     }
@@ -2247,10 +2259,10 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         optionalParams.add(QueryParameters.GROUP_FIELDS);
         optionalParams.add(QueryParameters.UNIQUE_FIELDS);
         optionalParams.add(QueryOptions.LOG_TIMING_DETAILS);
-        optionalParams.add(datawave.webservice.query.QueryParameters.QUERY_PAGESIZE);
-        optionalParams.add(datawave.webservice.query.QueryParameters.QUERY_PAGETIMEOUT);
-        optionalParams.add(datawave.webservice.query.QueryParameters.QUERY_EXPIRATION);
-        optionalParams.add(datawave.webservice.query.QueryParameters.QUERY_MAX_RESULTS_OVERRIDE);
+        optionalParams.add(datawave.microservice.query.QueryParameters.QUERY_PAGESIZE);
+        optionalParams.add(datawave.microservice.query.QueryParameters.QUERY_PAGETIMEOUT);
+        optionalParams.add(datawave.microservice.query.QueryParameters.QUERY_EXPIRATION);
+        optionalParams.add(datawave.microservice.query.QueryParameters.QUERY_MAX_RESULTS_OVERRIDE);
         optionalParams.add(QueryParameters.SUM_FIELDS);
         optionalParams.add(QueryParameters.MAX_FIELDS);
         optionalParams.add(QueryParameters.MIN_FIELDS);
@@ -2262,12 +2274,12 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     @Override
     public Set<String> getRequiredQueryParameters() {
         Set<String> requiredParams = new TreeSet<>();
-        requiredParams.add(datawave.webservice.query.QueryParameters.QUERY_STRING);
-        requiredParams.add(datawave.webservice.query.QueryParameters.QUERY_NAME);
-        requiredParams.add(datawave.webservice.query.QueryParameters.QUERY_AUTHORIZATIONS);
-        requiredParams.add(datawave.webservice.query.QueryParameters.QUERY_LOGIC_NAME);
-        requiredParams.add(datawave.webservice.query.QueryParameters.QUERY_BEGIN);
-        requiredParams.add(datawave.webservice.query.QueryParameters.QUERY_END);
+        requiredParams.add(datawave.microservice.query.QueryParameters.QUERY_STRING);
+        requiredParams.add(datawave.microservice.query.QueryParameters.QUERY_NAME);
+        requiredParams.add(datawave.microservice.query.QueryParameters.QUERY_AUTHORIZATIONS);
+        requiredParams.add(datawave.microservice.query.QueryParameters.QUERY_LOGIC_NAME);
+        requiredParams.add(datawave.microservice.query.QueryParameters.QUERY_BEGIN);
+        requiredParams.add(datawave.microservice.query.QueryParameters.QUERY_END);
         return requiredParams;
     }
 
@@ -2301,7 +2313,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     }
 
     public boolean isExpansionLimitedToModelContents() {
-        return getConfig().isExpansionLimitedToModelContents();
+        return getConfig().isLimitTermExpansionToModel();
     }
 
     public void setLimitTermExpansionToModel(boolean shouldLimitTermExpansionToModel) {
@@ -2722,6 +2734,72 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
 
     public Set<String> getEvaluationOnlyFields() {
         return getConfig().getEvaluationOnlyFields();
+    }
+
+    /**
+     * Implementations use the configuration to setup execution of a portion of their query. getTransformIterator should be used to get the partial results if
+     * any.
+     *
+     * @param client
+     *            The accumulo client
+     * @param baseConfig
+     *            The shard query configuration
+     * @param checkpoint
+     */
+    @Override
+    public void setupQuery(AccumuloClient client, GenericQueryConfiguration baseConfig, QueryCheckpoint checkpoint) throws Exception {
+        ShardQueryConfiguration config = (ShardQueryConfiguration) baseConfig;
+        config.setQueries(checkpoint.getQueries());
+        config.setClient(client);
+        setScannerFactory(new ScannerFactory(config));
+
+        setupQuery(config);
+    }
+
+    @Override
+    public boolean isCheckpointable() {
+        return getConfig().isCheckpointable();
+    }
+
+    @Override
+    public void setCheckpointable(boolean checkpointable) {
+        getConfig().setCheckpointable(checkpointable);
+    }
+
+    /**
+     * This can be called at any point to get a checkpoint such that this query logic instance can be torn down to be rebuilt later. At a minimum this should be
+     * called after the getTransformIterator is depleted of results.
+     *
+     * @param queryKey
+     *            The query key to include in the checkpoint
+     * @return The query checkpoint
+     */
+    @Override
+    public List<QueryCheckpoint> checkpoint(QueryKey queryKey) {
+        if (!isCheckpointable()) {
+            throw new UnsupportedOperationException("Cannot checkpoint a query that is not checkpointable.  Try calling setCheckpointable(true) first.");
+        }
+
+        // if we have started returning results, then capture the state of the query scheduler
+        if (this.scheduler != null) {
+            return this.scheduler.checkpoint(queryKey);
+        }
+        // otherwise we create a checkpoint per query data
+        else {
+            Iterator<QueryData> queries = getConfig().getQueriesIter();
+            List<QueryCheckpoint> checkpoints = new ArrayList<>();
+            while (queries.hasNext()) {
+                checkpoints.add(new QueryCheckpoint(queryKey, Collections.singletonList(queries.next())));
+            }
+            return checkpoints;
+        }
+    }
+
+    @Override
+    public QueryCheckpoint updateCheckpoint(QueryCheckpoint checkpoint) {
+        // for the shard query logic, the query data objects automatically get update with
+        // the last result returned, so the checkpoint should already be updated!
+        return checkpoint;
     }
 
     public Set<String> getDisallowedRegexPatterns() {
