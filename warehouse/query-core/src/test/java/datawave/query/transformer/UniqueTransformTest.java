@@ -88,7 +88,7 @@ public class UniqueTransformTest {
 
         UniqueTransform uniqueTransform = getUniqueTransform();
 
-        assertNull(uniqueTransform.apply((Map.Entry<Key,Document>)null));
+        assertNull(uniqueTransform.apply((Map.Entry<Key,Document>) null));
     }
 
     @Test
@@ -546,14 +546,10 @@ public class UniqueTransformTest {
     }
 
     protected void assertOrderedFieldValues() {
-        try {
-            UniqueTransform uniqueTransform = getUniqueTransform();
-            for (Document d : inputDocuments) {
-                assertEquals("Ordered field sets do not match expected", new String(expectedOrderedFieldValues, StandardCharsets.UTF_8),
-                                new String(uniqueTransform.getBytes(d), StandardCharsets.UTF_8));
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        UniqueTransform uniqueTransform = getUniqueTransform();
+        for (Document d : inputDocuments) {
+            assertEquals("Ordered field sets do not match expected", new String(expectedOrderedFieldValues, StandardCharsets.UTF_8),
+                            new String(uniqueTransform.getBytes(d), StandardCharsets.UTF_8));
         }
     }
 

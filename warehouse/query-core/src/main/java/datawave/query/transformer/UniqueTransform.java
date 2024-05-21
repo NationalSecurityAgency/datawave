@@ -5,6 +5,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.Serializable;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -18,11 +19,6 @@ import java.util.TreeSet;
 
 import javax.annotation.Nullable;
 
-import datawave.core.query.configuration.GenericQueryConfiguration;
-import datawave.core.query.logic.ResultPostprocessor;
-import datawave.query.config.ShardQueryConfiguration;
-import datawave.webservice.query.result.event.EventBase;
-import datawave.webservice.query.result.event.FieldBase;
 import org.apache.accumulo.core.data.Key;
 import org.apache.commons.collections4.keyvalue.UnmodifiableMapEntry;
 import org.apache.hadoop.fs.FileSystem;
@@ -35,11 +31,14 @@ import com.google.common.hash.Funnel;
 import com.google.common.hash.PrimitiveSink;
 
 import datawave.core.iterators.filesystem.FileSystemCache;
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.logic.ResultPostprocessor;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.DocumentKey;
 import datawave.query.attributes.UniqueFields;
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.iterator.ivarator.IvaratorCacheDir;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.iterator.profile.FinalDocumentTrackingIterator;
@@ -50,6 +49,8 @@ import datawave.query.util.sortedset.FileKeyValueSortedSet;
 import datawave.query.util.sortedset.FileSortedSet;
 import datawave.query.util.sortedset.HdfsBackedSortedSet;
 import datawave.query.util.sortedset.RewritableSortedSetImpl;
+import datawave.webservice.query.result.event.EventBase;
+import datawave.webservice.query.result.event.FieldBase;
 
 /**
  * This iterator will filter documents based on uniqueness across a set of configured fields. Only the first instance of an event with a unique set of those
@@ -93,6 +94,7 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
 
     /**
      * reset the bloom filter with this one
+     *
      * @param filter
      */
     public void setFilter(BloomFilter<byte[]> filter) {
@@ -183,6 +185,7 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
         for (Object result : results) {
             EventBase event = (EventBase) result;
             if (!event.isIntermediateResult()) {
+                log.info("Testing " + event.getMetadata());
                 try {
                     if (set != null) {
                         byte[] signature = getBytes(event);
@@ -190,6 +193,7 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
                             this.set.add(new UnmodifiableMapEntry(signature, event));
                         }
                     } else if (!isDuplicate(event)) {
+                        log.info("Keeping " + event.getMetadata());
                         resultsToKeep.add(event);
                     }
                 } catch (IOException ioe) {
@@ -198,26 +202,15 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
             }
         }
         results.clear();
-        results.addAll(resultsToKeep);
-    }
-
-    /**
-     * Part of the ResultPostprocessor interface
-     */
-    @Override
-    public Iterator<Object> flushResults() {
         if (set != null) {
-            return set.stream().map(e -> e.getValue()).iterator();
+            set.stream().forEach(e -> results.add(e.getValue()));
+            // clear the set for next round
+            set.clear();
+        } else {
+            results.addAll(resultsToKeep);
+            // reset the bloom filter for next round
+            this.bloom = BloomFilter.create(new ByteFunnel(), 500000, 1e-15);
         }
-        return Collections.emptyIterator();
-    }
-
-    /**
-     * Part of the ResultPostprocessor interface
-     */
-    @Override
-    public void saveState(GenericQueryConfiguration config) {
-        ((ShardQueryConfiguration)config).setBloom(bloom);
     }
 
     /**
@@ -233,7 +226,7 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
                     setupIterator();
                 }
                 if (setIterator.hasNext()) {
-                    return (Map.Entry<Key,Document>)setIterator.next();
+                    return (Map.Entry<Key,Document>) setIterator.next();
                 }
             }
         }
@@ -245,7 +238,7 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
      */
     private void setupIterator() {
         for (Map.Entry<byte[],Object> entry : set) {
-            Document d = (Document)entry.getValue();
+            Document d = (Document) entry.getValue();
             returnSet.add(new UnmodifiableMapEntry<>(getDocKey(d), d));
         }
         setIterator = returnSet.iterator();
@@ -277,19 +270,16 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
      * @param result
      *            a document or event
      * @return A document signature
-     * @throws IOException
-     *             if we failed to generate the byte array
      */
-    byte[] getBytes(Object result) throws IOException {
+    byte[] getBytes(Object result) {
         // we need to pull the fields out of the document.
-        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-        DataOutputStream output = new DataOutputStream(bytes);
+        StringBuilder output = new StringBuilder();
         if (result instanceof Document) {
-            outputSortedFieldValues((Document)result, output);
+            outputSortedFieldValues((Document) result, output);
         } else {
-            outputSortedFieldValues((EventBase)result, output);
+            outputSortedFieldValues((EventBase) result, output);
         }
-        return bytes.toByteArray();
+        return output.toString().getBytes(StandardCharsets.UTF_8);
     }
 
     /**
@@ -298,36 +288,39 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
      * @param document
      *            a document
      * @param output
-     *            the output stream
-     * @throws IOException
-     *             if we failed to generate the byte array
+     *            the output string builder
      */
-    private void outputSortedFieldValues(Document document, DataOutputStream output) throws IOException {
-        Multimap<String,String> values = HashMultimap.create();
+    private void outputSortedFieldValues(Document document, StringBuilder output) {
+        int count = 0;
+        String lastField = "";
+        List<String> values = new ArrayList<>();
         for (String documentField : new TreeSet<>(document.getDictionary().keySet())) {
             String field = getUniqueField(documentField);
             if (field != null) {
                 addValues(field, document.get(documentField), values);
             }
         }
-        // Always dump the fields in the same order (uniqueFields.getFields is a sorted collection)
-        for (String field : uniqueFields.getFields()) {
-            dumpValues(field, values.get(field), output);
-        }
-        output.flush();
+        dumpValues(count, lastField, values, output);
     }
 
     /**
-     * Take the fields from the document configured for the unique transform and output them to the data output stream.
+     * Take the fields from the document configured for the unique transform and output them as a string
      *
      * @param event
      *            an event
      * @param output
-     *            the output stream
-     * @throws IOException
-     *             if we failed to generate the byte array
+     *            the string builder
+     * @return The sorted field values as a string
      */
-    private void outputSortedFieldValues(EventBase event, DataOutputStream output) throws IOException {
+    private void outputSortedFieldValues(EventBase event, StringBuilder output) {
+        // First see if we have stored the signature in the internal id metadata
+        String id = event.getMetadata().getInternalId();
+        int index = id.indexOf('\u0000');
+        if (index >= 0) {
+            output.append(id.substring(index + 1));
+            return;
+        }
+
         int count = 0;
         String lastField = "";
         List<String> values = new ArrayList<>();
@@ -343,7 +336,9 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
             }
         }
         dumpValues(count, lastField, values, output);
-        output.flush();
+
+        // Cache the result in the event itself for next time
+        event.getMetadata().setInternalId(event.getMetadata().getInternalId() + '\u0000' + output.toString());
     }
 
     /**
@@ -354,19 +349,16 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
      * @param values
      *            the list of values
      * @param output
-     *            the output stream
-     * @throws IOException
-     *             for issues with read/write
+     *            the output buffer
+     * @return The next field count
      */
-    private void dumpValues(String field, Collection<String> values, DataOutputStream output) throws IOException {
-        String separator = "f-" + field + ":";
+    private int dumpValues(int count, String field, List<String> values, StringBuilder output) {
         if (!values.isEmpty()) {
-            List<String> valueList = new ArrayList<>(values);
-            // always output values in sorted order.
-            Collections.sort(valueList);
-            for (String value : valueList) {
-                output.writeUTF(separator);
-                output.writeUTF(value);
+            Collections.sort(values);
+            String separator = "f-" + field + '/' + (count++) + ":";
+            for (String value : values) {
+                output.append(separator);
+                output.append(value);
                 separator = ",";
             }
         } else {
