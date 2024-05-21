@@ -4,3 +4,4 @@
 # to LookupUUIDUtil match LookupService in the Query Service.
 QueryExecutorBean.java @jwomeara
 LookupUUIDUtil.java @jwomeara
+RunningQuery.java @jwomeara
