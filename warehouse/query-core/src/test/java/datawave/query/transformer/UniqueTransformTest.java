@@ -88,7 +88,7 @@ public class UniqueTransformTest {
 
         UniqueTransform uniqueTransform = getUniqueTransform();
 
-        assertNull(uniqueTransform.apply(null));
+        assertNull(uniqueTransform.apply((Map.Entry<Key,Document>)null));
     }
 
     @Test

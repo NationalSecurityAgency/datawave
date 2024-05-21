@@ -18,6 +18,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import datawave.core.query.logic.ResultPostprocessor;
+import datawave.query.tables.shard.ListResultPostprocessor;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.IteratorSetting;
@@ -640,6 +642,48 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         return this.transformerInstance;
     }
 
+    @Override
+    public ResultPostprocessor getResultPostprocessor(GenericQueryConfiguration genericConfig) {
+        ShardQueryConfiguration config = (ShardQueryConfiguration)genericConfig;
+
+        ListResultPostprocessor processor = new ListResultPostprocessor();
+
+        if (config.getUniqueFields() != null && !config.getUniqueFields().isEmpty()) {
+            try {
+                // @formatter:off
+                processor.addProcessor(new UniqueTransform.Builder()
+                        .withUniqueFields(config.getUniqueFields())
+                        .withQueryExecutionForPageTimeout(this.getQueryExecutionForPageTimeout())
+                        .withBufferPersistThreshold(getUniqueCacheBufferSize())
+                        .withIvaratorCacheDirConfigs(getIvaratorCacheDirConfigs())
+                        .withHdfsSiteConfigURLs(getHdfsSiteConfigURLs())
+                        .withSubDirectory(config.getQuery().getId().toString())
+                        .withMaxOpenFiles(getIvaratorMaxOpenFiles())
+                        .withNumRetries(getIvaratorNumRetries())
+                        .withPersistOptions(new FileSortedSet.PersistOptions(
+                                isIvaratorPersistVerify(),
+                                isIvaratorPersistVerify(),
+                                getIvaratorPersistVerifyCount()))
+                        .withFilter(config.getBloom())
+                        .build());
+                // @formatter:on
+            } catch (IOException ioe) {
+                throw new RuntimeException("Unable to create a unique transform", ioe);
+            }
+        }
+
+        GroupFields groupFields = getGroupByFields();
+        if (groupFields != null && groupFields.hasGroupByFields()) {
+            processor.addProcessor(new GroupingTransform(groupFields, this.markingFunctions, this.getQueryExecutionForPageTimeout()));
+        }
+
+        if (config.getRenameFields() != null && !config.getRenameFields().isEmpty()) {
+            processor.addProcessor(new FieldRenameTransform(config.getRenameFields(), getIncludeGroupingContext(), isReducedResponse()));
+        }
+
+        return processor;
+    }
+
     protected DocumentTransformer createDocumentTransformer(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions markingFunctions,
                     ResponseObjectFactory responseObjectFactory, Boolean reducedResponse) {
         return new DocumentTransformer(logic, settings, markingFunctions, responseObjectFactory, reducedResponse);
@@ -667,7 +711,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
                         ((DocumentTransformer) this.transformerInstance).addTransform(new UniqueTransform.Builder()
                                 .withUniqueFields(getConfig().getUniqueFields())
                                 .withQueryExecutionForPageTimeout(this.getQueryExecutionForPageTimeout())
-                                .withModel(getQueryModel())
                                 .withBufferPersistThreshold(getUniqueCacheBufferSize())
                                 .withIvaratorCacheDirConfigs(getIvaratorCacheDirConfigs())
                                 .withHdfsSiteConfigURLs(getHdfsSiteConfigURLs())

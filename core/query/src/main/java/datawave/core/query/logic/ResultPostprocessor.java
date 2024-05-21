@@ -1,5 +1,9 @@
 package datawave.core.query.logic;
 
+import datawave.core.query.configuration.GenericQueryConfiguration;
+
+import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -15,6 +19,21 @@ public interface ResultPostprocessor {
      *            The results to be returned to the user
      */
     void apply(List<Object> results);
+
+    /**
+     * Used to get any cached summary results into a results queue
+     * @return an iterable of results
+     */
+    default Iterator<Object> flushResults() {
+        return Collections.emptyIterator();
+    }
+
+    /**
+     * Used to update a configuration with state required to be saved across pages of results.
+     * @param config
+     */
+    default void saveState(GenericQueryConfiguration config) {
+    }
 
     class IdentityResultPostprocessor implements ResultPostprocessor {
         public void apply(List<Object> results) {

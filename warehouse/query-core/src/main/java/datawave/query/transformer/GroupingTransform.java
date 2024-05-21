@@ -3,6 +3,7 @@ package datawave.query.transformer;
 import static org.slf4j.LoggerFactory.getLogger;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -10,6 +11,8 @@ import java.util.Map.Entry;
 
 import javax.annotation.Nullable;
 
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.logic.ResultPostprocessor;
 import org.apache.accumulo.core.data.Key;
 import org.slf4j.Logger;
 
@@ -30,7 +33,7 @@ import datawave.query.iterator.profile.FinalDocumentTrackingIterator;
  * one, it is necessary to combine the column visibilities for the fields and remark the grouped fields. Additionally, the overall document visibility must be
  * computed.
  */
-public class GroupingTransform extends DocumentTransform.DefaultDocumentTransform {
+public class GroupingTransform extends DocumentTransform.DefaultDocumentTransform implements ResultPostprocessor {
 
     private static final Logger log = getLogger(GroupingTransform.class);
 
@@ -140,5 +143,22 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
         }
 
         return null;
+    }
+
+    @Override
+    public void apply(List<Object> results) {
+        // TODO
+    }
+
+    @Override
+    public Iterator<Object> flushResults() {
+        // TODO
+        return ResultPostprocessor.super.flushResults();
+    }
+
+    @Override
+    public void saveState(GenericQueryConfiguration config) {
+        // TODO
+        ResultPostprocessor.super.saveState(config);
     }
 }

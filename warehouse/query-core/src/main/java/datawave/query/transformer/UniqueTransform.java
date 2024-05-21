@@ -13,19 +13,23 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Queue;
 import java.util.TreeSet;
 
 import javax.annotation.Nullable;
 
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.logic.ResultPostprocessor;
+import datawave.query.config.ShardQueryConfiguration;
+import datawave.webservice.query.result.event.EventBase;
+import datawave.webservice.query.result.event.FieldBase;
 import org.apache.accumulo.core.data.Key;
 import org.apache.commons.collections4.keyvalue.UnmodifiableMapEntry;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
 
-import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Multimap;
 import com.google.common.hash.BloomFilter;
 import com.google.common.hash.Funnel;
 import com.google.common.hash.PrimitiveSink;
@@ -52,13 +56,13 @@ import datawave.query.util.sortedset.RewritableSortedSetImpl;
  * fields will be returned unless mostRecentUnique is specified in which case the most recent instance of an event will be returned. This transform is thread
  * safe.
  */
-public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform {
+public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform implements ResultPostprocessor {
 
     private static final Logger log = Logger.getLogger(UniqueTransform.class);
 
     private BloomFilter<byte[]> bloom;
     private UniqueFields uniqueFields = new UniqueFields();
-    private HdfsBackedSortedSet<Entry<byte[],Document>> set;
+    private HdfsBackedSortedSet<Entry<byte[],Object>> set;
     private HdfsBackedSortedSet<Entry<Key,Document>> returnSet;
     private Iterator<Entry<Key,Document>> setIterator;
 
@@ -88,7 +92,16 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
     }
 
     /**
+     * reset the bloom filter with this one
+     * @param filter
+     */
+    public void setFilter(BloomFilter<byte[]> filter) {
+        this.bloom = filter;
+    }
+
+    /**
      * Update the configuration of this transform. If the configuration is actually changing, then the bloom filter will be reset as well.
+     *
      *
      * @param uniqueFields
      *            The new set of unique fields.
@@ -161,6 +174,53 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
     }
 
     /**
+     * Part of the ResultPostprocessor interface
+     */
+    @Override
+    public void apply(List<Object> results) {
+        // these results should be EventBase objects
+        List<Object> resultsToKeep = new ArrayList<>();
+        for (Object result : results) {
+            EventBase event = (EventBase) result;
+            if (!event.isIntermediateResult()) {
+                try {
+                    if (set != null) {
+                        byte[] signature = getBytes(event);
+                        synchronized (set) {
+                            this.set.add(new UnmodifiableMapEntry(signature, event));
+                        }
+                    } else if (!isDuplicate(event)) {
+                        resultsToKeep.add(event);
+                    }
+                } catch (IOException ioe) {
+                    log.error("Failed to convert document to bytes.  Returning document as unique.", ioe);
+                }
+            }
+        }
+        results.clear();
+        results.addAll(resultsToKeep);
+    }
+
+    /**
+     * Part of the ResultPostprocessor interface
+     */
+    @Override
+    public Iterator<Object> flushResults() {
+        if (set != null) {
+            return set.stream().map(e -> e.getValue()).iterator();
+        }
+        return Collections.emptyIterator();
+    }
+
+    /**
+     * Part of the ResultPostprocessor interface
+     */
+    @Override
+    public void saveState(GenericQueryConfiguration config) {
+        ((ShardQueryConfiguration)config).setBloom(bloom);
+    }
+
+    /**
      * This will start pulling data from the hdfs backed set if one exists (only if mostRecent is true).
      *
      * @return The next unique document from the set.
@@ -173,7 +233,7 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
                     setupIterator();
                 }
                 if (setIterator.hasNext()) {
-                    return setIterator.next();
+                    return (Map.Entry<Key,Document>)setIterator.next();
                 }
             }
         }
@@ -184,8 +244,9 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
      * This will run through the set and create a new set ordered by Key, Document
      */
     private void setupIterator() {
-        for (Map.Entry<byte[],Document> entry : set) {
-            returnSet.add(new UnmodifiableMapEntry<>(getDocKey(entry.getValue()), entry.getValue()));
+        for (Map.Entry<byte[],Object> entry : set) {
+            Document d = (Document)entry.getValue();
+            returnSet.add(new UnmodifiableMapEntry<>(getDocKey(d), d));
         }
         setIterator = returnSet.iterator();
     }
@@ -193,14 +254,14 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
     /**
      * Determine if a document is unique per the fields specified. If we have seen this set of fields and values before, then it is not unique.
      *
-     * @param document
-     *            a document
+     * @param result
+     *            a document or event
      * @return if a document is unique per the fields specified
      * @throws IOException
      *             for issues with read/write
      */
-    private boolean isDuplicate(Document document) throws IOException {
-        byte[] bytes = getBytes(document);
+    private boolean isDuplicate(Object result) throws IOException {
+        byte[] bytes = getBytes(result);
         synchronized (bloom) {
             if (bloom.mightContain(bytes)) {
                 return true;
@@ -213,17 +274,21 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
     /**
      * Get a sequence of bytes that uniquely identifies this document using the configured unique fields.
      *
-     * @param document
-     *            a document
+     * @param result
+     *            a document or event
      * @return A document signature
      * @throws IOException
      *             if we failed to generate the byte array
      */
-    byte[] getBytes(Document document) throws IOException {
+    byte[] getBytes(Object result) throws IOException {
         // we need to pull the fields out of the document.
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
         DataOutputStream output = new DataOutputStream(bytes);
-        outputSortedFieldValues(document, output);
+        if (result instanceof Document) {
+            outputSortedFieldValues((Document)result, output);
+        } else {
+            outputSortedFieldValues((EventBase)result, output);
+        }
         return bytes.toByteArray();
     }
 
@@ -249,6 +314,35 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
         for (String field : uniqueFields.getFields()) {
             dumpValues(field, values.get(field), output);
         }
+        output.flush();
+    }
+
+    /**
+     * Take the fields from the document configured for the unique transform and output them to the data output stream.
+     *
+     * @param event
+     *            an event
+     * @param output
+     *            the output stream
+     * @throws IOException
+     *             if we failed to generate the byte array
+     */
+    private void outputSortedFieldValues(EventBase event, DataOutputStream output) throws IOException {
+        int count = 0;
+        String lastField = "";
+        List<String> values = new ArrayList<>();
+        List<FieldBase> fields = event.getFields();
+        for (FieldBase fieldBase : fields) {
+            String field = getUniqueField(fieldBase.getName());
+            if (field != null) {
+                if (!field.equals(lastField)) {
+                    count = dumpValues(count, lastField, values, output);
+                    lastField = field;
+                }
+                addValue(field, fieldBase.getValueString(), values);
+            }
+        }
+        dumpValues(count, lastField, values, output);
         output.flush();
     }
 
@@ -299,8 +393,22 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
                     .forEach(a -> addValues(field, a, values));
             // @formatter:on
         } else {
-            values.put(field, uniqueFields.transformValue(field, String.valueOf(attribute.getData())));
+            addValue(field, String.valueOf(attribute.getData()), values);
         }
+    }
+
+    /**
+     * Add the attribute values to the list of values.
+     *
+     * @param field
+     *            The attribute field
+     * @param value
+     *            The value
+     * @param values
+     *            The list of values to be updated
+     */
+    private void addValue(final String field, String value, List<String> values) {
+        values.add(uniqueFields.transformValue(field, value));
     }
 
     /**
@@ -407,9 +515,8 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
      */
     public static class Builder {
         private UniqueFields uniqueFields;
-        private Comparator<Entry<byte[],Document>> keyComparator;
-        private RewritableSortedSetImpl.RewriteStrategy<Map.Entry<byte[],Document>> keyValueComparator;
-        private QueryModel model;
+        private Comparator<Entry<byte[],Object>> keyComparator;
+        private RewritableSortedSetImpl.RewriteStrategy<Map.Entry<byte[],Object>> keyValueComparator;
         private int bufferPersistThreshold;
         private List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs;
         private String hdfsSiteConfigURLs;
@@ -418,13 +525,14 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
         private int numRetries;
         private long queryExecutionForPageTimeout;
         private FileSortedSet.PersistOptions persistOptions;
+        private BloomFilter<byte[]> filter;
 
         public Builder() {
             keyComparator = new Comparator<>() {
                 private Comparator<byte[]> comparator = new ByteArrayComparator();
 
                 @Override
-                public int compare(Map.Entry<byte[],Document> o1, Map.Entry<byte[],Document> o2) {
+                public int compare(Map.Entry<byte[],Object> o1, Map.Entry<byte[],Object> o2) {
                     return comparator.compare(o1.getKey(), o2.getKey());
                 }
             };
@@ -478,11 +586,6 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
             return this;
         }
 
-        public Builder withModel(QueryModel model) {
-            this.model = model;
-            return this;
-        }
-
         public Builder withBufferPersistThreshold(int bufferPersistThreshold) {
             this.bufferPersistThreshold = bufferPersistThreshold;
             return this;
@@ -523,13 +626,21 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
             return this;
         }
 
+        public Builder withFilter(BloomFilter<byte[]> filter) {
+            this.filter = filter;
+            return this;
+        }
+
         public UniqueTransform build() throws IOException {
             UniqueTransform transform = new UniqueTransform(uniqueFields, queryExecutionForPageTimeout);
+            if (filter != null) {
+                transform.setFilter(filter);
+            }
 
             if (transform.uniqueFields.isMostRecent()) {
                 // @formatter:off
                 // noinspection unchecked
-                transform.set = (HdfsBackedSortedSet<Entry<byte[],Document>>) HdfsBackedSortedSet.builder()
+                transform.set = (HdfsBackedSortedSet<Entry<byte[],Object>>) HdfsBackedSortedSet.builder()
                         .withComparator(keyComparator)
                         .withRewriteStrategy(keyValueComparator)
                         .withBufferPersistThreshold(bufferPersistThreshold)
@@ -557,8 +668,12 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
         }
     }
 
-    private static long getTimestamp(Document doc) {
-        return getDocKeyAttr(doc).getTimestamp();
+    private static long getTimestamp(Object o) {
+        if (o instanceof Document) {
+            return getDocKeyAttr((Document) o).getTimestamp();
+        } else {
+            return getTimestamp((EventBase) o);
+        }
     }
 
     private static DocumentKey getDocKeyAttr(Document doc) {
@@ -567,6 +682,15 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
 
     private static Key getDocKey(Document doc) {
         return getDocKeyAttr(doc).getDocKey();
+    }
+
+    private static long getTimestamp(EventBase e) {
+        List<FieldBase> fields = e.getFields();
+        if (fields.isEmpty()) {
+            return -1;
+        } else {
+            return fields.get(0).getTimestamp();
+        }
     }
 
 }
