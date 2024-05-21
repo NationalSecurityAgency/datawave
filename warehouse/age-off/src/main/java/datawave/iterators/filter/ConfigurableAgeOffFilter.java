@@ -113,7 +113,6 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
                     .setNameFormat(ConfigurableAgeOffFilter.class.getSimpleName() + "-ruleCache-refresh-%d").build();
 
     private static final ScheduledExecutorService SIMPLE_TIMER = Executors.newSingleThreadScheduledExecutor(TIMER_THREAD_FACTORY);
-
     public static final String UPDATE_INTERVAL_MS_PROP = "tserver.datawave.ageoff.cache.update.interval.ms";
     protected static final long DEFAULT_UPDATE_INTERVAL_MS = 5;
     protected static long UPDATE_INTERVAL_MS = DEFAULT_UPDATE_INTERVAL_MS;
@@ -337,7 +336,6 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
         long sessionScanStart = options.containsKey(AgeOffConfigParams.SCAN_START_TIMESTAMP)
                         ? Long.parseLong(options.get(AgeOffConfigParams.SCAN_START_TIMESTAMP))
                         : System.currentTimeMillis();
-
         initialize(options.get(AgeOffConfigParams.TTL), options.get(AgeOffConfigParams.TTL_UNITS), options.get(AgeOffConfigParams.TTL_SHORT_CIRCUIT),
                         sessionScanStart, options.get(AgeOffConfigParams.FILTER_CONFIG));
 

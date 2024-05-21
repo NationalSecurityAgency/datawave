@@ -319,7 +319,6 @@ public class TableConfigurationUtil {
      */
     private void configureTablesIfNecessary(Set<String> tableNames, TableOperations tops, Configuration conf, Logger log)
                     throws AccumuloSecurityException, AccumuloException, TableNotFoundException {
-
         Map<String,TableConfigHelper> tableConfigs = setupTableConfigHelpers(log, conf, tableNames);
 
         for (String table : tableNames) {

@@ -6,8 +6,8 @@ import java.util.List;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.IntRange;
 
-import datawave.webservice.query.Query;
-import datawave.webservice.query.QueryImpl;
+import datawave.microservice.query.Query;
+import datawave.microservice.query.QueryImpl;
 
 public class SplitSelectorExtractor implements SelectorExtractor {
 

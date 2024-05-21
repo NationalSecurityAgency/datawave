@@ -16,8 +16,8 @@ import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.lang.mutable.MutableInt;
 import org.apache.log4j.Logger;
 
+import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
 
 /**
  * Count the number of terms where bounded ranges count as 1 term

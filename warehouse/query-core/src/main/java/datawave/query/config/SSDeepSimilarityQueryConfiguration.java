@@ -6,16 +6,16 @@ import org.apache.accumulo.core.data.Range;
 
 import com.google.common.collect.Multimap;
 
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.logic.BaseQueryLogic;
+import datawave.microservice.query.Query;
+import datawave.microservice.query.QueryImpl;
 import datawave.util.ssdeep.BucketAccumuloKeyGenerator;
 import datawave.util.ssdeep.ChunkSizeEncoding;
 import datawave.util.ssdeep.IntegerEncoding;
 import datawave.util.ssdeep.NGramGenerator;
 import datawave.util.ssdeep.NGramTuple;
 import datawave.util.ssdeep.SSDeepHash;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
-import datawave.webservice.query.logic.BaseQueryLogic;
 
 public class SSDeepSimilarityQueryConfiguration extends GenericQueryConfiguration {
 
@@ -33,15 +33,13 @@ public class SSDeepSimilarityQueryConfiguration extends GenericQueryConfiguratio
     /** Used to encode the chunk size as a character which is included in the ranges used to retrieve ngram tuples */
     private ChunkSizeEncoding chunkSizeEncoder;
 
-    private Query query;
-
     private Collection<Range> ranges;
 
     private Multimap<NGramTuple,SSDeepHash> queryMap;
 
     public SSDeepSimilarityQueryConfiguration() {
         super();
-        query = new QueryImpl();
+        setQuery(new QueryImpl());
     }
 
     public SSDeepSimilarityQueryConfiguration(BaseQueryLogic<?> configuredLogic) {
@@ -50,14 +48,6 @@ public class SSDeepSimilarityQueryConfiguration extends GenericQueryConfiguratio
 
     public static SSDeepSimilarityQueryConfiguration create() {
         return new SSDeepSimilarityQueryConfiguration();
-    }
-
-    public Query getQuery() {
-        return query;
-    }
-
-    public void setQuery(Query query) {
-        this.query = query;
     }
 
     public Collection<Range> getRanges() {

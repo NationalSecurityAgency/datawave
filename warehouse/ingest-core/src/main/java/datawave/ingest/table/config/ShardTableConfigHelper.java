@@ -113,7 +113,6 @@ public class ShardTableConfigHelper extends AbstractTableConfigHelper {
             localityGroupsConf = conf.get(shardDictionaryTableName + LOCALITY_GROUPS,
                             ShardedDataTypeHandler.SHARD_DINDX_FLABEL_LOCALITY_NAME + ':' + ShardedDataTypeHandler.SHARD_DINDX_FLABEL + ','
                                             + ShardedDataTypeHandler.SHARD_DINDX_RLABEL_LOCALITY_NAME + ':' + ShardedDataTypeHandler.SHARD_DINDX_RLABEL);
-
             for (String localityGroupDefConf : StringUtils.split(localityGroupsConf)) {
                 String[] localityGroupDef = StringUtils.split(localityGroupDefConf, '\\', ':');
                 Set<Text> families = localityGroups.get(localityGroupDef[0]);
@@ -171,7 +170,6 @@ public class ShardTableConfigHelper extends AbstractTableConfigHelper {
         // Set a text index aggregator on the "tf" (Term Frequency) column family
         CombinerConfiguration tfConf = new CombinerConfiguration(new Column("tf"),
                         new IteratorSetting(10, "TF", datawave.ingest.table.aggregator.TextIndexAggregator.class.getName()));
-
         setAggregatorConfigurationIfNecessary(tableName, Collections.singletonList(tfConf), tops, conf, log);
 
         if (markingsSetupIteratorEnabled) {
