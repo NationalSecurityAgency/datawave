@@ -2,5 +2,5 @@
 # In order to ensure the query microservices are consistent with the wildfly webservice, we need
 # to ensure that changes made to QueryExecutorBean match QueryManagementService, and changes made
 # to LookupUUIDUtil match LookupService in the Query Service.
-/web-services/query/src/main/java/datawave/webservice/query/runner/QueryExecutorBean.java @jwomeara
-/web-services/query/src/main/java/datawave/webservice/query/util/LookupUUIDUtil.java @jwomeara
+QueryExecutorBean.java @jwomeara
+LookupUUIDUtil.java @jwomeara
