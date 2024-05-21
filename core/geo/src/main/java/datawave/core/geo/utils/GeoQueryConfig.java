@@ -67,7 +67,7 @@ public class GeoQueryConfig {
     public static class Builder {
         // geowave configuration
         private int geowaveMaxEnvelopes = 4;
-        private int geometryMaxExpansion = 9;
+        private int geometryMaxExpansion = 8;
         private int pointMaxExpansion = 32;
         private boolean optimizeGeoWaveRanges = true;
         private int rangeSplitThreshold = 16;

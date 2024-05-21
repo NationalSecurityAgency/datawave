@@ -56,20 +56,20 @@ export const manualGeometryFormStore = (id: string) =>
         rangeSettings: {
           [GEO_POINT]: {
             maxEnvelopes: 4,
-            maxExpansion: 400,
-            optimizeRanges: false,
+            maxExpansion: 32,
+            optimizeRanges: true,
           } as QueryRangeSettings,
           [GEOWAVE_POINT]: {
             maxEnvelopes: 4,
-            maxExpansion: 400,
-            optimizeRanges: false,
+            maxExpansion: 32,
+            optimizeRanges: true,
             rangeSplitThreshold: 16,
             maxRangeOverlap: 0.25,
           } as QueryRangeSettings,
           [GEOWAVE_GEOMETRY]: {
             maxEnvelopes: 4,
-            maxExpansion: 400,
-            optimizeRanges: false,
+            maxExpansion: 8,
+            optimizeRanges: true,
             rangeSplitThreshold: 16,
             maxRangeOverlap: 0.25,
           } as QueryRangeSettings,

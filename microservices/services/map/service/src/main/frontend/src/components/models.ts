@@ -8,6 +8,11 @@ export interface Meta {
 }
 
 export interface GeoFeatures {
+  geometry?: Geo;
+  queryRanges?: GeoTerms;
+}
+
+export interface GeoQueryFeatures {
   geoByField: GeoByField;
   functions: GeoFunction[];
 }
@@ -76,10 +81,14 @@ export interface QueryRangeSettings {
 export interface ManualQueryForm {
   query: string;
   fieldTypes: FieldType[];
+  expand: boolean;
 }
 
 export interface FieldType {
   id: number;
   field: string;
-  type: string;
+  type: {
+    label: string,
+    value: string
+  };
 }

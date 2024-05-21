@@ -2,7 +2,6 @@ package datawave.microservice.map.data;
 
 import java.util.Set;
 
-import org.opengis.feature.Feature;
 import org.opengis.feature.simple.SimpleFeature;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;

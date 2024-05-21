@@ -6,8 +6,11 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue';
 import 'leaflet/dist/leaflet.css';
-import L from 'leaflet';
+import L, { Layer } from 'leaflet';
 import { geoFeaturesStore } from 'stores/geo-features-store';
+import { GeoQueryFeatures } from './models';
+import { GeoJsonObject } from 'geojson';
+import { GeoFeatures } from './models';
 
 interface TileLayerProps {
   title: string;
@@ -41,6 +44,8 @@ const props = withDefaults(defineProps<Props>(), {
 
 const mapInstance = ref<L.Map | null>(null);
 
+const loadedQueries = ref<[string]>();
+
 const initMap = () => {
   const bounds = L.latLngBounds(L.latLng(-90, -360), L.latLng(90, 360));
 
@@ -67,35 +72,105 @@ const initMap = () => {
     }
   });
 
-  // // the first basemap in the list is the default
-  // (Object.values(props.tileLayersMap)[0] as L.TileLayer).addTo(theMap);
-
-  // // add the basemap selector panel
-  // L.control.layers(basemaps.value, {}, { position: 'bottomright' }).addTo(theMap);
-
   mapInstance.value = theMap;
 
   const geoQueryFeatures = geoFeaturesStore();
-
-  console.log('getGeoFeaturesForQuery!');
-  let fieldTypes = new Map<string, string[]>([
-    ['GEOMETRY_FIELD', ['datawave.data.type.GeometryType']],
-  ]);
-
-  geoQueryFeatures
-    .loadGeoFeaturesForQuery(
-      'geowave:intersects(GEOMETRY_FIELD, "POLYGON((-180 -90, 180 -90, 180 90, -180 90, -180 -90))")',
-      fieldTypes
-    )
-    .then((data) => {
-      console.log('getGeoFeaturesForQuery response: ' + data);
-      console.log(geoQueryFeatures.getGeoFeatures);
-    });
 
   window.onresize = () => {
     console.log('invalidating size');
     theMap.invalidateSize(true);
   };
+
+  // watch for the addition of new geo query features
+  geoQueryFeatures.$subscribe((mutation, state) => {
+
+    // load all of the geo features for all queries
+    for (const queryId in state.geoQueryFeatures) {
+
+      // have we already loaded this queryId?
+      if (!loadedQueries.value?.includes(queryId)) {
+
+        // if this is a GeoQueryFeature
+        if ('geoByField' in state.geoQueryFeatures[queryId]) {
+          const geoQueryFeatures = state.geoQueryFeatures[queryId] as GeoQueryFeatures;
+
+          // keep track of all layers createdfor this query
+          let layers: Layer[] = [];
+
+          // add the queryId to the array of loaded queries
+          loadedQueries.value?.push(queryId);
+          
+          // handle the geo functions
+          for (const funcGeo of geoQueryFeatures.functions) {
+            let funcLayer = L.geoJSON(funcGeo.geoJson as GeoJsonObject);
+            layers.push(funcLayer)
+          }
+
+          // handle the geo by field
+          for (const field in geoQueryFeatures.geoByField) {
+            let fieldGeo = geoQueryFeatures.geoByField[field];
+            
+            // load the overall geo for this field
+            if (fieldGeo.geo) {
+              let fieldGeoLayer = L.geoJSON(fieldGeo.geo.geoJson as GeoJsonObject);
+              layers.push(fieldGeoLayer);
+            }
+
+            // load the geo by tier
+            if (fieldGeo.geoByTier) {
+              for (const tierKey in fieldGeo.geoByTier) {
+                let tierGeo = fieldGeo.geoByTier[tierKey];
+                let tierGeoLayer = L.geoJSON(tierGeo.geoJson as GeoJsonObject);
+                layers.push(tierGeoLayer);
+              }
+            }
+          }
+
+          // load the layers as a group
+          L.layerGroup(layers).addTo(theMap);
+        } 
+        // if this is a GeoFeature
+        else {
+          const geoFeatures = state.geoQueryFeatures[queryId] as GeoFeatures;
+
+          // keep track of all layers createdfor this query
+          let layers: Layer[] = [];
+
+          // add the queryId to the array of loaded queries
+          loadedQueries.value?.push(queryId);
+
+          // load the overall geo
+          if (geoFeatures.geometry) {
+            let fieldGeoLayer = L.geoJSON(geoFeatures.geometry.geoJson as GeoJsonObject);
+            layers.push(fieldGeoLayer);
+          }
+
+          // load the geo query ranges
+          if (geoFeatures.queryRanges) {
+            let queryRanges = geoFeatures.queryRanges;
+            
+            // load the overall geo for this field
+            if (queryRanges.geo) {
+              let fieldGeoLayer = L.geoJSON(queryRanges.geo.geoJson as GeoJsonObject);
+              layers.push(fieldGeoLayer);
+            }
+
+            // load the geo by tier
+            if (queryRanges.geoByTier) {
+              for (const tierKey in queryRanges.geoByTier) {
+                let tierGeo = queryRanges.geoByTier[tierKey];
+                let tierGeoLayer = L.geoJSON(tierGeo.geoJson as GeoJsonObject);
+                layers.push(tierGeoLayer);
+              }
+            }
+          }
+
+          // load the layers as a group
+          L.layerGroup(layers).addTo(theMap);
+        }
+      }
+    }
+  });
 };
 
 onMounted(() => {

@@ -1,6 +1,6 @@
 <template>
   <q-card>
-    <q-card-section class="q-py-none">
+    <q-card-section class="q-py-none" :style="'opacity: ' + cardOpacity">
       <q-form>
         <div class="q-py-sm">
           <q-file
@@ -132,9 +132,11 @@
       </q-form>
       <q-card-actions align="right" class="text-primary">
         <q-btn flat label="Reset" @click="manualGeometryForm.$reset()" />
-        <q-btn flat label="Save" @click="submitGeometry" />
+        <q-btn flat label="Load" @click="submitGeometry" />
       </q-card-actions>
     </q-card-section>
+
+    <CardLoading ref="cardLoading" @doneClick="cardOpacity=1.0;" />
   </q-card>
   <q-dialog v-model="editDialog">
     <q-card style="min-width: 66%">
@@ -182,10 +184,14 @@ import {
   GEOMETRY_TYPE_OPTIONS,
   RANGE_TYPE_OPTIONS,
 } from 'stores/manual-geometry-store';
+import CardLoading, { CardLoadingMethods } from 'components/CardLoading.vue';
 import { geoFeaturesStore } from 'stores/geo-features-store';
 
 const manualGeometryForm = manualGeometryFormStore('abc-123');
 const geoQueryFeatures = geoFeaturesStore();
+
+const cardLoading = ref<CardLoadingMethods>();
+const cardOpacity = ref<number>(1.0);
 
 const editDialog = ref<boolean>(false);
 const editDialogText = ref<string>('');
@@ -229,8 +235,16 @@ function loadFile(selectedFile: File) {
 }
 
 function submitGeometry() {
-  console.log('not empty anymore am i');
-  geoQueryFeatures.loadGeoFeaturesForGeometry(manualGeometryForm.$state);
+  cardOpacity.value = 0.05;
+  cardLoading.value?.loading('Loading geometry.  Please wait...');
+
+  geoQueryFeatures.loadGeoFeaturesForGeometry(manualGeometryForm.$state)
+    .then((id) => {
+      cardLoading.value?.success('Geometry loaded successfully!');
+    })
+    .catch((reason) => {
+      cardLoading.value?.failure('Failed to load geometry.');
+    });
 }
 
 onUnmounted(() => {

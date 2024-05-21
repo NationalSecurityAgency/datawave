@@ -7,6 +7,7 @@ export const manualQueryFormStore = (id: string) =>
       ({
         query: '',
         fieldTypes: [] as FieldType[],
+        expand: false
       } as ManualQueryForm),
     getters: {},
     actions: {},

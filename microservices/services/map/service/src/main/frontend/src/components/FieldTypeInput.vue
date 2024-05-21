@@ -12,7 +12,6 @@
         </div>
         <div class="col">
           <q-select
-            emit-value
             v-model="fieldType.type"
             style="max-width: 175px"
             :options="options"
@@ -49,7 +48,10 @@ const props = defineProps<Props>();
 const fieldType = ref<FieldType>({
   id: props.id,
   field: '',
-  type: '',
+  type: {
+    label: '',
+    value: ''
+  },
 });
 
 const options = [

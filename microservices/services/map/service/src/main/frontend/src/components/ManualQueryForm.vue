@@ -1,6 +1,6 @@
 <template>
   <q-card>
-    <q-card-section class="q-py-none">
+    <q-card-section class="q-py-none" :style="'opacity: ' + cardOpacity">
       <q-form>
         <div class="q-py-sm">
           <q-file
@@ -23,6 +23,14 @@
               <q-btn dense flat icon="upload" @click="selectFile" />
             </template>
           </q-input>
+        </div>
+        <!-- TODO: ADD FULL QUERY RANGE SETTINGS -->
+        <!-- CREATE COMPONENT OUT OF THESE SETTINGS -->
+        <div class="q-py-sm">
+          <q-toggle
+            v-model="manualQueryForm.expand"
+            label="Create Query Ranges"
+          />
         </div>
         <div class="q-py-sm">
           Geo Fields:
@@ -47,7 +55,10 @@
                 manualQueryForm.fieldTypes.push({
                   id: fieldNum++,
                   field: '',
-                  type: '',
+                  type: {
+                    label: '',
+                    value: ''
+                  },
                 } as FieldType)
               "
             />
@@ -63,9 +74,11 @@
             fieldNum = 0;
           "
         />
-        <q-btn flat label="Save" @click="submitQuery" />
+        <q-btn flat label="Load" @click="submitQuery" />
       </q-card-actions>
     </q-card-section>
+
+    <CardLoading ref="cardLoading" @doneClick="cardOpacity=1.0;" />
   </q-card>
   <q-dialog v-model="editDialog">
     <q-card style="min-width: 66%">
@@ -109,9 +122,13 @@ import { manualQueryFormStore } from 'stores/manual-query-store';
 import { geoFeaturesStore } from 'stores/geo-features-store';
 import FieldTypeInput from 'components/FieldTypeInput.vue';
 import { FieldType } from 'components/models';
+import CardLoading, { CardLoadingMethods } from 'components/CardLoading.vue';
 
 const manualQueryForm = manualQueryFormStore('abc-123');
 const geoQueryFeatures = geoFeaturesStore();
+
+const cardLoading = ref<CardLoadingMethods>();
+const cardOpacity = ref<number>(1.0);
 
 const editDialog = ref<boolean>(false);
 const editDialogText = ref<string>('');
@@ -167,7 +184,7 @@ function getFieldTypeMap() {
         fieldTypeMap.set(element.field, typeArray);
       }
 
-      typeArray.push(element.type);
+      typeArray.push(element.type.value);
     }
   });
 
@@ -175,10 +192,20 @@ function getFieldTypeMap() {
 }
 
 function submitQuery() {
+  cardOpacity.value = 0.05;
+  cardLoading.value?.loading('Loading query.  Please wait...');
+
   geoQueryFeatures.loadGeoFeaturesForQuery(
     manualQueryForm.query,
-    getFieldTypeMap()
-  );
+    getFieldTypeMap(),
+    manualQueryForm.expand
+  )
+    .then((query) => {
+      cardLoading.value?.success('Query loaded successfully!');
+    })
+    .catch((reason) => {
+      cardLoading.value?.failure('Failed to load query.');
+    });
 }
 
 onUnmounted(() => {

@@ -18,7 +18,7 @@
         group="contentgroup"
         icon="explore"
         label="Geometry"
-        header-class="text-teal"
+        header-class="text-secondary"
       >
         <ManualGeometryForm />
       </q-expansion-item>
@@ -30,7 +30,7 @@
         group="contentgroup"
         icon="manage_search"
         label="Query"
-        header-class="text-teal"
+        header-class="text-secondary"
       >
         <ManualQueryForm />
       </q-expansion-item>
@@ -42,7 +42,7 @@
         group="contentgroup"
         icon="travel_explore"
         label="Query Lookup"
-        header-class="text-teal"
+        header-class="text-secondary"
       >
         <q-card>
           <LookupQueryForm />

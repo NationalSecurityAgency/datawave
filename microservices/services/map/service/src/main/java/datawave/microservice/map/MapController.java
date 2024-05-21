@@ -48,15 +48,15 @@ public class MapController {
     }
     
     @RequestMapping(path = "/getGeoFeaturesForQueryId", method = {RequestMethod.POST})
-    public GeoQueryFeatures getGeoFeaturesForQuery(@RequestParam("queryId") String queryId, @AuthenticationPrincipal DatawaveUserDetails currentUser)
+    public GeoQueryFeatures getGeoFeaturesForQueryId(@RequestParam("queryId") String queryId, @AuthenticationPrincipal DatawaveUserDetails currentUser)
                     throws QueryException {
         return mapOperationsService.getGeoFeaturesForQueryId(queryId, currentUser);
     }
     
     @RequestMapping(path = "/geoFeaturesForGeometry", method = {RequestMethod.POST})
     public GeoFeatures geoFeaturesForGeometry(@RequestParam("geometry") String geometry, @RequestParam("geometryType") String geometryType,
-                    @RequestParam(value = "createRanges", required = false) Boolean createRanges,
-                    @RequestParam(value = "rangeType", required = false, defaultValue = "false") String rangeType,
+                    @RequestParam(value = "createRanges", required = false, defaultValue = "false") Boolean createRanges,
+                    @RequestParam(value = "rangeType", required = false) String rangeType,
                     @RequestParam(value = "maxEnvelopes", required = false) Integer maxEnvelopes,
                     @RequestParam(value = "maxExpansion", required = false) Integer maxExpansion,
                     @RequestParam(value = "optimizeRanges", required = false, defaultValue = "false") Boolean optimizeRanges,

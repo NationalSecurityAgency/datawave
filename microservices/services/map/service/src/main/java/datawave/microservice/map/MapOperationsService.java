@@ -1,8 +1,8 @@
 package datawave.microservice.map;
 
-import java.io.IOException;
 import java.net.URI;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -21,7 +21,15 @@ import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.http.HttpHeaders;
 import org.geotools.data.DataUtilities;
+import org.geotools.feature.FeatureCollection;
+import org.geotools.feature.FeatureIterator;
+import org.geotools.feature.simple.SimpleFeatureTypeBuilder;
+import org.geotools.geojson.feature.FeatureJSON;
 import org.geotools.geojson.geom.GeometryJSON;
+import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.opengis.feature.Feature;
+import org.opengis.feature.simple.SimpleFeatureType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -260,15 +268,62 @@ public class MapOperationsService {
         }
     }
     
+    private String parseGeoFeatureJSONtoWKT(String geoFeatureJSON) {
+        String wkt = null;
+        
+        // try to parse as geojson first
+        try {
+            wkt = new GeometryJSON().read(geoFeatureJSON).toText();
+        } catch (Exception e) {
+            log.warn("Unable to parse geometry as GeoJSON", e);
+        }
+        
+        // if that fails, parse as feature json
+        if (wkt == null) {
+            try {
+                GeometryFactory geomFact = new GeometryFactory();
+                List<Geometry> geometries = new ArrayList<>();
+                FeatureJSON featureJSON = new FeatureJSON();
+                SimpleFeatureType simpleFeatureType = featureJSON.readFeatureCollectionSchema(geoFeatureJSON, false);
+                
+                // fix the geometry type
+                SimpleFeatureTypeBuilder sftBuilder = new SimpleFeatureTypeBuilder();
+                sftBuilder.init(simpleFeatureType);
+                String defaultGeometry = sftBuilder.getDefaultGeometry();
+                sftBuilder.remove(defaultGeometry);
+                sftBuilder.add(defaultGeometry, Geometry.class);
+                simpleFeatureType = sftBuilder.buildFeatureType();
+                
+                featureJSON.setFeatureType(simpleFeatureType);
+                FeatureCollection<?,?> featColl = featureJSON.readFeatureCollection(geoFeatureJSON);
+                FeatureIterator<?> featIter = featColl.features();
+                while (featIter.hasNext()) {
+                    Feature feat = featIter.next();
+                    if (feat.getDefaultGeometryProperty().getValue() instanceof Geometry) {
+                        geometries.add((Geometry) feat.getDefaultGeometryProperty().getValue());
+                    }
+                }
+                wkt = (geometries.size() > 1) ? geomFact.createGeometryCollection(geometries.toArray(new Geometry[0])).toText() : geometries.get(0).toText();
+            } catch (Exception e) {
+                log.warn("Unable to parse geometry as FeatureJSON", e);
+            }
+        }
+        
+        return wkt;
+    }
+    
     public GeoFeatures geoFeaturesForGeometry(String geometry, String geometryType, Boolean createRanges, String rangeType, Integer maxEnvelopes,
                     Integer maxExpansion, Boolean optimizeRanges, Integer rangeSplitThreshold, Double maxRangeOverlap, DatawaveUserDetails currentUser) {
-        String wkt = geometry;
+        
+        String wkt = null;
         if (geometryType.equals("geojson")) {
-            try {
-                wkt = new GeometryJSON().read(wkt).toText();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+            wkt = parseGeoFeatureJSONtoWKT(geometry);
+        } else if (geometryType.equals("wkt")) {
+            wkt = geometry;
+        }
+        
+        if (wkt == null) {
+            throw new IllegalArgumentException("Unable to parse input geometry");
         }
         
         String field = "DEFAULT";
@@ -320,7 +375,12 @@ public class MapOperationsService {
             throw new RuntimeException(e);
         }
         
-        GeoQueryFeatures geoQueryFeatures = GeoFeatureVisitor.getGeoFeatures(script, typesByField, geoQueryConfigBuilder.build());
+        GeoQueryFeatures geoQueryFeatures = null;
+        try {
+            geoQueryFeatures = GeoFeatureVisitor.getGeoFeatures(script, typesByField, geoQueryConfigBuilder.build());
+        } catch (Exception e) {
+            System.out.println(e);
+        }
         
         GeoFeatures geoFeatures = new GeoFeatures();
         GeoFeature geoFeature = new GeoFeature();

@@ -14,7 +14,7 @@
             queryId = '';
           "
         />
-        <q-btn flat label="Save" @click="submitQuery" />
+        <q-btn flat label="Load" @click="submitQuery" />
       </q-card-actions>
     </q-card-section>
   </q-card>
