@@ -178,6 +178,7 @@ public class AccumuloConnectionFactoryImpl implements AccumuloConnectionFactory 
      *            the connection's Priority
      * @return accumulo connection
      * @throws Exception
+     *             when error encountered getting client
      */
     @Override
     public AccumuloClient getClient(final String userDN, final Collection<String> proxyServers, Priority priority, Map<String,String> trackingMap)
@@ -196,6 +197,7 @@ public class AccumuloConnectionFactoryImpl implements AccumuloConnectionFactory 
      *            the tracking map
      * @return Accumulo connection
      * @throws Exception
+     *             when error encountered getting client
      */
     @Override
     public AccumuloClient getClient(final String userDN, final Collection<String> proxyServers, final String cpn, final Priority priority,
@@ -236,6 +238,7 @@ public class AccumuloConnectionFactoryImpl implements AccumuloConnectionFactory 
      * @param client
      *            The connection to return
      * @throws Exception
+     *             when error encountered getting client
      */
     @Override
     public void returnClient(AccumuloClient client) throws Exception {

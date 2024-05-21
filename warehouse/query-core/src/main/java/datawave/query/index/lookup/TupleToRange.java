@@ -30,6 +30,10 @@ public class TupleToRange implements Function<Tuple2<String,IndexInfo>,Iterator<
     protected ShardQueryConfiguration config;
 
     /**
+     * TupleToRange constructor
+     *
+     * @param tableName
+     *            the table name
      * @param currentNode
      *            the jexl node
      * @param config

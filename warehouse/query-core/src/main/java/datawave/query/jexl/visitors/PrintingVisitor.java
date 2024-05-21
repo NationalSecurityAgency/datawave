@@ -255,6 +255,8 @@ public class PrintingVisitor extends ParserVisitor {
      *            a query node
      * @param maxChildNodes
      *            maximum number of child nodes
+     * @param maxTermsToPrint
+     *            maximum number of terms to print
      * @return formatted string
      * @throws ParseException
      *             for parsing issues

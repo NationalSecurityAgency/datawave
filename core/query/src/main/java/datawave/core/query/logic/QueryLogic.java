@@ -463,6 +463,7 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      * Set a client configuration for scanner hints and consistency.
      *
      * @param config
+     *            the client configuration
      */
     void setClientConfig(AccumuloClientConfiguration config);
 

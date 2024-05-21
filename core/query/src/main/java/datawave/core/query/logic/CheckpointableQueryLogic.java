@@ -38,6 +38,7 @@ public interface CheckpointableQueryLogic {
      * handling a previously returned checkpoint.
      *
      * @param checkpoint
+     *            the checkpoint
      * @return The updated checkpoint
      */
     QueryCheckpoint updateCheckpoint(QueryCheckpoint checkpoint);

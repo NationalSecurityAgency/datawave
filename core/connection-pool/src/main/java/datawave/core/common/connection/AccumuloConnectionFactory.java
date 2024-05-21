@@ -37,6 +37,10 @@ public interface AccumuloConnectionFactory extends AutoCloseable {
      *
      * Deprecated in 2.2.3, use {@link #getClient(String, Collection, String, Priority, Map)}
      *
+     * @param userDN
+     *            the user's DN
+     * @param proxyServers
+     *            thecollectiuon of proxy servers
      * @param priority
      *            the connection's Priority
      * @param trackingMap
@@ -50,6 +54,10 @@ public interface AccumuloConnectionFactory extends AutoCloseable {
     /**
      * Gets a connection from the named pool with the assigned priority
      *
+     * @param userDN
+     *            the user's DN
+     * @param proxyServers
+     *            collection of proxy servers
      * @param poolName
      *            the name of the pool to retrieve the connection from
      * @param priority
@@ -75,6 +83,8 @@ public interface AccumuloConnectionFactory extends AutoCloseable {
 
     /**
      * Return a report of the current connection factory usage
+     *
+     * @return the report
      */
     String report();
 

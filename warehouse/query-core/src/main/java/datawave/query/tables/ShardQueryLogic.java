@@ -690,6 +690,9 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
     /**
      * If the configuration didn't exist, OR IT CHANGED, we need to create or update the transformers that have been added.
+     *
+     * @throws QueryException
+     *             if error happens adding transformers
      */
     private void addConfigBasedTransformers() {
         if (getConfig() != null) {
@@ -2792,6 +2795,9 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
      * @param baseConfig
      *            The shard query configuration
      * @param checkpoint
+     *            The query checkpoint
+     * @throws Exception
+     *             when unable to set up query
      */
     @Override
     public void setupQuery(AccumuloClient client, GenericQueryConfiguration baseConfig, QueryCheckpoint checkpoint) throws Exception {

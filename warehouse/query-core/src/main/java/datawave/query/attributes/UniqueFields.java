@@ -165,6 +165,7 @@ public class UniqueFields implements Serializable {
      *            the field
      * @param uniqueGranularity
      *            the granularity
+     * @return the field map
      */
     public void put(String field, UniqueGranularity uniqueGranularity) {
         fieldMap.put(field, uniqueGranularity);
@@ -175,6 +176,7 @@ public class UniqueFields implements Serializable {
      *
      * @param fieldMap
      *            the field map to add entries from
+     * @return the field map
      */
     public void putAll(Multimap<String,UniqueGranularity> fieldMap) {
         if (fieldMap != null) {
