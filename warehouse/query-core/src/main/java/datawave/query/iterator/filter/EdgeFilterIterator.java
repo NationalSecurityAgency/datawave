@@ -24,9 +24,7 @@ import org.apache.log4j.Logger;
 
 import com.google.common.collect.HashMultimap;
 
-import datawave.edge.model.EdgeModelAware;
-import datawave.edge.model.EdgeModelAware.Fields;
-import datawave.edge.model.EdgeModelAware.Fields.FieldKey;
+import datawave.edge.model.EdgeModelFields.FieldKey;
 import datawave.edge.util.EdgeKeyUtil;
 import datawave.query.jexl.ArithmeticJexlEngines;
 import datawave.query.jexl.DatawaveJexlEngine;
@@ -134,14 +132,14 @@ public class EdgeFilterIterator extends Filter {
         if (null != edgeDate)
             edgeDate = edgeDate.toLowerCase();
 
-        ctx.set(EdgeModelAware.EDGE_SOURCE.toLowerCase(), source);
-        ctx.set(EdgeModelAware.EDGE_SINK.toLowerCase(), sink);
-        ctx.set(EdgeModelAware.EDGE_TYPE.toLowerCase(), edgeType);
-        ctx.set(EdgeModelAware.EDGE_RELATIONSHIP.toLowerCase(), edgeRelationship);
-        ctx.set(EdgeModelAware.EDGE_ATTRIBUTE1.toLowerCase(), edgeAttribute1);
-        ctx.set(EdgeModelAware.EDGE_ATTRIBUTE2.toLowerCase(), edgeAttribute2);
-        ctx.set(EdgeModelAware.EDGE_ATTRIBUTE3.toLowerCase(), edgeAttribute3);
-        ctx.set(EdgeModelAware.DATE.toLowerCase(), edgeDate);
+        ctx.set(FieldKey.EDGE_SOURCE.name().toLowerCase(), source);
+        ctx.set(FieldKey.EDGE_SINK.name().toLowerCase(), sink);
+        ctx.set(FieldKey.EDGE_TYPE.name().toLowerCase(), edgeType);
+        ctx.set(FieldKey.EDGE_RELATIONSHIP.name().toLowerCase(), edgeRelationship);
+        ctx.set(FieldKey.EDGE_ATTRIBUTE1.name().toLowerCase(), edgeAttribute1);
+        ctx.set(FieldKey.EDGE_ATTRIBUTE2.name().toLowerCase(), edgeAttribute2);
+        ctx.set(FieldKey.EDGE_ATTRIBUTE3.name().toLowerCase(), edgeAttribute3);
+        ctx.set(FieldKey.DATE.name().toLowerCase(), edgeDate);
     }
 
     /**
@@ -207,7 +205,7 @@ public class EdgeFilterIterator extends Filter {
         boolean retVal = true;
         if (preFilterValues != null) {
             for (Map.Entry<FieldKey,String> entry : keyComponents.entrySet()) {
-                String fieldName = Fields.getInstance().getFieldName(entry.getKey());
+                String fieldName = entry.getKey().name();
                 Set<String> values = preFilterValues.get(fieldName);
                 if (values == null || values.size() < 1) {
                     // if we encountered a regex, we'll just let the jexl engine handle it, or filter it by a different field

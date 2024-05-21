@@ -1,0 +1,74 @@
+spring:
+  lifecycle:
+    # Set the shutdown grace period
+    timeout-per-shutdown-phase: 5s
+
+management:
+  endpoint:
+    # Enable the shutdown endpoint for the query service
+    shutdown:
+      enabled: true
+
+# Query requires a client certificate
+server:
+  ssl:
+    client-auth: NEED
+  # Enable graceful shutdown
+  shutdown: "graceful"
+
+logging:
+  level:
+    root: INFO
+    org.springframework.cloud.bootstrap.config: DEBUG
+    datawave.microservice.query: DEBUG
+    org.apache.kafka: ERROR
+    datawave.microservice.query.storage: WARN
+
+datawave:
+  swagger:
+    title: "Query Service"
+    description: "REST API provided by the Query Service"
+  query:
+    nextCall:
+      resultPollInterval: 500
+      statusUpdateInterval: 500
+    expiration:
+      callTimeout: 1
+      callTimeoutUnit: HOURS
+      shortCircuitCheckTime: 60
+      shortCircuitCheckTimeUnit: MINUTES
+      shortCircuitTimeout: 55
+      shortCircuitTimeoutUnit: MINUTES
+      longRunningQueryTimeout: 24
+      longRunningQueryTimeoutUnit: HOURS
+    monitor:
+      monitorInterval: 30
+      monitorIntervalUnit: SECONDS
+  doc:
+    menu:
+      extras: '<li><a href="http://localhost:9995">Accumulo</a></li>'
+  table:
+    cache:
+      enabled: false
+  web:
+    accumulo:
+      uri: 'https://localhost:9143/accumulo'
+    cache:
+      uri: 'https://localhost:8843/cache'
+    config:
+      uri: 'https://localhost:8888/configserver'
+    authorization:
+      uri: 'https://localhost:8343/authorization'
+    audit:
+      uri: 'https://localhost:9043/audit'
+    metrics:
+      uri: 'https://localhost:8543/querymetric'
+    dictionary:
+      uri: 'https://localhost:8643/dictionary'
+    executor:
+      uri: 'https://localhost:8743/executor'
+
+audit-client:
+  discovery:
+    enabled: false
+  uri: '${AUDIT_SERVER_URL:http://localhost:11111/audit}'

@@ -1,11 +1,15 @@
 package datawave.query.config;
 
-import datawave.query.tables.edge.EdgeQueryLogic;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.QueryImpl;
+import java.io.Serializable;
+import java.util.Collection;
+import java.util.Objects;
 
-public class EdgeExtendedSummaryConfiguration extends EdgeQueryConfiguration {
+import datawave.core.query.configuration.QueryData;
+import datawave.microservice.query.Query;
+import datawave.microservice.query.QueryImpl;
+import datawave.query.edge.DefaultExtendedEdgeQueryLogic;
 
+public class EdgeExtendedSummaryConfiguration extends EdgeQueryConfiguration implements Serializable {
     public static final String SUMMARIZE = "summarize";
     public static final String LIMITED_JEXL = "LIMITED_JEXL";
     public static final String LIST = "LIST";
@@ -18,27 +22,139 @@ public class EdgeExtendedSummaryConfiguration extends EdgeQueryConfiguration {
 
     private char delimiter = '\0';
 
-    private int scannerThreads = 10;
-
     private boolean includeRelationships = true;
 
     private String edgeTypes;
 
     private boolean summaryInputType = false;
 
-    // Use to aggregate results will be false by default
-    private boolean aggregateResults = false;
-
     private boolean overRideInput = false;
     private boolean overRideOutput = false;
 
-    public EdgeExtendedSummaryConfiguration(EdgeQueryLogic configuredLogic, Query query) {
-        super(configuredLogic, query);
+    /**
+     * Default constructor
+     */
+    public EdgeExtendedSummaryConfiguration() {
+        super();
+    }
+
+    /**
+     * Performs a deep copy of the provided EdgeExtendedSummaryConfiguration into a new instance
+     *
+     * @param other
+     *            - another EdgeExtendedSummaryConfiguration instance
+     */
+    public EdgeExtendedSummaryConfiguration(EdgeExtendedSummaryConfiguration other) {
+
+        // GenericQueryConfiguration copy first
+        super(other);
+
+        // EdgeExtendedSummaryConfiguration copy
+        delimiter = other.delimiter;
+        includeRelationships = other.includeRelationships;
+        edgeTypes = other.edgeTypes;
+        summaryInputType = other.summaryInputType;
+        aggregateResults = other.aggregateResults;
+        overRideInput = other.overRideInput;
+        overRideOutput = other.overRideOutput;
+    }
+
+    /**
+     * This constructor is used when we are creating a checkpoint for a set of ranges (i.e. QueryData objects). All configuration required for post planning
+     * needs to be copied over here.
+     *
+     * @param other
+     * @param queries
+     */
+    public EdgeExtendedSummaryConfiguration(EdgeExtendedSummaryConfiguration other, Collection<QueryData> queries) {
+        this(other);
+
+        this.setQueries(queries);
+
+        // do not preserve the original queries iter. getQueriesIter will create a new
+        // iterator based off of the queries collection if queriesIter is null
+        this.setQueriesIter(null);
     }
 
     @Override
-    public EdgeQueryConfiguration parseParameters(Query settings) {
+    public EdgeExtendedSummaryConfiguration checkpoint() {
+        // Create a new config that only contains what is needed to execute the specified ranges
+        return new EdgeExtendedSummaryConfiguration(this, getQueries());
+    }
+
+    /**
+     * Delegates deep copy work to appropriate constructor, sets additional values specific to the provided ShardQueryLogic
+     *
+     * @param logic
+     *            - a DefaultExtendedEdgeQueryLogic instance or subclass
+     */
+    public EdgeExtendedSummaryConfiguration(DefaultExtendedEdgeQueryLogic logic) {
+        this(logic.getConfig());
+    }
+
+    /**
+     * Factory method that instantiates an fresh EdgeExtendedSummaryConfiguration
+     *
+     * @return - a clean EdgeExtendedSummaryConfiguration
+     */
+    public static EdgeExtendedSummaryConfiguration create() {
+        return new EdgeExtendedSummaryConfiguration();
+    }
+
+    /**
+     * Factory method that returns a deep copy of the provided EdgeExtendedSummaryConfiguration
+     *
+     * @param other
+     *            - another instance of a EdgeExtendedSummaryConfiguration
+     * @return - copy of provided EdgeExtendedSummaryConfiguration
+     */
+    public static EdgeExtendedSummaryConfiguration create(EdgeExtendedSummaryConfiguration other) {
+        return new EdgeExtendedSummaryConfiguration(other);
+    }
+
+    /**
+     * Factory method that creates a EdgeExtendedSummaryConfiguration deep copy from a DefaultExtendedEdgeQueryLogic
+     *
+     * @param logic
+     *            - a configured DefaultExtendedEdgeQueryLogic
+     * @return - a EdgeExtendedSummaryConfiguration
+     */
+    public static EdgeExtendedSummaryConfiguration create(DefaultExtendedEdgeQueryLogic logic) {
+
+        EdgeExtendedSummaryConfiguration config = create(logic.getConfig());
+
+        // Lastly, honor overrides passed in via query parameters
+        config.parseParameters(config.getQuery());
+
+        return config;
+    }
+
+    /**
+     * Factory method that creates a EdgeExtendedSummaryConfiguration from a DefaultExtendedEdgeQueryLogic and a Query
+     *
+     * @param logic
+     *            - a configured DefaultExtendedEdgeQueryLogic
+     * @param query
+     *            - a configured Query object
+     * @return - a EdgeExtendedSummaryConfiguration
+     */
+    public static EdgeExtendedSummaryConfiguration create(DefaultExtendedEdgeQueryLogic logic, Query query) {
+        EdgeExtendedSummaryConfiguration config = create(logic);
+        config.setQuery(query);
+        return config;
+    }
+
+    @Override
+    public EdgeExtendedSummaryConfiguration parseParameters(Query settings) {
         super.parseParameters(settings);
+
+        // first, reset the params to their defaults
+        overRideInput = false;
+        summaryInputType = false;
+        includeRelationships = true;
+        delimiter = '\0';
+        edgeTypes = null;
+
         if (settings.getParameters() != null) {
 
             QueryImpl.Parameter p = settings.findParameter(SUMMARIZE);
@@ -96,10 +212,6 @@ public class EdgeExtendedSummaryConfiguration extends EdgeQueryConfiguration {
         return includeRelationships;
     }
 
-    public boolean isAggregateResults() {
-        return aggregateResults;
-    }
-
     public boolean isSummaryInputType() {
         return summaryInputType;
     }
@@ -114,5 +226,24 @@ public class EdgeExtendedSummaryConfiguration extends EdgeQueryConfiguration {
 
     public boolean isOverRideInput() {
         return overRideInput;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
+        if (!super.equals(o))
+            return false;
+        EdgeExtendedSummaryConfiguration that = (EdgeExtendedSummaryConfiguration) o;
+        return delimiter == that.delimiter && includeRelationships == that.includeRelationships && summaryInputType == that.summaryInputType
+                        && aggregateResults == that.aggregateResults && overRideInput == that.overRideInput && overRideOutput == that.overRideOutput
+                        && Objects.equals(edgeTypes, that.edgeTypes);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), delimiter, includeRelationships, edgeTypes, summaryInputType, aggregateResults, overRideInput, overRideOutput);
     }
 }

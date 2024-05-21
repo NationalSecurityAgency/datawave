@@ -1,6 +1,6 @@
 package datawave.webservice.query.util;
 
-import javax.ws.rs.core.MultivaluedMap;
+import org.springframework.util.MultiValueMap;
 
 /**
  * Lookup criteria for one and only one UUID
@@ -9,7 +9,7 @@ public class GetUUIDCriteria extends AbstractUUIDLookupCriteria {
     protected final String uuid;
     protected final String uuidType;
 
-    public GetUUIDCriteria(final String uuid, final String uuidType, MultivaluedMap<String,String> queryParameters) {
+    public GetUUIDCriteria(final String uuid, final String uuidType, MultiValueMap<String,String> queryParameters) {
         super(queryParameters);
 
         this.uuid = uuid;
