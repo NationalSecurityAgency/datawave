@@ -2,20 +2,20 @@ package datawave.query.tables.edge.contexts;
 
 import org.apache.commons.lang.StringUtils;
 
-import datawave.edge.model.EdgeModelAware;
+import datawave.edge.model.EdgeModelFields;
 
-public class IdentityContext implements EdgeModelAware, EdgeContext {
-    private String identity;
+public class IdentityContext implements EdgeContext {
+    private EdgeModelFields.FieldKey identity;
     private String literal;
     private String operation;
     boolean equivalence;
 
-    public IdentityContext(String identity, String literal, String opp) {
-        this.identity = identity;
+    public IdentityContext(String internalFieldName, String literal, String opp, EdgeModelFields fields) {
+        this.identity = fields.parse(internalFieldName);
         this.literal = literal;
         this.operation = opp;
 
-        if (opp.equals(NOT_EQUALS) || opp.equals(NOT_EQUALS_REGEX)) {
+        if (opp.equals(EdgeModelFields.NOT_EQUALS) || opp.equals(EdgeModelFields.NOT_EQUALS_REGEX)) {
             equivalence = false;
         } else {
             equivalence = true;
@@ -59,7 +59,7 @@ public class IdentityContext implements EdgeModelAware, EdgeContext {
         return result;
     }
 
-    public String getIdentity() {
+    public EdgeModelFields.FieldKey getIdentity() {
         return identity;
     }
 

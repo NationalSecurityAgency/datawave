@@ -24,7 +24,13 @@ import org.apache.log4j.Logger;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
+import datawave.core.query.exception.EmptyObjectException;
+import datawave.core.query.logic.BaseQueryLogic;
+import datawave.core.query.logic.WritesQueryMetrics;
+import datawave.core.query.logic.WritesResultCardinalities;
 import datawave.marking.MarkingFunctions;
+import datawave.microservice.query.Query;
+import datawave.microservice.query.QueryImpl.Parameter;
 import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.query.DocumentSerialization;
 import datawave.query.attributes.Attribute;
@@ -42,12 +48,6 @@ import datawave.query.iterator.profile.QuerySpan;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.util.StringUtils;
 import datawave.util.time.DateHelper;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.QueryImpl.Parameter;
-import datawave.webservice.query.exception.EmptyObjectException;
-import datawave.webservice.query.logic.BaseQueryLogic;
-import datawave.webservice.query.logic.WritesQueryMetrics;
-import datawave.webservice.query.logic.WritesResultCardinalities;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
@@ -68,6 +68,7 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
 
     private static final Logger log = Logger.getLogger(DocumentTransformerSupport.class);
     private static final Map<String,String> EMPTY_MARKINGS = new HashMap<>();
+
     private long sourceCount = 0;
     private long nextCount = 0;
     private long seekCount = 0;
@@ -271,10 +272,46 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
         }
     }
 
+    @Override
+    public boolean hasMetrics() {
+        return sourceCount + nextCount + seekCount + yieldCount + docRanges + fiRanges > 0;
+    }
+
+    @Override
+    public long getSourceCount() {
+        return sourceCount;
+    }
+
+    @Override
+    public long getNextCount() {
+        return nextCount;
+    }
+
+    @Override
+    public long getSeekCount() {
+        return seekCount;
+    }
+
+    @Override
+    public long getYieldCount() {
+        return yieldCount;
+    }
+
+    @Override
+    public long getDocRanges() {
+        return docRanges;
+    }
+
+    @Override
+    public long getFiRanges() {
+        return fiRanges;
+    }
+
+    @Override
     public void writeQueryMetrics(BaseQueryMetric metric) {
 
         // if any timing details have been returned, add metrics
-        if (sourceCount > 0) {
+        if (hasMetrics()) {
             metric.setSourceCount(sourceCount);
             metric.setNextCount(nextCount);
             metric.setSeekCount(seekCount);
@@ -284,6 +321,16 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
             metric.setDocRanges(docRanges);
             metric.setFiRanges(fiRanges);
         }
+    }
+
+    @Override
+    public void resetMetrics() {
+        sourceCount = 0;
+        nextCount = 0;
+        seekCount = 0;
+        yieldCount = 0;
+        docRanges = 0;
+        fiRanges = 0;
     }
 
     protected List<String> getFieldValues(Document document, String field, boolean shortCircuit) {
@@ -456,7 +503,6 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
      */
     protected FieldBase<?> createField(final String fieldName, final long ts, final Attribute<?> attribute, Map<String,String> markings,
                     String columnVisibility) {
-
         if (markings == null || markings.isEmpty()) {
             log.warn("Null or empty markings for " + fieldName + ":" + attribute);
         }

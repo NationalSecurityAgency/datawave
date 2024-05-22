@@ -359,7 +359,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         ActiveQueryLog.getInstance().get(getQueryId()).beginCall(this.originalRange, ActiveQuery.CallType.SEEK);
 
         try {
-            if (this.isIncludeGroupingContext() == false && (this.query.contains("grouping:") || this.query.contains("matchesInGroup")
+            if (!this.isIncludeGroupingContext() && (this.query.contains("grouping:") || this.query.contains("matchesInGroup")
                             || this.query.contains("MatchesInGroup") || this.query.contains("atomValuesMatch"))) {
                 this.setIncludeGroupingContext(true);
                 this.groupingContextAddedByMe = true;
@@ -1093,7 +1093,6 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                                             new Aggregation(this.getTimeFilter(), typeMetadataWithNonIndexed, compositeMetadata,
                                                             this.isIncludeGroupingContext(), this.includeRecordId, this.disableIndexOnlyDocuments(),
                                                             getEvaluationFilter(), isTrackSizes())));
-
             Iterator<Entry<Key,Document>> retDocuments = Iterators.transform(mappedDocuments, new TupleToEntry<>());
 
             // Inject the document permutations if required
