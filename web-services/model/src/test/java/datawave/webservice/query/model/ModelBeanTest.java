@@ -139,7 +139,7 @@ public class ModelBeanTest {
         EasyMock.expect(ctx.getCallerPrincipal()).andReturn(principal);
         PowerMock.replayAll();
 
-        bean.importModel(MODEL_ONE, (String) null);
+        bean.importModel(MODEL_ONE, (String) null, (String) null, false);
         PowerMock.verifyAll();
     }
 
@@ -160,7 +160,7 @@ public class ModelBeanTest {
         EasyMock.expect(cache.reloadCache(ModelBean.DEFAULT_MODEL_TABLE_NAME)).andReturn(null);
         PowerMock.replayAll();
 
-        bean.importModel(MODEL_ONE, (String) null);
+        bean.importModel(MODEL_ONE, (String) null, (String) null, false);
         PowerMock.verifyAll();
         PowerMock.resetAll();
 
@@ -178,7 +178,7 @@ public class ModelBeanTest {
         EasyMock.expect(cache.reloadCache(ModelBean.DEFAULT_MODEL_TABLE_NAME)).andReturn(null);
         PowerMock.replayAll();
 
-        bean.importModel(MODEL_TWO, (String) null);
+        bean.importModel(MODEL_TWO, (String) null, (String) null, false);
 
         PowerMock.verifyAll();
     }
@@ -247,7 +247,7 @@ public class ModelBeanTest {
         EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
         PowerMock.replayAll();
 
-        bean.deleteModel(MODEL_TWO.getName(), (String) null);
+        bean.deleteModel(MODEL_TWO.getName(), (String) null, false);
         PowerMock.verifyAll();
         PowerMock.resetAll();
 
@@ -318,7 +318,7 @@ public class ModelBeanTest {
         EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
         PowerMock.replayAll();
 
-        bean.cloneModel(MODEL_ONE.getName(), "MODEL2", (String) null);
+        bean.cloneModel(MODEL_ONE.getName(), "MODEL2", (String) null, false);
         PowerMock.verifyAll();
         PowerMock.resetAll();
         EasyMock.expect(ctx.getCallerPrincipal()).andReturn(principal);

@@ -1,0 +1,102 @@
+modelName=Model1
+modelFile=${DW_DATAWAVE_SOURCE_DIR}/web-services/model/src/test/resources/ModelBeanTest_m1.xml
+
+################################################################
+# Test /Model/import endpoint
+#
+
+setCurlData @${modelFile}
+
+configureTest \
+        ImportQueryModel200 \
+        "Imports an example query model named '${modelName}'" \
+        "--header 'Content-Type: application/xml;charset=UTF-8' ${DW_CURL_DATA} -X POST ${URI_ROOT}/Model/import" \
+        "application/xml;charset=UTF-8" \
+        200
+
+runTest
+
+################################################################
+# Test GET /Model/admin/{name} endpoint (200 b/c cache bypassed)
+#
+
+configureTest \
+        AdminGetQueryModel200 \
+        "Retrieve the imported query model" \
+        "-X GET ${URI_ROOT}/Model/admin/${modelName}" \
+        "application/xml;charset=UTF-8" \
+        200
+
+runTest
+
+################################################################
+# Retry /Model/import on the same file
+#
+
+setCurlData @${modelFile}
+
+configureTest \
+        ImportQueryModelAgain412 \
+        "Try to import the same query model, expecting 412 response b/c model exists" \
+        "--header 'Content-Type: application/xml;charset=UTF-8' ${DW_CURL_DATA} -X POST ${URI_ROOT}/Model/import" \
+        "application/xml;charset=UTF-8" \
+        412
+
+runTest
+
+################################################################
+# Retry import on the same file, but this time using -X PUT
+# '/Model/import/{modelName}' to enable update/replace 
+#
+
+setCurlData @${modelFile}
+
+configureTest \
+        ImportQueryModelAgainWithPUT200 \
+        "Try to import the same query model, expecting 200 response b/c '/Model/import/{modelName}' was used" \
+        "--header 'Content-Type: application/xml;charset=UTF-8' ${DW_CURL_DATA} -X PUT ${URI_ROOT}/Model/import/${modelName}" \
+        "application/xml;charset=UTF-8" \
+        200
+
+runTest
+
+################################################################
+# Attempt '/Model/import/WrongModelName' and get 412 error 
+#
+
+setCurlData @${modelFile}
+
+configureTest \
+        ImportQueryModelAgainWithPUT412 \
+        "Try to update/replace but pass incorrect model name, expecting 412" \
+        "--header 'Content-Type: application/xml;charset=UTF-8' ${DW_CURL_DATA} -X PUT ${URI_ROOT}/Model/import/WrongModelName" \
+        "application/xml;charset=UTF-8" \
+        412
+
+runTest
+
+################################################################
+# Test DELETE /Model/{name} endpoint
+#
+
+configureTest \
+        DeleteQueryModel200 \
+        "Delete the imported query model" \
+        "-X DELETE ${URI_ROOT}/Model/${modelName}" \
+        "application/xml;charset=UTF-8" \
+        200
+
+runTest
+
+################################################################
+# Try to GET the deleted model with admin endpoint: 404 b/c cache is bypassed
+#
+
+configureTest \
+        GetDeletedQueryModelAndFail404 \
+        "Try and fail to retrieve the deleted query model, as appropriate" \
+        "-X GET ${URI_ROOT}/Model/admin/${modelName}" \
+        "application/xml;charset=UTF-8" \
+        404
+
+# This last test is executed by run.sh, as usual

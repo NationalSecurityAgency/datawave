@@ -23,9 +23,11 @@ import javax.inject.Inject;
 import javax.interceptor.Interceptors;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -37,6 +39,7 @@ import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.MutationsRejectedException;
 import org.apache.accumulo.core.client.Scanner;
+import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
@@ -58,6 +61,8 @@ import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.util.ScannerHelper;
 import datawave.webservice.common.cache.AccumuloTableCache;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
+import datawave.webservice.common.connection.WrappedAccumuloClient;
+import datawave.webservice.common.connection.WrappedScannerHelper;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.webservice.common.exception.NotFoundException;
 import datawave.webservice.common.exception.PreConditionFailedException;
@@ -86,7 +91,7 @@ public class ModelBean {
     private static final long BATCH_WRITER_MAX_MEMORY = 10845760;
     private static final int BATCH_WRITER_MAX_THREADS = 2;
 
-    private static final HashSet<String> RESERVED_COLF_VALUES = Sets.newHashSet("e", "i", "ri", "f", "tf", "m", "desc", "edge", "t", "n", "h");
+    private static final HashSet<String> RESERVED_COLF_VALUES = Sets.newHashSet("e", "i", "ri", "f", "tf", "m", "desc", "edge", "t", "n", "h", "version");
 
     @Inject
     @ConfigProperty(name = "dw.model.defaultTableName", defaultValue = DEFAULT_MODEL_TABLE_NAME)
@@ -127,6 +132,32 @@ public class ModelBean {
     @GZIP
     @Interceptors(ResponseInterceptor.class)
     public ModelList listModelNames(@QueryParam("modelTableName") String modelTableName) {
+        return listModelNames(modelTableName, false);
+    }
+
+    /**
+     * <strong>Administrator credentials required.</strong> Get the names of the models, optionally bypassing the local model cache in order to avoid reading
+     * stale data
+     *
+     *
+     * @param modelTableName
+     *            name of the table that contains the model
+     * @param skipCache
+     *            if true, bypasses reads of cached model data, forcing a read from the data source instead
+     * @return datawave.webservice.model.ModelList
+     * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user
+     *
+     * @HTTP 200 success
+     * @HTTP 500 internal server error
+     */
+    @GET
+    @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf",
+            "application/x-protostuff", "text/html"})
+    @Path("admin/list")
+    @GZIP
+    @RolesAllowed({"Administrator", "JBossAdministrator"})
+    @Interceptors(ResponseInterceptor.class)
+    public ModelList listModelNames(@QueryParam("modelTableName") String modelTableName, @QueryParam("skipCache") @DefaultValue("true") boolean skipCache) {
 
         if (modelTableName == null) {
             modelTableName = defaultModelTableName;
@@ -152,7 +183,7 @@ public class ModelBean {
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
             client = connectionFactory.getClient(AccumuloConnectionFactory.Priority.LOW, trackingMap);
-            try (Scanner scanner = ScannerHelper.createScanner(client, this.checkModelTableName(modelTableName), cbAuths)) {
+            try (Scanner scanner = createScanner(modelTableName, cbAuths, client, skipCache)) {
                 for (Entry<Key,Value> entry : scanner) {
                     String colf = entry.getKey().getColumnFamily().toString();
                     if (!RESERVED_COLF_VALUES.contains(colf) && !modelNames.contains(colf)) {
@@ -184,28 +215,35 @@ public class ModelBean {
     }
 
     /**
-     * <strong>Administrator credentials required.</strong> Insert a new model
+     * <strong>Administrator credentials required.</strong> Insert a new model or replace an existing one
      *
      * @param model
      *            the model
+     * @param modelName
+     *            name of the model. If non-empty, update/replace (PUT) semantics are enabled. Otherwise, it is assumed that user intends the model to be newly
+     *            created (POST), returning an error response if the model already exists
      * @param modelTableName
      *            name of the table that contains the model
+     * @param skipCache
+     *            if true, bypasses reads of cached model data, forcing a read from the data source instead
      * @return datawave.webservice.result.VoidResponse
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user
      *
      * @HTTP 200 success
-     * @HTTP 412 if model already exists with this name, delete it first
+     * @HTTP 412 if model already exists. Delete it first, or retry with 'import/{modelName}' URI to enable update/replace
      * @HTTP 500 internal server error
      */
+    @PUT
     @POST
     @Consumes({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml"})
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf",
             "application/x-protostuff"})
-    @Path("/import")
+    @Path("/import{pathDelimiter: (/)?}{modelName: ((?<=/)[a-zA-Z0-9_]*)?}")
     @GZIP
     @RolesAllowed({"Administrator", "JBossAdministrator"})
     @Interceptors(ResponseInterceptor.class)
-    public VoidResponse importModel(datawave.webservice.model.Model model, @QueryParam("modelTableName") String modelTableName) {
+    public VoidResponse importModel(datawave.webservice.model.Model model, @PathParam("modelName") String modelName,
+                    @QueryParam("modelTableName") String modelTableName, @QueryParam("skipCache") @DefaultValue("true") boolean skipCache) {
 
         if (modelTableName == null) {
             modelTableName = defaultModelTableName;
@@ -214,14 +252,26 @@ public class ModelBean {
         if (log.isDebugEnabled()) {
             log.debug("modelTableName: " + (null == modelTableName ? "" : modelTableName));
         }
-        VoidResponse response = new VoidResponse();
 
-        ModelList models = listModelNames(modelTableName);
-        if (models.getNames().contains(model.getName()))
-            throw new PreConditionFailedException(null, response);
+        VoidResponse response = new VoidResponse();
+        ModelList models = listModelNames(modelTableName, skipCache);
+
+        if (StringUtils.isEmpty(modelName)) {
+            // Caller used '/import', so we enforce create-only
+            if (models.getNames().contains(model.getName())) {
+                throw new PreConditionFailedException(null, response);
+            }
+        } else {
+            // Caller used '/import/{modelName}', so we allow update/replace (and create)
+            if (!modelName.equals(model.getName())) {
+                throw new PreConditionFailedException(null, response);
+            }
+            if (models.getNames().contains(modelName)) {
+                deleteModel(modelName, modelTableName, skipCache);
+            }
+        }
 
         insertMapping(model, modelTableName);
-
         return response;
     }
 
@@ -232,6 +282,8 @@ public class ModelBean {
      *            model name to delete
      * @param modelTableName
      *            name of the table that contains the model
+     * @param skipCache
+     *            if true, bypasses reads of cached model data, forcing a read from the data source instead
      * @return datawave.webservice.result.VoidResponse
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user
      *
@@ -246,27 +298,28 @@ public class ModelBean {
     @GZIP
     @RolesAllowed({"Administrator", "JBossAdministrator"})
     @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
-    public VoidResponse deleteModel(@Required("name") @PathParam("name") String name, @QueryParam("modelTableName") String modelTableName) {
+    public VoidResponse deleteModel(@Required("name") @PathParam("name") String name, @QueryParam("modelTableName") String modelTableName,
+                    @QueryParam("skipCache") @DefaultValue("true") boolean skipCache) {
 
         if (modelTableName == null) {
             modelTableName = defaultModelTableName;
         }
 
-        return deleteModel(name, modelTableName, true);
+        return deleteModel(name, modelTableName, true, skipCache);
     }
 
-    private VoidResponse deleteModel(@Required("name") String name, String modelTableName, boolean reloadCache) {
+    private VoidResponse deleteModel(@Required("name") String name, String modelTableName, boolean reloadCache, boolean skipCache) {
         if (log.isDebugEnabled()) {
             log.debug("model name: " + name);
             log.debug("modelTableName: " + (null == modelTableName ? "" : modelTableName));
         }
         VoidResponse response = new VoidResponse();
 
-        ModelList models = listModelNames(modelTableName);
+        ModelList models = listModelNames(modelTableName, skipCache);
         if (!models.getNames().contains(name))
             throw new NotFoundException(null, response);
 
-        datawave.webservice.model.Model model = getModel(name, modelTableName);
+        datawave.webservice.model.Model model = getModel(name, modelTableName, skipCache);
         deleteMapping(model, modelTableName, reloadCache);
 
         return response;
@@ -281,6 +334,8 @@ public class ModelBean {
      *            name of copied model
      * @param modelTableName
      *            name of the table that contains the model
+     * @param skipCache
+     *            if true, bypasses reads of cached model data, forcing a read from the data source instead
      * @return datawave.webservice.result.VoidResponse
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user
      *
@@ -296,17 +351,17 @@ public class ModelBean {
     @RolesAllowed({"Administrator", "JBossAdministrator"})
     @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
     public VoidResponse cloneModel(@Required("name") @FormParam("name") String name, @Required("newName") @FormParam("newName") String newName,
-                    @FormParam("modelTableName") String modelTableName) {
+                    @FormParam("modelTableName") String modelTableName, @FormParam("skipCache") @DefaultValue("true") boolean skipCache) {
         VoidResponse response = new VoidResponse();
 
         if (modelTableName == null) {
             modelTableName = defaultModelTableName;
         }
 
-        datawave.webservice.model.Model model = getModel(name, modelTableName);
+        datawave.webservice.model.Model model = getModel(name, modelTableName, skipCache);
         // Set the new name
         model.setName(newName);
-        importModel(model, modelTableName);
+        importModel(model, newName, modelTableName, skipCache);
         return response;
     }
 
@@ -331,6 +386,35 @@ public class ModelBean {
     @GZIP
     @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
     public datawave.webservice.model.Model getModel(@Required("name") @PathParam("name") String name, @QueryParam("modelTableName") String modelTableName) {
+        return getModel(name, modelTableName, false);
+    }
+
+    /**
+     * <strong>Administrator credentials required.</strong> Retrieve the model and all of its mappings, optionally bypassing the local model cache in order to
+     * avoid reading stale data
+     *
+     * @param name
+     *            model name
+     * @param modelTableName
+     *            name of the table that contains the model
+     * @param skipCache
+     *            if true, bypasses reads of cached model data, forcing a read from the data source instead
+     * @return datawave.webservice.model.Model
+     * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user
+     *
+     * @HTTP 200 success
+     * @HTTP 404 model not found
+     * @HTTP 500 internal server error
+     */
+    @GET
+    @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf",
+            "application/x-protostuff", "text/html"})
+    @Path("admin/{name}")
+    @GZIP
+    @RolesAllowed({"Administrator", "JBossAdministrator"})
+    @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
+    public datawave.webservice.model.Model getModel(@Required("name") @PathParam("name") String name, @QueryParam("modelTableName") String modelTableName,
+                    @QueryParam("skipCache") @DefaultValue("true") boolean skipCache) {
 
         if (modelTableName == null) {
             modelTableName = defaultModelTableName;
@@ -355,7 +439,7 @@ public class ModelBean {
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
             client = connectionFactory.getClient(AccumuloConnectionFactory.Priority.LOW, trackingMap);
-            try (Scanner scanner = ScannerHelper.createScanner(client, this.checkModelTableName(modelTableName), cbAuths)) {
+            try (Scanner scanner = createScanner(modelTableName, cbAuths, client, skipCache)) {
                 IteratorSetting cfg = new IteratorSetting(21, "colfRegex", RegExFilter.class.getName());
                 cfg.addOption(RegExFilter.COLF_REGEX, "^" + name + "(\\x00.*)?");
                 scanner.addScanIterator(cfg);
@@ -542,5 +626,28 @@ public class ModelBean {
             return DEFAULT_MODEL_TABLE_NAME;
         else
             return tableName;
+    }
+
+    /**
+     * Scanner factory method
+     *
+     * @param tableName
+     *            the table name
+     * @param auths
+     *            the scanner auths
+     * @param client
+     *            the AccumuloClient instance
+     * @param skipCache
+     *            if true, forces a read of tableName, bypassing the webservice's internal cache. Ignored when the client is anything other than
+     *            {@link WrappedAccumuloClient}
+     * @return
+     * @throws TableNotFoundException
+     */
+    private Scanner createScanner(String tableName, Set<Authorizations> auths, AccumuloClient client, boolean skipCache) throws TableNotFoundException {
+        if (client instanceof WrappedAccumuloClient) {
+            return WrappedScannerHelper.createScanner((WrappedAccumuloClient) client, this.checkModelTableName(tableName), auths, skipCache);
+        } else {
+            return ScannerHelper.createScanner(client, this.checkModelTableName(tableName), auths);
+        }
     }
 }
