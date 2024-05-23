@@ -86,7 +86,7 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
 
         this.expandUnfieldedNegations = config.isExpandUnfieldedNegations();
 
-        if (config.isExpansionLimitedToModelContents()) {
+        if (config.isLimitTermExpansionToModel()) {
             try {
                 QueryModel queryModel = helper.getQueryModel(config.getModelTableName(), config.getModelName());
                 this.onlyUseThese = queryModel.getForwardQueryMapping().values();

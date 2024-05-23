@@ -28,6 +28,7 @@ import com.google.common.collect.Multimap;
 import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.core.iterators.TimeoutExceptionIterator;
 import datawave.core.iterators.TimeoutIterator;
+import datawave.core.query.configuration.Result;
 import datawave.core.query.jexl.lookups.IndexLookupMap;
 import datawave.query.Constants;
 import datawave.query.config.ShardQueryConfiguration;
@@ -181,7 +182,7 @@ public class RegexIndexLookup extends AsyncIndexLookup {
                     }
 
                     forwardLookupData.getSessions().add(bs);
-                    iter = Iterators.concat(iter, bs);
+                    iter = Iterators.concat(iter, Result.keyValueIterator(bs));
                 }
 
                 forwardLookupData.setTimedScanFuture(execService.submit(createTimedCallable(iter, fields, forwardLookupData, indexLookupMap)));
@@ -212,7 +213,7 @@ public class RegexIndexLookup extends AsyncIndexLookup {
                     }
 
                     reverseLookupData.getSessions().add(bs);
-                    iter = Iterators.concat(iter, bs);
+                    iter = Iterators.concat(iter, Result.keyValueIterator(bs));
                 }
 
                 reverseLookupData.setTimedScanFuture(execService.submit(createTimedCallable(iter, reverseFields, reverseLookupData, indexLookupMap)));

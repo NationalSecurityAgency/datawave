@@ -261,7 +261,8 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                     }
                 }
 
-                this.itr = filter(concat(transform(queryStream, new TupleToRange(queryStream.currentNode(), config))), getEmptyPlanPruner());
+                this.itr = filter(concat(transform(queryStream, new TupleToRange(config.getShardTableName(), queryStream.currentNode(), config))),
+                                getEmptyPlanPruner());
 
                 if (config.isSortQueryByCounts() && (config.getUseFieldCounts() || config.getUseTermCounts())) {
                     this.itr = transform(itr, new OrderingTransform(config.getUseFieldCounts(), config.getUseTermCounts()));

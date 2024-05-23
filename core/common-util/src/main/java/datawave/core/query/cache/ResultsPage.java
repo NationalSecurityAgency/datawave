@@ -6,25 +6,25 @@ import java.util.List;
 /**
  *
  */
-public class ResultsPage {
+public class ResultsPage<T> {
     public enum Status {
         NONE, PARTIAL, COMPLETE
-    };
+    }
 
-    private List<Object> results = null;
-    private Status status = null;
+    private List<T> results;
+    private Status status;
 
     public ResultsPage() {
         this(new ArrayList<>());
     }
 
-    public ResultsPage(List<Object> c) {
-        this(c, (c.isEmpty() ? Status.NONE : Status.COMPLETE));
+    public ResultsPage(List<T> results) {
+        this(results, Status.COMPLETE);
     }
 
-    public ResultsPage(List<Object> c, Status s) {
-        setResults(c);
-        setStatus(s);
+    public ResultsPage(List<T> results, Status status) {
+        this.results = results;
+        this.status = status;
     }
 
     public Status getStatus() {
@@ -35,11 +35,11 @@ public class ResultsPage {
         this.status = status;
     }
 
-    public List<Object> getResults() {
+    public List<T> getResults() {
         return results;
     }
 
-    public void setResults(List<Object> results) {
+    public void setResults(List<T> results) {
         this.results = results;
     }
 }

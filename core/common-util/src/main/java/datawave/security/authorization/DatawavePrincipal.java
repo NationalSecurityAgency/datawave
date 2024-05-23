@@ -16,8 +16,8 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
 
-import datawave.microservice.security.util.DnUtils;
 import datawave.security.authorization.DatawaveUser.UserType;
+import datawave.security.util.ProxiedEntityUtils;
 
 /**
  * A {@link Principal} that represents a set of proxied {@link DatawaveUser}s. For example, this proxied user could represent a GUI server acting on behalf of a
@@ -108,23 +108,27 @@ public class DatawavePrincipal implements ProxiedUserDetails, Principal, Seriali
         return users;
     }
 
+    @Override
     public Collection<DatawaveUser> getProxiedUsers() {
         return Collections.unmodifiableCollection(this.proxiedUsers);
     }
 
+    @Override
     public DatawaveUser getPrimaryUser() {
         return primaryUser;
     }
 
+    @Override
     public Collection<? extends Collection<String>> getAuthorizations() {
         // @formatter:off
         return Collections.unmodifiableCollection(
                 DatawavePrincipal.orderProxiedUsers(this.proxiedUsers).stream()
-                        .map(DatawaveUser::getAuths)
-                        .collect(Collectors.toList()));
+                .map(DatawaveUser::getAuths)
+                .collect(Collectors.toList()));
         // @formatter:on
     }
 
+    @Override
     public String[] getDNs() {
         // @formatter:off
         return DatawavePrincipal.orderProxiedUsers(this.proxiedUsers).stream()
@@ -144,14 +148,16 @@ public class DatawavePrincipal implements ProxiedUserDetails, Principal, Seriali
         return this.username;
     }
 
+    @Override
     public String getShortName() {
-        return DnUtils.getShortName(getPrimaryUser().getName());
+        return ProxiedEntityUtils.getShortName(getPrimaryUser().getName());
     }
 
     public SubjectIssuerDNPair getUserDN() {
         return getPrimaryUser().getDn();
     }
 
+    @Override
     public List<String> getProxyServers() {
 
         // @formatter:off

@@ -130,6 +130,5 @@ public class MetricsSummaryFormatter {
             // check to see if entry key matches the supplied matcher
             return matcher.reset(input.getKey()).matches();
         });
-
     }
 }

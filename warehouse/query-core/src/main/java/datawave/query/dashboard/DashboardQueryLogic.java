@@ -6,15 +6,14 @@ import java.util.List;
 
 import org.apache.commons.collections4.iterators.TransformIterator;
 
+import datawave.core.common.extjs.ExtJsResponse;
 import datawave.core.query.cache.ResultsPage;
+import datawave.core.query.dashboard.DashboardFields;
+import datawave.core.query.dashboard.DashboardSummary;
+import datawave.core.query.logic.QueryLogicTransformer;
+import datawave.core.query.logic.ResponseEnricher;
+import datawave.microservice.query.Query;
 import datawave.query.tables.ShardQueryLogic;
-import datawave.webservice.common.extjs.ExtJsResponse;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.dashboard.DashboardFields;
-import datawave.webservice.query.dashboard.DashboardSummary;
-import datawave.webservice.query.exception.QueryException;
-import datawave.webservice.query.logic.QueryLogicTransformer;
-import datawave.webservice.query.logic.ResponseEnricher;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.result.BaseQueryResponse;
 

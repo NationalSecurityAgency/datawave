@@ -1,0 +1,11 @@
+# This profile should be included by any service which depends on the query starter and
+# wants to read/write query stats from/to the query storage cache, or read/write query
+# results from/to the query results messaging backend.
+datawave:
+  query:
+    messaging:
+      backend: ${messaging.backend}
+      rabbitmq:
+        maxMessageSizeBytes: ${messaging.maxMessageSizeBytes}
+      kafka:
+        partitions: 2

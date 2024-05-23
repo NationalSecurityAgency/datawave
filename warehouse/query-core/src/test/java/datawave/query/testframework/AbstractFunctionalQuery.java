@@ -51,9 +51,15 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
+import datawave.core.common.connection.AccumuloConnectionFactory;
+import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
+import datawave.core.query.logic.QueryLogic;
+import datawave.core.query.logic.QueryLogicFactory;
+import datawave.core.query.result.event.DefaultResponseObjectFactory;
 import datawave.data.type.Type;
 import datawave.marking.MarkingFunctions.Default;
+import datawave.microservice.query.QueryImpl;
 import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.QueryMetricFactory;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
@@ -73,12 +79,10 @@ import datawave.query.util.DateIndexHelperFactory;
 import datawave.query.util.MetadataHelperFactory;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
+import datawave.security.authorization.ProxiedUserDetails;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.util.DnUtils;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
-import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
-import datawave.webservice.query.result.event.DefaultResponseObjectFactory;
+import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
 import datawave.webservice.query.runner.RunningQuery;
@@ -144,8 +148,9 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
     protected final RawDataManager dataManager;
     protected Authorizations auths;
     protected String documentKey;
+    protected QueryLogicFactory logicFactory;
     protected ShardQueryLogic logic;
-    private CountingShardQueryLogic countLogic = new CountingShardQueryLogic();
+    private CountingShardQueryLogic countLogic;
     protected QueryLogicTestHarness testHarness;
     protected DatawavePrincipal principal;
 
@@ -155,31 +160,37 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         this.dataManager = mgr;
     }
 
-    protected ShardQueryLogic createQueryLogic() {
+    protected ShardQueryLogic createShardQueryLogic() {
         return new ShardQueryLogic();
     }
 
-    @Before
-    public void querySetUp() throws IOException {
-        log.debug("---------  querySetUp  ---------");
+    private ShardQueryLogic createQueryLogic() {
+        ShardQueryLogic logic = createShardQueryLogic();
+        QueryTestTableHelper.configureLogicToScanTables(logic);
 
-        this.logic = createQueryLogic();
-        QueryTestTableHelper.configureLogicToScanTables(this.logic);
+        logic.setFullTableScanEnabled(false);
+        logic.setIncludeDataTypeAsField(true);
 
-        this.logic.setFullTableScanEnabled(false);
-        this.logic.setIncludeDataTypeAsField(true);
+        logic.setDateIndexHelperFactory(new DateIndexHelperFactory());
+        logic.setMarkingFunctions(new Default());
+        logic.setMetadataHelperFactory(new MetadataHelperFactory());
+        logic.setQueryPlanner(new DefaultQueryPlanner());
+        logic.setResponseObjectFactory(new DefaultResponseObjectFactory());
 
-        this.logic.setDateIndexHelperFactory(new DateIndexHelperFactory());
-        this.logic.setMarkingFunctions(new Default());
-        this.logic.setMetadataHelperFactory(new MetadataHelperFactory());
-        this.logic.setResponseObjectFactory(new DefaultResponseObjectFactory());
+        logic.setCollectTimingDetails(true);
+        logic.setLogTimingDetails(true);
+        logic.setMinimumSelectivity(0.03D);
+        logic.setMaxIndexScanTimeMillis(5000);
 
-        this.logic.setCollectTimingDetails(true);
-        this.logic.setLogTimingDetails(true);
-        this.logic.setMinimumSelectivity(0.03D);
-        this.logic.setMaxIndexScanTimeMillis(5000);
+        return logic;
+    }
 
-        // count logic
+    protected CountingShardQueryLogic createCountingShardQueryLogic() {
+        return new CountingShardQueryLogic();
+    }
+
+    private CountingShardQueryLogic createCountingQueryLogic() {
+        CountingShardQueryLogic countLogic = createCountingShardQueryLogic();
         countLogic.setIncludeDataTypeAsField(true);
         countLogic.setFullTableScanEnabled(false);
 
@@ -190,6 +201,61 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         countLogic.setResponseObjectFactory(new DefaultResponseObjectFactory());
 
         QueryTestTableHelper.configureLogicToScanTables(countLogic);
+        return countLogic;
+    }
+
+    private class TestQueryLogicFactory implements QueryLogicFactory {
+
+        /**
+         * @param name
+         *            name of query logic
+         * @param currentUser
+         * @return new instance of QueryLogic class
+         * @throws IllegalArgumentException
+         *             if query logic name does not exist
+         */
+        @Override
+        public QueryLogic<?> getQueryLogic(String name, ProxiedUserDetails currentUser) throws IllegalArgumentException, CloneNotSupportedException {
+            QueryLogic<?> logic = null;
+            if (name.equals("EventQuery")) {
+                logic = createQueryLogic();
+            } else if (name.equals("CountQuery")) {
+                logic = createCountingQueryLogic();
+            } else {
+                throw new IllegalArgumentException("Unknown query logic " + name);
+            }
+            logic.setLogicName(name);
+            return logic;
+        }
+
+        /**
+         * @param name
+         *            name of query logic
+         * @return new instance of QueryLogic class
+         * @throws IllegalArgumentException
+         *             if query logic name does not exist
+         */
+        @Override
+        public QueryLogic<?> getQueryLogic(String name) throws IllegalArgumentException, CloneNotSupportedException {
+            return getQueryLogic(name, null);
+        }
+
+        @Override
+        public List<QueryLogic<?>> getQueryLogicList() {
+            try {
+                List<QueryLogic<?>> list = new ArrayList<>();
+                list.add(getQueryLogic("EventQuery", null));
+                list.add(getQueryLogic("CountQuery", null));
+                return list;
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to create query logic list");
+            }
+        }
+    }
+
+    @Before
+    public void querySetUp() throws IOException {
+        log.debug("---------  querySetUp  ---------");
 
         // init must set auths
         testInit();
@@ -201,7 +267,16 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         SubjectIssuerDNPair dn = SubjectIssuerDNPair.of("userDn", "issuerDn");
         DatawaveUser user = new DatawaveUser(dn, DatawaveUser.UserType.USER, Sets.newHashSet(this.auths.toString().split(",")), null, null, -1L);
         this.principal = new DatawavePrincipal(Collections.singleton(user));
+
         this.testHarness = new QueryLogicTestHarness(this);
+
+        this.logicFactory = new TestQueryLogicFactory();
+        try {
+            this.logic = (ShardQueryLogic) (logicFactory.getQueryLogic("EventQuery", principal));
+            this.countLogic = (CountingShardQueryLogic) (logicFactory.getQueryLogic("CountQuery", principal));
+        } catch (CloneNotSupportedException | QueryException e) {
+            throw new RuntimeException("Unable to create query logics", e);
+        }
     }
 
     // ============================================
@@ -441,7 +516,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
                 log.debug("Plan: " + config.getQueryString());
             }
         }
-        testHarness.assertLogicResults(this.logic, expected, checkers);
+        testHarness.assertLogicResults(this.logic, this.logicFactory, expected, checkers);
     }
 
     /**

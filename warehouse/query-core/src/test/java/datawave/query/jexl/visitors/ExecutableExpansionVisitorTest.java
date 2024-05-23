@@ -50,6 +50,7 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 
 import datawave.configuration.spring.SpringBean;
+import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.jexl.nodes.ExceededOr;
 import datawave.core.query.jexl.nodes.QueryPropertyMarker;
 import datawave.core.query.jexl.visitors.JexlStringBuildingVisitor;
@@ -59,6 +60,7 @@ import datawave.data.type.GeometryType;
 import datawave.data.type.Type;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
+import datawave.microservice.query.QueryImpl;
 import datawave.query.CompositeFunctionsTest;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.attributes.Attribute;
@@ -77,8 +79,6 @@ import datawave.query.util.MockMetadataHelper;
 import datawave.query.util.WiseGuysIngest;
 import datawave.util.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
-import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
 
 public abstract class ExecutableExpansionVisitorTest {
     @RunWith(Arquillian.class)
@@ -156,7 +156,8 @@ public abstract class ExecutableExpansionVisitorTest {
                         .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "org.jboss.logging",
                                         "datawave.webservice.query.result.event")
                         .deleteClass(DefaultEdgeEventQueryLogic.class).deleteClass(RemoteEdgeDictionary.class)
-                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class).deleteClass(datawave.query.metrics.ShardTableQueryMetricHandler.class)
+                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
+                        .deleteClass(datawave.query.tables.edge.DefaultEdgeEventQueryLogic.class)
                         .addAsManifestResource(new StringAsset(
                                         "<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>" + "</alternatives>"),
                                         "beans.xml");

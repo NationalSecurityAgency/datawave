@@ -8,8 +8,8 @@ import javax.ws.rs.core.MultivaluedMap;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.springframework.stereotype.Component;
 
+import datawave.microservice.query.QueryParameters;
 import datawave.query.data.UUIDType;
-import datawave.webservice.query.QueryParameters;
 
 @Component("idTranslatorConfiguration")
 public class IdTranslatorConfiguration {
@@ -42,7 +42,7 @@ public class IdTranslatorConfiguration {
         List<UUIDType> goodTypes = new ArrayList<>();
         if (uuidTypes != null) {
             for (UUIDType uuidType : uuidTypes) {
-                if ("LuceneUUIDEventQuery".equalsIgnoreCase(uuidType.getDefinedView("default"))) {
+                if ("LuceneUUIDEventQuery".equalsIgnoreCase(uuidType.getQueryLogic("default"))) {
                     goodTypes.add(uuidType);
                 }
             }

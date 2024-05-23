@@ -10,7 +10,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.TreeMap;
 
 import org.apache.accumulo.core.data.Key;
@@ -20,8 +19,7 @@ import org.apache.accumulo.core.iteratorsImpl.system.SortedMapIterator;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.junit.Test;
 
-import com.google.common.collect.Maps;
-
+import datawave.core.query.configuration.Result;
 import datawave.core.query.jexl.JexlNodeFactory;
 import datawave.core.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.ingest.protobuf.Uid;
@@ -57,7 +55,7 @@ public class EntryParserTest {
         iterator.seek(new Range(), Collections.emptySet(), false);
 
         EntryParser parser = new EntryParser("hello", "world", true);
-        Map.Entry<Key,Value> top = Maps.immutableEntry(iterator.getTopKey(), iterator.getTopValue());
+        Result top = new Result(iterator.getTopKey(), iterator.getTopValue());
         Tuple2<String,IndexInfo> tuple = parser.apply(top);
         assertTrue(iterator.hasTop());
 
@@ -92,7 +90,7 @@ public class EntryParserTest {
         assertTrue(iterator.hasTop());
 
         EntryParser parser = new EntryParser("hello", "world", false);
-        Map.Entry<Key,Value> top = Maps.immutableEntry(iterator.getTopKey(), iterator.getTopValue());
+        Result top = new Result(iterator.getTopKey(), iterator.getTopValue());
         Tuple2<String,IndexInfo> tuple = parser.apply(top);
 
         assertNotNull(tuple);
@@ -124,7 +122,7 @@ public class EntryParserTest {
         assertTrue(iterator.hasTop());
 
         EntryParser parser = new EntryParser("hello", "world", false);
-        Map.Entry<Key,Value> top = Maps.immutableEntry(iterator.getTopKey(), iterator.getTopValue());
+        Result top = new Result(iterator.getTopKey(), iterator.getTopValue());
         Tuple2<String,IndexInfo> tuple = parser.apply(top);
 
         assertNotNull(tuple);

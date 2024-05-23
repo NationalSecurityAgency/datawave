@@ -30,6 +30,8 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
+import datawave.core.common.connection.AccumuloConnectionFactory;
+import datawave.core.query.configuration.QueryData;
 import datawave.core.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.iterator.QueryIterator;
@@ -37,8 +39,6 @@ import datawave.query.iterator.QueryOptions;
 import datawave.query.planner.QueryPlan;
 import datawave.query.tables.SessionOptions;
 import datawave.query.tables.async.ScannerChunk;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
-import datawave.webservice.query.configuration.QueryData;
 
 public class PushdownFunction implements Function<QueryData,List<ScannerChunk>> {
 
@@ -120,8 +120,7 @@ public class PushdownFunction implements Function<QueryData,List<ScannerChunk>> 
 
                         options.setQueryConfig(this.config);
 
-                        chunks.add(new ScannerChunk(options, Lists.newArrayList(plan.getRanges()), server));
-
+                        chunks.add(new ScannerChunk(options, plan.getRanges(), qd, server));
                     } catch (Exception e) {
                         log.error(e);
                         throw new AccumuloException(e);
@@ -137,7 +136,6 @@ public class PushdownFunction implements Function<QueryData,List<ScannerChunk>> 
 
     protected void redistributeQueries(Multimap<String,QueryPlan> serverPlan, TabletLocator tl, QueryPlan currentPlan)
                     throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
-
         List<Range> ranges = Lists.newArrayList(currentPlan.getRanges());
         if (!ranges.isEmpty()) {
             Map<String,Map<KeyExtent,List<Range>>> binnedRanges = binRanges(tl, config.getClient(), ranges);
@@ -171,6 +169,7 @@ public class PushdownFunction implements Function<QueryData,List<ScannerChunk>> 
 
                 //  @formatter:off
                 QueryPlan queryPlan = new QueryPlan()
+                                .withTableName(currentPlan.getTableName())
                                 .withQueryTree(currentPlan.getQueryTree())
                                 .withRanges(allRanges)
                                 .withSettings(newSettings)

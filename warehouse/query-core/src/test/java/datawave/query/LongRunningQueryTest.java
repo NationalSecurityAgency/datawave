@@ -22,9 +22,14 @@ import org.junit.Test;
 
 import com.google.common.collect.Sets;
 
+import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.query.cache.ResultsPage;
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.result.event.DefaultResponseObjectFactory;
 import datawave.helpers.PrintUtility;
 import datawave.marking.MarkingFunctions;
+import datawave.microservice.query.QueryImpl;
+import datawave.microservice.query.config.QueryExpirationProperties;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.tables.ShardQueryLogic;
@@ -35,12 +40,7 @@ import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.util.TableName;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
-import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.cache.QueryExpirationConfiguration;
 import datawave.webservice.query.cache.RunningQueryTimingImpl;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
-import datawave.webservice.query.result.event.DefaultResponseObjectFactory;
 import datawave.webservice.query.runner.RunningQuery;
 
 /**
@@ -127,7 +127,7 @@ public class LongRunningQueryTest {
         GenericQueryConfiguration config = logic.initialize(client, query, Collections.singleton(auths));
         logic.setupQuery(config);
 
-        QueryExpirationConfiguration conf = new QueryExpirationConfiguration();
+        QueryExpirationProperties conf = new QueryExpirationProperties();
         conf.setMaxLongRunningTimeoutRetries(1000);
         RunningQueryTimingImpl timing = new RunningQueryTimingImpl(conf, 1);
         RunningQuery runningQuery = new RunningQuery(null, client, AccumuloConnectionFactory.Priority.NORMAL, logic, query, "", datawavePrincipal, timing, null,
@@ -189,7 +189,7 @@ public class LongRunningQueryTest {
         ShardQueryConfiguration config = (ShardQueryConfiguration) logic.initialize(client, query, Collections.singleton(auths));
         logic.setupQuery(config);
 
-        QueryExpirationConfiguration conf = new QueryExpirationConfiguration();
+        QueryExpirationProperties conf = new QueryExpirationProperties();
         conf.setMaxLongRunningTimeoutRetries(1000);
         RunningQueryTimingImpl timing = new RunningQueryTimingImpl(conf, 1);
         RunningQuery runningQuery = new RunningQuery(null, client, AccumuloConnectionFactory.Priority.NORMAL, logic, query, "", datawavePrincipal, timing, null,

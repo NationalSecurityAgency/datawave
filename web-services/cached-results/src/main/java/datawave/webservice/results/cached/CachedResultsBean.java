@@ -20,7 +20,6 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -45,7 +44,6 @@ import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
 import javax.ejb.TransactionManagement;
 import javax.ejb.TransactionManagementType;
-import javax.enterprise.concurrent.ManagedExecutorService;
 import javax.inject.Inject;
 import javax.interceptor.Interceptors;
 import javax.sql.DataSource;
@@ -75,6 +73,8 @@ import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.base.Preconditions;
@@ -83,11 +83,21 @@ import datawave.annotation.ClearQuerySessionId;
 import datawave.annotation.GenerateQuerySessionId;
 import datawave.annotation.Required;
 import datawave.configuration.spring.SpringBean;
+import datawave.core.common.audit.PrivateAuditConstants;
+import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.query.cache.ResultsPage;
+import datawave.core.query.cachedresults.CacheableLogic;
+import datawave.core.query.cachedresults.CachedResultsQueryParameters;
+import datawave.core.query.logic.QueryLogic;
+import datawave.core.query.logic.QueryLogicFactory;
+import datawave.core.query.predict.QueryPredictor;
 import datawave.interceptor.RequiredInterceptor;
 import datawave.interceptor.ResponseInterceptor;
 import datawave.marking.MarkingFunctions;
 import datawave.marking.SecurityMarking;
+import datawave.microservice.query.Query;
+import datawave.microservice.query.QueryParameters;
+import datawave.microservice.query.config.QueryExpirationProperties;
 import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.QueryMetric;
 import datawave.microservice.querymetric.QueryMetricFactory;
@@ -97,22 +107,16 @@ import datawave.security.user.UserOperationsBean;
 import datawave.webservice.common.audit.AuditBean;
 import datawave.webservice.common.audit.AuditParameters;
 import datawave.webservice.common.audit.Auditor.AuditType;
-import datawave.webservice.common.audit.PrivateAuditConstants;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.webservice.common.exception.NoResultsException;
 import datawave.webservice.common.exception.NotFoundException;
 import datawave.webservice.common.exception.PreConditionFailedException;
 import datawave.webservice.common.exception.QueryCanceledException;
 import datawave.webservice.common.exception.UnauthorizedException;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.QueryParameters;
 import datawave.webservice.query.cache.CachedResultsQueryCache;
 import datawave.webservice.query.cache.CreatedQueryLogicCacheBean;
 import datawave.webservice.query.cache.QueryCache;
-import datawave.webservice.query.cache.QueryExpirationConfiguration;
 import datawave.webservice.query.cache.RunningQueryTimingImpl;
-import datawave.webservice.query.cachedresults.CacheableLogic;
 import datawave.webservice.query.cachedresults.CacheableQueryRow;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
@@ -123,12 +127,9 @@ import datawave.webservice.query.exception.QueryCanceledQueryException;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.exception.UnauthorizedQueryException;
 import datawave.webservice.query.factory.Persister;
-import datawave.webservice.query.logic.QueryLogic;
-import datawave.webservice.query.logic.QueryLogicFactory;
 import datawave.webservice.query.metric.QueryMetricsBean;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.query.runner.AccumuloConnectionRequestBean;
-import datawave.webservice.query.runner.QueryPredictor;
 import datawave.webservice.query.runner.RunningQuery;
 import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
 import datawave.webservice.result.BaseQueryResponse;
@@ -208,7 +209,6 @@ public class CachedResultsBean {
     protected static final String BASE_COLUMNS = StringUtils.join(CacheableQueryRow.getFixedColumnSet(), ",");
 
     @Inject
-    @SpringBean(name = "ResponseObjectFactory")
     private ResponseObjectFactory responseObjectFactory;
 
     // reference "datawave/query/CachedResults.xml"
@@ -224,7 +224,7 @@ public class CachedResultsBean {
 
     @Inject
     @SpringBean(refreshable = true)
-    private QueryExpirationConfiguration queryExpirationConf;
+    private QueryExpirationProperties queryExpirationConf;
 
     @Inject
     private QueryMetricFactory metricFactory;
@@ -241,7 +241,7 @@ public class CachedResultsBean {
     private static Map<String,RunningQuery> loadingQueryMap = Collections.synchronizedMap(new HashMap<>());
     private static Set<String> loadingQueries = Collections.synchronizedSet(new HashSet<>());
     private URL importFileUrl = null;
-    private CachedResultsParameters cp = new CachedResultsParameters();
+    private CachedResultsQueryParameters cp = new CachedResultsQueryParameters();
 
     @PostConstruct
     public void init() {
@@ -341,9 +341,11 @@ public class CachedResultsBean {
         Principal p = ctx.getCallerPrincipal();
         String owner = getOwnerFromPrincipal(p);
         String userDn = getDNFromPrincipal(p);
+        Collection<String> proxyServers = null;
         Collection<Collection<String>> cbAuths = new HashSet<>();
         if (p instanceof DatawavePrincipal) {
             DatawavePrincipal dp = (DatawavePrincipal) p;
+            proxyServers = dp.getProxyServers();
             cbAuths.addAll(dp.getAuthorizations());
         } else {
             QueryException qe = new QueryException(DatawaveErrorCode.UNEXPECTED_PRINCIPAL_ERROR, MessageFormat.format("Class: {0}", p.getClass().getName()));
@@ -427,9 +429,9 @@ public class CachedResultsBean {
             priority = logic.getConnectionPriority();
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
             q.populateTrackingMap(trackingMap);
-            accumuloConnectionRequestBean.requestBegin(queryId);
+            accumuloConnectionRequestBean.requestBegin(queryId, userDn, trackingMap);
             try {
-                client = connectionFactory.getClient(priority, trackingMap);
+                client = connectionFactory.getClient(userDn, proxyServers, priority, trackingMap);
             } finally {
                 accumuloConnectionRequestBean.requestEnd(queryId);
             }
@@ -442,13 +444,12 @@ public class CachedResultsBean {
             AuditType auditType = logic.getAuditType(q);
             if (!auditType.equals(AuditType.NONE)) {
                 try {
-                    MultivaluedMap<String,String> queryMap = new MultivaluedMapImpl<>();
-                    queryMap.putAll(q.toMap());
+                    MultiValueMap<String,String> queryMap = new LinkedMultiValueMap<>(q.toMap());
                     marking.validate(queryMap);
-                    queryMap.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, marking.toColumnVisibilityString());
-                    queryMap.putSingle(PrivateAuditConstants.AUDIT_TYPE, auditType.name());
-                    queryMap.putSingle(PrivateAuditConstants.USER_DN, q.getUserDN());
-                    queryMap.putSingle(PrivateAuditConstants.LOGIC_CLASS, logic.getLogicName());
+                    queryMap.set(PrivateAuditConstants.COLUMN_VISIBILITY, marking.toColumnVisibilityString());
+                    queryMap.set(PrivateAuditConstants.AUDIT_TYPE, auditType.name());
+                    queryMap.set(PrivateAuditConstants.USER_DN, q.getUserDN());
+                    queryMap.set(PrivateAuditConstants.LOGIC_CLASS, logic.getLogicName());
                     try {
                         List<String> selectors = logic.getSelectors(q);
                         if (selectors != null && !selectors.isEmpty()) {
@@ -459,7 +460,7 @@ public class CachedResultsBean {
                     }
                     // if the user didn't set an audit id, use the query id
                     if (!queryMap.containsKey(AuditParameters.AUDIT_ID)) {
-                        queryMap.putSingle(AuditParameters.AUDIT_ID, q.getId().toString());
+                        queryMap.set(AuditParameters.AUDIT_ID, q.getId().toString());
                     }
                     auditor.audit(queryMap);
                 } catch (Exception e) {
@@ -533,57 +534,53 @@ public class CachedResultsBean {
 
                 int maxLength = 0;
                 for (Object o : results.getResults()) {
+                    CacheableQueryRow cacheableQueryRow = cacheableLogic.writeToCache(o);
 
-                    List<CacheableQueryRow> cacheableQueryRowList = cacheableLogic.writeToCache(o);
+                    Collection<String> values = cacheableQueryRow.getColumnValues().values();
+                    int maxValueLength = 0;
+                    for (String s : values) {
+                        if (s.length() > maxValueLength) {
+                            maxValueLength = s.length();
+                        }
+                    }
 
-                    for (CacheableQueryRow cacheableQueryObject : cacheableQueryRowList) {
+                    boolean dataWritten = false;
+                    // If a successful maxLength has been determined, then don't change it.
+                    if (maxLength == 0)
+                        maxLength = maxValueLength + 1;
+                    else if (maxValueLength > maxLength) {
+                        maxLength = maxValueLength;
+                    }
 
-                        Collection<String> values = ((CacheableQueryRow) cacheableQueryObject).getColumnValues().values();
-                        int maxValueLength = 0;
-                        for (String s : values) {
-                            if (s.length() > maxValueLength) {
-                                maxValueLength = s.length();
+                    int attempt = 0;
+                    SQLException loadBatchException = null; // exception;
+                    while (dataWritten == false && attempt < 10) {
+                        try {
+                            loadBatch(ps, owner, queryId, logic.getLogicName(), fieldMap, cacheableQueryRow, maxLength);
+                            dataWritten = true;
+                            rowsWritten++;
+                        } catch (SQLException e) {
+                            loadBatchException = e;
+                            String msg = e.getMessage();
+                            if (msg.startsWith("Table") && msg.endsWith("doesn't exist")) {
+                                throw new QueryException(DatawaveErrorCode.CACHE_TABLE_MISSING, MessageFormat.format("message: {0}", msg));
+                            } else {
+                                log.info("Caught other SQLException:" + msg + " writing batch with maxLength:" + maxLength);
+                                maxLength = maxLength / 2;
                             }
                         }
+                        attempt++;
+                    }
 
-                        boolean dataWritten = false;
-                        // If a successful maxLength has been determined, then don't change it.
-                        if (maxLength == 0)
-                            maxLength = maxValueLength + 1;
-                        else if (maxValueLength > maxLength) {
-                            maxLength = maxValueLength;
-                        }
+                    if (dataWritten == false) {
+                        String message = (loadBatchException == null) ? "unknown" : loadBatchException.getMessage();
 
-                        int attempt = 0;
-                        SQLException loadBatchException = null; // exception;
-                        while (dataWritten == false && attempt < 10) {
-                            try {
-                                loadBatch(ps, owner, queryId, logic.getLogicName(), fieldMap, cacheableQueryObject, maxLength);
-                                dataWritten = true;
-                                rowsWritten++;
-                            } catch (SQLException e) {
-                                loadBatchException = e;
-                                String msg = e.getMessage();
-                                if (msg.startsWith("Table") && msg.endsWith("doesn't exist")) {
-                                    throw new QueryException(DatawaveErrorCode.CACHE_TABLE_MISSING, MessageFormat.format("message: {0}", msg));
-                                } else {
-                                    log.info("Caught other SQLException:" + msg + " writing batch with maxLength:" + maxLength);
-                                    maxLength = maxLength / 2;
-                                }
-                            }
-                            attempt++;
-                        }
-
-                        if (dataWritten == false) {
-                            String message = (loadBatchException == null) ? "unknown" : loadBatchException.getMessage();
-
-                            log.error("Batch write FAILED - last exception = " + message + "record = " + cacheableQueryObject.getColumnValues().entrySet(),
-                                            loadBatchException);
-                        } else if (rowsWritten >= rowsPerBatch) {
-                            persistBatch(ps);
-                            ps.clearBatch();
-                            rowsWritten = 0;
-                        }
+                        log.error("Batch write FAILED - last exception = " + message + "record = " + cacheableQueryRow.getColumnValues().entrySet(),
+                                        loadBatchException);
+                    } else if (rowsWritten >= rowsPerBatch) {
+                        persistBatch(ps);
+                        ps.clearBatch();
+                        rowsWritten = 0;
                     }
                 }
             } // End of inserts into table
@@ -931,9 +928,9 @@ public class CachedResultsBean {
         Preconditions.checkNotNull(newQueryId, "newQueryId cannot be null");
 
         Preconditions.checkNotNull(queryId, "queryId cannot be null");
-        queryParameters.putSingle(CachedResultsParameters.QUERY_ID, queryId);
+        queryParameters.putSingle(CachedResultsQueryParameters.QUERY_ID, queryId);
 
-        String alias = queryParameters.getFirst(CachedResultsParameters.ALIAS);
+        String alias = queryParameters.getFirst(CachedResultsQueryParameters.ALIAS);
 
         // Find out who/what called this method
         Principal p = ctx.getCallerPrincipal();
@@ -985,9 +982,9 @@ public class CachedResultsBean {
 
         // pagesize validated in create
         CreateQuerySessionIDFilter.QUERY_ID.set(newQueryId);
-        queryParameters.remove(CachedResultsParameters.QUERY_ID);
-        queryParameters.remove(CachedResultsParameters.VIEW);
-        queryParameters.putSingle(CachedResultsParameters.VIEW, view);
+        queryParameters.remove(CachedResultsQueryParameters.QUERY_ID);
+        queryParameters.remove(CachedResultsQueryParameters.VIEW);
+        queryParameters.putSingle(CachedResultsQueryParameters.VIEW, view);
         CachedResultsResponse response = create(newQueryId, queryParameters);
         try {
             persistByQueryId(newQueryId, alias, owner, CachedRunningQuery.Status.AVAILABLE, "", true);
@@ -1007,16 +1004,16 @@ public class CachedResultsBean {
                     @DefaultValue("-1") Integer pagesize, String fixedFieldsInEvent) {
 
         MultivaluedMap<String,String> queryParameters = new MultivaluedMapImpl<>();
-        queryParameters.putSingle(CachedResultsParameters.QUERY_ID, queryId);
+        queryParameters.putSingle(CachedResultsQueryParameters.QUERY_ID, queryId);
         queryParameters.putSingle("newQueryId", newQueryId);
-        queryParameters.putSingle(CachedResultsParameters.ALIAS, alias);
-        queryParameters.putSingle(CachedResultsParameters.FIELDS, fields);
-        queryParameters.putSingle(CachedResultsParameters.CONDITIONS, conditions);
-        queryParameters.putSingle(CachedResultsParameters.GROUPING, grouping);
-        queryParameters.putSingle(CachedResultsParameters.ORDER, order);
+        queryParameters.putSingle(CachedResultsQueryParameters.ALIAS, alias);
+        queryParameters.putSingle(CachedResultsQueryParameters.FIELDS, fields);
+        queryParameters.putSingle(CachedResultsQueryParameters.CONDITIONS, conditions);
+        queryParameters.putSingle(CachedResultsQueryParameters.GROUPING, grouping);
+        queryParameters.putSingle(CachedResultsQueryParameters.ORDER, order);
         queryParameters.putSingle("columnVisibility", columnVisibility);
         queryParameters.putSingle(QueryParameters.QUERY_PAGESIZE, Integer.toString(pagesize));
-        queryParameters.putSingle(CachedResultsParameters.FIXED_FIELDS_IN_EVENT, fixedFieldsInEvent);
+        queryParameters.putSingle(CachedResultsQueryParameters.FIXED_FIELDS_IN_EVENT, fixedFieldsInEvent);
 
         return loadAndCreateAsync(queryParameters);
     }
@@ -1029,7 +1026,7 @@ public class CachedResultsBean {
         String newQueryId = queryParameters.getFirst("newQueryId");
         Preconditions.checkNotNull(newQueryId, "newQueryId cannot be null");
 
-        String queryId = queryParameters.getFirst(CachedResultsParameters.QUERY_ID);
+        String queryId = queryParameters.getFirst(CachedResultsQueryParameters.QUERY_ID);
         Preconditions.checkNotNull(queryId, "queryId cannot be null");
 
         String alias = queryParameters.getFirst("alias");
@@ -1198,7 +1195,7 @@ public class CachedResultsBean {
     public CachedResultsResponse create(@Required("queryId") @PathParam("queryId") String queryId, MultivaluedMap<String,String> queryParameters) {
         CreateQuerySessionIDFilter.QUERY_ID.set(null);
 
-        queryParameters.putSingle(CachedResultsParameters.QUERY_ID, queryId);
+        queryParameters.putSingle(CachedResultsQueryParameters.QUERY_ID, queryId);
         cp.clear();
         cp.validate(queryParameters);
 
@@ -1270,20 +1267,19 @@ public class CachedResultsBean {
                 auditMessage.append("User running secondary query on cached results of original query,");
                 auditMessage.append(" original query: ").append(query.getQuery());
                 auditMessage.append(", secondary query: ").append(sqlQuery);
-                MultivaluedMap<String,String> params = new MultivaluedMapImpl<>();
-                params.putAll(query.toMap());
+                MultiValueMap<String,String> params = new LinkedMultiValueMap<>(query.toMap());
                 marking.validate(params);
                 PrivateAuditConstants.stripPrivateParameters(queryParameters);
-                params.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, marking.toColumnVisibilityString());
-                params.putSingle(PrivateAuditConstants.AUDIT_TYPE, auditType.name());
-                params.putSingle(PrivateAuditConstants.USER_DN, query.getUserDN());
-                params.putSingle(PrivateAuditConstants.LOGIC_CLASS, crq.getQueryLogic().getLogicName());
+                params.set(PrivateAuditConstants.COLUMN_VISIBILITY, marking.toColumnVisibilityString());
+                params.set(PrivateAuditConstants.AUDIT_TYPE, auditType.name());
+                params.set(PrivateAuditConstants.USER_DN, query.getUserDN());
+                params.set(PrivateAuditConstants.LOGIC_CLASS, crq.getQueryLogic().getLogicName());
                 params.remove(QueryParameters.QUERY_STRING);
-                params.putSingle(QueryParameters.QUERY_STRING, auditMessage.toString());
+                params.set(QueryParameters.QUERY_STRING, auditMessage.toString());
                 params.putAll(queryParameters);
                 // if the user didn't set an audit id, use the query id
                 if (!params.containsKey(AuditParameters.AUDIT_ID)) {
-                    params.putSingle(AuditParameters.AUDIT_ID, queryId);
+                    params.set(AuditParameters.AUDIT_ID, queryId);
                 }
                 auditor.audit(params);
             }
@@ -1413,7 +1409,7 @@ public class CachedResultsBean {
                         Connection connection = ds.getConnection();
                         String logicName = crq.getQueryLogicName();
                         if (logicName != null) {
-                            QueryLogic<?> queryLogic = queryFactory.getQueryLogic(logicName, p);
+                            QueryLogic<?> queryLogic = queryFactory.getQueryLogic(logicName, (DatawavePrincipal) p);
                             crq.activate(connection, queryLogic);
                         } else {
                             DbUtils.closeQuietly(connection);
@@ -1519,7 +1515,7 @@ public class CachedResultsBean {
                         if (crq.getShouldAutoActivate()) {
                             Connection connection = ds.getConnection();
                             String logicName = crq.getQueryLogicName();
-                            QueryLogic<?> queryLogic = queryFactory.getQueryLogic(logicName, p);
+                            QueryLogic<?> queryLogic = queryFactory.getQueryLogic(logicName, (DatawavePrincipal) p);
                             crq.activate(connection, queryLogic);
                         } else {
                             throw new PreConditionFailedQueryException(DatawaveErrorCode.QUERY_TIMEOUT_FOR_RESOURCES);
@@ -1633,7 +1629,7 @@ public class CachedResultsBean {
 
                     Connection connection = ds.getConnection();
                     String logicName = crq.getQueryLogicName();
-                    QueryLogic<?> queryLogic = queryFactory.getQueryLogic(logicName, p);
+                    QueryLogic<?> queryLogic = queryFactory.getQueryLogic(logicName, (DatawavePrincipal) p);
                     crq.activate(connection, queryLogic);
 
                     response.setQueryId(crq.getQueryId());
@@ -1729,7 +1725,7 @@ public class CachedResultsBean {
                         if (crq.getShouldAutoActivate()) {
                             Connection connection = ds.getConnection();
                             String logicName = crq.getQueryLogicName();
-                            QueryLogic<?> queryLogic = queryFactory.getQueryLogic(logicName, p);
+                            QueryLogic<?> queryLogic = queryFactory.getQueryLogic(logicName, (DatawavePrincipal) p);
                             crq.activate(connection, queryLogic);
                         } else {
                             throw new PreConditionFailedQueryException(DatawaveErrorCode.QUERY_TIMEOUT_FOR_RESOURCES);
@@ -1872,7 +1868,7 @@ public class CachedResultsBean {
                     if (crq.isActivated() == false) {
                         Connection connection = ds.getConnection();
                         String logicName = crq.getQueryLogicName();
-                        QueryLogic<?> queryLogic = queryFactory.getQueryLogic(logicName, p);
+                        QueryLogic<?> queryLogic = queryFactory.getQueryLogic(logicName, (DatawavePrincipal) p);
                         crq.activate(connection, queryLogic);
                     }
 
@@ -2142,7 +2138,7 @@ public class CachedResultsBean {
                 Query q = queries.get(0);
 
                 // will throw IllegalArgumentException if not defined
-                QueryLogic<?> logic = queryFactory.getQueryLogic(q.getQueryLogicName(), p);
+                QueryLogic<?> logic = queryFactory.getQueryLogic(q.getQueryLogicName(), (DatawavePrincipal) p);
                 AccumuloConnectionFactory.Priority priority = logic.getConnectionPriority();
                 query = new RunningQuery(metrics, null, priority, logic, q, q.getQueryAuthorizations(), p,
                                 new RunningQueryTimingImpl(queryExpirationConf, q.getPageTimeout()), predictor, userOperationsBean, metricFactory);
@@ -2447,8 +2443,8 @@ public class CachedResultsBean {
     }
 
     protected boolean createView(String tableName, String viewName, Connection con, boolean viewCreated, Map<String,Integer> fieldMap) throws SQLException {
-        CachedResultsParameters.validate(tableName);
-        CachedResultsParameters.validate(viewName);
+        CachedResultsQueryParameters.validate(tableName);
+        CachedResultsQueryParameters.validate(viewName);
         StringBuilder viewCols = new StringBuilder();
         StringBuilder tableCols = new StringBuilder();
         viewCols.append(BASE_COLUMNS);

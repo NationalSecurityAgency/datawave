@@ -94,6 +94,7 @@
             <includes>
                 <include>org.apache.commons:commons-collections4</include>
                 <include>org.apache.commons:commons-jexl3</include>
+                <include>org.apache.curator:curator-client</include>
                 <include>${groupId}:datawave-accumulo-extensions</include>
                 <include>${groupId}:datawave-common</include>
                 <include>${groupId}:datawave-core</include>
@@ -108,7 +109,10 @@
                 <include>${groupId}:datawave-ingest-wikipedia</include>
                 <include>${groupId}:datawave-ingest-nyctlc</include>
                 <include>${groupId}:datawave-ingest-json</include>
+                <include>gov.nsa.datawave.core:datawave-core-connection-pool</include>
+                <include>gov.nsa.datawave.core:datawave-core-common</include>
                 <include>gov.nsa.datawave.core:datawave-core-common-util</include>
+                <include>gov.nsa.datawave.core:datawave-core-query</include>
                 <include>gov.nsa.datawave.core:datawave-core-exceptions</include>
                 <include>gov.nsa.datawave.core:datawave-core-geo</include>
                 <include>gov.nsa.datawave.core:datawave-core-jexl</include>
@@ -162,6 +166,8 @@
                   <include>${groupId}:datawave-ingest-core</include>
                   <include>${groupId}:datawave-ingest-configuration</include>
                   <include>${groupId}:datawave-query-core</include>
+                  <include>gov.nsa.datawave.core:datawave-core-connection-pool</include>
+                  <include>gov.nsa.datawave.core:datawave-core-common</include>
                   <include>gov.nsa.datawave.core:datawave-core-common-util</include>
                   <include>gov.nsa.datawave.core:datawave-core-exceptions</include>
                   <include>gov.nsa.datawave.core:datawave-core-geo</include>

@@ -170,7 +170,6 @@ public class GeoUtils {
             }
             return diff;
         });
-
         // these ranges are sorted by the minimum bound of the range so that we can
         // quickly merge contiguous segments into discrete ranges
         TreeSet<RangeData> positionSortedRanges = new TreeSet<>(Comparator.comparingDouble(o -> o.range[0]));

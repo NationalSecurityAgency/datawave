@@ -24,13 +24,12 @@ import com.google.common.collect.Lists;
 import datawave.common.util.MultiComparator;
 import datawave.common.util.concurrent.BoundedBlockingQueue;
 import datawave.core.common.logging.ThreadConfigurableLogger;
+import datawave.core.query.configuration.QueryData;
+import datawave.microservice.query.Query;
 import datawave.query.CloseableIterable;
-import datawave.query.iterator.QueryIterator;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.tld.TLDQueryIterator;
 import datawave.query.util.count.CountMapSerDe;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.configuration.QueryData;
 
 public class ThreadedRangeBundlerIterator implements Iterator<QueryData>, Closeable {
     private static final Logger log = ThreadConfigurableLogger.getLogger(ThreadedRangeBundlerIterator.class);
@@ -295,6 +294,7 @@ public class ThreadedRangeBundlerIterator implements Iterator<QueryData>, Closea
 
         //  @formatter:off
         return new QueryData()
+                        .withTableName(plan.getTableName())
                         .withQuery(queryString)
                         .withRanges(Lists.newArrayList(plan.getRanges()))
                         .withColumnFamilies(plan.getColumnFamilies())
@@ -391,7 +391,10 @@ public class ThreadedRangeBundlerIterator implements Iterator<QueryData>, Closea
                 }
 
             } catch (Exception e) {
-                throw new RuntimeException(e);
+                // only propogate the exception if we weren't being shutdown.
+                if (running) {
+                    throw new RuntimeException(e);
+                }
             } finally {
                 rangeConsumer.stop();
             }

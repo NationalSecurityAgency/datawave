@@ -5,7 +5,9 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.Collections;
 import java.util.Set;
+import java.util.TreeSet;
 
+import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.junit.jupiter.api.BeforeAll;
@@ -130,23 +132,174 @@ class IngestTypeVisitorTest {
     void testNegatedLogic() {
         // negated terms do not contribute to an intersection
         assertSingleNode("A == '1' && !(B == '2')", aTypes);
-
-        // negated terms actually contribute to the total ingest types (union operation)
-        assertSingleNode("B == '2' && !(C == '3')", aTypes);
+        assertSingleNode("B == '2' && !(C == '3')", bTypes);
     }
 
     @Test
     void testUnknownType() {
-        assertSingleNode("A == '1' && D == '4'", Collections.emptySet());
-        assertSingleNode("A == '1' || D == '4'", Collections.emptySet());
-        assertSingleNode("D == '4' && E == '5'", Collections.emptySet());
-        assertSingleNode("D == '4' || E == '5'", Collections.emptySet());
+        assertSingleNode("A == '1' && D == '4'", Collections.singleton(IngestTypeVisitor.UNKNOWN_TYPE));
+        assertSingleNode("A == '1' || D == '4'", Collections.singleton(IngestTypeVisitor.UNKNOWN_TYPE));
+        assertSingleNode("D == '4' && E == '5'", Collections.singleton(IngestTypeVisitor.UNKNOWN_TYPE));
+        assertSingleNode("D == '4' || E == '5'", Collections.singleton(IngestTypeVisitor.UNKNOWN_TYPE));
     }
 
     @Test
     void testEqNull() {
-        assertSingleNode("A == null", Collections.emptySet());
-        assertSingleNode("!(A == null)", Collections.emptySet());
+        assertSingleNode("A == null", aTypes);
+        assertSingleNode("!(A == null)", aTypes);
+    }
+
+    @Test
+    void testNotNullAndNestedUnion() {
+        String query = "!(A == null) && B == '1' && ((C == '2' || D == '2' || E == '2' || F == '2'))";
+
+        TypeMetadata metadata = new TypeMetadata();
+        metadata.put("A", "type1", LcType.class.getTypeName());
+        metadata.put("A", "type2", LcType.class.getTypeName());
+        metadata.put("A", "type3", LcType.class.getTypeName());
+        metadata.put("A", "type4", LcType.class.getTypeName());
+
+        metadata.put("B", "type1", LcType.class.getTypeName());
+        metadata.put("B", "type2", LcType.class.getTypeName());
+        metadata.put("B", "type3", LcType.class.getTypeName());
+        metadata.put("B", "type4", LcType.class.getTypeName());
+
+        metadata.put("C", "type1", LcType.class.getTypeName());
+        metadata.put("C", "type2", LcType.class.getTypeName());
+        metadata.put("C", "type3", LcType.class.getTypeName());
+        metadata.put("C", "type4", LcType.class.getTypeName());
+        metadata.put("C", "type5", LcType.class.getTypeName());
+        metadata.put("C", "type6", LcType.class.getTypeName());
+
+        metadata.put("D", "type1", LcType.class.getTypeName());
+        metadata.put("D", "type2", LcType.class.getTypeName());
+        metadata.put("D", "type3", LcType.class.getTypeName());
+        metadata.put("D", "type4", LcType.class.getTypeName());
+        metadata.put("D", "type5", LcType.class.getTypeName());
+        metadata.put("D", "type6", LcType.class.getTypeName());
+
+        metadata.put("E", "type3", LcType.class.getTypeName());
+        metadata.put("F", "type3", LcType.class.getTypeName());
+
+        Set<String> expected = Sets.newHashSet("type1", "type2", "type3", "type4");
+        test(query, expected, metadata);
+    }
+
+    @Test
+    void testFilterFunctionExclude() {
+        String query = "((A == '1' || A == '2' || A == '3' || A =='4' || A == '5') && B == '1' && C == '1' && (!filter:includeRegex(D,'bar')))";
+
+        TypeMetadata metadata = new TypeMetadata();
+        metadata.put("A", "type1", LcType.class.getTypeName());
+        metadata.put("A", "type2", LcType.class.getTypeName());
+
+        metadata.put("B", "type1", LcType.class.getTypeName());
+        metadata.put("B", "type2", LcType.class.getTypeName());
+        metadata.put("B", "type3", LcType.class.getTypeName());
+        metadata.put("B", "type4", LcType.class.getTypeName());
+        metadata.put("B", "type5", LcType.class.getTypeName());
+        metadata.put("B", "type6", LcType.class.getTypeName());
+
+        metadata.put("C", "type1", LcType.class.getTypeName());
+        metadata.put("C", "type2", LcType.class.getTypeName());
+        metadata.put("C", "type3", LcType.class.getTypeName());
+        metadata.put("C", "type4", LcType.class.getTypeName());
+        metadata.put("C", "type5", LcType.class.getTypeName());
+        metadata.put("C", "type6", LcType.class.getTypeName());
+
+        metadata.put("D", "type1", LcType.class.getTypeName());
+        metadata.put("D", "type2", LcType.class.getTypeName());
+        metadata.put("D", "type3", LcType.class.getTypeName());
+        metadata.put("D", "type4", LcType.class.getTypeName());
+        metadata.put("D", "type5", LcType.class.getTypeName());
+        metadata.put("D", "type6", LcType.class.getTypeName());
+
+        Set<String> expected = Sets.newHashSet("type1", "type2");
+        test(query, expected, metadata);
+    }
+
+    @Test
+    void testWrappedStuff() {
+        String query = "!(A == null) && B == '1' && (!(C == null))";
+
+        TypeMetadata metadata = new TypeMetadata();
+        metadata.put("A", "type1", LcType.class.getTypeName());
+        metadata.put("B", "type1", LcType.class.getTypeName());
+        metadata.put("C", "type1", LcType.class.getTypeName());
+
+        test(query, Collections.singleton("type1"), metadata);
+    }
+
+    @Test
+    void testAndNull() {
+        TypeMetadata metadata = new TypeMetadata();
+        metadata.put("A", "ingestType1", LcType.class.getTypeName());
+        metadata.put("B", "ingestType2", LcType.class.getTypeName());
+        metadata.put("9", "ingestType2", LcType.class.getTypeName());
+
+        String query = "A == '1' && B == null"; // *technically* valid
+        test(query, Collections.singleton("ingestType1"), metadata);
+
+        // same form but with an identifier
+        query = "A == '1' && $9 == null";
+        test(query, Collections.singleton("ingestType1"), metadata);
+    }
+
+    @Test
+    void testAndNotNull() {
+        TypeMetadata metadata = new TypeMetadata();
+        metadata.put("A", "ingestType1", LcType.class.getTypeName());
+        metadata.put("B", "ingestType2", LcType.class.getTypeName());
+        metadata.put("9", "ingestType2", LcType.class.getTypeName());
+
+        // in theory this visitor should be smart enough to prune out a negation for an exclusive ingest type
+        String query = "A == '1' && !(B == null)";
+        test(query, Collections.singleton("ingestType1"), metadata);
+
+        query = "A == '1' && !($B == null)";
+        test(query, Collections.singleton("ingestType1"), metadata);
+    }
+
+    @Test
+    void testAndMultiFieldedDateFilter() {
+        TypeMetadata metadata = new TypeMetadata();
+        metadata.put("A", "type1", LcType.class.getTypeName());
+        metadata.put("B", "type1", LcType.class.getTypeName());
+        metadata.put("C", "type1", LcType.class.getTypeName());
+        metadata.put("D", "type1", LcType.class.getTypeName());
+        metadata.put("1", "type1", LcType.class.getTypeName());
+        metadata.put("2", "type1", LcType.class.getTypeName());
+        metadata.put("3", "type1", LcType.class.getTypeName());
+
+        String query = "!(A == null) && ($1 == '1' || B == '1') && ($2 == '2' || C == '2') && filter:afterDate(($3 || D), '2024-01-01')";
+        test(query, Collections.singleton("type1"), metadata);
+    }
+
+    @Test
+    void testFilterFunctionExcludeExpandedIntoMutuallyExclusiveFields() {
+        // there might be an exclude like #EXCLUDE(MODEL_FIELD, '.*.*')
+        // which is expanded like so #EXCLUDE((F1||F2||F3), '.*.*')
+        // and is then rewritten as a filter function like so !((F1 == null && F2 == null && F3 == null))
+        TypeMetadata metadata = new TypeMetadata();
+        metadata.put("A", "type1", LcType.class.getTypeName());
+        metadata.put("B", "type1", LcType.class.getTypeName());
+        metadata.put("C", "type2", LcType.class.getTypeName());
+        metadata.put("D", "type3", LcType.class.getTypeName());
+
+        String query = "A == '1' && !((B == null || C == null || D == null))";
+        test(query, Collections.singleton("type1"), metadata);
+    }
+
+    @Test
+    void testUnionOfNegatedTerms() {
+        String query = "!(A == '1') || !(B == '2') || !(C == '3')";
+        test(query, Sets.union(aTypes, bTypes));
+    }
+
+    @Test
+    void testUnionOfNotNullTerms() {
+        String query = "!(A == null) || !(B == null) || !(C == null)";
+        test(query, Sets.union(aTypes, bTypes));
     }
 
     private void assertSingleNode(String query, Set<String> expectedIngestTypes) {
@@ -174,7 +327,17 @@ class IngestTypeVisitorTest {
         }
     }
 
-    private JexlNode parseQuery(String query) {
+    private void test(String query, Set<String> expected) {
+        test(query, expected, typeMetadata);
+    }
+
+    private void test(String query, Set<String> expected, TypeMetadata typeMetadata) {
+        ASTJexlScript script = parseQuery(query);
+        Set<String> types = IngestTypeVisitor.getIngestTypes(script, typeMetadata);
+        assertEquals(new TreeSet<>(expected), new TreeSet<>(types)); // sorted sets make differences easy to spot
+    }
+
+    private ASTJexlScript parseQuery(String query) {
         try {
             return JexlASTHelper.parseAndFlattenJexlQuery(query);
         } catch (ParseException e) {

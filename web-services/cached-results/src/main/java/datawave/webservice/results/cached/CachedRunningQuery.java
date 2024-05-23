@@ -29,23 +29,27 @@ import javax.sql.rowset.RowSetProvider;
 import org.apache.commons.dbutils.DbUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
 import datawave.core.query.cache.ResultsPage;
+import datawave.core.query.cachedresults.CacheableLogic;
+import datawave.core.query.cachedresults.CacheableQueryRowReader;
+import datawave.core.query.cachedresults.CachedResultsQueryParameters;
+import datawave.core.query.logic.QueryLogic;
+import datawave.core.query.logic.QueryLogicFactory;
+import datawave.core.query.logic.QueryLogicTransformer;
+import datawave.microservice.query.Query;
 import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.QueryMetricFactory;
-import datawave.webservice.query.Query;
+import datawave.security.authorization.DatawavePrincipal;
 import datawave.webservice.query.cache.AbstractRunningQuery;
-import datawave.webservice.query.cachedresults.CacheableLogic;
 import datawave.webservice.query.cachedresults.CacheableQueryRow;
-import datawave.webservice.query.cachedresults.CacheableQueryRowReader;
 import datawave.webservice.query.data.ObjectSizeOf;
 import datawave.webservice.query.exception.QueryException;
-import datawave.webservice.query.logic.QueryLogic;
-import datawave.webservice.query.logic.QueryLogicFactory;
-import datawave.webservice.query.logic.QueryLogicTransformer;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
+import datawave.webservice.query.util.MapUtils;
 
 @SuppressWarnings("restriction")
 public class CachedRunningQuery extends AbstractRunningQuery {
@@ -394,7 +398,7 @@ public class CachedRunningQuery extends AbstractRunningQuery {
 
     public String generateSql(String view, String fields, String conditions, String grouping, String order, String user, Connection connection)
                     throws SQLException {
-        CachedResultsParameters.validate(view);
+        CachedResultsQueryParameters.validate(view);
         StringBuilder buf = new StringBuilder();
         if (StringUtils.isEmpty(StringUtils.trimToNull(fields)))
             fields = "*";
@@ -554,7 +558,7 @@ public class CachedRunningQuery extends AbstractRunningQuery {
     }
 
     private List<String> getViewColumnNames(Connection connection, String view) throws SQLException {
-        CachedResultsParameters.validate(view);
+        CachedResultsQueryParameters.validate(view);
         List<String> columns = new ArrayList<>();
         try (Statement s = connection.createStatement(); ResultSet rs = s.executeQuery(String.format("show columns from %s", view))) {
             Set<String> fixedColumns = CacheableQueryRow.getFixedColumnSet();
@@ -826,13 +830,14 @@ public class CachedRunningQuery extends AbstractRunningQuery {
      */
     private ResultsPage convert(CachedRowSet cachedRowSet, long pageByteTrigger) {
         boolean hitPageByteTrigger = false;
-        List<CacheableQueryRow> cacheableQueryRowList = new ArrayList<>();
+        List<Object> results = new ArrayList<>();
         try {
             cachedRowSet.beforeFirst();
             long resultBytes = 0;
             while (cachedRowSet.next() && !hitPageByteTrigger) {
-                CacheableQueryRow row = CacheableQueryRowReader.createRow(cachedRowSet, this.fixedFieldsInEvent, this.responseObjectFactory);
-                cacheableQueryRowList.add(row);
+                CacheableQueryRow row = CacheableQueryRowReader.createRow(cachedRowSet, this.fixedFieldsInEvent, this.responseObjectFactory,
+                                queryLogic.getMarkingFunctions());
+                results.add(this.cacheableLogic.readFromCache(row));
                 if (pageByteTrigger != 0) {
                     resultBytes += ObjectSizeOf.Sizer.getObjectSize(row);
                     if (resultBytes >= pageByteTrigger) {
@@ -847,21 +852,21 @@ public class CachedRunningQuery extends AbstractRunningQuery {
         if (this.cacheableLogic == null) {
             return new ResultsPage();
         } else {
-            return new ResultsPage(this.cacheableLogic.readFromCache(cacheableQueryRowList),
-                            (hitPageByteTrigger ? ResultsPage.Status.PARTIAL : ResultsPage.Status.COMPLETE));
+            return new ResultsPage(results, (hitPageByteTrigger ? ResultsPage.Status.PARTIAL : ResultsPage.Status.COMPLETE));
         }
     }
 
     private ResultsPage convert(CachedRowSet cachedRowSet, Integer rowBegin, Integer rowEnd, long pageByteTrigger) {
         boolean hitPageByteTrigger = false;
-        List<CacheableQueryRow> cacheableQueryRowList = new ArrayList<>();
+        List<Object> results = new ArrayList<>();
         try {
             long resultBytes = 0;
             while (cachedRowSet.next() && cachedRowSet.getRow() <= rowEnd && !hitPageByteTrigger) {
                 if (log.isTraceEnabled())
                     log.trace("CRS.position: " + cachedRowSet.getRow() + ", size: " + cachedRowSet.size());
-                CacheableQueryRow row = CacheableQueryRowReader.createRow(cachedRowSet, this.fixedFieldsInEvent, this.responseObjectFactory);
-                cacheableQueryRowList.add(row);
+                CacheableQueryRow row = CacheableQueryRowReader.createRow(cachedRowSet, this.fixedFieldsInEvent, this.responseObjectFactory,
+                                queryLogic.getMarkingFunctions());
+                results.add(this.cacheableLogic.readFromCache(row));
                 if (pageByteTrigger != 0) {
                     resultBytes += ObjectSizeOf.Sizer.getObjectSize(row);
                     if (resultBytes >= pageByteTrigger) {
@@ -877,8 +882,7 @@ public class CachedRunningQuery extends AbstractRunningQuery {
         if (this.cacheableLogic == null) {
             return new ResultsPage();
         } else {
-            return new ResultsPage(this.cacheableLogic.readFromCache(cacheableQueryRowList),
-                            (hitPageByteTrigger ? ResultsPage.Status.PARTIAL : ResultsPage.Status.COMPLETE));
+            return new ResultsPage(results, (hitPageByteTrigger ? ResultsPage.Status.PARTIAL : ResultsPage.Status.COMPLETE));
         }
     }
 
@@ -1145,7 +1149,7 @@ public class CachedRunningQuery extends AbstractRunningQuery {
                     resultSet.getTimestamp(x++);
                     crq.pagesize = resultSet.getInt(x++);
                     crq.user = resultSet.getString(x++);
-                    crq.view = CachedResultsParameters.validate(resultSet.getString(x++), true);
+                    crq.view = CachedResultsQueryParameters.validate(resultSet.getString(x++), true);
                     crq.tableName = resultSet.getString(x++);
 
                     crq.getMetric().setQueryType(CachedRunningQuery.class);
@@ -1203,9 +1207,16 @@ public class CachedRunningQuery extends AbstractRunningQuery {
                             InputStream istream = optionalQueryParametersBlob.getBinaryStream();
                             ObjectInputStream oistream = new ObjectInputStream(istream);
                             Object optionalQueryParametersObject = oistream.readObject();
-                            if (optionalQueryParametersObject != null && optionalQueryParametersObject instanceof MultiValueMap) {
-                                MultiValueMap<String,String> optionalQueryParameters = (MultiValueMap<String,String>) optionalQueryParametersObject;
-                                query.setOptionalQueryParameters(optionalQueryParameters);
+                            if (optionalQueryParametersObject != null) {
+                                if (optionalQueryParametersObject instanceof MultivaluedMapImpl) {
+                                    MultivaluedMapImpl<String,String> optionalQueryParameters = (MultivaluedMapImpl<String,String>) optionalQueryParametersObject;
+                                    query.setOptionalQueryParameters(MapUtils.toMultiValueMap(optionalQueryParameters));
+                                } else if (optionalQueryParametersObject instanceof MultiValueMap) {
+                                    query.setOptionalQueryParameters((MultiValueMap) optionalQueryParametersObject);
+                                } else {
+                                    throw new IllegalArgumentException(
+                                                    "Failed to convert " + optionalQueryParametersObject.getClass() + " to a " + MultiValueMap.class);
+                                }
                             }
                         } catch (IOException e) {
                             log.error(e.getMessage(), e);
@@ -1222,14 +1233,14 @@ public class CachedRunningQuery extends AbstractRunningQuery {
                     }
                     if (crq.queryLogicName != null) {
                         try {
-                            crq.queryLogic = queryFactory.getQueryLogic(crq.queryLogicName, principal);
+                            crq.queryLogic = queryFactory.getQueryLogic(crq.queryLogicName, (DatawavePrincipal) principal);
                         } catch (IllegalArgumentException | CloneNotSupportedException e) {
                             log.error(e.getMessage(), e);
                         }
                     }
                 }
             }
-        } catch (SQLException e) {
+        } catch (SQLException | QueryException e) {
             log.error(e.getMessage(), e);
         }
         return crq;
@@ -1260,7 +1271,7 @@ public class CachedRunningQuery extends AbstractRunningQuery {
     }
 
     public void setView(String view) {
-        this.view = CachedResultsParameters.validate(view);
+        this.view = CachedResultsQueryParameters.validate(view);
     }
 
     public String getTableName() {

@@ -36,6 +36,8 @@ import datawave.annotation.DateFormat;
 import datawave.annotation.Required;
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.configuration.spring.SpringBean;
+import datawave.core.query.map.QueryGeometryHandler;
+import datawave.core.query.metric.QueryMetricHandler;
 import datawave.interceptor.RequiredInterceptor;
 import datawave.interceptor.ResponseInterceptor;
 import datawave.metrics.remote.RemoteQueryMetricService;
@@ -46,7 +48,6 @@ import datawave.microservice.querymetric.QueryMetricsSummaryResponse;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
-import datawave.webservice.query.map.QueryGeometryHandler;
 import datawave.webservice.query.map.QueryGeometryResponse;
 
 @Path("/Query/Metrics")

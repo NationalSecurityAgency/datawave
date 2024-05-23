@@ -11,14 +11,13 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.log4j.Logger;
 
 import datawave.core.common.logging.ThreadConfigurableLogger;
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.exception.EmptyObjectException;
+import datawave.core.query.logic.BaseQueryLogic;
+import datawave.core.query.logic.QueryLogicTransformer;
 import datawave.marking.MarkingFunctions;
-import datawave.query.tables.remote.RemoteQueryLogic;
+import datawave.microservice.query.Query;
 import datawave.query.transformer.EventQueryTransformerSupport;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
-import datawave.webservice.query.exception.EmptyObjectException;
-import datawave.webservice.query.logic.BaseQueryLogic;
-import datawave.webservice.query.logic.QueryLogicTransformer;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.result.EventQueryResponseBase;
@@ -27,7 +26,7 @@ import datawave.webservice.result.EventQueryResponseBase;
  * <h1>Overview</h1> This is a query logic implementation that can handle delegating to a remote event query logic (i.e. one that returns an extension of
  * EventQueryResponseBase).
  */
-public class RemoteEventQueryLogic extends BaseRemoteQueryLogic<EventBase> implements RemoteQueryLogic<EventBase> {
+public class RemoteEventQueryLogic extends BaseRemoteQueryLogic<EventBase> {
 
     protected static final Logger log = ThreadConfigurableLogger.getLogger(RemoteEventQueryLogic.class);
 
@@ -90,7 +89,7 @@ public class RemoteEventQueryLogic extends BaseRemoteQueryLogic<EventBase> imple
         public boolean hasNext() {
             if (data.isEmpty() && !complete) {
                 try {
-                    EventQueryResponseBase response = (EventQueryResponseBase) remoteQueryService.next(getRemoteId(), getCallerObject());
+                    EventQueryResponseBase response = (EventQueryResponseBase) remoteQueryService.next(getRemoteId(), currentUser);
                     if (response != null) {
                         if (response.getReturnedEvents() == 0) {
                             if (response.isPartialResults()) {
