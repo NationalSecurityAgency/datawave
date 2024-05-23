@@ -1,6 +1,8 @@
 package datawave.ingest.mapreduce.job.reindex;
 
 import static datawave.ingest.data.config.DataTypeHelper.Properties.DATA_NAME;
+import static datawave.ingest.mapreduce.EventMapper.CONTEXT_WRITER_CLASS;
+import static datawave.ingest.mapreduce.EventMapper.CONTEXT_WRITER_OUTPUT_TABLE_COUNTERS;
 import static org.apache.commons.lang3.StringUtils.reverse;
 
 import java.io.IOException;
@@ -38,6 +40,8 @@ import datawave.ingest.mapreduce.ContextWrappedStatusReporter;
 import datawave.ingest.mapreduce.handler.DataTypeHandler;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.ingest.mapreduce.job.writer.BulkContextWriter;
+import datawave.ingest.mapreduce.job.writer.ContextWriter;
 import datawave.ingest.mapreduce.partition.MultiTableRangePartitioner;
 import datawave.ingest.protobuf.Uid;
 
@@ -55,10 +59,10 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
     public static final String DUMP_COUNTERS = "ShardReindexMapper.dumpCounters";
     public static final String BATCH_MODE = "ShardReindexMapper.batchMode";
     public static final String GENERATE_METADATA = "ShardReindexMapper.generateMetadata";
+    private static final byte[] FI_START_BYTES = ShardReindexJob.FI_START.getBytes();
 
     private static final Logger log = Logger.getLogger(ShardReindexMapper.class);
 
-    private final byte[] FI_START_BYTES = ShardReindexJob.FI_START.getBytes();
     private final Value UID_VALUE = new Value(buildIndexValue().toByteArray());
     private final Value EMPTY_VALUE = new Value();
 
@@ -108,6 +112,7 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
      */
     private Map<Text,Map<String,List<String>>> batchValues = null;
     private RawRecordContainer batchEvent = null;
+    private ContextWriter<BulkIngestKey,Value> contextWriter;
 
     /**
      * Setup the mapper and check for all required and inconsistent settings
@@ -204,6 +209,16 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
                 batchValues = new HashMap<>();
             }
         }
+
+        // create a context
+        Class<? extends ContextWriter<BulkIngestKey,Value>> contextWriterClass = (Class<ContextWriter<BulkIngestKey,Value>>) context.getConfiguration()
+                        .getClass(CONTEXT_WRITER_CLASS, BulkContextWriter.class, ContextWriter.class);
+        try {
+            contextWriter = contextWriterClass.getDeclaredConstructor().newInstance();
+            contextWriter.setup(config, config.getBoolean(CONTEXT_WRITER_OUTPUT_TABLE_COUNTERS, false));
+        } catch (InvocationTargetException | InstantiationException | IllegalAccessException | NoSuchMethodException e) {
+            throw new IOException("Failed to initialize " + contextWriterClass + " from property " + CONTEXT_WRITER_CLASS, e);
+        }
     }
 
     @Override
@@ -220,11 +235,13 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
         if (this.generateMetadata && this.indexHandler.getMetadata() != null) {
             for (BulkIngestKey bik : this.indexHandler.getMetadata().getBulkMetadata().keySet()) {
                 for (Value v : this.indexHandler.getMetadata().getBulkMetadata().get(bik)) {
-                    context.write(bik, v);
+                    contextWriter.write(bik, v, context);
                 }
             }
-
         }
+
+        // cleanup the context writer
+        contextWriter.cleanup(context);
 
         // output counters if used
         if (this.enableReindexCounters) {
@@ -249,7 +266,7 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
      * @param cf
      * @return
      */
-    private boolean isKeyD(ByteSequence cf) {
+    public static boolean isKeyD(ByteSequence cf) {
         return cf.length() == 1;
     }
 
@@ -263,7 +280,7 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
      */
     private void processDKey(Key key, Value value, Context context) throws IOException, InterruptedException {
         if (this.reprocessEvents && this.exportShard) {
-            context.write(new BulkIngestKey(shardTable, key), value);
+            contextWriter.write(new BulkIngestKey(shardTable, key), value, context);
             incrementCounter("export", "d");
         }
     }
@@ -274,7 +291,7 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
      * @param cf
      * @return
      */
-    private boolean isKeyTF(ByteSequence cf) {
+    public static boolean isKeyTF(ByteSequence cf) {
         return cf.length() == 2;
     }
 
@@ -284,7 +301,7 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
 
         // if reprocessing events and exporting shard and either not generating tf or this is an index only field write it to the context
         if (this.reprocessEvents && this.exportShard && (!this.generateTF || this.defaultHelper.isIndexOnlyField(tfField))) {
-            context.write(new BulkIngestKey(shardTable, key), value);
+            contextWriter.write(new BulkIngestKey(shardTable, key), value, context);
             incrementCounter("tf", tfField);
             incrementCounter("export", "tf");
         }
@@ -296,7 +313,7 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
      * @param cf
      * @return
      */
-    private boolean isKeyFI(ByteSequence cf) {
+    public static boolean isKeyFI(ByteSequence cf) {
         return cf.length() > 3 && WritableComparator.compareBytes(cf.getBackingArray(), 0, 3, FI_START_BYTES, 0, 3) == 0;
     }
 
@@ -310,7 +327,7 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
         if (this.reprocessEvents) {
             processEvent(context, key);
             if (exportShard) {
-                context.write(new BulkIngestKey(shardTable, key), value);
+                contextWriter.write(new BulkIngestKey(shardTable, key), value, context);
                 incrementCounter("export", "e");
             }
         }
@@ -330,28 +347,34 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
      */
     @Override
     protected void map(Key key, Value value, Context context) throws IOException, InterruptedException {
-        // this is required for the partitioner, see EventMapper
-        MultiTableRangePartitioner.setContext(context);
+        try {
+            // this is required for the partitioner, see EventMapper
+            MultiTableRangePartitioner.setContext(context);
 
-        ByteSequence cf = key.getColumnFamilyData();
-        String keyType;
-        if (isKeyD(cf)) {
-            keyType = "d";
-            processDKey(key, value, context);
-        } else if (isKeyTF(cf)) {
-            keyType = "tf";
-            processTFKey(key, value, context);
-        } else if (isKeyFI(cf)) {
-            keyType = "fi";
-            processFIKey(key, value, context);
-        } else {
-            keyType = "e";
-            processEventKey(key, value, context);
+            ByteSequence cf = key.getColumnFamilyData();
+            String keyType;
+            if (isKeyD(cf)) {
+                keyType = "d";
+                processDKey(key, value, context);
+            } else if (isKeyTF(cf)) {
+                keyType = "tf";
+                processTFKey(key, value, context);
+            } else if (isKeyFI(cf)) {
+                keyType = "fi";
+                processFIKey(key, value, context);
+            } else {
+                keyType = "e";
+                processEventKey(key, value, context);
+            }
+
+            incrementCounter("shard", key.getRowData().toString());
+            incrementCounter("key types", keyType);
+        } catch (IOException | InterruptedException e) {
+            contextWriter.rollback();
+            throw e;
+        } finally {
+            contextWriter.commit(context);
         }
-
-        incrementCounter("shard", key.getRowData().toString());
-        incrementCounter("key types", keyType);
-
         context.progress();
     }
 
@@ -438,7 +461,7 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
             Key globalIndexKey = new Key(fieldValueText, fieldText, indexCq, key.getColumnVisibility(), floorTimestamp(key.getTimestamp()));
             globalIndexKey.setDeleted(key.isDeleted());
             BulkIngestKey bik = new BulkIngestKey(this.indexTable, globalIndexKey);
-            context.write(bik, UID_VALUE);
+            contextWriter.write(bik, UID_VALUE, context);
             indexed = true;
             incrementCounter("index.fields", this.normalizedFieldName);
         }
@@ -459,7 +482,7 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
             globalReverseIndexKey.setDeleted(key.isDeleted());
             // generate the global reverse index key and emit it
             BulkIngestKey bik = new BulkIngestKey(this.reverseIndexTable, globalReverseIndexKey);
-            context.write(bik, UID_VALUE);
+            contextWriter.write(bik, UID_VALUE, context);
             indexed = true;
             incrementCounter("reverse index", this.normalizedFieldName);
         }
@@ -469,12 +492,12 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
             Key deleteKey = new Key(key);
             deleteKey.setDeleted(true);
             BulkIngestKey bik = new BulkIngestKey(this.shardTable, deleteKey);
-            context.write(bik, EMPTY_VALUE);
+            contextWriter.write(bik, EMPTY_VALUE, context);
             incrementCounter("shard cleanup", normalizedFieldName);
         } else if (indexed && this.exportShard) {
             // write the FI back out so the export is complete
             BulkIngestKey bik = new BulkIngestKey(this.shardTable, key);
-            context.write(bik, EMPTY_VALUE);
+            contextWriter.write(bik, EMPTY_VALUE, context);
             incrementCounter("export", "fi");
         }
     }
@@ -766,7 +789,7 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
      */
     private void writeKey(Context context, BulkIngestKey bik, Collection<Value> values) throws IOException, InterruptedException {
         for (Value v : values) {
-            context.write(bik, v);
+            contextWriter.write(bik, v, context);
         }
     }
 
@@ -777,7 +800,7 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
      * @param tf
      * @return the tf field name, or null
      */
-    private String getFieldFromTF(Key tf) {
+    public static String getFieldFromTF(Key tf) {
         final byte[] cq = tf.getColumnQualifierData().getBackingArray();
         int cqLen = cq.length;
         for (int i = cqLen - 1; i >= 0; i--) {
@@ -795,7 +818,7 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
      * @param fi
      * @return
      */
-    private String getFieldFromFI(Key fi) {
+    public static String getFieldFromFI(Key fi) {
         return fi.getColumnFamilyData().subSequence(3, fi.getColumnFamilyData().length()).toString();
     }
 

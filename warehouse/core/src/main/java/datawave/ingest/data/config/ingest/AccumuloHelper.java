@@ -22,11 +22,13 @@ public class AccumuloHelper {
     public static final String PASSWORD = "accumulo.password";
     public static final String INSTANCE_NAME = "accumulo.instance.name";
     public static final String ZOOKEEPERS = "accumulo.zookeepers";
+    public static final String CLIENT_PROPERTIES_PATH = "accumulo.client.properties.path";
 
     private String username = null;
     private PasswordToken password;
     private String instanceName = null;
     private String zooKeepers = null;
+    private String accumuloClientPropertiesPath = null;
 
     public void setup(Configuration config) throws IllegalArgumentException {
         username = ConfigurationHelper.isNull(config, USERNAME, String.class);
@@ -34,6 +36,7 @@ public class AccumuloHelper {
         password = new PasswordToken(pw);
         instanceName = ConfigurationHelper.isNull(config, INSTANCE_NAME, String.class);
         zooKeepers = ConfigurationHelper.isNull(config, ZOOKEEPERS, String.class);
+        accumuloClientPropertiesPath = config.get(CLIENT_PROPERTIES_PATH);
     }
 
     public String getInstanceName() {
@@ -56,10 +59,16 @@ public class AccumuloHelper {
      * @return an {@link AccumuloClient} to Accumulo given this object's settings.
      */
     public AccumuloClient newClient() {
+        if (accumuloClientPropertiesPath != null) {
+            return Accumulo.newClient().from(accumuloClientPropertiesPath).as(username, password).build();
+        }
         return Accumulo.newClient().to(instanceName, zooKeepers).as(username, password).build();
     }
 
     public Properties newClientProperties() {
+        if (accumuloClientPropertiesPath != null) {
+            return Accumulo.newClientProperties().from(accumuloClientPropertiesPath).as(username, password).build();
+        }
         return Accumulo.newClientProperties().to(instanceName, zooKeepers).as(username, password).build();
     }
 
@@ -79,6 +88,10 @@ public class AccumuloHelper {
         conf.set(ZOOKEEPERS, zooKeepers);
     }
 
+    public static void setClientPropertiesPath(Configuration conf, String accumuloClientPropertiesPath) {
+        conf.set(CLIENT_PROPERTIES_PATH, accumuloClientPropertiesPath);
+    }
+
     public static String getUsername(Configuration conf) {
         return conf.get(USERNAME);
     }
@@ -93,5 +106,9 @@ public class AccumuloHelper {
 
     public static String getZooKeepers(Configuration conf) {
         return conf.get(ZOOKEEPERS);
+    }
+
+    public static String getClientPropertiesPath(Configuration conf) {
+        return conf.get(CLIENT_PROPERTIES_PATH);
     }
 }

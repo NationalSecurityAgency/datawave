@@ -1,8 +1,10 @@
 package datawave.ingest.mapreduce.job.reindex;
 
 import static datawave.ingest.mapreduce.job.ShardedTableMapFile.SPLIT_WORK_DIR;
+import static org.apache.accumulo.core.conf.Property.TABLE_CRYPTO_PREFIX;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -11,13 +13,20 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import org.apache.accumulo.core.client.Accumulo;
 import org.apache.accumulo.core.client.AccumuloClient;
@@ -27,11 +36,20 @@ import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.clientImpl.thrift.ThriftTableOperationException;
+import org.apache.accumulo.core.crypto.CryptoFactoryLoader;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.file.FileSKVIterator;
+import org.apache.accumulo.core.file.blockfile.impl.CachableBlockFile;
+import org.apache.accumulo.core.file.rfile.RFile;
+import org.apache.accumulo.core.spi.crypto.CryptoEnvironment;
+import org.apache.accumulo.core.spi.crypto.CryptoService;
 import org.apache.accumulo.hadoop.mapreduce.AccumuloInputFormat;
+import org.apache.accumulo.hadoop.mapreduce.InputFormatBuilder;
+import org.apache.commons.collections.list.TreeList;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -49,6 +67,7 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
 
 import datawave.ingest.data.config.ingest.AccumuloHelper;
+import datawave.ingest.mapreduce.EventMapper;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.DelegatingPartitioner;
 import datawave.ingest.mapreduce.job.IngestJob;
@@ -56,6 +75,12 @@ import datawave.ingest.mapreduce.job.MultiRFileOutputFormatter;
 import datawave.ingest.mapreduce.job.RFileInputFormat;
 import datawave.ingest.mapreduce.job.ShardedTableMapFile;
 import datawave.ingest.mapreduce.job.reduce.BulkIngestKeyAggregatingReducer;
+import datawave.ingest.mapreduce.job.reduce.BulkIngestKeyDedupeCombiner;
+import datawave.ingest.mapreduce.job.writer.BulkContextWriter;
+import datawave.ingest.mapreduce.job.writer.ChainedContextWriter;
+import datawave.ingest.mapreduce.job.writer.ContextWriter;
+import datawave.ingest.mapreduce.job.writer.DedupeContextWriter;
+import datawave.ingest.mapreduce.job.writer.TableCachingContextWriter;
 import datawave.util.StringUtils;
 
 /**
@@ -90,9 +115,24 @@ public class ShardReindexJob implements Tool {
         return -1;
     }
 
+    private Map<String,String> generateHints() {
+        if (jobConfig.resourceGroup != null) {
+            log.info("setting resource group: " + jobConfig.resourceGroup);
+            Map<String,String> hints = new HashMap<>();
+            hints.put("scan_type", jobConfig.resourceGroup);
+            return hints;
+        }
+
+        return null;
+    }
+
     private Job setupJob() throws IOException, ParseException, AccumuloException, TableNotFoundException, AccumuloSecurityException, URISyntaxException {
-        AccumuloClient.ConnectionOptions<Properties> builder = Accumulo.newClientProperties().to(jobConfig.instance, jobConfig.zookeepers)
-                        .as(jobConfig.username, getPassword());
+        AccumuloClient.ConnectionOptions<Properties> builder;
+        if (jobConfig.accumuloClientPropertiesPath != null) {
+            builder = Accumulo.newClientProperties().from(jobConfig.accumuloClientPropertiesPath).as(jobConfig.username, getPassword());
+        } else {
+            builder = Accumulo.newClientProperties().to(jobConfig.instance, jobConfig.zookeepers).as(jobConfig.username, getPassword());
+        }
 
         // using a batch scanner will force only a single thread per tablet
         // see AccumuloRecordReader.initialize()
@@ -155,6 +195,8 @@ public class ShardReindexJob implements Tool {
         AccumuloHelper.setPassword(configuration, getPassword().getBytes());
         AccumuloHelper.setUsername(configuration, jobConfig.username);
         AccumuloHelper.setZooKeepers(configuration, jobConfig.zookeepers);
+        // TODO convert to this?
+        // AccumuloHelper.setClientPropertiesPath(configuration, jobConfig.accumuloClientPropertiesPath);
 
         // set the work dir
         configuration.set(SPLIT_WORK_DIR, jobConfig.workDir);
@@ -199,13 +241,14 @@ public class ShardReindexJob implements Tool {
 
             if (jobConfig.accumuloMetadata) {
                 // fetch the file list by scanning the accumulo.metadata table
-                jobConfig.inputFiles = org.apache.hadoop.util.StringUtils.join(",",
-                                getSplitsFromMetadata(jobConfig.table, new Range(new Key(jobConfig.startDate), true, new Key(jobConfig.endDate), true)));
+                jobConfig.inputFiles = org.apache.hadoop.util.StringUtils.join(",", getSplitsFromMetadata(accumuloClient, jobConfig.table,
+                                new Range(new Key(jobConfig.startDate), true, new Key(jobConfig.endDate), true), jobConfig.useScanServers));
             } else if (!jobConfig.accumuloData) {
                 // build ranges
                 Collection<Range> ranges = null;
                 if (jobConfig.reprocessEvents) {
-                    ranges = buildRanges(jobConfig.startDate, jobConfig.endDate, jobConfig.splitsPerDay, new Text(), new Text());
+                    ranges = buildSplittableRanges(accumuloClient, jobConfig.maxRangeThreads, jobConfig.blocksPerSplit, jobConfig.batchMode, configuration,
+                                    jobConfig.table, jobConfig.startDate, jobConfig.endDate, jobConfig.shard, jobConfig.splitsPerDay, jobConfig.useScanServers);
                 } else {
                     ranges = buildFiRanges(jobConfig.startDate, jobConfig.endDate, jobConfig.splitsPerDay);
                 }
@@ -224,8 +267,14 @@ public class ShardReindexJob implements Tool {
                 }
 
                 // do not auto adjust ranges because they will be clipped and drop the column qualifier. this will result in full table scans
-                AccumuloInputFormat.configure().clientProperties(accumuloProperties).table(jobConfig.table).autoAdjustRanges(false).batchScan(false)
-                                .ranges(ranges).consistencyLevel(consistencyLevel).store(j);
+                InputFormatBuilder.InputFormatOptions options = AccumuloInputFormat.configure().clientProperties(accumuloProperties).table(jobConfig.table)
+                                .autoAdjustRanges(false).batchScan(false).ranges(ranges).consistencyLevel(consistencyLevel)
+                                .localIterators(jobConfig.accumuloLocal).offlineScan(jobConfig.offline);
+                Map<String,String> executionHints = generateHints();
+                if (executionHints != null) {
+                    options.executionHints(executionHints);
+                }
+                options.store(j);
             }
         }
 
@@ -254,11 +303,24 @@ public class ShardReindexJob implements Tool {
         j.setMapOutputValueClass(Value.class);
         j.setMapperClass(ShardReindexMapper.class);
 
+        // setup the combiner
+        // see IngestJob
+        if (jobConfig.useCombiner) {
+            j.getConfiguration().setBoolean(BulkIngestKeyDedupeCombiner.USING_COMBINER, true);
+            j.getConfiguration().setClass(EventMapper.CONTEXT_WRITER_CLASS, DedupeContextWriter.class, ChainedContextWriter.class);
+            j.getConfiguration().setClass(DedupeContextWriter.CONTEXT_WRITER_CLASS, TableCachingContextWriter.class, ContextWriter.class);
+        } else {
+            j.getConfiguration().setClass(EventMapper.CONTEXT_WRITER_CLASS, TableCachingContextWriter.class, ChainedContextWriter.class);
+        }
+        j.getConfiguration().setClass(TableCachingContextWriter.CONTEXT_WRITER_CLASS, BulkContextWriter.class, ContextWriter.class);
+
         // setup a partitioner
         DelegatingPartitioner.configurePartitioner(j, configuration, tableNames.toArray(new String[0]));
 
         // setup the reducer
         j.setReducerClass(BulkIngestKeyAggregatingReducer.class);
+        j.getConfiguration().setClass(BulkIngestKeyAggregatingReducer.CONTEXT_WRITER_CLASS, BulkContextWriter.class, ContextWriter.class);
+        j.getConfiguration().setBoolean(BulkIngestKeyAggregatingReducer.CONTEXT_WRITER_OUTPUT_TABLE_COUNTERS, true);
         j.setOutputKeyClass(BulkIngestKey.class);
         j.setOutputValueClass(Value.class);
 
@@ -287,23 +349,24 @@ public class ShardReindexJob implements Tool {
         }
     }
 
-    private Set<String> getSplitsFromMetadata(String tableName, Range r) {
+    private static Set<String> getSplitsFromMetadata(AccumuloClient accumuloClient, String tableName, Range r, boolean useScanServers) {
         Set<String> rangeSplits = new HashSet<>();
 
-        String tableId = this.accumuloClient.tableOperations().tableIdMap().get(tableName);
+        String tableId = accumuloClient.tableOperations().tableIdMap().get(tableName);
 
         if (tableId == null) {
             throw new RuntimeException("Could not locate table: '" + tableName + "'");
         }
 
-        try (Scanner s = this.accumuloClient.createScanner("accumulo.metadata")) {
+        try (Scanner s = accumuloClient.createScanner("accumulo.metadata")) {
             ScannerBase.ConsistencyLevel consistencyLevel = ScannerBase.ConsistencyLevel.IMMEDIATE;
-            if (jobConfig.useScanServers) {
+            if (useScanServers) {
                 consistencyLevel = ScannerBase.ConsistencyLevel.EVENTUAL;
             }
 
             s.setConsistencyLevel(consistencyLevel);
             s.setRange(new Range(new Key(tableId + ";" + r.getStartKey().getRowData()), true, new Key(tableId + ";" + r.getEndKey().getRowData()), true));
+            s.fetchColumnFamily("file");
             Iterator<Map.Entry<Key,Value>> metarator = s.iterator();
             while (metarator.hasNext()) {
                 Map.Entry<Key,Value> next = metarator.next();
@@ -315,6 +378,169 @@ public class ShardReindexJob implements Tool {
         }
 
         return rangeSplits;
+    }
+
+    public static RFile.Reader getRFileReader(Configuration config, Path rfile) throws IOException {
+        log.info("getting reader for " + rfile);
+        FileSystem fs = rfile.getFileSystem(config);
+        if (!fs.exists(rfile)) {
+            throw new FileNotFoundException(rfile + " does not exist");
+        }
+
+        CryptoService cs = CryptoFactoryLoader.getServiceForClient(CryptoEnvironment.Scope.TABLE, config.getPropsWithPrefix(TABLE_CRYPTO_PREFIX.name()));
+        CachableBlockFile.CachableBuilder cb = new CachableBlockFile.CachableBuilder().fsPath(fs, rfile).conf(config).cryptoService(cs);
+
+        return new RFile.Reader(cb);
+    }
+
+    public static Collection<Range> buildSplittableRanges(AccumuloClient accumuloClient, int maxRangeThreads, final int blocksPerSplit, String batchMode,
+                    Configuration config, String table, String startDay, String endDay, int shard, int splitsPerDay, boolean useScanServers)
+                    throws ParseException, IOException {
+        ExecutorService threadPool = null;
+        List<Future<List<Range>>> splitTasks = null;
+        if (maxRangeThreads > 1) {
+            threadPool = Executors.newFixedThreadPool(maxRangeThreads);
+            splitTasks = new ArrayList<>();
+        }
+
+        log.info("building ranges startDate: " + startDay + " endDate: " + endDay + " splits: " + splitsPerDay);
+        log.info("processing shard: " + shard);
+
+        SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyyMMdd");
+
+        List<Range> ranges = new ArrayList<>();
+
+        Date startDate = dateFormatter.parse(startDay);
+        Date endDate = dateFormatter.parse(endDay);
+
+        Date current = startDate;
+        while (!endDate.before(current)) {
+            final Date dateToProcess = current;
+            for (int i = 0; i < splitsPerDay; i++) {
+                final int split = i;
+                if (shard != -1 && i != shard) {
+                    // skip
+                    continue;
+                }
+
+                Callable<List<Range>> callable = () -> {
+                    // TODO this isn't thread safe... fix
+                    String row = dateFormatter.format(dateToProcess);
+                    Text rowText = new Text(row + "_" + split);
+
+                    log.info("Building splits for " + rowText);
+                    // test index blocks againts acceptable ranges
+                    Range testRange = new Range(new Key(rowText), true, new Key(rowText.toString() + '\u0000'), false);
+                    List<Range> splitRanges = new ArrayList<>();
+
+                    // for each split pull all the rfiles and build the splits
+                    // add each split range based on config
+                    Set<String> splitFiles = getSplitsFromMetadata(accumuloClient, table, testRange, useScanServers);
+
+                    log.info("found " + splitFiles.size() + " rfiles for " + rowText);
+
+                    TreeList indexes = new TreeList();
+                    // open each file and read the index blocks writing their start key to get a distribution
+                    // TODO done better in Verification job
+                    for (String rfile : splitFiles) {
+                        try (RFile.Reader rfileReader = getRFileReader(config, new Path(rfile))) {
+                            try (FileSKVIterator indexIterator = rfileReader.getIndex()) {
+                                while (indexIterator.hasTop()) {
+                                    Key top = indexIterator.getTopKey();
+                                    if (testRange.contains(top)) {
+                                        indexes.add(top);
+                                    }
+                                    indexIterator.next();
+                                }
+                            }
+                        }
+                    }
+
+                    // sort since treeList wont
+                    Collections.sort(indexes);
+
+                    // indexes contain all the index blocks, divide into split ranges regardless of file based on config
+                    int blocksPerSplitAssigned = blocksPerSplit;
+                    if (blocksPerSplitAssigned == -1) {
+                        blocksPerSplitAssigned = indexes.size();
+                    }
+
+                    log.info(indexes.size() + " index blocks for row " + rowText);
+
+                    double splitCount = Math.ceil((double) indexes.size() / (double) blocksPerSplitAssigned);
+                    log.info("Creating + " + splitCount + " splits for " + rowText);
+                    int createdSplits = 0;
+                    Key splitStart = new Key(rowText);
+                    while (createdSplits < splitCount) {
+                        Key splitEnd;
+                        if (indexes.size() > blocksPerSplitAssigned * (createdSplits + 1)) {
+                            splitEnd = (Key) indexes.get((blocksPerSplitAssigned * (createdSplits + 1)));
+
+                            // if using batch mode offset the end to ensure batches are not broken
+                            // with small blocks or extremely dense data this count potentially cause a key out of order
+
+                            if (!batchMode.equals("NONE")) {
+                                // batch mode enabled
+                                ByteSequence cf = splitEnd.getColumnFamilyData();
+                                if (!ShardReindexMapper.isKeyD(cf) && !ShardReindexMapper.isKeyTF(cf) && !ShardReindexMapper.isKeyFI(cf)) {
+                                    // it's an event key, so bump its cf to include the whole event
+                                    Key oldEnd = splitEnd;
+                                    splitEnd = splitEnd.followingKey(PartialKey.ROW_COLFAM);
+                                    log.debug("Extended event range from " + oldEnd + " to " + splitEnd);
+                                }
+                            }
+                        } else {
+                            // end of range
+                            splitEnd = new Key(rowText.toString() + '\u0000');
+                        }
+                        if (splitStart == splitEnd) {
+                            log.warn("miscalculated split counts, discarding empty range");
+                            createdSplits++;
+                            continue;
+                        }
+                        splitRanges.add(new Range(splitStart, true, splitEnd, false));
+                        createdSplits++;
+                        splitStart = splitEnd;
+                    }
+
+                    log.info("Created " + splitRanges.size() + " ranges for " + rowText);
+                    if (log.isDebugEnabled()) {
+                        for (Range r : splitRanges) {
+                            log.debug(r);
+                        }
+                    }
+
+                    return splitRanges;
+                };
+
+                if (threadPool != null) {
+                    splitTasks.add(threadPool.submit(callable));
+                } else {
+                    try {
+                        ranges.addAll(callable.call());
+                    } catch (Exception e) {
+                        throw new RuntimeException("Problem fetching splits", e);
+                    }
+                }
+            }
+
+            Calendar calendar = Calendar.getInstance();
+            calendar.setTime(current);
+            calendar.add(Calendar.HOUR_OF_DAY, 24);
+            current = calendar.getTime();
+        }
+
+        if (splitTasks != null) {
+            for (Future<List<Range>> splitTask : splitTasks) {
+                try {
+                    ranges.addAll(splitTask.get());
+                } catch (InterruptedException | ExecutionException e) {
+                    throw new RuntimeException("Failed to fetch splits", e);
+                }
+            }
+        }
+
+        return ranges;
     }
 
     public static Collection<Range> buildFiRanges(String start, String end, int splitsPerDay) throws ParseException {
@@ -405,6 +631,9 @@ public class ShardReindexJob implements Tool {
         @Parameter(names = "--splitsPerDay", description = "splits for each day")
         private int splitsPerDay;
 
+        @Parameter(names = "--shard", description = "reprocess a specific shard of the day, not the entire day")
+        private int shard;
+
         @Parameter(names = "--table", description = "shard table")
         private String table = "shard";
 
@@ -414,11 +643,17 @@ public class ShardReindexJob implements Tool {
         @Parameter(names = "--accumuloData", description = "read ranges from accumulo instead of from files")
         private boolean accumuloData = false;
 
+        @Parameter(names = "--blocksPerSplit", description = "Number of rfile index blocks per split, -1 to not split rfiles")
+        private int blocksPerSplit = -1;
+
         @Parameter(names = "--useScanServers", description = "Use scan servers for any accumulo scans")
         private boolean useScanServers = false;
 
         @Parameter(names = "--accumuloLocal", description = "Run the accumulo iterators local in offline mode")
         private boolean accumuloLocal = false;
+
+        @Parameter(names = "--accumuloClientPropertiesPath", description = "Filesystem path to accumulo-client.properties file to use for the accumulo client")
+        private String accumuloClientPropertiesPath;
 
         // alternatively accept RFileInputFormat
         @Parameter(names = "--inputFiles", description = "When set these files will be used for the job. Should be comma delimited hdfs glob strings",
@@ -500,6 +735,12 @@ public class ShardReindexJob implements Tool {
         @Parameter(names = "--skipMetadata", description = "disable writing DatawaveMetadata for job")
         private boolean skipMetadata = false;
 
+        @Parameter(names = "--resourceGroup", description = "Applies a scan_type hint on accumulo scanners")
+        private String resourceGroup;
+
+        @Parameter(names = "--offline", description = "When used with --accumuloData will read rfiles directly in the mapper, table must be offline")
+        private boolean offline = false;
+
         @Parameter(names = "--preserveTimestamps",
                         description = "preserve event timestamps when generating index entries instead of flooring them to the beginning of the day")
         private boolean preserveTimestamps = false;
@@ -516,6 +757,12 @@ public class ShardReindexJob implements Tool {
         @Parameter(names = "--batchMode",
                         description = "if enabled and --reprocessEvents is enabled events will be processed together in batches. NONE,FIELD,EVENT,TLD are valid options")
         private String batchMode = "NONE";
+
+        @Parameter(names = "--useCombiner", description = "Enable the Map based combiners")
+        private boolean useCombiner = false;
+
+        @Parameter(names = "--maxRangeThreads", description = "Max number of threads to use for range generation")
+        private int maxRangeThreads = 1;
 
         @Parameter(names = {"-h", "--help"}, description = "display help", help = true)
         private boolean help;
