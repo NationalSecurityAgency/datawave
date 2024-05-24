@@ -1042,7 +1042,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         try {
             ivaratorSourcePool.returnObject(source);
         } catch (Exception e) {
-            throw new IterationInterruptedException("Unable to return object to ivarator source pool.  " + e.getMessage());
+            throw new RuntimeException("Unable to return object to ivarator source pool.  " + e.getMessage());
         }
     }
 
