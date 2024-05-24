@@ -1406,6 +1406,7 @@
                         <failsOnError>true</failsOnError>
                         <failOnViolation>false</failOnViolation>
                         <consoleOutput>true</consoleOutput>
+                        <propertyExpansion>basedir=${datawave.root}</propertyExpansion>
                     </configuration>
                     <dependencies>
                         <dependency>

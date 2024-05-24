@@ -3,11 +3,12 @@
 <module name="Checker">
   <property name="charset" value="UTF-8"/>
   <property name="severity" value="info"/>
+  <property name="basedir" value="${basedir}"/>
   <module name="TreeWalker">
     <!--check that only Accumulo 2.1.x public APIs are imported-->
     <module name="ImportControl">
         <!--Allows per-package enforcement for importing Accumulo 2.1.x public APIs -->
-        <property name="file" value="import-control-accumulo.xml"/>
+        <property name="file" value="${basedir}/import-control-accumulo.xml"/>
         <property name="severity" value="warning"/>
     </module>
   </module>
