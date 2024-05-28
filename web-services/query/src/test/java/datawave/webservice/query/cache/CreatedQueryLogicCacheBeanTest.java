@@ -1,11 +1,11 @@
 package datawave.webservice.query.cache;
 
+import java.util.AbstractMap;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.util.Pair;
 import org.easymock.EasyMock;
 import org.junit.Assert;
 import org.junit.Before;
@@ -29,7 +29,7 @@ import datawave.webservice.query.cache.CreatedQueryLogicCacheBean.Triple;
 public class CreatedQueryLogicCacheBeanTest {
 
     protected CreatedQueryLogicCacheBean qlCache = null;
-    protected ConcurrentHashMap<Pair<String,Long>,Triple> internalCache = null;
+    protected ConcurrentHashMap<AbstractMap.SimpleEntry<String,Long>,Triple> internalCache = null;
     protected QueryLogic<?> queryLogic;
     protected AccumuloClient client;
 
@@ -156,8 +156,8 @@ public class CreatedQueryLogicCacheBeanTest {
         boolean ret2 = qlCache.add(queryId2, userId, queryLogic, client);
         boolean ret3 = qlCache.add(queryId3, userId, queryLogic, client);
 
-        Map<String,Pair<QueryLogic<?>,AccumuloClient>> oldEntries = qlCache.entriesOlderThan(5l, 2l), olderEntries = qlCache.entriesOlderThan(5l, 3l),
-                        noEntries = qlCache.entriesOlderThan(5l, 4l);
+        Map<String,AbstractMap.SimpleEntry<QueryLogic<?>,AccumuloClient>> oldEntries = qlCache.entriesOlderThan(5l, 2l),
+                        olderEntries = qlCache.entriesOlderThan(5l, 3l), noEntries = qlCache.entriesOlderThan(5l, 4l);
 
         PowerMock.verifyAll();
 
@@ -190,7 +190,8 @@ public class CreatedQueryLogicCacheBeanTest {
         boolean ret1 = qlCache.add(queryId1, user1, queryLogic, client);
         boolean ret2 = qlCache.add(queryId2, user2, queryLogic, client);
 
-        Pair<QueryLogic<?>,AccumuloClient> user2FetchQuery1 = qlCache.pollIfOwnedBy(queryId1, user2), user1FetchQuery2 = qlCache.pollIfOwnedBy(queryId2, user1);
+        AbstractMap.SimpleEntry<QueryLogic<?>,AccumuloClient> user2FetchQuery1 = qlCache.pollIfOwnedBy(queryId1, user2),
+                        user1FetchQuery2 = qlCache.pollIfOwnedBy(queryId2, user1);
 
         PowerMock.verifyAll();
 
@@ -204,7 +205,8 @@ public class CreatedQueryLogicCacheBeanTest {
 
         PowerMock.resetAll();
 
-        Pair<QueryLogic<?>,AccumuloClient> user1FetchQuery1 = qlCache.pollIfOwnedBy(queryId1, user1), user2FetchQuery2 = qlCache.pollIfOwnedBy(queryId2, user2);
+        AbstractMap.SimpleEntry<QueryLogic<?>,AccumuloClient> user1FetchQuery1 = qlCache.pollIfOwnedBy(queryId1, user1),
+                        user2FetchQuery2 = qlCache.pollIfOwnedBy(queryId2, user2);
 
         Assert.assertNotNull(user1FetchQuery1);
         Assert.assertNotNull(user2FetchQuery2);
@@ -224,7 +226,7 @@ public class CreatedQueryLogicCacheBeanTest {
 
         boolean ret1 = qlCache.add(queryId1, userId, queryLogic, client);
 
-        Map<String,Pair<QueryLogic<?>,AccumuloClient>> snapshot = qlCache.snapshot();
+        Map<String,AbstractMap.SimpleEntry<QueryLogic<?>,AccumuloClient>> snapshot = qlCache.snapshot();
 
         PowerMock.verifyAll();
 

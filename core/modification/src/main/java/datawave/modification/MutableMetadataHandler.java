@@ -1,5 +1,6 @@
 package datawave.modification;
 
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -33,7 +34,6 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.user.SummingCombiner;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.accumulo.core.util.Pair;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
@@ -334,7 +334,7 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
                 String oldFieldValue = null;
                 Map<String,String> oldFieldMarkings = null;
                 String oldColumnVisibility = null;
-                List<Pair<Key,Value>> currentEntryList = null;
+                List<AbstractMap.SimpleEntry<Key,Value>> currentEntryList = null;
                 int valHistoryCount = 0;
 
                 /*
@@ -356,11 +356,11 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
 
                 // Count the history entries if history is going to be inserted.
                 if (insertHistory && (MODE.INSERT.equals(mode) || MODE.UPDATE.equals(mode))) {
-                    List<Pair<Key,Value>> fieldHistoryList = getField(client, userAuths, shardId, datatype, eventUid, "HISTORY_" + fieldName, null,
-                                    new HashMap<>(), null);
+                    List<AbstractMap.SimpleEntry<Key,Value>> fieldHistoryList = getField(client, userAuths, shardId, datatype, eventUid, "HISTORY_" + fieldName,
+                                    null, new HashMap<>(), null);
 
-                    for (Pair<Key,Value> p : fieldHistoryList) {
-                        if (p.getFirst().getColumnQualifier().find(mr.getFieldValue()) > -1) {
+                    for (AbstractMap.SimpleEntry<Key,Value> p : fieldHistoryList) {
+                        if (p.getKey().getColumnQualifier().find(mr.getFieldValue()) > -1) {
                             ++valHistoryCount;
                         }
                     }
@@ -683,24 +683,25 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
      * @throws Exception
      *             if there are issues
      */
-    protected void delete(MultiTableBatchWriter writer, AccumuloClient client, Set<Authorizations> userAuths, List<Pair<Key,Value>> currentEntryList,
-                    boolean isIndexOnlyField, boolean isIndexed, boolean isReverseIndexed, boolean isContentField, Set<Type<?>> dataTypes, String user,
-                    MODE mode, long ts, boolean purgeTokens, boolean insertHistory) throws Exception {
+    protected void delete(MultiTableBatchWriter writer, AccumuloClient client, Set<Authorizations> userAuths,
+                    List<AbstractMap.SimpleEntry<Key,Value>> currentEntryList, boolean isIndexOnlyField, boolean isIndexed, boolean isReverseIndexed,
+                    boolean isContentField, Set<Type<?>> dataTypes, String user, MODE mode, long ts, boolean purgeTokens, boolean insertHistory)
+                    throws Exception {
 
-        for (Pair<Key,Value> currentEntry : currentEntryList) {
+        for (AbstractMap.SimpleEntry<Key,Value> currentEntry : currentEntryList) {
 
-            ColumnVisibility viz = currentEntry.getFirst().getColumnVisibilityParsed();
+            ColumnVisibility viz = currentEntry.getKey().getColumnVisibilityParsed();
 
-            DatawaveKey key = new DatawaveKey(currentEntry.getFirst());
+            DatawaveKey key = new DatawaveKey(currentEntry.getKey());
 
             String shardId = key.getRow().toString();
 
-            long currentEntryTimestamp = currentEntry.getFirst().getTimestamp();
+            long currentEntryTimestamp = currentEntry.getKey().getTimestamp();
 
             if (key.getType().equals(KeyType.INDEX_EVENT)) {
                 // Only the delete the fi key
-                Mutation e = new Mutation(currentEntry.getFirst().getRow());
-                e.putDelete(currentEntry.getFirst().getColumnFamily(), currentEntry.getFirst().getColumnQualifier(), viz, currentEntryTimestamp);
+                Mutation e = new Mutation(currentEntry.getKey().getRow());
+                e.putDelete(currentEntry.getKey().getColumnFamily(), currentEntry.getKey().getColumnQualifier(), viz, currentEntryTimestamp);
                 writer.getBatchWriter(this.getEventTableName()).addMutation(e);
             } else if (key.getType().equals(KeyType.EVENT)) {
                 Mutation m = new Mutation(key.getFieldName());
@@ -709,9 +710,9 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
                 m.put(ColumnFamilyConstants.COLF_F, new Text(key.getDataType() + NULL_BYTE + DateHelper.format(currentEntryTimestamp)),
                                 new Value(SummingCombiner.VAR_LEN_ENCODER.encode(-1L)));
                 // Remove the event field.
-                Mutation e = new Mutation(currentEntry.getFirst().getRow());
+                Mutation e = new Mutation(currentEntry.getKey().getRow());
                 if (!isIndexOnlyField) {
-                    e.putDelete(currentEntry.getFirst().getColumnFamily(), currentEntry.getFirst().getColumnQualifier(), viz, currentEntryTimestamp);
+                    e.putDelete(currentEntry.getKey().getColumnFamily(), currentEntry.getKey().getColumnQualifier(), viz, currentEntryTimestamp);
                 }
 
                 // Remove the content column
@@ -810,8 +811,9 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
      * @throws Exception
      *             if there are issues
      */
-    protected List<Pair<Key,Value>> getField(AccumuloClient client, Set<Authorizations> userAuths, String shardId, String datatype, String eventUid,
-                    String fieldName, String oldFieldValue, Map<String,String> oldFieldMarkings, ColumnVisibility oldColumnVisibility) throws Exception {
+    protected List<AbstractMap.SimpleEntry<Key,Value>> getField(AccumuloClient client, Set<Authorizations> userAuths, String shardId, String datatype,
+                    String eventUid, String fieldName, String oldFieldValue, Map<String,String> oldFieldMarkings, ColumnVisibility oldColumnVisibility)
+                    throws Exception {
 
         Text family = new Text(datatype);
         TextUtil.textAppend(family, eventUid);
@@ -823,7 +825,7 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
             TextUtil.textAppend(qualifier, oldFieldValue);
         }
 
-        List<Pair<Key,Value>> results = new ArrayList<>();
+        List<AbstractMap.SimpleEntry<Key,Value>> results = new ArrayList<>();
 
         Scanner s = ScannerHelper.createScanner(client, this.getEventTableName(), userAuths);
         try {
@@ -856,7 +858,7 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
                         continue;
                     }
                 }
-                results.add(new Pair<>(e.getKey(), e.getValue()));
+                results.add(new AbstractMap.SimpleEntry<>(e.getKey(), e.getValue()));
             }
         } finally {
             s.close();

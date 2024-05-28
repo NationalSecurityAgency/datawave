@@ -7,6 +7,7 @@ import java.net.InetAddress;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.text.DateFormat;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -401,16 +402,16 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
      *            A pair of {@link Text} objects corresponding to column family and column qualifier. If the column qualifier is null, the entire column family
      *            is selected. An empty set is the default and is equivalent to scanning the all columns.
      */
-    public static void fetchColumns(Configuration conf, Collection<Pair<Text,Text>> columnFamilyColumnQualifierPairs) {
+    public static void fetchColumns(Configuration conf, Collection<AbstractMap.SimpleEntry<Text,Text>> columnFamilyColumnQualifierPairs) {
         ArgumentChecker.notNull(columnFamilyColumnQualifierPairs);
         ArrayList<String> columnStrings = new ArrayList<>(columnFamilyColumnQualifierPairs.size());
-        for (Pair<Text,Text> column : columnFamilyColumnQualifierPairs) {
-            if (column.getFirst() == null)
+        for (AbstractMap.SimpleEntry<Text,Text> column : columnFamilyColumnQualifierPairs) {
+            if (column.getKey() == null)
                 throw new IllegalArgumentException("Column family can not be null");
 
-            String col = new String(Base64.encodeBase64(TextUtil.getBytes(column.getFirst())));
-            if (column.getSecond() != null)
-                col += ":" + new String(Base64.encodeBase64(TextUtil.getBytes(column.getSecond())));
+            String col = new String(Base64.encodeBase64(TextUtil.getBytes(column.getKey())));
+            if (column.getValue() != null)
+                col += ":" + new String(Base64.encodeBase64(TextUtil.getBytes(column.getValue())));
             columnStrings.add(col);
         }
         conf.setStrings(COLUMNS, columnStrings.toArray(new String[columnStrings.size()]));
@@ -583,13 +584,13 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
      * @return a set of columns
      * @see #fetchColumns(Configuration, Collection)
      */
-    protected static Set<Pair<Text,Text>> getFetchedColumns(Configuration conf) {
-        Set<Pair<Text,Text>> columns = new HashSet<>();
+    protected static Set<AbstractMap.SimpleEntry<Text,Text>> getFetchedColumns(Configuration conf) {
+        Set<AbstractMap.SimpleEntry<Text,Text>> columns = new HashSet<>();
         for (String col : conf.getStringCollection(COLUMNS)) {
             int idx = col.indexOf(":");
             Text cf = new Text(idx < 0 ? Base64.decodeBase64(col.getBytes()) : Base64.decodeBase64(col.substring(0, idx).getBytes()));
             Text cq = idx < 0 ? null : new Text(Base64.decodeBase64(col.substring(idx + 1).getBytes()));
-            columns.add(new Pair<>(cf, cq));
+            columns.add(new AbstractMap.SimpleEntry<>(cf, cq));
         }
         return columns;
     }
@@ -907,13 +908,13 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
             }
 
             // setup a scanner within the bounds of this split
-            for (Pair<Text,Text> c : getFetchedColumns(conf)) {
-                if (c.getSecond() != null) {
-                    log.debug("Fetching column " + c.getFirst() + ":" + c.getSecond());
-                    scanner.fetchColumn(c.getFirst(), c.getSecond());
+            for (AbstractMap.SimpleEntry<Text,Text> c : getFetchedColumns(conf)) {
+                if (c.getValue() != null) {
+                    log.debug("Fetching column " + c.getKey() + ":" + c.getValue());
+                    scanner.fetchColumn(c.getKey(), c.getValue());
                 } else {
-                    log.debug("Fetching column family " + c.getFirst());
-                    scanner.fetchColumnFamily(c.getFirst());
+                    log.debug("Fetching column family " + c.getKey());
+                    scanner.fetchColumnFamily(c.getKey());
                 }
             }
 
