@@ -1,9 +1,10 @@
 package datawave.query.iterators;
 
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.util.Pair;
+import java.util.AbstractMap;
 
-public class FirstAndLastSeenDate extends Pair<String,String> {
+import org.apache.accumulo.core.data.Value;
+
+public class FirstAndLastSeenDate extends AbstractMap.SimpleEntry<String,String> {
     public FirstAndLastSeenDate(String f, String s) {
         super(f, s);
     }
@@ -18,6 +19,6 @@ public class FirstAndLastSeenDate extends Pair<String,String> {
 
     @Override
     public String toString() {
-        return getFirst() + "," + getSecond();
+        return getKey() + "," + getValue();
     }
 }

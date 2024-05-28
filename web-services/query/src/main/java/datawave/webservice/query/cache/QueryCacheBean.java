@@ -1,5 +1,6 @@
 package datawave.webservice.query.cache;
 
+import java.util.AbstractMap;
 import java.util.Map.Entry;
 
 import javax.annotation.security.DeclareRoles;
@@ -15,7 +16,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 
 import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.util.Pair;
 import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.apache.deltaspike.core.api.jmx.JmxManaged;
 import org.apache.deltaspike.core.api.jmx.MBean;
@@ -80,8 +80,8 @@ public class QueryCacheBean {
             result.getQueries().add(value.toString());
         }
         // Iterate over queries that are in the init phase
-        for (Entry<String,Pair<QueryLogic<?>,AccumuloClient>> entry : qlCache.snapshot().entrySet()) {
-            result.getQueries().add("Identifier: " + entry.getKey() + " Query Logic: " + entry.getValue().getFirst().getClass().getName() + "\n");
+        for (Entry<String,AbstractMap.SimpleEntry<QueryLogic<?>,AccumuloClient>> entry : qlCache.snapshot().entrySet()) {
+            result.getQueries().add("Identifier: " + entry.getKey() + " Query Logic: " + entry.getValue().getKey().getClass().getName() + "\n");
         }
         return result;
     }

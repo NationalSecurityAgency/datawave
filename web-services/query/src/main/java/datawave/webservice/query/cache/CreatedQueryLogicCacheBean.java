@@ -1,5 +1,6 @@
 package datawave.webservice.query.cache;
 
+import java.util.AbstractMap;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -17,7 +18,6 @@ import javax.ejb.Startup;
 import javax.inject.Inject;
 
 import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.util.Pair;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.apache.log4j.Logger;
@@ -67,19 +67,19 @@ public class CreatedQueryLogicCacheBean {
         }
     }
 
-    private static final Function<Triple,Pair<QueryLogic<?>,AccumuloClient>> tripToPair = from -> {
+    private static final Function<Triple,AbstractMap.SimpleEntry<QueryLogic<?>,AccumuloClient>> tripToPair = from -> {
         if (null == from) {
             return null;
         }
-        return new Pair<>(from.logic, from.client);
+        return new AbstractMap.SimpleEntry<>(from.logic, from.client);
     };
 
     // returns the logic and connection fields in a triple as a pair
-    private static final Function<Entry<Pair<String,Long>,Triple>,Entry<String,Pair<QueryLogic<?>,AccumuloClient>>> toPair = from -> {
+    private static final Function<Entry<AbstractMap.SimpleEntry<String,Long>,Triple>,Entry<String,AbstractMap.SimpleEntry<QueryLogic<?>,AccumuloClient>>> toPair = from -> {
         if (from == null) {
             return null;
         } else {
-            return Maps.immutableEntry(from.getKey().getFirst(), tripToPair.apply(from.getValue()));
+            return Maps.immutableEntry(from.getKey().getKey(), tripToPair.apply(from.getValue()));
         }
     };
 
@@ -87,7 +87,7 @@ public class CreatedQueryLogicCacheBean {
 
     @Inject
     private AccumuloConnectionFactory connectionFactory;
-    private final ConcurrentHashMap<Pair<String,Long>,Triple> cache = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<AbstractMap.SimpleEntry<String,Long>,Triple> cache = new ConcurrentHashMap<>();
 
     /**
      * Add the provided QueryLogic to the QueryLogicCache.
@@ -105,27 +105,27 @@ public class CreatedQueryLogicCacheBean {
     public boolean add(String queryId, String userId, QueryLogic<?> logic, AccumuloClient client) {
         Triple value = new Triple(userId, logic, client);
         long updateTime = System.currentTimeMillis();
-        return cache.putIfAbsent(new Pair<>(queryId, updateTime), value) == null;
+        return cache.putIfAbsent(new AbstractMap.SimpleEntry<>(queryId, updateTime), value) == null;
     }
 
-    public Pair<QueryLogic<?>,AccumuloClient> poll(String id) {
-        Entry<Pair<String,Long>,Triple> entry = get(id);
+    public AbstractMap.SimpleEntry<QueryLogic<?>,AccumuloClient> poll(String id) {
+        Entry<AbstractMap.SimpleEntry<String,Long>,Triple> entry = get(id);
         return entry == null ? null : tripToPair.apply(entry.getValue());
     }
 
-    public Map<String,Pair<QueryLogic<?>,AccumuloClient>> snapshot() {
-        HashMap<Pair<String,Long>,Triple> snapshot = Maps.newHashMap(cache);
-        HashMap<String,Pair<QueryLogic<?>,AccumuloClient>> tformMap = Maps.newHashMapWithExpectedSize(cache.size());
+    public Map<String,AbstractMap.SimpleEntry<QueryLogic<?>,AccumuloClient>> snapshot() {
+        HashMap<AbstractMap.SimpleEntry<String,Long>,Triple> snapshot = Maps.newHashMap(cache);
+        HashMap<String,AbstractMap.SimpleEntry<QueryLogic<?>,AccumuloClient>> tformMap = Maps.newHashMapWithExpectedSize(cache.size());
 
-        for (Entry<String,Pair<QueryLogic<?>,AccumuloClient>> tform : Iterables.transform(snapshot.entrySet(), toPair)) {
+        for (Entry<String,AbstractMap.SimpleEntry<QueryLogic<?>,AccumuloClient>> tform : Iterables.transform(snapshot.entrySet(), toPair)) {
             tformMap.put(tform.getKey(), tform.getValue());
         }
         return tformMap;
     }
 
-    public Map<String,Pair<QueryLogic<?>,AccumuloClient>> entriesOlderThan(final Long now, final Long expiration) {
-        Iterable<Entry<Pair<String,Long>,Triple>> iter = Iterables.filter(cache.entrySet(), input -> {
-            Long timeInserted = input.getKey().getSecond();
+    public Map<String,AbstractMap.SimpleEntry<QueryLogic<?>,AccumuloClient>> entriesOlderThan(final Long now, final Long expiration) {
+        Iterable<Entry<AbstractMap.SimpleEntry<String,Long>,Triple>> iter = Iterables.filter(cache.entrySet(), input -> {
+            Long timeInserted = input.getKey().getValue();
 
             // If this entry was inserted more than the TTL 'time' ago, do not return it
             if ((now - expiration) > timeInserted) {
@@ -135,16 +135,16 @@ public class CreatedQueryLogicCacheBean {
             return false;
         });
 
-        Map<String,Pair<QueryLogic<?>,AccumuloClient>> result = Maps.newHashMapWithExpectedSize(32);
-        for (Entry<Pair<String,Long>,Triple> entry : iter) {
-            result.put(entry.getKey().getFirst(), tripToPair.apply(entry.getValue()));
+        Map<String,AbstractMap.SimpleEntry<QueryLogic<?>,AccumuloClient>> result = Maps.newHashMapWithExpectedSize(32);
+        for (Entry<AbstractMap.SimpleEntry<String,Long>,Triple> entry : iter) {
+            result.put(entry.getKey().getKey(), tripToPair.apply(entry.getValue()));
         }
 
         return result;
     }
 
-    public Pair<QueryLogic<?>,AccumuloClient> pollIfOwnedBy(String queryId, String userId) {
-        Entry<Pair<String,Long>,Triple> entry = get(queryId);
+    public AbstractMap.SimpleEntry<QueryLogic<?>,AccumuloClient> pollIfOwnedBy(String queryId, String userId) {
+        Entry<AbstractMap.SimpleEntry<String,Long>,Triple> entry = get(queryId);
         if (entry != null) {
             if (userId.equals(entry.getValue().userID)) {
                 return tripToPair.apply(entry.getValue());
@@ -157,14 +157,14 @@ public class CreatedQueryLogicCacheBean {
     }
 
     public void clearQueryLogics(long currentTimeMs, long timeToLiveMs) {
-        Set<Entry<String,Pair<QueryLogic<?>,AccumuloClient>>> entrySet = entriesOlderThan(currentTimeMs, timeToLiveMs).entrySet();
+        Set<Entry<String,AbstractMap.SimpleEntry<QueryLogic<?>,AccumuloClient>>> entrySet = entriesOlderThan(currentTimeMs, timeToLiveMs).entrySet();
         clearQueryLogics(entrySet);
     }
 
-    private void clearQueryLogics(Set<Entry<String,Pair<QueryLogic<?>,AccumuloClient>>> entrySet) {
+    private void clearQueryLogics(Set<Entry<String,AbstractMap.SimpleEntry<QueryLogic<?>,AccumuloClient>>> entrySet) {
         int count = 0;
-        for (Entry<String,Pair<QueryLogic<?>,AccumuloClient>> entry : entrySet) {
-            Pair<QueryLogic<?>,AccumuloClient> activePair = poll(entry.getKey());
+        for (Entry<String,AbstractMap.SimpleEntry<QueryLogic<?>,AccumuloClient>> entry : entrySet) {
+            AbstractMap.SimpleEntry<QueryLogic<?>,AccumuloClient> activePair = poll(entry.getKey());
 
             if (activePair == null) {
                 if (log.isDebugEnabled()) {
@@ -174,13 +174,13 @@ public class CreatedQueryLogicCacheBean {
             }
 
             try {
-                activePair.getFirst().close();
+                activePair.getKey().close();
             } catch (Exception ex) {
                 log.error("Exception caught while closing an uninitialized query logic.", ex);
             }
 
             try {
-                connectionFactory.returnClient(activePair.getSecond());
+                connectionFactory.returnClient(activePair.getValue());
             } catch (Exception ex) {
                 log.error("Could not return connection from: " + entry.getKey() + " - " + activePair, ex);
             }
@@ -206,9 +206,9 @@ public class CreatedQueryLogicCacheBean {
      *            the query id
      * @return entry in the underlying cache with the given queryId
      */
-    private Entry<Pair<String,Long>,Triple> get(String queryId) {
-        for (Pair<String,Long> key : cache.keySet()) {
-            if (key.getFirst().equals(queryId)) {
+    private Entry<AbstractMap.SimpleEntry<String,Long>,Triple> get(String queryId) {
+        for (AbstractMap.SimpleEntry<String,Long> key : cache.keySet()) {
+            if (key.getKey().equals(queryId)) {
                 return Maps.immutableEntry(key, cache.remove(key));
             }
         }
