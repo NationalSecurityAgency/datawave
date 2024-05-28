@@ -12,7 +12,9 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableComparator;
 import org.apache.hadoop.io.WritableUtils;
 
-public class LocalityGroupBulkIngestKeyComparator extends WritableComparator implements Configurable {
+import com.esotericsoftware.kryo.io.Input;
+
+public class KryoBulkIngestKeyComparator extends WritableComparator implements Configurable {
     private final static int IDX_TABLE = 0;
     private final static int IDX_COLF = 2;
 
@@ -20,13 +22,18 @@ public class LocalityGroupBulkIngestKeyComparator extends WritableComparator imp
     private final Text tablePreviousHolder;
     private final Text colfHolder;
 
+    private Input in1;
+    private Input in2;
+
     private Configuration conf;
     private LocalityGroupSupport lgSupport;
     private LocalityGroupConfiguration lgConf;
     private LocalityGroupSupport.ColumnFamilyToLocalityGroup colfLg;
 
-    public LocalityGroupBulkIngestKeyComparator() {
+    public KryoBulkIngestKeyComparator() {
         super(BulkIngestKey.class);
+        this.in1 = new Input();
+        this.in2 = new Input();
         this.tableHolder = new Text();
         this.tablePreviousHolder = new Text();
         this.colfHolder = new Text();
@@ -51,24 +58,19 @@ public class LocalityGroupBulkIngestKeyComparator extends WritableComparator imp
 
     @Override
     public int compare(byte[] b1, int s1, int l1, byte[] b2, int s2, int l2) {
+        in1.setBuffer(b1, s1, l1);
+        in2.setBuffer(b2, s2, l2);
 
-        int o1 = s1;
-        int o2 = s2;
-        int[] startAndLen = {0, 0};
+        var o1 = s1;
+        var o2 = s2;
+
         // 5 parts to read (all Text... vint gives size of Text):
         // table name, row, col fam, col qual, col vis
         for (int i = 0; i < 5; i++) {
-            startAndLen[0] = o1;
-            // get Text's length in bytes
-            int tl1 = readVInt(b1, startAndLen);
-            o1 += startAndLen[1];
-            startAndLen[0] = o2;
-            int tl2 = readVInt(b2, startAndLen);
-            o2 += startAndLen[1];
+            var tl1 = in1.readInt(true);
+            var tl2 = in2.readInt(true);
 
-            // int result = compareBytes(b1, o1, tl1, b2, o2, tl2);
-            int minlin = Math.min(tl1, tl2);
-            int result = Arrays.compare(b1, o1, o1 + minlin, b2, o2, o2 + minlin);
+            int result = compareBytes(b1, o1, tl1, b2, o2, tl2);
 
             if (result != 0 && i == IDX_TABLE) {
                 colfLg = null;
@@ -112,15 +114,13 @@ public class LocalityGroupBulkIngestKeyComparator extends WritableComparator imp
             }
             o1 += tl1;
             o2 += tl2;
+            in1.skip(tl1);
+            in2.skip(tl2);
         }
 
         // get timestamps (vlong)
-        startAndLen[0] = o1;
-        long ts1 = readVLong(b1, startAndLen);
-        o1 += startAndLen[1];
-        startAndLen[0] = o2;
-        long ts2 = readVLong(b2, startAndLen);
-        o2 += startAndLen[1];
+        long ts1 = in1.readLong(true);
+        long ts2 = in2.readLong(true);
 
         if (ts1 < ts2) {
             return 1;
@@ -128,13 +128,13 @@ public class LocalityGroupBulkIngestKeyComparator extends WritableComparator imp
             return -1;
         }
 
-        boolean deleted1 = readBoolean(b1, o1);
-        boolean deleted2 = readBoolean(b2, o2);
-        if (deleted1 != deleted2) {
-            // if deleted=true return -1 indicating a deleted key is 'less than' a non-deleted key, and that
-            // the deleted key must be sorted before the non-deleted key
-            return (deleted1 ? -1 : 1);
-        }
+        // boolean deleted1 = readBoolean(b1, o1);
+        // boolean deleted2 = readBoolean(b2, o2);
+        // if (deleted1 != deleted2) {
+        // // if deleted=true return -1 indicating a deleted key is 'less than' a non-deleted key, and that
+        // // the deleted key must be sorted before the non-deleted key
+        // return (deleted1 ? -1 : 1);
+        // }
 
         return 0;
     }

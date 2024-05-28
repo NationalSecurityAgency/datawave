@@ -1,15 +1,16 @@
 package datawave.ingest.mapreduce.job;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-
+import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.io.WritableComparator;
 import org.apache.hadoop.io.WritableUtils;
+
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 
 /**
  * Used during bulk ingest to convey the table name to the reducer and stores the key for sorting.
@@ -84,16 +85,31 @@ public class BulkIngestKey implements WritableComparable<BulkIngestKey> {
 
     @Override
     public void write(DataOutput out) throws IOException {
-        writeText(out, tableName);
+        // writeText(out, tableName);
         // reuse a text object for writing
-        Text t = new Text();
-        writeText(out, key.getRow(t));
-        writeText(out, key.getColumnFamily(t));
-        writeText(out, key.getColumnQualifier(t));
-        writeText(out, key.getColumnVisibility(t));
+        // Text t = new Text();
+        // writeText(out, key.getRow(t));
+        // writeText(out, key.getColumnFamily(t));
+        // writeText(out, key.getColumnQualifier(t));
+        // writeText(out, key.getColumnVisibility(t));
 
-        WritableUtils.writeVLong(out, key.getTimestamp());
+        out.writeInt(tableName.getLength());
+        out.write(tableName.getBytes(), 0, tableName.getLength());
+
+        writeText(out, key.getRowData());
+        writeText(out, key.getColumnFamilyData());
+        writeText(out, key.getColumnQualifierData());
+        writeText(out, key.getColumnVisibilityData());
+
+        // WritableUtils.writeVLong(out, key.getTimestamp());
+        out.writeLong(key.getTimestamp());
         out.writeBoolean(key.isDeleted());
+    }
+
+    private void writeText(DataOutput out, ByteSequence bs) throws IOException {
+        // WritableUtils.writeVInt(out, bs.length());
+        out.writeInt(bs.length());
+        out.write(bs.getBackingArray(), bs.offset(), bs.length());
     }
 
     private void writeText(DataOutput out, Text t) throws IOException {
