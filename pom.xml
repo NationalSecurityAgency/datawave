@@ -1403,8 +1403,10 @@
                     <version>3.1.0</version>
                     <configuration>
                         <configLocation>checkstyle.xml</configLocation>
-                        <failsOnError>false</failsOnError>
+                        <failsOnError>true</failsOnError>
                         <failOnViolation>false</failOnViolation>
+                        <consoleOutput>true</consoleOutput>
+                        <propertyExpansion>basedir=${datawave.root}</propertyExpansion>
                     </configuration>
                     <dependencies>
                         <dependency>
