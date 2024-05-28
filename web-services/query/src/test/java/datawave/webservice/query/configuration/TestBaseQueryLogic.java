@@ -24,14 +24,15 @@ import org.powermock.modules.junit4.PowerMockRunner;
 
 import com.google.common.collect.Sets;
 
+import datawave.core.common.connection.AccumuloConnectionFactory.Priority;
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.logic.BaseQueryLogic;
+import datawave.core.query.logic.QueryLogicTransformer;
+import datawave.microservice.query.Query;
+import datawave.microservice.query.QueryImpl;
 import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.authorization.ProxiedUserDetails;
 import datawave.webservice.common.audit.Auditor;
-import datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.logic.BaseQueryLogic;
-import datawave.webservice.query.logic.EasyRoleManager;
-import datawave.webservice.query.logic.QueryLogicTransformer;
-import datawave.webservice.query.logic.RoleManager;
 
 @RunWith(PowerMockRunner.class)
 public class TestBaseQueryLogic {
@@ -57,15 +58,17 @@ public class TestBaseQueryLogic {
         expect(this.copy.getPageByteTrigger()).andReturn(1024L);
         expect(this.copy.getCollectQueryMetrics()).andReturn(false);
         expect(this.copy.getConnPoolName()).andReturn("connPool1");
-        expect(this.copy.getPrincipal()).andReturn(null);
-        RoleManager roleManager = new EasyRoleManager();
-        expect(this.copy.getRoleManager()).andReturn(roleManager);
+        expect(this.copy.getRequiredRoles()).andReturn(null);
         expect(this.copy.getSelectorExtractor()).andReturn(null);
+        expect(this.copy.getCurrentUser()).andReturn(null);
+        expect(this.copy.getServerUser()).andReturn(null);
         expect(this.copy.getResponseEnricherBuilder()).andReturn(null);
-        DatawavePrincipal principal = new DatawavePrincipal();
-        expect(this.copy.getPrincipal()).andReturn(principal).anyTimes();
+        ProxiedUserDetails principal = new DatawavePrincipal();
+        expect(this.copy.getCurrentUser()).andReturn(principal).anyTimes();
 
         // setup expectations for GenericQueryConfig
+        expect(config.getQuery()).andReturn(new QueryImpl());
+        expect(config.isCheckpointable()).andReturn(false);
         expect(config.getAuthorizations()).andReturn(null).anyTimes();
         expect(config.getQueryString()).andReturn("FOO == 'bar'").anyTimes();
         expect(config.getBeginDate()).andReturn(null).anyTimes();
@@ -75,8 +78,10 @@ public class TestBaseQueryLogic {
         expect(config.getTableName()).andReturn("tableName").anyTimes();
         expect(config.getBypassAccumulo()).andReturn(false).anyTimes();
         expect(config.getAccumuloPassword()).andReturn("env:PASS").anyTimes();
+        expect(config.isReduceResults()).andReturn(false).anyTimes();
         expect(config.getClient()).andReturn(null).anyTimes();
-        expect(config.getQueries()).andReturn(Collections.emptyIterator()).anyTimes();
+        expect(config.getQueries()).andReturn(Collections.emptyList()).anyTimes();
+        expect(config.getQueriesIter()).andReturn(Collections.emptyIterator()).anyTimes();
         expect(this.copy.getConfig()).andReturn(config).anyTimes();
 
         // Run the test

@@ -67,6 +67,9 @@ import org.jboss.security.JSSESecurityDomain;
 import datawave.annotation.Required;
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.configuration.spring.SpringBean;
+import datawave.core.common.audit.PrivateAuditConstants;
+import datawave.core.common.connection.AccumuloConnectionFactory;
+import datawave.core.query.logic.QueryLogicFactory;
 import datawave.marking.SecurityMarking;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.system.ServerPrincipal;
@@ -74,8 +77,6 @@ import datawave.security.util.WSAuthorizationsUtil;
 import datawave.webservice.common.audit.AuditBean;
 import datawave.webservice.common.audit.AuditParameters;
 import datawave.webservice.common.audit.Auditor;
-import datawave.webservice.common.audit.PrivateAuditConstants;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.connection.config.ConnectionPoolsConfiguration;
 import datawave.webservice.common.exception.BadRequestException;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
@@ -101,7 +102,7 @@ import datawave.webservice.query.exception.NotFoundQueryException;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.exception.UnauthorizedQueryException;
 import datawave.webservice.query.factory.Persister;
-import datawave.webservice.query.logic.QueryLogicFactory;
+import datawave.webservice.query.util.MapUtils;
 import datawave.webservice.result.BaseResponse;
 import datawave.webservice.result.GenericResponse;
 import datawave.webservice.result.VoidResponse;
@@ -297,7 +298,7 @@ public class MapReduceBean {
                     if (!queryParameters.containsKey(AuditParameters.AUDIT_ID)) {
                         queryParameters.putSingle(AuditParameters.AUDIT_ID, id);
                     }
-                    auditor.audit(queryParameters);
+                    auditor.audit(MapUtils.toMultiValueMap(queryParameters));
                 } catch (IllegalArgumentException e) {
                     log.error("Error validating audit parameters", e);
                     BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.MISSING_REQUIRED_PARAMETER, e);

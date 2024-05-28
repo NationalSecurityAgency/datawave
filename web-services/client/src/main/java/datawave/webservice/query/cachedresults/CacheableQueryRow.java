@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import datawave.marking.MarkingFunctions;
 import datawave.webservice.query.result.event.HasMarkings;
 import datawave.webservice.query.util.TypedValue;
 
@@ -25,6 +26,8 @@ public abstract class CacheableQueryRow implements HasMarkings {
         fixedColumnSet.add("_column_markings_");
         fixedColumnSet.add("_column_timestamps_");
     }
+
+    protected MarkingFunctions markingFunctions;
 
     public static Set<String> getFixedColumnSet() {
         return Collections.unmodifiableSet(fixedColumnSet);
@@ -100,4 +103,12 @@ public abstract class CacheableQueryRow implements HasMarkings {
     public abstract void setColumnColumnVisibilityMap(Map<String,String> columnVisibilityMap);
 
     public abstract void setColumnTimestampMap(Map<String,Long> parseColumnTimestamps);
+
+    public MarkingFunctions getMarkingFunctions() {
+        return markingFunctions;
+    }
+
+    public void setMarkingFunctions(MarkingFunctions markingFunctions) {
+        this.markingFunctions = markingFunctions;
+    }
 }

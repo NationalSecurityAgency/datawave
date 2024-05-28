@@ -1,5 +1,6 @@
 package datawave.query.tables.ssdeep;
 
+import static datawave.query.tables.ssdeep.util.SSDeepTestUtil.EXPECTED_2_3_OVERLAPS;
 import static datawave.query.tables.ssdeep.util.SSDeepTestUtil.TEST_SSDEEPS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -20,9 +21,14 @@ import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 import datawave.marking.MarkingFunctions;
+import datawave.microservice.query.Query;
 import datawave.query.config.SSDeepSimilarityQueryConfiguration;
+import datawave.util.ssdeep.NGramGenerator;
+import datawave.util.ssdeep.NGramTuple;
 import datawave.util.ssdeep.SSDeepHash;
-import datawave.webservice.query.Query;
+import datawave.util.ssdeep.SSDeepHashEditDistanceScorer;
+import datawave.util.ssdeep.SSDeepHashScorer;
+import datawave.util.ssdeep.SSDeepNGramOverlapScorer;
 import datawave.webservice.query.result.event.DefaultEvent;
 import datawave.webservice.query.result.event.DefaultField;
 import datawave.webservice.query.result.event.EventBase;
@@ -52,20 +58,27 @@ public class SSDeepSimilarityQueryTransformerTest {
         EasyMock.expect(mockQuery.getQueryAuthorizations()).andReturn("A,B,C");
         EasyMock.expect(mockResponseFactory.getEventQueryResponse()).andAnswer(DefaultEventQueryResponse::new);
         EasyMock.expect(mockResponseFactory.getEvent()).andAnswer(DefaultEvent::new).times(1);
-        EasyMock.expect(mockResponseFactory.getField()).andAnswer(DefaultField::new).times(4);
+        EasyMock.expect(mockResponseFactory.getField()).andAnswer(DefaultField::new).times(5);
 
         expectedFields.add("MATCHING_SSDEEP");
         expectedFields.add("QUERY_SSDEEP");
-        expectedFields.add("MATCH_SCORE");
         expectedFields.add("WEIGHTED_SCORE");
+        expectedFields.add("OVERLAP_SCORE");
+        expectedFields.add("OVERLAP_SSDEEP_NGRAMS");
     }
 
     @Test
     public void transformTest() {
 
+        final SSDeepHashScorer<Set<NGramTuple>> ngramOverlapScorer = new SSDeepNGramOverlapScorer(NGramGenerator.DEFAULT_NGRAM_SIZE,
+                        SSDeepHash.DEFAULT_MAX_REPEATED_CHARACTERS, NGramGenerator.DEFAULT_MIN_HASH_SIZE);
+        final SSDeepHashScorer<Integer> editDistanceScorer = new SSDeepHashEditDistanceScorer(SSDeepHash.DEFAULT_MAX_REPEATED_CHARACTERS);
+
         final SSDeepHash query = SSDeepHash.parse(TEST_SSDEEPS[2]);
         final SSDeepHash match = SSDeepHash.parse(TEST_SSDEEPS[3]);
-        final ScoredSSDeepPair scoredSSDeepPair = new ScoredSSDeepPair(query, match, 51, 96);
+        final Set<NGramTuple> overlappingNGrams = ngramOverlapScorer.apply(query, match);
+        final Integer editDistance = editDistanceScorer.apply(query, match);
+        final ScoredSSDeepPair scoredSSDeepPair = new ScoredSSDeepPair(query, match, overlappingNGrams, editDistance);
 
         basicExpects();
 
@@ -91,7 +104,6 @@ public class SSDeepSimilarityQueryTransformerTest {
         DefaultEvent defaultEvent = (DefaultEvent) eventBase;
 
         List<DefaultField> fields = defaultEvent.getFields();
-        assertEquals(4, fields.size());
         for (DefaultField field : fields) {
             assertTrue("Unexpected field: " + field.getName(), expectedFields.remove(field.getName()));
             switch (field.getName()) {
@@ -101,17 +113,21 @@ public class SSDeepSimilarityQueryTransformerTest {
                 case "QUERY_SSDEEP":
                     assertEquals(TEST_SSDEEPS[2], field.getValueString());
                     break;
-                case "MATCH_SCORE":
-                    assertEquals("51", field.getValueString());
-                    break;
                 case "WEIGHTED_SCORE":
                     assertEquals("96", field.getValueString());
+                    break;
+                case "OVERLAP_SCORE":
+                    assertEquals("51", field.getValueString());
+                    break;
+                case "OVERLAP_SSDEEP_NGRAMS":
+                    assertEquals(EXPECTED_2_3_OVERLAPS, field.getValueString());
                     break;
                 default:
                     fail("Unexpected field: " + field.getName());
             }
 
         }
+        assertEquals(5, fields.size());
         assertTrue("Did not observe all expected fields: " + expectedFields, expectedFields.isEmpty());
     }
 }
