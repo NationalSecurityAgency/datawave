@@ -82,19 +82,8 @@ public class FieldRenameTransform extends DocumentTransform.DefaultDocumentTrans
     }
 
     @Override
-    public void apply(List<Object> results) {
-        // TODO
+    public void apply(List<Object> results, boolean flushed) {
+
     }
 
-    @Override
-    public Iterator<Object> flushResults() {
-        // TODO
-        return ResultPostprocessor.super.flushResults();
-    }
-
-    @Override
-    public void saveState(GenericQueryConfiguration config) {
-        // TODO
-        ResultPostprocessor.super.saveState(config);
-    }
 }

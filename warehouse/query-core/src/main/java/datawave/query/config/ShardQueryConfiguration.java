@@ -1884,6 +1884,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     @Override
     public boolean isLongRunningQuery() {
+        // we are long running if we are grouping or applying a unique filter
         return getGroupFields().hasGroupByFields() || !getUniqueFields().isEmpty();
     }
 

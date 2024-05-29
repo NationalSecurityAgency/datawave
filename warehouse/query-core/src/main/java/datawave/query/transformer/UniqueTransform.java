@@ -1,7 +1,5 @@
 package datawave.query.transformer;
 
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.Serializable;
 import java.net.URI;
@@ -14,7 +12,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Queue;
 import java.util.TreeSet;
 
 import javax.annotation.Nullable;
@@ -25,7 +22,9 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
 
+import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
 import com.google.common.hash.BloomFilter;
 import com.google.common.hash.Funnel;
 import com.google.common.hash.PrimitiveSink;
@@ -42,7 +41,6 @@ import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.iterator.ivarator.IvaratorCacheDir;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.iterator.profile.FinalDocumentTrackingIterator;
-import datawave.query.model.QueryModel;
 import datawave.query.util.sortedset.ByteArrayComparator;
 import datawave.query.util.sortedset.FileByteDocumentSortedSet;
 import datawave.query.util.sortedset.FileKeyValueSortedSet;
@@ -179,7 +177,12 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
      * Part of the ResultPostprocessor interface
      */
     @Override
-    public void apply(List<Object> results) {
+    public void apply(List<Object> results, boolean flushed) {
+        // if we have already been flushed, then these are already final results
+        if (flushed) {
+            return;
+        }
+
         // these results should be EventBase objects
         List<Object> resultsToKeep = new ArrayList<>();
         for (Object result : results) {
@@ -201,16 +204,22 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
                 }
             }
         }
-        results.clear();
+        results.retainAll(resultsToKeep);
+    }
+
+    @Override
+    public Iterator<Object> flushResults(GenericQueryConfiguration config) {
         if (set != null) {
-            set.stream().forEach(e -> results.add(e.getValue()));
-            // clear the set for next round
-            set.clear();
+            return set.stream().map(e -> e.getValue()).iterator();
         } else {
-            results.addAll(resultsToKeep);
-            // reset the bloom filter for next round
-            this.bloom = BloomFilter.create(new ByteFunnel(), 500000, 1e-15);
+            return Collections.emptyIterator();
         }
+    }
+
+    @Override
+    public void saveState(GenericQueryConfiguration config) {
+        ShardQueryConfiguration sConfig = (ShardQueryConfiguration) config;
+        sConfig.setBloom(bloom);
     }
 
     /**
@@ -291,54 +300,39 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
      *            the output string builder
      */
     private void outputSortedFieldValues(Document document, StringBuilder output) {
-        int count = 0;
-        String lastField = "";
-        List<String> values = new ArrayList<>();
+        Multimap<String,String> values = HashMultimap.create();
         for (String documentField : new TreeSet<>(document.getDictionary().keySet())) {
             String field = getUniqueField(documentField);
             if (field != null) {
                 addValues(field, document.get(documentField), values);
             }
         }
-        dumpValues(count, lastField, values, output);
+        // Always dump the fields in the same order (uniqueFields.getFields is a sorted collection)
+        for (String field : uniqueFields.getFields()) {
+            dumpValues(field, values.get(field), output);
+        }
     }
 
     /**
-     * Take the fields from the document configured for the unique transform and output them as a string
+     * Take the fields from the document configured for the unique transform and output them to the data output stream.
      *
-     * @param event
-     *            an event
+     * @param document
+     *            a document
      * @param output
-     *            the string builder
-     * @return The sorted field values as a string
+     *            the output string builder
      */
-    private void outputSortedFieldValues(EventBase event, StringBuilder output) {
-        // First see if we have stored the signature in the internal id metadata
-        String id = event.getMetadata().getInternalId();
-        int index = id.indexOf('\u0000');
-        if (index >= 0) {
-            output.append(id.substring(index + 1));
-            return;
-        }
-
-        int count = 0;
-        String lastField = "";
-        List<String> values = new ArrayList<>();
-        List<FieldBase> fields = event.getFields();
-        for (FieldBase fieldBase : fields) {
-            String field = getUniqueField(fieldBase.getName());
+    private void outputSortedFieldValues(EventBase document, StringBuilder output) {
+        Multimap<String,String> values = HashMultimap.create();
+        for (Object fieldBase : document.getFields()) {
+            String field = getUniqueField(((FieldBase) fieldBase).getName());
             if (field != null) {
-                if (!field.equals(lastField)) {
-                    count = dumpValues(count, lastField, values, output);
-                    lastField = field;
-                }
-                addValue(field, fieldBase.getValueString(), values);
+                addValue(field, ((FieldBase) fieldBase).getValueString(), values);
             }
         }
-        dumpValues(count, lastField, values, output);
-
-        // Cache the result in the event itself for next time
-        event.getMetadata().setInternalId(event.getMetadata().getInternalId() + '\u0000' + output.toString());
+        // Always dump the fields in the same order (uniqueFields.getFields is a sorted collection)
+        for (String field : uniqueFields.getFields()) {
+            dumpValues(field, values.get(field), output);
+        }
     }
 
     /**
@@ -352,11 +346,13 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
      *            the output buffer
      * @return The next field count
      */
-    private int dumpValues(int count, String field, List<String> values, StringBuilder output) {
+    private void dumpValues(String field, Collection<String> values, StringBuilder output) {
+        String separator = "f-" + field + ":";
         if (!values.isEmpty()) {
-            Collections.sort(values);
-            String separator = "f-" + field + '/' + (count++) + ":";
-            for (String value : values) {
+            List<String> valueList = new ArrayList<>(values);
+            // always output values in sorted order.
+            Collections.sort(valueList);
+            for (String value : valueList) {
                 output.append(separator);
                 output.append(value);
                 separator = ",";
@@ -364,7 +360,7 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
         } else {
             // dump at least a header for empty value sets to ensure we have some bytes to check against
             // in the bloom filter.
-            output.writeUTF(separator);
+            output.append(separator);
         }
     }
 
@@ -389,18 +385,8 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
         }
     }
 
-    /**
-     * Add the attribute values to the list of values.
-     *
-     * @param field
-     *            The attribute field
-     * @param value
-     *            The value
-     * @param values
-     *            The list of values to be updated
-     */
-    private void addValue(final String field, String value, List<String> values) {
-        values.add(uniqueFields.transformValue(field, value));
+    public void addValue(final String field, final String value, Multimap<String,String> values) {
+        values.put(field, uniqueFields.transformValue(field, value));
     }
 
     /**

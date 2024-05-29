@@ -17,20 +17,24 @@ public class ListResultPostprocessor implements ResultPostprocessor {
     }
 
     @Override
-    public void apply(List<Object> results) {
+    public void apply(List<Object> results, boolean flushed) {
         for (ResultPostprocessor processor : processors) {
-            processor.apply(results);
+            processor.apply(results, flushed);
         }
     }
 
     @Override
-    public Iterator<Object> flushResults() {
+    public Iterator<Object> flushResults(GenericQueryConfiguration config) {
         // TODO: This could be expensive memory-wise. Consider doing in batches.
         // step through the processors, flushing data from one to the next
         List<Object> resultList = new ArrayList<>();
         for (ResultPostprocessor processor : processors) {
-            processor.apply(resultList);
-            Iterator<Object> resultIt = processor.flushResults();
+            // if we have any results, then apply
+            if (!resultList.isEmpty()) {
+                processor.apply(resultList, false);
+                processor.saveState(config);
+            }
+            Iterator<Object> resultIt = processor.flushResults(config);
             while (resultIt.hasNext()) {
                 resultList.add(resultIt.next());
             }

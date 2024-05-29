@@ -17,15 +17,19 @@ public interface ResultPostprocessor {
      *
      * @param results
      *            The results to be returned to the user
+     * @param flushedResults
+     *            True if the results passed in were the result of the flushResults call below
      */
-    void apply(List<Object> results);
+    void apply(List<Object> results, boolean flushedResults);
 
     /**
-     * Used to get any cached summary results into a results queue
+     * Used to get any cached summary results
+     *
+     * @param config
      *
      * @return an iterable of results
      */
-    default Iterator<Object> flushResults() {
+    default Iterator<Object> flushResults(GenericQueryConfiguration config) {
         return Collections.emptyIterator();
     }
 
@@ -37,7 +41,7 @@ public interface ResultPostprocessor {
     default void saveState(GenericQueryConfiguration config) {}
 
     class IdentityResultPostprocessor implements ResultPostprocessor {
-        public void apply(List<Object> results) {
+        public void apply(List<Object> results, boolean flushedResults) {
             // do nothing
         }
     }

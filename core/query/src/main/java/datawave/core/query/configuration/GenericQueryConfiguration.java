@@ -67,9 +67,6 @@ public class GenericQueryConfiguration implements Serializable {
     // use a value like 'env:PASS' to pull from the environment
     private String accumuloPassword = "";
 
-    // Whether or not this query emits every result or performs some kind of result reduction
-    protected boolean reduceResults = false;
-
     protected boolean longRunningQuery = false;
 
     /**
@@ -104,7 +101,6 @@ public class GenericQueryConfiguration implements Serializable {
         this.setQueriesIter(genericConfig.getQueriesIter());
         this.setQueryString(genericConfig.getQueryString());
         this.setTableName(genericConfig.getTableName());
-        this.setReduceResults(genericConfig.isReduceResults());
     }
 
     public Collection<QueryData> getQueries() {
@@ -253,14 +249,6 @@ public class GenericQueryConfiguration implements Serializable {
         return this.accumuloPassword;
     }
 
-    public boolean isReduceResults() {
-        return reduceResults;
-    }
-
-    public void setReduceResults(boolean reduceResults) {
-        this.reduceResults = reduceResults;
-    }
-
     /**
      * Sets configured password for accumulo access
      *
@@ -320,13 +308,12 @@ public class GenericQueryConfiguration implements Serializable {
                         && Objects.equals(getQuery(), that.getQuery()) && Objects.equals(getQueryString(), that.getQueryString())
                         && Objects.equals(getBeginDate(), that.getBeginDate()) && Objects.equals(getEndDate(), that.getEndDate())
                         && Objects.equals(getMaxWork(), that.getMaxWork()) && Objects.equals(getTableName(), that.getTableName())
-                        && Objects.equals(getQueries(), that.getQueries()) && Objects.equals(getAccumuloPassword(), that.getAccumuloPassword())
-                        && Objects.equals(isReduceResults(), that.isReduceResults());
+                        && Objects.equals(getQueries(), that.getQueries()) && Objects.equals(getAccumuloPassword(), that.getAccumuloPassword());
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(isCheckpointable(), getAuthorizations(), getQuery(), getQueryString(), getBeginDate(), getEndDate(), getMaxWork(),
-                        getBaseIteratorPriority(), getTableName(), getQueries(), getBypassAccumulo(), getAccumuloPassword(), isReduceResults());
+                        getBaseIteratorPriority(), getTableName(), getQueries(), getBypassAccumulo(), getAccumuloPassword());
     }
 }

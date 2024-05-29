@@ -13,6 +13,9 @@ import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.logic.QueryLogicTransformer;
 import datawave.core.query.logic.ResultPostprocessor;
 import datawave.microservice.query.Query;
+import datawave.query.config.ContentQueryConfiguration;
+import datawave.query.config.CountingQueryConfiguration;
+import datawave.query.config.ShardIndexQueryConfiguration;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.scheduler.PushdownScheduler;
 import datawave.query.scheduler.Scheduler;
@@ -29,18 +32,28 @@ import datawave.query.transformer.ShardQueryCountTableTransformer;
 public class CountingShardQueryLogic extends ShardQueryLogic {
     private static final Logger log = Logger.getLogger(CountingShardQueryLogic.class);
 
+    private CountingQueryConfiguration config;
+
     public CountingShardQueryLogic() {
         super();
     }
 
     public CountingShardQueryLogic(CountingShardQueryLogic other) {
         super(other);
+        this.config = CountingQueryConfiguration.create(other);
+    }
+
+    @Override
+    public CountingQueryConfiguration getConfig() {
+        if (this.config == null) {
+            this.config = CountingQueryConfiguration.create();
+        }
+        return this.config;
     }
 
     @Override
     public GenericQueryConfiguration initialize(AccumuloClient client, Query settings, Set<Authorizations> runtimeQueryAuthorizations) throws Exception {
         GenericQueryConfiguration config = super.initialize(client, settings, runtimeQueryAuthorizations);
-        config.setReduceResults(true);
         return config;
     }
 
@@ -61,7 +74,7 @@ public class CountingShardQueryLogic extends ShardQueryLogic {
 
     @Override
     public ResultPostprocessor getResultPostprocessor(GenericQueryConfiguration config) {
-        return new CountResultPostprocessor(markingFunctions);
+        return new CountResultPostprocessor(responseObjectFactory, markingFunctions);
     }
 
     @Override

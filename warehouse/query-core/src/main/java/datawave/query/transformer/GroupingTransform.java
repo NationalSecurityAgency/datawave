@@ -146,14 +146,14 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
     }
 
     @Override
-    public void apply(List<Object> results) {
+    public void apply(List<Object> results, boolean flushedResults) {
         // TODO
     }
 
     @Override
-    public Iterator<Object> flushResults() {
+    public Iterator<Object> flushResults(GenericQueryConfiguration config) {
         // TODO
-        return ResultPostprocessor.super.flushResults();
+        return ResultPostprocessor.super.flushResults(config);
     }
 
     @Override
