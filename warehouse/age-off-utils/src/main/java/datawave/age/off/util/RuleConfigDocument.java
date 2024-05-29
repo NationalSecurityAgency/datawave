@@ -15,7 +15,6 @@ import datawave.ingest.util.cache.watch.AgeOffRuleLoader;
 public class RuleConfigDocument extends DocumentImpl {
     private static final String FILTER_CLASS_ELEMENT_NAME = "filterClass";
     private static final String MATCH_PATTERN_ELEMENT_NAME = "matchPattern";
-    private static final String IS_MERGE_ELEMENT_NAME = "ismerge";
     private static final String TTL_ELEMENT_NAME = "ttl";
     private static final String TTL_UNITS_ATTRIBUTE_NAME = "units";
     private static final String RULE_ELEMENT_NAME = "rule";
@@ -53,7 +52,6 @@ public class RuleConfigDocument extends DocumentImpl {
 
     private void appendElementsToRule() {
         appendFilterClassElement();
-        appendMergeElement();
         appendTtlElement();
         appendMatchPatternElement();
         appendCustomElements();
@@ -92,14 +90,6 @@ public class RuleConfigDocument extends DocumentImpl {
             ttlElement.setAttribute(TTL_UNITS_ATTRIBUTE_NAME, this.ruleConfig.ttlUnits);
             ttlElement.setTextContent(this.ruleConfig.ttlValue);
             rule.appendChild(ttlElement);
-        }
-    }
-
-    private void appendMergeElement() {
-        if (this.ruleConfig.isMerge) {
-            Element mergeElement = super.createElement(IS_MERGE_ELEMENT_NAME);
-            mergeElement.setTextContent(Boolean.TRUE.toString());
-            rule.appendChild(mergeElement);
         }
     }
 
