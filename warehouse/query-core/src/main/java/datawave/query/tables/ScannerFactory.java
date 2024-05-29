@@ -34,6 +34,7 @@ import datawave.webservice.common.connection.WrappedConnector;
 
 public class ScannerFactory {
 
+    private static final int DEFAULT_MAX_THREADS = 100;
     protected int maxQueue = 1000;
     protected HashSet<ScannerBase> instances = new HashSet<>();
     protected HashSet<ScannerSession> sessionInstances = new HashSet<>();
@@ -66,7 +67,7 @@ public class ScannerFactory {
      *            an {@link AccumuloClient}
      */
     public ScannerFactory(AccumuloClient client) {
-        this(client, 100);
+        this(client, DEFAULT_MAX_THREADS);
 
     }
 
@@ -95,7 +96,6 @@ public class ScannerFactory {
      */
     public void updateConfigs(GenericQueryConfiguration genericConfig) {
 
-        int numThreads = 100;
         this.client = genericConfig.getClient();
 
         Map<String,ScannerBase.ConsistencyLevel> consistencyLevels = genericConfig.getConsistencyLevels();
@@ -108,6 +108,7 @@ public class ScannerFactory {
             this.hintsByTable = genericConfig.getHints();
         }
 
+        int numThreads = DEFAULT_MAX_THREADS;
         if (genericConfig instanceof ShardQueryConfiguration) {
             ShardQueryConfiguration config = (ShardQueryConfiguration) genericConfig;
 
