@@ -400,7 +400,7 @@ function getNextPage() {
 function parseQueryResponse() {
    DW_QUERY_RESPONSE_BODY=$( echo ${response} | sed -e 's/HTTP_STATUS_CODE\:.*//g' )
    DW_QUERY_RESPONSE_CODE=$( echo ${response} | tr -d '\n' | sed -e 's/.*HTTP_STATUS_CODE://' | sed -e 's/;TOTAL_TIME\:.*//' )
-   DW_QUERY_RESPONSE_TYPE=$( echo ${response} | tr -d '\n' | sed -e 's/.*CONTENT_TYPE://' )
+   DW_QUERY_RESPONSE_TYPE=$( echo ${response} | tr -d '\n' | sed -e 's/.*CONTENT_TYPE://' | sed -e 's/;.*//' )
    DW_QUERY_TOTAL_TIME=$( echo ${response} | tr -d '\n' | sed -e 's/.*TOTAL_TIME://' | sed -e 's/;CONTENT_TYPE\:.*//' )
 }
 

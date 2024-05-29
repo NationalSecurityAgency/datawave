@@ -42,6 +42,7 @@ syncLimit=5
 clientPort=2181
 dataDir=${DW_CLOUD_DATA}/zookeeper
 maxClientCnxns=100
+4lw.commands.whitelist=ruok,wchs
 admin.serverPort=8089
 admin.enableServer=false"
 

@@ -25,6 +25,7 @@ public class EvaluationTrackingNestedIterator<T> extends SeekableNestedIterator<
 
     @Override
     public T next() {
+        mySpan.next();
         long start = System.currentTimeMillis();
         T next = super.next();
         mySpan.addStageTimer(stageName, System.currentTimeMillis() - start);
@@ -33,6 +34,7 @@ public class EvaluationTrackingNestedIterator<T> extends SeekableNestedIterator<
 
     @Override
     public T move(T minimum) {
+        mySpan.seek();
         long start = System.currentTimeMillis();
         T next = super.move(minimum);
         mySpan.addStageTimer(stageName, System.currentTimeMillis() - start);
@@ -41,6 +43,7 @@ public class EvaluationTrackingNestedIterator<T> extends SeekableNestedIterator<
 
     @Override
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
+        mySpan.seek();
         long start = System.currentTimeMillis();
         super.seek(range, columnFamilies, inclusive);
         mySpan.addStageTimer(stageName, System.currentTimeMillis() - start);

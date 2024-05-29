@@ -9,8 +9,8 @@ import org.apache.accumulo.core.data.Key;
 import com.google.common.base.Function;
 
 import datawave.marking.MarkingFunctions;
+import datawave.microservice.query.Query;
 import datawave.query.attributes.Document;
-import datawave.webservice.query.Query;
 
 public interface DocumentTransform extends Function<Map.Entry<Key,Document>,Map.Entry<Key,Document>> {
     // called when adding the document transform
@@ -31,7 +31,7 @@ public interface DocumentTransform extends Function<Map.Entry<Key,Document>,Map.
     class DefaultDocumentTransform implements DocumentTransform {
         protected Query settings;
         protected MarkingFunctions markingFunctions;
-        protected long queryExecutionForPageStartTime;
+        protected long queryExecutionForPageStartTime = System.currentTimeMillis();
 
         @Override
         public void initialize(Query settings, MarkingFunctions markingFunctions) {
