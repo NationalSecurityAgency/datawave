@@ -22,6 +22,7 @@ import datawave.microservice.query.QueryImpl.Parameter;
 import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.BaseQueryMetric.PageMetric;
 import datawave.microservice.querymetric.BaseQueryMetric.Prediction;
+import datawave.microservice.querymetric.RangeCounts;
 
 public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements TermFrequencyIngestHelperInterface {
 
@@ -127,6 +128,13 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
             }
             if (updatedQueryMetric.getPlan() != null) {
                 fields.put("PLAN", updatedQueryMetric.getPlan());
+            }
+            Map<String,RangeCounts> subPlans = updatedQueryMetric.getSubPlans();
+            if (subPlans != null && !subPlans.isEmpty()) {
+                for (Map.Entry<String,RangeCounts> entry : subPlans.entrySet()) {
+                    fields.put("SUBPLAN",
+                                    entry.getKey() + " : [" + entry.getValue().getDocumentRangeCount() + ", " + entry.getValue().getShardRangeCount() + "]");
+                }
             }
             if (updatedQueryMetric.getQueryId() != null) {
                 fields.put("QUERY_ID", updatedQueryMetric.getQueryId());
@@ -291,6 +299,21 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
             }
             if (updatedQueryMetric.getDocRanges() != storedQueryMetric.getDocRanges()) {
                 fields.put("DOC_RANGES", Long.toString(storedQueryMetric.getDocRanges()));
+            }
+            Map<String,RangeCounts> updatedSubPlans = updatedQueryMetric.getSubPlans();
+            if (updatedSubPlans != null && !updatedSubPlans.isEmpty()) {
+                Map<String,RangeCounts> storedSubPlans = storedQueryMetric.getSubPlans() != null ? storedQueryMetric.getSubPlans() : null;
+                for (Map.Entry<String,RangeCounts> entry : updatedSubPlans.entrySet()) {
+                    String subPlan = entry.getKey();
+                    RangeCounts updatedRangeCounts = entry.getValue();
+                    if (storedSubPlans != null && storedSubPlans.containsKey(subPlan) && !storedSubPlans.get(subPlan).equals(updatedRangeCounts)) {
+                        fields.put("SUBPLAN", subPlan + " : [" + storedSubPlans.get(subPlan).getDocumentRangeCount() + ", "
+                                        + storedSubPlans.get(subPlan).getShardRangeCount() + "]");
+                    } else if (storedSubPlans == null) {
+                        fields.put("SUBPLAN",
+                                        subPlan + " : [" + updatedRangeCounts.getDocumentRangeCount() + ", " + updatedRangeCounts.getShardRangeCount() + "]");
+                    }
+                }
             }
             if (updatedQueryMetric.getFiRanges() != storedQueryMetric.getFiRanges()) {
                 fields.put("FI_RANGES", Long.toString(storedQueryMetric.getFiRanges()));

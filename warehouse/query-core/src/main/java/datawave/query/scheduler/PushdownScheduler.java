@@ -36,6 +36,7 @@ import datawave.core.query.configuration.QueryData;
 import datawave.core.query.configuration.Result;
 import datawave.core.query.logic.QueryCheckpoint;
 import datawave.core.query.logic.QueryKey;
+import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.mr.bulk.RfileResource;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.tables.BatchScannerSession;
@@ -60,6 +61,10 @@ public class PushdownScheduler extends Scheduler {
      */
     protected final ShardQueryConfiguration config;
     /**
+     * Query Metric reference.
+     */
+    protected final BaseQueryMetric metric;
+    /**
      * Scanner factory reference.
      */
     protected final ScannerFactory scannerFactory;
@@ -83,14 +88,15 @@ public class PushdownScheduler extends Scheduler {
 
     protected MetadataHelper metadataHelper;
 
-    public PushdownScheduler(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelperFactory metaFactory) {
-        this(config, scannerFactory, metaFactory.createMetadataHelper(config.getClient(), config.getMetadataTableName(), config.getAuthorizations()));
+    public PushdownScheduler(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelperFactory metaFactory, BaseQueryMetric metric) {
+        this(config, scannerFactory, metaFactory.createMetadataHelper(config.getClient(), config.getMetadataTableName(), config.getAuthorizations()), metric);
     }
 
-    protected PushdownScheduler(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper) {
+    protected PushdownScheduler(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, BaseQueryMetric metric) {
         this.config = config;
         this.metadataHelper = helper;
         this.scannerFactory = scannerFactory;
+        this.metric = metric;
         customizedFunctionList = Lists.newArrayList();
         Preconditions.checkNotNull(config.getClient());
     }
@@ -173,7 +179,7 @@ public class PushdownScheduler extends Scheduler {
                 session.setSpeculativeScanning(true);
             }
 
-            session.addVisitor(new VisitorFunction(config, metadataHelper));
+            session.addVisitor(new VisitorFunction(config, metadataHelper, metric));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

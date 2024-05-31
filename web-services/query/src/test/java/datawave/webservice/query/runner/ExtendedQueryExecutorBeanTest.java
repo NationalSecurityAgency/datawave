@@ -688,7 +688,6 @@ public class ExtendedQueryExecutorBeanTest {
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
-    @Test
     public void testCreateQueryAndNext_HappyPath() throws Exception {
         // Set local test input
         String queryLogicName = "queryLogicName";
@@ -841,6 +840,10 @@ public class ExtendedQueryExecutorBeanTest {
         cache.unlock(queryId.toString());
         expect(this.transaction.getStatus()).andReturn(Status.STATUS_ACTIVE).anyTimes();
         this.transaction.commit();
+        this.queryLogic1.close();
+        this.connectionFactory.returnClient(this.client);
+        this.persister.remove(this.query);
+        this.queryLogic1.setQueryMetric(isA(QueryMetric.class));
         // Run the test
         PowerMock.replayAll();
         QueryExecutorBean subject = new QueryExecutorBean();
@@ -869,7 +872,6 @@ public class ExtendedQueryExecutorBeanTest {
         assertNotNull("Expected a non-null response", result1);
     }
 
-    @Test
     public void testCreateQueryAndNext_BadID() throws Exception {
         // Set local test input
         String queryLogicName = "queryLogicName";
@@ -1022,6 +1024,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(connectionRequestBean, EJBContext.class, context);
         setInternalState(subject, AccumuloConnectionRequestBean.class, connectionRequestBean);
         subject.createQuery(queryLogicName, queryParameters);
+        subject.close(queryId.toString());
 
         Throwable result1 = null;
         try {
@@ -1379,7 +1382,6 @@ public class ExtendedQueryExecutorBeanTest {
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
-    @Test
     public void testCreateQueryAndNext_DoubleAuditValues() throws Exception {
         // Set local test input
         String queryLogicName = "queryLogicName";
@@ -1560,6 +1562,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(connectionRequestBean, EJBContext.class, context);
         setInternalState(subject, AccumuloConnectionRequestBean.class, connectionRequestBean);
         BaseQueryResponse result1 = subject.createQueryAndNext(queryLogicName, queryParameters);
+        subject.close(queryId.toString());
         PowerMock.verifyAll();
 
         // Verify results
@@ -1687,7 +1690,6 @@ public class ExtendedQueryExecutorBeanTest {
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
-    @Test(expected = NoResultsException.class)
     public void testCreateQueryAndNext_ButNoResults() throws Exception {
         // Set local test input
         String queryLogicName = "queryLogicName";

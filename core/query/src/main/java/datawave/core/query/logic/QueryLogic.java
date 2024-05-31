@@ -15,6 +15,7 @@ import datawave.core.query.cache.ResultsPage;
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.Query;
+import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.security.authorization.ProxiedUserDetails;
 import datawave.security.authorization.UserOperations;
 import datawave.validation.ParameterValidator;
@@ -232,6 +233,14 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      *            base iterator priority
      */
     void setBaseIteratorPriority(final int priority);
+
+    /**
+     * Sets the query metric
+     *
+     * @param metric
+     *            query metric
+     */
+    void setQueryMetric(BaseQueryMetric metric);
 
     /**
      * @param logicName
