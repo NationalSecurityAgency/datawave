@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave</groupId>
         <artifactId>assemble-parent</artifactId>
-        <version>6.13.2-SNAPSHOT</version>
+        <version>6.13.2</version>
     </parent>
     <artifactId>assemble-datawave</artifactId>
     <packaging>jar</packaging>
