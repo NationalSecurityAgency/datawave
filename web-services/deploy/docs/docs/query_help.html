@@ -258,5 +258,26 @@
 		<li>excerpt.fields="field/offset"</li>
 		<li>excerpt.fields="field1/offset,field2/offset,..."</li>
 	</ul>
+	<h3>Language Expansion</h3>
+	<p class="left">Datawave provides limited support for Lucene-based language expansion. A user may specify a set of language short codes that determine which
+		analyzers are applied to a query.</p>
+	<p class="left">Language analyzers may support stemming, lemmatization, unigramming and bigramming. All options are enabled by default, but Lucene only
+		supports certain features by default for certain languages. Stemming is supported for most languages, and bigrams are supported or CJK languages.</p>
+	<p class="left">The following query parameters may be specified. Note: a user may supply the option value 'all' to trigger all supported language analyzers</p>
+	<ul class="left">
+		<li>language.expansion</li>
+		<li>disable.stemming</li>
+		<li>disable.lemmas</li>
+		<li>disable.unigrams</li>
+		<li>disable.bigrams</li>
+	</ul>
+	<table>
+		<tr><th>JEXL Operator</th><th>LUCENE Operator</th></tr>
+		<tr><td>f:options('language.expansion', 'en,all,etc')</td><td>#OPTIONS('language.expansion', 'en,all,etc')</td></tr>
+		<tr><td>f:options('disable.stemming', 'en,all,etc')</td><td>#OPTIONS('disable.stemming', 'en,all,etc')</td></tr>
+		<tr><td>f:options('disable.lemmas', 'en,all,etc')</td><td>#OPTIONS('disable.lemmas', 'en,all,etc')</td></tr>
+		<tr><td>f:options('disable.unigrams', 'en,all,etc')</td><td>#OPTIONS('disable.unigrams', 'en,all,etc')</td></tr>
+		<tr><td>f:options('disable.bigrams', 'en,all,etc')</td><td>#OPTIONS('disable.bigrams', 'en,all,etc')</td></tr>
+	</table>
 	<br />
 </body>

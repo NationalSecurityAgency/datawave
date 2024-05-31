@@ -22,7 +22,6 @@ import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
 
 import com.google.common.base.Joiner;
-import com.google.common.collect.ImmutableSet;
 
 import datawave.query.QueryParameters;
 import datawave.query.attributes.UniqueFields;
@@ -37,6 +36,7 @@ import datawave.query.jexl.functions.QueryFunctions;
  * <li>{@code f:options()}: Expects a comma-delimited list of key/value pairs, e.g. {@code f:options('hit.list','true','limit.fields','FOO_1_BAR=3)}</li>
  * <li>{@code f:groupby()}: Expects a comma-delimited list of fields to group by, e.g. {@code f:groupby('field1','field2','field3')}</li>
  * <li>{@code f:noexpansion()}: Expects a comma-delimited list of fields, e.g. {@code f:noExpansion('field1','field2','field3')}</li>
+ * <li>{@code f:language_expansion()}: Expects a comma-delimited list of short codes, e.g. {@code f:language_expansion('en','es','it')}</li>
  * <li>{@code f:lenient()}: Expects a comma-delimited list of fields, e.g. {@code f:lenient('field1','field2','field3')}</li>
  * <li>{@code f:strict()}: Expects a comma-delimited list of fields, e.g. {@code f:strict('field1','field2','field3')}</li>
  * <li>{@code f:excerpt_fields()}: Expects a comma-delimited list of fields, e.g. {@code f:excerpt_fields('field1','field2','field3')}</li>
@@ -57,10 +57,10 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
 
     private static final Joiner JOINER = Joiner.on(',').skipNulls();
 
-    private static final Set<String> RESERVED = ImmutableSet.of(QueryFunctions.QUERY_FUNCTION_NAMESPACE, QueryFunctions.OPTIONS_FUNCTION,
-                    QueryFunctions.UNIQUE_FUNCTION, UniqueFunction.UNIQUE_BY_DAY_FUNCTION, UniqueFunction.UNIQUE_BY_HOUR_FUNCTION,
-                    UniqueFunction.UNIQUE_BY_MINUTE_FUNCTION, UniqueFunction.UNIQUE_BY_TENTH_OF_HOUR_FUNCTION, UniqueFunction.UNIQUE_BY_MONTH_FUNCTION,
-                    UniqueFunction.UNIQUE_BY_SECOND_FUNCTION, UniqueFunction.UNIQUE_BY_MILLISECOND_FUNCTION, UniqueFunction.UNIQUE_BY_YEAR_FUNCTION,
+    private static final Set<String> RESERVED = Set.of(QueryFunctions.QUERY_FUNCTION_NAMESPACE, QueryFunctions.OPTIONS_FUNCTION, QueryFunctions.UNIQUE_FUNCTION,
+                    UniqueFunction.UNIQUE_BY_DAY_FUNCTION, UniqueFunction.UNIQUE_BY_HOUR_FUNCTION, UniqueFunction.UNIQUE_BY_MINUTE_FUNCTION,
+                    UniqueFunction.UNIQUE_BY_TENTH_OF_HOUR_FUNCTION, UniqueFunction.UNIQUE_BY_MONTH_FUNCTION, UniqueFunction.UNIQUE_BY_SECOND_FUNCTION,
+                    UniqueFunction.UNIQUE_BY_MILLISECOND_FUNCTION, UniqueFunction.UNIQUE_BY_YEAR_FUNCTION,
                     QueryFunctions.MOST_RECENT_PREFIX + QueryFunctions.UNIQUE_FUNCTION,
                     QueryFunctions.MOST_RECENT_PREFIX + UniqueFunction.UNIQUE_BY_DAY_FUNCTION,
                     QueryFunctions.MOST_RECENT_PREFIX + UniqueFunction.UNIQUE_BY_HOUR_FUNCTION,
@@ -72,7 +72,8 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
                     QueryFunctions.MOST_RECENT_PREFIX + UniqueFunction.UNIQUE_BY_YEAR_FUNCTION, QueryFunctions.GROUPBY_FUNCTION,
                     QueryFunctions.EXCERPT_FIELDS_FUNCTION, QueryFunctions.NO_EXPANSION, QueryFunctions.LENIENT_FIELDS_FUNCTION,
                     QueryFunctions.STRICT_FIELDS_FUNCTION, QueryFunctions.SUM, QueryFunctions.MIN, QueryFunctions.MAX, QueryFunctions.AVERAGE,
-                    QueryFunctions.COUNT, QueryFunctions.RENAME_FUNCTION);
+                    QueryFunctions.COUNT, QueryFunctions.RENAME_FUNCTION, QueryFunctions.LANGUAGE_EXPANSION, QueryFunctions.DISABLE_STEMMING,
+                    QueryFunctions.DISABLE_LEMMAS, QueryFunctions.DISABLE_UNIGRAMS, QueryFunctions.DISABLE_BIGRAMS);
 
     @SuppressWarnings("unchecked")
     public static <T extends JexlNode> T collect(T node, Object data) {
@@ -226,6 +227,11 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
                             case QueryParameters.LENIENT_FIELDS:
                             case QueryParameters.STRICT_FIELDS:
                             case QueryParameters.RENAME_FIELDS:
+                            case QueryParameters.LANGUAGE_EXPANSION:
+                            case QueryParameters.DISABLE_STEMMING:
+                            case QueryParameters.DISABLE_LEMMAS:
+                            case QueryParameters.DISABLE_UNIGRAMS:
+                            case QueryParameters.DISABLE_BIGRAMS:
                                 updateFieldsOption(optionsMap, key, Collections.singletonList(value));
                                 break;
                             default:

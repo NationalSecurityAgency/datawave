@@ -417,6 +417,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     // fields exempt from query model expansion
     private Set<String> noExpansionFields = new HashSet<>();
 
+    // set of language codes used to initialize LanguageAnalyzers. by default all features are enabled
+    private Set<String> languageExpansionCodes = new HashSet<>();
+    // allow users or operators to disable specific features on a per-language basis
+    private Set<String> disableStemming = new HashSet<>();
+    private Set<String> disableLemmas = new HashSet<>();
+    private Set<String> disableUnigrams = new HashSet<>();
+    private Set<String> disableBigrams = new HashSet<>();
+
     // fields for which normalizations can be dropped if they do not normalize
     // properly for the type. This can include model fields in which case the
     // concept will pass on to the expanded fields.
@@ -699,6 +707,11 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setWhindexMappingFields(other.getWhindexMappingFields());
         this.setWhindexFieldMappings(other.getWhindexFieldMappings());
         this.setNoExpansionFields(other.getNoExpansionFields());
+        this.setLanguageExpansionCodes(other.getLanguageExpansionCodes());
+        this.setDisableStemming(other.getDisableStemming());
+        this.setDisableLemmas(other.getDisableLemmas());
+        this.setDisableUnigrams(other.getDisableUnigrams());
+        this.setDisableBigrams(other.getDisableBigrams());
         this.setLenientFields(other.getLenientFields());
         this.setStrictFields(other.getStrictFields());
         this.setExcerptFields(ExcerptFields.copyOf(other.getExcerptFields()));
@@ -2929,6 +2942,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 Objects.equals(getActiveQueryLogNameSource(), that.getActiveQueryLogNameSource()) &&
                 Objects.equals(getBloom(), that.getBloom()) &&
                 Objects.equals(getNoExpansionFields(), that.getNoExpansionFields()) &&
+                Objects.equals(getLanguageExpansionCodes(), that.getLanguageExpansionCodes()) &&
                 Objects.equals(getLenientFields(), that.getLenientFields()) &&
                 Objects.equals(getStrictFields(), that.getStrictFields()) &&
                 Objects.equals(getExcerptFields(), that.getExcerptFields()) &&
@@ -3133,6 +3147,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getEnforceUniqueConjunctionsWithinExpression(),
                 getEnforceUniqueDisjunctionsWithinExpression(),
                 getNoExpansionFields(),
+                getLanguageExpansionCodes(),
                 getBloom(),
                 getLenientFields(),
                 getStrictFields(),
@@ -3161,5 +3176,45 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.timers = new QueryStopwatch();
         this.fstCount = new AtomicInteger(0);
         return this;
+    }
+
+    public Set<String> getLanguageExpansionCodes() {
+        return languageExpansionCodes;
+    }
+
+    public void setLanguageExpansionCodes(Set<String> languageExpansionCodes) {
+        this.languageExpansionCodes = languageExpansionCodes;
+    }
+
+    public Set<String> getDisableStemming() {
+        return disableStemming;
+    }
+
+    public void setDisableStemming(Set<String> disableStemming) {
+        this.disableStemming = disableStemming;
+    }
+
+    public Set<String> getDisableLemmas() {
+        return disableLemmas;
+    }
+
+    public void setDisableLemmas(Set<String> disableLemmas) {
+        this.disableLemmas = disableLemmas;
+    }
+
+    public Set<String> getDisableUnigrams() {
+        return disableUnigrams;
+    }
+
+    public void setDisableUnigrams(Set<String> disableUnigrams) {
+        this.disableUnigrams = disableUnigrams;
+    }
+
+    public Set<String> getDisableBigrams() {
+        return disableBigrams;
+    }
+
+    public void setDisableBigrams(Set<String> disableBigrams) {
+        this.disableBigrams = disableBigrams;
     }
 }

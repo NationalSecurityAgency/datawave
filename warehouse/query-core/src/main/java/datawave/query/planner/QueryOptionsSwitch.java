@@ -1,7 +1,6 @@
 package datawave.query.planner;
 
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -136,6 +135,21 @@ public class QueryOptionsSwitch {
                     if (groupFields.hasGroupByFields()) {
                         config.setProjectFields(groupFields.getProjectionFields());
                     }
+                    break;
+                case QueryParameters.LANGUAGE_EXPANSION:
+                    config.setLanguageExpansionCodes(new HashSet<>(Arrays.asList(StringUtils.split(value, Constants.PARAM_VALUE_SEP))));
+                    break;
+                case QueryParameters.DISABLE_STEMMING:
+                    config.setDisableStemming(new HashSet<>(Arrays.asList(StringUtils.split(value, Constants.PARAM_VALUE_SEP))));
+                    break;
+                case QueryParameters.DISABLE_LEMMAS:
+                    config.setDisableLemmas(new HashSet<>(Arrays.asList(StringUtils.split(value, Constants.PARAM_VALUE_SEP))));
+                    break;
+                case QueryParameters.DISABLE_UNIGRAMS:
+                    config.setDisableUnigrams(new HashSet<>(Arrays.asList(StringUtils.split(value, Constants.PARAM_VALUE_SEP))));
+                    break;
+                case QueryParameters.DISABLE_BIGRAMS:
+                    config.setDisableBigrams(new HashSet<>(Arrays.asList(StringUtils.split(value, Constants.PARAM_VALUE_SEP))));
                     break;
             }
         }
