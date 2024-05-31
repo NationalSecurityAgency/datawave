@@ -146,7 +146,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
     }
 
     @Override
-    public void apply(List<Object> results, boolean flushedResults) {
+    public void apply(List<Object> results, Object newResult) {
         // TODO
     }
 

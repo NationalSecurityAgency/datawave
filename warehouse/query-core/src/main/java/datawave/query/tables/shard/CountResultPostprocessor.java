@@ -43,24 +43,18 @@ public class CountResultPostprocessor implements ResultPostprocessor {
     }
 
     @Override
-    public void apply(List<Object> results, boolean flushed) {
-        if (flushed) {
-            return;
-        }
-
+    public void apply(List<Object> results, Object newResult) {
         Set<ColumnVisibility> visibilities = new HashSet<>();
         visibilities.add(this.vis);
-        for (Object result : results) {
-            if (result instanceof EventBase) {
-                EventBase event = (EventBase) result;
+        if (newResult instanceof EventBase) {
+            EventBase event = (EventBase) newResult;
 
-                // aggregate the count, and column visibility
-                FieldBase<?> countField = getCountField(event.getFields());
-                if (countField != null) {
-                    if (countField.getTypedValue().getDataType().isAssignableFrom(Long.class)) {
-                        resultCount += ((Number) countField.getValueOfTypedValue()).longValue();
-                        visibilities.add(new ColumnVisibility(countField.getColumnVisibility()));
-                    }
+            // aggregate the count, and column visibility
+            FieldBase<?> countField = getCountField(event.getFields());
+            if (countField != null) {
+                if (countField.getTypedValue().getDataType().isAssignableFrom(Long.class)) {
+                    resultCount += ((Number) countField.getValueOfTypedValue()).longValue();
+                    visibilities.add(new ColumnVisibility(countField.getColumnVisibility()));
                 }
             }
         }
@@ -69,7 +63,6 @@ public class CountResultPostprocessor implements ResultPostprocessor {
         } catch (MarkingFunctions.Exception e) {
             throw new RuntimeException("Unable to combine column visibilities", e);
         }
-        results.clear();
     }
 
     @Override

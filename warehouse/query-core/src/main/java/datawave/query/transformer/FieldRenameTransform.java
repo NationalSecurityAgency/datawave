@@ -1,10 +1,7 @@
 package datawave.query.transformer;
 
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -12,15 +9,11 @@ import java.util.Set;
 import javax.annotation.Nullable;
 
 import org.apache.accumulo.core.data.Key;
-import org.apache.commons.lang3.StringUtils;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
-import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.logic.ResultPostprocessor;
-import datawave.query.Constants;
 import datawave.query.attributes.Document;
 import datawave.query.jexl.JexlASTHelper;
 
@@ -82,7 +75,7 @@ public class FieldRenameTransform extends DocumentTransform.DefaultDocumentTrans
     }
 
     @Override
-    public void apply(List<Object> results, boolean flushed) {
+    public void apply(List<Object> results, Object newResult) {
 
     }
 

@@ -17,10 +17,10 @@ public interface ResultPostprocessor {
      *
      * @param results
      *            The results to be returned to the user
-     * @param flushedResults
-     *            True if the results passed in were the result of the flushResults call below
+     * @param newResult
+     *            The new result to add to the page
      */
-    void apply(List<Object> results, boolean flushedResults);
+    void apply(List<Object> results, Object newResult);
 
     /**
      * Used to get any cached summary results
@@ -41,8 +41,8 @@ public interface ResultPostprocessor {
     default void saveState(GenericQueryConfiguration config) {}
 
     class IdentityResultPostprocessor implements ResultPostprocessor {
-        public void apply(List<Object> results, boolean flushedResults) {
-            // do nothing
+        public void apply(List<Object> results, Object newResult) {
+            results.add(newResult);
         }
     }
 }

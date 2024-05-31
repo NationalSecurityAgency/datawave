@@ -529,12 +529,16 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
         addOption(cfg, QueryOptions.LIMIT_FIELDS, config.getLimitFieldsAsString(), false);
         addOption(cfg, QueryOptions.MATCHING_FIELD_SETS, config.getMatchingFieldSetsAsString(), false);
-        addOption(cfg, QueryOptions.GROUP_FIELDS, config.getGroupFields().toString(), true);
-        addOption(cfg, QueryOptions.GROUP_FIELDS_BATCH_SIZE, config.getGroupFieldsBatchSizeAsString(), true);
-        addOption(cfg, QueryOptions.UNIQUE_FIELDS, config.getUniqueFields().toString(), true);
-        if (config.getUniqueFields().isMostRecent()) {
-            addOption(cfg, QueryOptions.MOST_RECENT_UNIQUE, Boolean.toString(true), false);
-            addOption(cfg, QueryOptions.UNIQUE_CACHE_BUFFER_SIZE, Integer.toString(config.getUniqueCacheBufferSize()), false);
+        if (!config.getUniqueFields().isEmpty()) {
+            addOption(cfg, QueryOptions.UNIQUE_FIELDS, config.getUniqueFields().toString(), true);
+            if (config.getUniqueFields().isMostRecent()) {
+                addOption(cfg, QueryOptions.MOST_RECENT_UNIQUE, Boolean.toString(true), false);
+                addOption(cfg, QueryOptions.UNIQUE_CACHE_BUFFER_SIZE, Integer.toString(config.getUniqueCacheBufferSize()), false);
+            }
+        } else {
+            // we cannot do grouping tserver side if already appling a unique transform
+            addOption(cfg, QueryOptions.GROUP_FIELDS, config.getGroupFields().toString(), true);
+            addOption(cfg, QueryOptions.GROUP_FIELDS_BATCH_SIZE, config.getGroupFieldsBatchSizeAsString(), true);
         }
         addOption(cfg, QueryOptions.HIT_LIST, Boolean.toString(config.isHitList()), false);
         addOption(cfg, QueryOptions.TERM_FREQUENCY_FIELDS, Joiner.on(',').join(config.getQueryTermFrequencyFields()), false);

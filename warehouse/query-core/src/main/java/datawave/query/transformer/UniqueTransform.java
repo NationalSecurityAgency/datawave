@@ -177,34 +177,25 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
      * Part of the ResultPostprocessor interface
      */
     @Override
-    public void apply(List<Object> results, boolean flushed) {
-        // if we have already been flushed, then these are already final results
-        if (flushed) {
-            return;
-        }
-
+    public void apply(List<Object> results, Object newResult) {
         // these results should be EventBase objects
-        List<Object> resultsToKeep = new ArrayList<>();
-        for (Object result : results) {
-            EventBase event = (EventBase) result;
-            if (!event.isIntermediateResult()) {
-                log.info("Testing " + event.getMetadata());
-                try {
-                    if (set != null) {
-                        byte[] signature = getBytes(event);
-                        synchronized (set) {
-                            this.set.add(new UnmodifiableMapEntry(signature, event));
-                        }
-                    } else if (!isDuplicate(event)) {
-                        log.info("Keeping " + event.getMetadata());
-                        resultsToKeep.add(event);
+        EventBase event = (EventBase) newResult;
+        if (!event.isIntermediateResult()) {
+            log.info("Testing " + event.getMetadata());
+            try {
+                if (set != null) {
+                    byte[] signature = getBytes(event);
+                    synchronized (set) {
+                        this.set.add(new UnmodifiableMapEntry(signature, event));
                     }
-                } catch (IOException ioe) {
-                    log.error("Failed to convert document to bytes.  Returning document as unique.", ioe);
+                } else if (!isDuplicate(event)) {
+                    log.info("Keeping " + event.getMetadata());
+                    results.add(newResult);
                 }
+            } catch (IOException ioe) {
+                log.error("Failed to convert document to bytes.  Returning document as unique.", ioe);
             }
         }
-        results.retainAll(resultsToKeep);
     }
 
     @Override
@@ -616,6 +607,7 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
             }
 
             if (transform.uniqueFields.isMostRecent()) {
+                log.info("Creating most recent unique transform");
                 // @formatter:off
                 // noinspection unchecked
                 transform.set = (HdfsBackedSortedSet<Entry<byte[],Object>>) HdfsBackedSortedSet.builder()
@@ -640,6 +632,8 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
                         .withSetFactory(new FileKeyValueSortedSet.Factory())
                         .build();
                 // @formatter:on
+            } else {
+                log.info("Creating unique transform");
             }
 
             return transform;

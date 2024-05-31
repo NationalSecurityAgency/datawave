@@ -684,6 +684,8 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
             processor.addProcessor(new FieldRenameTransform(config.getRenameFields(), config.getIncludeGroupingContext(), config.isReducedResponse()));
         }
 
+        log.info("Created list results post processor with " + processor.numProcessors() + " processors");
+
         return processor;
     }
 

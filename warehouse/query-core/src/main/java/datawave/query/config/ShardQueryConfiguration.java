@@ -743,6 +743,10 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setModelName(other.getModelName());
         this.setMetadataTableName(other.getMetadataTableName());
 
+        this.setQueryExecutionForPageTimeout(other.getQueryExecutionForPageTimeout());
+        this.setIncludeGroupingContext(other.getIncludeGroupingContext());
+        this.setReducedResponse(other.isReducedResponse());
+
         this.setSpeculativeScanning(other.getSpeculativeScanning());
         this.setMaxDocScanTimeout(other.getMaxDocScanTimeout());
         this.setBackoffEnabled(other.getBackoffEnabled());
@@ -751,6 +755,13 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setHdfsFileCompressionCodec(other.getHdfsFileCompressionCodec());
         this.setIvaratorCacheDirConfigs(null == other.getIvaratorCacheDirConfigs() ? null : Lists.newArrayList(other.getIvaratorCacheDirConfigs()));
         this.setIvaratorFstHdfsBaseURIs(other.getIvaratorFstHdfsBaseURIs());
+        this.setIvaratorMaxOpenFiles(other.getIvaratorMaxOpenFiles());
+        this.setIvaratorNumRetries(other.getIvaratorNumRetries());
+        this.setIvaratorPersistVerify(other.isIvaratorPersistVerify());
+        this.setIvaratorPersistVerifyCount(other.getIvaratorPersistVerifyCount());
+        this.setIvaratorCacheScanTimeout(other.getIvaratorCacheScanTimeout());
+        this.setIvaratorCacheBufferSize(other.getIvaratorCacheBufferSize());
+        this.setIvaratorCacheScanPersistThreshold(other.getIvaratorCacheScanPersistThreshold());
 
         this.setCleanupShardsAndDaysQueryHints(other.isCleanupShardsAndDaysQueryHints());
         this.setBypassExecutabilityCheck(other.isBypassExecutabilityCheck());
@@ -772,7 +783,13 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setIndexedFields(null == other.getIndexedFields() ? null : Sets.newHashSet(other.getIndexedFields()));
 
         this.setSortedUIDs(other.isSortedUIDs());
+
         this.setBloom(other.getBloom());
+        this.setUniqueFields(other.getUniqueFields());
+        this.setUniqueCacheBufferSize(other.getUniqueCacheBufferSize());
+        this.setGroupFields(other.getGroupFields());
+        this.setGroupFieldsBatchSize(other.getGroupFieldsBatchSize());
+        this.setRenameFields(other.getRenameFields());
     }
 
     @Override
