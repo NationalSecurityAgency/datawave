@@ -4,7 +4,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -16,7 +15,6 @@ import java.util.concurrent.TimeUnit;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
-import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.log4j.Logger;
@@ -28,11 +26,12 @@ import com.google.common.collect.Queues;
 import com.google.common.util.concurrent.AbstractExecutionThreadService;
 import com.google.common.util.concurrent.MoreExecutors;
 
+import datawave.core.query.configuration.Result;
+import datawave.microservice.query.Query;
 import datawave.query.tables.AccumuloResource.ResourceFactory;
 import datawave.query.tables.stats.ScanSessionStats;
 import datawave.query.tables.stats.ScanSessionStats.TIMERS;
 import datawave.query.tables.stats.StatsListener;
-import datawave.webservice.query.Query;
 import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
 
 /**
@@ -40,8 +39,7 @@ import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
  * result queue is polled in the actual next() and hasNext() calls. Note that the uncaughtExceptionHandler from the Query is used to pass exceptions up which
  * will also fail the overall query if something happens. If this is not desired then a local handler should be set.
  */
-public class ScannerSession extends AbstractExecutionThreadService implements Iterator<Entry<Key,Value>> {
-
+public class ScannerSession extends AbstractExecutionThreadService implements Iterator<Result> {
     /**
      * last seen key, used for moving across the sliding window of ranges.
      */
@@ -55,13 +53,11 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
     /**
      * Result queue, providing us objects
      */
-    protected ArrayBlockingQueue<Entry<Key,Value>> resultQueue;
-
+    protected ArrayBlockingQueue<Result> resultQueue;
     /**
      * Current entry to return. this will be popped from the result queue.
      */
-    protected Entry<Key,Value> currentEntry;
-
+    protected Result currentEntry;
     /**
      * Delegates scanners to us, blocking if none are available or used by other sources.
      */
@@ -286,18 +282,26 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
 
         // if we are new, let's start and wait
         if (state() == State.NEW) {
-            // we have just started, so let's start and wait
-            // until we've completed the start process
-            if (null != stats)
-                initializeTimers();
-
-            // these two guava methods replaced behavior of startAndWait() from version 15 but
-            // will now throw an exception if another thread closes the session so catch and ignore
-            startAsync();
-            try {
-                awaitRunning();
-            } catch (IllegalStateException e) {
-                log.debug("Session was closed while waiting to start up.");
+            // make sure this is not done multiple time concurrently
+            synchronized (this) {
+                if (state() == State.NEW) {
+                    if (null != stats) {
+                        initializeTimers();
+                    }
+                    startAsync();
+                    try {
+                        // we have just started, so let's start and wait
+                        // until we've completed the start process
+                        awaitRunning();
+                    } catch (IllegalStateException e) {
+                        // This is thrown if the state is anything other than RUNNING
+                        // STOPPING, and TERMINATED are valid as they indicate successful execution
+                        // FAILED is not ok, and should be thrown
+                        if (state() == State.FAILED) {
+                            throw e;
+                        }
+                    }
+                }
             }
         }
 
@@ -376,9 +380,9 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
      * Note that this method needs to check the uncaught exception handler and propogate any set throwables.
      */
     @Override
-    public Entry<Key,Value> next() {
+    public Result next() {
         try {
-            Entry<Key,Value> retVal = currentEntry;
+            Result retVal = currentEntry;
             currentEntry = null;
             return retVal;
         } finally {
@@ -470,7 +474,7 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
             delegatedResource = ResourceFactory.initializeResource(delegatedResourceInitializer, delegatedResource, tableName, auths, currentRange)
                             .setOptions(options);
 
-            Iterator<Entry<Key,Value>> iter = delegatedResource.iterator();
+            Iterator<Result> iter = Result.resultIterator(null, delegatedResource.iterator());
 
             // do not continue if we've reached the end of the corpus
 
@@ -534,10 +538,10 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
         }
     }
 
-    protected int scannerInvariant(final Iterator<Entry<Key,Value>> iter) {
+    protected int scannerInvariant(final Iterator<Result> iter) {
         int retrievalCount = 0;
 
-        Entry<Key,Value> myEntry = null;
+        Result myEntry = null;
         Key highest = null;
         while (iter.hasNext()) {
             myEntry = iter.next();

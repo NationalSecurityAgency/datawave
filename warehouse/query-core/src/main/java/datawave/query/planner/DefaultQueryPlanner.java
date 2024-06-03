@@ -60,10 +60,15 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 import com.google.common.collect.Sets;
 
+import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.core.iterators.querylock.QueryLock;
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.configuration.QueryData;
 import datawave.data.type.AbstractGeometryType;
 import datawave.data.type.Type;
 import datawave.ingest.mapreduce.handler.dateindex.DateIndexUtil;
+import datawave.microservice.query.Query;
+import datawave.microservice.query.QueryImpl.Parameter;
 import datawave.query.CloseableIterable;
 import datawave.query.Constants;
 import datawave.query.QueryParameters;
@@ -167,12 +172,6 @@ import datawave.query.util.QueryStopwatch;
 import datawave.query.util.Tuple2;
 import datawave.query.util.TypeMetadata;
 import datawave.util.time.TraceStopwatch;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.QueryImpl.Parameter;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
-import datawave.webservice.query.configuration.QueryData;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.NotFoundQueryException;
@@ -534,6 +533,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         addOption(cfg, QueryOptions.GROUP_FIELDS_BATCH_SIZE, config.getGroupFieldsBatchSizeAsString(), true);
         addOption(cfg, QueryOptions.UNIQUE_FIELDS, config.getUniqueFields().toString(), true);
         if (config.getUniqueFields().isMostRecent()) {
+            // this may be redundant with the uniqueFields.toString(), but other code relies on this explicitly being set
             addOption(cfg, QueryOptions.MOST_RECENT_UNIQUE, Boolean.toString(true), false);
             addOption(cfg, QueryOptions.UNIQUE_CACHE_BUFFER_SIZE, Integer.toString(config.getUniqueCacheBufferSize()), false);
         }
@@ -1299,7 +1299,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
     protected ASTJexlScript timedValidateFilterFunctions(QueryStopwatch timers, ASTJexlScript queryTree, Set<String> indexOnlyFields)
                     throws DatawaveQueryException {
-        return visitorManager.timedVisit(timers, "Rewrite Null Functions",
+        return visitorManager.timedVisit(timers, "Validate Filter Functions",
                         () -> (ASTJexlScript) ValidateFilterFunctionVisitor.validate(queryTree, indexOnlyFields));
     }
 
@@ -2210,11 +2210,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 throw new DatawaveQueryException(qe);
             }
 
-            if (!preloadOptions && config.isRebuildDatatypeFilter()) {
-                Set<String> datatypes = IngestTypeVisitor.getIngestTypes(config.getQueryTree(), getTypeMetadata());
-                config.setDatatypeFilter(datatypes);
-            }
-
             String datatypeFilter = config.getDatatypeFilterAsString();
 
             addOption(cfg, QueryOptions.DATATYPE_FILTER, datatypeFilter, false);
@@ -2589,6 +2584,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
         //  @formatter:off
         QueryPlan queryPlan = new QueryPlan()
+                        .withTableName(config.getShardTableName())
                         .withQueryTree(queryTree)
                         .withRanges(Collections.singleton(range));
         //  @formatter:on
@@ -2650,42 +2646,63 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         // optionally build/rebuild the datatype filter with the fully planned query
         if (config.isRebuildDatatypeFilter()) {
             Set<String> ingestTypes = IngestTypeVisitor.getIngestTypes(config.getQueryTree(), getTypeMetadata());
-            config.setDatatypeFilter(ingestTypes);
-        }
 
-        Set<String> ingestTypes = null;
-        if (config.getReduceIngestTypes()) {
-            Set<String> userRequestedIngestTypes = config.getDatatypeFilter();
-            if (!userRequestedIngestTypes.isEmpty()) {
-                Set<String> queryIngestTypes = IngestTypeVisitor.getIngestTypes(queryTree, getTypeMetadata());
-                ingestTypes = Sets.intersection(userRequestedIngestTypes, queryIngestTypes);
-
-                if (ingestTypes.isEmpty()) {
-                    throw new DatawaveFatalQueryException(
-                                    "DataTypes did not intersect. User requested types: " + userRequestedIngestTypes + " Query types: " + queryIngestTypes);
-                }
-
-                if (ingestTypes.size() < userRequestedIngestTypes.size()) {
-                    // need to update the user requested ingest types
-                    config.setDatatypeFilter(ingestTypes);
-                }
-            }
-        }
-
-        if (config.getPruneQueryByIngestTypes()) {
-            JexlNode pruned;
-            if (ingestTypes == null) {
-                // perform a self-pruning visit
-                pruned = IngestTypePruningVisitor.prune(RebuildingVisitor.copy(queryTree), getTypeMetadata());
+            if (ingestTypes.contains(IngestTypeVisitor.UNKNOWN_TYPE)) {
+                // could not reduce ingest types based on the query structure, do nothing
+            } else if (config.getDatatypeFilter().isEmpty()) {
+                // if no filter specified, build and set filter from query fields
+                config.setDatatypeFilter(ingestTypes);
             } else {
-                // perform an external pruning visit
-                pruned = IngestTypePruningVisitor.prune(RebuildingVisitor.copy(queryTree), getTypeMetadata(), ingestTypes);
+                Set<String> parameterTypes = config.getDatatypeFilter();
+                Set<String> intersectedTypes = Sets.intersection(ingestTypes, parameterTypes);
+
+                if (intersectedTypes.isEmpty()) {
+                    throw new DatawaveQueryException("User requested datatypes did not overlap with query fields");
+                }
+
+                // only update filter if it is smaller
+                if (intersectedTypes.size() < parameterTypes.size()) {
+                    config.setDatatypeFilter(intersectedTypes);
+                }
             }
+        }
+
+        // only reduce datatype filter if not rebuilding and there's a filter to reduce
+        if (!config.getDatatypeFilter().isEmpty() && !config.isRebuildDatatypeFilter() && config.getReduceIngestTypes()) {
+            Set<String> parameterTypes = config.getDatatypeFilter();
+            Set<String> ingestTypes = IngestTypeVisitor.getIngestTypes(queryTree, getTypeMetadata());
+
+            if (!ingestTypes.contains(IngestTypeVisitor.UNKNOWN_TYPE)) {
+                Set<String> intersectedTypes = Sets.intersection(ingestTypes, parameterTypes);
+
+                if (intersectedTypes.isEmpty()) {
+                    throw new DatawaveQueryException("User requested datatypes did not overlap with query fields");
+                }
+
+                // only update filter if it is smaller
+                if (intersectedTypes.size() < parameterTypes.size()) {
+                    config.setDatatypeFilter(intersectedTypes);
+                }
+            }
+        }
+
+        // prune query by ingest types
+        if (config.getPruneQueryByIngestTypes()) {
+            JexlNode pruned = IngestTypePruningVisitor.prune(RebuildingVisitor.copy(queryTree), getTypeMetadata());
 
             if (config.getFullTableScanEnabled() || ExecutableDeterminationVisitor.isExecutable(pruned, config, metadataHelper)) {
                 // always update the query for full table scans or in cases where the query is still executable
                 queryTree = pruned;
                 config.setQueryTree((ASTJexlScript) pruned);
+
+                Set<String> types = IngestTypeVisitor.getIngestTypes(pruned, getTypeMetadata());
+                if (!types.contains(IngestTypeVisitor.UNKNOWN_TYPE)) {
+                    if (types.isEmpty()) {
+                        throw new DatawaveQueryException("User requested datatypes did not overlap with query fields");
+                    } else if (config.getDatatypeFilter().isEmpty() || (types.size() < config.getDatatypeFilter().size())) {
+                        config.setDatatypeFilter(types);
+                    }
+                }
             } else {
                 throw new DatawaveFatalQueryException("Check query for mutually exclusive ingest types, query was non-executable after pruning by ingest type");
             }
