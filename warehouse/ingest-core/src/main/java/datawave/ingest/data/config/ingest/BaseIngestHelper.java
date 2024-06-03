@@ -139,8 +139,6 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     public static final String FIELD_CONFIG_FILE = ".data.category.field.config.file";
 
     private static final String PROPERTY_MALFORMED = " property malformed: ";
-    private static final String ADDED_NORMALIZED_FIELD = "added normalized field ";
-    private static final String TO_VALUES = " to values ";
 
     private static final Logger log = ThreadConfigurableLogger.getLogger(BaseIngestHelper.class);
 
@@ -749,9 +747,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
                 value.setEventFieldValue(null);
             }
             values.add(value);
-            if (log.isDebugEnabled()) {
-                log.debug(ADDED_NORMALIZED_FIELD + value + " to values set.");
-            }
+            logNormalizedField(normalizedContent, values);
         }
         return values;
     }
@@ -799,9 +795,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
                 } else {
                     values.add(normalize(normalizedContent, dataType));
                 }
-                if (log.isDebugEnabled()) {
-                    log.debug(ADDED_NORMALIZED_FIELD + normalizedContent + TO_VALUES + values);
-                }
+                logNormalizedField(normalizedContent, values);
             }
             return values;
         }
@@ -816,9 +810,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
             HashSet<NormalizedContentInterface> values = new HashSet<>(dataTypes.size());
             for (datawave.data.type.Type<?> dataType : dataTypes) {
                 values.add(normalizeFieldValue(normalizedContent, dataType));
-                if (log.isDebugEnabled()) {
-                    log.debug(ADDED_NORMALIZED_FIELD + normalizedContent + TO_VALUES + values);
-                }
+                logNormalizedField(normalizedContent, values);
             }
             return values;
         } else {
@@ -830,11 +822,15 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
             HashSet<NormalizedContentInterface> values = new HashSet<>(dataTypes.size());
             for (datawave.data.type.Type<?> dataType : dataTypes) {
                 values.add(normalize(normalizedContent, dataType));
-                if (log.isDebugEnabled()) {
-                    log.debug(ADDED_NORMALIZED_FIELD + normalizedContent + TO_VALUES + values);
-                }
+                logNormalizedField(normalizedContent, values);
             }
             return values;
+        }
+    }
+
+    private void logNormalizedField(NormalizedContentInterface normalizedContent, HashSet<NormalizedContentInterface> values) {
+        if (log.isDebugEnabled()) {
+            log.debug("added normalized field " + normalizedContent + " to values " + values);
         }
     }
 

@@ -1627,6 +1627,8 @@ public class BulkIngestMapFileLoaderTest {
 
             try {
                 Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
+            } catch (IOException ioException) {
+                Assert.fail(ioException.getMessage());
             } catch (Exception e) {
                 Assert.fail(e.getMessage());
             }

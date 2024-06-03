@@ -308,7 +308,7 @@ public final class EdgeData {
             return defaultInstance;
         }
 
-        private transient final com.google.protobuf.UnknownFieldSet unknownFields;
+        private final com.google.protobuf.UnknownFieldSet unknownFields;
 
         @java.lang.Override
         public final com.google.protobuf.UnknownFieldSet getUnknownFields() {
