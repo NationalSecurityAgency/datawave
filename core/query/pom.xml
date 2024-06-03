@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.core</groupId>
         <artifactId>datawave-core-parent</artifactId>
-        <version>7.0.1-SNAPSHOT</version>
+        <version>7.0.1</version>
     </parent>
     <artifactId>datawave-core-query</artifactId>
     <name>${project.artifactId}</name>
