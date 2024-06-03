@@ -10,6 +10,7 @@ import org.apache.log4j.Logger;
 
 import com.google.common.collect.Sets;
 
+import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.query.Constants;
 import datawave.query.QueryParameters;
 import datawave.query.attributes.ExcerptFields;
@@ -17,7 +18,6 @@ import datawave.query.attributes.UniqueFields;
 import datawave.query.common.grouping.GroupFields;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.util.StringUtils;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
 
 public class QueryOptionsSwitch {
 
@@ -65,6 +65,10 @@ public class QueryOptionsSwitch {
                     // preserve the most recent flag
                     uniqueFields.setMostRecent(config.getUniqueFields().isMostRecent());
                     config.setUniqueFields(uniqueFields);
+                    break;
+                case QueryParameters.MOST_RECENT_UNIQUE:
+                    log.info("Setting unique fields to be most recent");
+                    config.getUniqueFields().setMostRecent(Boolean.parseBoolean(value));
                     break;
                 case QueryParameters.EXCERPT_FIELDS:
                     ExcerptFields excerptFields = ExcerptFields.from(value);

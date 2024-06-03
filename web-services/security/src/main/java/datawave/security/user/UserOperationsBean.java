@@ -28,6 +28,7 @@ import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.configuration.spring.SpringBean;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
+import datawave.security.authorization.ProxiedUserDetails;
 import datawave.security.authorization.UserOperations;
 import datawave.security.cache.CredentialsCacheBean;
 import datawave.security.util.WSAuthorizationsUtil;
@@ -53,7 +54,6 @@ public class UserOperationsBean implements UserOperations {
     private CredentialsCacheBean credentialsCache;
 
     @Inject
-    @SpringBean(name = "ResponseObjectFactory")
     private ResponseObjectFactory responseObjectFactory;
 
     @Inject
@@ -116,7 +116,7 @@ public class UserOperationsBean implements UserOperations {
     }
 
     @Override
-    public AuthorizationsListBase listEffectiveAuthorizations(Object p) {
+    public AuthorizationsListBase listEffectiveAuthorizations(ProxiedUserDetails p) {
         return listEffectiveAuthorizations(p, true);
     }
 
@@ -175,15 +175,15 @@ public class UserOperationsBean implements UserOperations {
             "application/x-protostuff"})
     @PermitAll
     public GenericResponse<String> flushCachedCredentials(@DefaultValue("true") @QueryParam("includeRemoteServices") boolean includeRemoteServices) {
-        return flushCachedCredentials(context.getCallerPrincipal(), includeRemoteServices);
+        return flushCachedCredentials((ProxiedUserDetails) context.getCallerPrincipal(), includeRemoteServices);
     }
 
     @Override
-    public GenericResponse<String> flushCachedCredentials(Object callerPrincipal) {
+    public GenericResponse<String> flushCachedCredentials(ProxiedUserDetails callerPrincipal) {
         return flushCachedCredentials(callerPrincipal, true);
     }
 
-    private GenericResponse<String> flushCachedCredentials(Object callerPrincipal, boolean includeRemoteServices) {
+    private GenericResponse<String> flushCachedCredentials(ProxiedUserDetails callerPrincipal, boolean includeRemoteServices) {
         GenericResponse<String> response = new GenericResponse<>();
         log.info("Flushing credentials for " + callerPrincipal + " from the cache.");
 

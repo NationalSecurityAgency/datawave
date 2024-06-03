@@ -2,6 +2,7 @@ BIN_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 source "${BIN_DIR}/logging.sh"
 source "${BIN_DIR}/query.sh"
+source "${BIN_DIR}/modification.sh"
 
 # Upon uninstall, tarballs will be preserved in place by default.
 # To remove them, use DW_UNINSTALL_RM_BINARIES_FLAG_*

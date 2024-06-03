@@ -7,9 +7,9 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 
+import datawave.core.query.configuration.QueryData;
+import datawave.microservice.query.Query;
 import datawave.query.CloseableIterable;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.configuration.QueryData;
 
 public class ThreadedRangeBundler implements CloseableIterable<QueryData> {
 

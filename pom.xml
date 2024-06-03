@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>gov.nsa.datawave</groupId>
     <artifactId>datawave-parent</artifactId>
-    <version>6.13.0-SNAPSHOT</version>
+    <version>7.0.1-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>DataWave</name>
     <description>DataWave is a Java-based ingest and query framework that leverages Apache Accumulo to provide fast, secure access to your data.</description>
@@ -58,6 +58,7 @@
         <version.commons-pool>1.6</version.commons-pool>
         <version.commons-text>1.8</version.commons-text>
         <version.curator>5.2.0</version.curator>
+        <version.curator.test>5.2.0</version.curator.test>
         <version.deltaspike>1.9.0</version.deltaspike>
         <version.easymock>5.2.0</version.easymock>
         <version.eclipse.emf>2.15.0</version.eclipse.emf>
@@ -73,7 +74,7 @@
         <version.hamcrest>1.3</version.hamcrest>
         <version.httpcomponents-httpclient>4.5.13</version.httpcomponents-httpclient>
         <version.httpcomponents-httpcore>4.4.8</version.httpcomponents-httpcore>
-        <version.in-memory-accumulo>3.0.1</version.in-memory-accumulo>
+        <version.in-memory-accumulo>4.0.0</version.in-memory-accumulo>
         <version.infinispan>9.4.21.Final</version.infinispan>
         <version.jackson>2.10.0.pr1</version.jackson>
         <version.jackson-mapper-asl>1.9.13</version.jackson-mapper-asl>
@@ -98,17 +99,19 @@
         <version.lucene>7.5.0</version.lucene>
         <version.maven-install-plugin>2.5.2</version.maven-install-plugin>
         <version.metrics-cdi>1.6.0</version.metrics-cdi>
-        <version.microservice.accumulo-api>3.0.0</version.microservice.accumulo-api>
-        <version.microservice.accumulo-utils>3.0.2</version.microservice.accumulo-utils>
-        <version.microservice.audit-api>3.0.0</version.microservice.audit-api>
-        <version.microservice.authorization-api>3.0.0</version.microservice.authorization-api>
-        <version.microservice.base-rest-responses>3.0.0</version.microservice.base-rest-responses>
-        <version.microservice.common-utils>2.0.1</version.microservice.common-utils>
-        <version.microservice.dictionary-api>3.0.0</version.microservice.dictionary-api>
-        <version.microservice.metadata-utils>3.0.0</version.microservice.metadata-utils>
-        <version.microservice.metrics-reporter>2.0.0</version.microservice.metrics-reporter>
-        <version.microservice.query-metric-api>3.0.0</version.microservice.query-metric-api>
-        <version.microservice.type-utils>2.0.2</version.microservice.type-utils>
+        <version.microservice.accumulo-api>4.0.0</version.microservice.accumulo-api>
+        <version.microservice.accumulo-utils>4.0.0</version.microservice.accumulo-utils>
+        <version.microservice.audit-api>4.0.0</version.microservice.audit-api>
+        <version.microservice.authorization-api>4.0.0</version.microservice.authorization-api>
+        <version.microservice.base-rest-responses>4.0.0</version.microservice.base-rest-responses>
+        <version.microservice.common-utils>3.0.0</version.microservice.common-utils>
+        <version.microservice.dictionary-api>4.0.0</version.microservice.dictionary-api>
+        <version.microservice.mapreduce-query-api>1.0.0</version.microservice.mapreduce-query-api>
+        <version.microservice.metadata-utils>4.0.0</version.microservice.metadata-utils>
+        <version.microservice.metrics-reporter>3.0.0</version.microservice.metrics-reporter>
+        <version.microservice.query-api>1.0.0</version.microservice.query-api>
+        <version.microservice.query-metric-api>4.0.0</version.microservice.query-metric-api>
+        <version.microservice.type-utils>3.0.0</version.microservice.type-utils>
         <version.minlog>1.2</version.minlog>
         <version.mockito>2.23.0</version.mockito>
         <version.mysql-connector>8.0.28</version.mysql-connector>
@@ -366,6 +369,11 @@
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
+                <artifactId>mapreduce-query-api</artifactId>
+                <version>${version.microservice.mapreduce-query-api}</version>
+            </dependency>
+            <dependency>
+                <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>metadata-utils</artifactId>
                 <version>${version.microservice.metadata-utils}</version>
                 <exclusions>
@@ -387,6 +395,17 @@
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>metrics-reporter</artifactId>
                 <version>${version.microservice.metrics-reporter}</version>
+            </dependency>
+            <dependency>
+                <groupId>gov.nsa.datawave.microservice</groupId>
+                <artifactId>query-api</artifactId>
+                <version>${version.microservice.query-api}</version>
+            </dependency>
+            <dependency>
+                <groupId>gov.nsa.datawave.microservice</groupId>
+                <artifactId>query-api</artifactId>
+                <version>${version.microservice.query-api}</version>
+                <classifier>jboss</classifier>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
@@ -627,17 +646,33 @@
                         <groupId>log4j</groupId>
                         <artifactId>*</artifactId>
                     </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.zookeeper</groupId>
+                        <artifactId>zookeeper</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.apache.curator</groupId>
                 <artifactId>curator-framework</artifactId>
                 <version>${version.curator}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.zookeeper</groupId>
+                        <artifactId>zookeeper</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.apache.curator</groupId>
                 <artifactId>curator-recipes</artifactId>
                 <version>${version.curator}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.zookeeper</groupId>
+                        <artifactId>zookeeper</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.apache.deltaspike.core</groupId>
@@ -810,6 +845,16 @@
                 <groupId>org.apache.zookeeper</groupId>
                 <artifactId>zookeeper</artifactId>
                 <version>${version.zookeeper}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-log4j12</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>log4j</groupId>
+                        <artifactId>log4j</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.emf</groupId>
@@ -1113,7 +1158,7 @@
             <dependency>
                 <groupId>org.apache.curator</groupId>
                 <artifactId>curator-test</artifactId>
-                <version>${version.curator}</version>
+                <version>${version.curator.test}</version>
                 <scope>test</scope>
                 <optional>true</optional>
             </dependency>
@@ -1168,6 +1213,12 @@
             <dependency>
                 <groupId>org.powermock</groupId>
                 <artifactId>powermock-module-junit4</artifactId>
+                <version>${version.powermock}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.powermock</groupId>
+                <artifactId>powermock-reflect</artifactId>
                 <version>${version.powermock}</version>
                 <scope>test</scope>
             </dependency>
@@ -1352,10 +1403,17 @@
                     <version>3.1.0</version>
                     <configuration>
                         <configLocation>checkstyle.xml</configLocation>
-                        <failsOnError>false</failsOnError>
+                        <failsOnError>true</failsOnError>
                         <failOnViolation>false</failOnViolation>
+                        <consoleOutput>true</consoleOutput>
+                        <propertyExpansion>basedir=${datawave.root}</propertyExpansion>
                     </configuration>
                     <dependencies>
+                        <dependency>
+                            <groupId>ch.qos.reload4j</groupId>
+                            <artifactId>reload4j</artifactId>
+                            <version>1.2.22</version>
+                        </dependency>
                         <dependency>
                             <groupId>ch.qos.reload4j</groupId>
                             <artifactId>reload4j</artifactId>
@@ -1365,6 +1423,17 @@
                             <groupId>com.puppycrawl.tools</groupId>
                             <artifactId>checkstyle</artifactId>
                             <version>8.29</version>
+                        </dependency>
+                        <dependency>
+                            <groupId>org.apache.maven.doxia</groupId>
+                            <artifactId>doxia-site-renderer</artifactId>
+                            <version>1.4</version>
+                            <exclusions>
+                                <exclusion>
+                                    <groupId>log4j</groupId>
+                                    <artifactId>log4j</artifactId>
+                                </exclusion>
+                            </exclusions>
                         </dependency>
                         <dependency>
                             <groupId>org.apache.maven.doxia</groupId>
@@ -1638,7 +1707,7 @@
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>build-helper-maven-plugin</artifactId>
-                    <version>3.0.0</version>
+                    <version>3.3.0</version>
                 </plugin>
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
@@ -1836,6 +1905,24 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-javadoc-plugin</artifactId>
+                        <dependencies>
+                            <dependency>
+                                <groupId>ch.qos.reload4j</groupId>
+                                <artifactId>reload4j</artifactId>
+                                <version>1.2.22</version>
+                            </dependency>
+                            <dependency>
+                                <groupId>org.apache.maven.doxia</groupId>
+                                <artifactId>doxia-site-renderer</artifactId>
+                                <version>1.7.4</version>
+                                <exclusions>
+                                    <exclusion>
+                                        <groupId>log4j</groupId>
+                                        <artifactId>log4j</artifactId>
+                                    </exclusion>
+                                </exclusions>
+                            </dependency>
+                        </dependencies>
                         <executions>
                             <!-- build javadoc jars per module for publishing to the repo -->
                             <execution>
@@ -2050,9 +2137,9 @@
             <id>clover</id>
             <dependencies>
                 <dependency>
-                    <groupId>com.cenqua.clover</groupId>
+                    <groupId>com.atlassian.clover</groupId>
                     <artifactId>clover</artifactId>
-                    <version>RELEASE</version>
+                    <version>[4.1.2,)</version>
                 </dependency>
             </dependencies>
         </profile>
