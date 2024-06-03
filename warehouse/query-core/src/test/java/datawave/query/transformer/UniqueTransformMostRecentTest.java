@@ -11,11 +11,11 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
+import datawave.microservice.query.QueryImpl;
 import datawave.query.attributes.UniqueGranularity;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.util.sortedset.FileSortedSet;
-import datawave.webservice.query.QueryImpl;
 
 public class UniqueTransformMostRecentTest extends UniqueTransformTest {
 
