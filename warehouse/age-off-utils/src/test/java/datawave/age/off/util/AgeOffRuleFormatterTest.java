@@ -22,7 +22,6 @@ public class AgeOffRuleFormatterTest {
         String expectedOutputText =
                 "<rule label=\"test\" mode=\"merge\">\n" +
                 "     <filterClass>datawave.ingest.util.cache.watch.TestTrieFilter</filterClass>\n" +
-                "     <ismerge>true</ismerge>\n" +
                 "     <matchPattern>\n" +
                 "          dryFood bakingPowder=365d\n" +
                 "          dryFood driedBeans=548d\n" +
@@ -111,7 +110,6 @@ public class AgeOffRuleFormatterTest {
         String expectedOutputText =
                 "<rule mode=\"merge\">\n" +
                 "  <filterClass>datawave.iterators.filter.ageoff.DataTypeAgeOffFilter</filterClass>\n" +
-                "  <ismerge>true</ismerge>\n" +
                 "  <isindextable>true</isindextable>\n" +
                 "</rule>\n";
         // @formatter:on

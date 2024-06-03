@@ -31,13 +31,10 @@ import java.util.Map;
 import java.util.Observer;
 import java.util.Set;
 
-import org.apache.accumulo.core.Constants;
-import org.apache.accumulo.core.client.Accumulo;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.ColumnUpdate;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.KeyValue;
@@ -1582,6 +1579,8 @@ public class IngestJob implements Tool {
                         key.getKey().getColumnQualifier().getBytes(), key.getKey().getColumnVisibility(), value.get());
     }
 
+    public final static int MAX_DATA_TO_PRINT = 64;
+
     /**
      * Output a verbose counter
      *
@@ -1606,9 +1605,8 @@ public class IngestJob implements Tool {
     public static void verboseCounter(TaskInputOutputContext context, String location, Text tableName, byte[] row, byte[] colFamily, byte[] colQualifier,
                     Text colVis, byte[] val) {
         String labelString = new ColumnVisibility(colVis).toString();
-        String s = Key.toPrintableString(row, 0, row.length, Constants.MAX_DATA_TO_PRINT) + " "
-                        + Key.toPrintableString(colFamily, 0, colFamily.length, Constants.MAX_DATA_TO_PRINT) + ":"
-                        + Key.toPrintableString(colQualifier, 0, colQualifier.length, Constants.MAX_DATA_TO_PRINT) + " " + labelString + " "
+        String s = Key.toPrintableString(row, 0, row.length, MAX_DATA_TO_PRINT) + " " + Key.toPrintableString(colFamily, 0, colFamily.length, MAX_DATA_TO_PRINT)
+                        + ":" + Key.toPrintableString(colQualifier, 0, colQualifier.length, MAX_DATA_TO_PRINT) + " " + labelString + " "
                         + (val == null ? "null" : String.valueOf(val.length) + " value bytes");
 
         s = s.replace('\n', ' ');

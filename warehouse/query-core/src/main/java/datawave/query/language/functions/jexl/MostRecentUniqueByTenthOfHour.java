@@ -18,6 +18,6 @@ public class MostRecentUniqueByTenthOfHour extends UniqueByFunction {
 
     @Override
     public QueryFunction duplicate() {
-        return new UniqueByTenthOfHour();
+        return new MostRecentUniqueByTenthOfHour();
     }
 }
