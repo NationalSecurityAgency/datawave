@@ -6,7 +6,7 @@ import datawave.webservice.query.result.event.EventBase;
 
 public abstract class EventQueryResponseBase extends BaseQueryResponse {
 
-    private static final long serialVersionUID = 1l;
+    private static final long serialVersionUID = -8404343960387980525L;
 
     public abstract Long getTotalEvents();
 

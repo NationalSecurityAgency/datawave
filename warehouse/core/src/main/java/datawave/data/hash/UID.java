@@ -43,7 +43,7 @@ public abstract class UID implements Comparable<UID>, Comparator<UID>, Writable,
 
     private static final Logger LOGGER = Logger.getLogger(UID.class);
 
-    private static final long serialVersionUID = 0L;
+    private static final long serialVersionUID = 931768570469788255L;
 
     protected static final String[] EMPTY_EXTRAS = {};
     protected static final String NULL = "" + null;

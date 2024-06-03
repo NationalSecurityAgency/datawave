@@ -726,7 +726,7 @@ public class AccumuloSyntaxParser implements SyntaxParser, AcumuloSyntaxParserCo
     }
 
     static private final class LookaheadSuccess extends java.lang.Error {
-        private static final long serialVersionUID = 0l;
+        private static final long serialVersionUID = -4371149864858129526L;
     }
 
     final private LookaheadSuccess jj_ls = new LookaheadSuccess();

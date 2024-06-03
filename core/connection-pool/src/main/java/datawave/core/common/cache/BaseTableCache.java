@@ -38,7 +38,7 @@ import datawave.webservice.common.connection.WrappedAccumuloClient;
 
 public class BaseTableCache implements Serializable, TableCache {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -5849784584173005890L;
 
     private final transient Logger log = Logger.getLogger(this.getClass());
 

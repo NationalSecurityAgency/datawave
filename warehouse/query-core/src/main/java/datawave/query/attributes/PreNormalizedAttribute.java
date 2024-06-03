@@ -22,7 +22,7 @@ import datawave.query.jexl.DatawaveJexlContext;
  *
  */
 public class PreNormalizedAttribute extends Attribute<PreNormalizedAttribute> implements Serializable {
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -15927664283551620L;
     protected String value;
 
     public String getValue() {

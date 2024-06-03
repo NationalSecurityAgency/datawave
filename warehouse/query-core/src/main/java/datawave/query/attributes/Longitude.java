@@ -19,7 +19,7 @@ import datawave.query.collections.FunctionalSet;
 import datawave.query.jexl.DatawaveJexlContext;
 
 public class Longitude extends Attribute<Longitude> implements Serializable {
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -5925043913098866868L;
 
     private static final GeoLonNormalizer normalizer = new GeoLonNormalizer();
 

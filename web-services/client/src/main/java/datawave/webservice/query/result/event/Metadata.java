@@ -22,7 +22,7 @@ import io.protostuff.Schema;
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class Metadata implements Serializable, Message<Metadata> {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 3078086696168705239L;
 
     @XmlElement(name = "DataType")
     private String dataType = null;

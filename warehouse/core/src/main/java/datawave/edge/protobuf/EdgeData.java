@@ -694,7 +694,7 @@ public final class EdgeData {
                 return size;
             }
 
-            private static final long serialVersionUID = 0L;
+            private static final long serialVersionUID = 780014719499307692L;
 
             @java.lang.Override
             protected java.lang.Object writeReplace() throws java.io.ObjectStreamException {
@@ -1564,7 +1564,7 @@ public final class EdgeData {
             return size;
         }
 
-        private static final long serialVersionUID = 0L;
+        private static final long serialVersionUID = 5507263779623468977L;
 
         @java.lang.Override
         protected java.lang.Object writeReplace() throws java.io.ObjectStreamException {

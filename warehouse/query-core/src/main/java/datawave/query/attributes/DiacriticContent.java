@@ -19,7 +19,7 @@ import datawave.query.collections.FunctionalSet;
 import datawave.query.jexl.DatawaveJexlContext;
 
 public class DiacriticContent extends Attribute<DiacriticContent> implements Serializable {
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 570010612591254801L;
 
     private static final LcNormalizer normalizer = new LcNormalizer();
 

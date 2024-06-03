@@ -28,7 +28,7 @@ import datawave.security.util.ProxiedEntityUtils;
 @XmlAccessorType(XmlAccessType.NONE)
 public class DatawavePrincipal implements ProxiedUserDetails, Principal, Serializable {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -4882226447158615343L;
     private final String username;
     private final DatawaveUser primaryUser;
     @XmlElement

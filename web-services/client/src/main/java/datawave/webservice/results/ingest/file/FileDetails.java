@@ -17,7 +17,7 @@ import io.protostuff.Schema;
 @XmlAccessorType(XmlAccessType.NONE)
 public class FileDetails implements Serializable, Message<FileDetails> {
 
-    private static final long serialVersionUID = 1l;
+    private static final long serialVersionUID = 3801967042458098108L;
     @XmlAttribute(name = "filePath")
     private String path;
     @XmlAttribute(name = "dateReceived")

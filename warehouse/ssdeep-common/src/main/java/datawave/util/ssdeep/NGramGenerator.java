@@ -26,7 +26,7 @@ public class NGramGenerator implements Serializable {
      */
     public static final int DEFAULT_MIN_HASH_SIZE = 64;
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 8930666415965604405L;
 
     private static final Logger log = LoggerFactory.getLogger(NGramGenerator.class);
 

@@ -56,7 +56,7 @@ public class RunningQueryTest {
         // in the datawave-query package. This is not a dependency in maven though, but added from the lib. See
         // the setup() below. Here is an instantiatable class for testing.
         @SuppressWarnings("unused")
-        private static final long serialVersionUID = 1L;
+        private static final long serialVersionUID = -2981779719095867631L;
     }
 
     // variables common to all current tests

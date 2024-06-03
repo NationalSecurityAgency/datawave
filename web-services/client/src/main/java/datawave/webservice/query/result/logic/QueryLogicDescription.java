@@ -16,7 +16,7 @@ import javax.xml.bind.annotation.XmlElements;
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class QueryLogicDescription implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 4592004897609293243L;
 
     public QueryLogicDescription() {}
 

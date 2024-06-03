@@ -25,7 +25,7 @@ import io.protostuff.Schema;
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class QueryImplListResponse extends BaseResponse implements Message<QueryImplListResponse> {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -2118945918588194332L;
 
     @XmlElement
     private List<Query> query = null;

@@ -53,7 +53,7 @@ public class TypeRegistry extends HashMap<String,Type> {
 
     public static final String OUTPUT_NAME = ".output.name";
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -9186653395229072139L;
 
     private static TypeRegistry registry = null;
 

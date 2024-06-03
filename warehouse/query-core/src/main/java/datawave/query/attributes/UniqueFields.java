@@ -26,7 +26,7 @@ import datawave.query.jexl.JexlASTHelper;
  * {@link UniqueFields#from(String)}.
  */
 public class UniqueFields implements Serializable {
-    private static final long serialVersionUID = 1l;
+    private static final long serialVersionUID = 2269249452109902433L;
 
     private Multimap<String,UniqueGranularity> fieldMap;
 

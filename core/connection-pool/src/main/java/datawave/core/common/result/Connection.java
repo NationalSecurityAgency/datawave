@@ -19,7 +19,7 @@ import com.google.common.base.Objects;
 @XmlAccessorType(XmlAccessType.NONE)
 public class Connection implements Serializable, Comparable<Connection> {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -2003281391380863328L;
 
     @XmlAttribute
     private String state = null;

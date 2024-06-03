@@ -4,7 +4,7 @@ import java.nio.charset.StandardCharsets;
 
 public class SSDeepParseException extends RuntimeException {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 96156228318650642L;
 
     final String message;
     final String input;

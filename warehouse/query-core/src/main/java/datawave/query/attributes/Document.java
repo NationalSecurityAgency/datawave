@@ -40,7 +40,7 @@ import datawave.query.util.TypeMetadata;
 import datawave.util.time.DateHelper;
 
 public class Document extends AttributeBag<Document> implements Serializable {
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -377226620954754934L;
 
     private static final Logger log = Logger.getLogger(Document.class);
 

@@ -477,7 +477,7 @@ public class UIDTest {
      * Test subclass akin to the StringUID
      */
     private static class CustomHashUID extends HashUID {
-        private static final long serialVersionUID = 0L;
+        private static final long serialVersionUID = 7205412670351903561L;
 
         public CustomHashUID(HashUID template, String... extras) {
             super(template, extras);
@@ -498,7 +498,7 @@ public class UIDTest {
      * Another test subclass akin to the StringUID
      */
     private static class CustomSnowflakeUID extends SnowflakeUID {
-        private static final long serialVersionUID = 0L;
+        private static final long serialVersionUID = -5932468265046243486L;
 
         public CustomSnowflakeUID(SnowflakeUID template, String... extras) {
             super(template, extras);
@@ -516,7 +516,7 @@ public class UIDTest {
     }
 
     private class TestUID extends UID {
-        private static final long serialVersionUID = 0L;
+        private static final long serialVersionUID = 3780105804452735276L;
 
         public TestUID(String prefix, boolean isPrefixOptional, String... extras) {
             super(prefix, isPrefixOptional, extras);

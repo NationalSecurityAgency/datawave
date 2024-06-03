@@ -648,7 +648,7 @@ public final class QueryMessages {
                 return size;
             }
 
-            private static final long serialVersionUID = 0L;
+            private static final long serialVersionUID = 7775810273121957009L;
 
             @java.lang.Override
             protected java.lang.Object writeReplace() throws java.io.ObjectStreamException {
@@ -1650,7 +1650,7 @@ public final class QueryMessages {
             return size;
         }
 
-        private static final long serialVersionUID = 0L;
+        private static final long serialVersionUID = -8624669227387781661L;
 
         @java.lang.Override
         protected java.lang.Object writeReplace() throws java.io.ObjectStreamException {

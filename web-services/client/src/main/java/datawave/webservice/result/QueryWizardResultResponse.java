@@ -26,7 +26,7 @@ import datawave.webservice.query.result.istat.IndexStatsResponse;
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class QueryWizardResultResponse extends BaseResponse implements HtmlProvider {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 5015858130286649476L;
     private static final String TITLE = "DataWave Query Results", EMPTY = "";
     private static final String DATA_TABLES_TEMPLATE = "<script type=''text/javascript'' src=''{0}''></script>\n"
                     + "<script type=''text/javascript'' src=''{1}''></script>\n" + "<script type=''text/javascript''>\n"

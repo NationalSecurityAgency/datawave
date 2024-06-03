@@ -72,7 +72,7 @@ public class QueryTraceCache {
      * do this so that we can have the more efficient pre-compiled patterns, but still store them in a hash table.
      */
     public static class PatternWrapper implements Serializable {
-        private static final long serialVersionUID = 1L;
+        private static final long serialVersionUID = -7133901671546841382L;
         private final Pattern pattern;
 
         public static PatternWrapper wrap(String regex) {

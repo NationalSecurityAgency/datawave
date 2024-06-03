@@ -30,7 +30,7 @@ public class EdgeModelFields implements Serializable {
     /** A mapping of field names to field keys */
     private Map<String,FieldKey> reverseMap = new HashMap<>();
 
-    private static final long serialVersionUID = 0l;
+    private static final long serialVersionUID = 6506817448338233545L;
 
     public static String EQUALS = "==";
     public static String EQUALS_REGEX = "=~";

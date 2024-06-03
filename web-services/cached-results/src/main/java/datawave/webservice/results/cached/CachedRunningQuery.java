@@ -58,7 +58,7 @@ public class CachedRunningQuery extends AbstractRunningQuery {
 
     private static DataSource datasource = null;
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 9093679062966451008L;
 
     private static ResponseObjectFactory responseObjectFactory;
     private transient Connection connection = null;

@@ -27,7 +27,7 @@ import java.io.Serializable;
 //@formatter:on
 public class ChunkSizeEncoding implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -3959340489340249949L;
 
     public static final int SPAMSUM_LENGTH = 64;
 

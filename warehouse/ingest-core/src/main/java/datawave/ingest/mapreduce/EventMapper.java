@@ -776,7 +776,7 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
     }
 
     private static class FieldNormalizationError extends Exception {
-        private static final long serialVersionUID = 1L;
+        private static final long serialVersionUID = 6106161010855162008L;
 
         public FieldNormalizationError(String message, Throwable cause) {
             super(message, cause);

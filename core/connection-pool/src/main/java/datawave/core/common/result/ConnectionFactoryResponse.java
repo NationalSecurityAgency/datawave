@@ -25,7 +25,7 @@ import datawave.webservice.result.BaseResponse;
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class ConnectionFactoryResponse extends BaseResponse implements HtmlProvider {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 6113726446236223919L;
     private static final String TITLE = "Accumulo Connection Factory Metrics", EMPTY = "";
 
     @XmlElementWrapper(name = "ConnectionPools")

@@ -29,7 +29,7 @@ import datawave.query.model.util.LoadModel;
  * (3) Additionally, index-only/unevaluated fields are ignored, as this concept is not applicable to edges.
  */
 public class EdgeQueryModel extends QueryModel {
-    private static final long serialVersionUID = 0l;
+    private static final long serialVersionUID = -590763583662768646L;
 
     private final EdgeModelFields fields;
 
@@ -100,7 +100,7 @@ public class EdgeQueryModel extends QueryModel {
      * Thrown whenever an invalid edge query model is detected.
      */
     public static class InvalidModelException extends Exception {
-        private static final long serialVersionUID = 1L;
+        private static final long serialVersionUID = -312834628767055149L;
 
         public InvalidModelException() {
             super();

@@ -11,8 +11,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 @XmlRootElement
 @XmlAccessorType(XmlAccessType.NONE)
 public class TableCacheDescription implements Serializable {
-    private static final long serialVersionUID = 1L;
-
+    private static final long serialVersionUID = -2832954010469120174L;
     @XmlAttribute
     private String tableName = null;
 

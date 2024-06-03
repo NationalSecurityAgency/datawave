@@ -23,7 +23,7 @@ import io.protostuff.Schema;
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class MapReduceInfoResponse implements Serializable, Message<MapReduceInfoResponse> {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 8277437213275289717L;
 
     @XmlAttribute(name = "id")
     private String id;

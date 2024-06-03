@@ -14,7 +14,7 @@ public interface QueryPredictor<T extends BaseQueryMetric> {
     Set<Prediction> predict(T query) throws PredictionException;
 
     class PredictionException extends Exception implements Serializable {
-        private static final long serialVersionUID = 0l;
+        private static final long serialVersionUID = 61150377750239886L;
 
         public PredictionException() {
             super();

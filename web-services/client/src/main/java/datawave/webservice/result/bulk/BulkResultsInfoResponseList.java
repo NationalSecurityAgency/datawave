@@ -27,7 +27,7 @@ import io.protostuff.Schema;
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class BulkResultsInfoResponseList extends BaseQueryResponse implements Serializable, Message<BulkResultsInfoResponseList> {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 2307749059655524952L;
 
     @XmlElementWrapper(name = "BulkResults")
     @XmlElement(name = "BulkResult")

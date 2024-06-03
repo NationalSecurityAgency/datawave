@@ -26,7 +26,7 @@ import datawave.query.jexl.DatawaveJexlContext;
 
 public class Attributes extends AttributeBag<Attributes> implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 4677957768640489928L;
     private static final Logger log = Logger.getLogger(Attributes.class);
     private Set<Attribute<? extends Comparable<?>>> attributes;
     private int _count = 0;

@@ -5,7 +5,7 @@ package datawave.query.exceptions;
  *
  */
 public class BooleanLogicFatalQueryException extends Exception {
-    private static final long serialVersionUID = 0l;
+    private static final long serialVersionUID = 318700258115575237L;
 
     private String query = "";
     private String reason = "";

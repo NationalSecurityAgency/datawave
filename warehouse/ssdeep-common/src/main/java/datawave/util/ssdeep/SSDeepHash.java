@@ -9,7 +9,7 @@ import java.util.Objects;
 /** An Immutable SSDeepHash object */
 public final class SSDeepHash implements Serializable, Comparable<SSDeepHash> {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -4470665039274696957L;
 
     /**
      * The paper on Optimizing ssDeep for use at Scale" suggested that any hash with more than this many repeated characters should have that run of characters

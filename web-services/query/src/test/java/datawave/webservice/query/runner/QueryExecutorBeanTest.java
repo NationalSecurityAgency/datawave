@@ -446,7 +446,7 @@ public class QueryExecutorBeanTest {
         metric.setQueryType(RunningQuery.class.getSimpleName());
 
         QueryMetric testMetric = new QueryMetric((QueryMetric) metric) {
-            public static final long serialVersionUID = 1L;
+            public static final long serialVersionUID = 7210890100446871775L;
 
             @Override
             public boolean equals(Object o) {

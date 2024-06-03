@@ -17,7 +17,7 @@ import org.apache.commons.lang.builder.HashCodeBuilder;
 @XmlAccessorType(XmlAccessType.NONE)
 public class ConnectionPool implements Serializable, Comparable<ConnectionPool> {
 
-    private static final long serialVersionUID = 2L;
+    private static final long serialVersionUID = -1080014568240669701L;
 
     public enum Priority {
         ADMIN, HIGH, NORMAL, LOW
