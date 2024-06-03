@@ -1,13 +1,8 @@
 package datawave.ingest.mapreduce.job.reindex;
 
-import static datawave.ingest.data.config.CSVHelper.DATA_HEADER;
-import static datawave.ingest.data.config.CSVHelper.DATA_SEP;
-import static datawave.ingest.data.config.ingest.BaseIngestHelper.INDEX_FIELDS;
-import static datawave.ingest.data.config.ingest.BaseIngestHelper.REVERSE_INDEX_FIELDS;
 import static datawave.ingest.mapreduce.job.reindex.ShardReindexJob.FI_END;
 import static datawave.ingest.mapreduce.job.reindex.ShardReindexJob.FI_START;
 
-import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -16,23 +11,11 @@ import java.util.List;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
-import org.apache.accumulo.core.data.Value;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapreduce.Counter;
-import org.apache.hadoop.mapreduce.Mapper;
-import org.easymock.EasyMock;
 import org.easymock.EasyMockSupport;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-
-import datawave.ingest.data.Type;
-import datawave.ingest.data.TypeRegistry;
-import datawave.ingest.data.config.ingest.CSVIngestHelper;
-import datawave.ingest.mapreduce.job.BulkIngestKey;
-import datawave.ingest.mapreduce.job.reindex.ShardReindexJob;
-import datawave.ingest.mapreduce.job.reindex.ShardReindexMapper;
 
 public class ShardReindexJobTest extends EasyMockSupport {
 

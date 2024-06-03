@@ -1,10 +1,8 @@
 package datawave.ingest.mapreduce.job.reindex;
 
 import static datawave.ingest.mapreduce.job.ShardedTableMapFile.SPLIT_WORK_DIR;
-import static org.apache.accumulo.core.conf.Property.TABLE_CRYPTO_PREFIX;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -13,11 +11,8 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -27,29 +22,19 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.function.Function;
 
 import org.apache.accumulo.core.client.Accumulo;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
-import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.accumulo.core.clientImpl.thrift.ThriftTableOperationException;
-import org.apache.accumulo.core.crypto.CryptoFactoryLoader;
-import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.file.FileSKVIterator;
-import org.apache.accumulo.core.file.blockfile.impl.CachableBlockFile;
-import org.apache.accumulo.core.file.rfile.RFile;
-import org.apache.accumulo.core.spi.crypto.CryptoEnvironment;
-import org.apache.accumulo.core.spi.crypto.CryptoService;
 import org.apache.accumulo.hadoop.mapreduce.AccumuloInputFormat;
 import org.apache.accumulo.hadoop.mapreduce.InputFormatBuilder;
-import org.apache.commons.collections.list.TreeList;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -58,13 +43,10 @@ import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
-import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
-import com.beust.jcommander.IParameterValidator;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
-import com.beust.jcommander.ParameterException;
 
 import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.ingest.mapreduce.EventMapper;
@@ -76,6 +58,8 @@ import datawave.ingest.mapreduce.job.RFileInputFormat;
 import datawave.ingest.mapreduce.job.ShardedTableMapFile;
 import datawave.ingest.mapreduce.job.reduce.BulkIngestKeyAggregatingReducer;
 import datawave.ingest.mapreduce.job.reduce.BulkIngestKeyDedupeCombiner;
+import datawave.ingest.mapreduce.job.util.AccumuloUtil;
+import datawave.ingest.mapreduce.job.util.RFileUtil;
 import datawave.ingest.mapreduce.job.writer.BulkContextWriter;
 import datawave.ingest.mapreduce.job.writer.ChainedContextWriter;
 import datawave.ingest.mapreduce.job.writer.ContextWriter;
@@ -241,14 +225,19 @@ public class ShardReindexJob implements Tool {
 
             if (jobConfig.accumuloMetadata) {
                 // fetch the file list by scanning the accumulo.metadata table
-                jobConfig.inputFiles = org.apache.hadoop.util.StringUtils.join(",", getSplitsFromMetadata(accumuloClient, jobConfig.table,
-                                new Range(new Key(jobConfig.startDate), true, new Key(jobConfig.endDate), true), jobConfig.useScanServers));
+                List<Map.Entry<String,List<String>>> filesForRanges = AccumuloUtil.getFilesFromMetadataBySplit(accumuloClient, jobConfig.table,
+                                jobConfig.startDate, jobConfig.endDate);
+                List<String> allFiles = new ArrayList<>();
+                for (Map.Entry<String,List<String>> split : filesForRanges) {
+                    allFiles.addAll(split.getValue());
+                }
+                jobConfig.inputFiles = String.join(",", allFiles);
             } else if (!jobConfig.accumuloData) {
                 // build ranges
                 Collection<Range> ranges = null;
                 if (jobConfig.reprocessEvents) {
                     ranges = buildSplittableRanges(accumuloClient, jobConfig.maxRangeThreads, jobConfig.blocksPerSplit, jobConfig.batchMode, configuration,
-                                    jobConfig.table, jobConfig.startDate, jobConfig.endDate, jobConfig.shard, jobConfig.splitsPerDay, jobConfig.useScanServers);
+                                    jobConfig.table, jobConfig.startDate, jobConfig.endDate);
                 } else {
                     ranges = buildFiRanges(jobConfig.startDate, jobConfig.endDate, jobConfig.splitsPerDay);
                 }
@@ -349,53 +338,17 @@ public class ShardReindexJob implements Tool {
         }
     }
 
-    private static Set<String> getSplitsFromMetadata(AccumuloClient accumuloClient, String tableName, Range r, boolean useScanServers) {
-        Set<String> rangeSplits = new HashSet<>();
-
-        String tableId = accumuloClient.tableOperations().tableIdMap().get(tableName);
-
-        if (tableId == null) {
-            throw new RuntimeException("Could not locate table: '" + tableName + "'");
-        }
-
-        try (Scanner s = accumuloClient.createScanner("accumulo.metadata")) {
-            ScannerBase.ConsistencyLevel consistencyLevel = ScannerBase.ConsistencyLevel.IMMEDIATE;
-            if (useScanServers) {
-                consistencyLevel = ScannerBase.ConsistencyLevel.EVENTUAL;
-            }
-
-            s.setConsistencyLevel(consistencyLevel);
-            s.setRange(new Range(new Key(tableId + ";" + r.getStartKey().getRowData()), true, new Key(tableId + ";" + r.getEndKey().getRowData()), true));
-            s.fetchColumnFamily("file");
-            Iterator<Map.Entry<Key,Value>> metarator = s.iterator();
-            while (metarator.hasNext()) {
-                Map.Entry<Key,Value> next = metarator.next();
-                ByteSequence file = next.getKey().getColumnQualifierData();
-                rangeSplits.add(file.toString());
-            }
-        } catch (TableNotFoundException | AccumuloException | AccumuloSecurityException e) {
-            throw new RuntimeException("Failed to scan metadata for table", e);
-        }
-
-        return rangeSplits;
-    }
-
-    public static RFile.Reader getRFileReader(Configuration config, Path rfile) throws IOException {
-        log.info("getting reader for " + rfile);
-        FileSystem fs = rfile.getFileSystem(config);
-        if (!fs.exists(rfile)) {
-            throw new FileNotFoundException(rfile + " does not exist");
-        }
-
-        CryptoService cs = CryptoFactoryLoader.getServiceForClient(CryptoEnvironment.Scope.TABLE, config.getPropsWithPrefix(TABLE_CRYPTO_PREFIX.name()));
-        CachableBlockFile.CachableBuilder cb = new CachableBlockFile.CachableBuilder().fsPath(fs, rfile).conf(config).cryptoService(cs);
-
-        return new RFile.Reader(cb);
+    private static Callable<List<Range>> getSplitCallable(Configuration config, String split, List<String> files, int blocksPerSplit,
+                    Function<Key,Key> eventShiftFunction) {
+        return () -> {
+            log.info("found " + files.size() + " rfiles for " + split);
+            return RFileUtil.getRangeSplits(config, files, new Key(split), new Key(split + '\uFFFF'), blocksPerSplit, eventShiftFunction);
+        };
     }
 
     public static Collection<Range> buildSplittableRanges(AccumuloClient accumuloClient, int maxRangeThreads, final int blocksPerSplit, String batchMode,
-                    Configuration config, String table, String startDay, String endDay, int shard, int splitsPerDay, boolean useScanServers)
-                    throws ParseException, IOException {
+                    Configuration config, String table, String startDay, String endDay) throws ParseException, IOException {
+        List<Range> allRanges = new ArrayList<>();
         ExecutorService threadPool = null;
         List<Future<List<Range>>> splitTasks = null;
         if (maxRangeThreads > 1) {
@@ -403,144 +356,50 @@ public class ShardReindexJob implements Tool {
             splitTasks = new ArrayList<>();
         }
 
-        log.info("building ranges startDate: " + startDay + " endDate: " + endDay + " splits: " + splitsPerDay);
-        log.info("processing shard: " + shard);
+        log.info("building ranges startDate: " + startDay + " endDate: " + endDay);
 
-        SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyyMMdd");
-
-        List<Range> ranges = new ArrayList<>();
-
-        Date startDate = dateFormatter.parse(startDay);
-        Date endDate = dateFormatter.parse(endDay);
-
-        Date current = startDate;
-        while (!endDate.before(current)) {
-            final Date dateToProcess = current;
-            for (int i = 0; i < splitsPerDay; i++) {
-                final int split = i;
-                if (shard != -1 && i != shard) {
-                    // skip
-                    continue;
-                }
-
-                Callable<List<Range>> callable = () -> {
-                    // TODO this isn't thread safe... fix
-                    String row = dateFormatter.format(dateToProcess);
-                    Text rowText = new Text(row + "_" + split);
-
-                    log.info("Building splits for " + rowText);
-                    // test index blocks againts acceptable ranges
-                    Range testRange = new Range(new Key(rowText), true, new Key(rowText.toString() + '\u0000'), false);
-                    List<Range> splitRanges = new ArrayList<>();
-
-                    // for each split pull all the rfiles and build the splits
-                    // add each split range based on config
-                    Set<String> splitFiles = getSplitsFromMetadata(accumuloClient, table, testRange, useScanServers);
-
-                    log.info("found " + splitFiles.size() + " rfiles for " + rowText);
-
-                    TreeList indexes = new TreeList();
-                    // open each file and read the index blocks writing their start key to get a distribution
-                    // TODO done better in Verification job
-                    for (String rfile : splitFiles) {
-                        try (RFile.Reader rfileReader = getRFileReader(config, new Path(rfile))) {
-                            try (FileSKVIterator indexIterator = rfileReader.getIndex()) {
-                                while (indexIterator.hasTop()) {
-                                    Key top = indexIterator.getTopKey();
-                                    if (testRange.contains(top)) {
-                                        indexes.add(top);
-                                    }
-                                    indexIterator.next();
-                                }
-                            }
-                        }
-                    }
-
-                    // sort since treeList wont
-                    Collections.sort(indexes);
-
-                    // indexes contain all the index blocks, divide into split ranges regardless of file based on config
-                    int blocksPerSplitAssigned = blocksPerSplit;
-                    if (blocksPerSplitAssigned == -1) {
-                        blocksPerSplitAssigned = indexes.size();
-                    }
-
-                    log.info(indexes.size() + " index blocks for row " + rowText);
-
-                    double splitCount = Math.ceil((double) indexes.size() / (double) blocksPerSplitAssigned);
-                    log.info("Creating + " + splitCount + " splits for " + rowText);
-                    int createdSplits = 0;
-                    Key splitStart = new Key(rowText);
-                    while (createdSplits < splitCount) {
-                        Key splitEnd;
-                        if (indexes.size() > blocksPerSplitAssigned * (createdSplits + 1)) {
-                            splitEnd = (Key) indexes.get((blocksPerSplitAssigned * (createdSplits + 1)));
-
-                            // if using batch mode offset the end to ensure batches are not broken
-                            // with small blocks or extremely dense data this count potentially cause a key out of order
-
-                            if (!batchMode.equals("NONE")) {
-                                // batch mode enabled
-                                ByteSequence cf = splitEnd.getColumnFamilyData();
-                                if (!ShardReindexMapper.isKeyD(cf) && !ShardReindexMapper.isKeyTF(cf) && !ShardReindexMapper.isKeyFI(cf)) {
-                                    // it's an event key, so bump its cf to include the whole event
-                                    Key oldEnd = splitEnd;
-                                    splitEnd = splitEnd.followingKey(PartialKey.ROW_COLFAM);
-                                    log.debug("Extended event range from " + oldEnd + " to " + splitEnd);
-                                }
-                            }
-                        } else {
-                            // end of range
-                            splitEnd = new Key(rowText.toString() + '\u0000');
-                        }
-                        if (splitStart == splitEnd) {
-                            log.warn("miscalculated split counts, discarding empty range");
-                            createdSplits++;
-                            continue;
-                        }
-                        splitRanges.add(new Range(splitStart, true, splitEnd, false));
-                        createdSplits++;
-                        splitStart = splitEnd;
-                    }
-
-                    log.info("Created " + splitRanges.size() + " ranges for " + rowText);
-                    if (log.isDebugEnabled()) {
-                        for (Range r : splitRanges) {
-                            log.debug(r);
-                        }
-                    }
-
-                    return splitRanges;
-                };
-
-                if (threadPool != null) {
-                    splitTasks.add(threadPool.submit(callable));
-                } else {
-                    try {
-                        ranges.addAll(callable.call());
-                    } catch (Exception e) {
-                        throw new RuntimeException("Problem fetching splits", e);
-                    }
-                }
-            }
-
-            Calendar calendar = Calendar.getInstance();
-            calendar.setTime(current);
-            calendar.add(Calendar.HOUR_OF_DAY, 24);
-            current = calendar.getTime();
+        Function<Key,Key> eventShiftFunction = Function.identity();
+        if (!batchMode.equals("NONE")) {
+            eventShiftFunction = new EventKeyAdjustment();
         }
 
-        if (splitTasks != null) {
-            for (Future<List<Range>> splitTask : splitTasks) {
+        // check that these aren't the same
+        if (startDay.equals(endDay)) {
+            throw new IllegalArgumentException("endDay must be after startDay");
+        }
+
+        List<Map.Entry<String,List<String>>> filesBySplit;
+        try {
+            filesBySplit = AccumuloUtil.getFilesFromMetadataBySplit(accumuloClient, table, startDay, endDay);
+        } catch (AccumuloException e) {
+            throw new RuntimeException("Failed to lookup rfiles in metadata table", e);
+        }
+
+        for (Map.Entry<String,List<String>> fileSplit : filesBySplit) {
+            Callable<List<Range>> splitCallable = getSplitCallable(config, fileSplit.getKey(), fileSplit.getValue(), blocksPerSplit, eventShiftFunction);
+            if (threadPool != null) {
+                splitTasks.add(threadPool.submit(splitCallable));
+            } else {
                 try {
-                    ranges.addAll(splitTask.get());
-                } catch (InterruptedException | ExecutionException e) {
-                    throw new RuntimeException("Failed to fetch splits", e);
+                    allRanges.addAll(splitCallable.call());
+                } catch (Exception e) {
+                    throw new RuntimeException("Problem fetching splits", e);
                 }
             }
         }
 
-        return ranges;
+        // wait for any threads to complete
+        if (splitTasks != null) {
+            for (Future<List<Range>> f : splitTasks) {
+                try {
+                    allRanges.addAll(f.get());
+                } catch (InterruptedException | ExecutionException e) {
+                    throw new RuntimeException("Failed to fetch split", e);
+                }
+            }
+        }
+
+        return allRanges;
     }
 
     public static Collection<Range> buildFiRanges(String start, String end, int splitsPerDay) throws ParseException {
@@ -630,9 +489,6 @@ public class ShardReindexJob implements Tool {
 
         @Parameter(names = "--splitsPerDay", description = "splits for each day")
         private int splitsPerDay;
-
-        @Parameter(names = "--shard", description = "reprocess a specific shard of the day, not the entire day")
-        private int shard;
 
         @Parameter(names = "--table", description = "shard table")
         private String table = "shard";

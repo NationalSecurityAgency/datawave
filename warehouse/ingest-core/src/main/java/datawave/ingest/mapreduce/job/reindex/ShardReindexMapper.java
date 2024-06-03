@@ -18,7 +18,6 @@ import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableComparator;
@@ -321,6 +320,16 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
         if (!this.reprocessEvents || (this.reprocessEvents && this.defaultHelper.isIndexOnlyField(getFieldFromFI(key)))) {
             processFI(context, key);
         }
+    }
+
+    public static boolean isKeyEvent(ByteSequence cf) {
+        for (int i = 0; i < cf.length(); i++) {
+            if (cf.byteAt(i) == '\u0000') {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private void processEventKey(Key key, Value value, Context context) throws IOException, InterruptedException {
