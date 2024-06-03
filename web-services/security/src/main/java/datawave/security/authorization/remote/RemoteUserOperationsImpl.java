@@ -14,6 +14,7 @@ import com.fasterxml.jackson.databind.ObjectReader;
 import datawave.security.auth.DatawaveAuthenticationMechanism;
 import datawave.security.authorization.AuthorizationException;
 import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.authorization.ProxiedUserDetails;
 import datawave.security.authorization.UserOperations;
 import datawave.user.AuthorizationsListBase;
 import datawave.webservice.common.remote.RemoteHttpService;
@@ -30,7 +31,7 @@ public class RemoteUserOperationsImpl extends RemoteHttpService implements UserO
 
     private static final String FLUSH_CREDS = "flushCachedCredentials";
 
-    private static final String INCLUDE_REMOTE_SERVICES = "includeRemoteServices";
+    public static final String INCLUDE_REMOTE_SERVICES = "includeRemoteServices";
 
     private ObjectReader genericResponseReader;
 
@@ -51,14 +52,14 @@ public class RemoteUserOperationsImpl extends RemoteHttpService implements UserO
 
     @Override
     @Cacheable(value = "getRemoteUser", key = "{#principal}", cacheManager = "remoteOperationsCacheManager")
-    public DatawavePrincipal getRemoteUser(DatawavePrincipal principal) throws AuthorizationException {
-        log.info("Cache fault: Retrieving user for " + principal.getPrimaryUser().getDn());
-        return UserOperations.super.getRemoteUser(principal);
+    public ProxiedUserDetails getRemoteUser(ProxiedUserDetails currentUser) throws AuthorizationException {
+        log.info("Cache fault: Retrieving user for " + currentUser.getPrimaryUser().getDn());
+        return UserOperations.super.getRemoteUser(currentUser);
     }
 
     @Override
     @Cacheable(value = "listEffectiveAuthorizations", key = "{#callerObject}", cacheManager = "remoteOperationsCacheManager")
-    public AuthorizationsListBase listEffectiveAuthorizations(Object callerObject) throws AuthorizationException {
+    public AuthorizationsListBase listEffectiveAuthorizations(ProxiedUserDetails callerObject) throws AuthorizationException {
         init();
         final DatawavePrincipal principal = getDatawavePrincipal(callerObject);
         log.info("Cache fault: Retrieving effective auths for " + principal.getPrimaryUser().getDn());
@@ -76,7 +77,7 @@ public class RemoteUserOperationsImpl extends RemoteHttpService implements UserO
     }
 
     @Override
-    public GenericResponse<String> flushCachedCredentials(Object callerObject) throws AuthorizationException {
+    public GenericResponse<String> flushCachedCredentials(ProxiedUserDetails callerObject) throws AuthorizationException {
         init();
         final DatawavePrincipal principal = getDatawavePrincipal(callerObject);
         final String suffix = FLUSH_CREDS;

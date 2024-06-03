@@ -12,6 +12,7 @@ import org.junit.Test;
 
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.planner.FederatedQueryPlanner;
+import datawave.query.tables.ShardQueryLogic;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.CitiesDataType;
@@ -61,7 +62,13 @@ public class DelayedIndexOnlyQueryTest extends AbstractFunctionalQuery {
     protected void testInit() {
         this.auths = CitiesDataType.getTestAuths();
         this.documentKey = CitiesDataType.CityField.EVENT_ID.name();
-        ((FederatedQueryPlanner) this.logic.getQueryPlanner()).getQueryPlanner().setExecutableExpansion(false);
+    }
+
+    @Override
+    protected ShardQueryLogic createShardQueryLogic() {
+        ShardQueryLogic logic = super.createShardQueryLogic();
+        ((FederatedQueryPlanner) logic.getQueryPlanner()).getQueryPlanner().setExecutableExpansion(false);
+        return logic;
     }
 
     @Test

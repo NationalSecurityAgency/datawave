@@ -31,13 +31,10 @@ import java.util.Map;
 import java.util.Observer;
 import java.util.Set;
 
-import org.apache.accumulo.core.Constants;
-import org.apache.accumulo.core.client.Accumulo;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.ColumnUpdate;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.KeyValue;
@@ -252,6 +249,7 @@ public class IngestJob implements Tool {
 
     @Override
     public int run(String[] args) throws Exception {
+        long setupStart = System.currentTimeMillis();
 
         Logger.getLogger(TypeRegistry.class).setLevel(Level.ALL);
 
@@ -324,7 +322,6 @@ public class IngestJob implements Tool {
         conf = job.getConfiguration();
 
         setupHandlers(conf);
-
         if (!useMapOnly || !outputMutations) {
             // Calculate the sampled splits, splits file, and set up the partitioner, but not if only doing only a map phase and outputting mutations
             // if not outputting mutations and only doing a map phase, we still need to go through this logic as the MultiRFileOutputFormatter
@@ -368,6 +365,8 @@ public class IngestJob implements Tool {
 
         startDaemonProcesses(conf);
         long start = System.currentTimeMillis();
+        log.info("JOB SETUP TIME: " + (start - setupStart));
+
         job.submit();
         JobID jobID = job.getJobID();
         log.info("JOB ID: " + jobID);
@@ -1580,6 +1579,8 @@ public class IngestJob implements Tool {
                         key.getKey().getColumnQualifier().getBytes(), key.getKey().getColumnVisibility(), value.get());
     }
 
+    public final static int MAX_DATA_TO_PRINT = 64;
+
     /**
      * Output a verbose counter
      *
@@ -1604,9 +1605,8 @@ public class IngestJob implements Tool {
     public static void verboseCounter(TaskInputOutputContext context, String location, Text tableName, byte[] row, byte[] colFamily, byte[] colQualifier,
                     Text colVis, byte[] val) {
         String labelString = new ColumnVisibility(colVis).toString();
-        String s = Key.toPrintableString(row, 0, row.length, Constants.MAX_DATA_TO_PRINT) + " "
-                        + Key.toPrintableString(colFamily, 0, colFamily.length, Constants.MAX_DATA_TO_PRINT) + ":"
-                        + Key.toPrintableString(colQualifier, 0, colQualifier.length, Constants.MAX_DATA_TO_PRINT) + " " + labelString + " "
+        String s = Key.toPrintableString(row, 0, row.length, MAX_DATA_TO_PRINT) + " " + Key.toPrintableString(colFamily, 0, colFamily.length, MAX_DATA_TO_PRINT)
+                        + ":" + Key.toPrintableString(colQualifier, 0, colQualifier.length, MAX_DATA_TO_PRINT) + " " + labelString + " "
                         + (val == null ? "null" : String.valueOf(val.length) + " value bytes");
 
         s = s.replace('\n', ' ');

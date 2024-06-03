@@ -538,6 +538,7 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
     @Test
     public void testAndNoMatch_federatedQueryPlanner() throws Exception {
         log.info("------  testAndNoMatch : FederatedQueryPlanner ------");
+
         String phrase = EQ_OP + "'nothing'";
         String first = CityField.ACCESS.name() + EQ_OP + "'NA'";
         String query = first + AND_OP + Constants.ANY_FIELD + phrase;

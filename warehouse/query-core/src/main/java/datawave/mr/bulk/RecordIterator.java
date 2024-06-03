@@ -186,6 +186,21 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
         }
 
         @Override
+        public boolean isFullMajorCompaction() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean isUserCompaction() {
+            return false;
+        }
+
+        @Override
+        public Authorizations getAuthorizations() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         public IteratorEnvironment cloneWithSamplingEnabled() {
             throw new SampleNotPresentException();
         }

@@ -31,12 +31,13 @@ public class CountAggregatingIterator extends TransformIterator {
 
     protected Set<ColumnVisibility> columnVisibilities = Sets.newHashSet();
 
-    private MarkingFunctions markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
+    private final MarkingFunctions markingFunctions;
 
     private Kryo kryo = new Kryo();
 
-    public CountAggregatingIterator(Iterator<Entry<Key,Value>> iterator, Transformer transformer) {
+    public CountAggregatingIterator(Iterator<Entry<Key,Value>> iterator, Transformer transformer, MarkingFunctions markingFunctions) {
         super(iterator, transformer);
+        this.markingFunctions = markingFunctions;
     }
 
     @Override

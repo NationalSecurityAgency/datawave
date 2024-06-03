@@ -14,8 +14,8 @@ import org.junit.ClassRule;
 import org.junit.Test;
 
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
-import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.planner.FederatedQueryPlanner;
+import datawave.query.tables.ShardQueryLogic;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.CitiesDataType;
@@ -122,7 +122,12 @@ public class TextFunctionQueryTest extends AbstractFunctionalQuery {
     protected void testInit() {
         this.auths = CitiesDataType.getTestAuths();
         this.documentKey = CityField.EVENT_ID.name();
+    }
 
-        this.logic.setParser(new LuceneToJexlQueryParser());
+    @Override
+    public ShardQueryLogic createShardQueryLogic() {
+        ShardQueryLogic logic = super.createShardQueryLogic();
+        logic.setParser(new LuceneToJexlQueryParser());
+        return logic;
     }
 }

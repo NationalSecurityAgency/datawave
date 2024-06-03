@@ -5,8 +5,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import datawave.core.query.configuration.QueryData;
 import datawave.query.CloseableIterable;
-import datawave.webservice.query.configuration.QueryData;
 
 /**
  * Implementation of {@link CloseableIterable} intended to be used by {@link FederatedQueryPlanner}. This iterable
