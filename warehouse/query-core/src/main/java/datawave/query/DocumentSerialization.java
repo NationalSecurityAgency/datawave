@@ -10,6 +10,8 @@ import java.util.zip.DeflaterOutputStream;
 import java.util.zip.Inflater;
 import java.util.zip.InflaterInputStream;
 
+import datawave.microservice.query.Query;
+import datawave.microservice.query.QueryImpl.Parameter;
 import datawave.query.exceptions.InvalidDocumentHeader;
 import datawave.query.exceptions.NoSuchDeserializerException;
 import datawave.query.function.deserializer.DocumentDeserializer;
@@ -18,8 +20,6 @@ import datawave.query.function.deserializer.WritableDocumentDeserializer;
 import datawave.query.function.serializer.DocumentSerializer;
 import datawave.query.function.serializer.KryoDocumentSerializer;
 import datawave.query.function.serializer.WritableDocumentSerializer;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.QueryImpl.Parameter;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.NotFoundQueryException;

@@ -3,8 +3,6 @@ package datawave.query.discovery;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.Comparator;
-import java.util.Map;
 import java.util.Objects;
 import java.util.StringJoiner;
 
@@ -13,7 +11,10 @@ import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.VLongWritable;
 import org.apache.hadoop.io.WritableComparable;
 
+import datawave.core.query.configuration.ResultContext;
+
 public class DiscoveredThing implements WritableComparable<DiscoveredThing> {
+    private ResultContext context;
     private String term, field, type, date, columnVisibility;
     private final VLongWritable count;
     private final MapWritable countsByColumnVisibility;

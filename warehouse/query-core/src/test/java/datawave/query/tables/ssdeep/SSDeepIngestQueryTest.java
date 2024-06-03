@@ -23,9 +23,14 @@ import org.junit.Test;
 
 import com.google.common.collect.Sets;
 
+import datawave.core.common.connection.AccumuloConnectionFactory;
+import datawave.core.query.logic.AbstractQueryLogicTransformer;
+import datawave.core.query.logic.QueryLogic;
+import datawave.core.query.result.event.DefaultResponseObjectFactory;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.mapreduce.handler.ssdeep.SSDeepIndexHandler;
 import datawave.marking.MarkingFunctions;
+import datawave.microservice.query.QueryImpl;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
 import datawave.query.RebuildingScannerTestHelper;
 import datawave.query.tables.ssdeep.testframework.SSDeepDataType;
@@ -42,11 +47,6 @@ import datawave.query.util.MetadataHelperFactory;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
-import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.logic.AbstractQueryLogicTransformer;
-import datawave.webservice.query.logic.QueryLogic;
-import datawave.webservice.query.result.event.DefaultResponseObjectFactory;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
@@ -103,7 +103,8 @@ public class SSDeepIngestQueryTest extends AbstractFunctionalQuery {
         discoveryQueryLogic.setTableName("shardIndex");
         discoveryQueryLogic.setIndexTableName("shardIndex");
         discoveryQueryLogic.setReverseIndexTableName("shardReverseIndex");
-        discoveryQueryLogic.setModelTableName("metadata");
+        discoveryQueryLogic.setMetadataTableName("metadata");
+        discoveryQueryLogic.setModelName("DATAWAVE");
         discoveryQueryLogic.setMarkingFunctions(markingFunctions);
         discoveryQueryLogic.setMetadataHelperFactory(metadataHelperFactory);
         discoveryQueryLogic.setResponseObjectFactory(responseFactory);

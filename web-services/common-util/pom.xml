@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.webservices</groupId>
         <artifactId>datawave-ws-parent</artifactId>
-        <version>6.11.0-SNAPSHOT</version>
+        <version>7.0.1-SNAPSHOT</version>
     </parent>
     <artifactId>datawave-ws-common-util</artifactId>
     <packaging>jar</packaging>
@@ -30,6 +30,29 @@
             <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-common</artifactId>
             <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.core</groupId>
+            <artifactId>datawave-core-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.core</groupId>
+            <artifactId>datawave-core-common-util</artifactId>
+            <version>${project.version}</version>
+            <classifier>jboss</classifier>
+            <exclusions>
+                <exclusion>
+                    <groupId>gov.nsa.datawave.core</groupId>
+                    <artifactId>datawave-core-connection-pool</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.core</groupId>
+            <artifactId>datawave-core-connection-pool</artifactId>
+            <version>${project.version}</version>
+            <classifier>jboss</classifier>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
