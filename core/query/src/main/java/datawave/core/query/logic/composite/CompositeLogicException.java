@@ -56,18 +56,12 @@ public class CompositeLogicException extends RuntimeException {
     /**
      * Return the given exception with query exception's error code (if present) available at the root exception. This means one of the following cases will
      * occur:
-     * <li>
      * <ul>
-     * The exception is not a {@link QueryException} and no {@link QueryException} exists in the exception's stack: The exception will be returned.
+     * <li>The exception is not a {@link QueryException} and no {@link QueryException} exists in the exception's stack: The exception will be returned.</li>
+     * <li>The exception is a {@link QueryException}: The exception will be returned.</li>
+     * <li>The exception is not a {@link QueryException}, but a {@link QueryException} exists in the exception's stack. A {@link CompositeRaisedQueryException}
+     * will be returned with the error code of the first {@link QueryException} found in the stack, and the original exception as its cause.</li>
      * </ul>
-     * <ul>
-     * The exception is a {@link QueryException}: The exception will be returned.
-     * </ul>
-     * <ul>
-     * The exception is not a {@link QueryException}, but a {@link QueryException} exists in the exception's stack. A {@link CompositeRaisedQueryException} will
-     * be returned with the error code of the first {@link QueryException} found in the stack, and the original exception as its cause.
-     * </ul>
-     * </li>
      */
     private static Exception getRaisedQueryException(Exception exception) {
         if (exception instanceof QueryException) {
