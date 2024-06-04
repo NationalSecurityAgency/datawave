@@ -17,6 +17,6 @@ public class MostRecentUniqueByDay extends UniqueByFunction {
 
     @Override
     public QueryFunction duplicate() {
-        return new UniqueByDay();
+        return new MostRecentUniqueByDay();
     }
 }
