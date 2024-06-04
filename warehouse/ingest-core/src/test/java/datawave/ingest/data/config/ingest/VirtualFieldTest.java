@@ -56,18 +56,18 @@ public class VirtualFieldTest {
         eventFields.put("PARTIAL_2", new NormalizedFieldAndValue("PARTIAL_2", "value5", "group5", "subgroup1"));
     }
 
-    protected VirtualFieldIngestHelper getHelper(VirtualIngest.GroupingPolicy policy) {
+    protected VirtualFieldIngestHelper getHelper(String policy) {
         return getHelper(policy, false);
     }
 
-    protected VirtualFieldIngestHelper getHelper(VirtualIngest.GroupingPolicy policy, boolean allowMissing) {
+    protected VirtualFieldIngestHelper getHelper(String policy, boolean allowMissing) {
         VirtualFieldIngestHelper helper = new VirtualFieldIngestHelper(new Type("test", null, null, null, 1, null));
         Configuration config = new Configuration();
         config.set("test" + VirtualIngest.VIRTUAL_FIELD_NAMES,
                         "group1partial*,partial*group1,group1group2,group1ungroup1,ungroup1group1,ungroup1ungroup2,partial1partial2,ungroup1empty,emptypartial1");
         config.set("test" + VirtualIngest.VIRTUAL_FIELD_MEMBERS,
                         "GROUPED_1.PARTIAL_*,PARTIAL_*.GROUPED_1,GROUPED_1.GROUPED_2,GROUPED_1.UNGROUPED_1,UNGROUPED_1.GROUPED_1,UNGROUPED_1.UNGROUPED_2,PARTIAL_1.PARTIAL_2,UNGROUPED_1.EMPTY,EMPTY.PARTIAL_1");
-        config.set("test" + VirtualIngest.VIRTUAL_FIELD_GROUPING_POLICY, policy.name());
+        config.set("test" + VirtualIngest.VIRTUAL_FIELD_GROUPING_POLICY, policy);
         config.set("test" + VirtualIngest.VIRTUAL_FIELD_ALLOW_MISSING, Boolean.toString(allowMissing));
         helper.setup(config);
         return helper;
@@ -75,7 +75,7 @@ public class VirtualFieldTest {
 
     @Test
     public void testSameGroupOnlyVirtualFieldGrouping() {
-        VirtualFieldIngestHelper helper = getHelper(VirtualIngest.GroupingPolicy.SAME_GROUP_ONLY);
+        VirtualFieldIngestHelper helper = getHelper("SAME_GROUP_ONLY");
         Multimap<String,NormalizedContentInterface> virtualFields = helper.getVirtualFields(eventFields);
 
         assertEquals(7, virtualFields.keySet().size());
@@ -93,7 +93,7 @@ public class VirtualFieldTest {
 
     @Test
     public void testGroupedWithNonGroupedVirtualFieldGrouping() {
-        VirtualFieldIngestHelper helper = getHelper(VirtualIngest.GroupingPolicy.GROUPED_WITH_NON_GROUPED);
+        VirtualFieldIngestHelper helper = getHelper("GROUPED_WITH_NON_GROUPED");
         Multimap<String,NormalizedContentInterface> virtualFields = helper.getVirtualFields(eventFields);
 
         assertEquals(9, virtualFields.keySet().size());
@@ -117,7 +117,7 @@ public class VirtualFieldTest {
 
     @Test
     public void testIgnoreGroupsVirtualFieldGrouping() {
-        VirtualFieldIngestHelper helper = getHelper(VirtualIngest.GroupingPolicy.IGNORE_GROUPS);
+        VirtualFieldIngestHelper helper = getHelper("IGNORE_GROUPS");
         Multimap<String,NormalizedContentInterface> virtualFields = helper.getVirtualFields(eventFields);
 
         assertEquals(9, virtualFields.keySet().size());
@@ -135,7 +135,7 @@ public class VirtualFieldTest {
 
     @Test
     public void testAllowMissing() {
-        VirtualFieldIngestHelper helper = getHelper(VirtualIngest.GroupingPolicy.GROUPED_WITH_NON_GROUPED, true);
+        VirtualFieldIngestHelper helper = getHelper("GROUPED_WITH_NON_GROUPED", true);
         Multimap<String,NormalizedContentInterface> virtualFields = helper.getVirtualFields(eventFields);
 
         assertEquals(11, virtualFields.keySet().size());

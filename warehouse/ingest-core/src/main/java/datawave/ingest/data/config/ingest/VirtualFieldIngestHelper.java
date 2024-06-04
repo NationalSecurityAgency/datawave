@@ -11,13 +11,10 @@ import datawave.ingest.data.config.NormalizedContentInterface;
 
 /**
  * This class will add the VirtualFieldNormalizer to the list of normalizers. Note that this can be done directly via the configuration.
- *
- *
- *
  */
 public class VirtualFieldIngestHelper implements VirtualIngest {
 
-    private VirtualFieldNormalizer virtualFieldNormalizer = new VirtualFieldNormalizer();
+    protected VirtualFieldNormalizer virtualFieldNormalizer = new VirtualFieldNormalizer();
 
     private Type type;
 
