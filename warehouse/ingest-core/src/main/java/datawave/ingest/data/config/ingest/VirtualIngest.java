@@ -37,10 +37,11 @@ public interface VirtualIngest {
     String VIRTUAL_FIELD_ALLOW_MISSING = VirtualFieldNormalizer.VIRTUAL_FIELD_ALLOW_MISSING;
     String VIRTUAL_FIELD_GROUPING_POLICY = VirtualFieldNormalizer.VIRTUAL_FIELD_GROUPING_POLICY;
 
-    enum GroupingPolicy {
-        SAME_GROUP_ONLY, GROUPED_WITH_NON_GROUPED, IGNORE_GROUPS
-    }
+    // enum GroupingPolicy {
+    // SAME_GROUP_ONLY, GROUPED_WITH_NON_GROUPED, IGNORE_GROUPS
+    // }
 
+    // AbstractGroupingPolicy groupingPolicy = new GroupingPolicy();
     void setup(Configuration config) throws IllegalArgumentException;
 
     Map<String,String[]> getVirtualFieldDefinitions();
@@ -110,7 +111,7 @@ public interface VirtualIngest {
          * myDataType.data.combine.grouped.with.nongrouped.
          */
         public static final String VIRTUAL_FIELD_GROUPING_POLICY = ".data.combine.grouping.policy";
-        public static final GroupingPolicy DEFAULT_GROUPING_POLICY = GroupingPolicy.GROUPED_WITH_NON_GROUPED;
+        // public static final int DEFAULT_GROUPING_POLICY = GROUPED_WITH_NON_GROUPED;
 
         /**
          *
@@ -122,7 +123,7 @@ public interface VirtualIngest {
         protected String defaultSeparator = null;
         protected String defaultStartSeparator = null;
         protected String defaultEndSeparator = null;
-        protected Map<String,GroupingPolicy> grouping = new HashMap<>();
+        protected Map<String,AbstractGroupingPolicy> grouping = new HashMap<>();
         protected Map<String,Boolean> allowMissing = new HashMap<>();
         private Set<String> ignoreNormalizationForFields = new HashSet<>();
 
@@ -183,11 +184,12 @@ public interface VirtualIngest {
                 virtualFieldDefinitions.put(name, members);
 
                 if (groupingPolicies.length == 0) {
-                    grouping.put(name, DEFAULT_GROUPING_POLICY);
+                    // use default policy
+                    grouping.put(name, new GroupingPolicy());
                 } else if (groupingPolicies.length == 1) {
-                    grouping.put(name, GroupingPolicy.valueOf(groupingPolicies[0]));
+                    grouping.put(name, new GroupingPolicy(groupingPolicies[0]));
                 } else {
-                    grouping.put(name, GroupingPolicy.valueOf(groupingPolicies[i]));
+                    grouping.put(name, new GroupingPolicy(groupingPolicies[i]));
                 }
 
                 if (missingPolicies.length == 0) {
@@ -401,7 +403,7 @@ public interface VirtualIngest {
                 // for each of the virtual field definitions, add the virtual fields.
                 for (Entry<String,String[]> vFields : this.virtualFieldDefinitions.entrySet()) {
                     tempResults.clear();
-                    GroupingPolicy groupingPolicy = grouping.get(vFields.getKey());
+                    AbstractGroupingPolicy groupingPolicy = grouping.get(vFields.getKey());
                     addVirtualFields(tempResults, eventFields, groupedEventFields, vFields.getKey(), null, null, groupingPolicy,
                                     allowMissing.get(vFields.getKey()), vFields.getValue(), 0, "", "", // separator is initially empty
                                     new StringBuilder(), new StringBuilder(), null);
@@ -424,7 +426,7 @@ public interface VirtualIngest {
          * @param groupedEventFields
          *            a multimap of grouped event fields
          */
-        private void updateGroupedEventFields(Multimap<String,NormalizedContentInterface> eventFields, String field,
+        protected void updateGroupedEventFields(Multimap<String,NormalizedContentInterface> eventFields, String field,
                         Map<String,Multimap<VirtualFieldGrouping,NormalizedContentInterface>> groupedEventFields) {
             if (!groupedEventFields.containsKey(field)) {
                 groupedEventFields.put(field, groupFields(eventFields.get(field)));
@@ -543,8 +545,8 @@ public interface VirtualIngest {
          */
         public void addVirtualFields(List<NormalizedContentInterface> virtualFields, Multimap<String,NormalizedContentInterface> eventFields,
                         Map<String,Multimap<VirtualFieldGrouping,NormalizedContentInterface>> groupings, String virtualFieldName, String replacement,
-                        VirtualFieldGrouping grouping, GroupingPolicy groupingPolicy, boolean allowMissing, String[] fields, int pos, String startSeparator,
-                        String endSeparator, StringBuilder originalValue, StringBuilder normalizedValue, Map<String,String> markings) {
+                        VirtualFieldGrouping grouping, AbstractGroupingPolicy groupingPolicy, boolean allowMissing, String[] fields, int pos,
+                        String startSeparator, String endSeparator, StringBuilder originalValue, StringBuilder normalizedValue, Map<String,String> markings) {
             String separator = "";
             // append any constants that have been specified
             while (pos < fields.length && isConstant(fields[pos])) {
@@ -680,30 +682,31 @@ public interface VirtualIngest {
          *            the groupings
          * @return an {@link Iterable} of {@link NormalizedContentInterface}
          */
-        private Iterable<NormalizedContentInterface> getEventFields(boolean firstField, String field, GroupingPolicy groupingPolicy,
+        private Iterable<NormalizedContentInterface> getEventFields(boolean firstField, String field, AbstractGroupingPolicy groupingPolicy,
                         VirtualFieldGrouping grouping, Multimap<String,NormalizedContentInterface> eventFields,
                         Map<String,Multimap<VirtualFieldGrouping,NormalizedContentInterface>> groupings) {
             if (firstField) {
                 return eventFields.get(field);
             }
-            switch (groupingPolicy) {
-                case GROUPED_WITH_NON_GROUPED:
-                    updateGroupedEventFields(eventFields, field, groupings);
-                    if (grouping == null) {
-                        // if this grouping is null, then we can match with anything
-                        return eventFields.get(field);
-                    } else {
-                        // if we have a grouping, then we can match those with the same grouping or no grouping
-                        return Iterables.concat(groupings.get(field).get(null), groupings.get(field).get(grouping));
-                    }
-                case SAME_GROUP_ONLY:
-                    updateGroupedEventFields(eventFields, field, groupings);
-                    // only return those with the same grouping
-                    return groupings.get(field).get(grouping);
-                default:
-                    // by default grouping does not matter
-                    return eventFields.get(field);
-            }
+            return groupingPolicy.applyPolicy(this, field, grouping, eventFields, groupings);
+            // switch (groupingPolicy) {
+            // case GroupingPolicy.GROUPED_WITH_NON_GROUPED:
+            // updateGroupedEventFields(eventFields, field, groupings);
+            // if (grouping == null) {
+            // // if this grouping is null, then we can match with anything
+            // return eventFields.get(field);
+            // } else {
+            // // if we have a grouping, then we can match those with the same grouping or no grouping
+            // return Iterables.concat(groupings.get(field).get(null), groupings.get(field).get(grouping));
+            // }
+            // case GroupingPolicy.SAME_GROUP_ONLY:
+            // updateGroupedEventFields(eventFields, field, groupings);
+            // // only return those with the same grouping
+            // return groupings.get(field).get(grouping);
+            // default:
+            // // by default grouping does not matter
+            // return eventFields.get(field);
+            // }
         }
 
         private boolean isConstant(String name) {
@@ -716,8 +719,8 @@ public interface VirtualIngest {
             return name.substring(1, name.length() - 1);
         }
 
-        private VirtualFieldGrouping getGrouping(NormalizedContentInterface value, GroupingPolicy groupingPolicy) {
-            if (!groupingPolicy.equals(GroupingPolicy.IGNORE_GROUPS)) {
+        private VirtualFieldGrouping getGrouping(NormalizedContentInterface value, AbstractGroupingPolicy groupingPolicy) {
+            if (!groupingPolicy.isIgnoreGroupings()) {
                 return getGrouping(value);
             }
             return null;
