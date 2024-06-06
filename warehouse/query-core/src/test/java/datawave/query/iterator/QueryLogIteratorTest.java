@@ -3,17 +3,20 @@ package datawave.query.iterator;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.security.util.ScannerHelper;
-import org.apache.accumulo.core.client.*;
+import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.accumulo.core.client.BatchWriter;
+import org.apache.accumulo.core.client.BatchWriterConfig;
+import org.apache.accumulo.core.client.IteratorSetting;
+import org.apache.accumulo.core.client.MutationsRejectedException;
 import org.apache.accumulo.core.client.Scanner;
+import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.log4j.AppenderSkeleton;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.apache.log4j.spi.LoggingEvent;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -87,33 +90,6 @@ public class QueryLogIteratorTest {
 
         // Logs will print to console with a start/end for each method in the iterator.
     }
-
-   /* @Test
-    public void test() {
-        TestAppender testAppender = new TestAppender();
-
-        Logger.getRootLogger().addAppender(testAppender);
-        ClassUnderTest.logMessage();
-        LoggingEvent loggingEvent = testAppender.events.get(0);
-        //asset equals 1 because log level is info, change it to debug and
-        //the test will fail
-        assertTrue("Unexpected empty log",testAppender.events.size()==1);
-        assertEquals("Unexpected log level",Level.INFO,loggingEvent.getLevel());
-        assertEquals("Unexpected log message"
-                ,loggingEvent.getMessage().toString()
-                ,"Hello Test");
-    }
-
-    public static class TestAppender extends AppenderSkeleton {
-        public List<LoggingEvent> events = new ArrayList<LoggingEvent>();
-        public void close() {}
-        public boolean requiresLayout() {return false;}
-        @Override
-        protected void append(LoggingEvent event) {
-            events.add(event);
-        }
-    }
-*/
 }
 
 
