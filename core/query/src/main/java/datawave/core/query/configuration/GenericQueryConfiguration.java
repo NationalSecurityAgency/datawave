@@ -74,8 +74,8 @@ public class GenericQueryConfiguration implements Serializable {
     protected boolean reduceResults = false;
 
     // either IMMEDIATE or EVENTUAL
-    private Map<String,ScannerBase.ConsistencyLevel> consistencyLevels = new HashMap<>();
-    private Map<String,Map<String,String>> hints = new HashMap<>();
+    private Map<String,ScannerBase.ConsistencyLevel> tableConsistencyLevels = new HashMap<>();
+    private Map<String,Map<String,String>> tableHints = new HashMap<>();
 
     /**
      * Empty default constructor
@@ -110,8 +110,8 @@ public class GenericQueryConfiguration implements Serializable {
         this.setQueryString(genericConfig.getQueryString());
         this.setTableName(genericConfig.getTableName());
         this.setReduceResults(genericConfig.isReduceResults());
-        this.setConsistencyLevels(genericConfig.getConsistencyLevels());
-        this.setHints(genericConfig.getHints());
+        this.setTableConsistencyLevels(genericConfig.getTableConsistencyLevels());
+        this.setTableHints(genericConfig.getTableHints());
     }
 
     public Collection<QueryData> getQueries() {
@@ -278,20 +278,20 @@ public class GenericQueryConfiguration implements Serializable {
         this.accumuloPassword = EnvProvider.resolve(password);
     }
 
-    public Map<String,ScannerBase.ConsistencyLevel> getConsistencyLevels() {
-        return consistencyLevels;
+    public Map<String,ScannerBase.ConsistencyLevel> getTableConsistencyLevels() {
+        return tableConsistencyLevels;
     }
 
-    public void setConsistencyLevels(Map<String,ScannerBase.ConsistencyLevel> consistencyLevels) {
-        this.consistencyLevels = consistencyLevels;
+    public void setTableConsistencyLevels(Map<String,ScannerBase.ConsistencyLevel> tableConsistencyLevels) {
+        this.tableConsistencyLevels = tableConsistencyLevels;
     }
 
-    public Map<String,Map<String,String>> getHints() {
-        return hints;
+    public Map<String,Map<String,String>> getTableHints() {
+        return tableHints;
     }
 
-    public void setHints(Map<String,Map<String,String>> hints) {
-        this.hints = hints;
+    public void setTableHints(Map<String,Map<String,String>> tableHints) {
+        this.tableHints = tableHints;
     }
 
     /**

@@ -47,7 +47,7 @@ class ScannerFactoryTest {
     public void setup() {
         Map<String,ScannerBase.ConsistencyLevel> consistencyLevels = new HashMap<>();
         consistencyLevels.put(TableName.SHARD, ScannerBase.ConsistencyLevel.IMMEDIATE);
-        config.setConsistencyLevels(consistencyLevels);
+        config.setTableConsistencyLevels(consistencyLevels);
         scannerFactory.updateConfigs(config);
     }
 
@@ -174,7 +174,7 @@ class ScannerFactoryTest {
     private void setEventualConsistency() {
         Map<String,ScannerBase.ConsistencyLevel> consistencyLevels = new HashMap<>();
         consistencyLevels.put(TableName.SHARD, ScannerBase.ConsistencyLevel.EVENTUAL);
-        config.setConsistencyLevels(consistencyLevels);
+        config.setTableConsistencyLevels(consistencyLevels);
         scannerFactory.updateConfigs(config);
     }
 

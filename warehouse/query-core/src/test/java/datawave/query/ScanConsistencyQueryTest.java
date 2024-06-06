@@ -73,7 +73,7 @@ public class ScanConsistencyQueryTest extends AbstractFunctionalQuery {
         // for now just assert the consistency level on the final batch scanner
         Map<String,ScannerBase.ConsistencyLevel> consistencyLevels = new HashMap<>();
         consistencyLevels.put(TableName.SHARD, ScannerBase.ConsistencyLevel.EVENTUAL);
-        logic.setConsistencyLevels(consistencyLevels);
+        logic.setTableConsistencyLevels(consistencyLevels);
 
         String query = "CITY == 'london'";
         Set<String> expected = Sets.newHashSet("ldn-usa-mi-10", "ldn-uk-7", "ldn-fra-lle-11", "ldn-usa-oh-8", "ldn-usa-mo-8");
@@ -99,7 +99,7 @@ public class ScanConsistencyQueryTest extends AbstractFunctionalQuery {
         q.setQueryAuthorizations(auths.toString());
 
         GenericQueryConfiguration config = this.logic.initialize(client, q, authSet);
-        config.setConsistencyLevels(Collections.singletonMap(TableName.SHARD, ScannerBase.ConsistencyLevel.IMMEDIATE));
+        config.setTableConsistencyLevels(Collections.singletonMap(TableName.SHARD, ScannerBase.ConsistencyLevel.IMMEDIATE));
 
         this.logic.setupQuery(config);
 
@@ -108,8 +108,8 @@ public class ScanConsistencyQueryTest extends AbstractFunctionalQuery {
 
     public void assertScannerConsistency(BaseQueryLogic<Entry<Key,Value>> logic) {
         Map<String,ScannerBase.ConsistencyLevel> expected = Collections.singletonMap(TableName.SHARD, ScannerBase.ConsistencyLevel.IMMEDIATE);
-        assertEquals(expected, logic.getConfig().getConsistencyLevels());
-        assertEquals(expected, logic.getConsistencyLevels());
+        assertEquals(expected, logic.getConfig().getTableConsistencyLevels());
+        assertEquals(expected, logic.getTableConsistencyLevels());
     }
 
     // ============================================

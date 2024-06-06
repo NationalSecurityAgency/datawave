@@ -581,10 +581,10 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("sortQueryBeforeGlobalIndex", true);
         defaultValues.put("sortQueryByCounts", false);
         updatedValues.put("sortQueryByCounts", true);
-        defaultValues.put("consistencyLevels", Collections.emptyMap());
-        updatedValues.put("consistencyLevels", Collections.singletonMap(TableName.SHARD, ScannerBase.ConsistencyLevel.EVENTUAL));
-        defaultValues.put("hints", Collections.emptyMap());
-        updatedValues.put("hints", Collections.emptyMap());
+        defaultValues.put("tableConsistencyLevels", Collections.emptyMap());
+        updatedValues.put("tableConsistencyLevels", Collections.singletonMap(TableName.SHARD, ScannerBase.ConsistencyLevel.EVENTUAL));
+        defaultValues.put("tableHints", Collections.emptyMap());
+        updatedValues.put("tableHints", Collections.emptyMap());
     }
 
     private Query createQuery(String query) {

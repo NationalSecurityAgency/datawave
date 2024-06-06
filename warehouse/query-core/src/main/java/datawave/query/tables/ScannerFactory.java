@@ -98,14 +98,14 @@ public class ScannerFactory {
 
         this.client = genericConfig.getClient();
 
-        Map<String,ScannerBase.ConsistencyLevel> consistencyLevels = genericConfig.getConsistencyLevels();
+        Map<String,ScannerBase.ConsistencyLevel> consistencyLevels = genericConfig.getTableConsistencyLevels();
         if (consistencyLevels != null && !consistencyLevels.isEmpty()) {
-            this.consistencyByTable = genericConfig.getConsistencyLevels();
+            this.consistencyByTable = genericConfig.getTableConsistencyLevels();
         }
 
-        Map<String,Map<String,String>> hints = genericConfig.getHints();
+        Map<String,Map<String,String>> hints = genericConfig.getTableHints();
         if (hints != null && !hints.isEmpty()) {
-            this.hintsByTable = genericConfig.getHints();
+            this.hintsByTable = genericConfig.getTableHints();
         }
 
         int numThreads = DEFAULT_MAX_THREADS;

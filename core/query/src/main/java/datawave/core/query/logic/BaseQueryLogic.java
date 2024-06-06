@@ -446,19 +446,19 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
         return clientConfig;
     }
 
-    public Map<String,ScannerBase.ConsistencyLevel> getConsistencyLevels() {
-        return getConfig().getConsistencyLevels();
+    public Map<String,ScannerBase.ConsistencyLevel> getTableConsistencyLevels() {
+        return getConfig().getTableConsistencyLevels();
     }
 
-    public void setConsistencyLevels(Map<String,ScannerBase.ConsistencyLevel> consistencyLevels) {
-        getConfig().setConsistencyLevels(consistencyLevels);
+    public void setTableConsistencyLevels(Map<String,ScannerBase.ConsistencyLevel> consistencyLevels) {
+        getConfig().setTableConsistencyLevels(consistencyLevels);
     }
 
-    public Map<String,Map<String,String>> getHints() {
-        return getConfig().getHints();
+    public Map<String,Map<String,String>> getTableHints() {
+        return getConfig().getTableHints();
     }
 
-    public void setHints(Map<String,Map<String,String>> hints) {
-        getConfig().setHints(hints);
+    public void setTableHints(Map<String,Map<String,String>> hints) {
+        getConfig().setTableHints(hints);
     }
 }
