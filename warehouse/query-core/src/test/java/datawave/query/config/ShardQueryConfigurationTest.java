@@ -580,6 +580,9 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("sortQueryBeforeGlobalIndex", true);
         defaultValues.put("sortQueryByCounts", false);
         updatedValues.put("sortQueryByCounts", true);
+
+        defaultValues.put("tserverLoggingActive", false);
+        updatedValues.put("tserverLoggingActive", true);
     }
 
     private Query createQuery(String query) {
