@@ -497,7 +497,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     /**
      * Controls whether query IDs are logged on the tserver level via {@link datawave.query.iterator.QueryLogIterator}.
      */
-    private boolean tserverLoggingActive = true;
+    private boolean tserverLoggingActive = false;
 
     /**
      * Default constructor
