@@ -486,11 +486,11 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 while (null == logCfg) {
                     logCfg = getQueryLogIterator(config, settings);
                 }
-                configureIterator(config, logCfg, newQueryString, isFullTable);
             }
         }
-
-        final QueryData queryData = new QueryData().withQuery(newQueryString).withSettings(Lists.newArrayList(cfg, logCfg));
+        
+        List<IteratorSetting> iteratorSettings = logCfg == null ? Collections.singletonList(cfg) : Lists.newArrayList(cfg, logCfg);
+        final QueryData queryData = new QueryData().withQuery(newQueryString).withSettings(iteratorSettings);
 
         stopwatch.stop();
 
@@ -2267,12 +2267,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             // VersioningIterator is typically set at 20 on the table
             IteratorSetting cfg = new IteratorSetting(config.getBaseIteratorPriority() + QUERY_LOG_ITERATOR_PRIORITY_ADDEND, "queryLog",
                             getQueryLogIteratorClass());
-
-            if (config.isTserverLoggingActive()) {
-                addOption(cfg, QueryOptions.TSERVER_LOGGING_ACTIVE, Boolean.toString(config.isTserverLoggingActive()), false);
-                addOption(cfg, QueryOptions.QUERY_ID, settings.getId().toString(), false);
-            }
-
+            addOption(cfg, QueryOptions.QUERY_ID, settings.getId().toString(), false);
             return cfg;
         });
     }
