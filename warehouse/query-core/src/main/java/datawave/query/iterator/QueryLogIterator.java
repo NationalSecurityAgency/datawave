@@ -19,16 +19,17 @@ import org.apache.log4j.Logger;
 public class QueryLogIterator implements SortedKeyValueIterator<Key,Value>, OptionDescriber {
 
     private static final Logger log = Logger.getLogger(QueryLogIterator.class);
-
     private static final String CLASS_NAME = QueryLogIterator.class.getSimpleName();
+
     private String queryID;
     private SortedKeyValueIterator<Key,Value> source;
-    private IteratorEnvironment myEnvironment;
+    private IteratorEnvironment env;
 
     public QueryLogIterator() {}
 
     public QueryLogIterator(QueryLogIterator other, IteratorEnvironment env) {
-        this.myEnvironment = other.myEnvironment;
+        this.source = other.source.deepCopy(env);
+        this.env = other.env;
         this.queryID = other.queryID;
     }
 
@@ -38,7 +39,7 @@ public class QueryLogIterator implements SortedKeyValueIterator<Key,Value>, Opti
         try {
             this.queryID = options.get(QUERY_ID);
             this.source = source;
-            this.myEnvironment = env;
+            this.env = env;
             logStartOf("init()");
         } finally {
             logEndOf("init()");
@@ -53,13 +54,12 @@ public class QueryLogIterator implements SortedKeyValueIterator<Key,Value>, Opti
 
     private void logEndOf(String methodName) {
         if (log.isInfoEnabled()) {
-            log.info(CLASS_NAME + " "  + methodName + " Ended QueryID: " + this.queryID);
+            log.info(CLASS_NAME + " " + methodName + " Ended QueryID: " + this.queryID);
         }
     }
 
     @Override
     public boolean hasTop() {
-
         boolean result;
 
         try {
@@ -112,7 +112,7 @@ public class QueryLogIterator implements SortedKeyValueIterator<Key,Value>, Opti
 
         try {
             logStartOf("deepCopy()");
-            copy = new QueryLogIterator(this, this.myEnvironment);
+            copy = new QueryLogIterator(this, this.env);
         } finally {
             logEndOf("deepCopy()");
         }

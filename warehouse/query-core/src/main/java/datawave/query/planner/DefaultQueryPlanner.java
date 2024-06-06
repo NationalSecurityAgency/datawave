@@ -255,7 +255,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     private List<NodeTransformRule> transformRules = Lists.newArrayList();
 
     protected Class<? extends SortedKeyValueIterator<Key,Value>> queryIteratorClazz = QueryIterator.class;
-    protected Class<? extends SortedKeyValueIterator<Key,Value>> QueryLogIteratorClazz = QueryLogIterator.class;
+    protected Class<? extends SortedKeyValueIterator<Key,Value>> queryLogIteratorClazz = QueryLogIterator.class;
 
     protected String plannedScript = null;
 
@@ -333,7 +333,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         setDisableExpandIndexFunction(other.disableExpandIndexFunction);
         rules.addAll(other.rules);
         queryIteratorClazz = other.queryIteratorClazz;
-        QueryLogIteratorClazz = other.QueryLogIteratorClazz;
+        queryLogIteratorClazz = other.queryLogIteratorClazz;
         setMetadataHelper(other.getMetadataHelper());
         setDateIndexHelper(other.getDateIndexHelper());
         setCompressOptionMappings(other.getCompressOptionMappings());
@@ -420,7 +420,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             cfg = getQueryIterator(metadataHelper, config, settings, "", false, true);
             // Create and add the QueryLogIterator only if active Tserver logging is true.
             if (config.isTserverLoggingActive()) {
-                logCfg = getQueryLogIterator(metadataHelper, config, settings, "", false, true);
+                logCfg = getQueryLogIterator(config, settings);
             }
         }
 
@@ -463,8 +463,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
         // Set the final query after we're done mucking with it
         String newQueryString = JexlStringBuildingVisitor.buildQuery(config.getQueryTree());
-        if (log.isTraceEnabled())
+        if (log.isTraceEnabled()) {
             log.trace("newQueryString is " + newQueryString);
+        }
         if (StringUtils.isBlank(newQueryString)) {
             stopwatch.stop();
             QueryException qe = new QueryException(DatawaveErrorCode.EMPTY_QUERY_STRING_AFTER_MODIFICATION);
@@ -483,7 +484,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             // Create and add the QueryLogIterator only if active Tserver logging is true.
             if (config.isTserverLoggingActive()) {
                 while (null == logCfg) {
-                    logCfg = getQueryLogIterator(metadataHelper, config, settings, "", false, false);
+                    logCfg = getQueryLogIterator(config, settings);
                 }
                 configureIterator(config, logCfg, newQueryString, isFullTable);
             }
@@ -2159,13 +2160,15 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         // no-op
     }
 
+    private static final int QUERY_ITERATOR_PRIORITY_ADDEND = 40;
+
     protected Future<IteratorSetting> loadQueryIterator(final MetadataHelper metadataHelper, final ShardQueryConfiguration config, final Query settings,
                     final String queryString, final Boolean isFullTable, boolean isPreload) throws DatawaveQueryException {
 
         return builderThread.submit(() -> {
 
             // VersioningIterator is typically set at 20 on the table
-            IteratorSetting cfg = new IteratorSetting(config.getBaseIteratorPriority() + 40, "query", getQueryIteratorClass());
+            IteratorSetting cfg = new IteratorSetting(config.getBaseIteratorPriority() + QUERY_ITERATOR_PRIORITY_ADDEND, "query", getQueryIteratorClass());
 
             addOption(cfg, Constants.RETURN_TYPE, config.getReturnType().toString(), false);
             addOption(cfg, QueryOptions.FULL_TABLE_SCAN_ONLY, Boolean.toString(isFullTable), false);
@@ -2257,15 +2260,15 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         });
     }
 
-    protected Future<IteratorSetting> loadQueryLogIterator(final MetadataHelper metadataHelper, final ShardQueryConfiguration config,
-                    final Query settings, final String queryString, final Boolean isFullTable, boolean isPreload) throws DatawaveQueryException {
-        return builderThread.submit(() -> {
+    private static final int QUERY_LOG_ITERATOR_PRIORITY_ADDEND = QUERY_ITERATOR_PRIORITY_ADDEND + 1;
 
+    protected Future<IteratorSetting> loadQueryLogIterator(final ShardQueryConfiguration config, final Query settings) {
+        return builderThread.submit(() -> {
             // VersioningIterator is typically set at 20 on the table
-            IteratorSetting cfg = new IteratorSetting(config.getBaseIteratorPriority() + 50, "smuckerLog", getQueryLogIteratorClass());
+            IteratorSetting cfg = new IteratorSetting(config.getBaseIteratorPriority() + QUERY_LOG_ITERATOR_PRIORITY_ADDEND, "queryLog",
+                            getQueryLogIteratorClass());
 
             if (config.isTserverLoggingActive()) {
-                System.out.println("INFO: " + Boolean.toString(config.isTserverLoggingActive()) + settings.getId().toString());
                 addOption(cfg, QueryOptions.TSERVER_LOGGING_ACTIVE, Boolean.toString(config.isTserverLoggingActive()), false);
                 addOption(cfg, QueryOptions.QUERY_ID, settings.getId().toString(), false);
             }
@@ -2399,26 +2402,15 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     /**
      * Get the loaded {@link IteratorSetting}
      *
-     * @param metadataHelper
-     *            the {@link MetadataHelper}
      * @param config
      *            the {@link ShardQueryConfiguration}
      * @param settings
      *            the {@link Query}
-     * @param queryString
-     *            the raw query string
-     * @param isFullTable
-     *            a flag indicating if this is a full table scan
-     * @param isPreload
-     *            a flag indicating the iterator is being loaded prior to planning
      * @return a loaded {@link IteratorSetting}
-     * @throws DatawaveQueryException
-     *             if something goes wrong
      */
-    protected IteratorSetting getQueryLogIterator(MetadataHelper metadataHelper, ShardQueryConfiguration config, Query settings, String queryString,
-                    Boolean isFullTable, boolean isPreload) throws DatawaveQueryException {
+    protected IteratorSetting getQueryLogIterator(ShardQueryConfiguration config, Query settings) {
         if (null == settingFutureLog)
-            settingFutureLog = loadQueryLogIterator(metadataHelper, config, settings, queryString, isFullTable, isPreload);
+            settingFutureLog = loadQueryLogIterator(config, settings);
         if (settingFutureLog.isDone())
             try {
                 return settingFutureLog.get();
@@ -3132,11 +3124,11 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     }
 
     public Class<? extends SortedKeyValueIterator<Key,Value>> getQueryLogIteratorClass() {
-        return QueryLogIteratorClazz;
+        return queryLogIteratorClazz;
     }
 
     public void setQueryLogIteratorClass(Class<? extends SortedKeyValueIterator<Key,Value>> clazz) {
-        QueryLogIteratorClazz = clazz;
+        queryLogIteratorClazz = clazz;
     }
 
     public void setPreloadOptions(boolean preloadOptions) {

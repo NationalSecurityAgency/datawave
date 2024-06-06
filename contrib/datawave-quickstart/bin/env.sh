@@ -62,5 +62,3 @@ fi
 # Order of registration is important, as it reflects install and startup order within global wrapper
 # functions such as 'allInstall', 'allStart', etc. Likewise, 'allStop' and 'allUninstall' perform
 # actions in reverse order of registration. See bin/common.sh for more info
-
-

@@ -2754,7 +2754,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.tserverLoggingActive = tserverLoggingActive;
     }
 
-
     @Override
     public boolean equals(Object o) {
         if (this == o)

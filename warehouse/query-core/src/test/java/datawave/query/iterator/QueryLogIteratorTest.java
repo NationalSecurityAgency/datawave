@@ -1,8 +1,11 @@
 package datawave.query.iterator;
 
-import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
-import datawave.security.util.ScannerHelper;
+import java.io.File;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
@@ -22,11 +25,9 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.io.File;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
+import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.security.util.ScannerHelper;
 
 /**
  * Unit test for {@link QueryLogIterator}.
@@ -39,7 +40,6 @@ public class QueryLogIteratorTest {
     private final Set<Authorizations> AUTHS_SET = Collections.singleton(new Authorizations(AUTHS));
 
     private AccumuloClient accumuloClient;
-
 
     @BeforeClass
     public static void beforeClass() throws Exception {
@@ -86,12 +86,10 @@ public class QueryLogIteratorTest {
         iteratorSetting.addOption(QueryOptions.QUERY_ID, "12345");
         scanner.addScanIterator(iteratorSetting);
 
-        for (Map.Entry<Key, Value> entry : scanner) {
+        for (Map.Entry<Key,Value> entry : scanner) {
             // Do nothing here, we are examining logs only.
         }
 
         // Logs will print to console with a start/end for each method in the iterator.
     }
 }
-
-

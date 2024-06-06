@@ -277,7 +277,6 @@ public class QueryOptions implements OptionDescriber {
     public static final String FIELD_COUNTS = "field.counts";
     public static final String TERM_COUNTS = "term.counts";
 
-
     /**
      * Controls whether a query's ID is logged on the tserver using {@link QueryLogIterator}
      */
