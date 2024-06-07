@@ -1,5 +1,6 @@
 package datawave.metrics.remote;
 
+import java.net.URI;
 import java.text.SimpleDateFormat;
 import java.util.Collection;
 import java.util.Date;
@@ -15,7 +16,9 @@ import javax.ws.rs.core.MediaType;
 
 import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.apache.http.HttpEntity;
+import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.StringEntity;
+import org.xbill.DNS.TextParseException;
 
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.annotation.Metric;
@@ -77,6 +80,10 @@ public class RemoteQueryMetricService extends RemoteHttpService {
     @Inject
     @ConfigProperty(name = "dw.remoteQueryMetricService.port", defaultValue = "8443")
     private int servicePort;
+
+    @Inject
+    @ConfigProperty(name = "dw.remoteQueryMetricService.useConfiguredURIForRedirect", defaultValue = "false")
+    private boolean useConfiguredURIForRedirect;
 
     @Inject
     @ConfigProperty(name = "dw.remoteQueryMetricService.uri", defaultValue = "/querymetric/v1/")
@@ -222,6 +229,10 @@ public class RemoteQueryMetricService extends RemoteHttpService {
                 entity -> queryMetricsSummaryResponseReader.readValue(entity.getContent()),
                 () -> suffix);
         // @formatter:on
+    }
+
+    public URIBuilder buildRedirectURI(String suffix, URI baseURI) throws TextParseException {
+        return buildRedirectURI(suffix, baseURI, useConfiguredURIForRedirect);
     }
 
     protected String getBearer() {
