@@ -17,9 +17,8 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.log4j.Logger;
 
 /**
- * An iterator used to log the start and end of each method run by the {@link SortedKeyValueIterator} above it in the iterator stack.
- * Logs the QueryID associated with each method.
- * Logs are written on the TServer where the iterator is running
+ * An iterator used to log the start and end of each method run by the {@link SortedKeyValueIterator} above it in the iterator stack. Logs the QueryID
+ * associated with each method. Logs are written on the TServer where the iterator is running
  */
 public class QueryLogIterator implements SortedKeyValueIterator<Key,Value>, OptionDescriber {
 
@@ -169,7 +168,8 @@ public class QueryLogIterator implements SortedKeyValueIterator<Key,Value>, Opti
     }
 
     /**
-     * Returns a {@link org.apache.accumulo.core.iterators.OptionDescriber.IteratorOptions} object containing a description of the iterator and an option for the QueryID.
+     * Returns a {@link org.apache.accumulo.core.iterators.OptionDescriber.IteratorOptions} object containing a description of the iterator and an option for
+     * the QueryID.
      */
     @Override
     public IteratorOptions describeOptions() {
