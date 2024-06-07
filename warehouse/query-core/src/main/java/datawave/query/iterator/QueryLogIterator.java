@@ -16,8 +16,11 @@ import org.apache.accumulo.core.iterators.OptionDescriber;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.log4j.Logger;
 
-
-
+/**
+ * An iterator used to log the start and end of each method run by the {@link SortedKeyValueIterator} above it in the iterator stack.
+ * Logs the QueryID associated with each method.
+ * Logs are written on the TServer where the iterator is running
+ */
 public class QueryLogIterator implements SortedKeyValueIterator<Key,Value>, OptionDescriber {
 
     private static final Logger log = Logger.getLogger(QueryLogIterator.class);
