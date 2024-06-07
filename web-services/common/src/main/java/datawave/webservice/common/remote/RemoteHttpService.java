@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.ConnectException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.security.Key;
@@ -256,6 +257,17 @@ public abstract class RemoteHttpService {
         if (suffix == null)
             suffix = "";
         return buildURI().setPath(serviceURI() + suffix);
+    }
+
+    public URIBuilder buildRedirectURI(String suffix, URI baseURI, boolean useConfiguredBaseURI) throws TextParseException {
+        URIBuilder builder;
+        if (useConfiguredBaseURI) {
+            builder = buildURI();
+        } else {
+            builder = new URIBuilder(baseURI);
+        }
+        builder.setPath(serviceURI() + suffix);
+        return builder;
     }
 
     protected <T> T executeGetMethod(Consumer<URIBuilder> uriCustomizer, Consumer<HttpGet> requestCustomizer, IOFunction<T> resultConverter,
