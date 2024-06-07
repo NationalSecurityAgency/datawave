@@ -59,6 +59,7 @@ import datawave.data.type.Type;
 import datawave.ingest.data.config.ingest.CompositeIngest;
 import datawave.query.Constants;
 import datawave.query.DocumentSerialization;
+import datawave.query.QueryParameters;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.ExcerptFields;
 import datawave.query.attributes.UniqueFields;
@@ -277,11 +278,6 @@ public class QueryOptions implements OptionDescriber {
     public static final String FIELD_COUNTS = "field.counts";
     public static final String TERM_COUNTS = "term.counts";
 
-    /**
-     * Controls whether a query's ID is logged on the tserver using {@link QueryLogIterator}
-     */
-    public static final String TSERVER_LOGGING_ACTIVE = "tserver.logging.active";
-
     protected Map<String,String> options;
 
     protected String scanId;
@@ -448,9 +444,6 @@ public class QueryOptions implements OptionDescriber {
     private CountMap fieldCounts;
     private CountMap termCounts;
     private CountMapSerDe mapSerDe;
-
-    // Controls whether query IDs are logged on the tserver level via QueryLogIterator.
-    private boolean tserverLoggingActive = false;
 
     public void deepCopy(QueryOptions other) {
         this.options = other.options;
@@ -1289,7 +1282,6 @@ public class QueryOptions implements OptionDescriber {
         options.put(TERM_FREQUENCY_AGGREGATION_THRESHOLD_MS, "TermFrequency aggregations that exceed this threshold are logged as a warning");
         options.put(FIELD_COUNTS, "Map of field counts from the global index");
         options.put(TERM_COUNTS, "Map of term counts from the global index");
-        options.put(TSERVER_LOGGING_ACTIVE, "Whether the queryID will be logged during queries");
         return new IteratorOptions(getClass().getSimpleName(), "Runs a query against the DATAWAVE tables", options, null);
     }
 
@@ -1786,10 +1778,6 @@ public class QueryOptions implements OptionDescriber {
             }
         }
 
-        if (options.containsKey(TSERVER_LOGGING_ACTIVE)) {
-            this.tserverLoggingActive = Boolean.parseBoolean(options.get(TSERVER_LOGGING_ACTIVE));
-        }
-
         return true;
     }
 
@@ -2273,14 +2261,6 @@ public class QueryOptions implements OptionDescriber {
 
     public void setTfAggregationThresholdMs(int tfAggregationThresholdMs) {
         this.tfAggregationThresholdMs = tfAggregationThresholdMs;
-    }
-
-    public boolean isTserverLoggingActive() {
-        return this.tserverLoggingActive;
-    }
-
-    public void setTserverLoggingActive(boolean tserverLoggingActive) {
-        this.tserverLoggingActive = tserverLoggingActive;
     }
 
     /**

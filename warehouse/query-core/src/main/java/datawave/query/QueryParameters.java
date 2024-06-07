@@ -1,5 +1,7 @@
 package datawave.query;
 
+import datawave.query.iterator.QueryLogIterator;
+
 public class QueryParameters {
 
     /**
@@ -221,4 +223,9 @@ public class QueryParameters {
      * Used to specify model or DB fields that must be treated as strict (cannot be skipped if normalization fails)
      */
     public static final String STRICT_FIELDS = "strict.fields";
+
+    /**
+     * Controls whether a query's ID is logged on the tserver using {@link QueryLogIterator}
+     */
+    public static final String TSERVER_LOGGING_ACTIVE = "tserver.logging.active";
 }

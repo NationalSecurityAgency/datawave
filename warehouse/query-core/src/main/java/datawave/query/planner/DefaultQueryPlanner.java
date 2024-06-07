@@ -274,7 +274,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     protected ExecutorService builderThread = null;
 
     protected Future<IteratorSetting> settingFuture = null;
-    protected Future<IteratorSetting> settingFutureLog = null;
+    protected Future<IteratorSetting> logSettingFuture = null;
 
     protected long maxRangeWaitMillis = 125;
 
@@ -411,17 +411,14 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     protected CloseableIterable<QueryData> process(ScannerFactory scannerFactory, MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper,
                     ShardQueryConfiguration config, String query, Query settings) throws DatawaveQueryException {
         settingFuture = null;
-        settingFutureLog = null;
+        logSettingFuture = null;
 
         IteratorSetting cfg = null;
         IteratorSetting logCfg = null;
 
         if (preloadOptions) {
             cfg = getQueryIterator(metadataHelper, config, settings, "", false, true);
-            // Create and add the QueryLogIterator only if active Tserver logging is true.
-            if (config.isTserverLoggingActive()) {
-                logCfg = getQueryLogIterator(config, settings);
-            }
+            logCfg = getQueryLogIterator(config, settings);
         }
 
         try {
@@ -481,14 +478,18 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             }
             configureIterator(config, cfg, newQueryString, isFullTable);
 
-            // Create and add the QueryLogIterator only if active Tserver logging is true.
-            if (config.isTserverLoggingActive()) {
-                while (null == logCfg) {
-                    logCfg = getQueryLogIterator(config, settings);
+            while (null == logCfg) {
+                logCfg = getQueryLogIterator(config, settings);
+                if (logSettingFuture.isDone()) {
+                    // It's possible that getQueryLogIterator will return a non-null setting once we know the future is done. Check one more time.
+                    if (logCfg == null) {
+                        logCfg = getQueryLogIterator(config, settings);
+                    }
+                    break;
                 }
             }
         }
-        
+
         List<IteratorSetting> iteratorSettings = logCfg == null ? Collections.singletonList(cfg) : Lists.newArrayList(cfg, logCfg);
         final QueryData queryData = new QueryData().withQuery(newQueryString).withSettings(iteratorSettings);
 
@@ -564,7 +565,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         addOption(cfg, QueryOptions.FULL_TABLE_SCAN_ONLY, Boolean.toString(isFullTable), false);
         addOption(cfg, QueryOptions.TRACK_SIZES, Boolean.toString(config.isTrackSizes()), false);
         addOption(cfg, QueryOptions.ACTIVE_QUERY_LOG_NAME, config.getActiveQueryLogName(), false);
-        addOption(cfg, QueryOptions.TSERVER_LOGGING_ACTIVE, Boolean.toString(config.isTserverLoggingActive()), true);
+        addOption(cfg, QueryParameters.TSERVER_LOGGING_ACTIVE, Boolean.toString(config.isTserverLoggingActive()), true);
         // Set the start and end dates
         configureTypeMappings(config, cfg, metadataHelper, getCompressOptionMappings());
     }
@@ -2264,11 +2265,16 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
     protected Future<IteratorSetting> loadQueryLogIterator(final ShardQueryConfiguration config, final Query settings) {
         return builderThread.submit(() -> {
-            // VersioningIterator is typically set at 20 on the table
-            IteratorSetting cfg = new IteratorSetting(config.getBaseIteratorPriority() + QUERY_LOG_ITERATOR_PRIORITY_ADDEND, "queryLog",
-                            getQueryLogIteratorClass());
-            addOption(cfg, QueryOptions.QUERY_ID, settings.getId().toString(), false);
-            return cfg;
+            // Create the query log iterator only if tserver logging should be active.
+            if (config.isTserverLoggingActive()) {
+                // VersioningIterator is typically set at 20 on the table
+                IteratorSetting cfg = new IteratorSetting(config.getBaseIteratorPriority() + QUERY_LOG_ITERATOR_PRIORITY_ADDEND, "queryLog",
+                                getQueryLogIteratorClass());
+                addOption(cfg, QueryOptions.QUERY_ID, settings.getId().toString(), false);
+                return cfg;
+            } else {
+                return null;
+            }
         });
     }
 
@@ -2382,16 +2388,18 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      */
     protected IteratorSetting getQueryIterator(MetadataHelper metadataHelper, ShardQueryConfiguration config, Query settings, String queryString,
                     Boolean isFullTable, boolean isPreload) throws DatawaveQueryException {
-        if (null == settingFuture)
+        if (null == settingFuture) {
             settingFuture = loadQueryIterator(metadataHelper, config, settings, queryString, isFullTable, isPreload);
-        if (settingFuture.isDone())
+        }
+        if (settingFuture.isDone()) {
             try {
                 return settingFuture.get();
             } catch (InterruptedException | ExecutionException e) {
                 throw new RuntimeException(e.getCause());
             }
-        else
+        } else {
             return null;
+        }
     }
 
     /**
@@ -2404,16 +2412,19 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      * @return a loaded {@link IteratorSetting}
      */
     protected IteratorSetting getQueryLogIterator(ShardQueryConfiguration config, Query settings) {
-        if (null == settingFutureLog)
-            settingFutureLog = loadQueryLogIterator(config, settings);
-        if (settingFutureLog.isDone())
+        if (null == logSettingFuture) {
+            logSettingFuture = loadQueryLogIterator(config, settings);
+        }
+
+        if (logSettingFuture.isDone()) {
             try {
-                return settingFutureLog.get();
+                return logSettingFuture.get();
             } catch (InterruptedException | ExecutionException e) {
                 throw new RuntimeException(e.getCause());
             }
-        else
+        } else {
             return null;
+        }
     }
 
     public static void configureTypeMappings(ShardQueryConfiguration config, IteratorSetting cfg, MetadataHelper metadataHelper, boolean compressMappings)
