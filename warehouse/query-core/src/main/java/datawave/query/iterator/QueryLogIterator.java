@@ -16,6 +16,8 @@ import org.apache.accumulo.core.iterators.OptionDescriber;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.log4j.Logger;
 
+
+
 public class QueryLogIterator implements SortedKeyValueIterator<Key,Value>, OptionDescriber {
 
     private static final Logger log = Logger.getLogger(QueryLogIterator.class);
@@ -25,14 +27,23 @@ public class QueryLogIterator implements SortedKeyValueIterator<Key,Value>, Opti
     private SortedKeyValueIterator<Key,Value> source;
     private IteratorEnvironment env;
 
+    /**
+     * Class constructor
+     */
     public QueryLogIterator() {}
 
+    /**
+     * Class copy constructor
+     */
     public QueryLogIterator(QueryLogIterator other, IteratorEnvironment env) {
         this.source = other.source.deepCopy(env);
         this.env = other.env;
         this.queryID = other.queryID;
     }
 
+    /**
+     * Wraps the init() method of the iterator above it, logging the start and end of the method along with its query id.
+     */
     @Override
     public void init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env) throws IOException {
 
@@ -46,18 +57,27 @@ public class QueryLogIterator implements SortedKeyValueIterator<Key,Value>, Opti
         }
     }
 
+    /**
+     * Logs the query id and {@link SortedKeyValueIterator} method name before the method is run.
+     */
     private void logStartOf(String methodName) {
         if (log.isInfoEnabled()) {
             log.info(CLASS_NAME + " " + methodName + " Started QueryID: " + this.queryID);
         }
     }
 
+    /**
+     * Logs the query id and {@link SortedKeyValueIterator} method name after the method is run.
+     */
     private void logEndOf(String methodName) {
         if (log.isInfoEnabled()) {
             log.info(CLASS_NAME + " " + methodName + " Ended QueryID: " + this.queryID);
         }
     }
 
+    /**
+     * Wraps the hasTop() method of the iterator above it, logging the start and end of the method along with its query id.
+     */
     @Override
     public boolean hasTop() {
         boolean result;
@@ -71,6 +91,9 @@ public class QueryLogIterator implements SortedKeyValueIterator<Key,Value>, Opti
         return result;
     }
 
+    /**
+     * Wraps the next() method of the iterator above it, logging the start and end of the method along with its query id.
+     */
     @Override
     public void next() throws IOException {
         try {
@@ -81,6 +104,9 @@ public class QueryLogIterator implements SortedKeyValueIterator<Key,Value>, Opti
         }
     }
 
+    /**
+     * Wraps the getTopKey() method of the iterator above it, logging the start and end of the method along with its query id.
+     */
     @Override
     public Key getTopKey() {
         Key k;
@@ -93,6 +119,9 @@ public class QueryLogIterator implements SortedKeyValueIterator<Key,Value>, Opti
         return k;
     }
 
+    /**
+     * Wraps the getTopValue() method of the iterator above it, logging the start and end of the method along with its query id.
+     */
     @Override
     public Value getTopValue() {
         Value v;
@@ -105,6 +134,9 @@ public class QueryLogIterator implements SortedKeyValueIterator<Key,Value>, Opti
         return v;
     }
 
+    /**
+     * Wraps the deepCopy() method of the iterator above it, logging the start and end of the method along with its query id.
+     */
     @Override
     public SortedKeyValueIterator<Key,Value> deepCopy(IteratorEnvironment iteratorEnvironment) {
 
@@ -119,6 +151,9 @@ public class QueryLogIterator implements SortedKeyValueIterator<Key,Value>, Opti
         return copy;
     }
 
+    /**
+     * Wraps the seek() method of the iterator above it, logging the start and end of the method along with its query id.
+     */
     @Override
     public void seek(Range range, Collection<ByteSequence> collection, boolean b) throws IOException {
 
@@ -130,6 +165,9 @@ public class QueryLogIterator implements SortedKeyValueIterator<Key,Value>, Opti
         }
     }
 
+    /**
+     * Returns a {@link org.apache.accumulo.core.iterators.OptionDescriber.IteratorOptions} object containing a description of the iterator and an option for the QueryID.
+     */
     @Override
     public IteratorOptions describeOptions() {
         Map<String,String> options = new HashMap<>();
@@ -138,6 +176,9 @@ public class QueryLogIterator implements SortedKeyValueIterator<Key,Value>, Opti
         return new IteratorOptions(getClass().getSimpleName(), "An iterator used to log the QueryID", options, null);
     }
 
+    /**
+     * Returns true if the options provided contains the QueryID.
+     */
     @Override
     public boolean validateOptions(Map<String,String> options) {
         return options.containsKey(QUERY_ID);
