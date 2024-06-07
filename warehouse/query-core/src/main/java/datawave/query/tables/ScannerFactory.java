@@ -97,6 +97,7 @@ public class ScannerFactory {
 
             synchronized (open) {
                 if (open.get()) {
+                    instances.add(bs);
                     return bs;
                 } else {
                     bs.close();
@@ -255,19 +256,20 @@ public class ScannerFactory {
     }
 
     public boolean close(ScannerBase bs) {
-        boolean removed = false;
         try {
             log.debug("Closed scanner " + System.identityHashCode(bs));
-            removed = instances.remove(bs);
-            if (log.isTraceEnabled()) {
-                log.trace("Closing instance " + bs.hashCode());
+            if (instances.remove(bs)) {
+                if (log.isTraceEnabled()) {
+                    log.trace("Closing instance " + bs.hashCode());
+                }
+                bs.close();
+                return true;
             }
-            bs.close();
         } catch (Exception e) {
             // ANY EXCEPTION HERE CAN SAFELY BE IGNORED
             log.trace("Exception closing ScannerBase, can be safely ignored: {}", e);
         }
-        return removed;
+        return false;
     }
 
     /**
@@ -302,11 +304,12 @@ public class ScannerFactory {
     public void close(ScannerSession bs) {
         try {
             log.debug("Closed session " + System.identityHashCode(bs));
-            sessionInstances.remove(bs);
-            if (log.isTraceEnabled()) {
-                log.trace("Closing instance " + bs.hashCode());
+            if (sessionInstances.remove(bs)) {
+                if (log.isTraceEnabled()) {
+                    log.trace("Closing instance " + bs.hashCode());
+                }
+                bs.close();
             }
-            bs.close();
         } catch (Exception e) {
             // ANY EXCEPTION HERE CAN SAFELY BE IGNORED
             log.trace("Exception closing ScannerSession, can be safely ignored: {}", e);
