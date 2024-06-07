@@ -40,10 +40,10 @@ public class ScannerFactory {
     // using an AtomicBoolean to give us a separate monitor for synchronization
     protected final AtomicBoolean open = new AtomicBoolean(true);
 
-    protected boolean accrueStats;
-    protected Query settings;
-    protected ResourceQueue scanQueue;
-    protected ShardQueryConfiguration config;
+    protected boolean accrueStats = false;
+    protected Query settings = null;
+    protected ResourceQueue scanQueue = null;
+    protected ShardQueryConfiguration config = null;
 
     private static final Logger log = Logger.getLogger(ScannerFactory.class);
 
@@ -62,11 +62,6 @@ public class ScannerFactory {
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
-        } else {
-            this.config = null;
-            this.settings = null;
-            this.accrueStats = false;
-            this.scanQueue = null;
         }
     }
 
@@ -76,9 +71,6 @@ public class ScannerFactory {
     }
 
     public ScannerFactory(AccumuloClient client, int queueSize) {
-        this.config = null;
-        this.settings = null;
-        this.accrueStats = false;
         try {
             this.cxn = client;
             this.scanQueue = new ResourceQueue(queueSize, client);
