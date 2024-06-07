@@ -43,7 +43,7 @@ public class ScannerFactory {
     protected boolean accrueStats;
     protected Query settings;
     protected ResourceQueue scanQueue;
-    ShardQueryConfiguration config;
+    protected ShardQueryConfiguration config;
 
     private static final Logger log = Logger.getLogger(ScannerFactory.class);
 
