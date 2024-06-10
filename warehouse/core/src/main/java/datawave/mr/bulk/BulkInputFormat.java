@@ -1298,7 +1298,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
             this.iteratorName = tokenizer.nextToken();
             try {
                 this.key = URLDecoder.decode(tokenizer.nextToken(), UTF8);
-                this.value = URLDecoder.decode(tokenizer.nextToken(), "UTF8");
+                this.value = URLDecoder.decode(tokenizer.nextToken(), UTF8);
             } catch (UnsupportedEncodingException e) {
                 throw new RuntimeException(e);
             }

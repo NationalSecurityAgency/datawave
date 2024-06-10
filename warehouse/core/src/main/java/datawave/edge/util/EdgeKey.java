@@ -44,7 +44,7 @@ public class EdgeKey {
 
     private static final Logger log = Logger.getLogger(EdgeKey.class);
 
-    private static final String CANT_ENCODE_UNKNOWN_ERROR_MSG = "Can't encode unknown edge key format.";
+    private static final String UNKNOWN_EDGE_KEY_FORMAT_MSG = "Can't encode unknown edge key format.";
 
     // use the builder, not this nightmare constructor
     private EdgeKey(EDGE_FORMAT format, STATS_TYPE statsType, String sourceData, String sinkData, String family, String sourceRelationship,
@@ -927,7 +927,7 @@ public class EdgeKey {
                 return encode(EDGE_VERSION.DATE_PROTOBUF);
             } else {
                 // EDGE_FORMAT.UNKNOWN
-                throw new IllegalStateException(CANT_ENCODE_UNKNOWN_ERROR_MSG + this);
+                throw new IllegalStateException(UNKNOWN_EDGE_KEY_FORMAT_MSG + this);
             }
         }
 
@@ -940,7 +940,7 @@ public class EdgeKey {
             return encode(EDGE_VERSION.PROTOBUF);
         } else {
             // EDGE_FORMAT.UNKNOWN
-            throw new IllegalStateException(CANT_ENCODE_UNKNOWN_ERROR_MSG + this);
+            throw new IllegalStateException(UNKNOWN_EDGE_KEY_FORMAT_MSG + this);
         }
     }
 
@@ -951,7 +951,7 @@ public class EdgeKey {
             return encode(EDGE_VERSION.BASE_ATTRIBUTE2);
         } else {
             // EDGE_FORMAT.UNKNOWN
-            throw new IllegalStateException(CANT_ENCODE_UNKNOWN_ERROR_MSG + this);
+            throw new IllegalStateException(UNKNOWN_EDGE_KEY_FORMAT_MSG + this);
         }
     }
 
@@ -962,7 +962,7 @@ public class EdgeKey {
             return encode(EDGE_VERSION.BASE);
         } else {
             // EDGE_FORMAT.UNKNOWN
-            throw new IllegalStateException(CANT_ENCODE_UNKNOWN_ERROR_MSG + this);
+            throw new IllegalStateException(UNKNOWN_EDGE_KEY_FORMAT_MSG + this);
         }
     }
 
