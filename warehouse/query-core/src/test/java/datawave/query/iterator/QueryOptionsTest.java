@@ -247,6 +247,40 @@ public class QueryOptionsTest {
         Assert.assertEquals(initialString, decompressOptions);
     }
 
+    @Test
+    public void testEvaluateBooleanOptions() {
+
+        Map<String,String> opts = Maps.newHashMap();
+        opts.put(QueryOptions.TRACK_SIZES, "true");
+        opts.put(QueryOptions.ALLOW_FIELD_INDEX_EVALUATION, "TRuE");
+        opts.put(QueryOptions.DISABLE_DOCUMENTS_WITHOUT_EVENTS, "false");
+        opts.put(QueryOptions.REDUCED_RESPONSE, "FaLSe");
+        opts.put(QueryOptions.INCLUDE_GROUPING_CONTEXT, "true");
+        opts.put(QueryOptions.ALLOW_TERM_FREQUENCY_LOOKUP, "abc");
+        opts.put(QueryOptions.INCLUDE_RECORD_ID, null);
+        opts.put(QueryOptions.SORTED_UIDS, "truefalse");
+        opts.put(QueryOptions.LIMIT_FIELDS_PRE_QUERY_EVALUATION, "falsetrue");
+
+        opts.put(QueryOptions.DISABLE_EVALUATION, "true");
+        opts.put(QueryOptions.FULL_TABLE_SCAN_ONLY, "true");
+        opts.put(QueryOptions.START_TIME, "0");
+        opts.put(QueryOptions.END_TIME, "10000");
+
+        QueryOptions qopts = new QueryOptions();
+        qopts.validateOptions(opts);
+
+        Assert.assertTrue(qopts.isTrackSizes());
+        Assert.assertTrue(qopts.isAllowFieldIndexEvaluation());
+        Assert.assertFalse(qopts.disableIndexOnlyDocuments());
+        Assert.assertFalse(qopts.isReducedResponse());
+        Assert.assertTrue(qopts.isIncludeGroupingContext());
+        Assert.assertTrue(qopts.isAllowTermFrequencyLookup());
+        Assert.assertTrue(qopts.isIncludeRecordId());
+        Assert.assertTrue(qopts.isSortedUIDs());
+        Assert.assertTrue(qopts.isLimitFieldsPreQueryEvaluation());
+
+    }
+
     private static class WrappedQueryOptions extends QueryOptions {
         protected static String decompressOption(final String buffer, Charset characterSet) throws IOException {
             return QueryOptions.decompressOption(buffer, characterSet);
