@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave</groupId>
         <artifactId>datawave-warehouse-parent</artifactId>
-        <version>7.0.3-SNAPSHOT</version>
+        <version>7.0.3</version>
     </parent>
     <artifactId>datawave-ingest-ssdeep</artifactId>
     <properties>
