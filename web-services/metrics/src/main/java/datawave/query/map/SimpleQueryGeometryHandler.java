@@ -20,13 +20,13 @@ import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.core.query.map.QueryGeometryHandler;
 import datawave.microservice.query.QueryImpl;
 import datawave.microservice.querymetric.BaseQueryMetric;
+import datawave.microservice.querymetric.QueryGeometry;
+import datawave.microservice.querymetric.QueryGeometryResponse;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.GeoFeatureVisitor;
 import datawave.query.language.parser.ParseException;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.metrics.ShardTableQueryMetricHandler;
-import datawave.webservice.query.map.QueryGeometry;
-import datawave.webservice.query.map.QueryGeometryResponse;
 
 /**
  * This class is used to extract query geometries from the query metrics in an effort to provide those geometries for subsequent display to the user.
@@ -47,8 +47,9 @@ public class SimpleQueryGeometryHandler implements QueryGeometryHandler {
 
     @Override
     public QueryGeometryResponse getQueryGeometryResponse(String id, List<? extends BaseQueryMetric> metrics) {
-        QueryGeometryResponse response = new QueryGeometryResponse(id, basemaps);
-
+        QueryGeometryResponse response = new QueryGeometryResponse();
+        response.setQueryId(id);
+        response.setBasemaps(basemaps);
         if (metrics != null) {
             Set<QueryGeometry> queryGeometries = new LinkedHashSet<>();
             for (BaseQueryMetric metric : metrics) {

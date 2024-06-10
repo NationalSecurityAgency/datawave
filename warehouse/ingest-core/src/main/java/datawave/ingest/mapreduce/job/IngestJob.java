@@ -425,7 +425,6 @@ public class IngestJob implements Tool {
 
         // output the counters to the log
         Counters counters = job.getCounters();
-        log.info(counters);
         try (JobClient jobClient = new JobClient((org.apache.hadoop.mapred.JobConf) job.getConfiguration())) {
             RunningJob runningJob = jobClient.getJob(new org.apache.hadoop.mapred.JobID(jobID.getJtIdentifier(), jobID.getId()));
 
