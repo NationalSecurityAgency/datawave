@@ -36,7 +36,6 @@ import datawave.query.jexl.functions.QueryFunctions;
  * <li>{@code f:options()}: Expects a comma-delimited list of key/value pairs, e.g. {@code f:options('hit.list','true','limit.fields','FOO_1_BAR=3)}</li>
  * <li>{@code f:groupby()}: Expects a comma-delimited list of fields to group by, e.g. {@code f:groupby('field1','field2','field3')}</li>
  * <li>{@code f:noexpansion()}: Expects a comma-delimited list of fields, e.g. {@code f:noExpansion('field1','field2','field3')}</li>
- * <li>{@code f:language_expansion()}: Expects a comma-delimited list of short codes, e.g. {@code f:language_expansion('en','es','it')}</li>
  * <li>{@code f:lenient()}: Expects a comma-delimited list of fields, e.g. {@code f:lenient('field1','field2','field3')}</li>
  * <li>{@code f:strict()}: Expects a comma-delimited list of fields, e.g. {@code f:strict('field1','field2','field3')}</li>
  * <li>{@code f:excerpt_fields()}: Expects a comma-delimited list of fields, e.g. {@code f:excerpt_fields('field1','field2','field3')}</li>
@@ -72,8 +71,7 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
                     QueryFunctions.MOST_RECENT_PREFIX + UniqueFunction.UNIQUE_BY_YEAR_FUNCTION, QueryFunctions.GROUPBY_FUNCTION,
                     QueryFunctions.EXCERPT_FIELDS_FUNCTION, QueryFunctions.NO_EXPANSION, QueryFunctions.LENIENT_FIELDS_FUNCTION,
                     QueryFunctions.STRICT_FIELDS_FUNCTION, QueryFunctions.SUM, QueryFunctions.MIN, QueryFunctions.MAX, QueryFunctions.AVERAGE,
-                    QueryFunctions.COUNT, QueryFunctions.RENAME_FUNCTION, QueryFunctions.LANGUAGE_EXPANSION, QueryFunctions.DISABLE_STEMMING,
-                    QueryFunctions.DISABLE_LEMMAS, QueryFunctions.DISABLE_UNIGRAMS, QueryFunctions.DISABLE_BIGRAMS);
+                    QueryFunctions.COUNT, QueryFunctions.RENAME_FUNCTION);
 
     @SuppressWarnings("unchecked")
     public static <T extends JexlNode> T collect(T node, Object data) {
