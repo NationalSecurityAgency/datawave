@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchScanner;
@@ -36,12 +37,15 @@ public class ScannerFactory {
 
     private static final int DEFAULT_MAX_THREADS = 100;
     protected int maxQueue = 1000;
-    protected HashSet<ScannerBase> instances = new HashSet<>();
-    protected HashSet<ScannerSession> sessionInstances = new HashSet<>();
+
+    protected final Set<ScannerBase> instances = Collections.synchronizedSet(new HashSet<>());
+    protected final Set<ScannerSession> sessionInstances = Collections.synchronizedSet(new HashSet<>());
     protected AccumuloClient client;
-    protected boolean open = true;
+    // using an AtomicBoolean to give us a separate monitor for synchronization
+    protected final AtomicBoolean open = new AtomicBoolean(true);
+
     protected boolean accrueStats = false;
-    protected Query settings;
+    protected Query settings = null;
     protected ResourceQueue scanQueue = null;
     protected ShardQueryConfiguration config = null;
 
@@ -131,52 +135,71 @@ public class ScannerFactory {
         }
     }
 
-    public synchronized Scanner newSingleScanner(String tableName, Set<Authorizations> auths, Query query) throws TableNotFoundException {
-        if (open) {
+    public Scanner newSingleScanner(String tableName, Set<Authorizations> auths, Query query) throws TableNotFoundException {
+        if (open.get()) {
             Scanner bs = QueryScannerHelper.createScannerWithoutInfo(client, tableName, auths, query);
-
             applyConfigs(bs, tableName);
 
             log.debug("Created scanner " + System.identityHashCode(bs));
             if (log.isTraceEnabled()) {
                 log.trace("Adding instance " + bs.hashCode());
             }
-            return bs;
+
+            synchronized (open) {
+                if (open.get()) {
+                    instances.add(bs);
+                    return bs;
+                } else {
+                    bs.close();
+                    throw new IllegalStateException("Factory has been locked. No new scanners can be created.");
+                }
+            }
         } else {
             throw new IllegalStateException("Factory has been locked. No new scanners can be created.");
         }
     }
 
-    public synchronized BatchScanner newScanner(String tableName, Set<Authorizations> auths, int threads, Query query) throws TableNotFoundException {
-        if (open) {
+    public BatchScanner newScanner(String tableName, Set<Authorizations> auths, int threads, Query query) throws TableNotFoundException {
+        if (open.get()) {
             BatchScanner bs = QueryScannerHelper.createBatchScanner(client, tableName, auths, threads, query);
-
             applyConfigs(bs, tableName);
 
             log.debug("Created scanner " + System.identityHashCode(bs));
             if (log.isTraceEnabled()) {
                 log.trace("Adding instance " + bs.hashCode());
             }
-            instances.add(bs);
-            return bs;
+            synchronized (open) {
+                if (open.get()) {
+                    instances.add(bs);
+                    return bs;
+                } else {
+                    bs.close();
+                    throw new IllegalStateException("Factory has been locked. No new scanners can be created.");
+                }
+            }
         } else {
             throw new IllegalStateException("Factory has been locked. No new scanners can be created.");
         }
     }
 
-    public synchronized BatchScanner newScanner(String tableName, Set<Authorizations> auths, int threads, Query query, boolean reportErrors)
-                    throws TableNotFoundException {
-        if (open) {
+    public BatchScanner newScanner(String tableName, Set<Authorizations> auths, int threads, Query query, boolean reportErrors) throws TableNotFoundException {
+        if (open.get()) {
             BatchScanner bs = QueryScannerHelper.createBatchScanner(client, tableName, auths, threads, query, reportErrors);
-
             applyConfigs(bs, tableName);
 
             log.debug("Created scanner " + System.identityHashCode(bs));
             if (log.isTraceEnabled()) {
                 log.trace("Adding instance " + bs.hashCode());
             }
-            instances.add(bs);
-            return bs;
+            synchronized (open) {
+                if (open.get()) {
+                    instances.add(bs);
+                    return bs;
+                } else {
+                    bs.close();
+                    throw new IllegalStateException("Factory has been locked. No new scanners can be created.");
+                }
+            }
         } else {
             throw new IllegalStateException("Factory has been locked. No new scanners can be created.");
         }
@@ -204,7 +227,7 @@ public class ScannerFactory {
      * @throws Exception
      *             if there are issues
      */
-    public synchronized BatchScannerSession newQueryScanner(final String tableName, final Set<Authorizations> auths, Query settings) throws Exception {
+    public BatchScannerSession newQueryScanner(final String tableName, final Set<Authorizations> auths, Query settings) throws Exception {
         return newLimitedScanner(BatchScannerSession.class, tableName, auths, settings).setThreads(scanQueue.getCapacity());
     }
 
@@ -227,11 +250,11 @@ public class ScannerFactory {
      *             if there are issues
      *
      */
-    public synchronized <T extends ScannerSession> T newLimitedScanner(Class<T> wrapper, final String tableName, final Set<Authorizations> auths,
-                    final Query settings) throws Exception {
+    public <T extends ScannerSession> T newLimitedScanner(Class<T> wrapper, final String tableName, final Set<Authorizations> auths, final Query settings)
+                    throws Exception {
         Preconditions.checkNotNull(scanQueue);
         Preconditions.checkNotNull(wrapper);
-        Preconditions.checkArgument(open, "Factory has been locked. No New scanners can be created");
+        Preconditions.checkArgument(open.get(), "Factory has been locked. No New scanners can be created");
 
         log.debug("Creating limited scanner whose max threads is is " + scanQueue.getCapacity() + " and max capacity is " + maxQueue);
 
@@ -254,9 +277,15 @@ public class ScannerFactory {
         if (log.isTraceEnabled()) {
             log.trace("Adding instance " + session.hashCode());
         }
-        sessionInstances.add(session);
-
-        return session;
+        synchronized (open) {
+            if (open.get()) {
+                sessionInstances.add(session);
+                return session;
+            } else {
+                session.close();
+                throw new IllegalStateException("Factory has been locked. No new scanners can be created.");
+            }
+        }
     }
 
     /**
@@ -273,7 +302,7 @@ public class ScannerFactory {
      * @throws Exception
      *             if there are issues
      */
-    public synchronized RangeStreamScanner newRangeScanner(final String tableName, final Set<Authorizations> auths, final Query settings) throws Exception {
+    public RangeStreamScanner newRangeScanner(final String tableName, final Set<Authorizations> auths, final Query settings) throws Exception {
         return newRangeScanner(tableName, auths, settings, Integer.MAX_VALUE);
     }
 
@@ -281,16 +310,21 @@ public class ScannerFactory {
         return newLimitedScanner(RangeStreamScanner.class, tableName, auths, settings).setShardsPerDayThreshold(shardsPerDayThreshold).setScannerFactory(this);
     }
 
-    public synchronized boolean close(ScannerBase bs) {
-        boolean removed = instances.remove(bs);
-        if (removed) {
+    public boolean close(ScannerBase bs) {
+        try {
             log.debug("Closed scanner " + System.identityHashCode(bs));
-            if (log.isTraceEnabled()) {
-                log.trace("Closing instance " + bs.hashCode());
+            if (instances.remove(bs)) {
+                if (log.isTraceEnabled()) {
+                    log.trace("Closing instance " + bs.hashCode());
+                }
+                bs.close();
+                return true;
             }
-            bs.close();
+        } catch (Exception e) {
+            // ANY EXCEPTION HERE CAN SAFELY BE IGNORED
+            log.trace("Exception closing ScannerBase, can be safely ignored: {}", e);
         }
-        return removed;
+        return false;
     }
 
     /**
@@ -298,7 +332,7 @@ public class ScannerFactory {
      *
      * @return a NEW collection of scanners
      */
-    public synchronized Collection<ScannerBase> currentScanners() {
+    public Collection<ScannerBase> currentScanners() {
         return new ArrayList<>(instances);
     }
 
@@ -307,28 +341,30 @@ public class ScannerFactory {
      *
      * @return a NEW collection of scanner session instances
      */
-    public synchronized Collection<ScannerSession> currentSessions() {
+    public Collection<ScannerSession> currentSessions() {
         return new ArrayList<>(sessionInstances);
     }
 
-    public synchronized boolean lockdown() {
+    public boolean lockdown() {
         log.debug("Locked scanner factory " + System.identityHashCode(this));
         if (log.isTraceEnabled()) {
             log.trace("Locked down with following stacktrace", new Exception("stacktrace for debugging"));
         }
 
-        open = false;
-        return open;
+        synchronized (open) {
+            return open.getAndSet(false);
+        }
     }
 
-    public synchronized void close(ScannerSession bs) {
+    public void close(ScannerSession bs) {
         try {
             log.debug("Closed session " + System.identityHashCode(bs));
-            sessionInstances.remove(bs);
-            if (log.isTraceEnabled()) {
-                log.trace("Closing instance " + bs.hashCode());
+            if (sessionInstances.remove(bs)) {
+                if (log.isTraceEnabled()) {
+                    log.trace("Closing instance " + bs.hashCode());
+                }
+                bs.close();
             }
-            bs.close();
         } catch (Exception e) {
             // ANY EXCEPTION HERE CAN SAFELY BE IGNORED
             log.trace("Exception closing ScannerSession, can be safely ignored: {}", e);
@@ -339,31 +375,41 @@ public class ScannerFactory {
         this.maxQueue = size;
     }
 
-    public synchronized ScannerBase newRfileScanner(String tableName, Set<Authorizations> auths, Query setting) {
-        Configuration conf = new Configuration();
+    public ScannerBase newRfileScanner(String tableName, Set<Authorizations> auths, Query setting) {
+        if (open.get()) {
+            Configuration conf = new Configuration();
 
-        Properties clientProps = client.properties();
-        final String instanceName = clientProps.getProperty(ClientProperty.INSTANCE_NAME.getKey());
-        final String zookeepers = clientProps.getProperty(ClientProperty.INSTANCE_ZOOKEEPERS.getKey());
+            Properties clientProps = client.properties();
+            final String instanceName = clientProps.getProperty(ClientProperty.INSTANCE_NAME.getKey());
+            final String zookeepers = clientProps.getProperty(ClientProperty.INSTANCE_ZOOKEEPERS.getKey());
 
-        AccumuloHelper.setInstanceName(conf, instanceName);
-        AccumuloHelper.setUsername(conf, client.whoami());
+            AccumuloHelper.setInstanceName(conf, instanceName);
+            AccumuloHelper.setUsername(conf, client.whoami());
 
-        AccumuloHelper.setZooKeepers(conf, zookeepers);
-        BulkInputFormat.setZooKeeperInstance(conf, instanceName, zookeepers);
+            AccumuloHelper.setZooKeepers(conf, zookeepers);
+            BulkInputFormat.setZooKeeperInstance(conf, instanceName, zookeepers);
 
-        AccumuloHelper.setPassword(conf, config.getAccumuloPassword().getBytes());
-        BulkInputFormat.setMemoryInput(conf, client.whoami(), config.getAccumuloPassword().getBytes(), tableName, auths.iterator().next());
+            AccumuloHelper.setPassword(conf, config.getAccumuloPassword().getBytes());
+            BulkInputFormat.setMemoryInput(conf, client.whoami(), config.getAccumuloPassword().getBytes(), tableName, auths.iterator().next());
 
-        conf.set(MultiRfileInputformat.CACHE_METADATA, "true");
+            conf.set(MultiRfileInputformat.CACHE_METADATA, "true");
 
-        ScannerBase baseScanner = new RfileScanner(client, conf, tableName, auths, 1);
+            ScannerBase baseScanner = new RfileScanner(client, conf, tableName, auths, 1);
 
-        applyConfigs(baseScanner, tableName);
+            applyConfigs(baseScanner, tableName);
 
-        instances.add(baseScanner);
-
-        return baseScanner;
+            synchronized (open) {
+                if (open.get()) {
+                    instances.add(baseScanner);
+                    return baseScanner;
+                } else {
+                    baseScanner.close();
+                    throw new IllegalStateException("Factory has been locked. No new scanners can be created.");
+                }
+            }
+        } else {
+            throw new IllegalStateException("Factory has been locked. No new scanners can be created.");
+        }
     }
 
     /**
