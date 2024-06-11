@@ -398,10 +398,8 @@ public class QueryMetricsBean {
     }
 
     private Response sendRedirect(String suffix, UriInfo uriInfo) throws TextParseException, URISyntaxException {
-        URIBuilder builder = remoteQueryMetricService.buildURI(suffix);
-        if (uriInfo != null) {
-            uriInfo.getQueryParameters().forEach((pname, valueList) -> valueList.forEach(pvalue -> builder.addParameter(pname, pvalue)));
-        }
+        URIBuilder builder = remoteQueryMetricService.buildRedirectURI(suffix, uriInfo.getBaseUri());
+        uriInfo.getQueryParameters().forEach((pname, valueList) -> valueList.forEach(pvalue -> builder.addParameter(pname, pvalue)));
         return Response.temporaryRedirect(builder.build()).build();
     }
 }

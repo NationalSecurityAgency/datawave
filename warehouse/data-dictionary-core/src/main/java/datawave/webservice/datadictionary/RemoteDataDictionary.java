@@ -1,11 +1,14 @@
 package datawave.webservice.datadictionary;
 
+import java.net.URI;
 import java.util.List;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import org.apache.deltaspike.core.api.config.ConfigProperty;
+import org.apache.http.client.utils.URIBuilder;
+import org.xbill.DNS.TextParseException;
 
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.annotation.Metric;
@@ -49,6 +52,10 @@ public class RemoteDataDictionary extends RemoteHttpService {
     @Inject
     @ConfigProperty(name = "dw.remoteDictionary.port", defaultValue = "8843")
     private int dictServicePort;
+
+    @Inject
+    @ConfigProperty(name = "dw.remoteDictionary.useConfiguredURIForRedirect", defaultValue = "false")
+    private boolean useConfiguredURIForRedirect;
 
     @Inject
     @ConfigProperty(name = "dw.remoteDictionary.data.uri", defaultValue = "/dictionary/data/v1/")
@@ -109,6 +116,10 @@ public class RemoteDataDictionary extends RemoteHttpService {
                 entity -> dataDictReader.readValue(entity.getContent()),
                 () -> "getDataDictionary [" + modelName + ", " + modelTableName + ", " + metadataTableName + ", " + auths + "]");
         // @formatter:on
+    }
+
+    public URIBuilder buildRedirectURI(String suffix, URI baseURI) throws TextParseException {
+        return buildRedirectURI(suffix, baseURI, useConfiguredURIForRedirect);
     }
 
     @Override
@@ -175,5 +186,4 @@ public class RemoteDataDictionary extends RemoteHttpService {
     protected Counter failureCounter() {
         return failureCounter;
     }
-
 }
