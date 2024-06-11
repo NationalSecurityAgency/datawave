@@ -130,7 +130,7 @@ public abstract class BaseHdfsFileCacheUtil {
             do {
                 Path parentDirectory = this.cacheFilePath.getParent();
                 String fileName = this.cacheFilePath.getName() + "." + count;
-                log.info("Attempting to create " + fileName + "under " + parentDirectory);
+                log.info("Attempting to create " + fileName + " under " + parentDirectory);
                 tmpCacheFile = new Path(parentDirectory, fileName);
                 count++;
             } while (!fs.createNewFile(tmpCacheFile));

@@ -1,16 +1,28 @@
 package datawave.ingest.mapreduce.job;
 
+import static datawave.ingest.mapreduce.job.BulkIngestMapFileLoader.BULK_IMPORT_MODE_CONFIG;
 import static org.apache.accumulo.core.conf.Property.TABLE_CRYPTO_PREFIX;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
+import java.util.RandomAccess;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
@@ -20,6 +32,8 @@ import org.apache.accumulo.core.crypto.CryptoFactoryLoader;
 import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.LoadPlan;
+import org.apache.accumulo.core.data.LoadPlan.RangeType;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.file.FileOperations;
 import org.apache.accumulo.core.file.FileSKVIterator;
@@ -29,7 +43,10 @@ import org.apache.accumulo.core.spi.crypto.CryptoEnvironment;
 import org.apache.accumulo.core.spi.crypto.CryptoService;
 import org.apache.accumulo.core.spi.file.rfile.compression.NoCompression;
 import org.apache.commons.lang.mutable.MutableInt;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -46,9 +63,12 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
+import datawave.ingest.mapreduce.job.BulkIngestMapFileLoader.ImportMode;
 import datawave.marking.MarkingFunctions;
 import datawave.util.StringUtils;
 
@@ -56,7 +76,20 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
 
     private static final Logger log = Logger.getLogger(MultiRFileOutputFormatter.class);
 
+    private static final Gson gson = new GsonBuilder().registerTypeHierarchyAdapter(byte[].class, new BulkIngestMapFileLoader.ByteArrayToBase64TypeAdapter())
+                    .create();
+
+    protected static TableSplitsCache splitsCache = null;
+
     protected Map<String,SizeTrackingWriter> writers = null;
+    /**
+     * <p>
+     * TableName-LoadPlan map. It would be nice if the LoadPlan API supported adding LoadPlan.Destination elements directly to an existing LoadPlan, so that we
+     * could just employ {@code Map<String,LoadPlan>} here, and let the LoadPlan itself take on the work of adding and deduping destinations as needed.
+     * </p>
+     */
+    protected Map<String,List<LoadPlan>> tableLoadPlans = new ConcurrentHashMap<>();
+    protected List<CompletableFuture<Void>> loadPlanFutures = new LinkedList<>();
     protected Map<String,Path> unusedWriterPaths = null;
     protected Map<String,Path> usedWriterPaths = null;
     protected Map<String,String> writerTableNames = null;
@@ -100,6 +133,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
     protected int maxRFileEntries = 0;
     protected boolean generateMapFileRowKeys = false;
     protected boolean generateMapFilePerShardLocation = false;
+    protected boolean loadPlanningEnabled = false;
     private long startWriteTime = 0L;
 
     protected Map<String,Map<Text,String>> columnFamilyToLocalityGroup;
@@ -176,6 +210,17 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
         conf.set(CONFIGURE_LOCALITY_GROUPS, Joiner.on(",").join(splits, tableName));
     }
 
+    public static boolean loadPlanningEnabled(Configuration conf) {
+        return conf.getEnum(BULK_IMPORT_MODE_CONFIG, ImportMode.V1).equals(ImportMode.V2_LOAD_PLANNING);
+    }
+
+    protected synchronized static TableSplitsCache getSplitsCache(Configuration conf) {
+        if (splitsCache == null) {
+            splitsCache = new TableSplitsCache(conf);
+        }
+        return splitsCache;
+    }
+
     /**
      * Insert a count into the filename. The filename is expected to end with our extension.
      *
@@ -250,9 +295,13 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
 
     protected SizeTrackingWriter openWriter(String filename, AccumuloConfiguration tableConf) throws IOException {
         startWriteTime = System.currentTimeMillis();
-        CryptoService cs = CryptoFactoryLoader.getServiceForClient(CryptoEnvironment.Scope.TABLE, tableConf.getAllCryptoProperties());
+        // @formatter:off
+        CryptoService cs = CryptoFactoryLoader.getServiceForClient(
+           CryptoEnvironment.Scope.TABLE, tableConf.getAllCryptoProperties());
         return new SizeTrackingWriter(
-                        FileOperations.getInstance().newWriterBuilder().forFile(filename, fs, conf, cs).withTableConfiguration(tableConf).build());
+           FileOperations.getInstance().newWriterBuilder().forFile(filename, fs, conf, cs).withTableConfiguration(tableConf).build(),
+           this.loadPlanningEnabled);
+        // @formatter:on
     }
 
     /**
@@ -270,19 +319,174 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
         // don't bother if we have not created a writer for this key yet
         if (writer != null) {
             String table = writerTableNames.get(key);
-            Path filename = usedWriterPaths.get(key);
+            Path file = usedWriterPaths.get(key);
             // don't bother if this writer has not been used yet
-            if (filename != null) {
+            if (file != null) {
+                if (writer.isLoadPlanning()) {
+                    // @formatter:off
+                    loadPlanFutures.add(CompletableFuture
+                       .supplyAsync(() -> createLoadPlan(usedWriterPaths.get(key), writer.rows, table))
+                       .thenAccept(p -> addPlan(p.getKey(), p.getValue())));
+                    // @formatter:on
+                }
                 writer.close();
                 // pull the index off the filename
-                filename = removeFileCount(filename);
-                createAndRegisterWriter(key, table, filename, tableConfigs.get(table));
+                file = removeFileCount(file);
+                createAndRegisterWriter(key, table, file, tableConfigs.get(table));
             }
+        }
+    }
+
+    /**
+     * Creates a {@link LoadPlan} list for the given RFile by mapping its row values to the relevant KeyExtents from the given table. A list is required here
+     * due to constraints on how Accumulo builds LoadPlan instances (see return value note below)
+     *
+     * @param rfile
+     *            RFile path
+     * @param rfileRows
+     *            Set of rows contained in the RFile
+     * @param tableName
+     *            Table whose splits are to be examined to create the mapping
+     * @return Table name-LoadPlan pair for the RFile.
+     *         <p>
+     *         Note that the LoadPlan API doesn't currently provide a way to add {@link LoadPlan.Destination} entries (i.e., key extents) to an existing
+     *         LoadPlan instance. The only way to construct the entire plan is to create a list of LoadPlans, one for each extent, and then use
+     *         {@link LoadPlan.Builder#addPlan(LoadPlan)} after the fact to construct a single consolidated plan from that list. This consolidation is performed
+     *         later in {@link #writeLoadPlans(TaskAttemptContext)}
+     *         </p>
+     */
+    protected Pair<String,List<LoadPlan>> createLoadPlan(Path rfile, SortedSet<Text> rfileRows, String tableName) {
+        List<LoadPlan> destinations = new LinkedList<>();
+        if (rfileRows != null && !rfileRows.isEmpty()) {
+            List<Text> tableSplits;
+            try {
+                tableSplits = getSplitsCache(conf).getSplits(tableName);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to retrieve splits!", e);
+            }
+            // @formatter:off
+            if (tableSplits == null || tableSplits.isEmpty()) {
+                // RFile examination and mapping are handled later by bulk import client
+                log.debug("Calculating FILE load plan for " + rfile);
+                var ke = new KeyExtent(rfileRows.first(), rfileRows.last());
+                destinations.add(LoadPlan.builder().loadFileTo(
+                   rfile.getName(), RangeType.FILE, ke.prevEndRow, ke.endRow).build());
+            } else {
+                sanityCheckSplitsList(tableSplits);
+                // Calculate extent mapping, so that import client can skip examination/mapping at load time
+                log.debug("Calculating TABLE load plan for " + rfile);
+                rfileRows.stream().map(row -> findKeyExtent(row, tableSplits))
+                   .collect(Collectors.toCollection(HashSet::new))
+                   .forEach(ke -> destinations.add(LoadPlan.builder().loadFileTo(
+                       rfile.getName(), RangeType.TABLE, ke.prevEndRow, ke.endRow).build())
+                   );
+                log.debug("Table load plan completed for file: " + rfile);
+            }
+            // @formatter:on
+        }
+        if (destinations.isEmpty()) {
+            log.warn("Load planning is enabled, but no load plans were created for " + rfile);
+        }
+        return new ImmutablePair<>(tableName, destinations);
+    }
+
+    /**
+     * Finds the KeyExtent where the specified row should reside
+     *
+     * @param lookupRow
+     *            row value to be mapped
+     * @param tableSplits
+     *            splits for the table in question
+     * @return KeyExtent mapping for the given row
+     */
+    static KeyExtent findKeyExtent(Text lookupRow, List<Text> tableSplits) {
+        var ke = new KeyExtent();
+        var ceilingIdx = findCeiling(tableSplits, lookupRow);
+        if (ceilingIdx == -1) {
+            ke.endRow = null;
+            ke.prevEndRow = tableSplits.get(tableSplits.size() - 1);
+        } else {
+            ke.endRow = tableSplits.get(ceilingIdx);
+            ke.prevEndRow = (ceilingIdx > 0) ? tableSplits.get(ceilingIdx - 1) : null;
+        }
+        return ke;
+    }
+
+    /**
+     * Performs binary search on splits to find the index of the first (least) split &ge; to the lookup value
+     *
+     * @param splits
+     *            sorted splits list whose implementation is assumed to provide fast random access (i.e., {@link java.util.RandomAccess})
+     * @param lookup
+     *            row for which we want to find the ceiling
+     * @return index of the first split &ge; lookup, or -1 if lookup &gt; than the last split
+     */
+    static int findCeiling(List<Text> splits, Text lookup) {
+        int begin = 0;
+        int end = splits.size() - 1;
+        int ceiling = -1;
+        while (begin <= end) {
+            int middle = (begin + end) / 2;
+            if (splits.get(middle).compareTo(lookup) >= 0) {
+                end = middle - 1;
+                ceiling = middle;
+            } else {
+                begin = middle + 1;
+            }
+        }
+        return ceiling;
+    }
+
+    private static void sanityCheckSplitsList(List<Text> splits) {
+        // @formatter:off
+        // TODO: Perhaps modify TableSplitsCache client interface to be more explicit about this
+        if (!(splits instanceof RandomAccess)) {
+            throw new IllegalArgumentException("Yikes! We expected splits list to implement fast random access. Found "
+               + splits.getClass() + " instead. Please investigate, and disable load planning temporarily");
+        }
+        // @formatter:off
+    }
+
+    private void writeLoadPlans(TaskAttemptContext context) throws IOException {
+        if (loadPlanningEnabled) {
+            log.debug("Writing bulk load plans to disk for all tables");
+            // Consolidate all plans for a table into a single file
+            List<CompletableFuture<Void>> futures = new LinkedList<>();
+            for (Map.Entry<String,List<LoadPlan>> entry : tableLoadPlans.entrySet()) {
+                var builder = LoadPlan.builder();
+                var table = entry.getKey();
+                var path = new Path(String.format("%s/%s", workDir, table), getUniqueFile(context, "loadplan", ".json"));
+                entry.getValue().stream().forEach(plan -> builder.addPlan(plan));
+                var loadPlan = builder.build();
+                // TODO: Use Gson streaming api instead (JsonWriter) to minimize impact on heap
+                //@formatter:off
+                futures.add(CompletableFuture.runAsync(() -> {
+                    try (FSDataOutputStream out = fs.create(path)) {
+                        log.debug("Begin writing load plan for " + path);
+                        out.write(gson.toJson(loadPlan).getBytes(StandardCharsets.UTF_8));
+                        log.debug("Completed writing load plan for " + path);
+                    } catch (IOException ioe) {
+                        log.error("Failed to write plan for " + path, ioe);
+                        throw new RuntimeException(ioe);
+                    }
+                }));
+                //@formatter:on
+            }
+            futures.stream().forEach(f -> {
+                try {
+                    f.get();
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            });
+            log.debug("Finished writing bulk load plans to disk");
         }
     }
 
     public static class SizeTrackingWriter implements FileSKVWriter {
         private FileSKVWriter delegate;
+        private boolean loadPlanning;
+        SortedSet<Text> rows;
         long size = 0;
         int entries = 0;
 
@@ -310,6 +514,9 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
             entries++;
             size += key.getLength() + (value == null ? 0 : value.getSize());
             delegate.append(key, value);
+            if (loadPlanning) {
+                rows.add(key.getRow());
+            }
         }
 
         public DataOutputStream createMetaStore(String name) throws IOException {
@@ -325,8 +532,16 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
             return getSize();
         }
 
-        public SizeTrackingWriter(FileSKVWriter delegate) {
+        public boolean isLoadPlanning() {
+            return loadPlanning;
+        }
+
+        public SizeTrackingWriter(FileSKVWriter delegate, boolean loadPlanning) {
             this.delegate = delegate;
+            this.loadPlanning = loadPlanning;
+            if (this.loadPlanning) {
+                rows = new TreeSet<>();
+            }
         }
     }
 
@@ -458,6 +673,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
 
         columnFamilyToLocalityGroup = Maps.newHashMap();
         localityGroupToColumnFamilies = Maps.newHashMap();
+        loadPlanningEnabled = loadPlanningEnabled(conf);
 
         extension = conf.get(FILE_TYPE);
         if (extension == null || extension.isEmpty())
@@ -557,15 +773,35 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
                     }
                 }
                 writer.append(key.getKey(), value);
-
             }
 
             @Override
             public void close(TaskAttemptContext context) throws IOException, InterruptedException {
-                // Close all of the Map File Writers
-                for (SizeTrackingWriter writer : writers.values()) {
+                for (Map.Entry<String,SizeTrackingWriter> entry : writers.entrySet()) {
+                    var writer = entry.getValue();
+                    if (writer.isLoadPlanning()) {
+                        var table = writerTableNames.get(entry.getKey());
+                        var file = usedWriterPaths.get(entry.getKey());
+                        // @formatter:off
+                        loadPlanFutures.add(CompletableFuture
+                           .supplyAsync(() -> createLoadPlan(file, writer.rows, table))
+                           .thenAccept(p -> addPlan(p.getKey(), p.getValue()))
+                        );
+                        // @formatter:on
+                    }
                     writer.close();
                 }
+                loadPlanFutures.stream().forEach(f -> {
+                    try {
+                        f.get();
+                    } catch (Exception e) {
+                        log.error("Load planning failed", e);
+                        throw new RuntimeException(e);
+                    }
+                });
+
+                writeLoadPlans(context);
+
                 // To verify the file was actually written successfully, we need to reopen it which will reread
                 // the index at the end and verify its integrity.
                 FileOperations fops = FileOperations.getInstance();
@@ -587,6 +823,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
                         throw new IOException(ex);
                     }
                 }
+
                 for (Path path : unusedWriterPaths.values()) {
                     log.info("Nothing written to " + path + ".  Deleting from HDFS.");
                     fs.delete(path, true);
@@ -626,6 +863,9 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
                         if (shardLocation == null) {
                             // in this case we have a shard id that has no split. Lets put this in one "extra" file
                             shardLocation = "extra";
+                        } else {
+                            // Ensure there's no colon
+                            shardLocation = shardLocation.replace(":", "_");
                         }
                     }
                     // Combine table name with shard location so that we end up
@@ -653,6 +893,15 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
         };
     }
 
+    private void addPlan(String table, List<LoadPlan> lps) {
+        if (lps != null && !lps.isEmpty()) {
+            if (!tableLoadPlans.containsKey(table)) {
+                tableLoadPlans.put(table, new LinkedList<>());
+            }
+            tableLoadPlans.get(table).addAll(lps);
+        }
+    }
+
     /**
      * Read in the sequence file (that was created at job startup) for the given table that contains a list of shard IDs and the corresponding tablet server to
      * which that shard is assigned.
@@ -674,5 +923,60 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
         }
 
         return tableShardLocations.get(tableName);
+    }
+
+    /**
+     * Simplified representation of an Accumulo KeyExtent, used here to track mapped tablets during LoadPlan creation (and to avoid yet another Accumulo
+     * "disallowed import")
+     */
+    static class KeyExtent implements Comparable<KeyExtent> {
+        Text prevEndRow;
+        Text endRow;
+
+        KeyExtent(Text prevEndRow, Text endRow) {
+            this.prevEndRow = prevEndRow;
+            this.endRow = endRow;
+        }
+
+        KeyExtent() {
+            this.prevEndRow = null;
+            this.endRow = null;
+        }
+
+        private static final Comparator<KeyExtent> COMPARATOR = Comparator.comparing(KeyExtent::endRow, Comparator.nullsLast(Text::compareTo))
+                        .thenComparing(KeyExtent::prevEndRow, Comparator.nullsFirst(Text::compareTo));
+
+        public Text endRow() {
+            return endRow;
+        }
+
+        public Text prevEndRow() {
+            return prevEndRow;
+        }
+
+        @Override
+        public int compareTo(KeyExtent other) {
+            return COMPARATOR.compare(this, other);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o)
+                return true;
+            if (o == null || getClass() != o.getClass())
+                return false;
+            KeyExtent keyExtent = (KeyExtent) o;
+            return Objects.equals(endRow, keyExtent.endRow) && Objects.equals(prevEndRow, keyExtent.prevEndRow);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(endRow, prevEndRow);
+        }
+
+        @Override
+        public String toString() {
+            return (prevEndRow == null ? "null" : prevEndRow.toString()) + ";" + (endRow == null ? "null" : endRow.toString());
+        }
     }
 }
