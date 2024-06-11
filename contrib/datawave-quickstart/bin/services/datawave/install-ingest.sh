@@ -30,12 +30,14 @@ tar xf "${DW_DATAWAVE_SERVICE_DIR}/${DW_DATAWAVE_INGEST_DIST}" -C "${TARBALL_BAS
 
 info "DataWave Ingest tarball extracted and symlinked"
 
+source "${THIS_DIR}/fix-hadoop-classpath.sh"
+
 if ! hadoopIsRunning ; then
    info "Starting Hadoop, so that we can initialize Accumulo"
    hadoopStart
 fi
 
-# Create any Hadoop directories related to Datawave Ingest
+# Create any Hadoop directories needed for live ingest input
 if [[ -n "${DW_DATAWAVE_INGEST_LIVE_DATA_TYPES}" ]] ; then
 
    OLD_IFS="${IFS}"
@@ -44,7 +46,22 @@ if [[ -n "${DW_DATAWAVE_INGEST_LIVE_DATA_TYPES}" ]] ; then
    IFS="${OLD_IFS}"
 
    for dir in "${HDFS_RAW_INPUT_DIRS[@]}" ; do
+      # Dirs created here should be configured in your live flag maker config (e.g., in config/flag-maker-live.xml)
       hdfs dfs -mkdir -p "${DW_DATAWAVE_INGEST_HDFS_BASEDIR}/${dir}" || fatal "Failed to create HDFS directory: ${dir}"
+   done
+fi
+
+# Create any Hadoop directories needed for bulk ingest input
+if [[ -n "${DW_DATAWAVE_INGEST_BULK_DATA_TYPES}" ]] ; then
+
+   OLD_IFS="${IFS}"
+   IFS=","
+   HDFS_RAW_INPUT_DIRS=( ${DW_DATAWAVE_INGEST_BULK_DATA_TYPES} )
+   IFS="${OLD_IFS}"
+
+   for dir in "${HDFS_RAW_INPUT_DIRS[@]}" ; do
+      # Dirs created here should be configured in your bulk flag maker config (e.g., in config/flag-maker-bulk.xml)
+      hdfs dfs -mkdir -p "${DW_DATAWAVE_INGEST_HDFS_BASEDIR}/${dir}-bulk" || fatal "Failed to create HDFS directory: ${dir}-bulk"
    done
 fi
 
