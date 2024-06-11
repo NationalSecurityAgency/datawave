@@ -138,6 +138,31 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
         return subset;
     }
 
+    /**
+     * Performs binary search on splits to find the index of the first (least) split &ge; to the lookup value
+     *
+     * @param splits
+     *            sorted splits array
+     * @param lookup
+     *            row for which we want to find the ceiling
+     * @return index of the first split &ge; lookup, or -1 if lookup &gt; than the last split
+     */
+    public static int findCeiling(List<Text> splits, Text lookup) {
+        int begin = 0;
+        int end = splits.size() - 1;
+        int ceiling = -1;
+        while (begin <= end) {
+            int middle = (begin + end) / 2;
+            if (splits.get(middle).compareTo(lookup) >= 0) {
+                end = middle - 1;
+                ceiling = middle;
+            } else {
+                begin = middle + 1;
+            }
+        }
+        return ceiling;
+    }
+
     @Override
     public void setCacheFilePath(Configuration conf) {
         this.cacheFilePath = new Path(conf.get(SPLITS_CACHE_DIR, DEFAULT_SPLITS_CACHE_DIR), conf.get(SPLITS_CACHE_FILE, DEFAULT_SPLITS_CACHE_FILE));
