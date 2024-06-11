@@ -1,5 +1,9 @@
 package datawave.ingest.mapreduce.job;
 
+import static datawave.ingest.mapreduce.job.BulkIngestMapFileLoader.BULK_IMPORT_MODE_CONFIG;
+import static datawave.ingest.mapreduce.job.MultiRFileOutputFormatter.findKeyExtent;
+import static org.junit.Assert.assertEquals;
+
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -10,12 +14,16 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.LoadPlan;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.file.FileSKVWriter;
 import org.apache.commons.codec.binary.Base64;
@@ -40,6 +48,8 @@ import org.junit.Test;
 import org.powermock.api.easymock.PowerMock;
 
 import datawave.ingest.data.config.ingest.AccumuloHelper;
+import datawave.ingest.mapreduce.job.BulkIngestMapFileLoader.ImportMode;
+import datawave.ingest.mapreduce.job.MultiRFileOutputFormatter.KeyExtent;
 import datawave.util.TableName;
 
 public class MultiRFileOutputFormatterTest {
@@ -141,7 +151,6 @@ public class MultiRFileOutputFormatterTest {
 
         MultiRFileOutputFormatterTest.logger.setLevel(testDriverLevel);
         Logger.getLogger(MultiRFileOutputFormatter.class).setLevel(uutLevel);
-
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -162,6 +171,87 @@ public class MultiRFileOutputFormatterTest {
         }
     }
 
+    private Map<String,Set<LoadPlan>> tableLoadPlans = new HashMap<>();
+
+    private ArrayList<Text> getSplits() {
+        var arr = new ArrayList<Text>();
+        arr.add(new Text("20170601_0")); // 0
+        arr.add(new Text("20170601_1")); // 1
+        arr.add(new Text("20170601_2")); // 2
+        arr.add(new Text("20170601_3")); // 3
+        arr.add(new Text("20170601_4")); // 4
+        arr.add(new Text("20170601_5")); // 5
+        arr.add(new Text("20170601_6")); // 6
+        arr.add(new Text("20170601_7")); // 7
+        arr.add(new Text("20170601_8")); // 8
+        arr.add(new Text("20170601_9")); // 9
+        arr.add(new Text("20170602_0")); // 10
+        arr.add(new Text("20170602_1")); // 11
+        arr.add(new Text("20170602_2")); // 12
+        arr.add(new Text("20170602_3")); // 13
+        arr.add(new Text("20170602_4")); // 14
+        arr.add(new Text("20170602_5")); // 15
+        arr.add(new Text("20170602_6")); // 16
+        arr.add(new Text("20170602_7")); // 17
+        arr.add(new Text("20170602_8")); // 18
+        arr.add(new Text("20170602_9")); // 19
+        arr.add(new Text("20170602_9a")); // 20
+        arr.add(new Text("20170602_9b")); // 21
+        arr.add(new Text("20170602_9c")); // 22
+        arr.add(new Text("20170603_0")); // 23
+        arr.add(new Text("20170603_0a")); // 24
+        arr.add(new Text("20170603_0b")); // 25
+        arr.add(new Text("20170603_0c")); // 26
+        arr.add(new Text("20170603_1")); // 27
+        arr.add(new Text("20170603_2")); // 28
+        arr.add(new Text("20170603_3")); // 29
+        arr.add(new Text("20170603_4")); // 30
+        arr.add(new Text("20170603_5")); // 31
+        arr.add(new Text("20170603_6")); // 32
+        arr.add(new Text("20170603_7")); // 34
+        arr.add(new Text("20170603_8")); // 35
+        arr.add(new Text("20170603_9")); // 36
+        return arr;
+    }
+
+    @Test
+    public void testPlanning() {
+        SortedSet<Text> rfileRows = new TreeSet<>();
+        rfileRows.add(new Text("20160602_0"));
+        rfileRows.add(new Text("20170601_0"));
+        rfileRows.add(new Text("20170601_1"));
+        rfileRows.add(new Text("20170602_1"));
+        rfileRows.add(new Text("20170602_0a1"));
+        rfileRows.add(new Text("20170602_0a11"));
+        rfileRows.add(new Text("20170602_0a111"));
+        rfileRows.add(new Text("20170602_0b1"));
+        rfileRows.add(new Text("20170602_0c1"));
+        rfileRows.add(new Text("20170603_0"));
+        rfileRows.add(new Text("20170603_0a11"));
+        rfileRows.add(new Text("20170603_0a12"));
+        rfileRows.add(new Text("20170603_0b"));
+        rfileRows.add(new Text("20170603_0c"));
+        rfileRows.add(new Text("20170603_0d"));
+        rfileRows.add(new Text("20170601_9"));
+        rfileRows.add(new Text("20200601_9"));
+
+        Set<KeyExtent> expectedExtents = new HashSet<>();
+        expectedExtents.add(new KeyExtent(new Text("20170601_0"), new Text("20170601_1")));
+        expectedExtents.add(new KeyExtent(new Text("20170601_8"), new Text("20170601_9")));
+        expectedExtents.add(new KeyExtent(new Text("20170602_0"), new Text("20170602_1")));
+        expectedExtents.add(new KeyExtent(new Text("20170603_9"), null));
+        expectedExtents.add(new KeyExtent(new Text("20170603_0c"), new Text("20170603_1")));
+        expectedExtents.add(new KeyExtent(null, new Text("20170601_0")));
+        expectedExtents.add(new KeyExtent(new Text("20170602_9c"), new Text("20170603_0")));
+        expectedExtents.add(new KeyExtent(new Text("20170603_0a"), new Text("20170603_0b")));
+        expectedExtents.add(new KeyExtent(new Text("20170603_0b"), new Text("20170603_0c")));
+
+        List<Text> tableSplits = getSplits();
+        Set<KeyExtent> extents = rfileRows.stream().map(row -> findKeyExtent(row, tableSplits)).collect(Collectors.toCollection(HashSet::new));
+
+        assertEquals(expectedExtents, extents);
+    }
+
     @Test
     public void testSetCompressionType() {
 
@@ -179,25 +269,25 @@ public class MultiRFileOutputFormatterTest {
             String expected = "snappy";
             MultiRFileOutputFormatter.setCompressionType(createMockConfiguration(), expected);
 
-            Assert.assertEquals("MultiRFileOutputFormatter.setCompressionType failed to set compression type", expected,
+            assertEquals("MultiRFileOutputFormatter.setCompressionType failed to set compression type", expected,
                             MultiRFileOutputFormatterTest.mockedConfiguration.get(compressionKey));
 
             expected = "lzo";
             MultiRFileOutputFormatter.setCompressionType(createMockConfiguration(), expected);
 
-            Assert.assertEquals("MultiRFileOutputFormatter.setCompressionType failed to set compression type", expected,
+            assertEquals("MultiRFileOutputFormatter.setCompressionType failed to set compression type", expected,
                             MultiRFileOutputFormatterTest.mockedConfiguration.get(compressionKey));
 
             expected = "gz";
             MultiRFileOutputFormatter.setCompressionType(createMockConfiguration(), expected);
 
-            Assert.assertEquals("MultiRFileOutputFormatter.setCompressionType failed to set compression type", expected,
+            assertEquals("MultiRFileOutputFormatter.setCompressionType failed to set compression type", expected,
                             MultiRFileOutputFormatterTest.mockedConfiguration.get(compressionKey));
 
             expected = "none";
             MultiRFileOutputFormatter.setCompressionType(createMockConfiguration(), expected);
 
-            Assert.assertEquals("MultiRFileOutputFormatter.setCompressionType failed to set compression type", expected,
+            assertEquals("MultiRFileOutputFormatter.setCompressionType failed to set compression type", expected,
                             MultiRFileOutputFormatterTest.mockedConfiguration.get(compressionKey));
 
         } finally {
@@ -216,7 +306,7 @@ public class MultiRFileOutputFormatterTest {
 
             String expected = "gz";
 
-            Assert.assertEquals("MultiRFileOutputFormatter.setCompressionType failed to set compression type", expected,
+            assertEquals("MultiRFileOutputFormatter.setCompressionType failed to set compression type", expected,
                             MultiRFileOutputFormatter.getCompressionType(createMockConfiguration()));
 
         } finally {
@@ -237,25 +327,25 @@ public class MultiRFileOutputFormatterTest {
             String expected = "snappy";
             MultiRFileOutputFormatter.setCompressionType(conf, expected);
 
-            Assert.assertEquals("MultiRFileOutputFormatter.setCompressionType failed to set compression type", expected,
+            assertEquals("MultiRFileOutputFormatter.setCompressionType failed to set compression type", expected,
                             MultiRFileOutputFormatter.getCompressionType(conf));
 
             expected = "lzo";
             MultiRFileOutputFormatter.setCompressionType(conf, expected);
 
-            Assert.assertEquals("MultiRFileOutputFormatter.setCompressionType failed to set compression type", expected,
+            assertEquals("MultiRFileOutputFormatter.setCompressionType failed to set compression type", expected,
                             MultiRFileOutputFormatter.getCompressionType(conf));
 
             expected = "gz";
             MultiRFileOutputFormatter.setCompressionType(conf, expected);
 
-            Assert.assertEquals("MultiRFileOutputFormatter.setCompressionType failed to set compression type", expected,
+            assertEquals("MultiRFileOutputFormatter.setCompressionType failed to set compression type", expected,
                             MultiRFileOutputFormatter.getCompressionType(conf));
 
             expected = "none";
             MultiRFileOutputFormatter.setCompressionType(conf, expected);
 
-            Assert.assertEquals("MultiRFileOutputFormatter.setCompressionType failed to set compression type", expected,
+            assertEquals("MultiRFileOutputFormatter.setCompressionType failed to set compression type", expected,
                             MultiRFileOutputFormatter.getCompressionType(conf));
 
         } finally {
@@ -287,7 +377,7 @@ public class MultiRFileOutputFormatterTest {
 
             Assert.assertTrue("MultiRFileOutputFormatter#setFileType failed to add a File Type property",
                             MultiRFileOutputFormatterTest.mockedConfiguration.containsKey(typeKey));
-            Assert.assertEquals("MultiRFileOutputFormatter#setFileType failed to retain the expected File Type property value", "fileType",
+            assertEquals("MultiRFileOutputFormatter#setFileType failed to retain the expected File Type property value", "fileType",
                             MultiRFileOutputFormatterTest.mockedConfiguration.get(typeKey));
 
         } finally {
@@ -323,13 +413,11 @@ public class MultiRFileOutputFormatterTest {
             String passwordKey = String.format("%s.password", MultiRFileOutputFormatter.class.getName());
             String zooKeeperKey = String.format("%s.zookeepers", MultiRFileOutputFormatter.class.getName());
 
-            Assert.assertEquals("MultiRFileOutputFormatter#setAccumuloConfiguration failed to retain the expected instance value.", instance,
-                            conf.get(instanceKey));
-            Assert.assertEquals("MultiRFileOutputFormatter#setAccumuloConfiguration failed to retain the expected username value.", username,
-                            conf.get(usernameKey));
-            Assert.assertEquals("MultiRFileOutputFormatter#setAccumuloConfiguration failed to retain the expected password value.",
+            assertEquals("MultiRFileOutputFormatter#setAccumuloConfiguration failed to retain the expected instance value.", instance, conf.get(instanceKey));
+            assertEquals("MultiRFileOutputFormatter#setAccumuloConfiguration failed to retain the expected username value.", username, conf.get(usernameKey));
+            assertEquals("MultiRFileOutputFormatter#setAccumuloConfiguration failed to retain the expected password value.",
                             new String(Base64.encodeBase64(password)), conf.get(passwordKey));
-            Assert.assertEquals("MultiRFileOutputFormatter#setAccumuloConfiguration failed to retain the expected zookeepers value.", zookeepers,
+            assertEquals("MultiRFileOutputFormatter#setAccumuloConfiguration failed to retain the expected zookeepers value.", zookeepers,
                             conf.get(zooKeeperKey));
 
         } finally {
@@ -421,8 +509,7 @@ public class MultiRFileOutputFormatterTest {
 
                     @Override
                     public void append(Key key, Value value) throws IOException {}
-                });
-
+                }, false);
             }
         };
 
@@ -434,7 +521,7 @@ public class MultiRFileOutputFormatterTest {
         conf = new Configuration();
         conf.set("mapred.output.dir", "/tmp");
         conf.set(SplitsFile.CONFIGURED_SHARDED_TABLE_NAMES, TableName.SHARD);
-
+        conf.setEnum(BULK_IMPORT_MODE_CONFIG, ImportMode.V2_LOAD_PLANNING);
     }
 
     @Test
@@ -490,8 +577,10 @@ public class MultiRFileOutputFormatterTest {
     public void testRFileFileSizeLimit() throws IOException, InterruptedException {
         // each key we write is 16 characters total, so a limit of 32 should allow two keys per file
         MultiRFileOutputFormatter.setRFileLimits(conf, 0, 32);
-        RecordWriter<BulkIngestKey,Value> writer = createWriter(formatter, conf);
+        TaskAttemptContext context = new TaskAttemptContextImpl(conf, new TaskAttemptID(new TaskID(new JobID(JOB_ID, 1), TaskType.MAP, 1), 1));
+        RecordWriter<BulkIngestKey,Value> writer = createWriter(formatter, context);
         writeShardPairs(writer, 3);
+        // writer.close(context);
         assertNumFileNames(4);
         assertFileNameForShardIndex(0);
         expectShardFiles(3);
@@ -528,6 +617,11 @@ public class MultiRFileOutputFormatterTest {
         return formatter.getRecordWriter(context);
     }
 
+    private RecordWriter<BulkIngestKey,Value> createWriter(MultiRFileOutputFormatter formatter, TaskAttemptContext context)
+                    throws IOException, InterruptedException {
+        return formatter.getRecordWriter(context);
+    }
+
     private void assertFileNameForShard(int index, String prefix, int shardId) {
         Assert.assertTrue(filenames.get(index).endsWith("/shard/" + prefix + "-m-00001_" + shardId + ".rf"));
     }
@@ -537,6 +631,6 @@ public class MultiRFileOutputFormatterTest {
     }
 
     private void assertNumFileNames(int expectedNumFiles) {
-        Assert.assertEquals(filenames.toString(), expectedNumFiles, filenames.size());
+        assertEquals(filenames.toString(), expectedNumFiles, filenames.size());
     }
 }

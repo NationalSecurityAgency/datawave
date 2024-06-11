@@ -6,14 +6,17 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Type;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -33,6 +36,7 @@ import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.clientImpl.ClientContext;
+import org.apache.accumulo.core.data.LoadPlan;
 import org.apache.accumulo.core.manager.thrift.ManagerClientService;
 import org.apache.accumulo.core.manager.thrift.ManagerMonitorInfo;
 import org.apache.accumulo.core.master.thrift.TableInfo;
@@ -40,6 +44,7 @@ import org.apache.accumulo.core.rpc.ThriftUtil;
 import org.apache.accumulo.core.rpc.clients.ThriftClientTypes;
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileChecksum;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -62,6 +67,15 @@ import org.apache.log4j.Logger;
 
 import com.google.common.base.Objects;
 import com.google.common.collect.Lists;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonPrimitive;
+import com.google.gson.JsonSerializationContext;
+import com.google.gson.JsonSerializer;
 
 import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.mapreduce.StandaloneStatusReporter;
@@ -73,7 +87,8 @@ import datawave.util.cli.PasswordConverter;
  * various tablet servers.
  */
 public final class BulkIngestMapFileLoader implements Runnable {
-    private static Logger log = Logger.getLogger(BulkIngestMapFileLoader.class);
+    private static final Logger log = Logger.getLogger(BulkIngestMapFileLoader.class);
+    private static final Gson gson = new GsonBuilder().registerTypeHierarchyAdapter(byte[].class, new ByteArrayToBase64TypeAdapter()).create();
     private static int SLEEP_TIME = 30000;
     private static int FAILURE_SLEEP_TIME = 10 * 60 * 1000; // 10 minutes
     private static int MAX_DIRECTORIES = 1;
@@ -83,6 +98,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
     private static int SHUTDOWN_PORT = 24111;
     private static boolean FIFO = true;
     private static boolean INGEST_METRICS = true;
+    private static ImportMode BULK_IMPORT_MODE = ImportMode.V1;
 
     public static final String CLEANUP_FILE_MARKER = "job.cleanup";
     public static final String COMPLETE_FILE_MARKER = "job.complete";
@@ -90,6 +106,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
     public static final String FAILED_FILE_MARKER = "job.failed";
     public static final String ATTEMPT_FILE_MARKER = "job.load.attempt.failed.do.not.delete";
     public static final String INPUT_FILES_MARKER = "job.paths";
+    public static final String BULK_IMPORT_MODE_CONFIG = "ingest.bulk.import.mode";
 
     private Path workDir;
     private String jobDirPattern;
@@ -106,6 +123,29 @@ public final class BulkIngestMapFileLoader implements Runnable {
     private volatile boolean running;
     private ExecutorService executor;
     private JobObservable jobObservable;
+    private int sleepTime;
+    private int failSleepTime;
+    private boolean writeStats;
+    private ImportMode importMode;
+
+    public enum ImportMode {
+        /**
+         * Accumulo's 1.x bulk api will be used to import rfiles.
+         */
+        @Deprecated
+        V1,
+        /**
+         * Accumulo's 2.x bulk api will be used to import rfiles. All rfile-to-tablet mappings are computed locally within the {@link BulkIngestMapFileLoader}
+         * JVM upon import. This will incur an import latency cost that is proportional to the size/number of rfiles to be imported and the number of tablets to
+         * be targeted
+         */
+        V2_LOCAL_MAPPING,
+        /**
+         * Accumulo's 2.x bulk api will be used to import rfiles. All rfile-to-tablet mappings are determined from precomputed
+         * {@link org.apache.accumulo.core.data.LoadPlan} files created in {@link MultiRFileOutputFormatter}
+         */
+        V2_LOAD_PLANNING
+    }
 
     public static void main(String[] args) throws AccumuloSecurityException, IOException, NoSuchMethodException {
 
@@ -316,6 +356,8 @@ public final class BulkIngestMapFileLoader implements Runnable {
             }
         }
 
+        BULK_IMPORT_MODE = conf.getEnum(BULK_IMPORT_MODE_CONFIG, ImportMode.V1);
+
         log.info("Set sleep time to " + SLEEP_TIME + "ms");
         log.info("Will wait to bring map files online if there are more than " + MAJC_THRESHOLD + " running or queued major compactions.");
         log.info("Will not bring map files online unless at least " + MAJC_WAIT_TIMEOUT + "ms have passed since last time.");
@@ -330,6 +372,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
         log.info("Using " + jobtracker + " as the jobtracker");
         log.info("Using " + SHUTDOWN_PORT + " as the shutdown port");
         log.info("Using " + (FIFO ? "FIFO" : "LIFO") + " processing order");
+        log.info("Using " + BULK_IMPORT_MODE + " bulk import mode");
 
         for (String[] s : properties) {
             conf.set(s[0], s[1]);
@@ -357,7 +400,8 @@ public final class BulkIngestMapFileLoader implements Runnable {
         String passwordStr = PasswordConverter.parseArg(args[5]);
 
         BulkIngestMapFileLoader processor = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, user, new PasswordToken(passwordStr),
-                        seqFileHdfs, srcHdfs, destHdfs, jobtracker, tablePriorities, conf, SHUTDOWN_PORT, numHdfsThreads, jobObservers);
+                        seqFileHdfs, srcHdfs, destHdfs, jobtracker, tablePriorities, conf, SHUTDOWN_PORT, numHdfsThreads, jobObservers, SLEEP_TIME,
+                        FAILURE_SLEEP_TIME, INGEST_METRICS, BULK_IMPORT_MODE);
         Thread t = new Thread(processor, "map-file-watcher");
         t.start();
     }
@@ -365,18 +409,18 @@ public final class BulkIngestMapFileLoader implements Runnable {
     public BulkIngestMapFileLoader(String workDir, String jobDirPattern, String instanceName, String zooKeepers, String user, PasswordToken passToken,
                     URI seqFileHdfs, URI srcHdfs, URI destHdfs, String jobtracker, Map<String,Integer> tablePriorities, Configuration conf) {
         this(workDir, jobDirPattern, instanceName, zooKeepers, user, passToken, seqFileHdfs, srcHdfs, destHdfs, jobtracker, tablePriorities, conf,
-                        SHUTDOWN_PORT, 1, Collections.emptyList());
+                        SHUTDOWN_PORT, 1, Collections.emptyList(), SLEEP_TIME, FAILURE_SLEEP_TIME, INGEST_METRICS, BULK_IMPORT_MODE);
     }
 
     public BulkIngestMapFileLoader(String workDir, String jobDirPattern, String instanceName, String zooKeepers, String user, PasswordToken passToken,
                     URI seqFileHdfs, URI srcHdfs, URI destHdfs, String jobtracker, Map<String,Integer> tablePriorities, Configuration conf, int shutdownPort) {
         this(workDir, jobDirPattern, instanceName, zooKeepers, user, passToken, seqFileHdfs, srcHdfs, destHdfs, jobtracker, tablePriorities, conf, shutdownPort,
-                        1, Collections.emptyList());
+                        1, Collections.emptyList(), SLEEP_TIME, FAILURE_SLEEP_TIME, INGEST_METRICS, BULK_IMPORT_MODE);
     }
 
     public BulkIngestMapFileLoader(String workDir, String jobDirPattern, String instanceName, String zooKeepers, String user, PasswordToken passToken,
                     URI seqFileHdfs, URI srcHdfs, URI destHdfs, String jobtracker, Map<String,Integer> tablePriorities, Configuration conf, int shutdownPort,
-                    int numHdfsThreads, List<Observer> jobObservers) {
+                    int numHdfsThreads, List<Observer> jobObservers, int sleepTime, int failSleepTime, boolean writeStats, ImportMode importMode) {
         this.conf = conf;
         this.tablePriorities = tablePriorities;
         this.workDir = new Path(workDir);
@@ -390,6 +434,10 @@ public final class BulkIngestMapFileLoader implements Runnable {
         this.destHdfs = destHdfs;
         this.jobtracker = jobtracker;
         this.running = true;
+        this.sleepTime = sleepTime;
+        this.failSleepTime = failSleepTime;
+        this.writeStats = writeStats;
+        this.importMode = importMode;
         this.executor = Executors.newFixedThreadPool(numHdfsThreads > 0 ? numHdfsThreads : 1);
         try {
             this.jobObservable = new JobObservable(seqFileHdfs != null ? getFileSystem(seqFileHdfs) : null);
@@ -468,7 +516,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
                             if (takeOwnershipJobDirectory(srcJobDirectory)) {
                                 processedDirectories.add(srcJobDirectory);
                                 Path mapFilesDir = new Path(srcJobDirectory, "mapFiles");
-                                if (INGEST_METRICS) {
+                                if (writeStats) {
                                     reporter.getCounter("MapFileLoader.StartTimes", srcJobDirectory.getName()).increment(System.currentTimeMillis());
                                 }
                                 Path dstJobDirectory = srcJobDirectory;
@@ -508,7 +556,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
                                         } else {
                                             log.warn("Failed to mark " + dstJobDirectory + " as failed. Sleeping in case this was a transient failure.");
                                             try {
-                                                Thread.sleep(FAILURE_SLEEP_TIME);
+                                                Thread.sleep(failSleepTime);
                                             } catch (InterruptedException ie) {
                                                 log.warn("Interrupted while sleeping.", ie);
                                             }
@@ -907,19 +955,41 @@ public final class BulkIngestMapFileLoader implements Runnable {
                 // Ensure all of the files put just under tableDir....
                 collapseDirectory();
 
-                // create the failures directory
-                String failuresDir = mapFilesDir + "/failures/" + tableName;
-                Path failuresPath = new Path(failuresDir);
-                FileSystem fileSystem = FileSystem.get(srcHdfs, new Configuration());
-                if (fileSystem.exists(failuresPath)) {
-                    log.fatal("Cannot bring map files online because a failures directory already exists: " + failuresDir);
-                    throw new IOException("Cannot bring map files online because a failures directory already exists: " + failuresDir);
-                }
-                fileSystem.mkdirs(failuresPath);
-
                 // import the directory
                 log.info("Bringing Map Files online for " + tableName);
-                accumuloClient.tableOperations().importDirectory(tableName, tableDir.toString(), failuresDir, false);
+
+                // @formatter:off
+                switch (importMode) {
+                    case V1:
+                        // create the failures directory
+                        String failuresDir = mapFilesDir + "/failures/" + tableName;
+                        Path failuresPath = new Path(failuresDir);
+                        FileSystem fileSystem = FileSystem.get(srcHdfs, new Configuration());
+                        if (fileSystem.exists(failuresPath)) {
+                            log.fatal("Cannot bring map files online because a failures directory already exists: " + failuresDir);
+                            throw new IOException("Cannot bring map files online because a failures directory already exists: " + failuresDir);
+                        }
+                        fileSystem.mkdirs(failuresPath);
+                        accumuloClient.tableOperations()
+                           .importDirectory(tableName, tableDir.toString(), failuresDir, false);
+                        break;
+                    case V2_LOCAL_MAPPING:
+                        accumuloClient.tableOperations().importDirectory(tableDir.toString())
+                           .to(tableName)
+                           .ignoreEmptyDir(true)
+                           .tableTime(false).load();
+                        break;
+                    case V2_LOAD_PLANNING:
+                        accumuloClient.tableOperations().importDirectory(tableDir.toString())
+                           .to(tableName)
+                           .plan(getLoadPlan())
+                           .ignoreEmptyDir(true)
+                           .tableTime(false).load();
+                        break;
+                    default:
+                        throw new RuntimeException("Unsupported import mode " + importMode);
+                }
+                // @formatter:on
                 log.info("Completed bringing map files online for " + tableName);
                 validateComplete();
             } catch (Exception e) {
@@ -931,6 +1001,28 @@ public final class BulkIngestMapFileLoader implements Runnable {
                     this.notifyAll();
                 }
             }
+        }
+
+        private LoadPlan getLoadPlan() throws IOException {
+            FileSystem fs = FileSystem.get(srcHdfs, new Configuration());
+            FileStatus[] loadPlans = fs.globStatus(new Path(tableDir, "loadplan*.json"));
+            var builder = LoadPlan.builder();
+            log.debug("Deserializing load plan for " + tableDir);
+            for (FileStatus lp : loadPlans) {
+                try (FSDataInputStream in = fs.open(lp.getPath())) {
+                    byte[] buffer = new byte[(int) lp.getLen()];
+                    in.readFully(0, buffer);
+                    String s = new String(buffer, StandardCharsets.UTF_8);
+                    // TODO: Use Gson streaming api instead to minimize impact on heap and cpu
+                    builder.addPlan(gson.fromJson(s, LoadPlan.class));
+                }
+            }
+            LoadPlan lp = builder.build();
+            log.debug("Completed deserializing load plan for " + tableDir);
+            if (log.isTraceEnabled()) {
+                log.trace("Consolidated LoadPlan for " + tableDir + ": " + gson.toJson(lp));
+            }
+            return lp;
         }
 
         private void collapseDirectory() throws IOException {
@@ -997,7 +1089,8 @@ public final class BulkIngestMapFileLoader implements Runnable {
 
         private void validateComplete() throws IOException {
             FileSystem fileSystem = FileSystem.get(srcHdfs, new Configuration());
-            if (fileSystem.listStatus(tableDir).length > 0) {
+            // Make sure all rfiles are processed, disregarding any loadplan*.json files
+            if (fileSystem.globStatus(new Path(tableDir, "*.rf")).length > 0) {
                 log.fatal("Failed to completely import " + tableDir);
                 throw new IOException("Failed to completely import " + tableDir);
             }
@@ -1261,7 +1354,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
     }
 
     private void writeStats(Path[] jobDirectories) throws IOException {
-        if (!INGEST_METRICS) {
+        if (!writeStats) {
             log.info("ingest metrics disabled");
         } else {
             long now = System.currentTimeMillis();
@@ -1316,9 +1409,24 @@ public final class BulkIngestMapFileLoader implements Runnable {
     private void sleep() {
         try {
             System.gc();
-            Thread.sleep(SLEEP_TIME);
+            Thread.sleep(sleepTime);
         } catch (InterruptedException e) {
             log.warn("Interrupted while sleeping.", e);
+        }
+    }
+
+    public static class ByteArrayToBase64TypeAdapter implements JsonSerializer<byte[]>, JsonDeserializer<byte[]> {
+        Base64.Decoder decoder = Base64.getUrlDecoder();
+        Base64.Encoder encoder = Base64.getUrlEncoder();
+
+        @Override
+        public byte[] deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
+            return decoder.decode(json.getAsString());
+        }
+
+        @Override
+        public JsonElement serialize(byte[] src, Type typeOfSrc, JsonSerializationContext context) {
+            return new JsonPrimitive(encoder.encodeToString(src));
         }
     }
 
