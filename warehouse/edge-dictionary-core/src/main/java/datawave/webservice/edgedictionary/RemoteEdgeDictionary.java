@@ -1,11 +1,14 @@
 package datawave.webservice.edgedictionary;
 
+import java.net.URI;
 import java.util.List;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import org.apache.deltaspike.core.api.config.ConfigProperty;
+import org.apache.http.client.utils.URIBuilder;
+import org.xbill.DNS.TextParseException;
 
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.annotation.Metric;
@@ -50,6 +53,10 @@ public class RemoteEdgeDictionary extends RemoteHttpService {
     @Inject
     @ConfigProperty(name = "dw.remoteDictionary.port", defaultValue = "8843")
     private int dictServicePort;
+
+    @Inject
+    @ConfigProperty(name = "dw.remoteDictionary.useConfiguredURIForRedirect", defaultValue = "false")
+    private boolean useConfiguredURIForRedirect;
 
     @Inject
     @ConfigProperty(name = "dw.remoteDictionary.edge.uri", defaultValue = "/dictionary/edge/v1/")
@@ -107,6 +114,10 @@ public class RemoteEdgeDictionary extends RemoteHttpService {
                 entity -> edgeDictReader.readValue(entity.getContent()),
                 () -> "getEdgeDictionary [" + metadataTableName + ", " + settings.getQueryAuthorizations() + "]");
         // @formatter:on
+    }
+
+    public URIBuilder buildRedirectURI(String suffix, URI baseURI) throws TextParseException {
+        return buildRedirectURI(suffix, baseURI, useConfiguredURIForRedirect);
     }
 
     @Override
