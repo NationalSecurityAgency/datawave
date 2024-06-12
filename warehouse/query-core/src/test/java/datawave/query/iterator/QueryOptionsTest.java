@@ -35,6 +35,8 @@ import datawave.query.function.PrefixEquality;
 import datawave.query.iterator.filter.EntryKeyIdentity;
 import datawave.query.iterator.filter.FieldIndexKeyDataTypeFilter;
 
+import javax.management.Query;
+
 public class QueryOptionsTest {
 
     @BeforeClass
@@ -245,6 +247,35 @@ public class QueryOptionsTest {
 
         Assert.assertEquals(initialString.length(), decompressOptions.length());
         Assert.assertEquals(initialString, decompressOptions);
+    }
+
+    @Test
+    public void testEvaluateBooleanOptions() {
+
+        Map<String,String> opts = Maps.newHashMap();
+        opts.put(QueryOptions.TRACK_SIZES, "true");
+        opts.put(QueryOptions.DISABLE_EVALUATION, "TrUe");
+        opts.put(QueryOptions.FULL_TABLE_SCAN_ONLY, "false");
+        opts.put(QueryOptions.REDUCED_RESPONSE, "FaLSe");
+        opts.put(QueryOptions.INCLUDE_GROUPING_CONTEXT, "");
+        opts.put(QueryOptions.ALLOW_TERM_FREQUENCY_LOOKUP, "abc");
+        opts.put(QueryOptions.INCLUDE_RECORD_ID, null);
+        opts.put(QueryOptions.SORTED_UIDS, "truefalse");
+        opts.put(QueryOptions.LIMIT_FIELDS_PRE_QUERY_EVALUATION, "falsetrue");
+
+        QueryOptions qopts = new QueryOptions();
+        qopts.validateOptions(opts);
+
+        Assert.assertEquals(true, qopts.isTrackSizes());
+        Assert.assertEquals(true, qopts.isDisableEvaluation());
+        Assert.assertEquals(false, qopts.isFullTableScanOnly());
+        Assert.assertEquals(false, qopts.isReducedResponse());
+        Assert.assertEquals(true, qopts.isIncludeGroupingContext());
+        Assert.assertEquals(true, qopts.isAllowTermFrequencyLookup());
+        Assert.assertEquals(true, qopts.isIncludeRecordId());
+        Assert.assertEquals(true, qopts.isSortedUIDs());
+        Assert.assertEquals(true, qopts.isLimitFieldsPreQueryEvaluation());
+
     }
 
     private static class WrappedQueryOptions extends QueryOptions {
