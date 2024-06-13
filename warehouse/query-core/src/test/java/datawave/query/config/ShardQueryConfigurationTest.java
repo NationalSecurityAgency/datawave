@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
 
+import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.security.Authorizations;
 import org.junit.Assert;
 import org.junit.Before;
@@ -583,6 +584,10 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("sortQueryBeforeGlobalIndex", true);
         defaultValues.put("sortQueryByCounts", false);
         updatedValues.put("sortQueryByCounts", true);
+        defaultValues.put("tableConsistencyLevels", Collections.emptyMap());
+        updatedValues.put("tableConsistencyLevels", Collections.singletonMap(TableName.SHARD, ScannerBase.ConsistencyLevel.EVENTUAL));
+        defaultValues.put("tableHints", Collections.emptyMap());
+        updatedValues.put("tableHints", Collections.emptyMap());
     }
 
     private Query createQuery(String query) {

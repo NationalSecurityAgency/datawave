@@ -375,6 +375,7 @@ public class RangeStreamTestX {
     public void setupTest() {
         config = new ShardQueryConfiguration();
         config.setShardsPerDayThreshold(20);
+        config.setClient(client);
     }
 
     // A && B
@@ -3294,12 +3295,13 @@ public class RangeStreamTestX {
         helper.setIndexedFields(dataTypes.keySet());
 
         // Run a standard limited-scanner range stream.
-        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(client, 1), helper);
+        ScannerFactory scannerFactory = new ScannerFactory(config);
+        RangeStream rangeStream = new RangeStream(config, scannerFactory, helper);
         rangeStream.setLimitScanners(true);
         runTest(rangeStream, script, expectedRanges, expectedQueries);
 
         // Run a default range stream.
-        rangeStream = new RangeStream(config, new ScannerFactory(client, 1), helper);
+        rangeStream = new RangeStream(config, scannerFactory, helper);
         rangeStream.setLimitScanners(false);
         runTest(rangeStream, script, expectedRanges, expectedQueries);
 
