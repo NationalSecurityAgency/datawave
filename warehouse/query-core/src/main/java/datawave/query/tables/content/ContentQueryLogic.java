@@ -101,10 +101,11 @@ public class ContentQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
     @Override
     public GenericQueryConfiguration initialize(final AccumuloClient client, final Query settings, final Set<Authorizations> auths) throws Exception {
         // Initialize the config and scanner factory
-        config = new ContentQueryConfiguration(this, settings);
-        this.scannerFactory = new ScannerFactory(client);
+        final ContentQueryConfiguration config = new ContentQueryConfiguration(this, settings);
         config.setClient(client);
         config.setAuthorizations(auths);
+
+        this.scannerFactory = new ScannerFactory(config);
 
         // Re-assign the view name if specified via params
         Parameter p = settings.findParameter(QueryParameters.CONTENT_VIEW_NAME);

@@ -69,7 +69,6 @@ public class FieldIndexCountQueryLogic extends ShardQueryLogic {
             logger.trace("initialize");
         }
 
-        this.scannerFactory = new ScannerFactory(client);
         MetadataHelper metadataHelper = prepareMetadataHelper(client, this.getMetadataTableName(), auths);
         String modelName = this.getModelName();
         String modelTableName = this.getModelTableName();
@@ -96,6 +95,8 @@ public class FieldIndexCountQueryLogic extends ShardQueryLogic {
         ShardQueryConfiguration config = ShardQueryConfiguration.create(this, settings);
         config.setClient(client);
         config.setAuthorizations(auths);
+
+        this.scannerFactory = new ScannerFactory(config);
 
         // the following throw IllegalArgumentExceptions if validation fails.
         parseQuery(config, settings);
