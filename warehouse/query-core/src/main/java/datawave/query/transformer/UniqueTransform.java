@@ -181,15 +181,16 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
         // these results should be EventBase objects
         EventBase event = (EventBase) newResult;
         if (!event.isIntermediateResult()) {
-            log.info("Testing " + event.getMetadata());
+            log.info("Testing " + event.getMetadata() + " for uniqueness");
             try {
                 if (set != null) {
+                    log.info("Adding " + event.getMetadata() + " to most recent unique set");
                     byte[] signature = getBytes(event);
                     synchronized (set) {
                         this.set.add(new UnmodifiableMapEntry(signature, event));
                     }
                 } else if (!isDuplicate(event)) {
-                    log.info("Keeping " + event.getMetadata());
+                    log.info("Keeping unique " + event.getMetadata());
                     results.add(newResult);
                 }
             } catch (IOException ioe) {
@@ -649,7 +650,19 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
     }
 
     private static DocumentKey getDocKeyAttr(Document doc) {
-        return (DocumentKey) (doc.get(Document.DOCKEY_FIELD_NAME));
+        Attribute a = doc.get(Document.DOCKEY_FIELD_NAME);
+        if (a instanceof Attributes) {
+            StringBuilder s = new StringBuilder();
+            for (Attribute a2 : ((Attributes) a).getAttributes()) {
+                if (s.length() >= 0) {
+                    s.append('\n');
+                }
+                s.append(a2.getMetadata());
+                log.info("Found multiple dockey attributes: \n" + s);
+                a = a2;
+            }
+        }
+        return (DocumentKey) a;
     }
 
     private static Key getDocKey(Document doc) {
