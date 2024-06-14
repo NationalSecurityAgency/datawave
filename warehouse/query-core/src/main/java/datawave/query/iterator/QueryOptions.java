@@ -1290,16 +1290,17 @@ public class QueryOptions implements OptionDescriber {
     }
 
     /**
-     * Helper function for validateOptions().
-     * Takes the String value of an option and returns the appropriate a boolean value.
-     * @param value: The string value of an option that should be represented by a boolean.
+     * Helper function for validateOptions(). Takes the String value of an option and returns the appropriate a boolean value.
+     *
+     * @param value:
+     *            The string value of an option that should be represented by a boolean.
      * @return: True if the option is null or not "false". False if the option has the value "false" (not case-sensitive).
      */
-    private static boolean evaluateBooleanOption(String value){
-       if(value == null) {
-           return true;
-       }
-       return !value.equalsIgnoreCase("false");
+    private static boolean evaluateBooleanOption(String value) {
+        if (value == null) {
+            return true;
+        }
+        return !value.equalsIgnoreCase("false");
     }
 
     @Override

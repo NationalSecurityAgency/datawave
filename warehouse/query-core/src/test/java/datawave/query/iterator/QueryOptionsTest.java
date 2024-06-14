@@ -21,6 +21,8 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
+import javax.management.Query;
+
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
@@ -34,8 +36,6 @@ import datawave.query.function.Equality;
 import datawave.query.function.PrefixEquality;
 import datawave.query.iterator.filter.EntryKeyIdentity;
 import datawave.query.iterator.filter.FieldIndexKeyDataTypeFilter;
-
-import javax.management.Query;
 
 public class QueryOptionsTest {
 
@@ -254,21 +254,26 @@ public class QueryOptionsTest {
 
         Map<String,String> opts = Maps.newHashMap();
         opts.put(QueryOptions.TRACK_SIZES, "true");
-        opts.put(QueryOptions.DISABLE_EVALUATION, "TrUe");
-        opts.put(QueryOptions.FULL_TABLE_SCAN_ONLY, "false");
+        opts.put(QueryOptions.ALLOW_FIELD_INDEX_EVALUATION, "TRuE");
+        opts.put(QueryOptions.DISABLE_DOCUMENTS_WITHOUT_EVENTS, "false");
         opts.put(QueryOptions.REDUCED_RESPONSE, "FaLSe");
-        opts.put(QueryOptions.INCLUDE_GROUPING_CONTEXT, "");
+        opts.put(QueryOptions.INCLUDE_GROUPING_CONTEXT, "true");
         opts.put(QueryOptions.ALLOW_TERM_FREQUENCY_LOOKUP, "abc");
         opts.put(QueryOptions.INCLUDE_RECORD_ID, null);
         opts.put(QueryOptions.SORTED_UIDS, "truefalse");
         opts.put(QueryOptions.LIMIT_FIELDS_PRE_QUERY_EVALUATION, "falsetrue");
 
+        opts.put(QueryOptions.DISABLE_EVALUATION, "true");
+        opts.put(QueryOptions.FULL_TABLE_SCAN_ONLY, "true");
+        opts.put(QueryOptions.START_TIME, "0");
+        opts.put(QueryOptions.END_TIME, "10000");
+
         QueryOptions qopts = new QueryOptions();
         qopts.validateOptions(opts);
 
         Assert.assertEquals(true, qopts.isTrackSizes());
-        Assert.assertEquals(true, qopts.isDisableEvaluation());
-        Assert.assertEquals(false, qopts.isFullTableScanOnly());
+        Assert.assertEquals(true, qopts.isAllowFieldIndexEvaluation());
+        Assert.assertEquals(false, qopts.disableIndexOnlyDocuments());
         Assert.assertEquals(false, qopts.isReducedResponse());
         Assert.assertEquals(true, qopts.isIncludeGroupingContext());
         Assert.assertEquals(true, qopts.isAllowTermFrequencyLookup());
