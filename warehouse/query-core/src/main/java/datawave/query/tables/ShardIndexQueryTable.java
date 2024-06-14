@@ -183,9 +183,11 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
 
     @Override
     public GenericQueryConfiguration initialize(AccumuloClient client, Query settings, Set<Authorizations> auths) throws Exception {
-        this.config = new ShardIndexQueryConfiguration(this, settings);
-        this.scannerFactory = new ScannerFactory(client);
-        MetadataHelper metadataHelper = initializeMetadataHelper(client, getConfig().getMetadataTableName(), auths);
+        ShardIndexQueryConfiguration config = new ShardIndexQueryConfiguration(this, settings);
+        config.setClient(client);
+        this.scannerFactory = new ScannerFactory(config);
+
+        MetadataHelper metadataHelper = initializeMetadataHelper(client, config.getMetadataTableName(), auths);
 
         if (StringUtils.isEmpty(settings.getQuery())) {
             throw new IllegalArgumentException("Query cannot be null");
@@ -424,7 +426,6 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
         baseConfig.setQueries(checkpoint.getQueries());
         config.setClient(client);
 
-        scannerFactory = new ScannerFactory(client);
         MetadataHelper metadataHelper = initializeMetadataHelper(client, config.getMetadataTableName(), config.getAuthorizations());
         config.setQueryModel(metadataHelper.getQueryModel(config.getModelTableName(), config.getModelName(), null));
 

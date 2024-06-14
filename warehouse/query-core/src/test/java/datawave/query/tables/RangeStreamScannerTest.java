@@ -105,8 +105,6 @@ public class RangeStreamScannerTest {
         client = new InMemoryAccumuloClient("", instance);
         client.tableOperations().create(SHARD_INDEX);
 
-        scannerFactory = new ScannerFactory(client, 1);
-
         BatchWriterConfig bwConfig = new BatchWriterConfig().setMaxMemory(1024L).setMaxLatency(1, TimeUnit.SECONDS).setMaxWriteThreads(1);
         BatchWriter bw = client.createBatchWriter(SHARD_INDEX, bwConfig);
 
@@ -169,6 +167,9 @@ public class RangeStreamScannerTest {
 
         config.setQueryFieldsDatatypes(dataTypes);
         config.setIndexedFields(dataTypes);
+
+        config.setClient(client);
+        scannerFactory = new ScannerFactory(config);
     }
 
     // Helper method largely copied from RangeStream class.
@@ -368,7 +369,7 @@ public class RangeStreamScannerTest {
     @Test
     public void testGetDay() throws Exception {
         // Build RangeStreamScanner
-        ScannerFactory scanners = new ScannerFactory(client, 1);
+        ScannerFactory scanners = new ScannerFactory(config);
         RangeStreamScanner rangeStreamScanner = scanners.newRangeScanner(config.getIndexTableName(), config.getAuthorizations(), config.getQuery(),
                         config.getShardsPerDayThreshold());
 
