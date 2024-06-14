@@ -21,8 +21,6 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
-import javax.management.Query;
-
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
