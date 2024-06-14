@@ -60,10 +60,15 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 import com.google.common.collect.Sets;
 
+import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.core.iterators.querylock.QueryLock;
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.configuration.QueryData;
 import datawave.data.type.AbstractGeometryType;
 import datawave.data.type.Type;
 import datawave.ingest.mapreduce.handler.dateindex.DateIndexUtil;
+import datawave.microservice.query.Query;
+import datawave.microservice.query.QueryImpl.Parameter;
 import datawave.query.CloseableIterable;
 import datawave.query.Constants;
 import datawave.query.QueryParameters;
@@ -167,11 +172,6 @@ import datawave.query.util.QueryStopwatch;
 import datawave.query.util.Tuple2;
 import datawave.query.util.TypeMetadata;
 import datawave.util.time.TraceStopwatch;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.QueryImpl.Parameter;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
-import datawave.webservice.query.configuration.QueryData;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.NotFoundQueryException;
@@ -533,6 +533,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         addOption(cfg, QueryOptions.GROUP_FIELDS_BATCH_SIZE, config.getGroupFieldsBatchSizeAsString(), true);
         addOption(cfg, QueryOptions.UNIQUE_FIELDS, config.getUniqueFields().toString(), true);
         if (config.getUniqueFields().isMostRecent()) {
+            // this may be redundant with the uniqueFields.toString(), but other code relies on this explicitly being set
             addOption(cfg, QueryOptions.MOST_RECENT_UNIQUE, Boolean.toString(true), false);
             addOption(cfg, QueryOptions.UNIQUE_CACHE_BUFFER_SIZE, Integer.toString(config.getUniqueCacheBufferSize()), false);
         }
@@ -2583,6 +2584,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
         //  @formatter:off
         QueryPlan queryPlan = new QueryPlan()
+                        .withTableName(config.getShardTableName())
                         .withQueryTree(queryTree)
                         .withRanges(Collections.singleton(range));
         //  @formatter:on

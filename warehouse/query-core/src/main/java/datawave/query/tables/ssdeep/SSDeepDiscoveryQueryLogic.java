@@ -1,6 +1,5 @@
 package datawave.query.tables.ssdeep;
 
-import java.security.Principal;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -14,23 +13,23 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
 
 import datawave.audit.SelectorExtractor;
+import datawave.core.common.connection.AccumuloConnectionFactory;
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.iterator.DatawaveTransformIterator;
+import datawave.core.query.logic.AbstractQueryLogicTransformer;
+import datawave.core.query.logic.BaseQueryLogic;
+import datawave.core.query.logic.QueryLogicTransformer;
+import datawave.core.query.logic.ResponseEnricherBuilder;
 import datawave.marking.MarkingFunctions;
+import datawave.microservice.query.Query;
 import datawave.query.discovery.DiscoveryLogic;
 import datawave.query.discovery.DiscoveryTransformer;
 import datawave.query.model.QueryModel;
 import datawave.query.util.MetadataHelperFactory;
+import datawave.security.authorization.ProxiedUserDetails;
 import datawave.security.authorization.UserOperations;
 import datawave.webservice.common.audit.Auditor;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.exception.QueryException;
-import datawave.webservice.query.iterator.DatawaveTransformIterator;
-import datawave.webservice.query.logic.AbstractQueryLogicTransformer;
-import datawave.webservice.query.logic.BaseQueryLogic;
-import datawave.webservice.query.logic.QueryLogicTransformer;
-import datawave.webservice.query.logic.ResponseEnricherBuilder;
-import datawave.webservice.query.logic.RoleManager;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
@@ -186,6 +185,14 @@ public class SSDeepDiscoveryQueryLogic extends BaseQueryLogic<DiscoveredSSDeep> 
         discoveryDelegate.setModelName(modelName);
     }
 
+    public void setMetadataTableName(String metadataTableName) {
+        discoveryDelegate.setMetadataTableName(metadataTableName);
+    }
+
+    public String getIndexTableName() {
+        return discoveryDelegate.getIndexTableName();
+    }
+
     public void setQueryModel(QueryModel model) {
         discoveryDelegate.setQueryModel(model);
     }
@@ -274,13 +281,13 @@ public class SSDeepDiscoveryQueryLogic extends BaseQueryLogic<DiscoveredSSDeep> 
     }
 
     @Override
-    public Principal getPrincipal() {
-        return discoveryDelegate.getPrincipal();
+    public ProxiedUserDetails getCurrentUser() {
+        return discoveryDelegate.getCurrentUser();
     }
 
     @Override
-    public void setPrincipal(Principal principal) {
-        discoveryDelegate.setPrincipal(principal);
+    public void setCurrentUser(ProxiedUserDetails currentUser) {
+        discoveryDelegate.setCurrentUser(currentUser);
     }
 
     @Override
@@ -404,13 +411,13 @@ public class SSDeepDiscoveryQueryLogic extends BaseQueryLogic<DiscoveredSSDeep> 
     }
 
     @Override
-    public RoleManager getRoleManager() {
-        return discoveryDelegate.getRoleManager();
+    public Set<String> getRequiredRoles() {
+        return discoveryDelegate.getRequiredRoles();
     }
 
     @Override
-    public void setRoleManager(RoleManager roleManager) {
-        discoveryDelegate.setRoleManager(roleManager);
+    public void setRequiredRoles(Set<String> requiredRoles) {
+        discoveryDelegate.setRequiredRoles(requiredRoles);
     }
 
     @Override
@@ -424,13 +431,8 @@ public class SSDeepDiscoveryQueryLogic extends BaseQueryLogic<DiscoveredSSDeep> 
     }
 
     @Override
-    public boolean canRunQuery() {
-        return discoveryDelegate.canRunQuery();
-    }
-
-    @Override
-    public boolean canRunQuery(Principal principal) {
-        return discoveryDelegate.canRunQuery(principal);
+    public boolean canRunQuery(Collection<String> userRoles) {
+        return discoveryDelegate.canRunQuery(userRoles);
     }
 
     @Override

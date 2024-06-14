@@ -2,7 +2,6 @@ package datawave.query.tables.async;
 
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.List;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
@@ -17,7 +16,6 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
-import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
 
@@ -28,6 +26,7 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 
+import datawave.core.query.configuration.Result;
 import datawave.query.tables.AccumuloResource;
 import datawave.query.tables.ResourceQueue;
 import datawave.query.tables.stats.ScanSessionStats;
@@ -51,8 +50,7 @@ public class SpeculativeScan extends Scan implements FutureCallback<Scan>, Uncau
 
     protected ExecutorService service = null;
 
-    protected LinkedBlockingDeque<Entry<Key,Value>> myResultQueue;
-
+    protected LinkedBlockingDeque<Result> myResultQueue;
     protected ReentrantLock writeControl = new ReentrantLock();
 
     protected Throwable failure = null;
@@ -82,8 +80,7 @@ public class SpeculativeScan extends Scan implements FutureCallback<Scan>, Uncau
     }
 
     public SpeculativeScan(String localTableName, Set<Authorizations> localAuths, ScannerChunk chunk, ResourceQueue delegatorReference,
-                    Class<? extends AccumuloResource> delegatedResourceInitializer, ArrayBlockingQueue<Entry<Key,Value>> results,
-                    ExecutorService callingService) {
+                    Class<? extends AccumuloResource> delegatedResourceInitializer, ArrayBlockingQueue<Result> results, ExecutorService callingService) {
         super(localTableName, localAuths, chunk, delegatorReference, delegatedResourceInitializer, results, callingService);
         scans = Lists.newArrayList();
         scanFutures = Lists.newArrayList();
@@ -231,7 +228,7 @@ public class SpeculativeScan extends Scan implements FutureCallback<Scan>, Uncau
 
     }
 
-    public LinkedBlockingDeque<Entry<Key,Value>> getQueue() {
+    public LinkedBlockingDeque<Result> getQueue() {
         return myResultQueue;
     }
 

@@ -18,6 +18,6 @@ public class MostRecentUniqueBySecond extends UniqueByFunction {
 
     @Override
     public QueryFunction duplicate() {
-        return new UniqueBySecond();
+        return new MostRecentUniqueBySecond();
     }
 }
