@@ -41,6 +41,16 @@ public class VirtualFieldIngestHelper implements VirtualIngest {
     }
 
     @Override
+    public void setGroupingPolicies(Map<String,GroupingPolicy> groupingPolicies) {
+        virtualFieldNormalizer.setGroupingPolicies(groupingPolicies);
+    }
+
+    @Override
+    public void setAllowMissing(Map<String,Boolean> allowMissing) {
+        virtualFieldNormalizer.setAllowMissing(allowMissing);
+    }
+
+    @Override
     public String getDefaultVirtualFieldSeparator() {
         return virtualFieldNormalizer.getDefaultSeparator();
     }

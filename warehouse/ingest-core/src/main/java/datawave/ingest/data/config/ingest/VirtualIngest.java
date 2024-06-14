@@ -47,6 +47,10 @@ public interface VirtualIngest {
 
     void setVirtualFieldDefinitions(Map<String,String[]> virtualFieldDefinitions);
 
+    void setGroupingPolicies(Map<String,GroupingPolicy> groupingPolicies);
+
+    void setAllowMissing(Map<String,Boolean> allowMissing);
+
     String getDefaultVirtualFieldSeparator();
 
     void setDefaultVirtualFieldSeparator(String separator);
@@ -134,7 +138,6 @@ public interface VirtualIngest {
 
             String[] fieldNames = getStrings(type, instance, config, VIRTUAL_FIELD_NAMES, null);
             String[] fieldMembers = getStrings(type, instance, config, VIRTUAL_FIELD_MEMBERS, null);
-
             String[] groupingPolicies = getStrings(type, instance, config, VIRTUAL_FIELD_GROUPING_POLICY, new String[0]);
             String[] missingPolicies = getStrings(type, instance, config, VIRTUAL_FIELD_ALLOW_MISSING, new String[0]);
             defaultSeparator = get(type, instance, config, VIRTUAL_FIELD_VALUE_SEPARATOR, " ");
@@ -145,28 +148,65 @@ public interface VirtualIngest {
             Set<String> emptySet = Collections.emptySet();
             ignoreNormalizationForFields = (null != ignoreNormalization) ? cleanSet(ignoreNormalization) : emptySet;
 
-            if (null == fieldNames && null == fieldMembers)
-                return;
+            if (virtualFieldDefinitions.isEmpty()) {
 
-            if (null == fieldNames)
-                throw new IllegalArgumentException(getConfPrefixes(type, instance)[0] + VIRTUAL_FIELD_NAMES + " must be specified.");
+                if (null == fieldNames && null == fieldMembers)
+                    return;
 
-            if (null == fieldMembers)
-                throw new IllegalArgumentException(getConfPrefixes(type, instance)[0] + VIRTUAL_FIELD_MEMBERS + " must be specified.");
+                if (null == fieldNames)
+                    throw new IllegalArgumentException(getConfPrefixes(type, instance)[0] + VIRTUAL_FIELD_NAMES + " must be specified.");
 
-            if (fieldNames.length != fieldMembers.length)
-                throw new IllegalArgumentException("Virtual field names and members do not match. Fix configuration and try again.");
+                if (null == fieldMembers)
+                    throw new IllegalArgumentException(getConfPrefixes(type, instance)[0] + VIRTUAL_FIELD_MEMBERS + " must be specified.");
 
-            if (groupingPolicies.length != 0 && groupingPolicies.length != 1 && groupingPolicies.length != fieldNames.length)
-                throw new IllegalArgumentException(
-                                "Virtual field names and grouping policies do not match.  Specify 0, 1, or the same number of policies. Fix configuration and try again.");
+                if (fieldNames.length != fieldMembers.length)
+                    throw new IllegalArgumentException("Virtual field names and members do not match. Fix configuration and try again.");
 
-            if (missingPolicies.length != 0 && missingPolicies.length != 1 && missingPolicies.length != fieldNames.length)
-                throw new IllegalArgumentException(
-                                "Virtual field names and missing policies do not match.  Specify 0, 1, or the same number of policies. Fix configuration and try again.");
+                if (groupingPolicies.length != 0 && groupingPolicies.length != 1 && groupingPolicies.length != fieldNames.length)
+                    throw new IllegalArgumentException(
+                                    "Virtual field names and grouping policies do not match.  Specify 0, 1, or the same number of policies. Fix configuration and try again.");
 
-            if (fieldNames.length == 0)
-                return;
+                if (missingPolicies.length != 0 && missingPolicies.length != 1 && missingPolicies.length != fieldNames.length)
+                    throw new IllegalArgumentException(
+                                    "Virtual field names and missing policies do not match.  Specify 0, 1, or the same number of policies. Fix configuration and try again.");
+
+                if (fieldNames.length == 0)
+                    return;
+
+                for (int i = 0; i < fieldNames.length; i++) {
+                    String name = fieldNames[i];
+
+                    String[] members = datawave.util.StringUtils.split(fieldMembers[i], '.');
+                    virtualFieldDefinitions.put(name, members);
+
+                    if (groupingPolicies.length == 0) {
+                        grouping.put(name, DEFAULT_GROUPING_POLICY);
+                    } else if (groupingPolicies.length == 1) {
+                        grouping.put(name, GroupingPolicy.valueOf(groupingPolicies[0]));
+                    } else {
+                        grouping.put(name, GroupingPolicy.valueOf(groupingPolicies[i]));
+                    }
+
+                    if (missingPolicies.length == 0) {
+                        allowMissing.put(name, Boolean.FALSE);
+                    } else if (missingPolicies.length == 1) {
+                        allowMissing.put(name, Boolean.valueOf(missingPolicies[0]));
+                    } else {
+                        allowMissing.put(name, Boolean.valueOf(missingPolicies[i]));
+                    }
+                }
+
+            } else {
+                // we are using a field list
+                for (String field : virtualFieldDefinitions.keySet()) {
+                    if (!grouping.containsKey(field)) {
+                        grouping.put(field, DEFAULT_GROUPING_POLICY);
+                    }
+                    if (!allowMissing.containsKey(field)) {
+                        allowMissing.put(field, Boolean.FALSE);
+                    }
+                }
+            }
 
             if (StringUtils.isEmpty(defaultSeparator) && StringUtils.isEmpty(defaultStartSeparator) && StringUtils.isEmpty(defaultEndSeparator))
                 throw new IllegalArgumentException(getConfPrefixes(type, instance)[0] + VIRTUAL_FIELD_VALUE_SEPARATOR + " must be specified.");
@@ -174,29 +214,6 @@ public interface VirtualIngest {
             if (StringUtils.isEmpty(defaultStartSeparator) && StringUtils.isEmpty(defaultEndSeparator)) {
                 this.defaultStartSeparator = this.defaultSeparator;
                 this.defaultEndSeparator = "";
-            }
-
-            for (int i = 0; i < fieldNames.length; i++) {
-                String name = fieldNames[i];
-
-                String[] members = datawave.util.StringUtils.split(fieldMembers[i], '.');
-                virtualFieldDefinitions.put(name, members);
-
-                if (groupingPolicies.length == 0) {
-                    grouping.put(name, DEFAULT_GROUPING_POLICY);
-                } else if (groupingPolicies.length == 1) {
-                    grouping.put(name, GroupingPolicy.valueOf(groupingPolicies[0]));
-                } else {
-                    grouping.put(name, GroupingPolicy.valueOf(groupingPolicies[i]));
-                }
-
-                if (missingPolicies.length == 0) {
-                    allowMissing.put(name, Boolean.FALSE);
-                } else if (missingPolicies.length == 1) {
-                    allowMissing.put(name, Boolean.valueOf(missingPolicies[0]));
-                } else {
-                    allowMissing.put(name, Boolean.valueOf(missingPolicies[i]));
-                }
             }
         }
 
@@ -402,6 +419,12 @@ public interface VirtualIngest {
                 for (Entry<String,String[]> vFields : this.virtualFieldDefinitions.entrySet()) {
                     tempResults.clear();
                     GroupingPolicy groupingPolicy = grouping.get(vFields.getKey());
+                    if (null == groupingPolicy) {
+                        groupingPolicy = DEFAULT_GROUPING_POLICY;
+                    }
+                    if (null == allowMissing.get(vFields.getKey())) {
+                        allowMissing.put(vFields.getKey(), Boolean.FALSE);
+                    }
                     addVirtualFields(tempResults, eventFields, groupedEventFields, vFields.getKey(), null, null, groupingPolicy,
                                     allowMissing.get(vFields.getKey()), vFields.getValue(), 0, "", "", // separator is initially empty
                                     new StringBuilder(), new StringBuilder(), null);
@@ -737,6 +760,14 @@ public interface VirtualIngest {
 
         public void setVirtualFieldDefinitions(Map<String,String[]> virtualFieldDefinitions) {
             this.virtualFieldDefinitions = virtualFieldDefinitions;
+        }
+
+        public void setGroupingPolicies(Map<String,GroupingPolicy> groupingPolicies) {
+            this.grouping = groupingPolicies;
+        }
+
+        public void setAllowMissing(Map<String,Boolean> allowMissing) {
+            this.allowMissing = allowMissing;
         }
 
         public String getDefaultSeparator() {

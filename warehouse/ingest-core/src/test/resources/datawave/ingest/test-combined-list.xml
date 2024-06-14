@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<fieldConfig>
+    <!-- fields not listed here are not indexed or tokenized. By default fields listed here are indexed
+         (forward and reverse) but >not< tokenized unless explicitly stated as such. This is an allowlist -->
+    <default stored="true" indexed="true" reverseIndexed="true" tokenized="false" reverseTokenized="false" indexType="datawave.data.type.LcNoDiacriticsType"/>
+    <nomatch stored="false" indexed="false" reverseIndexed="false" tokenized="false" reverseTokenized="false" indexType="datawave.data.type.HexStringType"/>
+    <field name="A" combine="B.C"/>
+    <field name="D" combine="E.F"/>
+</fieldConfig>

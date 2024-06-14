@@ -20,6 +20,7 @@ import datawave.ingest.data.config.NormalizedFieldAndValue;
 import datawave.ingest.data.config.ingest.BaseIngestHelper;
 import datawave.ingest.data.config.ingest.EventFieldNormalizerHelper;
 import datawave.ingest.data.config.ingest.TermFrequencyIngestHelperInterface;
+import datawave.ingest.data.config.ingest.VirtualIngest;
 import datawave.ingest.metadata.id.MetadataIdParser;
 
 public class ExtendedContentIngestHelper extends BaseIngestHelper implements TermFrequencyIngestHelperInterface {
