@@ -269,15 +269,15 @@ public class QueryOptionsTest {
         QueryOptions qopts = new QueryOptions();
         qopts.validateOptions(opts);
 
-        Assert.assertEquals(true, qopts.isTrackSizes());
-        Assert.assertEquals(true, qopts.isAllowFieldIndexEvaluation());
-        Assert.assertEquals(false, qopts.disableIndexOnlyDocuments());
-        Assert.assertEquals(false, qopts.isReducedResponse());
-        Assert.assertEquals(true, qopts.isIncludeGroupingContext());
-        Assert.assertEquals(true, qopts.isAllowTermFrequencyLookup());
-        Assert.assertEquals(true, qopts.isIncludeRecordId());
-        Assert.assertEquals(true, qopts.isSortedUIDs());
-        Assert.assertEquals(true, qopts.isLimitFieldsPreQueryEvaluation());
+        Assert.assertTrue(qopts.isTrackSizes());
+        Assert.assertTrue(qopts.isAllowFieldIndexEvaluation());
+        Assert.assertFalse(qopts.disableIndexOnlyDocuments());
+        Assert.assertFalse(qopts.isReducedResponse());
+        Assert.assertTrue(qopts.isIncludeGroupingContext());
+        Assert.assertTrue(qopts.isAllowTermFrequencyLookup());
+        Assert.assertTrue(qopts.isIncludeRecordId());
+        Assert.assertTrue(qopts.isSortedUIDs());
+        Assert.assertTrue(qopts.isLimitFieldsPreQueryEvaluation());
 
     }
 
