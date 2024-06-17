@@ -1289,6 +1289,20 @@ public class QueryOptions implements OptionDescriber {
         return new IteratorOptions(getClass().getSimpleName(), "Runs a query against the DATAWAVE tables", options, null);
     }
 
+    /**
+     * Helper function for validateOptions(). Takes the String value of an option and returns the appropriate a boolean value.
+     *
+     * @param value:
+     *            The string value of an option that should be represented by a boolean.
+     * @return True if the option is null or not "false". False if the option has the value "false" (not case-sensitive).
+     */
+    private static boolean evaluateBooleanOption(String value) {
+        if (value == null) {
+            return true;
+        }
+        return !value.equalsIgnoreCase("false");
+    }
+
     @Override
     public boolean validateOptions(Map<String,String> options) {
         if (log.isTraceEnabled()) {
@@ -1300,11 +1314,11 @@ public class QueryOptions implements OptionDescriber {
         // If we don't have a query, make sure it's because
         // we aren't performing any Jexl evaluation
         if (options.containsKey(DISABLE_EVALUATION)) {
-            this.disableEvaluation = Boolean.parseBoolean(options.get(DISABLE_EVALUATION));
+            this.disableEvaluation = evaluateBooleanOption(options.get(DISABLE_EVALUATION));
         }
 
         if (options.containsKey(DISABLE_FIELD_INDEX_EVAL)) {
-            this.disableFiEval = Boolean.parseBoolean(options.get(DISABLE_FIELD_INDEX_EVAL));
+            this.disableFiEval = evaluateBooleanOption(options.get(DISABLE_FIELD_INDEX_EVAL));
         }
 
         if (options.containsKey(LIMIT_SOURCES)) {
@@ -1316,7 +1330,7 @@ public class QueryOptions implements OptionDescriber {
         }
 
         if (options.containsKey(DISABLE_DOCUMENTS_WITHOUT_EVENTS)) {
-            this.disableIndexOnlyDocuments = Boolean.parseBoolean(options.get(DISABLE_DOCUMENTS_WITHOUT_EVENTS));
+            this.disableIndexOnlyDocuments = evaluateBooleanOption(options.get(DISABLE_DOCUMENTS_WITHOUT_EVENTS));
         }
 
         // If we're not provided a query, we may not be performing any
@@ -1337,7 +1351,7 @@ public class QueryOptions implements OptionDescriber {
         }
 
         if (options.containsKey(QUERY_MAPPING_COMPRESS)) {
-            compressedMappings = Boolean.valueOf(options.get(QUERY_MAPPING_COMPRESS));
+            compressedMappings = evaluateBooleanOption(options.get(QUERY_MAPPING_COMPRESS));
         }
 
         this.validateTypeMetadata(options);
@@ -1368,15 +1382,15 @@ public class QueryOptions implements OptionDescriber {
 
         // Boolean: should each attribute maintain a ColumnVisibility.
         if (options.containsKey(REDUCED_RESPONSE)) {
-            setReducedResponse(Boolean.parseBoolean(options.get(REDUCED_RESPONSE)));
+            setReducedResponse(evaluateBooleanOption(options.get(REDUCED_RESPONSE)));
         }
 
         if (options.containsKey(FULL_TABLE_SCAN_ONLY)) {
-            setFullTableScanOnly(Boolean.parseBoolean(options.get(FULL_TABLE_SCAN_ONLY)));
+            setFullTableScanOnly(evaluateBooleanOption(options.get(FULL_TABLE_SCAN_ONLY)));
         }
 
         if (options.containsKey(TRACK_SIZES) && options.get(TRACK_SIZES) != null) {
-            setTrackSizes(Boolean.parseBoolean(options.get(TRACK_SIZES)));
+            setTrackSizes(evaluateBooleanOption(options.get(TRACK_SIZES)));
         }
 
         if (options.containsKey(PROJECTION_FIELDS)) {
@@ -1390,7 +1404,7 @@ public class QueryOptions implements OptionDescriber {
                 this.allowListedFields = new HashSet<>();
                 Collections.addAll(this.allowListedFields, StringUtils.split(fieldList, Constants.PARAM_VALUE_SEP));
             }
-            if (options.containsKey(HIT_LIST) && Boolean.parseBoolean(options.get(HIT_LIST))) {
+            if (options.containsKey(HIT_LIST) && evaluateBooleanOption(options.get(HIT_LIST))) {
                 this.allowListedFields.add(JexlEvaluation.HIT_TERM_FIELD);
             }
         }
@@ -1426,22 +1440,22 @@ public class QueryOptions implements OptionDescriber {
         this.mustUseFieldIndex = false;
 
         if (options.containsKey(FILTER_MASKED_VALUES)) {
-            this.filterMaskedValues = Boolean.parseBoolean(options.get(FILTER_MASKED_VALUES));
+            this.filterMaskedValues = evaluateBooleanOption(options.get(FILTER_MASKED_VALUES));
         }
 
         if (options.containsKey(INCLUDE_DATATYPE)) {
-            this.includeDatatype = Boolean.parseBoolean(options.get(INCLUDE_DATATYPE));
+            this.includeDatatype = evaluateBooleanOption(options.get(INCLUDE_DATATYPE));
             if (this.includeDatatype) {
                 this.datatypeKey = options.getOrDefault(DATATYPE_FIELDNAME, DEFAULT_DATATYPE_FIELDNAME);
             }
         }
 
         if (options.containsKey(INCLUDE_RECORD_ID)) {
-            this.includeRecordId = Boolean.parseBoolean(options.get(INCLUDE_RECORD_ID));
+            this.includeRecordId = evaluateBooleanOption(options.get(INCLUDE_RECORD_ID));
         }
 
         if (options.containsKey(COLLECT_TIMING_DETAILS)) {
-            this.collectTimingDetails = Boolean.parseBoolean(options.get(COLLECT_TIMING_DETAILS));
+            this.collectTimingDetails = evaluateBooleanOption(options.get(COLLECT_TIMING_DETAILS));
         }
 
         if (options.containsKey(STATSD_HOST_COLON_PORT)) {
@@ -1453,7 +1467,7 @@ public class QueryOptions implements OptionDescriber {
         }
 
         if (options.containsKey(INCLUDE_HIERARCHY_FIELDS)) {
-            this.includeHierarchyFields = Boolean.parseBoolean(options.get(INCLUDE_HIERARCHY_FIELDS));
+            this.includeHierarchyFields = evaluateBooleanOption(options.get(INCLUDE_HIERARCHY_FIELDS));
         }
 
         // parse seek thresholds before building filters/aggregators
@@ -1548,7 +1562,7 @@ public class QueryOptions implements OptionDescriber {
         this.timeFilter = new TimeFilter(startTime, endTime);
 
         if (options.containsKey(INCLUDE_GROUPING_CONTEXT)) {
-            this.setIncludeGroupingContext(Boolean.parseBoolean(options.get(INCLUDE_GROUPING_CONTEXT)));
+            this.setIncludeGroupingContext(evaluateBooleanOption(options.get(INCLUDE_GROUPING_CONTEXT)));
         }
 
         if (options.containsKey(DOCUMENT_PERMUTATION_CLASSES)) {
@@ -1576,7 +1590,7 @@ public class QueryOptions implements OptionDescriber {
         }
 
         if (options.containsKey(LIMIT_FIELDS_PRE_QUERY_EVALUATION)) {
-            this.setLimitFieldsPreQueryEvaluation(Boolean.parseBoolean(options.get(LIMIT_FIELDS_PRE_QUERY_EVALUATION)));
+            this.setLimitFieldsPreQueryEvaluation(evaluateBooleanOption(options.get(LIMIT_FIELDS_PRE_QUERY_EVALUATION)));
         }
 
         if (options.containsKey(LIMIT_FIELDS_FIELD)) {
@@ -1596,7 +1610,7 @@ public class QueryOptions implements OptionDescriber {
         if (options.containsKey(UNIQUE_FIELDS)) {
             this.setUniqueFields(UniqueFields.from(options.get(UNIQUE_FIELDS)));
             if (options.containsKey(MOST_RECENT_UNIQUE)) {
-                this.getUniqueFields().setMostRecent(Boolean.valueOf(options.get(MOST_RECENT_UNIQUE)));
+                this.getUniqueFields().setMostRecent(evaluateBooleanOption(options.get(MOST_RECENT_UNIQUE)));
                 if (options.containsKey(UNIQUE_CACHE_BUFFER_SIZE)) {
                     this.setUniqueCacheBufferSize(Integer.parseInt(options.get(UNIQUE_CACHE_BUFFER_SIZE)));
                 }
@@ -1605,7 +1619,7 @@ public class QueryOptions implements OptionDescriber {
 
         if (options.containsKey(HIT_LIST)) {
             log.debug("Adding hitList to QueryOptions? " + options.get(HIT_LIST));
-            if (Boolean.parseBoolean(options.get(HIT_LIST))) {
+            if (evaluateBooleanOption(options.get(HIT_LIST))) {
                 this.setArithmetic(new HitListArithmetic());
             }
         } else {
@@ -1614,7 +1628,7 @@ public class QueryOptions implements OptionDescriber {
 
         if (options.containsKey(DATE_INDEX_TIME_TRAVEL)) {
             log.debug("Adding dateIndexTimeTravel to QueryOptions? " + options.get(DATE_INDEX_TIME_TRAVEL));
-            boolean dateIndexTimeTravel = Boolean.parseBoolean(options.get(DATE_INDEX_TIME_TRAVEL));
+            boolean dateIndexTimeTravel = evaluateBooleanOption(options.get(DATE_INDEX_TIME_TRAVEL));
             if (dateIndexTimeTravel) {
                 this.setDateIndexTimeTravel(dateIndexTimeTravel);
             }
@@ -1641,15 +1655,15 @@ public class QueryOptions implements OptionDescriber {
         }
 
         if (options.containsKey(CONTAINS_INDEX_ONLY_TERMS)) {
-            this.setContainsIndexOnlyTerms(Boolean.parseBoolean(options.get(CONTAINS_INDEX_ONLY_TERMS)));
+            this.setContainsIndexOnlyTerms(evaluateBooleanOption(options.get(CONTAINS_INDEX_ONLY_TERMS)));
         }
 
         if (options.containsKey(ALLOW_FIELD_INDEX_EVALUATION)) {
-            this.setAllowFieldIndexEvaluation(Boolean.parseBoolean(options.get(ALLOW_FIELD_INDEX_EVALUATION)));
+            this.setAllowFieldIndexEvaluation(evaluateBooleanOption(options.get(ALLOW_FIELD_INDEX_EVALUATION)));
         }
 
         if (options.containsKey(ALLOW_TERM_FREQUENCY_LOOKUP)) {
-            this.setAllowTermFrequencyLookup(Boolean.parseBoolean(options.get(ALLOW_TERM_FREQUENCY_LOOKUP)));
+            this.setAllowTermFrequencyLookup(evaluateBooleanOption(options.get(ALLOW_TERM_FREQUENCY_LOOKUP)));
         }
 
         if (options.containsKey(HDFS_SITE_CONFIG_URLS)) {
@@ -1701,7 +1715,7 @@ public class QueryOptions implements OptionDescriber {
         }
 
         if (options.containsKey(IVARATOR_PERSIST_VERIFY)) {
-            boolean verify = Boolean.parseBoolean(options.get(IVARATOR_PERSIST_VERIFY));
+            boolean verify = evaluateBooleanOption(options.get(IVARATOR_PERSIST_VERIFY));
             FileSortedSet.PersistOptions persistOptions = getIvaratorPersistOptions();
             this.setIvaratorPersistOptions(new FileSortedSet.PersistOptions(verify, verify, persistOptions.getNumElementsToVerify()));
         }
@@ -1729,7 +1743,7 @@ public class QueryOptions implements OptionDescriber {
         }
 
         if (options.containsKey(COMPRESS_SERVER_SIDE_RESULTS)) {
-            this.setCompressResults(Boolean.parseBoolean(options.get(COMPRESS_SERVER_SIDE_RESULTS)));
+            this.setCompressResults(evaluateBooleanOption(options.get(COMPRESS_SERVER_SIDE_RESULTS)));
         }
 
         if (options.containsKey(MAX_EVALUATION_PIPELINES)) {
@@ -1737,7 +1751,7 @@ public class QueryOptions implements OptionDescriber {
         }
 
         if (options.containsKey(SERIAL_EVALUATION_PIPELINE)) {
-            this.setSerialEvaluationPipeline(Boolean.parseBoolean(options.get(SERIAL_EVALUATION_PIPELINE)));
+            this.setSerialEvaluationPipeline(evaluateBooleanOption(options.get(SERIAL_EVALUATION_PIPELINE)));
         }
 
         if (options.containsKey(MAX_PIPELINE_CACHED_RESULTS)) {
@@ -1745,21 +1759,21 @@ public class QueryOptions implements OptionDescriber {
         }
 
         if (options.containsKey(TERM_FREQUENCIES_REQUIRED)) {
-            this.setTermFrequenciesRequired(Boolean.parseBoolean(options.get(TERM_FREQUENCIES_REQUIRED)));
+            this.setTermFrequenciesRequired(evaluateBooleanOption(options.get(TERM_FREQUENCIES_REQUIRED)));
         }
         this.setTermFrequencyFields(parseTermFrequencyFields(options));
         this.setContentExpansionFields(parseContentExpansionFields(options));
 
         if (options.containsKey(DATE_INDEX_TIME_TRAVEL)) {
-            this.dateIndexTimeTravel = Boolean.parseBoolean(options.get(DATE_INDEX_TIME_TRAVEL));
+            this.dateIndexTimeTravel = evaluateBooleanOption(options.get(DATE_INDEX_TIME_TRAVEL));
         }
 
         if (options.containsKey(SORTED_UIDS)) {
-            this.sortedUIDs = Boolean.parseBoolean(options.get(SORTED_UIDS));
+            this.sortedUIDs = evaluateBooleanOption(options.get(SORTED_UIDS));
         }
 
         if (options.containsKey(DEBUG_MULTITHREADED_SOURCES)) {
-            this.debugMultithreadedSources = Boolean.parseBoolean(options.get(DEBUG_MULTITHREADED_SOURCES));
+            this.debugMultithreadedSources = evaluateBooleanOption(options.get(DEBUG_MULTITHREADED_SOURCES));
         }
 
         if (options.containsKey(ACTIVE_QUERY_LOG_NAME)) {
@@ -1771,7 +1785,7 @@ public class QueryOptions implements OptionDescriber {
         }
 
         if (options.containsKey(EXCERPT_FIELDS_NO_HIT_CALLOUT)) {
-            setExcerptFieldsNoHitCallout(Boolean.parseBoolean(options.get(EXCERPT_FIELDS_NO_HIT_CALLOUT)));
+            setExcerptFieldsNoHitCallout(evaluateBooleanOption(options.get(EXCERPT_FIELDS_NO_HIT_CALLOUT)));
         }
 
         if (options.containsKey(EXCERPT_ITERATOR)) {
