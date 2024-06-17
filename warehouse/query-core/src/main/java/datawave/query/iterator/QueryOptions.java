@@ -1290,7 +1290,7 @@ public class QueryOptions implements OptionDescriber {
     }
 
     /**
-     * Helper function for validateOptions(). Takes the String value of an option and returns the appropriate a boolean value.
+     * Helper function for validateOptions(). Takes the String value of an option and returns the appropriate boolean value.
      *
      * @param value:
      *            The string value of an option that should be represented by a boolean.
