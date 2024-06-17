@@ -9,6 +9,7 @@ import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -19,6 +20,8 @@ import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+
+import javax.measure.spi.SystemOfUnits;
 
 import org.apache.commons.collections4.SetUtils;
 import org.apache.log4j.Logger;
@@ -269,10 +272,14 @@ public class EvaluationPhaseFilterFunctions {
                     return FunctionalSet.singleton(getHitTerm(fieldValue));
                 }
             } catch (PatternSyntaxException e) {
+                System.out.println("exception occurred " + e);
                 if (NumericalEncoder.isPossiblyEncoded(regex)) {
+                    System.out.println("Number encoder is possible encoded");
                     if (regex.equals(ValueTuple.getNormalizedStringValue(fieldValue))) {
+                        System.out.println("Found match");
                         return FunctionalSet.singleton(getHitTerm(fieldValue));
                     }
+                    System.out.println("Did not find match");
                 } else {
                     throw e;
                 }
@@ -309,8 +316,11 @@ public class EvaluationPhaseFilterFunctions {
                             .orElseGet(FunctionalSet::emptySet);
             // @formatter:on
             } catch (PatternSyntaxException e) {
+                System.out.println("Exception occurred iter " + e);
+                ;
                 if (NumericalEncoder.isPossiblyEncoded(regex)) {
                 // @formatter:off
+                    System.out.println("Is possibly encoded: " + regex);
                 return StreamSupport.stream(values.spliterator(), false)
                         .filter(Objects::nonNull)
                         .filter((value) -> regex.equals(ValueTuple.getNormalizedStringValue(value)))
@@ -360,9 +370,9 @@ public class EvaluationPhaseFilterFunctions {
                 final boolean caseInsensitive = regex.matches(CASE_INSENSITIVE);
                 // @formatter:off
                 Stream<ValueTuple> matches = StreamSupport.stream(values.spliterator(), false)
-                        .filter(Objects::nonNull)
-                        .filter((value) -> isMatchForPattern(pattern, caseInsensitive, value))
-                        .map(EvaluationPhaseFilterFunctions::getHitTerm);
+                                .filter(Objects::nonNull)
+                                .filter((value) -> isMatchForPattern(pattern, caseInsensitive, value))
+                                .map(EvaluationPhaseFilterFunctions::getHitTerm);
                 // @formatter:on
                 return matches;
             } catch (PatternSyntaxException e) {
