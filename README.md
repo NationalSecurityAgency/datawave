@@ -4,9 +4,8 @@
 
 # My Project
 
-![CI](https://github.com/username/repository/actions/workflows/ci.yml/badge.svg?jobs=build-and-test-microservices)
 [![Apache License][li]][ll] ![Build Status](https://github.com/NationalSecurityAgency/datawave/actions/workflows/tests.yml/badge.svg)
-
+![CI](https://github.com/NationalSecurityAgency/datawave/actions/workflows/tests.yml/badge.svg?jobs=build-and-test-microservices)
 DataWave is a Java-based ingest and query framework that leverages [Apache Accumulo](http://accumulo.apache.org/) to provide fast, secure access to your data. DataWave supports a wide variety of use cases, including but not limited to...
 
 * Data fusion across structured and unstructured datasets
