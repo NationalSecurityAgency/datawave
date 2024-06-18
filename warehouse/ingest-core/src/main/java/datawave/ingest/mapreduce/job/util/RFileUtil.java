@@ -11,6 +11,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
 
+import org.apache.accumulo.core.client.Scanner;
+import org.apache.accumulo.core.client.rfile.RFileSource;
 import org.apache.accumulo.core.crypto.CryptoFactoryLoader;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -29,6 +31,24 @@ import org.apache.hadoop.fs.Path;
  * Collection of utilities to locate, read, and split rfiles
  */
 public class RFileUtil {
+    public static Scanner getRFileScanner(Configuration config, String... paths) {
+        RFileSource[] sources = new RFileSource[paths.length];
+        try {
+            for (int i = 0; i < paths.length; i++) {
+                Path p = new Path(paths[i]);
+                FileSystem fs = FileSystem.get(p.toUri(), config);
+                if (!fs.exists(p)) {
+                    throw new IOException("file not found " + p);
+                }
+                sources[i] = new RFileSource(fs.open(p), fs.getFileStatus(p).getLen());
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("could not open source rfiles: " + paths, e);
+        }
+
+        return org.apache.accumulo.core.client.rfile.RFile.newScanner().from(sources).withoutSystemIterators().build();
+    }
+
     public static RFile.Reader getRFileReader(Configuration config, Path rfile) throws IOException {
         FileSystem fs = rfile.getFileSystem(config);
         if (!fs.exists(rfile)) {
