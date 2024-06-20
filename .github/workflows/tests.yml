@@ -64,10 +64,6 @@ jobs:
           java-version: ${{env.JAVA_VERSION}}
           maven-version: 3.9.5
           cache: 'maven'
-      - name: Run a script
-        run: |
-          echo "This step will fail"
-          exit 1
       - name: Build and Run Unit Tests
         env:
           USER_NAME: ${{ secrets.USER_NAME }}
@@ -86,6 +82,7 @@ jobs:
   # Build the code and run the microservice unit/integration tests.
   build-and-test-microservices:
     runs-on: ubuntu-latest
+    continue-on-error: true
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
@@ -121,7 +118,10 @@ jobs:
           $RUN_TESTS \
             || { echo "***** TESTS FAILED. Attempting retry."; $RUN_TESTS; } \
             || { echo "***** TESTS FAILED. Attempting final retry."; $RUN_TESTS; }
-        continue-on-error: true
+      - name: Run a script
+        run: |
+          echo "This step will fail"
+          exit 1
 
   quickstart-build-and-test:
     runs-on: ubuntu-latest
