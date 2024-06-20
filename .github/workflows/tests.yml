@@ -2,13 +2,12 @@ name: Tests
 
 on:
   push:
-    paths-ignore: [ '*.md', 'CODEOWNERS', 'LICENSE' ]
+    paths-ignore: ['*.md', 'CODEOWNERS', 'LICENSE']
     branches:
-      - 'integration'
-      - 'release/version*'
-      - 'task/GITHUB-2414'
+    - 'integration'
+    - 'release/version*'
   pull_request:
-    paths-ignore: [ '*.md', 'CODEOWNERS', 'LICENSE' ]
+    paths-ignore: ['*.md', 'CODEOWNERS', 'LICENSE']
   workflow_dispatch:
 
 env:
@@ -23,56 +22,56 @@ jobs:
   check-code-formatting:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
-      - name: Set up JDK ${{env.JAVA_VERSION}}
-        uses: actions/setup-java@v3
-        with:
-          distribution: ${{env.JAVA_DISTRIBUTION}}
-          java-version: ${{env.JAVA_VERSION}}
-          maven-version: 3.9.5
-          cache: 'maven'
-      - name: Format code
-        env:
-          USER_NAME: ${{ secrets.USER_NAME }}
-          ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
-        run: |
-          mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -V -B -e -ntp "-Dstyle.color=always" clean formatter:format sortpom:sort impsort:sort -Dmaven.build.cache.enabled=false -Pautoformat
-          git status
-          git diff-index --quiet HEAD || (echo "Modified files found. Creating new commit with formatting fixes" && echo "diffs_found=true" >> "$GITHUB_ENV")
-      - name: Commit Changes
-        run: |
-          if [ "$diffs_found" = true ]; then
-            git config --global user.name "GitHub Actions"
-            git config --global user.email "datawave@github.com"
-            git commit -am "Formatting job fix"
-            git push
-          else
-            echo "Nothing to do"
-          fi
+    - name: Checkout Code
+      uses: actions/checkout@v3
+    - name: Set up JDK ${{env.JAVA_VERSION}}
+      uses: actions/setup-java@v3
+      with:
+        distribution: ${{env.JAVA_DISTRIBUTION}}
+        java-version: ${{env.JAVA_VERSION}}
+        maven-version: 3.9.5
+        cache: 'maven'
+    - name: Format code
+      env:
+        USER_NAME: ${{ secrets.USER_NAME }}
+        ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+      run: |
+        mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -V -B -e -ntp "-Dstyle.color=always" clean formatter:format sortpom:sort impsort:sort -Dmaven.build.cache.enabled=false -Pautoformat
+        git status
+        git diff-index --quiet HEAD || (echo "Modified files found. Creating new commit with formatting fixes" && echo "diffs_found=true" >> "$GITHUB_ENV")
+    - name: Commit Changes
+      run: |
+        if [ "$diffs_found" = true ]; then
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "datawave@github.com"
+          git commit -am "Formatting job fix"
+          git push
+        else
+          echo "Nothing to do"
+        fi
 
   # Build the code and run the unit/integration tests.
   build-and-test:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
-      - name: Set up JDK ${{env.JAVA_VERSION}}
-        uses: actions/setup-java@v3
-        with:
-          distribution: ${{env.JAVA_DISTRIBUTION}}
-          java-version: ${{env.JAVA_VERSION}}
-          maven-version: 3.9.5
-          cache: 'maven'
-      - name: Build and Run Unit Tests
-        env:
-          USER_NAME: ${{ secrets.USER_NAME }}
-          ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
-        run: |
-          RUN_TESTS="mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -V -B -e -ntp "-Dstyle.color=always" -Pdev,examples,assemble,spotbugs -Dmaven.build.cache.enabled=false -Ddeploy -Ddist -T1C clean verify"
-          $RUN_TESTS \
-            || { echo "***** TESTS FAILED. Attempting retry."; $RUN_TESTS; } \
-            || { echo "***** TESTS FAILED. Attempting final retry."; $RUN_TESTS; }
+    - name: Checkout Code
+      uses: actions/checkout@v3
+    - name: Set up JDK ${{env.JAVA_VERSION}}
+      uses: actions/setup-java@v3
+      with:
+        distribution: ${{env.JAVA_DISTRIBUTION}}
+        java-version: ${{env.JAVA_VERSION}}
+        maven-version: 3.9.5
+        cache: 'maven'
+    - name: Build and Run Unit Tests
+      env:
+        USER_NAME: ${{ secrets.USER_NAME }}
+        ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+      run: |
+        RUN_TESTS="mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -V -B -e -ntp "-Dstyle.color=always" -Pdev,examples,assemble,spotbugs -Dmaven.build.cache.enabled=false -Ddeploy -Ddist -T1C clean verify"
+        $RUN_TESTS \
+          || { echo "***** TESTS FAILED. Attempting retry."; $RUN_TESTS; } \
+          || { echo "***** TESTS FAILED. Attempting final retry."; $RUN_TESTS; }
 
   # This step can be uncommented to support feature development.  When developing a
   # feature which spans multiple repos, you can update the poms to use the latest
@@ -126,35 +125,35 @@ jobs:
   quickstart-build-and-test:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
-      - name: Set up JDK ${{env.JAVA_VERSION}}
-        uses: actions/setup-java@v3
-        with:
-          distribution: ${{env.JAVA_DISTRIBUTION}}
-          java-version: ${{env.JAVA_VERSION}}
-          maven-version: 3.9.5
-          cache: 'maven'
-      # Allow us to use the "--squash" option below
-      - name: Turn on Docker experimental features and move Docker data root
-        run: |
-          if [[ -f /etc/docker/daemon.json ]]; then
-            sudo sed -ri 's|\s*}\s*$|, "experimental": true, "data-root": "/mnt/docker" }|' /etc/docker/daemon.json
-          else
-            echo $'{\n    "experimental": true, "data-root": "/mnt/docker"\n}' | sudo tee /etc/docker/daemon.json
-          fi
-          sudo systemctl restart docker
-          echo Docker Experimental Features: $(docker version -f '{{.Server.Experimental}}')
-      # Builds the quickstart docker image and run the query tests
-      - name: Quickstart Query Tests
-        env:
-          DW_DATAWAVE_BUILD_COMMAND: "mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -B -V -e -ntp -Dstyle.color=always -Dmaven.build.cache.enabled=false -Pdev -Ddeploy -Dtar -DskipTests clean package"
-          DOCKER_BUILD_OPTS: "--squash --force-rm"
-          USER_NAME: ${{ secrets.USER_NAME }}
-          ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
-        run: |
-          TAG=$(mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -q -N -Dmaven.build.cache.enabled=false -Dexec.executable='echo' -Dexec.args='${project.version}' exec:exec)
-          contrib/datawave-quickstart/docker/docker-build.sh ${TAG} --docker-opts "${DOCKER_BUILD_OPTS}"
+    - name: Checkout Code
+      uses: actions/checkout@v3
+    - name: Set up JDK ${{env.JAVA_VERSION}}
+      uses: actions/setup-java@v3
+      with:
+        distribution: ${{env.JAVA_DISTRIBUTION}}
+        java-version: ${{env.JAVA_VERSION}}
+        maven-version: 3.9.5
+        cache: 'maven'
+    # Allow us to use the "--squash" option below
+    - name: Turn on Docker experimental features and move Docker data root
+      run: |
+        if [[ -f /etc/docker/daemon.json ]]; then
+          sudo sed -ri 's|\s*}\s*$|, "experimental": true, "data-root": "/mnt/docker" }|' /etc/docker/daemon.json
+        else
+          echo $'{\n    "experimental": true, "data-root": "/mnt/docker"\n}' | sudo tee /etc/docker/daemon.json
+        fi
+        sudo systemctl restart docker
+        echo Docker Experimental Features: $(docker version -f '{{.Server.Experimental}}')
+    # Builds the quickstart docker image and run the query tests
+    - name: Quickstart Query Tests
+      env:
+        DW_DATAWAVE_BUILD_COMMAND: "mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -B -V -e -ntp -Dstyle.color=always -Dmaven.build.cache.enabled=false -Pdev -Ddeploy -Dtar -DskipTests clean package"
+        DOCKER_BUILD_OPTS: "--squash --force-rm"
+        USER_NAME: ${{ secrets.USER_NAME }}
+        ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+      run: |
+        TAG=$(mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -q -N -Dmaven.build.cache.enabled=false -Dexec.executable='echo' -Dexec.args='${project.version}' exec:exec)
+        contrib/datawave-quickstart/docker/docker-build.sh ${TAG} --docker-opts "${DOCKER_BUILD_OPTS}"
 
   compose-build-and-test-latest-snapshots:
     runs-on: ubuntu-latest
