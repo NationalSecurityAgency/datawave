@@ -101,6 +101,10 @@ jobs:
             ${{ runner.os }}-maven-build-
             ${{ runner.os }}-maven-format-
             ${{ runner.os }}-maven-
+      - name: Run a script
+        run: |
+          echo "This step will fail"
+          exit 1
       - name: Build Project
         env:
           USER_NAME: ${{ secrets.USER_NAME }}
@@ -118,10 +122,6 @@ jobs:
           $RUN_TESTS \
             || { echo "***** TESTS FAILED. Attempting retry."; $RUN_TESTS; } \
             || { echo "***** TESTS FAILED. Attempting final retry."; $RUN_TESTS; }
-      - name: Run a script
-        run: |
-          echo "This step will fail"
-          exit 1
 
   quickstart-build-and-test:
     runs-on: ubuntu-latest
