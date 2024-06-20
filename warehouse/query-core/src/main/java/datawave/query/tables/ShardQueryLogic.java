@@ -1167,6 +1167,11 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
             setCollectTimingDetails(false);
         }
 
+        // Configure whether query IDs are logged on the tservers.
+        String tserverLoggingActive = settings.findParameter(QueryParameters.TSERVER_LOGGING_ACTIVE).getParameterValue().trim();
+        if (!tserverLoggingActive.isEmpty()) {
+            config.setTserverLoggingActive(Boolean.parseBoolean(tserverLoggingActive));
+        }
         stopwatch.stop();
     }
 

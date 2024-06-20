@@ -59,6 +59,7 @@ import datawave.data.type.Type;
 import datawave.ingest.data.config.ingest.CompositeIngest;
 import datawave.query.Constants;
 import datawave.query.DocumentSerialization;
+import datawave.query.QueryParameters;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.ExcerptFields;
 import datawave.query.attributes.UniqueFields;
@@ -556,6 +557,7 @@ public class QueryOptions implements OptionDescriber {
 
         this.fieldCounts = other.fieldCounts;
         this.termCounts = other.termCounts;
+
     }
 
     public String getQuery() {
