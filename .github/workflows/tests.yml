@@ -100,10 +100,6 @@ jobs:
             ${{ runner.os }}-maven-build-
             ${{ runner.os }}-maven-format-
             ${{ runner.os }}-maven-
-      - name: Run a script
-        run: |
-          echo "This step will fail"
-          exit 1
       - name: Build Project
         env:
           USER_NAME: ${{ secrets.USER_NAME }}
