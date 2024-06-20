@@ -107,6 +107,10 @@ jobs:
         run: |
           BUILD="mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -V -B -e -Pdev,examples,assemble,spotbugs -Dmaven.build.cache.enabled=false -DskipServices -Ddeploy -Ddist -T1C -pl "-:config-service" clean install -DskipTests"
           $BUILD
+      - name: Run a script
+        run: |
+          echo "This step will fail"
+          exit 1
       - name: Run Microservice Unit Tests
         env:
           USER_NAME: ${{ secrets.USER_NAME }}
