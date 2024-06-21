@@ -65,12 +65,6 @@ public class RegexFunctionVisitor extends FunctionIndexQueryExpansionVisitor {
         if (functionMetadata.name().equals(INCLUDE_REGEX) || functionMetadata.name().equals(EXCLUDE_REGEX)) {
             List<JexlNode> arguments = functionMetadata.args();
 
-            if (arguments.get(0) instanceof ASTAndNode) {
-                // without this check we would have changed the AND to an OR
-                log.warn("filter:includeRegex(FIELD1 && FIELD2...) is currently not supported for rewrite");
-                return returnNode;
-            }
-
             List<ASTIdentifier> identifiers = JexlASTHelper.getIdentifiers(arguments.get(0));
             List<JexlNode> extractChildren = new ArrayList<>(identifiers.size());
             List<JexlNode> keepChildren = new ArrayList<>(identifiers.size());
@@ -94,7 +88,7 @@ public class RegexFunctionVisitor extends FunctionIndexQueryExpansionVisitor {
                     // we've already rewritten our one node
                     returnNode = extractChildren.get(0);
                 } else {
-                    if (functionMetadata.name().equals(INCLUDE_REGEX)) {
+                    if (functionMetadata.name().equals(INCLUDE_REGEX) && arguments.get(0) instanceof ASTOrNode) {
                         returnNode = JexlNodeFactory.createOrNode(extractChildren);
                     } else {
                         // build an AND node because of how DeMorgan's law works with expanding negations
@@ -107,7 +101,7 @@ public class RegexFunctionVisitor extends FunctionIndexQueryExpansionVisitor {
                 List<JexlNode> joint = new ArrayList<>();
                 List<JexlNode> newArgs = new ArrayList<>();
 
-                if (functionMetadata.name().equals(INCLUDE_REGEX)) {
+                if (functionMetadata.name().equals(INCLUDE_REGEX) && arguments.get(0) instanceof ASTOrNode) {
                     newArgs.add(JexlNodeFactory.createOrNode(keepChildren));
                     extractNode = JexlNodeFactory.createOrNode(extractChildren);
                 } else {
@@ -122,7 +116,7 @@ public class RegexFunctionVisitor extends FunctionIndexQueryExpansionVisitor {
                 joint.add(extractNode);
                 joint.add(newFunc);
 
-                if (functionMetadata.name().equals(INCLUDE_REGEX)) {
+                if (functionMetadata.name().equals(INCLUDE_REGEX) && arguments.get(0) instanceof ASTOrNode) {
                     returnNode = JexlNodeFactory.createOrNode(joint);
                 } else {
                     returnNode = JexlNodeFactory.createAndNode(joint);
