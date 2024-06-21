@@ -7,8 +7,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.commons.jexl3.parser.ASTAndNode;
 import org.apache.commons.jexl3.parser.ASTFunctionNode;
 import org.apache.commons.jexl3.parser.ASTIdentifier;
+import org.apache.commons.jexl3.parser.ASTOrNode;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.log4j.Logger;
@@ -19,6 +21,8 @@ import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.functions.FunctionJexlNodeVisitor;
+import datawave.query.language.functions.jexl.Jexl;
+import datawave.query.language.tree.FunctionNode;
 import datawave.query.parser.JavaRegexAnalyzer;
 import datawave.query.parser.JavaRegexAnalyzer.JavaRegexParseException;
 import datawave.query.util.MetadataHelper;
@@ -61,42 +65,74 @@ public class RegexFunctionVisitor extends FunctionIndexQueryExpansionVisitor {
         if (functionMetadata.name().equals(INCLUDE_REGEX) || functionMetadata.name().equals(EXCLUDE_REGEX)) {
             List<JexlNode> arguments = functionMetadata.args();
 
+            if (arguments.get(0) instanceof ASTAndNode) {
+                // without this check we would have changed the AND to an OR
+                log.warn("filter:includeRegex(FIELD1 && FIELD2...) is currently not supported for rewrite");
+                return returnNode;
+            }
+
             List<ASTIdentifier> identifiers = JexlASTHelper.getIdentifiers(arguments.get(0));
-            List<JexlNode> children = new ArrayList<>(identifiers.size());
+            List<JexlNode> extractChildren = new ArrayList<>(identifiers.size());
+            List<JexlNode> keepChildren = new ArrayList<>(identifiers.size());
 
             for (ASTIdentifier identifier : identifiers) {
                 JexlNode regexNode = buildRegexNode(identifier, functionMetadata.name(), JexlNodes.getIdentifierOrLiteralAsString(arguments.get(1)));
                 if (regexNode != null) {
-                    children.add(regexNode);
+                    extractChildren.add(regexNode);
+                } else {
+                    keepChildren.add(JexlNodeFactory.buildIdentifier(identifier.getName()));
                 }
+
             }
 
-            // only re-parent if the same number of regex nodes were built
-            if (identifiers.size() == children.size()) {
-                switch (identifiers.size()) {
-                    case 0:
-                        return returnNode;
-                    case 1:
-                        if (log.isTraceEnabled()) {
-                            log.trace("Rewrote \"" + JexlStringBuildingVisitor.buildQueryWithoutParse(node) + "\" into \""
-                                            + JexlStringBuildingVisitor.buildQueryWithoutParse(children.get(0)) + "\"");
-                        }
-                        return children.get(0);
-                    default:
-                        if (functionMetadata.name().equals(INCLUDE_REGEX)) {
-                            returnNode = JexlNodeFactory.createOrNode(children);
-                        } else {
-                            // build an AND node because of how DeMorgan's law works with expanding negations
-                            returnNode = JexlNodeFactory.createAndNode(children);
-                        }
+            if (extractChildren.size() == 0) {
+                // nothing to rewrite
+                return returnNode;
+            } else if (keepChildren.size() == 0) {
+                // rewrite all nodes
+                if (identifiers.size() == 1) {
+                    // we've already rewritten our one node
+                    returnNode = extractChildren.get(0);
+                } else {
+                    if (functionMetadata.name().equals(INCLUDE_REGEX)) {
+                        returnNode = JexlNodeFactory.createOrNode(extractChildren);
+                    } else {
+                        // build an AND node because of how DeMorgan's law works with expanding negations
+                        returnNode = JexlNodeFactory.createAndNode(extractChildren);
+                    }
+                }
+            } else {
+                // construct each and put it all together
+                JexlNode extractNode;
+                List<JexlNode> joint = new ArrayList<>();
+                List<JexlNode> newArgs = new ArrayList<>();
 
-                        if (log.isTraceEnabled()) {
-                            log.trace("Rewrote \"" + JexlStringBuildingVisitor.buildQueryWithoutParse(node) + "\" into \""
-                                            + JexlStringBuildingVisitor.buildQueryWithoutParse(returnNode) + "\"");
-                        }
-                        return returnNode;
+                if (functionMetadata.name().equals(INCLUDE_REGEX)) {
+                    newArgs.add(JexlNodeFactory.createOrNode(keepChildren));
+                    extractNode = JexlNodeFactory.createOrNode(extractChildren);
+                } else {
+                    newArgs.add(JexlNodeFactory.createAndNode(keepChildren));
+                    extractNode = JexlNodeFactory.createAndNode(extractChildren);
+                }
+
+                newArgs.add(arguments.get(1));
+                JexlNode newFunc = FunctionJexlNodeVisitor.makeFunctionFrom(functionMetadata.namespace(), functionMetadata.name(),
+                                newArgs.toArray(new JexlNode[0]));
+
+                joint.add(extractNode);
+                joint.add(newFunc);
+
+                if (functionMetadata.name().equals(INCLUDE_REGEX)) {
+                    returnNode = JexlNodeFactory.createOrNode(joint);
+                } else {
+                    returnNode = JexlNodeFactory.createAndNode(joint);
                 }
             }
+        }
+
+        if (log.isTraceEnabled()) {
+            log.trace("Rewrote \"" + JexlStringBuildingVisitor.buildQueryWithoutParse(node) + "\" into \""
+                            + JexlStringBuildingVisitor.buildQueryWithoutParse(returnNode) + "\"");
         }
         return returnNode;
     }
