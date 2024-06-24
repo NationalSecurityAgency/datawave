@@ -7,8 +7,9 @@ services:
   quickstart:
     profiles:
       - quickstart
-    command: ["datawave-bootstrap.sh", "--web"]
-    image: datawave/quickstart-compose:6.7.0-SNAPSHOT
+    # To run the wildfly webservice, change `--accumulo` to `--web`
+    command: ["datawave-bootstrap.sh", "--accumulo"]
+    image: datawave/quickstart-compose:7.0.1-SNAPSHOT
     environment:
       - DW_CONTAINER_HOST=quickstart
       - DW_DATAWAVE_WEB_JAVA_OPTS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:8787 -Duser.timezone=GMT -Dfile.encoding=UTF-8 -Djava.net.preferIPv4Stack=true
@@ -30,9 +31,9 @@ services:
       # accumulo monitor
       - "9995:9995"
       # web server
-      - "8443:8443"
+      - "9443:8443"
       # web server debug port
-      - "8787:8787"
+      - "5011:8787"
     extra_hosts:
       - "${DW_HOSTNAME}:${DW_HOST_IP}"
       - "${DW_HOST_FQDN}:${DW_HOST_IP}"
@@ -79,9 +80,49 @@ services:
       consul:
         condition: service_started
 
+  # When auto.create.topics.enable is true, this causes deleted topics to be recreated at random.  So, leave it disabled.
+  kafka:
+    image: bitnami/kafka:3.2.3
+    ports:
+      - "9094:9094"
+    networks:
+      - demo
+    environment:
+      - KAFKA_CFG_NODE_ID=1
+      - KAFKA_CFG_PROCESS_ROLES=controller,broker
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CLIENT:PLAINTEXT,CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT
+      - KAFKA_CFG_LISTENERS=CLIENT://:9092,CONTROLLER://:9093,EXTERNAL://:9094
+      - KAFKA_CFG_ADVERTISED_LISTENERS=CLIENT://kafka:9092,EXTERNAL://${DW_HOSTNAME}:9094
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@kafka:9093
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_INTER_BROKER_LISTENER_NAME=CLIENT
+      - KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=false
+      - KAFKA_CFG_DELETE_TOPICS_ENABLE=true
+
+  kafdrop:
+    profiles:
+      - management
+      - full
+    image: obsidiandynamics/kafdrop
+    ports:
+      - "8999:9000"
+    networks:
+      - demo
+    environment:
+      - "KAFKA_BROKERCONNECT=${DW_HOSTNAME}:9094"
+    # This mapping is required to enable kafdrop to communicate with
+    # the external, host-bound port for kafka
+    extra_hosts:
+      - "${DW_HOSTNAME}:${DW_HOST_IP}"
+      - "${DW_HOST_FQDN}:${DW_HOST_IP}"
+    depends_on:
+      kafka:
+        condition: service_started
+
   configuration:
-    entrypoint: [ "java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005","-jar","app.jar" ]
-    image: datawave/config-service:3.0.1-SNAPSHOT
+    entrypoint: [ "java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5009","-jar","app.jar" ]
+    image: datawave/config-service:4.0.1-SNAPSHOT
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,native,open_actuator
@@ -93,7 +134,7 @@ services:
       - KEY_ALIAS=certificate
     ports:
       - "8888:8888"
-      - "5005:5005"
+      - "5009:5009"
     volumes:
       - ${CONFIG_DIR:-./config}:/microservice-config:ro
       - ${PKI_DIR:-./pki}:/etc/pki:ro
@@ -105,8 +146,7 @@ services:
         condition: service_started
 
   cache:
-    entrypoint: [ "java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005","-jar","app.jar" ]
-    image: datawave/hazelcast-service:3.0.1-SNAPSHOT
+    image: datawave/hazelcast-service:4.0.1-SNAPSHOT
     scale: 1
     command:
       - --spring.profiles.active=consul,compose,remoteauth
@@ -117,7 +157,6 @@ services:
       - "5701-5703"
       - "8080"
       - "8843:8443"
-      - "5006:5005"
     volumes:
       - ${PKI_DIR:-./pki}:/etc/pki:ro
       - ./logs:/logs
@@ -134,17 +173,17 @@ services:
         condition: service_started
 
   authorization:
-    entrypoint: [ "java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005","-jar","app.jar" ]
-    image: datawave/authorization-service:3.0.1-SNAPSHOT
+    entrypoint: [ "java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5008","-jar","app.jar" ]
+    image: datawave/authorization-service:4.0.1-SNAPSHOT
     command:
       - --spring.output.ansi.enabled=ALWAYS
-      - --spring.profiles.active=consul,mock,compose
+      - --spring.profiles.active=consul,mock,compose,federation
       - --spring.cloud.consul.host=consul
       - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${random.value}
     ports:
       - "8080"
       - "8343:8443"
-      - "5007:5005"
+      - "5008:5008"
     volumes:
       - ${PKI_DIR:-./pki}:/etc/pki:ro
       - ./logs:/logs
@@ -164,8 +203,7 @@ services:
     profiles:
       - accumulo
       - full
-    entrypoint: [ "java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005","-jar","app.jar" ]
-    image: datawave/accumulo-service:3.0.1-SNAPSHOT
+    image: datawave/accumulo-service:4.0.1-SNAPSHOT
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,compose,remoteauth
@@ -182,7 +220,6 @@ services:
       - "${DW_HOST_FQDN}:${DW_HOST_IP}"
     ports:
       - "9143:8443"
-      - "5008:5005"
     volumes:
       - ${PKI_DIR:-./pki}:/etc/pki:ro
       - ./logs:/logs
@@ -199,8 +236,7 @@ services:
         condition: service_healthy
 
   audit:
-    entrypoint: [ "java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005","-jar","app.jar" ]
-    image: datawave/audit-service:3.0.2-SNAPSHOT
+    image: datawave/audit-service:4.0.1-SNAPSHOT
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,compose,remoteauth
@@ -217,7 +253,6 @@ services:
     ports:
       - "8080"
       - "9043:8443"
-      - "5009:5005"
     volumes:
       - ${PKI_DIR:-./pki}:/etc/pki:ro
       - ./logs:/logs
@@ -234,8 +269,8 @@ services:
         condition: service_healthy
 
   metrics:
-    entrypoint: ["java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005","-jar","app.jar"]
-    image: datawave/query-metric-service:3.0.8-SNAPSHOT
+    entrypoint: ["java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5007","-jar","app.jar"]
+    image: datawave/query-metric-service:4.0.2-SNAPSHOT
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,compose,remoteauth
@@ -252,7 +287,7 @@ services:
     ports:
       - "8180:8080"
       - "8543:8443"
-      - "5010:5005"
+      - "5007:5007"
     volumes:
       - ${PKI_DIR:-./pki}:/etc/pki:ro
       - ./logs:/logs
@@ -269,8 +304,10 @@ services:
         condition: service_healthy
 
   dictionary:
-    entrypoint: [ "java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005","-jar","app.jar" ]
-    image: datawave/dictionary-service:3.0.1-SNAPSHOT
+    profiles:
+      - dictionary
+      - full
+    image: datawave/dictionary-service:4.0.1-SNAPSHOT
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,compose,remoteauth
@@ -287,7 +324,233 @@ services:
     ports:
       - "8280:8080"
       - "8643:8443"
-      - "5011:5005"
+    volumes:
+      - ${PKI_DIR:-./pki}:/etc/pki:ro
+      - ./logs:/logs
+    networks:
+      - demo
+    healthcheck:
+      test: curl -f http://localhost:8080/dictionary/mgmt/health
+    depends_on:
+      authorization:
+        condition: service_healthy
+
+  # If you want to test cached results, enable the cachedresults profile
+  mysql:
+    profiles:
+      - cachedresults
+    image: mysql:8.0.32
+    environment:
+      - MYSQL_RANDOM_ROOT_PASSWORD=true
+      - MYSQL_DATABASE=cachedresults
+      - MYSQL_USER=datawave
+      - MYSQL_PASSWORD=secret
+    networks:
+      - demo
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  # If you want to test cached results, set the CACHED_RESULTS environment variable to 'true'
+  query:
+    entrypoint: ["java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005","-jar","app.jar"]
+    image: datawave/query-service:1.0.1-SNAPSHOT
+    command:
+      - --spring.output.ansi.enabled=ALWAYS
+      - --spring.profiles.active=consul,compose,remoteauth,querymessaging,metricssource,query,mrquery,cachedresults,federation
+      - --spring.cloud.consul.host=consul
+      - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${random.value}
+    environment:
+      - AUDIT_SERVER_URL=http://audit:8080/audit
+      - HADOOP_HOST=${DW_HADOOP_HOST}
+      - HADOOP_CONF_DIR=${HADOOP_CONF_DIR:-/etc/hadoop/conf}
+      - "BACKEND=${BACKEND:-kafka}"
+      - CACHED_RESULTS=${CACHED_RESULTS:-false}
+    ports:
+      - "8080:8080"
+      - "8443:8443"
+      - "5005:5005"
+    volumes:
+      - ${PKI_DIR:-./pki}:/etc/pki:ro
+      - ./logs:/logs
+      - ${HADOOP_CONF_DIR:-hadoop_conf}:${HADOOP_CONF_DIR:-/etc/hadoop/conf}:ro
+    networks:
+      - demo
+    healthcheck:
+      test: curl -f http://localhost:8080/query/mgmt/health
+      interval: 10s
+      timeout: 1s
+      start_period: 30s
+      retries: 3
+    depends_on:
+      audit:
+        condition: service_healthy
+      authorization:
+        condition: service_healthy
+      metrics:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+      executor-pool1:
+        condition: service_started
+
+  mapreduce-query:
+    profiles:
+      - full
+    entrypoint: ["java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005","-jar","app.jar"]
+    image: datawave/mapreduce-query-service:1.0.1-SNAPSHOT
+    command:
+      - --spring.output.ansi.enabled=ALWAYS
+      - --spring.profiles.active=consul,compose,remoteauth,query,mrquery,federation
+      - --spring.cloud.consul.host=consul
+      - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${random.value}
+    environment:
+      - ZOOKEEPER_HOST=${DW_ZOOKEEPER_HOST}
+      - HADOOP_HOST=${DW_HADOOP_HOST}
+      - HADOOP_CONF_DIR=${HADOOP_CONF_DIR:-/etc/hadoop/conf}
+    ports:
+      - "50005:5005"
+    volumes:
+      - ${PKI_DIR:-./pki}:/etc/pki:ro
+      - ./logs:/logs
+      - ${HADOOP_CONF_DIR:-hadoop_conf}:${HADOOP_CONF_DIR:-/etc/hadoop/conf}:ro
+    networks:
+      - demo
+    healthcheck:
+      test: curl -f http://localhost:8080/mrquery/mgmt/health
+      interval: 10s
+      timeout: 1s
+      start_period: 30s
+      retries: 3
+    depends_on:
+      audit:
+        condition: service_healthy
+      authorization:
+        condition: service_healthy
+      metrics:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+      executor-pool1:
+        condition: service_started
+
+  executor-pool1:
+    entrypoint: ["java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5006","-jar","app.jar"]
+    image: datawave/query-executor-service:1.0.1-SNAPSHOT
+    command:
+      - --spring.application.name=executor-pool1
+      - --spring.cloud.config.name=executor
+      - --spring.output.ansi.enabled=ALWAYS
+      - --spring.profiles.active=consul,compose,remoteauth,querymessaging,metricssource,query,pool1,federation
+      - --spring.cloud.consul.host=consul
+      - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${random.value}
+    environment:
+      - ZOOKEEPER_HOST=${DW_ZOOKEEPER_HOST}
+      - HADOOP_HOST=${DW_HADOOP_HOST}
+      - BACKEND=${BACKEND:-kafka}
+      - HADOOP_CONF_DIR=${HADOOP_CONF_DIR:-/etc/hadoop/conf}
+    # This mapping is required to enable the metrics service to communicate
+    # with host-deployed services like hadoop, zookeeper, and accumulo.
+    # These values are set locally in .env via bootstrap.sh
+    extra_hosts:
+      - "${DW_HOSTNAME}:${DW_HOST_IP}"
+      - "${DW_HOST_FQDN}:${DW_HOST_IP}"
+    ports:
+      - "8380:8080"
+      - "8743:8443"
+      - "5006:5006"
+    volumes:
+      - ${PKI_DIR:-./pki}:/etc/pki:ro
+      - ./logs/pool1:/logs
+      - ${HADOOP_CONF_DIR:-hadoop_conf}:${HADOOP_CONF_DIR:-/etc/hadoop/conf}:ro
+    networks:
+      - demo
+    healthcheck:
+      test: curl -f http://localhost:8080/executor/mgmt/health
+      interval: 10s
+      timeout: 1s
+      start_period: 30s
+      retries: 3
+    depends_on:
+      rabbitmq:
+        condition: service_started
+      authorization:
+        condition: service_healthy
+      metrics:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+
+  executor-pool2:
+    profiles:
+      - pool2
+      - full
+    image: datawave/query-executor-service:1.0.1-SNAPSHOT
+    command:
+      - --spring.application.name=executor-pool2
+      - --spring.cloud.config.name=executor
+      - --spring.output.ansi.enabled=ALWAYS
+      - --spring.profiles.active=consul,compose,remoteauth,querymessaging,metricssource,query,pool2,federation
+      - --spring.cloud.consul.host=consul
+      - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${random.value}
+    environment:
+      - ZOOKEEPER_HOST=${DW_ZOOKEEPER_HOST}
+      - HADOOP_HOST=${DW_HADOOP_HOST}
+      - BACKEND=${BACKEND:-kafka}
+      - HADOOP_CONF_DIR=${HADOOP_CONF_DIR:-/etc/hadoop/conf}
+    # This mapping is required to enable the metrics service to communicate
+    # with host-deployed services like hadoop, zookeeper, and accumulo.
+    # These values are set locally in .env via bootstrap.sh
+    extra_hosts:
+      - "${DW_HOSTNAME}:${DW_HOST_IP}"
+      - "${DW_HOST_FQDN}:${DW_HOST_IP}"
+    ports:
+      - "8480:8080"
+      - "8243:8443"
+    volumes:
+      - ${PKI_DIR:-./pki}:/etc/pki:ro
+      - ./logs/pool2:/logs
+      - ${HADOOP_CONF_DIR:-hadoop_conf}:${HADOOP_CONF_DIR:-/etc/hadoop/conf}:ro
+    networks:
+      - demo
+    healthcheck:
+      test: curl -f http://localhost:8080/executor/mgmt/health
+      interval: 10s
+      timeout: 1s
+      start_period: 30s
+      retries: 3
+    depends_on:
+      rabbitmq:
+        condition: service_started
+      authorization:
+        condition: service_healthy
+      metrics:
+        condition: service_healthy
+
+  modification:
+    entrypoint: ["java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5010","-jar","app.jar"]
+    profiles:
+      - modification
+      - full
+    image: datawave/modification-service:1.0.1-SNAPSHOT
+    command:
+      - --spring.output.ansi.enabled=ALWAYS
+      - --spring.profiles.active=consul,compose,remoteauth,query
+      - --spring.cloud.consul.host=consul
+      - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${random.value}
+    environment:
+      - ZOOKEEPER_HOST=${DW_ZOOKEEPER_HOST}
+    # This mapping is required to enable the metrics service to communicate
+    # with host-deployed services like hadoop, zookeeper, and accumulo.
+    # These values are set locally in .env via bootstrap.sh
+    extra_hosts:
+      - "${DW_HOSTNAME}:${DW_HOST_IP}"
+      - "${DW_HOST_FQDN}:${DW_HOST_IP}"
+    ports:
+      - "8680:8080"
+      - "9343:8443"
+      - "5010:5010"
     volumes:
       - ${PKI_DIR:-./pki}:/etc/pki:ro
       - ./logs:/logs

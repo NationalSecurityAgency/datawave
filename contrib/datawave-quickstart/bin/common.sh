@@ -2,6 +2,7 @@ BIN_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 source "${BIN_DIR}/logging.sh"
 source "${BIN_DIR}/query.sh"
+source "${BIN_DIR}/modification.sh"
 
 # Upon uninstall, tarballs will be preserved in place by default.
 # To remove them, use DW_UNINSTALL_RM_BINARIES_FLAG_*
@@ -80,6 +81,24 @@ function askYesNo() {
    done
 }
 
+function verifyChecksum() {
+  # $1 - distribution URI
+  # $2 - service directory
+  # $3 - tarball sha512 checksum
+  local tarballName="$(basename "$1")"
+  if [[ -f "$2/${tarballName}" ]]; then
+      local calculatedChecksum="$( cd $2 && sha512sum ${tarballName} )"
+      if [[ "${calculatedChecksum}" = "$3  ${tarballName}" ]] ; then
+          info "Checksum verification success... [${tarballName}]"
+      else
+          error "------------------------------------------------------------------------"
+          error "$(printRed "CHECKSUM MISMATCH") - Could not verify integrity of: ${tarballName}"
+          error "------------------------------------------------------------------------"
+          kill -INT $$
+      fi
+  fi
+}
+
 function downloadTarball() {
    # Downloads the specified tarball, if it doesn't already exist.
    # If you want to utilize a tarball from the local file system, simply use
@@ -90,7 +109,13 @@ function downloadTarball() {
    if [ ! -f "${tarballdir}/${tarball}" ] ; then
       if [[ ${uri} == file://* ]] ; then
           $( cd "${tarballdir}" && cp  "${uri:7}" ./${tarball} ) || error "File copy failed for ${uri:7}"
-      else
+      elif [[ ${uri} == http://* ]] ; then
+          if ! askYesNo "Are you sure you want to download ${tarball} using HTTP? $( printRed "This can potentially be insecure." )" ; then
+            kill -INT $$
+          else
+            $( cd "${tarballdir}" && wget ${DW_WGET_OPTS} "${uri}" )
+          fi
+      elif [[ ${uri} == https://* ]] ; then
           $( cd "${tarballdir}" && wget ${DW_WGET_OPTS} "${uri}" )
       fi
    fi

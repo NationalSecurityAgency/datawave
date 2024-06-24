@@ -2,12 +2,13 @@ package datawave.query.tables;
 
 import java.io.InterruptedIOException;
 import java.lang.Thread.UncaughtExceptionHandler;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
@@ -18,12 +19,12 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.clientImpl.ScannerOptions;
 import org.apache.accumulo.core.clientImpl.TabletLocator;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
-import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.log4j.Logger;
@@ -40,17 +41,28 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.Service;
 
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.configuration.QueryData;
+import datawave.core.query.configuration.Result;
+import datawave.core.query.configuration.ResultContext;
+import datawave.core.query.logic.QueryCheckpoint;
+import datawave.core.query.logic.QueryKey;
+import datawave.microservice.query.Query;
 import datawave.query.tables.async.Scan;
 import datawave.query.tables.async.ScannerChunk;
 import datawave.query.tables.async.SessionArbiter;
 import datawave.query.tables.async.SpeculativeScan;
-import datawave.webservice.query.Query;
 
-public class BatchScannerSession extends ScannerSession implements Iterator<Entry<Key,Value>>, FutureCallback<Scan>, SessionArbiter, UncaughtExceptionHandler {
+public class BatchScannerSession extends ScannerSession implements Iterator<Result>, FutureCallback<Scan>, SessionArbiter, UncaughtExceptionHandler {
 
     private static final double RANGE_MULTIPLIER = 5;
 
     private static final double QUEUE_MULTIPLIER = 25;
+
+    /**
+     * The configuration used for checkpoints
+     */
+    private GenericQueryConfiguration config;
 
     /**
      * Delegates scanners to us, blocking if none are available or used by other sources.
@@ -67,9 +79,21 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
      */
     private Set<Authorizations> localAuths;
 
+    /**
+     * This is the iterator of scanner chunks. Basically the work queue.
+     */
     protected Iterator<List<ScannerChunk>> scannerBatches;
 
+    /**
+     * This is the current batch of chunks pending submission
+     */
     protected BlockingQueue<ScannerChunk> currentBatch;
+
+    // set when we need operations to stop gracefully enough to checkpoint
+    protected volatile boolean needToCheckpoint = false;
+
+    // set when the processing is at a place where we can checkpoint
+    protected volatile boolean readyToCheckpoint = false;
 
     protected ExecutorService service = null;
 
@@ -92,11 +116,37 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
 
     protected AtomicInteger runnableCount = new AtomicInteger(0);
 
+    protected Set<ResultContext> runningQueries = Collections.synchronizedSet(new HashSet<>());
+
     protected boolean backoffEnabled = false;
 
     protected boolean speculativeScanning = false;
 
     protected int threadCount = 5;
+
+    public List<QueryCheckpoint> checkpoint(QueryKey queryKey) {
+        needToCheckpoint = true;
+        while (!readyToCheckpoint && isRunning()) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {}
+        }
+        List<QueryCheckpoint> checkpoints = new ArrayList<>();
+        for (ResultContext context : runningQueries) {
+            if (!context.isFinished()) {
+                checkpoints.add(new QueryCheckpoint(queryKey, Collections.singletonList((QueryData) context)));
+            }
+
+        }
+        // now add all of the remaining chunks
+        for (Iterator<List<ScannerChunk>> it = scannerBatches; it.hasNext();) {
+            List<ScannerChunk> chunks = it.next();
+            for (ScannerChunk chunk : chunks) {
+                checkpoints.add(new QueryCheckpoint(queryKey, Collections.singletonList((QueryData) chunk.getContext())));
+            }
+        }
+        return checkpoints;
+    }
 
     private class BatchReaderThreadFactory implements ThreadFactory {
 
@@ -105,9 +155,7 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
         private StringBuilder threadIdentifier;
         private UncaughtExceptionHandler uncaughtHandler = null;
 
-        public BatchReaderThreadFactory(StringBuilder threadName, UncaughtExceptionHandler handler)
-
-        {
+        public BatchReaderThreadFactory(StringBuilder threadName, UncaughtExceptionHandler handler) {
             uncaughtHandler = handler;
             this.threadIdentifier = threadName;
         }
@@ -188,6 +236,11 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
         this.threadCount = threads;
         service = new ThreadPoolExecutor(threads, threads, 120, TimeUnit.MINUTES, new LinkedBlockingQueue<>(), new BatchReaderThreadFactory(threadId, this));
         service = MoreExecutors.listeningDecorator(service);
+        return this;
+    }
+
+    public BatchScannerSession setConfig(GenericQueryConfiguration config) {
+        this.config = config;
         return this;
     }
 
@@ -277,9 +330,7 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
                 return;
             }
 
-            while (scannerBatches.hasNext())
-
-            {
+            while (scannerBatches.hasNext() && !needToCheckpoint) {
                 if (runnableCount.get() < (threadCount * RANGE_MULTIPLIER)) {
                     if (currentBatch.isEmpty()) {
                         List<ScannerChunk> chunks = scannerBatches.next();
@@ -310,7 +361,11 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
             if (log.isTraceEnabled())
                 log.trace("waiting " + runnableCount.get());
             submitTasks();
-            while (runnableCount.get() > 0) {
+
+            // notify those that are wondering
+            readyToCheckpoint = true;
+
+            while (runnableCount.get() > 0 && !needToCheckpoint) {
                 Thread.sleep(1);
                 // if a failure did not occur, let's check the interrupted status
                 if (isRunning()) {
@@ -331,6 +386,9 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
         } catch (Exception e) {
             uncaughtExceptionHandler.uncaughtException(Thread.currentThread().currentThread(), e);
             Throwables.propagate(e);
+        } finally {
+            // make sure nobody is hung up on this flag....
+            readyToCheckpoint = true;
         }
     }
 
@@ -451,8 +509,10 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
 
     protected void submitScan(Scan scan, boolean increment) {
         ListenableFuture<Scan> future = (ListenableFuture<Scan>) service.submit(scan);
-        if (increment)
+        if (increment) {
             runnableCount.incrementAndGet();
+            runningQueries.add((scan.getScannerChunk().getContext()));
+        }
         Futures.addCallback(future, this, MoreExecutors.newDirectExecutorService());
     }
 
@@ -465,7 +525,10 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
      */
     public BatchScannerSession setOptions(SessionOptions options) {
         return this;
+    }
 
+    public void setConsistencyLevel(ScannerBase.ConsistencyLevel consistencyLevel) {
+        this.options.setConsistencyLevel(consistencyLevel);
     }
 
     /**
@@ -503,6 +566,12 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
 
         if (finishedScan.finished()) {
             runnableCount.decrementAndGet();
+
+            // if we have pulled all of the results of the front end for this query, then and only then can we remove it.
+            // otherwise we still need it for checkpointing
+            if (finishedScan.getScannerChunk().getContext().isFinished()) {
+                runningQueries.remove(finishedScan.getScannerChunk().getContext());
+            }
 
             finishedScan.close();
 
@@ -657,6 +726,11 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
     @Override
     public void close() {
         stopAsync();
+        try {
+            awaitTerminated();
+        } catch (Exception e) {
+
+        }
         service.shutdownNow();
     }
 

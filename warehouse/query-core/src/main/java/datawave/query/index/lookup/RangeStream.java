@@ -22,6 +22,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
@@ -66,6 +67,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
+import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.data.type.Type;
 import datawave.query.CloseableIterable;
 import datawave.query.Constants;
@@ -85,6 +87,7 @@ import datawave.query.jexl.visitors.ExecutableDeterminationVisitor;
 import datawave.query.jexl.visitors.IngestTypePruningVisitor;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
+import datawave.query.jexl.visitors.order.OrderByCostVisitor;
 import datawave.query.planner.QueryPlan;
 import datawave.query.tables.RangeStreamScanner;
 import datawave.query.tables.ScannerFactory;
@@ -96,7 +99,6 @@ import datawave.query.util.Tuples;
 import datawave.query.util.TypeMetadata;
 import datawave.util.StringUtils;
 import datawave.util.time.DateHelper;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.PreConditionFailedQueryException;
 import datawave.webservice.query.exception.QueryException;
@@ -139,6 +141,8 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
     protected ExecutorService streamExecutor;
 
     protected boolean collapseUids = false;
+    protected boolean fieldCounts = false;
+    protected boolean termCounts = false;
 
     protected Set<String> indexOnlyFields = Sets.newHashSet();
 
@@ -153,6 +157,8 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
         streamExecutor = new ThreadPoolExecutor(executeLookupMin, maxLookup, 100, TimeUnit.MILLISECONDS, runnables);
         fieldDataTypes = config.getQueryFieldsDatatypes();
         collapseUids = config.getCollapseUids();
+        fieldCounts = config.getUseFieldCounts();
+        termCounts = config.getUseTermCounts();
         try {
             Set<String> ioFields = metadataHelper.getIndexOnlyFields(null);
             if (null != ioFields) {
@@ -255,7 +261,12 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                     }
                 }
 
-                this.itr = filter(concat(transform(queryStream, new TupleToRange(queryStream.currentNode(), config))), getEmptyPlanPruner());
+                this.itr = filter(concat(transform(queryStream, new TupleToRange(config.getShardTableName(), queryStream.currentNode(), config))),
+                                getEmptyPlanPruner());
+
+                if (config.isSortQueryByCounts() && (config.getUseFieldCounts() || config.getUseTermCounts())) {
+                    this.itr = transform(itr, new OrderingTransform(config.getUseFieldCounts(), config.getUseTermCounts()));
+                }
             }
         } finally {
             // shut down the executor as all threads have completed
@@ -330,29 +341,29 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
         }
     }
 
-    public static class MinimizeRanges implements Function<QueryPlan,QueryPlan> {
+    /**
+     * Transform that reorders a query tree according to field or term counts.
+     * <p>
+     * If both flags are set then the more precise term counts are used.
+     */
+    public static class OrderingTransform implements Function<QueryPlan,QueryPlan> {
 
-        StreamContext myContext;
+        private final boolean useFieldCounts;
+        private final boolean useTermCounts;
 
-        public MinimizeRanges(StreamContext myContext) {
-            this.myContext = myContext;
+        public OrderingTransform(boolean useFieldCounts, boolean useTermCounts) {
+            this.useFieldCounts = useFieldCounts;
+            this.useTermCounts = useTermCounts;
         }
 
+        @Override
         public QueryPlan apply(QueryPlan plan) {
-
-            if (StreamContext.EXCEEDED_TERM_THRESHOLD == myContext || StreamContext.EXCEEDED_VALUE_THRESHOLD == myContext) {
-
-                Set<Range> newRanges = Sets.newHashSet();
-
-                for (Range range : plan.getRanges()) {
-                    if (isEventSpecific(range)) {
-                        Key topKey = range.getStartKey();
-                        newRanges.add(new Range(topKey.getRow().toString(), true, topKey.getRow() + Constants.NULL_BYTE_STRING, false));
-                    } else {
-                        newRanges.add(range);
-                    }
-                }
-                plan.setRanges(newRanges);
+            if (useTermCounts) {
+                Map<String,Long> counts = plan.getTermCounts().getCounts();
+                OrderByCostVisitor.orderByTermCount(plan.getQueryTree(), counts);
+            } else if (useFieldCounts) {
+                Map<String,Long> counts = plan.getTermCounts().getCounts();
+                OrderByCostVisitor.orderByFieldCount(plan.getQueryTree(), counts);
             }
             return plan;
         }
@@ -563,8 +574,10 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                                 config.getShardsPerDayThreshold());
 
                 uidSetting = new IteratorSetting(stackStart++, createUidsIteratorClass);
-                uidSetting.addOption(CreateUidsIterator.COLLAPSE_UIDS, Boolean.valueOf(collapseUids).toString());
-                uidSetting.addOption(CreateUidsIterator.PARSE_TLD_UIDS, Boolean.valueOf(config.getParseTldUids()).toString());
+                uidSetting.addOption(CreateUidsIterator.COLLAPSE_UIDS, Boolean.toString(collapseUids));
+                uidSetting.addOption(CreateUidsIterator.PARSE_TLD_UIDS, Boolean.toString(config.getParseTldUids()));
+                uidSetting.addOption(CreateUidsIterator.FIELD_COUNTS, Boolean.toString(fieldCounts));
+                uidSetting.addOption(CreateUidsIterator.TERM_COUNTS, Boolean.toString(termCounts));
 
             } else {
                 // Setup so this is a pass-through
@@ -572,8 +585,10 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                                 config.getShardsPerDayThreshold());
 
                 uidSetting = new IteratorSetting(stackStart++, createUidsIteratorClass);
-                uidSetting.addOption(CreateUidsIterator.COLLAPSE_UIDS, Boolean.valueOf(false).toString());
-                uidSetting.addOption(CreateUidsIterator.PARSE_TLD_UIDS, Boolean.valueOf(false).toString());
+                uidSetting.addOption(CreateUidsIterator.COLLAPSE_UIDS, Boolean.toString(false));
+                uidSetting.addOption(CreateUidsIterator.PARSE_TLD_UIDS, Boolean.toString(false));
+                uidSetting.addOption(CreateUidsIterator.FIELD_COUNTS, Boolean.toString(false));
+                uidSetting.addOption(CreateUidsIterator.TERM_COUNTS, Boolean.toString(false));
             }
 
             /*

@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
@@ -19,7 +20,6 @@ import org.apache.accumulo.core.client.admin.Locations;
 import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.TabletId;
-import org.apache.accumulo.core.util.UtilWaitThread;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.hadoop.conf.Configuration;
@@ -355,7 +355,12 @@ public class ShardedTableMapFile {
                 keepRetrying = false;
             } catch (Exception e) {
                 log.warn(e.getClass().getName() + ":" + e.getMessage() + " ... retrying ...", e);
-                UtilWaitThread.sleep(3000);
+                try {
+                    TimeUnit.MILLISECONDS.sleep(3000);
+                } catch (InterruptedException ex) {
+                    log.error(e.getMessage(), ex);
+                }
+
                 splitToLocation.clear();
             }
         }

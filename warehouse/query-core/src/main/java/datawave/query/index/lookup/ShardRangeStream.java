@@ -122,11 +122,13 @@ public class ShardRangeStream extends RangeStream {
         }
 
         public QueryPlan apply(Entry<Key,Value> entry) {
-            Key start = new Key(entry.getKey().getRow(), entry.getKey().getColumnFamily());
-            Key end = entry.getKey().followingKey(PartialKey.ROW_COLFAM);
+            Key key = entry.getKey();
+            Key start = new Key(key.getRow(), key.getColumnFamily());
+            Key end = start.followingKey(PartialKey.ROW_COLFAM);
             Range range = new Range(start, true, end, false);
             //  @formatter:off
             return new QueryPlan()
+                            .withTableName(config.getShardTableName())
                             .withQueryTree(node)
                             .withRanges(Collections.singleton(range));
             //  @formatter:on
