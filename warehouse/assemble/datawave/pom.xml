@@ -9,6 +9,9 @@
     <artifactId>assemble-datawave</artifactId>
     <packaging>jar</packaging>
     <name>${project.artifactId}</name>
+    <properties>
+        <maven.build.cache.enabled>false</maven.build.cache.enabled>
+    </properties>
     <dependencies>
         <!-- To ensure a consistent version is loaded -->
         <dependency>
