@@ -1,7 +1,7 @@
 <!-- eslint-disable vue/no-use-v-if-with-v-for -->
 <template>
-  <main class="main col" style="height: 100vh">
-    <div class="row" style="width: 60%; height: 10%; justify-content: center; align-self: center;">
+  <main class="main">
+    <div class="header">
       <label class="title">Data Dictionary</label>
       <p class="information">
         When a value is present in the forward index types, this means that a
@@ -13,8 +13,6 @@
         are typically composite fields, derived from actual data, created by the
         software to make querying easier.
       </p>
-    </div>
-    <div class="row" style="width: 100%; height: 85%;">
       <q-table
         ref="table"
         :loading="loading"
@@ -24,7 +22,7 @@
         v-model:pagination="paginationFront"
         row-key="fieldName"
         dense
-        style="font-size: smaller; height: 100%; width: 100%"
+        style="font-size: smaller"
       >
         <template v-slot:top-left>
           <q-btn
@@ -59,26 +57,129 @@
         </template>
 
         <template v-slot:body="props">
-          <q-tr :class="(props.row.instance>1)?'bg-accent text-white':''" :props="props" v-if="isVisible(props.row)">
-            <q-td style="width: 60px; min-width: 60px;">
+          <q-tr :props="props">
+            <q-td>
               <q-btn
                 size="sm"
                 color="accent"
                 round
                 dense
-                @click="{props.expand = !props.expand; toggleVisibility(props.row)}"
+                @click="props.expand = !props.expand"
                 :icon="props.expand ? 'remove' : 'add'"
-                v-if="buttonParse(props.cols, props.row)"
+                v-if="buttonParse(props.cols)"
               />
+              <q-td size="sm" v-else></q-td>
             </q-td>
             <q-td
               v-for="col in props.cols"
               :key="col.name"
               :props="props"
-              style="font-size: x-small;"
+              style="font-size: x-small"
               :title="parseVal(col.name, col.value)"
             >
               {{ maxSubstring(parseVal(col.name, col.value)) }}
+            </q-td>
+          </q-tr>
+          <q-tr
+            v-show="props.expand"
+            :props="props"
+            style="padding: 0px; margin: -50px"
+          >
+            <q-td />
+            <q-td colspan="100%">
+              <div
+                class="text-left"
+                v-for="vals in duplicateAry"
+                :key="vals.fieldName"
+              >
+                <div
+                  v-if="vals.fieldName === props.row.fieldName"
+                  class="subtable"
+                >
+                  <div
+                    v-if="vals.fieldName === props.row.fieldName"
+                    class="row"
+                  >
+                    <div
+                      class="col"
+                      style="max-width: 275px; min-width: 275px"
+                      :title="vals.fieldName"
+                    >
+                      {{ maxSubstring(vals.fieldName) }}
+                    </div>
+                    <div
+                      class="col"
+                      style="max-width: 275px; min-width: 275px"
+                      :title="vals.internalFieldName"
+                    >
+                      {{ maxSubstring(vals.internalFieldName) }}
+                    </div>
+                    <div
+                      class="col"
+                      style="max-width: 100px; min-width: 100px"
+                      :title="vals.dataType"
+                    >
+                      {{ maxSubstring(vals.dataType) }}
+                    </div>
+                    <div
+                      class="col"
+                      style="max-width: 100px; min-width: 100px"
+                      :title="vals.indexOnly"
+                    >
+                      {{ maxSubstring(vals.indexOnly) }}
+                    </div>
+                    <div
+                      class="col"
+                      style="max-width: 110px; min-width: 110px"
+                      :title="vals.forwardIndexed"
+                    >
+                      {{ maxSubstring(vals.forwardIndexed) }}
+                    </div>
+                    <div
+                      class="col"
+                      style="max-width: 107px; min-width: 107px"
+                      :title="vals.reverseIndexed"
+                    >
+                      {{ maxSubstring(vals.reverseIndexed) }}
+                    </div>
+                    <div
+                      class="col"
+                      style="max-width: 100px; min-width: 100px"
+                      :title="vals.normalized"
+                    >
+                      {{ maxSubstring(vals.normalized) }}
+                    </div>
+                    <div
+                      class="col"
+                      style="max-width: 100px; min-width: 100px"
+                      :title="vals.types"
+                    >
+                      {{ maxSubstring(vals.types) }}
+                    </div>
+                    <div
+                      class="col"
+                      style="max-width: 100px; min-width: 100px"
+                      :title="vals.tokenized"
+                    >
+                      {{ maxSubstring(vals.tokenized) }}
+                    </div>
+                    <div
+                      class="col"
+                      style="max-width: 200px; min-width: 200px"
+                      :title="vals.Description"
+                    >
+                      {{ maxSubstring(vals.Description) }}
+                    </div>
+                    <div
+                      class="col"
+                      style="max-width: 75px; min-width: 75px"
+                      :title="vals.lastUpdated"
+                    >
+                      {{ maxSubstring(vals.lastUpdated) }}
+                    </div>
+                  </div>
+                </div>
+              </div>
             </q-td>
           </q-tr>
         </template>
@@ -88,7 +189,7 @@
 </template>
 
 <script setup lang="ts">
-import { Ref, ref } from 'vue';
+import { ref } from 'vue';
 import { QTable, QTableProps, exportFile, useQuasar } from 'quasar';
 import axios from 'axios';
 
@@ -114,8 +215,15 @@ function maxSubstring(str: any): any {
   }
 }
 
-function buttonParse(col: any, row: any): boolean {
-  return row.count() > 1 && row.instance == 1;
+function buttonParse(col: any): boolean {
+  var render: any = [].concat(duplicateAry.value);
+  console.log('ren', render[0]);
+  for (var i = 0; i < render.length; i++) {
+    if (col[0].value === render[i].fieldName) {
+      return true;
+    }
+  }
+  return false;
 }
 
 let newAry: any = ref([]);
@@ -274,7 +382,6 @@ let rows: QTableProps['rows'] = [];
 
 // define pagination for standard table and table collapse
 const paginationFront = ref({
-  // NOTE: row is 28px high
   rowsPerPage: 23,
   sortBy: 'fieldName',
 });
@@ -284,62 +391,13 @@ axios
   .get('https://localhost:8643/dictionary/data/v1/')
   .then((response) => {
     rows = response.data.MetadataFields;
-    rows = setVisibility(rows);
-    // rows = filterMethod(rows); //filter
-
-    // 33 - height of table pagination area
-    // 52 - height of table export/search area
-    // 28 - height of table column header area
-    // table.value.$el.clientHeight - total height of qtable
-    // 28 - height of each row
-    paginationFront.value.rowsPerPage = Math.floor((table.value.$el.clientHeight - 33 - 52 - 28) / 28);
+    rows = filterMethod(rows); //filter
 
     loading.value = false;
   })
   .catch((reason) => {
     console.log('Something went wrong? ' + reason);
   });
-
-// use this if you want to ensure the table is full as the window size changes
-window.onresize = () => {
-  paginationFront.value.rowsPerPage = Math.floor((table.value.$el.clientHeight - 33 - 52 - 28) / 28);
-};
-
-const toggleVisibility = (row : any) => {
-  row.toggleVisibility();
-}
-
-const setVisibility = (rows: readonly any[]) => {
-  let fieldVisibility: Map<string, Ref<boolean>> = new Map<string, Ref<boolean>>();
-  let fieldNameCounts: Map<string, number> = new Map<string, number>();
-  for (var row of rows) {
-    let fieldName = row.fieldName;
-
-    let instance = undefined;
-    if (fieldNameCounts.has(fieldName)) {
-      instance = fieldNameCounts.get(fieldName)!+1;
-    } else {
-      instance = 1;
-    }
-    fieldNameCounts.set(fieldName, instance);
-
-    if (!fieldVisibility.has(fieldName)) {
-      fieldVisibility.set(fieldName, ref<boolean>(false));
-    }
-      
-    let visibility = fieldVisibility.get(fieldName);
-
-    row['instance'] = instance;
-    row['count'] = () => fieldNameCounts.get(fieldName);
-    row['toggleVisibility'] = () => {visibility!.value = !visibility?.value;};
-    row['isVisible'] = visibility;
-  }
-  return rows;
-}
-
-const isVisible = (row: any) => {
-  return row.instance == 1 || row.isVisible.value;
-}
 
 // function to export the table to a csv -> Default Functionality and can be modified
 const $q = useQuasar();
@@ -362,12 +420,10 @@ function wrapCsvValue(val?: any, formatFn?: any, row?: any) {
 }
 
 function exportTable(this: any) {
-  const rowsToExport = table.value?.filteredSortedRows.filter(isVisible);
-
   // naive encoding to csv format
   const content = [columns!.map((col) => wrapCsvValue(col.label))]
     .concat(
-      rowsToExport.map((row: any) =>
+      table.value?.filteredSortedRows.map((row: any) =>
         columns!
           .map((col: any) =>
             wrapCsvValue(
