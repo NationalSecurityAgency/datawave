@@ -38,7 +38,8 @@
 ## Development Mode vs Production Mode
 
 When you build/run the site locally, you'll automatically be in development mode, i.e., **JEKYLL_ENV=development**.
-So, if you want to build the production site, then you must set **JEKYLL_ENV=production**, as is the case on GitHub.
+So, if you want to build the production site, then you must set **JEKYLL_ENV=production**, which is the value set by
+GitHub when it builds and renders the site automatically (i.e., whenever new commits are pushed) 
 
 Currently, the only difference between dev and prod mode is that dev mode will enable display of *TODO*, *WIP*,
 and other dev-related *tags* and *includes* throughout the site.
@@ -50,11 +51,11 @@ JEKYLL_ENV=production bundle exec jekyll serve --baseurl '' --watch
 
 ```
 
-Thus, internally, you can add dev-only elements and behaviors to the site as follows...
+For example, you can add dev-only content to the site as follows...
 
 ```
 {% if jekyll.environment != 'production' %}
-   I'm in development! 
+   <h1>I'm in development!</h1> 
 {% endif %}
 
 ```

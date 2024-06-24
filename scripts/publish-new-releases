@@ -7,8 +7,7 @@
 # the gh-pages branch as "Latest Project News", i.e., for newly tagged DW releases that are discovered
 # on DW_GITHUB_REMOTE_URL (see Prerequisites below) .
 #
-# Currently, we look for new 3.x, 5.x and 6.x updates, for Accumulo 1.10.x- and 2.1.x-compatible DW releases.
-# See TRACKED_DW_VERSIONS variable below.
+# Also see the TRACKED_DW_VERSIONS variable below.
 #
 # Usage:
 #   <script-name> [--push, -p] [--verbose, -v] [--help, -h]
@@ -22,14 +21,16 @@
 #       export DW_GITHUB_REMOTE_URL="https://username:userOAuthToken@github.com/NationalSecurityAgency/datawave.git"
 #
 #       NOTE: 'username' and associated 'userOAuthToken' will need to have write
-#              privs on the repo in order for --push (-p) to be successful
+#              privs on the repo in order for --push (-p) arg to be successful
 #
 #   (2) The git executable must be on the user's PATH
 #
 
-# Major versions of DW that we want to track for publishing to the gh-pages site.
-# To start/stop publishing news updates about a particular version, just add/remove it to/from the array 
-declare -a -r TRACKED_DW_VERSIONS=( 3 5 6 )
+# TRACKED_DW_VERSIONS: Major versions of DW that we want to track for publishing as "Project News" to the gh-pages site.
+# To start publishing news updates for a new major release, just add the major version to the array here, and seed the
+# _posts/release/ dir with at least the first post entry. E.g., 2040-01-01-datawave-20.0.0.md
+# To stop tracking updates for a particular major version, just remove it from the array
+declare -a -r TRACKED_DW_VERSIONS=( 5 6 7 )
 
 readonly TMP_DW_DIR=$(mktemp -d /tmp/$( basename $0 )_datawave_XXXXXXX)
 readonly TMP_GHPAGES_DIR=$(mktemp -d /tmp/$( basename $0 )_ghpages_XXXXXXX)
@@ -66,13 +67,15 @@ logf() {
 }
 
 usage() {
-  echo "Usage:"
-  echo " $( basename "$0" ) [--push, -p] [--verbose, -v] [--help, -h]"
-  echo "Options:"
-  echo " --push, -p    | Commit and push changes to DW_GITHUB_REMOTE_URL"
-  echo " --verbose, -v | Turn on debug mode"
-  echo " --help, -h    | Print this usage information and exit"
-  exit 0
+cat <<EOF
+Usage:
+  $( basename "$0" ) [--push, -p] [--verbose, -v] [--help, -h]
+Options:
+  --push, -p    | Commit and push changes to DW_GITHUB_REMOTE_URL
+  --verbose, -v | Turn on debug mode
+  --help, -h    | Print this usage information and exit
+EOF
+exit 0
 }
 
 configure() {
