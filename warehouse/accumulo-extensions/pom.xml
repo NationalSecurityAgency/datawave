@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave</groupId>
         <artifactId>datawave-warehouse-parent</artifactId>
-        <version>7.0.4</version>
+        <version>7.0.5-SNAPSHOT</version>
     </parent>
     <artifactId>datawave-accumulo-extensions</artifactId>
     <name>${project.artifactId}</name>
