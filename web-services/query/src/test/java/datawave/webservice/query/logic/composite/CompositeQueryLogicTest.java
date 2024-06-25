@@ -1303,6 +1303,151 @@ public class CompositeQueryLogicTest {
     }
 
     @Test
+    // testQueryLogic with max.results.override is set
+    public void testQueryLogicWithMaxResultsOverrideWithDNOverride() throws Exception {
+        Map<String,QueryLogic<?>> logics = new HashMap<>();
+        TestQueryLogic logic1 = new TestQueryLogic();
+        TestQueryLogic2 logic2 = new TestQueryLogic2();
+        logics.put("TestQueryLogic", logic1);
+        logics.put("TestQueryLogic2", logic2);
+
+        logic1.getData().put(key1, value1);
+        logic1.getData().put(key2, value2);
+        logic2.getData().put(key3, value3);
+        logic2.getData().put(key4, value4);
+        logic1.getData().put(key5, value5);
+        logic1.getData().put(key6, value6);
+        logic2.getData().put(key7, value7);
+        logic2.getData().put(key8, value8);
+
+        QueryImpl settings = new QueryImpl();
+        settings.setPagesize(100);
+        settings.setQueryAuthorizations(auths.toString());
+        settings.setQuery("FOO == 'BAR'");
+        settings.setParameters(new HashSet<>());
+        settings.setId(UUID.randomUUID());
+        settings.setDnList(Arrays.asList(principal.getUserDN().subjectDN()));
+
+        CompositeQueryLogic c = new CompositeQueryLogic();
+        // max.results.override is set to -1 when it is not passed in as it is an optional parameter
+        logic1.setMaxResults(2); // it can return 4, so this will cap it at 3 (1 more than max)
+        logic2.setMaxResults(1); // it cat return 4, so this will cap it at 2 (1 more than max)
+
+        // just FYI, setting up DNResultLimits for the composite query logic doesn't do anything
+        // c.setDnResultLimits(Map.of(principal.getUserDN().subjectDN(), 3L));
+
+        // settings the DNResultLimits for each logics configured for composite
+        logic1.setDnResultLimits(Map.of(principal.getUserDN().subjectDN(), 2L));
+        logic2.setDnResultLimits(Map.of(principal.getUserDN().subjectDN(), 3L));
+        /**
+         * RunningQuery.setupConnection()
+         */
+        c.setQueryLogics(logics);
+        c.setCurrentUser(principal);
+        c.initialize(null, settings, Collections.singleton(auths));
+        c.setupQuery(null);
+        TransformIterator iter = c.getTransformIterator(settings);
+
+        /**
+         * RunningQuery.next() - iterate over results coming from tablet server through the TransformIterator to turn them into the objects.
+         */
+        List<Object> results = new ArrayList<>();
+        while (iter.hasNext()) {
+            Object o = iter.next();
+            if (null == o)
+                break;
+            Assert.assertTrue(o instanceof TestQueryResponse);
+            results.add(o);
+        }
+        Assert.assertEquals(7, results.size());
+        ResultsPage page = new ResultsPage(results, Status.COMPLETE);
+
+        /**
+         * QueryExecutorBean.next() - transform list of objects into JAXB response
+         */
+        TestQueryResponseList response = (TestQueryResponseList) c.getEnrichedTransformer((Query) settings).createResponse(page);
+        Assert.assertEquals(7, response.getResponses().size());
+        for (TestQueryResponse r : response.getResponses()) {
+            Assert.assertNotNull(r);
+        }
+
+        c.close();
+
+    }
+
+    @Test
+    // testQueryLogic with max.results.override is set
+    public void testQueryLogicWithMaxResultsOverrideWithDNOverrideNonMatchingDN() throws Exception {
+        Map<String,QueryLogic<?>> logics = new HashMap<>();
+        TestQueryLogic logic1 = new TestQueryLogic();
+        TestQueryLogic2 logic2 = new TestQueryLogic2();
+        logics.put("TestQueryLogic", logic1);
+        logics.put("TestQueryLogic2", logic2);
+
+        logic1.getData().put(key1, value1);
+        logic1.getData().put(key2, value2);
+        logic2.getData().put(key3, value3);
+        logic2.getData().put(key4, value4);
+        logic1.getData().put(key5, value5);
+        logic1.getData().put(key6, value6);
+        logic2.getData().put(key7, value7);
+        logic2.getData().put(key8, value8);
+
+        QueryImpl settings = new QueryImpl();
+        settings.setPagesize(100);
+        settings.setQueryAuthorizations(auths.toString());
+        settings.setQuery("FOO == 'BAR'");
+        settings.setParameters(new HashSet<>());
+        settings.setId(UUID.randomUUID());
+        settings.setDnList(Arrays.asList(principal.getUserDN().subjectDN()));
+
+        CompositeQueryLogic c = new CompositeQueryLogic();
+        // max.results.override is set to -1 when it is not passed in as it is an optional parameter
+        logic1.setMaxResults(2); // it can return 4, so this will cap it at 3 (1 more than max)
+        logic2.setMaxResults(1); // it cat return 4, so this will cap it at 2 (1 more than max)
+
+        // setting up DNResultLimits for the composite query logic
+        // c.setDnResultLimits(Map.of(principal.getUserDN().toString(), 3L));
+
+        logic1.setDnResultLimits(Map.of(principal.getUserDN().subjectDN() + "foo", 2L));
+        logic2.setDnResultLimits(Map.of(principal.getUserDN().subjectDN() + "bar", 3L));
+        /**
+         * RunningQuery.setupConnection()
+         */
+        c.setQueryLogics(logics);
+        c.setCurrentUser(principal);
+        c.initialize(null, settings, Collections.singleton(auths));
+        c.setupQuery(null);
+        TransformIterator iter = c.getTransformIterator(settings);
+
+        /**
+         * RunningQuery.next() - iterate over results coming from tablet server through the TransformIterator to turn them into the objects.
+         */
+        List<Object> results = new ArrayList<>();
+        while (iter.hasNext()) {
+            Object o = iter.next();
+            if (null == o)
+                break;
+            Assert.assertTrue(o instanceof TestQueryResponse);
+            results.add(o);
+        }
+        Assert.assertEquals(5, results.size());
+        ResultsPage page = new ResultsPage(results, Status.COMPLETE);
+
+        /**
+         * QueryExecutorBean.next() - transform list of objects into JAXB response
+         */
+        TestQueryResponseList response = (TestQueryResponseList) c.getEnrichedTransformer((Query) settings).createResponse(page);
+        Assert.assertEquals(5, response.getResponses().size());
+        for (TestQueryResponse r : response.getResponses()) {
+            Assert.assertNotNull(r);
+        }
+
+        c.close();
+
+    }
+
+    @Test
     public void testQueryLogicNoDataLogic1() throws Exception {
         Map<String,QueryLogic<?>> logics = new HashMap<>();
         TestQueryLogic logic1 = new TestQueryLogic();
