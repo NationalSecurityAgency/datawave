@@ -360,5 +360,4 @@ public abstract class ShardQueryLogicTest {
 
         runTestQuery(expected, queryString, format.parse("20091231"), format.parse("20150101"), extraParameters);
     }
-
 }
