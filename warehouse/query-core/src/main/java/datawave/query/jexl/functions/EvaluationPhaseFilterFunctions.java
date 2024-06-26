@@ -9,7 +9,6 @@ import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -20,8 +19,6 @@ import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-
-import javax.measure.spi.SystemOfUnits;
 
 import org.apache.commons.collections4.SetUtils;
 import org.apache.log4j.Logger;
@@ -312,7 +309,6 @@ public class EvaluationPhaseFilterFunctions {
                             .orElseGet(FunctionalSet::emptySet);
             // @formatter:on
             } catch (PatternSyntaxException e) {
-                ;
                 if (NumericalEncoder.isPossiblyEncoded(regex)) {
                 // @formatter:off
                 return StreamSupport.stream(values.spliterator(), false)
@@ -364,9 +360,9 @@ public class EvaluationPhaseFilterFunctions {
                 final boolean caseInsensitive = regex.matches(CASE_INSENSITIVE);
                 // @formatter:off
                 Stream<ValueTuple> matches = StreamSupport.stream(values.spliterator(), false)
-                                .filter(Objects::nonNull)
-                                .filter((value) -> isMatchForPattern(pattern, caseInsensitive, value))
-                                .map(EvaluationPhaseFilterFunctions::getHitTerm);
+                        .filter(Objects::nonNull)
+                        .filter((value) -> isMatchForPattern(pattern, caseInsensitive, value))
+                        .map(EvaluationPhaseFilterFunctions::getHitTerm);
                 // @formatter:on
                 return matches;
             } catch (PatternSyntaxException e) {
