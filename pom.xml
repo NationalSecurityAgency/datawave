@@ -107,7 +107,7 @@
         <version.microservice.common-utils>3.0.0</version.microservice.common-utils>
         <version.microservice.dictionary-api>4.0.0</version.microservice.dictionary-api>
         <version.microservice.mapreduce-query-api>1.0.0</version.microservice.mapreduce-query-api>
-        <version.microservice.metadata-utils>4.0.2-SNAPSHOT</version.microservice.metadata-utils>
+        <version.microservice.metadata-utils>4.0.3-SNAPSHOT</version.microservice.metadata-utils>
         <version.microservice.metrics-reporter>3.0.0</version.microservice.metrics-reporter>
         <version.microservice.query-api>1.0.0</version.microservice.query-api>
         <version.microservice.query-metric-api>4.0.0</version.microservice.query-metric-api>
