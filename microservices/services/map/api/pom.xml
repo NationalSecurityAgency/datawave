@@ -21,7 +21,7 @@
         <version.geotools>29.0</version.geotools>
         <version.jts>1.19.0</version.jts>
         <version.microservice.metadata-utils>4.0.3-SNAPSHOT</version.microservice.metadata-utils>
-        <version.microservice.type-utils>3.0.1-SNAPSHOT</version.microservice.type-utils>
+        <version.microservice.type-utils>3.0.2-SNAPSHOT</version.microservice.type-utils>
         <version.mockito>4.5.1</version.mockito>
     </properties>
     <dependencyManagement>
