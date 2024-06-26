@@ -52,6 +52,7 @@ public class ShardedTableDateBasedTieredVolumeChooser extends RandomVolumeChoose
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern(DATE_PATTERN);
 
     private static Pattern SHARD_PATTERN = Pattern.compile("\\d{8}_\\d+");
+    private static Pattern SHARD_PATTERN_SUFFIXLESS = Pattern.compile("\\d{8}");
 
     @Override
     public String choose(VolumeChooserEnvironment env, Set<String> options) {
@@ -75,7 +76,7 @@ public class ShardedTableDateBasedTieredVolumeChooser extends RandomVolumeChoose
 
             } else {
                 String endRowString = endRow.toString();
-                if (SHARD_PATTERN.matcher(endRowString).matches()) {
+                if (SHARD_PATTERN.matcher(endRowString).matches() || SHARD_PATTERN_SUFFIXLESS.matcher(endRowString).matches()) {
                     String date = endRowString.substring(0, 8);
                     LocalDate rowDate = LocalDate.parse(date, FORMATTER);
                     LocalDate today = LocalDate.now();
