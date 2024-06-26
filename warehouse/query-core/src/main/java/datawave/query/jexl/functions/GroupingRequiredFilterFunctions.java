@@ -19,7 +19,6 @@ import datawave.query.attributes.ValueTuple;
  **/
 @JexlFunctions(descriptorFactory = "datawave.query.jexl.functions.GroupingRequiredFilterFunctionsDescriptor")
 public class GroupingRequiredFilterFunctions {
-
     public static final String GROUPING_REQUIRED_FUNCTION_NAMESPACE = "grouping";
     private static final Logger log = Logger.getLogger(GroupingRequiredFilterFunctions.class);
 
@@ -162,28 +161,30 @@ public class GroupingRequiredFilterFunctions {
      * @return a collection of matches
      */
     public static Collection<?> matchesInGroup(Object... args) {
+        // this is either '0', or it is the integer value of the last argument
+        // when the argumentCount is odd
+        final int positionFromRight = (args.length % 2 != 0) ? Integer.parseInt(args[args.length - 1].toString()) : 0;
         Stream<ValueTuple> leftSideMatches;
+        Collection<ValueTuple> allMatches = new HashSet<>();
         Object fieldValue1 = args[0];
         String regex = args[1].toString();
         if (fieldValue1 instanceof Iterable) {
             // cast as Iterable in order to call the right getAllMatches method
-            leftSideMatches = EvaluationPhaseFilterFunctions.getAllMatchesStream((Iterable<?>) fieldValue1, regex);
+            leftSideMatches = EvaluationPhaseFilterFunctions.getAllMatchesStream((Iterable) fieldValue1, regex);
         } else {
             leftSideMatches = EvaluationPhaseFilterFunctions.getAllMatches(fieldValue1, regex).stream();
         }
-
-        // This is either '0', or it is the integer value of the last argument when the argumentCount is odd.
-        final int positionFromRight = (args.length % 2 != 0) ? Integer.parseInt(args[args.length - 1].toString()) : 0;
-        Collection<ValueTuple> allMatches = new HashSet<>();
 
         leftSideMatches.forEach(currentMatch -> {
             String matchFieldName = ValueTuple.getFieldName(currentMatch);
             // my fieldValue2 will be a collection that looks like [ AGE.FOO.7.1:1, GENDER.BAZ.7.2:2, NAME.FO.7.3:1 ]
             // I am only interested in a match on the one that ends with the 'tail' (.2) that I found above
             String context = EvaluationPhaseFilterFunctions.getMatchToRightOfPeriod(matchFieldName, positionFromRight);
+
             for (int i = 2; i < args.length; i += 2) {
+
                 if (args[i] instanceof Iterable) {
-                    for (Object fv : (Iterable<?>) args[i]) {
+                    for (Object fv : (Iterable) args[i]) {
                         manageMatchesInGroupRemainingArgs(fv, args[i + 1].toString(), context, allMatches, currentMatch);
                     }
                 } else if (args[i] instanceof ValueTuple) {
@@ -198,7 +199,7 @@ public class GroupingRequiredFilterFunctions {
             allMatches.clear();
         }
 
-        if (log.isInfoEnabled()) {
+        if (log.isTraceEnabled()) {
             log.trace("matchesInGroup(" + Arrays.toString(args) + ") returning " + allMatches);
         }
         return Collections.unmodifiableCollection(allMatches);
@@ -324,7 +325,7 @@ public class GroupingRequiredFilterFunctions {
             allMatches.clear();
         }
         if (log.isTraceEnabled()) {
-            log.trace("returning matches:" + allMatches);
+            log.trace("matchesInGroupLeft(" + args + ") returning " + allMatches);
         }
         return Collections.unmodifiableCollection(allMatches);
     }
@@ -383,15 +384,12 @@ public class GroupingRequiredFilterFunctions {
                 argsList.add(iterable);
                 argsList.add(regex);
             }
-            // Fetch the matches.
-            @SuppressWarnings("unchecked")
             Collection<ValueTuple> migMatches = (Collection<ValueTuple>) matchesInGroup(argsList.toArray());
-
             matches.addAll(migMatches);
         }
 
         if (log.isTraceEnabled()) {
-            log.trace("atomsValuesMatch(" + Arrays.toString(fields) + ") returning " + matches);
+            log.trace("atomValuesMatch(" + fields + ") returning " + matches);
         }
         return matches;
     }
