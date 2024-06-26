@@ -11,6 +11,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 import javax.ejb.EJBContext;
 
@@ -28,6 +29,8 @@ import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.beans.factory.xml.XmlBeanDefinitionReader;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
+import datawave.core.query.logic.BaseQueryLogic;
+import datawave.core.query.logic.QueryLogic;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUser.UserType;
@@ -102,8 +105,10 @@ public class ConfiguredQueryLogicFactoryBeanTest extends EasyMockSupport {
         QueryLogicFactoryConfiguration qlfc = new QueryLogicFactoryConfiguration();
         qlfc.setMaxPageSize(25);
         qlfc.setPageByteTrigger(1024L);
-        this.logic.setPrincipal(altPrincipal);
+        this.logic.setServerUser(altPrincipal);
         this.logic.setLogicName(queryName);
+        expect(altPrincipal.getPrimaryUser()).andReturn(
+                        new DatawaveUser(SubjectIssuerDNPair.of("CN=Poe Edgar Allan eapoe, OU=acme", "<CN=ca, OU=acme>"), UserType.USER, null, null, null, 0L));
         expect(this.logic.getMaxPageSize()).andReturn(25);
         expect(this.logic.getPageByteTrigger()).andReturn(1024L);
         expect(this.applicationContext.getBean(mappedQueryName)).andReturn(this.logic);
@@ -134,8 +139,10 @@ public class ConfiguredQueryLogicFactoryBeanTest extends EasyMockSupport {
         Map<String,Collection<String>> rolesMap = new HashMap<>();
         rolesMap.put(queryName, roles);
 
-        this.logic.setPrincipal(altPrincipal);
+        this.logic.setServerUser(altPrincipal);
         this.logic.setLogicName(queryName);
+        expect(altPrincipal.getPrimaryUser()).andReturn(
+                        new DatawaveUser(SubjectIssuerDNPair.of("CN=Poe Edgar Allan eapoe, OU=acme", "<CN=ca, OU=acme>"), UserType.USER, null, null, null, 0L));
         expect(this.logic.getMaxPageSize()).andReturn(0);
         expect(this.logic.getPageByteTrigger()).andReturn(0L);
         this.logic.setMaxPageSize(25);

@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.webservices</groupId>
         <artifactId>datawave-ws-deploy-parent</artifactId>
-        <version>6.11.0-SNAPSHOT</version>
+        <version>7.1.0-SNAPSHOT</version>
     </parent>
     <artifactId>datawave-ws-deploy-docs</artifactId>
     <packaging>war</packaging>
@@ -18,6 +18,23 @@
     <build>
         <finalName>${project.artifactId}</finalName>
         <plugins>
+            <plugin>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>create-enunciate-directory</id>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <phase>process-resources</phase>
+                        <configuration>
+                            <target>
+                                <mkdir dir="${project.build.directory}/enunciate/enunciate" />
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <artifactId>maven-dependency-plugin</artifactId>
                 <executions>

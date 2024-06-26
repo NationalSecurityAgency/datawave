@@ -4,8 +4,10 @@ import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.NavigableSet;
 import java.util.Objects;
 import java.util.Set;
+import java.util.SortedSet;
 
 import org.apache.commons.lang.StringUtils;
 
@@ -28,8 +30,9 @@ import datawave.query.jexl.JexlASTHelper;
  */
 public class UniqueFields implements Serializable, Cloneable {
 
-    private final SortedSetMultimap<String,UniqueGranularity> fieldMap = TreeMultimap.create();
+    private final TreeMultimap<String,UniqueGranularity> fieldMap = TreeMultimap.create();
     private boolean mostRecent = false;
+    private static String MOST_RECENT_UNIQUE = "_MOST_RECENT_";
 
     /**
      * Returns a new {@link UniqueFields} parsed from this string. The provided string is expected to have the format returned by
@@ -74,8 +77,12 @@ public class UniqueFields implements Serializable, Cloneable {
             if (nextComma == -1 && nextStartBracket == -1) {
                 String field = string.substring(currentIndex);
                 if (!field.isEmpty()) {
-                    // Add the field only if its not blank. Ignore cases with consecutive trailing commas like field1[ALL],,
-                    uniqueFields.put(field, UniqueGranularity.ALL);
+                    if (field.equals(MOST_RECENT_UNIQUE)) {
+                        uniqueFields.setMostRecent(true);
+                    } else {
+                        // Add the field only if its not blank. Ignore cases with consecutive trailing commas like field1[ALL],,
+                        uniqueFields.put(field, UniqueGranularity.ALL);
+                    }
                 }
                 break; // There are no more fields to be parsed.
             } else if (nextComma != -1 && (nextStartBracket == -1 || nextComma < nextStartBracket)) {
@@ -89,8 +96,12 @@ public class UniqueFields implements Serializable, Cloneable {
                 // Add the field with the ALL granularity.
                 String field = string.substring(currentIndex, nextComma);
                 if (!field.isEmpty()) {
-                    // Add the field only if its not blank. Ignore cases with consecutive commas like field1,,field2[DAY]
-                    uniqueFields.put(field, UniqueGranularity.ALL);
+                    if (field.equals(MOST_RECENT_UNIQUE)) {
+                        uniqueFields.setMostRecent(true);
+                    } else {
+                        // Add the field only if its not blank. Ignore cases with consecutive commas like field1,,field2[DAY]
+                        uniqueFields.put(field, UniqueGranularity.ALL);
+                    }
                 }
                 currentIndex = nextComma + 1; // Advance to the start of the next field.
             } else {
@@ -102,14 +113,18 @@ public class UniqueFields implements Serializable, Cloneable {
                 String field = string.substring(currentIndex, nextStartBracket);
                 int nextEndBracket = string.indexOf(Constants.BRACKET_END, currentIndex);
                 if (!field.isEmpty()) {
-                    String granularityList = string.substring((nextStartBracket + 1), nextEndBracket);
-                    // An empty granularity list, e.g. field[] is equivalent to field[ALL].
-                    if (granularityList.isEmpty()) {
-                        uniqueFields.put(field, UniqueGranularity.ALL);
+                    if (field.equals(MOST_RECENT_UNIQUE)) {
+                        uniqueFields.setMostRecent(true);
                     } else {
-                        String[] granularities = StringUtils.split(granularityList, Constants.COMMA);
-                        for (String granularity : granularities) {
-                            uniqueFields.put(field, parseGranularity(granularity));
+                        String granularityList = string.substring((nextStartBracket + 1), nextEndBracket);
+                        // An empty granularity list, e.g. field[] is equivalent to field[ALL].
+                        if (granularityList.isEmpty()) {
+                            uniqueFields.put(field, UniqueGranularity.ALL);
+                        } else {
+                            String[] granularities = StringUtils.split(granularityList, Constants.COMMA);
+                            for (String granularity : granularities) {
+                                uniqueFields.put(field, parseGranularity(granularity));
+                            }
                         }
                     }
                 }
@@ -213,12 +228,12 @@ public class UniqueFields implements Serializable, Cloneable {
     }
 
     /**
-     * Return a copy of the fields within this {@link UniqueFields}. Modifications to this set will not modify the fields in this {@link UniqueFields}.
+     * Return the fields within this {@link UniqueFields}. Modifications to this set will modify the fields in this {@link UniqueFields}.
      *
      * @return a copy of the fields
      */
-    public Set<String> getFields() {
-        return Sets.newHashSet(fieldMap.keySet());
+    public NavigableSet<String> getFields() {
+        return fieldMap.keySet();
     }
 
     /**
@@ -226,8 +241,8 @@ public class UniqueFields implements Serializable, Cloneable {
      *
      * @return the field map
      */
-    public Multimap<String,UniqueGranularity> getFieldMap() {
-        return TreeMultimap.create(fieldMap);
+    public TreeMultimap<String,UniqueGranularity> getFieldMap() {
+        return fieldMap;
     }
 
     /**
@@ -306,6 +321,10 @@ public class UniqueFields implements Serializable, Cloneable {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
+        if (mostRecent) {
+            sb.append(MOST_RECENT_UNIQUE);
+            sb.append(Constants.COMMA);
+        }
         Iterator<String> fieldIterator = fieldMap.keySet().iterator();
         while (fieldIterator.hasNext()) {
             // Write the field.

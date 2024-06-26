@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave</groupId>
         <artifactId>datawave-parent</artifactId>
-        <version>6.11.0-SNAPSHOT</version>
+        <version>7.1.0-SNAPSHOT</version>
     </parent>
     <artifactId>datawave-docs</artifactId>
     <!-- Declare all datawave modules as dependencies in order to have the javadoc include all the datawave source. -->
@@ -167,6 +167,11 @@
             <version>1.8.8</version>
         </dependency>
         <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-core</artifactId>
+            <version>${version.springframework}</version>
+        </dependency>
+        <dependency>
             <groupId>org.wildfly</groupId>
             <artifactId>wildfly-undertow</artifactId>
             <optional>true</optional>
@@ -238,6 +243,12 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>2.28.2</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
             <groupId>org.picketbox</groupId>
             <artifactId>picketbox</artifactId>
             <scope>provided</scope>
@@ -279,6 +290,7 @@
                             <goal>docs</goal>
                         </goals>
                         <configuration>
+                            <skipEnunciate>true</skipEnunciate>
                             <docsDir>${project.build.outputDirectory}/enunciate</docsDir>
                             <sourcepath-includes>
                                 <include>
@@ -320,7 +332,7 @@
                         <configuration combine.children="append">
                             <sourcepath>${project.build.directory}/dependency</sourcepath>
                             <outputDirectory>${project.build.directory}/apidocs</outputDirectory>
-                            <excludePackageNames>generated-sources.*</excludePackageNames>
+                            <excludePackageNames>generated-sources.*:datawave.microservice.querymetric</excludePackageNames>
                         </configuration>
                     </execution>
                 </executions>

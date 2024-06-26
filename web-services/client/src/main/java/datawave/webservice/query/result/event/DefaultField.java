@@ -17,6 +17,9 @@ import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import datawave.data.type.Type;
 import datawave.webservice.query.util.TypedValue;
 import datawave.webservice.xml.util.StringMapAdapter;
@@ -81,10 +84,55 @@ public class DefaultField extends FieldBase<DefaultField> implements Serializabl
         return markings;
     }
 
+    public void setColumnVisibility(String columnVisibility) {
+        this.columnVisibility = columnVisibility;
+    }
+
+    public String getColumnVisibility() {
+        return columnVisibility;
+    }
+
+    public void setTimestamp(Long timestamp) {
+        this.timestamp = timestamp;
+    }
+
     public Long getTimestamp() {
         return timestamp;
     }
 
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setTypedValue(TypedValue value) {
+        this.value = value;
+    }
+
+    public TypedValue getTypedValue() {
+        return this.value;
+    }
+
+    @JsonIgnore
+    public void setValue(Object value) {
+        if (value instanceof TypedValue) {
+            this.value = (TypedValue) value;
+        } else {
+            this.value = new TypedValue(value);
+        }
+    }
+
+    @JsonIgnore
+    @XmlTransient
+    public Object getValueOfTypedValue() {
+        return (null == value) ? null : value.getValue();
+    }
+
+    @JsonIgnore
+    @XmlTransient
     public String getValueString() {
         if (value.getValue() instanceof Type<?>) {
             return ((Type<?>) value.getValue()).getDelegate().toString();
@@ -93,22 +141,6 @@ public class DefaultField extends FieldBase<DefaultField> implements Serializabl
         } else {
             return value.getValue().toString();
         }
-    }
-
-    public TypedValue getTypedValue() {
-        return this.value;
-    }
-
-    public Object getValueOfTypedValue() {
-        return (null == value) ? null : value.getValue();
-    }
-
-    public void setTimestamp(Long timestamp) {
-        this.timestamp = timestamp;
-    }
-
-    public void setValue(Object value) {
-        this.value = new TypedValue(value);
     }
 
     @Override
@@ -147,14 +179,6 @@ public class DefaultField extends FieldBase<DefaultField> implements Serializabl
         }
 
         return false;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
     }
 
     @Override
@@ -264,12 +288,4 @@ public class DefaultField extends FieldBase<DefaultField> implements Serializabl
             fieldMap.put("value", 5);
         }
     };
-
-    public String getColumnVisibility() {
-        return columnVisibility;
-    }
-
-    public void setColumnVisibility(String columnVisibility) {
-        this.columnVisibility = columnVisibility;
-    }
 }
