@@ -12,10 +12,10 @@ import org.junit.Before;
 import org.junit.Test;
 
 import datawave.microservice.query.QueryImpl;
+import datawave.microservice.querymetric.QueryGeometry;
+import datawave.microservice.querymetric.QueryGeometryResponse;
 import datawave.microservice.querymetric.QueryMetric;
 import datawave.webservice.query.exception.QueryExceptionType;
-import datawave.webservice.query.map.QueryGeometry;
-import datawave.webservice.query.map.QueryGeometryResponse;
 
 public class SimpleQueryGeometryHandlerTest {
 

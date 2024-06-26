@@ -17,10 +17,10 @@
         <url>https://github.com/NationalSecurityAgency/datawave-map-service</url>
     </scm>
     <properties>
-        <version.datawave>7.0.1-SNAPSHOT</version.datawave>
+        <version.datawave>7.1.0-SNAPSHOT</version.datawave>
         <version.geotools>29.0</version.geotools>
         <version.jts>1.19.0</version.jts>
-        <version.microservice.metadata-utils>4.0.1-SNAPSHOT</version.microservice.metadata-utils>
+        <version.microservice.metadata-utils>4.0.2-SNAPSHOT</version.microservice.metadata-utils>
         <version.microservice.type-utils>3.0.1-SNAPSHOT</version.microservice.type-utils>
         <version.mockito>4.5.1</version.mockito>
     </properties>

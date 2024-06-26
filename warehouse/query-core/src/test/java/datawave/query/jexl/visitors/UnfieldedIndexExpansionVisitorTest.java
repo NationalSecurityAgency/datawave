@@ -220,7 +220,7 @@ public class UnfieldedIndexExpansionVisitorTest {
             String expected = "FIELD1 == 'burrito' || FIELD2 == 'burrito'";
 
             ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
-            ScannerFactory scannerFactory = new ScannerFactory(config.getClient());
+            ScannerFactory scannerFactory = new ScannerFactory(config);
             metadataHelper.addExpansionFields(ImmutableSet.of("FIELD1", "FIELD2"));
             ASTJexlScript fixed = UnfieldedIndexExpansionVisitor.expandUnfielded(config, scannerFactory, metadataHelper, script);
 
@@ -244,7 +244,7 @@ public class UnfieldedIndexExpansionVisitorTest {
             String expected = "_NOFIELD_ == 'burrito'";
 
             ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
-            ScannerFactory scannerFactory = new ScannerFactory(config.getClient());
+            ScannerFactory scannerFactory = new ScannerFactory(config);
             metadataHelper.addExpansionFields(ImmutableSet.of("FOOBAR"));
             ASTJexlScript fixed = UnfieldedIndexExpansionVisitor.expandUnfielded(config, scannerFactory, metadataHelper, script);
 
@@ -370,7 +370,7 @@ public class UnfieldedIndexExpansionVisitorTest {
             String expected = "(_ANYFIELD_ !~ '.*?ly' && FIELD8 != 'fearfully' && FIELD9 != 'wonderfully')";
 
             ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
-            ScannerFactory scannerFactory = new ScannerFactory(config.getClient());
+            ScannerFactory scannerFactory = new ScannerFactory(config);
             metadataHelper.addExpansionFields(ImmutableSet.of("FIELD8", "FIELD9"));
             ASTJexlScript fixed = UnfieldedIndexExpansionVisitor.expandUnfielded(config, scannerFactory, metadataHelper, script);
 
@@ -429,7 +429,7 @@ public class UnfieldedIndexExpansionVisitorTest {
     // throw exception to assert failure cases, such as CannotExpandUnfieldedTermFatalException
     public void test(String query, String expected, ShardQueryConfiguration config, MockMetadataHelper metadataHelper) throws Exception {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
-        ScannerFactory scannerFactory = new ScannerFactory(config.getClient());
+        ScannerFactory scannerFactory = new ScannerFactory(config);
         ASTJexlScript fixed = UnfieldedIndexExpansionVisitor.expandUnfielded(config, scannerFactory, metadataHelper, script);
 
         // assert and validate

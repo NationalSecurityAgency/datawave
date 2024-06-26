@@ -68,6 +68,66 @@ public class RegexFunctionVisitorTest {
     }
 
     @Test
+    public void testRewriteMultiHeteroIndexOnlyFieldsIncludeRegex() throws ParseException {
+        Set<String> indexOnlyFields = Sets.newHashSet("FIELDB");
+        String query = "FOO == 'bar' && filter:includeRegex(FIELDA||FIELDB||FIELDC, 'ba.*')";
+        String expected = "FOO == 'bar' && (FIELDB =~ 'ba.*' || filter:includeRegex(FIELDA || FIELDC, 'ba.*'))";
+        assertVisitorResult(query, expected, indexOnlyFields);
+
+        query = "FOO == 'bar' || filter:includeRegex(FIELDA||FIELDB||FIELDC, 'ba.*')";
+        expected = "FOO == 'bar' || (FIELDB =~ 'ba.*' || filter:includeRegex(FIELDA || FIELDC, 'ba.*'))";
+        assertVisitorResult(query, expected, indexOnlyFields);
+    }
+
+    @Test
+    public void testRewriteMultiHeteroIndexOnlyFieldsIncludeRegex2() throws ParseException {
+        Set<String> indexOnlyFields = Sets.newHashSet("FIELDB", "FIELDC");
+        String query = "FOO == 'bar' && filter:includeRegex(FIELDA||FIELDB||FIELDC, 'ba.*')";
+        String expected = "FOO == 'bar' && (FIELDB =~ 'ba.*' || FIELDC =~ 'ba.*' || filter:includeRegex(FIELDA, 'ba.*'))";
+        assertVisitorResult(query, expected, indexOnlyFields);
+
+        query = "FOO == 'bar' || filter:includeRegex(FIELDA||FIELDB||FIELDC, 'ba.*')";
+        expected = "FOO == 'bar' || (FIELDB =~ 'ba.*' || FIELDC =~ 'ba.*' || filter:includeRegex(FIELDA, 'ba.*'))";
+        assertVisitorResult(query, expected, indexOnlyFields);
+    }
+
+    @Test
+    public void testRewriteHeteroIndexOnlyFieldsExcludeRegex() throws ParseException {
+        Set<String> indexOnlyFields = Sets.newHashSet("FIELDA", "FIELDB");
+        String query = "FOO == 'bar' && filter:excludeRegex(FIELDA||FIELDB||FIELDC, 'ba.*')";
+        String expected = "FOO == 'bar' && FIELDA !~ 'ba.*' && FIELDB !~ 'ba.*' && filter:excludeRegex(FIELDC, 'ba.*')";
+        assertVisitorResult(query, expected, indexOnlyFields);
+
+        query = "FOO == 'bar' || filter:excludeRegex(FIELDA||FIELDB||FIELDC, 'ba.*')";
+        expected = "FOO == 'bar' || (FIELDA !~ 'ba.*' && FIELDB !~ 'ba.*' && filter:excludeRegex(FIELDC, 'ba.*'))";
+        assertVisitorResult(query, expected, indexOnlyFields);
+    }
+
+    @Test
+    public void testANDIncludeRegex() throws ParseException {
+        Set<String> indexOnlyFields = Sets.newHashSet("FIELDA", "FIELDB");
+        String query = "FOO == 'bar' && filter:includeRegex(FIELDA&&FIELDB&&FIELDC, 'ba.*')";
+        String expected = "FOO == 'bar' && FIELDA =~ 'ba.*' && FIELDB =~ 'ba.*' && filter:includeRegex(FIELDC, 'ba.*')";
+        assertVisitorResult(query, expected, indexOnlyFields);
+
+        query = "FOO == 'bar' || filter:includeRegex(FIELDA&&FIELDB&&FIELDC, 'ba.*')";
+        expected = "FOO == 'bar' || (FIELDA =~ 'ba.*' && FIELDB =~ 'ba.*' && filter:includeRegex(FIELDC, 'ba.*'))";
+        assertVisitorResult(query, expected, indexOnlyFields);
+    }
+
+    @Test
+    public void testANDExcludeRegex() throws ParseException {
+        Set<String> indexOnlyFields = Sets.newHashSet("FIELDA", "FIELDB");
+        String query = "FOO == 'bar' && filter:excludeRegex(FIELDA&&FIELDB&&FIELDC, 'ba.*')";
+        String expected = "FOO == 'bar' && FIELDA !~ 'ba.*' && FIELDB !~ 'ba.*' && filter:excludeRegex(FIELDC, 'ba.*')";
+        assertVisitorResult(query, expected, indexOnlyFields);
+
+        query = "FOO == 'bar' || filter:excludeRegex(FIELDA&&FIELDB&&FIELDC, 'ba.*')";
+        expected = "FOO == 'bar' || (FIELDA !~ 'ba.*' && FIELDB !~ 'ba.*' && filter:excludeRegex(FIELDC, 'ba.*'))";
+        assertVisitorResult(query, expected, indexOnlyFields);
+    }
+
+    @Test
     public void testRewriteMultiFieldedExcludeRegex() throws ParseException {
         Set<String> indexOnlyFields = Sets.newHashSet("FIELDA", "FIELDB");
         String query = "FOO == 'bar' && filter:excludeRegex(FIELDA||FIELDB, 'ba.*')";
@@ -76,6 +136,18 @@ public class RegexFunctionVisitorTest {
 
         query = "FOO == 'bar' || filter:excludeRegex(FIELDA||FIELDB, 'ba.*')";
         expected = "FOO == 'bar' || (FIELDA !~ 'ba.*' && FIELDB !~ 'ba.*')";
+        assertVisitorResult(query, expected, indexOnlyFields);
+    }
+
+    @Test
+    public void testRewriteMultiHeteroFieldedExcludeRegex() throws ParseException {
+        Set<String> indexOnlyFields = Sets.newHashSet("FIELDA");
+        String query = "FOO == 'bar' && filter:excludeRegex(FIELDA||FIELDB, 'ba.*')";
+        String expected = "FOO == 'bar' && (FIELDA !~ 'ba.*' && filter:excludeRegex(FIELDB, 'ba.*'))";
+        assertVisitorResult(query, expected, indexOnlyFields);
+
+        query = "FOO == 'bar' || filter:excludeRegex(FIELDA||FIELDB, 'ba.*')";
+        expected = "FOO == 'bar' || (FIELDA !~ 'ba.*' && filter:excludeRegex(FIELDB, 'ba.*'))";
         assertVisitorResult(query, expected, indexOnlyFields);
     }
 
@@ -91,13 +163,12 @@ public class RegexFunctionVisitorTest {
         assertVisitorResult(query, query, indexOnlyFields);
     }
 
-    // mixture of index-only and non index-only fields should not be expanded
-
     @Test
     public void testMixedEventNonEvent() throws ParseException {
         Set<String> indexOnlyFields = Sets.newHashSet("NON_EVENT_FIELD");
         String query = "filter:includeRegex(EVENT_FIELD || NON_EVENT_FIELD,'all_.*?')";
-        assertVisitorResult(query, query, indexOnlyFields);
+        String expected = " NON_EVENT_FIELD =~ 'all_.*?' || filter:includeRegex(EVENT_FIELD, 'all_.*?')";
+        assertVisitorResult(query, expected, indexOnlyFields);
     }
 
     // bad regex cases

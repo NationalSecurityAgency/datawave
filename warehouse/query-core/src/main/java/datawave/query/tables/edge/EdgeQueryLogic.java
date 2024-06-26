@@ -149,9 +149,10 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements 
         } else {
             config.setQueryString(queryString);
         }
+
         config.setBeginDate(settings.getBeginDate());
         config.setEndDate(settings.getEndDate());
-        scannerFactory = new ScannerFactory(client);
+        scannerFactory = new ScannerFactory(config);
 
         prefilterValues = null;
         EdgeQueryConfiguration.dateType dateFilterType = config.getDateRangeType();

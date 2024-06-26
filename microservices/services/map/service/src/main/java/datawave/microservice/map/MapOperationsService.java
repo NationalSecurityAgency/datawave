@@ -47,6 +47,7 @@ import datawave.data.type.PointType;
 import datawave.data.type.Type;
 import datawave.microservice.authorization.user.DatawaveUserDetails;
 import datawave.microservice.map.config.MapServiceProperties;
+import datawave.microservice.map.config.QueryMetricListResponseSupplier;
 import datawave.microservice.map.data.GeoFeature;
 import datawave.microservice.map.data.GeoFeatures;
 import datawave.microservice.map.data.GeoQueryFeatures;
@@ -71,16 +72,19 @@ public class MapOperationsService {
     private final MetadataHelperFactory metadataHelperFactory;
     
     private final AccumuloClient accumuloClient;
+    private final QueryMetricListResponseSupplier queryMetricListResponseSupplier;
     private final Set<String> geoFields = new HashSet<>();
     private final Set<String> geoWaveFields = new HashSet<>();
     
     public MapOperationsService(MapServiceProperties mapServiceProperties, WebClient.Builder webClientBuilder, JWTTokenHandler jwtTokenHandler,
-                    MetadataHelperFactory metadataHelperFactory, @Qualifier("warehouse") AccumuloClient accumuloClient) {
+                    MetadataHelperFactory metadataHelperFactory, @Qualifier("warehouse") AccumuloClient accumuloClient,
+                    QueryMetricListResponseSupplier queryMetricListResponseSupplier) {
         this.mapServiceProperties = mapServiceProperties;
         this.webClient = webClientBuilder.build();
         this.jwtTokenHandler = jwtTokenHandler;
         this.metadataHelperFactory = metadataHelperFactory;
         this.accumuloClient = accumuloClient;
+        this.queryMetricListResponseSupplier = queryMetricListResponseSupplier;
         loadGeoFields();
     }
     
@@ -231,14 +235,15 @@ public class MapOperationsService {
     private BaseQueryMetricListResponse loadQueryFromMetricsService(String queryId, DatawaveUserDetails currentUser) throws QueryException {
         try {
             // @formatter:off
-            ResponseEntity<BaseQueryMetricListResponse> responseEntity = webClient
+            // noinspection unchecked
+            ResponseEntity<BaseQueryMetricListResponse> responseEntity = (ResponseEntity<BaseQueryMetricListResponse>) webClient
                     .get()
                     .uri(UriComponentsBuilder
                             .fromHttpUrl(mapServiceProperties.getMetricsUri() + queryId)
                             .toUriString())
                     .header(HttpHeaders.AUTHORIZATION, "Bearer " + jwtTokenHandler.createTokenFromUsers(currentUser.getPrimaryUser().getName(), currentUser.getProxiedUsers()))
                     .retrieve()
-                    .toEntity(BaseQueryMetricListResponse.class)
+                    .toEntity(queryMetricListResponseSupplier.get().getClass())
                     .doOnError(e -> log.warn("Encountered error while attempting to load query from query metric service", e))
                     .block(Duration.ofMillis(TimeUnit.SECONDS.toMillis(30)));
             // @formatter:on

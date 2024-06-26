@@ -10,17 +10,14 @@ import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.log4j.Logger;
 import org.geotools.geojson.geom.GeometryJSON;
 import org.locationtech.jts.geom.Geometry;
-import org.locationtech.jts.io.WKTReader;
 
 import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.core.geo.utils.CommonGeoUtils;
 import datawave.core.query.jexl.visitors.JexlStringBuildingVisitor;
-import datawave.query.jexl.functions.GeoFunctionsDescriptor;
-import datawave.query.jexl.functions.GeoWaveFunctionsDescriptor;
+import datawave.microservice.querymetric.QueryGeometry;
 import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
 import datawave.query.jexl.functions.arguments.GeoFunctionJexlArgumentDescriptor;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
-import datawave.webservice.query.map.QueryGeometry;
 
 /**
  * This visitor will traverse the query tree, and extract both the geo function and associated query geometry (as GeoJSON).

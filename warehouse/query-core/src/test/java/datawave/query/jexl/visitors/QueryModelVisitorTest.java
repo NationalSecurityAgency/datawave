@@ -212,6 +212,13 @@ public class QueryModelVisitorTest {
     }
 
     @Test
+    public void excludeFunction() throws ParseException {
+        String original = "filter:excludeRegex(FOO, '1')";
+        String expected = "filter:excludeRegex(BAR1||BAR2, '1')";
+        assertResult(original, expected);
+    }
+
+    @Test
     public void functionWithMethodInExpression() throws ParseException {
         String original = "filter:includeRegex(FOO, '1').size() > 0";
         String expected = "filter:includeRegex(BAR1||BAR2, '1').size() > 0";

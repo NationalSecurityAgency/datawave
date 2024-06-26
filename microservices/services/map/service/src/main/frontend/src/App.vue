@@ -1,8 +1,6 @@
 <template>
-  <!-- <router-view /> -->
-  <AltIndexPage />
+  <router-view />
 </template>
 
 <script setup lang="ts">
-import AltIndexPage from 'pages/AltIndexPage.vue';
 </script>
