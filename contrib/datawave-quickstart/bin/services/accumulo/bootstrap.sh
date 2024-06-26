@@ -21,7 +21,7 @@ DW_ZOOKEEPER_DIST_URI="${DW_ZOOKEEPER_DIST_URI:-https://dlcdn.apache.org/zookeep
 DW_ZOOKEEPER_DIST_SHA512_CHECKSUM="${DW_ZOOKEEPER_DIST_SHA512_CHECKSUM:-6afbfc1afc8b9370281bd9862f37dbb1cb95ec54bb2ed4371831aa5c0f08cfee775050bd57ce5fc0836e61af27eed9f0076f54b98997dd0e15159196056e52ea}"
 # shellcheck disable=SC2154
 # shellcheck disable=SC2034
-DW_ZOOKEEPER_DIST="$( downloadTarball "${DW_ZOOKEEPER_DIST_URI}" "${DW_ACCUMULO_SERVICE_DIR}" && echo "${tarball}" )"
+DW_ZOOKEEPER_DIST="$( { downloadTarball "${DW_ZOOKEEPER_DIST_URI}" "${DW_ACCUMULO_SERVICE_DIR}" || downloadMavenTarball "datawave-parent" "github-datawave::default::https://maven.pkg.github.com/NationalSecurityAgency/datawave" "gov.nsa.datawave.quickstart" "zookeeper" "3.7.2" "${DW_ACCUMULO_SERVICE_DIR}"; } && echo "${tarball}" )"
 DW_ZOOKEEPER_BASEDIR="zookeeper-install"
 DW_ZOOKEEPER_SYMLINK="zookeeper"
 
@@ -54,7 +54,7 @@ DW_ACCUMULO_DIST_URI="${DW_ACCUMULO_DIST_URI:-https://dlcdn.apache.org/accumulo/
 # The sha512 checksum for the tarball. Value should be the hash value only and does not include the file name. Cannot be left blank.
 DW_ACCUMULO_DIST_SHA512_CHECKSUM="${DW_ACCUMULO_DIST_SHA512_CHECKSUM:-27778c1c3f1d88ab128649fd0671d3be97ba052216ab43f1169395960e8c7d16375a51f940c2262437b836ea31f83f73f08f7a3d8cadda443e5e8bb31d9b23c5}"
 # shellcheck disable=SC2034
-DW_ACCUMULO_DIST="$( downloadTarball "${DW_ACCUMULO_DIST_URI}" "${DW_ACCUMULO_SERVICE_DIR}" && echo "${tarball}" )"
+DW_ACCUMULO_DIST="$( { downloadTarball "${DW_ACCUMULO_DIST_URI}" "${DW_ACCUMULO_SERVICE_DIR}" || downloadMavenTarball "datawave-parent" "github-datawave::default::https://maven.pkg.github.com/NationalSecurityAgency/datawave" "gov.nsa.datawave.quickstart" "accumulo" "2.1.2" "${DW_ACCUMULO_SERVICE_DIR}"; } && echo "${tarball}" )"
 DW_ACCUMULO_BASEDIR="accumulo-install"
 DW_ACCUMULO_SYMLINK="accumulo"
 DW_ACCUMULO_INSTANCE_NAME="my-instance-01"
@@ -300,15 +300,15 @@ function accumuloPidList() {
 }
 
 function accumuloDisplayBinaryInfo() {
-  echo "Source: ${DW_ACCUMULO_DIST_URI}"
-  local tarballName="$(basename "$DW_ACCUMULO_DIST_URI")"
+  echo "Source: ${DW_ACCUMULO_DIST}"
+  local tarballName="$(basename "$DW_ACCUMULO_DIST")"
   if [[ -f "${DW_ACCUMULO_SERVICE_DIR}/${tarballName}" ]]; then
      echo " Local: ${DW_ACCUMULO_SERVICE_DIR}/${tarballName}"
   else
      echo " Local: Not loaded"
   fi
-  echo "Source: ${DW_ZOOKEEPER_DIST_URI}"
-  tarballName="$(basename "$DW_ZOOKEEPER_DIST_URI")"
+  echo "Source: ${DW_ZOOKEEPER_DIST}"
+  tarballName="$(basename "$DW_ZOOKEEPER_DIST")"
   if [[ -f "${DW_ACCUMULO_SERVICE_DIR}/${tarballName}" ]]; then
      echo " Local: ${DW_ACCUMULO_SERVICE_DIR}/${tarballName}"
   else

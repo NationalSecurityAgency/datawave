@@ -53,7 +53,7 @@ RUN rm -f .dockerignore .maven-dockerignore && \
     git commit -m "Source Branch :: $DATAWAVE_BRANCH_NAME :: Source Commit :: $DATAWAVE_COMMIT_ID" && \
     echo "export DW_DATAWAVE_BUILD_PROFILE=\"$DATAWAVE_BUILD_PROFILE\"" >> ~/.bashrc && \
     echo "export DW_DATAWAVE_INGEST_TEST_SKIP=\"$DATAWAVE_SKIP_INGEST\"" >> ~/.bashrc && \
-    echo "export DW_WGET_OPTS=\"-q\"" >> ~/.bashrc && \
+    echo "export DW_WGET_OPTS=\"-q --no-check-certificate\"" >> ~/.bashrc && \
     echo "export JAVA_HOME=\"$DATAWAVE_JAVA_HOME\"" >> ~/.bashrc && \
     echo "export PATH=\$JAVA_HOME/bin:\$PATH" >> ~/.bashrc && \
     echo "source /opt/datawave/contrib/datawave-quickstart/bin/env.sh" >> ~/.bashrc

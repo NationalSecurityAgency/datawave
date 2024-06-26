@@ -8,9 +8,10 @@ DW_MAVEN_BASEDIR="maven-install"
 DW_MAVEN_SYMLINK="maven"
 
 function bootstrapEmbeddedMaven() {
-    [ ! -f "${DW_MAVEN_SERVICE_DIR}/${DW_MAVEN_DIST}" ] \
-    && info "Maven 3.x not detected. Attempting to bootstrap a dedicated install..." \
-    && downloadTarball "${DW_MAVEN_DIST_URI}" "${DW_MAVEN_SERVICE_DIR}"
+    if [ ! -f "${DW_MAVEN_SERVICE_DIR}/${DW_MAVEN_DIST}" ]; then
+        info "Maven 3.x not detected. Attempting to bootstrap a dedicated install..."
+        DW_MAVEN_DIST="$( { downloadTarball "${DW_MAVEN_DIST_URI}" "${DW_MAVEN_SERVICE_DIR}" || downloadMavenTarball "datawave-parent" "github-datawave::default::https://maven.pkg.github.com/NationalSecurityAgency/datawave" "gov.nsa.datawave.quickstart" "maven" "3.8.8" "${DW_MAVEN_SERVICE_DIR}"; } && echo "${tarball}" )"
+    fi
 
     export MAVEN_HOME="${DW_CLOUD_HOME}/${DW_MAVEN_SYMLINK}"
     export M2_HOME="${MAVEN_HOME}"
@@ -105,8 +106,8 @@ function mavenPrintenv() {
 }
 
 function mavenDisplayBinaryInfo() {
-  echo "Source: ${DW_MAVEN_DIST_URI}"
-  local tarballName="$(basename "$DW_MAVEN_DIST_URI")"
+  echo "Source: ${DW_MAVEN_DIST}"
+  local tarballName="$(basename "$DW_MAVEN_DIST")"
   if [[ -f "${DW_MAVEN_SERVICE_DIR}/${tarballName}" ]]; then
      echo " Local: ${DW_MAVEN_SERVICE_DIR}/${tarballName}"
   else

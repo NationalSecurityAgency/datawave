@@ -121,6 +121,37 @@ function downloadTarball() {
    fi
 }
 
+function downloadMavenTarball() {
+   return 1
+   local pomFile="${DW_DATAWAVE_SOURCE_DIR:-$( cd "${DW_CLOUD_HOME}/../.." && pwd )}/pom.xml"
+   local rootProject=":$1"
+   local remoteRepo="$2"
+   local group="$3"
+   local artifact="$4"
+   local version="$5"
+   local tarballdir="$6"
+   tarball="${artifact}-${version}.tar.gz"
+   if [ ! -f "${tarballdir}/${tarball}" ] ; then
+      # download from maven repo
+      output=$( mvn -f "${pomFile}" -pl "${rootProject}" -DremoteRepositories="${remoteRepo}" dependency:get -Dartifact="${group}:${artifact}:${version}" -Dpackaging="tar.gz" )
+      retVal=$?
+      if [ $retVal -ne 0 ]; then
+         echo "Failed to download ${tarball} via maven"
+         echo "$output"
+         return $retVal
+      fi
+
+      # copy to specified directory
+      output=$( mvn -f "${pomFile}" -pl "${rootProject}" dependency:copy -Dartifact="${group}:${artifact}:${version}:tar.gz" -DoutputDirectory="${tarballdir}" )
+      retVal=$?
+      if [ $retVal -ne 0 ]; then
+         echo "Failed to copy ${tarball} to ${tarballdir} via maven"
+         echo "$output"
+         return $retVal
+      fi
+   fi
+}
+
 function writeSiteXml() {
    # Writes *-site.xml files, such as hdfs-site.xml, accumulo-site.xml, etc...
 
@@ -273,9 +304,9 @@ function checkBinaries()  {
   local localBinaries=()
   while IFS= read -r line; do
     if [[ "${line}" =~ ^Source:.* ]] ; then
-       sourceBinaries+=("$(cut -d: -f2- <<<${line})")
+       sourceBinaries+=("$(sed 's/.*: //g' <<<${line})")
     else
-       localBinaries+=("$(cut -d: -f2- <<<${line})")
+       localBinaries+=("$(sed 's/.*: //g' <<<${line})")
     fi
   done < <( allDisplayBinaryInfo | grep -E 'Source:|Local:' )
 

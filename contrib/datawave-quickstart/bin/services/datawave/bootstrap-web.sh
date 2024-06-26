@@ -4,7 +4,7 @@
 DW_WILDFLY_DIST_URI="${DW_WILDFLY_DIST_URI:-https://download.jboss.org/wildfly/17.0.1.Final/wildfly-17.0.1.Final.tar.gz}"
 # The sha512 checksum for the tarball. Value should be the hash value only and does not include the file name. Cannot be left blank.
 DW_WILDFLY_DIST_SHA512_CHECKSUM="${DW_WILDFLY_DIST_SHA512_CHECKSUM:-fcbdff4bc275f478c3bf5f665a83e62468a920e58fcddeaa2710272dd0f1ce3154cdc371d5011763a6be24ae1a5e0bca0218cceea63543edb4b5cf22de60b485}"
-DW_WILDFLY_DIST="$( downloadTarball "${DW_WILDFLY_DIST_URI}" "${DW_DATAWAVE_SERVICE_DIR}" && echo "${tarball}" )"
+DW_WILDFLY_DIST="$( { downloadTarball "${DW_WILDFLY_DIST_URI}" "${DW_DATAWAVE_SERVICE_DIR}" || downloadMavenTarball "datawave-parent" "github-datawave::default::https://maven.pkg.github.com/NationalSecurityAgency/datawave" "gov.nsa.datawave.quickstart" "wildfly" "17.0.1" "${DW_DATAWAVE_SERVICE_DIR}"; } && echo "${tarball}" )"
 DW_WILDFLY_BASEDIR="wildfly-install"
 DW_WILDFLY_SYMLINK="wildfly"
 
@@ -176,8 +176,8 @@ function datawaveWebDisplayBinaryInfo() {
   else
      echo " Local: Not loaded"
   fi
-  echo "Source: ${DW_WILDFLY_DIST_URI}"
-  local tarballName="$(basename "$DW_WILDFLY_DIST_URI")"
+  echo "Source: ${DW_WILDFLY_DIST}"
+  local tarballName="$(basename "$DW_WILDFLY_DIST")"
   if [[ -f "${DW_DATAWAVE_SERVICE_DIR}/${tarballName}" ]]; then
      echo " Local: ${DW_DATAWAVE_SERVICE_DIR}/${tarballName}"
   else
