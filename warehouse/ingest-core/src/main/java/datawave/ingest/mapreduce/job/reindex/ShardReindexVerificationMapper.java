@@ -26,6 +26,7 @@ import org.apache.log4j.Logger;
 import com.google.protobuf.InvalidProtocolBufferException;
 
 import datawave.ingest.data.config.ingest.AccumuloHelper;
+import datawave.ingest.mapreduce.job.util.RFileUtil;
 import datawave.ingest.protobuf.TermWeight;
 
 public class ShardReindexVerificationMapper extends Mapper<Range,String,Key,Value> {
@@ -98,18 +99,7 @@ public class ShardReindexVerificationMapper extends Mapper<Range,String,Key,Valu
             }
         } else {
             String[] paths = sourceArg.split(",");
-            RFileSource[] sources = new RFileSource[paths.length];
-            try {
-                for (int i = 0; i < paths.length; i++) {
-                    Path p = new Path(paths[i]);
-                    FileSystem fs = FileSystem.get(p.toUri(), config);
-                    sources[i] = new RFileSource(fs.open(p), fs.getFileStatus(p).getLen());
-                }
-            } catch (IOException e) {
-                throw new RuntimeException("could not open source rfiles: " + sourceArg, e);
-            }
-
-            return RFile.newScanner().from(sources).withoutSystemIterators().build();
+            return RFileUtil.getRFileScanner(config, paths);
         }
     }
 
@@ -194,14 +184,14 @@ public class ShardReindexVerificationMapper extends Mapper<Range,String,Key,Valu
         return null;
     }
 
-    private void dumpIterator(int sourceNum, Iterator<Map.Entry<Key,Value>> itr, Context context) throws InvalidProtocolBufferException {
+    private void dumpIterator(int sourceNum, Iterator<Map.Entry<Key,Value>> itr, Context context) throws IOException, InterruptedException {
         while (itr.hasNext()) {
             Map.Entry<Key,Value> entry = itr.next();
             writeDiff(context, sourceNum, entry.getKey(), entry.getValue(), null, null);
         }
     }
 
-    private void writeDiff(Context context, int sourceNum, Key key, Value value, Key otherKey, Value otherValue) throws InvalidProtocolBufferException {
+    private void writeDiff(Context context, int sourceNum, Key key, Value value, Key otherKey, Value otherValue) throws IOException, InterruptedException {
         ByteSequence cf = key.getColumnFamilyData();
         if (ShardReindexMapper.isKeyD(cf)) {
             context.getCounter(key.getRow().toString() + "-" + sourceNum, "d").increment(1);
@@ -230,6 +220,7 @@ public class ShardReindexVerificationMapper extends Mapper<Range,String,Key,Valu
             // index keys? TODO
         }
 
+        context.write(key, value);
         context.getCounter("diff", "source" + sourceNum).increment(1);
     }
 

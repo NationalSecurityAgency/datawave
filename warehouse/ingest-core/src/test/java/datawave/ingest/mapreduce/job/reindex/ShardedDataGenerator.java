@@ -12,6 +12,7 @@ import static datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler.SHA
 import static datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler.SHARD_GRIDX_TNAME;
 import static datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler.SHARD_TNAME;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -29,9 +30,13 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.StatusReporter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
+import org.apache.hadoop.mapreduce.TaskAttemptID;
+import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
+import org.apache.hadoop.shaded.com.google.common.io.Files;
 import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.hadoop.util.StringUtils;
 
+import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.TreeMultimap;
 
@@ -40,9 +45,13 @@ import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
 import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.data.config.NormalizedContentInterface;
+import datawave.ingest.data.config.ingest.AbstractContentIngestHelper;
 import datawave.ingest.data.config.ingest.CSVIngestHelper;
 import datawave.ingest.data.config.ingest.IngestHelperInterface;
+import datawave.ingest.mapreduce.StandaloneStatusReporter;
 import datawave.ingest.mapreduce.handler.DataTypeHandler;
+import datawave.ingest.mapreduce.handler.shard.AbstractColumnBasedHandler;
+import datawave.ingest.mapreduce.handler.tokenize.ContentIndexingColumnBasedHandler;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 
 public class ShardedDataGenerator {
@@ -148,6 +157,27 @@ public class ShardedDataGenerator {
         for (RFileWriter writer : writerMap.values()) {
             writer.close();
         }
+    }
 
+    public static File createIngestFiles(List<String> dataOptions, int numEvents) throws ClassNotFoundException, IOException, InterruptedException {
+        File f = Files.createTempDir();
+        Configuration config = new Configuration();
+        ShardedDataGenerator.setup(config, "samplecsv", 8, "shard", "shardIndex", "shardReverseIndex", "DatawaveMetadata");
+        DataTypeHandler handler = ShardedDataGenerator.getDataTypeHandler(config, new TaskAttemptContextImpl(config, new TaskAttemptID()),
+                        SimpleContentIndexingColumnBasedHandler.class.getCanonicalName());
+        Multimap<BulkIngestKey,Value> allGenerated = HashMultimap.create();
+        for (int i = 0; i < numEvents; i++) {
+            RawRecordContainer container = ShardedDataGenerator.generateEvent(config, "samplecsv", new Date(),
+                            ShardedDataGenerator.generateRawData(9, dataOptions).getBytes(), new ColumnVisibility());
+            Multimap<BulkIngestKey,Value> generated = ShardedDataGenerator.process(config, handler, "samplecsv", container, new StandaloneStatusReporter());
+            allGenerated.putAll(generated);
+        }
+        ShardedDataGenerator.writeData(f.getAbsolutePath(), "magic.rf", allGenerated);
+
+        return f;
+    }
+
+    public static File createIngestFiles(List<String> dataOptions) throws ClassNotFoundException, IOException, InterruptedException {
+        return createIngestFiles(dataOptions, 1);
     }
 }

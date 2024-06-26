@@ -1,5 +1,6 @@
 package datawave.ingest.mapreduce.job.reindex;
 
+import static datawave.ingest.mapreduce.job.reindex.ShardedDataGenerator.createIngestFiles;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.expectLastCall;
 
@@ -46,6 +47,8 @@ public class ShardReindexVerificationMapperTest extends EasyMockSupport {
     private InMemoryInstance instance;
     private InMemoryAccumuloClient accumuloClient;
 
+    private List<String> dataOptions;
+
     private File sourceDir1 = null;
     private File sourceDir2 = null;
 
@@ -59,6 +62,15 @@ public class ShardReindexVerificationMapperTest extends EasyMockSupport {
         accumuloClient = new InMemoryAccumuloClient("root", instance);
 
         expect(context.getConfiguration()).andReturn(config).anyTimes();
+
+        dataOptions = new ArrayList<>();
+        dataOptions.add("");
+        dataOptions.add("val1");
+        dataOptions.add("value 2");
+        dataOptions.add("the dog jumped over the grey fence");
+        dataOptions.add("seven long nights");
+        dataOptions.add("val2");
+        dataOptions.add("walking");
     }
 
     @After
@@ -169,7 +181,7 @@ public class ShardReindexVerificationMapperTest extends EasyMockSupport {
     @Test
     public void setupTest_twoSourcesWithAccumuloConfig()
                     throws AccumuloException, TableExistsException, AccumuloSecurityException, IOException, ClassNotFoundException, InterruptedException {
-        sourceDir1 = createIngestFiles();
+        sourceDir1 = createIngestFiles(dataOptions);
 
         replayAll();
 
@@ -206,7 +218,7 @@ public class ShardReindexVerificationMapperTest extends EasyMockSupport {
         mockCounter.increment(1);
         expectLastCall().anyTimes();
 
-        sourceDir1 = createIngestFiles();
+        sourceDir1 = createIngestFiles(dataOptions);
 
         replayAll();
 
@@ -222,28 +234,5 @@ public class ShardReindexVerificationMapperTest extends EasyMockSupport {
         // should be no diff as the inputs are identical
 
         verifyAll();
-    }
-
-    private File createIngestFiles() throws ClassNotFoundException, IOException, InterruptedException {
-        File f = Files.createTempDir();
-        Configuration config = new Configuration();
-        ShardedDataGenerator.setup(config, "samplecsv", 9, "shard", "shardIndex", "shardReverseIndex", "DatawaveMetadata");
-        DataTypeHandler handler = ShardedDataGenerator.getDataTypeHandler(config, new TaskAttemptContextImpl(config, new TaskAttemptID()),
-                        AbstractColumnBasedHandler.class.getCanonicalName());
-        List<String> dataOptions = new ArrayList<>();
-        dataOptions.add("");
-        dataOptions.add("val1");
-        dataOptions.add("value 2");
-        dataOptions.add("the dog jumped over the grey fence");
-        dataOptions.add("seven long nights");
-        dataOptions.add("val2");
-        dataOptions.add("walking");
-        RawRecordContainer container = ShardedDataGenerator.generateEvent(config, "samplecsv", new Date(),
-                        ShardedDataGenerator.generateRawData(9, dataOptions).getBytes(), new ColumnVisibility());
-        Multimap<BulkIngestKey,Value> generated = ShardedDataGenerator.process(config, handler, "samplecsv", container, new StandaloneStatusReporter());
-
-        ShardedDataGenerator.writeData(f.getAbsolutePath(), "magic.rf", generated);
-
-        return f;
     }
 }

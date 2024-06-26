@@ -124,5 +124,4 @@ public class ShardReindexJobTest extends EasyMockSupport {
     public void noInputFiles_noDates_test() {
         // TODO
     }
-
 }

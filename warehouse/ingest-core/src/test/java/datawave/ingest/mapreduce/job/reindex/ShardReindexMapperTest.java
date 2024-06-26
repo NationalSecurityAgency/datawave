@@ -11,23 +11,39 @@ import static datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler.SHA
 import static datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler.SHARD_GRIDX_TNAME;
 import static datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler.SHARD_TNAME;
 import static datawave.ingest.mapreduce.job.reindex.ShardReindexJob.FI_START;
+import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.expectLastCall;
+import static org.easymock.EasyMock.getCurrentArguments;
+import static org.easymock.EasyMock.isA;
 
+import java.io.File;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 
 import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.file.rfile.RFile;
+import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.Counters;
 import org.apache.hadoop.mapreduce.Mapper;
+import org.apache.hadoop.shaded.com.google.common.io.Files;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockSupport;
 import org.junit.Before;
 import org.junit.Test;
+
+import com.google.common.collect.Multimap;
+import com.google.common.collect.TreeMultimap;
 
 import datawave.data.hash.HashUID;
 import datawave.data.type.NoOpType;
@@ -40,6 +56,7 @@ import datawave.ingest.data.config.ingest.CSVIngestHelper;
 import datawave.ingest.mapreduce.handler.shard.ShardIdFactory;
 import datawave.ingest.mapreduce.handler.tokenize.ContentIndexingColumnBasedHandler;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.ingest.mapreduce.job.util.RFileUtil;
 import datawave.ingest.protobuf.TermWeight;
 
 public class ShardReindexMapperTest extends EasyMockSupport {
@@ -48,6 +65,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
 
     @Before
     public void setup() {
+        // TODO shift this to ShardedDataGenerator
         // clear and reset the type registry
         conf = new Configuration();
         conf.addResource(ClassLoader.getSystemResource("config/all-config.xml"));
@@ -63,9 +81,9 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         // simple required config for a type with some indexed fields
         conf.set("samplecsv" + DATA_HEADER, "a,b,c,d,e");
         conf.set("samplecsv" + DATA_SEP, ",");
-        conf.set("samplecsv" + INDEX_FIELDS, "FIELDA,FIELDB,FIELDC,FIELDE,FIELDF,FIELDG");
+        conf.set("samplecsv" + INDEX_FIELDS, "FIELDA,FIELDB,FIELDC,FIELDE,FIELDE_TOKEN,FIELDF,FIELDF_TOKEN,FIELDG,FIELDG_TOKEN");
         conf.set("samplecsv" + REVERSE_INDEX_FIELDS, "FIELDB,FIELDD");
-        conf.set("samplecsv" + INDEX_ONLY_FIELDS, "FIELDE");
+        conf.set("samplecsv" + INDEX_ONLY_FIELDS, "FIELDE,FIELDE_TOKEN");
         conf.set("samplecsv" + TOKEN_INDEX_ALLOWLIST, "FIELDE,FIELDF,FIELDG");
 
         Type t = new Type("samplecsv", CSVIngestHelper.class, null, null, 0, null);
@@ -87,7 +105,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         Mapper.Context context = createMock(Mapper.Context.class);
         ShardReindexMapper mapper = new ShardReindexMapper();
 
-        EasyMock.expect(context.getConfiguration()).andReturn(conf).anyTimes();
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
         context.progress();
 
         replayAll();
@@ -107,7 +125,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
 
         conf.setBoolean(ShardReindexMapper.EXPORT_SHARD, true);
 
-        EasyMock.expect(context.getConfiguration()).andReturn(conf).anyTimes();
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
         context.progress();
 
         replayAll();
@@ -130,7 +148,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         deletedkey.setDeleted(true);
         BulkIngestKey bik = new BulkIngestKey(new Text("shard"), deletedkey);
         context.write(EasyMock.eq(bik), EasyMock.isA(Value.class));
-        EasyMock.expect(context.getConfiguration()).andReturn(conf).anyTimes();
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
         context.progress();
 
         replayAll();
@@ -155,7 +173,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         Key indexKey = new Key("ABC", "FIELDA", "row" + '\u0000' + "samplecsv");
         BulkIngestKey bik = new BulkIngestKey(new Text("shardIndex"), indexKey);
 
-        EasyMock.expect(context.getConfiguration()).andReturn(conf).anyTimes();
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
         context.write(EasyMock.eq(bik), EasyMock.isA(Value.class));
         context.progress();
 
@@ -183,7 +201,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         BulkIngestKey fiBik = new BulkIngestKey(new Text("shard"), fiKey);
 
         enableEventProcessing(true);
-        EasyMock.expect(context.getConfiguration()).andReturn(conf).anyTimes();
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
 
         context.progress();
 
@@ -207,7 +225,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         BulkIngestKey fiBik = new BulkIngestKey(new Text("shard"), fiKey);
 
         enableEventProcessing(true);
-        EasyMock.expect(context.getConfiguration()).andReturn(conf).anyTimes();
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
 
         // write both the shardIndex and the original fi
         context.write(EasyMock.eq(bik), EasyMock.isA(Value.class));
@@ -238,7 +256,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         BulkIngestKey bik1 = new BulkIngestKey(new Text("shardIndex"), indexKey);
         BulkIngestKey bik2 = new BulkIngestKey(new Text("shardReverseIndex"), revKey);
 
-        EasyMock.expect(context.getConfiguration()).andReturn(conf).anyTimes();
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
         context.write(EasyMock.eq(bik1), EasyMock.isA(Value.class));
         context.write(EasyMock.eq(bik2), EasyMock.isA(Value.class));
         context.progress();
@@ -265,7 +283,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         Key revKey = new Key("CBA", "FIELDD", "row" + '\u0000' + "samplecsv");
         BulkIngestKey bik2 = new BulkIngestKey(new Text("shardReverseIndex"), revKey);
 
-        EasyMock.expect(context.getConfiguration()).andReturn(conf).anyTimes();
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
         context.write(EasyMock.and(EasyMock.isA(BulkIngestKey.class), EasyMock.eq(bik2)), EasyMock.isA(Value.class));
         context.progress();
 
@@ -292,7 +310,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         revKey.setDeleted(true);
         BulkIngestKey bik2 = new BulkIngestKey(new Text("shardReverseIndex"), revKey);
 
-        EasyMock.expect(context.getConfiguration()).andReturn(conf).anyTimes();
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
         context.write(EasyMock.eq(bik2), EasyMock.isA(Value.class));
         context.progress();
 
@@ -318,7 +336,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         Key fiKey = new Key("row", FI_START + "FIELDD", "ABC" + '\u0000' + "samplecsv" + '\u0000' + "1.2.3");
         fiKey.setDeleted(true);
 
-        EasyMock.expect(context.getConfiguration()).andReturn(conf).anyTimes();
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
 
         conf.setBoolean(ShardReindexMapper.PROPAGATE_DELETES, false);
         conf.setBoolean(ShardReindexMapper.CLEANUP_SHARD, true);
@@ -341,7 +359,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         ShardReindexMapper mapper = new ShardReindexMapper();
         Key event = new Key("row", "samplecsv" + '\u0000' + "1.2.3", "FIELDB" + '\u0000' + "my field b value", 1000l);
 
-        EasyMock.expect(context.getConfiguration()).andReturn(conf).anyTimes();
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
         context.progress();
 
         replayAll();
@@ -366,7 +384,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         Key event = new Key(shard, "samplecsv" + '\u0000' + uid, "FIELD_UNINDEXED" + '\u0000' + "my field b value", eventTime);
 
         enableEventProcessing(true);
-        EasyMock.expect(context.getConfiguration()).andReturn(conf).anyTimes();
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
 
         // output the event only
         BulkIngestKey bik = new BulkIngestKey(new Text("shard"), event);
@@ -388,7 +406,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         ShardReindexMapper mapper = new ShardReindexMapper();
 
         enableEventProcessing(true);
-        EasyMock.expect(context.getConfiguration()).andReturn(conf).anyTimes();
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
 
         Key event = expectIndexed(context, "20240216", "1.2.3", "samplecsv", "FIELDA", "ABC", true);
 
@@ -409,7 +427,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         ShardReindexMapper mapper = new ShardReindexMapper();
 
         enableEventProcessing(true);
-        EasyMock.expect(context.getConfiguration()).andReturn(conf).anyTimes();
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
 
         Key event = expectIndexed(context, "20240216", "1.2.3", "samplecsv", "FIELDA.123.234.345.456", "ABC", true);
 
@@ -430,7 +448,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         ShardReindexMapper mapper = new ShardReindexMapper();
 
         enableEventProcessing(true);
-        EasyMock.expect(context.getConfiguration()).andReturn(conf).anyTimes();
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
 
         Key event = expectTokenized(context, "20240216", "1.2.3", "samplecsv", "FIELDF", "generate some tokens", new String[] {"generate", "some", "tokens"},
                         false);
@@ -440,7 +458,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         EasyMock.expectLastCall().anyTimes();
 
         // ingest handler may access counters, this is a catch all
-        EasyMock.expect(context.getCounter(EasyMock.isA(String.class), EasyMock.isA(String.class))).andReturn(new Counters.Counter()).anyTimes();
+        expect(context.getCounter(EasyMock.isA(String.class), EasyMock.isA(String.class))).andReturn(new Counters.Counter()).anyTimes();
 
         replayAll();
 
@@ -459,7 +477,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         ShardReindexMapper mapper = new ShardReindexMapper();
 
         enableEventProcessing(true);
-        EasyMock.expect(context.getConfiguration()).andReturn(conf).anyTimes();
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
 
         Key event = expectTokenized(context, "20240216", "1.2.3", "samplecsv", "FIELDF", "generate some tokens", new String[] {"generate", "some", "tokens"},
                         true);
@@ -469,7 +487,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         EasyMock.expectLastCall().anyTimes();
 
         // ingest handler may access counters, this is a catch all
-        EasyMock.expect(context.getCounter(EasyMock.isA(String.class), EasyMock.isA(String.class))).andReturn(new Counters.Counter()).anyTimes();
+        expect(context.getCounter(EasyMock.isA(String.class), EasyMock.isA(String.class))).andReturn(new Counters.Counter()).anyTimes();
 
         replayAll();
 
@@ -489,7 +507,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         ShardReindexMapper mapper = new ShardReindexMapper();
 
         enableEventProcessing(true);
-        EasyMock.expect(context.getConfiguration()).andReturn(conf).anyTimes();
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
 
         Key event1 = expectTokenized(context, "20240216", "1.2.3", "samplecsv", "FIELDF", "value1", new String[] {"value1"}, true);
         Key event2 = expectTokenized(context, "20240216", "1.2.3", "samplecsv", "FIELDF", "value2", new String[] {"value2"}, true);
@@ -499,7 +517,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         EasyMock.expectLastCall().anyTimes();
 
         // ingest handler may access counters, this is a catch all
-        EasyMock.expect(context.getCounter(EasyMock.isA(String.class), EasyMock.isA(String.class))).andReturn(new Counters.Counter()).anyTimes();
+        expect(context.getCounter(EasyMock.isA(String.class), EasyMock.isA(String.class))).andReturn(new Counters.Counter()).anyTimes();
 
         replayAll();
 
@@ -518,7 +536,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         enableEventProcessing(true);
         conf.setBoolean(ShardReindexMapper.GENERATE_TF, true);
         conf.set(ShardReindexMapper.BATCH_MODE, ShardReindexMapper.BatchMode.FIELD.name());
-        EasyMock.expect(context.getConfiguration()).andReturn(conf).anyTimes();
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
 
         ShardReindexMapper mapper = new ShardReindexMapper();
 
@@ -555,7 +573,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         conf.setBoolean(ShardReindexMapper.GENERATE_TF, true);
         conf.set(ShardReindexMapper.BATCH_MODE, ShardReindexMapper.BatchMode.FIELD.name());
         enableEventProcessing(true);
-        EasyMock.expect(context.getConfiguration()).andReturn(conf).anyTimes();
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
 
         ShardReindexMapper mapper = new ShardReindexMapper();
 
@@ -568,7 +586,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         EasyMock.expectLastCall().anyTimes();
 
         // ingest handler may access counters, this is a catch all
-        EasyMock.expect(context.getCounter(EasyMock.isA(String.class), EasyMock.isA(String.class))).andReturn(new Counters.Counter()).anyTimes();
+        expect(context.getCounter(EasyMock.isA(String.class), EasyMock.isA(String.class))).andReturn(new Counters.Counter()).anyTimes();
 
         replayAll();
 
@@ -588,7 +606,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         conf.setBoolean(ShardReindexMapper.GENERATE_TF, true);
         conf.set(ShardReindexMapper.BATCH_MODE, ShardReindexMapper.BatchMode.FIELD.name());
         enableEventProcessing(true);
-        EasyMock.expect(context.getConfiguration()).andReturn(conf).anyTimes();
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
 
         ShardReindexMapper mapper = new ShardReindexMapper();
 
@@ -601,7 +619,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         EasyMock.expectLastCall().anyTimes();
 
         // ingest handler may access counters, this is a catch all
-        EasyMock.expect(context.getCounter(EasyMock.isA(String.class), EasyMock.isA(String.class))).andReturn(new Counters.Counter()).anyTimes();
+        expect(context.getCounter(EasyMock.isA(String.class), EasyMock.isA(String.class))).andReturn(new Counters.Counter()).anyTimes();
 
         replayAll();
 
@@ -621,7 +639,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         conf.setBoolean(ShardReindexMapper.GENERATE_TF, true);
         conf.set(ShardReindexMapper.BATCH_MODE, ShardReindexMapper.BatchMode.FIELD.name());
         enableEventProcessing(true);
-        EasyMock.expect(context.getConfiguration()).andReturn(conf).anyTimes();
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
 
         ShardReindexMapper mapper = new ShardReindexMapper();
 
@@ -633,7 +651,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         EasyMock.expectLastCall().anyTimes();
 
         // ingest handler may access counters, this is a catch all
-        EasyMock.expect(context.getCounter(EasyMock.isA(String.class), EasyMock.isA(String.class))).andReturn(new Counters.Counter()).anyTimes();
+        expect(context.getCounter(EasyMock.isA(String.class), EasyMock.isA(String.class))).andReturn(new Counters.Counter()).anyTimes();
 
         replayAll();
 
@@ -652,7 +670,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         conf.setBoolean(ShardReindexMapper.GENERATE_TF, true);
         conf.set(ShardReindexMapper.BATCH_MODE, ShardReindexMapper.BatchMode.FIELD.name());
         enableEventProcessing(true);
-        EasyMock.expect(context.getConfiguration()).andReturn(conf).anyTimes();
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
 
         ShardReindexMapper mapper = new ShardReindexMapper();
 
@@ -664,7 +682,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         EasyMock.expectLastCall().anyTimes();
 
         // ingest handler may access counters, this is a catch all
-        EasyMock.expect(context.getCounter(EasyMock.isA(String.class), EasyMock.isA(String.class))).andReturn(new Counters.Counter()).anyTimes();
+        expect(context.getCounter(EasyMock.isA(String.class), EasyMock.isA(String.class))).andReturn(new Counters.Counter()).anyTimes();
 
         replayAll();
 
@@ -683,7 +701,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         conf.setBoolean(ShardReindexMapper.GENERATE_TF, true);
         conf.set(ShardReindexMapper.BATCH_MODE, ShardReindexMapper.BatchMode.EVENT.name());
         enableEventProcessing(true);
-        EasyMock.expect(context.getConfiguration()).andReturn(conf).anyTimes();
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
 
         ShardReindexMapper mapper = new ShardReindexMapper();
 
@@ -695,7 +713,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         EasyMock.expectLastCall().anyTimes();
 
         // ingest handler may access counters, this is a catch all
-        EasyMock.expect(context.getCounter(EasyMock.isA(String.class), EasyMock.isA(String.class))).andReturn(new Counters.Counter()).anyTimes();
+        expect(context.getCounter(EasyMock.isA(String.class), EasyMock.isA(String.class))).andReturn(new Counters.Counter()).anyTimes();
 
         replayAll();
 
@@ -714,7 +732,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         conf.setBoolean(ShardReindexMapper.GENERATE_TF, true);
         conf.set(ShardReindexMapper.BATCH_MODE, ShardReindexMapper.BatchMode.EVENT.name());
         enableEventProcessing(true);
-        EasyMock.expect(context.getConfiguration()).andReturn(conf).anyTimes();
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
 
         ShardReindexMapper mapper = new ShardReindexMapper();
 
@@ -726,7 +744,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         EasyMock.expectLastCall().anyTimes();
 
         // ingest handler may access counters, this is a catch all
-        EasyMock.expect(context.getCounter(EasyMock.isA(String.class), EasyMock.isA(String.class))).andReturn(new Counters.Counter()).anyTimes();
+        expect(context.getCounter(EasyMock.isA(String.class), EasyMock.isA(String.class))).andReturn(new Counters.Counter()).anyTimes();
 
         replayAll();
 
@@ -745,7 +763,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         conf.setBoolean(ShardReindexMapper.GENERATE_TF, true);
         conf.set(ShardReindexMapper.BATCH_MODE, ShardReindexMapper.BatchMode.EVENT.name());
         enableEventProcessing(true);
-        EasyMock.expect(context.getConfiguration()).andReturn(conf).anyTimes();
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
 
         ShardReindexMapper mapper = new ShardReindexMapper();
 
@@ -757,7 +775,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         EasyMock.expectLastCall().anyTimes();
 
         // ingest handler may access counters, this is a catch all
-        EasyMock.expect(context.getCounter(EasyMock.isA(String.class), EasyMock.isA(String.class))).andReturn(new Counters.Counter()).anyTimes();
+        expect(context.getCounter(EasyMock.isA(String.class), EasyMock.isA(String.class))).andReturn(new Counters.Counter()).anyTimes();
 
         replayAll();
 
@@ -776,7 +794,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         conf.setBoolean(ShardReindexMapper.GENERATE_TF, true);
         conf.set(ShardReindexMapper.BATCH_MODE, ShardReindexMapper.BatchMode.EVENT.name());
         enableEventProcessing(true);
-        EasyMock.expect(context.getConfiguration()).andReturn(conf).anyTimes();
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
 
         ShardReindexMapper mapper = new ShardReindexMapper();
 
@@ -790,7 +808,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         EasyMock.expectLastCall().anyTimes();
 
         // ingest handler may access counters, this is a catch all
-        EasyMock.expect(context.getCounter(EasyMock.isA(String.class), EasyMock.isA(String.class))).andReturn(new Counters.Counter()).anyTimes();
+        expect(context.getCounter(EasyMock.isA(String.class), EasyMock.isA(String.class))).andReturn(new Counters.Counter()).anyTimes();
 
         replayAll();
 
@@ -811,7 +829,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         conf.setBoolean(ShardReindexMapper.GENERATE_TF, true);
         conf.set(ShardReindexMapper.BATCH_MODE, ShardReindexMapper.BatchMode.FIELD.name());
         enableEventProcessing(true);
-        EasyMock.expect(context.getConfiguration()).andReturn(conf).anyTimes();
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
 
         ShardReindexMapper mapper = new ShardReindexMapper();
 
@@ -824,7 +842,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         EasyMock.expectLastCall().anyTimes();
 
         // ingest handler may access counters, this is a catch all
-        EasyMock.expect(context.getCounter(EasyMock.isA(String.class), EasyMock.isA(String.class))).andReturn(new Counters.Counter()).anyTimes();
+        expect(context.getCounter(EasyMock.isA(String.class), EasyMock.isA(String.class))).andReturn(new Counters.Counter()).anyTimes();
 
         replayAll();
 
@@ -851,7 +869,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         Key event = new Key(shard, "samplecsv" + '\u0000' + uid, "FIELDD" + '\u0000' + "ABC", eventTime);
 
         enableEventProcessing(true);
-        EasyMock.expect(context.getConfiguration()).andReturn(conf).anyTimes();
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
 
         // write a reverse global index key
         Key indexKey = new Key("CBA", "FIELDD", shard + '\u0000' + "samplecsv", eventTime);
@@ -889,7 +907,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         Key event = new Key(shard, "samplecsv" + '\u0000' + uid, "FIELDB" + '\u0000' + "this could be tokenized", eventTime);
 
         enableEventProcessing(true);
-        EasyMock.expect(context.getConfiguration()).andReturn(conf).anyTimes();
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
 
         // write a global index key
         Key indexKey = new Key("this could be tokenized", "FIELDB", shard + '\u0000' + "samplecsv", eventTime);
@@ -927,7 +945,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         ShardReindexMapper mapper = new ShardReindexMapper();
         Key fiKey = new Key("row", FI_START + "FIELDA", "ABC" + '\u0000' + "someUnknownDataType" + '\u0000' + "1.2.3");
 
-        EasyMock.expect(context.getConfiguration()).andReturn(conf).anyTimes();
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
         context.progress();
 
         replayAll();
@@ -951,7 +969,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         // set this as the default
         conf.set(ShardReindexMapper.DEFAULT_DATA_TYPE, "samplecsv");
 
-        EasyMock.expect(context.getConfiguration()).andReturn(conf).anyTimes();
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
         context.write(EasyMock.eq(bik), EasyMock.isA(Value.class));
         context.progress();
 
@@ -968,7 +986,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         Mapper.Context context = createMock(Mapper.Context.class);
         ShardReindexMapper mapper = new ShardReindexMapper();
 
-        EasyMock.expect(context.getConfiguration()).andReturn(conf).anyTimes();
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
         // set this as the default
         conf.set(ShardReindexMapper.DEFAULT_DATA_TYPE, "samplecsv");
 
@@ -989,7 +1007,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         Mapper.Context context = createMock(Mapper.Context.class);
         ShardReindexMapper mapper = new ShardReindexMapper();
 
-        EasyMock.expect(context.getConfiguration()).andReturn(conf).anyTimes();
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
         // set this as the default
         conf.set(ShardReindexMapper.DEFAULT_DATA_TYPE, "samplecsv");
         enableEventProcessing(false);
@@ -1011,7 +1029,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         Mapper.Context context = createMock(Mapper.Context.class);
         ShardReindexMapper mapper = new ShardReindexMapper();
 
-        EasyMock.expect(context.getConfiguration()).andReturn(conf).anyTimes();
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
         // set this as the default
         conf.set(ShardReindexMapper.DEFAULT_DATA_TYPE, "samplecsv");
         enableEventProcessing(true);
@@ -1035,7 +1053,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         Mapper.Context context = createMock(Mapper.Context.class);
         ShardReindexMapper mapper = new ShardReindexMapper();
 
-        EasyMock.expect(context.getConfiguration()).andReturn(conf).anyTimes();
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
         // set this as the default
         conf.set(ShardReindexMapper.DEFAULT_DATA_TYPE, "samplecsv");
         conf.setBoolean(ShardReindexMapper.GENERATE_TF, true);
@@ -1060,7 +1078,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         Mapper.Context context = createMock(Mapper.Context.class);
         ShardReindexMapper mapper = new ShardReindexMapper();
 
-        EasyMock.expect(context.getConfiguration()).andReturn(conf).anyTimes();
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
         // set this as the default
         conf.set(ShardReindexMapper.DEFAULT_DATA_TYPE, "samplecsv");
         enableEventProcessing(true);
@@ -1084,7 +1102,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         Mapper.Context context = createMock(Mapper.Context.class);
         ShardReindexMapper mapper = new ShardReindexMapper();
 
-        EasyMock.expect(context.getConfiguration()).andReturn(conf).anyTimes();
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
         // set this as the default
         conf.set(ShardReindexMapper.DEFAULT_DATA_TYPE, "samplecsv");
         conf.setBoolean(ShardReindexMapper.GENERATE_TF, true);
@@ -1106,7 +1124,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         Mapper.Context context = createMock(Mapper.Context.class);
         ShardReindexMapper mapper = new ShardReindexMapper();
 
-        EasyMock.expect(context.getConfiguration()).andReturn(conf).anyTimes();
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
         // set this as the default
         conf.set(ShardReindexMapper.DEFAULT_DATA_TYPE, "samplecsv");
 
@@ -1126,7 +1144,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         Mapper.Context context = createMock(Mapper.Context.class);
         ShardReindexMapper mapper = new ShardReindexMapper();
 
-        EasyMock.expect(context.getConfiguration()).andReturn(conf).anyTimes();
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
         // set this as the default
         conf.set(ShardReindexMapper.DEFAULT_DATA_TYPE, "samplecsv");
         enableEventProcessing(false);
@@ -1147,7 +1165,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         Mapper.Context context = createMock(Mapper.Context.class);
         ShardReindexMapper mapper = new ShardReindexMapper();
 
-        EasyMock.expect(context.getConfiguration()).andReturn(conf).anyTimes();
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
         // set this as the default
         conf.set(ShardReindexMapper.DEFAULT_DATA_TYPE, "samplecsv");
         enableEventProcessing(true);
@@ -1171,7 +1189,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
 
         conf.setBoolean(ShardReindexMapper.GENERATE_METADATA, true);
         enableEventProcessing(true);
-        EasyMock.expect(context.getConfiguration()).andReturn(conf).anyTimes();
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
         ShardReindexMapper mapper = new ShardReindexMapper();
 
         Key event = expectIndexed(context, "20240216", "1.2.3", "samplecsv", "FIELDA", "ABC", true);
@@ -1198,6 +1216,99 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         mapper.setup(context);
         mapper.map(event, new Value(), context);
         mapper.cleanup(context);
+
+        verifyAll();
+    }
+
+    @Test
+    public void createAndVerifyTest() throws IOException, ClassNotFoundException, InterruptedException {
+        Mapper.Context context = createMock(Mapper.Context.class);
+
+        conf.setBoolean(ShardReindexMapper.ENABLE_REINDEX_COUNTERS, true);
+        conf.setBoolean(ShardReindexMapper.DUMP_COUNTERS, true);
+        conf.setBoolean(ShardReindexMapper.GENERATE_METADATA, true);
+        enableEventProcessing(true);
+        expect(context.getConfiguration()).andReturn(conf).anyTimes();
+        ShardReindexMapper mapper = new ShardReindexMapper();
+
+        context.progress();
+        expectLastCall().anyTimes();
+
+        Multimap generated = TreeMultimap.create();
+
+        context.write(isA(BulkIngestKey.class), isA(Value.class));
+        expectLastCall().andAnswer(() -> {
+            BulkIngestKey bik = (BulkIngestKey) getCurrentArguments()[0];
+            Value value = (Value) getCurrentArguments()[1];
+            generated.put(bik, new Value(value.get()));
+            return null;
+        }).anyTimes();
+
+        // ingest handler may access counters, this is a catch all
+        expect(context.getCounter(isA(String.class), isA(String.class))).andReturn(new Counters.Counter()).anyTimes();
+
+        // other context for the verification mapper
+        Mapper.Context verificationContext = createMock(Mapper.Context.class);
+        expect(verificationContext.getCounter(isA(String.class), isA(String.class))).andReturn(new Counters.Counter()).anyTimes();
+
+        verificationContext.progress();
+        expectLastCall().anyTimes();
+
+        replayAll();
+
+        File inputFiles = null;
+        try {
+            List<String> dataOptions = new ArrayList<>();
+            dataOptions.add("");
+            dataOptions.add("red");
+            dataOptions.add("green");
+            dataOptions.add("yellow");
+            dataOptions.add("blue");
+            dataOptions.add("purple");
+            dataOptions.add("all the colors of the rainbow");
+            dataOptions.add("blues and reds");
+            dataOptions.add("oranges and yellows");
+
+            inputFiles = ShardedDataGenerator.createIngestFiles(dataOptions, 1);
+            File shardFiles = new File(inputFiles, "shard/magic.rf");
+
+            mapper.setup(context);
+
+            RFile.Reader reader = RFileUtil.getRFileReader(conf, new Path(shardFiles.toString()));
+            reader.seek(new Range(), Collections.emptySet(), false);
+            System.out.println("processing mapper input");
+            while (reader.hasTop()) {
+                Key key = reader.getTopKey();
+                System.out.println(key);
+                Value value = reader.getTopValue();
+                mapper.map(key, value, context);
+                reader.next();
+            }
+
+            mapper.cleanup(context);
+
+            System.out.println("processing diff");
+            // write out the generated data
+            File outDir = Files.createTempDir();
+            try {
+                ShardedDataGenerator.writeData(outDir.toString(), "reindexed.rf", generated);
+                conf.set("source1", "FILE");
+                conf.set("source1.files", shardFiles.toString());
+                conf.set("source2", "FILE");
+                conf.set("source2.files", outDir + "/shard/reindexed.rf");
+
+                // read and compare the data
+                ShardReindexVerificationMapper verificationMapper = new ShardReindexVerificationMapper();
+                verificationMapper.setup(context);
+                verificationMapper.map(new Range(), "", verificationContext);
+            } finally {
+                FileUtils.deleteDirectory(outDir);
+            }
+        } finally {
+            if (inputFiles != null) {
+                FileUtils.deleteDirectory(inputFiles);
+            }
+        }
 
         verifyAll();
     }

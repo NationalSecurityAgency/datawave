@@ -1,6 +1,8 @@
 package datawave.ingest.mapreduce.job.reindex;
 
 import static datawave.ingest.mapreduce.job.ShardedTableMapFile.SPLIT_WORK_DIR;
+import static datawave.ingest.mapreduce.job.TableConfigurationUtil.JOB_OUTPUT_TABLE_NAMES;
+import static datawave.ingest.mapreduce.job.TableConfigurationUtil.TABLES_CONFIGS_TO_CACHE;
 
 import java.io.File;
 import java.io.IOException;
@@ -64,6 +66,7 @@ import datawave.ingest.mapreduce.job.writer.BulkContextWriter;
 import datawave.ingest.mapreduce.job.writer.ChainedContextWriter;
 import datawave.ingest.mapreduce.job.writer.ContextWriter;
 import datawave.ingest.mapreduce.job.writer.DedupeContextWriter;
+import datawave.ingest.mapreduce.job.writer.SpillingSortedContextWriter;
 import datawave.ingest.mapreduce.job.writer.TableCachingContextWriter;
 import datawave.util.StringUtils;
 
@@ -202,7 +205,7 @@ public class ShardReindexJob implements Tool {
         // test that each of the output table names exist
         Properties accumuloProperties = builder.build();
         accumuloClient = Accumulo.newClient().from(accumuloProperties).build();
-        String[] outputTableNames = configuration.get("job.output.table.names").split(",");
+        String[] outputTableNames = configuration.get(JOB_OUTPUT_TABLE_NAMES).split(",");
         validateTablesExist(outputTableNames);
 
         ShardedTableMapFile.setupFile(configuration);
@@ -293,15 +296,24 @@ public class ShardReindexJob implements Tool {
         j.setMapperClass(ShardReindexMapper.class);
 
         // setup the combiner
+        j.getConfiguration().setBoolean(BulkIngestKeyDedupeCombiner.USING_COMBINER, true);
         // see IngestJob
         if (jobConfig.useCombiner) {
-            j.getConfiguration().setBoolean(BulkIngestKeyDedupeCombiner.USING_COMBINER, true);
             j.getConfiguration().setClass(EventMapper.CONTEXT_WRITER_CLASS, DedupeContextWriter.class, ChainedContextWriter.class);
             j.getConfiguration().setClass(DedupeContextWriter.CONTEXT_WRITER_CLASS, TableCachingContextWriter.class, ContextWriter.class);
         } else {
             j.getConfiguration().setClass(EventMapper.CONTEXT_WRITER_CLASS, TableCachingContextWriter.class, ChainedContextWriter.class);
         }
-        j.getConfiguration().setClass(TableCachingContextWriter.CONTEXT_WRITER_CLASS, BulkContextWriter.class, ContextWriter.class);
+
+        if (jobConfig.reducers == 0) {
+            j.getConfiguration().set(SpillingSortedContextWriter.WORK_DIR, jobConfig.workDir);
+            j.getConfiguration().setInt("shard" + TABLES_CONFIGS_TO_CACHE, 10000);
+            j.getConfiguration().setInt("shardIndex" + TABLES_CONFIGS_TO_CACHE, 10000);
+            j.getConfiguration().setInt("shardReverse" + TABLES_CONFIGS_TO_CACHE, 10000);
+            j.getConfiguration().setClass(TableCachingContextWriter.CONTEXT_WRITER_CLASS, SpillingSortedContextWriter.class, ContextWriter.class);
+        } else {
+            j.getConfiguration().setClass(TableCachingContextWriter.CONTEXT_WRITER_CLASS, BulkContextWriter.class, ContextWriter.class);
+        }
 
         // setup a partitioner
         DelegatingPartitioner.configurePartitioner(j, configuration, tableNames.toArray(new String[0]));
