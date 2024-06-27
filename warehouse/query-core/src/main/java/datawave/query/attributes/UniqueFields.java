@@ -7,14 +7,12 @@ import java.util.Iterator;
 import java.util.NavigableSet;
 import java.util.Objects;
 import java.util.Set;
-import java.util.SortedSet;
 
 import org.apache.commons.lang.StringUtils;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 import com.google.common.collect.Multimap;
-import com.google.common.collect.Multimaps;
 import com.google.common.collect.Sets;
 import com.google.common.collect.SortedSetMultimap;
 import com.google.common.collect.TreeMultimap;
@@ -32,7 +30,7 @@ public class UniqueFields implements Serializable, Cloneable {
 
     private final TreeMultimap<String,UniqueGranularity> fieldMap = TreeMultimap.create();
     private boolean mostRecent = false;
-    private static String MOST_RECENT_UNIQUE = "_MOST_RECENT_";
+    private static final String MOST_RECENT_UNIQUE = "_MOST_RECENT_";
 
     /**
      * Returns a new {@link UniqueFields} parsed from this string. The provided string is expected to have the format returned by
