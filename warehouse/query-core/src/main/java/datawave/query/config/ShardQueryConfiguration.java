@@ -1291,18 +1291,22 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         }
     }
 
+    @Deprecated(since = "7.1.0", forRemoval = true)
     public int getEventPerDayThreshold() {
         return eventPerDayThreshold;
     }
 
+    @Deprecated(since = "7.1.0", forRemoval = true)
     public void setEventPerDayThreshold(int eventPerDayThreshold) {
         this.eventPerDayThreshold = eventPerDayThreshold;
     }
 
+    @Deprecated(since = "7.1.0", forRemoval = true)
     public int getShardsPerDayThreshold() {
         return shardsPerDayThreshold;
     }
 
+    @Deprecated(since = "7.1.0", forRemoval = true)
     public void setShardsPerDayThreshold(int shardsPerDayThreshold) {
         this.shardsPerDayThreshold = shardsPerDayThreshold;
     }
