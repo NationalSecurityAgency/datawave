@@ -783,6 +783,22 @@ public abstract class CompositeFunctionsTest {
     }
 
     @Test
+    public void test() throws Exception {
+        eventQueryLogic.setParser(new LuceneToJexlQueryParser());
+        Map<String,String> extraParameters = new HashMap<>();
+        // @formatter:off
+        String[] queryStrings = {
+                "UUID:SOPRANO AND #INCLUDE(LOCATION || POSIZIONE || NAME, 'newjersey')"
+        };
+        @SuppressWarnings("unchecked")
+        List<String>[] expectedLists = new List[] {Collections.singletonList("SOPRANO")};
+        for (int i = 0; i < queryStrings.length; i++) {
+            runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
+        }
+
+    }
+
+    @Test
     public void testDelayedExceededValueThresholdRegexTFField() throws Exception {
         Map<String,String> extraParameters = new HashMap();
 
