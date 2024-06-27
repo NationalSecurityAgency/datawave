@@ -37,7 +37,6 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
 
     public static final String BETWEEN = "between";
     public static final String LENGTH = "length";
-    public static final String INCLUDE_TEXT = "includeText";
 
     /**
      * This is the argument descriptor which can be used to normalize and optimize function node queries
@@ -72,7 +71,7 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
                 case QueryFunctions.MATCH_REGEX:
                     // Return an index query.
                     return getIndexQuery();
-                case INCLUDE_TEXT:
+                case QueryFunctions.INCLUDE_TEXT:
                     // Return the appropriate index query.
                     return getTextIndexQuery();
                 default:
