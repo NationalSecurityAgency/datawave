@@ -9,7 +9,6 @@ import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.Map.Entry;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -19,8 +18,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-
-import javax.annotation.Nullable;
 
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.Scanner;
@@ -33,11 +30,9 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.util.PeekingIterator;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
-import com.google.common.base.Function;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Queues;
@@ -55,28 +50,26 @@ import datawave.query.tables.stats.ScanSessionStats.TIMERS;
 /**
  * Purpose: Extends Scanner session so that we can modify how we build our subsequent ranges. Breaking this out cleans up the code. May require implementation
  * specific details if you are using custom iterators, as we are reinitializing a seek
- *
+ * <p>
  * Design: Extends Scanner session and only overrides the buildNextRange.
- *
+ * <p>
  * The {@link datawave.query.index.lookup.RangeStream} configures the iterator running against the global index.
- *
+ * <p>
  * Typically the iterator is a {@link datawave.query.index.lookup.CreateUidsIterator} or variant.
- *
+ * <p>
  * The iterator returns a tuple of shard - {@link IndexInfo} object pairs, each shard representing and day or shard range.
- *
+ * <p>
  * Results from the iterator are put onto the currentQueue and then flushed into the resultQueue. Under certain circumstances these results may be modified
  * final to the prior flush into the resultQueue.
- *
+ * <p>
  * The RangeStreamScanner supports "seeking" the global index iterator. Because the RangeStreamScanner supports a {@link PeekingIterator} some implementation
  * details are not immediately obvious. For more information, see {@link #seek(String)}.
  */
 public class RangeStreamScanner extends ScannerSession implements Callable<RangeStreamScanner> {
 
-    private static final int MAX_MEDIAN = 20;
     private static final Logger log = Logger.getLogger(RangeStreamScanner.class);
-    private int shardsPerDayThreshold = Integer.MAX_VALUE;
     // simply compare the strings. no need for a date formatter
-    protected static final int dateCfLength = 8;
+    protected static final int DATE_CF_LENGTH = 8;
     protected boolean seenUnexpectedKey = false;
     protected ArrayDeque<Result> currentQueue;
 
@@ -144,13 +137,13 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
 
     /**
      * Override this for your specific implementation.
-     *
+     * <p>
      * In this specific implementation our row key will be the term, the column family will be the field name, and the column family will be the shard,so we
      * should have the following as our last key
-     *
+     * <p>
      * bar FOO:20130101_0
-     *
-     * so we should append a null so that we we don't skip shards. similarly, an assumption is made of the key structure within this class.
+     * <p>
+     * so we should append a null so that we don't skip shards. similarly, an assumption is made of the key structure within this class.
      *
      * @param lastKey
      *            the last key
@@ -435,9 +428,6 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
         PeekingIterator<Result> kvIter = new PeekingIterator<>(iter);
 
         int retrievalCount = 0;
-
-        Result myEntry;
-
         String currentDay = null;
 
         if (null != prevDay) {
@@ -452,13 +442,11 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
                 return 0;
             }
         }
-        // produces stats for us, so we don't have to!
-        DescriptiveStatistics stats = new DescriptiveStatistics();
 
         writeLock.lock();
         try {
             while (kvIter.hasNext()) {
-                Result currentKeyValue = kvIter.peek();
+                Result<?> currentKeyValue = kvIter.peek();
 
                 // become a pass-through if we've seen an unexpected key.
                 if (seenUnexpectedKey) {
@@ -475,7 +463,6 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
                     currentDay = getDay(currentKeyValue.getKey());
 
                     currentQueue.add(trimTrailingUnderscore(currentKeyValue));
-
                     lastSeenKey = kvIter.next().getKey();
                 } else {
                     String nextKeysDay = getDay(currentKeyValue.getKey());
@@ -490,22 +477,7 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
                             log.trace("adding count of " + info.count());
                         }
 
-                        stats.addValue(info.count());
-
-                        if (currentQueue.size() <= shardsPerDayThreshold || stats.getPercentile(50) < MAX_MEDIAN) {
-
-                            if (log.isTraceEnabled()) {
-                                log.trace("adding our stats are " + stats.getPercentile(50) + " on " + currentQueue.size());
-                            }
-
-                            currentQueue.add(trimTrailingUnderscore(currentKeyValue));
-
-                        } else {
-                            if (log.isTraceEnabled()) {
-                                log.trace("breaking because our stats are " + stats.getPercentile(50) + " on " + currentQueue.size());
-                            }
-                            break;
-                        }
+                        currentQueue.add(trimTrailingUnderscore(currentKeyValue));
                         lastSeenKey = kvIter.next().getKey();
                     } else {
 
@@ -522,36 +494,8 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
                 }
             }
 
-            if (currentQueue.size() >= shardsPerDayThreshold && stats.getPercentile(50) > MAX_MEDIAN) {
+            retrievalCount += dequeue();
 
-                Result top = currentQueue.poll();
-
-                Key topKey = top.getKey();
-                if (log.isTraceEnabled())
-                    log.trace(topKey + " for " + currentDay + " exceeds limit of " + shardsPerDayThreshold + " with " + currentQueue.size());
-                Key newKey = new Key(topKey.getRow(), topKey.getColumnFamily(), new Text(currentDay), topKey.getColumnVisibility(), topKey.getTimestamp());
-
-                Value newValue = writeInfoToValue();
-
-                myEntry = new Result(top.getContext(), newKey, newValue);
-                lastSeenKey = newKey;
-
-                try {
-                    if (!resultQueue.offer(myEntry, 1, TimeUnit.SECONDS)) {
-                        if (log.isTraceEnabled()) {
-                            log.trace("could not add day! converting " + myEntry + " to " + prevDay);
-                        }
-                        prevDay = myEntry;
-                    }
-                } catch (InterruptedException exception) {
-                    prevDay = myEntry;
-                }
-
-                currentQueue.clear();
-
-            } else {
-                retrievalCount += dequeue();
-            }
         } finally {
             writeLock.unlock();
         }
@@ -673,8 +617,8 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
     protected String getDay(final Key key) {
         String myDay = null;
         byte[] cq = key.getColumnQualifierData().getBackingArray();
-        if (cq.length >= dateCfLength) {
-            myDay = new String(cq, 0, dateCfLength);
+        if (cq.length >= DATE_CF_LENGTH) {
+            myDay = new String(cq, 0, DATE_CF_LENGTH);
             if (log.isTraceEnabled()) {
                 log.trace("Day is " + myDay + " for " + key);
             }
@@ -698,11 +642,6 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
         } else {
             return new String(cq, 0, cq.length);
         }
-    }
-
-    public RangeStreamScanner setShardsPerDayThreshold(int shardsPerDayThreshold) {
-        this.shardsPerDayThreshold = shardsPerDayThreshold;
-        return this;
     }
 
     @Override
@@ -795,14 +734,11 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
             if (baseScanner instanceof Scanner)
                 ((Scanner) baseScanner).setRange(currentRange);
 
-            Iterator<Result> iter = Iterators.transform(baseScanner.iterator(), new Function<Entry<Key,Value>,Result>() {
-                @Override
-                public Result apply(@Nullable Entry<Key,Value> input) {
-                    if (input == null) {
-                        return null;
-                    }
-                    return new Result(input.getKey(), input.getValue());
+            Iterator<Result> iter = Iterators.transform(baseScanner.iterator(), input -> {
+                if (input == null) {
+                    return null;
                 }
+                return new Result<>(input.getKey(), input.getValue());
             });
             // do not continue if we've reached the end of the corpus
 
@@ -867,8 +803,8 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
                 log.trace(cf + " " + endCf);
             }
 
-            if (dateCfLength == cf.length()) {
-                endCf = endCf.substring(0, dateCfLength);
+            if (DATE_CF_LENGTH == cf.length()) {
+                endCf = endCf.substring(0, DATE_CF_LENGTH);
                 if (cf.compareTo(endCf) >= 0) {
                     return true;
                 }
