@@ -173,7 +173,6 @@ public class ExtendedRunningQueryTest {
             expect(this.transformIterator.next()).andReturn(iterator.next());
             expect(this.transformIterator.getTransformer()).andReturn(transformer);
         }
-        expect(this.transformIterator.hasNext()).andReturn(iterator.hasNext());
         expect(this.query.getPagesize()).andReturn(pageSize).anyTimes();
         expect(this.queryLogic.getMaxPageSize()).andReturn(maxPageSize).anyTimes();
         expect(this.queryLogic.getPageByteTrigger()).andReturn(pageByteTrigger).anyTimes();
@@ -266,7 +265,6 @@ public class ExtendedRunningQueryTest {
             expect(this.transformIterator.next()).andReturn(iterator.next());
             count++;
         }
-        expect(this.transformIterator.hasNext()).andReturn(iterator.hasNext());
         expect(this.transformIterator.getTransformer()).andReturn(transformer).times(count);
 
         expect(this.query.getPagesize()).andReturn(pageSize).anyTimes();
@@ -481,7 +479,6 @@ public class ExtendedRunningQueryTest {
             expect(this.transformIterator.next()).andReturn(iterator.next());
             count++;
         }
-        expect(this.transformIterator.hasNext()).andReturn(iterator.hasNext());
         // now that the results thread is separate from the running query thread, we could continue getting stuff
         expect(this.transformIterator.getTransformer()).andReturn(transformer).anyTimes();
         expect(this.transformIterator.hasNext()).andReturn(iterator.hasNext()).anyTimes();

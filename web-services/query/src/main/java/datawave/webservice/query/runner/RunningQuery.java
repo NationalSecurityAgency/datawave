@@ -559,7 +559,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             log.info("Returning page of results");
             // we have results!
             // we also indicate whether we returned less than the requested page size in the response
-            return new ResultsPage(resultList, ((iter.hasNext() && numResults < this.maxResults && currentPageCount < maxPageSize) || hitIntermediateResult
+            return new ResultsPage(resultList, ((hasNext.get() > 0 && numResults < this.maxResults && currentPageCount < maxPageSize) || hitIntermediateResult
                             || hitShortCircuitForLongRunningQuery) ? ResultsPage.Status.PARTIAL : ResultsPage.Status.COMPLETE);
         } else {
             // we have no results. Let us determine whether we are done or not.
