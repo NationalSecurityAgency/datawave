@@ -46,7 +46,7 @@ public class QueryLogIterator implements SortedKeyValueIterator<Key,Value>, Opti
     }
 
     /**
-     * Wraps the init() method of the iterator above it, logging the start and end of the method along with its query id.
+     * Wraps the init() method of the iterator above it, logging the start/end of the method along with its query id.
      */
     @Override
     public void init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env) throws IOException {
