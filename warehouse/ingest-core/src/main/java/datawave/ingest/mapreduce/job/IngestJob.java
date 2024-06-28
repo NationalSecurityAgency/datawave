@@ -239,7 +239,7 @@ public class IngestJob implements Tool {
         System.out.println("                     [-collectDistributionStats]");
         System.out.println("                     [-ingestMetricsDisabled]");
         System.out.println("                     [-ingestMetricsLabel label]");
-        System.out.println("                     [-compressionType lzo|gz]");
+        System.out.println("                     [-compressionType lzo|gz|zstd]");
         System.out.println("                     [-compressionTableDisallowList table,table,...");
         System.out.println("                     [-maxRFileUndeduppedEntries maxEntries]");
         System.out.println("                     [-maxRFileUncompressedSize maxSize]");
