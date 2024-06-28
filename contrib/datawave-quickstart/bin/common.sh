@@ -122,7 +122,6 @@ function downloadTarball() {
 }
 
 function downloadMavenTarball() {
-   return 1
    local pomFile="${DW_DATAWAVE_SOURCE_DIR:-$( cd "${DW_CLOUD_HOME}/../.." && pwd )}/pom.xml"
    local rootProject=":$1"
    local remoteRepo="$2"
