@@ -66,6 +66,12 @@ spring:
     publisher-confirm-type: simple
     publisher-confirms: true
     publisher-returns: true
+  query-results-rabbitmq:
+    host: ${MESSAGING_SERVER_HOSTNAME:localhost}
+    port: 5673
+    publisher-confirm-type: simple
+    publisher-confirms: true
+    publisher-returns: true
   cloud:
     consul:
       enabled: false

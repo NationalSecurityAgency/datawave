@@ -80,6 +80,22 @@ services:
       consul:
         condition: service_started
 
+  query-results-rabbitmq:
+    image: rabbitmq:3.12.4-alpine
+    volumes:
+      - ${RABBITMQ_CONFIG_DIR:-./query-results-rabbitmq-config}:/etc/rabbitmq
+      - ./logs:/logs
+    environment:
+      - TCP_PORTS=15673, 5673
+      - RABBITMQ_ERLANG_COOKIE="mycookie"
+    ports:
+      - "15673:15673"
+    networks:
+      - demo
+    depends_on:
+      consul:
+        condition: service_started
+
   # When auto.create.topics.enable is true, this causes deleted topics to be recreated at random.  So, leave it disabled.
   kafka:
     image: docker.io/bitnami/kafka:3.2
@@ -143,6 +159,8 @@ services:
       - demo
     depends_on:
       rabbitmq:
+        condition: service_started
+      query-results-rabbitmq:
         condition: service_started
 
   cache:
@@ -522,6 +540,8 @@ services:
       retries: 3
     depends_on:
       rabbitmq:
+        condition: service_started
+      query-results-rabbitmq:
         condition: service_started
       authorization:
         condition: service_healthy
