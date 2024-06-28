@@ -1548,7 +1548,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                             .withUniqueFields(getUniqueFields())
                             .withQueryExecutionForPageTimeout(getResultTimeout())
                             .withBufferPersistThreshold(getUniqueCacheBufferSize())
-                            .withIvaratorCacheDirConfigs(getIvaratorCacheDirConfigs())
+                            .withLocalIvaratorCacheDirConfigs(getIvaratorCacheDirConfigs())
                             .withHdfsSiteConfigURLs(getHdfsSiteConfigURLs())
                             .withSubDirectory(getQueryId() + "-" + getScanId())
                             .withMaxOpenFiles(getIvaratorMaxOpenFiles())

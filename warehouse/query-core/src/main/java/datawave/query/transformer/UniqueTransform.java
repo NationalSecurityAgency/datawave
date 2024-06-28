@@ -488,7 +488,7 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
             return this;
         }
 
-        public Builder withIvaratorCacheDirConfigs(List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs) {
+        public Builder withLocalIvaratorCacheDirConfigs(List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs) {
             this.ivaratorCacheDirConfigs = ivaratorCacheDirConfigs;
             return this;
         }
