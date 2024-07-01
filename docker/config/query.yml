@@ -54,7 +54,7 @@ datawave:
     accumulo:
       uri: 'https://localhost:9143/accumulo'
     cache:
-      uri: 'https://localhost:8843/cache'
+      uri: 'https://localhost:8844/cache'
     config:
       uri: 'https://localhost:8888/configserver'
     authorization:

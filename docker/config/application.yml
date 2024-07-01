@@ -75,7 +75,10 @@ spring:
 
 hazelcast:
   client:
-    clusterName: cache
+    cluster1:
+      clusterName: cache
+    cluster2:
+      clusterName: cache2
 
 # The default URI for remote authorization
 datawave:

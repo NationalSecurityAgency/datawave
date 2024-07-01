@@ -173,6 +173,36 @@ services:
       configuration:
         condition: service_started
 
+  cache2:
+    image: datawave/hazelcast-service
+    scale: 1
+    command:
+      - --spring.application.name=cache2
+      - --hazelcast.client.cluster-members
+      - --spring.profiles.active=consul,compose,remoteauth
+      - --spring.output.ansi.enabled=ALWAYS
+      - --spring.cloud.consul.host=consul
+      - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${random.value}
+    ports:
+      - "5701-5703"
+      - "8082"
+      - "8844:8443"
+    volumes:
+      - ${PKI_DIR:-./pki}:/etc/pki:ro
+      - ./logs:/logs
+    networks:
+      - demo
+    healthcheck:
+      test: curl -f http://localhost:8080/cache/mgmt/health
+      interval: 10s
+      timeout: 1s
+      start_period: 45s
+      retries: 3
+    depends_on:
+      configuration:
+        condition: service_started
+
+
   authorization:
     entrypoint: [ "java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5008","-jar","app.jar" ]
     image: datawave/authorization-service
