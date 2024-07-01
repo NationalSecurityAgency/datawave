@@ -1,4 +1,4 @@
-FROM centos:centos7
+FROM rockylinux/rockylinux:8
 
 ARG DATAWAVE_COMMIT_ID
 ARG DATAWAVE_BRANCH_NAME
