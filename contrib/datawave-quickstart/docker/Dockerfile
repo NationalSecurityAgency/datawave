@@ -1,4 +1,4 @@
-FROM centos:centos7
+FROM rockylinux/rockylinux:8
 
 ARG DATAWAVE_COMMIT_ID
 ARG DATAWAVE_BRANCH_NAME
@@ -25,9 +25,6 @@ ENV DW_ACCUMULO_BIND_HOST=localhost
 # Build context should be the DataWave source root, minus .git and other dirs. See .dockerignore
 
 COPY . /opt/datawave
-
-# Configure the yum repo mirror
-RUN sed -i 's|mirrorlist|#mirrorlist|g;s|#baseurl.*|baseurl=http://archive.kernel.org/centos-vault/centos/$releasever/updates/$basearch/|g' /etc/yum.repos.d/CentOS-Base.repo
 
 # Install dependencies, configure password-less/zero-prompt SSH...
 
