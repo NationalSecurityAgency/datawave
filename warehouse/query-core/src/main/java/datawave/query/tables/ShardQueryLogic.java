@@ -263,6 +263,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
             bs.addScanIterator(cfg);
         }
 
+        if (config.getTableConsistencyLevels().containsKey(config.getTableName())) {
+            bs.setConsistencyLevel(config.getTableConsistencyLevels().get(config.getTableName()));
+        }
+
+        if (config.getTableHints().containsKey(config.getTableName())) {
+            bs.setExecutionHints(config.getTableHints().get(config.getTableName()));
+        }
+
         return bs;
     }
 
@@ -932,7 +940,8 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
             UniqueFields uniqueFields = UniqueFields.from(uniqueFieldsParam);
             // Only set the unique fields if we were actually given some
             if (!uniqueFields.isEmpty()) {
-                this.setUniqueFields(uniqueFields);
+                // preserve the most recent flag
+                uniqueFields.setMostRecent(config.getUniqueFields().isMostRecent());
                 config.setUniqueFields(uniqueFields);
             }
         }
@@ -940,7 +949,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         // Get the most recent flag
         String mostRecentUnique = settings.findParameter(QueryParameters.MOST_RECENT_UNIQUE).getParameterValue().trim();
         if (StringUtils.isNotBlank(mostRecentUnique)) {
-            this.getUniqueFields().setMostRecent(Boolean.valueOf(mostRecentUnique));
             config.getUniqueFields().setMostRecent(Boolean.valueOf(mostRecentUnique));
         }
 
@@ -1596,18 +1604,22 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         getConfig().setHitList(hitList);
     }
 
+    @Deprecated(since = "7.1.0", forRemoval = true)
     public int getEventPerDayThreshold() {
         return getConfig().getEventPerDayThreshold();
     }
 
+    @Deprecated(since = "7.1.0", forRemoval = true)
     public void setEventPerDayThreshold(int eventPerDayThreshold) {
         getConfig().setEventPerDayThreshold(eventPerDayThreshold);
     }
 
+    @Deprecated(since = "7.1.0", forRemoval = true)
     public int getShardsPerDayThreshold() {
         return getConfig().getShardsPerDayThreshold();
     }
 
+    @Deprecated(since = "7.1.0", forRemoval = true)
     public void setShardsPerDayThreshold(int shardsPerDayThreshold) {
         getConfig().setShardsPerDayThreshold(shardsPerDayThreshold);
     }
