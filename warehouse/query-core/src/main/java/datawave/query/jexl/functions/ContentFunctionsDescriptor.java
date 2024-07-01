@@ -304,13 +304,16 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
 
                     if (arg instanceof ASTNumberLiteral || arg instanceof ASTUnaryMinusNode) {
                         // if the first argument is a number, then no field exists
+                        // for example, content:scoredPhrase(-1.5, termOffsetMap, 'value')
                         termOffsetMap = args.next();
                     } else {
                         if (arg instanceof ASTIdentifier) {
                             // single field case
+                            // for example, content:scoredPhrase(FIELD, -1.5, termOffsetMap, 'value')
                             fields = Collections.singleton(String.valueOf(JexlASTHelper.getIdentifier(arg)));
                         } else {
                             // multi field case
+                            // for example, content:scoredPhrase((FIELD_A || FIELD_B), -1.5, termOffsetMap, 'value')
                             Set<String> identifiers = JexlASTHelper.getIdentifierNames(arg);
                             if (!identifiers.isEmpty()) {
                                 fields = identifiers;
@@ -321,7 +324,7 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
                             }
                         }
 
-                        // skip score
+                        // skip score because it is not needed when gathering just the fields and values from a function
                         args.next();
 
                         termOffsetMap = args.next();
