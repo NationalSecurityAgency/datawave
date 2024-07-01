@@ -1,7 +1,5 @@
 FROM azul/zulu-openjdk-centos:11.0.18-11.62.17
 
-# Configure the yum repo mirror
-RUN sed -i 's|mirrorlist|#mirrorlist|g;s|#baseurl.*|baseurl=http://archive.kernel.org/centos-vault/centos/$releasever/updates/$basearch/|g' /etc/yum.repos.d/CentOS-Base.repo
 
 RUN yum -y install deltarpm centos-release-sc && \
     chmod -R 777 /usr/lib/jvm/zulu11/bin/* && \
