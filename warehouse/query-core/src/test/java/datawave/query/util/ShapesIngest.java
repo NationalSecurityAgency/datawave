@@ -1,7 +1,9 @@
 package datawave.query.util;
 
+import static datawave.util.TableName.METADATA;
 import static datawave.util.TableName.SHARD;
 import static datawave.util.TableName.SHARD_INDEX;
+import static datawave.util.TableName.SHARD_RINDEX;
 
 import java.util.Date;
 import java.util.List;
@@ -10,6 +12,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
+import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.LongCombiner;
@@ -124,6 +127,12 @@ public class ShapesIngest {
     }
 
     public static void writeData(AccumuloClient client, RangeType type) throws Exception {
+
+        TableOperations tops = client.tableOperations();
+        tops.create(SHARD);
+        tops.create(SHARD_INDEX);
+        tops.create(SHARD_RINDEX);
+        tops.create(METADATA);
 
         BatchWriterConfig bwConfig = new BatchWriterConfig().setMaxMemory(1000L).setMaxLatency(1, TimeUnit.SECONDS).setMaxWriteThreads(1);
         Mutation m;
