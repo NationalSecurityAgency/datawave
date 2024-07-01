@@ -2406,7 +2406,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     }
 
     /**
-     * Add a boolean option to the IteratorSetting. If the value is true, the value will be changed to null to save space. If the value is false, the value will
+     * Add a boolean option to the IteratorSetting. If the value is true, the value will be changed to an empty string to save space. If the value is false, the value will
      * be "false".
      *
      * @param cfg
@@ -2418,7 +2418,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      */
     public static void addOption(IteratorSetting cfg, String option, boolean value) {
         if (value) {
-            cfg.addOption(option, null);
+            cfg.addOption(option, " ");
         } else {
             cfg.addOption(option, "false");
         }
