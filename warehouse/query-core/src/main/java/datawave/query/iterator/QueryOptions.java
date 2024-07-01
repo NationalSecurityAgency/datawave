@@ -20,6 +20,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
@@ -1296,8 +1297,8 @@ public class QueryOptions implements OptionDescriber {
      *            The string value of an option that should be represented by a boolean.
      * @return True if the option is null or not "false". False if the option has the value "false" (not case-sensitive).
      */
-    private static boolean evaluateBooleanOption(String value) {
-        if (value == null) {
+    protected static boolean evaluateBooleanOption(String value) {
+        if (value.equals(" ")) {
             return true;
         }
         return !value.equalsIgnoreCase("false");

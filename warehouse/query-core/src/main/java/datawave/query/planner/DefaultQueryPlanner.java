@@ -2406,8 +2406,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     }
 
     /**
-     * Add a boolean option to the IteratorSetting. If the value is true, the value will be changed to an empty string to save space. If the value is false, the value will
-     * be "false".
+     * Add a boolean option to the IteratorSetting. If the value is true, the value will be changed to an empty string to save space. If the value is false, the
+     * value will be "false".
      *
      * @param cfg
      *            the IteratorSetting to add the option to
