@@ -54,6 +54,7 @@ import datawave.data.type.Type;
 import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl.Parameter;
+import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.query.CloseableIterable;
 import datawave.query.Constants;
 import datawave.query.DocumentSerialization;
@@ -188,6 +189,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
     protected Map<String,Profile> configuredProfiles = Maps.newHashMap();
     protected Profile selectedProfile = null;
     protected Map<String,List<String>> primaryToSecondaryFieldMap = Collections.emptyMap();
+    protected BaseQueryMetric metric = null;
     // Map of syntax names to QueryParser classes
     private Map<String,QueryParser> querySyntaxParsers = new HashMap<>();
     private Set<String> mandatoryQuerySyntax = null;
@@ -231,6 +233,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         this.setQueryModel(other.getQueryModel());
         this.setScannerFactory(other.getScannerFactory());
         this.setScheduler(other.getScheduler());
+        this.metric = other.metric;
 
         log.trace("copy CTOR setting metadataHelperFactory to " + other.getMetadataHelperFactory());
         this.setMetadataHelperFactory(other.getMetadataHelperFactory());
@@ -1218,7 +1221,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         if (config.getSequentialScheduler()) {
             return new SequentialScheduler(config, scannerFactory);
         } else {
-            return new PushdownScheduler(config, scannerFactory, this.metadataHelperFactory, this.getQueryMetric());
+            return new PushdownScheduler(config, scannerFactory, this.metadataHelperFactory, this.metric);
         }
     }
 

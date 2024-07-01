@@ -95,11 +95,6 @@ public class VisitorFunctionTest extends EasyMockSupport {
         config.setQuery(mockQuery);
         EasyMock.expect(mockQuery.getId()).andReturn(new UUID(0, 0)).anyTimes();
 
-        RangeCounts ranges = new RangeCounts();
-        ranges.setShardRangeCount(1);
-        ranges.setDocumentRangeCount(1);
-        metric.addSubPlan(EasyMock.eq("20210101_0"), EasyMock.eq(ranges));
-
         // set thresholds
         config.setFinalMaxTermThreshold(2);
         config.setMaxDepthThreshold(2);

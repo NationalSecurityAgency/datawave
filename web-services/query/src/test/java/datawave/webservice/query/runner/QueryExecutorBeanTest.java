@@ -473,8 +473,8 @@ public class QueryExecutorBeanTest {
                                     .append(this.getNextCount(), other.getNextCount()).append(this.getSeekCount(), other.getSeekCount())
                                     .append(this.getYieldCount(), other.getYieldCount()).append(this.getDocRanges(), other.getDocRanges())
                                     .append(this.getFiRanges(), other.getFiRanges()).append(this.getPlan(), other.getPlan())
-                                    .append(this.getVersionMap(), other.getVersionMap()).append(this.getLoginTime(), other.getLoginTime())
-                                    .append(this.getPredictions(), other.getPredictions()).isEquals();
+                                    .append(this.getSubPlans(), other.getSubPlans()).append(this.getVersionMap(), other.getVersionMap())
+                                    .append(this.getLoginTime(), other.getLoginTime()).append(this.getPredictions(), other.getPredictions()).isEquals();
                 } else {
                     return false;
                 }

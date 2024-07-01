@@ -376,11 +376,11 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                     for (Range range : newSettings.getRanges()) {
                         updateRangeCounts(range);
                     }
-                    if (metric != null) {
+                    if (this.metric != null) {
                         RangeCounts ranges = new RangeCounts();
                         ranges.setDocumentRangeCount(documentRangeCount);
                         ranges.setShardRangeCount(shardRangeCount);
-                        metric.addSubPlan(newQuery, ranges);
+                        this.metric.addSubPlan(newQuery, ranges);
                     }
                 } catch (ParseException e) {
                     throw new DatawaveFatalQueryException(e);

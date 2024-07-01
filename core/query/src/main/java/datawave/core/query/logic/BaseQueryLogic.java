@@ -88,6 +88,7 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
         setCurrentUser(other.getCurrentUser());
         setServerUser(other.getServerUser());
         setResponseEnricherBuilder(other.getResponseEnricherBuilder());
+        this.metric = other.metric;
     }
 
     public GenericQueryConfiguration getConfig() {
