@@ -26,6 +26,9 @@ ENV DW_ACCUMULO_BIND_HOST=localhost
 
 COPY . /opt/datawave
 
+# Configure the yum repo mirror
+RUN sed -i 's|mirrorlist|#mirrorlist|g;s|#baseurl.*|baseurl=http://archive.kernel.org/centos-vault/centos/$releasever/updates/$basearch/|g' /etc/yum.repos.d/CentOS-Base.repo
+
 # Install dependencies, configure password-less/zero-prompt SSH...
 
 RUN yum -y install gcc-c++ openssl openssh openssh-server openssh-clients openssl-libs which bc wget git java-11-openjdk-devel iproute  && \
