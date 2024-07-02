@@ -31,6 +31,7 @@ import org.apache.accumulo.core.client.MultiTableBatchWriter;
 import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.KeyValue;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
@@ -705,9 +706,9 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         }
     }
 
-    protected Multimap<String,Key> removeMetadataEntries(Set<String> fields, Text cf)
+    protected Multimap<String,KeyValue> removeMetadataEntries(Set<String> fields, Text cf)
                     throws AccumuloSecurityException, AccumuloException, TableNotFoundException {
-        Multimap<String,Key> metadataEntries = HashMultimap.create();
+        Multimap<String,KeyValue> metadataEntries = HashMultimap.create();
         MultiTableBatchWriter multiTableWriter = client.createMultiTableBatchWriter(new BatchWriterConfig());
         BatchWriter writer = multiTableWriter.getBatchWriter(QueryTestTableHelper.METADATA_TABLE_NAME);
         for (String field : fields) {
@@ -718,8 +719,9 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
             boolean foundEntries = false;
             for (Map.Entry<Key,Value> entry : scanner) {
                 foundEntries = true;
-                metadataEntries.put(field, entry.getKey());
-                mutation.putDelete(entry.getKey().getColumnFamily(), entry.getKey().getColumnQualifier(), entry.getKey().getColumnVisibilityParsed());
+                metadataEntries.put(field, new KeyValue(entry.getKey(), entry.getValue()));
+                mutation.putDelete(entry.getKey().getColumnFamily(), entry.getKey().getColumnQualifier(), entry.getKey().getColumnVisibilityParsed(),
+                                entry.getKey().getTimestamp() + 1000);
             }
             scanner.close();
             if (foundEntries) {
@@ -731,14 +733,15 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         return metadataEntries;
     }
 
-    protected void addMetadataEntries(Multimap<String,Key> metadataEntries) throws AccumuloSecurityException, AccumuloException, TableNotFoundException {
+    protected void addMetadataEntries(Multimap<String,KeyValue> metadataEntries) throws AccumuloSecurityException, AccumuloException, TableNotFoundException {
         MultiTableBatchWriter multiTableWriter = client.createMultiTableBatchWriter(new BatchWriterConfig());
         BatchWriter writer = multiTableWriter.getBatchWriter(QueryTestTableHelper.METADATA_TABLE_NAME);
         for (String field : metadataEntries.keySet()) {
             Mutation mutation = new Mutation(new Text(field));
-            for (Key key : metadataEntries.get(field)) {
-                metadataEntries.put(field, key);
-                mutation.put(key.getColumnFamily(), key.getColumnQualifier(), key.getColumnVisibilityParsed(), new Value());
+            for (KeyValue kv : metadataEntries.get(field)) {
+                Key key = kv.getKey();
+                Value val = kv.getValue();
+                mutation.put(key.getColumnFamily(), key.getColumnQualifier(), key.getColumnVisibilityParsed(), key.getTimestamp() + 2000, val);
             }
             writer.addMutation(mutation);
         }

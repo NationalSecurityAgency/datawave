@@ -6,6 +6,7 @@ import datawave.query.ancestor.AncestorRangeStream;
 import datawave.query.ancestor.AncestorUidIntersector;
 import datawave.query.index.lookup.AncestorCreateUidsIterator;
 import datawave.query.planner.DefaultQueryPlanner;
+import datawave.query.planner.FederatedQueryPlanner;
 import datawave.query.planner.QueryPlanner;
 
 /**
@@ -33,13 +34,22 @@ public class AncestorQueryLogic extends ShardQueryLogic {
 
     @Override
     public void setQueryPlanner(QueryPlanner planner) {
-        if (!(planner instanceof DefaultQueryPlanner)) {
-            throw new IllegalArgumentException("Query logic requires DefaultQueryPlanner compatibility");
+        if (!(planner instanceof DefaultQueryPlanner) && !(planner instanceof FederatedQueryPlanner)) {
+            throw new IllegalArgumentException("Query logic requires DefaultQueryPlanner or FederatedQueryPlanner compatibility");
         }
 
         super.setQueryPlanner(planner);
         setRangeStream();
         setIter();
+    }
+
+    private DefaultQueryPlanner getDefaultQueryPlanner() {
+        QueryPlanner planner = getQueryPlanner();
+        if (planner instanceof FederatedQueryPlanner) {
+            return ((FederatedQueryPlanner) planner).getQueryPlanner();
+        } else {
+            return (DefaultQueryPlanner) planner;
+        }
     }
 
     /**
@@ -57,7 +67,7 @@ public class AncestorQueryLogic extends ShardQueryLogic {
     }
 
     private void setRangeStream() {
-        ((DefaultQueryPlanner) getQueryPlanner()).setRangeStreamClass(AncestorRangeStream.class.getCanonicalName());
+        getDefaultQueryPlanner().setRangeStreamClass(AncestorRangeStream.class.getCanonicalName());
     }
 
     private void setIter() {

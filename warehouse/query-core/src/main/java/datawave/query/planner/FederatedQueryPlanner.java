@@ -2,13 +2,12 @@ package datawave.query.planner;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
-import java.util.List;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
@@ -60,7 +59,8 @@ public class FederatedQueryPlanner extends QueryPlanner implements Cloneable {
     private final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd");
     private final Calendar calendar = Calendar.getInstance();
 
-    private final List<String> plans = new ArrayList<>();
+    // we want a unique set of plans, but maintain insertion order (facilitates easier testing)
+    private final Set<String> plans = new LinkedHashSet<>();
     private DefaultQueryPlanner queryPlanner;
     private String plannedScript;
 
@@ -381,15 +381,16 @@ public class FederatedQueryPlanner extends QueryPlanner implements Cloneable {
         if (plans.isEmpty()) {
             this.plannedScript = "";
         } else if (this.plans.size() == 1) {
-            this.plannedScript = this.plans.get(0);
+            this.plannedScript = this.plans.iterator().next();
         } else {
             int lastIndex = plans.size() - 1;
             StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < plans.size(); i++) {
-                sb.append("((plan = ").append((i + 1)).append(") && (").append(plans.get(i)).append("))");
-                if (i != lastIndex) {
+            int i = 0;
+            for (String plan : plans) {
+                if (sb.length() > 0) {
                     sb.append(" || ");
                 }
+                sb.append("((plan = ").append(++i).append(") && (").append(plan).append("))");
             }
             this.plannedScript = sb.toString();
         }
