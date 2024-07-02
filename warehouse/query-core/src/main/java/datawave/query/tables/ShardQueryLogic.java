@@ -1138,6 +1138,31 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         // Set the ReturnType for Documents coming out of the iterator stack
         config.setReturnType(DocumentSerialization.getReturnType(settings));
 
+        String expansionCodes = settings.findParameter(QueryParameters.LANGUAGE_EXPANSION).getParameterValue().trim();
+        if (StringUtils.isNotBlank(expansionCodes)) {
+            config.setLanguageExpansionCodes(Set.of(org.apache.commons.lang3.StringUtils.split(expansionCodes, ',')));
+        }
+
+        String stemmingCodes = settings.findParameter(QueryParameters.DISABLE_STEMMING).getParameterValue().trim();
+        if (StringUtils.isNotBlank(stemmingCodes)) {
+            config.setDisableStemming(Set.of(org.apache.commons.lang3.StringUtils.split(stemmingCodes, ',')));
+        }
+
+        String lemmaCodes = settings.findParameter(QueryParameters.DISABLE_LEMMAS).getParameterValue().trim();
+        if (StringUtils.isNotBlank(lemmaCodes)) {
+            config.setDisableLemmas(Set.of(org.apache.commons.lang3.StringUtils.split(lemmaCodes, ',')));
+        }
+
+        String unigramCodes = settings.findParameter(QueryParameters.DISABLE_UNIGRAMS).getParameterValue().trim();
+        if (StringUtils.isNotBlank(unigramCodes)) {
+            config.setDisableUnigrams(Set.of(org.apache.commons.lang3.StringUtils.split(unigramCodes, ',')));
+        }
+
+        String bigramCodes = settings.findParameter(QueryParameters.DISABLE_BIGRAMS).getParameterValue().trim();
+        if (StringUtils.isNotBlank(bigramCodes)) {
+            config.setDisableBigrams(Set.of(org.apache.commons.lang3.StringUtils.split(bigramCodes, ',')));
+        }
+
         // this needs to be configured first in order for FieldMappingTransform to work properly for profiles
         if (null != selectedProfile) {
             selectedProfile.configure(this);
@@ -2932,5 +2957,45 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
     public void setRebuildDatatypeFilterPerShard(boolean rebuildDatatypeFilterPerShard) {
         getConfig().setRebuildDatatypeFilterPerShard(rebuildDatatypeFilterPerShard);
+    }
+
+    public Set<String> getLanguageExpansionCodes() {
+        return getConfig().getLanguageExpansionCodes();
+    }
+
+    public void setLanguageExpansionCodes(Set<String> languageExpansionCodes) {
+        getConfig().setLanguageExpansionCodes(languageExpansionCodes);
+    }
+
+    public Set<String> getDisableStemming() {
+        return getConfig().getDisableStemming();
+    }
+
+    public void setDisableStemming(Set<String> disableStemming) {
+        getConfig().setDisableStemming(disableStemming);
+    }
+
+    public Set<String> getDisableLemmas() {
+        return getConfig().getDisableLemmas();
+    }
+
+    public void setDisableLemmas(Set<String> disableLemmas) {
+        getConfig().setDisableLemmas(disableLemmas);
+    }
+
+    public Set<String> getDisableUnigrams() {
+        return getConfig().getDisableUnigrams();
+    }
+
+    public void setDisableUnigrams(Set<String> disableUnigrams) {
+        getConfig().setDisableUnigrams(disableUnigrams);
+    }
+
+    public Set<String> getDisableBigrams() {
+        return getConfig().getDisableBigrams();
+    }
+
+    public void setDisableBigrams(Set<String> disableBigrams) {
+        getConfig().setDisableBigrams(disableBigrams);
     }
 }

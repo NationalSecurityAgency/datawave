@@ -187,6 +187,16 @@ public class QueryParameters {
     public static final String NO_EXPANSION_FIELDS = "no.expansion.fields";
 
     /**
+     * Used to specify short codes that map to LanguageAnalyzers
+     */
+    public static final String LANGUAGE_EXPANSION = "language.expansion";
+
+    public static final String DISABLE_STEMMING = "disable.stemming";
+    public static final String DISABLE_LEMMAS = "disable.lemmas";
+    public static final String DISABLE_UNIGRAMS = "disable.unigrams";
+    public static final String DISABLE_BIGRAMS = "disable.bigrams";
+
+    /**
      * Used to cause Documents to contain a list of selectors that hit;
      */
     public static final String HIT_LIST = "hit.list";

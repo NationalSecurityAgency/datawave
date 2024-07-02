@@ -127,6 +127,7 @@ import datawave.query.jexl.visitors.IsNotNullIntentVisitor;
 import datawave.query.jexl.visitors.IsNotNullPruningVisitor;
 import datawave.query.jexl.visitors.IvaratorRequiredVisitor;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.query.jexl.visitors.LanguageExpansionVisitor;
 import datawave.query.jexl.visitors.NodeTypeCountVisitor;
 import datawave.query.jexl.visitors.PrintingVisitor;
 import datawave.query.jexl.visitors.PullupUnexecutableNodesVisitor;
@@ -155,6 +156,9 @@ import datawave.query.jexl.visitors.ValidPatternVisitor;
 import datawave.query.jexl.visitors.ValidateFilterFunctionVisitor;
 import datawave.query.jexl.visitors.order.OrderByCostVisitor;
 import datawave.query.jexl.visitors.whindex.WhindexVisitor;
+import datawave.query.language.analyzers.LanguageAnalyzer;
+import datawave.query.language.analyzers.lucene.LanguageAwareAnalyzer;
+import datawave.query.language.analyzers.lucene.LuceneAnalyzerFactory;
 import datawave.query.model.QueryModel;
 import datawave.query.planner.comparator.DefaultQueryPlanComparator;
 import datawave.query.planner.comparator.GeoWaveQueryPlanComparator;
@@ -305,6 +309,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
     // handles boilerplate operations that surround a visitor's execution (e.g., timers, logging, validating)
     private TimedVisitorManager visitorManager = new TimedVisitorManager();
+
+    private LuceneAnalyzerFactory analyzerFactory;
 
     public DefaultQueryPlanner() {
         this(Long.MAX_VALUE);
@@ -772,6 +778,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         // Ensure that all ASTIdentifier nodes (field names) are upper-case to be consistent with what is enforced at ingest time
         // this will also ensure that various configure fields for projections, grouping, etc are upper cased as well
         config.setQueryTree(timedUpperCaseIdentifiers(timers, config.getQueryTree(), config, metadataHelper));
+
+        if (!config.getLanguageExpansionCodes().isEmpty()) {
+            config.setQueryTree(timedLanguageExpansion(timers, config.getQueryTree(), config, metadataHelper));
+        }
 
         config.setQueryTree(timedRewriteNegations(timers, config.getQueryTree()));
 
@@ -1279,6 +1289,17 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         return visitorManager.timedVisit(timers, "Uppercase Field Names", () -> (upperCaseIdentifiers(metadataHelper, config, script)));
     }
 
+    protected ASTJexlScript timedLanguageExpansion(QueryStopwatch timers, final ASTJexlScript script, ShardQueryConfiguration config, MetadataHelper helper) {
+        try {
+            Set<String> tokenizedFields = helper.getTermFrequencyFields(config.getDatatypeFilter());
+            return visitorManager.timedVisit(timers, "Language Expansion", () -> (applyLanguageExpansion(config, script, tokenizedFields)));
+        } catch (TableNotFoundException e) {
+            throw new DatawaveFatalQueryException("MetadataHelper failed to read tokenized fields", e);
+        } catch (DatawaveQueryException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     protected ASTJexlScript timedRewriteNegations(QueryStopwatch timers, final ASTJexlScript script) throws DatawaveQueryException {
         return visitorManager.timedVisit(timers, "Rewrite Negated Equality Operators", () -> (RewriteNegationsVisitor.rewrite(script)));
     }
@@ -1783,6 +1804,29 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         }
 
         return (CaseSensitivityVisitor.upperCaseIdentifiers(config, metadataHelper, script));
+    }
+
+    /**
+     * Expand a query via a set of {@link LanguageAwareAnalyzer}s.
+     *
+     * @param config
+     *            the config
+     * @param script
+     *            the query tree
+     * @param tokenizedFields
+     *            the set of tokenized fields
+     * @return an expanded query tree
+     */
+    protected ASTJexlScript applyLanguageExpansion(ShardQueryConfiguration config, ASTJexlScript script, Set<String> tokenizedFields) {
+        Set<String> codes = config.getLanguageExpansionCodes();
+        Set<String> disableStemming = config.getDisableStemming();
+        Set<String> disableLemmas = config.getDisableLemmas();
+        Set<String> disableUnigrams = config.getDisableUnigrams();
+        Set<String> disableBigrams = config.getDisableBigrams();
+
+        List<LanguageAwareAnalyzer> analyzers = analyzerFactory.createAnalyzers(codes, disableStemming, disableLemmas, disableUnigrams, disableBigrams);
+        LanguageExpansionVisitor visitor = new LanguageExpansionVisitor(analyzers, tokenizedFields);
+        return (ASTJexlScript) visitor.expand(script);
     }
 
     // Overwrite projection and disallowlist properties if the query model is
@@ -3155,5 +3199,13 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         if (null != builderThread) {
             builderThread.shutdown();
         }
+    }
+
+    public LuceneAnalyzerFactory getAnalyzerFactory() {
+        return this.analyzerFactory;
+    }
+
+    public void setAnalyzerFactory(LuceneAnalyzerFactory analyzerFactory) {
+        this.analyzerFactory = analyzerFactory;
     }
 }

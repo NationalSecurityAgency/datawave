@@ -456,6 +456,16 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("enforceUniqueDisjunctionsWithinExpression", true);
         defaultValues.put("noExpansionFields", Sets.newHashSet());
         updatedValues.put("noExpansionFields", Sets.newHashSet("FIELD_N", "FIELD_O"));
+        defaultValues.put("languageExpansionCodes", Sets.newHashSet());
+        updatedValues.put("languageExpansionCodes", Sets.newHashSet("fr", "it", "es", "pt", "ro")); // romance languages
+        defaultValues.put("disableStemming", Sets.newHashSet());
+        updatedValues.put("disableStemming", Sets.newHashSet("en", "es"));
+        defaultValues.put("disableLemmas", Sets.newHashSet());
+        updatedValues.put("disableLemmas", Sets.newHashSet("en", "es"));
+        defaultValues.put("disableUnigrams", Sets.newHashSet());
+        updatedValues.put("disableUnigrams", Sets.newHashSet("en", "es"));
+        defaultValues.put("disableBigrams", Sets.newHashSet());
+        updatedValues.put("disableBigrams", Sets.newHashSet("en", "es"));
         defaultValues.put("lenientFields", Sets.newHashSet());
         updatedValues.put("lenientFields", Sets.newHashSet("FIELD_L", "FIELD_M"));
         defaultValues.put("strictFields", Sets.newHashSet());

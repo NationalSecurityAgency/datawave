@@ -351,6 +351,7 @@
     <bean id="DefaultQueryPlanner" scope="prototype" class="datawave.query.planner.DefaultQueryPlanner" >
         <property name="transformRules" ref="transformRuleList" />
         <property name="visitorManager" ref="TimedVisitorManager"/>
+        <property name="analyzerFactory" ref="luceneAnalyzerFactory" />
     </bean>
 
     <bean id="TimedVisitorManager" scope="prototype" class="datawave.query.planner.TimedVisitorManager">
@@ -369,4 +370,16 @@
 
     <util:list id="RemoteUserServices" value-type="datawave.security.authorization.UserOperations">
     </util:list>
+
+    <bean id="luceneAnalyzerFactory" scope="prototype" class="datawave.query.language.analyzers.lucene.LuceneAnalyzerFactory">
+        <property name="analyzerMap" ref="languageAnalyzerMap" />
+    </bean>
+
+    <util:map id="languageAnalyzerMap" scope="prototype" key-type="java.lang.String" value-type="java.lang.Class" map-class="java.util.HashMap">
+        <description>A map of language short codes and LanguageAwareAnalyzers</description>
+        <entry key="en" value="datawave.query.language.analyzers.lucene.EnglishLuceneAnalyzer"/>
+        <entry key="es" value="datawave.query.language.analyzers.lucene.SpanishLuceneAnalyzer"/>
+        <entry key="it" value="datawave.query.language.analyzers.lucene.NoOpLuceneAnalyzer"/>
+    </util:map>
+
 </beans>

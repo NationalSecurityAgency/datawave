@@ -283,6 +283,36 @@ public class QueryOptionsFromQueryVisitorTest {
         assertOption(QueryParameters.GROUP_FIELDS, "field1,field2");
     }
 
+    @Test
+    public void testLanguageExpansionCodes() throws ParseException {
+        assertResult("FOO == 'bar' && f:options('language.expansion', 'en,es')", "FOO == 'bar'");
+        assertOption(QueryParameters.LANGUAGE_EXPANSION, "en,es");
+    }
+
+    @Test
+    public void testDisableStemming() throws ParseException {
+        assertResult("FOO == 'bar' && f:options('disable.stemming', 'en,es')", "FOO == 'bar'");
+        assertOption(QueryParameters.DISABLE_STEMMING, "en,es");
+    }
+
+    @Test
+    public void testDisableLemmas() throws ParseException {
+        assertResult("FOO == 'bar' && f:options('disable.lemmas', 'en,es')", "FOO == 'bar'");
+        assertOption(QueryParameters.DISABLE_LEMMAS, "en,es");
+    }
+
+    @Test
+    public void testDisableUnigrams() throws ParseException {
+        assertResult("FOO == 'bar' && f:options('disable.unigrams', 'en,es')", "FOO == 'bar'");
+        assertOption(QueryParameters.DISABLE_UNIGRAMS, "en,es");
+    }
+
+    @Test
+    public void testDisableBigrams() throws ParseException {
+        assertResult("FOO == 'bar' && f:options('disable.bigrams', 'en,es')", "FOO == 'bar'");
+        assertOption(QueryParameters.DISABLE_BIGRAMS, "en,es");
+    }
+
     private void assertOption(String option, String value) {
         assertEquals(value, optionsMap.get(option));
     }
