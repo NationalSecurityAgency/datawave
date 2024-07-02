@@ -3,7 +3,9 @@ package datawave.query.tables;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -33,10 +35,12 @@ import datawave.webservice.common.connection.WrappedConnector;
 
 public class ScannerFactory {
 
+    private static final int DEFAULT_MAX_THREADS = 100;
     protected int maxQueue = 1000;
+
     protected final Set<ScannerBase> instances = Collections.synchronizedSet(new HashSet<>());
     protected final Set<ScannerSession> sessionInstances = Collections.synchronizedSet(new HashSet<>());
-    protected final AccumuloClient cxn;
+    protected AccumuloClient client;
     // using an AtomicBoolean to give us a separate monitor for synchronization
     protected final AtomicBoolean open = new AtomicBoolean(true);
 
@@ -45,43 +49,97 @@ public class ScannerFactory {
     protected ResourceQueue scanQueue = null;
     protected ShardQueryConfiguration config = null;
 
+    protected Map<String,ScannerBase.ConsistencyLevel> consistencyByTable = new HashMap<>();
+    protected Map<String,Map<String,String>> hintsByTable = new HashMap<>();
+
     private static final Logger log = Logger.getLogger(ScannerFactory.class);
 
-    public ScannerFactory(GenericQueryConfiguration queryConfiguration) {
-
-        this.cxn = queryConfiguration.getClient();
-        log.debug("Created scanner factory " + System.identityHashCode(this) + " is wrapped ? " + (cxn instanceof WrappedConnector));
-
-        if (queryConfiguration instanceof ShardQueryConfiguration) {
-            this.config = ((ShardQueryConfiguration) queryConfiguration);
-            this.maxQueue = this.config.getMaxScannerBatchSize();
-            this.settings = this.config.getQuery();
-            this.accrueStats = this.config.getAccrueStats();
-            try {
-                scanQueue = new ResourceQueue(this.config.getNumQueryThreads(), this.cxn);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
+    /**
+     * Preferred constructor, builds scanner factory from configs
+     *
+     * @param config
+     *            a {@link GenericQueryConfiguration}
+     */
+    public ScannerFactory(GenericQueryConfiguration config) {
+        updateConfigs(config);
     }
 
+    /**
+     * Constructor that accepts a prebuilt AccumuloClient
+     *
+     * @param client
+     *            an {@link AccumuloClient}
+     */
     public ScannerFactory(AccumuloClient client) {
-        this(client, 100);
+        this(client, DEFAULT_MAX_THREADS);
 
     }
 
+    /**
+     * Constructor that accepts a prebuild AccumuloClient and limits the internal result queue to the provided value
+     *
+     * @param client
+     *            an {@link AccumuloClient}
+     * @param queueSize
+     *            the internal result queue size
+     */
     public ScannerFactory(AccumuloClient client, int queueSize) {
         try {
-            this.cxn = client;
+            this.client = client;
             this.scanQueue = new ResourceQueue(queueSize, client);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
+    /**
+     * Method that allows a ScannerFactory to be updated by a config after initialization
+     *
+     * @param genericConfig
+     *            a {@link GenericQueryConfiguration}
+     */
+    public void updateConfigs(GenericQueryConfiguration genericConfig) {
+
+        this.client = genericConfig.getClient();
+
+        Map<String,ScannerBase.ConsistencyLevel> consistencyLevels = genericConfig.getTableConsistencyLevels();
+        if (consistencyLevels != null && !consistencyLevels.isEmpty()) {
+            this.consistencyByTable = genericConfig.getTableConsistencyLevels();
+        }
+
+        Map<String,Map<String,String>> hints = genericConfig.getTableHints();
+        if (hints != null && !hints.isEmpty()) {
+            this.hintsByTable = genericConfig.getTableHints();
+        }
+
+        int numThreads = DEFAULT_MAX_THREADS;
+        if (genericConfig instanceof ShardQueryConfiguration) {
+            ShardQueryConfiguration config = (ShardQueryConfiguration) genericConfig;
+
+            this.settings = config.getQuery();
+            this.accrueStats = config.getAccrueStats();
+            this.maxQueue = config.getMaxScannerBatchSize();
+            this.config = config;
+
+            numThreads = config.getNumQueryThreads();
+        }
+
+        try {
+            this.scanQueue = new ResourceQueue(numThreads, this.client);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        if (log.isDebugEnabled()) {
+            log.debug("Created ScannerFactory " + System.identityHashCode(this) + " is wrapped ? " + (client instanceof WrappedConnector));
+        }
+    }
+
     public Scanner newSingleScanner(String tableName, Set<Authorizations> auths, Query query) throws TableNotFoundException {
         if (open.get()) {
-            Scanner bs = QueryScannerHelper.createScannerWithoutInfo(cxn, tableName, auths, query);
+            Scanner bs = QueryScannerHelper.createScannerWithoutInfo(client, tableName, auths, query);
+            applyConfigs(bs, tableName);
+
             log.debug("Created scanner " + System.identityHashCode(bs));
             if (log.isTraceEnabled()) {
                 log.trace("Adding instance " + bs.hashCode());
@@ -103,7 +161,9 @@ public class ScannerFactory {
 
     public BatchScanner newScanner(String tableName, Set<Authorizations> auths, int threads, Query query) throws TableNotFoundException {
         if (open.get()) {
-            BatchScanner bs = QueryScannerHelper.createBatchScanner(cxn, tableName, auths, threads, query);
+            BatchScanner bs = QueryScannerHelper.createBatchScanner(client, tableName, auths, threads, query);
+            applyConfigs(bs, tableName);
+
             log.debug("Created scanner " + System.identityHashCode(bs));
             if (log.isTraceEnabled()) {
                 log.trace("Adding instance " + bs.hashCode());
@@ -124,7 +184,9 @@ public class ScannerFactory {
 
     public BatchScanner newScanner(String tableName, Set<Authorizations> auths, int threads, Query query, boolean reportErrors) throws TableNotFoundException {
         if (open.get()) {
-            BatchScanner bs = QueryScannerHelper.createBatchScanner(cxn, tableName, auths, threads, query, reportErrors);
+            BatchScanner bs = QueryScannerHelper.createBatchScanner(client, tableName, auths, threads, query, reportErrors);
+            applyConfigs(bs, tableName);
+
             log.debug("Created scanner " + System.identityHashCode(bs));
             if (log.isTraceEnabled()) {
                 log.trace("Adding instance " + bs.hashCode());
@@ -166,7 +228,6 @@ public class ScannerFactory {
      *             if there are issues
      */
     public BatchScannerSession newQueryScanner(final String tableName, final Set<Authorizations> auths, Query settings) throws Exception {
-
         return newLimitedScanner(BatchScannerSession.class, tableName, auths, settings).setThreads(scanQueue.getCapacity());
     }
 
@@ -202,13 +263,15 @@ public class ScannerFactory {
             stats = new ScanSessionStats();
         }
 
-        T session = null;
+        T session;
         if (wrapper == ScannerSession.class) {
             session = (T) new ScannerSession(tableName, auths, scanQueue, maxQueue, settings).applyStats(stats);
         } else {
             session = wrapper.getConstructor(ScannerSession.class)
                             .newInstance(new ScannerSession(tableName, auths, scanQueue, maxQueue, settings).applyStats(stats));
         }
+
+        applyConfigs(session, tableName);
 
         log.debug("Created session " + System.identityHashCode(session));
         if (log.isTraceEnabled()) {
@@ -244,7 +307,7 @@ public class ScannerFactory {
     }
 
     public RangeStreamScanner newRangeScanner(String tableName, Set<Authorizations> auths, Query query, int shardsPerDayThreshold) throws Exception {
-        return newLimitedScanner(RangeStreamScanner.class, tableName, auths, settings).setShardsPerDayThreshold(shardsPerDayThreshold).setScannerFactory(this);
+        return newLimitedScanner(RangeStreamScanner.class, tableName, auths, settings).setScannerFactory(this);
     }
 
     public boolean close(ScannerBase bs) {
@@ -316,24 +379,24 @@ public class ScannerFactory {
         if (open.get()) {
             Configuration conf = new Configuration();
 
-            AccumuloClient con = cxn;
-
-            Properties clientProps = con.properties();
+            Properties clientProps = client.properties();
             final String instanceName = clientProps.getProperty(ClientProperty.INSTANCE_NAME.getKey());
             final String zookeepers = clientProps.getProperty(ClientProperty.INSTANCE_ZOOKEEPERS.getKey());
 
             AccumuloHelper.setInstanceName(conf, instanceName);
-            AccumuloHelper.setUsername(conf, con.whoami());
+            AccumuloHelper.setUsername(conf, client.whoami());
 
             AccumuloHelper.setZooKeepers(conf, zookeepers);
             BulkInputFormat.setZooKeeperInstance(conf, instanceName, zookeepers);
 
             AccumuloHelper.setPassword(conf, config.getAccumuloPassword().getBytes());
-            BulkInputFormat.setMemoryInput(conf, con.whoami(), config.getAccumuloPassword().getBytes(), tableName, auths.iterator().next());
+            BulkInputFormat.setMemoryInput(conf, client.whoami(), config.getAccumuloPassword().getBytes(), tableName, auths.iterator().next());
 
             conf.set(MultiRfileInputformat.CACHE_METADATA, "true");
 
-            ScannerBase baseScanner = new RfileScanner(con, conf, tableName, auths, 1);
+            ScannerBase baseScanner = new RfileScanner(client, conf, tableName, auths, 1);
+
+            applyConfigs(baseScanner, tableName);
 
             synchronized (open) {
                 if (open.get()) {
@@ -347,5 +410,45 @@ public class ScannerFactory {
         } else {
             throw new IllegalStateException("Factory has been locked. No new scanners can be created.");
         }
+    }
+
+    /**
+     * Apply table-specific scanner configs to the provided scanner base object
+     *
+     * @param scannerBase
+     *            a {@link ScannerBase}
+     * @param tableName
+     *            the table
+     */
+    protected void applyConfigs(ScannerBase scannerBase, String tableName) {
+        if (consistencyByTable != null && consistencyByTable.containsKey(tableName)) {
+            scannerBase.setConsistencyLevel(consistencyByTable.get(tableName));
+        }
+
+        if (hintsByTable != null && hintsByTable.containsKey(tableName)) {
+            scannerBase.setExecutionHints(hintsByTable.get(tableName));
+        }
+    }
+
+    /**
+     * Apply table-specific scanner configs to the provided scanner session
+     *
+     * @param scannerSession
+     *            the {@link ScannerSession}
+     * @param tableName
+     *            the table
+     */
+    protected void applyConfigs(ScannerSession scannerSession, String tableName) {
+        SessionOptions options = scannerSession.getOptions();
+
+        if (consistencyByTable != null && consistencyByTable.containsKey(tableName)) {
+            options.setConsistencyLevel(consistencyByTable.get(tableName));
+        }
+
+        if (hintsByTable != null && hintsByTable.containsKey(tableName)) {
+            options.setExecutionHints(hintsByTable.get(tableName));
+        }
+
+        scannerSession.setOptions(options);
     }
 }

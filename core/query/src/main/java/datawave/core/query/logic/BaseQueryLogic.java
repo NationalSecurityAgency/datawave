@@ -445,4 +445,20 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     public AccumuloClientConfiguration getClientConfig() {
         return clientConfig;
     }
+
+    public Map<String,ScannerBase.ConsistencyLevel> getTableConsistencyLevels() {
+        return getConfig().getTableConsistencyLevels();
+    }
+
+    public void setTableConsistencyLevels(Map<String,ScannerBase.ConsistencyLevel> consistencyLevels) {
+        getConfig().setTableConsistencyLevels(consistencyLevels);
+    }
+
+    public Map<String,Map<String,String>> getTableHints() {
+        return getConfig().getTableHints();
+    }
+
+    public void setTableHints(Map<String,Map<String,String>> hints) {
+        getConfig().setTableHints(hints);
+    }
 }

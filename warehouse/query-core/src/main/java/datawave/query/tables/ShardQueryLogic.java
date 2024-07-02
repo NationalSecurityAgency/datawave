@@ -260,6 +260,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
             bs.addScanIterator(cfg);
         }
 
+        if (config.getTableConsistencyLevels().containsKey(config.getTableName())) {
+            bs.setConsistencyLevel(config.getTableConsistencyLevels().get(config.getTableName()));
+        }
+
+        if (config.getTableHints().containsKey(config.getTableName())) {
+            bs.setExecutionHints(config.getTableHints().get(config.getTableName()));
+        }
+
         return bs;
     }
 
@@ -1593,18 +1601,22 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         getConfig().setHitList(hitList);
     }
 
+    @Deprecated(since = "7.1.0", forRemoval = true)
     public int getEventPerDayThreshold() {
         return getConfig().getEventPerDayThreshold();
     }
 
+    @Deprecated(since = "7.1.0", forRemoval = true)
     public void setEventPerDayThreshold(int eventPerDayThreshold) {
         getConfig().setEventPerDayThreshold(eventPerDayThreshold);
     }
 
+    @Deprecated(since = "7.1.0", forRemoval = true)
     public int getShardsPerDayThreshold() {
         return getConfig().getShardsPerDayThreshold();
     }
 
+    @Deprecated(since = "7.1.0", forRemoval = true)
     public void setShardsPerDayThreshold(int shardsPerDayThreshold) {
         getConfig().setShardsPerDayThreshold(shardsPerDayThreshold);
     }
