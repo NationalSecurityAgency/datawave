@@ -783,7 +783,7 @@ public abstract class CompositeFunctionsTest {
     }
 
     @Test
-    public void test() throws Exception {
+    public void testMultiFieldInclude() throws Exception {
         eventQueryLogic.setParser(new LuceneToJexlQueryParser());
         Map<String,String> extraParameters = new HashMap<>();
         // @formatter:off

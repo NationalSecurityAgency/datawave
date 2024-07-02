@@ -188,6 +188,8 @@ public class RegexFunctionVisitorTest {
 
     @Test
     public void testMultiFieldDoubleEndedWildCard() throws ParseException {
+        // we cannot extract the index only field because we don't support double ended wildcards against the index. Queries like this will fail in a later
+        // visitor
         Set<String> indexOnlyFields = Sets.newHashSet("FIELDA");
         String query = "FOO == 'bar' && filter:includeRegex(FIELDA||FIELDB,'.*all_.*')";
         assertVisitorResult(query, query, indexOnlyFields);
