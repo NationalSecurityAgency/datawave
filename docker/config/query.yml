@@ -54,7 +54,7 @@ datawave:
     accumulo:
       uri: 'https://localhost:9143/accumulo'
     cache:
-      uri: 'https://localhost:8844/cache'
+      uri: 'https://localhost:8843/cache'
     config:
       uri: 'https://localhost:8888/configserver'
     authorization:
@@ -72,3 +72,9 @@ audit-client:
   discovery:
     enabled: false
   uri: '${AUDIT_SERVER_URL:http://localhost:11111/audit}'
+
+hazelcast:
+  clusterName: 'cache2'
+  client:
+    enabled: true
+    clusterName: 'cache2'

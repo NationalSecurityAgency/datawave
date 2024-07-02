@@ -193,7 +193,7 @@ services:
     networks:
       - demo
     healthcheck:
-      test: curl -f http://localhost:8080/cache/mgmt/health
+      test: curl -f http://localhost:8082/cache2/mgmt/health
       interval: 10s
       timeout: 1s
       start_period: 45s
@@ -201,7 +201,6 @@ services:
     depends_on:
       configuration:
         condition: service_started
-
 
   authorization:
     entrypoint: [ "java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5008","-jar","app.jar" ]
@@ -606,9 +605,9 @@ services:
   #    - ns datawaveUsers
   #    - m.entries
   management-center:
-    profiles:
-      - management
-      - full
+#    profiles:
+#      - management
+#      - full
     image: docker.io/hazelcast/management-center:5.1.2
     environment:
       - |-

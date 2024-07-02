@@ -65,3 +65,9 @@ datawave:
       logStatusPeriodMs: 600000
       logStatusWhenChangedMs: 300000
       queryMetricsUrlPrefix: https://localhost:8543/querymetric/v1/id/
+
+hazelcast:
+  clusterName: 'cache2'
+  client:
+    enabled: true
+    clusterName: 'cache2'
