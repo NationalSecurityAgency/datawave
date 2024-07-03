@@ -48,6 +48,7 @@ public abstract class AsyncIndexLookup extends IndexLookup {
             try {
                 startedLatch.await();
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 throw new UnsupportedOperationException("Interrupted while waiting for IndexLookup to start", e);
             }
         } else {
@@ -80,7 +81,10 @@ public abstract class AsyncIndexLookup extends IndexLookup {
                 break;
             }
 
-        } catch (InterruptedException | ExecutionException e) {
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        } catch (ExecutionException e) {
             throw new RuntimeException(e);
         } catch (TimeoutException e) {
             future.cancel(true);
@@ -88,6 +92,7 @@ public abstract class AsyncIndexLookup extends IndexLookup {
             try {
                 stoppedLatch.await();
             } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
                 log.error("Interrupted waiting for canceled AsyncIndexLookup to complete.");
                 throw new RuntimeException(ex);
             }

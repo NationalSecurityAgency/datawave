@@ -229,7 +229,10 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
                 this.docWriterService.shutdown();
                 this.docWriterService.awaitTermination(1, TimeUnit.MINUTES);
                 this.docWriter.close();
-            } catch (InterruptedException | MutationsRejectedException e) {
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                log.error("Unable to terminate document writing service!", e);
+            } catch (MutationsRejectedException e) {
                 log.error("Unable to terminate document writing service!", e);
             }
         }
@@ -669,6 +672,7 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
                 try {
                     Thread.sleep(INTERVAL);
                 } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                     throw new RuntimeException(e);
                 }
 

@@ -38,6 +38,11 @@ public class KillJobByRegex {
             Job job = null;
             try {
                 job = cluster.getJob(js.getJobID());
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                System.out.println("Error getting job: " + js.getJobID() + " Reason: " + e.getMessage());
+                JOB_FAILED_COUNT.getAndIncrement();
+                return;
             } catch (Exception e) {
                 System.out.println("Error getting job: " + js.getJobID() + " Reason: " + e.getMessage());
                 JOB_FAILED_COUNT.getAndIncrement();
@@ -82,6 +87,7 @@ public class KillJobByRegex {
             JOB_KILLER_SVC.shutdown(); // signal shutdown
             JOB_KILLER_SVC.awaitTermination(1, TimeUnit.MINUTES); // allow processes to stop
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             JOB_KILLER_SVC.shutdownNow();
         }
 

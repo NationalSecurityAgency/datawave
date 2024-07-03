@@ -68,6 +68,7 @@ public class CompositeQueryLogicResultsIterator implements Iterator<Object>, Thr
                     if (failure != null) {
                         Throwables.propagate(failure);
                     }
+                    Thread.currentThread().interrupt();
                     throw new RuntimeException(e);
                 }
             }

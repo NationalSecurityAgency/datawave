@@ -102,6 +102,9 @@ public class MetricsIngester extends Configured implements Tool {
         if ("errors".equals(type)) {
             try {
                 launchErrorsJob(Job.getInstance(conf), conf);
+            } catch (InterruptedException e) {
+                log.info("Failed to launch errors job", e);
+                Thread.currentThread().interrupt();
             } catch (Exception e) {
                 log.info("Failed to launch errors job", e);
             }

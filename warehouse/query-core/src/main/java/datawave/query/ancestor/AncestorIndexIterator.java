@@ -33,8 +33,6 @@ public class AncestorIndexIterator extends IndexIterator {
     @Override
     protected Range buildIndexRange(Range r) {
         Key start = r.getStartKey();
-        Key end = r.getEndKey();
-        String endCf = (end == null || end.getColumnFamily() == null ? "" : end.getColumnFamily().toString());
         String startCf = (start == null || start.getColumnFamily() == null ? "" : start.getColumnFamily().toString());
 
         // if the start key is inclusive, and contains a datatype/0UID, then move back to the top level ancestor

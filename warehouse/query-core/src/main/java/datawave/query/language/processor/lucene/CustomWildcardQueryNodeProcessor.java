@@ -39,7 +39,7 @@ public class CustomWildcardQueryNodeProcessor extends WildcardQueryNodeProcessor
 
             // Code below simulates the old lucene parser behavior for wildcards
 
-            if (isWildcard(text)) {
+            if (checkIfWildcard(text)) {
                 if (isPrefixWildcard(text)) {
                     return new PrefixWildcardQueryNode(fqn.getField(), text, fqn.getBegin(), fqn.getEnd());
                 } else {
@@ -51,7 +51,7 @@ public class CustomWildcardQueryNodeProcessor extends WildcardQueryNodeProcessor
         return node;
     }
 
-    private boolean isWildcard(CharSequence text) {
+    private boolean checkIfWildcard(CharSequence text) {
         if (text == null || text.length() <= 0)
             return false;
 
@@ -67,7 +67,7 @@ public class CustomWildcardQueryNodeProcessor extends WildcardQueryNodeProcessor
     }
 
     private boolean isPrefixWildcard(CharSequence text) {
-        if (text == null || text.length() <= 0 || !isWildcard(text))
+        if (text == null || text.length() <= 0 || !checkIfWildcard(text))
             return false;
 
         // Validate last character is a '*' and was not escaped

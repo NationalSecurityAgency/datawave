@@ -510,6 +510,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
                                             try {
                                                 Thread.sleep(FAILURE_SLEEP_TIME);
                                             } catch (InterruptedException ie) {
+                                                Thread.currentThread().interrupt();
                                                 log.warn("Interrupted while sleeping.", ie);
                                             }
                                         }
@@ -820,6 +821,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
                         if (e == null)
                             e = importTask.getException();
                     } catch (InterruptedException interrupted) {
+                        Thread.currentThread().interrupt();
                         // this task was interrupted, wait for the others and then terminate
                         if (e == null)
                             e = interrupted;
@@ -842,6 +844,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
                 if (e == null)
                     e = importTask.getException();
             } catch (InterruptedException interrupted) {
+                Thread.currentThread().interrupt();
                 // this task was interrupted, wait for the others and then terminate
                 if (e == null)
                     e = interrupted;
@@ -1236,6 +1239,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
             }
 
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             if (null != e.getCause())
                 throw new IOException(e.getCause().getMessage());
             else
@@ -1318,6 +1322,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
             System.gc();
             Thread.sleep(SLEEP_TIME);
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             log.warn("Interrupted while sleeping.", e);
         }
     }
