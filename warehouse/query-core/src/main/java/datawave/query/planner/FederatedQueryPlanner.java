@@ -273,7 +273,7 @@ public class FederatedQueryPlanner extends QueryPlanner implements Cloneable {
     public CloseableIterable<QueryData> process(GenericQueryConfiguration genericConfig, String query, Query settings, ScannerFactory scannerFactory)
                     throws DatawaveQueryException {
         // Validate the config type.
-        if (!genericConfig.getClass().equals(ShardQueryConfiguration.class)) {
+        if (!ShardQueryConfiguration.class.isAssignableFrom(genericConfig.getClass())) {
             throw new ClassCastException("Config must be an instance of " + ShardQueryConfiguration.class.getSimpleName());
         }
 
