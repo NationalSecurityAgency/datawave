@@ -9,7 +9,7 @@ services:
       - quickstart
     # To run the wildfly webservice, change `--accumulo` to `--web`
     command: ["datawave-bootstrap.sh", "--accumulo"]
-    image: datawave/quickstart-compose:7.0.1-SNAPSHOT
+    image: datawave/quickstart-compose
     environment:
       - DW_CONTAINER_HOST=quickstart
       - DW_DATAWAVE_WEB_JAVA_OPTS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:8787 -Duser.timezone=GMT -Dfile.encoding=UTF-8 -Djava.net.preferIPv4Stack=true
@@ -47,7 +47,7 @@ services:
       test: ["CMD-SHELL", "! accumuloStatus | grep DW-WARN > /dev/null"]
 
   consul:
-    image: consul:1.15.4
+    image: docker.io/hashicorp/consul:1.15.4
     hostname: localhost
     environment:
       - 'CONSUL_LOCAL_CONFIG={"log_level": "trace", "datacenter": "demo_dc", "disable_update_check": true, "enable_agent_tls_for_checks": true, "addresses": {"https": "0.0.0.0"}, "ports": {"https": 8501, "grpc_tls": 8503}, "tls": {"defaults": {"key_file": "/etc/pki/testServer.key", "cert_file": "/etc/pki/testServer.crt", "ca_file": "/etc/pki/testCA.pem", "verify_outgoing": true}, "internal_rpc": {"verify_server_hostname": false}}}'
@@ -65,7 +65,7 @@ services:
       - demo
 
   rabbitmq:
-    image: rabbitmq:3.12.4-alpine
+    image: docker.io/rabbitmq:3.12.4
     volumes:
       - ${RABBITMQ_CONFIG_DIR:-./rabbitmq-config}:/etc/rabbitmq
       - ./logs:/logs
@@ -82,7 +82,7 @@ services:
 
   # When auto.create.topics.enable is true, this causes deleted topics to be recreated at random.  So, leave it disabled.
   kafka:
-    image: bitnami/kafka:3.2.3
+    image: docker.io/bitnami/kafka:3.2
     ports:
       - "9094:9094"
     networks:
@@ -104,7 +104,7 @@ services:
     profiles:
       - management
       - full
-    image: obsidiandynamics/kafdrop
+    image: docker.io/obsidiandynamics/kafdrop
     ports:
       - "8999:9000"
     networks:
@@ -122,7 +122,7 @@ services:
 
   configuration:
     entrypoint: [ "java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5009","-jar","app.jar" ]
-    image: datawave/config-service:4.0.1-SNAPSHOT
+    image: datawave/config-service
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,native,open_actuator
@@ -146,7 +146,7 @@ services:
         condition: service_started
 
   cache:
-    image: datawave/hazelcast-service:4.0.1-SNAPSHOT
+    image: datawave/hazelcast-service
     scale: 1
     command:
       - --spring.profiles.active=consul,compose,remoteauth
@@ -174,7 +174,7 @@ services:
 
   authorization:
     entrypoint: [ "java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5008","-jar","app.jar" ]
-    image: datawave/authorization-service:4.0.1-SNAPSHOT
+    image: datawave/authorization-service
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,mock,compose,federation
@@ -203,7 +203,7 @@ services:
     profiles:
       - accumulo
       - full
-    image: datawave/accumulo-service:4.0.1-SNAPSHOT
+    image: datawave/accumulo-service
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,compose,remoteauth
@@ -236,7 +236,7 @@ services:
         condition: service_healthy
 
   audit:
-    image: datawave/audit-service:4.0.1-SNAPSHOT
+    image: datawave/audit-service
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,compose,remoteauth
@@ -270,7 +270,7 @@ services:
 
   metrics:
     entrypoint: ["java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5007","-jar","app.jar"]
-    image: datawave/query-metric-service:4.0.1-SNAPSHOT
+    image: datawave/query-metric-service
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,compose,remoteauth
@@ -307,7 +307,7 @@ services:
     profiles:
       - dictionary
       - full
-    image: datawave/dictionary-service:4.0.1-SNAPSHOT
+    image: datawave/dictionary-service
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,compose,remoteauth
@@ -339,7 +339,7 @@ services:
   mysql:
     profiles:
       - cachedresults
-    image: mysql:8.0.32
+    image: docker.io/mysql:8.0.32
     environment:
       - MYSQL_RANDOM_ROOT_PASSWORD=true
       - MYSQL_DATABASE=cachedresults
@@ -355,7 +355,7 @@ services:
   # If you want to test cached results, set the CACHED_RESULTS environment variable to 'true'
   query:
     entrypoint: ["java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005","-jar","app.jar"]
-    image: datawave/query-service:1.0.1-SNAPSHOT
+    image: datawave/query-service
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,compose,remoteauth,querymessaging,metricssource,query,mrquery,cachedresults,federation
@@ -399,7 +399,7 @@ services:
     profiles:
       - full
     entrypoint: ["java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005","-jar","app.jar"]
-    image: datawave/mapreduce-query-service:1.0.1-SNAPSHOT
+    image: datawave/mapreduce-query-service
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,compose,remoteauth,query,mrquery,federation
@@ -437,7 +437,7 @@ services:
 
   executor-pool1:
     entrypoint: ["java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5006","-jar","app.jar"]
-    image: datawave/query-executor-service:1.0.1-SNAPSHOT
+    image: datawave/query-executor-service
     command:
       - --spring.application.name=executor-pool1
       - --spring.cloud.config.name=executor
@@ -486,7 +486,7 @@ services:
     profiles:
       - pool2
       - full
-    image: datawave/query-executor-service:1.0.1-SNAPSHOT
+    image: datawave/query-executor-service
     command:
       - --spring.application.name=executor-pool2
       - --spring.cloud.config.name=executor
@@ -533,7 +533,7 @@ services:
     profiles:
       - modification
       - full
-    image: datawave/modification-service:1.0.1-SNAPSHOT
+    image: datawave/modification-service
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,compose,remoteauth,query
@@ -584,7 +584,7 @@ services:
     profiles:
       - management
       - full
-    image: hazelcast/management-center:5.1.2
+    image: docker.io/hazelcast/management-center:5.1.2
     environment:
       - |-
         JAVA_OPTS=

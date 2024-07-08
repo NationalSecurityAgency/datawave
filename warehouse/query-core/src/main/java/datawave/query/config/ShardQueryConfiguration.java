@@ -389,7 +389,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private int groupFieldsBatchSize;
     private boolean accrueStats = false;
     private UniqueFields uniqueFields = new UniqueFields();
-    private boolean mostRecentUnique = false;
     private boolean cacheModel = false;
     /**
      * should the sizes of documents be tracked for this query
@@ -685,6 +684,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setGroupFieldsBatchSize(other.getGroupFieldsBatchSize());
         this.setAccrueStats(other.getAccrueStats());
         this.setUniqueFields(other.getUniqueFields());
+        log.info("Checkpointing with " + getUniqueFields());
         this.setUniqueCacheBufferSize(other.getUniqueCacheBufferSize());
         this.setCacheModel(other.getCacheModel());
         this.setTrackSizes(other.isTrackSizes());
@@ -1291,18 +1291,22 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         }
     }
 
+    @Deprecated(since = "7.1.0", forRemoval = true)
     public int getEventPerDayThreshold() {
         return eventPerDayThreshold;
     }
 
+    @Deprecated(since = "7.1.0", forRemoval = true)
     public void setEventPerDayThreshold(int eventPerDayThreshold) {
         this.eventPerDayThreshold = eventPerDayThreshold;
     }
 
+    @Deprecated(since = "7.1.0", forRemoval = true)
     public int getShardsPerDayThreshold() {
         return shardsPerDayThreshold;
     }
 
+    @Deprecated(since = "7.1.0", forRemoval = true)
     public void setShardsPerDayThreshold(int shardsPerDayThreshold) {
         this.shardsPerDayThreshold = shardsPerDayThreshold;
     }
