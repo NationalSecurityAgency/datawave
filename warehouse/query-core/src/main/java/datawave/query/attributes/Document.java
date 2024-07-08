@@ -1,5 +1,27 @@
 package datawave.query.attributes;
 
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
+import com.google.common.collect.Iterators;
+import com.google.common.collect.Sets;
+import datawave.marking.MarkingFunctions;
+import datawave.query.Constants;
+import datawave.query.collections.FunctionalSet;
+import datawave.query.composite.CompositeMetadata;
+import datawave.query.function.KeyToFieldName;
+import datawave.query.jexl.DatawaveJexlContext;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.predicate.EventDataQueryFilter;
+import datawave.query.predicate.ValueToAttributes;
+import datawave.query.util.TypeMetadata;
+import datawave.util.time.DateHelper;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Value;
+import org.apache.commons.lang.builder.HashCodeBuilder;
+import org.apache.hadoop.io.WritableUtils;
+import org.apache.log4j.Logger;
+
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
@@ -15,30 +37,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
-import org.apache.commons.lang.builder.HashCodeBuilder;
-import org.apache.hadoop.io.WritableUtils;
-import org.apache.log4j.Logger;
-
-import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.io.Input;
-import com.esotericsoftware.kryo.io.Output;
-import com.google.common.collect.Iterators;
-import com.google.common.collect.Sets;
-
-import datawave.marking.MarkingFunctions;
-import datawave.query.Constants;
-import datawave.query.collections.FunctionalSet;
-import datawave.query.composite.CompositeMetadata;
-import datawave.query.function.KeyToFieldName;
-import datawave.query.jexl.DatawaveJexlContext;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.predicate.EventDataQueryFilter;
-import datawave.query.predicate.ValueToAttributes;
-import datawave.query.util.TypeMetadata;
-import datawave.util.time.DateHelper;
-
 public class Document extends AttributeBag<Document> implements Serializable {
     private static final long serialVersionUID = 1L;
 
@@ -51,7 +49,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
     private static final long ONE_HUNDRED_M = 1024L * 1000 * 100;
     private static final long ONE_M = 1024L * 1000;
     private static final long FIVE_HUNDRED_K = 1024L * 500;
-    TreeMap<String,Attribute<? extends Comparable<?>>> dict;
+    TreeMap<String, Attribute<? extends Comparable<?>>> dict;
 
     /**
      * should sizes of the documents be tracked
@@ -69,11 +67,12 @@ public class Document extends AttributeBag<Document> implements Serializable {
         return MarkingFunctions.Factory.createMarkingFunctions();
     }
 
-    public Map<String,String> getMarkings() {
+    public Map<String, String> getMarkings() {
         try {
             MarkingFunctions markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
             return markingFunctions.translateFromColumnVisibility(getColumnVisibility());
-        } catch (MarkingFunctions.Exception e) {}
+        } catch (MarkingFunctions.Exception e) {
+        }
         return Collections.emptyMap();
     }
 
@@ -91,18 +90,18 @@ public class Document extends AttributeBag<Document> implements Serializable {
         this.trackSizes = trackSizes;
     }
 
-    public Document(Key key, Set<Key> docKeys, boolean fromIndex, Iterator<Entry<Key,Value>> iter, TypeMetadata typeMetadata,
+    public Document(Key key, Set<Key> docKeys, boolean fromIndex, Iterator<Entry<Key, Value>> iter, TypeMetadata typeMetadata,
                     CompositeMetadata compositeMetadata, boolean includeGroupingContext, boolean keepRecordId, EventDataQueryFilter attrFilter) {
         this(key, docKeys, fromIndex, iter, typeMetadata, compositeMetadata, includeGroupingContext, keepRecordId, attrFilter, true);
     }
 
-    public Document(Key key, Set<Key> docKeys, boolean fromIndex, Iterator<Entry<Key,Value>> iter, TypeMetadata typeMetadata,
+    public Document(Key key, Set<Key> docKeys, boolean fromIndex, Iterator<Entry<Key, Value>> iter, TypeMetadata typeMetadata,
                     CompositeMetadata compositeMetadata, boolean includeGroupingContext, boolean keepRecordId, EventDataQueryFilter attrFilter,
                     boolean toKeep) {
         this(key, docKeys, fromIndex, iter, typeMetadata, compositeMetadata, includeGroupingContext, keepRecordId, attrFilter, toKeep, true);
     }
 
-    public Document(Key key, Set<Key> docKeys, boolean fromIndex, Iterator<Entry<Key,Value>> iter, TypeMetadata typeMetadata,
+    public Document(Key key, Set<Key> docKeys, boolean fromIndex, Iterator<Entry<Key, Value>> iter, TypeMetadata typeMetadata,
                     CompositeMetadata compositeMetadata, boolean includeGroupingContext, boolean keepRecordId, EventDataQueryFilter attrFilter, boolean toKeep,
                     boolean trackSizes) {
         this(key, toKeep, trackSizes);
@@ -114,19 +113,19 @@ public class Document extends AttributeBag<Document> implements Serializable {
         return Collections.unmodifiableCollection(this.dict.values());
     }
 
-    public Map<String,Attribute<? extends Comparable<?>>> getDictionary() {
+    public Map<String, Attribute<? extends Comparable<?>>> getDictionary() {
         return Collections.unmodifiableMap(this.dict);
     }
 
-    private TreeMap<String,Attribute<? extends Comparable<?>>> _getDictionary() {
+    private TreeMap<String, Attribute<? extends Comparable<?>>> _getDictionary() {
         return dict;
     }
 
-    public Set<Entry<String,Attribute<? extends Comparable<?>>>> entrySet() {
+    public Set<Entry<String, Attribute<? extends Comparable<?>>>> entrySet() {
         return getDictionary().entrySet();
     }
 
-    public Iterator<Entry<String,Attribute<? extends Comparable<?>>>> iterator() {
+    public Iterator<Entry<String, Attribute<? extends Comparable<?>>>> iterator() {
         return getDictionary().entrySet().iterator();
     }
 
@@ -134,29 +133,20 @@ public class Document extends AttributeBag<Document> implements Serializable {
      * Given an iterator over {@code Entry<Key, Value>}, and a set of normalizers, this method will merge the attributes scanned over by the supplied iterator
      * into <code>this</code> Document.
      *
-     * @param iter
-     *            iterator of entry map
-     * @param typeMetadata
-     *            the type metadata
-     * @param docKey
-     *            document key
-     * @param attrFilter
-     *            attribute filter
-     * @param compositeMetadata
-     *            the composite metadata
-     * @param docKeys
-     *            the document keys
-     * @param fromIndex
-     *            boolean flag for fromIndex
-     * @param includeGroupingContext
-     *            check for including the grouping context
-     * @param keepRecordId
-     *            check for keepRecordId
+     * @param iter                   iterator of entry map
+     * @param typeMetadata           the type metadata
+     * @param docKey                 document key
+     * @param attrFilter             attribute filter
+     * @param compositeMetadata      the composite metadata
+     * @param docKeys                the document keys
+     * @param fromIndex              boolean flag for fromIndex
+     * @param includeGroupingContext check for including the grouping context
+     * @param keepRecordId           check for keepRecordId
      * @return a Document object
      */
-    public Document consumeRawData(Key docKey, Set<Key> docKeys, Iterator<Entry<Key,Value>> iter, TypeMetadata typeMetadata,
-                    CompositeMetadata compositeMetadata, boolean includeGroupingContext, boolean keepRecordId, EventDataQueryFilter attrFilter,
-                    boolean fromIndex) {
+    public Document consumeRawData(Key docKey, Set<Key> docKeys, Iterator<Entry<Key, Value>> iter, TypeMetadata typeMetadata,
+                                   CompositeMetadata compositeMetadata, boolean includeGroupingContext, boolean keepRecordId, EventDataQueryFilter attrFilter,
+                                   boolean fromIndex) {
         invalidateMetadata();
         // extract the sharded time from the dockey if possible
         try {
@@ -168,16 +158,16 @@ public class Document extends AttributeBag<Document> implements Serializable {
         }
 
         // Extract the fieldName from the Key
-        Iterator<Entry<Key,String>> extractedFieldNames = Iterators.transform(iter, new KeyToFieldName(includeGroupingContext));
+        Iterator<Entry<Key, String>> extractedFieldNames = Iterators.transform(iter, new KeyToFieldName(includeGroupingContext));
 
         // Transform the remaining entries back into Attributes
-        Iterator<Iterable<Entry<String,Attribute<? extends Comparable<?>>>>> attributes = Iterators.transform(extractedFieldNames,
-                        new ValueToAttributes(compositeMetadata, typeMetadata, attrFilter, MarkingFunctions.Factory.createMarkingFunctions(), fromIndex));
+        Iterator<Iterable<Entry<String, Attribute<? extends Comparable<?>>>>> attributes = Iterators.transform(extractedFieldNames,
+                new ValueToAttributes(compositeMetadata, typeMetadata, attrFilter, MarkingFunctions.Factory.createMarkingFunctions(), fromIndex));
 
         // Add all of the String=>Attribute pairs to this Document
         while (attributes.hasNext()) {
-            Iterable<Entry<String,Attribute<? extends Comparable<?>>>> entries = attributes.next();
-            for (Entry<String,Attribute<? extends Comparable<?>>> entry : entries) {
+            Iterable<Entry<String, Attribute<? extends Comparable<?>>>> entries = attributes.next();
+            for (Entry<String, Attribute<? extends Comparable<?>>> entry : entries) {
                 this.put(entry, includeGroupingContext);
             }
         }
@@ -211,17 +201,8 @@ public class Document extends AttributeBag<Document> implements Serializable {
 
     public void debugDocumentSize(Key docKey) {
         long bytes = sizeInBytes();
-        // if more than 100M, then error
-        if (bytes > (ONE_HUNDRED_M)) {
-            log.error("Document " + docKey + "; size = " + size() + "; bytes = " + bytes);
-        }
-        // if more than 10M, then warn
-        // else if (bytes > (1024l * 1000 * 10)) {
-        // log.warn("Document " + docKey + "; size = " + size() + "; bytes = " + bytes);
-        // }
-
         // if more than 1M, then info
-        else if (bytes > (ONE_M)) {
+        if (bytes > (ONE_M)) {
             log.info("Document " + docKey + "; size = " + size() + "; bytes = " + bytes);
         }
         // if more than 500K, then debug
@@ -237,8 +218,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
     /**
      * Returns true if this <code>Document</code> contains the given <code>key</code>
      *
-     * @param key
-     *            a key
+     * @param key a key
      * @return a boolean on if a key is found
      */
     public boolean containsKey(String key) {
@@ -248,8 +228,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
     /**
      * Fetch the value for the given <code>key</code>. Will return <code>null</code> if no such mapping exists.
      *
-     * @param key
-     *            the key
+     * @param key the key
      * @return the attribute value
      */
     public Attribute<?> get(String key) {
@@ -263,14 +242,10 @@ public class Document extends AttributeBag<Document> implements Serializable {
     /**
      * Replaces an attribute within a document
      *
-     * @param key
-     *            the key
-     * @param value
-     *            a value
-     * @param includeGroupingContext
-     *            flag to include grouping context
-     * @param reducedResponse
-     *            flag for reducedResponse
+     * @param key                    the key
+     * @param value                  a value
+     * @param includeGroupingContext flag to include grouping context
+     * @param reducedResponse        flag for reducedResponse
      */
     public void replace(String key, Attribute<?> value, Boolean includeGroupingContext, boolean reducedResponse) {
         dict.put(key, value);
@@ -281,14 +256,10 @@ public class Document extends AttributeBag<Document> implements Serializable {
      * <code>Attributes</code> object (if the attribute associated with <code>key</code> isn't already an <code>Attributes</code>), and add the
      * <code>value</code> and existing attribute to that list.
      *
-     * @param key
-     *            the key
-     * @param value
-     *            the attribute value
-     * @param includeGroupingContext
-     *            flag to include grouping context
-     * @param reducedResponse
-     *            flag for reducedResponse
+     * @param key                    the key
+     * @param value                  the attribute value
+     * @param includeGroupingContext flag to include grouping context
+     * @param reducedResponse        flag for reducedResponse
      */
     public void put(String key, Attribute<?> value, Boolean includeGroupingContext, boolean reducedResponse) {
 
@@ -400,21 +371,21 @@ public class Document extends AttributeBag<Document> implements Serializable {
         }
     }
 
-    public void put(Entry<String,Attribute<? extends Comparable<?>>> entry, Boolean includeGroupingContext) {
+    public void put(Entry<String, Attribute<? extends Comparable<?>>> entry, Boolean includeGroupingContext) {
         // No grouping context in the document.
         this.put(entry.getKey(), entry.getValue(), includeGroupingContext, false);
     }
 
-    public void put(Entry<String,Attribute<? extends Comparable<?>>> entry, Boolean includeGroupingContext, boolean reducedResponse) {
+    public void put(Entry<String, Attribute<? extends Comparable<?>>> entry, Boolean includeGroupingContext, boolean reducedResponse) {
         // No grouping context in the document.
         this.put(entry.getKey(), entry.getValue(), includeGroupingContext, reducedResponse);
     }
 
-    public void putAll(Iterator<Entry<String,Attribute<? extends Comparable<?>>>> iterator, Boolean includeGroupingContext) {
+    public void putAll(Iterator<Entry<String, Attribute<? extends Comparable<?>>>> iterator, Boolean includeGroupingContext) {
         putAll(iterator, includeGroupingContext, false);
     }
 
-    public void putAll(Iterator<Entry<String,Attribute<? extends Comparable<?>>>> iterator, Boolean includeGroupingContext, boolean reducedResponse) {
+    public void putAll(Iterator<Entry<String, Attribute<? extends Comparable<?>>>> iterator, Boolean includeGroupingContext, boolean reducedResponse) {
         if (null == iterator) {
             return;
         }
@@ -435,8 +406,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
     /**
      * Remove an Attribute, non-recursively, from the internal dictionary
      *
-     * @param key
-     *            a key
+     * @param key a key
      * @return the dictionary with the key removed
      */
     public Attribute<?> remove(String key) {
@@ -459,18 +429,17 @@ public class Document extends AttributeBag<Document> implements Serializable {
     /**
      * Remove all Attributes from the Document (recursively) whose field is the provided key.
      *
-     * @param key
-     *            a key
+     * @param key a key
      */
     public void removeAll(String key) {
         _removeAll(this._getDictionary(), key);
     }
 
-    private void _removeAll(Map<String,Attribute<? extends Comparable<?>>> dict, String key) {
+    private void _removeAll(Map<String, Attribute<? extends Comparable<?>>> dict, String key) {
 
-        Iterator<Entry<String,Attribute<? extends Comparable<?>>>> iter = dict.entrySet().iterator();
+        Iterator<Entry<String, Attribute<? extends Comparable<?>>>> iter = dict.entrySet().iterator();
         while (iter.hasNext()) {
-            Entry<String,Attribute<? extends Comparable<?>>> entry = iter.next();
+            Entry<String, Attribute<? extends Comparable<?>>> entry = iter.next();
 
             if (entry.getKey().equals(key) || entry.getValue() instanceof Document) {
                 // Remove the Attribute's size
@@ -528,8 +497,8 @@ public class Document extends AttributeBag<Document> implements Serializable {
 
     @Override
     public Attribute<?> reduceToKeep() {
-        for (Iterator<Entry<String,Attribute<? extends Comparable<?>>>> it = dict.entrySet().iterator(); it.hasNext();) {
-            Entry<String,Attribute<? extends Comparable<?>>> entry = it.next();
+        for (Iterator<Entry<String, Attribute<? extends Comparable<?>>>> it = dict.entrySet().iterator(); it.hasNext(); ) {
+            Entry<String, Attribute<? extends Comparable<?>>> entry = it.next();
             Attribute<?> attr = entry.getValue();
             _count -= attr.size();
             if (trackSizes) {
@@ -577,7 +546,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
         // Write out the number of Attributes we're going to store
         WritableUtils.writeVInt(out, this.dict.size());
 
-        for (Entry<String,Attribute<? extends Comparable<?>>> entry : this.dict.entrySet()) {
+        for (Entry<String, Attribute<? extends Comparable<?>>> entry : this.dict.entrySet()) {
             // Write out the field name
             WritableUtils.writeString(out, entry.getKey());
 
@@ -625,7 +594,8 @@ public class Document extends AttributeBag<Document> implements Serializable {
             Attribute<?> attr;
             try {
                 attr = (Attribute<?>) clz.getDeclaredConstructor().newInstance();
-            } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
+            } catch (InstantiationException | IllegalAccessException | NoSuchMethodException |
+                     InvocationTargetException e) {
                 throw new IOException(e);
             }
 
@@ -649,15 +619,15 @@ public class Document extends AttributeBag<Document> implements Serializable {
         } else if (size() > o.size()) {
             return 1;
         } else {
-            TreeMap<String,Attribute<? extends Comparable<?>>> map1 = _getDictionary();
-            TreeMap<String,Attribute<? extends Comparable<?>>> map2 = o._getDictionary();
-            Iterator<Entry<String,Attribute<? extends Comparable<?>>>> iter1 = map1.entrySet().iterator();
-            Iterator<Entry<String,Attribute<? extends Comparable<?>>>> iter2 = map2.entrySet().iterator();
+            TreeMap<String, Attribute<? extends Comparable<?>>> map1 = _getDictionary();
+            TreeMap<String, Attribute<? extends Comparable<?>>> map2 = o._getDictionary();
+            Iterator<Entry<String, Attribute<? extends Comparable<?>>>> iter1 = map1.entrySet().iterator();
+            Iterator<Entry<String, Attribute<? extends Comparable<?>>>> iter2 = map2.entrySet().iterator();
 
             // iterate over the Attribute name / Attribute entries
             while (iter1.hasNext() && iter2.hasNext()) {
-                Entry<String,Attribute<? extends Comparable<?>>> entry1 = iter1.next();
-                Entry<String,Attribute<? extends Comparable<?>>> entry2 = iter2.next();
+                Entry<String, Attribute<? extends Comparable<?>>> entry1 = iter1.next();
+                Entry<String, Attribute<? extends Comparable<?>>> entry2 = iter2.next();
 
                 // compare the Attribute names
                 int keyCmp = entry1.getKey().compareTo(entry2.getKey());
@@ -720,7 +690,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
     public int hashCode() {
         HashCodeBuilder hcb = new HashCodeBuilder(173, 167);
 
-        for (Entry<String,Attribute<? extends Comparable<?>>> entry : this.dict.entrySet()) {
+        for (Entry<String, Attribute<? extends Comparable<?>>> entry : this.dict.entrySet()) {
             hcb.append(entry.hashCode());
         }
 
@@ -738,7 +708,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
         if (queryFieldNames.contains(Constants.ANY_FIELD)) {
             anySet = new HashSet<>();
         }
-        for (Entry<String,Attribute<? extends Comparable<?>>> entry : this.dict.entrySet()) {
+        for (Entry<String, Attribute<? extends Comparable<?>>> entry : this.dict.entrySet()) {
             // For evaluation purposes, all field names have the grouping context
             // ripped off, regardless of whether or not it's beign return to the client.
             // Until grouping-context aware query evaluation is implemented, we always
@@ -812,7 +782,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
 
         output.writeInt(this.dict.size(), true);
 
-        for (Entry<String,Attribute<? extends Comparable<?>>> entry : this.dict.entrySet()) {
+        for (Entry<String, Attribute<? extends Comparable<?>>> entry : this.dict.entrySet()) {
             // Write out the field name
             // writeAscii fails to be read correctly if the value has only one character
             // need to use writeString here
@@ -880,8 +850,8 @@ public class Document extends AttributeBag<Document> implements Serializable {
         Document d = new Document(this.getMetadata(), this.isToKeep(), trackSizes);
 
         // _count will be set via put operations
-        Set<Entry<String,Attribute<? extends Comparable<?>>>> entries = this._getDictionary().entrySet();
-        for (Entry<String,Attribute<? extends Comparable<?>>> entry : entries) {
+        Set<Entry<String, Attribute<? extends Comparable<?>>>> entries = this._getDictionary().entrySet();
+        for (Entry<String, Attribute<? extends Comparable<?>>> entry : entries) {
             d.put(entry.getKey(), (Attribute<?>) entry.getValue().copy());
         }
 
