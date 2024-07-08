@@ -1,6 +1,7 @@
 package datawave.query.planner;
 
 import java.io.IOException;
+import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Collection;
@@ -14,6 +15,9 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
+import datawave.query.exceptions.EmptyUnfieldedTermExpansionException;
+import datawave.query.exceptions.NoResultsException;
+import datawave.webservice.query.exception.NotFoundQueryException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -527,7 +531,7 @@ public class FederatedQueryPlanner extends QueryPlanner implements Cloneable {
     /**
      * Return the set of fields in the query.
      */
-    private Set<String> getFieldsForQuery(ShardQueryConfiguration config, String query, ScannerFactory scannerFactory) {
+    private Set<String> getFieldsForQuery(ShardQueryConfiguration config, String query, ScannerFactory scannerFactory) throws NoResultsException {
         // Parse the query.
         ASTJexlScript queryTree = queryPlanner.parseQueryAndValidatePattern(query, null);
 
@@ -552,6 +556,11 @@ public class FederatedQueryPlanner extends QueryPlanner implements Cloneable {
             throw new DatawaveFatalQueryException(qe);
         } catch (IllegalAccessException | InstantiationException e) {
             throw new DatawaveFatalQueryException(e);
+        } catch (EmptyUnfieldedTermExpansionException e) {
+            // The visitor will only throw this if we cannot expand anything resulting in empty query
+            NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.UNFIELDED_QUERY_ZERO_MATCHES, e, MessageFormat.format("Query: ", query));
+            log.info(qe);
+            throw new NoResultsException(qe);
         }
 
         // Extract and return the fields from the query.
