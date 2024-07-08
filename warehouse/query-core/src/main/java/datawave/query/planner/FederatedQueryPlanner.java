@@ -427,7 +427,12 @@ public class FederatedQueryPlanner extends QueryPlanner implements Cloneable {
         try {
             Set<String> fields = getFieldsForQuery(config, query, scannerFactory);
             log.debug("Fetching field index holes for fields " + fields + " and datatypes " + config.getDatatypeFilter());
-            fieldIndexHoles = metadataHelper.getFieldIndexHoles(fields, config.getDatatypeFilter(), config.getFieldIndexHoleMinThreshold());
+            // if we found no fields in the query, then we have no index holes
+            if (fields.isEmpty()) {
+                fieldIndexHoles = Collections.emptyMap();
+            } else {
+                fieldIndexHoles = metadataHelper.getFieldIndexHoles(fields, config.getDatatypeFilter(), config.getFieldIndexHoleMinThreshold());
+            }
         } catch (TableNotFoundException | IOException e) {
             throw new DatawaveQueryException("Error occurred when fetching field index holes from metadata table", e);
         }
@@ -544,23 +549,23 @@ public class FederatedQueryPlanner extends QueryPlanner implements Cloneable {
             log.warn("Query model was null, will not apply to query tree.");
         }
 
-        // Expand unfielded terms.
-        ShardQueryConfiguration configCopy = new ShardQueryConfiguration(config);
-        try {
-            configCopy.setIndexedFields(metadataHelper.getIndexedFields(config.getDatatypeFilter()));
-            configCopy.setReverseIndexedFields(metadataHelper.getReverseIndexedFields(config.getDatatypeFilter()));
-            queryTree = UnfieldedIndexExpansionVisitor.expandUnfielded(configCopy, scannerFactory, metadataHelper, queryTree);
-        } catch (TableNotFoundException e) {
-            QueryException qe = new QueryException(DatawaveErrorCode.METADATA_ACCESS_ERROR, e);
-            log.info(qe);
-            throw new DatawaveFatalQueryException(qe);
-        } catch (IllegalAccessException | InstantiationException e) {
-            throw new DatawaveFatalQueryException(e);
-        } catch (EmptyUnfieldedTermExpansionException e) {
-            // The visitor will only throw this if we cannot expand anything resulting in empty query
-            NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.UNFIELDED_QUERY_ZERO_MATCHES, e, MessageFormat.format("Query: ", query));
-            log.info(qe);
-            throw new NoResultsException(qe);
+        // Expand unfielded terms unless explicitly disabled
+        if (!queryPlanner.disableAnyFieldLookup) {
+            ShardQueryConfiguration configCopy = new ShardQueryConfiguration(config);
+            try {
+                configCopy.setIndexedFields(metadataHelper.getIndexedFields(config.getDatatypeFilter()));
+                configCopy.setReverseIndexedFields(metadataHelper.getReverseIndexedFields(config.getDatatypeFilter()));
+                queryTree = UnfieldedIndexExpansionVisitor.expandUnfielded(configCopy, scannerFactory, metadataHelper, queryTree);
+            } catch (TableNotFoundException e) {
+                QueryException qe = new QueryException(DatawaveErrorCode.METADATA_ACCESS_ERROR, e);
+                log.info(qe);
+                throw new DatawaveFatalQueryException(qe);
+            } catch (IllegalAccessException | InstantiationException e) {
+                throw new DatawaveFatalQueryException(e);
+            } catch (EmptyUnfieldedTermExpansionException e) {
+                // in this case the planner will simply return an empty iterator, so ignore and keep going
+                log.warn("Empty query", e);
+            }
         }
 
         // Extract and return the fields from the query.
