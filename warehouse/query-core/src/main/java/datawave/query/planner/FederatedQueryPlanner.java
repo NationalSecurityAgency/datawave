@@ -15,9 +15,6 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
-import datawave.query.exceptions.EmptyUnfieldedTermExpansionException;
-import datawave.query.exceptions.NoResultsException;
-import datawave.webservice.query.exception.NotFoundQueryException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -34,6 +31,8 @@ import datawave.query.CloseableIterable;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.DatawaveQueryException;
+import datawave.query.exceptions.EmptyUnfieldedTermExpansionException;
+import datawave.query.exceptions.NoResultsException;
 import datawave.query.index.lookup.UidIntersector;
 import datawave.query.jexl.visitors.QueryFieldsVisitor;
 import datawave.query.jexl.visitors.UnfieldedIndexExpansionVisitor;
@@ -45,6 +44,7 @@ import datawave.query.util.MetadataHelper;
 import datawave.query.util.QueryStopwatch;
 import datawave.util.time.TraceStopwatch;
 import datawave.webservice.query.exception.DatawaveErrorCode;
+import datawave.webservice.query.exception.NotFoundQueryException;
 import datawave.webservice.query.exception.QueryException;
 
 /**
