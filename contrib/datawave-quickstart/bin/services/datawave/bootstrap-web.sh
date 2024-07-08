@@ -119,7 +119,7 @@ function datawaveWebIsDeployed() {
 
 function datawaveWebStart() {
 
-    local debug=false
+    local debug=true
 
     # Use --debug flag to start Wildfly in debug mode
     [[ "${1}" == "--debug" || "${1}" == "-d" ]] && debug=true
