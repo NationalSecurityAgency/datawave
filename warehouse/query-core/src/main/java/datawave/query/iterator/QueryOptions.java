@@ -337,7 +337,7 @@ public class QueryOptions implements OptionDescriber {
     protected List<String> documentPermutationClasses = new ArrayList<>();
     protected List<DocumentPermutation> documentPermutations = null;
 
-    protected long startTime = 0l;
+    protected long startTime = 0L;
     protected long endTime = System.currentTimeMillis();
     protected TimeFilter timeFilter = null;
 
@@ -1295,10 +1295,12 @@ public class QueryOptions implements OptionDescriber {
      * @return True if the option is null or not "false". False if the option has the value "false" (not case-sensitive).
      */
     protected static boolean evaluateBooleanOption(String value) {
-        if (value.equals(" ")) {
+        if(value.equals(" ")) {
             return true;
         }
-        return !value.equalsIgnoreCase("false");
+        return false;
+//true        //return Boolean.parseBoolean(value);
+//        return true;
     }
 
     @Override
@@ -1400,7 +1402,7 @@ public class QueryOptions implements OptionDescriber {
             this.useAllowListedFields = true;
 
             String fieldList = options.get(PROJECTION_FIELDS);
-            if (fieldList != null && EVERYTHING.equals(fieldList)) {
+            if (EVERYTHING.equals(fieldList)) {
                 this.allowListedFields = UniversalSet.instance();
             } else if (fieldList != null && !fieldList.trim().equals("")) {
                 this.allowListedFields = new HashSet<>();
@@ -1802,7 +1804,7 @@ public class QueryOptions implements OptionDescriber {
         System.out.println(this);
 
         System.out.println("SETHOPTIONS: (number of options: " + options.size() + ")");
-        for(Map.Entry<String,String> entry : options.entrySet()) {
+        for (Map.Entry<String,String> entry : options.entrySet()) {
             System.out.println(entry.getKey() + " : " + entry.getValue());
         }
 
@@ -1888,8 +1890,6 @@ public class QueryOptions implements OptionDescriber {
         return s.toString();
 
     }
-
-
 
     private void setSerialEvaluationPipeline(boolean serialEvaluationPipeline) {
         this.serialEvaluationPipeline = serialEvaluationPipeline;
