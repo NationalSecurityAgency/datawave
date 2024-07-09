@@ -39,17 +39,11 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <surefire.forkCount>1C</surefire.forkCount>
         <version.accumulo>2.1.2</version.accumulo>
-        <version.accumulo-api>4.0.0</version.accumulo-api>
-        <version.accumulo-utils>4.0.0</version.accumulo-utils>
         <version.arquillian>1.4.1.Final</version.arquillian>
         <version.arquillian-weld-ee-embedded>1.0.0.Final</version.arquillian-weld-ee-embedded>
         <version.assertj>3.20.2</version.assertj>
-        <version.audit-api>4.0.0</version.audit-api>
-        <version.authorization-api>4.0.0</version.authorization-api>
         <version.avro>1.11.3</version.avro>
-        <version.base-rest-responses>4.0.0</version.base-rest-responses>
         <version.caffeine>3.1.0</version.caffeine>
-        <version.common-utils>3.0.0</version.common-utils>
         <version.commons-beanutils>1.9.4</version.commons-beanutils>
         <version.commons-cli>1.4</version.commons-cli>
         <version.commons-codec>1.12</version.commons-codec>
@@ -65,8 +59,20 @@
         <version.commons-text>1.8</version.commons-text>
         <version.curator>5.2.0</version.curator>
         <version.curator.test>5.2.0</version.curator.test>
+        <version.datawave.accumulo-api>4.0.0</version.datawave.accumulo-api>
+        <version.datawave.accumulo-utils>4.0.0</version.datawave.accumulo-utils>
+        <version.datawave.audit-api>4.0.0</version.datawave.audit-api>
+        <version.datawave.authorization-api>4.0.0</version.datawave.authorization-api>
+        <version.datawave.base-rest-responses>4.0.0</version.datawave.base-rest-responses>
+        <version.datawave.common-utils>3.0.0</version.datawave.common-utils>
+        <version.datawave.dictionary-api>4.0.0</version.datawave.dictionary-api>
+        <version.datawave.mapreduce-query-api>1.0.0</version.datawave.mapreduce-query-api>
+        <version.datawave.metadata-utils>4.0.0</version.datawave.metadata-utils>
+        <version.datawave.metrics-reporter>3.0.0</version.datawave.metrics-reporter>
+        <version.datawave.query-api>1.0.0</version.datawave.query-api>
+        <version.datawave.query-metric-api>4.0.0</version.datawave.query-metric-api>
+        <version.datawave.type-utils>3.0.0</version.datawave.type-utils>
         <version.deltaspike>1.9.0</version.deltaspike>
-        <version.dictionary-api>4.0.0</version.dictionary-api>
         <version.easymock>5.2.0</version.easymock>
         <version.eclipse.emf>2.15.0</version.eclipse.emf>
         <version.geoserver>2.22.5</version.geoserver>
@@ -104,11 +110,8 @@
         <version.kryonet>2.20</version.kryonet>
         <version.log4j2>2.17.2</version.log4j2>
         <version.lucene>7.5.0</version.lucene>
-        <version.mapreduce-query-api>1.0.0</version.mapreduce-query-api>
         <version.maven-install-plugin>2.5.2</version.maven-install-plugin>
-        <version.metadata-utils>4.0.0</version.metadata-utils>
         <version.metrics-cdi>1.6.0</version.metrics-cdi>
-        <version.metrics-reporter>3.0.0</version.metrics-reporter>
         <version.minlog>1.2</version.minlog>
         <version.mockito>2.23.0</version.mockito>
         <version.mysql-connector>8.0.28</version.mysql-connector>
@@ -118,8 +121,6 @@
         <version.powermock>2.0.9</version.powermock>
         <version.protobuf>3.16.3</version.protobuf>
         <version.protostuff>1.6.2</version.protostuff>
-        <version.query-api>1.0.0</version.query-api>
-        <version.query-metric-api>4.0.0</version.query-metric-api>
         <version.slf4j>1.7.36</version.slf4j>
         <version.spotify-dns>3.1.5</version.spotify-dns>
         <version.spring>5.2.2.RELEASE</version.spring>
@@ -127,7 +128,6 @@
         <version.stream>2.9.6</version.stream>
         <version.surefire.plugin>3.2.5</version.surefire.plugin>
         <version.thrift>0.17.0</version.thrift>
-        <version.type-utils>3.0.0</version.type-utils>
         <version.weld>3.1.1.Final</version.weld>
         <version.weld-se>3.1.1.Final</version.weld-se>
         <!-- Different version of weld for tests since the Arquillian embedded EE container needs an older version. -->
@@ -335,47 +335,47 @@
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>accumulo-api</artifactId>
-                <version>${version.accumulo-api}</version>
+                <version>${version.datawave.accumulo-api}</version>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>accumulo-utils</artifactId>
-                <version>${version.accumulo-utils}</version>
+                <version>${version.datawave.accumulo-utils}</version>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>audit-api</artifactId>
-                <version>${version.audit-api}</version>
+                <version>${version.datawave.audit-api}</version>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>authorization-api</artifactId>
-                <version>${version.authorization-api}</version>
+                <version>${version.datawave.authorization-api}</version>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>base-rest-responses</artifactId>
-                <version>${version.base-rest-responses}</version>
+                <version>${version.datawave.base-rest-responses}</version>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>common-utils</artifactId>
-                <version>${version.common-utils}</version>
+                <version>${version.datawave.common-utils}</version>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>dictionary-api</artifactId>
-                <version>${version.dictionary-api}</version>
+                <version>${version.datawave.dictionary-api}</version>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>mapreduce-query-api</artifactId>
-                <version>${version.mapreduce-query-api}</version>
+                <version>${version.datawave.mapreduce-query-api}</version>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>metadata-utils</artifactId>
-                <version>${version.metadata-utils}</version>
+                <version>${version.datawave.metadata-utils}</version>
                 <exclusions>
                     <exclusion>
                         <groupId>log4j</groupId>
@@ -394,23 +394,23 @@
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>metrics-reporter</artifactId>
-                <version>${version.metrics-reporter}</version>
+                <version>${version.datawave.metrics-reporter}</version>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>query-api</artifactId>
-                <version>${version.query-api}</version>
+                <version>${version.datawave.query-api}</version>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>query-api</artifactId>
-                <version>${version.query-api}</version>
+                <version>${version.datawave.query-api}</version>
                 <classifier>jboss</classifier>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>query-metric-api</artifactId>
-                <version>${version.query-metric-api}</version>
+                <version>${version.datawave.query-metric-api}</version>
                 <exclusions>
                     <exclusion>
                         <groupId>gov.nsa.datawave</groupId>
@@ -445,7 +445,7 @@
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>type-utils</artifactId>
-                <version>${version.type-utils}</version>
+                <version>${version.datawave.type-utils}</version>
                 <exclusions>
                     <exclusion>
                         <groupId>log4j</groupId>
@@ -1131,7 +1131,7 @@
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>base-rest-responses</artifactId>
-                <version>${version.base-rest-responses}</version>
+                <version>${version.datawave.base-rest-responses}</version>
                 <classifier>tests</classifier>
                 <type>test-jar</type>
                 <scope>test</scope>
