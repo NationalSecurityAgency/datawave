@@ -1,17 +1,11 @@
 package datawave.query.planner;
 
-import static datawave.query.iterator.QueryOptions.QUERY;
-import static datawave.query.iterator.QueryOptions.RANGES;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.data.Range;
-import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.commons.lang.builder.EqualsBuilder;
@@ -20,10 +14,8 @@ import org.apache.log4j.Logger;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
 
 import datawave.core.common.logging.ThreadConfigurableLogger;
-import datawave.core.query.configuration.QueryData;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.util.count.CountMap;
@@ -116,105 +108,6 @@ public class QueryPlan {
         this.termCounts = other.termCounts;
         this.hashCode = other.hashCode;
         this.rebuildHashCode = other.rebuildHashCode;
-    }
-
-    /**
-     * Partial constructor, missing IteratorSetting
-     *
-     * @param tableName
-     *            the table name
-     * @param queryTreeString
-     *            the query string
-     * @param queryTree
-     *            the query tree
-     * @param ranges
-     *            the ranges
-     * @deprecated
-     */
-    @Deprecated(since = "6.9.0", forRemoval = true)
-    public QueryPlan(String tableName, String queryTreeString, JexlNode queryTree, Iterable<Range> ranges) {
-        this(tableName, queryTreeString, queryTree, ranges, null);
-    }
-
-    @Deprecated(since = "6.9.0", forRemoval = true)
-    public QueryPlan(String tableName, String queryTreeString, JexlNode queryTree, Iterable<Range> ranges, List<IteratorSetting> settings) {
-        Preconditions.checkNotNull(queryTree);
-        this.tableName = tableName;
-        this.queryTree = queryTree;
-        this.queryTreeString = queryTreeString;
-        this.ranges = Lists.newArrayList(ranges);
-        if (null != settings) {
-            this.settings = settings;
-        }
-        resetHashCode();
-    }
-
-    @Deprecated(since = "6.9.0", forRemoval = true)
-    public QueryPlan(String tableName, JexlNode queryTree, Iterable<Range> ranges, Collection<String> columnFamilies) {
-        Preconditions.checkNotNull(queryTree);
-        this.tableName = tableName;
-        this.queryTree = queryTree;
-        this.ranges = Lists.newArrayList(ranges);
-        this.columnFamilies = Lists.newArrayList(columnFamilies);
-        resetHashCode();
-    }
-
-    @Deprecated(since = "6.9.0", forRemoval = true)
-    public QueryPlan(String tableName, JexlNode queryTree, Range range) {
-        Preconditions.checkNotNull(queryTree);
-        this.tableName = tableName;
-        this.queryTree = queryTree;
-        this.ranges = Lists.newArrayList(range);
-        resetHashCode();
-    }
-
-    @Deprecated(since = "6.9.0", forRemoval = true)
-    public QueryPlan(QueryData currentQueryData) throws ParseException {
-        this.tableName = currentQueryData.getTableName();
-        this.queryTreeString = currentQueryData.getQuery();
-        this.ranges = Lists.newArrayList(currentQueryData.getRanges());
-        this.settings.addAll(currentQueryData.getSettings());
-        this.columnFamilies.addAll(currentQueryData.getColumnFamilies());
-        resetHashCode();
-    }
-
-    /**
-     * @param tableName
-     * @param queryTree
-     * @param rangeIter
-     * @param settings
-     * @param columnFamilies
-     */
-    @Deprecated(since = "6.9.0", forRemoval = true)
-    public QueryPlan(String tableName, JexlNode queryTree, Iterable<Range> rangeIter, List<IteratorSetting> settings, Collection<String> columnFamilies) {
-        this.tableName = tableName;
-        this.queryTree = queryTree;
-        this.ranges = Lists.newArrayList(rangeIter);
-        for (IteratorSetting setting : settings) {
-            IteratorSetting newSetting = new IteratorSetting(setting.getPriority(), setting.getName(), setting.getIteratorClass());
-            newSetting.addOptions(setting.getOptions());
-            if (newSetting.getOptions().containsKey(QUERY)) {
-                newSetting.addOption(QUERY, JexlStringBuildingVisitor.buildQuery(queryTree));
-                newSetting.addOption(RANGES, this.ranges.stream().map(Range::toString).collect(Collectors.joining(",", "[", "]")));
-            }
-            this.settings.add(newSetting);
-
-        }
-        if (null != columnFamilies) {
-            this.columnFamilies.addAll(columnFamilies);
-        }
-        resetHashCode();
-    }
-
-    /**
-     * @param tableName
-     * @param queryTree
-     * @param rangeIter
-     * @param settings
-     */
-    @Deprecated(since = "6.9.0", forRemoval = true)
-    public QueryPlan(String tableName, JexlNode queryTree, Iterable<Range> rangeIter, List<IteratorSetting> settings) {
-        this(tableName, queryTree, rangeIter, settings, null);
     }
 
     public QueryPlan(JexlNode queryTree, Collection<Range> ranges) {
@@ -336,20 +229,6 @@ public class QueryPlan {
     }
 
     public void setQueryTreeString(String queryString) {
-        this.queryTreeString = queryString;
-        resetHashCode();
-    }
-
-    @Deprecated(since = "6.9.0", forRemoval = true)
-    public void setQuery(String queryString, JexlNode queryTree) {
-        this.queryTree = queryTree;
-        this.queryTreeString = queryString;
-        resetHashCode();
-    }
-
-    @Deprecated(since = "6.9.0", forRemoval = true)
-    public void setQuery(String queryString, ASTJexlScript queryTree) {
-        this.queryTree = queryTree;
         this.queryTreeString = queryString;
         resetHashCode();
     }
