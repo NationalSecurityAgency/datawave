@@ -56,9 +56,9 @@ public class QueryCacheBeanTest {
         // Set expectations
         expect(altCache.iterator()).andReturn((Iterator<RunningQuery>) new HashMap().values().iterator());
         Map<String,AbstractMap.SimpleEntry<QueryLogic<?>,AccumuloClient>> snapshot = new HashMap<>();
+        this.pair = new AbstractMap.SimpleEntry<>(this.logic, null);
         snapshot.put("key", this.pair);
         expect(this.remoteCache.snapshot()).andReturn(snapshot);
-        expect(this.pair.getKey()).andReturn((QueryLogic) this.logic);
 
         // Run the test
         PowerMock.replayAll();
