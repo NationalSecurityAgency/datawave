@@ -21,7 +21,6 @@ import datawave.webservice.common.audit.Auditor.AuditType;
 import datawave.webservice.common.connection.AccumuloClientConfiguration;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
-import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.iterator.DatawaveTransformIterator;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 
