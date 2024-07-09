@@ -24,7 +24,7 @@ import it.unimi.dsi.fastutil.ints.IntIterator;
  */
 public class RewritableSortedSetImpl<E> implements RewritableSortedSet<E>, Cloneable {
     private static Logger log = Logger.getLogger(RewritableSortedSetImpl.class);
-    // using a map to enable replacement of the actual set member (see uses of addResolvingCollisions)
+    // using a map to enable replacement of the actual set member (see uses of collisionSelection)
     protected NavigableMap<E,E> set = null;
     // When the set contains X and we are adding Y where X == Y, then use this strategy
     // to decide which to keep.
@@ -128,18 +128,18 @@ public class RewritableSortedSetImpl<E> implements RewritableSortedSet<E>, Clone
 
     @Override
     public Iterator<E> iterator() {
-        return set.values().iterator();
+        return set.keySet().iterator();
     }
 
     @Override
     public Object[] toArray() {
-        return set.values().toArray();
+        return set.keySet().toArray();
     }
 
     @SuppressWarnings({"unchecked"})
     @Override
     public <T> T[] toArray(T[] a) {
-        return set.values().toArray(a);
+        return set.keySet().toArray(a);
     }
 
     @Override
@@ -153,16 +153,11 @@ public class RewritableSortedSetImpl<E> implements RewritableSortedSet<E>, Clone
     }
 
     private boolean addResolvingCollisions(E e) {
-        // return true if this is a new element to the set
-        if (set.containsKey(e)) {
-            if ((rewriteStrategy != null) && rewriteStrategy.rewrite(set.get(e), e)) {
-                set.put(e, e);
-                return true;
-            }
-            return false;
+        if ((rewriteStrategy != null) && set.containsKey(e) && rewriteStrategy.rewrite(set.get(e), e)) {
+            set.remove(e);
         }
-        set.put(e, e);
-        return true;
+        // return true if this is a new element to the set
+        return (set.put(e, e) == null);
     }
 
     @Override
@@ -239,7 +234,7 @@ public class RewritableSortedSetImpl<E> implements RewritableSortedSet<E>, Clone
             QueryException qe = new QueryException(DatawaveErrorCode.FETCH_FIRST_ELEMENT_ERROR);
             throw (NoSuchElementException) (new NoSuchElementException().initCause(qe));
         } else {
-            return set.get(first);
+            return first;
         }
     }
 
@@ -255,13 +250,13 @@ public class RewritableSortedSetImpl<E> implements RewritableSortedSet<E>, Clone
             QueryException qe = new QueryException(DatawaveErrorCode.FETCH_LAST_ELEMENT_ERROR);
             throw (NoSuchElementException) (new NoSuchElementException().initCause(qe));
         } else {
-            return set.get(last);
+            return last;
         }
     }
 
     @Override
     public String toString() {
-        return set.values().toString();
+        return set.toString();
     }
 
     /**

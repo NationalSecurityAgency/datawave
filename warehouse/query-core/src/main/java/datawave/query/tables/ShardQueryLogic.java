@@ -913,8 +913,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             UniqueFields uniqueFields = UniqueFields.from(uniqueFieldsParam);
             // Only set the unique fields if we were actually given some
             if (!uniqueFields.isEmpty()) {
-                // preserve the most recent flag
-                uniqueFields.setMostRecent(config.getUniqueFields().isMostRecent());
+                this.setUniqueFields(uniqueFields);
                 config.setUniqueFields(uniqueFields);
             }
         }
@@ -922,6 +921,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         // Get the most recent flag
         String mostRecentUnique = settings.findParameter(QueryParameters.MOST_RECENT_UNIQUE).getParameterValue().trim();
         if (StringUtils.isNotBlank(mostRecentUnique)) {
+            this.getUniqueFields().setMostRecent(Boolean.valueOf(mostRecentUnique));
             config.getUniqueFields().setMostRecent(Boolean.valueOf(mostRecentUnique));
         }
 
