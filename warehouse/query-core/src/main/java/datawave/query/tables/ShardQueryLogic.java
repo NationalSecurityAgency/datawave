@@ -83,7 +83,6 @@ import datawave.query.util.DateIndexHelperFactory;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.MetadataHelperFactory;
 import datawave.query.util.QueryStopwatch;
-import datawave.query.util.sortedset.FileSortedSet;
 import datawave.util.time.TraceStopwatch;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
@@ -261,9 +260,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
 
     @Override
     public GenericQueryConfiguration initialize(AccumuloClient client, Query settings, Set<Authorizations> auths) throws Exception {
-        // whenever we reinitialize, ensure we have a fresh transformer
         this.transformerInstance = null;
-
         this.config = ShardQueryConfiguration.create(this, settings);
         if (log.isTraceEnabled())
             log.trace("Initializing ShardQueryLogic: " + System.identityHashCode(this) + '('
@@ -590,11 +587,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     @Override
     public QueryLogicTransformer getTransformer(Query settings) {
         if (this.transformerInstance != null) {
-            try {
-                addConfigBasedTransformers();
-            } catch (QueryException e) {
-                throw new DatawaveFatalQueryException("Unable to configure transformers", e);
-            }
+            addConfigBasedTransformers();
             return this.transformerInstance;
         }
 
@@ -615,11 +608,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         transformer.setPrimaryToSecondaryFieldMap(primaryToSecondaryFieldMap);
         transformer.setQm(queryModel);
         this.transformerInstance = transformer;
-        try {
-            addConfigBasedTransformers();
-        } catch (QueryException e) {
-            throw new DatawaveFatalQueryException("Unable to configure transformers", e);
-        }
+        addConfigBasedTransformers();
 
         return this.transformerInstance;
     }
@@ -636,7 +625,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     /**
      * If the configuration didn't exist, OR IT CHANGED, we need to create or update the transformers that have been added.
      */
-    private void addConfigBasedTransformers() throws QueryException {
+    private void addConfigBasedTransformers() {
         if (getConfig() != null) {
             ((DocumentTransformer) this.transformerInstance).setProjectFields(getConfig().getProjectFields());
             ((DocumentTransformer) this.transformerInstance).setDisallowlistedFields(getConfig().getDisallowlistedFields());
@@ -646,27 +635,8 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
                 if (alreadyExists != null) {
                     ((UniqueTransform) alreadyExists).updateConfig(getConfig().getUniqueFields(), getQueryModel());
                 } else {
-                    try {
-                        // @formatter:off
-                        ((DocumentTransformer) this.transformerInstance).addTransform(new UniqueTransform.Builder()
-                                .withUniqueFields(getConfig().getUniqueFields())
-                                .withQueryExecutionForPageTimeout(this.getQueryExecutionForPageTimeout())
-                                .withModel(getQueryModel())
-                                .withBufferPersistThreshold(getUniqueCacheBufferSize())
-                                .withIvaratorCacheDirConfigs(getIvaratorCacheDirConfigs())
-                                .withHdfsSiteConfigURLs(getHdfsSiteConfigURLs())
-                                .withSubDirectory(getConfig().getQuery().getId().toString())
-                                .withMaxOpenFiles(getIvaratorMaxOpenFiles())
-                                .withNumRetries(getIvaratorNumRetries())
-                                .withPersistOptions(new FileSortedSet.PersistOptions(
-                                        isIvaratorPersistVerify(),
-                                        isIvaratorPersistVerify(),
-                                        getIvaratorPersistVerifyCount()))
-                                .build());
-                        // @formatter:on
-                    } catch (IOException ioe) {
-                        throw new QueryException("Unable to create a unique transform", ioe);
-                    }
+                    ((DocumentTransformer) this.transformerInstance)
+                                    .addTransform(new UniqueTransform(this, getConfig().getUniqueFields(), this.getQueryExecutionForPageTimeout()));
                 }
             }
 
@@ -916,13 +886,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
                 this.setUniqueFields(uniqueFields);
                 config.setUniqueFields(uniqueFields);
             }
-        }
-
-        // Get the most recent flag
-        String mostRecentUnique = settings.findParameter(QueryParameters.MOST_RECENT_UNIQUE).getParameterValue().trim();
-        if (StringUtils.isNotBlank(mostRecentUnique)) {
-            this.getUniqueFields().setMostRecent(Boolean.valueOf(mostRecentUnique));
-            config.getUniqueFields().setMostRecent(Boolean.valueOf(mostRecentUnique));
         }
 
         // Get the EXCERPT_FIELDS parameter if given
@@ -1920,14 +1883,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
 
     public void setIvaratorFstHdfsBaseURIs(String ivaratorFstHdfsBaseURIs) {
         getConfig().setIvaratorFstHdfsBaseURIs(ivaratorFstHdfsBaseURIs);
-    }
-
-    public int getUniqueCacheBufferSize() {
-        return getConfig().getUniqueCacheBufferSize();
-    }
-
-    public void setUniqueCacheBufferSize(int uniqueCacheBufferSize) {
-        getConfig().setUniqueCacheBufferSize(uniqueCacheBufferSize);
     }
 
     public int getIvaratorCacheBufferSize() {

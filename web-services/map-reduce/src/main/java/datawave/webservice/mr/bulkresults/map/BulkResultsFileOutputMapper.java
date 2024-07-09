@@ -28,7 +28,6 @@ import org.springframework.util.Assert;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.cache.ResultsPage;
 import datawave.webservice.query.exception.EmptyObjectException;
-import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.logic.QueryLogic;
 import datawave.webservice.query.logic.QueryLogicTransformer;
 import datawave.webservice.result.BaseQueryResponse;
@@ -91,7 +90,6 @@ public class BulkResultsFileOutputMapper extends ApplicationContextAwareMapper<K
 
         QueryLogic<?> logic = (QueryLogic<?>) super.applicationContext.getBean(logicName);
         t = logic.getEnrichedTransformer(query);
-
         Assert.notNull(logic.getMarkingFunctions());
         Assert.notNull(logic.getResponseObjectFactory());
         this.format = SerializationFormat.valueOf(context.getConfiguration().get(RESULT_SERIALIZATION_FORMAT));
