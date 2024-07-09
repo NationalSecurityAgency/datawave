@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -40,8 +39,10 @@ import datawave.query.iterator.ivarator.IvaratorCacheDir;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.iterator.profile.FinalDocumentTrackingIterator;
 import datawave.query.model.QueryModel;
+import datawave.query.tables.ShardQueryLogic;
 import datawave.query.util.sortedset.ByteArrayComparator;
 import datawave.query.util.sortedset.FileByteDocumentSortedSet;
+import datawave.query.util.sortedset.FileKeySortedSet;
 import datawave.query.util.sortedset.FileKeyValueSortedSet;
 import datawave.query.util.sortedset.FileSortedSet;
 import datawave.query.util.sortedset.HdfsBackedSortedSet;
@@ -58,6 +59,7 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
 
     private BloomFilter<byte[]> bloom;
     private UniqueFields uniqueFields = new UniqueFields();
+    private Multimap<String,String> modelMapping;
     private HdfsBackedSortedSet<Entry<byte[],Document>> set;
     private HdfsBackedSortedSet<Entry<Key,Document>> returnSet;
     private Iterator<Entry<Key,Document>> setIterator;
@@ -87,13 +89,40 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
         }
     }
 
+    /*
+     * Create a new {@link UniqueTransform} that will use a bloom filter to return on those results that are unique per the uniqueFields. Special uniqueness can
+     * be requested for date/time fields (@see UniqueFields). The logic will be used to get a query model to include the reverse mappings in the unique field
+     * set
+     *
+     * @param logic The query logic from whih to pull the query model
+     *
+     * @param uniqueFields The unique fields
+     *
+     * @param queryExecutionForPageTimeout If this timeout is passed before since the last result was returned, then an "intermediate" result is returned
+     * denoting we are still looking for the next unique result.
+     */
+    public UniqueTransform(ShardQueryLogic logic, UniqueFields uniqueFields, long queryExecutionForPageTimeout) {
+        this(uniqueFields, queryExecutionForPageTimeout);
+        QueryModel model = logic.getQueryModel();
+        if (model != null) {
+            modelMapping = HashMultimap.create();
+            // reverse the reverse query mapping which will give us a mapping from the final field name to the original field name(s)
+            for (Map.Entry<String,String> entry : model.getReverseQueryMapping().entrySet()) {
+                modelMapping.put(entry.getValue(), entry.getKey());
+            }
+        }
+        setModelMappings(model);
+    }
+
     /**
      * Update the configuration of this transform. If the configuration is actually changing, then the bloom filter will be reset as well.
      *
      * @param uniqueFields
      *            The new set of unique fields.
+     * @param model
+     *            The query model
      */
-    public void updateConfig(UniqueFields uniqueFields) {
+    public void updateConfig(UniqueFields uniqueFields, QueryModel model) {
         // only reset the bloom filter if changing the field set
         if (!this.uniqueFields.equals(uniqueFields)) {
             this.uniqueFields = uniqueFields.clone();
@@ -101,6 +130,23 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
             this.bloom = BloomFilter.create(new ByteFunnel(), 500000, 1e-15);
             if (log.isTraceEnabled()) {
                 log.trace("unique fields: " + this.uniqueFields.getFields());
+            }
+        }
+        setModelMappings(model);
+    }
+
+    /**
+     * Set the query model from which the reverse query mappings are pulled.
+     *
+     * @param model
+     *            The query model
+     */
+    private void setModelMappings(QueryModel model) {
+        if (model != null) {
+            modelMapping = HashMultimap.create();
+            // reverse the reverse query mapping which will give us a mapping from the final field name to the original field name(s)
+            for (Map.Entry<String,String> entry : model.getReverseQueryMapping().entrySet()) {
+                modelMapping.put(entry.getValue(), entry.getKey());
             }
         }
     }
@@ -128,10 +174,6 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
     public Entry<Key,Document> apply(@Nullable Entry<Key,Document> keyDocumentEntry) {
         if (keyDocumentEntry != null) {
             if (FinalDocumentTrackingIterator.isFinalDocumentKey(keyDocumentEntry.getKey())) {
-                return keyDocumentEntry;
-            }
-
-            if (keyDocumentEntry.getValue().isIntermediateResult()) {
                 return keyDocumentEntry;
             }
 
@@ -238,48 +280,50 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
      *             if we failed to generate the byte array
      */
     private void outputSortedFieldValues(Document document, DataOutputStream output) throws IOException {
-        Multimap<String,String> values = HashMultimap.create();
+        int count = 0;
+        String lastField = "";
+        List<String> values = new ArrayList<>();
         for (String documentField : new TreeSet<>(document.getDictionary().keySet())) {
             String field = getUniqueField(documentField);
             if (field != null) {
+                if (!field.equals(lastField)) {
+                    count = dumpValues(count, lastField, values, output);
+                    lastField = field;
+                }
                 addValues(field, document.get(documentField), values);
             }
         }
-        // Always dump the fields in the same order (uniqueFields.getFields is a sorted collection)
-        for (String field : uniqueFields.getFields()) {
-            dumpValues(field, values.get(field), output);
-        }
+        dumpValues(count, lastField, values, output);
         output.flush();
     }
 
     /**
      * Dump a list of values, sorted, to the data output stream
      *
+     * @param count
+     *            value count
      * @param field
      *            a field
      * @param values
      *            the list of values
      * @param output
      *            the output stream
+     * @return The next field count
      * @throws IOException
      *             for issues with read/write
      */
-    private void dumpValues(String field, Collection<String> values, DataOutputStream output) throws IOException {
-        String separator = "f-" + field + ":";
+    private int dumpValues(int count, String field, List<String> values, DataOutputStream output) throws IOException {
         if (!values.isEmpty()) {
-            List<String> valueList = new ArrayList<>(values);
-            // always output values in sorted order.
-            Collections.sort(valueList);
-            for (String value : valueList) {
+            Collections.sort(values);
+            String separator = "f-" + field + '/' + (count++) + ":";
+            for (String value : values) {
                 output.writeUTF(separator);
                 output.writeUTF(value);
                 separator = ",";
             }
-        } else {
-            // dump at least a header for empty value sets to ensure we have some bytes to check against
-            // in the bloom filter.
-            output.writeUTF(separator);
+            values.clear();
         }
+        return count;
     }
 
     /**
@@ -290,16 +334,16 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
      * @param attribute
      *            The attribute
      * @param values
-     *            The map of values to be updated
+     *            The list of values to be updated
      */
-    private void addValues(final String field, Attribute<?> attribute, Multimap<String,String> values) {
+    private void addValues(final String field, Attribute<?> attribute, List<String> values) {
         if (attribute instanceof Attributes) {
             // @formatter:off
             ((Attributes) attribute).getAttributes().stream()
                     .forEach(a -> addValues(field, a, values));
             // @formatter:on
         } else {
-            values.put(field, uniqueFields.transformValue(field, String.valueOf(attribute.getData())));
+            values.add(uniqueFields.transformValue(field, String.valueOf(attribute.getData())));
         }
     }
 
@@ -332,7 +376,8 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
     }
 
     /**
-     * Return whether or not the provided document field is considered a case-insensitive match for the provided field
+     * Return whether or not the provided document field is considered a case-insensitive match for the provided field, applying reverse model mappings if
+     * configured.
      *
      * @param baseField
      *            The base field
@@ -341,7 +386,9 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
      * @return true if matching
      */
     private boolean isMatchingField(String baseField, String field) {
-        return baseField.equalsIgnoreCase(field);
+        baseField = baseField.toUpperCase();
+        field = field.toUpperCase();
+        return field.equals(baseField) || (modelMapping != null && modelMapping.get(field).contains(baseField));
     }
 
     /**
@@ -525,6 +572,10 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
 
         public UniqueTransform build() throws IOException {
             UniqueTransform transform = new UniqueTransform(uniqueFields, queryExecutionForPageTimeout);
+
+            if (model != null) {
+                transform.setModelMappings(model);
+            }
 
             if (transform.uniqueFields.isMostRecent()) {
                 // @formatter:off
