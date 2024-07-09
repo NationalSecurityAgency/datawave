@@ -59,85 +59,34 @@ public class QueryOptionsFromQueryVisitorTest {
         // Verify an empty function results in an empty parameter value.
         assertResult("f:unique_by_day()", "");
         assertOption(QueryParameters.UNIQUE_FIELDS, "");
-        assertOption(QueryParameters.MOST_RECENT_UNIQUE, null);
 
         // Verify that fields of no specified granularity are added with the default ALL granularity.
         assertResult("f:unique('field1','field2','field3')", "");
         assertOption(QueryParameters.UNIQUE_FIELDS, "FIELD1[ALL],FIELD2[ALL],FIELD3[ALL]");
-        assertOption(QueryParameters.MOST_RECENT_UNIQUE, null);
 
         // Verify that fields with DAY granularity are added as such.
         assertResult("f:unique('field1[DAY]','field2[DAY]','field3[DAY]')", "");
         assertOption(QueryParameters.UNIQUE_FIELDS, "FIELD1[DAY],FIELD2[DAY],FIELD3[DAY]");
-        assertOption(QueryParameters.MOST_RECENT_UNIQUE, null);
 
         // Verify that fields with HOUR granularity are added as such.
         assertResult("f:unique('field1[HOUR]','field2[HOUR]','field3[HOUR]')", "");
         assertOption(QueryParameters.UNIQUE_FIELDS, "FIELD1[HOUR],FIELD2[HOUR],FIELD3[HOUR]");
-        assertOption(QueryParameters.MOST_RECENT_UNIQUE, null);
 
         // Verify that fields with MINUTE granularity are added as such.
         assertResult("f:unique('field1[MINUTE]','field2[MINUTE]','field3[MINUTE]')", "");
         assertOption(QueryParameters.UNIQUE_FIELDS, "FIELD1[MINUTE],FIELD2[MINUTE],FIELD3[MINUTE]");
-        assertOption(QueryParameters.MOST_RECENT_UNIQUE, null);
 
         // Verify that fields from multiple unique functions are merged together.
         assertResult("f:unique('field1','field2') AND f:unique('field2[DAY]','field3[DAY]') AND f:unique('field4')", "");
         assertOption(QueryParameters.UNIQUE_FIELDS, "FIELD1[ALL],FIELD2[ALL,DAY],FIELD3[DAY],FIELD4[ALL]");
-        assertOption(QueryParameters.MOST_RECENT_UNIQUE, null);
 
         // Verify more complex fields with multiple granularity levels are merged together.
         assertResult("f:unique('field1[DAY]','field2[DAY,HOUR]','field3[HOUR,MINUTE]','field4[ALL,MINUTE]','field5')", "");
         assertOption(QueryParameters.UNIQUE_FIELDS, "FIELD1[DAY],FIELD2[DAY,HOUR],FIELD3[HOUR,MINUTE],FIELD4[ALL,MINUTE],FIELD5[ALL]");
-        assertOption(QueryParameters.MOST_RECENT_UNIQUE, null);
 
         // Lucene will parse comma-delimited granularity levels into separate strings. Ensure it still parses correctly.
         assertResult("f:unique('field1[DAY]','field2[DAY','HOUR]','field3[HOUR','MINUTE]','field4[ALL','MINUTE]','field5')", "");
         assertOption(QueryParameters.UNIQUE_FIELDS, "FIELD1[DAY],FIELD2[DAY,HOUR],FIELD3[HOUR,MINUTE],FIELD4[ALL,MINUTE],FIELD5[ALL]");
-        assertOption(QueryParameters.MOST_RECENT_UNIQUE, null);
-    }
-
-    @Test
-    public void testMostRecentUniqueFunction() throws ParseException {
-        // Verify an empty function results in an empty parameter value.
-        assertResult("f:most_recent_unique_by_day()", "");
-        assertOption(QueryParameters.UNIQUE_FIELDS, "");
-        assertOption(QueryParameters.MOST_RECENT_UNIQUE, "true");
-
-        // Verify that fields of no specified granularity are added with the default ALL granularity.
-        assertResult("f:most_recent_unique('field1','field2','field3')", "");
-        assertOption(QueryParameters.UNIQUE_FIELDS, "FIELD1[ALL],FIELD2[ALL],FIELD3[ALL]");
-        assertOption(QueryParameters.MOST_RECENT_UNIQUE, "true");
-
-        // Verify that fields with DAY granularity are added as such.
-        assertResult("f:most_recent_unique('field1[DAY]','field2[DAY]','field3[DAY]')", "");
-        assertOption(QueryParameters.UNIQUE_FIELDS, "FIELD1[DAY],FIELD2[DAY],FIELD3[DAY]");
-        assertOption(QueryParameters.MOST_RECENT_UNIQUE, "true");
-
-        // Verify that fields with HOUR granularity are added as such.
-        assertResult("f:most_recent_unique('field1[HOUR]','field2[HOUR]','field3[HOUR]')", "");
-        assertOption(QueryParameters.UNIQUE_FIELDS, "FIELD1[HOUR],FIELD2[HOUR],FIELD3[HOUR]");
-        assertOption(QueryParameters.MOST_RECENT_UNIQUE, "true");
-
-        // Verify that fields with MINUTE granularity are added as such.
-        assertResult("f:most_recent_unique('field1[MINUTE]','field2[MINUTE]','field3[MINUTE]')", "");
-        assertOption(QueryParameters.UNIQUE_FIELDS, "FIELD1[MINUTE],FIELD2[MINUTE],FIELD3[MINUTE]");
-        assertOption(QueryParameters.MOST_RECENT_UNIQUE, "true");
-
-        // Verify that fields from multiple unique functions are merged together.
-        assertResult("f:most_recent_unique('field1','field2') AND f:unique('field2[DAY]','field3[DAY]') AND f:unique('field4')", "");
-        assertOption(QueryParameters.UNIQUE_FIELDS, "FIELD1[ALL],FIELD2[ALL,DAY],FIELD3[DAY],FIELD4[ALL]");
-        assertOption(QueryParameters.MOST_RECENT_UNIQUE, "true");
-
-        // Verify more complex fields with multiple granularity levels are merged together.
-        assertResult("f:most_recent_unique('field1[DAY]','field2[DAY,HOUR]','field3[HOUR,MINUTE]','field4[ALL,MINUTE]','field5')", "");
-        assertOption(QueryParameters.UNIQUE_FIELDS, "FIELD1[DAY],FIELD2[DAY,HOUR],FIELD3[HOUR,MINUTE],FIELD4[ALL,MINUTE],FIELD5[ALL]");
-        assertOption(QueryParameters.MOST_RECENT_UNIQUE, "true");
-
-        // Lucene will parse comma-delimited granularity levels into separate strings. Ensure it still parses correctly.
-        assertResult("f:most_recent_unique('field1[DAY]','field2[DAY','HOUR]','field3[HOUR','MINUTE]','field4[ALL','MINUTE]','field5')", "");
-        assertOption(QueryParameters.UNIQUE_FIELDS, "FIELD1[DAY],FIELD2[DAY,HOUR],FIELD3[HOUR,MINUTE],FIELD4[ALL,MINUTE],FIELD5[ALL]");
-        assertOption(QueryParameters.MOST_RECENT_UNIQUE, "true");
     }
 
     @Test
