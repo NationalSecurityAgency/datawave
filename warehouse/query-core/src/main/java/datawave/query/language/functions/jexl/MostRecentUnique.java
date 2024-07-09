@@ -66,7 +66,7 @@ public class MostRecentUnique extends JexlQueryFunction {
 
     @Override
     public QueryFunction duplicate() {
-        return new MostRecentUnique();
+        return new Unique();
     }
 
 }

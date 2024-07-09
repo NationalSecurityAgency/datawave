@@ -18,6 +18,6 @@ public class MostRecentUniqueByMonth extends UniqueByFunction {
 
     @Override
     public QueryFunction duplicate() {
-        return new MostRecentUniqueByMonth();
+        return new UniqueByMonth();
     }
 }

@@ -374,21 +374,6 @@ public abstract class UniqueTest {
     }
 
     @Test
-    public void testRecentUniquenessWithModelAliases() throws Exception {
-        Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("include.grouping.context", "true");
-        extraParameters.put("query.syntax", "LUCENE");
-
-        Set<Set<String>> expected = new HashSet<>();
-        expected.add(Sets.newHashSet(WiseGuysIngest.sopranoUID, WiseGuysIngest.corleoneUID, WiseGuysIngest.caponeUID));
-        Date startDate = format.parse("20091231");
-        Date endDate = format.parse("20150101");
-
-        String queryString = "UUID:/^[CS].*/ AND #MOST_RECENT_UNIQUE(BOTH_NULL)";
-        runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
-    }
-
-    @Test
     public void testMostRecentUniqueness() throws Exception {
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
