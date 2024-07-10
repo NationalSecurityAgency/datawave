@@ -146,7 +146,7 @@ public class GroupingRequiredFilterFunctionsDescriptor implements JexlFunctionAr
         public boolean regexArguments() {
             FunctionJexlNodeVisitor functionMetadata = new FunctionJexlNodeVisitor();
             node.jjtAccept(functionMetadata, null);
-            return false;
+            return true;
         }
 
         @Override
