@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
 
+import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.security.Authorizations;
 import org.junit.Assert;
 import org.junit.Before;
@@ -439,8 +440,6 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("compositeFilterFunctionsEnabled", true);
         defaultValues.put("uniqueFields", new UniqueFields());
         updatedValues.put("uniqueFields", UniqueFields.from("FIELD_U,FIELD_V"));
-        defaultValues.put("uniqueCacheBufferSize", 100);
-        updatedValues.put("uniqueCacheBufferSize", 1000);
         defaultValues.put("cacheModel", false);
         updatedValues.put("cacheModel", true);
         defaultValues.put("trackSizes", true);
@@ -580,6 +579,10 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("sortQueryBeforeGlobalIndex", true);
         defaultValues.put("sortQueryByCounts", false);
         updatedValues.put("sortQueryByCounts", true);
+        defaultValues.put("tableConsistencyLevels", Collections.emptyMap());
+        updatedValues.put("tableConsistencyLevels", Collections.singletonMap(TableName.SHARD, ScannerBase.ConsistencyLevel.EVENTUAL));
+        defaultValues.put("tableHints", Collections.emptyMap());
+        updatedValues.put("tableHints", Collections.emptyMap());
     }
 
     private Query createQuery(String query) {
