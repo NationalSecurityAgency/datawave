@@ -1372,6 +1372,10 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         return config;
     }
 
+    public void setConfig(ShardQueryConfiguration config) {
+        this.config = config;
+    }
+
     @Override
     public AccumuloConnectionFactory.Priority getConnectionPriority() {
         return AccumuloConnectionFactory.Priority.NORMAL;
