@@ -71,7 +71,7 @@
         <version.datawave.metrics-reporter>3.0.0</version.datawave.metrics-reporter>
         <version.datawave.query-api>1.0.0</version.datawave.query-api>
         <version.datawave.query-metric-api>4.0.0</version.datawave.query-metric-api>
-        <version.datawave.type-utils>3.0.0</version.datawave.type-utils>
+        <version.datawave.type-utils>3.0.1</version.datawave.type-utils>
         <version.deltaspike>1.9.0</version.deltaspike>
         <version.easymock>5.2.0</version.easymock>
         <version.eclipse.emf>2.15.0</version.eclipse.emf>
