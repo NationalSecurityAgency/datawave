@@ -7,7 +7,6 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -2321,7 +2320,7 @@ public class QueryOptions implements OptionDescriber {
     */
     
     // Fetches the default option for the given class, either from the map, or from createDefaultOptions() on an instance of the class.
-    protected static DefaultOptions getDefaultOption(String className) {
+    protected static DefaultOptions getDefaultOptions(String className) {
         if (defaultOptionsMap.containsKey(className)) {
             return defaultOptionsMap.get(className);
         } else {
