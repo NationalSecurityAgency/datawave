@@ -7,6 +7,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -22,11 +23,12 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
+import com.google.common.base.Joiner;
+import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
@@ -40,12 +42,7 @@ import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
 
-import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.io.Input;
-import com.esotericsoftware.kryo.io.Output;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
@@ -111,6 +108,7 @@ import datawave.util.UniversalSet;
  * Some options are passed through from the QueryParameters.
  */
 public class QueryOptions implements OptionDescriber {
+    
     private static final Logger log = Logger.getLogger(QueryOptions.class);
 
     protected static Cache<String,FileSystem> fileSystemCache = CacheBuilder.newBuilder().concurrencyLevel(10).maximumSize(100).build();
@@ -258,7 +256,7 @@ public class QueryOptions implements OptionDescriber {
     public static final String RANGES = "ranges";
 
     /**
-     * If a value is set, a separate {@link datawave.query.tracking.ActiveQueryLog} instance will be used instead of the shared default instance. The value is
+     * If a value is set, a separate {@link ActiveQueryLog} instance will be used instead of the shared default instance. The value is
      * typically a table name or query logic name.
      */
     public static final String ACTIVE_QUERY_LOG_NAME = "active.query.log.name";
@@ -425,7 +423,7 @@ public class QueryOptions implements OptionDescriber {
     protected boolean trackSizes = true;
 
     /**
-     * The name of the {@link datawave.query.tracking.ActiveQueryLog} instance to use.
+     * The name of the {@link ActiveQueryLog} instance to use.
      */
     protected String activeQueryLogName;
 
@@ -2040,7 +2038,7 @@ public class QueryOptions implements OptionDescriber {
     }
 
     /**
-     * Get a serialization and deserialization utility for {@link datawave.query.util.count.CountMap}
+     * Get a serialization and deserialization utility for {@link CountMap}
      *
      * @return count map utility
      */
@@ -2292,5 +2290,115 @@ public class QueryOptions implements OptionDescriber {
             equality = new PrefixEquality(PartialKey.ROW_COLFAM);
         }
         return equality;
+    }
+    
+    private static final Joiner COMMA_JOINER = Joiner.on(",").skipNulls();
+    
+    // Map of class strings to DefaultOptions implementations.
+    protected static Map<String,DefaultOptions> defaultOptionsMap = new HashMap<>();
+    
+    static {
+        // Add an initial default options instance for QueryOptions.
+        defaultOptionsMap.put(QueryOptions.class.getName(), new QueryOptions().createDefaultOptions());
+    }
+    
+    // Method to create Default options for current class. Overrideable.
+    protected DefaultOptions createDefaultOptions() {
+        QueryOptions queryOptions = new QueryOptions();
+        DefaultOptions defaultOptions = new DefaultOptions();
+        defaultOptions.putDefaultValue(QueryOptions.DISABLE_EVALUATION, queryOptions.isDisableEvaluation());
+        // Repeat for remaining properties. This method can be overridden in sub-classes, like following example:
+        return defaultOptions;
+    }
+    
+    /*
+    protected DefaultOptions createDefaultOptions() {
+        SubClass subClass = new SubClass();
+        DefaultOptions defaultOptions = super.createDefaultOptions();
+        // For anything where we override, or have a new option.
+        defaultOptions.putDefaultValue(QueryOptions.DISABLE_EVALUATION, subclass.isDisableEvaluation());
+    }
+    */
+    
+    // Fetches the default option for the given class, either from the map, or from createDefaultOptions() on an instance of the class.
+    protected static DefaultOptions getDefaultOption(String className) {
+        if (defaultOptionsMap.containsKey(className)) {
+            return defaultOptionsMap.get(className);
+        } else {
+            try {
+                Class<?> clazz = Class.forName(className);
+                // Check if the given class inherits QueryOptions.
+                if (!QueryOptions.class.isAssignableFrom(clazz)) {
+                    throw new IllegalArgumentException("Class must be a subclass of " + QueryOptions.class.getName());
+                }
+                // Attempt to fetch the default options from createDefaultOptions on an instance of the class.
+                try {
+                    QueryOptions instance = (QueryOptions) clazz.getConstructor().newInstance();
+                    DefaultOptions defaultOptions = instance.createDefaultOptions();
+                    // Update the map so that we only need to do this once for the class.
+                    defaultOptionsMap.put(className, defaultOptions);
+                    return defaultOptions;
+                } catch (NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException e) {
+                    throw new RuntimeException("Failed to instantiate new instance of " + clazz + ", class does not have a default constructor", e);
+                }
+                
+            } catch (ClassNotFoundException e) {
+                throw new RuntimeException(e);
+            }
+            
+        }
+    }
+    
+    // Add the given option.
+    public static void addOption(IteratorSetting setting, String option, Object value, boolean allowBlankValues) {
+        // Determine the correct method for converting the value to a string.
+        if (value instanceof String) {
+            addOption(setting, option, value, (v) -> (String) v, allowBlankValues);
+        } else if (value instanceof Boolean) {
+            addOption(setting, option, value, (v) -> Boolean.toString((Boolean) v), allowBlankValues);
+        } else if (value instanceof Long) {
+            addOption(setting, option, value, (v) -> Long.toString((Long)v), allowBlankValues);
+        } else if(value instanceof Iterable) {
+            addOption(setting, option, value, (v) -> COMMA_JOINER.join((Iterable<?>)v), allowBlankValues);
+        }
+        // Continue adding else branches for the different possible primitive types.
+    }
+    
+    // Add given option, using the specified to-string transformer.
+    public static <T> void addOption(IteratorSetting setting, String option, T value, Function<T, String> valueTransformer, boolean allowBlankValues) {
+        // If we have a default options implementation for the specified iterator setting's class, fetch it.
+        DefaultOptions defaultOptions = getDefaultOptions(setting.getIteratorClass());
+        // If the value matches the default value, do not add it to the setting.
+        if (defaultOptions.hasDefaultValue(option) && defaultOptions.equalsDefaultValue(option, value)) {
+            return;
+        }
+        // Otherwise convert it, and if blank and blank values allowed, change it to something else, or it will fail in InputFormatBase when run through the
+        // MapReduce api.
+        String valueString = valueTransformer.apply(value);
+        if (allowBlankValues && org.apache.commons.lang.StringUtils.isBlank(valueString)) {
+            valueString = " ";
+        }
+        setting.addOption(option, valueString);
+    }
+    
+    // Contains default values. Should make immutable with a builder that is used in createDefaultOptions().
+    protected static class DefaultOptions {
+        
+        protected Map<String, Object> defaultValues = new HashMap<>();
+        
+        protected void putDefaultValue(String option, Object value) {
+            defaultValues.put(option, value);
+        }
+        
+        protected boolean hasDefaultValue(String option) {
+            return defaultValues.containsKey(option);
+        }
+        
+        protected boolean equalsDefaultValue(String option, Object value) {
+            if (hasDefaultValue(option)) {
+                return Objects.equals(defaultValues.get(option), value);
+            }
+            return false;
+        }
     }
 }
