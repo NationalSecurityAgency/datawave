@@ -156,6 +156,8 @@ public class RewritableSortedSetImpl<E> implements RewritableSortedSet<E>, Clone
         // return true if this is a new element to the set
         if (set.containsKey(e)) {
             if ((rewriteStrategy != null) && rewriteStrategy.rewrite(set.get(e), e)) {
+                // let's remove to original key first to avoid holding on to extra values
+                set.remove(e);
                 set.put(e, e);
                 return true;
             }
