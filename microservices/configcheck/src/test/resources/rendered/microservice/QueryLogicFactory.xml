@@ -115,6 +115,10 @@
         <property name="zookeeperConfig" value="${accumulo.zookeepers}" />
 
         <!-- This is injected via BaseEventQueryConfiguration.java and configured via configuration properties -->
+        <!-- the list of directories in which the query service puts its caches (selection always made on query service side) -->
+        <property name="localIvaratorCacheDirConfigs" ref="baseEventQueryLocalIvaratorCacheDirConfigs" />
+
+        <!-- This is injected via BaseEventQueryConfiguration.java and configured via configuration properties -->
         <!-- the list of directories in which the ivarator puts its caches (selection always made on tserver side) -->
         <property name="ivaratorCacheDirConfigs" ref="baseEventQueryIvaratorCacheDirConfigs" />
 

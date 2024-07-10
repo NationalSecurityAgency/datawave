@@ -35,6 +35,7 @@ public class UniqueTransformMostRecentTest extends UniqueTransformTest {
         // setup a directory for cache results
         File tmpDir = temporaryFolder.newFolder();
         IvaratorCacheDirConfig config = new IvaratorCacheDirConfig(tmpDir.toURI().toString());
+        logic.setLocalIvaratorCacheDirConfigs(Collections.singletonList(config));
         logic.setIvaratorCacheDirConfigs(Collections.singletonList(config));
 
         QueryImpl query = new QueryImpl();
@@ -50,7 +51,7 @@ public class UniqueTransformMostRecentTest extends UniqueTransformTest {
                     .withUniqueFields(uniqueFields)
                     .withQueryExecutionForPageTimeout(Long.MAX_VALUE)
                     .withBufferPersistThreshold(logic.getUniqueCacheBufferSize())
-                    .withIvaratorCacheDirConfigs(logic.getIvaratorCacheDirConfigs())
+                    .withLocalIvaratorCacheDirConfigs(logic.getLocalIvaratorCacheDirConfigs())
                     .withHdfsSiteConfigURLs(logic.getHdfsSiteConfigURLs())
                     .withSubDirectory(logic.getConfig().getQuery().getId().toString())
                     .withMaxOpenFiles(logic.getIvaratorMaxOpenFiles())

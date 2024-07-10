@@ -226,6 +226,7 @@
         <!-- The max value or list expansion for a single field using an FST ivarator -->
         <property name="maxOrExpansionFstThreshold" value="20" />	<!-- was ${beq.orExpansionFstThreshold} -->
         <property name="hdfsSiteConfigURLs" value="" />	<!--  was ${hdfs.site.config.urls} -->
+        <property name="localIvaratorCacheDirConfigs" ref="IvaratorCacheDirConfigs" />	<!-- was ${local.ivarator.cache.dir.config} -->
         <property name="ivaratorCacheDirConfigs" ref="IvaratorCacheDirConfigs" />	<!-- was ${ivarator.cache.dir.config} -->
         <property name="ivaratorCacheBufferSize" value="10000" />
         <property name="ivaratorCacheScanPersistThreshold" value="100000" />

@@ -677,7 +677,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
                                 .withQueryExecutionForPageTimeout(this.getQueryExecutionForPageTimeout())
                                 .withModel(getQueryModel())
                                 .withBufferPersistThreshold(getUniqueCacheBufferSize())
-                                .withIvaratorCacheDirConfigs(getIvaratorCacheDirConfigs())
+                                .withLocalIvaratorCacheDirConfigs(getLocalIvaratorCacheDirConfigs())
                                 .withHdfsSiteConfigURLs(getHdfsSiteConfigURLs())
                                 .withSubDirectory(getConfig().getQuery().getId().toString())
                                 .withMaxOpenFiles(getIvaratorMaxOpenFiles())
@@ -1928,6 +1928,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
     public void setFullTableScanEnabled(boolean fullTableScanEnabled) {
         getConfig().setFullTableScanEnabled(fullTableScanEnabled);
+    }
+
+    public void setLocalIvaratorCacheDirConfigs(List<IvaratorCacheDirConfig> localIvaratorCacheDirConfigs) {
+        getConfig().setLocalIvaratorCacheDirConfigs(localIvaratorCacheDirConfigs);
+    }
+
+    public List<IvaratorCacheDirConfig> getLocalIvaratorCacheDirConfigs() {
+        return getConfig().getLocalIvaratorCacheDirConfigs();
     }
 
     public List<IvaratorCacheDirConfig> getIvaratorCacheDirConfigs() {

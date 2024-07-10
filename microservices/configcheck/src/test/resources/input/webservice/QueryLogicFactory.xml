@@ -284,6 +284,8 @@
         <property name="hdfsSiteConfigURLs" value="${hdfs.site.config.urls}" />
         <!-- the zookeeper configuration (could be something like file:///opt/datawave/zookeeper-warehouse/conf/zoo.cfg, or the zookeeper list (somehost1:2181,somehost2:2181,…)-->
         <property name="zookeeperConfig" value="${ivarator.zookeeper.hosts}" />
+        <!-- the list of directories in which the webserver puts its ivarator caches (selection always made on webserver side) -->
+        <property name="localIvaratorCacheDirConfigs" ref="LocalIvaratorCacheDirConfigs" />
         <!-- the list of directories in which the ivarator puts its caches (selection always made on tserver side) -->
         <property name="ivaratorCacheDirConfigs" ref="IvaratorCacheDirConfigs" />
         <!-- the hdfs location where FST's will be stored (see maxOrExpansionFstThreshold above) -->
@@ -323,6 +325,10 @@
         <property name="docAggregationThresholdMs" value="-1" />
         <property name="tfAggregationThresholdMs" value="-1" />
     </bean>
+
+    <util:list id="LocalIvaratorCacheDirConfigs">
+        ${local.ivarator.cache.dir.config}
+    </util:list>
 
     <util:list id="IvaratorCacheDirConfigs">
         ${ivarator.cache.dir.config}
