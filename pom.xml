@@ -854,6 +854,10 @@
                         <groupId>log4j</groupId>
                         <artifactId>log4j</artifactId>
                     </exclusion>
+                    <exclusion>
+                        <groupId>ch.qos.logback</groupId>
+                        <artifactId>logback-classic</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
             <dependency>
@@ -1555,6 +1559,7 @@
                                         <excludes>
                                             <exclude>log4j:log4j</exclude>
                                             <exclude>org.slf4j:slf4j-log4j12</exclude>
+                                            <exclude>ch.qos.logback:logback-classic</exclude>
                                         </excludes>
                                     </bannedDependencies>
                                 </rules>
