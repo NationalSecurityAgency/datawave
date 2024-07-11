@@ -2537,23 +2537,25 @@ public class QueryOptions implements OptionDescriber {
         } else if (value instanceof Boolean) {
             addOption(setting, option, value, (v) -> Boolean.toString((Boolean) v), allowBlankValues);
         } else if (value instanceof Long) {
-            addOption(setting, option, value, (v) -> Long.toString((Long)v), allowBlankValues);
-        } else if(value instanceof Integer) {
+            addOption(setting, option, value, (v) -> Long.toString((Long) v), allowBlankValues);
+        } else if (value instanceof Integer) {
             addOption(setting, option, value, (v) -> Integer.toString((Integer) v), allowBlankValues);
-        } else if(value instanceof Double) {
+        } else if (value instanceof Double) {
             addOption(setting, option, value, (v) -> Double.toString((Double) v), allowBlankValues);
-        } else if(value instanceof Float) {
+        } else if (value instanceof Float) {
             addOption(setting, option, value, (v) -> Float.toString((Float) v), allowBlankValues);
-        } else if(value instanceof Short) {
+        } else if (value instanceof Short) {
             addOption(setting, option, value, (v) -> Short.toString((Short) v), allowBlankValues);
-        } else if(value instanceof Byte) {
+        } else if (value instanceof Byte) {
             addOption(setting, option, value, (v) -> Byte.toString((Byte) v), allowBlankValues);
-        } else if(value instanceof Character) {
-                addOption(setting, option, value, (v) -> Character.toString((Character) v), allowBlankValues);
-        } else if (value instanceof Collection<?>){
+        } else if (value instanceof Character) {
+            addOption(setting, option, value, (v) -> Character.toString((Character) v), allowBlankValues);
+        } else if (value instanceof Collection<?>) {
             addOption(setting, option, value, (v) -> COMMA_JOINER.join((Iterable<?>) v), allowBlankValues);
-        } else if(value instanceof Enum<?>){
+        } else if (value instanceof Enum<?>) {
             addOption(setting, option, value, (v) -> ((Enum<?>) v).name(), allowBlankValues);
+        } else if (value instanceof Object){
+            addOption(setting, option, value, (v) -> v.toString(), allowBlankValues);
         } else {
             throw new IllegalArgumentException("Unsupported option type: " + value.getClass().getName());
         }
