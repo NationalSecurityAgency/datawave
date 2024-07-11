@@ -1,37 +1,34 @@
-package datawave.query.util.sortedset.rfile;
+package datawave.query.util.sortedset;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.Map;
 
 import org.apache.accumulo.core.client.rfile.RFile;
 import org.apache.accumulo.core.client.rfile.RFileWriter;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
-import org.apache.commons.collections.keyvalue.UnmodifiableMapEntry;
 import org.apache.hadoop.io.Text;
 
-public class RFileKeyValueOutputStreamBase {
+public class RFileKeyOutputStream implements FileSortedSet.SortedSetOutputStream<Key> {
     private RFileWriter writer;
-    static final Value EMPTY_VALUE = new Value(new byte[0]);
+    private static final Value EMPTY_VALUE = new Value(new byte[0]);
 
-    public RFileKeyValueOutputStreamBase(OutputStream stream) throws IOException {
+    public RFileKeyOutputStream(OutputStream stream) throws IOException {
         super();
         this.writer = RFile.newWriter().to(stream).withVisibilityCacheSize(10).build();
     }
 
-    public void writeKeyValue(Key key, Value value) throws IOException {
-        writer.append(key, value);
+    @Override
+    public void writeObject(Key o) throws IOException {
+        writer.append(o, EMPTY_VALUE);
     }
 
-    public void writeKeyValue(Map.Entry<Key,Value> keyValue) throws IOException {
-        writer.append(keyValue.getKey(), keyValue.getValue());
-    }
-
+    @Override
     public void writeSize(int i) throws IOException {
-        writeKeyValue(SizeKeyUtil.getKey(i), EMPTY_VALUE);
+        writeObject(SizeKeyUtil.getKey(i));
     }
 
+    @Override
     public void close() throws IOException {
         writer.close();
         writer = null;
