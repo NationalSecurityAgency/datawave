@@ -2397,9 +2397,97 @@ public class QueryOptions implements OptionDescriber {
     
     // Method to create Default options for current class. Overrideable.
     protected DefaultOptions createDefaultOptions() {
+
         QueryOptions queryOptions = new QueryOptions();
         DefaultOptions defaultOptions = new DefaultOptions();
         defaultOptions.putDefaultValue(QueryOptions.DISABLE_EVALUATION, queryOptions.isDisableEvaluation());
+        defaultOptions.putDefaultValue(QueryOptions.DISABLE_FIELD_INDEX_EVAL, !queryOptions.isAllowFieldIndexEvaluation()); //odd wording
+        defaultOptions.putDefaultValue(QueryOptions.LIMIT_SOURCES, sourceLimit);
+        defaultOptions.putDefaultValue(QueryOptions.DISABLE_DOCUMENTS_WITHOUT_EVENTS, queryOptions.disableIndexOnlyDocuments());
+        defaultOptions.putDefaultValue(QueryOptions.QUERY, queryOptions.getQuery());
+        defaultOptions.putDefaultValue(QueryOptions.QUERY_ID, queryOptions.getQueryId());
+        defaultOptions.putDefaultValue(QueryOptions.SCAN_ID, queryOptions.getScanId());
+        defaultOptions.putDefaultValue(QueryOptions.QUERY_MAPPING_COMPRESS, compressedMappings);
+        defaultOptions.putDefaultValue(QueryOptions.COMPOSITE_METADATA, queryOptions.getCompositeMetadata());
+        defaultOptions.putDefaultValue(QueryOptions.COMPOSITE_SEEK_THRESHOLD, queryOptions.getCompositeSeekThreshold());
+        defaultOptions.putDefaultValue(Constants.RETURN_TYPE, queryOptions.getReturnType());
+        defaultOptions.putDefaultValue(QueryOptions.REDUCED_RESPONSE, queryOptions.isReducedResponse());
+        defaultOptions.putDefaultValue(QueryOptions.FULL_TABLE_SCAN_ONLY, queryOptions.isFullTableScanOnly());
+        defaultOptions.putDefaultValue(QueryOptions.TRACK_SIZES, queryOptions.isTrackSizes());
+        defaultOptions.putDefaultValue(QueryOptions.PROJECTION_FIELDS, allowListedFields);
+        defaultOptions.putDefaultValue(QueryOptions.DISALLOWLISTED_FIELDS, disallowListedFields);
+        defaultOptions.putDefaultValue(QueryOptions.FIELD_COUNTS, fieldCounts);
+        defaultOptions.putDefaultValue(QueryOptions.TERM_COUNTS, termCounts);
+        defaultOptions.putDefaultValue(QueryOptions.FILTER_MASKED_VALUES, filterMaskedValues);
+        defaultOptions.putDefaultValue(QueryOptions.INCLUDE_DATATYPE, includeDatatype));
+        defaultOptions.putDefaultValue(QueryOptions.INCLUDE_RECORD_ID, queryOptions.isIncludeRecordId());
+        defaultOptions.putDefaultValue(QueryOptions.COLLECT_TIMING_DETAILS, collectTimingDetails);
+        defaultOptions.putDefaultValue(QueryOptions.STATSD_HOST_COLON_PORT, queryOptions.getStatsdHostAndPort());
+        defaultOptions.putDefaultValue(QueryOptions.STATSD_MAX_QUEUE_SIZE, queryOptions.getStatsdMaxQueueSize());
+        defaultOptions.putDefaultValue(QueryOptions.INCLUDE_HIERARCHY_FIELDS, includeHierarchyFields);
+        defaultOptions.putDefaultValue(QueryOptions.FI_FIELD_SEEK, queryOptions.getFiFieldSeek());
+        defaultOptions.putDefaultValue(QueryOptions.FI_NEXT_SEEK, queryOptions.getFiNextSeek());
+        defaultOptions.putDefaultValue(QueryOptions.EVENT_FIELD_SEEK, queryOptions.getEventFieldSeek());
+        defaultOptions.putDefaultValue(QueryOptions.EVENT_NEXT_SEEK, queryOptions.getEventNextSeek());
+        defaultOptions.putDefaultValue(QueryOptions.TF_FIELD_SEEK, queryOptions.getTfFieldSeek());
+        defaultOptions.putDefaultValue(QueryOptions.TF_NEXT_SEEK, queryOptions.getTfNextSeek());
+        defaultOptions.putDefaultValue(QueryOptions.DOC_AGGREGATION_THRESHOLD_MS, queryOptions.getDocAggregationThresholdMs());
+        defaultOptions.putDefaultValue(QueryOptions.TERM_FREQUENCY_AGGREGATION_THRESHOLD_MS, getTfAggregationThresholdMs());
+        defaultOptions.putDefaultValue(QueryOptions.DATATYPE_FILTER, queryOptions.getFieldIndexKeyDataTypeFilter());
+        defaultOptions.putDefaultValue(QueryOptions.INDEX_ONLY_FIELDS, queryOptions.getIndexOnlyFields());
+        defaultOptions.putDefaultValue(QueryOptions.INDEXED_FIELDS, queryOptions.getIndexedFields());
+        defaultOptions.putDefaultValue(QueryOptions.IGNORE_COLUMN_FAMILIES, ignoreColumnFamilies);
+        defaultOptions.putDefaultValue(QueryOptions.START_TIME, startTime);
+        defaultOptions.putDefaultValue(QueryOptions.END_TIME, endTime);
+        defaultOptions.putDefaultValue(QueryOptions.INCLUDE_GROUPING_CONTEXT, queryOptions.isIncludeGroupingContext());
+        defaultOptions.putDefaultValue(QueryOptions.DOCUMENT_PERMUTATION_CLASSES, queryOptions.getDocumentPermutationClasses());
+        defaultOptions.putDefaultValue(QueryOptions.LIMIT_FIELDS, queryOptions.getLimitFieldsMap());
+        defaultOptions.putDefaultValue(QueryOptions.MATCHING_FIELD_SETS, queryOptions.getMatchingFieldSets());
+        defaultOptions.putDefaultValue(QueryOptions.LIMIT_FIELDS_PRE_QUERY_EVALUATION, queryOptions.isLimitFieldsPreQueryEvaluation());
+        defaultOptions.putDefaultValue(QueryOptions.LIMIT_FIELDS_FIELD, queryOptions.getLimitFieldsField());
+        defaultOptions.putDefaultValue(QueryOptions.GROUP_FIELDS, queryOptions.getGroupFields());
+        defaultOptions.putDefaultValue(QueryOptions.GROUP_FIELDS_BATCH_SIZE, queryOptions.getGroupFieldsBatchSize());
+        defaultOptions.putDefaultValue(QueryOptions.UNIQUE_FIELDS, queryOptions.getUniqueFields());
+        defaultOptions.putDefaultValue(QueryOptions.MOST_RECENT_UNIQUE, queryOptions.getUniqueFields().isMostRecent());
+        defaultOptions.putDefaultValue(QueryOptions.UNIQUE_CACHE_BUFFER_SIZE, queryOptions.getUniqueCacheBufferSize());
+        defaultOptions.putDefaultValue(QueryOptions.HIT_LIST, getArithmetic());
+        defaultOptions.putDefaultValue(QueryOptions.DATE_INDEX_TIME_TRAVEL, queryOptions.isDateIndexTimeTravel());
+        defaultOptions.putDefaultValue(QueryOptions.POSTPROCESSING_CLASSES, postProcessingFunctions);
+        defaultOptions.putDefaultValue(QueryOptions.NON_INDEXED_DATATYPES, queryOptions.getNonIndexedDataTypeMap());
+        defaultOptions.putDefaultValue(QueryOptions.CONTAINS_INDEX_ONLY_TERMS, queryOptions.isContainsIndexOnlyTerms());
+        defaultOptions.putDefaultValue(QueryOptions.ALLOW_FIELD_INDEX_EVALUATION, queryOptions.isAllowFieldIndexEvaluation());
+        defaultOptions.putDefaultValue(QueryOptions.ALLOW_TERM_FREQUENCY_LOOKUP, queryOptions.isAllowTermFrequencyLookup());
+        defaultOptions.putDefaultValue(QueryOptions.HDFS_SITE_CONFIG_URLS, queryOptions.getHdfsSiteConfigURLs());
+        defaultOptions.putDefaultValue(QueryOptions.HDFS_FILE_COMPRESSION_CODEC, queryOptions.getHdfsFileCompressionCodec());
+        defaultOptions.putDefaultValue(QueryOptions.ZOOKEEPER_CONFIG, queryOptions.getZookeeperConfig());
+        defaultOptions.putDefaultValue(QueryOptions.IVARATOR_CACHE_DIR_CONFIG, queryOptions.getIvaratorCacheDirConfigs());
+        defaultOptions.putDefaultValue(QueryOptions.IVARATOR_CACHE_BUFFER_SIZE, queryOptions.getIvaratorCacheBufferSize());
+        defaultOptions.putDefaultValue(QueryOptions.IVARATOR_SCAN_PERSIST_THRESHOLD, queryOptions.getIvaratorCacheScanPersistThreshold());
+        defaultOptions.putDefaultValue(QueryOptions.IVARATOR_SCAN_TIMEOUT, queryOptions.getIvaratorCacheScanTimeout());
+        defaultOptions.putDefaultValue(QueryOptions.RESULT_TIMEOUT, queryOptions.getResultTimeout());
+        defaultOptions.putDefaultValue(QueryOptions.MAX_INDEX_RANGE_SPLIT, queryOptions.getMaxIndexRangeSplit());
+        defaultOptions.putDefaultValue(QueryOptions.MAX_IVARATOR_OPEN_FILES, queryOptions.getIvaratorMaxOpenFiles());
+        defaultOptions.putDefaultValue(QueryOptions.IVARATOR_NUM_RETRIES, queryOptions.getIvaratorNumRetries());
+        defaultOptions.putDefaultValue(QueryOptions.IVARATOR_PERSIST_VERIFY, queryOptions.getIvaratorPersistOptions().isVerifySize());
+        defaultOptions.putDefaultValue(QueryOptions.IVARATOR_PERSIST_VERIFY_COUNT, queryOptions.getIvaratorPersistOptions().getNumElementsToVerify());
+        defaultOptions.putDefaultValue(QueryOptions.MAX_IVARATOR_SOURCES, queryOptions.getMaxIvaratorSources());
+        defaultOptions.putDefaultValue(QueryOptions.MAX_IVARATOR_SOURCE_WAIT, queryOptions.getMaxIvaratorSourceWait());
+        defaultOptions.putDefaultValue(QueryOptions.MAX_IVARATOR_RESULTS, queryOptions.getMaxIvaratorResults());
+        defaultOptions.putDefaultValue(QueryOptions.YIELD_THRESHOLD_MS, queryOptions.getYieldThresholdMs());
+        defaultOptions.putDefaultValue(QueryOptions.COMPRESS_SERVER_SIDE_RESULTS, queryOptions.isCompressResults());
+        defaultOptions.putDefaultValue(QueryOptions.MAX_EVALUATION_PIPELINES, queryOptions.getMaxEvaluationPipelines());
+        defaultOptions.putDefaultValue(QueryOptions.SERIAL_EVALUATION_PIPELINE, serialEvaluationPipeline);
+        defaultOptions.putDefaultValue(QueryOptions.MAX_PIPELINE_CACHED_RESULTS, queryOptions.getMaxPipelineCachedResults());
+        defaultOptions.putDefaultValue(QueryOptions.TERM_FREQUENCIES_REQUIRED, queryOptions.isTermFrequenciesRequired());
+        defaultOptions.putDefaultValue(QueryOptions.DATE_INDEX_TIME_TRAVEL, queryOptions.isDateIndexTimeTravel());
+        defaultOptions.putDefaultValue(QueryOptions.SORTED_UIDS, queryOptions.isSortedUIDs());
+        defaultOptions.putDefaultValue(QueryOptions.DEBUG_MULTITHREADED_SOURCES, queryOptions.isDebugMultithreadedSources());
+        defaultOptions.putDefaultValue(QueryOptions.ACTIVE_QUERY_LOG_NAME, queryOptions.getActiveQueryLogName());
+        defaultOptions.putDefaultValue(QueryOptions.EXCERPT_FIELDS, queryOptions.getExcerptFields());
+        defaultOptions.putDefaultValue(QueryOptions.EXCERPT_FIELDS_NO_HIT_CALLOUT, queryOptions.getExcerptFieldsNoHitCallout());
+        defaultOptions.putDefaultValue(QueryOptions.EXCERPT_ITERATOR, queryOptions.getExcerptIterator());
+
+
         // Repeat for remaining properties. This method can be overridden in sub-classes, like following example:
         return defaultOptions;
     }
