@@ -198,12 +198,12 @@ public class IdTranslatorBean {
      * @HTTP 500 internal server error
      */
     @POST
-    @Path("/translateIDs")
+    @Path("/translateIds")
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf",
             "application/x-protostuff"})
     @GZIP
     @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
-    public BaseQueryResponse translateIDs(@FormParam("idList") String idList, @FormParam("pagesize") @DefaultValue("100") int pagesize,
+    public BaseQueryResponse translateIds(@FormParam("idList") String idList, @FormParam("pagesize") @DefaultValue("100") int pagesize,
                     @FormParam("pageTimeout") @DefaultValue("-1") int pageTimeout, @FormParam("TLDonly") @DefaultValue("true") String TLDonly) {
 
         return submitTranslationQuery(idList, pagesize, pageTimeout, TLDonly);
