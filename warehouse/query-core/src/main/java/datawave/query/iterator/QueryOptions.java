@@ -1287,42 +1287,22 @@ public class QueryOptions implements OptionDescriber {
         return new IteratorOptions(getClass().getSimpleName(), "Runs a query against the DATAWAVE tables", options, null);
     }
 
-    /**
-     * Helper function for validateOptions(). Takes the String value of an option and returns the appropriate boolean value.
-     *
-     * @param value:
-     *            The string value of an option that should be represented by a boolean.
-     * @return True if the option is null or not "false". False if the option has the value "false" (not case-sensitive).
-     */
-    protected static boolean evaluateBooleanOption(String value) {
-        if(value.equals(" ")) {
-            return true;
-        }
-        return false;
-//true        //return Boolean.parseBoolean(value);
-//        return true;
-    }
-
     @Override
     public boolean validateOptions(Map<String,String> options) {
-
         if (log.isTraceEnabled()) {
             log.trace("Options: " + options);
         }
 
         this.options = options;
 
-        System.out.println("SETH-QO-BEFORE");
-        System.out.println(this);
-
         // If we don't have a query, make sure it's because
         // we aren't performing any Jexl evaluation
         if (options.containsKey(DISABLE_EVALUATION)) {
-            this.disableEvaluation = evaluateBooleanOption(options.get(DISABLE_EVALUATION));
+            this.disableEvaluation = Boolean.parseBoolean(options.get(DISABLE_EVALUATION));
         }
 
         if (options.containsKey(DISABLE_FIELD_INDEX_EVAL)) {
-            this.disableFiEval = evaluateBooleanOption(options.get(DISABLE_FIELD_INDEX_EVAL));
+            this.disableFiEval = Boolean.parseBoolean(options.get(DISABLE_FIELD_INDEX_EVAL));
         }
 
         if (options.containsKey(LIMIT_SOURCES)) {
@@ -1334,7 +1314,7 @@ public class QueryOptions implements OptionDescriber {
         }
 
         if (options.containsKey(DISABLE_DOCUMENTS_WITHOUT_EVENTS)) {
-            this.disableIndexOnlyDocuments = evaluateBooleanOption(options.get(DISABLE_DOCUMENTS_WITHOUT_EVENTS));
+            this.disableIndexOnlyDocuments = Boolean.parseBoolean(options.get(DISABLE_DOCUMENTS_WITHOUT_EVENTS));
         }
 
         // If we're not provided a query, we may not be performing any
@@ -1355,7 +1335,7 @@ public class QueryOptions implements OptionDescriber {
         }
 
         if (options.containsKey(QUERY_MAPPING_COMPRESS)) {
-            compressedMappings = evaluateBooleanOption(options.get(QUERY_MAPPING_COMPRESS));
+            compressedMappings = Boolean.valueOf(options.get(QUERY_MAPPING_COMPRESS));
         }
 
         this.validateTypeMetadata(options);
@@ -1386,15 +1366,15 @@ public class QueryOptions implements OptionDescriber {
 
         // Boolean: should each attribute maintain a ColumnVisibility.
         if (options.containsKey(REDUCED_RESPONSE)) {
-            setReducedResponse(evaluateBooleanOption(options.get(REDUCED_RESPONSE)));
+            setReducedResponse(Boolean.parseBoolean(options.get(REDUCED_RESPONSE)));
         }
 
         if (options.containsKey(FULL_TABLE_SCAN_ONLY)) {
-            setFullTableScanOnly(evaluateBooleanOption(options.get(FULL_TABLE_SCAN_ONLY)));
+            setFullTableScanOnly(Boolean.parseBoolean(options.get(FULL_TABLE_SCAN_ONLY)));
         }
 
         if (options.containsKey(TRACK_SIZES) && options.get(TRACK_SIZES) != null) {
-            setTrackSizes(evaluateBooleanOption(options.get(TRACK_SIZES)));
+            setTrackSizes(Boolean.parseBoolean(options.get(TRACK_SIZES)));
         }
 
         if (options.containsKey(PROJECTION_FIELDS)) {
@@ -1402,13 +1382,13 @@ public class QueryOptions implements OptionDescriber {
             this.useAllowListedFields = true;
 
             String fieldList = options.get(PROJECTION_FIELDS);
-            if (EVERYTHING.equals(fieldList)) {
+            if (fieldList != null && EVERYTHING.equals(fieldList)) {
                 this.allowListedFields = UniversalSet.instance();
             } else if (fieldList != null && !fieldList.trim().equals("")) {
                 this.allowListedFields = new HashSet<>();
                 Collections.addAll(this.allowListedFields, StringUtils.split(fieldList, Constants.PARAM_VALUE_SEP));
             }
-            if (options.containsKey(HIT_LIST) && evaluateBooleanOption(options.get(HIT_LIST))) {
+            if (options.containsKey(HIT_LIST) && Boolean.parseBoolean(options.get(HIT_LIST))) {
                 this.allowListedFields.add(JexlEvaluation.HIT_TERM_FIELD);
             }
         }
@@ -1444,22 +1424,22 @@ public class QueryOptions implements OptionDescriber {
         this.mustUseFieldIndex = false;
 
         if (options.containsKey(FILTER_MASKED_VALUES)) {
-            this.filterMaskedValues = evaluateBooleanOption(options.get(FILTER_MASKED_VALUES));
+            this.filterMaskedValues = Boolean.parseBoolean(options.get(FILTER_MASKED_VALUES));
         }
 
         if (options.containsKey(INCLUDE_DATATYPE)) {
-            this.includeDatatype = evaluateBooleanOption(options.get(INCLUDE_DATATYPE));
+            this.includeDatatype = Boolean.parseBoolean(options.get(INCLUDE_DATATYPE));
             if (this.includeDatatype) {
                 this.datatypeKey = options.getOrDefault(DATATYPE_FIELDNAME, DEFAULT_DATATYPE_FIELDNAME);
             }
         }
 
         if (options.containsKey(INCLUDE_RECORD_ID)) {
-            this.includeRecordId = evaluateBooleanOption(options.get(INCLUDE_RECORD_ID));
+            this.includeRecordId = Boolean.parseBoolean(options.get(INCLUDE_RECORD_ID));
         }
 
         if (options.containsKey(COLLECT_TIMING_DETAILS)) {
-            this.collectTimingDetails = evaluateBooleanOption(options.get(COLLECT_TIMING_DETAILS));
+            this.collectTimingDetails = Boolean.parseBoolean(options.get(COLLECT_TIMING_DETAILS));
         }
 
         if (options.containsKey(STATSD_HOST_COLON_PORT)) {
@@ -1471,7 +1451,7 @@ public class QueryOptions implements OptionDescriber {
         }
 
         if (options.containsKey(INCLUDE_HIERARCHY_FIELDS)) {
-            this.includeHierarchyFields = evaluateBooleanOption(options.get(INCLUDE_HIERARCHY_FIELDS));
+            this.includeHierarchyFields = Boolean.parseBoolean(options.get(INCLUDE_HIERARCHY_FIELDS));
         }
 
         // parse seek thresholds before building filters/aggregators
@@ -1566,7 +1546,7 @@ public class QueryOptions implements OptionDescriber {
         this.timeFilter = new TimeFilter(startTime, endTime);
 
         if (options.containsKey(INCLUDE_GROUPING_CONTEXT)) {
-            this.setIncludeGroupingContext(evaluateBooleanOption(options.get(INCLUDE_GROUPING_CONTEXT)));
+            this.setIncludeGroupingContext(Boolean.parseBoolean(options.get(INCLUDE_GROUPING_CONTEXT)));
         }
 
         if (options.containsKey(DOCUMENT_PERMUTATION_CLASSES)) {
@@ -1594,7 +1574,7 @@ public class QueryOptions implements OptionDescriber {
         }
 
         if (options.containsKey(LIMIT_FIELDS_PRE_QUERY_EVALUATION)) {
-            this.setLimitFieldsPreQueryEvaluation(evaluateBooleanOption(options.get(LIMIT_FIELDS_PRE_QUERY_EVALUATION)));
+            this.setLimitFieldsPreQueryEvaluation(Boolean.parseBoolean(options.get(LIMIT_FIELDS_PRE_QUERY_EVALUATION)));
         }
 
         if (options.containsKey(LIMIT_FIELDS_FIELD)) {
@@ -1613,17 +1593,11 @@ public class QueryOptions implements OptionDescriber {
 
         if (options.containsKey(UNIQUE_FIELDS)) {
             this.setUniqueFields(UniqueFields.from(options.get(UNIQUE_FIELDS)));
-            if (options.containsKey(MOST_RECENT_UNIQUE)) {
-                this.getUniqueFields().setMostRecent(evaluateBooleanOption(options.get(MOST_RECENT_UNIQUE)));
-                if (options.containsKey(UNIQUE_CACHE_BUFFER_SIZE)) {
-                    this.setUniqueCacheBufferSize(Integer.parseInt(options.get(UNIQUE_CACHE_BUFFER_SIZE)));
-                }
-            }
         }
 
         if (options.containsKey(HIT_LIST)) {
             log.debug("Adding hitList to QueryOptions? " + options.get(HIT_LIST));
-            if (evaluateBooleanOption(options.get(HIT_LIST))) {
+            if (Boolean.parseBoolean(options.get(HIT_LIST))) {
                 this.setArithmetic(new HitListArithmetic());
             }
         } else {
@@ -1632,7 +1606,7 @@ public class QueryOptions implements OptionDescriber {
 
         if (options.containsKey(DATE_INDEX_TIME_TRAVEL)) {
             log.debug("Adding dateIndexTimeTravel to QueryOptions? " + options.get(DATE_INDEX_TIME_TRAVEL));
-            boolean dateIndexTimeTravel = evaluateBooleanOption(options.get(DATE_INDEX_TIME_TRAVEL));
+            boolean dateIndexTimeTravel = Boolean.parseBoolean(options.get(DATE_INDEX_TIME_TRAVEL));
             if (dateIndexTimeTravel) {
                 this.setDateIndexTimeTravel(dateIndexTimeTravel);
             }
@@ -1659,15 +1633,15 @@ public class QueryOptions implements OptionDescriber {
         }
 
         if (options.containsKey(CONTAINS_INDEX_ONLY_TERMS)) {
-            this.setContainsIndexOnlyTerms(evaluateBooleanOption(options.get(CONTAINS_INDEX_ONLY_TERMS)));
+            this.setContainsIndexOnlyTerms(Boolean.parseBoolean(options.get(CONTAINS_INDEX_ONLY_TERMS)));
         }
 
         if (options.containsKey(ALLOW_FIELD_INDEX_EVALUATION)) {
-            this.setAllowFieldIndexEvaluation(evaluateBooleanOption(options.get(ALLOW_FIELD_INDEX_EVALUATION)));
+            this.setAllowFieldIndexEvaluation(Boolean.parseBoolean(options.get(ALLOW_FIELD_INDEX_EVALUATION)));
         }
 
         if (options.containsKey(ALLOW_TERM_FREQUENCY_LOOKUP)) {
-            this.setAllowTermFrequencyLookup(evaluateBooleanOption(options.get(ALLOW_TERM_FREQUENCY_LOOKUP)));
+            this.setAllowTermFrequencyLookup(Boolean.parseBoolean(options.get(ALLOW_TERM_FREQUENCY_LOOKUP)));
         }
 
         if (options.containsKey(HDFS_SITE_CONFIG_URLS)) {
@@ -1719,7 +1693,7 @@ public class QueryOptions implements OptionDescriber {
         }
 
         if (options.containsKey(IVARATOR_PERSIST_VERIFY)) {
-            boolean verify = evaluateBooleanOption(options.get(IVARATOR_PERSIST_VERIFY));
+            boolean verify = Boolean.parseBoolean(options.get(IVARATOR_PERSIST_VERIFY));
             FileSortedSet.PersistOptions persistOptions = getIvaratorPersistOptions();
             this.setIvaratorPersistOptions(new FileSortedSet.PersistOptions(verify, verify, persistOptions.getNumElementsToVerify()));
         }
@@ -1747,7 +1721,7 @@ public class QueryOptions implements OptionDescriber {
         }
 
         if (options.containsKey(COMPRESS_SERVER_SIDE_RESULTS)) {
-            this.setCompressResults(evaluateBooleanOption(options.get(COMPRESS_SERVER_SIDE_RESULTS)));
+            this.setCompressResults(Boolean.parseBoolean(options.get(COMPRESS_SERVER_SIDE_RESULTS)));
         }
 
         if (options.containsKey(MAX_EVALUATION_PIPELINES)) {
@@ -1755,7 +1729,7 @@ public class QueryOptions implements OptionDescriber {
         }
 
         if (options.containsKey(SERIAL_EVALUATION_PIPELINE)) {
-            this.setSerialEvaluationPipeline(evaluateBooleanOption(options.get(SERIAL_EVALUATION_PIPELINE)));
+            this.setSerialEvaluationPipeline(Boolean.parseBoolean(options.get(SERIAL_EVALUATION_PIPELINE)));
         }
 
         if (options.containsKey(MAX_PIPELINE_CACHED_RESULTS)) {
@@ -1763,21 +1737,21 @@ public class QueryOptions implements OptionDescriber {
         }
 
         if (options.containsKey(TERM_FREQUENCIES_REQUIRED)) {
-            this.setTermFrequenciesRequired(evaluateBooleanOption(options.get(TERM_FREQUENCIES_REQUIRED)));
+            this.setTermFrequenciesRequired(Boolean.parseBoolean(options.get(TERM_FREQUENCIES_REQUIRED)));
         }
         this.setTermFrequencyFields(parseTermFrequencyFields(options));
         this.setContentExpansionFields(parseContentExpansionFields(options));
 
         if (options.containsKey(DATE_INDEX_TIME_TRAVEL)) {
-            this.dateIndexTimeTravel = evaluateBooleanOption(options.get(DATE_INDEX_TIME_TRAVEL));
+            this.dateIndexTimeTravel = Boolean.parseBoolean(options.get(DATE_INDEX_TIME_TRAVEL));
         }
 
         if (options.containsKey(SORTED_UIDS)) {
-            this.sortedUIDs = evaluateBooleanOption(options.get(SORTED_UIDS));
+            this.sortedUIDs = Boolean.parseBoolean(options.get(SORTED_UIDS));
         }
 
         if (options.containsKey(DEBUG_MULTITHREADED_SOURCES)) {
-            this.debugMultithreadedSources = evaluateBooleanOption(options.get(DEBUG_MULTITHREADED_SOURCES));
+            this.debugMultithreadedSources = Boolean.parseBoolean(options.get(DEBUG_MULTITHREADED_SOURCES));
         }
 
         if (options.containsKey(ACTIVE_QUERY_LOG_NAME)) {
@@ -1789,7 +1763,7 @@ public class QueryOptions implements OptionDescriber {
         }
 
         if (options.containsKey(EXCERPT_FIELDS_NO_HIT_CALLOUT)) {
-            setExcerptFieldsNoHitCallout(evaluateBooleanOption(options.get(EXCERPT_FIELDS_NO_HIT_CALLOUT)));
+            setExcerptFieldsNoHitCallout(Boolean.parseBoolean(options.get(EXCERPT_FIELDS_NO_HIT_CALLOUT)));
         }
 
         if (options.containsKey(EXCERPT_ITERATOR)) {
@@ -1800,95 +1774,7 @@ public class QueryOptions implements OptionDescriber {
             }
         }
 
-        System.out.println("SETH-QO-AFTER");
-        System.out.println(this);
-
-        System.out.println("SETHOPTIONS: (number of options: " + options.size() + ")");
-        for (Map.Entry<String,String> entry : options.entrySet()) {
-            System.out.println(entry.getKey() + " : " + entry.getValue());
-        }
-
         return true;
-    }
-
-    @Override
-    public String toString() {
-
-        StringBuilder s = new StringBuilder("QueryOptions{\n" + "  001 options={");
-        int i = 1;
-        for (Map.Entry<String,String> entry : options.entrySet()) {
-            s.append("  001-").append(i).append(" ").append(entry.getKey()).append(" : ").append(entry.getValue()).append(",\n");
-            i++;
-        }
-
-        s.append("  002 scanId='").append(scanId).append("',\n").append("  003 query='").append(query).append("',\n").append("  004 queryId='").append(queryId)
-                        .append("',\n").append("  005 disableEvaluation=").append(disableEvaluation).append(",\n").append("  006 disableFiEval=")
-                        .append(disableFiEval).append(",\n").append("  007 sourceLimit=").append(sourceLimit).append(",\n")
-                        .append("  008 disableIndexOnlyDocuments=").append(disableIndexOnlyDocuments).append(",\n").append("  009 typeMetadata=")
-                        .append(typeMetadata).append(",\n").append("  010 typeMetadataAuthsKey=").append(typeMetadataAuthsKey).append(",\n")
-                        .append("  011 compositeMetadata=").append(compositeMetadata).append(",\n").append("  012 compositeSeekThreshold=")
-                        .append(compositeSeekThreshold).append(",\n").append("  013 returnType=").append(returnType).append(",\n")
-                        .append("  014 documentSerializer=").append(documentSerializer).append(",\n").append("  015 reducedResponse=").append(reducedResponse)
-                        .append(",\n").append("  016 fullTableScanOnly=").append(fullTableScanOnly).append(",\n").append("  017 arithmetic=").append(arithmetic)
-                        .append(",\n").append("  018 projectResults=").append(projectResults).append(",\n").append("  019 useAllowListedFields=")
-                        .append(useAllowListedFields).append(",\n").append("  020 allowListedFields=").append(allowListedFields).append(",\n")
-                        .append("  021 useDisallowListedFields=").append(useDisallowListedFields).append(",\n").append("  022 disallowListedFields=")
-                        .append(disallowListedFields).append(",\n").append("  023 limitFieldsMap=").append(limitFieldsMap).append(",\n")
-                        .append("  024 matchingFieldSets=").append(matchingFieldSets).append(",\n").append("  025 limitFieldsPreQueryEvaluation=")
-                        .append(limitFieldsPreQueryEvaluation).append(",\n").append("  026 limitFieldsField='").append(limitFieldsField).append("',\n")
-                        .append("  027 groupFields=").append(groupFields).append(",\n").append("  028 groupFieldsBatchSize=").append(groupFieldsBatchSize)
-                        .append(",\n").append("  029 uniqueFields=").append(uniqueFields).append(",\n").append("  030 uniqueCacheBufferSize=")
-                        .append(uniqueCacheBufferSize).append(",\n").append("  031 hitsOnlySet=").append(hitsOnlySet).append(",\n")
-                        .append("  032 getDocumentKey=").append(getDocumentKey).append(",\n").append("  033 fiAggregator=").append(fiAggregator).append(",\n")
-                        .append("  034 equality=").append(equality).append(",\n").append("  035 evaluationFilter=").append(evaluationFilter).append(",\n")
-                        .append("  036 maxEvaluationPipelines=").append(maxEvaluationPipelines).append(",\n").append("  037 maxPipelineCachedResults=")
-                        .append(maxPipelineCachedResults).append(",\n").append("  038 indexOnlyFields=").append(indexOnlyFields).append(",\n")
-                        .append("  039 indexedFields=").append(indexedFields).append(",\n").append("  040 ignoreColumnFamilies=").append(ignoreColumnFamilies)
-                        .append(",\n").append("  041 includeGroupingContext=").append(includeGroupingContext).append(",\n")
-                        .append("  042 documentPermutationClasses=").append(documentPermutationClasses).append(",\n").append("  043 documentPermutations=")
-                        .append(documentPermutations).append(",\n").append("  044 startTime=").append(startTime).append(",\n").append("  045 endTime=")
-                        .append(endTime).append(",\n").append("  046 timeFilter=").append(timeFilter).append(",\n").append("  047 filterMaskedValues=")
-                        .append(filterMaskedValues).append(",\n").append("  048 includeRecordId=").append(includeRecordId).append(",\n")
-                        .append("  049 includeDatatype=").append(includeDatatype).append(",\n").append("  050 includeHierarchyFields=")
-                        .append(includeHierarchyFields).append(",\n").append("  051 datatypeKey='").append(datatypeKey).append("',\n")
-                        .append("  052 containsIndexOnlyTerms=").append(containsIndexOnlyTerms).append(",\n").append("  053 mustUseFieldIndex=")
-                        .append(mustUseFieldIndex).append(",\n").append("  054 allowFieldIndexEvaluation=").append(allowFieldIndexEvaluation).append(",\n")
-                        .append("  055 allowTermFrequencyLookup=").append(allowTermFrequencyLookup).append(",\n").append("  056 hdfsSiteConfigURLs='")
-                        .append(hdfsSiteConfigURLs).append("',\n").append("  057 hdfsFileCompressionCodec='").append(hdfsFileCompressionCodec).append("',\n")
-                        .append("  058 fsCache=").append(fsCache).append(",\n").append("  059 zookeeperConfig='").append(zookeeperConfig).append("',\n")
-                        .append("  060 ivaratorCacheDirConfigs=").append(ivaratorCacheDirConfigs).append(",\n")
-                        .append("  061 ivaratorCacheScanPersistThreshold=").append(ivaratorCacheScanPersistThreshold).append(",\n")
-                        .append("  062 ivaratorCacheScanTimeout=").append(ivaratorCacheScanTimeout).append(",\n").append("  063 ivaratorCacheBufferSize=")
-                        .append(ivaratorCacheBufferSize).append(",\n").append("  064 resultTimeout=").append(resultTimeout).append(",\n")
-                        .append("  065 maxIndexRangeSplit=").append(maxIndexRangeSplit).append(",\n").append("  066 ivaratorMaxOpenFiles=")
-                        .append(ivaratorMaxOpenFiles).append(",\n").append("  067 ivaratorNumRetries=").append(ivaratorNumRetries).append(",\n")
-                        .append("  068 ivaratorPersistOptions=").append(ivaratorPersistOptions).append(",\n").append("  069 maxIvaratorSources=")
-                        .append(maxIvaratorSources).append(",\n").append("  070 maxIvaratorSourceWait=").append(maxIvaratorSourceWait).append(",\n")
-                        .append("  071 maxIvaratorResults=").append(maxIvaratorResults).append(",\n").append("  072 yieldThresholdMs=").append(yieldThresholdMs)
-                        .append(",\n").append("  073 fieldIndexKeyDataTypeFilter=").append(fieldIndexKeyDataTypeFilter).append(",\n")
-                        .append("  074 eventEntryKeyDataTypeFilter=").append(eventEntryKeyDataTypeFilter).append(",\n")
-                        .append("  075 postProcessingFunctions='").append(postProcessingFunctions).append("',\n").append("  076 nonIndexedDataTypeMap=")
-                        .append(nonIndexedDataTypeMap).append(",\n").append("  077 termFrequenciesRequired=").append(termFrequenciesRequired).append(",\n")
-                        .append("  078 termFrequencyFields=").append(termFrequencyFields).append(",\n").append("  079 contentExpansionFields=")
-                        .append(contentExpansionFields).append(",\n").append("  080 compressResults=").append(compressResults).append(",\n")
-                        .append("  081 compressedMappings=").append(compressedMappings).append(",\n").append("  082 sortedUIDs=").append(sortedUIDs)
-                        .append(",\n").append("  083 collectTimingDetails=").append(collectTimingDetails).append(",\n").append("  084 statsdHostAndPort='")
-                        .append(statsdHostAndPort).append("',\n").append("  085 statsdMaxQueueSize=").append(statsdMaxQueueSize).append(",\n")
-                        .append("  086 statsdClient=").append(statsdClient).append(",\n").append("  087 serialEvaluationPipeline=")
-                        .append(serialEvaluationPipeline).append(",\n").append("  088 metadataTableName='").append(metadataTableName).append("',\n")
-                        .append("  089 dateIndexTimeTravel=").append(dateIndexTimeTravel).append(",\n").append("  090 debugMultithreadedSources=")
-                        .append(debugMultithreadedSources).append(",\n").append("  091 trackSizes=").append(trackSizes).append(",\n")
-                        .append("  092 activeQueryLogName='").append(activeQueryLogName).append("',\n").append("  093 excerptFields=").append(excerptFields)
-                        .append(",\n").append("  094 excerptFieldsNoHitCallout=").append(excerptFieldsNoHitCallout).append(",\n")
-                        .append("  095 excerptIterator=").append(excerptIterator).append(",\n").append("  096 fiFieldSeek=").append(fiFieldSeek).append(",\n")
-                        .append("  097 fiNextSeek=").append(fiNextSeek).append(",\n").append("  098 eventFieldSeek=").append(eventFieldSeek).append(",\n")
-                        .append("  099 eventNextSeek=").append(eventNextSeek).append(",\n").append("  100 tfFieldSeek=").append(tfFieldSeek).append(",\n")
-                        .append("  101 tfNextSeek=").append(tfNextSeek).append(",\n").append("  102 docAggregationThresholdMs=")
-                        .append(docAggregationThresholdMs).append(",\n").append("  103 tfAggregationThresholdMs=").append(tfAggregationThresholdMs)
-                        .append(",\n").append("  104 fieldCounts=").append(fieldCounts).append(",\n").append("  105 termCounts=").append(termCounts)
-                        .append(",\n").append("  106 mapSerDe=").append(mapSerDe).append("\n").append('}');
-        return s.toString();
-
     }
 
     private void setSerialEvaluationPipeline(boolean serialEvaluationPipeline) {
@@ -2419,7 +2305,7 @@ public class QueryOptions implements OptionDescriber {
         defaultOptions.putDefaultValue(QueryOptions.FIELD_COUNTS, fieldCounts);
         defaultOptions.putDefaultValue(QueryOptions.TERM_COUNTS, termCounts);
         defaultOptions.putDefaultValue(QueryOptions.FILTER_MASKED_VALUES, filterMaskedValues);
-        defaultOptions.putDefaultValue(QueryOptions.INCLUDE_DATATYPE, includeDatatype));
+        defaultOptions.putDefaultValue(QueryOptions.INCLUDE_DATATYPE, includeDatatype);
         defaultOptions.putDefaultValue(QueryOptions.INCLUDE_RECORD_ID, queryOptions.isIncludeRecordId());
         defaultOptions.putDefaultValue(QueryOptions.COLLECT_TIMING_DETAILS, collectTimingDetails);
         defaultOptions.putDefaultValue(QueryOptions.STATSD_HOST_COLON_PORT, queryOptions.getStatsdHostAndPort());
@@ -2556,11 +2442,7 @@ public class QueryOptions implements OptionDescriber {
             addOption(setting, option, value, (v) -> ((Enum<?>) v).name(), allowBlankValues);
         } else {
             addOption(setting, option, value, (v) -> v.toString(), allowBlankValues);
-        }
-            addOption(setting, option, value, (v) -> v.toString(), allowBlankValues);
-        } else {
-            throw new IllegalArgumentException("Unsupported option type: " + value.getClass().getName());
-        }
+            }
         // Continue adding else branches for the different possible primitive types.
     }
     
@@ -2585,16 +2467,16 @@ public class QueryOptions implements OptionDescriber {
     protected static class DefaultOptions {
         
         protected Map<String, Object> defaultValues = new HashMap<>();
-        
-        protected void putDefaultValue(String option, Object value) {
+
+        public void putDefaultValue(String option, Object value) {
             defaultValues.put(option, value);
         }
-        
-        protected boolean hasDefaultValue(String option) {
+
+        public boolean hasDefaultValue(String option) {
             return defaultValues.containsKey(option);
         }
-        
-        protected boolean equalsDefaultValue(String option, Object value) {
+
+        public boolean equalsDefaultValue(String option, Object value) {
             if (hasDefaultValue(option)) {
                 return Objects.equals(defaultValues.get(option), value);
             }

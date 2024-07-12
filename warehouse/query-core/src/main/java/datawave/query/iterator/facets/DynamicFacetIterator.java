@@ -12,6 +12,8 @@ import java.util.SortedSet;
 
 import javax.annotation.Nullable;
 
+import datawave.query.ancestor.AncestorQueryIterator;
+import datawave.query.iterator.QueryOptions;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -282,5 +284,4 @@ public class DynamicFacetIterator extends FieldIndexOnlyQueryIterator {
         }
         return fiAggregator;
     }
-
 }

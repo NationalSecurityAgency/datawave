@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import datawave.query.iterator.QueryOptions;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
@@ -310,5 +311,13 @@ public class AncestorQueryIterator extends QueryIterator {
             equality = new AncestorEquality();
         }
         return equality;
+    }
+
+    @Override
+    protected DefaultOptions createDefaultOptions(){
+        AncestorQueryIterator ancestorQueryIterator = new AncestorQueryIterator();
+        DefaultOptions defaultOptions = super.createDefaultOptions();
+        defaultOptions.putDefaultValue(QueryOptions.HIT_LIST, getArithmetic());
+        return defaultOptions;
     }
 }

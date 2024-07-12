@@ -20,6 +20,7 @@ import java.util.Set;
 
 import javax.annotation.Nullable;
 
+import datawave.query.ancestor.AncestorQueryIterator;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
