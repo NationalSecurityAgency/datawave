@@ -13,7 +13,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import datawave.query.iterator.QueryOptions;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
@@ -41,6 +40,7 @@ import datawave.query.function.JexlEvaluation;
 import datawave.query.function.RangeProvider;
 import datawave.query.iterator.NestedQueryIterator;
 import datawave.query.iterator.QueryIterator;
+import datawave.query.iterator.QueryOptions;
 import datawave.query.iterator.SourcedOptions;
 import datawave.query.iterator.logic.IndexIterator;
 import datawave.query.jexl.DatawaveJexlContext;
@@ -314,7 +314,7 @@ public class AncestorQueryIterator extends QueryIterator {
     }
 
     @Override
-    protected DefaultOptions createDefaultOptions(){
+    protected DefaultOptions createDefaultOptions() {
         AncestorQueryIterator ancestorQueryIterator = new AncestorQueryIterator();
         DefaultOptions defaultOptions = super.createDefaultOptions();
         defaultOptions.putDefaultValue(QueryOptions.HIT_LIST, getArithmetic());

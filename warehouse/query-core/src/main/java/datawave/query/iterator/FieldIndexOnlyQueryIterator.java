@@ -110,7 +110,7 @@ public class FieldIndexOnlyQueryIterator extends QueryIterator {
         }
 
         if (options.containsKey(QUERY_MAPPING_COMPRESS)) {
-            compressedMappings = evaluateBooleanOption(options.get(QUERY_MAPPING_COMPRESS));
+            compressedMappings = Boolean.parseBoolean(options.get(QUERY_MAPPING_COMPRESS));
         }
 
         this.validateTypeMetadata(options);
@@ -122,18 +122,18 @@ public class FieldIndexOnlyQueryIterator extends QueryIterator {
 
         // Boolean: should each attribute maintain a ColumnVisibility.
         if (options.containsKey(REDUCED_RESPONSE)) {
-            setReducedResponse(evaluateBooleanOption(options.get(REDUCED_RESPONSE)));
+            setReducedResponse(Boolean.parseBoolean(options.get(REDUCED_RESPONSE)));
         }
 
         this.getDocumentKey = GetStartKey.instance();
         this.mustUseFieldIndex = true;
 
         if (options.containsKey(FILTER_MASKED_VALUES)) {
-            this.filterMaskedValues = evaluateBooleanOption(options.get(FILTER_MASKED_VALUES));
+            this.filterMaskedValues = Boolean.parseBoolean(options.get(FILTER_MASKED_VALUES));
         }
 
         if (options.containsKey(INCLUDE_DATATYPE)) {
-            this.includeDatatype = evaluateBooleanOption(options.get(INCLUDE_DATATYPE));
+            this.includeDatatype = Boolean.parseBoolean(options.get(INCLUDE_DATATYPE));
             if (this.includeDatatype) {
                 this.datatypeKey = options.containsKey(DATATYPE_FIELDNAME) ? options.get(DATATYPE_FIELDNAME) : DEFAULT_DATATYPE_FIELDNAME;
             }
@@ -196,7 +196,7 @@ public class FieldIndexOnlyQueryIterator extends QueryIterator {
         this.timeFilter = new TimeFilter(this.startTime, this.endTime);
 
         if (options.containsKey(COLLECT_TIMING_DETAILS)) {
-            this.collectTimingDetails = evaluateBooleanOption(options.get(COLLECT_TIMING_DETAILS));
+            this.collectTimingDetails = Boolean.parseBoolean(options.get(COLLECT_TIMING_DETAILS));
         }
 
         return true;
