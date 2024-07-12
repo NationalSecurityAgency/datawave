@@ -2554,7 +2554,9 @@ public class QueryOptions implements OptionDescriber {
             addOption(setting, option, value, (v) -> COMMA_JOINER.join((Iterable<?>) v), allowBlankValues);
         } else if (value instanceof Enum<?>) {
             addOption(setting, option, value, (v) -> ((Enum<?>) v).name(), allowBlankValues);
-        } else if (value instanceof Object){
+        } else {
+            addOption(setting, option, value, (v) -> v.toString(), allowBlankValues);
+        }
             addOption(setting, option, value, (v) -> v.toString(), allowBlankValues);
         } else {
             throw new IllegalArgumentException("Unsupported option type: " + value.getClass().getName());
