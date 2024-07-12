@@ -1114,7 +1114,7 @@ public class QueryOptions implements OptionDescriber {
     }
 
     public void setUniqueFields(UniqueFields uniqueFields) {
-        this.uniqueFields = uniqueFields.clone();
+        this.uniqueFields = uniqueFields;
     }
 
     public Set<String> getHitsOnlySet() {
@@ -2334,7 +2334,7 @@ public class QueryOptions implements OptionDescriber {
         defaultOptions.putDefaultValue(QueryOptions.GROUP_FIELDS, queryOptions.getGroupFields());
         defaultOptions.putDefaultValue(QueryOptions.GROUP_FIELDS_BATCH_SIZE, queryOptions.getGroupFieldsBatchSize());
         defaultOptions.putDefaultValue(QueryOptions.UNIQUE_FIELDS, queryOptions.getUniqueFields());
-        defaultOptions.putDefaultValue(QueryOptions.MOST_RECENT_UNIQUE, queryOptions.getUniqueFields().isMostRecent());
+        defaultOptions.putDefaultValue(QueryOptions.MOST_RECENT_UNIQUE, queryOptions.getUniqueFields());
         defaultOptions.putDefaultValue(QueryOptions.UNIQUE_CACHE_BUFFER_SIZE, queryOptions.getUniqueCacheBufferSize());
         defaultOptions.putDefaultValue(QueryOptions.HIT_LIST, getArithmetic());
         defaultOptions.putDefaultValue(QueryOptions.DATE_INDEX_TIME_TRAVEL, queryOptions.isDateIndexTimeTravel());
