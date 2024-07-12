@@ -87,6 +87,7 @@ public class TupleToRange implements Function<Tuple2<String,IndexInfo>,Iterator<
     }
 
     /**
+     * Determine if this is a shard range
      *
      * @param shard
      *            a shard string
@@ -97,8 +98,10 @@ public class TupleToRange implements Function<Tuple2<String,IndexInfo>,Iterator<
     }
 
     /**
+     * Create Document ranges
      *
-     *
+     * @param tableName
+     *            the name of the table
      * @param queryNode
      *            a query node
      * @param shard

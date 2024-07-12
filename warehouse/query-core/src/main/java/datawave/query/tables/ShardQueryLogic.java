@@ -690,9 +690,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
     /**
      * If the configuration didn't exist, OR IT CHANGED, we need to create or update the transformers that have been added.
-     *
-     * @throws QueryException
-     *             if error happens adding transformers
      */
     private void addConfigBasedTransformers() {
         if (getConfig() != null) {
