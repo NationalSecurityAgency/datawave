@@ -2287,7 +2287,7 @@ public class QueryOptions implements OptionDescriber {
         QueryOptions queryOptions = new QueryOptions();
         DefaultOptions defaultOptions = new DefaultOptions();
         defaultOptions.putDefaultValue(QueryOptions.DISABLE_EVALUATION, queryOptions.disableEvaluation);
-        defaultOptions.putDefaultValue(QueryOptions.DISABLE_FIELD_INDEX_EVAL, !queryOptions.allowFieldIndexEvaluation); // odd wording
+        defaultOptions.putDefaultValue(QueryOptions.DISABLE_FIELD_INDEX_EVAL, queryOptions.disableFiEval);
         defaultOptions.putDefaultValue(QueryOptions.LIMIT_SOURCES, queryOptions.sourceLimit);
         defaultOptions.putDefaultValue(QueryOptions.DISABLE_DOCUMENTS_WITHOUT_EVENTS, queryOptions.disableIndexOnlyDocuments);
         defaultOptions.putDefaultValue(QueryOptions.QUERY, queryOptions.query);
