@@ -134,6 +134,7 @@ import datawave.query.jexl.visitors.PushFunctionsIntoExceededValueRanges;
 import datawave.query.jexl.visitors.PushdownLowSelectivityNodesVisitor;
 import datawave.query.jexl.visitors.PushdownMissingIndexRangeNodesVisitor;
 import datawave.query.jexl.visitors.PushdownUnexecutableNodesVisitor;
+import datawave.query.jexl.visitors.QueryFieldsVisitor;
 import datawave.query.jexl.visitors.QueryModelVisitor;
 import datawave.query.jexl.visitors.QueryOptionsFromQueryVisitor;
 import datawave.query.jexl.visitors.QueryPropertyMarkerSourceConsolidator;
@@ -2704,7 +2705,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         }
 
         if (config.isSortQueryBeforeGlobalIndex()) {
-            queryTree = OrderByCostVisitor.order((ASTJexlScript) queryTree);
+            config.setQueryTree(timedSortQueryBeforeGlobalIndex(config, getMetadataHelper()));
         }
 
         // if a simple examination of the query has not forced a full table
@@ -2789,6 +2790,20 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         }
 
         return new Tuple2<>(ranges, needsFullTable);
+    }
+
+    protected ASTJexlScript timedSortQueryBeforeGlobalIndex(ShardQueryConfiguration config, MetadataHelper metadataHelper) throws DatawaveQueryException {
+        return visitorManager.timedVisit(config.getTimers(), "SortQueryBeforeGlobalIndex", () -> {
+            Set<String> fields = QueryFieldsVisitor.parseQueryFields(config.getQueryTree(), getMetadataHelper());
+            if (!fields.isEmpty()) {
+                Set<String> datatypes = config.getDatatypeFilter();
+                Map<String,Long> counts = metadataHelper.getCountsForFieldsInDateRange(fields, datatypes, config.getBeginDate(), config.getEndDate());
+                if (!counts.isEmpty()) {
+                    return OrderByCostVisitor.orderByFieldCount(config.getQueryTree(), counts);
+                }
+            }
+            return config.getQueryTree();
+        });
     }
 
     private TypeMetadata getTypeMetadata() {
