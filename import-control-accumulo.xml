@@ -22,7 +22,7 @@
     team seperates parts of that into public api -->
     <allow class="org.apache.accumulo.core.conf.Property"/>
     <allow class="org.apache.accumulo.core.clientImpl.TabletLocator"/>
-
+    <allow class="org.apache.accumulo.core.file.keyfunctor.KeyFunctor" />
     <!-- disallow everything else coming from accumulo -->
     <disallow pkg="org.apache.accumulo"/>
 </import-control>
