@@ -532,14 +532,14 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         addOption(cfg, QueryOptions.GROUP_FIELDS, config.getGroupFields().toString(), true);
         addOption(cfg, QueryOptions.GROUP_FIELDS_BATCH_SIZE, config.getGroupFieldsBatchSizeAsString(), true);
         addOption(cfg, QueryOptions.UNIQUE_FIELDS, config.getUniqueFields().toString(), true);
-        addOption(cfg, QueryOptions.HIT_LIST, config.isHitList());
+        addOption(cfg, QueryOptions.HIT_LIST, Boolean.toString(config.isHitList()), false);
         addOption(cfg, QueryOptions.HIT_LIST, Boolean.toString(config.isHitList()), false);
         addOption(cfg, QueryOptions.TERM_FREQUENCY_FIELDS, Joiner.on(',').join(config.getQueryTermFrequencyFields()), false);
-        addOption(cfg, QueryOptions.TERM_FREQUENCIES_REQUIRED, config.isTermFrequenciesRequired());
+        addOption(cfg, QueryOptions.TERM_FREQUENCIES_REQUIRED, Boolean.toString(config.isTermFrequenciesRequired()), false);
         addOption(cfg, QueryOptions.QUERY, newQueryString, false);
         addOption(cfg, QueryOptions.QUERY_ID, config.getQuery().getId().toString(), false);
-        addOption(cfg, QueryOptions.FULL_TABLE_SCAN_ONLY, isFullTable);
-        addOption(cfg, QueryOptions.TRACK_SIZES, config.isTrackSizes());
+        addOption(cfg, QueryOptions.FULL_TABLE_SCAN_ONLY, Boolean.toString(isFullTable), false);
+        addOption(cfg, QueryOptions.TRACK_SIZES, Boolean.toString(config.isTrackSizes()), false);
         addOption(cfg, QueryOptions.ACTIVE_QUERY_LOG_NAME, config.getActiveQueryLogName(), false);
         // Set the start and end dates
         configureTypeMappings(config, cfg, metadataHelper, getCompressOptionMappings());
@@ -2144,13 +2144,13 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             IteratorSetting cfg = new IteratorSetting(config.getBaseIteratorPriority() + 40, "query", getQueryIteratorClass());
 
             addOption(cfg, Constants.RETURN_TYPE, config.getReturnType().toString(), false);
-            addOption(cfg, QueryOptions.FULL_TABLE_SCAN_ONLY, isFullTable);
+            addOption(cfg, QueryOptions.FULL_TABLE_SCAN_ONLY, Boolean.toString(isFullTable), false);
 
             if (sourceLimit > 0) {
                 addOption(cfg, QueryOptions.LIMIT_SOURCES, Long.toString(sourceLimit), false);
             }
             if (config.getCollectTimingDetails()) {
-                addOption(cfg, QueryOptions.COLLECT_TIMING_DETAILS, (true));
+                addOption(cfg, QueryOptions.COLLECT_TIMING_DETAILS, Boolean.toString((true)), false);
             }
             if (config.getSendTimingToStatsd()) {
                 addOption(cfg, QueryOptions.STATSD_HOST_COLON_PORT, config.getStatsdHost() + ':' + Integer.toString(config.getStatsdPort()), false);
@@ -2171,12 +2171,12 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             addOption(cfg, QueryOptions.IVARATOR_CACHE_BUFFER_SIZE, Integer.toString(config.getIvaratorCacheBufferSize()), false);
             addOption(cfg, QueryOptions.IVARATOR_SCAN_PERSIST_THRESHOLD, Long.toString(config.getIvaratorCacheScanPersistThreshold()), false);
             addOption(cfg, QueryOptions.IVARATOR_SCAN_TIMEOUT, Long.toString(config.getIvaratorCacheScanTimeout()), false);
-            addOption(cfg, QueryOptions.COLLECT_TIMING_DETAILS, config.getCollectTimingDetails());
+            addOption(cfg, QueryOptions.COLLECT_TIMING_DETAILS, Boolean.toString(config.getCollectTimingDetails()), false);
             addOption(cfg, QueryOptions.MAX_INDEX_RANGE_SPLIT, Integer.toString(config.getMaxFieldIndexRangeSplit()), false);
             addOption(cfg, QueryOptions.MAX_IVARATOR_OPEN_FILES, Integer.toString(config.getIvaratorMaxOpenFiles()), false);
             addOption(cfg, QueryOptions.MAX_IVARATOR_RESULTS, Long.toString(config.getMaxIvaratorResults()), false);
             addOption(cfg, QueryOptions.IVARATOR_NUM_RETRIES, Integer.toString(config.getIvaratorNumRetries()), false);
-            addOption(cfg, QueryOptions.IVARATOR_PERSIST_VERIFY, config.isIvaratorPersistVerify());
+            addOption(cfg, QueryOptions.IVARATOR_PERSIST_VERIFY, Boolean.toString(config.isIvaratorPersistVerify()), false);
             addOption(cfg, QueryOptions.IVARATOR_PERSIST_VERIFY_COUNT, Integer.toString(config.getIvaratorPersistVerifyCount()), false);
             addOption(cfg, QueryOptions.MAX_EVALUATION_PIPELINES, Integer.toString(config.getMaxEvaluationPipelines()), false);
             addOption(cfg, QueryOptions.MAX_PIPELINE_CACHED_RESULTS, Integer.toString(config.getMaxPipelineCachedResults()), false);
@@ -2187,7 +2187,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 addOption(cfg, QueryOptions.YIELD_THRESHOLD_MS, Long.toString(config.getYieldThresholdMs()), false);
             }
 
-            addOption(cfg, QueryOptions.SORTED_UIDS, config.isSortedUIDs());
+            addOption(cfg, QueryOptions.SORTED_UIDS, Boolean.toString(config.isSortedUIDs()), false);
 
             configureTypeMappings(config, cfg, metadataHelper, getCompressOptionMappings(), isPreload);
             configureAdditionalOptions(config, cfg);
@@ -2218,11 +2218,11 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             }
 
             if (config.isDebugMultithreadedSources()) {
-                addOption(cfg, QueryOptions.DEBUG_MULTITHREADED_SOURCES, config.isDebugMultithreadedSources());
+                addOption(cfg, QueryOptions.DEBUG_MULTITHREADED_SOURCES, Boolean.toString(config.isDebugMultithreadedSources()), false);
             }
 
             if (config.isLimitFieldsPreQueryEvaluation()) {
-                addOption(cfg, QueryOptions.LIMIT_FIELDS_PRE_QUERY_EVALUATION, config.isLimitFieldsPreQueryEvaluation());
+                addOption(cfg, QueryOptions.LIMIT_FIELDS_PRE_QUERY_EVALUATION, Boolean.toString(config.isLimitFieldsPreQueryEvaluation()), false);
             }
 
             if (config.getLimitFieldsField() != null) {
@@ -2363,7 +2363,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     public static void configureTypeMappings(ShardQueryConfiguration config, IteratorSetting cfg, MetadataHelper metadataHelper, boolean compressMappings,
                     boolean isPreload) throws DatawaveQueryException {
         try {
-            addOption(cfg, QueryOptions.QUERY_MAPPING_COMPRESS, compressMappings);
+            addOption(cfg, QueryOptions.QUERY_MAPPING_COMPRESS, Boolean.toString(compressMappings), false);
 
             // now lets filter the query field datatypes to those that are not
             // indexed
@@ -2401,23 +2401,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         }
     }
 
-    /**
-     * Add a boolean option to the IteratorSetting. If the value is true, the value will be changed to an empty string to save space. If the value is false, the
-     * value will be "false".
-     *
-     * @param cfg
-     *            the IteratorSetting to add the option to
-     * @param option
-     *            the option to add
-     * @param value
-     *            the value of the option
-     */
     public static void addOption(IteratorSetting cfg, String option, boolean value) {
-        if (value) {
-            cfg.addOption(option, " ");
-        } else {
-            cfg.addOption(option, "false");
-        }
+        cfg.addOption(option, Boolean.toString(value));
     }
 
     public static void addOption(IteratorSetting cfg, String option, String value, boolean allowBlankValue) {
@@ -2512,23 +2497,23 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         }
 
         // Include the option to filter masked values
-        addOption(cfg, QueryOptions.FILTER_MASKED_VALUES, config.getFilterMaskedValues());
+        addOption(cfg, QueryOptions.FILTER_MASKED_VALUES, Boolean.toString(config.getFilterMaskedValues()), false);
 
         // Include the EVENT_DATATYPE as a field
         if (config.getIncludeDataTypeAsField()) {
-            addOption(cfg, QueryOptions.INCLUDE_DATATYPE, (true));
+            addOption(cfg, QueryOptions.INCLUDE_DATATYPE, Boolean.toString((true)), false);
         }
 
         // Include the RECORD_ID as a field
         if (!config.getIncludeRecordId()) {
-            addOption(cfg, QueryOptions.INCLUDE_RECORD_ID, (false));
+            addOption(cfg, QueryOptions.INCLUDE_RECORD_ID, Boolean.toString((false)), false);
         }
 
         // Conditionally include CHILD_COUNT, DESCENDANT_COUNT, HAS_CHILDREN
         // and/or PARENT_UID fields, plus
         // various options for output and optimization
         if (config.getIncludeHierarchyFields()) {
-            addOption(cfg, QueryOptions.INCLUDE_HIERARCHY_FIELDS, (true));
+            addOption(cfg, QueryOptions.INCLUDE_HIERARCHY_FIELDS, Boolean.toString((true)), false);
             final Map<String,String> options = config.getHierarchyFieldOptions();
             if (null != options) {
                 for (final Entry<String,String> entry : config.getHierarchyFieldOptions().entrySet()) {
@@ -2553,19 +2538,19 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
         // if groupby function is used, force include.grouping.context to be true
         if (config.getGroupFields() != null && config.getGroupFields().hasGroupByFields()) {
-            addOption(cfg, QueryOptions.INCLUDE_GROUPING_CONTEXT, (true));
+            addOption(cfg, QueryOptions.INCLUDE_GROUPING_CONTEXT, Boolean.toString((true)), false);
         } else {
-            addOption(cfg, QueryOptions.INCLUDE_GROUPING_CONTEXT, config.getIncludeGroupingContext());
+            addOption(cfg, QueryOptions.INCLUDE_GROUPING_CONTEXT, Boolean.toString(config.getIncludeGroupingContext()), false);
         }
 
-        addOption(cfg, QueryOptions.REDUCED_RESPONSE, config.isReducedResponse());
-        addOption(cfg, QueryOptions.DISABLE_EVALUATION, config.isDisableEvaluation());
-        addOption(cfg, QueryOptions.DISABLE_DOCUMENTS_WITHOUT_EVENTS, config.isDisableIndexOnlyDocuments());
-        addOption(cfg, QueryOptions.CONTAINS_INDEX_ONLY_TERMS, config.isContainsIndexOnlyTerms());
-        addOption(cfg, QueryOptions.CONTAINS_COMPOSITE_TERMS, config.isContainsCompositeTerms());
-        addOption(cfg, QueryOptions.ALLOW_FIELD_INDEX_EVALUATION, config.isAllowFieldIndexEvaluation());
-        addOption(cfg, QueryOptions.ALLOW_TERM_FREQUENCY_LOOKUP, config.isAllowTermFrequencyLookup());
-        addOption(cfg, QueryOptions.COMPRESS_SERVER_SIDE_RESULTS, config.isCompressServerSideResults());
+        addOption(cfg, QueryOptions.REDUCED_RESPONSE, Boolean.toString(config.isReducedResponse()), false);
+        addOption(cfg, QueryOptions.DISABLE_EVALUATION, Boolean.toString(config.isDisableEvaluation()), false);
+        addOption(cfg, QueryOptions.DISABLE_DOCUMENTS_WITHOUT_EVENTS, Boolean.toString(config.isDisableIndexOnlyDocuments()), false);
+        addOption(cfg, QueryOptions.CONTAINS_INDEX_ONLY_TERMS, Boolean.toString(config.isContainsIndexOnlyTerms()), false);
+        addOption(cfg, QueryOptions.CONTAINS_COMPOSITE_TERMS, Boolean.toString(config.isContainsCompositeTerms()), false);
+        addOption(cfg, QueryOptions.ALLOW_FIELD_INDEX_EVALUATION, Boolean.toString(config.isAllowFieldIndexEvaluation()), false);
+        addOption(cfg, QueryOptions.ALLOW_TERM_FREQUENCY_LOOKUP, Boolean.toString(config.isAllowTermFrequencyLookup()), false);
+        addOption(cfg, QueryOptions.COMPRESS_SERVER_SIDE_RESULTS, Boolean.toString(config.isCompressServerSideResults()), false);
     }
 
     /**
