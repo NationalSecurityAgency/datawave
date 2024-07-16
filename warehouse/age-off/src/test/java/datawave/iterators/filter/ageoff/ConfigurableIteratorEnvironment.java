@@ -91,7 +91,11 @@ public class ConfigurableIteratorEnvironment implements IteratorEnvironment {
 
             @Override
             public Configuration getConfiguration() {
-                return null;
+                if (conf != null) {
+                    return new ConfigurationImpl(conf);
+                } else {
+                    return null;
+                }
             }
 
             @Override
