@@ -182,6 +182,9 @@ jobs:
           USER_NAME: ${{ secrets.USER_NAME }}
           ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
         run: |
+          # checkout the most recent commit for each submodule
+          git submodule foreach 'git checkout origin/main || :'
+          
           # update datawave dependencies to use the latest snapshots
           mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -B -V -e versions:update-properties versions:update-parent -DallowSnapshots=true -Dincludes=gov.nsa.*
           
