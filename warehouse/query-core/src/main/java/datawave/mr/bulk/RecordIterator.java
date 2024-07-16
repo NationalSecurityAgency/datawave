@@ -176,11 +176,6 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
         }
 
         @Override
-        public AccumuloConfiguration getConfig() {
-            return conf;
-        }
-
-        @Override
         public IteratorScope getIteratorScope() {
             return IteratorScope.scan;
         }
@@ -212,11 +207,6 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
 
         @Override
         public SamplerConfiguration getSamplerConfiguration() {
-            return null;
-        }
-
-        @Override
-        public ServiceEnvironment getServiceEnv() {
             return null;
         }
 

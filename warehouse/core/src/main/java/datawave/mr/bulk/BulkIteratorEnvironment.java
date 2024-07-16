@@ -26,11 +26,6 @@ public class BulkIteratorEnvironment implements IteratorEnvironment {
     }
 
     @Override
-    public AccumuloConfiguration getConfig() {
-        return conf;
-    }
-
-    @Override
     public IteratorScope getIteratorScope() {
         return scope;
     }
@@ -42,11 +37,6 @@ public class BulkIteratorEnvironment implements IteratorEnvironment {
 
     @Override
     public boolean isUserCompaction() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void registerSideChannel(SortedKeyValueIterator<Key,Value> iter) {
         throw new UnsupportedOperationException();
     }
 
@@ -67,17 +57,6 @@ public class BulkIteratorEnvironment implements IteratorEnvironment {
 
     @Override
     public SamplerConfiguration getSamplerConfiguration() {
-        return null;
-    }
-
-    @Override
-    public SortedKeyValueIterator<Key,Value> reserveMapFileReader(String mapFileName) throws IOException {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public ServiceEnvironment getServiceEnv() {
         return null;
     }
 

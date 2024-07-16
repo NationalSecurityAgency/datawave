@@ -36,19 +36,19 @@ import org.junit.Test;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.ingest.protobuf.Uid;
-import datawave.query.iterator.SourceManagerTest;
 
 public class DiscoveryIteratorTest {
     static final Logger log = Logger.getLogger(DiscoveryIteratorTest.class);
 
     @Test
     public void testHappyPath() throws Throwable {
-        Connector con = new InMemoryInstance("DiscoveryIteratorTest").getConnector("root", new PasswordToken(""));
-        con.tableOperations().create("index");
-        writeSample(con.createBatchWriter("index", new BatchWriterConfig().setMaxLatency(0, TimeUnit.SECONDS).setMaxMemory(0).setMaxWriteThreads(1)));
-        Scanner s = con.createScanner("index", new Authorizations("FOO"));
+        InMemoryAccumuloClient client = new InMemoryAccumuloClient("root", new InMemoryInstance("DiscoveryIteratorTest"));
+        client.tableOperations().create("index");
+        writeSample(client.createBatchWriter("index", new BatchWriterConfig().setMaxLatency(0, TimeUnit.SECONDS).setMaxMemory(0).setMaxWriteThreads(1)));
+        Scanner s = client.createScanner("index", new Authorizations("FOO"));
         s.addScanIterator(new IteratorSetting(50, DiscoveryIterator.class));
         s.setRange(new Range());
 
@@ -203,11 +203,11 @@ public class DiscoveryIteratorTest {
 
     @Test
     public void testReverseIndex() throws Throwable {
-        Connector con = new InMemoryInstance("DiscoveryIteratorTest").getConnector("root", new PasswordToken(""));
-        con.tableOperations().create("reverseIndex");
-        writeSample(con.createBatchWriter("reverseIndex", new BatchWriterConfig().setMaxLatency(0, TimeUnit.SECONDS).setMaxMemory(0).setMaxWriteThreads(1)),
+        InMemoryAccumuloClient client = new InMemoryAccumuloClient("root", new InMemoryInstance("DiscoveryIteratorTest"));
+        client.tableOperations().create("reverseIndex");
+        writeSample(client.createBatchWriter("reverseIndex", new BatchWriterConfig().setMaxLatency(0, TimeUnit.SECONDS).setMaxMemory(0).setMaxWriteThreads(1)),
                         true);
-        Scanner s = con.createScanner("reverseIndex", new Authorizations("FOO"));
+        Scanner s = client.createScanner("reverseIndex", new Authorizations("FOO"));
         IteratorSetting setting = new IteratorSetting(50, DiscoveryIterator.class);
         setting.addOption(DiscoveryLogic.REVERSE_INDEX, "true");
         s.addScanIterator(setting);
