@@ -228,12 +228,6 @@ jobs:
           cd docker
           docker compose logs
 
-      - name: Docker Compose Cleanup
-        if: always()
-        run: |
-          cd docker
-          docker compose down -v --remove-orphans
-
     # Here's an example of how you'd deploy the image to the github package registry.
     # We don't want to do this by default since packages on github cannot be deleted
     # or overwritten. So this could only be done for tags, however it seems the quickstart
