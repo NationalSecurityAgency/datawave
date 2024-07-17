@@ -68,24 +68,8 @@ public class FileSerializableSortedSet<E extends Serializable> extends FileSorte
      * @param persisted
      *            persisted boolean flag
      */
-    public FileSerializableSortedSet(Comparator<E> comparator, TypedSortedSetFileHandler handler, boolean persisted) {
+    public FileSerializableSortedSet(Comparator<? super E> comparator, TypedSortedSetFileHandler handler, boolean persisted) {
         super(comparator, handler, new Factory(), persisted);
-    }
-
-    /**
-     * Create a persistede sorted set
-     *
-     * @param comparator
-     *            a comparator
-     * @param rewriteStrategy
-     *            rewrite strategy
-     * @param handler
-     *            a file handler
-     * @param persisted
-     *            persisted boolean flag
-     */
-    public FileSerializableSortedSet(Comparator<E> comparator, RewriteStrategy<E> rewriteStrategy, TypedSortedSetFileHandler handler, boolean persisted) {
-        super(comparator, rewriteStrategy, handler, new Factory(), persisted);
     }
 
     /**
@@ -96,7 +80,7 @@ public class FileSerializableSortedSet<E extends Serializable> extends FileSorte
      * @param handler
      *            a file handler
      */
-    public FileSerializableSortedSet(RewritableSortedSet<E> set, TypedSortedSetFileHandler handler) {
+    public FileSerializableSortedSet(SortedSet<E> set, TypedSortedSetFileHandler handler) {
         super(set, handler, new Factory());
     }
 
@@ -113,7 +97,7 @@ public class FileSerializableSortedSet<E extends Serializable> extends FileSorte
      * @throws IOException
      *             for issues with read/write
      */
-    public FileSerializableSortedSet(RewritableSortedSet<E> set, TypedSortedSetFileHandler handler, boolean persist) throws IOException {
+    public FileSerializableSortedSet(SortedSet<E> set, TypedSortedSetFileHandler handler, boolean persist) throws IOException {
         super(set, handler, new Factory(), persist);
     }
 
@@ -276,23 +260,17 @@ public class FileSerializableSortedSet<E extends Serializable> extends FileSorte
         }
 
         @Override
-        public FileSerializableSortedSet<E> newInstance(Comparator<E> comparator, SortedSetFileHandler handler, boolean persisted) {
+        public FileSerializableSortedSet<E> newInstance(Comparator<? super E> comparator, SortedSetFileHandler handler, boolean persisted) {
             return new FileSerializableSortedSet(comparator, new SerializableFileHandler(handler), persisted);
         }
 
         @Override
-        public FileSerializableSortedSet<E> newInstance(Comparator<E> comparator, RewriteStrategy<E> rewriteStrategy, SortedSetFileHandler handler,
-                        boolean persisted) {
-            return new FileSerializableSortedSet(comparator, rewriteStrategy, new SerializableFileHandler(handler), persisted);
-        }
-
-        @Override
-        public FileSerializableSortedSet<E> newInstance(RewritableSortedSet<E> set, SortedSetFileHandler handler) {
+        public FileSerializableSortedSet<E> newInstance(SortedSet<E> set, SortedSetFileHandler handler) {
             return new FileSerializableSortedSet(set, new SerializableFileHandler(handler));
         }
 
         @Override
-        public FileSerializableSortedSet<E> newInstance(RewritableSortedSet<E> set, SortedSetFileHandler handler, boolean persist) throws IOException {
+        public FileSerializableSortedSet<E> newInstance(SortedSet<E> set, SortedSetFileHandler handler, boolean persist) throws IOException {
             return new FileSerializableSortedSet(set, new SerializableFileHandler(handler), persist);
         }
     }
