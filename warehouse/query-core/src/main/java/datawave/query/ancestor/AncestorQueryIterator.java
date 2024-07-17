@@ -315,7 +315,6 @@ public class AncestorQueryIterator extends QueryIterator {
 
     @Override
     protected DefaultOptions createDefaultOptions() {
-        AncestorQueryIterator ancestorQueryIterator = new AncestorQueryIterator();
         DefaultOptions defaultOptions = super.createDefaultOptions();
         defaultOptions.putDefaultValue(QueryOptions.HIT_LIST, getArithmetic());
         return defaultOptions;
