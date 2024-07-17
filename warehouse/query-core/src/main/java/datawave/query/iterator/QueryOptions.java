@@ -2325,7 +2325,8 @@ public class QueryOptions implements OptionDescriber {
         defaultOptions.putDefaultValue(QueryOptions.IGNORE_COLUMN_FAMILIES, queryOptions.ignoreColumnFamilies);
         defaultOptions.putDefaultValue(QueryOptions.START_TIME, queryOptions.startTime);
         defaultOptions.putDefaultValue(QueryOptions.END_TIME, queryOptions.endTime);
-        defaultOptions.putDefaultValue(QueryOptions.INCLUDE_GROUPING_CONTEXT, queryOptions.includeGroupingContext || (queryOptions.groupFields != null && queryOptions.groupFields.hasGroupByFields()));
+        defaultOptions.putDefaultValue(QueryOptions.INCLUDE_GROUPING_CONTEXT,
+                        queryOptions.includeGroupingContext || (queryOptions.groupFields != null && queryOptions.groupFields.hasGroupByFields()));
         defaultOptions.putDefaultValue(QueryOptions.DOCUMENT_PERMUTATION_CLASSES, queryOptions.documentPermutationClasses);
         defaultOptions.putDefaultValue(QueryOptions.LIMIT_FIELDS, queryOptions.limitFieldsMap);
         defaultOptions.putDefaultValue(QueryOptions.MATCHING_FIELD_SETS, queryOptions.matchingFieldSets);
