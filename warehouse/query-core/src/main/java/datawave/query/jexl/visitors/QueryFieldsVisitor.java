@@ -88,7 +88,9 @@ public class QueryFieldsVisitor extends BaseVisitor {
 
     private Object parseSingleField(JexlNode node, Object data) {
         String field = JexlASTHelper.getIdentifier(node);
-        ((Set<String>) data).add(field);
+        if (field != null) {
+            ((Set<String>) data).add(field);
+        }
         return data;
     }
 
