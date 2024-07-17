@@ -574,8 +574,10 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         Multimap<String,NormalizedContentInterface> mSink = null;
 
         for (EdgeDefinition edgeDef : edgeDefs) {
-            arithmetic.clearMatchingGroups();
+            arithmetic.clear();
             Map<String,Set<String>> matchingGroups = new HashMap<>();
+            Map<String,Set<String>> excludedGroups = new HashMap<>();
+
             String jexlPreconditions = null;
 
             // don't bother evaluating preconditions if we know this event doesn't have the necessary fields for this edge
@@ -612,8 +614,18 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
 
                     } else {
                         matchingGroups = arithmetic.getMatchingGroups();
+                        excludedGroups = arithmetic.getExcludedGroups();
+
+                        for (Entry excluded : excludedGroups.entrySet()) {
+                            matchingGroups.remove(excluded.getKey(), excluded.getValue());
+                        }
+
                         if (log.isTraceEnabled()) {
                             log.trace("Time to evaluate event(+): " + (System.currentTimeMillis() - start) + "ms.");
+                        }
+
+                        if (edgeDef.isGroupAware() && matchingGroups.size() == 0) {
+                            continue;
                         }
 
                     }
