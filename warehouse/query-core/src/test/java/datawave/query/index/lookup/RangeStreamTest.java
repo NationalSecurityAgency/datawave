@@ -422,7 +422,6 @@ public class RangeStreamTest {
     public void setupTest() {
         config = new ShardQueryConfiguration();
         config.setClient(client);
-        config.setShardsPerDayThreshold(20);
     }
 
     @Test
@@ -1197,8 +1196,6 @@ public class RangeStreamTest {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
         config.setBeginDate(sdf.parse("20190314"));
         config.setEndDate(sdf.parse("20190315"));
-        config.setShardsPerDayThreshold(3);
-
         config.setDatatypeFilter(Sets.newHashSet("datatype1", "datatype2"));
 
         Multimap<String,Type<?>> dataTypes = HashMultimap.create();
@@ -1212,8 +1209,9 @@ public class RangeStreamTest {
         helper.setIndexedFields(dataTypes.keySet());
         helper.addFields(Arrays.asList("FOO", "LAUGH"));
 
+        // "20190314_10" never actually hit
         Set<Range> expectedRanges = Sets.newHashSet();
-        for (String shard : Arrays.asList("20190314_0", "20190314_1", "20190314_10", "20190314_100", "20190314_9")) {
+        for (String shard : Arrays.asList("20190314_0", "20190314_1", "20190314_100", "20190314_9")) {
             expectedRanges.add(makeShardedRange(shard));
         }
 
@@ -1523,27 +1521,15 @@ public class RangeStreamTest {
 
         config.setQueryFieldsDatatypes(dataTypes);
         config.setIndexedFields(dataTypes);
-        config.setShardsPerDayThreshold(0); // set to zero to roll up to day ranges
 
         MockMetadataHelper helper = new MockMetadataHelper();
         helper.setIndexedFields(dataTypes.keySet());
 
-        Range range1 = makeShardedRange("20190310_21");
-        // Fun story. It's hard to roll up to a day range when you seek most of the way through the day and don't have all the shards for the day.
-        Range range2 = makeShardedRange("20190315_51");
-        Set<Range> expectedRanges = Sets.newHashSet(range1, range2);
-
         RangeStream rangeStream = getRangeStream(helper);
         rangeStream.setLimitScanners(true);
         CloseableIterable<QueryPlan> queryPlans = rangeStream.streamPlans(script);
-        assertEquals(IndexStream.StreamContext.PRESENT, rangeStream.context());
-        for (QueryPlan queryPlan : queryPlans) {
-            Iterable<Range> ranges = queryPlan.getRanges();
-            for (Range range : ranges) {
-                assertTrue("Tried to remove unexpected range " + range.toString() + "\nfrom expected ranges: " + expectedRanges, expectedRanges.remove(range));
-            }
-        }
-        assertTrue("Expected ranges not found in query plan: " + expectedRanges, expectedRanges.isEmpty());
+        assertEquals(IndexStream.StreamContext.ABSENT, rangeStream.context());
+        assertFalse(queryPlans.iterator().hasNext());
     }
 
     private RangeStream getRangeStream(MetadataHelper helper) {

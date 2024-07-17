@@ -203,8 +203,7 @@ public class RangeStreamScannerTest {
 
         int priority = 50; // Iterator priority
 
-        RangeStreamScanner scanSession = scannerFactory.newRangeScanner(config.getIndexTableName(), config.getAuthorizations(), config.getQuery(),
-                        config.getShardsPerDayThreshold());
+        RangeStreamScanner scanSession = scannerFactory.newRangeScanner(config.getIndexTableName(), config.getAuthorizations(), config.getQuery());
 
         scanSession.setMaxResults(config.getMaxIndexBatchSize());
         scanSession.setExecutor(streamExecutor);
@@ -344,7 +343,6 @@ public class RangeStreamScannerTest {
         // Construct a ScannerStream from RangeStreamScanner, iterator, entry parser.
         RangeStreamScanner rangeStreamScanner = buildRangeStreamScanner(fieldName, fieldValue);
         EntryParser entryParser = new EntryParser(eqNode, fieldName, fieldValue, config.getIndexedFields());
-        // Iterator<ImmutablePair<String,IndexInfo>> iterator = Iterators.transform(rangeStreamScanner, entryParser);
         ScannerStream scannerStream = ScannerStream.initialized(rangeStreamScanner, entryParser, eqNode);
 
         // Assert the iterator correctly iterates over the iterables without irritating the unit test.
@@ -358,8 +356,8 @@ public class RangeStreamScannerTest {
             documentCount += entry.second().count();
         }
         // A single range with a count of -1 means the shard ranges were collapsed into a day range.
-        assertEquals(1, shardCount);
-        assertEquals(-1, documentCount);
+        assertEquals(15, shardCount);
+        assertEquals(375, documentCount);
         assertFalse(scannerStream.hasNext());
     }
 
@@ -370,8 +368,7 @@ public class RangeStreamScannerTest {
     public void testGetDay() throws Exception {
         // Build RangeStreamScanner
         ScannerFactory scanners = new ScannerFactory(config);
-        RangeStreamScanner rangeStreamScanner = scanners.newRangeScanner(config.getIndexTableName(), config.getAuthorizations(), config.getQuery(),
-                        config.getShardsPerDayThreshold());
+        RangeStreamScanner rangeStreamScanner = scanners.newRangeScanner(config.getIndexTableName(), config.getAuthorizations(), config.getQuery());
 
         Key key = new Key("row".getBytes(), "cf".getBytes(), "20190314".getBytes());
         String expectedDay = "20190314";

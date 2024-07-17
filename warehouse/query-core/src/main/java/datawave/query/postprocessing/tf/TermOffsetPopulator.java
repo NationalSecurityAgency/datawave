@@ -40,7 +40,6 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import datawave.core.iterators.TermFrequencyIterator;
 import datawave.core.query.postprocessing.tf.Function;
 import datawave.core.query.postprocessing.tf.FunctionReferenceVisitor;
-import datawave.data.type.Type;
 import datawave.ingest.protobuf.TermWeight;
 import datawave.ingest.protobuf.TermWeightPosition;
 import datawave.query.Constants;
@@ -245,25 +244,6 @@ public class TermOffsetPopulator {
     }
 
     /**
-     * @deprecated because the term frequency values are already normalized in the query
-     *             <p>
-     *             Get the list of content function fields to normalized values
-     *
-     * @param contentExpansionFields
-     *            set of content expansion fields
-     * @param dataTypes
-     *            map of datatypes
-     * @param functions
-     *            map of functions
-     * @return list of content function fields to normalized values
-     */
-    @Deprecated(since = "5.9.0", forRemoval = true)
-    public static Multimap<String,String> getContentFieldValues(Set<String> contentExpansionFields, Multimap<String,Class<? extends Type<?>>> dataTypes,
-                    Multimap<String,Function> functions) {
-        return getContentFieldValues(contentExpansionFields, functions);
-    }
-
-    /**
      * Get the fields and values from the content functions
      *
      * @param contentExpansionFields
@@ -310,31 +290,6 @@ public class TermOffsetPopulator {
         return contentFieldValues;
     }
 
-    /**
-     * @deprecated because the datatype normalization is no longer required
-     *             <p>
-     *             A method to get the list of fields and values for which term frequencies need to be gathered. ASSUMPTION: The query planner (@see
-     *             DefaultQueryPlanner) has: 1) expanded the content functions into the query 2) the values in the query have already been normalized
-     *             appropriately 3) the query has been reduced to those values actually in the index The query is scraped for content functions from which a
-     *             list of zones to normalized values is determined (the contentExpansionFields are used for unfielded content functions). The list of fields to
-     *             values as a subset of the term frequency fields is gathered. The intersection of those two sets are returned.
-     *
-     * @param dataTypes
-     *            map of datatypes
-     * @param contentExpansionFields
-     *            set of content expansion fields
-     * @param query
-     *            the query script
-     * @param termFrequencyFields
-     *            set of term frequency fields
-     * @return list of fields and values for which term frequencies need to be gathered
-     */
-    @Deprecated(since = "5.9.0", forRemoval = true)
-    public static Multimap<String,String> getTermFrequencyFieldValues(ASTJexlScript query, Set<String> contentExpansionFields, Set<String> termFrequencyFields,
-                    Multimap<String,Class<? extends Type<?>>> dataTypes) {
-        return getTermFrequencyFieldValues(query, contentExpansionFields, termFrequencyFields);
-    }
-
     public static Multimap<String,String> getTermFrequencyFieldValues(ASTJexlScript query, Set<String> contentExpansionFields,
                     Set<String> termFrequencyFields) {
         Multimap<String,Function> functions = TermOffsetPopulator.getContentFunctions(query);
@@ -350,24 +305,6 @@ public class TermOffsetPopulator {
             }
         }
         return HashMultimap.create();
-    }
-
-    /**
-     * @deprecated in 5.9.0 because the datatypes multimap is not necessary for term frequency aggregation
-     * @param functions
-     *            a multimap of functions
-     * @param contentExpansionFields
-     *            the content expansion fields
-     * @param queryFieldValues
-     *            the query field values
-     * @param dataTypes
-     *            a multimap of datatypes
-     * @return term frequency fields and values
-     */
-    @Deprecated(since = "5.9.0", forRemoval = true)
-    public static Multimap<String,String> getTermFrequencyFieldValues(Multimap<String,Function> functions, Set<String> contentExpansionFields,
-                    Multimap<String,String> queryFieldValues, Multimap<String,Class<? extends Type<?>>> dataTypes) {
-        return getTermFrequencyFieldValues(functions, contentExpansionFields, queryFieldValues);
     }
 
     public static Multimap<String,String> getTermFrequencyFieldValues(Multimap<String,Function> functions, Set<String> contentExpansionFields,
