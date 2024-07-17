@@ -1,6 +1,5 @@
 package datawave.query.jexl.functions;
 
-import static datawave.query.jexl.functions.QueryFunctions.INCLUDE_TEXT;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.BOUNDED_RANGE;
 
 import java.util.Arrays;
@@ -72,7 +71,7 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
                 case QueryFunctions.MATCH_REGEX:
                     // Return an index query.
                     return getIndexQuery();
-                case INCLUDE_TEXT:
+                case QueryFunctions.INCLUDE_TEXT:
                     // Return the appropriate index query.
                     return getTextIndexQuery();
                 default:
@@ -131,7 +130,7 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
         @Override
         public Set<String> fieldsForNormalization(MetadataHelper helper, Set<String> datatypeFilter, int arg) {
             // Do not normalize fields for the includeText function.
-            if (!name.equalsIgnoreCase(INCLUDE_TEXT)) {
+            if (!name.equalsIgnoreCase(QueryFunctions.INCLUDE_TEXT)) {
                 // All other functions use the fields in the first argument for normalization.
                 if (arg > 0) {
                     return fields(helper, datatypeFilter);
@@ -159,7 +158,7 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
                         fields.addAll(JexlASTHelper.getIdentifierNames(arg));
                     }
                     break;
-                case INCLUDE_TEXT:
+                case QueryFunctions.INCLUDE_TEXT:
                     if (args.size() == 2) {
                         fields.addAll(JexlASTHelper.getIdentifierNames(args.get(0)));
                     } else {
@@ -263,7 +262,7 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
             case QueryFunctions.GROUPBY_FUNCTION:
             case QueryFunctions.EXCERPT_FIELDS_FUNCTION:
             case QueryFunctions.MATCH_REGEX:
-            case INCLUDE_TEXT:
+            case QueryFunctions.INCLUDE_TEXT:
             case QueryFunctions.NO_EXPANSION:
             case QueryFunctions.LENIENT_FIELDS_FUNCTION:
             case QueryFunctions.STRICT_FIELDS_FUNCTION:
