@@ -4,6 +4,7 @@ import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.BOUNDED_R
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -14,11 +15,13 @@ import org.apache.commons.jexl3.parser.ASTFunctionNode;
 import org.apache.commons.jexl3.parser.ASTGENode;
 import org.apache.commons.jexl3.parser.ASTIdentifier;
 import org.apache.commons.jexl3.parser.ASTLENode;
+import org.apache.commons.jexl3.parser.ASTStringLiteral;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.commons.jexl3.parser.ParserTreeConstants;
 
 import datawave.query.attributes.AttributeFactory;
+import datawave.query.attributes.UniqueFields;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.ArithmeticJexlEngines;
 import datawave.query.jexl.JexlASTHelper;
@@ -34,14 +37,14 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
 
     public static final String BETWEEN = "between";
     public static final String LENGTH = "length";
-    public static final String INCLUDE_TEXT = "includeText";
 
     /**
      * This is the argument descriptor which can be used to normalize and optimize function node queries
      */
     public static class QueryJexlArgumentDescriptor implements JexlArgumentDescriptor {
         private final ASTFunctionNode node;
-        private final String namespace, name;
+        private final String namespace;
+        private final String name;
         private final List<JexlNode> args;
 
         public QueryJexlArgumentDescriptor(ASTFunctionNode node, String namespace, String name, List<JexlNode> args) {
@@ -68,7 +71,7 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
                 case QueryFunctions.MATCH_REGEX:
                     // Return an index query.
                     return getIndexQuery();
-                case INCLUDE_TEXT:
+                case QueryFunctions.INCLUDE_TEXT:
                     // Return the appropriate index query.
                     return getTextIndexQuery();
                 default:
@@ -127,7 +130,7 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
         @Override
         public Set<String> fieldsForNormalization(MetadataHelper helper, Set<String> datatypeFilter, int arg) {
             // Do not normalize fields for the includeText function.
-            if (!name.equalsIgnoreCase(INCLUDE_TEXT)) {
+            if (!name.equalsIgnoreCase(QueryFunctions.INCLUDE_TEXT)) {
                 // All other functions use the fields in the first argument for normalization.
                 if (arg > 0) {
                     return fields(helper, datatypeFilter);
@@ -138,12 +141,63 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
 
         @Override
         public Set<String> fields(MetadataHelper helper, Set<String> datatypeFilter) {
-            return JexlASTHelper.getIdentifierNames(args.get(0));
+            Set<String> fields = new HashSet<>();
+            switch (name) {
+                case QueryFunctions.COUNT:
+                case QueryFunctions.SUM:
+                case QueryFunctions.MIN:
+                case QueryFunctions.MAX:
+                case QueryFunctions.AVERAGE:
+                case QueryFunctions.GROUPBY_FUNCTION:
+                case QueryFunctions.NO_EXPANSION:
+                case QueryFunctions.LENIENT_FIELDS_FUNCTION:
+                case QueryFunctions.STRICT_FIELDS_FUNCTION:
+                    // In practice each of these functions should be parsed from the query
+                    // almost immediately. This implementation is added for consistency
+                    for (JexlNode arg : args) {
+                        fields.addAll(JexlASTHelper.getIdentifierNames(arg));
+                    }
+                    break;
+                case QueryFunctions.INCLUDE_TEXT:
+                    if (args.size() == 2) {
+                        fields.addAll(JexlASTHelper.getIdentifierNames(args.get(0)));
+                    } else {
+                        for (int i = 1; i < args.size(); i += 2) {
+                            fields.addAll(JexlASTHelper.getIdentifierNames(args.get(i)));
+                        }
+                    }
+                    break;
+                case QueryFunctions.UNIQUE_FUNCTION:
+                    for (JexlNode arg : args) {
+                        if (arg instanceof ASTStringLiteral) {
+                            // FIELD[GRANULARITY] is represented by an ASTStringLiteral
+                            String literal = ((ASTStringLiteral) arg).getLiteral();
+                            fields.addAll(UniqueFields.from(literal).getFields());
+                        } else {
+                            // otherwise it's just an ASTIdentifier
+                            for (String identifier : JexlASTHelper.getIdentifierNames(arg)) {
+                                fields.addAll(UniqueFields.from(identifier).getFields());
+                            }
+                        }
+                    }
+                    break;
+                case QueryFunctions.MATCH_REGEX:
+                case BETWEEN:
+                case LENGTH:
+                default:
+                    fields.addAll(JexlASTHelper.getIdentifierNames(args.get(0)));
+            }
+            return fields;
         }
 
         @Override
         public Set<Set<String>> fieldSets(MetadataHelper helper, Set<String> datatypeFilter) {
-            return JexlArgumentDescriptor.Fields.product(args.get(0));
+            Set<Set<String>> fieldSet = new HashSet<>();
+            Set<String> fields = fields(helper, datatypeFilter);
+            for (String field : fields) {
+                fieldSet.add(Set.of(field));
+            }
+            return fieldSet;
         }
 
         @Override
