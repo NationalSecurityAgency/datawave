@@ -2274,7 +2274,7 @@ public class QueryOptions implements OptionDescriber {
     private static final Joiner COMMA_JOINER = Joiner.on(",").skipNulls();
 
     // Map of class strings to DefaultOptions implementations.
-    protected static Map<String,DefaultOptions> defaultOptionsMap = new HashMap<>();
+    protected static final Map<String,DefaultOptions> defaultOptionsMap = new HashMap<>();
 
     static {
         // Add an initial default options instance for QueryOptions.
