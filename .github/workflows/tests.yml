@@ -168,14 +168,8 @@ jobs:
         with:
           distribution: ${{env.JAVA_DISTRIBUTION}}
           java-version: ${{env.JAVA_VERSION}}
-      - uses: actions/cache@v3
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-build-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-maven-build-
-            ${{ runner.os }}-maven-format-
-            ${{ runner.os }}-maven-
+          maven-version: 3.9.5
+          cache: 'maven'
       # Builds the quickstart and microservice docker images and runs a query test
       - name: Docker Compose Query Tests
         env:
