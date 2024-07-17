@@ -150,6 +150,78 @@ jobs:
         TAG=$(mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -q -N -Dmaven.build.cache.enabled=false -Dexec.executable='echo' -Dexec.args='${project.version}' exec:exec)
         contrib/datawave-quickstart/docker/docker-build.sh ${TAG} --docker-opts "${DOCKER_BUILD_OPTS}"
 
+  compose-build-and-test-latest-snapshots:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Free up some space
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /usr/local/share/boost
+          sudo rm -rf $AGENT_TOOLSDIRECTORY
+      - name: Checkout Code
+        uses: actions/checkout@v3
+        with:
+          submodules: 'recursive'
+      - name: Set up JDK ${{env.JAVA_VERSION}}
+        uses: actions/setup-java@v3
+        with:
+          distribution: ${{env.JAVA_DISTRIBUTION}}
+          java-version: ${{env.JAVA_VERSION}}
+          maven-version: 3.9.5
+          cache: 'maven'
+      # Builds the quickstart and microservice docker images and runs a query test
+      - name: Docker Compose Query Tests
+        env:
+          USER_NAME: ${{ secrets.USER_NAME }}
+          ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+        run: |
+          # checkout the most recent commit for each submodule
+          git submodule foreach 'git checkout origin/main || :'
+          
+          # update datawave dependencies to use the latest snapshots
+          mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -B -V -e versions:update-properties versions:update-parent -DallowSnapshots=true -Dincludes=gov.nsa.*
+          
+          mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -B -V -e -Pcompose -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -DskipTests clean install
+          
+          # free up some space so that we don't run out
+          docker system prune -f
+          mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -B -V -e -Pcompose -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -DskipTests clean
+          
+          cd docker
+          ./bootstrap.sh
+          
+          attempt=0
+          max_attempts=20
+          while [ $attempt -lt $max_attempts ]; do
+            attempt=$((attempt+1))
+          
+            echo "Starting docker compose (Attempt ${attempt}/${max_attempts})"
+            nohup docker compose up -d --no-recreate < /dev/null > compose.out 2>&1 &
+            sleep 60s
+            cat compose.out
+          
+            # check to see if the query service is running
+            QUERY="$(docker compose ps --status running --services | grep query || true)"
+          
+            if [ "$QUERY" == "query" ] ; then
+              echo "Docker compose started successfully"
+              break
+            elif [ $attempt -eq $max_attempts ] ; then
+              echo "Failed to start docker compose"
+              exit 1
+            fi
+          done
+          
+          cd scripts
+          ./testAll.sh
+
+      - name: Dump Logs
+        if: failure()
+        run: |
+          cd docker
+          docker compose logs
+
     # Here's an example of how you'd deploy the image to the github package registry.
     # We don't want to do this by default since packages on github cannot be deleted
     # or overwritten. So this could only be done for tags, however it seems the quickstart
