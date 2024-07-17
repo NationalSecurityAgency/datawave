@@ -15,6 +15,9 @@ import datawave.attribute.EventFieldValueTuple;
 public class EdgePreconditionArithmetic extends JexlArithmetic {
 
     private Map<String,Set<String>> matchingGroups = new HashMap<>();
+    private Map<String,Set<String>> excludedGroups = new HashMap<>();
+
+    private boolean negated = false;
 
     public EdgePreconditionArithmetic() {
         super(false);
@@ -309,12 +312,109 @@ public class EdgePreconditionArithmetic extends JexlArithmetic {
         }
     }
 
+    private void addExcludedGroup(Object o) {
+        if (o instanceof EventFieldValueTuple) {
+            String fieldName = EventFieldValueTuple.getFieldName(o);
+            String commonality = EventField.getGroup(fieldName);
+            String group = EventField.getSubgroup(fieldName);
+            Set<String> groups = excludedGroups.get(commonality);
+            if (groups == null) {
+                groups = new HashSet<>();
+                groups.add(group);
+                excludedGroups.put(commonality, groups);
+            } else
+                groups.add(group);
+        }
+    }
+
     public Map<String,Set<String>> getMatchingGroups() {
         return matchingGroups;
+    }
+
+    public Map<String,Set<String>> getExcludedGroups() {
+        return excludedGroups;
     }
 
     public void clearMatchingGroups() {
         matchingGroups = new HashMap<>();
     }
 
+    public void clearExcludedGroups() {
+        excludedGroups = new HashMap<>();
+    }
+
+    public void clear() {
+        clearMatchingGroups();
+        clearExcludedGroups();
+    }
+
+    public Object notEquals(Object left, Object right) {
+        boolean matches = false;
+
+        if (left instanceof Collection && !(right instanceof Collection)) {
+            Object newRight = EventFieldValueTuple.getValue(right);
+
+            Iterator iter = ((Collection) left).iterator();
+            while (iter.hasNext()) {
+                Object tuple = iter.next();
+                Object newLeft = EventFieldValueTuple.getValue(tuple);
+                if (!super.equals(newLeft, newRight)) {
+                    addMatchingGroup(tuple);
+                    matches = true;
+                } else {
+                    addExcludedGroup(tuple);
+                }
+            }
+
+        } else if (!(left instanceof Collection) && (right instanceof Collection)) {
+            Object newLeft = EventFieldValueTuple.getValue(left);
+
+            Iterator iter = ((Collection) right).iterator();
+            while (iter.hasNext()) {
+                Object tuple = iter.next();
+                Object newRight = EventFieldValueTuple.getValue(tuple);
+                if (!super.equals(newLeft, newRight)) {
+                    addMatchingGroup(tuple);
+                    matches = true;
+                } else {
+                    addExcludedGroup(tuple);
+                }
+            }
+
+        } else if ((left instanceof Collection) && (right instanceof Collection)) {
+
+            Iterator iter = ((Collection) right).iterator();
+            while (iter.hasNext()) {
+                Object lefttuple = iter.next();
+                Iterator iter2 = ((Collection) left).iterator();
+                while (iter2.hasNext()) {
+                    Object righttuple = iter2.next();
+                    Object newLeft = EventFieldValueTuple.getValue(lefttuple);
+                    Object newRight = EventFieldValueTuple.getValue(righttuple);
+                    if (!super.equals(newLeft, newRight)) {
+                        addMatchingGroup(righttuple);
+                        addMatchingGroup(lefttuple);
+                        matches = true;
+                    } else {
+                        addExcludedGroup(righttuple);
+                        addExcludedGroup(lefttuple);
+                    }
+                }
+            }
+        } else {
+            Object newLeft = EventFieldValueTuple.getValue(left);
+            Object newRight = EventFieldValueTuple.getValue(right);
+
+            if (!super.equals(newLeft, newRight)) {
+                addMatchingGroup(newLeft);
+                addMatchingGroup(newRight);
+                matches = true;
+            } else {
+                addExcludedGroup(newLeft);
+                addExcludedGroup(newRight);
+            }
+        }
+
+        return matches;
+    }
 }

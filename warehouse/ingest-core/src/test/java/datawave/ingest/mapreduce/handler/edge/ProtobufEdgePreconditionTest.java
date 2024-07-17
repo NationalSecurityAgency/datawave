@@ -336,6 +336,59 @@ public class ProtobufEdgePreconditionTest {
     }
 
     @Test
+    public void testAwareAllNegated() {
+        // CHEESE != 'apple' AND WINE != 'chianti'
+        // make sure negations don't take the cross products of groups that each contained things that don't match
+
+        fields.put("EVENT_DATE", new BaseNormalizedContent("EVENT_DATE", "2022-10-26T01:31:53Z"));
+        fields.put("UUID", new BaseNormalizedContent("UUID", "0016dd72-0000-827d-dd4d-001b2163ba09"));
+        fields.put("CHEESE", new NormalizedFieldAndValue("FRUIT", "apple", "FOOD", "0"));
+        fields.put("CHEESE", new NormalizedFieldAndValue("FRUIT", "pear", "FOOD", "1"));
+        fields.put("WINE", new NormalizedFieldAndValue("WINE", "pinot noir", "FOOD", "0"));
+        fields.put("WINE", new NormalizedFieldAndValue("WINE", "chianti", "FOOD", "1"));
+
+        ProtobufEdgeDataTypeHandler<Text,BulkIngestKey,Value> edgeHandler = new ProtobufEdgeDataTypeHandler<>();
+        TaskAttemptContext context = new TaskAttemptContextImpl(conf, new TaskAttemptID());
+        edgeHandler.setup(context);
+
+        Set<String> expectedKeys = new HashSet<>();
+
+        RawRecordContainer myEvent = getEvent(conf);
+
+        EdgeHandlerTestUtil.processEvent(fields, edgeHandler, myEvent, 0, true, false);
+        Assert.assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults.keySet());
+
+    }
+
+    @Test
+    public void testAwareNegation() {
+        // CHEESE != 'cheddar'
+
+        fields.put("EVENT_DATE", new BaseNormalizedContent("EVENT_DATE", "2022-10-26T01:31:53Z"));
+        fields.put("UUID", new BaseNormalizedContent("UUID", "0016dd72-0000-827d-dd4d-001b2163ba09"));
+        fields.put("CHEESE", new NormalizedFieldAndValue("CHEESE", "cheddar", "FOOD", "0"));
+        fields.put("CHEESE", new NormalizedFieldAndValue("CHEESE", "parmesan", "FOOD", "1"));
+        fields.put("WINE", new NormalizedFieldAndValue("WINE", "pinot noir", "FOOD", "0"));
+        fields.put("WINE", new NormalizedFieldAndValue("WINE", "chianti", "FOOD", "1"));
+
+        ProtobufEdgeDataTypeHandler<Text,BulkIngestKey,Value> edgeHandler = new ProtobufEdgeDataTypeHandler<>();
+        TaskAttemptContext context = new TaskAttemptContextImpl(conf, new TaskAttemptID());
+        edgeHandler.setup(context);
+
+        Set<String> expectedKeys = new HashSet<>();
+        expectedKeys.add("parmesan");
+        expectedKeys.add("parmesan%00;chianti");
+        expectedKeys.add("chianti");
+        expectedKeys.add("chianti%00;parmesan");
+
+        RawRecordContainer myEvent = getEvent(conf);
+
+        EdgeHandlerTestUtil.processEvent(fields, edgeHandler, myEvent, 4, true, false);
+        Assert.assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults.keySet());
+
+    }
+
+    @Test
     public void testAwarePreconDifferentGroup() {
         // CANINE == 'shepherd'
 
