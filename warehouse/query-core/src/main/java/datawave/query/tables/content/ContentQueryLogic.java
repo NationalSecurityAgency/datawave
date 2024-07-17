@@ -101,7 +101,8 @@ public class ContentQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
     @Override
     public GenericQueryConfiguration initialize(final AccumuloClient client, final Query settings, final Set<Authorizations> auths) throws Exception {
         // Initialize the config and scanner factory
-        final ContentQueryConfiguration config = new ContentQueryConfiguration(this, settings);
+        // NOTE: This needs to set the class-level config object. Do not use a local instance!
+        config = new ContentQueryConfiguration(this, settings);
         config.setClient(client);
         config.setAuthorizations(auths);
 

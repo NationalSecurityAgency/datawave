@@ -1,7 +1,9 @@
 package datawave.query.util;
 
+import static datawave.util.TableName.METADATA;
 import static datawave.util.TableName.SHARD;
 import static datawave.util.TableName.SHARD_INDEX;
+import static datawave.util.TableName.SHARD_RINDEX;
 
 import java.util.Date;
 import java.util.List;
@@ -10,8 +12,10 @@ import java.util.concurrent.TimeUnit;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
+import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.LongCombiner;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
 
@@ -99,6 +103,8 @@ public class ShapesIngest {
     private static final NumberType number = new NumberType();
     private static final LcNoDiacriticsListType list = new LcNoDiacriticsListType();
 
+    private static final LongCombiner.VarLenEncoder encoder = new LongCombiner.VarLenEncoder();
+
     protected static String normalizerForField(String field) {
         switch (field) {
             case "SHAPE":
@@ -121,6 +127,12 @@ public class ShapesIngest {
     }
 
     public static void writeData(AccumuloClient client, RangeType type) throws Exception {
+
+        TableOperations tops = client.tableOperations();
+        tops.create(SHARD);
+        tops.create(SHARD_INDEX);
+        tops.create(SHARD_RINDEX);
+        tops.create(METADATA);
 
         BatchWriterConfig bwConfig = new BatchWriterConfig().setMaxMemory(1000L).setMaxLatency(1, TimeUnit.SECONDS).setMaxWriteThreads(1);
         Mutation m;
@@ -485,11 +497,11 @@ public class ShapesIngest {
             m.put(ColumnFamilyConstants.COLF_E, new Text(hexagon), value);
             m.put(ColumnFamilyConstants.COLF_E, new Text(octagon), value);
 
-            m.put(ColumnFamilyConstants.COLF_F, new Text(triangle), value);
-            m.put(ColumnFamilyConstants.COLF_F, new Text(quadrilateral), value);
-            m.put(ColumnFamilyConstants.COLF_F, new Text(pentagon), value);
-            m.put(ColumnFamilyConstants.COLF_F, new Text(hexagon), value);
-            m.put(ColumnFamilyConstants.COLF_F, new Text(octagon), value);
+            m.put(ColumnFamilyConstants.COLF_F, new Text(triangle + '\u0000' + shard), createValue(12L));
+            m.put(ColumnFamilyConstants.COLF_F, new Text(quadrilateral + '\u0000' + shard), createValue(13L));
+            m.put(ColumnFamilyConstants.COLF_F, new Text(pentagon + '\u0000' + shard), createValue(11L));
+            m.put(ColumnFamilyConstants.COLF_F, new Text(hexagon + '\u0000' + shard), createValue(10L));
+            m.put(ColumnFamilyConstants.COLF_F, new Text(octagon + '\u0000' + shard), createValue(14L));
 
             m.put(ColumnFamilyConstants.COLF_I, new Text(triangle), value);
             m.put(ColumnFamilyConstants.COLF_I, new Text(quadrilateral), value);
@@ -518,11 +530,11 @@ public class ShapesIngest {
             m.put(ColumnFamilyConstants.COLF_E, new Text(hexagon), value);
             m.put(ColumnFamilyConstants.COLF_E, new Text(octagon), value);
 
-            m.put(ColumnFamilyConstants.COLF_F, new Text(triangle), value);
-            m.put(ColumnFamilyConstants.COLF_F, new Text(quadrilateral), value);
-            m.put(ColumnFamilyConstants.COLF_F, new Text(pentagon), value);
-            m.put(ColumnFamilyConstants.COLF_F, new Text(hexagon), value);
-            m.put(ColumnFamilyConstants.COLF_F, new Text(octagon), value);
+            m.put(ColumnFamilyConstants.COLF_F, new Text(triangle + '\u0000' + shard), createValue(10L));
+            m.put(ColumnFamilyConstants.COLF_F, new Text(quadrilateral + '\u0000' + shard), createValue(14L));
+            m.put(ColumnFamilyConstants.COLF_F, new Text(pentagon + '\u0000' + shard), createValue(11L));
+            m.put(ColumnFamilyConstants.COLF_F, new Text(hexagon + '\u0000' + shard), createValue(13L));
+            m.put(ColumnFamilyConstants.COLF_F, new Text(octagon + '\u0000' + shard), createValue(12L));
 
             m.put(ColumnFamilyConstants.COLF_I, new Text(triangle), value);
             m.put(ColumnFamilyConstants.COLF_I, new Text(quadrilateral), value);
@@ -639,5 +651,9 @@ public class ShapesIngest {
             builder.setCOUNT(1L);
         }
         return new Value(builder.build().toByteArray());
+    }
+
+    private static Value createValue(long count) {
+        return new Value(encoder.encode(count));
     }
 }
