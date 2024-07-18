@@ -11,9 +11,9 @@
           @click="toggleDrawer"
         />
 
-        <q-toolbar-title>Map Service</q-toolbar-title>
+        <q-toolbar-title>DataWave Map Service</q-toolbar-title>
 
-        <div>Quasar v{{ $q.version }}</div>
+        <div>v{{ app.version }}</div>
       </q-toolbar>
     </q-header>
 
@@ -58,12 +58,13 @@ import EssentialLink, {
   EssentialLinkProps,
 } from 'components/EssentialLink.vue';
 import { appStateStore } from 'stores/state-store';
+import app from '../../package.json';
 
 const appState = appStateStore();
 
 const essentialLinks: EssentialLinkProps[] = [
   {
-    title: 'Add',
+    title: 'Add Content',
     icon: 'add',
     myFunction: () => {
       if (appState.getConfigPanelSelection === 'Add') {
@@ -89,28 +90,8 @@ const essentialLinks: EssentialLinkProps[] = [
     },
   },
   {
-    title: 'Github',
-    icon: 'code',
-  },
-  {
-    title: 'Discord Chat Channel',
-    icon: 'chat',
-  },
-  {
-    title: 'Forum',
-    icon: 'record_voice_over',
-  },
-  {
-    title: 'Twitter',
-    icon: 'rss_feed',
-  },
-  {
-    title: 'Facebook',
-    icon: 'public',
-  },
-  {
-    title: 'Quasar Awesome',
-    icon: 'close',
+    title: 'Tools',
+    icon: 'handyman',
   },
 ];
 
