@@ -261,8 +261,7 @@ public class FunctionIndexQueryExpansionVisitorTest {
         runTest(original, expected);
     }
 
-    // scored phrase does not support 'scoredPhrase(Iterable, ...)'
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void expandContentScoredPhraseFunctionIntoMultipleFields_exception() throws ParseException {
         Set<String> fields = Sets.newHashSet("FOO", "BAR");
         Set<String> tfFields = Sets.newHashSet("FOO", "BAR");

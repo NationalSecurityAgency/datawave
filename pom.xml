@@ -67,7 +67,7 @@
         <version.datawave.common-utils>3.0.0</version.datawave.common-utils>
         <version.datawave.dictionary-api>4.0.0</version.datawave.dictionary-api>
         <version.datawave.mapreduce-query-api>1.0.0</version.datawave.mapreduce-query-api>
-        <version.datawave.metadata-utils>4.0.0</version.datawave.metadata-utils>
+        <version.datawave.metadata-utils>4.0.5</version.datawave.metadata-utils>
         <version.datawave.metrics-reporter>3.0.0</version.datawave.metrics-reporter>
         <version.datawave.query-api>1.0.0</version.datawave.query-api>
         <version.datawave.query-metric-api>4.0.0</version.datawave.query-metric-api>
@@ -854,6 +854,10 @@
                         <groupId>log4j</groupId>
                         <artifactId>log4j</artifactId>
                     </exclusion>
+                    <exclusion>
+                        <groupId>ch.qos.logback</groupId>
+                        <artifactId>logback-classic</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
             <dependency>
@@ -1555,6 +1559,7 @@
                                         <excludes>
                                             <exclude>log4j:log4j</exclude>
                                             <exclude>org.slf4j:slf4j-log4j12</exclude>
+                                            <exclude>ch.qos.logback:logback-classic</exclude>
                                         </excludes>
                                     </bannedDependencies>
                                 </rules>
