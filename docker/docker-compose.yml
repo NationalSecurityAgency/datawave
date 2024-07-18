@@ -82,6 +82,8 @@ services:
 
   # When auto.create.topics.enable is true, this causes deleted topics to be recreated at random.  So, leave it disabled.
   kafka:
+    profiles:
+      - kafka
     image: docker.io/bitnami/kafka:3.2
     ports:
       - "9094:9094"
@@ -102,8 +104,7 @@ services:
 
   kafdrop:
     profiles:
-      - management
-      - full
+      - kafka
     image: docker.io/obsidiandynamics/kafdrop
     ports:
       - "8999:9000"
@@ -365,7 +366,7 @@ services:
       - AUDIT_SERVER_URL=http://audit:8080/audit
       - HADOOP_HOST=${DW_HADOOP_HOST}
       - HADOOP_CONF_DIR=${HADOOP_CONF_DIR:-/etc/hadoop/conf}
-      - "BACKEND=${BACKEND:-kafka}"
+      - "BACKEND=${BACKEND:-rabbitmq}"
       - CACHED_RESULTS=${CACHED_RESULTS:-false}
     ports:
       - "8080:8080"
@@ -390,8 +391,6 @@ services:
         condition: service_healthy
       metrics:
         condition: service_healthy
-      kafka:
-        condition: service_started
       executor-pool1:
         condition: service_started
 
@@ -430,8 +429,6 @@ services:
         condition: service_healthy
       metrics:
         condition: service_healthy
-      kafka:
-        condition: service_started
       executor-pool1:
         condition: service_started
 
@@ -448,7 +445,7 @@ services:
     environment:
       - ZOOKEEPER_HOST=${DW_ZOOKEEPER_HOST}
       - HADOOP_HOST=${DW_HADOOP_HOST}
-      - BACKEND=${BACKEND:-kafka}
+      - BACKEND=${BACKEND:-rabbitmq}
       - HADOOP_CONF_DIR=${HADOOP_CONF_DIR:-/etc/hadoop/conf}
     # This mapping is required to enable the metrics service to communicate
     # with host-deployed services like hadoop, zookeeper, and accumulo.
@@ -479,8 +476,6 @@ services:
         condition: service_healthy
       metrics:
         condition: service_healthy
-      kafka:
-        condition: service_started
 
   executor-pool2:
     profiles:
@@ -497,7 +492,7 @@ services:
     environment:
       - ZOOKEEPER_HOST=${DW_ZOOKEEPER_HOST}
       - HADOOP_HOST=${DW_HADOOP_HOST}
-      - BACKEND=${BACKEND:-kafka}
+      - BACKEND=${BACKEND:-rabbitmq}
       - HADOOP_CONF_DIR=${HADOOP_CONF_DIR:-/etc/hadoop/conf}
     # This mapping is required to enable the metrics service to communicate
     # with host-deployed services like hadoop, zookeeper, and accumulo.
