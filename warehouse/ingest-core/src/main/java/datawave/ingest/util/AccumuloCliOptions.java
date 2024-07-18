@@ -2,6 +2,7 @@ package datawave.ingest.util;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.Option;
 import org.apache.commons.cli.OptionBuilder;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
@@ -21,10 +22,11 @@ public class AccumuloCliOptions {
 
     @SuppressWarnings("static-access")
     public AccumuloCliOptions() {
-        options.addOption(OptionBuilder.isRequired(true).hasArg().withDescription("Accumulo username").create("u"));
-        options.addOption(OptionBuilder.isRequired(true).hasArg().withDescription("Accumulo password").create("p"));
-        options.addOption(OptionBuilder.isRequired(true).hasArg().withDescription("Accumulo instance name").create("i"));
-        options.addOption(OptionBuilder.isRequired(true).hasArg().withDescription("Comma separated list of ZooKeeper servers").create("zk"));
+
+        options.addOption(Option.builder("u").argName("Username").hasArg().required().desc("Accumulo username").build());
+        options.addOption(Option.builder("p").argName("Password").hasArg().required().desc("Accumulo password").build());
+        options.addOption(Option.builder("i").argName("Instance Name").hasArg().required().desc("Accumulo instance name").build());
+        options.addOption(Option.builder("zk").argName("ZooKeeper Servers").hasArg().required().desc("Comma separated list of ZooKeeper servers").build());
     }
 
     /**
