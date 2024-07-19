@@ -66,6 +66,11 @@ import datawave.webservice.query.exception.QueryExceptionType;
 public class MapOperationsService {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
     
+    /**
+     * Allows user to specify query syntax (i.e. JEXL or LUCENE)
+     */
+    public static final String QUERY_SYNTAX = "query.syntax";
+    
     private final MapServiceProperties mapServiceProperties;
     private final WebClient webClient;
     private final JWTTokenHandler jwtTokenHandler;
@@ -224,9 +229,34 @@ public class MapOperationsService {
         GeoQueryFeatures geoQueryFeatures = null;
         if (queryMetricResponse.getResult().size() == 1) {
             BaseQueryMetric queryMetric = (BaseQueryMetric) queryMetricResponse.getResult().get(0);
+            
+            // prefer the plan (which is JEXL), but fall back to query if null
+            String jexlQuery = null;
+            if (queryMetric.getPlan() != null) {
+                jexlQuery = queryMetric.getPlan();
+            } else if (queryMetric.getQuery() != null) {
+                String origQuery = queryMetric.getQuery();
+                
+                // @formatter:off
+                String querySyntax = queryMetric.getParameters().stream()
+                        .filter(x -> x.getParameterName().equals(QUERY_SYNTAX))
+                        .map(x -> x.getParameterValue()).findFirst()
+                        .orElse(null);
+                // @formatter:on
+                
+                // if lucene, convert to jexl
+                if (querySyntax.equalsIgnoreCase("LUCENE")) {
+                    // do nothing
+                } else {
+                    jexlQuery = origQuery;
+                }
+            }
+            
             String query = queryMetric.getPlan();
             
-            geoQueryFeatures = getGeoFeaturesForQuery(query, null, false, currentUser);
+            if (jexlQuery != null) {
+                geoQueryFeatures = getGeoFeaturesForQuery(query, null, false, currentUser);
+            }
         }
         
         return geoQueryFeatures;
