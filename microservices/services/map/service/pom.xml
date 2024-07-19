@@ -25,11 +25,11 @@
         <npm.version>8.19.4</npm.version>
         <start-class>datawave.microservice.map.MapService</start-class>
         <version.accumulo>2.1.1</version.accumulo>
-        <version.microservice.dictionary-api>4.0.3-SNAPSHOT</version.microservice.dictionary-api>
+        <version.microservice.dictionary-api>4.0.4-SNAPSHOT</version.microservice.dictionary-api>
         <version.microservice.map-api>1.0.0-SNAPSHOT</version.microservice.map-api>
-        <version.microservice.query-metric-api>4.0.7-SNAPSHOT</version.microservice.query-metric-api>
-        <version.microservice.starter>4.0.2-SNAPSHOT</version.microservice.starter>
-        <version.microservice.starter-metadata>3.0.2-SNAPSHOT</version.microservice.starter-metadata>
+        <version.microservice.query-metric-api>4.0.8-SNAPSHOT</version.microservice.query-metric-api>
+        <version.microservice.starter>4.0.3-SNAPSHOT</version.microservice.starter>
+        <version.microservice.starter-metadata>3.0.3-SNAPSHOT</version.microservice.starter-metadata>
         <version.zookeeper>3.8.3</version.zookeeper>
     </properties>
     <dependencyManagement>
