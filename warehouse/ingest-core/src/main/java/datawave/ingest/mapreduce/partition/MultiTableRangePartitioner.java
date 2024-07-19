@@ -85,7 +85,7 @@ public class MultiTableRangePartitioner extends Partitioner<BulkIngestKey,Value>
 
         List<Text> cutPointArray = null;
         try {
-            cutPointArray = new ArrayList<>(SplitsFile.getSplits(conf, tableName));
+            cutPointArray = SplitsFile.getSplits(conf, tableName);
         } catch (IOException e) {
             log.error("Failed to read splits in MultiTableRangePartitioner for  " + tableName);
         }
