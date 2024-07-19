@@ -15,10 +15,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.SortedSet;
-import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 import org.apache.log4j.Logger;
 
@@ -27,21 +25,30 @@ import datawave.webservice.query.exception.QueryException;
 
 /**
  * A sorted set that can be persisted into a file and still be read in its persisted state. The set can always be re-loaded and then all operations will work as
- * expected. This class will not support null values.
- *
- * The persisted file will contain the serialized entries, followed by the actual size.
+ * expected. This will support null contained in the underlying sets iff a comparator is supplied that can handle null values. The persisted file will contain
+ * the serialized entries, followed by the actual size.
  *
  * @param <E>
  *            type of set
  */
-public abstract class FileSortedSet<E> extends RewritableSortedSetImpl<E> implements SortedSet<E>, Cloneable {
-    private static Logger log = Logger.getLogger(FileSortedSet.class);
-    protected boolean persisted = false;
+public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
+    private static final Logger log = Logger.getLogger(FileSortedSet.class);
+    protected boolean persisted;
     protected E[] range;
+    protected SortedSet<E> set;
+
     // The file handler that handles the underlying io
     public TypedSortedSetFileHandler handler;
     // The sort set factory
     public FileSortedSetFactory factory;
+
+    /**
+     * A class that represents a null object within the set
+     */
+    public static class NullObject implements Serializable {
+        private static final long serialVersionUID = -5528112099317370355L;
+
+    }
 
     /**
      * Create a file sorted set from another one
@@ -50,9 +57,9 @@ public abstract class FileSortedSet<E> extends RewritableSortedSetImpl<E> implem
      *            the other sorted set
      */
     public FileSortedSet(FileSortedSet<E> other) {
-        super(other);
         this.handler = other.handler;
         this.factory = other.factory;
+        this.set = new TreeSet<>(other.set);
         this.persisted = other.persisted;
         this.range = other.range;
     }
@@ -73,11 +80,11 @@ public abstract class FileSortedSet<E> extends RewritableSortedSetImpl<E> implem
             if (persisted) {
                 this.range = (E[]) new Object[] {getStart(from), getEnd(to)};
             } else if (to == null) {
-                this.set = this.set.tailMap(from, true);
+                this.set = this.set.tailSet(from);
             } else if (from == null) {
-                this.set = this.set.headMap(to, false);
+                this.set = this.set.headSet(to);
             } else {
-                this.set = this.set.subMap(from, true, to, false);
+                this.set = this.set.subSet(from, to);
             }
         }
     }
@@ -95,50 +102,7 @@ public abstract class FileSortedSet<E> extends RewritableSortedSetImpl<E> implem
     public FileSortedSet(TypedSortedSetFileHandler handler, FileSortedSetFactory factory, boolean persisted) {
         this.handler = handler;
         this.factory = factory;
-        this.set = new TreeMap<>();
-        this.persisted = persisted;
-    }
-
-    /**
-     * Create a persisted sorted set
-     *
-     * @param rewriteStrategy
-     *            the item rewrite strategy
-     * @param handler
-     *            the sorted set file handler
-     * @param persisted
-     *            a persisted boolean flag
-     * @param factory
-     *            the sorted set factory
-     */
-    public FileSortedSet(RewriteStrategy<E> rewriteStrategy, TypedSortedSetFileHandler handler, FileSortedSetFactory factory, boolean persisted) {
-        super(rewriteStrategy);
-        this.handler = handler;
-        this.factory = factory;
-        this.set = new TreeMap<>();
-        this.persisted = persisted;
-    }
-
-    /**
-     * Create a persisted sorted set
-     *
-     * @param comparator
-     *            the key comparator
-     * @param rewriteStrategy
-     *            the item rewrite strategy
-     * @param handler
-     *            the sorted set file handler
-     * @param persisted
-     *            a persisted boolean flag
-     * @param factory
-     *            the sorted set factory
-     */
-    public FileSortedSet(Comparator<E> comparator, RewriteStrategy<E> rewriteStrategy, TypedSortedSetFileHandler handler, FileSortedSetFactory factory,
-                    boolean persisted) {
-        super(comparator, rewriteStrategy);
-        this.handler = handler;
-        this.factory = factory;
-        this.set = new TreeMap<>(comparator);
+        this.set = new TreeSet<>();
         this.persisted = persisted;
     }
 
@@ -154,11 +118,10 @@ public abstract class FileSortedSet<E> extends RewritableSortedSetImpl<E> implem
      * @param factory
      *            the sorted set factory
      */
-    public FileSortedSet(Comparator<E> comparator, TypedSortedSetFileHandler handler, FileSortedSetFactory factory, boolean persisted) {
-        super(comparator);
+    public FileSortedSet(Comparator<? super E> comparator, TypedSortedSetFileHandler handler, FileSortedSetFactory factory, boolean persisted) {
         this.handler = handler;
         this.factory = factory;
-        this.set = new TreeMap<>(comparator);
+        this.set = new TreeSet<>(comparator);
         this.persisted = persisted;
     }
 
@@ -172,11 +135,10 @@ public abstract class FileSortedSet<E> extends RewritableSortedSetImpl<E> implem
      * @param factory
      *            the sorted set factory
      */
-    public FileSortedSet(RewritableSortedSet<E> set, TypedSortedSetFileHandler handler, FileSortedSetFactory factory) {
+    public FileSortedSet(SortedSet<E> set, TypedSortedSetFileHandler handler, FileSortedSetFactory factory) {
         this.handler = handler;
         this.factory = factory;
-        this.set = set.stream().collect(Collectors.toMap(value -> value, value -> value, (l, r) -> l, () -> new TreeMap<>(set.comparator())));
-        this.rewriteStrategy = set.getRewriteStrategy();
+        this.set = new TreeSet<>(set);
         this.persisted = false;
     }
 
@@ -195,9 +157,14 @@ public abstract class FileSortedSet<E> extends RewritableSortedSetImpl<E> implem
      * @throws IOException
      *             for issues with read/write
      */
-    public FileSortedSet(RewritableSortedSet<E> set, TypedSortedSetFileHandler handler, FileSortedSetFactory factory, boolean persist) throws IOException {
-        this(set, handler, factory);
-        if (persist) {
+    public FileSortedSet(SortedSet<E> set, TypedSortedSetFileHandler handler, FileSortedSetFactory factory, boolean persist) throws IOException {
+        this.handler = handler;
+        this.factory = factory;
+        if (!persist) {
+            this.set = new TreeSet<>(set);
+            this.persisted = false;
+        } else {
+            this.set = new TreeSet<>(set.comparator());
             persist(set, handler);
             persisted = true;
         }
@@ -238,7 +205,7 @@ public abstract class FileSortedSet<E> extends RewritableSortedSetImpl<E> implem
      */
     public void persist(TypedSortedSetFileHandler handler) throws IOException {
         if (!persisted) {
-            persist(this.set.navigableKeySet(), handler);
+            persist(this.set, handler);
             this.set.clear();
             persisted = true;
         }
@@ -359,7 +326,7 @@ public abstract class FileSortedSet<E> extends RewritableSortedSetImpl<E> implem
             try (SortedSetInputStream<E> stream = getBoundedFileHandler().getInputStream(getStart(), getEnd())) {
                 E obj = stream.readObject();
                 while (obj != null) {
-                    super.add(obj);
+                    set.add(obj);
                     obj = stream.readObject();
                 }
             }
@@ -403,7 +370,7 @@ public abstract class FileSortedSet<E> extends RewritableSortedSetImpl<E> implem
                 throw new IllegalStateException("Unable to get size from file", e);
             }
         } else {
-            return super.size();
+            return set.size();
         }
     }
 
@@ -430,7 +397,7 @@ public abstract class FileSortedSet<E> extends RewritableSortedSetImpl<E> implem
             }
             return false;
         } else {
-            return super.contains(o);
+            return set.contains(o);
         }
     }
 
@@ -439,7 +406,7 @@ public abstract class FileSortedSet<E> extends RewritableSortedSetImpl<E> implem
         if (persisted) {
             return new FileIterator();
         } else {
-            return super.iterator();
+            return set.iterator();
         }
     }
 
@@ -464,7 +431,7 @@ public abstract class FileSortedSet<E> extends RewritableSortedSetImpl<E> implem
                 throw new IllegalStateException("Unable to read file into a complete set", e);
             }
         } else {
-            return super.toArray();
+            return set.toArray();
         }
     }
 
@@ -501,7 +468,7 @@ public abstract class FileSortedSet<E> extends RewritableSortedSetImpl<E> implem
                 throw new IllegalStateException("Unable to read file into a complete set", e);
             }
         } else {
-            return super.toArray(a);
+            return set.toArray(a);
         }
     }
 
@@ -509,8 +476,9 @@ public abstract class FileSortedSet<E> extends RewritableSortedSetImpl<E> implem
     public boolean add(E e) {
         if (persisted) {
             throw new IllegalStateException("Cannot add an element to a persisted FileSortedSet.  Please call load() first.");
+        } else {
+            return set.add(e);
         }
-        return super.add(e);
     }
 
     @Override
@@ -518,7 +486,7 @@ public abstract class FileSortedSet<E> extends RewritableSortedSetImpl<E> implem
         if (persisted) {
             throw new IllegalStateException("Cannot remove an element to a persisted FileSortedSet.  Please call load() first.");
         } else {
-            return (super.remove(o));
+            return set.remove(o);
         }
     }
 
@@ -533,9 +501,6 @@ public abstract class FileSortedSet<E> extends RewritableSortedSetImpl<E> implem
                 SortedSet<E> all = new TreeSet<>(set.comparator());
                 for (Object o : c) {
                     all.add((E) o);
-                }
-                if (all.isEmpty()) {
-                    return true;
                 }
                 try (SortedSetInputStream<E> stream = getBoundedFileHandler().getInputStream(getStart(), getEnd())) {
                     E obj = stream.readObject();
@@ -553,7 +518,7 @@ public abstract class FileSortedSet<E> extends RewritableSortedSetImpl<E> implem
             }
             return false;
         } else {
-            return super.containsAll(c);
+            return set.containsAll(c);
         }
     }
 
@@ -562,7 +527,7 @@ public abstract class FileSortedSet<E> extends RewritableSortedSetImpl<E> implem
         if (persisted) {
             throw new IllegalStateException("Unable to add to a persisted FileSortedSet.  Please call load() first.");
         } else {
-            return super.addAll(c);
+            return set.addAll(c);
         }
     }
 
@@ -571,7 +536,7 @@ public abstract class FileSortedSet<E> extends RewritableSortedSetImpl<E> implem
         if (persisted) {
             throw new IllegalStateException("Unable to modify a persisted FileSortedSet.  Please call load() first.");
         } else {
-            return super.retainAll(c);
+            return set.retainAll(c);
         }
     }
 
@@ -580,7 +545,7 @@ public abstract class FileSortedSet<E> extends RewritableSortedSetImpl<E> implem
         if (persisted) {
             throw new IllegalStateException("Unable to remove from a persisted FileSortedSet.  Please call load() first.");
         } else {
-            return super.removeAll(c);
+            return set.removeAll(c);
         }
     }
 
@@ -589,7 +554,7 @@ public abstract class FileSortedSet<E> extends RewritableSortedSetImpl<E> implem
         if (persisted) {
             throw new IllegalStateException("Unable to remove from a persisted FileSortedSet.  Please call load() first.");
         } else {
-            return super.removeIf(filter);
+            return set.removeIf(filter);
         }
     }
 
@@ -599,81 +564,72 @@ public abstract class FileSortedSet<E> extends RewritableSortedSetImpl<E> implem
             handler.deleteFile();
             persisted = false;
         } else {
-            super.clear();
+            set.clear();
         }
     }
 
     @Override
     public Comparator<? super E> comparator() {
-        return super.comparator();
+        return set.comparator();
     }
 
     @Override
-    public RewritableSortedSet<E> subSet(E fromElement, E toElement) {
+    public SortedSet<E> subSet(E fromElement, E toElement) {
         return factory.newInstance(this, fromElement, toElement);
     }
 
     @Override
-    public RewritableSortedSet<E> headSet(E toElement) {
+    public SortedSet<E> headSet(E toElement) {
         return factory.newInstance(this, null, toElement);
     }
 
     @Override
-    public RewritableSortedSet<E> tailSet(E fromElement) {
+    public SortedSet<E> tailSet(E fromElement) {
         return factory.newInstance(this, fromElement, null);
     }
 
     @Override
     public E first() {
+        E first;
         if (persisted) {
             try (SortedSetInputStream<E> stream = getBoundedFileHandler().getInputStream(getStart(), getEnd())) {
-                E object = stream.readObject();
-                if (object == null) {
-                    throw (NoSuchElementException) new NoSuchElementException().initCause(new QueryException(DatawaveErrorCode.FETCH_FIRST_ELEMENT_ERROR));
-                } else {
-                    return object;
-                }
+                first = stream.readObject();
+                return first;
             } catch (Exception e) {
                 throw new IllegalStateException(new QueryException(DatawaveErrorCode.FETCH_FIRST_ELEMENT_ERROR, e));
             }
-        } else {
-            return super.first();
+        } else if (!set.isEmpty()) {
+            first = set.first();
+            return first;
         }
+        throw (NoSuchElementException) new NoSuchElementException().initCause(new QueryException(DatawaveErrorCode.FETCH_FIRST_ELEMENT_ERROR));
     }
 
     @Override
     public E last() {
+        E last;
         if (persisted) {
-            boolean gotLast = false;
-            E last = null;
             try (SortedSetInputStream<E> stream = getBoundedFileHandler().getInputStream(getStart(), getEnd())) {
                 last = stream.readObject();
                 E next = stream.readObject();
                 while (next != null) {
                     last = next;
-                    gotLast = true;
                     next = stream.readObject();
                 }
+                return last;
             } catch (Exception e) {
                 throw new IllegalStateException(new QueryException(DatawaveErrorCode.FETCH_LAST_ELEMENT_ERROR, e));
             }
-            if (gotLast) {
-                return last;
-            } else {
-                throw (NoSuchElementException) new NoSuchElementException().initCause(new QueryException(DatawaveErrorCode.FETCH_LAST_ELEMENT_ERROR));
-            }
-        } else {
-            return super.last();
+        } else if (!set.isEmpty()) {
+            last = set.last();
+            return last;
         }
+        throw (NoSuchElementException) new NoSuchElementException().initCause(new QueryException(DatawaveErrorCode.FETCH_LAST_ELEMENT_ERROR));
     }
 
     @Override
     public String toString() {
-        if (persisted) {
-            return handler.toString();
-        } else {
-            return super.toString();
-        }
+        return persisted ? handler.toString() : set.toString();
     }
 
     /**
@@ -865,22 +821,7 @@ public abstract class FileSortedSet<E> extends RewritableSortedSetImpl<E> implem
          *            a persisted boolean flag
          * @return a new instance
          */
-        FileSortedSet<E> newInstance(Comparator<E> comparator, SortedSetFileHandler handler, boolean persisted);
-
-        /**
-         * Factory method
-         *
-         * @param comparator
-         *            the key comparator
-         * @param rewriteStrategy
-         *            the collision rewrite strategy
-         * @param handler
-         *            the sorted set file handler
-         * @param persisted
-         *            a persisted boolean flag
-         * @return a new instance
-         */
-        FileSortedSet<E> newInstance(Comparator<E> comparator, RewriteStrategy<E> rewriteStrategy, SortedSetFileHandler handler, boolean persisted);
+        FileSortedSet<E> newInstance(Comparator<? super E> comparator, SortedSetFileHandler handler, boolean persisted);
 
         /**
          * Create an unpersisted sorted set (still in memory)
@@ -891,7 +832,7 @@ public abstract class FileSortedSet<E> extends RewritableSortedSetImpl<E> implem
          *            the sorted set file handler
          * @return a new instance
          */
-        FileSortedSet<E> newInstance(RewritableSortedSet<E> set, SortedSetFileHandler handler);
+        FileSortedSet<E> newInstance(SortedSet<E> set, SortedSetFileHandler handler);
 
         /**
          * factory method
@@ -906,7 +847,7 @@ public abstract class FileSortedSet<E> extends RewritableSortedSetImpl<E> implem
          * @throws IOException
          *             for problems with read/write
          */
-        FileSortedSet<E> newInstance(RewritableSortedSet<E> set, SortedSetFileHandler handler, boolean persist) throws IOException;
+        FileSortedSet<E> newInstance(SortedSet<E> set, SortedSetFileHandler handler, boolean persist) throws IOException;
     }
 
     /**
