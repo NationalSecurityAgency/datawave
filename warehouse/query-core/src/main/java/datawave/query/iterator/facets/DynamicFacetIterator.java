@@ -27,7 +27,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
-import datawave.query.ancestor.AncestorQueryIterator;
 import datawave.query.attributes.Document;
 import datawave.query.function.Aggregation;
 import datawave.query.function.AttributeToCardinality;
@@ -38,7 +37,6 @@ import datawave.query.function.KeyToDocumentData;
 import datawave.query.function.MinimumEstimation;
 import datawave.query.iterator.AccumuloTreeIterable;
 import datawave.query.iterator.FieldIndexOnlyQueryIterator;
-import datawave.query.iterator.QueryOptions;
 import datawave.query.iterator.aggregation.DocumentData;
 import datawave.query.iterator.builder.CardinalityIteratorBuilder;
 import datawave.query.jexl.JexlASTHelper;
@@ -284,4 +282,5 @@ public class DynamicFacetIterator extends FieldIndexOnlyQueryIterator {
         }
         return fiAggregator;
     }
+
 }

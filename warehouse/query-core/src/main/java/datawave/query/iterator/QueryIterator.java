@@ -58,7 +58,6 @@ import datawave.data.type.util.NumericalEncoder;
 import datawave.ingest.data.config.ingest.CompositeIngest;
 import datawave.marking.MarkingFunctionsFactory;
 import datawave.query.Constants;
-import datawave.query.ancestor.AncestorQueryIterator;
 import datawave.query.attributes.AttributeKeepFilter;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.ExcerptFields;
