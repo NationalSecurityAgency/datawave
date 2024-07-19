@@ -43,7 +43,9 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
 
     private final Map<String,FieldInfo> knownFields = new HashMap<>();
     private final Map<String,String[]> combinedFields = new HashMap<>();
+    private VirtualIngest.GroupingPolicy defaultGroupingPolicy = VirtualIngest.VirtualFieldNormalizer.DEFAULT_GROUPING_POLICY;
     private final Map<String,VirtualIngest.GroupingPolicy> groupingPolicy = new HashMap<>();
+    private boolean defaultAllowMissing = false;
     private final Map<String,Boolean> allowMissing = new HashMap<>();
     private TreeMap<Matcher,String> patterns = new TreeMap<>(new BaseIngestHelper.MatcherComparator());
 
@@ -125,6 +127,18 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
 
     private void addCombinedField(String fieldName, String combine) {
         combinedFields.put(fieldName, datawave.util.StringUtils.split(combine, '.'));
+    }
+
+    private void setDefaultGroupingPolicy(VirtualIngest.GroupingPolicy defaultGroupingPolicy) {
+        this.defaultGroupingPolicy = defaultGroupingPolicy;
+    }
+
+    public VirtualIngest.GroupingPolicy getDefaultGroupingPolicy() {
+        return this.defaultGroupingPolicy;
+    }
+
+    private void setDefaultAllowMissing(boolean allow) {
+        this.defaultAllowMissing = allow;
     }
 
     private void addGroupingPolicy(String name, String lv) {
@@ -378,6 +392,10 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
                 } else if (INDEX_TYPE.equals(qn)) {
                     this.defaultFieldType = lv;
                     seenAttr.remove(INDEX_TYPE);
+                } else if (GROUPING_POLICY.equals(qn)) {
+                    this.fieldHelper.setDefaultGroupingPolicy(VirtualIngest.GroupingPolicy.valueOf(lv));
+                } else if (ALLOW_MISSING.equals(qn)) {
+                    this.fieldHelper.setDefaultAllowMissing(Boolean.parseBoolean(lv));
                 } else {
                     throw new IllegalArgumentException("Unexpected attribute encounteded in: " + uri + " in 'default' tag: '" + qn + "'");
                 }
@@ -471,7 +489,7 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
                         this.fieldHelper.addCombinedField(name, lv);
                     }
                 } else if (GROUPING_POLICY.equals(qn)) {
-                    if (lv != null && !lv.equals("")) {
+                    if (lv != null && !lv.equals("") && !this.fieldHelper.defaultGroupingPolicy.equals(VirtualIngest.GroupingPolicy.valueOf(lv))) {
                         this.fieldHelper.addGroupingPolicy(name, lv);
                     }
                 } else if (ALLOW_MISSING.equals(qn)) {

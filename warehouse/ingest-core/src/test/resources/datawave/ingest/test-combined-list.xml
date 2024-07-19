@@ -6,4 +6,6 @@
     <nomatch stored="false" indexed="false" reverseIndexed="false" tokenized="false" reverseTokenized="false" indexType="datawave.data.type.HexStringType"/>
     <field name="A" combine="B.C"/>
     <field name="D" combine="E.F"/>
+    <field name="G" indexed="false"/>
+    <field name="H" stored="false" />
 </fieldConfig>
