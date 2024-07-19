@@ -390,11 +390,12 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
                 this.splitLocations.put(tableName, tmpSplitLocations);
                 this.splits.put(tableName, tmpSplits);
             }
-            if (parts.length == 2) {
-                tmpSplits.add(new Text(Base64.decodeBase64(parts[1].getBytes())));
-            }
-            if (parts.length == 3) {
-                tmpSplitLocations.put(new Text(Base64.decodeBase64(parts[1].getBytes())), parts[2]);
+            if (parts.length >= 2) {
+                Text split = new Text(Base64.decodeBase64(parts[1].getBytes()));
+                tmpSplits.add(split);
+                if (parts.length == 3) {
+                    tmpSplitLocations.put(split, parts[2]);
+                }
             }
 
         }
@@ -416,13 +417,8 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
         if (this.splits.isEmpty()) {
             read();
         }
-        if (this.splits.get(table) == null) {
-            if (this.splitLocations.get(table) != null) {
-                return new ArrayList(splitLocations.get(table).keySet());
-            }
-            return new ArrayList<>();
-        }
-        return splits.get(table);
+        List<Text> splitList = this.splits.get(table);
+        return (splitList == null ? Collections.emptyList() : splitList);
     }
 
     /**
