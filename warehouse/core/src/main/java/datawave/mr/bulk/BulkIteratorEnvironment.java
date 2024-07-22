@@ -25,6 +25,11 @@ public class BulkIteratorEnvironment implements IteratorEnvironment {
         this.conf = DefaultConfiguration.getInstance();
     }
 
+    /**
+     * @deprecated since 2.0.0. This method was using an unstable non-public type. Use
+     *             {@link #getPluginEnv()}
+     */
+    @Deprecated(since = "2.0.0")
     @Override
     public AccumuloConfiguration getConfig() {
         return conf;
