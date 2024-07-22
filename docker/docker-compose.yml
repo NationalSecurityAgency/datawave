@@ -47,7 +47,7 @@ services:
       test: ["CMD-SHELL", "! accumuloStatus | grep DW-WARN > /dev/null"]
 
   consul:
-    image: consul:1.15.4
+    image: docker.io/hashicorp/consul:1.15.4
     hostname: localhost
     environment:
       - 'CONSUL_LOCAL_CONFIG={"log_level": "trace", "datacenter": "demo_dc", "disable_update_check": true, "enable_agent_tls_for_checks": true, "addresses": {"https": "0.0.0.0"}, "ports": {"https": 8501, "grpc_tls": 8503}, "tls": {"defaults": {"key_file": "/etc/pki/testServer.key", "cert_file": "/etc/pki/testServer.crt", "ca_file": "/etc/pki/testCA.pem", "verify_outgoing": true}, "internal_rpc": {"verify_server_hostname": false}}}'
@@ -65,7 +65,7 @@ services:
       - demo
 
   rabbitmq:
-    image: rabbitmq:3.12.4-alpine
+    image: docker.io/rabbitmq:3.12.4
     volumes:
       - ${RABBITMQ_CONFIG_DIR:-./rabbitmq-config}:/etc/rabbitmq
       - ./logs:/logs
@@ -82,7 +82,9 @@ services:
 
   # When auto.create.topics.enable is true, this causes deleted topics to be recreated at random.  So, leave it disabled.
   kafka:
-    image: bitnami/kafka:3.2.3
+    profiles:
+      - kafka
+    image: docker.io/bitnami/kafka:3.2
     ports:
       - "9094:9094"
     networks:
@@ -102,9 +104,8 @@ services:
 
   kafdrop:
     profiles:
-      - management
-      - full
-    image: obsidiandynamics/kafdrop
+      - kafka
+    image: docker.io/obsidiandynamics/kafdrop
     ports:
       - "8999:9000"
     networks:
@@ -339,7 +340,7 @@ services:
   mysql:
     profiles:
       - cachedresults
-    image: mysql:8.0.32
+    image: docker.io/mysql:8.0.32
     environment:
       - MYSQL_RANDOM_ROOT_PASSWORD=true
       - MYSQL_DATABASE=cachedresults
@@ -365,7 +366,7 @@ services:
       - AUDIT_SERVER_URL=http://audit:8080/audit
       - HADOOP_HOST=${DW_HADOOP_HOST}
       - HADOOP_CONF_DIR=${HADOOP_CONF_DIR:-/etc/hadoop/conf}
-      - "BACKEND=${BACKEND:-kafka}"
+      - "BACKEND=${BACKEND:-rabbitmq}"
       - CACHED_RESULTS=${CACHED_RESULTS:-false}
     ports:
       - "8080:8080"
@@ -390,8 +391,6 @@ services:
         condition: service_healthy
       metrics:
         condition: service_healthy
-      kafka:
-        condition: service_started
       executor-pool1:
         condition: service_started
 
@@ -430,8 +429,6 @@ services:
         condition: service_healthy
       metrics:
         condition: service_healthy
-      kafka:
-        condition: service_started
       executor-pool1:
         condition: service_started
 
@@ -448,7 +445,7 @@ services:
     environment:
       - ZOOKEEPER_HOST=${DW_ZOOKEEPER_HOST}
       - HADOOP_HOST=${DW_HADOOP_HOST}
-      - BACKEND=${BACKEND:-kafka}
+      - BACKEND=${BACKEND:-rabbitmq}
       - HADOOP_CONF_DIR=${HADOOP_CONF_DIR:-/etc/hadoop/conf}
     # This mapping is required to enable the metrics service to communicate
     # with host-deployed services like hadoop, zookeeper, and accumulo.
@@ -479,8 +476,6 @@ services:
         condition: service_healthy
       metrics:
         condition: service_healthy
-      kafka:
-        condition: service_started
 
   executor-pool2:
     profiles:
@@ -497,7 +492,7 @@ services:
     environment:
       - ZOOKEEPER_HOST=${DW_ZOOKEEPER_HOST}
       - HADOOP_HOST=${DW_HADOOP_HOST}
-      - BACKEND=${BACKEND:-kafka}
+      - BACKEND=${BACKEND:-rabbitmq}
       - HADOOP_CONF_DIR=${HADOOP_CONF_DIR:-/etc/hadoop/conf}
     # This mapping is required to enable the metrics service to communicate
     # with host-deployed services like hadoop, zookeeper, and accumulo.
@@ -584,7 +579,7 @@ services:
     profiles:
       - management
       - full
-    image: hazelcast/management-center:5.1.2
+    image: docker.io/hazelcast/management-center:5.1.2
     environment:
       - |-
         JAVA_OPTS=
