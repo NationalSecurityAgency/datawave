@@ -9,11 +9,13 @@ import com.google.common.base.Throwables;
 import datawave.core.query.cachedresults.CacheableLogic;
 import datawave.core.query.logic.AbstractQueryLogicTransformer;
 import datawave.core.query.logic.QueryLogicTransformer;
+import datawave.core.query.logic.WritesQueryMetrics;
+import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.webservice.query.cachedresults.CacheableQueryRow;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.result.BaseQueryResponse;
 
-public class CompositeQueryLogicTransformer<I,O> extends AbstractQueryLogicTransformer<I,O> implements CacheableLogic {
+public class CompositeQueryLogicTransformer<I,O> extends AbstractQueryLogicTransformer<I,O> implements CacheableLogic, WritesQueryMetrics {
 
     protected static final Logger log = Logger.getLogger(CompositeQueryLogicTransformer.class);
 
@@ -82,4 +84,103 @@ public class CompositeQueryLogicTransformer<I,O> extends AbstractQueryLogicTrans
         return null;
     }
 
+    @Override
+    public void writeQueryMetrics(BaseQueryMetric metric) {
+        // if any timing details have been returned, add metrics
+        if (hasMetrics()) {
+            metric.setSourceCount(getSourceCount());
+            metric.setNextCount(getNextCount());
+            metric.setSeekCount(getSeekCount());
+            metric.setYieldCount(getYieldCount());
+            metric.setDocRanges(getDocRanges());
+            metric.setFiRanges(getFiRanges());
+        }
+    }
+
+    @Override
+    public void resetMetrics() {
+        for (QueryLogicTransformer d : delegates) {
+            if (d instanceof WritesQueryMetrics) {
+                ((WritesQueryMetrics) d).resetMetrics();
+            }
+        }
+    }
+    
+    @Override
+    public long getFiRanges() {
+        long total = 0;
+        for (QueryLogicTransformer d : delegates) {
+            if (d instanceof WritesQueryMetrics) {
+                total += ((WritesQueryMetrics) d).getFiRanges();
+            }
+        }
+        return total;
+    }
+    
+    @Override
+    public long getDocRanges() {
+        long total = 0;
+        for (QueryLogicTransformer d : delegates) {
+            if (d instanceof WritesQueryMetrics) {
+                total += ((WritesQueryMetrics) d).getDocRanges();
+            }
+        }
+        return total;
+    }
+    
+    @Override
+    public long getSourceCount() {
+        long total = 0;
+        for (QueryLogicTransformer d : delegates) {
+            if (d instanceof WritesQueryMetrics) {
+                total += ((WritesQueryMetrics) d).getSourceCount();
+            }
+        }
+        return total;
+    }
+    
+    @Override
+    public long getSeekCount() {
+        long total = 0;
+        for (QueryLogicTransformer d : delegates) {
+            if (d instanceof WritesQueryMetrics) {
+                total += ((WritesQueryMetrics) d).getSeekCount();
+            }
+        }
+        return total;
+    }
+    
+    @Override
+    public long getNextCount() {
+        long total = 0;
+        for (QueryLogicTransformer d : delegates) {
+            if (d instanceof WritesQueryMetrics) {
+                total += ((WritesQueryMetrics) d).getNextCount();
+            }
+        }
+        return total;
+    }
+    
+    @Override
+    public long getYieldCount() {
+        long total = 0;
+        for (QueryLogicTransformer d : delegates) {
+            if (d instanceof WritesQueryMetrics) {
+                total += ((WritesQueryMetrics) d).getYieldCount();
+            }
+        }
+        return total;
+    }
+    
+    @Override
+    public boolean hasMetrics() {
+        for (QueryLogicTransformer d : delegates) {
+            if (d instanceof WritesQueryMetrics) {
+                if (((WritesQueryMetrics) d).hasMetrics()) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
 }
