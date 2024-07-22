@@ -85,6 +85,18 @@ public class CompositeQueryLogicTransformer<I,O> extends AbstractQueryLogicTrans
     }
 
     @Override
+    public boolean hasMetrics() {
+        for (QueryLogicTransformer d : delegates) {
+            if (d instanceof WritesQueryMetrics) {
+                if (((WritesQueryMetrics) d).hasMetrics()) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    @Override
     public void writeQueryMetrics(BaseQueryMetric metric) {
         // if any timing details have been returned, add metrics
         if (hasMetrics()) {
@@ -105,7 +117,7 @@ public class CompositeQueryLogicTransformer<I,O> extends AbstractQueryLogicTrans
             }
         }
     }
-    
+
     @Override
     public long getFiRanges() {
         long total = 0;
@@ -116,7 +128,7 @@ public class CompositeQueryLogicTransformer<I,O> extends AbstractQueryLogicTrans
         }
         return total;
     }
-    
+
     @Override
     public long getDocRanges() {
         long total = 0;
@@ -127,7 +139,7 @@ public class CompositeQueryLogicTransformer<I,O> extends AbstractQueryLogicTrans
         }
         return total;
     }
-    
+
     @Override
     public long getSourceCount() {
         long total = 0;
@@ -138,7 +150,7 @@ public class CompositeQueryLogicTransformer<I,O> extends AbstractQueryLogicTrans
         }
         return total;
     }
-    
+
     @Override
     public long getSeekCount() {
         long total = 0;
@@ -149,7 +161,7 @@ public class CompositeQueryLogicTransformer<I,O> extends AbstractQueryLogicTrans
         }
         return total;
     }
-    
+
     @Override
     public long getNextCount() {
         long total = 0;
@@ -160,7 +172,7 @@ public class CompositeQueryLogicTransformer<I,O> extends AbstractQueryLogicTrans
         }
         return total;
     }
-    
+
     @Override
     public long getYieldCount() {
         long total = 0;
@@ -170,17 +182,5 @@ public class CompositeQueryLogicTransformer<I,O> extends AbstractQueryLogicTrans
             }
         }
         return total;
-    }
-    
-    @Override
-    public boolean hasMetrics() {
-        for (QueryLogicTransformer d : delegates) {
-            if (d instanceof WritesQueryMetrics) {
-                if (((WritesQueryMetrics) d).hasMetrics()) {
-                    return true;
-                }
-            }
-        }
-        return false;
     }
 }
