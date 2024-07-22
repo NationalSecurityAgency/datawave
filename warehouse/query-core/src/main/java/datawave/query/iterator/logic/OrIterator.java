@@ -41,8 +41,6 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
 
     private T evaluationContext;
 
-    private boolean nonEventField;
-
     public OrIterator(Iterable<NestedIterator<T>> sources) {
         this(sources, null);
     }
@@ -92,8 +90,6 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
             contextExcludeHeads = TreeMultimap.create(keyComp, itrComp);
             contextExcludeNullHeads = TreeMultimap.create(keyComp, itrComp);
         }
-
-        determineNonEventState();
 
         next();
     }
@@ -360,32 +356,24 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
 
     @Override
     public boolean isNonEventField() {
-        return nonEventField;
-    }
-
-    /**
-     * Method to determine if any iterator is for a non-event field
-     */
-    private void determineNonEventState() {
-        for (NestedIterator include : includes) {
+        for (NestedIterator<T> include : includes) {
             if (include.isNonEventField()) {
-                nonEventField = true;
-                return;
-            }
-        }
-        for (NestedIterator itr : contextIncludes) {
-            if (itr.isNonEventField()) {
-                nonEventField = true;
-                return;
+                return true;
             }
         }
 
-        for (NestedIterator itr : contextExcludes) {
+        for (NestedIterator<T> itr : contextIncludes) {
             if (itr.isNonEventField()) {
-                nonEventField = true;
-                return;
+                return true;
             }
         }
+
+        for (NestedIterator<T> itr : contextExcludes) {
+            if (itr.isNonEventField()) {
+                return true;
+            }
+        }
+
+        return false;
     }
-
 }

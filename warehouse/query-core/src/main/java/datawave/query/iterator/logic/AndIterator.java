@@ -561,21 +561,25 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T>, 
                 return true;
             }
         }
+
         for (NestedIterator<T> itr : contextIncludes) {
             if (itr.isNonEventField()) {
                 return true;
             }
         }
+
         for (NestedIterator<T> itr : excludes) {
             if (itr.isNonEventField()) {
                 return true;
             }
         }
+
         for (NestedIterator<T> itr : contextExcludes) {
             if (itr.isNonEventField()) {
                 return true;
             }
         }
+
         return false;
     }
 }
