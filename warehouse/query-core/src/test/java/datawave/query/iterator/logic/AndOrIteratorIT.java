@@ -11,6 +11,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
@@ -708,6 +709,36 @@ class AndOrIteratorIT {
         log.info("expected uids: " + countA);
 
         driveIntersectionWithSimpleNestedUnionWithNegatedTerm(uidsA, uidsB, uidsC, countA, fieldIndexCounts);
+    }
+
+    // This test should log a warning and continue because the non-event iterator is exhausted and no longer contributes
+    // to the non-event state of the nested union. In order for this case to be properly exercised, exhausted iterators should
+    // be removed from the original set of includes and context includes
+    // A && (B || C || D)
+    @Disabled
+    @Test
+    void testEdgeCaseThatShouldFlipAFatalExceptionToAWarning_exception() throws Exception {
+        SortedSet<String> sortedNonEventUids = new TreeSet<>(List.of("1", "2"));
+        Set<NestedIterator<Key>> orIncludes = new HashSet<>();
+        orIncludes.add(IndexIteratorBridgeTest.createIndexIteratorBridge("FIELD_B", sortedNonEventUids, true));
+        orIncludes.add(IndexIteratorBridgeTest.createInterruptibleIndexIteratorBridge("FIELD_C", uidsAll, false, 5));
+        orIncludes.add(IndexIteratorBridgeTest.createIndexIteratorBridge("FIELD_D", uidsAll, false));
+
+        OrIterator or = new OrIterator<>(orIncludes);
+
+        Set<NestedIterator<Key>> andIncludes = new HashSet<>();
+        andIncludes.add(IndexIteratorBridgeTest.createIndexIteratorBridge("FIELD_A", uidsAll));
+        andIncludes.add(or);
+
+        AndIterator and = new AndIterator<>(andIncludes);
+
+        Map<String,Integer> counts = new HashMap<>();
+        counts.put("FIELD_A", uidsAll.size());
+        counts.put("FIELD_B", 2);
+        counts.put("FIELD_C", 5);
+        counts.put("FIELD_D", uidsAll.size());
+
+        driveIterator(and, new TreeSet<>(uidsAll), counts);
     }
 
     // === assert methods ===
