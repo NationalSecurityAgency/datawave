@@ -228,7 +228,7 @@ public class AccumuloRecordWriter extends RecordWriter<Text,Mutation> {
             if (e.getSecurityErrorCodes().size() >= 0) {
                 HashSet<String> tables = new HashSet<>();
                 for (TabletId tabletId : e.getSecurityErrorCodes().keySet()) {
-                    tables.add(tabletId.getTableId().toString());
+                    tables.add(tabletId.getTable().canonical());
                 }
 
                 log.error("Not authorized to write to tables : " + tables);
