@@ -310,9 +310,16 @@ public class AndIteratorTest {
         AndIterator<String> iterator = new AndIterator<>(includes);
         iterator.initialize();
 
-        Assert.assertTrue(iterator.hasNext());
-        Document d = iterator.document();
-        Assert.assertNull(d);
+        for (String top : List.of("a", "b", "c")) {
+            Assert.assertTrue(iterator.hasNext());
+            Assert.assertEquals(top, iterator.next());
+            Document d = iterator.document();
+            Assert.assertNotNull(d);
+        }
+
+        // empty document at the end
+        Assert.assertFalse(iterator.hasNext());
+        Assert.assertEquals(0, iterator.document().size());
     }
 
     private NegationFilterTest.Itr<String> getItr(List<String> source, boolean contextRequired) {
