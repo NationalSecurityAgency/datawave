@@ -251,7 +251,7 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T>, 
 
     @Override
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
-        // seek all of the iterators. Drop those that fail, as long as we have at least one include left
+        // seek all the iterators. Drop those that fail, as long as we have at least one include left
         Iterator<NestedIterator<T>> include = includes.iterator();
         while (include.hasNext()) {
             NestedIterator<T> child = include.next();

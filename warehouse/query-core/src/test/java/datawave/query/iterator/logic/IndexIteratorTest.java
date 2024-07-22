@@ -74,10 +74,10 @@ class IndexIteratorTest {
      *
      * @param itr
      *            the IndexIterator
-     * @param field
-     *            the field
      * @param uids
      *            the list of uids
+     * @param field
+     *            the field
      * @throws IOException
      *             if an exception is encountered
      */
