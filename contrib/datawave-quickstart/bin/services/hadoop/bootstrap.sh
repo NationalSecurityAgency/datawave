@@ -3,7 +3,10 @@
 DW_HADOOP_SERVICE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # You may override DW_HADOOP_DIST_URI in your env ahead of time, and set as file:///path/to/file.tar.gz for local tarball, if needed
-DW_HADOOP_DIST_URI="${DW_HADOOP_DIST_URI:-http://archive.apache.org/dist/hadoop/common/hadoop-3.3.4/hadoop-3.3.4.tar.gz}"
+# DW_HADOOP_DIST_URI should, if possible, be using https. There are potential security risks by using http.
+DW_HADOOP_DIST_URI="${DW_HADOOP_DIST_URI:-https://dlcdn.apache.org/hadoop/common/hadoop-3.3.6/hadoop-3.3.6.tar.gz}"
+# The sha512 checksum for the tarball. Value should be the hash value only and does not include the file name. Cannot be left blank.
+DW_HADOOP_DIST_SHA512_CHECKSUM="${DW_HADOOP_DIST_SHA512_CHECKSUM:-de3eaca2e0517e4b569a88b63c89fae19cb8ac6c01ff990f1ff8f0cc0f3128c8e8a23db01577ca562a0e0bb1b4a3889f8c74384e609cd55e537aada3dcaa9f8a}"
 DW_HADOOP_DIST="$( downloadTarball "${DW_HADOOP_DIST_URI}" "${DW_HADOOP_SERVICE_DIR}" && echo "${tarball}" )"
 DW_HADOOP_BASEDIR="hadoop-install"
 DW_HADOOP_SYMLINK="hadoop"
@@ -19,8 +22,8 @@ DW_HADOOP_RESOURCE_MANAGER_ADDRESS_SERVER="${DW_BIND_HOST}:8050"
 DW_HADOOP_RESOURCE_MANAGER_ADDRESS_CLIENT="${DW_BIND_HOST}:8050"
 
 if [ "${DW_BIND_HOST}" == "0.0.0.0" ] ; then
-  DW_HADOOP_DFS_URI_CLIENT="hdfs://localhost:9000"
-  DW_HADOOP_RESOURCE_MANAGER_ADDRESS_CLIENT="localhost:8050"
+    DW_HADOOP_DFS_URI_CLIENT="hdfs://localhost:9000"
+    DW_HADOOP_RESOURCE_MANAGER_ADDRESS_CLIENT="localhost:8050"
 fi
 
 HADOOP_HOME="${DW_CLOUD_HOME}/${DW_HADOOP_SYMLINK}"
@@ -202,7 +205,7 @@ function hadoopUninstall() {
 }
 
 function hadoopInstall() {
-   "${DW_HADOOP_SERVICE_DIR}"/install.sh
+  "${DW_HADOOP_SERVICE_DIR}"/install.sh
 }
 
 function hadoopPrintenv() {

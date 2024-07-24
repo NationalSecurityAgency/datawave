@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave</groupId>
         <artifactId>datawave-parent</artifactId>
-        <version>6.9.0-SNAPSHOT</version>
+        <version>7.2.0-SNAPSHOT</version>
         <relativePath>../../../pom.xml</relativePath>
     </parent>
     <artifactId>quickstart</artifactId>
@@ -12,17 +12,17 @@
     <name>${project.artifactId}</name>
     <properties>
         <!-- These distributions and URLs should match what is listed in each service's bootstrap.sh script -->
-        <dist.accumulo>accumulo-2.1.1-bin.tar.gz</dist.accumulo>
-        <dist.hadoop>hadoop-3.3.4.tar.gz</dist.hadoop>
-        <dist.maven>apache-maven-3.8.6-bin.tar.gz</dist.maven>
+        <dist.accumulo>accumulo-2.1.2-bin.tar.gz</dist.accumulo>
+        <dist.hadoop>hadoop-3.3.6.tar.gz</dist.hadoop>
+        <dist.maven>apache-maven-3.8.8-bin.tar.gz</dist.maven>
         <dist.wildfly>wildfly-17.0.1.Final.tar.gz</dist.wildfly>
-        <dist.zookeeper>apache-zookeeper-3.7.1-bin.tar.gz</dist.zookeeper>
+        <dist.zookeeper>apache-zookeeper-3.7.2-bin.tar.gz</dist.zookeeper>
         <skipIngest>false</skipIngest>
-        <url.accumulo>http://archive.apache.org/dist/accumulo/2.1.1/${dist.accumulo}</url.accumulo>
-        <url.hadoop>http://archive.apache.org/dist/hadoop/common/hadoop-3.3.4/${dist.hadoop}</url.hadoop>
-        <url.maven>https://archive.apache.org/dist/maven/maven-3/3.8.6/binaries/${dist.maven}</url.maven>
+        <url.accumulo>https://dlcdn.apache.org/accumulo/2.1.2/${dist.accumulo}</url.accumulo>
+        <url.hadoop>https://dlcdn.apache.org/hadoop/common/hadoop-3.3.6/${dist.hadoop}</url.hadoop>
+        <url.maven>https://dlcdn.apache.org/maven/maven-3/3.8.8/binaries/${dist.maven}</url.maven>
         <url.wildfly>https://download.jboss.org/wildfly/17.0.1.Final/${dist.wildfly}</url.wildfly>
-        <url.zookeeper>https://archive.apache.org/dist/zookeeper/zookeeper-3.7.1/${dist.zookeeper}</url.zookeeper>
+        <url.zookeeper>https://dlcdn.apache.org/zookeeper/zookeeper-3.7.2/${dist.zookeeper}</url.zookeeper>
     </properties>
     <dependencies>
         <dependency>
@@ -254,6 +254,7 @@
                                         <buildOptions>
                                             <memory>8589934592</memory>
                                         </buildOptions>
+                                        <cleanup>none</cleanup>
                                         <contextDir>${project.basedir}/../../../</contextDir>
                                         <cleanup>none</cleanup>
                                         <dockerFile>${project.basedir}/Dockerfile</dockerFile>

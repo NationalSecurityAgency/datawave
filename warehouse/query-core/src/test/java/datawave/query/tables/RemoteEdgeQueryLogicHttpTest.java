@@ -47,17 +47,17 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.result.event.DefaultResponseObjectFactory;
+import datawave.microservice.query.QueryImpl;
+import datawave.microservice.query.QueryParameters;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.util.DnUtils;
 import datawave.webservice.common.json.DefaultMapperDecorator;
 import datawave.webservice.common.remote.TestJSSESecurityDomain;
-import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.QueryParameters;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.remote.RemoteQueryServiceImpl;
 import datawave.webservice.query.result.edge.DefaultEdge;
 import datawave.webservice.query.result.edge.EdgeBase;
-import datawave.webservice.query.result.event.DefaultResponseObjectFactory;
 import datawave.webservice.result.DefaultEdgeQueryResponse;
 import datawave.webservice.result.GenericResponse;
 import datawave.webservice.result.VoidResponse;
@@ -233,7 +233,7 @@ public class RemoteEdgeQueryLogicHttpTest {
 
     @Test
     public void testRemoteQuery() throws Exception {
-        logic.setPrincipal(new DatawavePrincipal(commonName));
+        logic.setCurrentUser(new DatawavePrincipal(commonName));
         QueryImpl settings = new QueryImpl();
         settings.setQuery(query);
         GenericQueryConfiguration config = logic.initialize(null, settings, null);

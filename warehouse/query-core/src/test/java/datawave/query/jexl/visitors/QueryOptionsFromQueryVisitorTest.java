@@ -35,13 +35,107 @@ public class QueryOptionsFromQueryVisitorTest {
     }
 
     @Test
+    public void testRenameFunction() throws ParseException {
+        // Verify that an empty rename function results in an empty parameter value.
+        assertResult("f:rename()", "");
+        assertOption(QueryParameters.RENAME_FIELDS, "");
+
+        assertResult("f:rename('field1=field2','field3=field4')", "");
+        assertOption(QueryParameters.RENAME_FIELDS, "field1=field2,field3=field4");
+    }
+
+    @Test
     public void testGroupByFunction() throws ParseException {
-        // Verify that an empty groupby functions results in an empty parameter value.
+        // Verify that an empty groupby function results in an empty parameter value.
         assertResult("f:groupby()", "");
         assertOption(QueryParameters.GROUP_FIELDS, "");
 
         assertResult("f:groupby('field1','field2','field3')", "");
         assertOption(QueryParameters.GROUP_FIELDS, "field1,field2,field3");
+    }
+
+    @Test
+    public void testSumFunction() throws ParseException {
+        assertResult("f:sum()", "");
+        assertOption(QueryParameters.SUM_FIELDS, "");
+
+        assertResult("f:sum(FIELD)", "");
+        assertOption(QueryParameters.SUM_FIELDS, "FIELD");
+
+        assertResult("f:sum(FIELD_A, FIELD_B)", "");
+        assertOption(QueryParameters.SUM_FIELDS, "FIELD_A,FIELD_B");
+    }
+
+    @Test
+    public void testCountFunction() throws ParseException {
+        assertResult("f:count()", "");
+        assertOption(QueryParameters.COUNT_FIELDS, "");
+
+        assertResult("f:count(FIELD)", "");
+        assertOption(QueryParameters.COUNT_FIELDS, "FIELD");
+
+        assertResult("f:count(FIELD_A, FIELD_B)", "");
+        assertOption(QueryParameters.COUNT_FIELDS, "FIELD_A,FIELD_B");
+    }
+
+    @Test
+    public void testMinFunction() throws ParseException {
+        assertResult("f:min()", "");
+        assertOption(QueryParameters.MIN_FIELDS, "");
+
+        assertResult("f:min(FIELD)", "");
+        assertOption(QueryParameters.MIN_FIELDS, "FIELD");
+
+        assertResult("f:min(FIELD_A, FIELD_B)", "");
+        assertOption(QueryParameters.MIN_FIELDS, "FIELD_A,FIELD_B");
+    }
+
+    @Test
+    public void testMaxFunction() throws ParseException {
+        assertResult("f:max()", "");
+        assertOption(QueryParameters.MAX_FIELDS, "");
+
+        assertResult("f:max(FIELD)", "");
+        assertOption(QueryParameters.MAX_FIELDS, "FIELD");
+
+        assertResult("f:max(FIELD_A, FIELD_B)", "");
+        assertOption(QueryParameters.MAX_FIELDS, "FIELD_A,FIELD_B");
+    }
+
+    @Test
+    public void testAverageFunction() throws ParseException {
+        assertResult("f:average()", "");
+        assertOption(QueryParameters.AVERAGE_FIELDS, "");
+
+        assertResult("f:average(FIELD)", "");
+        assertOption(QueryParameters.AVERAGE_FIELDS, "FIELD");
+
+        assertResult("f:average(FIELD_A, FIELD_B)", "");
+        assertOption(QueryParameters.AVERAGE_FIELDS, "FIELD_A,FIELD_B");
+    }
+
+    @Test
+    public void testStrictFunction() throws ParseException {
+        assertResult("f:strict()", "");
+        assertOption(QueryParameters.STRICT_FIELDS, "");
+
+        assertResult("f:strict(FIELD)", "");
+        assertOption(QueryParameters.STRICT_FIELDS, "FIELD");
+
+        assertResult("f:strict(FIELD_A, FIELD_B)", "");
+        assertOption(QueryParameters.STRICT_FIELDS, "FIELD_A,FIELD_B");
+    }
+
+    @Test
+    public void testLenientFunction() throws ParseException {
+        assertResult("f:lenient()", "");
+        assertOption(QueryParameters.LENIENT_FIELDS, "");
+
+        assertResult("f:lenient(FIELD)", "");
+        assertOption(QueryParameters.LENIENT_FIELDS, "FIELD");
+
+        assertResult("f:lenient(FIELD_A, FIELD_B)", "");
+        assertOption(QueryParameters.LENIENT_FIELDS, "FIELD_A,FIELD_B");
     }
 
     @Test

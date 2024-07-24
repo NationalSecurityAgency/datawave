@@ -24,6 +24,7 @@ import org.springframework.util.StringUtils;
 
 import com.google.common.base.Preconditions;
 
+import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.core.iterators.ColumnQualifierRangeIterator;
 import datawave.core.iterators.CompositeSeekingIterator;
 import datawave.core.iterators.TimeoutExceptionIterator;
@@ -36,7 +37,6 @@ import datawave.query.exceptions.IllegalRangeArgumentException;
 import datawave.query.jexl.LiteralRange;
 import datawave.query.tables.ScannerFactory;
 import datawave.util.time.DateHelper;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.NotFoundQueryException;
 import datawave.webservice.query.exception.QueryException;

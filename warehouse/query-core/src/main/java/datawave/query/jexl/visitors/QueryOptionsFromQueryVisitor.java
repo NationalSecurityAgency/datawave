@@ -35,11 +35,11 @@ import datawave.query.jexl.functions.QueryFunctions;
  * are as followed:
  * <ul>
  * <li>{@code f:options()}: Expects a comma-delimited list of key/value pairs, e.g. {@code f:options('hit.list','true','limit.fields','FOO_1_BAR=3)}</li>
- * <li>{@code f:groupby()}: Expects a comma-delimited list of fields to group by, e.g. {@code f:groupby('field1','field2',field3')}</li>
- * <li>{@code f:noexpansion()}: Expects a comma-delimited list of fields, e.g. {@code f:noExpansion('field1','field2',field3')}</li>
- * <li>{@code f:lenient()}: Expects a comma-delimited list of fields, e.g. {@code f:lenient('field1','field2',field3')}</li>
- * <li>{@code f:strict()}: Expects a comma-delimited list of fields, e.g. {@code f:strict('field1','field2',field3')}</li>
- * <li>{@code f:excerpt_fields()}: Expects a comma-delimited list of fields, e.g. {@code f:excerpt_fields('field1','field2',field3')}</li>
+ * <li>{@code f:groupby()}: Expects a comma-delimited list of fields to group by, e.g. {@code f:groupby('field1','field2','field3')}</li>
+ * <li>{@code f:noexpansion()}: Expects a comma-delimited list of fields, e.g. {@code f:noExpansion('field1','field2','field3')}</li>
+ * <li>{@code f:lenient()}: Expects a comma-delimited list of fields, e.g. {@code f:lenient('field1','field2','field3')}</li>
+ * <li>{@code f:strict()}: Expects a comma-delimited list of fields, e.g. {@code f:strict('field1','field2','field3')}</li>
+ * <li>{@code f:excerpt_fields()}: Expects a comma-delimited list of fields, e.g. {@code f:excerpt_fields('field1','field2','field3')}</li>
  * <li>{@code f:unique()}: Expects a comma-delimited list of fields to be unique and their granularity levels, e.g.
  * {@code f:unique('field1[ALL]','field2[DAY]','field3[MINUTE,SECOND]')}</li>
  * <li>{@code f:unique_by_day()}: Expects a comma-delimited list of fields to be unique with a granularity level of by DAY, e.g.
@@ -48,6 +48,7 @@ import datawave.query.jexl.functions.QueryFunctions;
  * {@code unique_by_minute('field1','field2')}</li>
  * <li>{@code f:unique_by_second()}: Expects a comma-delimited list of fields to be unique with a granularity level of by SECOND, e.g.
  * {@code unique_by_second('field1','field2')}</li>
+ * <li>{@code f:rename}: Expects a comma-delimited list field/field mappings e.g. {@code f:rename('field1=field2','field3=field4')}</li>
  * </ul>
  */
 public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
@@ -60,7 +61,7 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
                     UniqueFunction.UNIQUE_BY_SECOND_FUNCTION, UniqueFunction.UNIQUE_BY_MILLISECOND_FUNCTION, UniqueFunction.UNIQUE_BY_YEAR_FUNCTION,
                     QueryFunctions.GROUPBY_FUNCTION, QueryFunctions.EXCERPT_FIELDS_FUNCTION, QueryFunctions.NO_EXPANSION,
                     QueryFunctions.LENIENT_FIELDS_FUNCTION, QueryFunctions.STRICT_FIELDS_FUNCTION, QueryFunctions.SUM, QueryFunctions.MIN, QueryFunctions.MAX,
-                    QueryFunctions.AVERAGE, QueryFunctions.COUNT);
+                    QueryFunctions.AVERAGE, QueryFunctions.COUNT, QueryFunctions.RENAME_FUNCTION);
 
     @SuppressWarnings("unchecked")
     public static <T extends JexlNode> T collect(T node, Object data) {
@@ -204,6 +205,7 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
                             case QueryParameters.NO_EXPANSION_FIELDS:
                             case QueryParameters.LENIENT_FIELDS:
                             case QueryParameters.STRICT_FIELDS:
+                            case QueryParameters.RENAME_FIELDS:
                                 updateFieldsOption(optionsMap, key, Collections.singletonList(value));
                                 break;
                             default:
@@ -293,6 +295,12 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
                     List<String> options = new ArrayList<>();
                     this.visit(node, options);
                     optionsMap.put(QueryParameters.COUNT_FIELDS, JOINER.join(options));
+                    return null;
+                }
+                case QueryFunctions.RENAME_FUNCTION: {
+                    List<String> optionsList = new ArrayList<>();
+                    this.visit(node, optionsList);
+                    updateFieldsOption(optionsMap, QueryParameters.RENAME_FIELDS, optionsList);
                     return null;
                 }
             }

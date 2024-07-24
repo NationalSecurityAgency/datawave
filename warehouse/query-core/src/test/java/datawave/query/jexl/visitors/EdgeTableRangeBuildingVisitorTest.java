@@ -2,6 +2,7 @@ package datawave.query.jexl.visitors;
 
 import static java.util.Collections.emptyList;
 
+import static datawave.query.jexl.JexlASTHelper.jexlFeatures;
 import static org.junit.Assert.assertThrows;
 
 import org.apache.commons.jexl3.JexlFeatures;
@@ -11,6 +12,8 @@ import org.apache.commons.jexl3.parser.StringProvider;
 import org.junit.Before;
 import org.junit.Test;
 
+import datawave.edge.model.DefaultEdgeModelFieldsFactory;
+import datawave.edge.model.EdgeModelFields;
 import datawave.query.tables.edge.EdgeQueryLogic;
 
 public class EdgeTableRangeBuildingVisitorTest {
@@ -24,7 +27,7 @@ public class EdgeTableRangeBuildingVisitorTest {
     public void setup() {
         parser = new Parser(new StringProvider(";"));
 
-        visitor = new EdgeTableRangeBuildingVisitor(false, emptyList(), termLimit, emptyList());
+        visitor = new EdgeTableRangeBuildingVisitor(false, emptyList(), termLimit, emptyList(), new DefaultEdgeModelFieldsFactory().createFields());
     }
 
     @Test
@@ -35,6 +38,6 @@ public class EdgeTableRangeBuildingVisitorTest {
     }
 
     private ASTJexlScript parseQuery(String query) {
-        return parser.parse(null, new JexlFeatures(), EdgeQueryLogic.fixQueryString(query), null);
+        return parser.parse(null, jexlFeatures(), EdgeQueryLogic.fixQueryString(query), null);
     }
 }

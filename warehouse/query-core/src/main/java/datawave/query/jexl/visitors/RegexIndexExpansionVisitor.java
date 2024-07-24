@@ -34,6 +34,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
+import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.query.Constants;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
@@ -49,7 +50,6 @@ import datawave.query.parser.JavaRegexAnalyzer;
 import datawave.query.planner.pushdown.Cost;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MetadataHelper;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
 
 /**
  * Visits a Jexl tree, looks for regex terms, and replaces them with concrete values from the index
@@ -84,7 +84,7 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
 
         this.expandUnfieldedNegations = config.isExpandUnfieldedNegations();
 
-        if (config.isExpansionLimitedToModelContents()) {
+        if (config.isLimitTermExpansionToModel()) {
             try {
                 QueryModel queryModel = helper.getQueryModel(config.getModelTableName(), config.getModelName());
                 this.onlyUseThese = queryModel.getForwardQueryMapping().values();
@@ -197,19 +197,19 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
                 }
             }
 
-            boolean indexOnly;
+            boolean nonEvent;
             try {
-                indexOnly = helper.getNonEventFields(config.getDatatypeFilter()).contains(fieldName);
+                nonEvent = helper.getNonEventFields(config.getDatatypeFilter()).contains(fieldName);
             } catch (TableNotFoundException e) {
                 throw new DatawaveFatalQueryException(e);
             }
 
-            if (evalOnly && !exceededValueMarker && !exceededTermMarker && indexOnly) {
+            if (evalOnly && !exceededValueMarker && !exceededTermMarker && nonEvent) {
                 return QueryPropertyMarker.create(node, EXCEEDED_VALUE);
             } else if (exceededValueMarker || exceededTermMarker) {
                 // already did this expansion
                 return node;
-            } else if (!indexOnly && evalOnly) {
+            } else if (!nonEvent && evalOnly) {
                 // no need to expand its going to come out of the event
                 return node;
             }
@@ -607,8 +607,11 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
     public boolean mustExpand(ASTERNode node) throws TableNotFoundException {
         String fieldName = JexlASTHelper.getIdentifier(node);
 
-        // if the identifier is a non-event field, then we must expand it
-        return helper.getNonEventFields(config.getDatatypeFilter()).contains(fieldName);
+        // If the identifier is an index-only field, then we must expand it.
+        // This use to check for nonEvent fields, but we decided that tokenization
+        // can be handled now at evaluation time, so we only need to force index-only
+        // fields to expand.
+        return helper.getIndexOnlyFields(config.getDatatypeFilter()).contains(fieldName);
     }
 
     public void collapseAndSubtrees(ASTAndNode node, List<JexlNode> subTrees) {

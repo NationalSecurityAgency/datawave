@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
@@ -38,7 +39,12 @@ import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
 
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
@@ -93,6 +99,8 @@ import datawave.query.statsd.QueryStatsDClient;
 import datawave.query.tables.async.Scan;
 import datawave.query.tracking.ActiveQueryLog;
 import datawave.query.util.TypeMetadata;
+import datawave.query.util.count.CountMap;
+import datawave.query.util.count.CountMapSerDe;
 import datawave.query.util.sortedset.FileSortedSet;
 import datawave.util.StringUtils;
 import datawave.util.UniversalSet;
@@ -270,6 +278,9 @@ public class QueryOptions implements OptionDescriber {
 
     public static final String TERM_FREQUENCY_AGGREGATION_THRESHOLD_MS = "tf.agg.threshold";
 
+    public static final String FIELD_COUNTS = "field.counts";
+    public static final String TERM_COUNTS = "term.counts";
+
     protected Map<String,String> options;
 
     protected String scanId;
@@ -432,6 +443,10 @@ public class QueryOptions implements OptionDescriber {
     private int docAggregationThresholdMs = -1;
     private int tfAggregationThresholdMs = -1;
 
+    private CountMap fieldCounts;
+    private CountMap termCounts;
+    private CountMapSerDe mapSerDe;
+
     public void deepCopy(QueryOptions other) {
         this.options = other.options;
         this.query = other.query;
@@ -540,6 +555,9 @@ public class QueryOptions implements OptionDescriber {
 
         this.docAggregationThresholdMs = other.docAggregationThresholdMs;
         this.tfAggregationThresholdMs = other.tfAggregationThresholdMs;
+
+        this.fieldCounts = other.fieldCounts;
+        this.termCounts = other.termCounts;
     }
 
     public String getQuery() {
@@ -1254,6 +1272,8 @@ public class QueryOptions implements OptionDescriber {
         options.put(TF_NEXT_SEEK, "The number of next calls made by a Term Frequency data filter or aggregator before a seek is issued");
         options.put(DOC_AGGREGATION_THRESHOLD_MS, "Document aggregations that exceed this threshold are logged as a warning");
         options.put(TERM_FREQUENCY_AGGREGATION_THRESHOLD_MS, "TermFrequency aggregations that exceed this threshold are logged as a warning");
+        options.put(FIELD_COUNTS, "Map of field counts from the global index");
+        options.put(TERM_COUNTS, "Map of term counts from the global index");
         return new IteratorOptions(getClass().getSimpleName(), "Runs a query against the DATAWAVE tables", options, null);
     }
 
@@ -1377,6 +1397,16 @@ public class QueryOptions implements OptionDescriber {
                 this.disallowListedFields = new HashSet<>();
                 Collections.addAll(this.disallowListedFields, StringUtils.split(fieldList, Constants.PARAM_VALUE_SEP));
             }
+        }
+
+        if (options.containsKey(FIELD_COUNTS)) {
+            String serializedMap = options.get(FIELD_COUNTS);
+            this.fieldCounts = getMapSerDe().deserializeFromString(serializedMap);
+        }
+
+        if (options.containsKey(TERM_COUNTS)) {
+            String serializedMap = options.get(TERM_COUNTS);
+            this.termCounts = getMapSerDe().deserializeFromString(serializedMap);
         }
 
         this.evaluationFilter = null;
@@ -1974,6 +2004,18 @@ public class QueryOptions implements OptionDescriber {
         }
 
         return sb.toString();
+    }
+
+    /**
+     * Get a serialization and deserialization utility for {@link datawave.query.util.count.CountMap}
+     *
+     * @return count map utility
+     */
+    private CountMapSerDe getMapSerDe() {
+        if (mapSerDe == null) {
+            mapSerDe = new CountMapSerDe();
+        }
+        return mapSerDe;
     }
 
     public static Set<String> buildIgnoredColumnFamilies(String colFams) {

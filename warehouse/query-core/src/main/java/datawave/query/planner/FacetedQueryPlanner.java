@@ -7,6 +7,8 @@ import org.apache.log4j.Logger;
 
 import com.google.common.base.Joiner;
 
+import datawave.core.query.configuration.QueryData;
+import datawave.microservice.query.Query;
 import datawave.query.CloseableIterable;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveQueryException;
@@ -24,8 +26,6 @@ import datawave.query.tables.facets.FacetedSearchType;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.Tuple2;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.configuration.QueryData;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 
@@ -94,13 +94,13 @@ public class FacetedQueryPlanner extends IndexQueryPlanner {
 
     @Override
     protected ASTJexlScript updateQueryTree(ScannerFactory scannerFactory, MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper,
-                    ShardQueryConfiguration config, String query, QueryData queryData, Query settings) throws DatawaveQueryException {
+                    ShardQueryConfiguration config, String query, Query settings) throws DatawaveQueryException {
         // we want all terms expanded (except when max terms is reached)
         config.setExpandAllTerms(true);
 
         // update the query tree
 
-        return super.updateQueryTree(scannerFactory, metadataHelper, dateIndexHelper, config, query, queryData, settings);
+        return super.updateQueryTree(scannerFactory, metadataHelper, dateIndexHelper, config, query, settings);
     }
 
     @Override

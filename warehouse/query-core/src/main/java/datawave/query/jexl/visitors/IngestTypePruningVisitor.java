@@ -1,9 +1,8 @@
 package datawave.query.jexl.visitors;
 
-import java.util.Collections;
-import java.util.HashMap;
+import static datawave.query.jexl.visitors.IngestTypeVisitor.UNKNOWN_TYPE;
+
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.jexl3.parser.ASTAndNode;
@@ -49,20 +48,12 @@ import datawave.query.util.TypeMetadata;
 public class IngestTypePruningVisitor extends BaseVisitor {
     private static final Logger log = Logger.getLogger(IngestTypePruningVisitor.class);
 
-    private static final String UNKNOWN_TYPE = "UNKNOWN_TYPE";
-
-    // cache expensive calls to get ingest types per field
-    private final TypeMetadata typeMetadata;
-    private final Map<String,Set<String>> ingestTypeCache;
-
     private int termsPruned = 0;
     private int nodesPruned = 0;
 
     private final IngestTypeVisitor ingestTypeVisitor;
 
     public IngestTypePruningVisitor(TypeMetadata typeMetadata) {
-        this.typeMetadata = typeMetadata;
-        this.ingestTypeCache = new HashMap<>();
         this.ingestTypeVisitor = new IngestTypeVisitor(typeMetadata);
     }
 
@@ -150,7 +141,11 @@ public class IngestTypePruningVisitor extends BaseVisitor {
 
     @Override
     public Object visit(ASTNotNode node, Object data) {
-        return visitOrPrune(node, data);
+        Object o = node.jjtGetChild(0).jjtAccept(this, data);
+        if (node.jjtGetNumChildren() == 0) {
+            pruneNodeFromParent(node);
+        }
+        return o;
     }
 
     @Override
@@ -160,17 +155,51 @@ public class IngestTypePruningVisitor extends BaseVisitor {
 
     @Override
     public Object visit(ASTReference node, Object data) {
-        return visitOrPrune(node, data);
+        Object o = node.jjtGetChild(0).jjtAccept(this, data);
+        if (node.jjtGetNumChildren() == 0) {
+            pruneNodeFromParent(node);
+        }
+        return o;
     }
 
     @Override
     public Object visit(ASTReferenceExpression node, Object data) {
-        return visitOrPrune(node, data);
+        Object o = node.jjtGetChild(0).jjtAccept(this, data);
+        if (node.jjtGetNumChildren() == 0) {
+            pruneNodeFromParent(node);
+        }
+        return o;
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public Object visit(ASTOrNode node, Object data) {
-        return visitOrPrune(node, data);
+
+        Set<String> types;
+        if (data == null) {
+            // normal visit
+            types = new HashSet<>();
+            // must traverse the children in reverse order because of pruning
+            for (int i = node.jjtGetNumChildren() - 1; i >= 0; i--) {
+                Set<String> childTypes = (Set<String>) node.jjtGetChild(i).jjtAccept(this, data);
+                types.addAll(childTypes);
+            }
+        } else {
+            // pruning visit
+            Set<String> pruningTypes = (Set<String>) data;
+            // must traverse the children in reverse order because of pruning
+            for (int i = node.jjtGetNumChildren() - 1; i >= 0; i--) {
+                node.jjtGetChild(i).jjtAccept(this, pruningTypes);
+            }
+            types = pruningTypes;
+        }
+
+        // all children could self-prune, for example (A && B) || (C && D) when no term maps to the same datatype
+        if (node.jjtGetNumChildren() == 0) {
+            pruneNodeFromParent(node);
+        }
+
+        return types;
     }
 
     /**
@@ -188,16 +217,20 @@ public class IngestTypePruningVisitor extends BaseVisitor {
 
         QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(node);
         if (instance.isAnyType()) {
-            return visitMarker(instance, node, data);
+            Object o = visitMarker(instance, node, data);
+            if (node.jjtGetNumChildren() == 0) {
+                pruneNodeFromParent(node);
+            }
+            return o;
         }
 
         // getting ingest types for an intersection is different
-        Set<String> ingestTypes = getIngestTypesForIntersection(node);
+        Set<String> ingestTypes = ingestTypeVisitor.getIngestTypesForIntersection(node);
 
         // automatically prune if there is no common ingest type
         if (ingestTypes.isEmpty()) {
             pruneNodeFromParent(node);
-            return Collections.emptySet();
+            return new HashSet<>();
         }
 
         // the AndNode is where we can generate a set of ingest types used to prune child nodes
@@ -244,7 +277,7 @@ public class IngestTypePruningVisitor extends BaseVisitor {
         // ExceededOr marker can be handled on its own
         if (instance.isType(QueryPropertyMarker.MarkerType.EXCEEDED_OR)) {
             String field = new ExceededOr(instance.getSource()).getField();
-            Set<String> ingestTypes = getIngestTypesForField(field);
+            Set<String> ingestTypes = ingestTypeVisitor.getIngestTypesForField(field);
             if (data instanceof Set<?>) {
                 return pruneLeaf(ingestTypes, node, data);
             }
@@ -254,7 +287,7 @@ public class IngestTypePruningVisitor extends BaseVisitor {
         JexlNode source = node.jjtGetChild(1);
         Set<String> dts = (Set<String>) source.jjtAccept(this, data);
 
-        if (source.jjtGetParent() == null) {
+        if (source.jjtGetParent() == null || source.jjtGetNumChildren() == 0) {
             pruneNodeFromParent(node);
         }
 
@@ -265,7 +298,7 @@ public class IngestTypePruningVisitor extends BaseVisitor {
 
     private Set<String> visitOrPrune(JexlNode node, Object data) {
 
-        Set<String> ingestTypes = getIngestTypes(node);
+        Set<String> ingestTypes = ingestTypeVisitor.getIngestTypes(node);
 
         // check for pruning
         if (data instanceof Set<?>) {
@@ -296,7 +329,7 @@ public class IngestTypePruningVisitor extends BaseVisitor {
             pruneNodeFromParent(node);
             termsPruned++;
         }
-        return Collections.emptySet();
+        return new HashSet<>();
     }
 
     /**
@@ -324,7 +357,7 @@ public class IngestTypePruningVisitor extends BaseVisitor {
         for (int i = node.jjtGetNumChildren() - 1; i >= 0; i--) {
             node.jjtGetChild(i).jjtAccept(this, data);
         }
-        return Collections.emptySet();
+        return new HashSet<>();
     }
 
     /**
@@ -343,73 +376,6 @@ public class IngestTypePruningVisitor extends BaseVisitor {
                         deref instanceof ASTReferenceExpression ||
                         deref instanceof ASTNotNode;
         //  @formatter:on
-    }
-
-    // get ingest types
-
-    private Set<String> getIngestTypes(JexlNode node) {
-        if (isJunction(node)) {
-            return getIngestTypesForJunction(node);
-        } else {
-            return getIngestTypesForLeaf(node);
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    public Set<String> getIngestTypesForJunction(JexlNode node) {
-        Set<String> ingestTypes = new HashSet<>();
-        for (int i = 0; i < node.jjtGetNumChildren(); i++) {
-            Set<String> found = (Set<String>) node.jjtGetChild(i).jjtAccept(this, null);
-            ingestTypes.addAll(found);
-        }
-        return ingestTypes;
-    }
-
-    /**
-     * In most cases a leaf will have a single field. In certain cases a function may produce more than one field, and in rare cases one may see leaf nodes like
-     * <code>FIELD1 == FIELD2</code>
-     *
-     * @param node
-     *            the leaf node
-     * @return a set of ingestTypes
-     */
-    public Set<String> getIngestTypesForLeaf(JexlNode node) {
-        return ingestTypeVisitor.getIngestTypes(node);
-    }
-
-    public Set<String> getIngestTypesForField(String field) {
-        if (!ingestTypeCache.containsKey(field)) {
-            Set<String> types = typeMetadata.getDataTypesForField(field);
-            if (types.isEmpty()) {
-                types.add(UNKNOWN_TYPE);
-            }
-            ingestTypeCache.put(field, types);
-        }
-        return ingestTypeCache.get(field);
-    }
-
-    @SuppressWarnings("unchecked")
-    private Set<String> getIngestTypesForIntersection(ASTAndNode node) {
-        Set<String> ingestTypes = new HashSet<>();
-        for (int i = 0; i < node.jjtGetNumChildren(); i++) {
-            JexlNode child = node.jjtGetChild(i);
-            Set<String> childIngestTypes = (Set<String>) child.jjtAccept(this, null);
-
-            ingestTypes = ingestTypes.isEmpty() ? childIngestTypes : intersectTypes(ingestTypes, childIngestTypes);
-
-            if (ingestTypes.isEmpty()) {
-                // short circuit. no need to continue traversing the intersection.
-                break;
-            }
-        }
-        return ingestTypes;
-    }
-
-    private Set<String> intersectTypes(Set<String> typesA, Set<String> typesB) {
-        if (typesA.contains(UNKNOWN_TYPE) || typesB.contains(UNKNOWN_TYPE)) {
-            return Collections.singleton(UNKNOWN_TYPE);
-        }
-        return Sets.intersection(typesA, typesB);
     }
 
     private void pruneNodeFromParent(JexlNode node) {

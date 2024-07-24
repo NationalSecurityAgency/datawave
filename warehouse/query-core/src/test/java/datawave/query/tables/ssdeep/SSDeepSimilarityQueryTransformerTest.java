@@ -1,14 +1,18 @@
 package datawave.query.tables.ssdeep;
 
-import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import static datawave.query.tables.ssdeep.util.SSDeepTestUtil.EXPECTED_2_3_OVERLAPS;
+import static datawave.query.tables.ssdeep.util.SSDeepTestUtil.TEST_SSDEEPS;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 import org.easymock.EasyMock;
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.api.easymock.PowerMock;
@@ -16,18 +20,18 @@ import org.powermock.api.easymock.annotation.Mock;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import com.google.common.collect.Multimap;
-import com.google.common.collect.TreeMultimap;
-
 import datawave.marking.MarkingFunctions;
+import datawave.microservice.query.Query;
 import datawave.query.config.SSDeepSimilarityQueryConfiguration;
-import datawave.query.tables.ssdeep.SSDeepSimilarityQueryTransformer;
+import datawave.util.ssdeep.NGramGenerator;
 import datawave.util.ssdeep.NGramTuple;
 import datawave.util.ssdeep.SSDeepHash;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.QueryImpl;
+import datawave.util.ssdeep.SSDeepHashEditDistanceScorer;
+import datawave.util.ssdeep.SSDeepHashScorer;
+import datawave.util.ssdeep.SSDeepNGramOverlapScorer;
 import datawave.webservice.query.result.event.DefaultEvent;
 import datawave.webservice.query.result.event.DefaultField;
+import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.DefaultEventQueryResponse;
@@ -35,6 +39,10 @@ import datawave.webservice.result.DefaultEventQueryResponse;
 @RunWith(PowerMockRunner.class)
 @PowerMockIgnore({"javax.management.*", "javax.xml.*"})
 public class SSDeepSimilarityQueryTransformerTest {
+
+    @Mock
+    SSDeepSimilarityQueryConfiguration mockConfig;
+
     @Mock
     private Query mockQuery;
 
@@ -44,52 +52,82 @@ public class SSDeepSimilarityQueryTransformerTest {
     @Mock
     private ResponseObjectFactory mockResponseFactory;
 
-    String chunk = "//thPkK";
-    int chunkSize = 3;
-    String ssdeepString = "3:yionv//thPkKlDtn/rXScG2/uDlhl2UE9FQEul/lldDpZflsup:6v/lhPkKlDtt/6TIPFQEqRDpZ+up";
+    private final Set<String> expectedFields = new HashSet<>();
 
-    public void basicExpects(Key k) {
+    public void basicExpects() {
         EasyMock.expect(mockQuery.getQueryAuthorizations()).andReturn("A,B,C");
-        EasyMock.expect(mockQuery.findParameter("minScore")).andReturn(new QueryImpl.Parameter("minScore", ""));
-        EasyMock.expect(mockResponseFactory.getEventQueryResponse()).andReturn(new DefaultEventQueryResponse());
-        EasyMock.expect(mockResponseFactory.getEvent()).andReturn(new DefaultEvent()).times(1);
-        EasyMock.expect(mockResponseFactory.getField()).andReturn(new DefaultField()).times(4);
+        EasyMock.expect(mockResponseFactory.getEventQueryResponse()).andAnswer(DefaultEventQueryResponse::new);
+        EasyMock.expect(mockResponseFactory.getEvent()).andAnswer(DefaultEvent::new).times(1);
+        EasyMock.expect(mockResponseFactory.getField()).andAnswer(DefaultField::new).times(5);
+
+        expectedFields.add("MATCHING_SSDEEP");
+        expectedFields.add("QUERY_SSDEEP");
+        expectedFields.add("WEIGHTED_SCORE");
+        expectedFields.add("OVERLAP_SCORE");
+        expectedFields.add("OVERLAP_SSDEEP_NGRAMS");
     }
 
     @Test
     public void transformTest() {
-        int bucketEncodingBase = 32;
-        int bucketEncodingLength = 2;
 
-        NGramTuple tuple = new NGramTuple(chunkSize, chunk);
-        SSDeepHash hash = SSDeepHash.parse(ssdeepString);
+        final SSDeepHashScorer<Set<NGramTuple>> ngramOverlapScorer = new SSDeepNGramOverlapScorer(NGramGenerator.DEFAULT_NGRAM_SIZE,
+                        SSDeepHash.DEFAULT_MAX_REPEATED_CHARACTERS, NGramGenerator.DEFAULT_MIN_HASH_SIZE);
+        final SSDeepHashScorer<Integer> editDistanceScorer = new SSDeepHashEditDistanceScorer(SSDeepHash.DEFAULT_MAX_REPEATED_CHARACTERS);
 
-        Multimap<NGramTuple,SSDeepHash> queryMap = TreeMultimap.create();
-        queryMap.put(tuple, hash);
+        final SSDeepHash query = SSDeepHash.parse(TEST_SSDEEPS[2]);
+        final SSDeepHash match = SSDeepHash.parse(TEST_SSDEEPS[3]);
+        final Set<NGramTuple> overlappingNGrams = ngramOverlapScorer.apply(query, match);
+        final Integer editDistance = editDistanceScorer.apply(query, match);
+        final ScoredSSDeepPair scoredSSDeepPair = new ScoredSSDeepPair(query, match, overlappingNGrams, editDistance);
 
-        Key key = new Key("+++//thPkK", "3", "3:yionv//thPkKlDtn/rXScG2/uDlhl2UE9FQEul/lldDpZflsup:6v/lhPkKlDtt/6TIPFQEqRDpZ+up");
-        Value value = new Value();
-        AbstractMap.SimpleEntry<Key,Value> entry = new AbstractMap.SimpleEntry<>(key, value);
-
-        SSDeepSimilarityQueryConfiguration config = SSDeepSimilarityQueryConfiguration.create();
-        config.setBucketEncodingBase(bucketEncodingBase);
-        config.setBucketEncodingLength(bucketEncodingLength);
-        config.setQueryMap(queryMap);
-
-        basicExpects(key);
+        basicExpects();
 
         PowerMock.replayAll();
 
-        SSDeepSimilarityQueryTransformer transformer = new SSDeepSimilarityQueryTransformer(mockQuery, config, mockMarkingFunctions, mockResponseFactory);
-        Map.Entry<SSDeepHash,NGramTuple> transformedTuple = transformer.transform(entry);
+        SSDeepSimilarityQueryTransformer transformer = new SSDeepSimilarityQueryTransformer(mockQuery, mockConfig, mockMarkingFunctions, mockResponseFactory);
+        EventBase transformedEvent = transformer.transform(scoredSSDeepPair);
         List<Object> resultList = new ArrayList<>();
-        resultList.add(transformedTuple);
-        BaseQueryResponse response = transformer.createResponse(resultList);
+        resultList.add(transformedEvent);
+        BaseQueryResponse baseQueryResponse = transformer.createResponse(resultList);
 
         PowerMock.verifyAll();
 
-        Assert.assertNotNull(transformedTuple);
-        Assert.assertEquals(hash, transformedTuple.getKey());
-        Assert.assertEquals(tuple, transformedTuple.getValue());
+        assertNotNull(transformedEvent);
+
+        assertTrue(baseQueryResponse instanceof DefaultEventQueryResponse);
+        DefaultEventQueryResponse defaultEventQueryResponse = (DefaultEventQueryResponse) baseQueryResponse;
+
+        assertEquals(1, defaultEventQueryResponse.getEvents().size());
+
+        EventBase eventBase = defaultEventQueryResponse.getEvents().iterator().next();
+        assertTrue(eventBase instanceof DefaultEvent);
+        DefaultEvent defaultEvent = (DefaultEvent) eventBase;
+
+        List<DefaultField> fields = defaultEvent.getFields();
+        for (DefaultField field : fields) {
+            assertTrue("Unexpected field: " + field.getName(), expectedFields.remove(field.getName()));
+            switch (field.getName()) {
+                case "MATCHING_SSDEEP":
+                    assertEquals(TEST_SSDEEPS[3], field.getValueString());
+                    break;
+                case "QUERY_SSDEEP":
+                    assertEquals(TEST_SSDEEPS[2], field.getValueString());
+                    break;
+                case "WEIGHTED_SCORE":
+                    assertEquals("96", field.getValueString());
+                    break;
+                case "OVERLAP_SCORE":
+                    assertEquals("51", field.getValueString());
+                    break;
+                case "OVERLAP_SSDEEP_NGRAMS":
+                    assertEquals(EXPECTED_2_3_OVERLAPS, field.getValueString());
+                    break;
+                default:
+                    fail("Unexpected field: " + field.getName());
+            }
+
+        }
+        assertEquals(5, fields.size());
+        assertTrue("Did not observe all expected fields: " + expectedFields, expectedFields.isEmpty());
     }
 }

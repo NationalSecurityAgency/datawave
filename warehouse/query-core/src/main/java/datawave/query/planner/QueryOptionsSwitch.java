@@ -1,13 +1,16 @@
 package datawave.query.planner;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.Sets;
 
+import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.query.Constants;
 import datawave.query.QueryParameters;
 import datawave.query.attributes.ExcerptFields;
@@ -15,7 +18,6 @@ import datawave.query.attributes.UniqueFields;
 import datawave.query.common.grouping.GroupFields;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.util.StringUtils;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
 
 public class QueryOptionsSwitch {
 
@@ -67,13 +69,17 @@ public class QueryOptionsSwitch {
                     config.setExcerptFields(excerptFields);
                     break;
                 case QueryParameters.NO_EXPANSION_FIELDS:
-                    config.setNoExpansionFields(new HashSet<>(Arrays.asList(StringUtils.split(value, ','))));
+                    config.setNoExpansionFields(new HashSet<>(Arrays.asList(StringUtils.split(value, Constants.PARAM_VALUE_SEP))));
                     break;
                 case QueryParameters.LENIENT_FIELDS:
-                    config.setLenientFields(new HashSet<>(Arrays.asList(StringUtils.split(value, ','))));
+                    config.setLenientFields(new HashSet<>(Arrays.asList(StringUtils.split(value, Constants.PARAM_VALUE_SEP))));
                     break;
                 case QueryParameters.STRICT_FIELDS:
-                    config.setStrictFields(new HashSet<>(Arrays.asList(StringUtils.split(value, ','))));
+                    config.setStrictFields(new HashSet<>(Arrays.asList(StringUtils.split(value, Constants.PARAM_VALUE_SEP))));
+                    break;
+                case QueryParameters.RENAME_FIELDS:
+                    Set<String> renameFieldExpressions = new HashSet<>(Arrays.asList(StringUtils.split(value, Constants.PARAM_VALUE_SEP)));
+                    config.setRenameFields(renameFieldExpressions);
                     break;
                 case QueryParameters.SUM_FIELDS:
                     String[] sumFields = StringUtils.split(value, Constants.PARAM_VALUE_SEP);

@@ -2,7 +2,6 @@ package datawave.query.tables.ssdeep;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
@@ -11,15 +10,18 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
-import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.Multimap;
 
+import datawave.core.common.connection.AccumuloConnectionFactory;
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.logic.BaseQueryLogic;
+import datawave.core.query.logic.QueryLogicTransformer;
+import datawave.microservice.query.Query;
 import datawave.query.config.SSDeepSimilarityQueryConfiguration;
 import datawave.query.tables.ScannerFactory;
 import datawave.util.ssdeep.ChunkSizeEncoding;
@@ -27,14 +29,9 @@ import datawave.util.ssdeep.IntegerEncoding;
 import datawave.util.ssdeep.NGramGenerator;
 import datawave.util.ssdeep.NGramTuple;
 import datawave.util.ssdeep.SSDeepHash;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.exception.QueryException;
-import datawave.webservice.query.logic.BaseQueryLogic;
-import datawave.webservice.query.logic.QueryLogicTransformer;
 
-public class SSDeepSimilarityQueryLogic extends BaseQueryLogic<Map.Entry<Key,Value>> {
+public class SSDeepSimilarityQueryLogic extends BaseQueryLogic<ScoredSSDeepPair> {
 
     private static final Logger log = Logger.getLogger(SSDeepSimilarityQueryLogic.class);
 
@@ -63,12 +60,10 @@ public class SSDeepSimilarityQueryLogic extends BaseQueryLogic<Map.Entry<Key,Val
     @Override
     public GenericQueryConfiguration initialize(AccumuloClient accumuloClient, Query settings, Set<Authorizations> auths) throws Exception {
         final SSDeepSimilarityQueryConfiguration config = getConfig();
-
-        this.scannerFactory = new ScannerFactory(accumuloClient);
-
         config.setQuery(settings);
         config.setClient(accumuloClient);
         config.setAuthorizations(auths);
+        this.scannerFactory = new ScannerFactory(config);
         setupRanges(settings, config);
         return config;
     }
@@ -84,8 +79,13 @@ public class SSDeepSimilarityQueryLogic extends BaseQueryLogic<Map.Entry<Key,Val
         try {
             final BatchScanner scanner = this.scannerFactory.newScanner(config.getTableName(), config.getAuthorizations(), config.getQueryThreads(),
                             config.getQuery());
+
             scanner.setRanges(config.getRanges());
-            this.iterator = scanner.iterator();
+
+            // must be called after setRanges so that we get the query map from the config.
+            final SSDeepScoringFunction scoringFunction = new SSDeepScoringFunction(config);
+
+            this.iterator = scanner.stream().flatMap(scoringFunction).distinct().iterator();
             this.scanner = scanner;
 
         } catch (TableNotFoundException e) {
@@ -109,9 +109,9 @@ public class SSDeepSimilarityQueryLogic extends BaseQueryLogic<Map.Entry<Key,Val
             return pos > 0 ? k.substring(pos + 1) : k;
         }).map(SSDeepHash::parse).collect(Collectors.toSet());
 
+        log.info("Pre-processing " + queries.size() + " SSDeepHash queries");
         final int maxRepeatedCharacters = config.getMaxRepeatedCharacters();
         final NGramGenerator nGramEngine = new NGramGenerator(config.getNGramSize(), maxRepeatedCharacters, config.getMinHashSize());
-        log.info("Pre-processing " + queries.size() + " SSDeepHash queries");
         if (maxRepeatedCharacters > 0) {
             log.info("Normalizing SSDeepHashes to remove long runs of consecutive characters");
             queries = queries.stream().map(h -> h.normalize(maxRepeatedCharacters)).collect(Collectors.toSet());
@@ -125,6 +125,7 @@ public class SSDeepSimilarityQueryLogic extends BaseQueryLogic<Map.Entry<Key,Val
 
         final int indexBuckets = config.getIndexBuckets();
 
+        // TODO: stream?
         for (NGramTuple ct : queryMap.keys()) {
             final String sizeAndChunk = chunkSizeEncoder.encode(ct.getChunkSize()) + ct.getChunk();
             for (int i = 0; i < indexBuckets; i++) {
