@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.microservice</groupId>
         <artifactId>datawave-microservice-build-parent</artifactId>
-        <version>6.10.0-SNAPSHOT</version>
+        <version>7.2.0-SNAPSHOT</version>
     </parent>
     <artifactId>datawave-microservice-service-build-parent</artifactId>
     <packaging>pom</packaging>
@@ -75,6 +75,50 @@
             </activation>
             <modules>
                 <module>hazelcast</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>submodule-service-mapreduce-query</id>
+            <activation>
+                <file>
+                    <exists>mapreduce-query/pom.xml</exists>
+                </file>
+            </activation>
+            <modules>
+                <module>mapreduce-query</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>submodule-service-modification</id>
+            <activation>
+                <file>
+                    <exists>modification/pom.xml</exists>
+                </file>
+            </activation>
+            <modules>
+                <module>modification</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>submodule-service-query</id>
+            <activation>
+                <file>
+                    <exists>query/pom.xml</exists>
+                </file>
+            </activation>
+            <modules>
+                <module>query</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>submodule-service-query-executor</id>
+            <activation>
+                <file>
+                    <exists>query-executor/pom.xml</exists>
+                </file>
+            </activation>
+            <modules>
+                <module>query-executor</module>
             </modules>
         </profile>
         <profile>

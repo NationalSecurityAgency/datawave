@@ -11,7 +11,7 @@ import org.junit.Test;
 
 import com.google.common.collect.Lists;
 
-import datawave.webservice.query.QueryImpl;
+import datawave.microservice.query.QueryImpl;
 
 public class DatawaveSelectorExtractorTest {
 

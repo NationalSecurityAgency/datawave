@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave</groupId>
         <artifactId>datawave-parent</artifactId>
-        <version>6.10.0-SNAPSHOT</version>
+        <version>7.2.0-SNAPSHOT</version>
     </parent>
     <groupId>gov.nsa.datawave.webservices</groupId>
     <artifactId>datawave-ws-parent</artifactId>
@@ -21,6 +21,7 @@
         <module>map-reduce</module>
         <module>map-reduce-status</module>
         <module>map-reduce-embedded</module>
+        <module>metrics</module>
         <module>atom</module>
         <module>query-websocket</module>
         <module>web-root</module>
@@ -46,6 +47,7 @@
         <version.commons-digester>3.2</version.commons-digester>
         <version.commons-net>3.9.0</version.commons-net>
         <version.commons-pool2>2.6.1</version.commons-pool2>
+        <version.dnsjava>2.1.8</version.dnsjava>
         <version.geronimo-activation>1.1</version.geronimo-activation>
         <version.geronimo-stax>1.0.1</version.geronimo-stax>
         <version.jms>1.1</version.jms>
@@ -113,6 +115,11 @@
                         <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>dnsjava</groupId>
+                <artifactId>dnsjava</artifactId>
+                <version>${version.dnsjava}</version>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave</groupId>
@@ -356,8 +363,16 @@
                 <version>${version.zookeeper}</version>
                 <exclusions>
                     <exclusion>
-                        <groupId>*</groupId>
-                        <artifactId>*</artifactId>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-log4j12</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>log4j</groupId>
+                        <artifactId>log4j</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>ch.qos.logback</groupId>
+                        <artifactId>logback-classic</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -495,7 +510,14 @@
             <dependency>
                 <groupId>org.powermock</groupId>
                 <artifactId>powermock-module-junit4-rule-agent</artifactId>
-                <version>1.6.1</version>
+                <version>2.0.2</version>
+                <scope>test</scope>
+                <optional>true</optional>
+            </dependency>
+            <dependency>
+                <groupId>org.powermock</groupId>
+                <artifactId>powermock-reflect</artifactId>
+                <version>2.0.2</version>
                 <scope>test</scope>
                 <optional>true</optional>
             </dependency>

@@ -60,10 +60,15 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 import com.google.common.collect.Sets;
 
+import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.core.iterators.querylock.QueryLock;
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.configuration.QueryData;
 import datawave.data.type.AbstractGeometryType;
 import datawave.data.type.Type;
 import datawave.ingest.mapreduce.handler.dateindex.DateIndexUtil;
+import datawave.microservice.query.Query;
+import datawave.microservice.query.QueryImpl.Parameter;
 import datawave.query.CloseableIterable;
 import datawave.query.Constants;
 import datawave.query.QueryParameters;
@@ -129,6 +134,7 @@ import datawave.query.jexl.visitors.PushFunctionsIntoExceededValueRanges;
 import datawave.query.jexl.visitors.PushdownLowSelectivityNodesVisitor;
 import datawave.query.jexl.visitors.PushdownMissingIndexRangeNodesVisitor;
 import datawave.query.jexl.visitors.PushdownUnexecutableNodesVisitor;
+import datawave.query.jexl.visitors.QueryFieldsVisitor;
 import datawave.query.jexl.visitors.QueryModelVisitor;
 import datawave.query.jexl.visitors.QueryOptionsFromQueryVisitor;
 import datawave.query.jexl.visitors.QueryPropertyMarkerSourceConsolidator;
@@ -148,6 +154,7 @@ import datawave.query.jexl.visitors.UnmarkedBoundedRangeDetectionVisitor;
 import datawave.query.jexl.visitors.ValidComparisonVisitor;
 import datawave.query.jexl.visitors.ValidPatternVisitor;
 import datawave.query.jexl.visitors.ValidateFilterFunctionVisitor;
+import datawave.query.jexl.visitors.order.OrderByCostVisitor;
 import datawave.query.jexl.visitors.whindex.WhindexVisitor;
 import datawave.query.model.QueryModel;
 import datawave.query.planner.comparator.DefaultQueryPlanComparator;
@@ -166,12 +173,6 @@ import datawave.query.util.QueryStopwatch;
 import datawave.query.util.Tuple2;
 import datawave.query.util.TypeMetadata;
 import datawave.util.time.TraceStopwatch;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.QueryImpl.Parameter;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
-import datawave.webservice.query.configuration.QueryData;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.NotFoundQueryException;
@@ -227,6 +228,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      * The max number of child nodes that we will print with the PrintingVisitor. If trace is enabled, all nodes will be printed.
      */
     public static int maxChildNodesToPrint = 10;
+
+    public static int maxTermsToPrint = 100;
 
     private final long maxRangesPerQueryPiece;
 
@@ -1292,7 +1295,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
     protected ASTJexlScript timedValidateFilterFunctions(QueryStopwatch timers, ASTJexlScript queryTree, Set<String> indexOnlyFields)
                     throws DatawaveQueryException {
-        return visitorManager.timedVisit(timers, "Rewrite Null Functions",
+        return visitorManager.timedVisit(timers, "Validate Filter Functions",
                         () -> (ASTJexlScript) ValidateFilterFunctionVisitor.validate(queryTree, indexOnlyFields));
     }
 
@@ -1960,9 +1963,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
     public static void logQuery(final ASTJexlScript queryTree, String message) {
         if (log.isTraceEnabled()) {
-            logTrace(PrintingVisitor.formattedQueryStringList(queryTree), message);
+            logTrace(PrintingVisitor.formattedQueryStringList(queryTree, maxChildNodesToPrint, maxTermsToPrint), message);
         } else if (log.isDebugEnabled()) {
-            logDebug(PrintingVisitor.formattedQueryStringList(queryTree, maxChildNodesToPrint), message);
+            logDebug(PrintingVisitor.formattedQueryStringList(queryTree, maxChildNodesToPrint, maxTermsToPrint), message);
         }
     }
 
@@ -2577,6 +2580,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
         //  @formatter:off
         QueryPlan queryPlan = new QueryPlan()
+                        .withTableName(config.getShardTableName())
                         .withQueryTree(queryTree)
                         .withRanges(Collections.singleton(range));
         //  @formatter:on
@@ -2635,42 +2639,73 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             fullTableScanReason = state.reason;
         }
 
-        Set<String> ingestTypes = null;
-        if (config.getReduceIngestTypes()) {
-            Set<String> userRequestedIngestTypes = config.getDatatypeFilter();
-            if (!userRequestedIngestTypes.isEmpty()) {
-                Set<String> queryIngestTypes = IngestTypeVisitor.getIngestTypes(queryTree, getTypeMetadata());
-                ingestTypes = Sets.intersection(userRequestedIngestTypes, queryIngestTypes);
+        // optionally build/rebuild the datatype filter with the fully planned query
+        if (config.isRebuildDatatypeFilter()) {
+            Set<String> ingestTypes = IngestTypeVisitor.getIngestTypes(config.getQueryTree(), getTypeMetadata());
 
-                if (ingestTypes.isEmpty()) {
-                    throw new DatawaveFatalQueryException(
-                                    "DataTypes did not intersect. User requested types: " + userRequestedIngestTypes + " Query types: " + queryIngestTypes);
+            if (ingestTypes.contains(IngestTypeVisitor.UNKNOWN_TYPE)) {
+                // could not reduce ingest types based on the query structure, do nothing
+            } else if (config.getDatatypeFilter().isEmpty()) {
+                // if no filter specified, build and set filter from query fields
+                config.setDatatypeFilter(ingestTypes);
+            } else {
+                Set<String> parameterTypes = config.getDatatypeFilter();
+                Set<String> intersectedTypes = Sets.intersection(ingestTypes, parameterTypes);
+
+                if (intersectedTypes.isEmpty()) {
+                    throw new DatawaveQueryException("User requested datatypes did not overlap with query fields");
                 }
 
-                if (ingestTypes.size() < userRequestedIngestTypes.size()) {
-                    // need to update the user requested ingest types
-                    config.setDatatypeFilter(ingestTypes);
+                // only update filter if it is smaller
+                if (intersectedTypes.size() < parameterTypes.size()) {
+                    config.setDatatypeFilter(intersectedTypes);
                 }
             }
         }
 
-        if (config.getPruneQueryByIngestTypes()) {
-            JexlNode pruned;
-            if (ingestTypes == null) {
-                // perform a self-pruning visit
-                pruned = IngestTypePruningVisitor.prune(RebuildingVisitor.copy(queryTree), getTypeMetadata());
-            } else {
-                // perform an external pruning visit
-                pruned = IngestTypePruningVisitor.prune(RebuildingVisitor.copy(queryTree), getTypeMetadata(), ingestTypes);
+        // only reduce datatype filter if not rebuilding and there's a filter to reduce
+        if (!config.getDatatypeFilter().isEmpty() && !config.isRebuildDatatypeFilter() && config.getReduceIngestTypes()) {
+            Set<String> parameterTypes = config.getDatatypeFilter();
+            Set<String> ingestTypes = IngestTypeVisitor.getIngestTypes(queryTree, getTypeMetadata());
+
+            if (!ingestTypes.contains(IngestTypeVisitor.UNKNOWN_TYPE)) {
+                Set<String> intersectedTypes = Sets.intersection(ingestTypes, parameterTypes);
+
+                if (intersectedTypes.isEmpty()) {
+                    throw new DatawaveQueryException("User requested datatypes did not overlap with query fields");
+                }
+
+                // only update filter if it is smaller
+                if (intersectedTypes.size() < parameterTypes.size()) {
+                    config.setDatatypeFilter(intersectedTypes);
+                }
             }
+        }
+
+        // prune query by ingest types
+        if (config.getPruneQueryByIngestTypes()) {
+            JexlNode pruned = IngestTypePruningVisitor.prune(RebuildingVisitor.copy(queryTree), getTypeMetadata());
 
             if (config.getFullTableScanEnabled() || ExecutableDeterminationVisitor.isExecutable(pruned, config, metadataHelper)) {
                 // always update the query for full table scans or in cases where the query is still executable
                 queryTree = pruned;
                 config.setQueryTree((ASTJexlScript) pruned);
+
+                Set<String> types = IngestTypeVisitor.getIngestTypes(pruned, getTypeMetadata());
+                if (!types.contains(IngestTypeVisitor.UNKNOWN_TYPE)) {
+                    if (types.isEmpty()) {
+                        throw new DatawaveQueryException("User requested datatypes did not overlap with query fields");
+                    } else if (config.getDatatypeFilter().isEmpty() || (types.size() < config.getDatatypeFilter().size())) {
+                        config.setDatatypeFilter(types);
+                    }
+                }
             } else {
                 throw new DatawaveFatalQueryException("Check query for mutually exclusive ingest types, query was non-executable after pruning by ingest type");
             }
+        }
+
+        if (config.isSortQueryBeforeGlobalIndex()) {
+            config.setQueryTree(timedSortQueryBeforeGlobalIndex(config, getMetadataHelper()));
         }
 
         // if a simple examination of the query has not forced a full table
@@ -2755,6 +2790,20 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         }
 
         return new Tuple2<>(ranges, needsFullTable);
+    }
+
+    protected ASTJexlScript timedSortQueryBeforeGlobalIndex(ShardQueryConfiguration config, MetadataHelper metadataHelper) throws DatawaveQueryException {
+        return visitorManager.timedVisit(config.getTimers(), "SortQueryBeforeGlobalIndex", () -> {
+            Set<String> fields = QueryFieldsVisitor.parseQueryFields(config.getQueryTree(), getMetadataHelper());
+            if (!fields.isEmpty()) {
+                Set<String> datatypes = config.getDatatypeFilter();
+                Map<String,Long> counts = metadataHelper.getCountsForFieldsInDateRange(fields, datatypes, config.getBeginDate(), config.getEndDate());
+                if (!counts.isEmpty()) {
+                    return OrderByCostVisitor.orderByFieldCount(config.getQueryTree(), counts);
+                }
+            }
+            return config.getQueryTree();
+        });
     }
 
     private TypeMetadata getTypeMetadata() {
@@ -3089,6 +3138,14 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
     public static void setMaxChildNodesToPrint(int maxChildNodesToPrint) {
         DefaultQueryPlanner.maxChildNodesToPrint = maxChildNodesToPrint;
+    }
+
+    public static int getMaxTermsToPrint() {
+        return maxTermsToPrint;
+    }
+
+    public static void setMaxTermsToPrint(int maxTermsToPrint) {
+        DefaultQueryPlanner.maxTermsToPrint = maxTermsToPrint;
     }
 
     /**

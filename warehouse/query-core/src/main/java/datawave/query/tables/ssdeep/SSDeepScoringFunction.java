@@ -2,6 +2,7 @@ package datawave.query.tables.ssdeep;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -11,6 +12,8 @@ import org.apache.log4j.Logger;
 
 import com.google.common.collect.Multimap;
 
+import datawave.microservice.query.Query;
+import datawave.microservice.query.QueryImpl;
 import datawave.query.config.SSDeepSimilarityQueryConfiguration;
 import datawave.util.ssdeep.ChunkSizeEncoding;
 import datawave.util.ssdeep.IntegerEncoding;
@@ -19,8 +22,6 @@ import datawave.util.ssdeep.SSDeepHash;
 import datawave.util.ssdeep.SSDeepHashEditDistanceScorer;
 import datawave.util.ssdeep.SSDeepHashScorer;
 import datawave.util.ssdeep.SSDeepNGramOverlapScorer;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.QueryImpl;
 
 /** A function that transforms entries retrieved from Accumulo into Scored SSDeep hash matches */
 public class SSDeepScoringFunction implements Function<Map.Entry<Key,Value>,Stream<ScoredSSDeepPair>> {
@@ -56,9 +57,9 @@ public class SSDeepScoringFunction implements Function<Map.Entry<Key,Value>,Stre
     /** We'll toss out any matches that have scores less than this value. If set to 0 or less we'll keep all hashes */
     private final int minScoreThreshold;
 
-    private final SSDeepHashScorer editDistanceScorer;
+    private final SSDeepHashScorer<Integer> editDistanceScorer;
 
-    private final SSDeepHashScorer ngramOverlapScorer;
+    private final SSDeepHashScorer<Set<NGramTuple>> ngramOverlapScorer;
 
     public SSDeepScoringFunction(SSDeepSimilarityQueryConfiguration config) {
         this.queryMap = config.getQueryMap();
@@ -141,10 +142,10 @@ public class SSDeepScoringFunction implements Function<Map.Entry<Key,Value>,Stre
         // score the match between each query ssdeep and matching hash, keep those that exceed the match
         // threshold.
         return queryHashes.stream().flatMap(queryHash -> {
-            int overlapScore = ngramOverlapScorer.apply(queryHash, matchingHash);
+            Set<NGramTuple> overlappingNGrams = ngramOverlapScorer.apply(queryHash, matchingHash);
             int weightedScore = editDistanceScorer.apply(queryHash, matchingHash);
             if (minScoreThreshold <= 0 || weightedScore > minScoreThreshold) {
-                return Stream.of(new ScoredSSDeepPair(queryHash, matchingHash, overlapScore, weightedScore));
+                return Stream.of(new ScoredSSDeepPair(queryHash, matchingHash, overlappingNGrams, weightedScore));
             } else {
                 return Stream.empty();
             }

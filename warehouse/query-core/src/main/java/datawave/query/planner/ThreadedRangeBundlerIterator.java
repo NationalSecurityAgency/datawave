@@ -23,13 +23,13 @@ import com.google.common.collect.Lists;
 
 import datawave.common.util.MultiComparator;
 import datawave.common.util.concurrent.BoundedBlockingQueue;
+import datawave.core.common.logging.ThreadConfigurableLogger;
+import datawave.core.query.configuration.QueryData;
+import datawave.microservice.query.Query;
 import datawave.query.CloseableIterable;
-import datawave.query.iterator.QueryIterator;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.tld.TLDQueryIterator;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.configuration.QueryData;
+import datawave.query.util.count.CountMapSerDe;
 
 public class ThreadedRangeBundlerIterator implements Iterator<QueryData>, Closeable {
     private static final Logger log = ThreadConfigurableLogger.getLogger(ThreadedRangeBundlerIterator.class);
@@ -62,6 +62,8 @@ public class ThreadedRangeBundlerIterator implements Iterator<QueryData>, Closea
     protected long rangeBufferTimeoutMillis;
     protected long rangeBufferPollMillis;
     protected long startTimeMillis;
+
+    private CountMapSerDe mapSerDe;
 
     private ThreadedRangeBundlerIterator(Builder builder) {
 
@@ -280,11 +282,11 @@ public class ThreadedRangeBundlerIterator implements Iterator<QueryData>, Closea
             newSetting.addOptions(setting.getOptions());
 
             if (plan.getFieldCounts() != null && !plan.getTermCounts().isEmpty()) {
-                newSetting.addOption(QueryOptions.FIELD_COUNTS, QueryOptions.mapToString(plan.getFieldCounts()));
+                newSetting.addOption(QueryOptions.FIELD_COUNTS, getMapSerDe().serializeToString(plan.getFieldCounts()));
             }
 
             if (plan.getTermCounts() != null && !plan.getTermCounts().isEmpty()) {
-                newSetting.addOption(QueryOptions.TERM_COUNTS, QueryOptions.mapToString(plan.getTermCounts()));
+                newSetting.addOption(QueryOptions.TERM_COUNTS, getMapSerDe().serializeToString(plan.getTermCounts()));
             }
 
             settings.add(newSetting);
@@ -292,11 +294,19 @@ public class ThreadedRangeBundlerIterator implements Iterator<QueryData>, Closea
 
         //  @formatter:off
         return new QueryData()
+                        .withTableName(plan.getTableName())
                         .withQuery(queryString)
                         .withRanges(Lists.newArrayList(plan.getRanges()))
                         .withColumnFamilies(plan.getColumnFamilies())
                         .withSettings(settings);
         //  @formatter:on
+    }
+
+    private CountMapSerDe getMapSerDe() {
+        if (mapSerDe == null) {
+            mapSerDe = new CountMapSerDe();
+        }
+        return mapSerDe;
     }
 
     /*
@@ -381,7 +391,10 @@ public class ThreadedRangeBundlerIterator implements Iterator<QueryData>, Closea
                 }
 
             } catch (Exception e) {
-                throw new RuntimeException(e);
+                // only propogate the exception if we weren't being shutdown.
+                if (running) {
+                    throw new RuntimeException(e);
+                }
             } finally {
                 rangeConsumer.stop();
             }

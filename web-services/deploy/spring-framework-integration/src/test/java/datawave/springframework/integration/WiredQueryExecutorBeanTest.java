@@ -19,6 +19,10 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.context.ApplicationContext;
 
+import datawave.core.query.logic.QueryLogic;
+import datawave.core.query.logic.composite.CompositeQueryLogic;
+import datawave.core.query.result.event.DefaultResponseObjectFactory;
+import datawave.microservice.query.config.QueryExpirationProperties;
 import datawave.query.discovery.DiscoveryLogic;
 import datawave.query.metrics.QueryMetricQueryLogic;
 import datawave.query.planner.BooleanChunkingQueryPlanner;
@@ -35,16 +39,10 @@ import datawave.query.transformer.EventQueryDataDecoratorTransformer;
 import datawave.query.util.DateIndexHelperFactory;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.system.CallerPrincipal;
+import datawave.security.system.ServerPrincipal;
 import datawave.webservice.common.json.DefaultMapperDecorator;
-import datawave.webservice.edgedictionary.EdgeDictionaryResponseTypeProducer;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
-import datawave.webservice.query.cache.QueryExpirationConfiguration;
-import datawave.webservice.query.logic.DatawaveRoleManager;
-import datawave.webservice.query.logic.EasyRoleManager;
-import datawave.webservice.query.logic.QueryLogic;
 import datawave.webservice.query.logic.QueryLogicFactoryImpl;
-import datawave.webservice.query.logic.composite.CompositeQueryLogic;
-import datawave.webservice.query.result.event.DefaultResponseObjectFactory;
 import datawave.webservice.results.cached.CachedResultsConfiguration;
 
 /**
@@ -57,6 +55,12 @@ public class WiredQueryExecutorBeanTest {
 
     @Inject
     ApplicationContext ctx;
+
+    @Produces
+    @ServerPrincipal
+    public DatawavePrincipal produceServerPrincipal() {
+        return new DatawavePrincipal();
+    }
 
     @Deployment
     public static JavaArchive createDeployment() throws Exception {
@@ -71,12 +75,11 @@ public class WiredQueryExecutorBeanTest {
         return ShrinkWrap.create(JavaArchive.class)
                         .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.data.type", "datawave.query.language.parser.jexl",
                                         "datawave.query.language.functions.jexl", "datawave.webservice.query.configuration", "datawave.configuration")
-                        .addClasses(DefaultResponseObjectFactory.class, QueryExpirationConfiguration.class, FacetedQueryPlanner.class, FacetedQueryLogic.class,
+                        .addClasses(DefaultResponseObjectFactory.class, QueryExpirationProperties.class, FacetedQueryPlanner.class, FacetedQueryLogic.class,
                                         DefaultQueryPlanner.class, BooleanChunkingQueryPlanner.class, ShardQueryLogic.class, CountingShardQueryLogic.class,
                                         EventQueryDataDecoratorTransformer.class, FieldIndexCountQueryLogic.class, CompositeQueryLogic.class,
                                         QueryMetricQueryLogic.class, TLDQueryLogic.class, ParentQueryLogic.class, DiscoveryLogic.class, IndexQueryLogic.class,
-                                        QueryLogicFactoryImpl.class, DatawaveRoleManager.class, EasyRoleManager.class, CachedResultsConfiguration.class,
-                                        DateIndexHelperFactory.class, EdgeDictionaryResponseTypeProducer.class, RemoteEdgeDictionary.class,
+                                        QueryLogicFactoryImpl.class, CachedResultsConfiguration.class, DateIndexHelperFactory.class,
                                         DefaultMapperDecorator.class)
                         .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
     }
@@ -87,21 +90,26 @@ public class WiredQueryExecutorBeanTest {
         Assert.assertNotNull(defaultQueryPlanner);
     }
 
+    // This test ensures that we can
+    // 1) generate a query logic via xml configuration
+    // 2) inject an xml generated reference bean into the generated query logic
     @Test
     public void testCreatingPrototypeBeans() {
         String[] names = ctx.getBeanNamesForType(QueryLogic.class);
         for (String name : names) {
             QueryLogic<?> ql = ctx.getBean(name, QueryLogic.class);
-            if (ql.getRoleManager() == null) {
-                log.error("role manager is null for " + name + " and " + ql + " named " + ql.getLogicName() + " and " + ql.getClass());
+            if (ql.getResponseObjectFactory() == null) {
+                log.error("response object factory is null for " + name + " and " + ql + " named " + ql.getLogicName() + " and " + ql.getClass());
             }
-            Assert.assertNotNull(ql.getRoleManager());
+            Assert.assertNotNull(ql.getResponseObjectFactory());
             log.debug("got " + ql);
         }
     }
 
     private static JSSESecurityDomain mockJsseSecurityDomain = EasyMock.createMock(JSSESecurityDomain.class);
     private static DatawavePrincipal mockDatawavePrincipal = EasyMock.createMock(DatawavePrincipal.class);
+
+    private static RemoteEdgeDictionary mockRemoteEdgeDictionary = EasyMock.createMock(RemoteEdgeDictionary.class);
 
     public static class Producer {
         @Produces
@@ -113,6 +121,11 @@ public class WiredQueryExecutorBeanTest {
         @CallerPrincipal
         public static DatawavePrincipal produceDatawavePrincipal() {
             return mockDatawavePrincipal;
+        }
+
+        @Produces
+        public static RemoteEdgeDictionary produceRemoteEdgeDictionary() {
+            return mockRemoteEdgeDictionary;
         }
     }
 }
