@@ -2,12 +2,16 @@ package datawave.ingest.mapreduce.job;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.instrument.Instrumentation;
 import java.net.URI;
 import java.net.URL;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 import org.apache.accumulo.core.fate.zookeeper.ZooCache;
 import org.apache.commons.codec.binary.Base64;
@@ -28,11 +32,13 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.powermock.api.easymock.PowerMock;
 import org.powermock.reflect.Whitebox;
 
 import datawave.ingest.data.config.ingest.AccumuloHelper;
+import datawave.webservice.query.data.ObjectSizeOf;
 
 public class TableSplitsCacheTest {
 
@@ -675,6 +681,50 @@ public class TableSplitsCacheTest {
         Assert.assertEquals(1, splitsCache.getSplitsAndLocationByTable("shard1").size());
         Assert.assertEquals(0, splitsCache.getSplitsAndLocationByTable("someOtherTable").size());
 
+    }
+
+    @Ignore
+    @Test
+    public void testTrieSize() {
+        Map<Text,String> map = new HashMap<>();
+        fillMap(map);
+        System.out.println("Hashmap size: " + ObjectSizeOf.Sizer.getObjectSize(map));
+        map = new TreeMap<>();
+        fillMap(map);
+        System.out.println("Triemap size: " + ObjectSizeOf.Sizer.getObjectSize(map));
+    }
+
+    private void fillMap(Map<Text,String> map) {
+        List<String> tservers = getTservers();
+        Calendar c = Calendar.getInstance();
+        c.set(Calendar.YEAR, 1980);
+        c.set(Calendar.MONTH, 0);
+        c.set(Calendar.DATE, 1);
+        SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd");
+        String date = format.format(c.getTime());
+        int tserver = 0;
+        while (date.compareTo("2025") < 0) {
+            for (int shard = 0; shard < 1000; shard++) {
+                String row = date + '_' + shard;
+                String location = tservers.get(tserver);
+                tserver = (tserver + 1) % tservers.size();
+                map.put(new Text(row), location);
+            }
+            c.add(Calendar.DATE, 1);
+            date = format.format(c.getTime());
+        }
+    }
+
+    private List<String> getTservers() {
+        List<String> tservers = new ArrayList<>();
+        for (int row = 200; row < 250; row++) {
+            for (int node = 0; node < 40; node++) {
+                for (int port = 1000; port < 1005; port++) {
+                    tservers.add("r" + row + "n" + node + ":" + port);
+                }
+            }
+        }
+        return tservers;
     }
 
 }

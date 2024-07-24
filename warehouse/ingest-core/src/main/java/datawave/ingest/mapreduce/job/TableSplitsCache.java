@@ -47,6 +47,7 @@ import com.google.common.collect.Maps;
 import datawave.ingest.config.BaseHdfsFileCacheUtil;
 import datawave.ingest.mapreduce.partition.BalancedShardPartitioner;
 import datawave.ingest.mapreduce.partition.DelegatePartitioner;
+import datawave.ingest.util.TextTrieMap;
 import datawave.util.StringUtils;
 
 /**
@@ -75,7 +76,7 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
 
     private Path splitsPath = null;
     private Map<String,Map<Text,String>> splitLocations = new HashMap<>();
-    private Map<String,List<Text>> splits = new HashMap<String,List<Text>>();
+    private Map<String,List<Text>> splits = new HashMap<>();
 
     private PartitionerCache partitionerCache;
 
@@ -372,19 +373,18 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
         Map<String,String> locationDedup = new HashMap<>();
         String line;
         String tableName = null;
-        Map<Text,String> tmpSplitLocations = null;
+        Map tmpSplitLocations = new TextTrieMap();
         List<Text> tmpSplits = null;
 
         while ((line = in.readLine()) != null) {
             String[] parts = StringUtils.split(line, this.delimiter);
             if (tableName == null || !tableName.equals(parts[0])) {
-                if (null == tmpSplitLocations || tmpSplitLocations.isEmpty()) {
-                    this.splitLocations.remove(tableName);
+                if (!tmpSplitLocations.isEmpty()) {
+                    this.splitLocations.put(tableName, tmpSplitLocations);
                 }
                 tableName = parts[0];
-                tmpSplitLocations = new HashMap<>();
+                tmpSplitLocations = new TextTrieMap();
                 tmpSplits = new ArrayList<>();
-                this.splitLocations.put(tableName, Collections.unmodifiableMap(tmpSplitLocations));
                 this.splits.put(tableName, Collections.unmodifiableList(tmpSplits));
             }
             if (parts.length >= 2) {
@@ -394,10 +394,9 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
                     tmpSplitLocations.put(split, dedup(locationDedup, parts[2]));
                 }
             }
-
         }
-        if (null == tmpSplitLocations || tmpSplitLocations.isEmpty()) {
-            this.splitLocations.remove(tableName);
+        if (!tmpSplitLocations.isEmpty()) {
+            this.splitLocations.put(tableName, tmpSplitLocations);
         }
         in.close();
     }
