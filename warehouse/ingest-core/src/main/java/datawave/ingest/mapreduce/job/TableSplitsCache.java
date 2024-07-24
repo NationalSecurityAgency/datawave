@@ -1,6 +1,5 @@
 package datawave.ingest.mapreduce.job;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.File;
@@ -76,13 +75,12 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
 
     private Path splitsPath = null;
     private Map<String,Map<Text,String>> splitLocations = new HashMap<>();
-    private Map<String,List<Text>> splits = new TreeMap<String,List<Text>>();
+    private Map<String,List<Text>> splits = new HashMap<String,List<Text>>();
 
     private PartitionerCache partitionerCache;
 
     private Map<Text,String> getSplitsWithLocation(String table) throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
         SortedMap<KeyExtent,String> tabletLocations = new TreeMap<>();
-        SortedMap<Text,String> tabletLocationsByEndRow = new TreeMap<>();
 
         Properties props = Accumulo.newClientProperties().to(accumuloHelper.getInstanceName(), accumuloHelper.getZooKeepers())
                         .as(accumuloHelper.getUsername(), new PasswordToken(accumuloHelper.getPassword())).build();
@@ -91,10 +89,8 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
 
         MetadataServicer.forTableName(context, table).getTabletLocations(tabletLocations);
 
-        tabletLocationsByEndRow = tabletLocations.entrySet().stream().filter(k -> k.getKey().endRow() != null).collect(
+        return tabletLocations.entrySet().stream().filter(k -> k.getKey().endRow() != null).collect(
                         Collectors.toMap(e -> e.getKey().endRow(), e -> e.getValue() == null ? NO_LOCATION : e.getValue(), (o1, o2) -> o1, TreeMap::new));
-
-        return tabletLocationsByEndRow;
     }
 
     /**
@@ -324,7 +320,7 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
             try {
                 read();
             } catch (IOException ex) {
-                log.warn("No splits file exists");
+                log.warn("Failed to read splits file", ex);
             }
         for (String tableName : this.splitLocations.keySet()) {
             currentSplitsPerTable.put(tableName, this.splitLocations.get(tableName).size());
@@ -372,10 +368,11 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
     protected void readCache(BufferedReader in) throws IOException {
         this.splitLocations = new HashMap<>();
         this.splits = new HashMap<>();
+        // since we do not know whether -XX:+UseStringDeduplication is being used, lets do it ourselves
+        Map<String,String> locationDedup = new HashMap<>();
         String line;
         String tableName = null;
-        LinkedHashMap<Text,String> tmpSplitLocations = null;
-        TreeMap<Text,String> tmpTree = null;
+        Map<Text,String> tmpSplitLocations = null;
         List<Text> tmpSplits = null;
 
         while ((line = in.readLine()) != null) {
@@ -385,16 +382,16 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
                     this.splitLocations.remove(tableName);
                 }
                 tableName = parts[0];
-                tmpSplitLocations = new LinkedHashMap<>();
+                tmpSplitLocations = new HashMap<>();
                 tmpSplits = new ArrayList<>();
-                this.splitLocations.put(tableName, tmpSplitLocations);
-                this.splits.put(tableName, tmpSplits);
+                this.splitLocations.put(tableName, Collections.unmodifiableMap(tmpSplitLocations));
+                this.splits.put(tableName, Collections.unmodifiableList(tmpSplits));
             }
             if (parts.length >= 2) {
-                Text split = new Text(Base64.decodeBase64(parts[1].getBytes()));
+                Text split = new Text(Base64.decodeBase64(parts[1]));
                 tmpSplits.add(split);
                 if (parts.length == 3) {
-                    tmpSplitLocations.put(split, parts[2]);
+                    tmpSplitLocations.put(split, dedup(locationDedup, parts[2]));
                 }
             }
 
@@ -403,6 +400,15 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
             this.splitLocations.remove(tableName);
         }
         in.close();
+    }
+
+    private String dedup(Map<String,String> dedupMap, String value) {
+        String dedup = dedupMap.get(value);
+        if (dedup == null) {
+            dedupMap.put(value, value);
+            return value;
+        }
+        return dedup;
     }
 
     /**
@@ -432,7 +438,7 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
      *             for issues with read or write
      */
     public List<Text> getSplits(String table, int maxSplits) throws IOException {
-        return trimSplits(getAllSplits().get(table), maxSplits);
+        return trimSplits(getSplits(table), maxSplits);
     }
 
     /**
@@ -443,19 +449,7 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
     public Map<String,List<Text>> getSplits() throws IOException {
         if (this.splits.isEmpty())
             read();
-        return splits;
-    }
-
-    public Map<String,List<Text>> getAllSplits() throws IOException {
-        if (this.splits.isEmpty() && this.splitLocations.isEmpty()) {
-            read();
-        }
-        Map<String,List<Text>> allSplits = new HashMap<>();
-        allSplits.putAll(splits);
-        for (String table : this.splitLocations.keySet()) {
-            allSplits.put(table, new ArrayList(splitLocations.get(table).keySet()));
-        }
-        return allSplits;
+        return Collections.unmodifiableMap(splits);
     }
 
     /**
@@ -467,7 +461,7 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
         if (this.splitLocations.isEmpty())
             read();
         if (this.splitLocations.containsKey(table)) {
-            return Collections.unmodifiableMap(this.splitLocations.get(table));
+            return this.splitLocations.get(table);
         } else {
             return Collections.emptyMap();
         }

@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -40,7 +41,6 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
     private static final String today = formatDay(0);
     private Configuration conf;
     private Map<String,Map<Text,Integer>> shardPartitionsByTable;
-    private Map<String,Map<Text,String>> shardIdToLocations = Maps.newHashMap();
     private Map<Text,Integer> offsetsFactorByTable;
     int missingShardIdCount = 0;
 
@@ -134,15 +134,12 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
         if (log.isDebugEnabled())
             log.debug("Loading splits data for " + tableName);
 
-        Map<Text,String> shardIdToLocation = shardIdToLocations.get(tableName);
+        List<Text> sortedSplits = SplitsFile.getSplits(conf, tableName);
+        Map<Text,String> shardIdToLocation = SplitsFile.getSplitsAndLocations(conf, tableName);
 
-        if (null == shardIdToLocation) {
-            shardIdToLocation = SplitsFile.getSplitsAndLocations(conf, tableName);
-            shardIdToLocations.put(tableName, shardIdToLocation);
-        }
         if (log.isDebugEnabled())
             log.debug("Assigning partitioners for each shard in " + tableName);
-        return assignPartitionsForEachShard(shardIdToLocation);
+        return assignPartitionsForEachShard(sortedSplits, shardIdToLocation);
     }
 
     /**
@@ -161,10 +158,10 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
      *            the map of shard ids and their location
      * @return shardId to
      */
-    private HashMap<Text,Integer> assignPartitionsForEachShard(Map<Text,String> shardIdToLocations) {
+    private HashMap<Text,Integer> assignPartitionsForEachShard(List<Text> sortedShardIds, Map<Text,String> shardIdToLocations) {
         int totalNumUniqueTServers = calculateNumberOfUniqueTservers(shardIdToLocations);
 
-        HashMap<String,Integer> partitionsByTServer = getTServerAssignments(totalNumUniqueTServers, shardIdToLocations);
+        HashMap<String,Integer> partitionsByTServer = getTServerAssignments(totalNumUniqueTServers, sortedShardIds, shardIdToLocations);
         HashMap<Text,Integer> partitionsByShardId = getShardIdAssignments(shardIdToLocations, partitionsByTServer);
 
         if (log.isDebugEnabled())
@@ -181,17 +178,18 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
         return totalNumUniqueTServers;
     }
 
-    private HashMap<String,Integer> getTServerAssignments(int totalNumTServers, Map<Text,String> shardIdsToTservers) {
+    private HashMap<String,Integer> getTServerAssignments(int totalNumTServers, List<Text> sortedShardIds, Map<Text,String> shardIdsToTservers) {
         HashMap<String,Integer> partitionsByTServer = new HashMap<>(totalNumTServers);
         int nextAvailableSlot = 0;
         boolean alreadySkippedFutureShards = false;
-        for (Map.Entry<Text,String> entry : shardIdsToTservers.entrySet()) {
-            if (alreadySkippedFutureShards || !isFutureShard(entry.getKey())) { // short circuiting for performance
+        for (Text shard : sortedShardIds) {
+            if (alreadySkippedFutureShards || !isFutureShard(shard)) { // short circuiting for performance
                 alreadySkippedFutureShards = true;
-                Integer assignedPartition = partitionsByTServer.get(entry.getValue());
+                String location = shardIdsToTservers.get(shard);
+                Integer assignedPartition = partitionsByTServer.get(location);
                 if (null == assignedPartition) {
                     assignedPartition = nextAvailableSlot;
-                    partitionsByTServer.put(entry.getValue(), assignedPartition);
+                    partitionsByTServer.put(location, assignedPartition);
                     nextAvailableSlot++;
                 }
                 if (partitionsByTServer.size() == totalNumTServers) {

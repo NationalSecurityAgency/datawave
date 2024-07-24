@@ -527,7 +527,7 @@ public class TableSplitsCacheTest {
 
             Assert.assertNotNull("TableSplitsCache constructor failed to construct an instance.", uut);
 
-            Map<String,List<Text>> resultsSet = uut.getAllSplits();
+            Map<String,List<Text>> resultsSet = uut.getSplits();
 
             Assert.assertNotNull("TableSplitsCache#getSplits() failed created a map of tables and their splits", resultsSet);
             Assert.assertFalse("TableSplitsCache#getSplits() incorrectly populated map of tables and their splits", resultsSet.isEmpty());
@@ -561,7 +561,7 @@ public class TableSplitsCacheTest {
 
             Assert.assertNotNull("TableSplitsCache constructor failed to construct an instance.", uut);
 
-            List<Text> resultsSet = uut.getAllSplits().get("shard");
+            List<Text> resultsSet = uut.getSplits().get("shard");
 
             Assert.assertNotNull("TableSplitsCache#getSplits() failed to a list of splits", resultsSet);
             Assert.assertFalse("TableSplitsCache#getSplits() incorrectly populated the list of splits", resultsSet.isEmpty());
