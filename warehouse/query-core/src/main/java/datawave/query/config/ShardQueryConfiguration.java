@@ -354,8 +354,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs = Collections.emptyList();
     private String ivaratorFstHdfsBaseURIs = null;
     private int ivaratorCacheBufferSize = 10000;
-
-    private int uniqueCacheBufferSize = 100;
     private long ivaratorCacheScanPersistThreshold = 100000L;
     private long ivaratorCacheScanTimeout = 1000L * 60 * 60;
     private int maxFieldIndexRangeSplit = 11;
@@ -683,9 +681,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setCompositeFilterFunctionsEnabled(other.isCompositeFilterFunctionsEnabled());
         this.setGroupFieldsBatchSize(other.getGroupFieldsBatchSize());
         this.setAccrueStats(other.getAccrueStats());
-        this.setUniqueFields(other.getUniqueFields());
-        log.info("Checkpointing with " + getUniqueFields());
-        this.setUniqueCacheBufferSize(other.getUniqueCacheBufferSize());
+        this.setUniqueFields(UniqueFields.copyOf(other.getUniqueFields()));
         this.setCacheModel(other.getCacheModel());
         this.setTrackSizes(other.isTrackSizes());
         this.setContentFieldNames(null == other.getContentFieldNames() ? null : Lists.newArrayList(other.getContentFieldNames()));
@@ -1481,14 +1477,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.ivaratorFstHdfsBaseURIs = ivaratorFstHdfsBaseURIs;
     }
 
-    public int getUniqueCacheBufferSize() {
-        return uniqueCacheBufferSize;
-    }
-
-    public void setUniqueCacheBufferSize(int uniqueCacheBufferSize) {
-        this.uniqueCacheBufferSize = uniqueCacheBufferSize;
-    }
-
     public int getIvaratorCacheBufferSize() {
         return ivaratorCacheBufferSize;
     }
@@ -1844,7 +1832,11 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     }
 
     public void setUniqueFields(UniqueFields uniqueFields) {
-        this.uniqueFields = uniqueFields.clone();
+        this.uniqueFields = uniqueFields;
+        // If unique fields are present, make sure they are deconstructed by this point.
+        if (uniqueFields != null) {
+            uniqueFields.deconstructIdentifierFields();
+        }
     }
 
     public boolean isHitList() {
@@ -2862,7 +2854,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getGroupFieldsBatchSize() == that.getGroupFieldsBatchSize() &&
                 getAccrueStats() == that.getAccrueStats() &&
                 Objects.equals(getUniqueFields(), that.getUniqueFields()) &&
-                getUniqueCacheBufferSize() == that.getUniqueCacheBufferSize() &&
                 getCacheModel() == that.getCacheModel() &&
                 isTrackSizes() == that.isTrackSizes() &&
                 getEnforceUniqueConjunctionsWithinExpression() == that.getEnforceUniqueConjunctionsWithinExpression() &&
@@ -3129,7 +3120,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getAccrueStats(),
                 getGroupFields(),
                 getUniqueFields(),
-                getUniqueCacheBufferSize(),
                 getCacheModel(),
                 isTrackSizes(),
                 getContentFieldNames(),
