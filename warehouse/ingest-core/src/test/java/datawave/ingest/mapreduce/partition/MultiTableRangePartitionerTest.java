@@ -28,7 +28,7 @@ public class MultiTableRangePartitionerTest {
 
     @Before
     public void before() throws IOException {
-        mockJob = new Job();
+        mockJob = Job.getInstance();
         configuration = mockJob.getConfiguration();
         configuration.set(TableConfigurationUtil.JOB_OUTPUT_TABLE_NAMES, TableName.SHARD);
     }
