@@ -297,7 +297,7 @@ public class DataTypeAgeOffFilter extends AppliedRule {
                 final String dataTypeHasScanTime = options.getOption(dataType + ".hasScanTime");
                 if (Boolean.parseBoolean(dataTypeHasScanTime)) {
                     if (iterEnv != null) {
-                        final String scanTime = iterEnv.getConfig().get("table.custom.timestamp.current." + dataType);
+                        final String scanTime = iterEnv.getPluginEnv().getConfiguration(iterEnv.getTableId()).get("table.custom.timestamp.current." + dataType);
                         try {
                             dataTypeScanTimes.put(dataType, Long.parseLong(scanTime, 10));
                         } catch (final NumberFormatException e) {

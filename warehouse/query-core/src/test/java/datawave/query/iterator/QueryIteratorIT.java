@@ -149,7 +149,7 @@ public class QueryIteratorIT extends EasyMockSupport {
 
         environment = createMock(IteratorEnvironment.class);
         penvironment = createMock(PluginEnvironment.class);
-        EasyMock.expect(environment.getConfig()).andReturn(DefaultConfiguration.getInstance()).anyTimes();
+        EasyMock.expect(environment.getPluginEnv().getConfiguration(environment.getTableId())).andReturn((PluginEnvironment.Configuration) DefaultConfiguration.getInstance()).anyTimes();
         EasyMock.expect(environment.getPluginEnv()).andReturn(penvironment).anyTimes();
         EasyMock.expect(penvironment.getConfiguration()).andReturn(new ConfigurationImpl(DefaultConfiguration.getInstance())).anyTimes();
         filter = createMock(EventDataQueryFilter.class);

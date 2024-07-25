@@ -46,7 +46,7 @@ public class IteratorThreadPoolManager {
         final PluginEnvironment pluginEnv;
         if (env != null) {
             pluginEnv = env.getPluginEnv();
-            accumuloConfiguration = env.getConfig();
+            accumuloConfiguration = (AccumuloConfiguration) env.getPluginEnv().getConfiguration(env.getTableId());
         } else {
             pluginEnv = null;
             accumuloConfiguration = DefaultConfiguration.getInstance();
