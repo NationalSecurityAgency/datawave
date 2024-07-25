@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
@@ -269,7 +270,8 @@ public class DataTypeAgeOffFilter extends AppliedRule {
         isIndextable = false;
         if (options.getOption(AgeOffConfigParams.IS_INDEX_TABLE) == null) {
             if (iterEnv != null && iterEnv.getPluginEnv().getConfiguration(iterEnv.getTableId()) != null) {
-                isIndextable = Boolean.parseBoolean(iterEnv.getPluginEnv().getConfiguration(iterEnv.getTableId()).get("table.custom." + AgeOffConfigParams.IS_INDEX_TABLE));
+                isIndextable = Boolean.parseBoolean(((AccumuloConfiguration) iterEnv.getPluginEnv().getConfiguration(iterEnv.getTableId()))
+                                .get("table.custom." + AgeOffConfigParams.IS_INDEX_TABLE));
             }
         } else { // legacy
             isIndextable = Boolean.valueOf(options.getOption(AgeOffConfigParams.IS_INDEX_TABLE));
@@ -297,7 +299,8 @@ public class DataTypeAgeOffFilter extends AppliedRule {
                 final String dataTypeHasScanTime = options.getOption(dataType + ".hasScanTime");
                 if (Boolean.parseBoolean(dataTypeHasScanTime)) {
                     if (iterEnv != null) {
-                        final String scanTime = iterEnv.getPluginEnv().getConfiguration(iterEnv.getTableId()).get("table.custom.timestamp.current." + dataType);
+                        final String scanTime = ((AccumuloConfiguration) iterEnv.getPluginEnv().getConfiguration(iterEnv.getTableId()))
+                                        .get("table.custom.timestamp.current." + dataType);
                         try {
                             dataTypeScanTimes.put(dataType, Long.parseLong(scanTime, 10));
                         } catch (final NumberFormatException e) {
