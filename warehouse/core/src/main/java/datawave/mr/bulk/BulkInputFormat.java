@@ -262,6 +262,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
         conf.set(ZOOKEEPERS, zooKeepers);
         conf.set("accumulo.instance.name", instanceName);
         conf.set("accumulo.zookeepers", zooKeepers);
+
     }
 
     /**
