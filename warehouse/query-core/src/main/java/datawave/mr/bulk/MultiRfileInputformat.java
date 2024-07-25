@@ -152,8 +152,8 @@ public class MultiRfileInputformat extends RFileInputFormat {
 
             synchronized (MultiRfileInputformat.class) {
                 final InstanceOperations instOps = client.instanceOperations();
-                dfsUriMap.put(tableId, instOps.getSystemConfiguration().get(Property.INSTANCE_DFS_URI.getKey()));
-                dfsDirMap.put(tableId, instOps.getSystemConfiguration().get(Property.INSTANCE_DFS_DIR.getKey()));
+                dfsUriMap.put(tableId, instOps.getSystemConfiguration().get(Property.INSTANCE_VOLUMES.getKey()));
+                dfsDirMap.put(tableId, instOps.getSystemConfiguration().get(Property.INSTANCE_VOLUMES.getKey()));
             }
         }
 
