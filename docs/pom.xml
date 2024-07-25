@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave</groupId>
         <artifactId>datawave-parent</artifactId>
-        <version>7.2.0-SNAPSHOT</version>
+        <version>7.2.0</version>
     </parent>
     <artifactId>datawave-docs</artifactId>
     <!-- Declare all datawave modules as dependencies in order to have the javadoc include all the datawave source. -->
