@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import org.apache.commons.jexl3.JexlOperator;
 import org.apache.log4j.Logger;
 
 import datawave.data.type.Type;
@@ -178,7 +179,7 @@ public class DefaultArithmetic extends DatawaveArithmetic {
             Set<Object> set = (Set<Object>) left;
 
             for (Object o : set) {
-                if (super.compare(o, right, LESS_THAN) < 0) {
+                if (super.compare(o, right, JexlOperator.LT) < 0) {
                     return true;
                 }
             }
@@ -210,7 +211,7 @@ public class DefaultArithmetic extends DatawaveArithmetic {
             Set<Object> set = (Set<Object>) left;
 
             for (Object o : set) {
-                if (compare(o, right, LESS_THAN_OR_EQUAL) <= 0) {
+                if (compare(o, right, JexlOperator.LTE) <= 0) {
                     return true;
                 }
             }
@@ -242,7 +243,7 @@ public class DefaultArithmetic extends DatawaveArithmetic {
             Set<Object> set = (Set<Object>) left;
 
             for (Object o : set) {
-                if (compare(o, right, GREATER_THAN) > 0) {
+                if (compare(o, right, JexlOperator.GT) > 0) {
                     return true;
                 }
             }
@@ -274,7 +275,7 @@ public class DefaultArithmetic extends DatawaveArithmetic {
             Set<Object> set = (Set<Object>) left;
 
             for (Object o : set) {
-                if (compare(o, right, GREATER_THAN_OR_EQUAL) >= 0) {
+                if (compare(o, right, JexlOperator.GTE) >= 0) {
                     return true;
                 }
             }

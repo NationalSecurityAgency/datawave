@@ -9,6 +9,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.commons.jexl3.JexlArithmetic;
+import org.apache.commons.jexl3.JexlOperator;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.apache.lucene.util.IntsRef;
@@ -150,7 +151,7 @@ public abstract class DatawaveArithmetic extends JexlArithmetic {
      *             if either left or right is null
      * @since 2.1
      */
-    protected int compare(Object left, Object right, String operator) {
+    protected int compare(Object left, Object right, JexlOperator operator) {
         if (left != null && right != null) {
             if ((isNumberable(left) || isFloatingPoint(left)) && NumericalEncoder.isPossiblyEncoded(right.toString())) {
                 long lhs = toLong(left);

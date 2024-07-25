@@ -7,6 +7,7 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.commons.jexl3.JexlOperator;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.Sets;
@@ -221,7 +222,7 @@ public class HitListArithmetic extends DatawaveArithmetic implements StatefulAri
             for (final Object o : set) {
                 Object normalizedO = ValueTuple.getNormalizedValue(o);
                 Object normalizedRight = ValueTuple.getNormalizedValue(right);
-                if (compare(normalizedO, normalizedRight, LESS_THAN) < 0) {
+                if (compare(normalizedO, normalizedRight, JexlOperator.LTE) < 0) {
                     this.addTheCorrectHitSetValue(hitSet, o, right);
                     if (!exhaustiveHits) {
                         return true;
@@ -273,7 +274,7 @@ public class HitListArithmetic extends DatawaveArithmetic implements StatefulAri
             for (final Object o : set) {
                 Object normalizedO = ValueTuple.getNormalizedValue(o);
                 Object normalizedRight = ValueTuple.getNormalizedValue(right);
-                if (compare(normalizedO, normalizedRight, LESS_THAN_OR_EQUAL) <= 0) {
+                if (compare(normalizedO, normalizedRight, JexlOperator.LTE) <= 0) {
                     this.addTheCorrectHitSetValue(hitSet, o, right);
                     if (log.isTraceEnabled()) {
                         log.trace("hitSet now " + hitSet);
@@ -342,7 +343,7 @@ public class HitListArithmetic extends DatawaveArithmetic implements StatefulAri
             for (final Object o : set) {
                 Object normalizedO = ValueTuple.getNormalizedValue(o);
                 Object normalizedRight = ValueTuple.getNormalizedValue(right);
-                if (compare(normalizedO, normalizedRight, GREATER_THAN) > 0) {
+                if (compare(normalizedO, normalizedRight, JexlOperator.GT) > 0) {
                     this.addTheCorrectHitSetValue(hitSet, o, right);
                     if (log.isTraceEnabled()) {
                         log.trace("hitSet now " + hitSet);
@@ -411,7 +412,7 @@ public class HitListArithmetic extends DatawaveArithmetic implements StatefulAri
             for (final Object o : set) {
                 Object normalizedO = ValueTuple.getNormalizedValue(o);
                 Object normalizedRight = ValueTuple.getNormalizedValue(right);
-                if (compare(normalizedO, normalizedRight, GREATER_THAN_OR_EQUAL) >= 0) {
+                if (compare(normalizedO, normalizedRight, JexlOperator.GTE) >= 0) {
                     this.addTheCorrectHitSetValue(hitSet, o, right);
                     if (log.isTraceEnabled()) {
                         log.trace("hitSet now " + hitSet);
