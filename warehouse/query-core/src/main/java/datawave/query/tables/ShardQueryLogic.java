@@ -1,5 +1,8 @@
 package datawave.query.tables;
 
+import static datawave.query.jexl.functions.QueryFunctions.GROUPBY_FUNCTION;
+import static datawave.query.jexl.functions.QueryFunctions.UNIQUE_FUNCTION;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -2725,7 +2728,18 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
     @Override
     public boolean isCheckpointable() {
-        return getConfig().isCheckpointable();
+        boolean checkpointable = getConfig().isCheckpointable();
+
+        // NOTE: For now, don't allow unique or groupby queries to be checkpointable
+        if (checkpointable && getSettings() != null && getSettings().getQuery() != null) {
+            String query = getSettings().getQuery().toLowerCase();
+            if (query.contains(GROUPBY_FUNCTION) || query.contains(UNIQUE_FUNCTION)) {
+                checkpointable = false;
+                log.warn("Disabling checkpointing for groupby/unique query: " + getSettings().getId().toString());
+            }
+        }
+
+        return checkpointable;
     }
 
     @Override
