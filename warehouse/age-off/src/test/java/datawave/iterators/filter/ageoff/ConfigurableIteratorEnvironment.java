@@ -51,6 +51,11 @@ public class ConfigurableIteratorEnvironment implements IteratorEnvironment {
     }
 
     @Override
+    public TableId getTableId() {
+        return null;
+    }
+
+    @Override
     public IteratorUtil.IteratorScope getIteratorScope() {
         return scope;
     }
