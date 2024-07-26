@@ -2,7 +2,6 @@ package datawave.ingest.mapreduce.job;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.instrument.Instrumentation;
 import java.net.URI;
 import java.net.URL;
 import java.text.SimpleDateFormat;
@@ -11,7 +10,6 @@ import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 
 import org.apache.accumulo.core.fate.zookeeper.ZooCache;
 import org.apache.commons.codec.binary.Base64;
@@ -38,6 +36,7 @@ import org.powermock.api.easymock.PowerMock;
 import org.powermock.reflect.Whitebox;
 
 import datawave.ingest.data.config.ingest.AccumuloHelper;
+import datawave.ingest.util.ShardLocationTrieMap;
 import datawave.webservice.query.data.ObjectSizeOf;
 
 public class TableSplitsCacheTest {
@@ -689,7 +688,7 @@ public class TableSplitsCacheTest {
         Map<Text,String> map = new HashMap<>();
         fillMap(map);
         System.out.println("Hashmap size: " + ObjectSizeOf.Sizer.getObjectSize(map));
-        map = new TreeMap<>();
+        map = new ShardLocationTrieMap<>();
         fillMap(map);
         System.out.println("Triemap size: " + ObjectSizeOf.Sizer.getObjectSize(map));
     }

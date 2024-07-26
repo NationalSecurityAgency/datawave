@@ -19,13 +19,13 @@ import com.google.common.collect.Iterators;
 /**
  * A constructed trie which maps Text (byte arrays) to string values. This does NOT support null values or null keys.
  */
-public final class TextTrieMap<V> implements Map<Text,V> {
-    private static final Logger log = Logger.getLogger(TextTrieMap.class);
+public final class ShardLocationTrieMap<V> implements Map<Text,V> {
+    private static final Logger log = Logger.getLogger(ShardLocationTrieMap.class);
 
     protected TrieNode<V> root;
     protected int size;
 
-    public TextTrieMap() {
+    public ShardLocationTrieMap() {
         this.root = createNode();
     }
 
@@ -138,13 +138,8 @@ public final class TextTrieMap<V> implements Map<Text,V> {
     }
 
     public static class TrieNode<W> {
-        final TrieNode<W>[] children;
+        TrieNode<W>[] children = new TrieNode[11];
         W value;
-
-        public TrieNode() {
-            // TODO: can we reduce this array size?
-            this.children = new TrieNode[256];
-        }
     }
 
     public static class TrieNodeChildRef<U> {
@@ -231,13 +226,12 @@ public final class TextTrieMap<V> implements Map<Text,V> {
 
         private void pushChild() {
             TrieNodeChildRef<V> parent = queue.peekLast();
-            int character = parent.getChildIndex();
             TrieNode<V> childNode = parent.getChild();
             queue.add(new TrieNodeChildRef(childNode));
             if (key.length == keyLength) {
                 key = Arrays.copyOf(key, key.length * 2);
             }
-            key[keyLength++] = (byte) (character);
+            key[keyLength++] = getKeyByte(parent.child, parent.parent);
         }
 
         private void pop() {
@@ -271,11 +265,13 @@ public final class TextTrieMap<V> implements Map<Text,V> {
 
     private TrieNode<V> getNode(Text key, boolean createIfNeeded) {
         TrieNode<V> ptr = root;
-        for (byte b : key.getBytes()) {
-            TrieNode<V> next = ptr.children[(0xff & (int) b)];
+        byte[] data = key.getBytes();
+        for (int i = 0; i < key.getLength(); i++) {
+            int index = getChildIndex(data[i], ptr);
+            TrieNode<V> next = ptr.children[index];
             if (next == null) {
                 if (createIfNeeded) {
-                    ptr.children[(0xff & (int) b)] = next = createNode();
+                    ptr.children[index] = next = createNode();
                 } else {
                     return null;
                 }
@@ -287,6 +283,39 @@ public final class TextTrieMap<V> implements Map<Text,V> {
 
     public TrieNode<V> createNode() {
         return new TrieNode();
+    }
+
+    public static int getChildIndex(byte b, TrieNode node) {
+        int c = (0xff & (int) b);
+        if (node.children.length == 256) {
+
+            return c;
+        }
+        if (b >= '0' && b <= '9') {
+            return c - '0';
+        } else if (b == '_') {
+            return 10;
+        } else {
+            // this is the case where we got a character outside of the expected shard row range
+            // reallocate the children array and move the children into the new array
+            TrieNode[] children = new TrieNode[256];
+            for (int i = 0; i < 10; i++) {
+                children[i + '0'] = node.children[i];
+            }
+            children['_'] = node.children[10];
+            node.children = children;
+            return c;
+        }
+    }
+
+    public static byte getKeyByte(int index, TrieNode node) {
+        if (node.children.length == 256) {
+            return (byte) index;
+        } else if (index == 10) {
+            return '_';
+        } else {
+            return (byte) ('0' + index);
+        }
     }
 
 }

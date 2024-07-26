@@ -11,7 +11,6 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -47,7 +46,7 @@ import com.google.common.collect.Maps;
 import datawave.ingest.config.BaseHdfsFileCacheUtil;
 import datawave.ingest.mapreduce.partition.BalancedShardPartitioner;
 import datawave.ingest.mapreduce.partition.DelegatePartitioner;
-import datawave.ingest.util.TextTrieMap;
+import datawave.ingest.util.ShardLocationTrieMap;
 import datawave.util.StringUtils;
 
 /**
@@ -373,7 +372,7 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
         Map<String,String> locationDedup = new HashMap<>();
         String line;
         String tableName = null;
-        Map tmpSplitLocations = new TextTrieMap();
+        Map tmpSplitLocations = new ShardLocationTrieMap();
         List<Text> tmpSplits = null;
 
         while ((line = in.readLine()) != null) {
@@ -383,7 +382,7 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
                     this.splitLocations.put(tableName, tmpSplitLocations);
                 }
                 tableName = parts[0];
-                tmpSplitLocations = new TextTrieMap();
+                tmpSplitLocations = new ShardLocationTrieMap();
                 tmpSplits = new ArrayList<>();
                 this.splits.put(tableName, Collections.unmodifiableList(tmpSplits));
             }
