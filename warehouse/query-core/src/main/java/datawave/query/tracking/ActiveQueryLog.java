@@ -10,6 +10,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import org.apache.accumulo.core.client.PluginEnvironment;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.data.Range;
 import org.apache.commons.lang.StringUtils;
@@ -25,7 +26,7 @@ public class ActiveQueryLog {
     private static final Logger log = Logger.getLogger(ActiveQueryLog.class);
     private static Cache<String,ActiveQueryLog> logCache = null;
     private static final Object logCacheLock = new Object();
-    private static AccumuloConfiguration conf = null;
+    private static PluginEnvironment.Configuration conf = null;
 
     // Accumulo properties
     public static final String MAX_IDLE = "datawave.query.active.maxIdleMs";
@@ -50,9 +51,9 @@ public class ActiveQueryLog {
 
     private final String name;
 
-    synchronized public static void setConfig(final AccumuloConfiguration conf) {
+    synchronized public static void setConfig(final PluginEnvironment.Configuration conf) {
         if (conf != null) {
-            if (ActiveQueryLog.conf == null || conf.getUpdateCount() > ActiveQueryLog.conf.getUpdateCount()) {
+            if (ActiveQueryLog.conf == null) {
                 ActiveQueryLog.conf = conf;
             }
             // Do not allow access to the cache while updating each log's settings.
@@ -126,7 +127,7 @@ public class ActiveQueryLog {
         this(null, null);
     }
 
-    private ActiveQueryLog(AccumuloConfiguration conf, String name) {
+    private ActiveQueryLog(PluginEnvironment.Configuration conf, String name) {
         if (conf != null) {
             checkSettings(conf, true);
         } else {
@@ -217,7 +218,7 @@ public class ActiveQueryLog {
         }
     }
 
-    private void checkSettings(AccumuloConfiguration conf, boolean useDefaults) {
+    private void checkSettings(PluginEnvironment.Configuration conf, boolean useDefaults) {
 
         String maxIdleStr = conf.get(MAX_IDLE);
         if (maxIdleStr != null) {
