@@ -91,9 +91,4 @@ public class BulkIteratorEnvironment implements IteratorEnvironment {
         return null;
     }
 
-    @Override
-    public TableId getTableId() {
-        return null;
-    }
-
 }

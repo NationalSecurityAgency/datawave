@@ -270,7 +270,7 @@ public class FieldAgeOffFilter extends AppliedRule {
 
         isIndextable = false;
         if (options.getOption(AgeOffConfigParams.IS_INDEX_TABLE) == null) {
-            if (iterEnv != null && iterEnv.getPluginEnv().getConfiguration(iterEnv.getTableId()) != null) {
+            if (iterEnv != null && iterEnv.getPluginEnv().getConfiguration() != null) {
                 isIndextable = Boolean.parseBoolean(
                                 iterEnv.getPluginEnv().getConfiguration(iterEnv.getTableId()).get("table.custom." + AgeOffConfigParams.IS_INDEX_TABLE));
             }
