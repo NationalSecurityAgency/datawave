@@ -65,33 +65,33 @@ plugins: [jekyll-redirect-from]
 #
 # (1) Copy the existing _docs-latest to a new backup folder (aka "collection"), since it's now the "old" version. E.g.,...
 #
-#     cp -a _docs-latest  _docs-6x (Note: maintaining the underscore prefix is important)
+#     cp -a _docs-latest  _docs-7x (Note: maintaining the underscore prefix is important)
 #
 # (2) Delete the 'redirect' files from the "old" version, since we prefer to only maintain one set. E.g.,...
 #
-#     cd _docs-6x/  &&  rm -f index.md data-model.md quickstart.md tour.md
+#     rm -f _docs-7x/index.md _docs-7x/data-model.md _docs-7x/quickstart.md _docs-7x/tour.md
 #
 # (3) Update the 'redirect' files in _docs-latest to reflect the new major version as needed. E.g.,...
 #
-#     cd _docs-latest/ && sed -i 's/6.x/7.x/g' *.md
+#     sed -i 's/7.x/8.x/g' _docs-latest/*.md
 #
 # (4) Backup the current _data/sidebars/docs-latest-sidebar.yml to maintain compatibility with the "old" docs version. E.g.,...
 #
-#     cp _data/sidebars/docs-latest-sidebar.yml  _data/sidebars/docs-6x-sidebar.yml
+#     cp _data/sidebars/docs-latest-sidebar.yml  _data/sidebars/docs-7x-sidebar.yml
 #
 # (5) Update _data/sidebars/docs-latest-sidebar.yml to reflect the new major version as needed. E.g.,...
 #
-#     cd _data/sidebars/ && sed -i 's/6.x/7.x/g' docs-latest-sidebar.yml
+#     sed -i 's/7.x/8.x/g' _data/sidebars/docs-latest-sidebar.yml
 #
 # (6) Update _data/topnav.yml to reflect the new version. No need to back this one up since we're only maintaining a
 #     single top navigation bar for all docs versions, and it should always target the latest docs. E.g.,...
 #
-#     cd _data/ && sed -i 's/6.x/7.x/g' topnav.yml
+#     sed -i 's/7.x/8.x/g' _data/topnav.yml
 #
 # (7) _config.yml: Update the "collections" yaml section below as necessary to preserve permalinks for the new and old versions.
 #
 #     E.g., copy the "docs-latest" stanza below to a new "docs-6x" stanza, and update the "docs-latest" permalink to reflect
-#     the new 7.x major version 
+#     the new 8.x major version 
 #
 # (8) _config.yml: Update Frontmatter "defaults" yaml below as necessary, similar to step #7 above, making sure to
 #     configure the 'scope:type', 'values:sidebar', and 'values:release_tag' properties for the new and old docs versions  
@@ -105,20 +105,29 @@ plugins: [jekyll-redirect-from]
 
 collections: 
   # The "docs-latest" collection renders _docs-latest folder contents to the configured permalink path.
-  # Note the relationship between this collection and the frontmatter config below where scope:type == 'docs-latest' 
+  # Note the relationship between this collection and the frontmatter config below where scope.type == 'docs-latest' 
   docs-latest:
+    output: true
+    permalink: "/docs/7.x/:path"
+  
+  # The "docs-6x" collection renders _docs-6x folder contents to the configured permalink path.
+  # Note the relationship between this collection and the frontmatter config below where scope.type == 'docs-6x' 
+  docs-6x:
+    # Set 'output: false' to disable rendering of 6.x docs
     output: true
     permalink: "/docs/6.x/:path"
 
   # Likewise, "docs-5x" below renders _docs-5x folder contents, so that users can still navigate to the old docs
-  # Note the relationship between this collection and the frontmatter config below where scope:type == 'docs-5x'  
+  # Note the relationship between this collection and the frontmatter config below where scope.type == 'docs-5x'  
   docs-5x:
     # Set 'output: false' to disable rendering of 5.x docs
     output: true
     permalink: "/docs/5.x/:path"
+    
+  # There was never a 4.x DW release, for a variety of reasons...
 
   # Likewise, "docs-3x" below renders _docs-3x folder contents, so that users can still navigate to the old docs
-  # Note the relationship between this collection and the frontmatter config below where scope:type == 'docs-3x'
+  # Note the relationship between this collection and the frontmatter config below where scope.type == 'docs-3x'
   docs-3x:
     # Set 'output: false' to disable rendering of 3.x docs
     output: true
@@ -178,7 +187,6 @@ defaults:
     values:
       layout: "docs"
       title_prefix: "DataWave 3.x Docs - "
-      # Configure _data/sidebar/docs-3x-sidebar.yml...
       sidebar: docs-3x-sidebar
       # Note that release_tag is a page-scoped variable that is used for, among
       # other things, a means of creating href links to specific source files
@@ -197,7 +205,6 @@ defaults:
     values:
       layout: "docs"
       title_prefix: "DataWave 5.x Docs - "
-      # Configure _data/sidebar/docs-5x-sidebar.yml...
       sidebar: docs-5x-sidebar
       # Note that release_tag is a page-scoped variable that is used for, among
       # other things, a means of creating href links to specific source files
@@ -209,20 +216,37 @@ defaults:
       toc: true
       topnav: topnav
   -
+    # set frontmatter defaults for the previous DW 6.x docs "collection"
+    scope:
+      path: ""
+      type: "docs-6x"
+    values:
+      layout: "docs"
+      title_prefix: "DataWave 6.x Docs - "
+      sidebar: docs-6x-sidebar
+      # Note that release_tag is a page-scoped variable that is used for, among
+      # other things, a means of creating href links to specific source files
+      # on the main datawave repo, sometimes to specific line #'s in a given source
+      # file. Thus, changing the release_tag here can potentially break things
+      release_tag: 6.5.5
+      show_summary: true
+      skip_title_for_h1: false
+      toc: true
+      topnav: topnav
+  -
     # set frontmatter defaults for the current DW docs version
     scope:
       path: ""
       type: "docs-latest"
     values:
       layout: "docs"
-      title_prefix: "DataWave 6.x Docs - "
-      # Configure _data/sidebar/docs-latest-sidebar.yml...
+      title_prefix: "DataWave 7.x Docs - "
       sidebar: docs-latest-sidebar
       # Note that release_tag is a page-scoped variable that is used for, among
       # other things, a means of creating href links to specific source files
       # on the main datawave repo, sometimes to specific line #'s in a given source
       # file. Thus, changing the release_tag here can potentially break things
-      release_tag: 6.5.5
+      release_tag: 7.2.1
       show_summary: true
       skip_title_for_h1: false
       toc: true

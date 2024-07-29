@@ -185,14 +185,14 @@ self-signed materials are used...
   within your *~/.bashrc* prior to [installing the quickstart](quickstart-install)
 
 [dw_blob_env_sh]: https://github.com/NationalSecurityAgency/datawave/blob/{{ page.release_tag }}/contrib/datawave-quickstart/bin/env.sh
-[dw_blob_common_sh]: https://github.com/NationalSecurityAgency/datawave/blob/{{ page.release_tag }}/contrib/datawave-quickstart/bin/common.sh
+[dw_blob_common_sh]: https://github.com/NationalSecurityAgency/datawave/blob/{{ page.release_tag }}/contrib/datawave-quickstart/bin/common.sh#L117
 [dw_blob_query_sh]: https://github.com/NationalSecurityAgency/datawave/blob/{{ page.release_tag }}/contrib/datawave-quickstart/bin/query.sh
 [dw_blob_query_sh_query_func]: https://github.com/NationalSecurityAgency/datawave/blob/{{ page.release_tag }}/contrib/datawave-quickstart/bin/query.sh#L16
-[dw_blob_datawave_bootstrap_pki]: https://github.com/NationalSecurityAgency/datawave/blob/{{ page.release_tag }}/contrib/datawave-quickstart/bin/services/datawave/bootstrap.sh#L49
+[dw_blob_datawave_bootstrap_pki]: https://github.com/NationalSecurityAgency/datawave/blob/{{ page.release_tag }}/contrib/datawave-quickstart/bin/services/datawave/bootstrap.sh#L50
 [dw_blob_datawave_bootstrap]: https://github.com/NationalSecurityAgency/datawave/blob/{{ page.release_tag }}/contrib/datawave-quickstart/bin/services/datawave/bootstrap.sh
 [dw_blob_datawave_bootstrap_web]: https://github.com/NationalSecurityAgency/datawave/blob/{{ page.release_tag }}/contrib/datawave-quickstart/bin/services/datawave/bootstrap-web.sh
-[dw_blob_datawave_bootstrap_web_start]: https://github.com/NationalSecurityAgency/datawave/blob/{{ page.release_tag }}/contrib/datawave-quickstart/bin/services/datawave/bootstrap-web.sh#L119
-[dw_blob_datawave_bootstrap_web_test]: https://github.com/NationalSecurityAgency/datawave/blob/{{ page.release_tag }}/contrib/datawave-quickstart/bin/services/datawave/bootstrap-web.sh#L66
+[dw_blob_datawave_bootstrap_web_start]: https://github.com/NationalSecurityAgency/datawave/blob/{{ page.release_tag }}/contrib/datawave-quickstart/bin/services/datawave/bootstrap-web.sh#L116
+[dw_blob_datawave_bootstrap_web_test]: https://github.com/NationalSecurityAgency/datawave/blob/{{ page.release_tag }}/contrib/datawave-quickstart/bin/services/datawave/bootstrap-web.sh#L63
 [dw_blob_datawave_bootstrap_ingest]: https://github.com/NationalSecurityAgency/datawave/blob/{{ page.release_tag }}/contrib/datawave-quickstart/bin/services/datawave/bootstrap-ingest.sh
 [dw_blob_datawave_bootstrap_ingest_json]: https://github.com/NationalSecurityAgency/datawave/blob/{{ page.release_tag }}/contrib/datawave-quickstart/bin/services/datawave/bootstrap-ingest.sh#L222
 [dw_blob_datawave_bootstrap_ingest_wiki]: https://github.com/NationalSecurityAgency/datawave/blob/{{ page.release_tag }}/contrib/datawave-quickstart/bin/services/datawave/bootstrap-ingest.sh#L161

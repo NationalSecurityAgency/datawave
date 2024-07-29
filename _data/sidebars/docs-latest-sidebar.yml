@@ -1,72 +1,72 @@
-# This file is used to construct the sidebar navigation for DataWave 6.x docs
+# This file is used to construct the sidebar navigation for DataWave 7.x docs
 
 entries:
 - title: sidebar
   product: DataWave
-  version: 6.x
+  version: 7.x
   folders:
 
   - title: Getting Started
     folderitems:
 
     - title: Overview
-      url: /docs/6.x/getting-started/overview
+      url: /docs/7.x/getting-started/overview
 
     - title: Data Model
-      url: /docs/6.x/getting-started/data-model
+      url: /docs/7.x/getting-started/data-model
 
     - title: Development
-      url: /docs/6.x/getting-started/development
+      url: /docs/7.x/getting-started/development
 
       subfolders:
       - title: Quickstart
         subfolderitems:
         - title: Installation
-          url: /docs/6.x/getting-started/quickstart-install
+          url: /docs/7.x/getting-started/quickstart-install
 
         - title: Reference
-          url: /docs/6.x/getting-started/quickstart-reference
+          url: /docs/7.x/getting-started/quickstart-reference
 
         - title: Troubleshooting
-          url: /docs/6.x/getting-started/quickstart-trouble
+          url: /docs/7.x/getting-started/quickstart-trouble
 
   - title: Tour
     folderitems:
     - title: Getting Started
-      url: /docs/6.x/tour/getting-started
+      url: /docs/7.x/tour/getting-started
 
     - title: Ingest Basics
-      url: /docs/6.x/tour/ingest-basics
+      url: /docs/7.x/tour/ingest-basics
 
     - title: Query Basics
-      url: /docs/6.x/tour/query-basics
+      url: /docs/7.x/tour/query-basics
 
     - title: Edge Query
-      url: /docs/6.x/tour/edge-query
+      url: /docs/7.x/tour/edge-query
 
   - title: Ingest
     folderitems:
 
     - title: Overview
-      url: /docs/6.x/ingest/overview
+      url: /docs/7.x/ingest/overview
 
     - title: Data Flow
-      url: /docs/6.x/ingest/data-flow
+      url: /docs/7.x/ingest/data-flow
 
     - title: Development
-      url: /docs/6.x/ingest/development
+      url: /docs/7.x/ingest/development
 
     - title: Configuration
-      url: /docs/6.x/ingest/configuration
+      url: /docs/7.x/ingest/configuration
 
   - title: Query
     folderitems:
 
     - title: Overview
-      url: /docs/6.x/query/overview
+      url: /docs/7.x/query/overview
 
     - title: Query Syntax
-      url: /docs/6.x/query/syntax
+      url: /docs/7.x/query/syntax
 
     - title: Development
-      url: /docs/6.x/query/development
+      url: /docs/7.x/query/development

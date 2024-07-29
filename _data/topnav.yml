@@ -4,9 +4,9 @@ topnav:
 - title: Topnav
   items:
     - title: Documentation
-      url: /docs/6.x/getting-started/overview
+      url: /docs/7.x/getting-started/overview
     - title: Tour
-      url: /docs/6.x/tour/getting-started
+      url: /docs/7.x/tour/getting-started
     - title: GitHub
       external_url: https://github.com/nationalsecurityagency/datawave
     - title: News
