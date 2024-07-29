@@ -178,7 +178,7 @@ public class NegationFilterTest {
             // no-op
         }
 
-        // this iterator shouldn't need to use the index only flag
+        // tests involving this iterator are assumed to be for indexed event fields
         @Override
         public boolean isNonEventField() {
             return false;
