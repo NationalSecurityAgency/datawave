@@ -41,12 +41,15 @@ public class FieldOrTermNodeCostComparator extends NodeCostComparator {
                 sum += getCostIndex(node.jjtGetChild(i));
             }
             return sum;
+        } else if (QueryPropertyMarker.findInstance(node).isAnyType()) {
+            return Integer.MAX_VALUE;
         } else if (node instanceof ASTAndNode) {
             int lowest = Integer.MAX_VALUE;
             for (int i = 0; i < node.jjtGetNumChildren(); i++) {
                 int cost = getCostIndex(node.jjtGetChild(i));
-                if (cost < lowest)
+                if (cost < lowest) {
                     lowest = cost;
+                }
             }
             return lowest;
         } else {
