@@ -69,6 +69,7 @@ import datawave.mr.bulk.BulkInputFormat.AccumuloIteratorOption;
 import datawave.mr.bulk.split.FileRangeSplit;
 import datawave.mr.bulk.split.RangeSplit;
 import datawave.mr.bulk.split.TabletSplitSplit;
+import something.somethingelse.finalsomething.SingleConfigurationPluginEnvironment;
 
 public class RecordIterator extends RangeSplit implements SortedKeyValueIterator<Key,Value>, Closeable {
 
@@ -222,7 +223,7 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
 
         @Override
         public PluginEnvironment getPluginEnv() {
-            return null;
+            return new SingleConfigurationPluginEnvironment();
         }
     }
 

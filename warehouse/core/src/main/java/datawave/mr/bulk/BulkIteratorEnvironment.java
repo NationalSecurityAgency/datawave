@@ -8,13 +8,13 @@ import org.apache.accumulo.core.client.sample.SamplerConfiguration;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.conf.DefaultConfiguration;
 import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.TableId;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.IteratorUtil.IteratorScope;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.spi.common.ServiceEnvironment;
+import something.somethingelse.finalsomething.SingleConfigurationPluginEnvironment;
 
 public class BulkIteratorEnvironment implements IteratorEnvironment {
 
@@ -88,7 +88,7 @@ public class BulkIteratorEnvironment implements IteratorEnvironment {
 
     @Override
     public PluginEnvironment getPluginEnv() {
-        return null;
+        return new SingleConfigurationPluginEnvironment();
     }
 
 }
