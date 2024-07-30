@@ -1,0 +1,87 @@
+#!/usr/bin/env bash
+
+#
+# This script will automatically prepare a new '_docs-latest' collection and update a few related
+# site files for the next 1-up major release, based on the current major version found in the
+# local checkout. The new major release version can be overridden, if needed
+#
+# See _config.yml. This automates only steps 1 - 6, as described in _config.yml. Additional manual
+# updates to _config.yml are currently still required
+#
+# Note: It's up to the user to ensure that the local checkout is up to date with the remote repo,
+#       and that any automated changes to the repo meet with expectations
+#
+
+_repo_dir="$( cd -P "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
+
+declare -i _curr_major_version=$(grep -m1 version "${_repo_dir}"/_data/sidebars/docs-latest-sidebar.yml | awk '{print $NF}' | cut -d'.' -f1)
+declare -i _next_major_version=$((_curr_major_version + 1))
+
+log() {
+  echo "[INFO] "${@}""
+}
+
+usage() {
+cat <<EOF
+Usage:
+  $( basename "$0" ) [-n <INTEGER>] [-v]
+Options:
+  -n, --next-major-version <INT> | Override the auto-detected 1-up major version, if necessary
+  -v, --verbose                  | Turn on debug mode (set -x)
+  -h, --help                     | Print this usage information and exit
+EOF
+exit 0
+}
+
+configure() {
+  while [[ "${1}" != "" ]]; do
+    case "${1}" in
+      --verbose | -v)
+         set -x
+         ;;
+      --next-major-version | -n)
+         shift
+         _next_major_version="${1}"
+         ;;
+      --help | -h)
+         usage
+         ;;
+      *)
+         loge "Invalid argument: '${1}'"
+         usage
+    esac
+    shift
+  done
+  set -euo pipefail
+}
+
+configure "${@}"
+
+log "Current major version: ${_curr_major_version}"
+log "Next major version: ${_next_major_version}"
+
+log "(1) Creating _docs-${_curr_major_version}x collection for the previous major release"
+cp -a ${_repo_dir}/_docs-latest ${_repo_dir}/_docs-${_curr_major_version}x
+
+log "(2) Removing redirect files from the new _docs-${_curr_major_version}x collection"
+rm -f "${_repo_dir}"/_docs-${_curr_major_version}x/index.md \
+      "${_repo_dir}"/_docs-${_curr_major_version}x/data-model.md \
+      "${_repo_dir}"/_docs-${_curr_major_version}x/quickstart.md \
+      "${_repo_dir}"/_docs-${_curr_major_version}x/tour.md
+
+log "(3) Performing sed replacements on _docs-latest/\*.md to reflect the new version"
+sed -i "s/${_curr_major_version}.x/${_next_major_version}.x/g" "${_repo_dir}"/_docs-latest/*.md
+
+log "(4) Backing up the ${_curr_major_version}.x sidebar to _data/sidebars/docs-${_curr_major_version}x-sidebar.yml"
+cp ${_repo_dir}/_data/sidebars/docs-latest-sidebar.yml  "${_repo_dir}"/_data/sidebars/docs-${_curr_major_version}x-sidebar.yml
+
+log "(5) Performing sed replacements on _data/sidebars/docs-latest-sidebar.yml to reflect the new version"
+sed -i "s/${_curr_major_version}.x/${_next_major_version}.x/g" "${_repo_dir}"/_data/sidebars/docs-latest-sidebar.yml
+
+log "(6) Performing sed replacements on _data/topnav.yml to reflect the new version"
+sed -i "s/${_curr_major_version}.x/${_next_major_version}.x/g" "${_repo_dir}"/_data/topnav.yml
+
+log "Complete remaining configuration updates to _config.yml, and perform any content updates to _docs-latest/ as needed"
+log "Please run the site locally to test your changes!"
+
+exit 0

@@ -5,7 +5,7 @@
 #
 # The script will automatically generate (and optionally commit & push) _posts/release entries for
 # the gh-pages branch as "Latest Project News", i.e., for newly tagged DW releases that are discovered
-# on DW_GITHUB_REMOTE_URL (see Prerequisites below) .
+# on DW_GITHUB_REMOTE_URL (see Prerequisites below).
 #
 # Also see the TRACKED_DW_VERSIONS variable below.
 #

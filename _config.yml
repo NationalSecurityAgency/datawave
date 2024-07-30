@@ -63,7 +63,10 @@ plugins: [jekyll-redirect-from]
 #
 # For doc updates related to a new major release, you'll need to start with step (1) below.
 #
-# (1) Copy the existing _docs-latest to a new backup folder (aka "collection"), since it's now the "old" version. E.g.,...
+# Note: You may use scripts/prep-next-major-release-docs to automate steps 1-6 below
+#
+# (1) Assuming 8.x is the next major release, copy the existing _docs-latest (7.x) to a new backup folder (aka "collection").
+#     E.g.,...
 #
 #     cp -a _docs-latest  _docs-7x (Note: maintaining the underscore prefix is important)
 #
@@ -88,13 +91,15 @@ plugins: [jekyll-redirect-from]
 #
 #     sed -i 's/7.x/8.x/g' _data/topnav.yml
 #
-# (7) _config.yml: Update the "collections" yaml section below as necessary to preserve permalinks for the new and old versions.
+# (7) _config.yml: Following existing examples, update the "collections" yaml section below as necessary to preserve
+#                  permalinks for the new and old versions.
 #
-#     E.g., copy the "docs-latest" stanza below to a new "docs-6x" stanza, and update the "docs-latest" permalink to reflect
-#     the new 8.x major version 
+#     That is, copy the "docs-latest" stanza below to a new "docs-7x" stanza, and update the "docs-latest" permalink to
+#     reflect the new 8.x major version 
 #
-# (8) _config.yml: Update Frontmatter "defaults" yaml below as necessary, similar to step #7 above, making sure to
-#     configure the 'scope:type', 'values:sidebar', and 'values:release_tag' properties for the new and old docs versions  
+# (8) _config.yml: Following existing examples, update frontmatter "defaults" yaml below as necessary, similar to step
+#                  7 above, making sure to configure the 'scope.type', 'values.sidebar', and 'values.release_tag'
+#                  properties for the new and old docs versions  
 #
 # (9) Make any version-specific content updates to the _docs-latest/*/*.md files for the new DW release
 #
