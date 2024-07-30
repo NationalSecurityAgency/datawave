@@ -7,6 +7,8 @@ import org.apache.accumulo.core.client.Accumulo;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.hadoop.conf.Configuration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.ingest.data.config.ConfigurationHelper;
 
@@ -28,10 +30,17 @@ public class AccumuloHelper {
     private String instanceName = null;
     private String zooKeepers = null;
 
+    private static final Logger log = LoggerFactory.getLogger(AccumuloHelper.class);
+
     public void setup(Configuration config) throws IllegalArgumentException {
         username = ConfigurationHelper.isNull(config, USERNAME, String.class);
-        byte[] pw = Base64.getDecoder().decode(ConfigurationHelper.isNull(config, PASSWORD, String.class));
-        password = new PasswordToken(pw);
+        String encodedPW = ConfigurationHelper.isNull(config, PASSWORD, String.class);
+        if (encodedPW.isBlank()) {
+            log.warn("no Accumulo password?");
+            password = new PasswordToken(new byte[0]);
+        } else {
+            password = new PasswordToken(Base64.getDecoder().decode(encodedPW));
+        }
         instanceName = ConfigurationHelper.isNull(config, INSTANCE_NAME, String.class);
         zooKeepers = ConfigurationHelper.isNull(config, ZOOKEEPERS, String.class);
     }
