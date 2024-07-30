@@ -1,5 +1,7 @@
 package datawave.util.ssdeep;
 
+import java.util.Set;
+
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -28,11 +30,12 @@ public class SSDeepNGramOverlapScorerTest {
 
     @Test
     public void testCompare() {
-        SSDeepHashScorer scorer = new SSDeepNGramOverlapScorer(7, 3, 6);
+        SSDeepHashScorer<Set<NGramTuple>> scorer = new SSDeepNGramOverlapScorer(7, 3, 6);
         for (int i = 0; i < testData.length; i++) {
             SSDeepHash queryHash = SSDeepHash.parse(testData[i][0]);
             SSDeepHash targetHash = SSDeepHash.parse(testData[i][1]);
-            int score = scorer.apply(queryHash, targetHash);
+            Set<NGramTuple> overlappingTuples = scorer.apply(queryHash, targetHash);
+            int score = overlappingTuples.size();
             Assert.assertEquals("Expected score of " + expectedScores[i] + " for query: " + queryHash + ", target: " + targetHash, expectedScores[i], score);
         }
     }

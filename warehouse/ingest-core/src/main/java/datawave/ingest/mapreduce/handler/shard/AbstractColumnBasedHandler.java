@@ -9,13 +9,13 @@ import org.apache.log4j.Logger;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
+import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
 import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.data.config.DataTypeHelper;
 import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.ingest.IngestHelperInterface;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
 
 public class AbstractColumnBasedHandler<KEYIN> extends ShardedDataTypeHandler<KEYIN> {
 
@@ -77,7 +77,7 @@ public class AbstractColumnBasedHandler<KEYIN> extends ShardedDataTypeHandler<KE
 
             // Put the normalized field name and normalized value into the reverse
             if (createGlobalReverseIndexTerms) {
-                if (helper.isReverseIndexedField(e.getValue().getIndexedFieldName())) {
+                if (e.getValue().getIndexedFieldValue() != null && helper.isReverseIndexedField(e.getValue().getIndexedFieldName())) {
                     NormalizedContentInterface rField = (NormalizedContentInterface) (e.getValue().clone());
                     rField.setEventFieldValue(new StringBuilder(rField.getEventFieldValue()).reverse().toString());
                     rField.setIndexedFieldValue(new StringBuilder(rField.getIndexedFieldValue()).reverse().toString());

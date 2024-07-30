@@ -22,7 +22,7 @@ import org.apache.deltaspike.core.api.jmx.MBean;
 import org.jboss.resteasy.annotations.GZIP;
 
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
-import datawave.webservice.query.logic.QueryLogic;
+import datawave.core.query.logic.QueryLogic;
 import datawave.webservice.query.runner.QueryExecutorBean;
 import datawave.webservice.query.runner.RunningQuery;
 import datawave.webservice.result.VoidResponse;

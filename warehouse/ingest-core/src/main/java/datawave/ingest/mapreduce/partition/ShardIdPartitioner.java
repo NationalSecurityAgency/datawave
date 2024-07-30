@@ -4,6 +4,7 @@ import java.text.ParseException;
 import java.util.Date;
 
 import org.apache.accumulo.core.data.Value;
+import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.Job;
@@ -72,27 +73,29 @@ public class ShardIdPartitioner extends Partitioner<BulkIngestKey,Value> impleme
      *             for issues parsing the time
      * @return the shard id number
      */
-    private long generateNumberForShardId(String shardId, long baseTime) throws ParseException {
-        if (shardId.charAt(SHARD_ID_SPLIT) != '_') {
+    protected long generateNumberForShardId(String shardId, long baseTime) throws ParseException {
+        String[] shardPieces = StringUtils.split(shardId, '_');
+
+        if (shardPieces.length != 2) {
             throw new ParseException("Shard id is not in expected format: yyyyMMdd_n: " + shardId, SHARD_ID_SPLIT);
         }
 
         // turn the yyyyMMdd into the number of days until base time
-        Date date = DateHelper.parse(shardId.substring(0, SHARD_ID_SPLIT));
+        Date date = DateHelper.parse(shardPieces[0]);
         long daysFromBaseTime = (baseTime - (date.getTime() / MILLIS_PER_DAY));
         if (daysFromBaseTime < 0) {
             daysFromBaseTime = 0 - daysFromBaseTime;
         }
 
         // get the shard number
-        int shard = Integer.parseInt(shardId.substring(SHARD_ID_SPLIT + 1));
+        int shard = Integer.parseInt(shardPieces[1]);
 
         // now turn the shard id into a number that is sequential (without gaps) with all other shard ids
 
         return (daysFromBaseTime * shardIdFactory.getNumShards(date.getTime())) + shard;
     }
 
-    private long getBaseTime() throws IllegalArgumentException {
+    protected long getBaseTime() throws IllegalArgumentException {
         if (baseTime < 0) {
             baseTime = conf.getLong(BASE_TIME, 0);
             if (baseTime == 0) {

@@ -7,6 +7,7 @@ import java.security.SecureRandom;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -28,14 +29,17 @@ import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
+import org.geotools.data.Join;
 
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
+import com.google.common.base.Splitter;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Sets;
 
 import datawave.core.iterators.filesystem.FileSystemCache;
+import datawave.microservice.query.Query;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.InvalidQueryException;
@@ -61,7 +65,6 @@ import datawave.query.util.MetadataHelper;
 import datawave.query.util.TypeMetadata;
 import datawave.util.StringUtils;
 import datawave.util.time.DateHelper;
-import datawave.webservice.query.Query;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.PreConditionFailedQueryException;
@@ -156,7 +159,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
 
         SessionOptions options = input.getOptions();
 
-        ScannerChunk newSettings = new ScannerChunk(null, input.getRanges(), input.getLastKnownLocation());
+        ScannerChunk newSettings = new ScannerChunk(null, input.getRanges(), input.getContext(), input.getLastKnownLocation());
 
         SessionOptions newOptions = new SessionOptions(options);
 
@@ -313,7 +316,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                         reduceQueryFields(script, newIteratorSetting);
                     }
 
-                    if (config.getReduceIngestTypesPerShard()) {
+                    if (config.isRebuildDatatypeFilterPerShard() || config.getReduceIngestTypesPerShard()) {
                         reduceIngestTypes(script, newIteratorSetting);
                     }
 
@@ -345,10 +348,11 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                     }
 
                     if (log.isTraceEnabled()) {
-                        DefaultQueryPlanner.logTrace(PrintingVisitor.formattedQueryStringList(script), "VistorFunction::apply method");
+                        DefaultQueryPlanner.logTrace(PrintingVisitor.formattedQueryStringList(script, DefaultQueryPlanner.getMaxChildNodesToPrint(),
+                                        DefaultQueryPlanner.getMaxTermsToPrint()), "VistorFunction::apply method");
                     } else if (log.isDebugEnabled()) {
-                        DefaultQueryPlanner.logDebug(PrintingVisitor.formattedQueryStringList(script, DefaultQueryPlanner.maxChildNodesToPrint),
-                                        "VistorFunction::apply method");
+                        DefaultQueryPlanner.logDebug(PrintingVisitor.formattedQueryStringList(script, DefaultQueryPlanner.getMaxChildNodesToPrint(),
+                                        DefaultQueryPlanner.getMaxTermsToPrint()), "VistorFunction::apply method");
                     }
 
                 } catch (ParseException e) {
@@ -491,17 +495,32 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
             cachedTypeMetadata = new TypeMetadata(serializedTypeMetadata);
         }
 
-        Set<String> userRequestedDataTypes = config.getDatatypeFilter();
-        if (!userRequestedDataTypes.isEmpty()) {
-            Set<String> queryDataTypes = IngestTypeVisitor.getIngestTypes(script, cachedTypeMetadata);
-            Set<String> ingestTypes = Sets.intersection(userRequestedDataTypes, queryDataTypes);
-            if (ingestTypes.size() < userRequestedDataTypes.size()) {
-                newIteratorSetting.addOption(QueryOptions.DATATYPE_FILTER, Joiner.on(',').join(ingestTypes));
+        // get requested types
+        Set<String> requestedDatatypes;
+        String opt = newIteratorSetting.getOptions().get(QueryOptions.DATATYPE_FILTER);
+        if (opt == null) {
+            requestedDatatypes = Collections.emptySet();
+        } else {
+            requestedDatatypes = new HashSet<>(Splitter.on(',').splitToList(opt));
+        }
+
+        // get existing types from the query
+        Set<String> datatypes = IngestTypeVisitor.getIngestTypes(script, cachedTypeMetadata);
+        if (datatypes.contains(IngestTypeVisitor.UNKNOWN_TYPE)) {
+            return;
+        }
+
+        if (config.isRebuildDatatypeFilterPerShard()) {
+            newIteratorSetting.addOption(QueryOptions.DATATYPE_FILTER, Joiner.on(',').join(datatypes));
+        } else if (config.getReduceIngestTypesPerShard() && !requestedDatatypes.isEmpty() && !datatypes.isEmpty()) {
+            Set<String> intersectedTypes = Sets.intersection(requestedDatatypes, datatypes);
+            if (intersectedTypes.isEmpty()) {
+                // the EmptyPlanPruner in the RangeStream should have handled this situation, this exception indicates a bug exists
+                throw new DatawaveFatalQueryException("Ingest types reduced to zero, cannot execute query sub-plan");
             }
 
-            if (ingestTypes.isEmpty()) {
-                // the EmptyPlanPruner in the RangeStream should have handled this situation, this exception indicates a bug exists
-                throw new DatawaveFatalQueryException("Reduced ingest types to zero, cannot execute query sub-plan");
+            if (intersectedTypes.size() <= requestedDatatypes.size()) {
+                newIteratorSetting.addOption(QueryOptions.DATATYPE_FILTER, Joiner.on(',').join(intersectedTypes));
             }
         }
     }
@@ -605,7 +624,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
     }
 
     protected URI getFstHdfsQueryCacheUri(ShardQueryConfiguration config, Query settings) {
-        if (config.getIvaratorFstHdfsBaseURIs() != null) {
+        if (config.getIvaratorFstHdfsBaseURIs() != null && !config.getIvaratorFstHdfsBaseURIs().isEmpty()) {
             String[] choices = StringUtils.split(config.getIvaratorFstHdfsBaseURIs(), ',');
             int index = random.nextInt(choices.length);
             Path path = new Path(choices[index], settings.getId().toString());
