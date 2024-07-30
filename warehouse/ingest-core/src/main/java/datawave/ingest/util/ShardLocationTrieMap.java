@@ -240,7 +240,7 @@ public final class ShardLocationTrieMap<V> implements Map<Text,V> {
      * This is the trie node that links to a set of children and potentially contains a value.
      *
      * @param <W>
-     *     value type
+     *            value type
      */
     public static class TrieNode<W> {
         // the first character represented by children[0]
@@ -254,7 +254,7 @@ public final class ShardLocationTrieMap<V> implements Map<Text,V> {
          * convert a child index into its key (a character from the Text key)
          *
          * @param index
-         *     the child index in the underlying children array
+         *            the child index in the underlying children array
          * @return the character byte key
          */
         public byte getChildKey(int index) {
@@ -343,7 +343,7 @@ public final class ShardLocationTrieMap<V> implements Map<Text,V> {
      * To facilitate navigation through the tree, we need an object representing a specific child of a node and can be used to find subsequent children.
      *
      * @param <U>
-     *     value type
+     *            value type
      */
     public static class TrieNodeChildRef<U> {
         // the parent node
