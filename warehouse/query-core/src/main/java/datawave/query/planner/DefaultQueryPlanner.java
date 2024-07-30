@@ -2151,7 +2151,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 addOption(cfg, QueryOptions.LIMIT_SOURCES, Long.toString(sourceLimit), false);
             }
             if (config.getCollectTimingDetails()) {
-                addOption(cfg, QueryOptions.COLLECT_TIMING_DETAILS, Boolean.toString((true)), false);
+                addOption(cfg, QueryOptions.COLLECT_TIMING_DETAILS, Boolean.toString(true), false);
             }
             if (config.getSendTimingToStatsd()) {
                 addOption(cfg, QueryOptions.STATSD_HOST_COLON_PORT, config.getStatsdHost() + ':' + Integer.toString(config.getStatsdPort()), false);
@@ -2401,7 +2401,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             throw new DatawaveQueryException(qe);
         }
     }
-    //public static <T> void addOption(IteratorSetting setting, String option, T value, com.google.common.base.Function<T,String> valueTransformer, boolean allowBlankValues) {
+
+    // public static <T> void addOption(IteratorSetting setting, String option, T value, com.google.common.base.Function<T,String> valueTransformer, boolean
+    // allowBlankValues) {
     public static <T> void addOption(IteratorSetting cfg, String option, T value, boolean allowBlankValues) {
         QueryOptions.addOption(cfg, option, value, allowBlankValues);
     }
@@ -2502,19 +2504,19 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
         // Include the EVENT_DATATYPE as a field
         if (config.getIncludeDataTypeAsField()) {
-            addOption(cfg, QueryOptions.INCLUDE_DATATYPE, Boolean.toString((true)), false);
+            addOption(cfg, QueryOptions.INCLUDE_DATATYPE, Boolean.toString(true), false);
         }
 
         // Include the RECORD_ID as a field
         if (!config.getIncludeRecordId()) {
-            addOption(cfg, QueryOptions.INCLUDE_RECORD_ID, Boolean.toString((false)), false);
+            addOption(cfg, QueryOptions.INCLUDE_RECORD_ID, Boolean.toString(false), false);
         }
 
         // Conditionally include CHILD_COUNT, DESCENDANT_COUNT, HAS_CHILDREN
         // and/or PARENT_UID fields, plus
         // various options for output and optimization
         if (config.getIncludeHierarchyFields()) {
-            addOption(cfg, QueryOptions.INCLUDE_HIERARCHY_FIELDS, Boolean.toString((true)), false);
+            addOption(cfg, QueryOptions.INCLUDE_HIERARCHY_FIELDS, Boolean.toString(true), false);
             final Map<String,String> options = config.getHierarchyFieldOptions();
             if (null != options) {
                 for (final Entry<String,String> entry : config.getHierarchyFieldOptions().entrySet()) {
@@ -2539,7 +2541,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
         // if groupby function is used, force include.grouping.context to be true
         if (config.getGroupFields() != null && config.getGroupFields().hasGroupByFields()) {
-            addOption(cfg, QueryOptions.INCLUDE_GROUPING_CONTEXT, Boolean.toString((true)), false);
+            addOption(cfg, QueryOptions.INCLUDE_GROUPING_CONTEXT, Boolean.toString(true), false);
         } else {
             addOption(cfg, QueryOptions.INCLUDE_GROUPING_CONTEXT, Boolean.toString(config.getIncludeGroupingContext()), false);
         }
