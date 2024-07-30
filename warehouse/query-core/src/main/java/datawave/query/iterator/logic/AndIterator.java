@@ -15,6 +15,7 @@ import java.util.TreeSet;
 
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.iteratorsImpl.system.IterationInterruptedException;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.TreeMultimap;
@@ -260,6 +261,9 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T>, 
                     if (itr instanceof SeekableIterator) {
                         try {
                             ((SeekableIterator) itr).seek(range, columnFamilies, inclusive);
+                        } catch (IterationInterruptedException e2) {
+                            // throw IterationInterrupted exceptions as-is with no modifications so the QueryIterator can handle it
+                            throw e2;
                         } catch (Exception e2) {
                             if (itr.isNonEventField()) {
                                 // dropping a non-event term from the query means that the accuracy of the query
@@ -277,7 +281,7 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T>, 
                 }
             } catch (Exception e) {
                 include.remove();
-                if (includes.isEmpty() || e instanceof DatawaveFatalQueryException) {
+                if (includes.isEmpty() || e instanceof DatawaveFatalQueryException || e instanceof IterationInterruptedException) {
                     throw e;
                 } else {
                     log.warn("Lookup of event field failed, precision of query reduced.");
@@ -395,6 +399,10 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T>, 
                 if ((highest == null && transform.compareTo(key) > 0) || (highest != null && transform.compareTo(highest) > 0)) {
                     highest = transform;
                 }
+
+            } catch (IterationInterruptedException e) {
+                // allow the QueryIterator to handle these exception
+                throw e;
             } catch (Exception e) {
                 seenException = true;
                 if (itr.isNonEventField()) {

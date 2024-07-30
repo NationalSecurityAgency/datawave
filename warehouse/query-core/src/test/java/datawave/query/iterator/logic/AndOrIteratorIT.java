@@ -30,7 +30,6 @@ import com.google.common.collect.Sets;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Document;
-import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.iterator.NestedIterator;
 
 /**
@@ -228,7 +227,7 @@ class AndOrIteratorIT {
         final SortedSet<String> uids = intersect(union(uidsEven, uidsOdd), uidsAll);
 
         AndIterator itr = new AndIterator(includes);
-        driveIterator(itr, uids);
+        assertThrows(IterationInterruptedException.class, () -> driveIterator(itr, uids));
     }
 
     @Test
@@ -245,7 +244,7 @@ class AndOrIteratorIT {
         final SortedSet<String> uids = intersect(union(uidsEven, uidsOdd), uidsAll);
 
         AndIterator itr = new AndIterator(includes);
-        driveIterator(itr, uids);
+        assertThrows(IterationInterruptedException.class, () -> driveIterator(itr, uids));
     }
 
     // === test index only exceptions ===
@@ -307,7 +306,7 @@ class AndOrIteratorIT {
         final SortedSet<String> uids = intersect(union(uidsEven, uidsOdd), uidsAll);
 
         AndIterator itr = new AndIterator(includes);
-        assertThrows(DatawaveFatalQueryException.class, () -> driveIterator(itr, uids));
+        assertThrows(IterationInterruptedException.class, () -> driveIterator(itr, uids));
     }
 
     @Test
@@ -328,7 +327,7 @@ class AndOrIteratorIT {
         indexOnlyCounts.put("FIELD_C", 1); // compare to #testIndexOnlyNestedUnionTermAssertions
 
         AndIterator itr = new AndIterator(includes);
-        assertThrows(DatawaveFatalQueryException.class, () -> driveIterator(itr, uids, indexOnlyCounts));
+        assertThrows(IterationInterruptedException.class, () -> driveIterator(itr, uids, indexOnlyCounts));
     }
 
     @Test
@@ -350,7 +349,7 @@ class AndOrIteratorIT {
         indexOnlyCounts.put("FIELD_C", 1);
 
         AndIterator itr = new AndIterator(includes);
-        assertThrows(DatawaveFatalQueryException.class, () -> driveIterator(itr, uids, indexOnlyCounts));
+        assertThrows(IterationInterruptedException.class, () -> driveIterator(itr, uids, indexOnlyCounts));
     }
 
     // nested union with negated term that is interrupted
