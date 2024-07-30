@@ -2270,10 +2270,10 @@ public class QueryOptions implements OptionDescriber {
     }
 
     /**
-     * Used to populate the defaultOptionsMap with the default options for each class.
-     * When overriding this method, call super.createDefaultOptions() to ensure the default options are populated.
-     * Changes to these defaults will be reflected in the DefaultOptions object returned by this method. Add them with
+     * Used to populate the defaultOptionsMap with the default options for each class. When overriding this method, call super.createDefaultOptions() to ensure
+     * the default options are populated. Changes to these defaults will be reflected in the DefaultOptions object returned by this method. Add them with
      * defaultOptions.putDefaultValue(key, value).
+     *
      * @return the default options
      */
     protected DefaultOptions createDefaultOptions() {
@@ -2370,9 +2370,11 @@ public class QueryOptions implements OptionDescriber {
     }
 
     /**
-     * Fetch the default options for the given class. If the class has not been seen before, it will be instantiated and the default options will be fetched from.
-     * Used to populate the defaultOptionsMap with the default options for each class.
-     * @param className The name of the class to fetch the default options for. Use YourQueryOptionsImplementation.class.getName().
+     * Fetch the default options for the given class. If the class has not been seen before, it will be instantiated and the default options will be fetched
+     * from. Used to populate the defaultOptionsMap with the default options for each class.
+     *
+     * @param className
+     *            The name of the class to fetch the default options for. Use YourQueryOptionsImplementation.class.getName().
      * @return The default options for the given class.
      */
     protected static DefaultOptions getDefaultOptions(String className) {
@@ -2405,11 +2407,15 @@ public class QueryOptions implements OptionDescriber {
 
     /**
      * Add an option to the given iterator setting. The value will be converted to a string using the appropriate method based on the type of the value.
-     * @param setting The iterator setting to add the option to.
-     * @param option The name of the option to add.
-     * @param value The value of the option to add.
-     * @param allowBlankValues If true, blank values will be converted to a single space, as blank values will fail in InputFormatBase when run through the
-     *            MapReduce api.
+     *
+     * @param setting
+     *            The iterator setting to add the option to.
+     * @param option
+     *            The name of the option to add.
+     * @param value
+     *            The value of the option to add.
+     * @param allowBlankValues
+     *            If true, blank values will be converted to a single space, as blank values will fail in InputFormatBase when run through the MapReduce api.
      */
     public static void addOption(IteratorSetting setting, String option, Object value, boolean allowBlankValues) {
         // Determine the correct method for converting the value to a string.
@@ -2443,12 +2449,17 @@ public class QueryOptions implements OptionDescriber {
     // Add given option, using the specified to-string transformer.
     /**
      * Add an option to the given iterator setting. The value will be converted to a string using the provided value transformer.
-     * @param setting The iterator setting to add the option to.
-     * @param option The name of the option to add.
-     * @param value The value of the option to add.
-     * @param valueTransformer A function that converts the value to a string.
-     * @param allowBlankValues If true, blank values will be converted to a single space, as blank values will fail in InputFormatBase when run through the
-     *            MapReduce api.
+     *
+     * @param setting
+     *            The iterator setting to add the option to.
+     * @param option
+     *            The name of the option to add.
+     * @param value
+     *            The value of the option to add.
+     * @param valueTransformer
+     *            A function that converts the value to a string.
+     * @param allowBlankValues
+     *            If true, blank values will be converted to a single space, as blank values will fail in InputFormatBase when run through the MapReduce api.
      */
     public static <T> void addOption(IteratorSetting setting, String option, T value, Function<T,String> valueTransformer, boolean allowBlankValues) {
         // If we have a default options implementation for the specified iterator setting's class, fetch it.
@@ -2467,8 +2478,7 @@ public class QueryOptions implements OptionDescriber {
     }
 
     /**
-     * Default options for QueryOptions.
-     * TODO: Make immutable with a builder that is used in createDefaultOptions().
+     * Default options for QueryOptions. TODO: Make immutable with a builder that is used in createDefaultOptions().
      */
     protected static class DefaultOptions {
 
