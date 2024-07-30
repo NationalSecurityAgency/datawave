@@ -13,24 +13,19 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
-import org.apache.accumulo.core.client.Accumulo;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.accumulo.core.client.security.tokens.PasswordToken;
-import org.apache.accumulo.core.clientImpl.ClientConfConverter;
 import org.apache.accumulo.core.clientImpl.ClientContext;
-import org.apache.accumulo.core.clientImpl.ClientInfo;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.dataImpl.KeyExtent;
 import org.apache.accumulo.core.metadata.MetadataServicer;
-import org.apache.accumulo.core.singletons.SingletonReservation;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
@@ -81,19 +76,8 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
     private Map<Text,String> getSplitsWithLocation(String table) throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
         SortedMap<KeyExtent,String> tabletLocations = new TreeMap<>();
 
-        Properties props = Accumulo.newClientProperties().to(accumuloHelper.getInstanceName(), accumuloHelper.getZooKeepers())
-                        .as(accumuloHelper.getUsername(), new PasswordToken(accumuloHelper.getPassword())).build();
-        ClientInfo info = ClientInfo.from(props);
-        SplitCacheUncaughtExceptionHandler eh = new SplitCacheUncaughtExceptionHandler();
-        ClientContext context = new ClientContext(SingletonReservation.noop(), info, ClientConfConverter.toAccumuloConf(info.getProperties()), eh);
-
-        MetadataServicer.forTableName(context, table).getTabletLocations(tabletLocations);
-
-        // check if there was a failure
-        Throwable exception = eh.getException();
-        if (exception != null) {
-            throw new AccumuloException(exception);
-        }
+        AccumuloClient client = accumuloHelper.newClient();
+        MetadataServicer.forTableName((ClientContext) client, table).getTabletLocations(tabletLocations);
 
         return tabletLocations.entrySet().stream().filter(k -> k.getKey().endRow() != null).collect(
                         Collectors.toMap(e -> e.getKey().endRow(), e -> e.getValue() == null ? NO_LOCATION : e.getValue(), (o1, o2) -> o1, TreeMap::new));
@@ -480,19 +464,4 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
             read();
         return Collections.unmodifiableMap(splitLocations);
     }
-
-    private class SplitCacheUncaughtExceptionHandler implements Thread.UncaughtExceptionHandler {
-        Throwable e = null;
-
-        @Override
-        public void uncaughtException(Thread t, Throwable e) {
-            log.error("Failure in " + t.getName(), e);
-            this.e = e;
-        }
-
-        public Throwable getException() {
-            return e;
-        }
-    }
-
 }
