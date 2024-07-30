@@ -31,7 +31,6 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.dataImpl.KeyExtent;
 import org.apache.accumulo.core.metadata.MetadataServicer;
 import org.apache.accumulo.core.singletons.SingletonReservation;
-import org.apache.accumulo.core.util.threads.Threads;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
@@ -40,6 +39,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Partitioner;
 import org.apache.log4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Maps;
 
@@ -85,9 +85,16 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
         Properties props = Accumulo.newClientProperties().to(accumuloHelper.getInstanceName(), accumuloHelper.getZooKeepers())
                         .as(accumuloHelper.getUsername(), new PasswordToken(accumuloHelper.getPassword())).build();
         ClientInfo info = ClientInfo.from(props);
-        ClientContext context = new ClientContext(SingletonReservation.noop(), info, ClientConfConverter.toAccumuloConf(info.getProperties()), Threads.UEH);
+        SplitCacheUncaughtExceptionHandler eh = new SplitCacheUncaughtExceptionHandler();
+        ClientContext context = new ClientContext(SingletonReservation.noop(), info, ClientConfConverter.toAccumuloConf(info.getProperties()), eh);
 
         MetadataServicer.forTableName(context, table).getTabletLocations(tabletLocations);
+
+        // check if there was a failure
+        Throwable exception = eh.getException();
+        if (exception != null) {
+            throw new AccumuloException(exception);
+        }
 
         return tabletLocations.entrySet().stream().filter(k -> k.getKey().endRow() != null).collect(
                         Collectors.toMap(e -> e.getKey().endRow(), e -> e.getValue() == null ? NO_LOCATION : e.getValue(), (o1, o2) -> o1, TreeMap::new));
@@ -473,6 +480,20 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
         if (this.splitLocations.isEmpty())
             read();
         return Collections.unmodifiableMap(splitLocations);
+    }
+
+    private class SplitCacheUncaughtExceptionHandler implements Thread.UncaughtExceptionHandler {
+        Throwable e = null;
+
+        @Override
+        public void uncaughtException(Thread t, Throwable e) {
+            log.error("Failure in " + t.getName(), e);
+            this.e = e;
+        }
+
+        public Throwable getException() {
+            return e;
+        }
     }
 
 }
