@@ -40,7 +40,6 @@ import datawave.query.function.JexlEvaluation;
 import datawave.query.function.RangeProvider;
 import datawave.query.iterator.NestedQueryIterator;
 import datawave.query.iterator.QueryIterator;
-import datawave.query.iterator.QueryOptions;
 import datawave.query.iterator.SourcedOptions;
 import datawave.query.iterator.logic.IndexIterator;
 import datawave.query.jexl.DatawaveJexlContext;
@@ -311,12 +310,5 @@ public class AncestorQueryIterator extends QueryIterator {
             equality = new AncestorEquality();
         }
         return equality;
-    }
-
-    @Override
-    protected DefaultOptions createDefaultOptions() {
-        DefaultOptions defaultOptions = super.createDefaultOptions();
-        defaultOptions.putDefaultValue(QueryOptions.HIT_LIST, getArithmetic());
-        return defaultOptions;
     }
 }
