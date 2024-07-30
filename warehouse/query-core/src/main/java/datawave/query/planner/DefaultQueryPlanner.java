@@ -2401,9 +2401,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             throw new DatawaveQueryException(qe);
         }
     }
-
-    public static void addOption(IteratorSetting cfg, String option, boolean value) {
-        cfg.addOption(option, Boolean.toString(value));
+    //public static <T> void addOption(IteratorSetting setting, String option, T value, com.google.common.base.Function<T,String> valueTransformer, boolean allowBlankValues) {
+    public static <T> void addOption(IteratorSetting cfg, String option, T value, boolean allowBlankValues) {
+        QueryOptions.addOption(cfg, option, value, allowBlankValues);
     }
 
     public static void addOption(IteratorSetting cfg, String option, String value, boolean allowBlankValue) {
