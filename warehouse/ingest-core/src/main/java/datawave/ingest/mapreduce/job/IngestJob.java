@@ -249,7 +249,7 @@ public class IngestJob implements Tool {
 
     @Override
     public int run(String[] args) throws Exception {
-        long setupstart = System.currentTimeMillis();
+        long setupStart = System.currentTimeMillis();
 
         Logger.getLogger(TypeRegistry.class).setLevel(Level.ALL);
 
@@ -366,7 +366,7 @@ public class IngestJob implements Tool {
 
         startDaemonProcesses(conf);
         long start = System.currentTimeMillis();
-        log.info("JOB SETUP TIME: " + (start - setupstart));
+        log.info("JOB SETUP TIME: " + (start - setupStart));
 
         job.submit();
         JobID jobID = job.getJobID();
@@ -420,8 +420,8 @@ public class IngestJob implements Tool {
                 }
             }
         }
-        long setupstop = System.currentTimeMillis();
-        log.info("JOB SETUP TIME: " + (setupstop - setupstart) + "ms");
+        long setupStop = System.currentTimeMillis();
+        log.info("JOB SETUP TIME: " + (setupStop - setupStart) + "ms");
 
         job.waitForCompletion(true);
         long stop = System.currentTimeMillis();

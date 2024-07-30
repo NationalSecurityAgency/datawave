@@ -60,8 +60,6 @@ public class TestShardGenerator {
                 }
             }
         }
-
-        // writeSplits(locations, tmpDirectory, BALANCEDISH_SHARDS_LST);
     }
 
     public TestShardGenerator(Configuration conf, File tmpDir, Map<Text,String> locations, String... tableNames) throws IOException {
@@ -83,8 +81,6 @@ public class TestShardGenerator {
             }
         }
         conf.set(TableSplitsCache.SPLITS_CACHE_DIR, tmpDir.getAbsolutePath());
-
-        // writeSplits(locations, tmpDirectory, BALANCEDISH_SHARDS_LST);
     }
 
     // create splits for all the shards from today back NUM_DAYS,
