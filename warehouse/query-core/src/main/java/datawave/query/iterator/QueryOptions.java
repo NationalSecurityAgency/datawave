@@ -151,8 +151,6 @@ public class QueryOptions implements OptionDescriber {
     public static final String GROUP_FIELDS = "group.fields";
     public static final String GROUP_FIELDS_BATCH_SIZE = "group.fields.batch.size";
     public static final String UNIQUE_FIELDS = "unique.fields";
-    public static final String MOST_RECENT_UNIQUE = "most.recent.unique";
-    public static final String UNIQUE_CACHE_BUFFER_SIZE = "unique.cache.buffer.size";
 
     public static final String HITS_ONLY = "hits.only";
     public static final String HIT_LIST = "hit.list";
@@ -314,7 +312,6 @@ public class QueryOptions implements OptionDescriber {
     protected GroupFields groupFields = new GroupFields();
     protected int groupFieldsBatchSize = Integer.MAX_VALUE;
     protected UniqueFields uniqueFields = new UniqueFields();
-    protected int uniqueCacheBufferSize = 100;
 
     protected Set<String> hitsOnlySet = new HashSet<>();
 
@@ -508,7 +505,6 @@ public class QueryOptions implements OptionDescriber {
         this.ivaratorCacheDirConfigs = (other.ivaratorCacheDirConfigs == null) ? null : new ArrayList<>(other.ivaratorCacheDirConfigs);
         this.hdfsSiteConfigURLs = other.hdfsSiteConfigURLs;
         this.ivaratorCacheBufferSize = other.ivaratorCacheBufferSize;
-        this.uniqueCacheBufferSize = other.uniqueCacheBufferSize;
         this.ivaratorCacheScanPersistThreshold = other.ivaratorCacheScanPersistThreshold;
         this.ivaratorCacheScanTimeout = other.ivaratorCacheScanTimeout;
         this.hdfsFileCompressionCodec = other.hdfsFileCompressionCodec;
@@ -959,14 +955,6 @@ public class QueryOptions implements OptionDescriber {
 
     public void setIvaratorCacheBufferSize(int ivaratorCacheBufferSize) {
         this.ivaratorCacheBufferSize = ivaratorCacheBufferSize;
-    }
-
-    public int getUniqueCacheBufferSize() {
-        return uniqueCacheBufferSize;
-    }
-
-    public void setUniqueCacheBufferSize(int uniqueCacheBufferSize) {
-        this.uniqueCacheBufferSize = uniqueCacheBufferSize;
     }
 
     public long getIvaratorCacheScanPersistThreshold() {
@@ -2335,8 +2323,6 @@ public class QueryOptions implements OptionDescriber {
         defaultOptions.putDefaultValue(QueryOptions.GROUP_FIELDS, queryOptions.groupFields);
         defaultOptions.putDefaultValue(QueryOptions.GROUP_FIELDS_BATCH_SIZE, queryOptions.groupFieldsBatchSize);
         defaultOptions.putDefaultValue(QueryOptions.UNIQUE_FIELDS, queryOptions.uniqueFields);
-        defaultOptions.putDefaultValue(QueryOptions.MOST_RECENT_UNIQUE, queryOptions.uniqueFields);
-        defaultOptions.putDefaultValue(QueryOptions.UNIQUE_CACHE_BUFFER_SIZE, queryOptions.uniqueCacheBufferSize);
         defaultOptions.putDefaultValue(QueryOptions.HIT_LIST, queryOptions.arithmetic);
         defaultOptions.putDefaultValue(QueryOptions.DATE_INDEX_TIME_TRAVEL, queryOptions.dateIndexTimeTravel);
         defaultOptions.putDefaultValue(QueryOptions.POSTPROCESSING_CLASSES, queryOptions.postProcessingFunctions);
@@ -2377,11 +2363,6 @@ public class QueryOptions implements OptionDescriber {
         // This method can be overridden in sub-classes, like following example:
         return defaultOptions;
     }
-
-    /*
-     * protected DefaultOptions createDefaultOptions() { SubClass subClass = new SubClass(); DefaultOptions defaultOptions = super.createDefaultOptions(); //
-     * For anything where we override, or have a new option. defaultOptions.putDefaultValue(QueryOptions.DISABLE_EVALUATION, subclass.isDisableEvaluation()); }
-     */
 
     // Fetches the default option for the given class, either from the map, or from createDefaultOptions() on an instance of the class.
     protected static DefaultOptions getDefaultOptions(String className) {
