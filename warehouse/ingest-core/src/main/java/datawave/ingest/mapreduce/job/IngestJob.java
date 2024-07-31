@@ -360,7 +360,8 @@ public class IngestJob implements Tool {
         log.info("InputFormat: " + job.getInputFormatClass().getName());
         log.info("Mapper: " + job.getMapperClass().getName());
         log.info("Reduce tasks: " + (useMapOnly ? 0 : reduceTasks));
-        log.info("Split File: " + workDirPath + "/splits.txt");
+        log.info("Split File: " + conf.get(TableSplitsCache.SPLITS_CACHE_DIR) + "/"
+                        + conf.get(TableSplitsCache.SPLITS_CACHE_FILE, TableSplitsCache.DEFAULT_SPLITS_CACHE_FILE));
 
         // Note that if we run any other jobs in the same vm (such as a sampler), then we may
         // need to catch and throw away an exception here
@@ -422,6 +423,8 @@ public class IngestJob implements Tool {
                 }
             }
         }
+        long setupStop = System.currentTimeMillis();
+        log.info("JOB SETUP TIME: " + (setupStop - setupStart) + "ms");
 
         job.waitForCompletion(true);
         long stop = System.currentTimeMillis();
@@ -718,9 +721,6 @@ public class IngestJob implements Tool {
                 maxRFileEntries = Integer.parseInt(args[++i]);
             } else if (args[i].equals("-maxRFileUncompressedSize")) {
                 maxRFileSize = Long.parseLong(args[++i]);
-            } else if (args[i].equals("-shardedMapFiles")) {
-                conf.set(ShardedTableMapFile.SHARDED_MAP_FILE_PATHS_RAW, args[++i]);
-                ShardedTableMapFile.extractShardedTableMapFilePaths(conf);
             } else if (args[i].equals("-createTables")) {
                 createTables = true;
             } else if (args[i].startsWith(REDUCE_TASKS_ARG_PREFIX)) {
@@ -830,12 +830,16 @@ public class IngestJob implements Tool {
      */
     protected void configureBulkPartitionerAndOutputFormatter(Job job, AccumuloHelper cbHelper, Configuration conf, FileSystem outputFs)
                     throws AccumuloSecurityException, AccumuloException, IOException, URISyntaxException, TableExistsException, TableNotFoundException {
-        if (null == conf.get("split.work.dir")) {
-            conf.set("split.work.dir", conf.get("ingest.work.dir.qualified"));
+        if (null == conf.get(SplitsFile.SPLIT_WORK_DIR)) {
+            conf.set(SplitsFile.SPLIT_WORK_DIR, conf.get("ingest.work.dir.qualified"));
         }
         conf.setInt("splits.num.reduce", this.reduceTasks);
         // used by the output formatter and the sharded partitioner
-        ShardedTableMapFile.setupFile(conf);
+        long before = System.currentTimeMillis();
+        SplitsFile.setupFile(job, conf);
+        long after = System.currentTimeMillis();
+
+        log.info("Sharded splits files setup time: " + (after - before) + "ms");
 
         conf.setInt(MultiRFileOutputFormatter.EVENT_PARTITION_COUNT, this.reduceTasks * 2);
         configureMultiRFileOutputFormatter(conf, compressionType, compressionTableDisallowList, maxRFileEntries, maxRFileSize, generateMapFileRowKeys);
