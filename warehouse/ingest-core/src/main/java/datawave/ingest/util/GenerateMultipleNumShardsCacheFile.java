@@ -28,8 +28,9 @@ public class GenerateMultipleNumShardsCacheFile {
     public static void main(String[] args) throws ParseException, AccumuloException, AccumuloSecurityException, TableNotFoundException, IOException {
         AccumuloCliOptions accumuloOptions = new AccumuloCliOptions();
         Options options = accumuloOptions.getOptions();
-        //options.addOption(Option.builder("u").argName("Username").hasArg().required().desc("Accumulo username").build());
-        options.addOption(Option.builder(CONFIG_DIRECTORY_LOCATION_OVERRIDE).argName("Config Directory Path").hasArg().required().desc("Config directory path").build());
+        // options.addOption(Option.builder("u").argName("Username").hasArg().required().desc("Accumulo username").build());
+        options.addOption(Option.builder(CONFIG_DIRECTORY_LOCATION_OVERRIDE).argName("Config Directory Path").hasArg().required().desc("Config directory path")
+                        .build());
         options.addOption(Option.builder(CONFIG_SUFFIEX_OVERRIDE).argName("Config Suffix").hasArg().required().desc("Config file suffix").build());
         options.addOption(Option.builder(MULTIPLE_NUMSHARD_CACHE_FILE_LOCATION_OVERRIDE).argName("Multiple NumShards Cache File Path").hasArg()
                         .desc("Multiple numShards cache file path").build());
