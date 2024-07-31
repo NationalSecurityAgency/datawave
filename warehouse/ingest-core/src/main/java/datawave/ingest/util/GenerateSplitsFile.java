@@ -3,6 +3,7 @@ package datawave.ingest.util;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Option;
 import org.apache.commons.cli.OptionBuilder;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
@@ -22,9 +23,11 @@ public class GenerateSplitsFile {
     public static void main(String[] args) {
         AccumuloCliOptions accumuloOptions = new AccumuloCliOptions();
         Options options = accumuloOptions.getOptions();
-        options.addOption(OptionBuilder.isRequired(true).hasArg().withDescription("Config directory path").create("cd"));
-        options.addOption(OptionBuilder.isRequired(false).hasArg().withDescription("Config file suffix").create("cs"));
-        options.addOption(OptionBuilder.isRequired(false).hasArg().withDescription("Splits file path").create("sp"));
+
+        options.addOption(Option.builder("cd").argName("Config Directory Path").hasArg().required().desc("Config directory path").build());
+        options.addOption(Option.builder("cs").argName("Config Suffix").hasArg().desc("Config file suffix").build());
+        options.addOption(Option.builder("sp").argName("Splits File Path").hasArg().desc("Splits file path").build());
+
         Configuration conf = accumuloOptions.getConf(args, true);
         CommandLine cl;
         String configDirectory = null;
