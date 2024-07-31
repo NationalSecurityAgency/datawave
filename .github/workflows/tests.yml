@@ -153,6 +153,10 @@ jobs:
   compose-build-and-test-latest-snapshots:
     runs-on: ubuntu-latest
     steps:
+      - name: Force Failure
+        run: |
+          echo "This is a forced failure"
+          exit 1
       - name: Free up some space
         run: |
           sudo rm -rf /usr/share/dotnet
