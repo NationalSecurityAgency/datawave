@@ -177,7 +177,6 @@ jobs:
           ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
         run: |
           # update datawave dependencies to use the latest snapshots
-          mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -B -V -e versions:update-properties versions:update-parent -DallowSnapshots=true -Dincludes=gov.nsa.*
           
           mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -B -V -e -Pcompose -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -DskipTests clean install
           
