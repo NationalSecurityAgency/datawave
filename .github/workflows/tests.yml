@@ -150,13 +150,9 @@ jobs:
         TAG=$(mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -q -N -Dmaven.build.cache.enabled=false -Dexec.executable='echo' -Dexec.args='${project.version}' exec:exec)
         contrib/datawave-quickstart/docker/docker-build.sh ${TAG} --docker-opts "${DOCKER_BUILD_OPTS}"
 
-  compose-build-and-test-latest-snapshots:
+  compose-build-and-test:
     runs-on: ubuntu-latest
     steps:
-      - name: Force Failure
-        run: |
-          echo "This is a forced failure"
-          exit 1
       - name: Free up some space
         run: |
           sudo rm -rf /usr/share/dotnet
@@ -179,9 +175,7 @@ jobs:
         env:
           USER_NAME: ${{ secrets.USER_NAME }}
           ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
-        run: |
-          # update datawave dependencies to use the latest snapshots
-          
+        run: |          
           mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -B -V -e -Pcompose -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -DskipTests clean install
           
           # free up some space so that we don't run out
