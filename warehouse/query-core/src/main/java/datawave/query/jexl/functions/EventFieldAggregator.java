@@ -15,11 +15,8 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
-
 import datawave.data.type.Type;
+import datawave.data.type.TypeFactory;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.AttributeFactory;
 import datawave.query.attributes.Document;
@@ -28,23 +25,16 @@ import datawave.query.util.Tuple2;
 import datawave.query.util.TypeMetadata;
 
 public class EventFieldAggregator extends IdentityAggregator {
-    // speedy cache loading for types, duplicated from AttributeFactory with caching of types rather than classes
-    protected static final LoadingCache<String,Type<?>> typeCache = CacheBuilder.newBuilder().maximumSize(128).expireAfterAccess(1, TimeUnit.HOURS)
-                    .build(new CacheLoader<String,Type<?>>() {
-                        @Override
-                        public Type<?> load(String clazz) throws Exception {
-                            Class<?> c = Class.forName(clazz);
-                            return (Type<?>) c.newInstance();
-                        }
-                    });
 
-    private TypeMetadata typeMetadata;
-    private String defaultTypeClass;
+    private final TypeMetadata typeMetadata;
+    private final TypeFactory typeFactory;
+    private final String defaultTypeClass;
 
     public EventFieldAggregator(String field, EventDataQueryFilter filter, int maxNextCount, TypeMetadata typeMetadata, String defaultTypeClass) {
         super(Collections.singleton(field), filter, maxNextCount);
 
         this.typeMetadata = typeMetadata;
+        this.typeFactory = new TypeFactory();
         this.defaultTypeClass = defaultTypeClass;
     }
 
@@ -122,14 +112,10 @@ public class EventFieldAggregator extends IdentityAggregator {
 
         // transform the key for each type and add it to the normalized set
         for (String typeClass : typeClasses) {
-            try {
-                Type<?> type = typeCache.get(typeClass);
-                String normalizedValue = type.normalize(fieldValue);
+            Type<?> type = typeFactory.createType(typeClass);
+            String normalizedValue = type.normalize(fieldValue);
 
-                normalizedValues.add(normalizedValue);
-            } catch (ExecutionException e) {
-                throw new RuntimeException("cannot instantiate class '" + typeClass + "'", e);
-            }
+            normalizedValues.add(normalizedValue);
         }
 
         return normalizedValues;

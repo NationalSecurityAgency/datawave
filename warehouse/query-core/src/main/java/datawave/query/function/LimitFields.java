@@ -13,6 +13,7 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
 import datawave.data.type.Type;
+import datawave.data.type.TypeFactory;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Content;
@@ -63,6 +64,8 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
     // A collection of field sets where if the values match then those values
     // should not be dropped
     private final Set<Set<String>> matchingFieldSets;
+
+    private final TypeFactory typeFactory = new TypeFactory();
 
     public LimitFields(Map<String,Integer> limitFieldsMap, Set<Set<String>> matchingFieldSets) {
         this.limitFieldsMap = limitFieldsMap;
@@ -295,7 +298,7 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
             for (Object hitValue : hitTermMap.get(keyWithGrouping)) {
                 try {
                     if (Type.class.isAssignableFrom(clazz)) {
-                        Type<?> thing = (Type<?>) clazz.newInstance();
+                        Type<?> thing = typeFactory.createType(clazz.getName());
                         thing.setDelegateFromString(String.valueOf(hitValue));
                         hitValue = thing;
                     } else { // otherwise, s is not a Type, just compare as string values
