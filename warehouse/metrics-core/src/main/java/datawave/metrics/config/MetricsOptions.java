@@ -27,9 +27,12 @@ public class MetricsOptions extends Options {
         this.addOption(Option.builder("conf").argName("Path to metrics.xml").hasArg().desc("Path to the metrics.xml configuration file.").build());
         this.addOption(Option.builder("hdfsConf").argName("Path to hdfs-site.xml").hasArg().desc("Path to the HDFS Configuration file").build());
         this.addOption(Option.builder("war").argName("Path to webapp war file.").hasArg().desc("Path to the metrics web app war file.").build());
-        this.addOption(Option.builder("start").argName("Start date to begin processing metrics.").hasArg().desc("Start date to begin processing metrics, as yyyyMMddHHmm or yyyyMMdd.").build());
-        this.addOption(Option.builder("end").argName("Stop date for processing metrics.").hasArg().desc("Stop date for processing metrics, as yyyyMMddHHmm or yyyyMMdd.").build());
-        this.addOption(Option.builder("ignoreFlagMakerMetrics").argName("Ignore flag maker metrics for correlation").hasArg().desc("Ignore flag maker metrics for correlation").build());
+        this.addOption(Option.builder("start").argName("Start date to begin processing metrics.").hasArg()
+                        .desc("Start date to begin processing metrics, as yyyyMMddHHmm or yyyyMMdd.").build());
+        this.addOption(Option.builder("end").argName("Stop date for processing metrics.").hasArg()
+                        .desc("Stop date for processing metrics, as yyyyMMddHHmm or yyyyMMdd.").build());
+        this.addOption(Option.builder("ignoreFlagMakerMetrics").argName("Ignore flag maker metrics for correlation").hasArg()
+                        .desc("Ignore flag maker metrics for correlation").build());
     }
 
 }
