@@ -35,11 +35,11 @@ public class AccumuloHelper {
     public void setup(Configuration config) throws IllegalArgumentException {
         username = ConfigurationHelper.isNull(config, USERNAME, String.class);
         String encodedPW = ConfigurationHelper.isNull(config, PASSWORD, String.class);
-        if (encodedPW.isBlank()) {
-            log.warn("no Accumulo password?");
-            password = new PasswordToken(new byte[0]);
-        } else {
+        if (encodedPW.length() >= 2) {
             password = new PasswordToken(Base64.getDecoder().decode(encodedPW));
+        } else {
+            log.warn("no Accumulo password?");
+            password = new PasswordToken();
         }
         instanceName = ConfigurationHelper.isNull(config, INSTANCE_NAME, String.class);
         zooKeepers = ConfigurationHelper.isNull(config, ZOOKEEPERS, String.class);

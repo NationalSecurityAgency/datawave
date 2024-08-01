@@ -1,9 +1,9 @@
-shard	B0E= loc1
-shard	B0D= loc2
-shard	B1o= loc3
-shard	B2o= loc4
-shard	CA== loc5
-shard1	CA== loc1
+shard	B0E=	loc1
+shard	B0D=	loc2
+shard	B1o=	loc3
+shard	B2o=	loc4
+shard	CA==	loc5
+shard1	CA==	loc1
 shard1
 someTableName	B0E=
 someTableName	B0D=
