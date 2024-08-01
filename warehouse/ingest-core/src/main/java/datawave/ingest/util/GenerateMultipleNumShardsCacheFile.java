@@ -22,7 +22,7 @@ public class GenerateMultipleNumShardsCacheFile {
 
     public static final String MULTIPLE_NUMSHARD_CACHE_FILE_LOCATION_OVERRIDE = "ns";
     public static final String CONFIG_DIRECTORY_LOCATION_OVERRIDE = "cd";
-    public static final String CONFIG_SUFFIEX_OVERRIDE = "cs";
+    public static final String CONFIG_SUFFIX_OVERRIDE = "cs";
 
     @SuppressWarnings("static-access")
     public static void main(String[] args) throws ParseException, AccumuloException, AccumuloSecurityException, TableNotFoundException, IOException {
@@ -31,7 +31,7 @@ public class GenerateMultipleNumShardsCacheFile {
         // options.addOption(Option.builder("u").argName("Username").hasArg().required().desc("Accumulo username").build());
         options.addOption(Option.builder(CONFIG_DIRECTORY_LOCATION_OVERRIDE).argName("Config Directory Path").hasArg().required().desc("Config directory path")
                         .build());
-        options.addOption(Option.builder(CONFIG_SUFFIEX_OVERRIDE).argName("Config Suffix").hasArg().required().desc("Config file suffix").build());
+        options.addOption(Option.builder(CONFIG_SUFFIX_OVERRIDE).argName("Config Suffix").hasArg().required().desc("Config file suffix").build());
         options.addOption(Option.builder(MULTIPLE_NUMSHARD_CACHE_FILE_LOCATION_OVERRIDE).argName("Multiple NumShards Cache File Path").hasArg()
                         .desc("Multiple numShards cache file path").build());
         Configuration conf = accumuloOptions.getConf(args, true);
@@ -50,8 +50,8 @@ public class GenerateMultipleNumShardsCacheFile {
             if (cl.hasOption(MULTIPLE_NUMSHARD_CACHE_FILE_LOCATION_OVERRIDE)) {
                 conf.set(NumShards.MULTIPLE_NUMSHARDS_CACHE_PATH, cl.getOptionValue(MULTIPLE_NUMSHARD_CACHE_FILE_LOCATION_OVERRIDE));
             }
-            if (cl.hasOption(CONFIG_SUFFIEX_OVERRIDE)) {
-                configSuffix = cl.getOptionValue(CONFIG_SUFFIEX_OVERRIDE);
+            if (cl.hasOption(CONFIG_SUFFIX_OVERRIDE)) {
+                configSuffix = cl.getOptionValue(CONFIG_SUFFIX_OVERRIDE);
             } else {
                 configSuffix = "config.xml";
             }
