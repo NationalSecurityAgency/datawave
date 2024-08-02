@@ -1,5 +1,7 @@
-# Data model terms. Make sure 'id' is unique within the set of terms,
+##########################################################################################
+# Data model glossary of terms. Make sure 'id' is unique within the set of terms,
 # and try to keep terms sorted by 'id' just for easier maintenance
+##########################################################################################
 
 terms:
   - id: CF
@@ -147,11 +149,15 @@ terms:
     name: Vertex
     info: A single node within a graph
 
-# Table Schema Definitions...
 
-# Note that string literal components within row, cf, cq, and val entries below should be enclosed in single quotes,
-# as this will signal that those terms should be treated them differently in code.
-# E.g., see _includes/set_table_entry_tooltips.html
+##########################################################################################
+# Table Schema Definitions
+##########################################################################################
+
+# Note that any string literal component within a row, cf, cq, or val entry below should be enclosed in single quotes,
+# as this will signal that those components should be treated differently in code. See EDGE table entries below for
+# examples, and see _includes/set_table_entry_tooltips.html for implementation details. Otherwise, it is assumed
+# that each component specified is mapped to a glossary term above
 
 tables:
   - id: PDT
