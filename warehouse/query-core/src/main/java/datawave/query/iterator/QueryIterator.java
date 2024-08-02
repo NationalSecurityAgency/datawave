@@ -459,7 +459,8 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             // now apply the unique iterator if requested
             UniqueTransform uniquify = getUniqueTransform();
             if (uniquify != null) {
-                pipelineDocuments = uniquify.getIterator(pipelineDocuments);
+                // pipelineDocuments = uniquify;
+                pipelineDocuments = Iterators.filter(pipelineDocuments, uniquify.getUniquePredicate());
             }
 
             // apply the grouping iterator if requested and if the batch size is greater than zero
@@ -1548,23 +1549,11 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         return new ValueComparator(from.second().getMetadata());
     }
 
-    protected UniqueTransform getUniqueTransform() throws IOException {
+    protected UniqueTransform getUniqueTransform() {
         if (uniqueTransform == null && getUniqueFields() != null && !getUniqueFields().isEmpty()) {
             synchronized (getUniqueFields()) {
                 if (uniqueTransform == null) {
-                    // @formatter:off
-                    uniqueTransform = new UniqueTransform.Builder()
-                            .withUniqueFields(getUniqueFields())
-                            .withQueryExecutionForPageTimeout(getResultTimeout())
-                            .withBufferPersistThreshold(getUniqueCacheBufferSize())
-                            .withIvaratorCacheDirConfigs(getIvaratorCacheDirConfigs())
-                            .withHdfsSiteConfigURLs(getHdfsSiteConfigURLs())
-                            .withSubDirectory(getQueryId() + "-" + getScanId())
-                            .withMaxOpenFiles(getIvaratorMaxOpenFiles())
-                            .withNumRetries(getIvaratorNumRetries())
-                            .withPersistOptions(getIvaratorPersistOptions())
-                            .build();
-                    // @formatter:on
+                    uniqueTransform = new UniqueTransform(getUniqueFields(), getResultTimeout());
                 }
             }
         }

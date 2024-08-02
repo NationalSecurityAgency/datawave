@@ -24,7 +24,6 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.WrappingIterator;
-import org.apache.accumulo.core.iteratorsImpl.system.IterationInterruptedException;
 import org.apache.commons.pool.impl.GenericObjectPool;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
@@ -812,7 +811,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
 
                 if (this.setControl.isCancelledQuery()) {
                     log.debug("Ivarator query was cancelled");
-                    throw new IterationInterruptedException("Ivarator query was cancelled");
+                    throw new RuntimeException("Ivarator query was cancelled");
                 }
 
                 // if we have any persisted data or we have scanned a significant number of keys, then persist it completely
@@ -831,7 +830,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                     throw new IvaratorException("Ivarator query timed out");
                 } else {
                     log.debug("Ivarator query was cancelled");
-                    throw new IterationInterruptedException("Ivarator query was cancelled");
+                    throw new RuntimeException("Ivarator query was cancelled");
                 }
             }
 
@@ -1028,7 +1027,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         try {
             source = ivaratorSourcePool.borrowObject();
         } catch (Exception e) {
-            throw new IterationInterruptedException("Unable to borrow object from ivarator source pool.  " + e.getMessage());
+            throw new RuntimeException("Unable to borrow object from ivarator source pool.  " + e.getMessage());
         }
         return source;
     }
@@ -1043,7 +1042,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         try {
             ivaratorSourcePool.returnObject(source);
         } catch (Exception e) {
-            throw new IterationInterruptedException("Unable to return object to ivarator source pool.  " + e.getMessage());
+            throw new RuntimeException("Unable to return object to ivarator source pool.  " + e.getMessage());
         }
     }
 
@@ -1297,11 +1296,8 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                 this.createdRowDir = false;
             }
 
-            // noinspection unchecked
-            this.set = (HdfsBackedSortedSet<Key>) HdfsBackedSortedSet.builder().withBufferPersistThreshold(hdfsBackedSetBufferSize)
-                            .withIvaratorCacheDirs(ivaratorCacheDirs).withUniqueSubPath(row).withMaxOpenFiles(maxOpenFiles).withNumRetries(numRetries)
-                            .withPersistOptions(persistOptions).withSetFactory(new FileKeySortedSet.Factory()).build();
-
+            this.set = new HdfsBackedSortedSet<>(null, hdfsBackedSetBufferSize, ivaratorCacheDirs, row, maxOpenFiles, numRetries, persistOptions,
+                            new FileKeySortedSet.Factory());
             this.threadSafeSet = Collections.synchronizedSortedSet(this.set);
             this.currentRow = row;
             this.setControl.takeOwnership(row, this);
