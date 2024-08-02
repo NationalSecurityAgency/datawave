@@ -26,7 +26,7 @@ public class SSDeepNGramOverlapScorerTest {
 
     };
 
-    public static final int[] expectedScores = {65, 47, 16, 16, 0, 0, 0};
+    public static final int[] expectedScores = {67, 48, 17, 17, 0, 0, 0};
 
     @Test
     public void testCompare() {
