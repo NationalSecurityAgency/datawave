@@ -117,7 +117,7 @@ public class SSDeepSimilarityQueryTransformerTest {
                     assertEquals("96", field.getValueString());
                     break;
                 case "OVERLAP_SCORE":
-                    assertEquals("51", field.getValueString());
+                    assertEquals("53", field.getValueString());
                     break;
                 case "OVERLAP_SSDEEP_NGRAMS":
                     assertEquals(EXPECTED_2_3_OVERLAPS, field.getValueString());

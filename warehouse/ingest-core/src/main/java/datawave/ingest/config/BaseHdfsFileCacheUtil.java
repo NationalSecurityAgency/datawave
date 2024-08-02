@@ -18,7 +18,9 @@ public abstract class BaseHdfsFileCacheUtil {
     protected Path cacheFilePath;
     protected final Configuration conf;
     protected AccumuloHelper accumuloHelper;
+
     protected String delimiter = "\t";
+    private static final int MAX_RETRIES = 3;
     protected short cacheReplicas = 3;
 
     private static final Logger log = Logger.getLogger(BaseHdfsFileCacheUtil.class);
@@ -40,14 +42,23 @@ public abstract class BaseHdfsFileCacheUtil {
     }
 
     public void read() throws IOException {
-        log.info("Reading cache at " + this.cacheFilePath);
-        try (BufferedReader in = new BufferedReader(new InputStreamReader(FileSystem.get(this.cacheFilePath.toUri(), conf).open(this.cacheFilePath)))) {
-            readCache(in);
-        } catch (IOException ex) {
-            if (shouldRefreshCache(this.conf)) {
-                update();
-            } else {
-                throw new IOException("Unable to read cache file at " + this.cacheFilePath, ex);
+
+        int attempts = 0;
+        boolean retry = true;
+        while (retry && attempts <= MAX_RETRIES) {
+            attempts++;
+
+            log.info("Reading cache at " + this.cacheFilePath);
+            try (BufferedReader in = new BufferedReader(new InputStreamReader(FileSystem.get(this.cacheFilePath.toUri(), conf).open(this.cacheFilePath)))) {
+                readCache(in);
+                retry = false;
+            } catch (IOException ex) {
+                if (shouldRefreshCache(this.conf)) {
+                    update();
+                } else if (attempts == MAX_RETRIES) {
+                    throw new IOException("Unable to read cache file at " + this.cacheFilePath, ex);
+                }
+
             }
 
         }
