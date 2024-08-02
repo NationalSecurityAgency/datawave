@@ -10,6 +10,8 @@ import java.util.Set;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.logic.BaseQueryLogic;
 import datawave.query.Constants;
 import datawave.query.language.parser.QueryParser;
 import datawave.query.planner.DefaultQueryPlanner;
@@ -17,8 +19,6 @@ import datawave.query.planner.QueryPlanner;
 import datawave.query.planner.rules.NodeTransformRule;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tld.TLDQueryIterator;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
-import datawave.webservice.query.logic.BaseQueryLogic;
 
 public class LookupUUIDTune implements Profile {
 
@@ -241,10 +241,12 @@ public class LookupUUIDTune implements Profile {
         return queryIteratorClass;
     }
 
+    @Deprecated(since = "7.1.0", forRemoval = true)
     public int getMaxShardsPerDayThreshold() {
         return maxShardsPerDayThreshold;
     }
 
+    @Deprecated(since = "7.1.0", forRemoval = true)
     public void setMaxShardsPerDayThreshold(int maxShardsPerDayThreshold) {
         this.maxShardsPerDayThreshold = maxShardsPerDayThreshold;
     }

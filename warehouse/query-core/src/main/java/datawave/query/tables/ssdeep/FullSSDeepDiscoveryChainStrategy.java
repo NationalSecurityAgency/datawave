@@ -16,11 +16,11 @@ import org.apache.log4j.Logger;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.TreeMultimap;
 
+import datawave.core.query.logic.QueryLogic;
+import datawave.microservice.query.Query;
+import datawave.microservice.query.QueryImpl;
 import datawave.query.discovery.DiscoveredThing;
 import datawave.query.tables.chained.strategy.FullChainStrategy;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.logic.QueryLogic;
 
 /**
  * A chain strategy that is designed to first run a ssdeep similarity query and then run a subsequent discovery query for each matching ssdeep hash found by

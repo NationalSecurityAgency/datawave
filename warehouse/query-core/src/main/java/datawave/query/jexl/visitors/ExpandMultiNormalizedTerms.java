@@ -39,6 +39,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
+import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.data.normalizer.IpAddressNormalizer;
 import datawave.data.type.IpAddressType;
 import datawave.data.type.OneToManyNormalizerType;
@@ -53,7 +54,6 @@ import datawave.query.jexl.lookups.ExpandedFieldCache;
 import datawave.query.jexl.nodes.DroppedExpression;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.util.MetadataHelper;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 

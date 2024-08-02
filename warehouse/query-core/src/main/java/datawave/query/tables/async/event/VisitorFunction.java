@@ -39,6 +39,7 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Sets;
 
 import datawave.core.iterators.filesystem.FileSystemCache;
+import datawave.microservice.query.Query;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.InvalidQueryException;
@@ -64,7 +65,6 @@ import datawave.query.util.MetadataHelper;
 import datawave.query.util.TypeMetadata;
 import datawave.util.StringUtils;
 import datawave.util.time.DateHelper;
-import datawave.webservice.query.Query;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.PreConditionFailedQueryException;
@@ -159,7 +159,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
 
         SessionOptions options = input.getOptions();
 
-        ScannerChunk newSettings = new ScannerChunk(null, input.getRanges(), input.getLastKnownLocation());
+        ScannerChunk newSettings = new ScannerChunk(null, input.getRanges(), input.getContext(), input.getLastKnownLocation());
 
         SessionOptions newOptions = new SessionOptions(options);
 
@@ -415,7 +415,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
      *            an {@link IteratorSetting}
      */
     protected void pruneIvaratorConfigs(ASTJexlScript script, IteratorSetting settings) {
-        if (script != null && !settings.getOptions().containsKey(QueryOptions.MOST_RECENT_UNIQUE) && !IvaratorRequiredVisitor.isIvaratorRequired(script)) {
+        if (script != null && !IvaratorRequiredVisitor.isIvaratorRequired(script)) {
             settings.removeOption(QueryOptions.IVARATOR_CACHE_BUFFER_SIZE);
             settings.removeOption(QueryOptions.IVARATOR_CACHE_DIR_CONFIG);
             settings.removeOption(QueryOptions.IVARATOR_NUM_RETRIES);
@@ -506,6 +506,9 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
 
         // get existing types from the query
         Set<String> datatypes = IngestTypeVisitor.getIngestTypes(script, cachedTypeMetadata);
+        if (datatypes.contains(IngestTypeVisitor.UNKNOWN_TYPE) || datatypes.contains(IngestTypeVisitor.IGNORED_TYPE)) {
+            return;
+        }
 
         if (config.isRebuildDatatypeFilterPerShard()) {
             newIteratorSetting.addOption(QueryOptions.DATATYPE_FILTER, Joiner.on(',').join(datatypes));
@@ -621,7 +624,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
     }
 
     protected URI getFstHdfsQueryCacheUri(ShardQueryConfiguration config, Query settings) {
-        if (config.getIvaratorFstHdfsBaseURIs() != null) {
+        if (config.getIvaratorFstHdfsBaseURIs() != null && !config.getIvaratorFstHdfsBaseURIs().isEmpty()) {
             String[] choices = StringUtils.split(config.getIvaratorFstHdfsBaseURIs(), ',');
             int index = random.nextInt(choices.length);
             Path path = new Path(choices[index], settings.getId().toString());

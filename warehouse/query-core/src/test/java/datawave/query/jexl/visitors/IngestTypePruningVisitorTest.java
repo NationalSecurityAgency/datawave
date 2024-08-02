@@ -1,5 +1,6 @@
 package datawave.query.jexl.visitors;
 
+import static datawave.query.jexl.visitors.IngestTypeVisitor.IGNORED_TYPE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -8,6 +9,7 @@ import java.util.Collections;
 import java.util.Set;
 
 import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.log4j.Logger;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -86,10 +88,8 @@ public class IngestTypePruningVisitorTest {
                         "A == '1' && C == '3'",
                         "A == '1' && B == '2' && C == '3'",
                         "A == '1' && C != '3'",
-                        "A == '1' && !(C == '3')",
                         "A == '1' && C =~ '3'",
                         "A == '1' && C !~ '3'",
-                        "A == '1' && !(C =~ '3')",
                         "A == '1' && C < '3'",
                         "A == '1' && C <= '3'",
                         "A == '1' && C > '3'",
@@ -100,6 +100,12 @@ public class IngestTypePruningVisitorTest {
         for (String query : queries) {
             test(query, null);
         }
+    }
+
+    @Test
+    public void testIntersectionWithExclusiveNegation() {
+        test("A == '1' && !(C == '3')", "A == '1'");
+        test("A == '1' && !(C =~ '3')", "A == '1'");
     }
 
     // A && (B || C)
@@ -437,14 +443,18 @@ public class IngestTypePruningVisitorTest {
 
     @Test
     public void testPruneNegation() {
-        String query = "A == '1' || !((_Delayed_ = true) && (A == '1' && C == '2'))";
+        // internal prune
+        String query = "A == '1' || !((_Delayed_ = true) && (A == '2' && C == '3'))";
         test(query, "A == '1'");
+
+        query = "A == '0' && (A == '1' || !((_Delayed_ = true) && (A == '2' && C == '3')))";
+        test(query, "A == '0' && (A == '1')");
     }
 
     @Test
     public void testFullyPrunedTree() {
         String query = "(false)";
-        test(query, query);
+        test(query, "");
     }
 
     @Test
@@ -490,8 +500,8 @@ public class IngestTypePruningVisitorTest {
         metadata.put("B", "ingestType1", LcType.class.getTypeName());
         metadata.put("C", "ingestType1", LcType.class.getTypeName());
 
-        test("A == '1' && (B == '2' || C == '3')", null, metadata, Collections.singleton("ingestType2"));
-        test("A == '1' || (B == '2' && C == '3')", null, metadata, Collections.singleton("ingestType2"));
+        testExternalPrune("A == '1' && (B == '2' || C == '3')", null, metadata, Collections.singleton("ingestType2"));
+        testExternalPrune("A == '1' || (B == '2' && C == '3')", null, metadata, Collections.singleton("ingestType2"));
     }
 
     @Test
@@ -508,7 +518,7 @@ public class IngestTypePruningVisitorTest {
         Set<String> externalTypes = Sets.newHashSet("ingestType2", "ingestType3", "ingestType4");
         // A term pruned by external types
         // C and D terms should self prune
-        test(query, expected, metadata, externalTypes);
+        testExternalPrune(query, expected, metadata, externalTypes);
     }
 
     @Test
@@ -518,12 +528,13 @@ public class IngestTypePruningVisitorTest {
         metadata.put("B", "ingestType2", LcType.class.getTypeName());
         metadata.put("9", "ingestType2", LcType.class.getTypeName());
 
-        String query = "A == '1' && B == null"; // *technically* valid
-        test(query, query, metadata);
+        // *technically* valid because B will always be null for any document that matches A
+        // practically the B term is superfluous
+        String query = "A == '1' && B == null";
+        test(query, "A == '1'", metadata);
 
-        // same form but with an identifier
-        query = "A == '1' && $9 == null";
-        test(query, query, metadata);
+        query = "A == '1' && $9 == null"; // same form but with an identifier
+        test(query, "A == '1'", metadata);
     }
 
     @Test
@@ -531,10 +542,14 @@ public class IngestTypePruningVisitorTest {
         TypeMetadata metadata = new TypeMetadata();
         metadata.put("A", "ingestType1", LcType.class.getTypeName());
         metadata.put("B", "ingestType2", LcType.class.getTypeName());
+        metadata.put("9", "ingestType2", LcType.class.getTypeName());
 
-        // in theory this visitor should be smart enough to prune out a negation for an exclusive ingest type
+        // not null exclusive type evaluates to false, causing whole intersection to be dropped
         String query = "A == '1' && !(B == null)";
-        test(query, query, metadata);
+        test(query, "", metadata);
+
+        query = "A == '1' && !($B == null)"; // same form but with an identifier
+        test(query, "", metadata);
     }
 
     @Test
@@ -563,21 +578,355 @@ public class IngestTypePruningVisitorTest {
         test(query, query, metadata);
     }
 
-    private void test(String query, String expected) {
-        test(query, expected, typeMetadata, null);
+    @Test
+    public void testNotNullAndNestedUnion() {
+        String query = "!(A == null) && B == '1' || ((C == '2' || D == '2' || E == '2' || F == '2'))";
+
+        TypeMetadata metadata = new TypeMetadata();
+        metadata.put("A", "type1", LcType.class.getTypeName());
+        metadata.put("A", "type2", LcType.class.getTypeName());
+        metadata.put("A", "type3", LcType.class.getTypeName());
+        metadata.put("A", "type4", LcType.class.getTypeName());
+
+        metadata.put("B", "type1", LcType.class.getTypeName());
+        metadata.put("B", "type2", LcType.class.getTypeName());
+        metadata.put("B", "type3", LcType.class.getTypeName());
+        metadata.put("B", "type4", LcType.class.getTypeName());
+
+        metadata.put("C", "type1", LcType.class.getTypeName());
+        metadata.put("C", "type2", LcType.class.getTypeName());
+        metadata.put("C", "type3", LcType.class.getTypeName());
+        metadata.put("C", "type4", LcType.class.getTypeName());
+        metadata.put("C", "type5", LcType.class.getTypeName());
+        metadata.put("C", "type6", LcType.class.getTypeName());
+
+        metadata.put("D", "type1", LcType.class.getTypeName());
+        metadata.put("D", "type2", LcType.class.getTypeName());
+        metadata.put("D", "type3", LcType.class.getTypeName());
+        metadata.put("D", "type4", LcType.class.getTypeName());
+        metadata.put("D", "type5", LcType.class.getTypeName());
+        metadata.put("D", "type6", LcType.class.getTypeName());
+
+        metadata.put("E", "type3", LcType.class.getTypeName());
+        metadata.put("F", "type3", LcType.class.getTypeName());
+
+        test(query, query, metadata);
     }
 
-    private void testExternalPrune(String query, String expected, Set<String> ingestTypes) {
-        test(query, expected, typeMetadata, ingestTypes);
+    @Ignore
+    @Test
+    public void testFilterFunctionExcludeExpandedIntoMutuallyExclusiveFields() {
+        // there might be an exclude like #EXCLUDE(MODEL_FIELD, '.*.*')
+        // which is expanded like so #EXCLUDE((F1||F2||F3), '.*.*')
+        // and is then rewritten as a filter function like so !((F1 == null && F2 == null && F3 == null))
+        TypeMetadata metadata = new TypeMetadata();
+        metadata.put("A", "type1", LcType.class.getTypeName());
+        metadata.put("B", "type1", LcType.class.getTypeName());
+        metadata.put("C", "type2", LcType.class.getTypeName());
+        metadata.put("D", "type3", LcType.class.getTypeName());
+
+        // pushdown negations visitor would rewrite this
+        // into A == '1' && !(B == null) && !...
+        String query = "A == '1' && !((B == null || C == null || D == null))";
+        String expected = "A == '1' && !((B == null))";
+        test(query, expected, metadata);
+    }
+
+    @Test
+    public void testUnionOfNegatedTerms() {
+        String query = "!(A == '1') || !(B == '2') || !(C == '3')";
+        test(query, query);
+    }
+
+    @Test
+    public void testUnionOfNotNullTerms() {
+        String query = "!(A == null) || !(B == null) || !(C == null)";
+        test(query, query);
+    }
+
+    @Test
+    public void testIntersectionsWithNullTerms() {
+        TypeMetadata metadata = new TypeMetadata();
+        metadata.put("A", "type-1", LcType.class.getTypeName());
+        metadata.put("B", "type-1", LcType.class.getTypeName());
+        metadata.put("C", "type-2", LcType.class.getTypeName());
+        metadata.put("123", "type-1", LcType.class.getTypeName());
+        metadata.put("234", "type-2", LcType.class.getTypeName());
+
+        // same field, no change
+        String query = "A == '1' && A == null";
+        test(query, query, metadata);
+
+        // different field, same type, no change
+        query = "A == '1' && B == null";
+        test(query, query, metadata);
+
+        // field with exclusive type, pruned
+        query = "A == '1' && C == null";
+        test(query, "A == '1'", metadata);
+
+        // identifier with same type, no change
+        query = "A == '1' && $123 == null";
+        test(query, query, metadata);
+
+        // identifier with exclusive type, prune
+        query = "A == '1' && $234 == null";
+        test(query, "A == '1'", metadata);
+    }
+
+    // is not null terms with exclusive datatypes should NOT be pruned
+    // the query is *technically* non-executable
+    @Test
+    public void testIntersectionsWithNotNullTerms() {
+        TypeMetadata metadata = new TypeMetadata();
+        metadata.put("A", "type-1", LcType.class.getTypeName());
+        metadata.put("B", "type-1", LcType.class.getTypeName());
+        metadata.put("C", "type-2", LcType.class.getTypeName());
+        metadata.put("123", "type-1", LcType.class.getTypeName());
+        metadata.put("234", "type-2", LcType.class.getTypeName());
+
+        // same field, no change
+        String query = "A == '1' && !(A == null)";
+        test(query, query, metadata);
+
+        // different field, same type, no change
+        query = "A == '1' && !(B == null)";
+        test(query, query, metadata);
+
+        // not null term with exclusive type is false, prune whole intersection
+        query = "A == '1' && !(C == null)";
+        test(query, "", metadata);
+
+        // identifier with same type, no change
+        query = "A == '1' && !($123 == null)";
+        test(query, query, metadata);
+
+        // identifier with exclusive type, prune
+        query = "A == '1' && !($234 == null)";
+        test(query, "", metadata);
+    }
+
+    @Test
+    public void testNestedUnionsWithNullTerms() {
+        TypeMetadata metadata = new TypeMetadata();
+        metadata.put("A", "type-1", LcType.class.getTypeName());
+        metadata.put("B", "type-1", LcType.class.getTypeName());
+        metadata.put("C", "type-2", LcType.class.getTypeName());
+        metadata.put("123", "type-1", LcType.class.getTypeName());
+        metadata.put("234", "type-2", LcType.class.getTypeName());
+
+        // same field, same types, no change
+        String query = "A == '1' && (A == '2' || A == null)";
+        test(query, query, metadata);
+
+        // different fields, subset types, no change
+        query = "A == '1' && (A == '2' || B == null)";
+        test(query, query, metadata);
+
+        // exclusive null term evaluates to true, should prune the whole union
+        query = "A == '1' && (B == '2' || C == null)";
+        String expected = "A == '1'";
+        test(query, expected, metadata);
+    }
+
+    @Test
+    public void testNestedUnionsWithNotNullTerms() {
+        TypeMetadata metadata = new TypeMetadata();
+        metadata.put("A", "type-1", LcType.class.getTypeName());
+        metadata.put("B", "type-1", LcType.class.getTypeName());
+        metadata.put("C", "type-2", LcType.class.getTypeName());
+        metadata.put("123", "type-1", LcType.class.getTypeName());
+        metadata.put("234", "type-2", LcType.class.getTypeName());
+
+        String query = "A == '1' && (A == '2' || !(A == null))";
+        test(query, query, metadata);
+
+        query = "A == '1' && (A == '2' || !(B == null))";
+        test(query, query, metadata);
+
+        // not null exclusive term evaluates to false, can safely drop from a union
+        query = "A == '1' && (B == '2' || !(C == null))";
+        test(query, "A == '1' && (B == '2')", metadata);
+    }
+
+    @Test
+    public void testNestedUnionsWithNegatedTerms() {
+        TypeMetadata metadata = new TypeMetadata();
+        metadata.put("A", "type-1", LcType.class.getTypeName());
+        metadata.put("B", "type-1", LcType.class.getTypeName());
+        metadata.put("C", "type-2", LcType.class.getTypeName());
+        metadata.put("123", "type-1", LcType.class.getTypeName());
+        metadata.put("234", "type-2", LcType.class.getTypeName());
+
+        // same field, same types, no change
+        String query = "A == '1' && (A == '2' || !(A == '3'))";
+        test(query, query, metadata);
+
+        // different fields, subset types, no change
+        query = "A == '1' && (A == '2' || !(B == '3'))";
+        test(query, query, metadata);
+
+        // exclusive negated term evaluates to true, drop the whole union
+        query = "A == '1' && (B == '2' || !(C == '3'))";
+        String expected = "A == '1'";
+        test(query, expected, metadata);
+    }
+
+    @Test
+    public void testNestedIntersectionsWithNullTerms() {
+        TypeMetadata metadata = new TypeMetadata();
+        metadata.put("A", "type-1", LcType.class.getTypeName());
+        metadata.put("B", "type-1", LcType.class.getTypeName());
+        metadata.put("C", "type-2", LcType.class.getTypeName());
+        metadata.put("123", "type-1", LcType.class.getTypeName());
+        metadata.put("234", "type-2", LcType.class.getTypeName());
+
+        // same field, same types, no change
+        String query = "A == '1' || (A == '2' && A == null)";
+        test(query, query, metadata);
+
+        // different fields, subset types, no change
+        query = "A == '1' || (A == '2' && B == null)";
+        test(query, query, metadata);
+
+        // exclusive type evaluates to true, may be safely pruned
+        query = "A == '1' || (A == '2' && C == null)";
+        test(query, "A == '1' || (A == '2')", metadata);
+    }
+
+    @Test
+    public void testNestedIntersectionsWithNotNullTerms() {
+        TypeMetadata metadata = new TypeMetadata();
+        metadata.put("A", "type-1", LcType.class.getTypeName());
+        metadata.put("B", "type-1", LcType.class.getTypeName());
+        metadata.put("C", "type-2", LcType.class.getTypeName());
+        metadata.put("123", "type-1", LcType.class.getTypeName());
+        metadata.put("234", "type-2", LcType.class.getTypeName());
+
+        String query = "A == '1' || (A == '2' && !(A == null))";
+        test(query, query, metadata);
+
+        query = "A == '1' || (A == '2' && !(B == null))";
+        test(query, query, metadata);
+
+        // not null term for exclusive type evaluates to false, whole intersection must be pruned
+        query = "A == '1' || (A == '2' && !(C == null))";
+        test(query, "A == '1'", metadata);
+    }
+
+    @Test
+    public void testNestedIntersectionsWithNegatedTerms() {
+        TypeMetadata metadata = new TypeMetadata();
+        metadata.put("A", "type-1", LcType.class.getTypeName());
+        metadata.put("B", "type-1", LcType.class.getTypeName());
+        metadata.put("C", "type-2", LcType.class.getTypeName());
+        metadata.put("123", "type-1", LcType.class.getTypeName());
+        metadata.put("234", "type-2", LcType.class.getTypeName());
+
+        // same field, same types, no change
+        String query = "A == '1' || (A == '2' && !(A == '3'))";
+        test(query, query, metadata);
+
+        // different fields, subset types, no change
+        query = "A == '1' || (A == '2' && !(B == '3'))";
+        test(query, query, metadata);
+
+        // negated term for exclusive type evaluates to false, safely dropped from intersection
+        query = "A == '1' || (A == '2' && !(C == '3'))";
+        test(query, "A == '1' || (A == '2')", metadata);
+    }
+
+    /**
+     * This query is technically a top level union, but the nested intersections are <b>both</b> top level intersections and can thus drive pruning in their
+     * nested unions.
+     */
+    @Test
+    public void testContrivedCaseWithTwoTopLevelIntersectionsUnderUnion() {
+
+        TypeMetadata metadata = new TypeMetadata();
+        metadata.put("A", "type-1", LcType.class.getTypeName());
+        metadata.put("B", "type-1", LcType.class.getTypeName());
+        metadata.put("C", "type-3", LcType.class.getTypeName());
+        metadata.put("X", "type-7", LcType.class.getTypeName());
+        metadata.put("Y", "type-7", LcType.class.getTypeName());
+        metadata.put("Z", "type-9", LcType.class.getTypeName());
+
+        String query = "(A == '1' && (B == '2' || C == '3')) || (X == '7' && (Y == '8' || Z == '9'))";
+        String expected = "(A == '1' && (B == '2')) || (X == '7' && (Y == '8'))";
+        test(query, expected, metadata);
+    }
+
+    private void test(String query, String expected) {
+        test(query, expected, typeMetadata);
     }
 
     private void test(String query, String expected, TypeMetadata metadata) {
-        test(query, expected, metadata, null);
+        ASTJexlScript internal = testInternalPrune(query, expected, metadata);
+        ASTJexlScript external = testExternalPrune(query, expected, metadata);
+
+        // validate and compare internal vs. external pruning
+        verifyEquality(internal, external);
     }
 
-    private void test(String query, String expected, TypeMetadata metadata, Set<String> ingestTypes) {
+    private void testInternalPrune(String query, String expected) {
+        testInternalPrune(query, expected, typeMetadata);
+    }
+
+    private ASTJexlScript testInternalPrune(String query, String expected, TypeMetadata metadata) {
         try {
-            ASTJexlScript script = JexlASTHelper.parseAndFlattenJexlQuery(query);
+            ASTJexlScript script = parseQuery(query);
+            ASTJexlScript pruned = (ASTJexlScript) IngestTypePruningVisitor.prune(script, metadata);
+
+            log.info("input   : " + query);
+            log.info("output  : " + JexlStringBuildingVisitor.buildQuery(pruned));
+            log.info("expected: " + expected);
+
+            // all pruned scripts must be valid
+            assertTrue(validator.isValid(pruned));
+
+            // we might be expecting nothing as a result
+            if (expected == null) {
+                log.trace("expected null! " + JexlStringBuildingVisitor.buildQuery(pruned));
+                assertEquals("failed for query: " + query, 0, pruned.jjtGetNumChildren());
+                return null;
+            }
+
+            ASTJexlScript expectedScript = parseQuery(expected);
+            verifyEquality(pruned, expectedScript);
+            return pruned;
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail("test failed: " + e.getMessage());
+        }
+        return null;
+    }
+
+    private void testExternalPrune(String query, String expected) {
+        testExternalPrune(query, expected, typeMetadata);
+    }
+
+    private void testExternalPrune(String query, String expected, Set<String> ingestTypes) {
+        testExternalPrune(query, expected, typeMetadata, ingestTypes);
+    }
+
+    private ASTJexlScript testExternalPrune(String query, String expected, TypeMetadata metadata) {
+        ASTJexlScript script = parseQuery(query);
+        Set<String> ingestTypes = IngestTypeVisitor.getIngestTypes(script, metadata);
+        return testExternalPrune(query, expected, metadata, ingestTypes);
+    }
+
+    private ASTJexlScript testExternalPrune(String query, String expected, TypeMetadata metadata, Set<String> ingestTypes) {
+        try {
+            ASTJexlScript script = parseQuery(query);
+
+            if (ingestTypes == null) {
+                ingestTypes = IngestTypeVisitor.getIngestTypes(script, metadata);
+            }
+
+            if (ingestTypes.contains(IGNORED_TYPE)) {
+                return parseQuery(expected);
+            }
+
             ASTJexlScript pruned = (ASTJexlScript) IngestTypePruningVisitor.prune(script, metadata, ingestTypes);
 
             log.info("input   : " + query);
@@ -590,17 +939,31 @@ public class IngestTypePruningVisitorTest {
             // we might be expecting nothing as a result
             if (expected == null) {
                 log.trace("expected null! " + JexlStringBuildingVisitor.buildQuery(pruned));
-                assertEquals(0, pruned.jjtGetNumChildren());
-                return;
+                assertEquals("failed for query: " + query, 0, pruned.jjtGetNumChildren());
+                return null;
             }
 
-            ASTJexlScript expectedScript = JexlASTHelper.parseAndFlattenJexlQuery(expected);
-            TreeEqualityVisitor.Comparison comparison = TreeEqualityVisitor.checkEquality(expectedScript, pruned);
-            assertTrue("Jexl tree comparison failed with reason: " + comparison.getReason(), comparison.isEqual());
-
+            ASTJexlScript expectedScript = parseQuery(expected);
+            verifyEquality(pruned, expectedScript);
+            return pruned;
         } catch (Exception e) {
             e.printStackTrace();
             fail("test failed: " + e.getMessage());
         }
+        return null;
+    }
+
+    private ASTJexlScript parseQuery(String query) {
+        try {
+            return JexlASTHelper.parseAndFlattenJexlQuery(query);
+        } catch (ParseException e) {
+            fail("Failed to parse query: " + query);
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void verifyEquality(ASTJexlScript script, ASTJexlScript expected) {
+        TreeEqualityVisitor.Comparison comparison = TreeEqualityVisitor.checkEquality(expected, script);
+        assertTrue("Jexl tree comparison failed with reason: " + comparison.getReason(), comparison.isEqual());
     }
 }
