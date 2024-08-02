@@ -4,7 +4,9 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,11 +30,14 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.powermock.api.easymock.PowerMock;
 import org.powermock.reflect.Whitebox;
 
 import datawave.ingest.data.config.ingest.AccumuloHelper;
+import datawave.ingest.util.ShardLocationTrieMap;
+import datawave.webservice.query.data.ObjectSizeOf;
 
 public class TableSplitsCacheTest {
 
@@ -177,6 +182,7 @@ public class TableSplitsCacheTest {
         Logger.getLogger(TableSplitsCache.class).setLevel(uutLevel);
         Logger.getLogger(ZooCache.class).setLevel(zooCacheLevel);
         Logger.getLogger(ZooKeeper.class).setLevel(zooKeeperLevel);
+        TableSplitsCache.clear();
 
     }
 
@@ -440,7 +446,7 @@ public class TableSplitsCacheTest {
 
         try {
 
-            new TableSplitsCache(null);
+            TableSplitsCache.getCurrentCache(null);
 
             Assert.fail();
 
@@ -457,7 +463,7 @@ public class TableSplitsCacheTest {
 
         try {
 
-            TableSplitsCache uut = new TableSplitsCache(createMockJobConf());
+            TableSplitsCache uut = TableSplitsCache.getCurrentCache(createMockJobConf());
 
             Assert.assertNotNull("TableSplitsCache constructor failed to construct an instance.", uut);
 
@@ -472,7 +478,7 @@ public class TableSplitsCacheTest {
         setupConfiguration();
 
         try {
-            TableSplitsCache uut = new TableSplitsCache(createMockJobConf());
+            TableSplitsCache uut = TableSplitsCache.getCurrentCache(createMockJobConf());
             Assert.assertNotNull("TableSplitsCache constructor failed to construct an instance.", uut);
             Assert.assertNull("TableSplitsCache#getSplits() created a map of tables and their splits when no file should exist", uut.getSplits());
         } finally {
@@ -487,7 +493,7 @@ public class TableSplitsCacheTest {
         setupConfiguration();
         setSplitsCacheDir(String.format("/random/dir%s/must/not/exist", (int) (Math.random() * 100) + 1));
         try {
-            TableSplitsCache uut = new TableSplitsCache(createMockJobConf());
+            TableSplitsCache uut = TableSplitsCache.getCurrentCache(createMockJobConf());
             uut.update();
             Assert.assertNotNull("TableSplitsCache constructor failed to construct an instance.", uut);
             Assert.assertNull("TableSplitsCache should have no splits", uut.getSplits());
@@ -504,7 +510,7 @@ public class TableSplitsCacheTest {
         setSplitsCacheDir();
         setupConfiguration();
         try {
-            TableSplitsCache uut = new TableSplitsCache(createMockJobConf());
+            TableSplitsCache uut = TableSplitsCache.getCurrentCache(createMockJobConf());
             FileStatus fileStatus = uut.getFileStatus();
             Assert.assertNotNull("FileStatus", fileStatus);
         } finally {
@@ -522,7 +528,7 @@ public class TableSplitsCacheTest {
 
         try {
 
-            TableSplitsCache uut = new TableSplitsCache(createMockJobConf());
+            TableSplitsCache uut = TableSplitsCache.getCurrentCache(createMockJobConf());
 
             Assert.assertNotNull("TableSplitsCache constructor failed to construct an instance.", uut);
 
@@ -532,12 +538,12 @@ public class TableSplitsCacheTest {
             Assert.assertFalse("TableSplitsCache#getSplits() incorrectly populated map of tables and their splits", resultsSet.isEmpty());
             Assert.assertEquals("TableSplitsCache#getSplits() incorrectly populated map of tables and their splits", 3, resultsSet.size());
 
-            List<Text> listings = resultsSet.get("shard");
+            List<Text> listings = new ArrayList(resultsSet.get("shard"));
             Assert.assertNotNull("TableSplitsCache#getSplits() failed to a list of splits", listings);
             Assert.assertFalse("TableSplitsCache#getSplits() incorrectly populated the list of splits", listings.isEmpty());
             Assert.assertEquals("TableSplitsCache#getSplits() incorrectly populated the list of splits", 5, listings.size());
 
-            listings = resultsSet.get("shard1");
+            listings = new ArrayList(resultsSet.get("shard1"));
             Assert.assertNotNull("TableSplitsCache#getSplits() failed to a list of splits", listings);
             Assert.assertFalse("TableSplitsCache#getSplits() incorrectly populated the list of splits", listings.isEmpty());
             Assert.assertEquals("TableSplitsCache#getSplits() incorrectly populated the list of splits", 1, listings.size());
@@ -556,11 +562,11 @@ public class TableSplitsCacheTest {
 
         try {
 
-            TableSplitsCache uut = new TableSplitsCache(createMockJobConf());
+            TableSplitsCache uut = TableSplitsCache.getCurrentCache(createMockJobConf());
 
             Assert.assertNotNull("TableSplitsCache constructor failed to construct an instance.", uut);
 
-            List<Text> resultsSet = uut.getSplits("shard");
+            List<Text> resultsSet = uut.getSplits().get("shard");
 
             Assert.assertNotNull("TableSplitsCache#getSplits() failed to a list of splits", resultsSet);
             Assert.assertFalse("TableSplitsCache#getSplits() incorrectly populated the list of splits", resultsSet.isEmpty());
@@ -579,7 +585,7 @@ public class TableSplitsCacheTest {
 
         try {
 
-            TableSplitsCache uut = new TableSplitsCache(createMockJobConf());
+            TableSplitsCache uut = TableSplitsCache.getCurrentCache(createMockJobConf());
 
             Assert.assertNotNull("TableSplitsCache constructor failed to construct an instance.", uut);
 
@@ -602,7 +608,7 @@ public class TableSplitsCacheTest {
 
         try {
 
-            TableSplitsCache uut = new TableSplitsCache(createMockJobConf());
+            TableSplitsCache uut = TableSplitsCache.getCurrentCache(createMockJobConf());
 
             Assert.assertNotNull("TableSplitsCache constructor failed to construct an instance.", uut);
 
@@ -626,7 +632,7 @@ public class TableSplitsCacheTest {
 
         try {
 
-            TableSplitsCache uut = new TableSplitsCache(createMockJobConf());
+            TableSplitsCache uut = TableSplitsCache.getCurrentCache(createMockJobConf());
 
             Assert.assertNotNull("TableSplitsCache constructor failed to construct an instance.", uut);
 
@@ -663,6 +669,61 @@ public class TableSplitsCacheTest {
             Assert.assertTrue("split size", (split - lastsplit) <= 402);
             lastsplit = split;
         }
+    }
+
+    @Test
+    public void testLocs() throws IOException {
+        setSplitsCacheDir();
+        TableSplitsCache splitsCache = TableSplitsCache.getCurrentCache(createMockJobConf());
+        splitsCache.getSplitsAndLocation();
+        Assert.assertEquals(5, splitsCache.getSplitsAndLocationByTable("shard").size());
+        Assert.assertEquals(1, splitsCache.getSplitsAndLocationByTable("shard1").size());
+        Assert.assertEquals(0, splitsCache.getSplitsAndLocationByTable("someOtherTable").size());
+
+    }
+
+    @Ignore
+    @Test
+    public void testTrieSize() {
+        Map<Text,String> map = new HashMap<>();
+        fillMap(map);
+        System.out.println("Hashmap size: " + ObjectSizeOf.Sizer.getObjectSize(map));
+        map = new ShardLocationTrieMap<>();
+        fillMap(map);
+        System.out.println("Triemap size: " + ObjectSizeOf.Sizer.getObjectSize(map));
+    }
+
+    private void fillMap(Map<Text,String> map) {
+        List<String> tservers = getTservers();
+        Calendar c = Calendar.getInstance();
+        c.set(Calendar.YEAR, 1980);
+        c.set(Calendar.MONTH, 0);
+        c.set(Calendar.DATE, 1);
+        SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd");
+        String date = format.format(c.getTime());
+        int tserver = 0;
+        while (date.compareTo("2025") < 0) {
+            for (int shard = 0; shard < 1000; shard++) {
+                String row = date + '_' + shard;
+                String location = tservers.get(tserver);
+                tserver = (tserver + 1) % tservers.size();
+                map.put(new Text(row), location);
+            }
+            c.add(Calendar.DATE, 1);
+            date = format.format(c.getTime());
+        }
+    }
+
+    private List<String> getTservers() {
+        List<String> tservers = new ArrayList<>();
+        for (int row = 200; row < 250; row++) {
+            for (int node = 0; node < 40; node++) {
+                for (int port = 1000; port < 1005; port++) {
+                    tservers.add("r" + row + "n" + node + ":" + port);
+                }
+            }
+        }
+        return tservers;
     }
 
 }
