@@ -37,18 +37,6 @@ public class DocumentProjection implements DocumentPermutation {
      */
     private boolean trackSizes = true;
 
-    @Deprecated
-    public DocumentProjection() {
-        this(false, false);
-    }
-
-    @Deprecated
-    public DocumentProjection(boolean includeGroupingContext, boolean reducedResponse) {
-        this.includeGroupingContext = includeGroupingContext;
-        this.reducedResponse = reducedResponse;
-        this.projection = new Projection();
-    }
-
     public DocumentProjection(boolean includeGroupingContext, boolean reducedResponse, boolean trackSizes, Set<String> projections,
                     Projection.ProjectionType projectionType) {
         this.includeGroupingContext = includeGroupingContext;
@@ -75,16 +63,6 @@ public class DocumentProjection implements DocumentPermutation {
         this.reducedResponse = isReducedResponse;
         this.trackSizes = isTrackSizes;
         this.projection = projection;
-    }
-
-    @Deprecated
-    public void setIncludes(Set<String> includes) {
-        this.projection.setIncludes(includes);
-    }
-
-    @Deprecated
-    public void setExcludes(Set<String> excludes) {
-        this.projection.setExcludes(excludes);
     }
 
     public Projection getProjection() {

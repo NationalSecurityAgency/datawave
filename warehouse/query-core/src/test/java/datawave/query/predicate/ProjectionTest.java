@@ -9,13 +9,6 @@ import com.google.common.collect.Sets;
 
 public class ProjectionTest {
 
-    @Deprecated
-    @Test(expected = RuntimeException.class)
-    public void testNoConfigurationDepricated() {
-        Projection projection = new Projection();
-        assertTrue(projection.apply("FIELD_A"));
-    }
-
     @Test(expected = RuntimeException.class)
     public void testNoConfiguration() {
         Projection projection = new Projection(null, Projection.ProjectionType.INCLUDES);
@@ -23,29 +16,9 @@ public class ProjectionTest {
     }
 
     @Deprecated
-    @Test(expected = RuntimeException.class)
-    public void testTooMuchConfiguration() {
-        Projection projection = new Projection();
-        projection.setIncludes(Sets.newHashSet("FIELD_A", "FIELD_B"));
-        projection.setExcludes(Sets.newHashSet("FIELD_X", "FIELD_Y"));
-        assertTrue(projection.apply("FIELD_A"));
-    }
-
-    @Deprecated
-    @Test(expected = RuntimeException.class)
-    public void testTooMuchOfTheSameConfiguration() {
-        Projection projection = new Projection();
-        projection.setIncludes(Sets.newHashSet("FIELD_A", "FIELD_B"));
-        projection.setIncludes(Sets.newHashSet("FIELD_A", "FIELD_B"));
-        assertTrue(projection.apply("FIELD_A"));
-    }
-
-    @Deprecated
     @Test
     public void testIncludesDepricated() {
-        Projection projection = new Projection();
-        projection.setIncludes(Sets.newHashSet("FIELD_A", "FIELD_B"));
-
+        Projection projection = new Projection(Sets.newHashSet("FIELD_A", "FIELD_B"), Projection.ProjectionType.INCLUDES);
         assertTrue(projection.isUseIncludes());
         assertFalse(projection.isUseExcludes());
 
@@ -75,8 +48,7 @@ public class ProjectionTest {
     @Deprecated
     @Test
     public void testIncludesWithGroupingContextDeprecated() {
-        Projection projection = new Projection();
-        projection.setIncludes(Sets.newHashSet("FIELD_A", "FIELD_B"));
+        Projection projection = new Projection(Sets.newHashSet("FIELD_A", "FIELD_B"), Projection.ProjectionType.INCLUDES);
 
         assertTrue(projection.isUseIncludes());
         assertFalse(projection.isUseExcludes());
@@ -107,8 +79,7 @@ public class ProjectionTest {
     @Deprecated
     @Test
     public void testExcludesDeprecated() {
-        Projection projection = new Projection();
-        projection.setExcludes(Sets.newHashSet("FIELD_X", "FIELD_Y"));
+        Projection projection = new Projection(Sets.newHashSet("FIELD_X", "FIELD_Y"), Projection.ProjectionType.EXCLUDES);
 
         assertFalse(projection.isUseIncludes());
         assertTrue(projection.isUseExcludes());
@@ -139,8 +110,7 @@ public class ProjectionTest {
     @Deprecated
     @Test
     public void testExcludesWithGroupingContextDeprecated() {
-        Projection projection = new Projection();
-        projection.setExcludes(Sets.newHashSet("FIELD_X", "FIELD_Y"));
+        Projection projection = new Projection(Sets.newHashSet("FIELD_X", "FIELD_Y"), Projection.ProjectionType.EXCLUDES);
 
         assertFalse(projection.isUseIncludes());
         assertTrue(projection.isUseExcludes());
@@ -171,8 +141,7 @@ public class ProjectionTest {
     @Deprecated
     @Test
     public void testTheAbsurdDeprecated() {
-        Projection projection = new Projection();
-        projection.setIncludes(Sets.newHashSet("PREFIX"));
+        Projection projection = new Projection(Sets.newHashSet("PREFIX"), Projection.ProjectionType.INCLUDES);
         assertTrue(projection.apply("$PREFIX.SUFFIX01.SUFFIX.02"));
     }
 

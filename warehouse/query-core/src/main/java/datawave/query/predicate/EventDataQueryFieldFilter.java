@@ -141,28 +141,4 @@ public class EventDataQueryFieldFilter implements EventDataQueryFilter {
         return new EventDataQueryFieldFilter(this);
     }
 
-    /**
-     * Configure the delegate {@link Projection} with the fields to exclude
-     *
-     * @param excludes
-     *            the set of fields to exclude
-     * @deprecated This method is deprecated and should no longer be used.
-     */
-    @Deprecated
-    public void setExcludes(Set<String> excludes) {
-        this.keyProjection.setExcludes(excludes);
-    }
-
-    /**
-     * Set the delegate {@link Projection} with the fields to include
-     *
-     * @param includedFields
-     *            the sorted set of fields to include
-     * @deprecated This method is deprecated and should no longer be used.
-     */
-    @Deprecated
-    public void setIncludes(Set<String> includedFields) {
-        this.keyProjection.setIncludes(includedFields);
-    }
-
 }
