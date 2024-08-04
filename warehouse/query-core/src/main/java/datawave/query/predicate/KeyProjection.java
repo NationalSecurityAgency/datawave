@@ -5,8 +5,6 @@ import java.util.Set;
 
 import org.apache.accumulo.core.data.Key;
 
-import com.google.common.collect.Sets;
-
 import datawave.query.data.parsers.DatawaveKey;
 import datawave.query.jexl.JexlASTHelper;
 

@@ -15,7 +15,6 @@ public class ProjectionTest {
         assertTrue(projection.apply("FIELD_A"));
     }
 
-    @Deprecated
     @Test
     public void testIncludesDepricated() {
         Projection projection = new Projection(Sets.newHashSet("FIELD_A", "FIELD_B"), Projection.ProjectionType.INCLUDES);
@@ -45,7 +44,6 @@ public class ProjectionTest {
         assertFalse(projection.apply("FIELD_Z"));
     }
 
-    @Deprecated
     @Test
     public void testIncludesWithGroupingContextDeprecated() {
         Projection projection = new Projection(Sets.newHashSet("FIELD_A", "FIELD_B"), Projection.ProjectionType.INCLUDES);
@@ -76,7 +74,6 @@ public class ProjectionTest {
         assertFalse(projection.apply("FIELD_Z"));
     }
 
-    @Deprecated
     @Test
     public void testExcludesDeprecated() {
         Projection projection = new Projection(Sets.newHashSet("FIELD_X", "FIELD_Y"), Projection.ProjectionType.EXCLUDES);
@@ -107,7 +104,6 @@ public class ProjectionTest {
         assertTrue(projection.apply("FIELD_Z"));
     }
 
-    @Deprecated
     @Test
     public void testExcludesWithGroupingContextDeprecated() {
         Projection projection = new Projection(Sets.newHashSet("FIELD_X", "FIELD_Y"), Projection.ProjectionType.EXCLUDES);
@@ -138,7 +134,6 @@ public class ProjectionTest {
         assertTrue(projection.apply("FIELD_Z"));
     }
 
-    @Deprecated
     @Test
     public void testTheAbsurdDeprecated() {
         Projection projection = new Projection(Sets.newHashSet("PREFIX"), Projection.ProjectionType.INCLUDES);

@@ -102,7 +102,6 @@ public class KeyProjectionTest {
         assertTrue(projection.apply(iter.next())); // FIELD_Z
     }
 
-    @Deprecated
     @Test
     public void testIncludesDeprecated() {
         KeyProjection projection = new KeyProjection(Sets.newHashSet("FIELD_A", "FIELD_B"), Projection.ProjectionType.INCLUDES);
@@ -131,9 +130,8 @@ public class KeyProjectionTest {
         assertFalse(projection.apply(iter.next())); // FIELD_Z
     }
 
-    @Deprecated
     @Test
-    public void testExcludesDepricated() {
+    public void testExcludesDeprecated() {
         KeyProjection projection = new KeyProjection(Sets.newHashSet("FIELD_X", "FIELD_Y"), Projection.ProjectionType.EXCLUDES);
 
         assertFalse(projection.getProjection().isUseIncludes());
