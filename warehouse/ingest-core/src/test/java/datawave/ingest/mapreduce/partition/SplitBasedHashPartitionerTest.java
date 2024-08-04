@@ -15,17 +15,25 @@ import org.junit.Before;
 import org.junit.Test;
 
 import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.ingest.mapreduce.job.TableSplitsCache;
 
 public class SplitBasedHashPartitionerTest {
     private static final String TEST_FILE_LOCATION = "datawave/ingest/mapreduce/job/full_splits.txt";
     private static final String TABLE_NAME = "someTableName"; // matches entry in test file: full_splits.txt
+    Configuration conf = new Configuration();
 
     @Before
     public void before() {
         final String testFilePath = SplitBasedHashPartitionerTest.class.getClassLoader().getResource(TEST_FILE_LOCATION).getPath();
 
-        Configuration conf = new Configuration();
+        conf.setBoolean(TableSplitsCache.REFRESH_SPLITS, false);
+        conf.set(TableSplitsCache.SPLITS_CACHE_DIR, testFilePath.substring(0, testFilePath.lastIndexOf('/')));
+        conf.set(TableSplitsCache.SPLITS_CACHE_FILE, "full_splits.txt");
+
+        TableSplitsCache.getCurrentCache(conf).clear();
+
         MultiTableRangePartitioner.context = getTaskInputOutputContext(testFilePath, conf);
+
     }
 
     @Test
@@ -33,7 +41,6 @@ public class SplitBasedHashPartitionerTest {
         int multiplier = 3;
         int numReducers = 1000;
 
-        Configuration conf = new Configuration();
         conf.setInt(SplitBasedHashPartitioner.PARTITIONER_SPACE_MULTIPLIER, multiplier);
         verifyPartitionRangeWithNoWrap(multiplier, numReducers, createPartitioner(conf));
     }
@@ -44,7 +51,6 @@ public class SplitBasedHashPartitionerTest {
         int numReducers = 1000;
 
         // configure generic multiplier to be a bit low which if used would make the test fail
-        Configuration conf = new Configuration();
         conf.setInt(SplitBasedHashPartitioner.PARTITIONER_SPACE_MULTIPLIER, multiplier - 1);
         conf.setInt(TABLE_NAME + '.' + SplitBasedHashPartitioner.PARTITIONER_SPACE_MULTIPLIER, multiplier);
         verifyPartitionRangeWithNoWrap(multiplier, numReducers, createPartitioner(conf));
@@ -56,14 +62,13 @@ public class SplitBasedHashPartitionerTest {
         int numReducers = 1000;
 
         // deliberately removed multiplier from configuration
-        verifyPartitionRangeWithNoWrap(multiplier, numReducers, createPartitioner(new Configuration()));
+        verifyPartitionRangeWithNoWrap(multiplier, numReducers, createPartitioner(conf));
     }
 
     @Test
     public void testMultiplierWrapping() throws IllegalAccessException, InstantiationException, InvocationTargetException, NoSuchMethodException {
         int multiplier = 2;
         int numReducers = 6;
-        Configuration conf = new Configuration();
         conf.setInt(SplitBasedHashPartitioner.PARTITIONER_SPACE_MULTIPLIER, multiplier);
 
         SplitBasedHashPartitioner partitioner = createPartitioner(conf);
@@ -81,7 +86,6 @@ public class SplitBasedHashPartitionerTest {
     public void testMultiplierWrappingTableOverride() throws IllegalAccessException, InstantiationException, InvocationTargetException, NoSuchMethodException {
         int multiplier = 2;
         int numReducers = 6;
-        Configuration conf = new Configuration();
         conf.setInt(SplitBasedHashPartitioner.PARTITIONER_SPACE_MULTIPLIER, multiplier + 1);
         conf.setInt(TABLE_NAME + '.' + SplitBasedHashPartitioner.PARTITIONER_SPACE_MULTIPLIER, multiplier);
         SplitBasedHashPartitioner partitioner = createPartitioner(conf);
