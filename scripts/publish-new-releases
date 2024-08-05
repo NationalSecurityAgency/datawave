@@ -1,37 +1,38 @@
 #!/usr/bin/env bash
 
 #
-# This script is intended to be non-interactive and suitable for crond or other automation.
+# This script will automatically generate _posts/release/*.md entries as "Project News" posts for the
+# tagged DataWave releases that it discovers on the configured repo. The script can optionally commit and push
+# the posts to the remote gh-pages branch, if desired. See DW_GITHUB_REMOTE_URL notes below
 #
-# The script will automatically generate (and optionally commit & push) _posts/release entries for
-# the gh-pages branch as "Latest Project News", i.e., for newly tagged DW releases that are discovered
-# on DW_GITHUB_REMOTE_URL (see Prerequisites below).
-#
-# Also see the TRACKED_DW_VERSIONS variable below.
+# Intended to be non-interactive and suitable for crond or other automation
 #
 # Usage:
 #   <script-name> [--push, -p] [--verbose, -v] [--help, -h]
 #
-# Use of '--push (-p)' option will attempt to locally commit and then push
-# changes to the gh-pages branch at the configured DW_GITHUB_REMOTE_URL
-#
-# Prerequisites:
-#   (1) DW_GITHUB_REMOTE_URL must be defined in the user's environment
-#       E.g.,
-#       export DW_GITHUB_REMOTE_URL="https://username:userOAuthToken@github.com/NationalSecurityAgency/datawave.git"
-#
-#       NOTE: 'username' and associated 'userOAuthToken' will need to have write
-#              privs on the repo in order for --push (-p) arg to be successful
-#
-#   (2) The git executable must be on the user's PATH
+#   -p option will locally commit the changes and then attempt to push them
 #
 
-# TRACKED_DW_VERSIONS: Major versions of DW that we want to track for publishing as "Project News" to the gh-pages site.
-# To start publishing news updates for a new major release, just add the major version to the array here, and seed the
-# _posts/release/ dir with at least the first post entry. E.g., 2040-01-01-datawave-20.0.0.md
-# To stop tracking updates for a particular major version, just remove it from the array
+# DW_GITHUB_REMOTE_URL: Github repo to read from and optionally update.
+# By default, DW_GITHUB_REMOTE_URL is defined as "https://github.com/NationalSecurityAgency/datawave.git"
+#
+# However, if --push is used, then it must be overridden as "https://user:token@github.com/NationalSecurityAgency/datawave.git"
+# where 'user:token' has write permissions on the repo
+DW_GITHUB_REMOTE_URL="${DW_GITHUB_REMOTE_URL:-https://github.com/NationalSecurityAgency/datawave.git}"
+ 
+# TRACKED_DW_VERSIONS: Major versions of DW that we want to track for publishing purposes.
+# For example, any pre-5.x releases that are created at this point are unlikely to be of interest to anyone
+# except the development team. Hence, we're not tracking the 3.x line here.
+#
+# To begin auto-publishing news updates for a new major release, just add the major version to the array and
+# then seed the _posts/release/ dir with at least the first entry. For example, assuming hypothetically that
+# DataWave 11.0.0 was tagged and released on February 1st 2024, you'd add '11' to the array here and then
+# create the file _posts/release/2024-02-01-datawave-11.0.0.md before running the script. All subsequent
+# posts for releases on the 11.x line will be created automatically  
 declare -a -r TRACKED_DW_VERSIONS=( 5 6 7 )
 
+# Fresh git clones are created in /tmp and then deleted each time
+# the script runs. No persistent local repo required 
 readonly TMP_DW_DIR=$(mktemp -d /tmp/$( basename $0 )_datawave_XXXXXXX)
 readonly TMP_GHPAGES_DIR=$(mktemp -d /tmp/$( basename $0 )_ghpages_XXXXXXX)
 readonly POSTS_DIR=${TMP_GHPAGES_DIR}/_posts/release
@@ -64,6 +65,18 @@ loge() {
 logf() {
   log "[FATAL] ${1}"
   exit 1
+}
+
+clone_repos() {
+  logi "Cloning repos..."
+  if ! ${GIT} clone ${GIT_QUIET} "${DW_GITHUB_REMOTE_URL}" ${TMP_DW_DIR} ; then
+    logf "Failed to clone DataWave!"
+  fi
+  logi "DataWave was cloned to ${TMP_DW_DIR}"
+  if ! ${GIT} clone ${GIT_QUIET} --single-branch --branch gh-pages "${DW_GITHUB_REMOTE_URL}" ${TMP_GHPAGES_DIR} ; then
+    logf "Failed to clone DataWave's gh-pages branch!"
+  fi
+  logi "gh-pages branch was cloned to ${TMP_GHPAGES_DIR}"
 }
 
 usage() {
@@ -174,18 +187,6 @@ update_git() {
   else
     logi "Skipping commit/push to remote repository"
   fi
-}
-
-clone_repos() {
-  logi "Cloning repos..."
-  if ! ${GIT} clone ${GIT_QUIET} "${DW_GITHUB_REMOTE_URL}" ${TMP_DW_DIR} ; then
-    logf "Failed to clone DataWave!"
-  fi
-  logi "DataWave was cloned to ${TMP_DW_DIR}"
-  if ! ${GIT} clone ${GIT_QUIET} --single-branch --branch gh-pages "${DW_GITHUB_REMOTE_URL}" ${TMP_GHPAGES_DIR} ; then
-    logf "Failed to clone DataWave's gh-pages branch!"
-  fi
-  logi "gh-pages branch was cloned to ${TMP_GHPAGES_DIR}"
 }
 
 get_dw_tags() {

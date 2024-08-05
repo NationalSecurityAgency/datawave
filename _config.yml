@@ -54,94 +54,27 @@ kramdown:
 # Description is used in /feed.xml
 description: "DataWave is a Java-based ingest and query framework that leverages Apache Accumulo to provide fast, secure access to your data"
 
-# Enable site plugins as needed...
+#############################################################################
+# Plugins
+#############################################################################
 
-# We're using the 'jekyll-redirect-from' plugin to allow for simplified
-# internal and external href links, i.e., href targets that are agnostic
-# to specific DW doc versions. See _docs-latest/*.md files for examples   
+# We're using the jekyll-redirect-from plugin so that we can hardcode
+# certain href links to the latest docs without having to hardcode the
+# permalink to the specific DW version....
+# E.g., "/docs" redirects to "/docs/7.x/getting-started/overview"
+# See _docs-latest/*.md files for other examples   
 
 whitelist: [jekyll-redirect-from]
 plugins: [jekyll-redirect-from]
 
 #############################################################################
-# Site update instructions for new DW versions
-#############################################################################
-
-# For doc changes pertaining to minor or patch releases of DW, you can
-# probably skip straight to step 9 below, i.e., for content-only,
-# non-structural changes.
-
-# For doc updates related to a new major release, structural changes
-# are required, so you'll need to start with step 1 below.
-
-# NOTE: Use 'scripts/prep-next-major-release-docs' to automate 1-6 below
-
-# (1) Assuming 8.x is the next major release, copy the existing
-#     _docs-latest (7.x) to a new "collection" directory
-#
-#     cp -a _docs-latest  _docs-7x
-#
-#     Note: maintaining the underscore prefix is important
-
-# (2) Delete the 'redirect' files from the "old" version. We 
-#     want to maintain only the ones in _docs-latest/
-#
-#     rm -f _docs-7x/*.md
-
-# (3) Update the redirect files in _docs-latest to reflect the new
-#     major version
-#
-#     sed -i 's/7.x/8.x/g' _docs-latest/*.md
-
-# (4) Copy the current _data/sidebars/docs-latest-sidebar.yml
-#     to preserve compatibility with the old docs version
-#
-#     cd _data/sidebars
-#     cp docs-latest-sidebar.yml docs-7x-sidebar.yml
-
-# (5) Update _data/sidebars/docs-latest-sidebar.yml to reflect
-#     the new major version
-#
-#     sed -i 's/7.x/8.x/g' _data/sidebars/docs-latest-sidebar.yml
-
-# (6) Update _data/topnav.yml to reflect the new version. No need to
-#     back this one up since we're only maintaining a single top
-#     navigation bar for all pages in the site, and topnav.yml will
-#     always reference the latest docs version
-#
-#     sed -i 's/7.x/8.x/g' _data/topnav.yml
-
-# (7) Update _config.yml "collections":
-#
-#     Following existing examples below, update the collections as
-#     necessary to preserve permalinks for the new and old versions.
-#
-#     That is, copy the "docs-latest" stanza below to a new "docs-7x"
-#     stanza, and update the "docs-latest" permalink to reflect the
-#     new 8.x version 
-
-# (8) Update _config.yml "frontmatter" defaults:
-#
-#     Following existing examples below, update the frontmatter defaults
-#     below as necessary, similar to step 7 above. Make sure to configure
-#     the 'scope.type', 'values.sidebar', and 'values.release_tag'
-#     properties appropriately for the new and old versions  
-
-# (9) Make version-specific content updates to anything under
-#     _docs-latest/ as needed for the current DW release
-
-# (10) Locally test all site changes. See README.md for instructions on
-#      running the site
-
-#############################################################################
 # Docs Collection Configuration
 #############################################################################
 
-# Note: The best way to prevent a deprecated/unwanted collection
-# from being rendered is to set 'output: false' below. E.g., if
-# the time it takes to build and render the site ever becomes
-# excessive, there's no need to delete ancient _docs-* dirs.
-# Just turn off rendering of the collection
+# To prevent a deprecated/unwanted collection from being rendered,
+# set 'output: false' below. E.g., if the time it takes to build and
+# render the site ever becomes excessive, there's no need to delete
+# ancient _docs-* dirs, just disable them here
 
 collections:
   # The "docs-latest" collection renders _docs-latest folder
@@ -176,17 +109,15 @@ collections:
 # Frontmatter Defaults. Override on a per-page (*.md) basis, if needed
 #############################################################################
 
-# Note that the values.topnav property is always 'topnav'
-# below, which configures _data/topnav.yml as the primary
-# navigation bar for *all* pages in the site
+# The values.topnav property is always 'topnav' below, so
+# that _data/topnav.yml will be configured as the primary nav
+# bar for all pages in the site
 
-# Note regarding sidebar menu navigation:
-# Sidebar navigation for each page in a docs collection
-# is configuration-driven (see _data/sidebars/*.yml for
-# example configs). And rendering of the sidebar is handled
-# by _includes/sidebar.html based on the 'sidebar'
-# property specified below for the given collection
-# (i.e., scope.type)
+# Sidebar navigation for each page in a docs collection 
+# is also config-driven (see _data/sidebars/*.yml examples). And
+# rendering of each sidebar is handled by _includes/sidebar.html
+# based on the values.sidebar property for the given collection
+# (or scope.type)
 
 defaults:
   -
@@ -198,10 +129,9 @@ defaults:
       layout: "docs"
       title_prefix: "DataWave 7.x Docs - "
       sidebar: docs-latest-sidebar
-      # Note that 'release_tag' is a page-scoped variable that is used for, among
-      # other things, a means of creating href links to specific source files
-      # on the main datawave repo, sometimes for specific line #'s in a given source
-      # file. Thus, changing the release_tag here can potentially break things
+      # release_tag is used mainly for creating links to source files
+      # on the main datawave repo, sometimes targeting specific line #'s
+      # in a file. So, changing the value here could break those
       release_tag: 7.2.1
       show_summary: true
       skip_title_for_h1: false

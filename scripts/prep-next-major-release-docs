@@ -5,7 +5,7 @@
 # site files for the next 1-up major release, based on the current major version found in the
 # local checkout. The new major release version can be overridden, if needed
 #
-# See _config.yml. This automates only steps 1 - 6, as described in _config.yml. Additional manual
+# This automates only steps 1 - 6 as described in README.md. Additional manual
 # updates to _config.yml are currently still required
 #
 # Note: It's up to the user to ensure that the local checkout is up to date with the remote repo,
@@ -81,7 +81,7 @@ sed -i "s/${_curr_major_version}.x/${_next_major_version}.x/g" "${_repo_dir}"/_d
 log "(6) Performing sed replacements on _data/topnav.yml to reflect the new version"
 sed -i "s/${_curr_major_version}.x/${_next_major_version}.x/g" "${_repo_dir}"/_data/topnav.yml
 
-log "Complete remaining configuration updates to _config.yml, and perform any content updates to _docs-latest/ as needed"
+log "Complete any remaining updates as described in the site maintenance sections of README.md"
 log "Please run the site locally to test your changes!"
 
 exit 0
