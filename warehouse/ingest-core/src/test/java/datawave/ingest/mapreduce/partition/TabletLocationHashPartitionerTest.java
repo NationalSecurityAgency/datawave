@@ -13,6 +13,7 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import datawave.ingest.mapreduce.handler.shard.ShardIdFactory;
+import datawave.ingest.mapreduce.job.TableSplitsCache;
 
 public class TabletLocationHashPartitionerTest {
     public static final int MAX_EXPECTED_COLLISIONS = 70;
@@ -30,6 +31,10 @@ public class TabletLocationHashPartitionerTest {
     @Before
     public void setUp() {
         conf = new Configuration();
+        conf.setBoolean(TableSplitsCache.REFRESH_SPLITS, false);
+
+        TableSplitsCache.getCurrentCache(conf).clear();
+
         partitioner = new TabletLocationHashPartitioner();
         partitioner.setConf(conf);
     }
