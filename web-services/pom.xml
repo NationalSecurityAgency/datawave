@@ -624,8 +624,12 @@
                                 <bannedDependencies>
                                     <excludes>
                                         <exclude>log4j:log4j</exclude>
+                                        <exclude>ch.qos.reload4j:reload4j</exclude>
                                         <exclude>org.slf4j:slf4j-log4j12</exclude>
+                                        <exclude>org.slf4j:slf4j-reload4j</exclude>
+                                        <exclude>joda-time:joda-time</exclude>
                                     </excludes>
+                                    <searchTransitive>true</searchTransitive>
                                     <includes />
                                 </bannedDependencies>
                             </rules>
@@ -708,6 +712,10 @@
                             <execution>
                                 <id>enforce-no-snapshots</id>
                                 <phase>none</phase>
+                            </execution>
+                            <execution>
+                                <id>enforce-banned-dependencies</id>
+                                <phase>validate</phase>
                             </execution>
                         </executions>
                     </plugin>
