@@ -34,6 +34,7 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.SequenceFile;
+import org.apache.hadoop.io.SequenceFile.Writer;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.OutputCommitter;
 import org.apache.hadoop.mapreduce.RecordWriter;
@@ -594,7 +595,9 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
                 if (generateMapFileRowKeys && !shardMapFileRowKeys.isEmpty()) {
                     log.info("Writing mapFileRowKeys");
                     Path shardMapFilePath = new Path(workDir, getUniqueFile(context, "mapFileRowKeys", ".lst"));
-                    try (SequenceFile.Writer output = SequenceFile.createWriter(fs, conf, shardMapFilePath, Text.class, Text.class)) {
+                    Path qualifiedShardMapFilePath = fs.makeQualified(shardMapFilePath);
+                    try (Writer output = SequenceFile.createWriter(conf, Writer.file(qualifiedShardMapFilePath), Writer.keyClass(Text.class),
+                                    Writer.valueClass(Text.class))) {
                         for (Map.Entry<String,Set<Text>> entry : shardMapFileRowKeys.entrySet()) {
                             Path path = shardMapFiles.get(entry.getKey());
                             Text pathText = new Text(path.getParent().getName() + "/" + path.getName());

@@ -21,6 +21,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.RawLocalFileSystem;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.SequenceFile;
+import org.apache.hadoop.io.SequenceFile.Writer;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.MapContext;
@@ -264,8 +265,9 @@ public class AccumuloSetup extends ExternalResource {
     private RawLocalFileSystem createSequenceFile(Configuration conf, Path path, TestFileLoader loader) throws IOException {
         RawLocalFileSystem rfs = new RawLocalFileSystem();
         rfs.setConf(conf);
-
-        try (SequenceFile.Writer seqWriter = new SequenceFile.Writer(rfs, conf, path, Text.class, RawRecordContainerImpl.class)) {
+        Path qualifiedPath = rfs.makeQualified(path);
+        try (Writer seqWriter = SequenceFile.createWriter(conf, Writer.file(qualifiedPath), Writer.keyClass(Text.class),
+                        Writer.valueClass(RawRecordContainerImpl.class))) {
             loader.loadTestData(seqWriter);
             return rfs;
         }
