@@ -13,9 +13,9 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.MutationsRejectedException;
 import org.apache.accumulo.core.client.Scanner;
@@ -27,6 +27,7 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iteratorsImpl.system.SortedMapIterator;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.DataInputBuffer;
 import org.apache.hadoop.io.Writable;
@@ -36,7 +37,9 @@ import org.junit.Test;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.ingest.protobuf.Uid;
 import datawave.query.iterator.SourceManagerTest;
 
@@ -45,10 +48,12 @@ public class DiscoveryIteratorTest {
 
     @Test
     public void testHappyPath() throws Throwable {
-        Connector con = new InMemoryInstance("DiscoveryIteratorTest").getConnector("root", new PasswordToken(""));
-        con.tableOperations().create("index");
-        writeSample(con.createBatchWriter("index", new BatchWriterConfig().setMaxLatency(0, TimeUnit.SECONDS).setMaxMemory(0).setMaxWriteThreads(1)));
-        Scanner s = con.createScanner("index", new Authorizations("FOO"));
+        InMemoryInstance instance = new InMemoryInstance("DiscoveryIteratorTest");
+        AccumuloClient client = new InMemoryAccumuloClient("root", instance);
+
+        client.tableOperations().create("index");
+        writeSample(client.createBatchWriter("index", new BatchWriterConfig().setMaxLatency(0, TimeUnit.SECONDS).setMaxMemory(0).setMaxWriteThreads(1)));
+        Scanner s = client.createScanner("index", new Authorizations("FOO"));
         s.addScanIterator(new IteratorSetting(50, DiscoveryIterator.class));
         s.setRange(new Range());
 
@@ -203,11 +208,13 @@ public class DiscoveryIteratorTest {
 
     @Test
     public void testReverseIndex() throws Throwable {
-        Connector con = new InMemoryInstance("DiscoveryIteratorTest").getConnector("root", new PasswordToken(""));
-        con.tableOperations().create("reverseIndex");
-        writeSample(con.createBatchWriter("reverseIndex", new BatchWriterConfig().setMaxLatency(0, TimeUnit.SECONDS).setMaxMemory(0).setMaxWriteThreads(1)),
+        InMemoryInstance instance = new InMemoryInstance("DiscoveryIteratorTest");
+        AccumuloClient client = new InMemoryAccumuloClient("root", instance);
+
+        client.tableOperations().create("reverseIndex");
+        writeSample(client.createBatchWriter("reverseIndex", new BatchWriterConfig().setMaxLatency(0, TimeUnit.SECONDS).setMaxMemory(0).setMaxWriteThreads(1)),
                         true);
-        Scanner s = con.createScanner("reverseIndex", new Authorizations("FOO"));
+        Scanner s = client.createScanner("reverseIndex", new Authorizations("FOO"));
         IteratorSetting setting = new IteratorSetting(50, DiscoveryIterator.class);
         setting.addOption(DiscoveryLogic.REVERSE_INDEX, "true");
         s.addScanIterator(setting);
