@@ -1,7 +1,9 @@
 ##########################################################################################
-# Data model glossary of terms. Make sure 'id' is unique within the set of terms,
-# and try to keep terms sorted by 'id' just for easier maintenance
+# Data Model Glossary of Terms
 ##########################################################################################
+
+# Make sure 'id' is unique within the set of terms, and try
+# to keep terms sorted by 'id' for easier maintenance
 
 terms:
   - id: CF
@@ -154,11 +156,6 @@ terms:
 # Table Schema Definitions
 ##########################################################################################
 
-# Note that any string literal component within a row, cf, cq, or val entry below should be enclosed in single quotes,
-# as this will signal that those components should be treated differently in code. See EDGE table entries below for
-# examples, and see _includes/set_table_entry_tooltips.html for implementation details. Otherwise, it is assumed
-# that each component specified is mapped to a glossary term above
-
 tables:
   - id: PDT
     name: Primary Data Table
@@ -171,22 +168,22 @@ tables:
       purpose: Represents a name/value pair for a given field within the data object
 
     - row: SHARD
-      cf: FI + NB + NFN
+      cf: "'fi' + NB + NFN"
       cq: NFV + NB + DT + NB + UID
       val: "NULL"
-      purpose: Provides an in-partition index for objects within the given shard
+      purpose: The <b>fi</b> (field index) column provides an in-partition index of field names and associated values for data objects that exist within the given shard
 
     - row: SHARD
-      cf: D
+      cf: "'d'"
       cq: DT + NB + UID + NB + DVN
       val: DC
-      purpose: (Optional) Provides a named 'view' of raw content from a given data object
+      purpose: (Optional) The <b>d</b> (document) column provides a named view of raw document content from a given data object 
 
     - row: SHARD
-      cf: TF
+      cf: "'tf'"
       cq: DT + NB + UID + NT + NFN
       val: TFPB
-      purpose: (Optional) To enable phrase queries on terms within the given document
+      purpose: (Optional) The <b>tf</b> (term frequency) column enables phrase queries on terms within the given document
 
   - id: GFIDX
     name: Global Forward Index Table
