@@ -76,7 +76,7 @@ public class FileByteSummaryLoader extends Configured implements Tool {
 
         JobSetupUtil.printConfig(getConf(), log);
 
-        Job job = new Job(conf);
+        Job job = Job.getInstance(conf);
         Configuration jconf = job.getConfiguration();
         job.setJarByClass(this.getClass());
         job.setJobName("FileByteMetricsSummaries");
