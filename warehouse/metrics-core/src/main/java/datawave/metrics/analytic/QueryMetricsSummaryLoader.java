@@ -292,7 +292,7 @@ public class QueryMetricsSummaryLoader extends Configured implements Tool {
                         .to(instance, zookeepers)
                         .as(userName, password)
                         .build();
-        // @formatter:off
+        // @formatter:on
 
         IteratorSetting regex = new IteratorSetting(50, RegExFilter.class);
         regex.addOption(RegExFilter.COLF_REGEX, QUERY_METRICS_REGEX);
