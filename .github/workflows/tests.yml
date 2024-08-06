@@ -77,6 +77,9 @@ jobs:
         $RUN_TESTS \
           || { echo "***** TESTS FAILED. Attempting retry."; $RUN_TESTS; } \
           || { echo "***** TESTS FAILED. Attempting final retry."; $RUN_TESTS; }
+    - name: Analyze Dependencies
+      run: |
+        mvn -V -B -e -ntp "-Dstyle.color=always" dependency:analyze package -DskipTests=true
 
   # This step can be uncommented to support feature development.  When developing a 
   # feature which spans multiple repos, you can update the poms to use the latest 

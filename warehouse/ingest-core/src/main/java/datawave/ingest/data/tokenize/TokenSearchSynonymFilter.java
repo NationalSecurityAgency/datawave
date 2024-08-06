@@ -15,8 +15,6 @@ import org.apache.lucene.analysis.tokenattributes.PositionIncrementAttribute;
 import org.apache.lucene.analysis.tokenattributes.PositionLengthAttribute;
 import org.apache.lucene.analysis.tokenattributes.TypeAttribute;
 
-import it.unimi.dsi.fastutil.Hash;
-
 /** Wraps DefaultTokenSearch and exposes it as a Lucene TokenFilter. Not thread-safe */
 public class TokenSearchSynonymFilter extends TokenFilter {
 
