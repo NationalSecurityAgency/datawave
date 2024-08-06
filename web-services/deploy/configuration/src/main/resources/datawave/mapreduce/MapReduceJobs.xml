@@ -15,7 +15,7 @@
 		<property name="restrictInputFormats" value="${mapReduce.inputFormat.restrict}" />
 		<property name="validInputFormats">
 			<list value-type="java.lang.Class">
-				<value>org.apache.accumulo.core.client.mapreduce.AccumuloInputFormat</value>
+				<value>org.apache.accumulo.hadoop.mapreduce.AccumuloInputFormat</value>
 				<value>datawave.mr.bulk.BulkInputFormat</value>
 			</list>
 		</property>
