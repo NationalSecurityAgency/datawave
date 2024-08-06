@@ -57,7 +57,6 @@ public class TestBaseQueryLogic {
         expect(this.copy.getMaxPageSize()).andReturn(25);
         expect(this.copy.getPageByteTrigger()).andReturn(1024L);
         expect(this.copy.getCollectQueryMetrics()).andReturn(false);
-        expect(this.copy.getConnPoolName()).andReturn("connPool1");
         expect(this.copy.getRequiredRoles()).andReturn(null);
         expect(this.copy.getSelectorExtractor()).andReturn(null);
         expect(this.copy.getCurrentUser()).andReturn(null);
@@ -82,6 +81,9 @@ public class TestBaseQueryLogic {
         expect(config.getClient()).andReturn(null).anyTimes();
         expect(config.getQueries()).andReturn(Collections.emptyList()).anyTimes();
         expect(config.getQueriesIter()).andReturn(Collections.emptyIterator()).anyTimes();
+        expect(config.getTableConsistencyLevels()).andReturn(Collections.emptyMap()).anyTimes();
+        expect(config.getTableHints()).andReturn(Collections.emptyMap()).anyTimes();
+        expect(config.getConnPoolName()).andReturn("connPool1");
         expect(this.copy.getConfig()).andReturn(config).anyTimes();
 
         // Run the test

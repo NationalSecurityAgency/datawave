@@ -19,6 +19,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.clientImpl.ScannerOptions;
 import org.apache.accumulo.core.clientImpl.TabletLocator;
 import org.apache.accumulo.core.data.Key;
@@ -524,7 +525,10 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Resu
      */
     public BatchScannerSession setOptions(SessionOptions options) {
         return this;
+    }
 
+    public void setConsistencyLevel(ScannerBase.ConsistencyLevel consistencyLevel) {
+        this.options.setConsistencyLevel(consistencyLevel);
     }
 
     /**

@@ -51,7 +51,7 @@ public class GenerateSplitsFile {
             log.info("Set configSuffix to " + configSuffix);
 
             ConfigurationFileHelper.setConfigurationFromFiles(conf, configDirectory, configSuffix);
-            TableSplitsCache splitsFile = new TableSplitsCache(conf);
+            TableSplitsCache splitsFile = TableSplitsCache.getCurrentCache(conf);
             splitsFile.update();
         } catch (ParseException ex) {
             log.error(GenerateSplitsFile.class.getName(), ex);
