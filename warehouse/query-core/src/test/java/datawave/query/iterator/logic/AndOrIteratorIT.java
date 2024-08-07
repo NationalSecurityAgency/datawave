@@ -429,7 +429,8 @@ class AndOrIteratorIT {
         }
     }
 
-    // this test is used to find edge cases
+    // Several edge cases exists where the following query will skip documents and cause valid hits to be missed.
+    // A fix will be made later, this test exists to document the error condition and validate any future fixes.
     // A && (B || !C)
     @Disabled
     @Test
