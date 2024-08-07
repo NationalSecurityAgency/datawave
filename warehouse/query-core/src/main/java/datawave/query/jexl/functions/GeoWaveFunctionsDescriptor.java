@@ -52,6 +52,8 @@ import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.GeoWaveUtils;
 import datawave.query.util.MetadataHelper;
+import datawave.webservice.query.exception.BadRequestQueryException;
+import datawave.webservice.query.exception.DatawaveErrorCode;
 
 /**
  * This is the descriptor class for performing geowave functions. It supports basic spatial relationships, and decomposes the bounding box of the relationship
@@ -303,13 +305,16 @@ public class GeoWaveFunctionsDescriptor implements JexlFunctionArgumentDescripto
 
         Class<?> functionClass = (Class<?>) ArithmeticJexlEngines.functions().get(fvis.namespace());
 
-        if (!GeoWaveFunctions.GEOWAVE_FUNCTION_NAMESPACE.equals(fvis.namespace()))
-            throw new IllegalArgumentException(
+        if (!GeoWaveFunctions.GEOWAVE_FUNCTION_NAMESPACE.equals(fvis.namespace())) {
+            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.JEXLNODEDESCRIPTOR_NAMESPACE_UNEXPECTED,
                             "Calling " + this.getClass().getSimpleName() + ".getJexlNodeDescriptor with an unexpected namespace of " + fvis.namespace());
-        if (!functionClass.equals(GeoWaveFunctions.class))
-            throw new IllegalArgumentException(
+            throw new IllegalArgumentException(qe);
+        }
+        if (!functionClass.equals(GeoWaveFunctions.class)) {
+            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.JEXLNODEDESCRIPTOR_NODE_FOR_FUNCTION,
                             "Calling " + this.getClass().getSimpleName() + ".getJexlNodeDescriptor with node for a function in " + functionClass);
-
+            throw new IllegalArgumentException(qe);
+        }
         verify(fvis.name(), fvis.args().size());
 
         return new GeoWaveJexlArgumentDescriptor(node, fvis.name(), fvis.args());
@@ -321,7 +326,8 @@ public class GeoWaveFunctionsDescriptor implements JexlFunctionArgumentDescripto
             // geometryString
             verify(name, numArgs, new String[] {"fieldName", "geometryString"});
         } else {
-            throw new IllegalArgumentException("Unknown GeoWave function: " + name);
+            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.FUNCTION_NOT_FOUND, "Unknown GeoWave function: " + name);
+            throw new IllegalArgumentException(qe);
         }
     }
 
@@ -345,7 +351,8 @@ public class GeoWaveFunctionsDescriptor implements JexlFunctionArgumentDescripto
                 exception.append(", ").append(parameterNames[i]);
             }
             exception.append(")'");
-            throw new IllegalArgumentException(exception.toString());
+            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.WRONG_NUMBER_OF_ARGUMENTS, exception.toString());
+            throw new IllegalArgumentException(qe);
         }
     }
 

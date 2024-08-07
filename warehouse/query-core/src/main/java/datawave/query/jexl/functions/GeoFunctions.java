@@ -15,6 +15,8 @@ import datawave.data.normalizer.GeoNormalizer.GeoPoint;
 import datawave.data.normalizer.Normalizer;
 import datawave.query.attributes.ValueTuple;
 import datawave.query.collections.FunctionalSet;
+import datawave.webservice.query.exception.BadRequestQueryException;
+import datawave.webservice.query.exception.DatawaveErrorCode;
 
 /**
  * Provides functions for doing geo spacial queries, such as bounding boxes and circles of interest.
@@ -114,8 +116,10 @@ public class GeoFunctions {
                 latValues = getDoublesFromFieldValue(latField);
             } catch (IllegalArgumentException e) { // NumberFormatException extends IAE and sometimes IAE is thrown
                 if (log.isTraceEnabled())
-                    log.trace("Error parsing lat[" + latField + " or lon[" + lonField + "]", e);
-                return false;
+                    log.trace("Error parsing lat[" + latField + "] or lon[" + lonField + "]", e);
+                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.UNPARSEABLE_JEXL_QUERY,
+                                "Error parsing lat[" + latField + "] or lon[" + lonField + "]");
+                throw new IllegalArgumentException(qe);
             }
 
             // @formatter:off
@@ -190,7 +194,9 @@ public class GeoFunctions {
                 numbers.addAll(getDoublesFromFieldValue(value));
             return numbers;
         }
-        throw new IllegalArgumentException("Field Value:" + fieldValue + " cannot be recognized as a double");
+        BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.UNPARSEABLE_JEXL_QUERY,
+                        "Field Value:" + fieldValue + " cannot be recognized as a double");
+        throw new IllegalArgumentException(qe);
     }
 
     private static Set<GeoPoint> getGeoPointsFromFieldValue(Object fieldValue) throws ExecutionException {
@@ -214,6 +220,8 @@ public class GeoFunctions {
                 geoPoints.addAll(getGeoPointsFromFieldValue(value));
             return geoPoints;
         }
-        throw new IllegalArgumentException("Field Value:" + fieldValue + " cannot be recognized as a geo point");
+        BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.UNPARSEABLE_JEXL_QUERY,
+                        "Field Value: " + fieldValue + " cannot be recognized as a geo point");
+        throw new IllegalArgumentException(qe);
     }
 }

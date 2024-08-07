@@ -226,7 +226,9 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor {
                         // Combine the query contexts if anything fails blame the user
                         if (!(qContext.combineQueryContexts(((List<QueryContext>) mergedContext), false))) {
                             log.error("And node had unexpected return type");
-                            throw new IllegalArgumentException("Error: problem with query syntax");
+                            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_SYNTAX_PARSE_ERROR,
+                                            "Error: problem with query syntax");
+                            throw new IllegalArgumentException(qe);
                         }
                     }
                     mergedContext = childContext;
@@ -234,17 +236,22 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor {
                     for (QueryContext qContext : ((List<QueryContext>) mergedContext)) {
                         if (!(qContext.combineQueryContexts(((List<QueryContext>) childContext), false))) {
                             log.error("And node had unexpected return type");
-                            throw new IllegalArgumentException("Error: problem with query syntax");
+                            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_SYNTAX_PARSE_ERROR,
+                                            "Error: problem with query syntax");
+                            throw new IllegalArgumentException(qe);
                         }
                     }
                 } else {
                     log.error("Problem parsing query");
-                    throw new IllegalArgumentException("Error: problem with query syntax");
+                    BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_SYNTAX_PARSE_ERROR,
+                                    "Error: problem with query syntax");
+                    throw new IllegalArgumentException(qe);
                 }
             } else {
 
                 log.error("And node had unexpected return type");
-                throw new IllegalArgumentException("Error: problem with query syntax");
+                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_SYNTAX_PARSE_ERROR, "Error: problem with query syntax");
+                throw new IllegalArgumentException(qe);
             }
         }
 
@@ -358,7 +365,8 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor {
                 mergedContext = childContext;
             } else {
                 log.error("OR node had unexpected return type");
-                throw new IllegalArgumentException("Error: problem with query syntax");
+                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_SYNTAX_PARSE_ERROR, "Error: problem with query syntax");
+                throw new IllegalArgumentException(qe);
             }
         }
 
@@ -369,7 +377,8 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor {
         for (QueryContext qContext : (List<QueryContext>) q1) {
             if (!qContext.combineQueryContexts(q2, true)) {
                 log.error("Unable to combine query contexts");
-                throw new IllegalArgumentException("Error: problem with query syntax");
+                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_SYNTAX_PARSE_ERROR, "Error: problem with query syntax");
+                throw new IllegalArgumentException(qe);
             }
         }
     }
