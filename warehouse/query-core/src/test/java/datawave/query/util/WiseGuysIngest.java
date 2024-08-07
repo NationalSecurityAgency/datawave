@@ -60,7 +60,7 @@ public class WiseGuysIngest {
     public static final long sopranoTimeStampDelta = 10;
     public static final String caponeUID = UID.builder().newId("Capone".getBytes(), (Date) null).toString();
     public static final long caponeTimeStampDelta = 20;
-    public static final String tattagliaUID = UID.builder().newId("Tattaglia".toString(), (Date) null).toString();
+    public static final String tattagliaUID = UID.builder().newId("Tattaglia".getBytes(), (Date) null).toString();
 
     protected static String normalizeColVal(Map.Entry<String,String> colVal) {
         switch (colVal.getKey()) {

@@ -1,9 +1,11 @@
 package datawave.query.util.sortedmap;
 
-import datawave.query.iterator.ivarator.IvaratorCacheDir;
-import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
-import datawave.query.util.sortedset.FileSortedSet;
-import datawave.query.util.sortedset.HdfsBackedSortedSet;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FsStatus;
@@ -14,13 +16,12 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import datawave.query.iterator.ivarator.IvaratorCacheDir;
+import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
+import datawave.query.util.sortedset.FileSortedSet;
+import datawave.query.util.sortedset.HdfsBackedSortedSet;
 
-public class HdfsBackedSortedSetTest {
+public class HdfsBackedSortedMapTest {
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
@@ -233,7 +234,7 @@ public class HdfsBackedSortedSetTest {
                 .withUniqueSubPath(uniquePath)
                 .withMaxOpenFiles(9999)
                 .withNumRetries(2)
-                .withPersistOptions(new FileSortedMap.PersistOptions())
+                .withPersistOptions(new FileSortedSet.PersistOptions())
                 .build();
         // @formatter:on
 

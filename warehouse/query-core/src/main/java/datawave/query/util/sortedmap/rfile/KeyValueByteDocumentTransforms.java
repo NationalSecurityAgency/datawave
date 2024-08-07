@@ -1,17 +1,18 @@
 package datawave.query.util.sortedmap.rfile;
 
+import java.io.ByteArrayInputStream;
+import java.util.Map;
+
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Value;
+import org.apache.commons.collections.keyvalue.UnmodifiableMapEntry;
+
+import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Document;
 import datawave.query.function.deserializer.DocumentDeserializer;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.function.serializer.DocumentSerializer;
 import datawave.query.function.serializer.KryoDocumentSerializer;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
-import org.apache.commons.collections.keyvalue.UnmodifiableMapEntry;
-
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.util.Map;
 
 public class KeyValueByteDocumentTransforms {
 
@@ -29,7 +30,7 @@ public class KeyValueByteDocumentTransforms {
         return new Key(bytes);
     }
 
-    public static Value documentToValue(Document doc) throws IOException {
+    public static Value documentToValue(Document doc) {
         if (doc == null) {
             return null;
         }
@@ -38,7 +39,7 @@ public class KeyValueByteDocumentTransforms {
         return new Value(document);
     }
 
-    public static Document valueToDocument(Value value) throws IOException {
+    public static Document valueToDocument(Value value) {
         if (value == null) {
             return null;
         }
@@ -47,14 +48,14 @@ public class KeyValueByteDocumentTransforms {
         return document;
     }
 
-    public static Map.Entry<byte[],Document> keyValueToByteDocument(Map.Entry<Key,Value> keyValue) throws IOException {
+    public static Map.Entry<byte[],Document> keyValueToByteDocument(Map.Entry<Key,Value> keyValue) {
         if (keyValue == null) {
             return null;
         }
         return new UnmodifiableMapEntry(keyToByte(keyValue.getKey()), valueToDocument(keyValue.getValue()));
     }
 
-    public static Map.Entry<Key,Value> byteDocumentToKeyValue(Map.Entry<byte[],Document> byteKey) throws IOException {
+    public static Map.Entry<Key,Value> byteDocumentToKeyValue(Map.Entry<byte[],Document> byteKey) {
         if (byteKey == null) {
             return null;
         }

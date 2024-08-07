@@ -1,26 +1,25 @@
 package datawave.query.util.sortedmap;
 
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+
+import datawave.query.util.sortedset.FileSortedSet;
+
 /**
  * A sorted set file handler factory that uses temporary local based files.
- *
- *
- *
  */
-public class SortedTempFileHandler implements FileSortedMap.SortedSetFileHandler {
+public class SortedMapTempFileHandler implements FileSortedMap.SortedMapFileHandler {
     private final FileSystem fs;
     private final File file;
     private final Path path;
 
-    public SortedSetTempFileHandler() throws IOException {
+    public SortedMapTempFileHandler() throws IOException {
         this.file = File.createTempFile("SortedSet", ".bin");
         this.file.deleteOnExit();
         this.path = new Path(file.toURI());
@@ -42,8 +41,8 @@ public class SortedTempFileHandler implements FileSortedMap.SortedSetFileHandler
     }
 
     @Override
-    public FileSortedMap.PersistOptions getPersistOptions() {
-        return new FileSortedMap.PersistOptions();
+    public FileSortedSet.PersistOptions getPersistOptions() {
+        return new FileSortedSet.PersistOptions();
     }
 
     @Override
