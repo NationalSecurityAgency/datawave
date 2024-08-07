@@ -1,6 +1,7 @@
 package datawave.query.util.sortedmap;
 
-import org.apache.accumulo.core.data.Key;
+import datawave.query.util.sortedset.FileSortedSet;
+import org.apache.commons.collections4.keyvalue.UnmodifiableMapEntry;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
@@ -10,55 +11,57 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
 import java.util.Comparator;
+import java.util.Map;
+import java.util.SortedMap;
 
 /**
- * A sorted set that can be persisted into a file and still be read in its persisted state. The set can always be re-loaded and then all operations will work as
- * expected. This will support null contained in the underlying sets iff a comparator is supplied that can handle null values.
+ * A sorted map that can be persisted into a file and still be read in its persisted state. The map can always be re-loaded and then all operations will work as
+ * expected. This will support null contained in the underlying maps iff a comparator is supplied that can handle null values.
  *
  * The persisted file will contain the serialized entries, followed by the actual size.
  *
  */
-public class FileSerializableSortedMap<E extends Serializable> extends FileSortedMap<E> {
+public class FileSerializableSortedMap<K extends Serializable, V extends Serializable> extends FileSortedMap<K,V> {
     private static Logger log = Logger.getLogger(FileSerializableSortedMap.class);
 
     /**
-     * Create a file sorted set from another one
+     * Create a file sorted map from another one
      *
      * @param other
-     *            the other sorted set
+     *            the other sorted map
      */
     public FileSerializableSortedMap(FileSerializableSortedMap other) {
         super(other);
     }
 
     /**
-     * Create a file sorted subset from another one
+     * Create a file sorted submap from another one
      *
      * @param other
-     *            the other sorted set
+     *            the other sorted map
      * @param from
      *            the from file
      * @param to
      *            the to file
      */
-    public FileSerializableSortedMap(FileSerializableSortedMap other, E from, E to) {
+    public FileSerializableSortedMap(FileSerializableSortedMap other, K from, K to) {
         super(other, from, to);
     }
 
     /**
-     * Create a persisted sorted set
+     * Create a persisted sorted map
      *
      * @param handler
      *            a file handler
      * @param persisted
      *            persisted boolean flag
      */
-    public FileSerializableSortedMap(TypedSortedSetFileHandler handler, boolean persisted) {
+    public FileSerializableSortedMap(TypedSortedMapFileHandler handler, boolean persisted) {
         super(handler, new Factory(), persisted);
     }
 
     /**
-     * Create a persistede sorted set
+     * Create a persistede sorted map
      *
      * @param comparator
      *            a comparator
@@ -67,44 +70,28 @@ public class FileSerializableSortedMap<E extends Serializable> extends FileSorte
      * @param persisted
      *            persisted boolean flag
      */
-    public FileSerializableSortedMap(Comparator<E> comparator, TypedSortedSetFileHandler handler, boolean persisted) {
+    public FileSerializableSortedMap(Comparator<K> comparator, TypedSortedMapFileHandler handler, boolean persisted) {
         super(comparator, handler, new Factory(), persisted);
     }
 
     /**
-     * Create a persistede sorted set
+     * Create an unpersisted sorted map (still in memory)
      *
-     * @param comparator
-     *            a comparator
-     * @param rewriteStrategy
-     *            rewrite strategy
-     * @param handler
-     *            a file handler
-     * @param persisted
-     *            persisted boolean flag
-     */
-    public FileSerializableSortedMap(Comparator<E> comparator, RewriteStrategy<E> rewriteStrategy, TypedSortedSetFileHandler handler, boolean persisted) {
-        super(comparator, rewriteStrategy, handler, new Factory(), persisted);
-    }
-
-    /**
-     * Create an unpersisted sorted set (still in memory)
-     *
-     * @param set
-     *            a sorted set
+     * @param map
+     *            a sorted map
      * @param handler
      *            a file handler
      */
-    public FileSerializableSortedMap(RewritableSortedSet<E> set, TypedSortedSetFileHandler handler) {
-        super(set, handler, new Factory());
+    public FileSerializableSortedMap(SortedMap<K,V> map, TypedSortedMapFileHandler handler) {
+        super(map, handler, new Factory());
     }
 
     /**
-     * Create an sorted set out of another sorted set. If persist is true, then the set will be directly persisted using the set's iterator which avoid pulling
+     * Create an sorted map out of another sorted map. If persist is true, then the map will be directly persisted using the map's iterator which avoid pulling
      * all of its entries into memory at once.
      *
-     * @param set
-     *            a sorted set
+     * @param map
+     *            a sorted map
      * @param handler
      *            a file handler
      * @param persist
@@ -112,12 +99,12 @@ public class FileSerializableSortedMap<E extends Serializable> extends FileSorte
      * @throws IOException
      *             for issues with read/write
      */
-    public FileSerializableSortedMap(RewritableSortedSet<E> set, TypedSortedSetFileHandler handler, boolean persist) throws IOException {
-        super(set, handler, new Factory(), persist);
+    public FileSerializableSortedMap(SortedMap<K,V> map, TypedSortedMapFileHandler handler, boolean persist) throws IOException {
+        super(map, handler, new Factory(), persist);
     }
 
     /**
-     * Persist a set using the specified handler
+     * Persist a map using the specified handler
      *
      * @param handler
      *            a file handler
@@ -125,37 +112,37 @@ public class FileSerializableSortedMap<E extends Serializable> extends FileSorte
      *             for issues with read/write
      */
     @Override
-    public void persist(SortedSetFileHandler handler) throws IOException {
+    public void persist(SortedMapFileHandler handler) throws IOException {
         super.persist(new SerializableFileHandler(handler));
     }
 
     @Override
-    public FileSerializableSortedMap<E> clone() {
+    public FileSerializableSortedMap<K,V> clone() {
         return (FileSerializableSortedMap) super.clone();
     }
 
     /**
-     * A sortedsetfilehandler that can handler serializable objects
+     * A SortedMapfilehandler that can handler serializable objects
      */
-    public static class SerializableFileHandler<E> implements TypedSortedSetFileHandler<Key> {
-        SortedSetFileHandler delegate;
+    public static class SerializableFileHandler<K extends Serializable,V extends Serializable> implements TypedSortedMapFileHandler<K,V> {
+        SortedMapFileHandler delegate;
 
-        public SerializableFileHandler(SortedSetFileHandler handler) {
+        public SerializableFileHandler(SortedMapFileHandler handler) {
             this.delegate = handler;
         }
 
         @Override
-        public SortedSetInputStream<Key> getInputStream() throws IOException {
+        public SortedMapInputStream<K,V> getInputStream() throws IOException {
             return new SerializableInputStream(delegate.getInputStream(), delegate.getSize());
         }
 
         @Override
-        public SortedSetOutputStream getOutputStream() throws IOException {
+        public SortedMapOutputStream getOutputStream() throws IOException {
             return new SerializableOutputStream(delegate.getOutputStream());
         }
 
         @Override
-        public PersistOptions getPersistOptions() {
+        public FileSortedSet.PersistOptions getPersistOptions() {
             return delegate.getPersistOptions();
         }
 
@@ -170,7 +157,7 @@ public class FileSerializableSortedMap<E extends Serializable> extends FileSorte
         }
     }
 
-    public static class SerializableInputStream<E> implements SortedSetInputStream<E> {
+    public static class SerializableInputStream<K extends Serializable,V extends Serializable> implements SortedMapInputStream<K,V> {
         private final InputStream stream;
         private ObjectInputStream delegate;
         private final long length;
@@ -188,9 +175,11 @@ public class FileSerializableSortedMap<E extends Serializable> extends FileSorte
         }
 
         @Override
-        public E readObject() throws IOException {
+        public Map.Entry<K,V> readObject() throws IOException {
             try {
-                return (E) getDelegate().readObject();
+                K key = (K)getDelegate().readObject();
+                V value = (V)getDelegate().readObject();
+                return new UnmodifiableMapEntry<>(key, value);
             } catch (IOException ioe) {
                 return null;
             } catch (ClassNotFoundException nnfe) {
@@ -228,7 +217,7 @@ public class FileSerializableSortedMap<E extends Serializable> extends FileSorte
         }
     }
 
-    public static class SerializableOutputStream<E> implements SortedSetOutputStream<E> {
+    public static class SerializableOutputStream<K extends Serializable,V extends Serializable> implements FileSortedMap.SortedMapOutputStream<K,V> {
         private ObjectOutputStream delegate;
 
         public SerializableOutputStream(OutputStream stream) throws IOException {
@@ -236,8 +225,9 @@ public class FileSerializableSortedMap<E extends Serializable> extends FileSorte
         }
 
         @Override
-        public void writeObject(E obj) throws IOException {
-            delegate.writeObject(obj);
+        public void writeObject(K key, V value) throws IOException {
+            delegate.writeObject(key);
+            delegate.writeObject(value);
         }
 
         @Override
@@ -255,44 +245,46 @@ public class FileSerializableSortedMap<E extends Serializable> extends FileSorte
     }
 
     /**
-     * A factory for this set
+     * A factory for this map
      */
-    public static class Factory<E extends Serializable> implements FileSortedSetFactory<E> {
+    public static class Factory<K extends Serializable, V extends Serializable> implements FileSortedMapFactory<K,V> {
 
         @Override
-        public FileSerializableSortedMap<E> newInstance(FileSortedMap<E> other) {
+        public FileSerializableSortedMap<K,V> newInstance(FileSortedMap<K,V> other) {
             return new FileSerializableSortedMap((FileSerializableSortedMap) other);
         }
 
         @Override
-        public FileSerializableSortedMap<E> newInstance(FileSortedMap<E> other, E from, E to) {
+        public FileSerializableSortedMap<K,V> newInstance(FileSortedMap<K,V> other, K from, K to) {
             return new FileSerializableSortedMap((FileSerializableSortedMap) other, from, to);
         }
 
         @Override
-        public FileSerializableSortedMap<E> newInstance(SortedSetFileHandler handler, boolean persisted) {
+        public FileSerializableSortedMap<K,V> newInstance(SortedMapFileHandler handler, boolean persisted) {
             return new FileSerializableSortedMap(new SerializableFileHandler(handler), persisted);
         }
 
         @Override
-        public FileSerializableSortedMap<E> newInstance(Comparator<E> comparator, SortedSetFileHandler handler, boolean persisted) {
+        public FileSerializableSortedMap<K,V> newInstance(Comparator<K> comparator, SortedMapFileHandler handler, boolean persisted) {
             return new FileSerializableSortedMap(comparator, new SerializableFileHandler(handler), persisted);
         }
 
         @Override
-        public FileSerializableSortedMap<E> newInstance(Comparator<E> comparator, RewriteStrategy<E> rewriteStrategy, SortedSetFileHandler handler,
+        public FileSerializableSortedMap<K,V> newInstance(Comparator<K> comparator, RewriteStrategy<K,V> rewriteStrategy, SortedMapFileHandler handler,
                                                         boolean persisted) {
-            return new FileSerializableSortedMap(comparator, rewriteStrategy, new SerializableFileHandler(handler), persisted);
+            FileSerializableSortedMap map = new FileSerializableSortedMap(comparator, new SerializableFileHandler(handler), persisted);
+            map.setRewriteStrategy(rewriteStrategy);
+            return map;
         }
 
         @Override
-        public FileSerializableSortedMap<E> newInstance(RewritableSortedSet<E> set, SortedSetFileHandler handler) {
-            return new FileSerializableSortedMap(set, new SerializableFileHandler(handler));
+        public FileSortedMap<K, V> newInstance(SortedMap<K, V> map, SortedMapFileHandler handler) {
+            return new FileSerializableSortedMap(map, new SerializableFileHandler(handler));
         }
 
         @Override
-        public FileSerializableSortedMap<E> newInstance(RewritableSortedSet<E> set, SortedSetFileHandler handler, boolean persist) throws IOException {
-            return new FileSerializableSortedMap(set, new SerializableFileHandler(handler), persist);
+        public FileSortedMap<K, V> newInstance(SortedMap<K, V> map, SortedMapFileHandler handler, boolean persist) throws IOException {
+            return new FileSerializableSortedMap(map, new SerializableFileHandler(handler), persist);
         }
     }
 

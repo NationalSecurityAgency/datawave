@@ -1,15 +1,18 @@
 package datawave.query.util.sortedmap;
 
-import datawave.query.util.sortedset.SortedByteSetBuffer;
+import datawave.query.util.sortedset.ByteArrayComparator;
+import datawave.query.util.sortedset.MultiSetBackedSortedSet;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.Random;
 import java.util.SortedSet;
+import java.util.TreeSet;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -17,13 +20,13 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-public class SortedByteSetBufferTest {
+public class MultiSetBackedSortedMapTest {
     private byte[][] data = null;
     private int[] sortedOrder = null;
-    private datawave.query.util.sortedset.SortedByteSetBuffer set = null;
+    private datawave.query.util.sortedset.MultiSetBackedSortedSet<byte[]> set = null;
 
     @Before
-    public void setUp() {
+    public void setUp() throws Exception {
         byte[] template = new byte[] {5, 2, 78, 4, 8, 3, 54, 23, 6, 21, 7, 16};
         int[] sortedTemplate = new int[] {1, 5, 3, 0, 8, 10, 4, 11, 9, 7, 6, 2};
         data = new byte[template.length * 2][];
@@ -40,15 +43,33 @@ public class SortedByteSetBufferTest {
             sortedOrder[i * 2] = sortedTemplate[i] + sortedTemplate.length;
             sortedOrder[i * 2 + 1] = sortedTemplate[i];
         }
-        set = new datawave.query.util.sortedset.SortedByteSetBuffer(5);
-        Collections.addAll(set, data);
+
+        set = new datawave.query.util.sortedset.MultiSetBackedSortedSet<>();
+
+        // create multiple underlying sets that contain random samplings of the data, ensuring we have complete coverage
+        boolean[] used = new boolean[data.length];
+        int usedCount = 0;
+        Random random = new Random(2123974611);
+        while (usedCount < data.length) {
+            // create a set of 10 elements
+            TreeSet<byte[]> subset = new TreeSet<>(new datawave.query.util.sortedset.ByteArrayComparator());
+            for (int i = 0; i < 10; i++) {
+                int index = random.nextInt(data.length);
+                if (!used[index]) {
+                    usedCount++;
+                    used[index] = true;
+                }
+                subset.add(data[index]);
+            }
+            set.addSet(subset);
+        }
     }
 
     /**
-     * @throws Exception
+     * throws java.lang.Exception
      */
     @After
-    public void tearDown() {
+    public void tearDown() throws Exception {
         data = null;
         sortedOrder = null;
         set.clear();
@@ -56,7 +77,7 @@ public class SortedByteSetBufferTest {
     }
 
     /**
-     * Test method for {@link datawave.query.util.sortedset.SortedByteSetBuffer#size()}.
+     * Test method for {@link datawave.query.util.sortedset.MultiSetBackedSortedSet#size()}
      */
     @Test
     public void testSize() {
@@ -74,14 +95,14 @@ public class SortedByteSetBufferTest {
         }
         assertEquals(0, set.size());
         for (int i = 0; i < data.length; i++) {
-            set.add(data[i]);
+            set.getSets().get(0).add(data[i]);
             expectedSize++;
             assertEquals(expectedSize, set.size());
         }
     }
 
     /**
-     * Test method for {@link datawave.query.util.sortedset.SortedByteSetBuffer#isEmpty()}.
+     * Test method for {@link datawave.query.util.sortedset.MultiSetBackedSortedSet#isEmpty()}.
      */
     @Test
     public void testIsEmpty() {
@@ -97,28 +118,27 @@ public class SortedByteSetBufferTest {
         set.remove(data[0]);
         assertTrue(set.isEmpty());
         for (int i = 0; i < data.length; i++) {
-            set.add(data[i]);
+            set.getSets().get(0).add(data[i]);
             assertFalse(set.isEmpty());
         }
     }
 
     /**
-     * Test method for {@link datawave.query.util.sortedset.SortedByteSetBuffer#clear()}.
+     * Test method for {@link datawave.query.util.sortedset.MultiSetBackedSortedSet#clear}.
      */
     @Test
     public void testClear() {
         set.clear();
         assertTrue(set.isEmpty());
-        for (int i = 0; i < data.length; i++) {
-            set.add(data[i]);
-            assertFalse(set.isEmpty());
-        }
+        SortedSet<byte[]> newSet = new TreeSet<>(new ByteArrayComparator());
+        newSet.add("test".getBytes());
+        set.addSet(newSet);
         set.clear();
         assertTrue(set.isEmpty());
     }
 
     /**
-     * Test method for {@link datawave.query.util.sortedset.SortedByteSetBuffer#contains(Object)}.
+     * Test method for {@link datawave.query.util.sortedset.MultiSetBackedSortedSet#contains(Object)}.
      */
     @Test
     public void testContainsObject() {
@@ -134,7 +154,7 @@ public class SortedByteSetBufferTest {
     }
 
     /**
-     * Test method for {@link datawave.query.util.sortedset.SortedByteSetBuffer#iterator()}.
+     * Test method for {@link datawave.query.util.sortedset.MultiSetBackedSortedSet#iterator()}.
      */
     @Test
     public void testIterator() {
@@ -152,7 +172,7 @@ public class SortedByteSetBufferTest {
     }
 
     /**
-     * Test method fo {@link nsa.datawave.data.SortedByteSetBuffer#iterator().remove()}.
+     * Test method for {@link datawave.query.util.sortedset.MultiSetBackedSortedSet#iterator().remove()}.
      */
     @Test
     public void testIteratorRemove() {
@@ -161,7 +181,7 @@ public class SortedByteSetBufferTest {
             byte[] value = it.next();
             assertTrue(set.contains(value));
             it.remove();
-            assertFalse(set.contains((value)));
+            assertFalse(set.contains(value));
             size--;
             assertEquals(size, set.size());
         }
@@ -169,7 +189,7 @@ public class SortedByteSetBufferTest {
     }
 
     /**
-     * Test method for {@link SortedByteSetBuffer#comparator()}.
+     * Test method for {@link datawave.query.util.sortedset.MultiSetBackedSortedSet#comparator()}.
      */
     @Test
     public void testComparator() {
@@ -184,7 +204,7 @@ public class SortedByteSetBufferTest {
     }
 
     /**
-     * Test method for {@link SortedByteSetBuffer#subSet(byte[]. byte[]}/
+     * Test method for {@link datawave.query.util.sortedset.MultiSetBackedSortedSet#subSet(byte[], byte[])}.
      */
     @Test
     public void testSubSet() {
@@ -211,23 +231,25 @@ public class SortedByteSetBufferTest {
         assertArrayEquals(data[sortedOrder[end - 1]], subSet.last());
 
         // verify add
-        assertFalse(subSet.add(data[sortedOrder[start]]));
-        assertFalse(subSet.add(data[sortedOrder[end - 1]]));
-        try {
-            subSet.add(data[sortedOrder[start - 1]]);
-            fail("Expected to not be able to add something outside the range");
-        } catch (IllegalArgumentException iae) {
-            // ok
-        }
-        try {
-            subSet.add(data[sortedOrder[end]]);
-            fail("Expected to not be able to add something outside the range");
-        } catch (IllegalArgumentException iae) {
-            // ok
+        for (SortedSet<byte[]> subSubSet : ((datawave.query.util.sortedset.MultiSetBackedSortedSet<byte[]>) subSet).getSets()) {
+            assertTrue(subSubSet.contains(data[sortedOrder[start]]) != subSubSet.add(data[sortedOrder[start]]));
+            assertTrue(subSubSet.contains(data[sortedOrder[end - 1]]) != subSubSet.add(data[sortedOrder[end - 1]]));
+            try {
+                subSubSet.add(data[sortedOrder[start - 1]]);
+                fail("Expected to not be able to add something outside the range");
+            } catch (IllegalArgumentException iae) {
+                // ok
+            }
+            try {
+                subSubSet.add(data[sortedOrder[end]]);
+                fail("Expected to not be able to add something outside the range");
+            } catch (IllegalArgumentException iae) {
+                // ok
+            }
         }
         byte[] startValue = data[sortedOrder[start]];
         byte[] value = Arrays.copyOf(startValue, startValue.length + 50);
-        assertTrue(subSet.add(value));
+        assertTrue(((datawave.query.util.sortedset.MultiSetBackedSortedSet<byte[]>) subSet).getSets().get(0).add(value));
         assertEquals(end - start + 1, subSet.size());
         assertEquals(data.length + 1, set.size());
         assertTrue(subSet.contains(value));
@@ -318,13 +340,13 @@ public class SortedByteSetBufferTest {
     }
 
     /**
-     * Test method for {@link SortedByteSetBuffer#headSet(byte[])}
+     * Test method for {@link datwave.query.util.sortedset.MultiSetBackedSortedSet#headSet(byte[])}.
      */
     @Test
     public void testHeadSet() {
         int end = sortedOrder.length / 3;
         int start = 0;
-        SortedSet<byte[]> subSet = set.headSet((data[sortedOrder[end]]));
+        SortedSet<byte[]> subSet = set.headSet(data[sortedOrder[end]]);
 
         // verify contents
         assertEquals(end - start, subSet.size());
@@ -335,27 +357,34 @@ public class SortedByteSetBufferTest {
                 assertFalse(subSet.contains(data[sortedOrder[i]]));
             }
         }
-
         // verify order
+        assertFalse(subSet.isEmpty());
+        assertArrayEquals(data[sortedOrder[start]], subSet.iterator().next());
         assertArrayEquals(data[sortedOrder[start]], subSet.first());
         int index = start;
         for (byte[] value : subSet) {
             assertArrayEquals(data[sortedOrder[index++]], value);
         }
+        ArrayList<byte[]> list = new ArrayList<>(subSet);
+        assertArrayEquals(data[sortedOrder[end - 1]], list.get(list.size() - 1));
         assertArrayEquals(data[sortedOrder[end - 1]], subSet.last());
 
+        subSet = set.headSet(data[sortedOrder[end]]);
+
         // verify add
-        assertFalse(subSet.add(data[sortedOrder[start]]));
-        assertFalse(subSet.add(data[sortedOrder[end - 1]]));
-        try {
-            subSet.add(data[sortedOrder[end]]);
-            fail("Expected to not be able to add something outside the range");
-        } catch (IllegalArgumentException iae) {
-            // ok
+        for (SortedSet<byte[]> subSubSet : ((datawave.query.util.sortedset.MultiSetBackedSortedSet<byte[]>) subSet).getSets()) {
+            assertTrue(subSubSet.contains(data[sortedOrder[start]]) != subSubSet.add(data[sortedOrder[start]]));
+            assertTrue(subSubSet.contains(data[sortedOrder[end - 1]]) != subSubSet.add(data[sortedOrder[end - 1]]));
+            try {
+                subSubSet.add(data[sortedOrder[end]]);
+                fail("Expected to not be able to add something outside the range");
+            } catch (IllegalArgumentException iae) {
+                // ok
+            }
         }
         byte[] startValue = data[sortedOrder[start]];
         byte[] value = Arrays.copyOf(startValue, startValue.length + 50);
-        assertTrue(subSet.add(value));
+        assertTrue(((datawave.query.util.sortedset.MultiSetBackedSortedSet<byte[]>) subSet).getSets().get(0).add(value));
         assertEquals(end - start + 1, subSet.size());
         assertEquals(data.length + 1, set.size());
         assertTrue(subSet.contains(value));
@@ -367,7 +396,6 @@ public class SortedByteSetBufferTest {
                 assertFalse(subSet.contains(data[sortedOrder[i]]));
             }
         }
-
         // verify remove
         assertFalse(subSet.remove(data[sortedOrder[end]]));
         assertTrue(subSet.remove(value));
@@ -431,7 +459,7 @@ public class SortedByteSetBufferTest {
     }
 
     /**
-     * Test method for {@link SortedByteSetBuffer#tailSet(byte[])}.
+     * Test method for {@link datawave.query.util.sortedset.MultiSetBackedSortedSet#tailSet(byte[])}.
      */
     @Test
     public void testTailSet() {
@@ -458,17 +486,19 @@ public class SortedByteSetBufferTest {
         assertArrayEquals(data[sortedOrder[end - 1]], subSet.last());
 
         // verify add
-        assertFalse(subSet.add(data[sortedOrder[start]]));
-        assertFalse(subSet.add(data[sortedOrder[end - 1]]));
-        try {
-            subSet.add(data[sortedOrder[start - 1]]);
-            fail("Expected to not be able to add something outside the range");
-        } catch (IllegalArgumentException iae) {
-            // ok
+        for (SortedSet<byte[]> subSubSet : ((datawave.query.util.sortedset.MultiSetBackedSortedSet<byte[]>) subSet).getSets()) {
+            assertTrue(subSubSet.contains(data[sortedOrder[start]]) != subSubSet.add(data[sortedOrder[start]]));
+            assertTrue(subSubSet.contains(data[sortedOrder[end - 1]]) != subSubSet.add(data[sortedOrder[end - 1]]));
+            try {
+                subSubSet.add(data[sortedOrder[start - 1]]);
+                fail("Expected to not be able to add something outside the range");
+            } catch (IllegalArgumentException iae) {
+                // ok
+            }
         }
         byte[] startValue = data[sortedOrder[start]];
         byte[] value = Arrays.copyOf(startValue, startValue.length + 50);
-        assertTrue(subSet.add(value));
+        assertTrue(((MultiSetBackedSortedSet<byte[]>) subSet).getSets().get(0).add(value));
         assertEquals(end - start + 1, subSet.size());
         assertEquals(data.length + 1, set.size());
         assertTrue(subSet.contains(value));
@@ -544,19 +574,7 @@ public class SortedByteSetBufferTest {
     }
 
     /**
-     * Test method for {@link SortedByteSetBuffer#get(int)}.
-     */
-    @Test
-    public void testGet() {
-        for (int i = 0; i < data.length; i++) {
-            byte[] expected = data[sortedOrder[i]];
-            byte[] value = set.get(i);
-            assertArrayEquals(expected, value);
-        }
-    }
-
-    /**
-     * Test method for {@link SortedByteSetBuffer#last()}.
+     * Test method for {@link MultiSetBackedSortedSet#last}.
      */
     @Test
     public void testLast() {
@@ -566,7 +584,7 @@ public class SortedByteSetBufferTest {
     }
 
     /**
-     * Test method for {@link SortedByteSetBuffer#first()}.
+     * Test method for {@link MultiSetBackedSortedSet#first()}.
      */
     @Test
     public void testFirst() {
@@ -574,4 +592,5 @@ public class SortedByteSetBufferTest {
         byte[] value = set.first();
         assertArrayEquals(expected, value);
     }
+
 }

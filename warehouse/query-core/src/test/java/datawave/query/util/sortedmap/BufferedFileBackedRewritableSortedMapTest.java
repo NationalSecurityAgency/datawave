@@ -1,7 +1,6 @@
 package datawave.query.util.sortedmap;
 
 import datawave.query.util.sortedset.BufferedFileBackedSortedSet;
-import datawave.query.util.sortedset.FileSortedSet;
 import datawave.query.util.sortedset.SortedSetTempFileHandler;
 import org.apache.commons.collections.keyvalue.UnmodifiableMapEntry;
 import org.junit.Test;
@@ -12,7 +11,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
 
-public abstract class BufferedFileBackedRewritableSortedSetTest<K,V> extends BufferedFileBackedSortedSetTest<Map.Entry<K,V>> {
+public abstract class BufferedFileBackedRewritableSortedMapTest<K,V> extends BufferedFileBackedSortedMapTest<Map.Entry<K,V>> {
 
     /**
      * Create a key given the specified value. This key should sort in the same way the underlying byte array will sort against other byte array.

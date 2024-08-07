@@ -7,6 +7,7 @@ import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.List;
 
+import datawave.query.util.sortedset.FileSortedSet;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FsStatus;
@@ -16,14 +17,14 @@ import org.apache.log4j.Logger;
 import datawave.query.iterator.ivarator.IvaratorCacheDir;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 
-public class HdfsBackedSortedMap<E> extends BufferedFileBackedSortedMap<E> {
+public class HdfsBackedSortedMap<K,V> extends BufferedFileBackedSortedMap<K,V> {
     private static final Logger log = Logger.getLogger(HdfsBackedSortedMap.class);
-    private static final String FILENAME_PREFIX = "SortedSetFile.";
+    private static final String FILENAME_PREFIX = "SortedMapFile.";
 
-    public static class Builder<B extends Builder<B,E>,E> extends BufferedFileBackedSortedMap.Builder<B,E> {
+    public static class Builder<B extends Builder<B,K,V>,K,V> extends BufferedFileBackedSortedMap.Builder<B,K,V> {
         private List<IvaratorCacheDir> ivaratorCacheDirs;
         private String uniqueSubPath;
-        private FileSortedMap.PersistOptions persistOptions;
+        private FileSortedSet.PersistOptions persistOptions;
 
         public Builder() {
             // change the default buffer persist threshold
@@ -46,21 +47,21 @@ public class HdfsBackedSortedMap<E> extends BufferedFileBackedSortedMap<E> {
             return self();
         }
 
-        public B withPersistOptions(FileSortedMap.PersistOptions persistOptions) {
+        public B withPersistOptions(FileSortedSet.PersistOptions persistOptions) {
             this.persistOptions = persistOptions;
             return self();
         }
 
-        public HdfsBackedSortedMap<?> build() throws IOException {
+        public HdfsBackedSortedMap<?,?> build() throws IOException {
             return new HdfsBackedSortedMap<>(this);
         }
     }
 
-    public static HdfsBackedSortedMap.Builder<?,?> builder() {
+    public static HdfsBackedSortedMap.Builder<?,?,?> builder() {
         return new HdfsBackedSortedMap.Builder<>();
     }
 
-    protected HdfsBackedSortedMap(HdfsBackedSortedMap<E> other) {
+    protected HdfsBackedSortedMap(HdfsBackedSortedMap<K,V> other) {
         super(other);
     }
 
@@ -68,62 +69,62 @@ public class HdfsBackedSortedMap<E> extends BufferedFileBackedSortedMap<E> {
         super(builder);
         this.handlerFactories = createFileHandlerFactories(builder.ivaratorCacheDirs, builder.uniqueSubPath, builder.persistOptions);
         // for each of the handler factories, check to see if there are any existing files we should load
-        for (SortedSetFileHandlerFactory handlerFactory : handlerFactories) {
-            // Note: All of the file handler factories created by 'createFileHandlerFactories' are SortedSetHdfsFileHandlerFactories
-            if (handlerFactory instanceof SortedSetHdfsFileHandlerFactory) {
-                SortedSetHdfsFileHandlerFactory hdfsHandlerFactory = (SortedSetHdfsFileHandlerFactory) handlerFactory;
+        for (SortedMapFileHandlerFactory handlerFactory : handlerFactories) {
+            // Note: All of the file handler factories created by 'createFileHandlerFactories' are SortedMapHdfsFileHandlerFactories
+            if (handlerFactory instanceof SortedMapHdfsFileHandlerFactory) {
+                SortedMapHdfsFileHandlerFactory hdfsHandlerFactory = (SortedMapHdfsFileHandlerFactory) handlerFactory;
                 FileSystem fs = hdfsHandlerFactory.getFs();
                 int count = 0;
 
-                // if the directory already exists, load up this sorted set with any existing files
+                // if the directory already exists, load up this sorted map with any existing files
                 if (fs.exists(hdfsHandlerFactory.getUniqueDir())) {
                     FileStatus[] files = fs.listStatus(hdfsHandlerFactory.getUniqueDir());
                     if (files != null) {
                         for (FileStatus file : files) {
                             if (!file.isDir() && file.getPath().getName().startsWith(FILENAME_PREFIX)) {
                                 count++;
-                                addSet(setFactory.newInstance(comparator, new SortedSetHdfsFileHandler(fs, file.getPath(), builder.persistOptions), true));
+                                addMap(mapFactory.newInstance(comparator, new SortedMapHdfsFileHandler(fs, file.getPath(), builder.persistOptions), true));
                             }
                         }
                     }
 
-                    hdfsHandlerFactory.setFileCount(count);
+                    hdfsHandlerFactory.mapFileCount(count);
                 }
             }
         }
     }
 
-    private static List<SortedSetFileHandlerFactory> createFileHandlerFactories(List<IvaratorCacheDir> ivaratorCacheDirs, String uniqueSubPath,
-                    FileSortedMap.PersistOptions persistOptions) {
-        List<SortedSetFileHandlerFactory> fileHandlerFactories = new ArrayList<>();
+    private static List<SortedMapFileHandlerFactory> createFileHandlerFactories(List<IvaratorCacheDir> ivaratorCacheDirs, String uniqueSubPath,
+                    FileSortedSet.PersistOptions persistOptions) {
+        List<SortedMapFileHandlerFactory> fileHandlerFactories = new ArrayList<>();
         for (IvaratorCacheDir ivaratorCacheDir : ivaratorCacheDirs) {
-            fileHandlerFactories.add(new SortedSetHdfsFileHandlerFactory(ivaratorCacheDir, uniqueSubPath, persistOptions));
+            fileHandlerFactories.add(new SortedMapHdfsFileHandlerFactory(ivaratorCacheDir, uniqueSubPath, persistOptions));
         }
         return fileHandlerFactories;
     }
 
     @Override
     public void clear() {
-        // This will be a new ArrayList<>() containing the same FileSortedSets
-        List<FileSortedMap<E>> sortedSets = super.getSets();
-        // Clear will call clear on each of the FileSortedSets, clear the container, and null the buffer
+        // This will be a new ArrayList<>() containing the same FileSortedMaps
+        List<FileSortedMap<K,V>> SortedMaps = super.getMaps();
+        // Clear will call clear on each of the FileSortedMaps, clear the container, and null the buffer
         super.clear();
-        // We should still be able to access the FileSortedSet objects to get their handler because we
-        // have a copy of the object in 'sortedSets'
-        for (FileSortedMap<E> fss : sortedSets) {
-            if (fss.isPersisted() && fss.handler instanceof SortedSetHdfsFileHandler) {
-                ((SortedSetHdfsFileHandler) fss.handler).deleteFile();
+        // We should still be able to access the FileSortedMap objects to get their handler because we
+        // have a copy of the object in 'SortedMaps'
+        for (FileSortedMap<K,V> fss : SortedMaps) {
+            if (fss.isPersisted() && fss.handler instanceof SortedMapHdfsFileHandler) {
+                ((SortedMapHdfsFileHandler) fss.handler).deleteFile();
             }
         }
     }
 
-    public static class SortedSetHdfsFileHandlerFactory implements SortedSetFileHandlerFactory {
+    public static class SortedMapHdfsFileHandlerFactory implements SortedMapFileHandlerFactory {
         final private IvaratorCacheDir ivaratorCacheDir;
         private String uniqueSubPath;
         private int fileCount = 0;
-        private FileSortedMap.PersistOptions persistOptions;
+        private FileSortedSet.PersistOptions persistOptions;
 
-        public SortedSetHdfsFileHandlerFactory(IvaratorCacheDir ivaratorCacheDir, String uniqueSubPath, FileSortedMap.PersistOptions persistOptions) {
+        public SortedMapHdfsFileHandlerFactory(IvaratorCacheDir ivaratorCacheDir, String uniqueSubPath, FileSortedSet.PersistOptions persistOptions) {
             this.ivaratorCacheDir = ivaratorCacheDir;
             this.uniqueSubPath = uniqueSubPath;
             this.persistOptions = persistOptions;
@@ -145,7 +146,7 @@ public class HdfsBackedSortedMap<E> extends BufferedFileBackedSortedMap<E> {
             return fileCount;
         }
 
-        void setFileCount(int count) {
+        void mapFileCount(int count) {
             this.fileCount = count;
         }
 
@@ -171,7 +172,7 @@ public class HdfsBackedSortedMap<E> extends BufferedFileBackedSortedMap<E> {
         }
 
         @Override
-        public FileSortedMap.SortedSetFileHandler createHandler() throws IOException {
+        public FileSortedMap.SortedMapFileHandler createHandler() throws IOException {
             FileSystem fs = getFs();
             Path uniqueDir = getUniqueDir();
 
@@ -181,7 +182,7 @@ public class HdfsBackedSortedMap<E> extends BufferedFileBackedSortedMap<E> {
             // generate a unique file name
             fileCount++;
             Path file = new Path(uniqueDir, FILENAME_PREFIX + fileCount + '.' + System.currentTimeMillis());
-            return new SortedSetHdfsFileHandler(fs, file, persistOptions);
+            return new SortedMapHdfsFileHandler(fs, file, persistOptions);
         }
 
         private void ensureDirsCreated() throws IOException {
@@ -218,12 +219,12 @@ public class HdfsBackedSortedMap<E> extends BufferedFileBackedSortedMap<E> {
 
     }
 
-    public static class SortedSetHdfsFileHandler implements FileSortedMap.SortedSetFileHandler {
+    public static class SortedMapHdfsFileHandler implements FileSortedMap.SortedMapFileHandler {
         private FileSystem fs;
         private Path file;
-        private FileSortedMap.PersistOptions persistOptions;
+        private FileSortedSet.PersistOptions persistOptions;
 
-        public SortedSetHdfsFileHandler(FileSystem fs, Path file, FileSortedMap.PersistOptions persistOptions) {
+        public SortedMapHdfsFileHandler(FileSystem fs, Path file, FileSortedSet.PersistOptions persistOptions) {
             this.fs = fs;
             this.file = file;
             this.persistOptions = persistOptions;
@@ -254,7 +255,7 @@ public class HdfsBackedSortedMap<E> extends BufferedFileBackedSortedMap<E> {
         }
 
         @Override
-        public FileSortedMap.PersistOptions getPersistOptions() {
+        public FileSortedSet.PersistOptions getPersistOptions() {
             return persistOptions;
         }
 

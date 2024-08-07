@@ -1,12 +1,11 @@
 package datawave.query.util.sortedmap;
 
 import datawave.query.util.sortedset.FileKeySortedSet;
-import datawave.query.util.sortedset.FileSortedSet;
 import org.apache.accumulo.core.data.Key;
 
 import java.util.Comparator;
 
-public class BufferedFileBackedKeySortedSetTest extends BufferedFileBackedSortedSetTest<Key> {
+public class BufferedFileBackedKeySortedMapTest extends BufferedFileBackedSortedMapTest<Key> {
 
     @Override
     public Key createData(byte[] values) {

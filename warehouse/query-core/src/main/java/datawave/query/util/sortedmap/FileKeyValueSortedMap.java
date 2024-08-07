@@ -2,145 +2,127 @@ package datawave.query.util.sortedmap;
 
 import datawave.query.util.sortedmap.rfile.RFileKeyValueInputStream;
 import datawave.query.util.sortedmap.rfile.RFileKeyValueOutputStream;
+import datawave.query.util.sortedset.FileSortedSet;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
 import java.util.Comparator;
-import java.util.Map;
+import java.util.SortedMap;
 
 /**
- * A sorted set that can be persisted into a file and still be read in its persisted state. The set can always be re-loaded and then all operations will work as
- * expected. This will support null contained in the underlying sets iff a comparator is supplied that can handle null values.
+ * A sorted map that can be persisted into a file and still be read in its persisted state. The map can always be re-loaded and then all operations will work as
+ * expected. This will support null contained in the underlying maps iff a comparator is supplied that can handle null values.
  *
  * The persisted file will contain the serialized entries, followed by the actual size.
  *
  */
-public class FileKeyValueSortedMap extends FileSortedMap<Map.Entry<Key,Value>> {
+public class FileKeyValueSortedMap extends FileSortedMap<Key,Value> {
     private static Logger log = Logger.getLogger(FileKeyValueSortedMap.class);
 
-    public static class DefaultKeyValueComparator implements Comparator<Map.Entry<Key,Value>> {
-
+    public static class DefaultKeyComparator implements Comparator<Key> {
         @Override
-        public int compare(Map.Entry<Key,Value> o1, Map.Entry<Key,Value> o2) {
-            return o1.getKey().compareTo(o2.getKey());
+        public int compare(Key o1, Key o2) {
+            return o1.compareTo(o2);
         }
     }
 
     /**
-     * Create a file sorted set from another one
+     * Create a file sorted map from another one
      *
      * @param other
-     *            the other sorted set
+     *            the other sorted map
      */
     public FileKeyValueSortedMap(FileKeyValueSortedMap other) {
         super(other);
     }
 
     /**
-     * Create a file sorted subset from another one
+     * Create a file sorted submap from another one
      *
      * @param other
-     *            the other sorted set
+     *            the other sorted map
      * @param from
      *            the from key
      * @param to
      *            the to key
      */
-    public FileKeyValueSortedMap(FileKeyValueSortedMap other, Map.Entry<Key,Value> from, Map.Entry<Key,Value> to) {
+    public FileKeyValueSortedMap(FileKeyValueSortedMap other, Key from, Key to) {
         super(other, from, to);
     }
 
     /**
-     * Create a persisted sorted set
+     * Create a persisted sorted map
      *
      * @param handler
-     *            the sorted set file handler
+     *            the sorted map file handler
      * @param persisted
      *            a persisted boolean flag
      */
-    public FileKeyValueSortedMap(SortedSetFileHandler handler, boolean persisted) {
-        this(new DefaultKeyValueComparator(), handler, persisted);
+    public FileKeyValueSortedMap(SortedMapFileHandler handler, boolean persisted) {
+        this(new DefaultKeyComparator(), handler, persisted);
     }
 
     /**
-     * Create a persisted sorted set
+     * Create a persisted sorted map
      *
      * @param comparator
      *            the key comparator
      * @param handler
-     *            the sorted set file handler
+     *            the sorted map file handler
      * @param persisted
      *            a persisted boolean flag
      */
-    public FileKeyValueSortedMap(Comparator<Map.Entry<Key,Value>> comparator, SortedSetFileHandler handler, boolean persisted) {
-        super((comparator == null ? new DefaultKeyValueComparator() : comparator), new KeyValueFileHandler(handler), new Factory(),
+    public FileKeyValueSortedMap(Comparator<Key> comparator, SortedMapFileHandler handler, boolean persisted) {
+        super(((comparator == null) ? new DefaultKeyComparator() : comparator), new KeyValueFileHandler(handler), new Factory(),
                         persisted);
     }
 
     /**
-     * Create a persisted sorted set
+     * Create an unpersisted sorted map (still in memory)
      *
-     * @param comparator
-     *            the key comparator
-     * @param rewriteStrategy
-     *            rewrite strategy
+     * @param map
+     *            the sorted map
      * @param handler
-     *            the sorted set file handler
-     * @param persisted
-     *            a persisted boolean flag
+     *            the sorted map file handler
      */
-    public FileKeyValueSortedMap(Comparator<Map.Entry<Key,Value>> comparator, RewriteStrategy<Map.Entry<Key,Value>> rewriteStrategy,
-                                 SortedSetFileHandler handler, boolean persisted) {
-        super((comparator == null ? new DefaultKeyValueComparator() : comparator), rewriteStrategy, new KeyValueFileHandler(handler),
-                        new Factory(), persisted);
+    public FileKeyValueSortedMap(SortedMap<Key,Value> map, SortedMapFileHandler handler) {
+        super(map, new KeyValueFileHandler(handler), new Factory());
     }
 
     /**
-     * Create an unpersisted sorted set (still in memory)
-     *
-     * @param set
-     *            the sorted set
-     * @param handler
-     *            the sorted set file handler
-     */
-    public FileKeyValueSortedMap(RewritableSortedSet<Map.Entry<Key,Value>> set, SortedSetFileHandler handler) {
-        super(set, new KeyValueFileHandler(handler), new Factory());
-    }
-
-    /**
-     * Create an sorted set out of another sorted set. If persist is true, then the set will be directly persisted using the set's iterator which avoid pulling
+     * Create a sorted map out of another sorted map. If persist is true, then the map will be directly persisted using the map's iterator which avoid pulling
      * all of its entries into memory at once.
      *
-     * @param set
-     *            the sorted set
+     * @param map
+     *            the sorted map
      * @param handler
-     *            the sorted set file handler
+     *            the sorted map file handler
      * @param persist
      *            boolean flag for persist
      * @throws IOException
      *             for issues with read/write
      */
-    public FileKeyValueSortedMap(RewritableSortedSet<Map.Entry<Key,Value>> set, SortedSetFileHandler handler, boolean persist) throws IOException {
-        super(set, new KeyValueFileHandler(handler), new Factory(), persist);
+    public FileKeyValueSortedMap(SortedMap<Key,Value> map, SortedMapFileHandler handler, boolean persist) throws IOException {
+        super(map, new KeyValueFileHandler(handler), new Factory(), persist);
     }
 
     /**
-     * This will dump the set to the file, making the set "persisted"
+     * This will dump the map to the file, making the map "persisted"
      *
      * @param handler
-     *            the sorted set file handler
+     *            the sorted map file handler
      * @throws IOException
      *             for issues with read/write
      */
-    public void persist(SortedSetFileHandler handler) throws IOException {
+    public void persist(SortedMapFileHandler handler) throws IOException {
         // ensure this handler is wrapped with our handler
         super.persist(new KeyValueFileHandler(handler));
     }
 
     /**
-     * Clone this set
+     * Clone this map
      */
     @Override
     public FileKeyValueSortedMap clone() {
@@ -148,32 +130,32 @@ public class FileKeyValueSortedMap extends FileSortedMap<Map.Entry<Key,Value>> {
     }
 
     /**
-     * A sortedsetfilehandler that can bound the input stream
+     * A SortedMapfilehandler that can bound the input stream
      */
-    public static class KeyValueFileHandler implements BoundedTypedSortedSetFileHandler<Map.Entry<Key,Value>> {
-        SortedSetFileHandler delegate;
+    public static class KeyValueFileHandler implements BoundedTypedSortedMapFileHandler<Key,Value> {
+        SortedMapFileHandler delegate;
 
-        public KeyValueFileHandler(SortedSetFileHandler handler) {
+        public KeyValueFileHandler(SortedMapFileHandler handler) {
             this.delegate = handler;
         }
 
         @Override
-        public SortedSetInputStream<Map.Entry<Key,Value>> getInputStream() throws IOException {
+        public SortedMapInputStream<Key,Value> getInputStream() throws IOException {
             return new RFileKeyValueInputStream(delegate.getInputStream(), delegate.getSize());
         }
 
         @Override
-        public SortedSetInputStream<Map.Entry<Key,Value>> getInputStream(Map.Entry<Key,Value> start, Map.Entry<Key,Value> end) throws IOException {
+        public SortedMapInputStream<Key,Value> getInputStream(Key start, Key end) throws IOException {
             return new RFileKeyValueInputStream(delegate.getInputStream(), delegate.getSize(), start, end);
         }
 
         @Override
-        public SortedSetOutputStream getOutputStream() throws IOException {
+        public SortedMapOutputStream getOutputStream() throws IOException {
             return new RFileKeyValueOutputStream(delegate.getOutputStream());
         }
 
         @Override
-        public PersistOptions getPersistOptions() {
+        public FileSortedSet.PersistOptions getPersistOptions() {
             return delegate.getPersistOptions();
         }
 
@@ -189,45 +171,47 @@ public class FileKeyValueSortedMap extends FileSortedMap<Map.Entry<Key,Value>> {
     }
 
     /**
-     * A factory for these file sorted sets
+     * A factory for these file sorted maps
      */
-    public static class Factory implements FileSortedSetFactory<Map.Entry<Key,Value>> {
+    public static class Factory implements FileSortedMapFactory<Key,Value> {
 
         @Override
-        public FileKeyValueSortedMap newInstance(FileSortedMap<Map.Entry<Key,Value>> other) {
+        public FileKeyValueSortedMap newInstance(FileSortedMap<Key,Value> other) {
             return new FileKeyValueSortedMap((FileKeyValueSortedMap) other);
         }
 
         @Override
-        public FileKeyValueSortedMap newInstance(FileSortedMap<Map.Entry<Key,Value>> other, Map.Entry<Key,Value> from, Map.Entry<Key,Value> to) {
+        public FileKeyValueSortedMap newInstance(FileSortedMap<Key,Value> other, Key from, Key to) {
             return new FileKeyValueSortedMap((FileKeyValueSortedMap) other, from, to);
         }
 
         @Override
-        public FileKeyValueSortedMap newInstance(SortedSetFileHandler handler, boolean persisted) {
+        public FileKeyValueSortedMap newInstance(SortedMapFileHandler handler, boolean persisted) {
             return new FileKeyValueSortedMap(handler, persisted);
         }
 
         @Override
-        public FileKeyValueSortedMap newInstance(Comparator<Map.Entry<Key,Value>> comparator, SortedSetFileHandler handler, boolean persisted) {
+        public FileKeyValueSortedMap newInstance(Comparator<Key> comparator, SortedMapFileHandler handler, boolean persisted) {
             return new FileKeyValueSortedMap(comparator, handler, persisted);
         }
 
         @Override
-        public FileKeyValueSortedMap newInstance(Comparator<Map.Entry<Key,Value>> comparator, RewriteStrategy<Map.Entry<Key,Value>> rewriteStategy,
-                                                 SortedSetFileHandler handler, boolean persisted) {
-            return new FileKeyValueSortedMap(comparator, rewriteStategy, handler, persisted);
+        public FileKeyValueSortedMap newInstance(Comparator<Key> comparator, RewriteStrategy<Key,Value> rewriteStategy,
+                                                 SortedMapFileHandler handler, boolean persisted) {
+            FileKeyValueSortedMap map = new FileKeyValueSortedMap(comparator, handler, persisted);
+            map.setRewriteStrategy(rewriteStategy);
+            return map;
         }
 
         @Override
-        public FileKeyValueSortedMap newInstance(RewritableSortedSet<Map.Entry<Key,Value>> set, SortedSetFileHandler handler) {
-            return new FileKeyValueSortedMap(set, handler);
+        public FileKeyValueSortedMap newInstance(SortedMap<Key,Value> map, SortedMapFileHandler handler) {
+            return new FileKeyValueSortedMap(map, handler);
         }
 
         @Override
-        public FileKeyValueSortedMap newInstance(RewritableSortedSet<Map.Entry<Key,Value>> set, SortedSetFileHandler handler, boolean persist)
+        public FileKeyValueSortedMap newInstance(SortedMap<Key,Value> map, SortedMapFileHandler handler, boolean persist)
                         throws IOException {
-            return new FileKeyValueSortedMap(set, handler, persist);
+            return new FileKeyValueSortedMap(map, handler, persist);
         }
     }
 }

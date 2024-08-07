@@ -2,11 +2,10 @@ package datawave.query.util.sortedmap;
 
 import datawave.query.util.sortedset.ByteArrayComparator;
 import datawave.query.util.sortedset.FileSerializableSortedSet;
-import datawave.query.util.sortedset.FileSortedSet;
 
 import java.util.Comparator;
 
-public class BufferedFileBackedByteArraySortedSetTest extends BufferedFileBackedSortedSetTest<byte[]> {
+public class BufferedFileBackedByteArraySortedMapTest extends BufferedFileBackedSortedMapTest<byte[]> {
 
     @Override
     public byte[] createData(byte[] values) {

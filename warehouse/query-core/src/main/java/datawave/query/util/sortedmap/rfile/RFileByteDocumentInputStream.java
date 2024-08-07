@@ -1,28 +1,25 @@
 package datawave.query.util.sortedmap.rfile;
 
 import datawave.query.attributes.Document;
+import datawave.query.util.sortedmap.FileSortedMap;
 import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Value;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
 
-import static datawave.query.util.sortedset.rfile.KeyValueByteDocumentTransforms.byteDocumentToKeyValue;
-import static datawave.query.util.sortedset.rfile.KeyValueByteDocumentTransforms.keyValueToByteDocument;
+import static datawave.query.util.sortedmap.rfile.KeyValueByteDocumentTransforms.byteToKey;
+import static datawave.query.util.sortedmap.rfile.KeyValueByteDocumentTransforms.keyValueToByteDocument;
 
-public class RFileByteDocumentInputStream extends RFileKeyValueInputStreamBase<Map.Entry<byte[],Document>> {
+public class RFileByteDocumentInputStream extends RFileKeyValueInputStreamBase implements FileSortedMap.SortedMapInputStream<byte[],Document> {
 
     public RFileByteDocumentInputStream(InputStream inputStream, long length) throws IOException {
         super(inputStream, length);
     }
 
-    public RFileByteDocumentInputStream(InputStream inputStream, long length, Key start, Key end) throws IOException {
-        super(inputStream, length, start, end);
-    }
-
-    public RFileByteDocumentInputStream(InputStream inputStream, long length, Map.Entry<byte[],Document> start, Map.Entry<byte[],Document> end)
-                    throws IOException {
-        super(inputStream, length, byteDocumentToKeyValue(start), byteDocumentToKeyValue(end));
+    public RFileByteDocumentInputStream(InputStream inputStream, long length, byte[] start, byte[] end) throws IOException {
+        super(inputStream, length, byteToKey(start), byteToKey(end));
     }
 
     @Override

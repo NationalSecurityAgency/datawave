@@ -1,8 +1,7 @@
 package datawave.query.util.sortedmap;
 
-import datawave.query.util.sortedset.BufferedFileBackedSortedSet;
-import datawave.query.util.sortedset.FileSortedSet;
-import datawave.query.util.sortedset.SortedSetTempFileHandler;
+import datawave.query.util.sortedmap.BufferedFileBackedSortedMap;
+import datawave.query.util.sortedmap.SortedMapTempFileHandler;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -15,13 +14,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
+import java.util.Map;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.function.Predicate;
 
 import static org.junit.Assert.assertEquals;
@@ -29,35 +28,35 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-public abstract class BufferedFileBackedSortedSetTest<E> {
+public abstract class BufferedFileBackedSortedMapTest<K,V> {
 
-    protected final List<datawave.query.util.sortedset.SortedSetTempFileHandler> tempFileHandlers = new ArrayList<>();
-    protected E[] data = null;
+    protected final List<datawave.query.util.sortedmap.SortedMapTempFileHandler> tempFileHandlers = new ArrayList<>();
+    protected Map.Entry<K,V>[] data = null;
     protected int[] sortedOrder = null;
-    protected datawave.query.util.sortedset.BufferedFileBackedSortedSet<E> set = null;
+    protected datawave.query.util.sortedmap.BufferedFileBackedSortedMap<K,V> map = null;
     protected final byte[] template = new byte[] {5, 2, 29, 4, 8, 3, 25, 23, 6, 21, 7, 16};
     protected final int[] sortedTemplate = new int[] {1, 5, 3, 0, 8, 10, 4, 11, 9, 7, 6, 2};
 
     public abstract E createData(byte[] values);
 
-    public abstract Comparator<E> getComparator();
+    public abstract Comparator<K,V> getComparator();
 
-    public abstract datawave.query.util.sortedset.FileSortedSet.FileSortedSetFactory<E> getFactory();
+    public abstract datawave.query.util.sortedmap.FileSortedMap.FileSortedMapFactory<K,V> getFactory();
 
-    public RewritableSortedSet.RewriteStrategy<E> getRewriteStrategy() {
+    public FileSortedMap.RewriteStrategy<K,V> getRewriteStrategy() {
         return null;
     }
 
     protected void testEquality(E expected, E value) {
-        if (set.comparator() != null) {
-            assertEquals(0, set.comparator().compare(expected, value));
+        if (map.comparator() != null) {
+            assertEquals(0, map.comparator().compare(expected, value));
         } else {
             assertEquals(expected, value);
         }
     }
 
     @Before
-    public void setUp() throws Exception {
+    public void mapUp() throws Exception {
         for (int i = 0; i < template.length; i++) {
             byte[] buffer = new byte[i + 11];
             Arrays.fill(buffer, template[i]);
@@ -78,12 +77,12 @@ public abstract class BufferedFileBackedSortedSetTest<E> {
             sortedOrder[i * 2] = sortedTemplate[i] + sortedTemplate.length;
             sortedOrder[i * 2 + 1] = sortedTemplate[i];
         }
-        set = new datawave.query.util.sortedset.BufferedFileBackedSortedSet.Builder().withComparator(getComparator()).withRewriteStrategy(getRewriteStrategy()).withBufferPersistThreshold(5)
+        map = new datawave.query.util.sortedmap.BufferedFileBackedSortedMap.Builder().withComparator(getComparator()).withRewriteStrategy(getRewriteStrategy()).withBufferPersistThreshold(5)
                         .withMaxOpenFiles(7).withNumRetries(2)
-                        .withHandlerFactories(Collections.singletonList(new datawave.query.util.sortedset.BufferedFileBackedSortedSet.SortedSetFileHandlerFactory() {
+                        .withHandlerFactories(Collections.singletonList(new datawave.query.util.sortedmap.BufferedFileBackedSortedMap.SortedMapFileHandlerFactory() {
                             @Override
-                            public FileSortedMap.SortedSetFileHandler createHandler() throws IOException {
-                                datawave.query.util.sortedset.SortedSetTempFileHandler fileHandler = new datawave.query.util.sortedset.SortedSetTempFileHandler();
+                            public FileSortedMap.SortedMapFileHandler createHandler() throws IOException {
+                                datawave.query.util.sortedmap.SortedMapTempFileHandler fileHandler = new datawave.query.util.sortedmap.SortedMapTempFileHandler();
                                 tempFileHandlers.add(fileHandler);
                                 return fileHandler;
                             }
@@ -92,39 +91,39 @@ public abstract class BufferedFileBackedSortedSetTest<E> {
                             public boolean isValid() {
                                 return true;
                             }
-                        })).withSetFactory(getFactory()).build();
+                        })).withmapFactory(getFactory()).build();
 
-        // adding in the data set multiple times to create underlying files with duplicate values making the
+        // adding in the data map multiple times to create underlying files with duplicate values making the
         // MergeSortIterator's job a little tougher...
         for (int d = 0; d < 11; d++) {
-            addDataRandomly(set, data);
+            addDataRandomly(map, data);
         }
-        while (set.getSets().size() <= 7) {
-            addDataRandomly(set, data);
+        while (map.getmaps().size() <= 7) {
+            addDataRandomly(map, data);
         }
     }
 
-    public void addDataRandomly(BufferedFileBackedSortedSet<E> set, E[] data) {
-        Set<Integer> added = new HashSet<>();
+    public void addDataRandomly(BufferedFileBackedSortedMap<K,V> map, E[] data) {
+        map<Integer> added = new Hashmap<>();
         Random random = new Random();
         // add data.length items randomly
         for (int i = 0; i < data.length; i++) {
             int index = random.nextInt(data.length);
-            set.add(data[index]);
+            map.add(data[index]);
             added.add(index);
         }
         // ensure all missing items are added
         for (int i = 0; i < data.length; i++) {
             if (!added.contains(i)) {
-                set.add(data[i]);
+                map.add(data[i]);
             }
         }
     }
 
     @After
     public void tearDown() throws Exception {
-        // Delete each sorted set file and its checksum.
-        for (SortedSetTempFileHandler fileHandler : tempFileHandlers) {
+        // Delete each sorted map file and its checksum.
+        for (SortedMapTempFileHandler fileHandler : tempFileHandlers) {
             File file = fileHandler.getFile();
             tryDelete(file);
             File checksum = new File(file.getParent(), "." + file.getName() + ".crc");
@@ -134,8 +133,8 @@ public abstract class BufferedFileBackedSortedSetTest<E> {
 
         data = null;
         sortedOrder = null;
-        set.clear();
-        set = null;
+        map.clear();
+        map = null;
     }
 
     private void tryDelete(File file) {
@@ -147,60 +146,60 @@ public abstract class BufferedFileBackedSortedSetTest<E> {
     @Test
     public void testSize() {
         int expectedSize = data.length;
-        assertEquals(expectedSize, set.size());
+        assertEquals(expectedSize, map.size());
         for (int i = (data.length / 2); i < data.length; i++) {
-            set.remove(data[i]);
+            map.remove(data[i]);
             expectedSize--;
-            assertEquals(expectedSize, set.size());
+            assertEquals(expectedSize, map.size());
         }
         for (int i = 0; i < (data.length / 2); i++) {
-            set.remove(data[i]);
+            map.remove(data[i]);
             expectedSize--;
-            assertEquals(expectedSize, set.size());
+            assertEquals(expectedSize, map.size());
         }
-        assertEquals(0, set.size());
+        assertEquals(0, map.size());
         for (int i = 0; i < data.length; i++) {
-            set.add(data[i]);
+            map.add(data[i]);
             expectedSize++;
-            assertEquals(expectedSize, set.size());
+            assertEquals(expectedSize, map.size());
         }
     }
 
     @Test
     public void testIsEmpty() {
-        assertFalse(set.isEmpty());
+        assertFalse(map.isEmpty());
         for (int i = (data.length / 2); i < data.length; i++) {
-            set.remove(data[i]);
-            assertFalse(set.isEmpty());
+            map.remove(data[i]);
+            assertFalse(map.isEmpty());
         }
         for (int i = 1; i < (data.length / 2); i++) {
-            set.remove(data[i]);
-            assertFalse(set.isEmpty());
+            map.remove(data[i]);
+            assertFalse(map.isEmpty());
         }
-        set.remove(data[0]);
-        assertTrue(set.isEmpty());
+        map.remove(data[0]);
+        assertTrue(map.isEmpty());
         for (int i = 0; i < data.length; i++) {
-            set.add(data[i]);
-            assertFalse(set.isEmpty());
+            map.add(data[i]);
+            assertFalse(map.isEmpty());
         }
     }
 
     @Test
     public void testClear() {
-        set.clear();
-        assertTrue(set.isEmpty());
+        map.clear();
+        assertTrue(map.isEmpty());
     }
 
     @Test
     public void testContainsObject() {
         for (int i = (data.length / 2); i < data.length; i++) {
-            set.remove(data[i]);
+            map.remove(data[i]);
         }
         for (int i = 1; i < (data.length / 2); i++) {
-            assertTrue(set.contains(data[i]));
+            assertTrue(map.contains(data[i]));
         }
         for (int i = (data.length / 2); i < data.length; i++) {
-            assertFalse(set.contains(data[i]));
+            assertFalse(map.contains(data[i]));
         }
     }
 
@@ -208,205 +207,205 @@ public abstract class BufferedFileBackedSortedSetTest<E> {
     public void testRemove() {
         int expectedSize = data.length;
 
-        assertFalse(set.isPersisted());
+        assertFalse(map.isPersisted());
         for (int i = 0; i < data.length; i++) {
-            set.remove(data[i]);
-            assertEquals(--expectedSize, set.size());
+            map.remove(data[i]);
+            assertEquals(--expectedSize, map.size());
         }
-        assertTrue(set.isEmpty());
+        assertTrue(map.isEmpty());
     }
 
     @Test
     public void testRemovePersisted() throws IOException {
         int expectedSize = data.length;
 
-        assertFalse(set.isPersisted());
-        set.persist();
-        assertTrue(set.isPersisted());
+        assertFalse(map.isPersisted());
+        map.persist();
+        assertTrue(map.isPersisted());
         for (int i = 0; i < data.length; i++) {
-            set.remove(data[i]);
-            assertEquals(--expectedSize, set.size());
-            assertTrue(set.isPersisted());
+            map.remove(data[i]);
+            assertEquals(--expectedSize, map.size());
+            assertTrue(map.isPersisted());
         }
-        assertTrue(set.isEmpty());
+        assertTrue(map.isEmpty());
     }
 
     @Test
     public void testRemoveIf() {
         int expectedSize = data.length;
 
-        assertFalse(set.isPersisted());
-        set.removeIf(new Predicate<E>() {
+        assertFalse(map.isPersisted());
+        map.removeIf(new Predicate<K,V>() {
             @Override
             public boolean test(E bytes) {
                 return false;
             }
         });
-        assertFalse(set.isPersisted());
-        assertEquals(expectedSize, set.size());
+        assertFalse(map.isPersisted());
+        assertEquals(expectedSize, map.size());
 
-        set.removeIf(new Predicate<E>() {
+        map.removeIf(new Predicate<K,V>() {
             @Override
             public boolean test(E bytes) {
                 return true;
             }
         });
-        assertFalse(set.isPersisted());
-        assertTrue(set.isEmpty());
+        assertFalse(map.isPersisted());
+        assertTrue(map.isEmpty());
     }
 
     @Test
     public void testRemoveIfPersisted() throws IOException {
         int expectedSize = data.length;
 
-        assertFalse(set.isPersisted());
-        set.persist();
-        assertTrue(set.isPersisted());
+        assertFalse(map.isPersisted());
+        map.persist();
+        assertTrue(map.isPersisted());
 
-        set.removeIf(new Predicate<E>() {
+        map.removeIf(new Predicate<K,V>() {
             @Override
             public boolean test(E bytes) {
                 return false;
             }
         });
-        assertTrue(set.isPersisted());
-        assertEquals(expectedSize, set.size());
+        assertTrue(map.isPersisted());
+        assertEquals(expectedSize, map.size());
 
-        set.removeIf(new Predicate<E>() {
+        map.removeIf(new Predicate<K,V>() {
             @Override
             public boolean test(E bytes) {
                 return true;
             }
         });
-        assertTrue(set.isPersisted());
-        assertTrue(set.isEmpty());
+        assertTrue(map.isPersisted());
+        assertTrue(map.isEmpty());
     }
 
     @Test
     public void testRemoveAll() {
         int expectedSize = data.length;
 
-        assertFalse(set.isPersisted());
-        set.removeAll(Collections.emptySet());
-        assertFalse(set.isPersisted());
-        assertEquals(expectedSize, set.size());
+        assertFalse(map.isPersisted());
+        map.removeAll(Collections.emptymap());
+        assertFalse(map.isPersisted());
+        assertEquals(expectedSize, map.size());
 
-        Set<E> dataSet = new TreeSet<>(set.comparator());
-        dataSet.addAll(Arrays.asList(data));
-        set.removeAll(dataSet);
-        assertFalse(set.isPersisted());
-        assertTrue(set.isEmpty());
+        map<K,V> datamap = new Treemap<>(map.comparator());
+        datamap.addAll(Arrays.asList(data));
+        map.removeAll(datamap);
+        assertFalse(map.isPersisted());
+        assertTrue(map.isEmpty());
     }
 
     @Test
     public void testRemoveAllPersisted() throws IOException {
         int expectedSize = data.length;
 
-        assertFalse(set.isPersisted());
-        set.persist();
-        assertTrue(set.isPersisted());
-        set.removeAll(Collections.emptySet());
-        assertTrue(set.isPersisted());
-        assertEquals(expectedSize, set.size());
+        assertFalse(map.isPersisted());
+        map.persist();
+        assertTrue(map.isPersisted());
+        map.removeAll(Collections.emptymap());
+        assertTrue(map.isPersisted());
+        assertEquals(expectedSize, map.size());
 
-        Set<E> dataSet = new TreeSet<>(set.comparator());
-        dataSet.addAll(Arrays.asList(data));
-        set.removeAll(dataSet);
-        assertTrue(set.isPersisted());
-        assertTrue(set.isEmpty());
+        map<K,V> datamap = new Treemap<>(map.comparator());
+        datamap.addAll(Arrays.asList(data));
+        map.removeAll(datamap);
+        assertTrue(map.isPersisted());
+        assertTrue(map.isEmpty());
     }
 
     @Test
     public void testIterator() {
         int index = 0;
-        for (Iterator<E> it = set.iterator(); it.hasNext();) {
+        for (Iterator<K,V> it = map.iterator(); it.hasNext();) {
             E value = it.next();
             E expected = data[sortedOrder[index++]];
             testEquality(expected, value);
         }
-        set.clear();
-        for (E value : set) {
+        map.clear();
+        for (E value : map) {
             fail();
         }
     }
 
     @Test
     public void testIteratorRemove() {
-        int size = set.size();
+        int size = map.size();
         int failCount = 0;
-        assertFalse(set.isPersisted());
+        assertFalse(map.isPersisted());
         // calling iterator() will force persistence
-        for (Iterator<E> it = set.iterator(); it.hasNext();) {
-            assertTrue(set.isPersisted());
+        for (Iterator<K,V> it = map.iterator(); it.hasNext();) {
+            assertTrue(map.isPersisted());
             E value = it.next();
-            assertTrue(set.contains(value));
+            assertTrue(map.contains(value));
             try {
                 it.remove();
-                fail("Expected iterator remove to fail with a persisted set");
+                fail("Expected iterator remove to fail with a persisted map");
             } catch (Exception e) {
-                // expected that some of the underlying FileSortedSets are persisted and hence the remove will fail
+                // expected that some of the underlying FileSortedMaps are persisted and hence the remove will fail
                 failCount++;
-                assertTrue(set.contains(value));
-                assertEquals(size, set.size());
+                assertTrue(map.contains(value));
+                assertEquals(size, map.size());
             }
         }
         assertEquals(size, failCount);
-        assertFalse(set.isEmpty());
+        assertFalse(map.isEmpty());
     }
 
     @Test
     public void testComparator() {
-        Comparator<? super E> comparator = set.comparator();
+        Comparator<? super E> comparator = map.comparator();
         E[] testData = Arrays.copyOf(data, data.length);
         Arrays.sort(testData, comparator);
         int index = 0;
-        for (E value : set) {
+        for (E value : map) {
             E expected = data[sortedOrder[index++]];
             testEquality(expected, value);
         }
     }
 
     @Test
-    public void testSubSet() {
+    public void testSubmap() {
         int start = sortedOrder.length / 3;
         int end = start * 2;
         try {
-            SortedSet<E> subSet = set.subSet(data[sortedOrder[start]], data[sortedOrder[end]]);
-            SortedSet<E> expected = new TreeSet<>(set.comparator());
+            SortedMap<K,V> submap = map.submap(data[sortedOrder[start]], data[sortedOrder[end]]);
+            SortedMap<K,V> expected = new Treemap<>(map.comparator());
             for (int i = start; i < end; i++) {
                 expected.add(data[sortedOrder[i]]);
             }
-            assertEquals(expected, subSet);
+            assertEquals(expected, submap);
         } catch (Exception e) {
             // expected
         }
     }
 
     @Test
-    public void testHeadSet() {
+    public void testHeadmap() {
         int end = sortedOrder.length / 3;
         try {
-            SortedSet<E> subSet = set.headSet(data[sortedOrder[end]]);
-            SortedSet<E> expected = new TreeSet<>(set.comparator());
+            SortedMap<K,V> submap = map.headmap(data[sortedOrder[end]]);
+            SortedMap<K,V> expected = new Treemap<>(map.comparator());
             for (int i = 0; i < end; i++) {
                 expected.add(data[sortedOrder[i]]);
             }
-            assertEquals(expected, subSet);
+            assertEquals(expected, submap);
         } catch (Exception e) {
             // expected
         }
     }
 
     @Test
-    public void testTailSet() {
+    public void testTailmap() {
         int start = sortedOrder.length / 3;
         try {
-            SortedSet<E> subSet = set.tailSet(data[sortedOrder[start]]);
-            SortedSet<E> expected = new TreeSet<>(set.comparator());
+            SortedMap<K,V> submap = map.tailmap(data[sortedOrder[start]]);
+            SortedMap<K,V> expected = new Treemap<>(map.comparator());
             for (int i = start; i < sortedOrder.length; i++) {
                 expected.add(data[sortedOrder[i]]);
             }
-            assertEquals(expected, subSet);
+            assertEquals(expected, submap);
         } catch (Exception e) {
             // expected
         }
@@ -415,22 +414,22 @@ public abstract class BufferedFileBackedSortedSetTest<E> {
     @Test
     public void testLast() {
         E expected = data[sortedOrder[data.length - 1]];
-        E value = set.last();
+        E value = map.last();
         testEquality(expected, value);
     }
 
     @Test
     public void testFirst() {
         E expected = data[sortedOrder[0]];
-        E value = set.first();
+        E value = map.first();
         testEquality(expected, value);
     }
 
     @Test
     public void testCompaction() throws IOException {
-        assertEquals(8, set.getSets().size());
-        set.persist();
-        assertEquals(3, set.getSets().size());
+        assertEquals(8, map.getmaps().size());
+        map.persist();
+        assertEquals(3, map.getmaps().size());
     }
 
 }

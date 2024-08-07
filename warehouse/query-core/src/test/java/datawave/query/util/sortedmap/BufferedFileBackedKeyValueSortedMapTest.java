@@ -1,6 +1,5 @@
 package datawave.query.util.sortedmap;
 
-import datawave.query.util.sortedset.FileSortedSet;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 
@@ -9,7 +8,7 @@ import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
-public class BufferedFileBackedKeyValueSortedSetTest extends BufferedFileBackedRewritableSortedSetTest<Key,Value> {
+public class BufferedFileBackedKeyValueSortedMapTest extends BufferedFileBackedRewritableSortedMapTest<Key,Value> {
 
     private Comparator<Map.Entry<Key,Value>> keyComparator = new Comparator<>() {
         @Override

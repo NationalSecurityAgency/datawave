@@ -5,220 +5,207 @@ import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
-import java.lang.reflect.Array;
+import java.io.Serializable;
+import java.util.AbstractCollection;
+import java.util.AbstractSet;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.SortedSet;
+import java.util.Set;
+import java.util.SortedMap;
 import java.util.TreeMap;
-import java.util.TreeSet;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
+import datawave.query.util.sortedset.FileSortedSet;
+import org.apache.commons.collections.IteratorUtils;
+import org.apache.commons.collections.keyvalue.UnmodifiableMapEntry;
 import org.apache.log4j.Logger;
 
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 
 /**
- * A sorted set that can be persisted into a file and still be read in its persisted state. The set can always be re-loaded and then all operations will work as
+ * A sorted map that can be persisted into a file and still be read in its persisted state. The map can always be re-loaded and then all operations will work as
  * expected. This class will not support null values.
  *
  * The persisted file will contain the serialized entries, followed by the actual size.
  *
- * @param <E>
- *            type of set
+ * A RewriteStrategy can be supplied that will determine whether a value gets replaced when putting a key,value pair.
+ *
+ * @param <K,V>
+ *            type of map
  */
-public abstract class FileSortedMap<E> extends RewritableSortedMapImpl<E> implements SortedSet<E>, Cloneable {
-    private static Logger log = Logger.getLogger(FileSortedMap.class);
-    protected boolean persisted = false;
-    protected E[] range;
+public abstract class FileSortedMap<K,V> implements SortedMap<K,V>, Cloneable, RewritableSortedMap<K,V> {
+    private static final Logger log = Logger.getLogger(FileSortedMap.class);
+    protected boolean persisted;
+    protected K[] range;
+    protected SortedMap<K,V> map;
+    protected RewriteStrategy<K,V> rewriteStrategy = null;
+
     // The file handler that handles the underlying io
-    public TypedSortedSetFileHandler handler;
-    // The sort set factory
-    public FileSortedSetFactory factory;
+    protected TypedSortedMapFileHandler handler;
+    // The sort map factory
+    protected FileSortedMapFactory factory;
 
     /**
-     * Create a file sorted set from another one
-     *
-     * @param other
-     *            the other sorted set
+     * A class that represents a null object within the map
      */
-    public FileSortedMap(FileSortedMap<E> other) {
-        super(other);
-        this.handler = other.handler;
-        this.factory = other.factory;
-        this.persisted = other.persisted;
-        this.range = other.range;
+    public static class NullObject implements Serializable {
+        private static final long serialVersionUID = -5528112099317370355L;
     }
 
     /**
-     * Create a file sorted subset from another one
+     * Create a file sorted map from another one
      *
      * @param other
-     *            the other sorted set
+     *            the other sorted map
+     */
+    public FileSortedMap(FileSortedMap<K,V> other) {
+        this.handler = other.handler;
+        this.factory = other.factory;
+        this.map = new TreeMap<>(other.map);
+        this.persisted = other.persisted;
+        this.range = other.range;
+        this.rewriteStrategy = other.rewriteStrategy;
+    }
+
+    /**
+     * Create a file sorted submap from another one
+     *
+     * @param other
+     *            the other sorted map
      * @param from
      *            the from key
      * @param to
      *            the to key
      */
-    public FileSortedMap(FileSortedMap<E> other, E from, E to) {
+    public FileSortedMap(FileSortedMap<K,V> other, K from, K to) {
         this(other);
         if (from != null || to != null) {
             if (persisted) {
-                this.range = (E[]) new Object[] {getStart(from), getEnd(to)};
+                this.range = (K[]) new Object[] {getStart(from), getEnd(to)};
             } else if (to == null) {
-                this.set = this.set.tailMap(from, true);
+                this.map = this.map.tailMap(from);
             } else if (from == null) {
-                this.set = this.set.headMap(to, false);
+                this.map = this.map.headMap(to);
             } else {
-                this.set = this.set.subMap(from, true, to, false);
+                this.map = this.map.subMap(from, to);
             }
         }
     }
 
     /**
-     * Create a persisted sorted set
+     * Create a persisted sorted map
      *
      * @param handler
-     *            the sorted set file handler
+     *            the sorted map file handler
      * @param persisted
      *            a persisted boolean flag
      * @param factory
-     *            the sorted set factory
+     *            the sorted map factory
      */
-    public FileSortedMap(TypedSortedSetFileHandler handler, FileSortedSetFactory factory, boolean persisted) {
+    public FileSortedMap(TypedSortedMapFileHandler handler, FileSortedMapFactory factory, boolean persisted) {
         this.handler = handler;
         this.factory = factory;
-        this.set = new TreeMap<>();
+        this.map = new TreeMap<>();
         this.persisted = persisted;
     }
 
     /**
-     * Create a persisted sorted set
-     *
-     * @param rewriteStrategy
-     *            the item rewrite strategy
-     * @param handler
-     *            the sorted set file handler
-     * @param persisted
-     *            a persisted boolean flag
-     * @param factory
-     *            the sorted set factory
-     */
-    public FileSortedMap(RewriteStrategy<E> rewriteStrategy, TypedSortedSetFileHandler handler, FileSortedSetFactory factory, boolean persisted) {
-        super(rewriteStrategy);
-        this.handler = handler;
-        this.factory = factory;
-        this.set = new TreeMap<>();
-        this.persisted = persisted;
-    }
-
-    /**
-     * Create a persisted sorted set
-     *
-     * @param comparator
-     *            the key comparator
-     * @param rewriteStrategy
-     *            the item rewrite strategy
-     * @param handler
-     *            the sorted set file handler
-     * @param persisted
-     *            a persisted boolean flag
-     * @param factory
-     *            the sorted set factory
-     */
-    public FileSortedMap(Comparator<E> comparator, RewriteStrategy<E> rewriteStrategy, TypedSortedSetFileHandler handler, FileSortedSetFactory factory,
-                         boolean persisted) {
-        super(comparator, rewriteStrategy);
-        this.handler = handler;
-        this.factory = factory;
-        this.set = new TreeMap<>(comparator);
-        this.persisted = persisted;
-    }
-
-    /**
-     * Create a persisted sorted set
+     * Create a persisted sorted map
      *
      * @param comparator
      *            the key comparator
      * @param handler
-     *            the sorted set file handler
+     *            the sorted map file handler
      * @param persisted
      *            a persisted boolean flag
      * @param factory
-     *            the sorted set factory
+     *            the sorted map factory
      */
-    public FileSortedMap(Comparator<E> comparator, TypedSortedSetFileHandler handler, FileSortedSetFactory factory, boolean persisted) {
-        super(comparator);
+    public FileSortedMap(Comparator<K> comparator, TypedSortedMapFileHandler handler, FileSortedMapFactory factory, boolean persisted) {
         this.handler = handler;
         this.factory = factory;
-        this.set = new TreeMap<>(comparator);
+        this.map = new TreeMap<>(comparator);
         this.persisted = persisted;
     }
 
     /**
-     * Create an unpersisted sorted set (still in memory)
+     * Create an unpersisted sorted map (still in memory)
      *
-     * @param set
-     *            a sorted set
+     * @param map
+     *            a sorted map
      * @param handler
-     *            the sorted set file handler
+     *            the sorted map file handler
      * @param factory
-     *            the sorted set factory
+     *            the sorted map factory
      */
-    public FileSortedMap(RewritableSortedMap<E> set, TypedSortedSetFileHandler handler, FileSortedSetFactory factory) {
+    public FileSortedMap(SortedMap<K,V> map, TypedSortedMapFileHandler handler, FileSortedMapFactory factory) {
         this.handler = handler;
         this.factory = factory;
-        this.set = set.stream().collect(Collectors.toMap(value -> value, value -> value, (l, r) -> l, () -> new TreeMap<>(set.comparator())));
-        this.rewriteStrategy = set.getRewriteStrategy();
+        this.map = new TreeMap<>(map);
         this.persisted = false;
     }
 
     /**
-     * Create a sorted set out of another sorted set. If persist is true, then the set will be directly persisted using the set's iterator which avoid pulling
+     * Create a sorted map out of another sorted map. If persist is true, then the map will be directly persisted using the map's iterator which avoid pulling
      * all of its entries into memory at once.
      *
-     * @param set
-     *            a sorted set
+     * @param map
+     *            a sorted map
      * @param handler
-     *            the sorted set file handler
+     *            the sorted map file handler
      * @param factory
-     *            the sorted set factory
+     *            the sorted map factory
      * @param persist
      *            the persist boolean flag
      * @throws IOException
      *             for issues with read/write
      */
-    public FileSortedMap(RewritableSortedMap<E> set, TypedSortedSetFileHandler handler, FileSortedSetFactory factory, boolean persist) throws IOException {
-        this(set, handler, factory);
-        if (persist) {
-            persist(set, handler);
+    public FileSortedMap(SortedMap<K,V> map, TypedSortedMapFileHandler handler, FileSortedMapFactory factory, boolean persist) throws IOException {
+        this.handler = handler;
+        this.factory = factory;
+        if (!persist) {
+            this.map = new TreeMap<>(map);
+            this.persisted = false;
+        } else {
+            this.map = new TreeMap<>(map.comparator());
+            persist(map, handler);
             persisted = true;
         }
     }
 
+    @Override
+    public RewriteStrategy<K,V> getRewriteStrategy() {
+        return rewriteStrategy;
+    }
+
+    @Override
+    public void setRewriteStrategy(RewriteStrategy<K,V> rewriteStrategy) {
+        this.rewriteStrategy = rewriteStrategy;
+    }
+
     /**
-     * This will revert this set to whatever contents are in the underlying file, making the set "persisted". This is intended to be used following a load
-     * command when no changes were actually made the the set If the persist options included verification, then the files will be verified prior to unloading.
+     * This will revert this map to whatever contents are in the underlying file, making the map "persisted". This is intended to be used following a load
+     * command when no changes were actually made the the map If the persist options included verification, then the files will be verified prior to unloading.
      *
      * @throws IOException
      *             for issues with read/write
      */
     public void unload() throws IOException {
         if (!persisted) {
-            verifyPersistance(handler, this.set.size(), Collections.emptyList());
-            this.set.clear();
+            verifyPersistance(handler, this.map.size(), Collections.emptyList());
+            this.map.clear();
             persisted = true;
         }
     }
 
     /**
-     * This will dump the set to the file, making the set "persisted"
+     * This will dump the map to the file, making the map "persisted"
      *
      * @throws IOException
      *             for issues with read/write
@@ -228,44 +215,44 @@ public abstract class FileSortedMap<E> extends RewritableSortedMapImpl<E> implem
     }
 
     /**
-     * This will dump the set to the file, making the set "persisted"
+     * This will dump the map to the file, making the map "persisted"
      *
      * @param handler
      *            the handler
      * @throws IOException
      *             for issues with read/write
      */
-    public void persist(TypedSortedSetFileHandler handler) throws IOException {
+    public void persist(TypedSortedMapFileHandler handler) throws IOException {
         if (!persisted) {
-            persist(this.set.navigableKeySet(), handler);
-            this.set.clear();
+            persist(this.map, handler);
+            this.map.clear();
             persisted = true;
         }
     }
 
     /**
-     * This will dump the set to a file, making the set "persisted" The implementation is expected to wrap the handler with a TypedSortedSetFileHandler and the
-     * call persist(TypedSortedSetFileHandler handler)
+     * This will dump the map to a file, making the map "persisted" The implementation is expected to wrap the handler with a TypedSortedMapFileHandler and the
+     * call persist(TypedSortedMapFileHandler handler)
      *
      * @param handler
-     *            the sorted set file handler
+     *            the sorted map file handler
      * @throws IOException
      *             for issues with read/write
      */
-    public abstract void persist(SortedSetFileHandler handler) throws IOException;
+    public abstract void persist(SortedMapFileHandler handler) throws IOException;
 
     /**
-     * Persist the supplied set to a file as defined by this classes sorted set file handler.
+     * Persist the supplied map to a file as defined by this classes sorted map file handler.
      *
-     * @param set
-     *            the set
+     * @param map
+     *            the map
      * @param handler
      *            the handler
      * @throws IOException
      *             for issues with read/write
      *
      */
-    private void persist(SortedSet<E> set, TypedSortedSetFileHandler handler) throws IOException {
+    private void persist(SortedMap<K,V> map, TypedSortedMapFileHandler handler) throws IOException {
         if (log.isDebugEnabled()) {
             log.debug("Persisting " + handler);
         }
@@ -273,24 +260,24 @@ public abstract class FileSortedMap<E> extends RewritableSortedMapImpl<E> implem
         long start = System.currentTimeMillis();
         try {
             // assign the passed in file handler
-            // if we can't persist, we will reset to null
+            // if we can't persist, we will remap to null
             this.handler = handler;
 
             int actualSize = 0;
-            PersistOptions persistOptions = handler.getPersistOptions();
-            List<E> setToVerify = new ArrayList<>();
-            try (SortedSetOutputStream<E> stream = handler.getOutputStream()) {
-                for (E t : set) {
-                    stream.writeObject(t);
-                    if (persistOptions.isVerifyElements() && setToVerify.size() < persistOptions.getNumElementsToVerify()) {
-                        setToVerify.add(t);
+            FileSortedSet.PersistOptions persistOptions = handler.getPersistOptions();
+            List<Map.Entry<K,V>> mapToVerify = new ArrayList<>();
+            try (SortedMapOutputStream<K,V> stream = handler.getOutputStream()) {
+                for (Entry<K,V> t : map.entrySet()) {
+                    stream.writeObject(t.getKey(), t.getValue());
+                    if (persistOptions.isVerifyElements() && mapToVerify.size() < persistOptions.getNumElementsToVerify()) {
+                        mapToVerify.add(t);
                     }
                     actualSize++;
                 }
                 stream.writeSize(actualSize);
             }
             // now verify the written file
-            verifyPersistance(handler, actualSize, setToVerify);
+            verifyPersistance(handler, actualSize, mapToVerify);
 
         } catch (IOException e) {
             handler.deleteFile();
@@ -304,19 +291,19 @@ public abstract class FileSortedMap<E> extends RewritableSortedMapImpl<E> implem
         }
     }
 
-    private void verifyPersistance(TypedSortedSetFileHandler handler, int size, List<E> setToVerify) throws IOException {
+    private void verifyPersistance(TypedSortedMapFileHandler handler, int size, List<Map.Entry<K,V>> mapToVerify) throws IOException {
         // verify we wrote at least the size....
         if (handler.getSize() == 0) {
             throw new IOException("Failed to verify file existence");
         }
-        PersistOptions persistOptions = handler.getPersistOptions();
+        FileSortedSet.PersistOptions persistOptions = handler.getPersistOptions();
         // now verify the first n objects were written correctly
-        if (persistOptions.isVerifyElements() && !setToVerify.isEmpty()) {
-            try (SortedSetInputStream<E> inStream = handler.getInputStream()) {
+        if (persistOptions.isVerifyElements() && !mapToVerify.isEmpty()) {
+            try (SortedMapInputStream<K,V> inStream = handler.getInputStream()) {
                 int count = 0;
-                for (E t : setToVerify) {
+                for (Map.Entry<K,V> t : mapToVerify) {
                     count++;
-                    E input = inStream.readObject();
+                    Map.Entry<K,V> input = inStream.readObject();
                     if (!equals(t, input)) {
                         throw new IOException("Failed to verify element " + count + " was written");
                     }
@@ -340,13 +327,13 @@ public abstract class FileSortedMap<E> extends RewritableSortedMapImpl<E> implem
      *             for issues with read/write
      */
     private int readSize() throws IOException {
-        try (SortedSetInputStream<E> inStream = handler.getInputStream()) {
+        try (SortedMapInputStream<K,V> inStream = handler.getInputStream()) {
             return inStream.readSize();
         }
     }
 
     /**
-     * This will read the file into an in-memory set, making this file "unpersisted"
+     * This will read the file into an in-memory map, making this file "unpersisted"
      *
      * @throws IOException
      *             for issues with read/write
@@ -355,10 +342,10 @@ public abstract class FileSortedMap<E> extends RewritableSortedMapImpl<E> implem
      */
     public void load() throws IOException, ClassNotFoundException {
         if (persisted) {
-            try (SortedSetInputStream<E> stream = getBoundedFileHandler().getInputStream(getStart(), getEnd())) {
-                E obj = stream.readObject();
+            try (SortedMapInputStream<K,V> stream = getBoundedFileHandler().getInputStream(getStart(), getEnd())) {
+                Map.Entry<K,V> obj = stream.readObject();
                 while (obj != null) {
-                    super.add(obj);
+                    map.put(obj.getKey(), obj.getValue());
                     obj = stream.readObject();
                 }
             }
@@ -366,35 +353,38 @@ public abstract class FileSortedMap<E> extends RewritableSortedMapImpl<E> implem
         }
     }
 
-    protected E readObject(ObjectInputStream stream) {
+    protected Map.Entry<K,V> readObject(ObjectInputStream stream) {
         try {
-            return (E) stream.readObject();
+            K key = (K)stream.readObject();
+            V value = (V)stream.readObject();
+            return new UnmodifiableMapEntry(key, value);
         } catch (Exception E) {
             return null;
         }
     }
 
-    protected void writeObject(ObjectOutputStream stream, E obj) throws IOException {
-        stream.writeObject(obj);
+    protected void writeObject(ObjectOutputStream stream, K key, V value) throws IOException {
+        stream.writeObject(key);
+        stream.writeObject(value);
     }
 
     /*
-     * Is this set persisted?
+     * Is this map persisted?
      */
     public boolean isPersisted() {
         return persisted;
     }
 
     /**
-     * Get the size of the set. Note if the set has been persisted, then this may be an upper bound on the size.
+     * Get the size of the map. Note if the map has been persisted, then this may be an upper bound on the size.
      *
      * @return the size upper bound
      */
     @Override
     public int size() {
         if (persisted) {
-            if (isSubset()) {
-                throw new IllegalStateException("Unable to determine size of a subset of a persisted set.  Please call load() first.");
+            if (isSubmap()) {
+                throw new IllegalStateException("Unable to determine size of a submap of a persisted map.  Please call load() first.");
             }
             try {
                 return readSize();
@@ -402,7 +392,7 @@ public abstract class FileSortedMap<E> extends RewritableSortedMapImpl<E> implem
                 throw new IllegalStateException("Unable to get size from file", e);
             }
         } else {
-            return super.size();
+            return map.size();
         }
     }
 
@@ -410,7 +400,7 @@ public abstract class FileSortedMap<E> extends RewritableSortedMapImpl<E> implem
     public boolean isEmpty() {
         // must attempt to read the first element to be sure if persisted
         try {
-            first();
+            firstKey();
             return false;
         } catch (NoSuchElementException e) {
             return true;
@@ -419,176 +409,85 @@ public abstract class FileSortedMap<E> extends RewritableSortedMapImpl<E> implem
 
     @SuppressWarnings("unchecked")
     @Override
-    public boolean contains(Object o) {
+    public boolean containsKey(Object o) {
         if (persisted) {
-            E t = (E) o;
-            for (E next : this) {
-                if (equals(next, t)) {
+            K t = (K) o;
+            try (SortedMapInputStream<K,V> stream = getBoundedFileHandler().getInputStream(getStart(), getEnd())) {
+                Map.Entry<K,V> first = stream.readObject();
+                if (equals(first.getKey(), t)) {
                     return true;
-                }
-            }
-            return false;
-        } else {
-            return super.contains(o);
-        }
-    }
-
-    @Override
-    public Iterator<E> iterator() {
-        if (persisted) {
-            return new FileIterator();
-        } else {
-            return super.iterator();
-        }
-    }
-
-    @Override
-    public Object[] toArray() {
-        if (persisted) {
-            try (SortedSetInputStream<E> stream = getBoundedFileHandler().getInputStream(getStart(), getEnd())) {
-                Object[] data = new Object[readSize()];
-                int index = 0;
-                E obj = stream.readObject();
-                while (obj != null) {
-                    data[index++] = obj;
-                    obj = stream.readObject();
-                }
-                if (index < data.length) {
-                    Object[] dataCpy = new Object[index];
-                    System.arraycopy(data, 0, dataCpy, 0, index);
-                    data = dataCpy;
-                }
-                return data;
-            } catch (IOException e) {
-                throw new IllegalStateException("Unable to read file into a complete set", e);
-            }
-        } else {
-            return super.toArray();
-        }
-    }
-
-    @SuppressWarnings({"unchecked"})
-    @Override
-    public <T> T[] toArray(T[] a) {
-        if (persisted) {
-            try (SortedSetInputStream<E> stream = getBoundedFileHandler().getInputStream(getStart(), getEnd())) {
-                T[] data = a;
-                int index = 0;
-                T obj = (T) stream.readObject();
-                while (obj != null) {
-                    if (index > data.length) {
-                        T[] dataCpy = (T[]) (Array.newInstance(a.getClass().getComponentType(), data.length + (data.length / 2)));
-                        System.arraycopy(data, 0, dataCpy, 0, data.length);
-                        data = dataCpy;
-                    }
-                    data[index++] = obj;
-                    obj = (T) stream.readObject();
-                }
-                // if not resized
-                if (data == a) {
-                    // ensure extra elements are set to null
-                    for (; index < data.length; index++) {
-                        data[index] = null;
-                    }
-                } else if (index < data.length) {
-                    T[] dataCpy = (T[]) (Array.newInstance(a.getClass().getComponentType(), index));
-                    System.arraycopy(data, 0, dataCpy, 0, index);
-                    data = dataCpy;
-                }
-                return data;
-            } catch (IOException e) {
-                throw new IllegalStateException("Unable to read file into a complete set", e);
-            }
-        } else {
-            return super.toArray(a);
-        }
-    }
-
-    @Override
-    public boolean add(E e) {
-        if (persisted) {
-            throw new IllegalStateException("Cannot add an element to a persisted FileSortedSet.  Please call load() first.");
-        }
-        return super.add(e);
-    }
-
-    @Override
-    public boolean remove(Object o) {
-        if (persisted) {
-            throw new IllegalStateException("Cannot remove an element to a persisted FileSortedSet.  Please call load() first.");
-        } else {
-            return (super.remove(o));
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public boolean containsAll(Collection<?> c) {
-        if (c.isEmpty()) {
-            return true;
-        }
-        if (persisted) {
-            try {
-                SortedSet<E> all = new TreeSet<>(set.comparator());
-                for (Object o : c) {
-                    all.add((E) o);
-                }
-                if (all.isEmpty()) {
-                    return true;
-                }
-                try (SortedSetInputStream<E> stream = getBoundedFileHandler().getInputStream(getStart(), getEnd())) {
-                    E obj = stream.readObject();
-                    while (obj != null) {
-                        if (all.remove(obj)) {
-                            if (all.isEmpty()) {
-                                return true;
-                            }
-                        }
-                        obj = stream.readObject();
-                    }
                 }
             } catch (Exception e) {
-                throw new IllegalStateException("Unable to read file into a complete set", e);
+                return false;
             }
             return false;
         } else {
-            return super.containsAll(c);
+            return map.containsKey(o);
         }
     }
 
     @Override
-    public boolean addAll(Collection<? extends E> c) {
+    public boolean containsValue(Object o) {
         if (persisted) {
-            throw new IllegalStateException("Unable to add to a persisted FileSortedSet.  Please call load() first.");
+            V t = (V) o;
+            try (SortedMapInputStream<K,V> stream = getBoundedFileHandler().getInputStream(getStart(), getEnd())) {
+                Map.Entry<K,V> first = stream.readObject();
+                if (first.getValue().equals(t)) {
+                    return true;
+                }
+            } catch (Exception e) {
+                return false;
+            }
+            return false;
         } else {
-            return super.addAll(c);
+            return map.containsValue(o);
         }
     }
 
     @Override
-    public boolean retainAll(Collection<?> c) {
+    public V get(Object key) {
         if (persisted) {
-            throw new IllegalStateException("Unable to modify a persisted FileSortedSet.  Please call load() first.");
+            K t = (K) key;
+            try (SortedMapInputStream<K,V> stream = getBoundedFileHandler().getInputStream(getStart(), getEnd())) {
+                Map.Entry<K,V> first = stream.readObject();
+                if (equals(first.getKey(), t)) {
+                    return first.getValue();
+                }
+            } catch (Exception e) {
+                return null;
+            }
+            return null;
         } else {
-            return super.retainAll(c);
+            return map.get(key);
         }
     }
 
     @Override
-    public boolean removeAll(Collection<?> c) {
+    public V put(K key, V value) {
         if (persisted) {
-            throw new IllegalStateException("Unable to remove from a persisted FileSortedSet.  Please call load() first.");
+            throw new IllegalStateException("Cannot add an element to a persisted FileSortedMap.  Please call load() first.");
         } else {
-            return super.removeAll(c);
+            V previous = map.get(key);
+            if ((previous == null) || (rewriteStrategy == null) || (rewriteStrategy.rewrite(key, previous, value))) {
+                map.put(key, value);
+            }
+            return previous;
         }
     }
 
     @Override
-    public boolean removeIf(Predicate<? super E> filter) {
+    public V remove(Object o) {
         if (persisted) {
-            throw new IllegalStateException("Unable to remove from a persisted FileSortedSet.  Please call load() first.");
+            throw new IllegalStateException("Cannot remove an element to a persisted FileSortedMap.  Please call load() first.");
         } else {
-            return super.removeIf(filter);
+            return map.remove(o);
+        }
+    }
+
+    @Override
+    public void putAll(Map<? extends K, ? extends V> m) {
+        for (Entry<? extends K, ? extends V> entry : m.entrySet()) {
+            put(entry.getKey(), entry.getValue());
         }
     }
 
@@ -598,81 +497,126 @@ public abstract class FileSortedMap<E> extends RewritableSortedMapImpl<E> implem
             handler.deleteFile();
             persisted = false;
         } else {
-            super.clear();
+            map.clear();
         }
     }
 
     @Override
-    public Comparator<? super E> comparator() {
-        return super.comparator();
+    public Comparator<? super K> comparator() {
+        return map.comparator();
     }
 
     @Override
-    public RewritableSortedMap<E> subSet(E fromElement, E toElement) {
+    public SortedMap<K,V> subMap(K fromElement, K toElement) {
         return factory.newInstance(this, fromElement, toElement);
     }
 
     @Override
-    public RewritableSortedMap<E> headSet(E toElement) {
+    public SortedMap<K,V> headMap(K toElement) {
         return factory.newInstance(this, null, toElement);
     }
 
     @Override
-    public RewritableSortedMap<E> tailSet(E fromElement) {
+    public SortedMap<K,V> tailMap(K fromElement) {
         return factory.newInstance(this, fromElement, null);
     }
 
     @Override
-    public E first() {
+    public K firstKey() {
         if (persisted) {
-            try (SortedSetInputStream<E> stream = getBoundedFileHandler().getInputStream(getStart(), getEnd())) {
-                E object = stream.readObject();
-                if (object == null) {
-                    throw (NoSuchElementException) new NoSuchElementException().initCause(new QueryException(DatawaveErrorCode.FETCH_FIRST_ELEMENT_ERROR));
-                } else {
-                    return object;
-                }
+            try (SortedMapInputStream<K,V> stream = getBoundedFileHandler().getInputStream(getStart(), getEnd())) {
+                Map.Entry<K,V> first = stream.readObject();
+                return first.getKey();
             } catch (Exception e) {
                 throw new IllegalStateException(new QueryException(DatawaveErrorCode.FETCH_FIRST_ELEMENT_ERROR, e));
             }
+        } else if (!map.isEmpty()) {
+            return map.firstKey();
+        }
+        throw (NoSuchElementException) new NoSuchElementException().initCause(new QueryException(DatawaveErrorCode.FETCH_FIRST_ELEMENT_ERROR));
+    }
+
+    @Override
+    public K lastKey() {
+        if (persisted) {
+            try (SortedMapInputStream<K,V> stream = getBoundedFileHandler().getInputStream(getStart(), getEnd())) {
+                Map.Entry<K,V> last = stream.readObject();
+                Map.Entry<K,V> next = stream.readObject();
+                while (next != null) {
+                    last = next;
+                    next = stream.readObject();
+                }
+                return last.getKey();
+            } catch (Exception e) {
+                throw new IllegalStateException(new QueryException(DatawaveErrorCode.FETCH_LAST_ELEMENT_ERROR, e));
+            }
+        } else if (!map.isEmpty()) {
+            return map.lastKey();
+        }
+        throw (NoSuchElementException) new NoSuchElementException().initCause(new QueryException(DatawaveErrorCode.FETCH_LAST_ELEMENT_ERROR));
+    }
+
+    private Iterator<Map.Entry<K,V>> iterator() {
+        if (persisted) {
+            return new FileIterator();
         } else {
-            return super.first();
+            return map.entrySet().iterator();
         }
     }
 
     @Override
-    public E last() {
-        if (persisted) {
-            boolean gotLast = false;
-            E last = null;
-            try (SortedSetInputStream<E> stream = getBoundedFileHandler().getInputStream(getStart(), getEnd())) {
-                last = stream.readObject();
-                E next = stream.readObject();
-                while (next != null) {
-                    last = next;
-                    gotLast = true;
-                    next = stream.readObject();
-                }
-            } catch (Exception e) {
-                throw new IllegalStateException(new QueryException(DatawaveErrorCode.FETCH_LAST_ELEMENT_ERROR, e));
+    public Set<K> keySet() {
+        return new AbstractSet<K>() {
+
+            @Override
+            public Iterator<K> iterator() {
+                return IteratorUtils.transformedIterator(new FileIterator(),
+                        o -> ((Map.Entry)o).getKey());
             }
-            if (gotLast) {
-                return last;
-            } else {
-                throw (NoSuchElementException) new NoSuchElementException().initCause(new QueryException(DatawaveErrorCode.FETCH_LAST_ELEMENT_ERROR));
+
+            @Override
+            public int size() {
+                return FileSortedMap.this.size();
             }
-        } else {
-            return super.last();
-        }
+        };
+    }
+
+    @Override
+    public Collection<V> values() {
+        return new AbstractCollection<V>() {
+
+            @Override
+            public Iterator<V> iterator() {
+                return IteratorUtils.transformedIterator(new FileIterator(),
+                        o -> ((Map.Entry)o).getValue());
+            }
+
+            @Override
+            public int size() {
+                return FileSortedMap.this.size();
+            }
+        };
+    }
+
+    @Override
+    public Set<Entry<K, V>> entrySet() {
+        return new AbstractSet<Entry<K,V>>() {
+
+            @Override
+            public Iterator<Entry<K,V>> iterator() {
+                return new FileIterator();
+            }
+
+            @Override
+            public int size() {
+                return FileSortedMap.this.size();
+            }
+        };
     }
 
     @Override
     public String toString() {
-        if (persisted) {
-            return handler.toString();
-        } else {
-            return super.toString();
-        }
+        return persisted ? handler.toString() : map.toString();
     }
 
     /**
@@ -680,31 +624,41 @@ public abstract class FileSortedMap<E> extends RewritableSortedMapImpl<E> implem
      *
      * @return A clone
      */
-    public FileSortedMap<E> clone() {
+    public FileSortedMap<K,V> clone() {
         return factory.newInstance(this);
     }
 
     /* Some utilities */
-    private boolean equals(E o1, E o2) {
+    private boolean equals(Map.Entry<K,V> o1, Map.Entry<K,V> o2) {
         if (o1 == null) {
             return o2 == null;
         } else if (o2 == null) {
             return false;
         } else {
-            if (set.comparator() == null) {
+            return equals(o1.getKey(), o2.getKey()) && o1.getValue().equals(o2.getValue());
+        }
+    }
+
+    private boolean equals(K o1, K o2) {
+        if (o1 == null) {
+            return o2 == null;
+        } else if (o2 == null) {
+            return false;
+        } else {
+            if (map.comparator() == null) {
                 return o1.equals(o2);
             } else {
-                return set.comparator().compare(o1, o2) == 0;
+                return map.comparator().compare(o1, o2) == 0;
             }
         }
     }
 
-    private E getStart() {
-        return (isSubset() ? range[0] : null);
+    private K getStart() {
+        return (isSubmap() ? range[0] : null);
     }
 
-    private E getStart(E from) {
-        E start = getStart();
+    private K getStart(K from) {
+        K start = getStart();
         if (start == null) {
             return from;
         } else if (from == null) {
@@ -716,12 +670,12 @@ public abstract class FileSortedMap<E> extends RewritableSortedMapImpl<E> implem
         }
     }
 
-    private E getEnd() {
-        return (isSubset() ? range[1] : null);
+    private K getEnd() {
+        return (isSubmap() ? range[1] : null);
     }
 
-    private E getEnd(E to) {
-        E end = getEnd();
+    private K getEnd(K to) {
+        K end = getEnd();
         if (end == null) {
             return to;
         } else if (to == null) {
@@ -733,24 +687,24 @@ public abstract class FileSortedMap<E> extends RewritableSortedMapImpl<E> implem
         }
     }
 
-    private boolean isSubset() {
+    private boolean isSubmap() {
         return (range != null);
     }
 
-    private int compare(E a, E b) {
-        return (this.set.comparator() != null) ? this.set.comparator().compare(a, b) : ((Comparable<E>) a).compareTo(b);
+    private int compare(K a, K b) {
+        return (this.map.comparator() != null) ? this.map.comparator().compare(a, b) : ((Comparable<K>) a).compareTo(b);
     }
 
-    public BoundedTypedSortedSetFileHandler<E> getBoundedFileHandler() {
-        return new DefaultBoundedTypedSortedSetFileHandler();
+    public BoundedTypedSortedMapFileHandler<K,V> getBoundedFileHandler() {
+        return new DefaultBoundedTypedSortedMapFileHandler();
     }
 
     /**
-     * This is the iterator for a persisted FileSortedSet
+     * This is the iterator for a persisted FileSortedMap
      */
-    protected class FileIterator implements Iterator<E> {
-        private SortedSetInputStream<E> stream;
-        private E next;
+    protected class FileIterator implements Iterator<Map.Entry<K,V>> {
+        private SortedMapInputStream<K,V> stream;
+        private Map.Entry<K,V> next;
 
         public FileIterator() {
             try {
@@ -782,13 +736,13 @@ public abstract class FileSortedMap<E> extends RewritableSortedMapImpl<E> implem
         }
 
         @Override
-        public E next() {
+        public Map.Entry<K,V> next() {
             if (!hasNext()) {
                 QueryException qe = new QueryException(DatawaveErrorCode.FETCH_NEXT_ELEMENT_ERROR);
                 throw (NoSuchElementException) (new NoSuchElementException().initCause(qe));
             }
             try {
-                E rtrn = next;
+                Map.Entry<K,V> rtrn = next;
                 next = stream.readObject();
                 if (next == null) {
                     cleanup();
@@ -814,12 +768,12 @@ public abstract class FileSortedMap<E> extends RewritableSortedMapImpl<E> implem
     }
 
     /**
-     * An interface for a sorted set factory
+     * An interface for a sorted map factory
      *
-     * @param <E>
+     * @param <K,V>
      *            type of the factory
      */
-    public interface FileSortedSetFactory<E> {
+    public interface FileSortedMapFactory<K,V> {
         /**
          * factory method
          *
@@ -827,7 +781,7 @@ public abstract class FileSortedMap<E> extends RewritableSortedMapImpl<E> implem
          *            the other factory
          * @return a new instance
          */
-        FileSortedMap<E> newInstance(FileSortedMap<E> other);
+        FileSortedMap<K,V> newInstance(FileSortedMap<K,V> other);
 
         /**
          * factory method
@@ -840,18 +794,18 @@ public abstract class FileSortedMap<E> extends RewritableSortedMapImpl<E> implem
          *            to instance
          * @return a new instance
          */
-        FileSortedMap<E> newInstance(FileSortedMap<E> other, E from, E to);
+        FileSortedMap<K,V> newInstance(FileSortedMap<K,V> other, K from, K to);
 
         /**
          * factory method
          *
          * @param handler
-         *            the sorted set file handler
+         *            the sorted map file handler
          * @param persisted
          *            a persisted boolean flag
          * @return a new instance
          */
-        FileSortedMap<E> newInstance(SortedSetFileHandler handler, boolean persisted);
+        FileSortedMap<K,V> newInstance(SortedMapFileHandler handler, boolean persisted);
 
         /**
          * Factory method
@@ -859,12 +813,12 @@ public abstract class FileSortedMap<E> extends RewritableSortedMapImpl<E> implem
          * @param comparator
          *            the key comparator
          * @param handler
-         *            the sorted set file handler
+         *            the sorted map file handler
          * @param persisted
          *            a persisted boolean flag
          * @return a new instance
          */
-        FileSortedMap<E> newInstance(Comparator<E> comparator, SortedSetFileHandler handler, boolean persisted);
+        FileSortedMap<K,V> newInstance(Comparator<K> comparator, SortedMapFileHandler handler, boolean persisted);
 
         /**
          * Factory method
@@ -872,50 +826,52 @@ public abstract class FileSortedMap<E> extends RewritableSortedMapImpl<E> implem
          * @param comparator
          *            the key comparator
          * @param rewriteStrategy
-         *            the collision rewrite strategy
+         *            the rewrite strategy
          * @param handler
-         *            the sorted set file handler
+         *            the sorted map file handler
          * @param persisted
          *            a persisted boolean flag
          * @return a new instance
          */
-        FileSortedMap<E> newInstance(Comparator<E> comparator, RewriteStrategy<E> rewriteStrategy, SortedSetFileHandler handler, boolean persisted);
+        FileSortedMap<K,V> newInstance(Comparator<K> comparator,
+                                       RewriteStrategy<K,V> rewriteStrategy,
+                                       SortedMapFileHandler handler, boolean persisted);
 
         /**
-         * Create an unpersisted sorted set (still in memory)
+         * Create an unpersisted sorted map (still in memory)
          *
-         * @param set
-         *            the sorted set
+         * @param map
+         *            the sorted map
          * @param handler
-         *            the sorted set file handler
+         *            the sorted map file handler
          * @return a new instance
          */
-        FileSortedMap<E> newInstance(RewritableSortedMap<E> set, SortedSetFileHandler handler);
+        FileSortedMap<K,V> newInstance(SortedMap<K,V> map, SortedMapFileHandler handler);
 
         /**
          * factory method
          *
-         * @param set
-         *            the sorted set
+         * @param map
+         *            the sorted map
          * @param handler
-         *            the sorted set file handler
+         *            the sorted map file handler
          * @param persist
          *            a persisted boolean flag
          * @return a new instance
          * @throws IOException
          *             for problems with read/write
          */
-        FileSortedMap<E> newInstance(RewritableSortedMap<E> set, SortedSetFileHandler handler, boolean persist) throws IOException;
+        FileSortedMap<K,V> newInstance(SortedMap<K,V> map, SortedMapFileHandler handler, boolean persist) throws IOException;
     }
 
     /**
-     * A sorted set input stream
+     * A sorted map input stream
      *
-     * @param <E>
+     * @param <K,V>
      *            type of the stream
      */
-    public interface SortedSetInputStream<E> extends AutoCloseable {
-        E readObject() throws IOException;
+    public interface SortedMapInputStream<K,V> extends AutoCloseable {
+        Map.Entry<K,V> readObject() throws IOException;
 
         int readSize() throws IOException;
 
@@ -923,13 +879,13 @@ public abstract class FileSortedMap<E> extends RewritableSortedMapImpl<E> implem
     }
 
     /**
-     * A sorted set output stream
+     * A sorted map output stream
      *
-     * @param <E>
+     * @param <K,V>
      *            type of the stream
      */
-    public interface SortedSetOutputStream<E> extends AutoCloseable {
-        void writeObject(E obj) throws IOException;
+    public interface SortedMapOutputStream<K,V> extends AutoCloseable {
+        void writeObject(K key, V value) throws IOException;
 
         void writeSize(int size) throws IOException;
 
@@ -940,7 +896,7 @@ public abstract class FileSortedMap<E> extends RewritableSortedMapImpl<E> implem
      * A factory that will provide the input stream and output stream to the same underlying file.
      *
      */
-    public interface SortedSetFileHandler {
+    public interface SortedMapFileHandler {
         /**
          * Return the input stream
          *
@@ -953,7 +909,7 @@ public abstract class FileSortedMap<E> extends RewritableSortedMapImpl<E> implem
         /**
          * Return the output stream
          *
-         * @return the sorted set output stream
+         * @return the sorted map output stream
          * @throws IOException
          *             for problems with read/write
          */
@@ -964,7 +920,7 @@ public abstract class FileSortedMap<E> extends RewritableSortedMapImpl<E> implem
          *
          * @return the persistent verification options
          */
-        PersistOptions getPersistOptions();
+        FileSortedSet.PersistOptions getPersistOptions();
 
         long getSize();
 
@@ -975,7 +931,7 @@ public abstract class FileSortedMap<E> extends RewritableSortedMapImpl<E> implem
      * A factory that will provide the input stream and output stream to the same underlying file.
      *
      */
-    public interface TypedSortedSetFileHandler<E> {
+    public interface TypedSortedMapFileHandler<K,V> {
         /**
          * Return the input stream
          *
@@ -983,23 +939,23 @@ public abstract class FileSortedMap<E> extends RewritableSortedMapImpl<E> implem
          * @throws IOException
          *             for problems with read/write
          */
-        SortedSetInputStream<E> getInputStream() throws IOException;
+        SortedMapInputStream<K,V> getInputStream() throws IOException;
 
         /**
          * Return the output stream
          *
-         * @return the sorted set output stream
+         * @return the sorted map output stream
          * @throws IOException
          *             for problems with read/write
          */
-        SortedSetOutputStream<E> getOutputStream() throws IOException;
+        SortedMapOutputStream<K,V> getOutputStream() throws IOException;
 
         /**
          * Get the persistent verification options
          *
          * @return persistent verification options
          */
-        PersistOptions getPersistOptions();
+        FileSortedSet.PersistOptions getPersistOptions();
 
         long getSize();
 
@@ -1008,10 +964,10 @@ public abstract class FileSortedMap<E> extends RewritableSortedMapImpl<E> implem
 
     /**
      * A factory that will provide the input stream and output stream to the same underlying file. An additional input stream method allows for creating a
-     * stream subset.
+     * stream submap.
      *
      */
-    public interface BoundedTypedSortedSetFileHandler<E> extends TypedSortedSetFileHandler<E> {
+    public interface BoundedTypedSortedMapFileHandler<K,V> extends TypedSortedMapFileHandler<K,V> {
         /**
          * Return the input stream
          *
@@ -1023,34 +979,34 @@ public abstract class FileSortedMap<E> extends RewritableSortedMapImpl<E> implem
          * @throws IOException
          *             for problems with read/write
          */
-        SortedSetInputStream<E> getInputStream(E start, E end) throws IOException;
+        SortedMapInputStream<K,V> getInputStream(K start, K end) throws IOException;
     }
 
     /**
-     * A default implementation for a bounded typed sorted set
+     * A default implementation for a bounded typed sorted map
      */
-    public class DefaultBoundedTypedSortedSetFileHandler implements BoundedTypedSortedSetFileHandler<E> {
+    public class DefaultBoundedTypedSortedMapFileHandler implements BoundedTypedSortedMapFileHandler<K,V> {
         @Override
-        public SortedSetInputStream<E> getInputStream(E start, E end) throws IOException {
-            if (handler instanceof FileSortedMap.BoundedTypedSortedSetFileHandler) {
-                return ((BoundedTypedSortedSetFileHandler) handler).getInputStream(start, end);
+        public SortedMapInputStream<K,V> getInputStream(K start, K end) throws IOException {
+            if (handler instanceof BoundedTypedSortedMapFileHandler) {
+                return ((BoundedTypedSortedMapFileHandler) handler).getInputStream(start, end);
             } else {
                 return new BoundedInputStream(handler.getInputStream(), start, end);
             }
         }
 
         @Override
-        public SortedSetInputStream<E> getInputStream() throws IOException {
+        public SortedMapInputStream<K,V> getInputStream() throws IOException {
             return handler.getInputStream();
         }
 
         @Override
-        public SortedSetOutputStream<E> getOutputStream() throws IOException {
+        public SortedMapOutputStream<K,V> getOutputStream() throws IOException {
             return handler.getOutputStream();
         }
 
         @Override
-        public PersistOptions getPersistOptions() {
+        public FileSortedSet.PersistOptions getPersistOptions() {
             return handler.getPersistOptions();
         }
 
@@ -1068,24 +1024,24 @@ public abstract class FileSortedMap<E> extends RewritableSortedMapImpl<E> implem
     /**
      * An input stream that supports bounding the objects. Used when the underlying stream does not already support bounding.
      */
-    public class BoundedInputStream implements SortedSetInputStream<E> {
-        private final SortedSetInputStream<E> delegate;
-        private final E from;
-        private final E to;
+    public class BoundedInputStream implements SortedMapInputStream<K,V> {
+        private final SortedMapInputStream<K,V> delegate;
+        private final K from;
+        private final K to;
 
-        public BoundedInputStream(SortedSetInputStream<E> stream, E from, E to) {
+        public BoundedInputStream(SortedMapInputStream<K,V> stream, K from, K to) {
             this.delegate = stream;
             this.from = from;
             this.to = to;
         }
 
         @Override
-        public E readObject() throws IOException {
-            E o = delegate.readObject();
-            while ((o != null) && (from != null) && (compare(o, from) < 0)) {
+        public Map.Entry<K,V> readObject() throws IOException {
+            Map.Entry<K,V> o = delegate.readObject();
+            while ((o != null) && (from != null) && (compare(o.getKey(), from) < 0)) {
                 o = delegate.readObject();
             }
-            if (o == null || (to != null && compare(o, to) >= 0)) {
+            if (o == null || (to != null && compare(o.getKey(), to) >= 0)) {
                 return null;
             } else {
                 return o;
@@ -1103,33 +1059,16 @@ public abstract class FileSortedMap<E> extends RewritableSortedMapImpl<E> implem
         }
     }
 
-    public static class PersistOptions {
-        private boolean verifySize = true;
-        private boolean verifyElements = true;
-        private int numElementsToVerify = 100;
-
-        public PersistOptions() {}
-
-        public PersistOptions(boolean verifySize, boolean verifyElements) {
-            this.verifySize = verifySize;
-            this.verifyElements = verifyElements;
-        }
-
-        public PersistOptions(boolean verifySize, boolean verifyElements, int numElementsToVerify) {
-            this(verifySize, verifyElements);
-            this.numElementsToVerify = numElementsToVerify;
-        }
-
-        public boolean isVerifySize() {
-            return verifySize;
-        }
-
-        public boolean isVerifyElements() {
-            return verifyElements;
-        }
-
-        public int getNumElementsToVerify() {
-            return numElementsToVerify;
-        }
+    public interface RewriteStrategy<K,V> {
+        /**
+         * Determine if the object should be rewritten
+         *
+         * @param key The key
+         * @param original The original value
+         * @param update The updated value
+         * @return true of the original should be replaced with the update
+         */
+        boolean rewrite(K key, V original, V update);
     }
+
 }

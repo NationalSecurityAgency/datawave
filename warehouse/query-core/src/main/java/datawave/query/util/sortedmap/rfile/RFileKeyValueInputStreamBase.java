@@ -1,6 +1,5 @@
 package datawave.query.util.sortedmap.rfile;
 
-import datawave.query.util.sortedmap.FileSortedMap;
 import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.rfile.RFile;
 import org.apache.accumulo.core.client.rfile.RFileSource;
@@ -13,7 +12,7 @@ import java.io.InputStream;
 import java.util.Iterator;
 import java.util.Map;
 
-public abstract class RFileKeyValueInputStreamBase<E> implements FileSortedMap.SortedSetInputStream<E> {
+public abstract class RFileKeyValueInputStreamBase {
     private final InputStream inputStream;
     private final long length;
     private Key start;
@@ -34,12 +33,6 @@ public abstract class RFileKeyValueInputStreamBase<E> implements FileSortedMap.S
         this.end = end;
     }
 
-    public RFileKeyValueInputStreamBase(InputStream inputStream, long length, Map.Entry<Key,Value> start, Map.Entry<Key,Value> end) throws IOException {
-        this(inputStream, length);
-        this.start = (start == null ? null : start.getKey());
-        this.end = (end == null ? null : end.getKey());
-    }
-
     private Iterator<Map.Entry<Key,Value>> keyValueIterator() {
         if (iterator == null) {
             Range r = ALL;
@@ -55,8 +48,8 @@ public abstract class RFileKeyValueInputStreamBase<E> implements FileSortedMap.S
     public Map.Entry<Key,Value> readKeyValue() throws IOException {
         if (keyValueIterator().hasNext()) {
             Map.Entry<Key,Value> next = keyValueIterator().next();
-            if (RFileKeyOutputStream.SizeKeyUtil.isSizeKey(next.getKey())) {
-                size = RFileKeyOutputStream.SizeKeyUtil.getSize(next.getKey());
+            if (RFileKeyValueOutputStreamBase.SizeKeyUtil.isSizeKey(next.getKey())) {
+                size = RFileKeyValueOutputStreamBase.SizeKeyUtil.getSize(next.getKey());
                 next = null;
             }
             return next;
@@ -64,20 +57,18 @@ public abstract class RFileKeyValueInputStreamBase<E> implements FileSortedMap.S
         return null;
     }
 
-    @Override
     public int readSize() throws IOException {
         if (size < 0) {
             if (iterator != null) {
                 throw new IllegalStateException("Cannot read size from undetermined location in stream");
             }
-            reader = RFile.newScanner().from(new RFileSource(inputStream, length)).withBounds(new Range(RFileKeyOutputStream.SizeKeyUtil.SIZE_ROW)).build();
+            reader = RFile.newScanner().from(new RFileSource(inputStream, length)).withBounds(new Range(RFileKeyValueOutputStreamBase.SizeKeyUtil.SIZE_ROW)).build();
             iterator = reader.iterator();
-            size = RFileKeyOutputStream.SizeKeyUtil.getSize(iterator.next().getKey());
+            size = RFileKeyValueOutputStreamBase.SizeKeyUtil.getSize(iterator.next().getKey());
         }
         return size;
     }
 
-    @Override
     public void close() {
         if (reader != null) {
             reader.close();

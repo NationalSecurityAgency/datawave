@@ -17,6 +17,10 @@ import java.util.TreeSet;
 
 import javax.annotation.Nullable;
 
+import datawave.query.util.sortedmap.FileByteDocumentSortedMap;
+import datawave.query.util.sortedmap.FileKeyValueSortedMap;
+import datawave.query.util.sortedmap.FileSortedMap;
+import datawave.query.util.sortedmap.HdfsBackedSortedMap;
 import org.apache.accumulo.core.data.Key;
 import org.apache.commons.collections4.keyvalue.UnmodifiableMapEntry;
 import org.apache.hadoop.fs.FileSystem;
@@ -41,11 +45,8 @@ import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.iterator.profile.FinalDocumentTrackingIterator;
 import datawave.query.model.QueryModel;
 import datawave.query.util.sortedset.ByteArrayComparator;
-import datawave.query.util.sortedset.FileByteDocumentSortedSet;
-import datawave.query.util.sortedset.FileKeyValueSortedSet;
 import datawave.query.util.sortedset.FileSortedSet;
 import datawave.query.util.sortedset.HdfsBackedSortedSet;
-import datawave.query.util.sortedset.RewritableSortedSetImpl;
 
 /**
  * This iterator will filter documents based on uniqueness across a set of configured fields. Only the first instance of an event with a unique set of those
@@ -58,8 +59,8 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
 
     private BloomFilter<byte[]> bloom;
     private UniqueFields uniqueFields = new UniqueFields();
-    private HdfsBackedSortedSet<Entry<byte[],Document>> set;
-    private HdfsBackedSortedSet<Entry<Key,Document>> returnSet;
+    private HdfsBackedSortedMap<byte[],Document> map;
+    private HdfsBackedSortedMap<Key,Document> returnSet;
     private Iterator<Entry<Key,Document>> setIterator;
 
     /**
@@ -136,10 +137,10 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
             }
 
             try {
-                if (set != null) {
+                if (map != null) {
                     byte[] signature = getBytes(keyDocumentEntry.getValue());
-                    synchronized (set) {
-                        this.set.add(new UnmodifiableMapEntry(signature, keyDocumentEntry.getValue()));
+                    synchronized (map) {
+                        this.map.put(signature, keyDocumentEntry.getValue());
                     }
                     return null;
                 } else if (!isDuplicate(keyDocumentEntry.getValue())) {
@@ -167,8 +168,8 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
      */
     @Override
     public Map.Entry<Key,Document> flush() {
-        if (set != null) {
-            synchronized (set) {
+        if (map != null) {
+            synchronized (map) {
                 if (setIterator == null) {
                     setupIterator();
                 }
@@ -184,10 +185,10 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
      * This will run through the set and create a new set ordered by Key, Document
      */
     private void setupIterator() {
-        for (Map.Entry<byte[],Document> entry : set) {
-            returnSet.add(new UnmodifiableMapEntry<>(getDocKey(entry.getValue()), entry.getValue()));
+        for (Map.Entry<byte[],Document> entry : map.entrySet()) {
+            returnSet.put(getDocKey(entry.getValue()), entry.getValue());
         }
-        setIterator = returnSet.iterator();
+        setIterator = returnSet.entrySet().iterator();
     }
 
     /**
@@ -407,8 +408,8 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
      */
     public static class Builder {
         private UniqueFields uniqueFields;
-        private Comparator<Entry<byte[],Document>> keyComparator;
-        private RewritableSortedSetImpl.RewriteStrategy<Map.Entry<byte[],Document>> keyValueComparator;
+        private Comparator<byte[]> keyComparator;
+        private FileSortedMap.RewriteStrategy<byte[],Document> keyValueComparator;
         private QueryModel model;
         private int bufferPersistThreshold;
         private List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs;
@@ -420,23 +421,12 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
         private FileSortedSet.PersistOptions persistOptions;
 
         public Builder() {
-            keyComparator = new Comparator<>() {
-                private Comparator<byte[]> comparator = new ByteArrayComparator();
+            keyComparator = new ByteArrayComparator();
 
-                @Override
-                public int compare(Map.Entry<byte[],Document> o1, Map.Entry<byte[],Document> o2) {
-                    return comparator.compare(o1.getKey(), o2.getKey());
-                }
-            };
-
-            keyValueComparator = (original, update) -> {
-                int comparison = keyComparator.compare(original, update);
-                if (comparison == 0) {
-                    long ts1 = getTimestamp(original.getValue());
-                    long ts2 = getTimestamp(update.getValue());
-                    return (ts2 > ts1);
-                }
-                return comparison < 0;
+            keyValueComparator = (key, original, update) -> {
+                long ts1 = getTimestamp(original);
+                long ts2 = getTimestamp(update);
+                return (ts2 > ts1);
             };
         }
 
@@ -529,7 +519,7 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
             if (transform.uniqueFields.isMostRecent()) {
                 // @formatter:off
                 // noinspection unchecked
-                transform.set = (HdfsBackedSortedSet<Entry<byte[],Document>>) HdfsBackedSortedSet.builder()
+                transform.map = (HdfsBackedSortedMap<byte[],Document>) HdfsBackedSortedMap.builder()
                         .withComparator(keyComparator)
                         .withRewriteStrategy(keyValueComparator)
                         .withBufferPersistThreshold(bufferPersistThreshold)
@@ -538,17 +528,17 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
                         .withMaxOpenFiles(maxOpenFiles)
                         .withNumRetries(numRetries)
                         .withPersistOptions(persistOptions)
-                        .withSetFactory(new FileByteDocumentSortedSet.Factory())
+                        .withMapFactory(new FileByteDocumentSortedMap.Factory())
                         .build();
 
-                transform.returnSet = (HdfsBackedSortedSet<Entry<Key,Document>>) HdfsBackedSortedSet.builder()
+                transform.returnSet = (HdfsBackedSortedMap<Key,Document>) HdfsBackedSortedMap.builder()
                         .withBufferPersistThreshold(bufferPersistThreshold)
                         .withIvaratorCacheDirs(getIvaratorCacheDirs(ivaratorCacheDirConfigs, hdfsSiteConfigURLs, subDirectory))
                         .withUniqueSubPath("byDocKey")
                         .withMaxOpenFiles(maxOpenFiles)
                         .withNumRetries(numRetries)
                         .withPersistOptions(persistOptions)
-                        .withSetFactory(new FileKeyValueSortedSet.Factory())
+                        .withMapFactory(new FileKeyValueSortedMap.Factory())
                         .build();
                 // @formatter:on
             }

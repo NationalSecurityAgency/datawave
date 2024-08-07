@@ -2,7 +2,6 @@ package datawave.query.util.sortedmap;
 
 import datawave.query.iterator.ivarator.IvaratorCacheDir;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
-import datawave.query.util.sortedset.FileSortedSet;
 import datawave.query.util.sortedset.HdfsBackedSortedSet;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
@@ -20,7 +19,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-public class HdfsBackedSortedSetTest {
+public class HdfsBackedSortedMapTest {
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();

@@ -1,7 +1,6 @@
 package datawave.query.util.sortedmap;
 
 import datawave.query.util.sortedset.FileSerializableSortedSet;
-import datawave.query.util.sortedset.FileSortedSet;
 import datawave.query.util.sortedset.SortedSetTempFileHandler;
 import org.junit.After;
 import org.junit.Before;
@@ -10,6 +9,7 @@ import org.junit.Test;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Random;
+import java.util.SortedMap;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
@@ -21,10 +21,10 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-public class FileSortedSetTest {
-    SortedSet<Integer> data = null;
-    SortedSet<Integer> extraData = null;
-    FileSortedMap<Integer> set = null;
+public class FileSortedMapTest {
+    SortedMap<Integer,Integer> data = null;
+    SortedMap<Integer,Integer> extraData = null;
+    FileSortedMap<Integer,Integer> set = null;
     datawave.query.util.sortedset.SortedSetTempFileHandler handler = null;
 
     @Before
@@ -40,7 +40,7 @@ public class FileSortedSetTest {
             }
         };
         handler = new SortedSetTempFileHandler();
-        set = new datawave.query.util.sortedset.FileSerializableSortedSet<>(c, new datawave.query.util.sortedset.FileSerializableSortedSet.SerializableFileHandler(handler), false);
+        set = new FileSerializableSortedMap<>(c, new FileSerializableSortedMap.SerializableFileHandler(handler), false);
         data = new TreeSet<>(c);
         Random r = new Random(123948710248L);
         // data.add(null);

@@ -8,32 +8,30 @@ import org.apache.hadoop.io.Text;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.Map;
 
-public class RFileKeyValueOutputStreamBase {
+public abstract class RFileKeyValueOutputStreamBase {
+    private final OutputStream outputStream;
     private RFileWriter writer;
-    static final Value EMPTY_VALUE = new Value(new byte[0]);
+    private static final Value EMPTY_VALUE = new Value(new byte[0]);
 
-    public RFileKeyValueOutputStreamBase(OutputStream stream) throws IOException {
-        super();
-        this.writer = RFile.newWriter().to(stream).withVisibilityCacheSize(10).build();
+    public RFileKeyValueOutputStreamBase(OutputStream outputStream) throws IOException {
+        this.outputStream = outputStream;
+        this.writer = RFile.newWriter().to(outputStream).withVisibilityCacheSize(10).build();
     }
 
-    public void writeKeyValue(Key key, Value value) throws IOException {
-        writer.append(key, value);
+    public void writeKeyValue(Key k, Value v) throws IOException {
+        writer.append(k, v);
     }
 
-    public void writeKeyValue(Map.Entry<Key,Value> keyValue) throws IOException {
-        writer.append(keyValue.getKey(), keyValue.getValue());
-    }
-
-    public void writeSize(int i) throws IOException {
-        writeKeyValue(SizeKeyUtil.getKey(i), EMPTY_VALUE);
+    public void writeSize(int size) throws IOException {
+        writer.append(SizeKeyUtil.getKey(size), EMPTY_VALUE);
     }
 
     public void close() throws IOException {
-        writer.close();
-        writer = null;
+        if (writer != null) {
+            writer.close();
+            writer = null;
+        }
     }
 
     public static class SizeKeyUtil {
@@ -52,4 +50,5 @@ public class RFileKeyValueOutputStreamBase {
             return Integer.parseInt(key.getColumnFamily().toString());
         }
     }
+
 }

@@ -7,7 +7,6 @@ import datawave.query.predicate.EventDataQueryFieldFilter;
 import datawave.query.predicate.KeyProjection;
 import datawave.query.util.TypeMetadata;
 import datawave.query.util.sortedset.ByteArrayComparator;
-import datawave.query.util.sortedset.FileSortedSet;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.commons.collections.keyvalue.UnmodifiableMapEntry;
@@ -20,7 +19,7 @@ import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
-public class BufferedFileBackedByteDocumentSortedSetTest extends BufferedFileBackedRewritableSortedSetTest<byte[],Document> {
+public class BufferedFileBackedByteDocumentSortedMapTest extends BufferedFileBackedRewritableSortedMapTest<byte[],Document> {
 
     private Comparator<Map.Entry<byte[],Document>> keyComparator = new Comparator<>() {
         private Comparator<byte[]> comparator = new ByteArrayComparator();

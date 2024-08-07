@@ -29,6 +29,20 @@ public class KeyValueByteDocumentTransforms {
         return new Key(bytes);
     }
 
+    public static Value keyToValue(Key key) {
+        if (key == null) {
+            return null;
+        }
+        return new Value(key.getRow().getBytes());
+    }
+
+    public static Key valueToKey(Value value) {
+        if (value == null) {
+            return null;
+        }
+        return new Key(value.get());
+    }
+
     public static Value documentToValue(Document doc) throws IOException {
         if (doc == null) {
             return null;

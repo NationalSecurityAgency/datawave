@@ -22,7 +22,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-public class RewritableSortedSetTest {
+public class RewritableSortedMapTest {
 
     private Map.Entry<Key,Value>[] data = null;
     private int[] sortedOrder = null;
