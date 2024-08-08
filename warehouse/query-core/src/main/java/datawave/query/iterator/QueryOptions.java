@@ -2463,6 +2463,7 @@ public class QueryOptions implements OptionDescriber {
      */
     public static <T> void addOption(IteratorSetting setting, String option, T value, Function<T,String> valueTransformer, boolean allowBlankValues) {
         // If we have a default options implementation for the specified iterator setting's class, fetch it.
+        System.out.println("Hey" + setting.getIteratorClass());
         DefaultOptions defaultOptions = getDefaultOptions(setting.getIteratorClass());
         // If the value matches the default value, do not add it to the setting.
         if (defaultOptions.hasDefaultValue(option) && defaultOptions.equalsDefaultValue(option, value)) {
