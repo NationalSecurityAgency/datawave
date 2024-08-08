@@ -7,8 +7,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
@@ -27,14 +25,16 @@ import datawave.query.util.TypeMetadata;
 public class EventFieldAggregator extends IdentityAggregator {
 
     private final TypeMetadata typeMetadata;
-    private final TypeFactory typeFactory;
     private final String defaultTypeClass;
+
+    private int typeCacheSize = -1;
+    private int typeCacheTimeoutMinutes = -1;
+    private TypeFactory typeFactory;
 
     public EventFieldAggregator(String field, EventDataQueryFilter filter, int maxNextCount, TypeMetadata typeMetadata, String defaultTypeClass) {
         super(Collections.singleton(field), filter, maxNextCount);
 
         this.typeMetadata = typeMetadata;
-        this.typeFactory = new TypeFactory();
         this.defaultTypeClass = defaultTypeClass;
     }
 
@@ -112,12 +112,48 @@ public class EventFieldAggregator extends IdentityAggregator {
 
         // transform the key for each type and add it to the normalized set
         for (String typeClass : typeClasses) {
-            Type<?> type = typeFactory.createType(typeClass);
+            Type<?> type = getTypeFactory().createType(typeClass);
             String normalizedValue = type.normalize(fieldValue);
 
             normalizedValues.add(normalizedValue);
         }
 
         return normalizedValues;
+    }
+
+    /**
+     * Get the TypeFactory. If no TypeFactory exists one will be created. Configs for cache size and timeout may be configured.
+     *
+     * @return the TypeFactory
+     */
+    private TypeFactory getTypeFactory() {
+        if (typeFactory == null) {
+            if (typeCacheSize != -1 && typeCacheTimeoutMinutes != -1) {
+                typeFactory = new TypeFactory(typeCacheSize, typeCacheTimeoutMinutes);
+            } else {
+                typeFactory = new TypeFactory();
+            }
+        }
+        return typeFactory;
+    }
+
+    /**
+     * Set the cache size for the TypeFactory
+     *
+     * @param typeCacheSize
+     *            the cache size
+     */
+    public void setTypeCacheSize(int typeCacheSize) {
+        this.typeCacheSize = typeCacheSize;
+    }
+
+    /**
+     * Set the timeout for the TypeFactory
+     *
+     * @param typeCacheTimeoutMinutes
+     *            the timeout
+     */
+    public void setTypeCacheTimeoutMinutes(int typeCacheTimeoutMinutes) {
+        this.typeCacheTimeoutMinutes = typeCacheTimeoutMinutes;
     }
 }

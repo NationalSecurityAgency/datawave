@@ -65,7 +65,9 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
     // should not be dropped
     private final Set<Set<String>> matchingFieldSets;
 
-    private final TypeFactory typeFactory = new TypeFactory();
+    private int typeCacheSize = -1;
+    private int typeCacheTimeoutMinutes = -1;
+    private TypeFactory typeFactory;
 
     public LimitFields(Map<String,Integer> limitFieldsMap, Set<Set<String>> matchingFieldSets) {
         this.limitFieldsMap = limitFieldsMap;
@@ -298,7 +300,7 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
             for (Object hitValue : hitTermMap.get(keyWithGrouping)) {
                 try {
                     if (Type.class.isAssignableFrom(clazz)) {
-                        Type<?> thing = typeFactory.createType(clazz.getName());
+                        Type<?> thing = getTypeFactory().createType(clazz.getName());
                         thing.setDelegateFromString(String.valueOf(hitValue));
                         hitValue = thing;
                     } else { // otherwise, s is not a Type, just compare as string values
@@ -399,4 +401,39 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
         }
     }
 
+    /**
+     * Get the TypeFactory. If no TypeFactory exists one will be created. Configs for cache size and timeout may be configured.
+     *
+     * @return the TypeFactory
+     */
+    private TypeFactory getTypeFactory() {
+        if (typeFactory == null) {
+            if (typeCacheSize != -1 && typeCacheTimeoutMinutes != -1) {
+                typeFactory = new TypeFactory(typeCacheSize, typeCacheTimeoutMinutes);
+            } else {
+                typeFactory = new TypeFactory();
+            }
+        }
+        return typeFactory;
+    }
+
+    /**
+     * Set the cache size for the TypeFactory
+     *
+     * @param typeCacheSize
+     *            the cache size
+     */
+    public void setTypeCacheSize(int typeCacheSize) {
+        this.typeCacheSize = typeCacheSize;
+    }
+
+    /**
+     * Set the timeout for the TypeFactory
+     *
+     * @param typeCacheTimeoutMinutes
+     *            the timeout
+     */
+    public void setTypeCacheTimeoutMinutes(int typeCacheTimeoutMinutes) {
+        this.typeCacheTimeoutMinutes = typeCacheTimeoutMinutes;
+    }
 }
