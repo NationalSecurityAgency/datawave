@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
+import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
@@ -253,4 +254,38 @@ public class QueryOptionsTest {
         }
     }
 
+    @Test
+    public void testDefaultOptions() {
+
+        IteratorSetting iteratorSetting = new IteratorSetting(1, "foo", QueryIterator.class, new HashMap<>());
+        Map<String,String> nonDefaults = new HashMap<>();
+        nonDefaults.put(QueryOptions.INCLUDE_RECORD_ID, "false");
+        nonDefaults.put(QueryOptions.INCLUDE_DATATYPE, "true");
+
+        // Test all default
+        QueryOptions.getDefaultOptions(QueryIterator.class.getName()).defaultValues.forEach((k, v) -> {
+            QueryOptions.addOption(iteratorSetting, k, v, false);
+        });
+
+        Assert.assertEquals(0, iteratorSetting.getOptions().size());
+
+        // Test non-defaults added after all defaults added
+        iteratorSetting.clearOptions();
+        QueryOptions.getDefaultOptions(QueryIterator.class.getName()).defaultValues.forEach((k, v) -> {
+            QueryOptions.addOption(iteratorSetting, k, v, false);
+        });
+
+        iteratorSetting.addOptions(nonDefaults);
+        assertEquals(2, iteratorSetting.getOptions().size());
+
+        // Test defaults added after non-defaults added
+        iteratorSetting.clearOptions();
+        iteratorSetting.addOptions(nonDefaults);
+        QueryOptions.getDefaultOptions(QueryIterator.class.getName()).defaultValues.forEach((k, v) -> {
+            QueryOptions.addOption(iteratorSetting, k, v, false);
+        });
+
+        assertEquals(0, iteratorSetting.getOptions().size());
+
+    }
 }
