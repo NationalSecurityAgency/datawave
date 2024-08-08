@@ -2466,6 +2466,7 @@ public class QueryOptions implements OptionDescriber {
         DefaultOptions defaultOptions = getDefaultOptions(setting.getIteratorClass());
         // If the value matches the default value, do not add it to the setting.
         if (defaultOptions.hasDefaultValue(option) && defaultOptions.equalsDefaultValue(option, value)) {
+            setting.removeOption(option);
             return;
         }
         // Otherwise convert it, and if blank and blank values allowed, change it to something else, or it will fail in InputFormatBase when run through the
