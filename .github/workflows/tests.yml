@@ -45,7 +45,7 @@ jobs:
         git diff-index --quiet HEAD || (echo "Modified files found. Creating new commit with formatting fixes" && echo "diffs_found=true" >> "$GITHUB_ENV")
     - name: Commit Changes
       run: |
-        if [ "$diffs_found" = true ]; then'
+        if [ "$diffs_found" = true ]; then
           git checkout -b ${{ steps.extract_branch.outputs.branch }}
           git config --global user.name "GitHub Actions"
           git config --global user.email "datawave@github.com"
