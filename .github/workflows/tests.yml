@@ -20,7 +20,13 @@ jobs:
   # is formatted and poms are sorted according to project rules. If changes are found,
   # they are committed back to the branch
   check-code-formatting:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        maven-version: [ 3.9 ]
+        os: [ ubuntu-22.04 ]
+    runs-on: ${{ matrix.os }}
+    container:
+      image: maven:${{ matrix.maven-version }}
     steps:
     - name: Checkout Code
       uses: actions/checkout@v3
@@ -29,7 +35,6 @@ jobs:
       with:
         distribution: ${{env.JAVA_DISTRIBUTION}}
         java-version: ${{env.JAVA_VERSION}}
-        maven-version: 3.9.5
         cache: 'maven'
     - name: Extract branch name
       shell: bash
@@ -57,7 +62,13 @@ jobs:
         
   # Build the code and run the unit/integration tests.
   build-and-test:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        maven-version: [ 3.9 ]
+        os: [ ubuntu-22.04 ]
+    runs-on: ${{ matrix.os }}
+    container:
+      image: maven:${{ matrix.maven-version }}
     steps:
     - name: Checkout Code
       uses: actions/checkout@v3
@@ -123,7 +134,13 @@ jobs:
   #           || { echo "***** TESTS FAILED. Attempting final retry."; $RUN_TESTS; }
 
   quickstart-build-and-test:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        maven-version: [ 3.9 ]
+        os: [ ubuntu-22.04 ]
+    runs-on: ${{ matrix.os }}
+    container:
+      image: maven:${{ matrix.maven-version }}
     steps:
     - name: Checkout Code
       uses: actions/checkout@v3
@@ -156,7 +173,13 @@ jobs:
         contrib/datawave-quickstart/docker/docker-build.sh ${TAG} --docker-opts "${DOCKER_BUILD_OPTS}"
 
   compose-build-and-test-latest-snapshots:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        maven-version: [ 3.9 ]
+        os: [ ubuntu-22.04 ]
+    runs-on: ${{ matrix.os }}
+    container:
+      image: maven:${{ matrix.maven-version }}
     steps:
       - name: Free up some space
         run: |
