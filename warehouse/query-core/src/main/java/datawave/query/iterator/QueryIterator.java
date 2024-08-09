@@ -55,6 +55,7 @@ import com.google.common.collect.Sets;
 import com.google.common.collect.UnmodifiableIterator;
 
 import datawave.core.iterators.DatawaveFieldIndexListIteratorJexl;
+import datawave.core.iterators.filesystem.FileSystemCache;
 import datawave.data.type.Type;
 import datawave.data.type.util.NumericalEncoder;
 import datawave.ingest.data.config.ingest.CompositeIngest;
@@ -299,13 +300,16 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         if (config.isValid()) {
             try {
                 Path basePath = new Path(config.getBasePathURI());
-                FileSystem fileSystem = this.getFileSystemCache().getFileSystem(basePath.toUri());
+                FileSystemCache cache = this.getFileSystemCache();
+                if (cache != null) {
+                    FileSystem fileSystem = cache.getFileSystem(basePath.toUri());
 
-                // Note: The ivarator config base paths are used by ALL queries which run on the system, so there
-                // should be no harm in creating these directories if they do not already exist by this point.
-                // Also, since we are selecting these directories intentionally for use by the ivarators, it
-                // should be a given that we have write permissions.
-                return fileSystem.exists(basePath) || fileSystem.mkdirs(basePath);
+                    // Note: The ivarator config base paths are used by ALL queries which run on the system, so there
+                    // should be no harm in creating these directories if they do not already exist by this point.
+                    // Also, since we are selecting these directories intentionally for use by the ivarators, it
+                    // should be a given that we have write permissions.
+                    return fileSystem.exists(basePath) || fileSystem.mkdirs(basePath);
+                }
             } catch (InterruptedIOException ioe) {
                 throw ioe;
             } catch (IOException e) {

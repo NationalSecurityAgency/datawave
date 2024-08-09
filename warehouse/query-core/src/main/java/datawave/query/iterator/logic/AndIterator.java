@@ -261,7 +261,11 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T>, 
                         ((SeekableIterator) itr).seek(range, columnFamilies, inclusive);
                     }
                 }
-            } catch (IOException e) {
+            } catch (QueryIteratorYieldingException qye) {
+                throw qye;
+            } catch (IterationInterruptedException iie) {
+                throw iie;
+            } catch (Exception e) {
                 include.remove();
                 if (includes.isEmpty()) {
                     throw e;
