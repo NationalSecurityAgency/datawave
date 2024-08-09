@@ -29,6 +29,7 @@ import com.google.common.collect.Iterators;
 import com.google.protobuf.InvalidProtocolBufferException;
 
 import datawave.common.util.ArgumentChecker;
+import datawave.core.query.attributes.ExcerptFields;
 import datawave.ingest.protobuf.TermWeight;
 import datawave.ingest.protobuf.TermWeightPosition;
 import datawave.query.Constants;
@@ -36,7 +37,6 @@ import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Content;
 import datawave.query.attributes.Document;
-import datawave.query.attributes.ExcerptFields;
 import datawave.query.attributes.ValueTuple;
 import datawave.query.function.JexlEvaluation;
 import datawave.query.iterator.logic.TermFrequencyExcerptIterator;

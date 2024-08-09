@@ -11,6 +11,19 @@ import java.util.stream.StreamSupport;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.log4j.Logger;
 
+import datawave.core.query.language.functions.jexl.Average;
+import datawave.core.query.language.functions.jexl.Count;
+import datawave.core.query.language.functions.jexl.ExcerptFields;
+import datawave.core.query.language.functions.jexl.GroupBy;
+import datawave.core.query.language.functions.jexl.JexlQueryFunction;
+import datawave.core.query.language.functions.jexl.Lenient;
+import datawave.core.query.language.functions.jexl.Max;
+import datawave.core.query.language.functions.jexl.Min;
+import datawave.core.query.language.functions.jexl.Options;
+import datawave.core.query.language.functions.jexl.Rename;
+import datawave.core.query.language.functions.jexl.Strict;
+import datawave.core.query.language.functions.jexl.Sum;
+import datawave.core.query.language.functions.jexl.Unique;
 import datawave.data.type.util.NumericalEncoder;
 import datawave.query.attributes.ValueTuple;
 import datawave.query.collections.FunctionalSet;
@@ -23,22 +36,22 @@ import datawave.query.jexl.JexlPatternCache;
 @JexlFunctions(descriptorFactory = "datawave.query.jexl.functions.QueryFunctionsDescriptor")
 public class QueryFunctions {
 
-    public static final String QUERY_FUNCTION_NAMESPACE = "f";
-    public static final String OPTIONS_FUNCTION = "options";
-    public static final String UNIQUE_FUNCTION = "unique";
-    public static final String GROUPBY_FUNCTION = "groupby";
-    public static final String EXCERPT_FIELDS_FUNCTION = "excerpt_fields";
-    public static final String LENIENT_FIELDS_FUNCTION = "lenient";
-    public static final String STRICT_FIELDS_FUNCTION = "strict";
+    public static final String QUERY_FUNCTION_NAMESPACE = JexlQueryFunction.QUERY_FUNCTION_NAMESPACE;
+    public static final String OPTIONS_FUNCTION = Options.OPTIONS_FUNCTION;
+    public static final String UNIQUE_FUNCTION = Unique.UNIQUE_FUNCTION;
+    public static final String GROUPBY_FUNCTION = GroupBy.GROUPBY_FUNCTION;
+    public static final String EXCERPT_FIELDS_FUNCTION = ExcerptFields.EXCERPT_FIELDS_FUNCTION;
+    public static final String LENIENT_FIELDS_FUNCTION = Lenient.LENIENT_FIELDS_FUNCTION;
+    public static final String STRICT_FIELDS_FUNCTION = Strict.STRICT_FIELDS_FUNCTION;
     public static final String MATCH_REGEX = "matchRegex";
     public static final String INCLUDE_TEXT = "includeText";
     public static final String NO_EXPANSION = "noExpansion";
-    public static final String SUM = "sum";
-    public static final String MAX = "max";
-    public static final String MIN = "min";
-    public static final String COUNT = "count";
-    public static final String AVERAGE = "average";
-    public static final String RENAME_FUNCTION = "rename";
+    public static final String SUM = Sum.SUM;
+    public static final String MAX = Max.MAX;
+    public static final String MIN = Min.MIN;
+    public static final String COUNT = Count.COUNT;
+    public static final String AVERAGE = Average.AVERAGE;
+    public static final String RENAME_FUNCTION = Rename.RENAME_FUNCTION;
 
     protected static Logger log = Logger.getLogger(QueryFunctions.class);
 

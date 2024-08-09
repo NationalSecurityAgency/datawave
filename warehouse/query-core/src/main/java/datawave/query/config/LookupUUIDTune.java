@@ -11,9 +11,9 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 
 import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.language.parser.QueryParser;
 import datawave.core.query.logic.BaseQueryLogic;
 import datawave.query.Constants;
-import datawave.query.language.parser.QueryParser;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.planner.QueryPlanner;
 import datawave.query.planner.rules.NodeTransformRule;

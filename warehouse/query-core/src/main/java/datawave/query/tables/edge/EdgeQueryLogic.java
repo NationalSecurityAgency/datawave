@@ -50,6 +50,8 @@ import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.configuration.QueryData;
 import datawave.core.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.core.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
+import datawave.core.query.language.parser.QueryParser;
+import datawave.core.query.language.tree.QueryNode;
 import datawave.core.query.logic.BaseQueryLogic;
 import datawave.core.query.logic.CheckpointableQueryLogic;
 import datawave.core.query.logic.QueryCheckpoint;
@@ -69,8 +71,6 @@ import datawave.query.iterator.filter.LoadDateFilter;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.EdgeTableRangeBuildingVisitor;
 import datawave.query.jexl.visitors.QueryModelVisitor;
-import datawave.query.language.parser.QueryParser;
-import datawave.query.language.tree.QueryNode;
 import datawave.query.model.edge.EdgeQueryModel;
 import datawave.query.scheduler.SingleRangeQueryDataIterator;
 import datawave.query.tables.ScannerFactory;
@@ -229,7 +229,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements 
         return config;
     }
 
-    public String getJexlQueryString(Query settings) throws datawave.query.language.parser.ParseException {
+    public String getJexlQueryString(Query settings) throws datawave.core.query.language.parser.ParseException {
         // queryString should be JEXl after all query parsers are applied
         String queryString;
         String originalQuery = settings.getQuery();
@@ -298,7 +298,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements 
         return queryString;
     }
 
-    protected String expandQueryMacros(String query) throws datawave.query.language.parser.ParseException {
+    protected String expandQueryMacros(String query) throws datawave.core.query.language.parser.ParseException {
         log.trace("query macros are :" + this.queryMacroFunction);
         if (this.queryMacroFunction != null) {
             query = this.queryMacroFunction.apply(query);

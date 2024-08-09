@@ -12,6 +12,8 @@ import org.junit.Test;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import datawave.core.query.attributes.UniqueGranularity;
+
 public class UniqueGranularityTest {
 
     private static final ObjectMapper objectMapper = new ObjectMapper();

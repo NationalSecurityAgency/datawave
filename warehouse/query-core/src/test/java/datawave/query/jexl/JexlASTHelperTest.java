@@ -37,11 +37,11 @@ import datawave.core.query.jexl.JexlNodeFactory.ContainerType;
 import datawave.core.query.jexl.LiteralRange;
 import datawave.core.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.core.query.jexl.visitors.PrintingVisitor;
+import datawave.core.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NumberType;
 import datawave.query.attributes.Document;
 import datawave.query.function.JexlEvaluation;
-import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.util.MockMetadataHelper;
 import datawave.query.util.Tuple3;
 

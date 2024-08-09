@@ -9,8 +9,8 @@ import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.junit.Test;
 
+import datawave.core.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 
 public class HasUnfieldedTermVisitorTest {
 
@@ -50,7 +50,7 @@ public class HasUnfieldedTermVisitorTest {
         script = JexlASTHelper.parseJexlQuery(query);
     }
 
-    private void givenLuceneQuery(String query) throws datawave.query.language.parser.ParseException, ParseException {
+    private void givenLuceneQuery(String query) throws datawave.core.query.language.parser.ParseException, ParseException {
         script = JexlASTHelper.parseJexlQuery(new LuceneToJexlQueryParser().convertToJexlNode(query).toString());
     }
 

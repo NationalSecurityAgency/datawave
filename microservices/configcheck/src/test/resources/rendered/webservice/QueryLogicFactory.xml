@@ -19,53 +19,53 @@
     <context:property-placeholder location="classpath:/datawave/query/database.properties" system-properties-mode="OVERRIDE" ignore-unresolvable="true" order="0" />
 
     <!-- A list of lucene to jexl query functions -->
-    <util:list id="allowedQueryFunctions" value-type="datawave.query.language.functions.jexl.JexlQueryFunction">
-        <bean class="datawave.query.language.functions.jexl.IsNull"/>
-        <bean class="datawave.query.language.functions.jexl.IsNotNull"/>
-        <bean class="datawave.query.language.functions.jexl.Include"/>
-        <bean class="datawave.query.language.functions.jexl.Exclude"/>
-        <bean class="datawave.query.language.functions.jexl.Text"/>
-        <bean class="datawave.query.language.functions.jexl.GeoFunction"/>
-        <bean class="datawave.query.language.functions.jexl.Loaded"/>
-        <bean class="datawave.query.language.functions.jexl.DateFunction"/>
-        <bean class="datawave.query.language.functions.jexl.OccurrenceFunction"/>
-        <bean class="datawave.query.language.functions.jexl.MatchesInGroupFunction"/>
-        <bean class="datawave.query.language.functions.jexl.MatchesInGroupLeft"/>
-        <bean class="datawave.query.language.functions.jexl.GetAllMatches"/>
-        <bean class="datawave.query.language.functions.jexl.MatchesAtLeastCountOf"/>
-        <bean class="datawave.query.language.functions.jexl.TimeFunction"/>
-        <bean class="datawave.query.language.functions.jexl.Jexl"/>
-        <bean class="datawave.query.language.functions.jexl.AtomValuesMatchFunction"/>
-        <bean class="datawave.query.language.functions.jexl.Options"/>
-        <bean class="datawave.query.language.functions.jexl.Rename"/>
-        <bean class="datawave.query.language.functions.jexl.Unique"/>
-        <bean class="datawave.query.language.functions.jexl.GroupBy"/>
-        <bean class="datawave.query.language.functions.jexl.UniqueByDay"/>
-        <bean class="datawave.query.language.functions.jexl.UniqueByHour"/>
-        <bean class="datawave.query.language.functions.jexl.UniqueByMinute"/>
-        <bean class="datawave.query.language.functions.jexl.UniqueByMonth"/>
-        <bean class="datawave.query.language.functions.jexl.UniqueByYear"/>
-        <bean class="datawave.query.language.functions.jexl.UniqueBySecond"/>
-        <bean class="datawave.query.language.functions.jexl.UniqueByTenthOfHour"/>
-        <bean class="datawave.query.language.functions.jexl.NoExpansion"/>
-        <bean class="datawave.query.language.functions.jexl.Compare"/>
-        <bean class="datawave.query.language.functions.jexl.Geowave.Contains"/>
-        <bean class="datawave.query.language.functions.jexl.Geowave.CoveredBy"/>
-        <bean class="datawave.query.language.functions.jexl.Geowave.Covers"/>
-        <bean class="datawave.query.language.functions.jexl.Geowave.Crosses"/>
-        <bean class="datawave.query.language.functions.jexl.Geowave.Intersects"/>
-        <bean class="datawave.query.language.functions.jexl.Geowave.Overlaps"/>
-        <bean class="datawave.query.language.functions.jexl.Geowave.Within"/>
-        <bean class="datawave.query.language.functions.jexl.EvaluationOnly">
+    <util:list id="allowedQueryFunctions" value-type="datawave.core.query.language.functions.jexl.JexlQueryFunction">
+        <bean class="datawave.core.query.language.functions.jexl.IsNull"/>
+        <bean class="datawave.core.query.language.functions.jexl.IsNotNull"/>
+        <bean class="datawave.core.query.language.functions.jexl.Include"/>
+        <bean class="datawave.core.query.language.functions.jexl.Exclude"/>
+        <bean class="datawave.core.query.language.functions.jexl.Text"/>
+        <bean class="datawave.core.query.language.functions.jexl.GeoFunction"/>
+        <bean class="datawave.core.query.language.functions.jexl.Loaded"/>
+        <bean class="datawave.core.query.language.functions.jexl.DateFunction"/>
+        <bean class="datawave.core.query.language.functions.jexl.OccurrenceFunction"/>
+        <bean class="datawave.core.query.language.functions.jexl.MatchesInGroupFunction"/>
+        <bean class="datawave.core.query.language.functions.jexl.MatchesInGroupLeft"/>
+        <bean class="datawave.core.query.language.functions.jexl.GetAllMatches"/>
+        <bean class="datawave.core.query.language.functions.jexl.MatchesAtLeastCountOf"/>
+        <bean class="datawave.core.query.language.functions.jexl.TimeFunction"/>
+        <bean class="datawave.core.query.language.functions.jexl.Jexl"/>
+        <bean class="datawave.core.query.language.functions.jexl.AtomValuesMatchFunction"/>
+        <bean class="datawave.core.query.language.functions.jexl.Options"/>
+        <bean class="datawave.core.query.language.functions.jexl.Rename"/>
+        <bean class="datawave.core.query.language.functions.jexl.Unique"/>
+        <bean class="datawave.core.query.language.functions.jexl.GroupBy"/>
+        <bean class="datawave.core.query.language.functions.jexl.UniqueByDay"/>
+        <bean class="datawave.core.query.language.functions.jexl.UniqueByHour"/>
+        <bean class="datawave.core.query.language.functions.jexl.UniqueByMinute"/>
+        <bean class="datawave.core.query.language.functions.jexl.UniqueByMonth"/>
+        <bean class="datawave.core.query.language.functions.jexl.UniqueByYear"/>
+        <bean class="datawave.core.query.language.functions.jexl.UniqueBySecond"/>
+        <bean class="datawave.core.query.language.functions.jexl.UniqueByTenthOfHour"/>
+        <bean class="datawave.core.query.language.functions.jexl.NoExpansion"/>
+        <bean class="datawave.core.query.language.functions.jexl.Compare"/>
+        <bean class="datawave.core.query.language.functions.jexl.Geowave.Contains"/>
+        <bean class="datawave.core.query.language.functions.jexl.Geowave.CoveredBy"/>
+        <bean class="datawave.core.query.language.functions.jexl.Geowave.Covers"/>
+        <bean class="datawave.core.query.language.functions.jexl.Geowave.Crosses"/>
+        <bean class="datawave.core.query.language.functions.jexl.Geowave.Intersects"/>
+        <bean class="datawave.core.query.language.functions.jexl.Geowave.Overlaps"/>
+        <bean class="datawave.core.query.language.functions.jexl.Geowave.Within"/>
+        <bean class="datawave.core.query.language.functions.jexl.EvaluationOnly">
             <property name="parser" ref="LuceneToJexlQueryParser"/>
         </bean>
-        <bean class="datawave.query.language.functions.jexl.ExcerptFields"/>
-        <bean class="datawave.query.language.functions.jexl.Matches"/>
-        <bean class="datawave.query.language.functions.jexl.Sum"/>
-        <bean class="datawave.query.language.functions.jexl.Min"/>
-        <bean class="datawave.query.language.functions.jexl.Max"/>
-        <bean class="datawave.query.language.functions.jexl.Average"/>
-        <bean class="datawave.query.language.functions.jexl.Count"/>
+        <bean class="datawave.core.query.language.functions.jexl.ExcerptFields"/>
+        <bean class="datawave.core.query.language.functions.jexl.Matches"/>
+        <bean class="datawave.core.query.language.functions.jexl.Sum"/>
+        <bean class="datawave.core.query.language.functions.jexl.Min"/>
+        <bean class="datawave.core.query.language.functions.jexl.Max"/>
+        <bean class="datawave.core.query.language.functions.jexl.Average"/>
+        <bean class="datawave.core.query.language.functions.jexl.Count"/>
     </util:list>
 
     <!-- Fields we should not tokenize in a tokenized query. In non-tokenized 
@@ -79,17 +79,17 @@
         <value>CONTENT</value>
     </util:set>
 
-    <bean id="LuceneToJexlQueryParser" scope="prototype" class="datawave.query.language.parser.jexl.LuceneToJexlQueryParser">
+    <bean id="LuceneToJexlQueryParser" scope="prototype" class="datawave.core.query.language.parser.jexl.LuceneToJexlQueryParser">
         <property name="skipTokenizeUnfieldedFields" ref="skipTokenizeFields"/>
         <property name="allowedFunctions" ref="allowedQueryFunctions"/>
     </bean>
 
-    <bean id="LuceneToJexlUUIDQueryParser" scope="prototype" class="datawave.query.language.parser.jexl.LuceneToJexlUUIDQueryParser">
+    <bean id="LuceneToJexlUUIDQueryParser" scope="prototype" class="datawave.core.query.language.parser.jexl.LuceneToJexlUUIDQueryParser">
         <property name="uuidTypes" ref="UUIDTypeList" />
         <property name="allowedFunctions" ref="allowedQueryFunctions"/>
     </bean>
 
-    <bean id="TokenizedLuceneToJexlQueryParser" scope="prototype" class="datawave.query.language.parser.jexl.LuceneToJexlQueryParser">
+    <bean id="TokenizedLuceneToJexlQueryParser" scope="prototype" class="datawave.core.query.language.parser.jexl.LuceneToJexlQueryParser">
         <property name="tokenizeUnfieldedQueries" value="true" />
         <property name="skipTokenizeUnfieldedFields" ref="skipTokenizeFields"/>
         <property name="tokenizedFields" ref="tokenizeFields"/>
@@ -346,7 +346,7 @@
         </property>
     </bean>
 
-    <util:list id="UUIDTypeList" value-type="datawave.query.data.UUIDType">
+    <util:list id="UUIDTypeList" value-type="datawave.core.query.data.UUIDType">
         
     </util:list>
 
@@ -581,7 +581,7 @@
                     <null/>
                 </entry>
                 <entry key="LUCENE">
-                    <bean class="datawave.query.language.parser.jexl.LuceneToJexlQueryParser" />
+                    <bean class="datawave.core.query.language.parser.jexl.LuceneToJexlQueryParser" />
                 </entry>
                 <entry key="LUCENE-UUID" value-ref="LuceneToJexlUUIDQueryParser" />
             </map>
@@ -656,7 +656,7 @@
                     <null/>
                 </entry>
                 <entry key="LUCENE">
-                    <bean class="datawave.query.language.parser.jexl.LuceneToJexlQueryParser" />
+                    <bean class="datawave.core.query.language.parser.jexl.LuceneToJexlQueryParser" />
                 </entry>
                 <entry key="LUCENE-UUID" value-ref="LuceneToJexlUUIDQueryParser" />
             </map>

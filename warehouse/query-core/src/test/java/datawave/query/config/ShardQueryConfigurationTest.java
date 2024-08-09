@@ -31,6 +31,8 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
 import datawave.core.geo.utils.GeoQueryConfig;
+import datawave.core.query.attributes.ExcerptFields;
+import datawave.core.query.attributes.UniqueFields;
 import datawave.data.type.DateType;
 import datawave.data.type.GeometryType;
 import datawave.data.type.LcNoDiacriticsType;
@@ -39,8 +41,6 @@ import datawave.data.type.Type;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
 import datawave.query.DocumentSerialization;
-import datawave.query.attributes.ExcerptFields;
-import datawave.query.attributes.UniqueFields;
 import datawave.query.common.grouping.GroupFields;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.iterator.logic.TermFrequencyExcerptIterator;

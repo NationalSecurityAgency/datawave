@@ -33,6 +33,8 @@ import com.google.common.collect.Sets;
 import com.google.common.hash.BloomFilter;
 
 import datawave.core.geo.utils.GeoQueryConfig;
+import datawave.core.query.attributes.ExcerptFields;
+import datawave.core.query.attributes.UniqueFields;
 import datawave.core.query.configuration.CheckpointableQueryConfiguration;
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.configuration.QueryData;
@@ -47,8 +49,6 @@ import datawave.query.Constants;
 import datawave.query.DocumentSerialization;
 import datawave.query.DocumentSerialization.ReturnType;
 import datawave.query.QueryParameters;
-import datawave.query.attributes.ExcerptFields;
-import datawave.query.attributes.UniqueFields;
 import datawave.query.common.grouping.GroupFields;
 import datawave.query.function.DocumentPermutation;
 import datawave.query.iterator.QueryIterator;

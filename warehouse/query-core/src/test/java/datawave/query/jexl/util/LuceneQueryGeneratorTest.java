@@ -15,8 +15,8 @@ import org.junit.jupiter.api.Test;
 import com.google.common.collect.Sets;
 
 import datawave.core.query.jexl.visitors.validate.ASTValidator;
+import datawave.core.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 
 class LuceneQueryGeneratorTest {
 

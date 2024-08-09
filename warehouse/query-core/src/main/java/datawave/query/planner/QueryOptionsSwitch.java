@@ -1,7 +1,6 @@
 package datawave.query.planner;
 
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -11,10 +10,10 @@ import org.apache.log4j.Logger;
 import com.google.common.collect.Sets;
 
 import datawave.core.common.logging.ThreadConfigurableLogger;
+import datawave.core.query.attributes.ExcerptFields;
+import datawave.core.query.attributes.UniqueFields;
 import datawave.query.Constants;
 import datawave.query.QueryParameters;
-import datawave.query.attributes.ExcerptFields;
-import datawave.query.attributes.UniqueFields;
 import datawave.query.common.grouping.GroupFields;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.util.StringUtils;

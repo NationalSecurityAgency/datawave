@@ -18,6 +18,7 @@
         <module>exceptions</module>
         <module>geo</module>
         <module>jexl</module>
+        <module>language</module>
         <module>map-reduce</module>
         <module>modification</module>
         <module>query</module>

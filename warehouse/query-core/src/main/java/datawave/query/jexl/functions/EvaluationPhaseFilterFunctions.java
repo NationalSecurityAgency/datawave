@@ -26,6 +26,7 @@ import org.apache.log4j.Logger;
 import com.google.common.base.CharMatcher;
 import com.google.common.collect.Sets;
 
+import datawave.core.query.language.functions.jexl.Compare;
 import datawave.data.type.util.NumericalEncoder;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.ValueTuple;
@@ -1789,7 +1790,7 @@ public class EvaluationPhaseFilterFunctions {
     public static boolean compare(Object field1, String operator, String compareMode, Object field2) {
         FunctionalSet<ValueTuple> set1 = toFunctionalSet(field1);
         FunctionalSet<ValueTuple> set2 = toFunctionalSet(field2);
-        boolean matchAny = CompareFunctionValidator.Mode.valueOf(compareMode.toUpperCase()).equals(CompareFunctionValidator.Mode.ANY);
+        boolean matchAny = Compare.Mode.valueOf(compareMode.toUpperCase()).equals(Compare.Mode.ANY);
         return compareFields(set1, set2, operator, matchAny);
     }
 

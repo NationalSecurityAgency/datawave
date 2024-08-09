@@ -104,7 +104,7 @@
         <version.microservice.audit-api>4.0.0</version.microservice.audit-api>
         <version.microservice.authorization-api>4.0.0</version.microservice.authorization-api>
         <version.microservice.base-rest-responses>4.0.0</version.microservice.base-rest-responses>
-        <version.microservice.common-utils>3.0.0</version.microservice.common-utils>
+        <version.microservice.common-utils>3.0.1-SNAPSHOT</version.microservice.common-utils>
         <version.microservice.dictionary-api>4.0.0</version.microservice.dictionary-api>
         <version.microservice.mapreduce-query-api>1.0.0</version.microservice.mapreduce-query-api>
         <version.microservice.metadata-utils>4.0.6-SNAPSHOT</version.microservice.metadata-utils>

@@ -1,4 +1,4 @@
-package datawave.query.language.functions.jexl;
+package datawave.core.query.language.functions.jexl;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
@@ -6,6 +6,8 @@ import static org.junit.Assert.assertThrows;
 import org.junit.Test;
 
 import com.google.common.collect.Lists;
+
+import datawave.core.query.language.functions.jexl.Unique;
 
 public class UniqueTest {
 

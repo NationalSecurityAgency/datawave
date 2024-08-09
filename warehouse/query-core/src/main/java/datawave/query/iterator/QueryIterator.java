@@ -53,6 +53,7 @@ import com.google.common.collect.Sets;
 import com.google.common.collect.UnmodifiableIterator;
 
 import datawave.core.iterators.DatawaveFieldIndexListIteratorJexl;
+import datawave.core.query.attributes.ExcerptFields;
 import datawave.core.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import datawave.data.type.Type;
 import datawave.data.type.util.NumericalEncoder;
@@ -61,7 +62,6 @@ import datawave.marking.MarkingFunctionsFactory;
 import datawave.query.Constants;
 import datawave.query.attributes.AttributeKeepFilter;
 import datawave.query.attributes.Document;
-import datawave.query.attributes.ExcerptFields;
 import datawave.query.attributes.ValueTuple;
 import datawave.query.composite.CompositeMetadata;
 import datawave.query.function.Aggregation;

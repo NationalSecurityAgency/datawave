@@ -74,7 +74,7 @@ public class WiredQueryExecutorBeanTest {
 
         return ShrinkWrap.create(JavaArchive.class)
                         .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.data.type", "datawave.query.language.parser.jexl",
-                                        "datawave.query.language.functions.jexl", "datawave.webservice.query.configuration", "datawave.configuration")
+                                        "datawave.core.query.language.functions.jexl", "datawave.webservice.query.configuration", "datawave.configuration")
                         .addClasses(DefaultResponseObjectFactory.class, QueryExpirationProperties.class, FacetedQueryPlanner.class, FacetedQueryLogic.class,
                                         DefaultQueryPlanner.class, BooleanChunkingQueryPlanner.class, ShardQueryLogic.class, CountingShardQueryLogic.class,
                                         EventQueryDataDecoratorTransformer.class, FieldIndexCountQueryLogic.class, CompositeQueryLogic.class,

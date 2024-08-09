@@ -5,11 +5,12 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import datawave.core.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.core.query.language.functions.jexl.EvaluationOnly;
+import datawave.core.query.language.functions.jexl.JexlQueryFunction;
+import datawave.core.query.language.parser.ParseException;
+import datawave.core.query.language.parser.jexl.LuceneToJexlQueryParser;
+import datawave.core.query.language.tree.QueryNode;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.language.functions.jexl.EvaluationOnly;
-import datawave.query.language.functions.jexl.JexlQueryFunction;
-import datawave.query.language.parser.ParseException;
-import datawave.query.language.tree.QueryNode;
 
 public class TestLuceneToJexlParser {
 

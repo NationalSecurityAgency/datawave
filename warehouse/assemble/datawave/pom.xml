@@ -682,6 +682,7 @@
                                             <include>gov.nsa.datawave.core:datawave-core-exceptions</include>
                                             <include>gov.nsa.datawave.core:datawave-core-geo</include>
                                             <include>gov.nsa.datawave.core:datawave-core-jexl</include>
+                                            <include>gov.nsa.datawave.core:datawave-core-language</include>
                                             <include>${project.groupId}:datawave-ingest-ssdeep</include>
                                             <include>gov.nsa.datawave.core:datawave-core-connection-pool</include>
                                             <include>gov.nsa.datawave.core:datawave-core-common</include>
@@ -739,6 +740,7 @@
                                             <include>gov.nsa.datawave.core:datawave-core-exceptions</include>
                                             <include>gov.nsa.datawave.core:datawave-core-geo</include>
                                             <include>gov.nsa.datawave.core:datawave-core-jexl</include>
+                                            <include>gov.nsa.datawave.core:datawave-core-language</include>
                                             <include>gov.nsa.datawave.microservice:accumulo-utils</include>
                                             <include>gov.nsa.datawave.microservice:metadata-utils</include>
                                             <include>gov.nsa.datawave.microservice:type-utils</include>

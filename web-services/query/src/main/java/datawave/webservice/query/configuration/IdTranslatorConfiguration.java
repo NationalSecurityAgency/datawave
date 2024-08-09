@@ -8,8 +8,8 @@ import javax.ws.rs.core.MultivaluedMap;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.springframework.stereotype.Component;
 
+import datawave.core.query.data.UUIDType;
 import datawave.microservice.query.QueryParameters;
-import datawave.query.data.UUIDType;
 
 @Component("idTranslatorConfiguration")
 public class IdTranslatorConfiguration {

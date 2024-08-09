@@ -24,10 +24,17 @@ import org.apache.commons.jexl3.parser.JexlNodes;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableSet;
 
+import datawave.core.query.attributes.UniqueFields;
+import datawave.core.query.attributes.UniqueGranularity;
 import datawave.core.query.jexl.visitors.RebuildingVisitor;
+import datawave.core.query.language.functions.jexl.UniqueByDay;
+import datawave.core.query.language.functions.jexl.UniqueByHour;
+import datawave.core.query.language.functions.jexl.UniqueByMinute;
+import datawave.core.query.language.functions.jexl.UniqueByMonth;
+import datawave.core.query.language.functions.jexl.UniqueBySecond;
+import datawave.core.query.language.functions.jexl.UniqueByTenthOfHour;
+import datawave.core.query.language.functions.jexl.UniqueByYear;
 import datawave.query.QueryParameters;
-import datawave.query.attributes.UniqueFields;
-import datawave.query.attributes.UniqueGranularity;
 import datawave.query.jexl.functions.QueryFunctions;
 
 /**
@@ -144,14 +151,14 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
         UNIQUE_BY_TENTH_OF_HOUR(UniqueFunction.UNIQUE_BY_TENTH_OF_HOUR_FUNCTION, UniqueGranularity.TRUNCATE_TEMPORAL_TO_TENTH_OF_HOUR),
         UNIQUE_BY_YEAR(UniqueFunction.UNIQUE_BY_YEAR_FUNCTION, UniqueGranularity.TRUNCATE_TEMPORAL_TO_YEAR);
 
-        public static final String UNIQUE_BY_DAY_FUNCTION = "unique_by_day";
-        public static final String UNIQUE_BY_HOUR_FUNCTION = "unique_by_hour";
-        public static final String UNIQUE_BY_MINUTE_FUNCTION = "unique_by_minute";
-        public static final String UNIQUE_BY_TENTH_OF_HOUR_FUNCTION = "unique_by_tenth_of_hour";
-        public static final String UNIQUE_BY_MONTH_FUNCTION = "unique_by_month";
-        public static final String UNIQUE_BY_SECOND_FUNCTION = "unique_by_second";
+        public static final String UNIQUE_BY_DAY_FUNCTION = UniqueByDay.UNIQUE_BY_DAY_FUNCTION;
+        public static final String UNIQUE_BY_HOUR_FUNCTION = UniqueByHour.UNIQUE_BY_HOUR_FUNCTION;
+        public static final String UNIQUE_BY_MINUTE_FUNCTION = UniqueByMinute.UNIQUE_BY_MINUTE_FUNCTION;
+        public static final String UNIQUE_BY_TENTH_OF_HOUR_FUNCTION = UniqueByTenthOfHour.UNIQUE_BY_TENTH_OF_HOUR_FUNCTION;
+        public static final String UNIQUE_BY_MONTH_FUNCTION = UniqueByMonth.UNIQUE_BY_MONTH_FUNCTION;
+        public static final String UNIQUE_BY_SECOND_FUNCTION = UniqueBySecond.UNIQUE_BY_SECOND_FUNCTION;
         public static final String UNIQUE_BY_MILLISECOND_FUNCTION = "unique_by_millisecond";
-        public static final String UNIQUE_BY_YEAR_FUNCTION = "unique_by_year";
+        public static final String UNIQUE_BY_YEAR_FUNCTION = UniqueByYear.UNIQUE_BY_YEAR_FUNCTION;
 
         public final String name;
         public final UniqueGranularity granularity;

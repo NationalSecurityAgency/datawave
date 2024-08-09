@@ -11,7 +11,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import datawave.query.data.UUIDType;
+import datawave.core.query.data.UUIDType;
 
 @RunWith(PowerMockRunner.class)
 public class TestLookupUUIDConfiguration {

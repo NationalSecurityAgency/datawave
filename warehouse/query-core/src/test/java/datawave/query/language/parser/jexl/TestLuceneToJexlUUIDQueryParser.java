@@ -7,10 +7,11 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import datawave.query.data.UUIDType;
-import datawave.query.language.parser.ParseException;
-import datawave.query.language.tree.QueryNode;
-import datawave.query.language.tree.ServerHeadNode;
+import datawave.core.query.data.UUIDType;
+import datawave.core.query.language.parser.ParseException;
+import datawave.core.query.language.parser.jexl.LuceneToJexlUUIDQueryParser;
+import datawave.core.query.language.tree.QueryNode;
+import datawave.core.query.language.tree.ServerHeadNode;
 
 public class TestLuceneToJexlUUIDQueryParser {
     private LuceneToJexlUUIDQueryParser parser;

@@ -8,13 +8,14 @@ import java.util.Set;
 import org.junit.Assert;
 import org.junit.Test;
 
-import datawave.query.language.parser.ParseException;
+import datawave.core.query.language.parser.ParseException;
+import datawave.core.query.language.parser.jexl.JexlControlledQueryParser;
 
 public class JexlControlledQueryParserTest {
 
     private JexlControlledQueryParser parser;
 
-    @Test(expected = datawave.query.language.parser.ParseException.class)
+    @Test(expected = datawave.core.query.language.parser.ParseException.class)
     public void testExceptionWhenQueryingInvalidFields() throws ParseException {
         parser = new JexlControlledQueryParser();
         Set<String> allowedFields = new HashSet<>();
@@ -62,7 +63,7 @@ public class JexlControlledQueryParserTest {
     }
 
     /**
-     * MetadataQuery logic doesn't accept lowercase field names. It previously threw: datawave.query.language.parser.ParseException: Unallowed field(s)
+     * MetadataQuery logic doesn't accept lowercase field names. It previously threw: datawave.core.query.language.parser.ParseException: Unallowed field(s)
      * '[bbb_1]' for this type of query
      *
      * It should accept these fields when checking against the allowed list.

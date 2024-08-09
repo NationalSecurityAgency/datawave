@@ -34,8 +34,8 @@ import datawave.core.query.jexl.JexlNodeFactory;
 import datawave.core.query.jexl.nodes.QueryPropertyMarker;
 import datawave.core.query.jexl.visitors.RebuildingVisitor;
 import datawave.core.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
+import datawave.core.query.language.parser.jexl.JexlNodeSet;
 import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.language.parser.jexl.JexlNodeSet;
 import datawave.query.util.count.CountMap;
 
 /**

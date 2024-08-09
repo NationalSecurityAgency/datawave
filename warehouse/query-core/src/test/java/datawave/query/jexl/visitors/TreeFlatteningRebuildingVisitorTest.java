@@ -25,8 +25,8 @@ import datawave.core.query.jexl.JexlNodeFactory;
 import datawave.core.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.core.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import datawave.core.query.jexl.visitors.validate.ASTValidator;
+import datawave.core.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.test.JexlNodeAssert;
 
 public class TreeFlatteningRebuildingVisitorTest {

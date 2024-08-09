@@ -7,6 +7,9 @@ import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.CharArraySet;
 
+import datawave.core.ingest.data.tokenize.DefaultTokenSearch;
+import datawave.core.ingest.data.tokenize.StandardAnalyzer;
+import datawave.core.ingest.data.tokenize.TokenSearch;
 import datawave.ingest.data.config.DataTypeHelper;
 import datawave.util.ObjectFactory;
 
@@ -70,7 +73,7 @@ public class TokenizationHelper {
     private CharArraySet stopWords;
 
     public static final String ANALYZER_CLASS = ".analyzer.class";
-    private String analyzerClassName = "datawave.ingest.data.tokenize.StandardAnalyzer";
+    private String analyzerClassName = "datawave.core.ingest.data.tokenize.StandardAnalyzer";
 
     public static final String TOKENIZER_TIME_THRESHOLDS_MSEC = ".tokenizer.time.thresholds.msec";
     private long[] tokenizerTimeThresholds = new long[0];

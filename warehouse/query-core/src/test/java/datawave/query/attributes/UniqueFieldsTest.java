@@ -21,6 +21,9 @@ import com.google.common.collect.Sets;
 import com.google.common.collect.SortedSetMultimap;
 import com.google.common.collect.TreeMultimap;
 
+import datawave.core.query.attributes.UniqueFields;
+import datawave.core.query.attributes.UniqueGranularity;
+
 public class UniqueFieldsTest {
 
     private static final ObjectMapper objectMapper = new ObjectMapper();

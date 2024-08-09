@@ -13,14 +13,14 @@ import org.apache.commons.lang.time.DateUtils;
 import org.apache.log4j.Logger;
 
 import datawave.core.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
+import datawave.core.query.language.parser.jexl.LuceneToJexlQueryParser;
+import datawave.core.query.language.tree.QueryNode;
 import datawave.core.query.metric.QueryMetricHandler;
 import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.BaseQueryMetric.Lifecycle;
 import datawave.microservice.querymetric.QueryMetricSummary;
 import datawave.microservice.querymetric.QueryMetricsSummaryResponse;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
-import datawave.query.language.tree.QueryNode;
 
 /**
  *
