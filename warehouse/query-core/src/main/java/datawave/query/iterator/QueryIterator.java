@@ -64,6 +64,7 @@ import datawave.query.attributes.AttributeKeepFilter;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.ValueTuple;
 import datawave.query.composite.CompositeMetadata;
+import datawave.query.exceptions.QueryIteratorYieldingException;
 import datawave.query.function.Aggregation;
 import datawave.query.function.DataTypeAsField;
 import datawave.query.function.DocumentMetadata;
@@ -546,12 +547,16 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         // handled specially to ensure that the client will retry the scan elsewhere
         IOException ioe = null;
         IterationInterruptedException iie = null;
+        QueryIteratorYieldingException qiy = null;
         TabletClosedException tce = null;
         if (reason instanceof IOException) {
             ioe = (IOException) reason;
         }
         if (reason instanceof IterationInterruptedException) {
             iie = (IterationInterruptedException) reason;
+        }
+        if (reason instanceof QueryIteratorYieldingException) {
+            qiy = (QueryIteratorYieldingException) reason;
         }
         if (reason instanceof TabletClosedException) {
             tce = (TabletClosedException) reason;
@@ -566,20 +571,27 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             if (reason instanceof IterationInterruptedException) {
                 iie = (IterationInterruptedException) reason;
             }
+            if (reason instanceof QueryIteratorYieldingException) {
+                qiy = (QueryIteratorYieldingException) reason;
+            }
             if (reason instanceof TabletClosedException) {
                 tce = (TabletClosedException) reason;
             }
             depth++;
         }
 
-        // NOTE: Only logging debug here because the Tablet/LookupTask will log the exception as a WARN if we actually have an problem here
+        // NOTE: Only logging debug (for the most part) here because the Tablet/LookupTask will log the exception
+        // as a WARN if we actually have a problem here
         if (iie != null) {
-            // exit gracefully if we are yielding as an iie is expected in this case
+            log.debug("Query interrupted " + queryId, e);
+            throw iie;
+        } else if (qiy != null) {
+            // exit gracefully if we are yielding as a qiy is expected in this case
             if ((this.yield != null) && this.yield.hasYielded()) {
                 log.debug("Query yielded " + queryId);
             } else {
-                log.debug("Query interrupted " + queryId, e);
-                throw iie;
+                log.error("QueryIteratorYieldingException throws but yield callback not set for " + queryId, qiy);
+                throw qiy;
             }
         } else if (tce != null) {
             log.debug("Query tablet closed " + queryId, e);
