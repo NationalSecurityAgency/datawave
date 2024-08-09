@@ -43,7 +43,7 @@ public class FileSystemCache {
         try {
             return new URI(scheme, authority, "/", null, null);
         } catch (URISyntaxException e) {
-            throw new IllegalArgumentException("Failed to create URI with only " + scheme + " and " + authority);
+            throw new IllegalArgumentException("Failed to create URI with only " + scheme + " and " + authority, e);
         }
     }
 
