@@ -16,11 +16,11 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.YieldCallback;
-import org.apache.accumulo.core.iteratorsImpl.system.IterationInterruptedException;
 import org.apache.log4j.Logger;
 
 import datawave.core.iterators.IteratorThreadPoolManager;
 import datawave.query.attributes.Document;
+import datawave.query.exceptions.QueryIteratorYieldingException;
 import datawave.query.iterator.NestedIterator;
 import datawave.query.iterator.NestedQuery;
 import datawave.query.iterator.NestedQueryIterator;
@@ -184,7 +184,7 @@ public class PipelineIterator implements Iterator<Entry<Key,Document>> {
                     yield.yield(lastKeyEvaluated);
                     if (log.isDebugEnabled())
                         log.debug("Yielding at " + lastKeyEvaluated);
-                    throw new IterationInterruptedException("Yielding at " + lastKeyEvaluated);
+                    throw new QueryIteratorYieldingException("Yielding at " + lastKeyEvaluated);
                 }
                 try {
                     result = poll(yieldThresholdMs - delta);
@@ -192,7 +192,7 @@ public class PipelineIterator implements Iterator<Entry<Key,Document>> {
                     yield.yield(lastKeyEvaluated);
                     if (log.isDebugEnabled())
                         log.debug("Yielding at " + lastKeyEvaluated);
-                    throw new IterationInterruptedException("Yielding at " + lastKeyEvaluated);
+                    throw new QueryIteratorYieldingException("Yielding at " + lastKeyEvaluated);
                 }
             } else {
                 try {
