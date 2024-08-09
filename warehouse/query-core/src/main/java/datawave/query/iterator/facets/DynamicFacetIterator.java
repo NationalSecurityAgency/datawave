@@ -17,6 +17,7 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
 
@@ -119,7 +120,7 @@ public class DynamicFacetIterator extends FieldIndexOnlyQueryIterator {
 
                     myEvaluationFunction = new JexlEvaluation(this.getQuery(), arithmetic);
 
-                } catch (Exception e) {
+                } catch (ParseException e) {
                     throw new RuntimeException("Could not parse the JEXL query: '" + this.getQuery() + "'", e);
                 }
 

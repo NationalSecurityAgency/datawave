@@ -30,8 +30,6 @@ public class LoadDateFilter extends DateTypeFilter {
         Range range = new Range();
         try {
             range.readFields(in);
-        } catch (Exception e2) {
-            throw new IOException(e2);
         } finally {
             in.close();
             b.close();

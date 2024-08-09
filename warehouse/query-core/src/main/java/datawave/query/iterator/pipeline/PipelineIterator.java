@@ -154,11 +154,6 @@ public class PipelineIterator implements Iterator<Entry<Key,Document>> {
             // cancel out existing executions
             cancel();
 
-            // if we yielded, then leave gracefully
-            if (yield != null && yield.hasYielded()) {
-                return null;
-            }
-
             log.error("Failed to retrieve evaluation pipeline result", e);
             throw new RuntimeException("Failed to retrieve evaluation pipeline result", e);
         }

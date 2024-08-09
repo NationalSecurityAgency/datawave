@@ -6,6 +6,7 @@ import static org.apache.commons.pool.impl.GenericObjectPool.WHEN_EXHAUSTED_BLOC
 
 import java.io.IOException;
 import java.io.InterruptedIOException;
+import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -34,6 +35,7 @@ import org.apache.commons.collections4.iterators.EmptyIterator;
 import org.apache.commons.jexl3.JexlArithmetic;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.commons.lang.builder.CompareToBuilder;
 import org.apache.commons.pool.BasePoolableObjectFactory;
 import org.apache.commons.pool.impl.GenericObjectPool;
@@ -251,7 +253,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             this.script = JexlASTHelper.parseAndFlattenJexlQuery(this.getQuery());
             this.myEvaluationFunction = getJexlEvaluation(this.getQuery(), arithmetic);
 
-        } catch (Exception e) {
+        } catch (ParseException e) {
             throw new IOException("Could not parse the JEXL query: '" + this.getQuery() + "'", e);
         }
 
@@ -306,7 +308,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 return fileSystem.exists(basePath) || fileSystem.mkdirs(basePath);
             } catch (InterruptedIOException ioe) {
                 throw ioe;
-            } catch (Exception e) {
+            } catch (IOException e) {
                 log.error("Failure to validate path " + config, e);
             }
         }
@@ -1602,7 +1604,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                     try {
                         excerptTransform = new ExcerptTransform(excerptFields, myEnvironment, sourceForDeepCopies.deepCopy(myEnvironment),
                                         excerptIterator.getDeclaredConstructor().newInstance());
-                    } catch (Exception e) {
+                    } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
                         throw new RuntimeException("Could not create excerpt transform", e);
                     }
                 }

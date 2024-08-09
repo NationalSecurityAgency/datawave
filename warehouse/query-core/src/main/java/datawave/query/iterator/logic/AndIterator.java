@@ -14,11 +14,13 @@ import java.util.SortedSet;
 
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.iteratorsImpl.system.IterationInterruptedException;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.TreeMultimap;
 
 import datawave.query.attributes.Document;
+import datawave.query.exceptions.QueryIteratorYieldingException;
 import datawave.query.iterator.NestedIterator;
 import datawave.query.iterator.SeekableIterator;
 import datawave.query.iterator.Util;
@@ -259,7 +261,7 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T>, 
                         ((SeekableIterator) itr).seek(range, columnFamilies, inclusive);
                     }
                 }
-            } catch (Exception e) {
+            } catch (IOException e) {
                 include.remove();
                 if (includes.isEmpty()) {
                     throw e;
@@ -378,6 +380,10 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T>, 
                 if ((highest == null && transform.compareTo(key) > 0) || (highest != null && transform.compareTo(highest) > 0)) {
                     highest = transform;
                 }
+            } catch (QueryIteratorYieldingException qe) {
+                throw qe;
+            } catch (IterationInterruptedException ie) {
+                throw ie;
             } catch (Exception e) {
                 // only need to actually fail if we have nothing left in the AND clause
                 if (includeHeads.isEmpty()) {

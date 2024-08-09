@@ -62,12 +62,7 @@ public class CountAggregatingIterator extends TransformIterator {
                 ResultCountingIterator.ResultCountTuple tuple = unpackValue(entry.getValue());
 
                 // Merge the columnVisibilities
-                try {
-                    this.columnVisibilities.add(tuple.getVisibility());
-                } catch (Exception e) {
-                    log.error("Error parsing columnVisibilities of key", e);
-                    continue;
-                }
+                this.columnVisibilities.add(tuple.getVisibility());
 
                 this.count += tuple.getCount();
             } while (getIterator().hasNext());

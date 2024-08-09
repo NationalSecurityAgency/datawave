@@ -86,8 +86,8 @@ public class ScanSessionStats {
         for (TIMERS timer : mergedTimers.keySet()) {
             try {
                 timers.get(timer).stop();
-            } catch (Exception e) {
-
+            } catch (IllegalStateException e) {
+                // thrown when timer was not yet running.... we can ignore that
             }
         }
     }

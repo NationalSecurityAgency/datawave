@@ -1,6 +1,7 @@
 package datawave.core.iterators;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -74,7 +75,7 @@ public class CompositeSeekingIterator extends WrappingIterator {
             if (typeClass != null) {
                 try {
                     type = Class.forName(typeClass).asSubclass(DiscreteIndexType.class).getDeclaredConstructor().newInstance();
-                } catch (Exception e) {
+                } catch (ClassNotFoundException | NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
                     log.warn("Unable to create DiscreteIndexType for class name: " + typeClass);
                 }
             }
