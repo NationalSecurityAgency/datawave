@@ -2515,8 +2515,8 @@ public class QueryOptions implements OptionDescriber {
             }
 
             public Builder putDefaultValue(String option, Object value) {
-                if(value.getClass().isAssignableFrom(Iterable.class)){
-
+                if(value.getClass().isAssignableFrom(Collection.class)){
+                    value = Collections.unmodifiableCollection((Collection<?>) value);
                 }
                 values.put(option, value);
                 return this;
