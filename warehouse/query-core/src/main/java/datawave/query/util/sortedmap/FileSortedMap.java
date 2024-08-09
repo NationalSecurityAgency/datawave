@@ -413,9 +413,12 @@ public abstract class FileSortedMap<K,V> implements SortedMap<K,V>, Cloneable, R
         if (persisted) {
             K t = (K) o;
             try (SortedMapInputStream<K,V> stream = getBoundedFileHandler().getInputStream(getStart(), getEnd())) {
-                Map.Entry<K,V> first = stream.readObject();
-                if (equals(first.getKey(), t)) {
-                    return true;
+                Map.Entry<K,V> next = stream.readObject();
+                while (next != null) {
+                    if (equals(next.getKey(), t)) {
+                        return true;
+                    }
+                    next = stream.readObject();
                 }
             } catch (Exception e) {
                 return false;
@@ -431,9 +434,12 @@ public abstract class FileSortedMap<K,V> implements SortedMap<K,V>, Cloneable, R
         if (persisted) {
             V t = (V) o;
             try (SortedMapInputStream<K,V> stream = getBoundedFileHandler().getInputStream(getStart(), getEnd())) {
-                Map.Entry<K,V> first = stream.readObject();
-                if (first.getValue().equals(t)) {
-                    return true;
+                Map.Entry<K,V> next = stream.readObject();
+                while (next != null) {
+                    if (next.getValue().equals(t)) {
+                        return true;
+                    }
+                    next = stream.readObject();
                 }
             } catch (Exception e) {
                 return false;
@@ -449,9 +455,12 @@ public abstract class FileSortedMap<K,V> implements SortedMap<K,V>, Cloneable, R
         if (persisted) {
             K t = (K) key;
             try (SortedMapInputStream<K,V> stream = getBoundedFileHandler().getInputStream(getStart(), getEnd())) {
-                Map.Entry<K,V> first = stream.readObject();
-                if (equals(first.getKey(), t)) {
-                    return first.getValue();
+                Map.Entry<K,V> next = stream.readObject();
+                while (next != null) {
+                    if (equals(next.getKey(), t)) {
+                        return next.getValue();
+                    }
+                    next = stream.readObject();
                 }
             } catch (Exception e) {
                 return null;
@@ -508,17 +517,17 @@ public abstract class FileSortedMap<K,V> implements SortedMap<K,V>, Cloneable, R
 
     @Override
     public SortedMap<K,V> subMap(K fromElement, K toElement) {
-        return factory.newInstance(this, fromElement, toElement);
+        return factory.newInstance(this, getStart(fromElement), getEnd(toElement));
     }
 
     @Override
     public SortedMap<K,V> headMap(K toElement) {
-        return factory.newInstance(this, null, toElement);
+        return factory.newInstance(this, getStart(null), getEnd(toElement));
     }
 
     @Override
     public SortedMap<K,V> tailMap(K fromElement) {
-        return factory.newInstance(this, fromElement, null);
+        return factory.newInstance(this, getStart(fromElement), getEnd(null));
     }
 
     @Override
@@ -570,7 +579,7 @@ public abstract class FileSortedMap<K,V> implements SortedMap<K,V>, Cloneable, R
 
             @Override
             public Iterator<K> iterator() {
-                return IteratorUtils.transformedIterator(new FileIterator(),
+                return IteratorUtils.transformedIterator(FileSortedMap.this.iterator(),
                         o -> ((Map.Entry)o).getKey());
             }
 
@@ -587,7 +596,7 @@ public abstract class FileSortedMap<K,V> implements SortedMap<K,V>, Cloneable, R
 
             @Override
             public Iterator<V> iterator() {
-                return IteratorUtils.transformedIterator(new FileIterator(),
+                return IteratorUtils.transformedIterator(FileSortedMap.this.iterator(),
                         o -> ((Map.Entry)o).getValue());
             }
 
@@ -604,7 +613,7 @@ public abstract class FileSortedMap<K,V> implements SortedMap<K,V>, Cloneable, R
 
             @Override
             public Iterator<Entry<K,V>> iterator() {
-                return new FileIterator();
+                return FileSortedMap.this.iterator();
             }
 
             @Override
@@ -756,7 +765,7 @@ public abstract class FileSortedMap<K,V> implements SortedMap<K,V>, Cloneable, R
 
         @Override
         public void remove() {
-            throw new UnsupportedOperationException("Iterator.remove() not supported.");
+            throw new UnsupportedOperationException("Iterator.remove() not supported on a persisted map.");
         }
 
         @Override
@@ -764,7 +773,6 @@ public abstract class FileSortedMap<K,V> implements SortedMap<K,V>, Cloneable, R
             cleanup();
             super.finalize();
         }
-
     }
 
     /**

@@ -1,7 +1,5 @@
 package datawave.query.util.sortedmap;
 
-import datawave.query.util.sortedmap.BufferedFileBackedSortedMap;
-import datawave.query.util.sortedmap.SortedMapTempFileHandler;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -14,14 +12,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Random;
 import java.util.Map;
+import java.util.Random;
+import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
-import java.util.function.Predicate;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -37,9 +35,9 @@ public abstract class BufferedFileBackedSortedMapTest<K,V> {
     protected final byte[] template = new byte[] {5, 2, 29, 4, 8, 3, 25, 23, 6, 21, 7, 16};
     protected final int[] sortedTemplate = new int[] {1, 5, 3, 0, 8, 10, 4, 11, 9, 7, 6, 2};
 
-    public abstract E createData(byte[] values);
+    public abstract Map.Entry<K,V> createData(byte[] values);
 
-    public abstract Comparator<K,V> getComparator();
+    public abstract Comparator<K> getComparator();
 
     public abstract datawave.query.util.sortedmap.FileSortedMap.FileSortedMapFactory<K,V> getFactory();
 
@@ -47,7 +45,12 @@ public abstract class BufferedFileBackedSortedMapTest<K,V> {
         return null;
     }
 
-    protected void testEquality(E expected, E value) {
+    protected void testEquality(Map.Entry<K,V> expected, Map.Entry<K,V> value) {
+        testEquality(expected.getKey(), value.getKey());
+        assertEquals(expected.getValue(), value.getValue());
+    }
+
+    protected void testEquality(K expected, K value) {
         if (map.comparator() != null) {
             assertEquals(0, map.comparator().compare(expected, value));
         } else {
@@ -60,16 +63,16 @@ public abstract class BufferedFileBackedSortedMapTest<K,V> {
         for (int i = 0; i < template.length; i++) {
             byte[] buffer = new byte[i + 11];
             Arrays.fill(buffer, template[i]);
-            E datum = createData(buffer);
+            Map.Entry<K,V> datum = createData(buffer);
             if (i == 0) {
-                data = (E[]) Array.newInstance(datum.getClass(), template.length * 2);
+                data = (Map.Entry[]) Array.newInstance(datum.getClass(), template.length * 2);
             }
             data[i] = datum;
         }
         for (int i = 0; i < template.length; i++) {
             byte[] buffer = new byte[i + 10];
             Arrays.fill(buffer, template[i]);
-            E datum = createData(buffer);
+            Map.Entry<K,V> datum = createData(buffer);
             data[i + template.length] = datum;
         }
         sortedOrder = new int[data.length];
@@ -91,31 +94,31 @@ public abstract class BufferedFileBackedSortedMapTest<K,V> {
                             public boolean isValid() {
                                 return true;
                             }
-                        })).withmapFactory(getFactory()).build();
+                        })).withMapFactory(getFactory()).build();
 
         // adding in the data map multiple times to create underlying files with duplicate values making the
         // MergeSortIterator's job a little tougher...
         for (int d = 0; d < 11; d++) {
             addDataRandomly(map, data);
         }
-        while (map.getmaps().size() <= 7) {
+        while (map.getMaps().size() <= 7) {
             addDataRandomly(map, data);
         }
     }
 
-    public void addDataRandomly(BufferedFileBackedSortedMap<K,V> map, E[] data) {
-        map<Integer> added = new Hashmap<>();
+    public void addDataRandomly(BufferedFileBackedSortedMap<K,V> map, Map.Entry<K,V>[] data) {
+        Set<Integer> added = new HashSet<>();
         Random random = new Random();
         // add data.length items randomly
         for (int i = 0; i < data.length; i++) {
             int index = random.nextInt(data.length);
-            map.add(data[index]);
+            map.put(data[index].getKey(), data[index].getValue());
             added.add(index);
         }
         // ensure all missing items are added
         for (int i = 0; i < data.length; i++) {
             if (!added.contains(i)) {
-                map.add(data[i]);
+                map.put(data[i].getKey(), data[i].getValue());
             }
         }
     }
@@ -159,8 +162,7 @@ public abstract class BufferedFileBackedSortedMapTest<K,V> {
         }
         assertEquals(0, map.size());
         for (int i = 0; i < data.length; i++) {
-            map.add(data[i]);
-            expectedSize++;
+            map.put(data[i].getKey(), data[i].getValue());
             assertEquals(expectedSize, map.size());
         }
     }
@@ -179,7 +181,7 @@ public abstract class BufferedFileBackedSortedMapTest<K,V> {
         map.remove(data[0]);
         assertTrue(map.isEmpty());
         for (int i = 0; i < data.length; i++) {
-            map.add(data[i]);
+            map.put(data[i].getKey(), data[i].getValue());
             assertFalse(map.isEmpty());
         }
     }
@@ -196,10 +198,10 @@ public abstract class BufferedFileBackedSortedMapTest<K,V> {
             map.remove(data[i]);
         }
         for (int i = 1; i < (data.length / 2); i++) {
-            assertTrue(map.contains(data[i]));
+            assertTrue(map.containsKey(data[i].getKey()));
         }
         for (int i = (data.length / 2); i < data.length; i++) {
-            assertFalse(map.contains(data[i]));
+            assertFalse(map.containsKey(data[i].getKey()));
         }
     }
 
@@ -231,100 +233,15 @@ public abstract class BufferedFileBackedSortedMapTest<K,V> {
     }
 
     @Test
-    public void testRemoveIf() {
-        int expectedSize = data.length;
-
-        assertFalse(map.isPersisted());
-        map.removeIf(new Predicate<K,V>() {
-            @Override
-            public boolean test(E bytes) {
-                return false;
-            }
-        });
-        assertFalse(map.isPersisted());
-        assertEquals(expectedSize, map.size());
-
-        map.removeIf(new Predicate<K,V>() {
-            @Override
-            public boolean test(E bytes) {
-                return true;
-            }
-        });
-        assertFalse(map.isPersisted());
-        assertTrue(map.isEmpty());
-    }
-
-    @Test
-    public void testRemoveIfPersisted() throws IOException {
-        int expectedSize = data.length;
-
-        assertFalse(map.isPersisted());
-        map.persist();
-        assertTrue(map.isPersisted());
-
-        map.removeIf(new Predicate<K,V>() {
-            @Override
-            public boolean test(E bytes) {
-                return false;
-            }
-        });
-        assertTrue(map.isPersisted());
-        assertEquals(expectedSize, map.size());
-
-        map.removeIf(new Predicate<K,V>() {
-            @Override
-            public boolean test(E bytes) {
-                return true;
-            }
-        });
-        assertTrue(map.isPersisted());
-        assertTrue(map.isEmpty());
-    }
-
-    @Test
-    public void testRemoveAll() {
-        int expectedSize = data.length;
-
-        assertFalse(map.isPersisted());
-        map.removeAll(Collections.emptymap());
-        assertFalse(map.isPersisted());
-        assertEquals(expectedSize, map.size());
-
-        map<K,V> datamap = new Treemap<>(map.comparator());
-        datamap.addAll(Arrays.asList(data));
-        map.removeAll(datamap);
-        assertFalse(map.isPersisted());
-        assertTrue(map.isEmpty());
-    }
-
-    @Test
-    public void testRemoveAllPersisted() throws IOException {
-        int expectedSize = data.length;
-
-        assertFalse(map.isPersisted());
-        map.persist();
-        assertTrue(map.isPersisted());
-        map.removeAll(Collections.emptymap());
-        assertTrue(map.isPersisted());
-        assertEquals(expectedSize, map.size());
-
-        map<K,V> datamap = new Treemap<>(map.comparator());
-        datamap.addAll(Arrays.asList(data));
-        map.removeAll(datamap);
-        assertTrue(map.isPersisted());
-        assertTrue(map.isEmpty());
-    }
-
-    @Test
     public void testIterator() {
         int index = 0;
-        for (Iterator<K,V> it = map.iterator(); it.hasNext();) {
-            E value = it.next();
-            E expected = data[sortedOrder[index++]];
+        for (Iterator<Map.Entry<K,V>> it = map.iterator(); it.hasNext();) {
+            Map.Entry<K,V> value = it.next();
+            Map.Entry<K,V> expected = data[sortedOrder[index++]];
             testEquality(expected, value);
         }
         map.clear();
-        for (E value : map) {
+        for (Map.Entry<K,V> value : map.entrySet()) {
             fail();
         }
     }
@@ -335,17 +252,17 @@ public abstract class BufferedFileBackedSortedMapTest<K,V> {
         int failCount = 0;
         assertFalse(map.isPersisted());
         // calling iterator() will force persistence
-        for (Iterator<K,V> it = map.iterator(); it.hasNext();) {
+        for (Iterator<Map.Entry<K,V>> it = map.iterator(); it.hasNext();) {
             assertTrue(map.isPersisted());
-            E value = it.next();
-            assertTrue(map.contains(value));
+            Map.Entry<K,V> value = it.next();
+            assertTrue(map.containsKey(value.getKey()));
             try {
                 it.remove();
                 fail("Expected iterator remove to fail with a persisted map");
             } catch (Exception e) {
                 // expected that some of the underlying FileSortedMaps are persisted and hence the remove will fail
                 failCount++;
-                assertTrue(map.contains(value));
+                assertTrue(map.containsKey(value.getKey()));
                 assertEquals(size, map.size());
             }
         }
@@ -355,12 +272,17 @@ public abstract class BufferedFileBackedSortedMapTest<K,V> {
 
     @Test
     public void testComparator() {
-        Comparator<? super E> comparator = map.comparator();
-        E[] testData = Arrays.copyOf(data, data.length);
-        Arrays.sort(testData, comparator);
+        final Comparator<K> comparator = map.comparator();
+        Map.Entry<K,V>[] testData = Arrays.copyOf(data, data.length);
+        Arrays.sort(testData, new Comparator<Map.Entry<K,V>>() {
+            @Override
+            public int compare(Map.Entry<K, V> o1, Map.Entry<K, V> o2) {
+                return comparator.compare(o1.getKey(), o2.getKey());
+            }
+        });
         int index = 0;
-        for (E value : map) {
-            E expected = data[sortedOrder[index++]];
+        for (Map.Entry<K,V> value : map.entrySet()) {
+            Map.Entry<K,V> expected = data[sortedOrder[index++]];
             testEquality(expected, value);
         }
     }
@@ -370,10 +292,10 @@ public abstract class BufferedFileBackedSortedMapTest<K,V> {
         int start = sortedOrder.length / 3;
         int end = start * 2;
         try {
-            SortedMap<K,V> submap = map.submap(data[sortedOrder[start]], data[sortedOrder[end]]);
-            SortedMap<K,V> expected = new Treemap<>(map.comparator());
+            SortedMap<K,V> submap = map.subMap(data[sortedOrder[start]].getKey(), data[sortedOrder[end]].getKey());
+            SortedMap<K,V> expected = new TreeMap<>(map.comparator());
             for (int i = start; i < end; i++) {
-                expected.add(data[sortedOrder[i]]);
+                expected.put(data[sortedOrder[i]].getKey(), data[sortedOrder[i]].getValue());
             }
             assertEquals(expected, submap);
         } catch (Exception e) {
@@ -385,10 +307,10 @@ public abstract class BufferedFileBackedSortedMapTest<K,V> {
     public void testHeadmap() {
         int end = sortedOrder.length / 3;
         try {
-            SortedMap<K,V> submap = map.headmap(data[sortedOrder[end]]);
-            SortedMap<K,V> expected = new Treemap<>(map.comparator());
+            SortedMap<K,V> submap = map.headMap(data[sortedOrder[end]].getKey());
+            SortedMap<K,V> expected = new TreeMap<>(map.comparator());
             for (int i = 0; i < end; i++) {
-                expected.add(data[sortedOrder[i]]);
+                expected.put(data[sortedOrder[i]].getKey(), data[sortedOrder[i]].getValue());
             }
             assertEquals(expected, submap);
         } catch (Exception e) {
@@ -400,10 +322,10 @@ public abstract class BufferedFileBackedSortedMapTest<K,V> {
     public void testTailmap() {
         int start = sortedOrder.length / 3;
         try {
-            SortedMap<K,V> submap = map.tailmap(data[sortedOrder[start]]);
-            SortedMap<K,V> expected = new Treemap<>(map.comparator());
+            SortedMap<K,V> submap = map.tailMap(data[sortedOrder[start]].getKey());
+            SortedMap<K,V> expected = new TreeMap<>(map.comparator());
             for (int i = start; i < sortedOrder.length; i++) {
-                expected.add(data[sortedOrder[i]]);
+                expected.put(data[sortedOrder[i]].getKey(), data[sortedOrder[i]].getValue());
             }
             assertEquals(expected, submap);
         } catch (Exception e) {
@@ -412,24 +334,24 @@ public abstract class BufferedFileBackedSortedMapTest<K,V> {
     }
 
     @Test
-    public void testLast() {
-        E expected = data[sortedOrder[data.length - 1]];
-        E value = map.last();
-        testEquality(expected, value);
+    public void testLastKey() {
+        Map.Entry<K,V> expected = data[sortedOrder[data.length - 1]];
+        K value = map.lastKey();
+        testEquality(expected.getKey(), value);
     }
 
     @Test
-    public void testFirst() {
-        E expected = data[sortedOrder[0]];
-        E value = map.first();
-        testEquality(expected, value);
+    public void testFirstKey() {
+        Map.Entry<K,V> expected = data[sortedOrder[0]];
+        K value = map.firstKey();
+        testEquality(expected.getKey(), value);
     }
 
     @Test
     public void testCompaction() throws IOException {
-        assertEquals(8, map.getmaps().size());
+        assertEquals(8, map.getMaps().size());
         map.persist();
-        assertEquals(3, map.getmaps().size());
+        assertEquals(3, map.getMaps().size());
     }
 
 }

@@ -4,6 +4,7 @@ import datawave.query.util.sortedset.FileSortedSet;
 import org.apache.commons.collections4.keyvalue.UnmodifiableMapEntry;
 import org.apache.log4j.Logger;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
@@ -177,8 +178,8 @@ public class FileSerializableSortedMap<K extends Serializable, V extends Seriali
         @Override
         public Map.Entry<K,V> readObject() throws IOException {
             try {
-                K key = (K)getDelegate().readObject();
-                V value = (V)getDelegate().readObject();
+                K key = (K) getDelegate().readObject();
+                V value = (V) getDelegate().readObject();
                 return new UnmodifiableMapEntry<>(key, value);
             } catch (IOException ioe) {
                 return null;

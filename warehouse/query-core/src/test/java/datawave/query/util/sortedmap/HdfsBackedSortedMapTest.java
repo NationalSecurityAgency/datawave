@@ -2,6 +2,7 @@ package datawave.query.util.sortedmap;
 
 import datawave.query.iterator.ivarator.IvaratorCacheDir;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
+import datawave.query.util.sortedset.FileSortedSet;
 import datawave.query.util.sortedset.HdfsBackedSortedSet;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
@@ -232,7 +233,7 @@ public class HdfsBackedSortedMapTest {
                 .withUniqueSubPath(uniquePath)
                 .withMaxOpenFiles(9999)
                 .withNumRetries(2)
-                .withPersistOptions(new FileSortedMap.PersistOptions())
+                .withPersistOptions(new FileSortedSet.PersistOptions())
                 .build();
         // @formatter:on
 

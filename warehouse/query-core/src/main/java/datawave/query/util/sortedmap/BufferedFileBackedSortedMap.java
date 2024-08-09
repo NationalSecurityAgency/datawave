@@ -481,7 +481,7 @@ public class BufferedFileBackedSortedMap<K,V> implements SortedMap<K,V>, Rewrita
     }
 
     @Override
-    public Comparator<? super K> comparator() {
+    public Comparator<K> comparator() {
         return comparator;
     }
 

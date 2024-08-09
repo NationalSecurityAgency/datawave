@@ -317,7 +317,23 @@ public class MultiMapBackedSortedMap<K,V> extends AbstractMap<K,V> implements Re
 
         @Override
         public void remove() {
-            throw new UnsupportedOperationException("Merge sort iterator does not support this operation");
+            if (!populated) {
+                throw new IllegalStateException();
+            }
+            Exception e = null;
+            for (Iterator<Entry<K,V>> it : nextIterators) {
+                if (it != null) {
+                    try {
+                        it.remove();
+                    } catch (UnsupportedOperationException uoe) {
+                        e = uoe;
+                    }
+                }
+            }
+            populated = false;
+            if (e != null) {
+                throw new UnsupportedOperationException("One or more of the underlying sets does not support this operation", e);
+            }
         }
 
         /* Some utility methods */

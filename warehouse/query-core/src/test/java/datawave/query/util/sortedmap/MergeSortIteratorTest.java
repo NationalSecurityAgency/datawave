@@ -1,6 +1,5 @@
 package datawave.query.util.sortedmap;
 
-import datawave.query.util.sortedset.MultiSetBackedSortedSet;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -8,8 +7,8 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.SortedSet;
-import java.util.TreeSet;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -20,26 +19,26 @@ public class MergeSortIteratorTest {
 
     @Test
     public void testIteration() {
-        SortedSet<Integer> set1 = new TreeSet<>();
-        SortedSet<Integer> set2 = new TreeSet<>();
-        SortedSet<Integer> set3 = new TreeSet<>();
+        SortedMap<Integer,Integer> set1 = new TreeMap<>();
+        SortedMap<Integer,Integer> set2 = new TreeMap<>();
+        SortedMap<Integer,Integer> set3 = new TreeMap<>();
 
-        set1.add(1);
-        set1.add(3);
-        set1.add(4);
-        set1.add(5);
-        set1.add(6);
-        set1.add(10);
+        set1.put(1,1);
+        set1.put(3,1);
+        set1.put(4,1);
+        set1.put(5,1);
+        set1.put(6,1);
+        set1.put(10,1);
 
-        set2.add(1);
-        set2.add(2);
-        set2.add(5);
-        set2.add(20);
+        set2.put(1,1);
+        set2.put(2,1);
+        set2.put(5,1);
+        set2.put(20,1);
 
-        set3.add(2);
-        set3.add(5);
-        set3.add(6);
-        set3.add(30);
+        set3.put(2,1);
+        set3.put(5,1);
+        set3.put(6,1);
+        set3.put(30,1);
 
         List<Integer> expected = new ArrayList<>();
         expected.add(1);
@@ -52,13 +51,13 @@ public class MergeSortIteratorTest {
         expected.add(20);
         expected.add(30);
 
-        List<SortedSet<Integer>> col = new ArrayList<>();
+        List<SortedMap<Integer,Integer>> col = new ArrayList<>();
         col.add(set1);
         col.add(set2);
         col.add(set3);
         List<Integer> results = new ArrayList<>();
 
-        Iterator<Integer> it = new datawave.query.util.sortedset.MultiSetBackedSortedSet(col).iterator();
+        Iterator<Integer> it = new MultiMapBackedSortedMap(col).keySet().iterator();
         try {
             it.remove();
             fail("Expected remove to fail");
@@ -74,9 +73,9 @@ public class MergeSortIteratorTest {
             }
             Integer next = it.next();
             results.add(next);
-            assertTrue(set1.contains(next) || set2.contains(next) || set3.contains(next));
+            assertTrue(set1.containsKey(next) || set2.containsKey(next) || set3.containsKey(next));
             it.remove();
-            assertFalse(set1.contains(next) || set2.contains(next) || set3.contains(next));
+            assertFalse(set1.containsKey(next) || set2.containsKey(next) || set3.containsKey(next));
             try {
                 it.remove();
                 fail("Expected remove to fail");
@@ -90,26 +89,26 @@ public class MergeSortIteratorTest {
 
     @Test
     public void testIterationSansHasNext() {
-        SortedSet<Integer> set1 = new TreeSet<>();
-        SortedSet<Integer> set2 = new TreeSet<>();
-        SortedSet<Integer> set3 = new TreeSet<>();
+        SortedMap<Integer,Integer> set1 = new TreeMap<>();
+        SortedMap<Integer,Integer> set2 = new TreeMap<>();
+        SortedMap<Integer,Integer> set3 = new TreeMap<>();
 
-        set1.add(1);
-        set1.add(3);
-        set1.add(4);
-        set1.add(5);
-        set1.add(6);
-        set1.add(10);
+        set1.put(1,1);
+        set1.put(3,1);
+        set1.put(4,1);
+        set1.put(5,1);
+        set1.put(6,1);
+        set1.put(10,1);
 
-        set2.add(1);
-        set2.add(2);
-        set2.add(5);
-        set2.add(20);
+        set2.put(1,1);
+        set2.put(2,1);
+        set2.put(5,1);
+        set2.put(20,1);
 
-        set3.add(2);
-        set3.add(5);
-        set3.add(6);
-        set3.add(30);
+        set3.put(2,1);
+        set3.put(5,1);
+        set3.put(6,1);
+        set3.put(30,1);
 
         List<Integer> expected = new ArrayList<>();
         expected.add(1);
@@ -122,12 +121,12 @@ public class MergeSortIteratorTest {
         expected.add(20);
         expected.add(30);
 
-        List<SortedSet<Integer>> col = new ArrayList<>();
+        List<SortedMap<Integer,Integer>> col = new ArrayList<>();
         col.add(set1);
         col.add(set2);
         col.add(set3);
         List<Integer> results = new ArrayList<>();
-        Iterator<Integer> it = new datawave.query.util.sortedset.MultiSetBackedSortedSet(col).iterator();
+        Iterator<Integer> it = new MultiMapBackedSortedMap(col).keySet().iterator();
         while (true) {
             try {
                 it.remove();
@@ -142,9 +141,9 @@ public class MergeSortIteratorTest {
                 break;
             }
             results.add(next);
-            assertTrue(set1.contains(next) || set2.contains(next) || set3.contains(next));
+            assertTrue(set1.containsKey(next) || set2.containsKey(next) || set3.containsKey(next));
             it.remove();
-            assertFalse(set1.contains(next) || set2.contains(next) || set3.contains(next));
+            assertFalse(set1.containsKey(next) || set2.containsKey(next) || set3.containsKey(next));
             try {
                 it.remove();
                 fail("Expected remove to fail");
@@ -170,28 +169,28 @@ public class MergeSortIteratorTest {
             }
         };
 
-        SortedSet<Integer> set1 = new TreeSet<>(c);
-        SortedSet<Integer> set2 = new TreeSet<>(c);
-        SortedSet<Integer> set3 = new TreeSet<>(c);
+        SortedMap<Integer,Integer> set1 = new TreeMap<>(c);
+        SortedMap<Integer,Integer> set2 = new TreeMap<>(c);
+        SortedMap<Integer,Integer> set3 = new TreeMap<>(c);
 
-        set1.add(1);
-        set1.add(3);
-        set1.add(4);
-        set1.add(5);
-        set1.add(6);
-        set1.add(10);
+        set1.put(1,1);
+        set1.put(3,1);
+        set1.put(4,1);
+        set1.put(5,1);
+        set1.put(6,1);
+        set1.put(10,1);
 
-        set2.add(null);
-        set2.add(1);
-        set2.add(2);
-        set2.add(5);
-        set2.add(20);
+        set2.put(null,1);
+        set2.put(1,1);
+        set2.put(2,1);
+        set2.put(5,1);
+        set2.put(20,1);
 
-        set3.add(null);
-        set3.add(2);
-        set3.add(5);
-        set3.add(6);
-        set3.add(30);
+        set3.put(null,1);
+        set3.put(2,1);
+        set3.put(5,1);
+        set3.put(6,1);
+        set3.put(30,1);
 
         List<Integer> expected = new ArrayList<>();
         expected.add(null);
@@ -205,12 +204,12 @@ public class MergeSortIteratorTest {
         expected.add(20);
         expected.add(30);
 
-        List<SortedSet<Integer>> col = new ArrayList<>();
+        List<SortedMap<Integer,Integer>> col = new ArrayList<>();
         col.add(set1);
         col.add(set2);
         col.add(set3);
         List<Integer> results = new ArrayList<>();
-        Iterator<Integer> it = new MultiSetBackedSortedSet(col).iterator();
+        Iterator<Integer> it = new MultiMapBackedSortedMap(col).keySet().iterator();
         try {
             it.remove();
             fail("Expected remove to fail");
@@ -226,9 +225,9 @@ public class MergeSortIteratorTest {
             }
             Integer next = it.next();
             results.add(next);
-            assertTrue(set1.contains(next) || set2.contains(next) || set3.contains(next));
+            assertTrue(set1.containsKey(next) || set2.containsKey(next) || set3.containsKey(next));
             it.remove();
-            assertFalse(set1.contains(next) || set2.contains(next) || set3.contains(next));
+            assertFalse(set1.containsKey(next) || set2.containsKey(next) || set3.containsKey(next));
             try {
                 it.remove();
                 fail("Expected remove to fail");
