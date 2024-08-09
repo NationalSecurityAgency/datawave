@@ -11,14 +11,17 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
+import java.util.TreeSet;
 
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.iteratorsImpl.system.IterationInterruptedException;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.TreeMultimap;
 
 import datawave.query.attributes.Document;
+import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.iterator.NestedIterator;
 import datawave.query.iterator.SeekableIterator;
 import datawave.query.iterator.Util;
@@ -201,7 +204,7 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T>, 
                     if (applyContextRequired(lowest)) {
                         // found a match, set next/document and advance
                         next = transforms.get(lowest);
-                        document = Util.buildNewDocument(includeHeads.values());
+                        document = Util.buildNewDocument(includeHeads, contextIncludeHeads, lowest);
                         includeHeads = advanceIterators(lowest);
                         break;
                     }
@@ -249,24 +252,40 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T>, 
 
     @Override
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
-        // seek all of the iterators. Drop those that fail, as long as we have at least one include left
+        // seek all the iterators. Drop those that fail, as long as we have at least one include left
         Iterator<NestedIterator<T>> include = includes.iterator();
         while (include.hasNext()) {
             NestedIterator<T> child = include.next();
             try {
                 for (NestedIterator<T> itr : child.leaves()) {
                     if (itr instanceof SeekableIterator) {
-                        ((SeekableIterator) itr).seek(range, columnFamilies, inclusive);
+                        try {
+                            ((SeekableIterator) itr).seek(range, columnFamilies, inclusive);
+                        } catch (IterationInterruptedException e2) {
+                            // throw IterationInterrupted exceptions as-is with no modifications so the QueryIterator can handle it
+                            throw e2;
+                        } catch (Exception e2) {
+                            if (itr.isNonEventField()) {
+                                // dropping a non-event term from the query means that the accuracy of the query
+                                // cannot be guaranteed. Thus, a fatal exception.
+                                log.error("Lookup of a non-event field failed, failing query");
+                                throw new DatawaveFatalQueryException("Lookup of non-event field failed", e2);
+                            }
+                            // otherwise we can safely drop this term from the intersection as the field will get re-introduced
+                            // to the context when the event is aggregated
+                            // Note: even though the precision of the query is affected the accuracy is not. i.e., documents that
+                            // would have been defeated at the field index will now be defeated at evaluation time
+                            throw e2;
+                        }
                     }
                 }
             } catch (Exception e) {
                 include.remove();
-                if (includes.isEmpty()) {
+                if (includes.isEmpty() || e instanceof DatawaveFatalQueryException || e instanceof IterationInterruptedException) {
                     throw e;
                 } else {
-                    log.warn("Failed include lookup, but dropping in lieu of other terms", e);
+                    log.warn("Lookup of event field failed, precision of query reduced.");
                 }
-
             }
         }
         Iterator<NestedIterator<T>> exclude = excludes.iterator();
@@ -352,9 +371,11 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T>, 
      * @return a sorted map
      */
     protected TreeMultimap<T,NestedIterator<T>> advanceIterators(T key) {
+        boolean seenException = false;
         T highest = null;
         transforms.remove(key);
-        for (NestedIterator<T> itr : includeHeads.removeAll(key)) {
+        SortedSet<NestedIterator<T>> itrs = new TreeSet<>(includeHeads.removeAll(key)).descendingSet();
+        for (NestedIterator<T> itr : itrs) {
             T next;
             try {
                 // if there is already a known highest go straight there instead of next
@@ -378,15 +399,28 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T>, 
                 if ((highest == null && transform.compareTo(key) > 0) || (highest != null && transform.compareTo(highest) > 0)) {
                     highest = transform;
                 }
+
+            } catch (IterationInterruptedException e) {
+                // allow the QueryIterator to handle these exception
+                throw e;
             } catch (Exception e) {
-                // only need to actually fail if we have nothing left in the AND clause
-                if (includeHeads.isEmpty()) {
-                    throw e;
+                seenException = true;
+                if (itr.isNonEventField()) {
+                    // dropping a non-event term from the query means that the accuracy of the query
+                    // cannot be guaranteed. Thus, a fatal exception.
+                    throw new DatawaveFatalQueryException("Lookup of non-event term failed", e);
                 } else {
-                    log.warn("Failed include lookup, but dropping in lieu of other terms", e);
+                    log.warn("Lookup of event field failed, precision of query reduced.");
                 }
             }
         }
+
+        // only need to actually fail if we have nothing left in the AND clause
+        if (seenException && includeHeads.isEmpty()) {
+            log.error("Failing query because all iterators within an intersection failed");
+            throw new DatawaveFatalQueryException("Exception in underlying iterator was destructive");
+        }
+
         return includeHeads;
     }
 
@@ -526,5 +560,34 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T>, 
     @Override
     public void setContext(T context) {
         this.evaluationContext = context;
+    }
+
+    @Override
+    public boolean isNonEventField() {
+        for (NestedIterator<T> itr : includes) {
+            if (itr.isNonEventField()) {
+                return true;
+            }
+        }
+
+        for (NestedIterator<T> itr : contextIncludes) {
+            if (itr.isNonEventField()) {
+                return true;
+            }
+        }
+
+        for (NestedIterator<T> itr : excludes) {
+            if (itr.isNonEventField()) {
+                return true;
+            }
+        }
+
+        for (NestedIterator<T> itr : contextExcludes) {
+            if (itr.isNonEventField()) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
