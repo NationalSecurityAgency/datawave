@@ -76,7 +76,7 @@ public class CompositeSeekingIterator extends WrappingIterator {
                 try {
                     type = Class.forName(typeClass).asSubclass(DiscreteIndexType.class).getDeclaredConstructor().newInstance();
                 } catch (ClassNotFoundException | NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
-                    log.warn("Unable to create DiscreteIndexType for class name: " + typeClass);
+                    log.warn("Unable to create DiscreteIndexType for class name: " + typeClass, e);
                 }
             }
 
