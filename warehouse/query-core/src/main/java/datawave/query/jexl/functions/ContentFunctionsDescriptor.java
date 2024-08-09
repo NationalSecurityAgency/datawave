@@ -552,7 +552,7 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
                     }
                     break;
                 default:
-                    NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.FUNCTION_NOT_FOUND,
+                    BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.FUNCTION_NOT_FOUND,
                                     MessageFormat.format("Found unexpected content function with name: {0}", visitor.name()));
                     throw new IllegalArgumentException(qe);
             }

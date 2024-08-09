@@ -464,7 +464,8 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor {
 
         if (numChildren != 2) {
             log.error("Equals node had unexpected number of children: " + numChildren);
-            throw new IllegalArgumentException("Problem parsing query");
+            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.UNPARSEABLE_JEXL_QUERY, "problem parsing query");
+            throw new IllegalArgumentException(qe);
         }
 
         String identifier = JexlNodes.getIdentifierOrLiteralAsString(node.jjtGetChild(0)).toUpperCase();
@@ -490,7 +491,8 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor {
                 }
                 if (contexts.isEmpty()) {
                     log.error("Couldn't normalize users regex: " + literal);
-                    throw new RuntimeException("Can't build query invalid regex: " + literal);
+                    BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_REGEX, "Can't build query invalid regex: " + literal);
+                    throw new RuntimeException(qe);
                 }
             } else {
                 for (String normalizedLiteral : EdgeKeyUtil.normalizeSource(literal, dataTypes, true)) {

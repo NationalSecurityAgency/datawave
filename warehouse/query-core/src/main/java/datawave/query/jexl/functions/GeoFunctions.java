@@ -117,9 +117,7 @@ public class GeoFunctions {
             } catch (IllegalArgumentException e) { // NumberFormatException extends IAE and sometimes IAE is thrown
                 if (log.isTraceEnabled())
                     log.trace("Error parsing lat[" + latField + "] or lon[" + lonField + "]", e);
-                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.UNPARSEABLE_JEXL_QUERY,
-                                "Error parsing lat[" + latField + "] or lon[" + lonField + "]");
-                throw new IllegalArgumentException(qe);
+                return false;
             }
 
             // @formatter:off

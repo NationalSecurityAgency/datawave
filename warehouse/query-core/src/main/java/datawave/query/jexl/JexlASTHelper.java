@@ -82,6 +82,7 @@ import datawave.query.jexl.visitors.validate.JunctionValidatingVisitor;
 import datawave.query.postprocessing.tf.Function;
 import datawave.query.postprocessing.tf.FunctionReferenceVisitor;
 import datawave.query.util.MetadataHelper;
+import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.NotFoundQueryException;
 import datawave.webservice.query.exception.QueryException;
@@ -206,14 +207,18 @@ public class JexlASTHelper {
             try {
                 return parseQueryWithBackslashes(query, parser);
             } catch (Exception e) {
-                throw new ParseException("Unable to perform backslash substitution while parsing the query: " + e.getMessage());
+                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.UNPARSEABLE_JEXL_QUERY,
+                        "Unable to perform backslash substitution while parsing the query: " + e.getMessage());
+                throw new IllegalArgumentException(qe);
             }
         } else {
             // Parse the original query
             try {
                 return parser.parse(null, jexlFeatures(), caseFixQuery, null);
             } catch (TokenMgrException | JexlException e) {
-                throw new ParseException(e.getMessage());
+                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.UNPARSEABLE_JEXL_QUERY,
+                        "Unable to parse the query: " + e.getMessage());
+                throw new IllegalArgumentException(qe);
             }
         }
     }
@@ -245,7 +250,9 @@ public class JexlASTHelper {
         try {
             jexlScript = parser.parse(null, jexlFeatures(), query, null);
         } catch (TokenMgrException e) {
-            throw new ParseException(e.getMessage());
+            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.UNPARSEABLE_JEXL_QUERY,
+                    "Unable to parse the query: " + e.getMessage());
+            throw new IllegalArgumentException(qe);
         }
 
         Deque<JexlNode> workingStack = new LinkedList<>();
@@ -285,10 +292,11 @@ public class JexlASTHelper {
             }
         }
 
-        if (numFound != numReplaced)
-            throw new ParseException(
-                            "Did not find the expected number of backslash placeholders in the query. Expected: " + numFound + ", Actual: " + numReplaced);
-
+        if (numFound != numReplaced) {
+            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.UNPARSEABLE_JEXL_QUERY,
+                    "Did not find the expected number of backslash placeholders in the query. Expected: " + numFound + ", Actual: " + numReplaced);
+            throw new IllegalArgumentException(qe);
+        }
         return jexlScript;
     }
 
@@ -1862,7 +1870,8 @@ public class JexlASTHelper {
     public static boolean validateJunctionChildren(JexlNode node, boolean failHard) {
         boolean valid = JunctionValidatingVisitor.validate(node);
         if (!valid && failHard) {
-            throw new RuntimeException("Instance of AND/OR node found with less than 2 children");
+            QueryException qe = new QueryException(DatawaveErrorCode.NODE_PROCESSING_ERROR, "Instance of AND/OR node found with less than 2 children");
+            throw new RuntimeException(qe);
         }
         return valid;
     }

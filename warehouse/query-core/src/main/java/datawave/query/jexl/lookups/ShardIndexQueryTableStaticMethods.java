@@ -53,6 +53,7 @@ import datawave.query.tables.ScannerFactory;
 import datawave.query.tables.ScannerSession;
 import datawave.query.tables.SessionOptions;
 import datawave.query.util.MetadataHelper;
+import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.PreConditionFailedQueryException;
 import datawave.webservice.query.exception.QueryException;
@@ -221,7 +222,9 @@ public class ShardIndexQueryTableStaticMethods {
             return normalizeQueryTerm(((Number) literal).toString(), config, scannerFactory, expansionFields, dataTypes, helperRef, execService);
         } else {
             log.error("Encountered literal that was not a String nor a Number: " + literal.getClass().getName() + ", " + literal);
-            throw new IllegalArgumentException("Encountered literal that was not a String nor a Number: " + literal.getClass().getName() + ", " + literal);
+            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.UNPARSEABLE_JEXL_QUERY,
+                            "Encountered literal that was not a String nor a Number: " + literal.getClass().getName() + ", " + literal);
+            throw new IllegalArgumentException(qe);
         }
     }
 
