@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
+import com.google.common.collect.ImmutableMap;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
@@ -2279,92 +2280,93 @@ public class QueryOptions implements OptionDescriber {
     protected DefaultOptions createDefaultOptions() {
 
         QueryOptions queryOptions = new QueryOptions();
-        DefaultOptions defaultOptions = new DefaultOptions();
-        defaultOptions.putDefaultValue(QueryOptions.DISABLE_EVALUATION, queryOptions.disableEvaluation);
-        defaultOptions.putDefaultValue(QueryOptions.DISABLE_FIELD_INDEX_EVAL, queryOptions.disableFiEval);
-        defaultOptions.putDefaultValue(QueryOptions.LIMIT_SOURCES, queryOptions.sourceLimit);
-        defaultOptions.putDefaultValue(QueryOptions.DISABLE_DOCUMENTS_WITHOUT_EVENTS, queryOptions.disableIndexOnlyDocuments);
-        defaultOptions.putDefaultValue(QueryOptions.QUERY, queryOptions.query);
-        defaultOptions.putDefaultValue(QueryOptions.QUERY_ID, queryOptions.queryId);
-        defaultOptions.putDefaultValue(QueryOptions.SCAN_ID, queryOptions.scanId);
-        defaultOptions.putDefaultValue(QueryOptions.QUERY_MAPPING_COMPRESS, compressedMappings);
-        defaultOptions.putDefaultValue(QueryOptions.COMPOSITE_METADATA, queryOptions.compositeMetadata);
-        defaultOptions.putDefaultValue(QueryOptions.COMPOSITE_SEEK_THRESHOLD, queryOptions.compositeSeekThreshold);
-        defaultOptions.putDefaultValue(Constants.RETURN_TYPE, queryOptions.returnType);
-        defaultOptions.putDefaultValue(QueryOptions.REDUCED_RESPONSE, queryOptions.reducedResponse);
-        defaultOptions.putDefaultValue(QueryOptions.FULL_TABLE_SCAN_ONLY, queryOptions.fullTableScanOnly);
-        defaultOptions.putDefaultValue(QueryOptions.TRACK_SIZES, queryOptions.trackSizes);
-        defaultOptions.putDefaultValue(QueryOptions.PROJECTION_FIELDS, queryOptions.allowListedFields);
-        defaultOptions.putDefaultValue(QueryOptions.DISALLOWLISTED_FIELDS, queryOptions.disallowListedFields);
-        defaultOptions.putDefaultValue(QueryOptions.FIELD_COUNTS, queryOptions.fieldCounts);
-        defaultOptions.putDefaultValue(QueryOptions.TERM_COUNTS, queryOptions.termCounts);
-        defaultOptions.putDefaultValue(QueryOptions.FILTER_MASKED_VALUES, queryOptions.filterMaskedValues);
-        defaultOptions.putDefaultValue(QueryOptions.INCLUDE_DATATYPE, queryOptions.includeDatatype);
-        defaultOptions.putDefaultValue(QueryOptions.INCLUDE_RECORD_ID, queryOptions.includeRecordId);
-        defaultOptions.putDefaultValue(QueryOptions.COLLECT_TIMING_DETAILS, queryOptions.collectTimingDetails);
-        defaultOptions.putDefaultValue(QueryOptions.STATSD_HOST_COLON_PORT, queryOptions.statsdHostAndPort);
-        defaultOptions.putDefaultValue(QueryOptions.STATSD_MAX_QUEUE_SIZE, queryOptions.statsdMaxQueueSize);
-        defaultOptions.putDefaultValue(QueryOptions.INCLUDE_HIERARCHY_FIELDS, queryOptions.includeHierarchyFields);
-        defaultOptions.putDefaultValue(QueryOptions.FI_FIELD_SEEK, queryOptions.fiFieldSeek);
-        defaultOptions.putDefaultValue(QueryOptions.FI_NEXT_SEEK, queryOptions.fiNextSeek);
-        defaultOptions.putDefaultValue(QueryOptions.EVENT_FIELD_SEEK, queryOptions.eventFieldSeek);
-        defaultOptions.putDefaultValue(QueryOptions.EVENT_NEXT_SEEK, queryOptions.eventNextSeek);
-        defaultOptions.putDefaultValue(QueryOptions.TF_FIELD_SEEK, queryOptions.tfFieldSeek);
-        defaultOptions.putDefaultValue(QueryOptions.TF_NEXT_SEEK, queryOptions.tfNextSeek);
-        defaultOptions.putDefaultValue(QueryOptions.DOC_AGGREGATION_THRESHOLD_MS, queryOptions.docAggregationThresholdMs);
-        defaultOptions.putDefaultValue(QueryOptions.TERM_FREQUENCY_AGGREGATION_THRESHOLD_MS, queryOptions.tfAggregationThresholdMs);
-        defaultOptions.putDefaultValue(QueryOptions.DATATYPE_FILTER, queryOptions.fieldIndexKeyDataTypeFilter);
-        defaultOptions.putDefaultValue(QueryOptions.INDEX_ONLY_FIELDS, queryOptions.indexOnlyFields);
-        defaultOptions.putDefaultValue(QueryOptions.INDEXED_FIELDS, queryOptions.indexedFields);
-        defaultOptions.putDefaultValue(QueryOptions.IGNORE_COLUMN_FAMILIES, queryOptions.ignoreColumnFamilies);
-        defaultOptions.putDefaultValue(QueryOptions.START_TIME, queryOptions.startTime);
-        defaultOptions.putDefaultValue(QueryOptions.END_TIME, queryOptions.endTime);
-        defaultOptions.putDefaultValue(QueryOptions.INCLUDE_GROUPING_CONTEXT,
-                        queryOptions.includeGroupingContext || (queryOptions.groupFields != null && queryOptions.groupFields.hasGroupByFields()));
-        defaultOptions.putDefaultValue(QueryOptions.DOCUMENT_PERMUTATION_CLASSES, queryOptions.documentPermutationClasses);
-        defaultOptions.putDefaultValue(QueryOptions.LIMIT_FIELDS, queryOptions.limitFieldsMap);
-        defaultOptions.putDefaultValue(QueryOptions.MATCHING_FIELD_SETS, queryOptions.matchingFieldSets);
-        defaultOptions.putDefaultValue(QueryOptions.LIMIT_FIELDS_PRE_QUERY_EVALUATION, queryOptions.limitFieldsPreQueryEvaluation);
-        defaultOptions.putDefaultValue(QueryOptions.LIMIT_FIELDS_FIELD, queryOptions.limitFieldsField);
-        defaultOptions.putDefaultValue(QueryOptions.GROUP_FIELDS, queryOptions.groupFields);
-        defaultOptions.putDefaultValue(QueryOptions.GROUP_FIELDS_BATCH_SIZE, queryOptions.groupFieldsBatchSize);
-        defaultOptions.putDefaultValue(QueryOptions.UNIQUE_FIELDS, queryOptions.uniqueFields);
-        defaultOptions.putDefaultValue(QueryOptions.HIT_LIST, queryOptions.arithmetic);
-        defaultOptions.putDefaultValue(QueryOptions.DATE_INDEX_TIME_TRAVEL, queryOptions.dateIndexTimeTravel);
-        defaultOptions.putDefaultValue(QueryOptions.POSTPROCESSING_CLASSES, queryOptions.postProcessingFunctions);
-        defaultOptions.putDefaultValue(QueryOptions.NON_INDEXED_DATATYPES, queryOptions.nonIndexedDataTypeMap);
-        defaultOptions.putDefaultValue(QueryOptions.CONTAINS_INDEX_ONLY_TERMS, queryOptions.containsIndexOnlyTerms);
-        defaultOptions.putDefaultValue(QueryOptions.ALLOW_FIELD_INDEX_EVALUATION, queryOptions.allowFieldIndexEvaluation);
-        defaultOptions.putDefaultValue(QueryOptions.ALLOW_TERM_FREQUENCY_LOOKUP, queryOptions.allowTermFrequencyLookup);
-        defaultOptions.putDefaultValue(QueryOptions.HDFS_SITE_CONFIG_URLS, queryOptions.hdfsSiteConfigURLs);
-        defaultOptions.putDefaultValue(QueryOptions.HDFS_FILE_COMPRESSION_CODEC, queryOptions.hdfsFileCompressionCodec);
-        defaultOptions.putDefaultValue(QueryOptions.ZOOKEEPER_CONFIG, queryOptions.zookeeperConfig);
-        defaultOptions.putDefaultValue(QueryOptions.IVARATOR_CACHE_DIR_CONFIG, queryOptions.ivaratorCacheDirConfigs);
-        defaultOptions.putDefaultValue(QueryOptions.IVARATOR_CACHE_BUFFER_SIZE, queryOptions.ivaratorCacheBufferSize);
-        defaultOptions.putDefaultValue(QueryOptions.IVARATOR_SCAN_PERSIST_THRESHOLD, queryOptions.ivaratorCacheScanPersistThreshold);
-        defaultOptions.putDefaultValue(QueryOptions.IVARATOR_SCAN_TIMEOUT, queryOptions.ivaratorCacheScanTimeout);
-        defaultOptions.putDefaultValue(QueryOptions.RESULT_TIMEOUT, queryOptions.resultTimeout);
-        defaultOptions.putDefaultValue(QueryOptions.MAX_INDEX_RANGE_SPLIT, queryOptions.maxIndexRangeSplit);
-        defaultOptions.putDefaultValue(QueryOptions.MAX_IVARATOR_OPEN_FILES, queryOptions.ivaratorMaxOpenFiles);
-        defaultOptions.putDefaultValue(QueryOptions.IVARATOR_NUM_RETRIES, queryOptions.ivaratorNumRetries);
-        defaultOptions.putDefaultValue(QueryOptions.IVARATOR_PERSIST_VERIFY, queryOptions.ivaratorPersistOptions.isVerifyElements());
-        defaultOptions.putDefaultValue(QueryOptions.IVARATOR_PERSIST_VERIFY_COUNT, queryOptions.ivaratorPersistOptions.getNumElementsToVerify());
-        defaultOptions.putDefaultValue(QueryOptions.MAX_IVARATOR_SOURCES, queryOptions.maxIvaratorSources);
-        defaultOptions.putDefaultValue(QueryOptions.MAX_IVARATOR_SOURCE_WAIT, queryOptions.maxIvaratorSourceWait);
-        defaultOptions.putDefaultValue(QueryOptions.MAX_IVARATOR_RESULTS, queryOptions.maxIvaratorResults);
-        defaultOptions.putDefaultValue(QueryOptions.YIELD_THRESHOLD_MS, queryOptions.yieldThresholdMs);
-        defaultOptions.putDefaultValue(QueryOptions.COMPRESS_SERVER_SIDE_RESULTS, queryOptions.compressResults);
-        defaultOptions.putDefaultValue(QueryOptions.MAX_EVALUATION_PIPELINES, queryOptions.maxEvaluationPipelines);
-        defaultOptions.putDefaultValue(QueryOptions.SERIAL_EVALUATION_PIPELINE, queryOptions.serialEvaluationPipeline);
-        defaultOptions.putDefaultValue(QueryOptions.MAX_PIPELINE_CACHED_RESULTS, queryOptions.maxPipelineCachedResults);
-        defaultOptions.putDefaultValue(QueryOptions.TERM_FREQUENCIES_REQUIRED, queryOptions.termFrequenciesRequired);
-        defaultOptions.putDefaultValue(QueryOptions.DATE_INDEX_TIME_TRAVEL, queryOptions.dateIndexTimeTravel);
-        defaultOptions.putDefaultValue(QueryOptions.SORTED_UIDS, queryOptions.sortedUIDs);
-        defaultOptions.putDefaultValue(QueryOptions.DEBUG_MULTITHREADED_SOURCES, queryOptions.debugMultithreadedSources);
-        defaultOptions.putDefaultValue(QueryOptions.ACTIVE_QUERY_LOG_NAME, queryOptions.activeQueryLogName);
-        defaultOptions.putDefaultValue(QueryOptions.EXCERPT_FIELDS, queryOptions.excerptFields);
-        defaultOptions.putDefaultValue(QueryOptions.EXCERPT_FIELDS_NO_HIT_CALLOUT, queryOptions.excerptFieldsNoHitCallout);
-        defaultOptions.putDefaultValue(QueryOptions.EXCERPT_ITERATOR, queryOptions.excerptIterator);
+        DefaultOptions defaultOptions = DefaultOptions.builder()
+            .putDefaultValue(QueryOptions.DISABLE_EVALUATION, queryOptions.disableEvaluation)
+            .putDefaultValue(QueryOptions.DISABLE_FIELD_INDEX_EVAL, queryOptions.disableFiEval)
+            .putDefaultValue(QueryOptions.LIMIT_SOURCES, queryOptions.sourceLimit)
+            .putDefaultValue(QueryOptions.DISABLE_DOCUMENTS_WITHOUT_EVENTS, queryOptions.disableIndexOnlyDocuments)
+            .putDefaultValue(QueryOptions.QUERY, queryOptions.query)
+            .putDefaultValue(QueryOptions.QUERY_ID, queryOptions.queryId)
+            .putDefaultValue(QueryOptions.SCAN_ID, queryOptions.scanId)
+            .putDefaultValue(QueryOptions.QUERY_MAPPING_COMPRESS, compressedMappings)
+            .putDefaultValue(QueryOptions.COMPOSITE_METADATA, queryOptions.compositeMetadata)
+            .putDefaultValue(QueryOptions.COMPOSITE_SEEK_THRESHOLD, queryOptions.compositeSeekThreshold)
+            .putDefaultValue(Constants.RETURN_TYPE, queryOptions.returnType)
+            .putDefaultValue(QueryOptions.REDUCED_RESPONSE, queryOptions.reducedResponse)
+            .putDefaultValue(QueryOptions.FULL_TABLE_SCAN_ONLY, queryOptions.fullTableScanOnly)
+            .putDefaultValue(QueryOptions.TRACK_SIZES, queryOptions.trackSizes)
+            .putDefaultValue(QueryOptions.PROJECTION_FIELDS, queryOptions.allowListedFields)
+            .putDefaultValue(QueryOptions.DISALLOWLISTED_FIELDS, queryOptions.disallowListedFields)
+            .putDefaultValue(QueryOptions.FIELD_COUNTS, queryOptions.fieldCounts)
+            .putDefaultValue(QueryOptions.TERM_COUNTS, queryOptions.termCounts)
+            .putDefaultValue(QueryOptions.FILTER_MASKED_VALUES, queryOptions.filterMaskedValues)
+            .putDefaultValue(QueryOptions.INCLUDE_DATATYPE, queryOptions.includeDatatype)
+            .putDefaultValue(QueryOptions.INCLUDE_RECORD_ID, queryOptions.includeRecordId)
+            .putDefaultValue(QueryOptions.COLLECT_TIMING_DETAILS, queryOptions.collectTimingDetails)
+            .putDefaultValue(QueryOptions.STATSD_HOST_COLON_PORT, queryOptions.statsdHostAndPort)
+            .putDefaultValue(QueryOptions.STATSD_MAX_QUEUE_SIZE, queryOptions.statsdMaxQueueSize)
+            .putDefaultValue(QueryOptions.INCLUDE_HIERARCHY_FIELDS, queryOptions.includeHierarchyFields)
+            .putDefaultValue(QueryOptions.FI_FIELD_SEEK, queryOptions.fiFieldSeek)
+            .putDefaultValue(QueryOptions.FI_NEXT_SEEK, queryOptions.fiNextSeek)
+            .putDefaultValue(QueryOptions.EVENT_FIELD_SEEK, queryOptions.eventFieldSeek)
+            .putDefaultValue(QueryOptions.EVENT_NEXT_SEEK, queryOptions.eventNextSeek)
+            .putDefaultValue(QueryOptions.TF_FIELD_SEEK, queryOptions.tfFieldSeek)
+            .putDefaultValue(QueryOptions.TF_NEXT_SEEK, queryOptions.tfNextSeek)
+            .putDefaultValue(QueryOptions.DOC_AGGREGATION_THRESHOLD_MS, queryOptions.docAggregationThresholdMs)
+            .putDefaultValue(QueryOptions.TERM_FREQUENCY_AGGREGATION_THRESHOLD_MS, queryOptions.tfAggregationThresholdMs)
+            .putDefaultValue(QueryOptions.DATATYPE_FILTER, queryOptions.fieldIndexKeyDataTypeFilter)
+            .putDefaultValue(QueryOptions.INDEX_ONLY_FIELDS, queryOptions.indexOnlyFields)
+            .putDefaultValue(QueryOptions.INDEXED_FIELDS, queryOptions.indexedFields)
+            .putDefaultValue(QueryOptions.IGNORE_COLUMN_FAMILIES, queryOptions.ignoreColumnFamilies)
+            .putDefaultValue(QueryOptions.START_TIME, queryOptions.startTime)
+            .putDefaultValue(QueryOptions.END_TIME, queryOptions.endTime)
+            .putDefaultValue(QueryOptions.INCLUDE_GROUPING_CONTEXT,
+              queryOptions.includeGroupingContext || (queryOptions.groupFields != null && queryOptions.groupFields.hasGroupByFields()))
+            .putDefaultValue(QueryOptions.DOCUMENT_PERMUTATION_CLASSES, queryOptions.documentPermutationClasses)
+            .putDefaultValue(QueryOptions.LIMIT_FIELDS, queryOptions.limitFieldsMap)
+            .putDefaultValue(QueryOptions.MATCHING_FIELD_SETS, queryOptions.matchingFieldSets)
+            .putDefaultValue(QueryOptions.LIMIT_FIELDS_PRE_QUERY_EVALUATION, queryOptions.limitFieldsPreQueryEvaluation)
+            .putDefaultValue(QueryOptions.LIMIT_FIELDS_FIELD, queryOptions.limitFieldsField)
+            .putDefaultValue(QueryOptions.GROUP_FIELDS, queryOptions.groupFields)
+            .putDefaultValue(QueryOptions.GROUP_FIELDS_BATCH_SIZE, queryOptions.groupFieldsBatchSize)
+            .putDefaultValue(QueryOptions.UNIQUE_FIELDS, queryOptions.uniqueFields)
+            .putDefaultValue(QueryOptions.HIT_LIST, queryOptions.arithmetic)
+            .putDefaultValue(QueryOptions.DATE_INDEX_TIME_TRAVEL, queryOptions.dateIndexTimeTravel)
+            .putDefaultValue(QueryOptions.POSTPROCESSING_CLASSES, queryOptions.postProcessingFunctions)
+            .putDefaultValue(QueryOptions.NON_INDEXED_DATATYPES, queryOptions.nonIndexedDataTypeMap)
+            .putDefaultValue(QueryOptions.CONTAINS_INDEX_ONLY_TERMS, queryOptions.containsIndexOnlyTerms)
+            .putDefaultValue(QueryOptions.ALLOW_FIELD_INDEX_EVALUATION, queryOptions.allowFieldIndexEvaluation)
+            .putDefaultValue(QueryOptions.ALLOW_TERM_FREQUENCY_LOOKUP, queryOptions.allowTermFrequencyLookup)
+            .putDefaultValue(QueryOptions.HDFS_SITE_CONFIG_URLS, queryOptions.hdfsSiteConfigURLs)
+            .putDefaultValue(QueryOptions.HDFS_FILE_COMPRESSION_CODEC, queryOptions.hdfsFileCompressionCodec)
+            .putDefaultValue(QueryOptions.ZOOKEEPER_CONFIG, queryOptions.zookeeperConfig)
+            .putDefaultValue(QueryOptions.IVARATOR_CACHE_DIR_CONFIG, queryOptions.ivaratorCacheDirConfigs)
+            .putDefaultValue(QueryOptions.IVARATOR_CACHE_BUFFER_SIZE, queryOptions.ivaratorCacheBufferSize)
+            .putDefaultValue(QueryOptions.IVARATOR_SCAN_PERSIST_THRESHOLD, queryOptions.ivaratorCacheScanPersistThreshold)
+            .putDefaultValue(QueryOptions.IVARATOR_SCAN_TIMEOUT, queryOptions.ivaratorCacheScanTimeout)
+            .putDefaultValue(QueryOptions.RESULT_TIMEOUT, queryOptions.resultTimeout)
+            .putDefaultValue(QueryOptions.MAX_INDEX_RANGE_SPLIT, queryOptions.maxIndexRangeSplit)
+            .putDefaultValue(QueryOptions.MAX_IVARATOR_OPEN_FILES, queryOptions.ivaratorMaxOpenFiles)
+            .putDefaultValue(QueryOptions.IVARATOR_NUM_RETRIES, queryOptions.ivaratorNumRetries)
+            .putDefaultValue(QueryOptions.IVARATOR_PERSIST_VERIFY, queryOptions.ivaratorPersistOptions.isVerifyElements())
+            .putDefaultValue(QueryOptions.IVARATOR_PERSIST_VERIFY_COUNT, queryOptions.ivaratorPersistOptions.getNumElementsToVerify())
+            .putDefaultValue(QueryOptions.MAX_IVARATOR_SOURCES, queryOptions.maxIvaratorSources)
+            .putDefaultValue(QueryOptions.MAX_IVARATOR_SOURCE_WAIT, queryOptions.maxIvaratorSourceWait)
+            .putDefaultValue(QueryOptions.MAX_IVARATOR_RESULTS, queryOptions.maxIvaratorResults)
+            .putDefaultValue(QueryOptions.YIELD_THRESHOLD_MS, queryOptions.yieldThresholdMs)
+            .putDefaultValue(QueryOptions.COMPRESS_SERVER_SIDE_RESULTS, queryOptions.compressResults)
+            .putDefaultValue(QueryOptions.MAX_EVALUATION_PIPELINES, queryOptions.maxEvaluationPipelines)
+            .putDefaultValue(QueryOptions.SERIAL_EVALUATION_PIPELINE, queryOptions.serialEvaluationPipeline)
+            .putDefaultValue(QueryOptions.MAX_PIPELINE_CACHED_RESULTS, queryOptions.maxPipelineCachedResults)
+            .putDefaultValue(QueryOptions.TERM_FREQUENCIES_REQUIRED, queryOptions.termFrequenciesRequired)
+            .putDefaultValue(QueryOptions.DATE_INDEX_TIME_TRAVEL, queryOptions.dateIndexTimeTravel)
+            .putDefaultValue(QueryOptions.SORTED_UIDS, queryOptions.sortedUIDs)
+            .putDefaultValue(QueryOptions.DEBUG_MULTITHREADED_SOURCES, queryOptions.debugMultithreadedSources)
+            .putDefaultValue(QueryOptions.ACTIVE_QUERY_LOG_NAME, queryOptions.activeQueryLogName)
+            .putDefaultValue(QueryOptions.EXCERPT_FIELDS, queryOptions.excerptFields)
+            .putDefaultValue(QueryOptions.EXCERPT_FIELDS_NO_HIT_CALLOUT, queryOptions.excerptFieldsNoHitCallout)
+            .putDefaultValue(QueryOptions.EXCERPT_ITERATOR, queryOptions.excerptIterator)
+            .build();
 
         return defaultOptions;
     }
@@ -2385,7 +2387,9 @@ public class QueryOptions implements OptionDescriber {
                 Class<?> clazz = Class.forName(className);
                 // Check if the given class inherits QueryOptions.
                 if (!QueryOptions.class.isAssignableFrom(clazz)) {
-                    throw new IllegalArgumentException("Class must be a subclass of " + QueryOptions.class.getName());
+                    DefaultOptions options = new DefaultOptions();
+                    defaultOptionsMap.put(className, options);
+                    return options;
                 }
                 // Attempt to fetch the default options from createDefaultOptions on an instance of the class.
                 try {
@@ -2463,7 +2467,6 @@ public class QueryOptions implements OptionDescriber {
      */
     public static <T> void addOption(IteratorSetting setting, String option, T value, Function<T,String> valueTransformer, boolean allowBlankValues) {
         // If we have a default options implementation for the specified iterator setting's class, fetch it.
-        System.out.println("Hey" + setting.getIteratorClass());
         DefaultOptions defaultOptions = getDefaultOptions(setting.getIteratorClass());
         // If the value matches the default value, do not add it to the setting.
         if (defaultOptions.hasDefaultValue(option) && defaultOptions.equalsDefaultValue(option, value)) {
@@ -2482,12 +2485,16 @@ public class QueryOptions implements OptionDescriber {
     /**
      * Default options for QueryOptions. TODO: Make immutable with a builder that is used in createDefaultOptions().
      */
-    protected static class DefaultOptions {
+    protected static final class DefaultOptions {
 
-        protected Map<String,Object> defaultValues = new HashMap<>();
+        private final ImmutableMap<String,Object> defaultValues;
 
-        public void putDefaultValue(String option, Object value) {
-            defaultValues.put(option, value);
+        public DefaultOptions() {
+            this.defaultValues = ImmutableMap.of();
+        }
+
+        public DefaultOptions(Map<String,Object> defaultValues) {
+            this.defaultValues = ImmutableMap.copyOf(defaultValues);
         }
 
         public boolean hasDefaultValue(String option) {
@@ -2499,6 +2506,38 @@ public class QueryOptions implements OptionDescriber {
                 return Objects.equals(defaultValues.get(option), value);
             }
             return false;
+        }
+
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        protected static class Builder {
+            private final Map<String,Object> values;
+
+            public Builder(){
+                values = new HashMap<>();
+            }
+
+            public Builder putDefaultValue(String option, Object value) {
+                values.put(option, value);
+                return this;
+            }
+
+            public boolean hasDefaultValue(String option) {
+                return values.containsKey(option);
+            }
+
+            public boolean equalsDefaultValue(String option, Object value) {
+                if (hasDefaultValue(option)) {
+                    return Objects.equals(values.get(option), value);
+                }
+                return false;
+            }
+
+            public DefaultOptions build() {
+                return new DefaultOptions(values);
+            }
         }
     }
 }
