@@ -136,6 +136,8 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("bypassAccumulo", true);
         defaultValues.put("accumuloPassword", "");
         updatedValues.put("accumuloPassword", "secret");
+        defaultValues.put("connPoolName", null);
+        updatedValues.put("connPoolName", "default");
         defaultValues.put("reduceResults", false);
         updatedValues.put("reduceResults", true);
         defaultValues.put("tldQuery", false);

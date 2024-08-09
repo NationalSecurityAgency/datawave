@@ -60,10 +60,18 @@ public class IngestTypeVisitor extends BaseVisitor {
 
     private static final Logger log = Logger.getLogger(IngestTypeVisitor.class);
 
+    // in the case of arithmetic or a miss in the TypeMetadata
     public static final String UNKNOWN_TYPE = "UNKNOWN_TYPE";
+
+    // in the case of a null literal or negated term (effectively non-executable terms)
+    public static final String IGNORED_TYPE = "IGNORED_TYPE";
+
     // cache expensive calls to get ingest types per field
     private final TypeMetadata typeMetadata;
     private final Map<String,Set<String>> ingestTypeCache;
+
+    // flag that determines how 'non-executable' nodes are handled
+    private boolean external = false;
 
     public IngestTypeVisitor(TypeMetadata typeMetadata) {
         this.typeMetadata = typeMetadata;
@@ -108,6 +116,20 @@ public class IngestTypeVisitor extends BaseVisitor {
         } else {
             return getIngestTypesForLeaf(node);
         }
+    }
+
+    /**
+     * Entrypoint for when this visitor is reused
+     *
+     * @param node
+     *            a JexlNode
+     * @param external
+     *            a flag that determines how 'non-executable' node are handled
+     * @return a set of ingest types for this node
+     */
+    public Set<String> getIngestTypes(JexlNode node, boolean external) {
+        this.external = external;
+        return (Set<String>) node.jjtAccept(this, null);
     }
 
     // leaf nodes
@@ -161,12 +183,17 @@ public class IngestTypeVisitor extends BaseVisitor {
 
     @Override
     public Object visit(ASTNotNode node, Object data) {
-        return getIngestTypes(node);
+        if (external) {
+            return node.jjtGetChild(0).jjtAccept(this, data);
+        }
+        Set<String> types = new HashSet<>();
+        types.add(IGNORED_TYPE);
+        return types;
     }
 
     @Override
     public Object visit(ASTFunctionNode node, Object data) {
-        return getIngestTypes(node);
+        return getIngestTypesForFunction(node);
     }
 
     @Override
@@ -253,11 +280,20 @@ public class IngestTypeVisitor extends BaseVisitor {
 
     @SuppressWarnings("unchecked")
     public Set<String> getIngestTypesForJunction(JexlNode node) {
+        if (node instanceof ASTAndNode) {
+            return getIngestTypesForIntersection((ASTAndNode) node);
+        }
+
         Set<String> ingestTypes = new HashSet<>();
         for (int i = 0; i < node.jjtGetNumChildren(); i++) {
             Set<String> found = (Set<String>) node.jjtGetChild(i).jjtAccept(this, null);
             ingestTypes.addAll(found);
         }
+
+        if (ingestTypes.size() > 1) {
+            ingestTypes.remove(IGNORED_TYPE);
+        }
+
         return ingestTypes;
     }
 
@@ -271,8 +307,14 @@ public class IngestTypeVisitor extends BaseVisitor {
      */
     public Set<String> getIngestTypesForLeaf(JexlNode node) {
         node = JexlASTHelper.dereference(node);
-
         Set<String> ingestTypes = new HashSet<>();
+
+        Object literal = JexlASTHelper.getLiteralValueSafely(node);
+        if (literal == null && !external) {
+            ingestTypes.add(IGNORED_TYPE);
+            return ingestTypes;
+        }
+
         Set<String> fields = getFieldsForLeaf(node);
         for (String field : fields) {
             ingestTypes.addAll(getIngestTypesForField(field));
@@ -311,6 +353,37 @@ public class IngestTypeVisitor extends BaseVisitor {
                         .map(JexlASTHelper::deconstructIdentifier)
                         .collect(Collectors.toSet());
         //  @formatter:on
+    }
+
+    /**
+     * Functions require a separate
+     *
+     * @param node
+     *            an ASTFunctionNode
+     * @return the set of ingest types
+     */
+    public Set<String> getIngestTypesForFunction(ASTFunctionNode node) {
+        Set<String> fields = getFieldsForFunctionNode(node);
+
+        if (fields == null) {
+            throw new IllegalStateException("no fields should be an empty collection");
+        }
+
+        // trim any identifiers
+        fields = fields.stream().map(JexlASTHelper::deconstructIdentifier).collect(Collectors.toSet());
+
+        Set<String> types = new HashSet<>();
+
+        // function fields are always treated as a union. there might be one exception to this.
+        for (String field : fields) {
+            types.addAll(getIngestTypesForField(field));
+        }
+
+        if (types.isEmpty()) {
+            types.add(UNKNOWN_TYPE);
+        }
+
+        return types;
     }
 
     /**
@@ -380,8 +453,8 @@ public class IngestTypeVisitor extends BaseVisitor {
      * <code>A == '1' &amp;&amp; B == null</code>
      * </p>
      * <p>
-     * The both queries appear to be non-executable due to exclusive datatypes. A normal intersection of the A and B terms should produce an empty set. However,
-     * the A term is executable while in both cases the B term acts as a filter. The B term is always true by definition of being an exclusive datatype, so this
+     * Both queries appear to be non-executable due to exclusive datatypes. A normal intersection of the A and B terms should produce an empty set. However, the
+     * A term is executable while in both cases the B term acts as a filter. The B term is always true by definition of being an exclusive datatype, so this
      * visitor will return ingest type 1 for this intersection. The IngestTypePruningVisitor will correctly detect that the B term is prunable and remove it
      * from the query.
      *
@@ -394,18 +467,13 @@ public class IngestTypeVisitor extends BaseVisitor {
         Set<String> ingestTypes = new HashSet<>();
         for (int i = 0; i < node.jjtGetNumChildren(); i++) {
             JexlNode child = JexlASTHelper.dereference(node.jjtGetChild(i));
-
-            boolean negated = child instanceof ASTNotNode;
-            boolean isNullLiteral = child instanceof ASTEQNode && JexlASTHelper.getLiteralValueSafely(child) == null;
-            if (negated || isNullLiteral) {
-                continue;
-            }
-
             Set<String> childIngestTypes = (Set<String>) child.jjtAccept(this, null);
 
             if (childIngestTypes == null) {
                 // we could have a malformed query or a query with a _Drop_ marker
-                continue;
+                log.warn("potentially malformed query");
+                childIngestTypes = new HashSet<>();
+                childIngestTypes.add(IGNORED_TYPE);
             }
 
             if (ingestTypes.isEmpty()) {
@@ -419,6 +487,11 @@ public class IngestTypeVisitor extends BaseVisitor {
                 break;
             }
         }
+
+        if (ingestTypes.size() > 1) {
+            ingestTypes.remove(IGNORED_TYPE);
+        }
+
         return ingestTypes;
     }
 
@@ -437,6 +510,13 @@ public class IngestTypeVisitor extends BaseVisitor {
             unknown.add(UNKNOWN_TYPE);
             return unknown;
         }
+
+        if ((typesA.contains(IGNORED_TYPE) && !typesB.contains(IGNORED_TYPE)) || (!typesA.contains(IGNORED_TYPE) && typesB.contains(IGNORED_TYPE))) {
+            typesA.addAll(typesB);
+            typesA.remove(IGNORED_TYPE);
+            return typesA;
+        }
+
         typesA.retainAll(typesB);
         return typesA;
     }

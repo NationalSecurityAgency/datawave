@@ -125,6 +125,12 @@ public class SSDeepSimilarityQueryLogic extends BaseQueryLogic<ScoredSSDeepPair>
 
         final int indexBuckets = config.getIndexBuckets();
 
+        if (queryMap.isEmpty()) {
+            String message = "Unable to generate SSDeepHash ngrams for query: " + settings.getQuery() + ", possibly due to invalid SSDeep hash(es)?";
+            log.error(message);
+            throw new SSDeepRuntimeQueryException(message);
+        }
+
         // TODO: stream?
         for (NGramTuple ct : queryMap.keys()) {
             final String sizeAndChunk = chunkSizeEncoder.encode(ct.getChunkSize()) + ct.getChunk();

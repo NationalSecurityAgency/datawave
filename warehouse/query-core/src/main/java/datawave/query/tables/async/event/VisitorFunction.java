@@ -506,7 +506,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
 
         // get existing types from the query
         Set<String> datatypes = IngestTypeVisitor.getIngestTypes(script, cachedTypeMetadata);
-        if (datatypes.contains(IngestTypeVisitor.UNKNOWN_TYPE)) {
+        if (datatypes.contains(IngestTypeVisitor.UNKNOWN_TYPE) || datatypes.contains(IngestTypeVisitor.IGNORED_TYPE)) {
             return;
         }
 
