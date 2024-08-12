@@ -2650,7 +2650,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         if (config.isRebuildDatatypeFilter()) {
             Set<String> ingestTypes = IngestTypeVisitor.getIngestTypes(config.getQueryTree(), getTypeMetadata());
 
-            if (ingestTypes.contains(IngestTypeVisitor.UNKNOWN_TYPE)) {
+            if (ingestTypes.contains(IngestTypeVisitor.UNKNOWN_TYPE) || ingestTypes.contains(IngestTypeVisitor.IGNORED_TYPE)) {
                 // could not reduce ingest types based on the query structure, do nothing
             } else if (config.getDatatypeFilter().isEmpty()) {
                 // if no filter specified, build and set filter from query fields
