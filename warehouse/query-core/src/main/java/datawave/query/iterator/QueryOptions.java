@@ -2281,13 +2281,18 @@ public class QueryOptions implements OptionDescriber {
     protected DefaultOptions createDefaultOptions() {
 
         QueryOptions queryOptions = new QueryOptions();
-        DefaultOptions defaultOptions = DefaultOptions.builder().putDefaultValue(QueryOptions.DISABLE_EVALUATION, queryOptions.disableEvaluation)
+        // formatter:off
+        DefaultOptions defaultOptions = DefaultOptions.builder()
+                        .putDefaultValue(QueryOptions.DISABLE_EVALUATION, queryOptions.query == null ? true : queryOptions.disableEvaluation)
                         .putDefaultValue(QueryOptions.DISABLE_FIELD_INDEX_EVAL, queryOptions.disableFiEval)
                         .putDefaultValue(QueryOptions.LIMIT_SOURCES, queryOptions.sourceLimit)
                         .putDefaultValue(QueryOptions.DISABLE_DOCUMENTS_WITHOUT_EVENTS, queryOptions.disableIndexOnlyDocuments)
-                        .putDefaultValue(QueryOptions.QUERY, queryOptions.query).putDefaultValue(QueryOptions.QUERY_ID, queryOptions.queryId)
-                        .putDefaultValue(QueryOptions.SCAN_ID, queryOptions.scanId).putDefaultValue(QueryOptions.QUERY_MAPPING_COMPRESS, compressedMappings)
-                        .putDefaultValue(QueryOptions.COMPOSITE_METADATA, queryOptions.compositeMetadata)
+                        .putDefaultValue(QueryOptions.QUERY, queryOptions.query == null ? "" : queryOptions.query)
+                        .putDefaultValue(QueryOptions.QUERY_ID, queryOptions.queryId == null ? "" : queryOptions.queryId)
+                        .putDefaultValue(QueryOptions.SCAN_ID, queryOptions.scanId == null ? "" : queryOptions.scanId)
+                        .putDefaultValue(QueryOptions.QUERY_MAPPING_COMPRESS, queryOptions.compressedMappings)
+                        .putDefaultValue(QueryOptions.COMPOSITE_METADATA,
+                                        queryOptions.compositeMetadata == null ? new CompositeMetadata() : queryOptions.compositeMetadata)
                         .putDefaultValue(QueryOptions.COMPOSITE_SEEK_THRESHOLD, queryOptions.compositeSeekThreshold)
                         .putDefaultValue(Constants.RETURN_TYPE, queryOptions.returnType)
                         .putDefaultValue(QueryOptions.REDUCED_RESPONSE, queryOptions.reducedResponse)
@@ -2295,12 +2300,13 @@ public class QueryOptions implements OptionDescriber {
                         .putDefaultValue(QueryOptions.TRACK_SIZES, queryOptions.trackSizes)
                         .putDefaultValue(QueryOptions.PROJECTION_FIELDS, queryOptions.allowListedFields)
                         .putDefaultValue(QueryOptions.DISALLOWLISTED_FIELDS, queryOptions.disallowListedFields)
-                        .putDefaultValue(QueryOptions.FIELD_COUNTS, queryOptions.fieldCounts).putDefaultValue(QueryOptions.TERM_COUNTS, queryOptions.termCounts)
+                        .putDefaultValue(QueryOptions.FIELD_COUNTS, queryOptions.fieldCounts == null ? new CountMap() : queryOptions.fieldCounts)
+                        .putDefaultValue(QueryOptions.TERM_COUNTS, queryOptions.termCounts == null ? new CountMap() : queryOptions.termCounts)
                         .putDefaultValue(QueryOptions.FILTER_MASKED_VALUES, queryOptions.filterMaskedValues)
                         .putDefaultValue(QueryOptions.INCLUDE_DATATYPE, queryOptions.includeDatatype)
                         .putDefaultValue(QueryOptions.INCLUDE_RECORD_ID, queryOptions.includeRecordId)
                         .putDefaultValue(QueryOptions.COLLECT_TIMING_DETAILS, queryOptions.collectTimingDetails)
-                        .putDefaultValue(QueryOptions.STATSD_HOST_COLON_PORT, queryOptions.statsdHostAndPort)
+                        .putDefaultValue(QueryOptions.STATSD_HOST_COLON_PORT, queryOptions.statsdHostAndPort == null ? "" : queryOptions.statsdHostAndPort)
                         .putDefaultValue(QueryOptions.STATSD_MAX_QUEUE_SIZE, queryOptions.statsdMaxQueueSize)
                         .putDefaultValue(QueryOptions.INCLUDE_HIERARCHY_FIELDS, queryOptions.includeHierarchyFields)
                         .putDefaultValue(QueryOptions.FI_FIELD_SEEK, queryOptions.fiFieldSeek)
@@ -2323,7 +2329,7 @@ public class QueryOptions implements OptionDescriber {
                         .putDefaultValue(QueryOptions.LIMIT_FIELDS, queryOptions.limitFieldsMap)
                         .putDefaultValue(QueryOptions.MATCHING_FIELD_SETS, queryOptions.matchingFieldSets)
                         .putDefaultValue(QueryOptions.LIMIT_FIELDS_PRE_QUERY_EVALUATION, queryOptions.limitFieldsPreQueryEvaluation)
-                        .putDefaultValue(QueryOptions.LIMIT_FIELDS_FIELD, queryOptions.limitFieldsField)
+                        .putDefaultValue(QueryOptions.LIMIT_FIELDS_FIELD, queryOptions.limitFieldsField == null ? "" : queryOptions.limitFieldsField)
                         .putDefaultValue(QueryOptions.GROUP_FIELDS, queryOptions.groupFields)
                         .putDefaultValue(QueryOptions.GROUP_FIELDS_BATCH_SIZE, queryOptions.groupFieldsBatchSize)
                         .putDefaultValue(QueryOptions.UNIQUE_FIELDS, queryOptions.uniqueFields).putDefaultValue(QueryOptions.HIT_LIST, queryOptions.arithmetic)
@@ -2333,9 +2339,10 @@ public class QueryOptions implements OptionDescriber {
                         .putDefaultValue(QueryOptions.CONTAINS_INDEX_ONLY_TERMS, queryOptions.containsIndexOnlyTerms)
                         .putDefaultValue(QueryOptions.ALLOW_FIELD_INDEX_EVALUATION, queryOptions.allowFieldIndexEvaluation)
                         .putDefaultValue(QueryOptions.ALLOW_TERM_FREQUENCY_LOOKUP, queryOptions.allowTermFrequencyLookup)
-                        .putDefaultValue(QueryOptions.HDFS_SITE_CONFIG_URLS, queryOptions.hdfsSiteConfigURLs)
-                        .putDefaultValue(QueryOptions.HDFS_FILE_COMPRESSION_CODEC, queryOptions.hdfsFileCompressionCodec)
-                        .putDefaultValue(QueryOptions.ZOOKEEPER_CONFIG, queryOptions.zookeeperConfig)
+                        .putDefaultValue(QueryOptions.HDFS_SITE_CONFIG_URLS, queryOptions.hdfsSiteConfigURLs == null ? "" : queryOptions.hdfsSiteConfigURLs)
+                        .putDefaultValue(QueryOptions.HDFS_FILE_COMPRESSION_CODEC,
+                                        queryOptions.hdfsFileCompressionCodec == null ? "" : queryOptions.hdfsFileCompressionCodec)
+                        .putDefaultValue(QueryOptions.ZOOKEEPER_CONFIG, queryOptions.zookeeperConfig == null ? "" : queryOptions.zookeeperConfig)
                         .putDefaultValue(QueryOptions.IVARATOR_CACHE_DIR_CONFIG, queryOptions.ivaratorCacheDirConfigs)
                         .putDefaultValue(QueryOptions.IVARATOR_CACHE_BUFFER_SIZE, queryOptions.ivaratorCacheBufferSize)
                         .putDefaultValue(QueryOptions.IVARATOR_SCAN_PERSIST_THRESHOLD, queryOptions.ivaratorCacheScanPersistThreshold)
@@ -2358,10 +2365,11 @@ public class QueryOptions implements OptionDescriber {
                         .putDefaultValue(QueryOptions.DATE_INDEX_TIME_TRAVEL, queryOptions.dateIndexTimeTravel)
                         .putDefaultValue(QueryOptions.SORTED_UIDS, queryOptions.sortedUIDs)
                         .putDefaultValue(QueryOptions.DEBUG_MULTITHREADED_SOURCES, queryOptions.debugMultithreadedSources)
-                        .putDefaultValue(QueryOptions.ACTIVE_QUERY_LOG_NAME, queryOptions.activeQueryLogName)
-                        .putDefaultValue(QueryOptions.EXCERPT_FIELDS, queryOptions.excerptFields)
+                        .putDefaultValue(QueryOptions.ACTIVE_QUERY_LOG_NAME, queryOptions.activeQueryLogName == null ? "" : queryOptions.activeQueryLogName)
+                        .putDefaultValue(QueryOptions.EXCERPT_FIELDS, queryOptions.excerptFields == null ? new ExcerptFields() : queryOptions.excerptFields)
                         .putDefaultValue(QueryOptions.EXCERPT_FIELDS_NO_HIT_CALLOUT, queryOptions.excerptFieldsNoHitCallout)
                         .putDefaultValue(QueryOptions.EXCERPT_ITERATOR, queryOptions.excerptIterator).build();
+        // formatter:on
 
         return defaultOptions;
     }
@@ -2382,7 +2390,7 @@ public class QueryOptions implements OptionDescriber {
                 Class<?> clazz = Class.forName(className);
                 // Check if the given class inherits QueryOptions.
                 if (!QueryOptions.class.isAssignableFrom(clazz)) {
-                    DefaultOptions options = new DefaultOptions();
+                    DefaultOptions options = DefaultOptions.builder().build();
                     defaultOptionsMap.put(className, options);
                     return options;
                 }
@@ -2484,7 +2492,7 @@ public class QueryOptions implements OptionDescriber {
 
         public final Map<String,Object> defaultValues;
 
-        public DefaultOptions() {
+        private DefaultOptions() {
             this.defaultValues = MapUtils.unmodifiableMap(new HashMap<>());
         }
 
@@ -2515,7 +2523,7 @@ public class QueryOptions implements OptionDescriber {
             }
 
             public Builder putDefaultValue(String option, Object value) {
-                if(value.getClass().isAssignableFrom(Collection.class)){
+                if (value.getClass().isAssignableFrom(Collection.class)) {
                     value = Collections.unmodifiableCollection((Collection<?>) value);
                 }
                 values.put(option, value);
