@@ -18,6 +18,8 @@ import com.google.common.collect.Sets;
 
 import datawave.query.jexl.nodes.ExceededOr;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
+import datawave.webservice.query.exception.BadRequestQueryException;
+import datawave.webservice.query.exception.DatawaveErrorCode;
 
 /**
  * Extracts all of the identifier names from a query. This exists only because the getVariables() method in JexlEngine is broken in the released versions of
@@ -45,7 +47,8 @@ public class VariableNameVisitor extends BaseVisitor {
         try {
             return parseQuery(parser.parse(null, jexlFeatures(), query, null));
         } catch (TokenMgrException e) {
-            throw new ParseException(e.getMessage());
+            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.UNPARSEABLE_JEXL_QUERY, e.getMessage());
+            throw new IllegalArgumentException(qe);
         }
     }
 

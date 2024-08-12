@@ -105,6 +105,9 @@ import org.apache.log4j.Logger;
 
 import com.google.common.collect.Lists;
 
+import datawave.webservice.query.exception.BadRequestQueryException;
+import datawave.webservice.query.exception.DatawaveErrorCode;
+
 /**
  * Does a pretty print out of a depth first traversal.
  *
@@ -195,10 +198,8 @@ public class PrintingVisitor extends ParserVisitor {
      *
      * @param query
      *            JEXL query string
-     * @throws ParseException
-     *             for issues parsing
      */
-    public static void printQuery(String query) throws ParseException {
+    public static void printQuery(String query) {
         // Instantiate a parser and visitor
         Parser parser = new Parser(new StringProvider(";"));
 
@@ -206,7 +207,8 @@ public class PrintingVisitor extends ParserVisitor {
         try {
             printQuery(parser.parse(null, jexlFeatures(), query, null));
         } catch (TokenMgrException e) {
-            throw new ParseException(e.getMessage());
+            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.UNPARSEABLE_JEXL_QUERY, e.getMessage());
+            throw new IllegalArgumentException(qe);
         }
     }
 
@@ -267,7 +269,8 @@ public class PrintingVisitor extends ParserVisitor {
         try {
             return formattedQueryString(parser.parse(null, jexlFeatures(), query, null), maxChildNodes, maxTermsToPrint);
         } catch (TokenMgrException e) {
-            throw new ParseException(e.getMessage());
+            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.UNPARSEABLE_JEXL_QUERY, e.getMessage());
+            throw new IllegalArgumentException(qe);
         }
     }
 
