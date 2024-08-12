@@ -569,4 +569,8 @@ datawave:
             modelFieldName: "ATTR3"
             direction: "FORWARD"
             indexOnly: false
-          
+
+hazelcast:
+  client:
+    clusterName: ${QUERY_CACHE:-cache}
+  clusterName: ${QUERY_CACHE:-cache}

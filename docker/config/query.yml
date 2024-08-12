@@ -72,8 +72,3 @@ audit-client:
   discovery:
     enabled: false
   uri: '${AUDIT_SERVER_URL:http://localhost:11111/audit}'
-
-hazelcast:
-  client:
-    clusterName: cache2
-  clusterName: cache2
