@@ -288,4 +288,39 @@ public class QueryOptionsTest {
         assertEquals(0, iteratorSetting.getOptions().size());
 
     }
+
+    @Test
+    public void testCollectionAsValueEquivalence() {
+
+        IteratorSetting iteratorSetting = new IteratorSetting(1, "foo", QueryIterator.class, new HashMap<>());
+
+        HashMap<String,Integer> limitFields = new HashMap<>();
+        limitFields.put("field1", 1);
+        limitFields.put("field2", 2);
+
+        QueryOptions.addOption(iteratorSetting, QueryOptions.LIMIT_FIELDS, limitFields, false);
+
+        Assert.assertTrue(QueryOptions.getDefaultOptions(QueryOptionsWithNonEmptyCollectionsAsDefaultValues.class.getName())
+                        .equalsDefaultValue(QueryOptions.LIMIT_FIELDS, limitFields));
+
+    }
+
+    public static class QueryOptionsWithNonEmptyCollectionsAsDefaultValues extends QueryOptions {
+
+        @Override
+        protected DefaultOptions createDefaultOptions() {
+
+            HashMap<String,Integer> limitFields = new HashMap<>();
+            limitFields.put("field1", 1);
+            limitFields.put("field2", 2);
+
+            // formatter:off
+            DefaultOptions defaultOptions = DefaultOptions.builder()
+                            .putDefaultValues(QueryOptions.getDefaultOptions(QueryOptions.class.getName()).getDefaultValues())
+                            .putDefaultValue(QueryOptions.LIMIT_FIELDS, limitFields).build();
+            // formatter:on
+
+            return defaultOptions;
+        }
+    }
 }

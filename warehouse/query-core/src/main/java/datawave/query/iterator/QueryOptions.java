@@ -2502,7 +2502,11 @@ public class QueryOptions implements OptionDescriber {
 
         public boolean equalsDefaultValue(String option, Object value) {
             if (hasDefaultValue(option)) {
-                return Objects.equals(defaultValues.get(option), value);
+                Object defaultValue = defaultValues.get(option);
+                if (defaultValue.getClass().isAssignableFrom(Collection.class)) {
+                    value = Collections.unmodifiableCollection((Collection<?>) value);
+                }
+                return defaultValues.get(option).equals(value);
             }
             return false;
         }
@@ -2530,13 +2534,22 @@ public class QueryOptions implements OptionDescriber {
                 return this;
             }
 
+            public Builder putDefaultValues(Map<String,Object> values) {
+                values.forEach(this::putDefaultValue);
+                return this;
+            }
+
             public boolean hasDefaultValue(String option) {
                 return values.containsKey(option);
             }
 
             public boolean equalsDefaultValue(String option, Object value) {
                 if (hasDefaultValue(option)) {
-                    return Objects.equals(values.get(option), value);
+                    Object defaultValue = values.get(option);
+                    if (defaultValue.getClass().isAssignableFrom(Collection.class)) {
+                        value = Collections.unmodifiableCollection((Collection<?>) value);
+                    }
+                    return values.get(option).equals(value);
                 }
                 return false;
             }
