@@ -44,9 +44,9 @@ is created by simply reversing the characters in the *NFV*...
 
 ## Data Dictionary Table
 
-The data dictionary table contains information about the data stored in the other tables, to include
-whether or not a field is indexed, the normalizer that is used for the field, etc. The structure of the table
-is as follows.
+The data dictionary table contains metadata about the data stored in other tables and is used primarily for query planning purposes.
+For example, this includes information about whether a particular field is indexed, about specific type-normalization performed on a field's values, etc.
+The structure of the table is as follows.
 
 {% include table_metadata.html %}
 

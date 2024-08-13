@@ -1,0 +1,9 @@
+<script>
+function doPopup{{ include.popup_id }}() {
+  var popup = document.getElementById("docsPopup{{ include.popup_id }}");
+  popup.classList.toggle("show");
+}
+</script>
+<div class="popup" onclick="doPopup{{ include.popup_id }}()">{% include image.html file="dw-popup-icon.png" alt="popup-icon" %}
+    <span class="popuptext" id="docsPopup{{ include.popup_id }}">{{ include.popup_content }}</span>
+</div>

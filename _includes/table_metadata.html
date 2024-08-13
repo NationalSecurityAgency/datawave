@@ -1,12 +1,14 @@
 <table>
   <caption>Data Dictionary Table Layout</caption>
-  <thead><tr><th>Row</th><th>Column&nbsp;Family</th><th>Column&nbsp;Qualifier</th><th>Value</th><th>Purpose</th></tr></thead>
+  <thead><tr><th>E.g.</th><th>Row</th><th>Column&nbsp;Family</th><th>Column&nbsp;Qualifier</th><th>Value</th><th>Purpose</th></tr></thead>
   <tbody>
 
   {% assign tables = site.data.datawave['data-model'].tables | where:"id","DDT" %}
 
   {% for entry in tables[0].entries %}
   <tr>
+    {% assign entry_id = 'DDT' | append: forloop.index %}
+    <td style="vertical-align: middle; text-align: center;">{% include popup.html popup_id=entry_id popup_content=entry.example %}</td>
     {% for i in (1..4) %}
         {% assign skip_tooltip = false %}
         {% if i == 1 %}
@@ -16,18 +18,24 @@
             {% assign skip_tooltip = true %}
         {% elsif i == 3 %}
             {% assign td_raw = entry.cq %}
-            {% if entry.cf =="edge" %}
+            {% if entry.cf == "edge" %}
                 {% assign skip_tooltip = true %}
             {% endif %}
         {% elsif i == 4 %}
             {% assign td_raw = entry.val %}
-            {% if entry.cf =="desc" or entry.cf =="f" %}
+            {% if entry.cf == "desc" or entry.cf == "f" or entry.cf == "i" or entry.cf == "ri" %}
                 {% assign skip_tooltip = true %}
             {% endif %}
         {% endif %}
     <td>
         {% if skip_tooltip == true %}
-            <em>{{ td_raw }}</em>
+           {% if td_raw == "!!SPECIAL_CASE!!" %}
+              {% assign dictionary_entry = site.data.datawave['data-model'].terms | where:"id","EAV" %}
+              <a href="#terms-and-definitions" data-toggle="tooltip" data-original-title="{{ dictionary_entry[0].name }} :: {{ dictionary_entry[0].info }}">EAV</a>[0]
+              <br/><br/>i.e., the first element from the edge key's attribute vector
+           {% else %} 
+              <em>{{ td_raw }}</em>
+           {% endif %}
         {% else %}
             {% assign terms = td_raw | split: '+' %}
             {% include set_table_entry_tooltips.html entry_terms=terms %}
