@@ -1,8 +1,6 @@
 package datawave.query.jexl.visitors;
 
 import static datawave.query.jexl.functions.ContentFunctions.CONTENT_FUNCTION_NAMESPACE;
-import static datawave.query.jexl.functions.EvaluationPhaseFilterFunctions.EVAL_PHASE_FUNCTION_NAMESPACE;
-import static datawave.query.jexl.functions.GroupingRequiredFilterFunctions.GROUPING_REQUIRED_FUNCTION_NAMESPACE;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -31,13 +29,9 @@ import org.apache.log4j.Logger;
 
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.ContentFunctionsDescriptor;
-import datawave.query.jexl.functions.EvaluationPhaseFilterFunctionsDescriptor;
 import datawave.query.jexl.functions.FunctionJexlNodeVisitor;
-import datawave.query.jexl.functions.GeoWaveFunctions;
-import datawave.query.jexl.functions.GeoWaveFunctionsDescriptor;
-import datawave.query.jexl.functions.GroupingRequiredFilterFunctionsDescriptor;
-import datawave.query.jexl.functions.QueryFunctions;
-import datawave.query.jexl.functions.QueryFunctionsDescriptor;
+import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
+import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.jexl.nodes.ExceededOr;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.util.TypeMetadata;
@@ -394,32 +388,17 @@ public class IngestTypeVisitor extends BaseVisitor {
      */
     private Set<String> getFieldsForFunctionNode(ASTFunctionNode node) {
         FunctionJexlNodeVisitor visitor = FunctionJexlNodeVisitor.eval(node);
-        switch (visitor.namespace()) {
-            case CONTENT_FUNCTION_NAMESPACE:
-                // all content function fields are added
-                ContentFunctionsDescriptor.ContentJexlArgumentDescriptor contentDescriptor = new ContentFunctionsDescriptor().getArgumentDescriptor(node);
-                return contentDescriptor.fieldsAndTerms(Collections.emptySet(), Collections.emptySet(), Collections.emptySet(), null)[0];
-            case EVAL_PHASE_FUNCTION_NAMESPACE:
-                // might be able to exclude certain evaluation phase functions from this step
-                EvaluationPhaseFilterFunctionsDescriptor.EvaluationPhaseFilterJexlArgumentDescriptor evaluationDescriptor = (EvaluationPhaseFilterFunctionsDescriptor.EvaluationPhaseFilterJexlArgumentDescriptor) new EvaluationPhaseFilterFunctionsDescriptor()
-                                .getArgumentDescriptor(node);
-                return evaluationDescriptor.fields(null, Collections.emptySet());
-            case GeoWaveFunctions.GEOWAVE_FUNCTION_NAMESPACE:
-                GeoWaveFunctionsDescriptor.GeoWaveJexlArgumentDescriptor descriptor = (GeoWaveFunctionsDescriptor.GeoWaveJexlArgumentDescriptor) new GeoWaveFunctionsDescriptor()
-                                .getArgumentDescriptor(node);
-                return descriptor.fields(null, Collections.emptySet());
-            case GROUPING_REQUIRED_FUNCTION_NAMESPACE:
-                GroupingRequiredFilterFunctionsDescriptor.GroupingRequiredFilterJexlArgumentDescriptor groupingDescriptor = (GroupingRequiredFilterFunctionsDescriptor.GroupingRequiredFilterJexlArgumentDescriptor) new GroupingRequiredFilterFunctionsDescriptor()
-                                .getArgumentDescriptor(node);
-                return groupingDescriptor.fields(null, Collections.emptySet());
-            case QueryFunctions.QUERY_FUNCTION_NAMESPACE:
-                QueryFunctionsDescriptor.QueryJexlArgumentDescriptor queryDescriptor = (QueryFunctionsDescriptor.QueryJexlArgumentDescriptor) new QueryFunctionsDescriptor()
-                                .getArgumentDescriptor(node);
-                return queryDescriptor.fields(null, Collections.emptySet());
-            default:
-                // do nothing
-                log.warn("Unhandled function namespace: " + visitor.namespace());
+        if (visitor.namespace().equals(CONTENT_FUNCTION_NAMESPACE)) {
+            // all content function fields are added
+            ContentFunctionsDescriptor.ContentJexlArgumentDescriptor contentDescriptor = new ContentFunctionsDescriptor().getArgumentDescriptor(node);
+            return contentDescriptor.fieldsAndTerms(Collections.emptySet(), Collections.emptySet(), Collections.emptySet(), null)[0];
+        } else {
+            JexlArgumentDescriptor descriptor = JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor(node);
+            if (descriptor == null) {
+                log.warn("could not get descriptor for function: " + JexlStringBuildingVisitor.buildQuery(node));
                 return new HashSet<>();
+            }
+            return descriptor.fields(null, Collections.emptySet());
         }
     }
 
