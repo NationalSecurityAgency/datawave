@@ -2453,7 +2453,6 @@ public class QueryOptions implements OptionDescriber {
         }
     }
 
-    // Add given option, using the specified to-string transformer.
     /**
      * Add an option to the given iterator setting. The value will be converted to a string using the provided value transformer.
      *
@@ -2471,7 +2470,7 @@ public class QueryOptions implements OptionDescriber {
     public static <T> void addOption(IteratorSetting setting, String option, T value, Function<T,String> valueTransformer, boolean allowBlankValues) {
         // If we have a default options implementation for the specified iterator setting's class, fetch it.
         DefaultOptions defaultOptions = getDefaultOptions(setting.getIteratorClass());
-        // If the value matches the default value, do not add it to the setting.
+        // If the value matches the default value, do not add it to the setting and instead remove it from the IteratorSetting if it exists.
         if (defaultOptions.hasDefaultValue(option) && defaultOptions.equalsDefaultValue(option, value)) {
             setting.removeOption(option);
             return;
@@ -2485,9 +2484,6 @@ public class QueryOptions implements OptionDescriber {
         setting.addOption(option, valueString);
     }
 
-    /**
-     * Default options for QueryOptions. TODO: Make immutable with a builder that is used in createDefaultOptions().
-     */
     protected static final class DefaultOptions {
 
         public final Map<String,Object> defaultValues;

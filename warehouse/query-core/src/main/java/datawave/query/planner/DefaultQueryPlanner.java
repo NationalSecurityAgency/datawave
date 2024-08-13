@@ -2402,8 +2402,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         }
     }
 
-    // public static <T> void addOption(IteratorSetting setting, String option, T value, com.google.common.base.Function<T,String> valueTransformer, boolean
-    // allowBlankValues) {
     public static <T> void addOption(IteratorSetting cfg, String option, T value, boolean allowBlankValues) {
         QueryOptions.addOption(cfg, option, value, allowBlankValues);
     }
