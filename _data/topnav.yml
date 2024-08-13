@@ -7,8 +7,6 @@ topnav:
       url: /docs/7.x/getting-started/overview
     - title: Tour
       url: /docs/7.x/tour/getting-started
-    - title: GitHub
-      external_url: https://github.com/nationalsecurityagency/datawave
     - title: News
       url: /news
 
@@ -16,8 +14,12 @@ topnav:
 topnav_dropdowns:
 - title: Topnav dropdowns
   folders:
-    - title: Releases/Tags
+    - title: Source Code
       folderitems:
-        - title: View Releases on GitHub
+        - title: DataWave Source
+          external_url: https://github.com/nationalsecurityagency/datawave
+        - title: DataWave Releases
           external_url: https://github.com/nationalsecurityagency/datawave/tags
+        - title: Website Source
+          external_url: https://github.com/NationalSecurityAgency/datawave/tree/gh-pages
 
