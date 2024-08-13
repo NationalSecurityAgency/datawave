@@ -66,25 +66,29 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
     /** the top value */
     protected Value tv;
 
-    /**
-     * The size of half of the original range. <br>
-     * Used during trimming.
-     */
-    private float origHalfSize;
-    /** the list of hit terms */
+    /** the list of hit terms: terms from the query that resulted in the current document being returned as a result */
     protected ArrayList<String> hitTermsList;
-    /** the direction for the excerpt */
+    /** the direction for the excerpt - controls which directions we build the excerpt from an originating hit term */
     private String direction;
+    /** specifies that an excerpt is built using the terms prior to the hit term(s) */
+    private static final String BEFORE = "BEFORE";
+    /** specifies that an excerpt is built using the terms after the hit term(s) */
+    private static final String AFTER = "AFTER";
+    /** specifies that an excerpt is built using the terms that appear on both sides of the hit terms(s) */
+    private static final String BOTH = "BOTH";
+
     /**
      * Whether we might need to trim down the excerpt to the requested size. <br>
-     * <br>
      * Is false if this is the first time running the iterator and true otherwise.
      */
     private boolean trim;
+    /** The size of half of the original desired excerpt length. Used during trimming. */
+    private float origHalfSize;
 
-    private static final String BEFORE = "BEFORE";
-    private static final String AFTER = "AFTER";
-    private static final String BOTH = "BOTH";
+    /**
+     * A special term that is used to indicate we removed a candidate term because <br>
+     * it was a member of the list of terms that should not be included in an excerpt.
+     */
     private static final String XXXWESKIPPEDAWORDXXX = "XXXWESKIPPEDAWORDXXX";
 
     @Override
