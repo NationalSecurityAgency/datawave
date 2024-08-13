@@ -50,7 +50,7 @@ admin.enableServer=false"
 
 # You may override DW_ACCUMULO_DIST_URI in your env ahead of time, and set as file:///path/to/file.tar.gz for local tarball, if needed
 # DW_ACCUMULO_DIST_URI should, if possible, be using https. There are potential security risks by using http.
-DW_ACCUMULO_DIST_URI="${DW_ACCUMULO_DIST_URI:-https://dlcdn.apache.org/accumulo/2.1.2/accumulo-2.1.2-bin.tar.gz}"
+DW_ACCUMULO_DIST_URI="${DW_ACCUMULO_DIST_URI:-https://dlcdn.apache.org/accumulo/2.1.3/accumulo-2.1.3-bin.tar.gz}"
 # The sha512 checksum for the tarball. Value should be the hash value only and does not include the file name. Cannot be left blank.
 DW_ACCUMULO_DIST_SHA512_CHECKSUM="${DW_ACCUMULO_DIST_SHA512_CHECKSUM:-27778c1c3f1d88ab128649fd0671d3be97ba052216ab43f1169395960e8c7d16375a51f940c2262437b836ea31f83f73f08f7a3d8cadda443e5e8bb31d9b23c5}"
 # shellcheck disable=SC2034
