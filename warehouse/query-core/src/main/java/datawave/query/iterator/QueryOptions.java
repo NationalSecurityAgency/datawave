@@ -2486,7 +2486,7 @@ public class QueryOptions implements OptionDescriber {
 
     protected static final class DefaultOptions {
 
-        public final Map<String,Object> defaultValues;
+        private final Map<String,Object> defaultValues;
 
         private DefaultOptions() {
             this.defaultValues = MapUtils.unmodifiableMap(new HashMap<>());
@@ -2505,6 +2505,10 @@ public class QueryOptions implements OptionDescriber {
                 return Objects.equals(defaultValues.get(option), value);
             }
             return false;
+        }
+
+        public ImmutableMap<String, Object> getDefaultValues() {
+            return ImmutableMap.copyOf(defaultValues);
         }
 
         public static Builder builder() {

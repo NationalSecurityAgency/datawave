@@ -263,7 +263,7 @@ public class QueryOptionsTest {
         nonDefaults.put(QueryOptions.INCLUDE_DATATYPE, "true");
 
         // Test all default
-        QueryOptions.getDefaultOptions(QueryIterator.class.getName()).defaultValues.forEach((k, v) -> {
+        QueryOptions.getDefaultOptions(QueryIterator.class.getName()).getDefaultValues().forEach((k, v) -> {
             QueryOptions.addOption(iteratorSetting, k, v, false);
         });
 
@@ -271,7 +271,7 @@ public class QueryOptionsTest {
 
         // Test non-defaults added after all defaults added
         iteratorSetting.clearOptions();
-        QueryOptions.getDefaultOptions(QueryIterator.class.getName()).defaultValues.forEach((k, v) -> {
+        QueryOptions.getDefaultOptions(QueryIterator.class.getName()).getDefaultValues().forEach((k, v) -> {
             QueryOptions.addOption(iteratorSetting, k, v, false);
         });
 
@@ -281,7 +281,7 @@ public class QueryOptionsTest {
         // Test defaults added after non-defaults added
         iteratorSetting.clearOptions();
         iteratorSetting.addOptions(nonDefaults);
-        QueryOptions.getDefaultOptions(QueryIterator.class.getName()).defaultValues.forEach((k, v) -> {
+        QueryOptions.getDefaultOptions(QueryIterator.class.getName()).getDefaultValues().forEach((k, v) -> {
             QueryOptions.addOption(iteratorSetting, k, v, false);
         });
 
