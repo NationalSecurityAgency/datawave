@@ -2507,7 +2507,7 @@ public class QueryOptions implements OptionDescriber {
             return false;
         }
 
-        public ImmutableMap<String, Object> getDefaultValues() {
+        public ImmutableMap<String,Object> getDefaultValues() {
             return ImmutableMap.copyOf(defaultValues);
         }
 
