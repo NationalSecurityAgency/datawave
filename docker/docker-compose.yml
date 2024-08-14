@@ -176,10 +176,12 @@ services:
   query-cache:
     profiles:
       - querycache
+      # To enable an additional Hazelcast cluster, enable the "querycache" profile
+      # Set an environment variable: QUERY_CACHE=query-cache. This will force the query and executor service to use a separate "query-cache" Hazelcast cluster.
     image: datawave/hazelcast-service
     scale: 1
     command:
-      - --spring.application.name=cache2
+      - --spring.application.name=query-cache
       - --hazelcast.client.cluster-members
       - --spring.profiles.active=consul,compose,remoteauth
       - --spring.output.ansi.enabled=ALWAYS
@@ -187,7 +189,7 @@ services:
       - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${random.value}
     ports:
       - "5701-5703"
-      - "8082"
+      - "8080"
       - "8844:8443"
     volumes:
       - ${PKI_DIR:-./pki}:/etc/pki:ro
@@ -399,6 +401,7 @@ services:
       - HADOOP_CONF_DIR=${HADOOP_CONF_DIR:-/etc/hadoop/conf}
       - "BACKEND=${BACKEND:-rabbitmq}"
       - CACHED_RESULTS=${CACHED_RESULTS:-false}
+      - QUERY_CACHE=${QUERY_CACHE:-cache}
     ports:
       - "8080:8080"
       - "8443:8443"
@@ -478,6 +481,7 @@ services:
       - HADOOP_HOST=${DW_HADOOP_HOST}
       - BACKEND=${BACKEND:-rabbitmq}
       - HADOOP_CONF_DIR=${HADOOP_CONF_DIR:-/etc/hadoop/conf}
+      - QUERY_CACHE=${QUERY_CACHE:-cache}
     # This mapping is required to enable the metrics service to communicate
     # with host-deployed services like hadoop, zookeeper, and accumulo.
     # These values are set locally in .env via bootstrap.sh
@@ -525,6 +529,7 @@ services:
       - HADOOP_HOST=${DW_HADOOP_HOST}
       - BACKEND=${BACKEND:-rabbitmq}
       - HADOOP_CONF_DIR=${HADOOP_CONF_DIR:-/etc/hadoop/conf}
+      - QUERY_CACHE=${QUERY_CACHE:-cache}
     # This mapping is required to enable the metrics service to communicate
     # with host-deployed services like hadoop, zookeeper, and accumulo.
     # These values are set locally in .env via bootstrap.sh
