@@ -253,7 +253,7 @@ public class IngestJob implements Tool {
 
         long start = System.currentTimeMillis();
 
-        StopWatch sw = new StopWatch("Job Setup");
+        StopWatch sw = new StopWatch("Ingest Job");
         sw.start("local init");
 
         Logger.getLogger(TypeRegistry.class).setLevel(Level.ALL);
@@ -436,7 +436,7 @@ public class IngestJob implements Tool {
         long stop = System.currentTimeMillis();
 
         log.info(formatTaskInfo(sw.getLastTaskInfo()));
-        log.info(sw.shortSummary());
+        log.info(sw.prettyPrint());
 
         // output the counters to the log
         Counters counters = job.getCounters();
@@ -546,7 +546,7 @@ public class IngestJob implements Tool {
     }
 
     private String formatTaskInfo(StopWatch.TaskInfo taskInfo) {
-        return  "Timing - " + taskInfo.getTaskName() + ": " + taskInfo.getTimeSeconds() + " s";
+        return "Timing - " + taskInfo.getTaskName() + ": " + taskInfo.getTimeSeconds() + " s";
     }
 
     private void setupHandlers(Configuration conf) {
