@@ -87,9 +87,14 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
 
     /**
      * A special term that is used to indicate we removed a candidate term because <br>
-     * it was a member of the list of terms that should not be included in an excerpt.
+     * it was a stop word, a member of the list of terms that should not be included in an excerpt.
      */
-    private static final String XXXWESKIPPEDAWORDXXX = "XXXWESKIPPEDAWORDXXX";
+    private static final String WORD_SKIPPED_MARKER = "XXXWESKIPPEDAWORDXXX";
+
+    /**
+     * A special token used to indicate that a excerpt was generated without using any scored terms.
+     */
+    private static final String NOT_SCORED_MARKER = "XXXNOTSCOREDXXX";
 
     @Override
     public IteratorOptions describeOptions() {
@@ -291,6 +296,7 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
         Text cv = top.getColumnVisibility();
         long ts = top.getTimestamp();
         Text row = top.getRow();
+
         // set the size of the array to the amount of terms we need to choose
         WordsAndScores[] wordsAndScoresArr = new WordsAndScores[endOffset - startOffset];
         // all of these variables are used in the loops so we'll just keep reassigning instead of creating a bunch of new ones every time
@@ -343,25 +349,27 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
                             } else {
                                 stopFound = wordsAndScoresArr[tmpIndex].addTerm(fieldAndValue[1], hitTermsList);
                             }
-                            // this is the fast-fail: if we find a stop word, and we are on the first attempt, exit out so that ExcerptTransform can run this
-                            // again with an expanded range
+                            // if we encounter a stop word, and we're not in trim mode, fail-fast and create an entry
+                            // to return the special marker token. When seeing this, the transform will run this again
+                            // in trim mode with an expanded offset range.
                             if (stopFound && !trim) {
-                                tk = new Key(row, new Text(dtUid), new Text(fieldName + Constants.NULL + XXXWESKIPPEDAWORDXXX + Constants.NULL
-                                                + XXXWESKIPPEDAWORDXXX + Constants.NULL + XXXWESKIPPEDAWORDXXX), cv, ts);
+                                tk = new Key(row, new Text(dtUid), new Text(fieldName + Constants.NULL + WORD_SKIPPED_MARKER + Constants.NULL
+                                                + WORD_SKIPPED_MARKER + Constants.NULL + WORD_SKIPPED_MARKER), cv, ts);
                                 tv = new Value();
                                 return;
                             }
                         }
                     }
                 } catch (InvalidProtocolBufferException e) {
-                    log.error("Value found in tf column was not of type TermWeight.Info, skipping", e);
+                    log.warn("Value found in tf column was not a valid TermWeight.Info, skipping", e);
                 }
             }
             // get the next term frequency
             source.next();
         }
-        // generate the return key and value
-        generateExcerpt(wordsAndScoresArr, dtUid, cv, ts, row);
+
+        // Now that the words and scores array is populated with all the tf data, it's time to generate an excerpt.
+        generateExcerpts(wordsAndScoresArr, dtUid, cv, ts, row);
     }
 
     /** Checks whether the passed in list has only negative scores or not within the iterator range. */
@@ -378,26 +386,51 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
         return true;
     }
 
-    /** Generates the differently formatted excerpts and creates the top key and value containing them. */
-    private void generateExcerpt(WordsAndScores[] wordsAndScoresArr, String dtUid, Text cv, long ts, Text row) {
+    /**
+     * Generates multiple variations of excerpts and creates the top key and value containing them for return to the transform. In this method, we'll generate
+     * the following excerpts:
+     * <ul>
+     * <li>phraseWithScoresExcerpt</li>
+     * <li>phraseWithoutScoresExcerpt</li>
+     * <li>oneBestExcerpt</li>
+     * </ul>
+     * These get packaged into the key returned to the transform. Ultimately the transform will decide which one we use.
+     *
+     * @param wordsAndScoresArr
+     *            a collection of document terms and their scores, organized by offset. Each offset may have multiple terms to choose from. Some offsets may be
+     *            null if there were no tf's from that position.
+     * @param dtUid
+     *            the data type and identifier of the current document - used when generating the excerpt entry
+     * @param cv
+     *            the column visibility of the current document - used when generating the excerpt entry
+     * @param ts
+     *            the timestamp of the current document - used when generating the excerpt entry
+     * @param row
+     *            the rowId of the current document - used when generating the excerpt entry
+     */
+    private void generateExcerpts(WordsAndScores[] wordsAndScoresArr, String dtUid, Text cv, long ts, Text row) {
         boolean usedScores = false;
-        String phraseWithScores = null;
-        // loop through the WordsAndScores and if we find one that has scores, generate the "phrase with scores" excerpt
+        String phraseWithScoresExcerpt = null;
+
+        // loop through the WordsAndScores and if we find at least one that has scores, generate a phrase with scores
+        // based excerpt
         for (WordsAndScores wordsAndScores : wordsAndScoresArr) {
             if (wordsAndScores == null) {
                 continue;
             }
             if (wordsAndScores.getUseScores()) {
-                phraseWithScores = generatePhrase(wordsAndScoresArr);
+                phraseWithScoresExcerpt = generatePhrase(wordsAndScoresArr);
                 usedScores = true;
                 break;
             }
         }
-        // if we did not find any scores in the whole wordsAndScoresArr
+
+        // if we did not find any scores in the entire wordsAndScoresArr, add a marker.
         if (!usedScores) {
-            phraseWithScores = "XXXNOTSCOREDXXX";
+            phraseWithScoresExcerpt = NOT_SCORED_MARKER;
         }
-        // if we have any scores, turn off outputting them
+
+        // if we have any scores, set all output scores flags to false.
         if (usedScores) {
             for (WordsAndScores wordsAndScores : wordsAndScoresArr) {
                 if (wordsAndScores == null) {
@@ -408,17 +441,19 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
                 }
             }
         }
-        // generate the "phrase without scores" excerpt
-        String phraseWithoutScores = generatePhrase(wordsAndScoresArr);
+
+        // generate the "phrase without scores" excerpt, now that the scores flags are false.
+        String phraseWithoutScoresExcerpt = generatePhrase(wordsAndScoresArr);
         String oneBestExcerpt;
-        // if the regular excerpt is blank, we will return blank excerpts for the other ones also
-        if (phraseWithoutScores.isEmpty()) {
-            phraseWithScores = "";
+
+        // if the regular excerpt is blank, we will return blank excerpts for the other ones as well.
+        if (phraseWithoutScoresExcerpt.isEmpty()) {
+            phraseWithScoresExcerpt = "";
             oneBestExcerpt = "";
         } else {
             // if not scored, we won't output anything for this part
             if (!usedScores && startOffset < endOffset) {
-                oneBestExcerpt = "XXXNOTSCOREDXXX";
+                oneBestExcerpt = NOT_SCORED_MARKER;
             } else {
                 // prepare all the WordsAndScores to output for the "one best" excerpt
                 for (WordsAndScores wordsAndScores : wordsAndScoresArr) {
@@ -432,10 +467,11 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
             }
 
         }
+
         // create a key that contains all of our excerpts to be read by the ExcerptTransform
-        tk = new Key(row, new Text(dtUid),
-                        new Text(fieldName + Constants.NULL + phraseWithScores + Constants.NULL + phraseWithoutScores + Constants.NULL + oneBestExcerpt), cv,
-                        ts);
+        tk = new Key(row, new Text(dtUid), new Text(
+                        fieldName + Constants.NULL + phraseWithScoresExcerpt + Constants.NULL + phraseWithoutScoresExcerpt + Constants.NULL + oneBestExcerpt),
+                        cv, ts);
         tv = new Value();
     }
 
@@ -683,7 +719,7 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
      * @return boolean isPhraseFound
      */
     private boolean isPhraseFound(String[] individualHitTerms, WordsAndScores[] terms, int j) {
-        ArrayList<String> tempWords;
+        Collection<String> tempWords;
         // k represents what position we are in of the individual hit terms array
         for (int k = 0; k < individualHitTerms.length; k++) {
             // if a WordsAndScores is null, the phrase obviously wasn't found
@@ -691,7 +727,7 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
                 return false;
             }
             // get the words list from the current WordsAndScores
-            tempWords = (ArrayList<String>) terms[j + k].getWordsList();
+            tempWords = terms[j + k].getWordsList();
             // if the current WordsAndScores doesn't have the term for this position, the phrase obviously wasn't found
             if (!tempWords.contains(individualHitTerms[k])) {
                 return false;
