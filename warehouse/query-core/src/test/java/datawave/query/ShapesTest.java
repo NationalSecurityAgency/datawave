@@ -880,11 +880,11 @@ public abstract class ShapesTest {
             Set<String> expectedUids = new HashSet<>(triangleUids);
             withExpected(expectedUids);
 
-            logic.setSortQueryBeforeGlobalIndex(true);
+            logic.setSortQueryPreIndexWithFieldCounts(true);
             planAndExecuteQuery();
             assertPlannedQuery("TYPE == 'pentagon' || SHAPE == 'triangle'");
         } finally {
-            logic.setSortQueryBeforeGlobalIndex(false);
+            logic.setSortQueryPreIndexWithFieldCounts(false);
         }
     }
 

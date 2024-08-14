@@ -2855,38 +2855,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         getConfig().setPruneQueryOptions(pruneQueryOptions);
     }
 
-    public boolean getUseFieldCounts() {
-        return getConfig().getUseFieldCounts();
-    }
-
-    public void setUseFieldCounts(boolean useFieldCounts) {
-        getConfig().setUseFieldCounts(useFieldCounts);
-    }
-
-    public boolean getUseTermCounts() {
-        return getConfig().getUseTermCounts();
-    }
-
-    public void setUseTermCounts(boolean useTermCounts) {
-        getConfig().setUseTermCounts(useTermCounts);
-    }
-
-    public boolean getSortQueryBeforeGlobalIndex() {
-        return getConfig().isSortQueryBeforeGlobalIndex();
-    }
-
-    public void setSortQueryBeforeGlobalIndex(boolean sortQueryBeforeGlobalIndex) {
-        getConfig().setSortQueryBeforeGlobalIndex(sortQueryBeforeGlobalIndex);
-    }
-
-    public boolean getSortQueryByCounts() {
-        return getConfig().isSortQueryByCounts();
-    }
-
-    public void setSortQueryByCounts(boolean sortQueryByCounts) {
-        getConfig().setSortQueryByCounts(sortQueryByCounts);
-    }
-
     public boolean isRebuildDatatypeFilter() {
         return getConfig().isRebuildDatatypeFilter();
     }
@@ -2901,5 +2869,37 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
     public void setRebuildDatatypeFilterPerShard(boolean rebuildDatatypeFilterPerShard) {
         getConfig().setRebuildDatatypeFilterPerShard(rebuildDatatypeFilterPerShard);
+    }
+
+    public boolean isSortQueryPreIndexWithImpliedCounts() {
+        return getConfig().isSortQueryPreIndexWithImpliedCounts();
+    }
+
+    public void setSortQueryPreIndexWithImpliedCounts(boolean sortQueryPreIndexWithImpliedCounts) {
+        getConfig().setSortQueryPreIndexWithImpliedCounts(sortQueryPreIndexWithImpliedCounts);
+    }
+
+    public boolean isSortQueryPreIndexWithFieldCounts() {
+        return getConfig().isSortQueryPreIndexWithFieldCounts();
+    }
+
+    public void setSortQueryPreIndexWithFieldCounts(boolean sortQueryPreIndexWithFieldCounts) {
+        getConfig().setSortQueryPreIndexWithImpliedCounts(sortQueryPreIndexWithFieldCounts);
+    }
+
+    public boolean isSortQueryPostIndexWithFieldCounts() {
+        return getConfig().isSortQueryPostIndexWithFieldCounts();
+    }
+
+    public void setSortQueryPostIndexWithFieldCounts(boolean sortQueryPostIndexWithFieldCounts) {
+        getConfig().setSortQueryPostIndexWithFieldCounts(sortQueryPostIndexWithFieldCounts);
+    }
+
+    public boolean isSortQueryPostIndexWithTermCounts() {
+        return getConfig().isSortQueryPostIndexWithTermCounts();
+    }
+
+    public void setSortQueryPostIndexWithTermCounts(boolean sortQueryPostIndexWithTermCounts) {
+        getConfig().setSortQueryPostIndexWithTermCounts(sortQueryPostIndexWithTermCounts);
     }
 }

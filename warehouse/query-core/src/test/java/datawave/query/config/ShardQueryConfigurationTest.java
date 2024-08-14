@@ -573,14 +573,14 @@ public class ShardQueryConfigurationTest {
         defaultValues.put("groupFields", new GroupFields());
         updatedValues.put("groupFields", GroupFields.from("GROUP(FIELD_G,FIELD_H)"));
 
-        defaultValues.put("useFieldCounts", false);
-        updatedValues.put("useFieldCounts", true);
-        defaultValues.put("useTermCounts", false);
-        updatedValues.put("useTermCounts", true);
-        defaultValues.put("sortQueryBeforeGlobalIndex", false);
-        updatedValues.put("sortQueryBeforeGlobalIndex", true);
-        defaultValues.put("sortQueryByCounts", false);
-        updatedValues.put("sortQueryByCounts", true);
+        defaultValues.put("sortQueryPreIndexWithImpliedCounts", false);
+        updatedValues.put("sortQueryPreIndexWithImpliedCounts", true);
+        defaultValues.put("sortQueryPreIndexWithFieldCounts", false);
+        updatedValues.put("sortQueryPreIndexWithFieldCounts", true);
+        defaultValues.put("sortQueryPostIndexWithTermCounts", false);
+        updatedValues.put("sortQueryPostIndexWithTermCounts", true);
+        defaultValues.put("sortQueryPostIndexWithFieldCounts", false);
+        updatedValues.put("sortQueryPostIndexWithFieldCounts", true);
         defaultValues.put("tableConsistencyLevels", Collections.emptyMap());
         updatedValues.put("tableConsistencyLevels", Collections.singletonMap(TableName.SHARD, ScannerBase.ConsistencyLevel.EVENTUAL));
         defaultValues.put("tableHints", Collections.emptyMap());

@@ -473,24 +473,26 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private boolean pruneQueryOptions = false;
 
     /**
-     * Flag to control gathering field counts from the global index and persisting those to the query iterator. Negated terms and branches are not considered.
+     * Flag that sorts the query prior to the global index lookup using inferred costs. This step may reduce time spent in the global index depending on
+     * individual term selectivity.
      */
-    private boolean useFieldCounts = false;
-    /**
-     * Flag to control gathering term counts from the global index and persisting those to the query iterator. Negated terms and branches are not considered.
-     */
-    private boolean useTermCounts = false;
-    /**
-     * Flag to control sorting a query by inferred default costs prior to the global index lookup. This step may reduce time performing a secondary sort as when
-     * {@link #sortQueryByCounts} is enabled.
-     */
-    private boolean sortQueryBeforeGlobalIndex = false;
+    private boolean sortQueryPreIndexWithImpliedCounts = false;
 
     /**
-     * Flag to control if a query is sorted by either field or term counts. Either {@link #useFieldCounts} or {@link #useTermCounts} must be set for this option
-     * to take effect.
+     * Flag that sorts the query prior to the global index lookup using field counts from the {@link TableName#METADATA} table. This option opens a scanner and
+     * thus is more expensive than sorting by implied counts, but is potentially more accurate.
      */
-    private boolean sortQueryByCounts = false;
+    private boolean sortQueryPreIndexWithFieldCounts = false;
+
+    /**
+     * Flag that sorts the query using field counts gathered as part of the global index lookup. Negated terms and branches are not considered.
+     */
+    private boolean sortQueryPostIndexWithFieldCounts = false;
+
+    /**
+     * Flag that sorts the query using term counts gathered as part of the global index lookup. Negated terms and branches are not considered.
+     */
+    private boolean sortQueryPostIndexWithTermCounts = false;
 
     /**
      * Default constructor
@@ -712,10 +714,10 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setTfAggregationThresholdMs(other.getTfAggregationThresholdMs());
         this.setGroupFields(GroupFields.copyOf(other.getGroupFields()));
         this.setPruneQueryOptions(other.getPruneQueryOptions());
-        this.setUseFieldCounts(other.getUseFieldCounts());
-        this.setUseTermCounts(other.getUseTermCounts());
-        this.setSortQueryBeforeGlobalIndex(other.isSortQueryBeforeGlobalIndex());
-        this.setSortQueryByCounts(other.isSortQueryByCounts());
+        this.setSortQueryPreIndexWithImpliedCounts(other.isSortQueryPreIndexWithImpliedCounts());
+        this.setSortQueryPreIndexWithFieldCounts(other.isSortQueryPreIndexWithFieldCounts());
+        this.setSortQueryPostIndexWithTermCounts(other.isSortQueryPostIndexWithTermCounts());
+        this.setSortQueryPostIndexWithFieldCounts(other.isSortQueryPostIndexWithFieldCounts());
     }
 
     /**
@@ -2704,36 +2706,36 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.reduceIngestTypesPerShard = reduceIngestTypesPerShard;
     }
 
-    public boolean getUseTermCounts() {
-        return useTermCounts;
+    public boolean isSortQueryPreIndexWithImpliedCounts() {
+        return sortQueryPreIndexWithImpliedCounts;
     }
 
-    public void setUseTermCounts(boolean useTermCounts) {
-        this.useTermCounts = useTermCounts;
+    public void setSortQueryPreIndexWithImpliedCounts(boolean sortQueryPreIndexWithImpliedCounts) {
+        this.sortQueryPreIndexWithImpliedCounts = sortQueryPreIndexWithImpliedCounts;
     }
 
-    public boolean getUseFieldCounts() {
-        return useFieldCounts;
+    public boolean isSortQueryPreIndexWithFieldCounts() {
+        return sortQueryPreIndexWithFieldCounts;
     }
 
-    public void setUseFieldCounts(boolean useFieldCounts) {
-        this.useFieldCounts = useFieldCounts;
+    public void setSortQueryPreIndexWithFieldCounts(boolean sortQueryPreIndexWithFieldCounts) {
+        this.sortQueryPreIndexWithFieldCounts = sortQueryPreIndexWithFieldCounts;
     }
 
-    public boolean isSortQueryBeforeGlobalIndex() {
-        return sortQueryBeforeGlobalIndex;
+    public boolean isSortQueryPostIndexWithFieldCounts() {
+        return sortQueryPostIndexWithFieldCounts;
     }
 
-    public void setSortQueryBeforeGlobalIndex(boolean sortQueryBeforeGlobalIndex) {
-        this.sortQueryBeforeGlobalIndex = sortQueryBeforeGlobalIndex;
+    public void setSortQueryPostIndexWithFieldCounts(boolean sortQueryPostIndexWithFieldCounts) {
+        this.sortQueryPostIndexWithFieldCounts = sortQueryPostIndexWithFieldCounts;
     }
 
-    public boolean isSortQueryByCounts() {
-        return sortQueryByCounts;
+    public boolean isSortQueryPostIndexWithTermCounts() {
+        return sortQueryPostIndexWithTermCounts;
     }
 
-    public void setSortQueryByCounts(boolean sortQueryByCounts) {
-        this.sortQueryByCounts = sortQueryByCounts;
+    public void setSortQueryPostIndexWithTermCounts(boolean sortQueryPostIndexWithTermCounts) {
+        this.sortQueryPostIndexWithTermCounts = sortQueryPostIndexWithTermCounts;
     }
 
     @Override
@@ -2939,10 +2941,10 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getDocAggregationThresholdMs() == that.getDocAggregationThresholdMs() &&
                 getTfAggregationThresholdMs() == that.getTfAggregationThresholdMs() &&
                 getPruneQueryOptions() == that.getPruneQueryOptions() &&
-                getUseFieldCounts() == that.getUseFieldCounts() &&
-                getUseTermCounts() == that.getUseTermCounts() &&
-                isSortQueryBeforeGlobalIndex() == that.isSortQueryBeforeGlobalIndex() &&
-                isSortQueryByCounts() == that.isSortQueryByCounts();
+                isSortQueryPreIndexWithImpliedCounts() == isSortQueryPreIndexWithImpliedCounts() &&
+                isSortQueryPreIndexWithFieldCounts() == isSortQueryPreIndexWithFieldCounts() &&
+                isSortQueryPostIndexWithTermCounts() == isSortQueryPostIndexWithTermCounts() &&
+                isSortQueryPostIndexWithFieldCounts() == isSortQueryPostIndexWithFieldCounts();
         // @formatter:on
     }
 
@@ -3143,10 +3145,11 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getDocAggregationThresholdMs(),
                 getTfAggregationThresholdMs(),
                 getPruneQueryOptions(),
-                getUseFieldCounts(),
-                getUseTermCounts(),
-                isSortQueryBeforeGlobalIndex(),
-                isSortQueryByCounts());
+                isSortQueryPreIndexWithImpliedCounts(),
+                isSortQueryPreIndexWithFieldCounts(),
+                isSortQueryPostIndexWithTermCounts(),
+                isSortQueryPostIndexWithFieldCounts()
+        );
         // @formatter:on
     }
 
