@@ -22,6 +22,7 @@ import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
+import com.google.common.collect.HashMultimap;
 
 import datawave.query.attributes.AttributeFactory;
 import datawave.query.attributes.Document;
@@ -130,7 +131,7 @@ public class TLDQueryIterator extends QueryIterator {
             // setup an evaluation filter to avoid loading every single child key into the event
             this.evaluationFilter = new TLDEventDataFilter(script, getAllFields(), expressionFilters, useAllowListedFields ? allowListedFields : null,
                             useDisallowListedFields ? disallowListedFields : null, getEventFieldSeek(), getEventNextSeek(),
-                            limitFieldsPreQueryEvaluation ? limitFieldsMap : Collections.emptyMap(), limitFieldsField, getNonEventFields());
+                            limitFieldsPreQueryEvaluation ? limitFieldsMap : HashMultimap.create(), limitFieldsField, getNonEventFields());
         }
         return this.evaluationFilter != null ? evaluationFilter.clone() : null;
     }
