@@ -46,6 +46,12 @@ terms:
   - id: EAV
     name: Edge Attribute Vector
     info: Three optional, user-supplied attributes which can be appended to the edge key's CQ. These attributes are typically delimited by ' / '
+    
+  - id: "EAV[0]"
+    name: "Edge Attribute Vector &#x23;1"
+    info: |
+          The first element of the Edge Attribute Vector (EAV). Typically used to denote a subcategory or facet of the given Edge Type (ETYPE) value.
+          This element is required (typically set in configuration), whereas the remaining EAV elements are optional
 
   - id: "ENFV<sub>1</sub>"
     name: Source Edge Vertex (NFV)
@@ -168,9 +174,9 @@ tables:
       cq: NFN + NB + FV
       val: "NULL"
       purpose: Represents a name/value pair for a given field within the data object
-      example: "20240101_6&nbsp;&nbsp;cars&#92;x00uid.abc.123:DESCRIPTION&#92;x001990&nbsp;red&nbsp;Ford&nbsp;Mustang
-                20240101_6&nbsp;&nbsp;cars&#92;x00uid.abc.123:MAKE&#92;x00FORD
-                20240101_6&nbsp;&nbsp;cars&#92;x00uid.abc.123:MODEL&#92;x00MUSTANG
+      example: "20240101_6&nbsp;&nbsp;cars&#92;x00uid.abc.123:DESCRIPTION&#92;x001990&nbsp;Ford&nbsp;Mustang&nbsp;(Red)
+                20240101_6&nbsp;&nbsp;cars&#92;x00uid.abc.123:MAKE&#92;x00Ford
+                20240101_6&nbsp;&nbsp;cars&#92;x00uid.abc.123:MODEL&#92;x00Mustang
                 20240101_6&nbsp;&nbsp;cars&#92;x00uid.abc.123:YEAR&#92;x001990"
 
     - row: SHARD
@@ -178,8 +184,8 @@ tables:
       cq: NFV + NB + DT + NB + UID
       val: "NULL"
       purpose: The <b>fi</b> (field index) column provides an in-partition index of field names and associated values for data objects that exist within the given shard
-      example: "20240101_6&nbsp;&nbsp;fi&#92;x00MAKE:FORD&#92;x00cars&#92;x00uid.abc.123
-                20240101_6&nbsp;&nbsp;fi&#92;x00MODEL:MUSTANG&#92;x00cars&#92;x00uid.abc.123"
+      example: "20240101_6&nbsp;&nbsp;fi&#92;x00MAKE:ford&#92;x00cars&#92;x00uid.abc.123
+                20240101_6&nbsp;&nbsp;fi&#92;x00MODEL:mustang&#92;x00cars&#92;x00uid.abc.123"
 
     - row: SHARD
       cf: "'d'"
@@ -289,15 +295,15 @@ tables:
 
     - row: "ETYPE + '/' + EREL"
       cf: edge
-      cq: "!!SPECIAL_CASE!!"
+      cq: "EAV[0]"
       val: "EPB<sub>0</sub>"
       purpose: |
          The <b>edge</b> column family denotes that one or more Edge Table keys were formed using the given Row and CQ
          identifiers and were derived from field names in the Primary Data Table (PDT) that are given in the Protocol Buffer value. 
          These dictionary entries allow an Edge Table key to be mapped back to the source Data Object from which it
          was derived (e.g., via the <em>EdgeEventQuery</em> query logic)
-      example: "CARS/MODEL&#8209;MAKE&nbsp;&nbsp;edge:SALES&#8209;SALES&nbsp;&nbsp;[Protobuf&nbsp;containing&nbsp;field&nbsp;name&nbsp;mapping]
-                CARS/MODEL&#8209;YEAR&nbsp;&nbsp;edge:SALES&#8209;SALES&nbsp;&nbsp;[Protobuf&nbsp;containing&nbsp;field&nbsp;name&nbsp;mapping]"
+      example: "CARS/MODEL&#8209;MAKE&nbsp;&nbsp;edge:SALES&nbsp;&nbsp;[Protobuf&nbsp;containing&nbsp;field&nbsp;name&nbsp;mapping]
+                CARS/MODEL&#8209;YEAR&nbsp;&nbsp;edge:SALES&nbsp;&nbsp;[Protobuf&nbsp;containing&nbsp;field&nbsp;name&nbsp;mapping]"
 
   - id: EDGE
     name: Edge Table
@@ -310,8 +316,8 @@ tables:
       purpose: |
                A unidirectional pair of vertices that expresses some relationship between a pair of Field Values originating from a Data Object (DO), where
                the CQ and value may contain additional metadata about the related activity
-      example: "mustang&#92;x00ford&nbsp;&nbsp;CARS/MODEL&#8209;MAKE:20240101/SALES&#8209;SALES/RegionA/Dealership1&nbsp;&nbsp;[Protobuf&nbsp;histogram&nbsp;object]
-                mustang&#92;x001990&nbsp;&nbsp;CARS/MODEL&#8209;YEAR:20240101/SALES&#8209;SALES/RegionA/Dealership1&nbsp;&nbsp;[Protobuf&nbsp;histogram&nbsp;object]"
+      example: "mustang&#92;x00ford&nbsp;&nbsp;CARS/MODEL&#8209;MAKE:20240101/SALES/RegionA/Dealership1&nbsp;&nbsp;[Protobuf&nbsp;histogram&nbsp;object]
+                mustang&#92;x001990&nbsp;&nbsp;CARS/MODEL&#8209;YEAR:20240101/SALES/RegionA/Dealership1&nbsp;&nbsp;[Protobuf&nbsp;histogram&nbsp;object]"
 
     - row: "ENFV<sub>1</sub>"
       cf: "'STATS' + NB + 'ACTIVITY' + ETYPE"
