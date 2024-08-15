@@ -1,5 +1,6 @@
 package datawave.query.jexl.visitors;
 
+import static datawave.query.jexl.visitors.IngestTypeVisitor.IGNORED_TYPE;
 import static datawave.query.jexl.visitors.IngestTypeVisitor.UNKNOWN_TYPE;
 
 import java.util.HashSet;
@@ -33,17 +34,33 @@ import datawave.query.util.TypeMetadata;
 
 /**
  * <p>
- * This visitor addresses the case when multiple ingest types share some but not all fields in a query
+ * This visitor prunes terms from a query based on exclusive ingest types. The decision to prune and the type of pruning depends on whether the term contributes
+ * positively or negatively to the overall evaluation, the type of term, and the parent junction.
  * </p>
  * <p>
  * Consider the query <code>(A AND B)</code> where term A maps to ingest type 1 and term B maps to ingest type 2. No document will ever satisfy this
- * intersection. Thus, this should prune to zero terms.
+ * intersection due to fully exclusive ingest types. Thus, this should prune to zero terms.
  * </p>
  * <p>
- * Consider the query <code>(A AND (B OR C))</code> where term A and term B map to ingest type 1 and term C maps to ingest type 2. In this case term C should be
- * pruned from the nested union leaving the intersection <code>(A AND B)</code>
+ * Consider the query <code>(A AND (B OR C))</code> where term A and term B map to ingest type 1 and term C maps to ingest type 2. A union requires outside
+ * context to determine inclusive vs. exclusive ingest types, in this case the A term provides context. The C term is fully exclusive and is pruned leaving the
+ * intersection <code>(A AND B)</code>.
  * </p>
- * This visitor can also accept a set of external ingest types and use those to prune the query tree
+ * <p>
+ * Null terms for exclusive types evaluates to true by default and may be pruned from intersections, e.g. <code>A AND C == null</code>. A null term should prune
+ * a whole union.
+ * </p>
+ * <p>
+ * Negated terms for exclusive types may be pruned, e.g. <code>A AND !B</code>
+ * </p>
+ * <p>
+ * Not Null terms should not be pruned in this visitor, e.g. <code>A AND !(C == null)</code>. A separate visitor to handle not null terms of exclusive types
+ * should be used, similar to the {@link IsNotNullPruningVisitor}.
+ * </p>
+ * <p>
+ * A not null term for exclusive types evaluates to false and may be pruned from an union, e.g. <code>A OR !(C == null)</code>. A not null term should prune a
+ * whole intersection.
+ * </p>
  */
 public class IngestTypePruningVisitor extends BaseVisitor {
     private static final Logger log = Logger.getLogger(IngestTypePruningVisitor.class);
@@ -52,6 +69,9 @@ public class IngestTypePruningVisitor extends BaseVisitor {
     private int nodesPruned = 0;
 
     private final IngestTypeVisitor ingestTypeVisitor;
+
+    private boolean globalExternal = false;
+    private boolean localExternal = false;
 
     public IngestTypePruningVisitor(TypeMetadata typeMetadata) {
         this.ingestTypeVisitor = new IngestTypeVisitor(typeMetadata);
@@ -83,6 +103,7 @@ public class IngestTypePruningVisitor extends BaseVisitor {
      */
     public static JexlNode prune(JexlNode node, TypeMetadata metadataHelper, Set<String> ingestTypes) {
         IngestTypePruningVisitor visitor = new IngestTypePruningVisitor(metadataHelper);
+        visitor.setGlobalExternal();
         node.jjtAccept(visitor, ingestTypes);
         if (visitor.getTermsPruned() > 0) {
             log.info("pruned " + visitor.getTermsPruned() + " terms and " + visitor.getNodesPruned() + " nodes");
@@ -141,10 +162,17 @@ public class IngestTypePruningVisitor extends BaseVisitor {
 
     @Override
     public Object visit(ASTNotNode node, Object data) {
-        Object o = node.jjtGetChild(0).jjtAccept(this, data);
+        JexlNode child = node.jjtGetChild(0);
+        Object o = child.jjtAccept(this, data);
+
+        if (child.jjtGetNumChildren() == 0) {
+            pruneNodeFromParent(child);
+        }
+
         if (node.jjtGetNumChildren() == 0) {
             pruneNodeFromParent(node);
         }
+
         return o;
     }
 
@@ -155,7 +183,13 @@ public class IngestTypePruningVisitor extends BaseVisitor {
 
     @Override
     public Object visit(ASTReference node, Object data) {
-        Object o = node.jjtGetChild(0).jjtAccept(this, data);
+        JexlNode child = node.jjtGetChild(0);
+        Object o = child.jjtAccept(this, data);
+
+        if (child.jjtGetNumChildren() == 0) {
+            pruneNodeFromParent(child);
+        }
+
         if (node.jjtGetNumChildren() == 0) {
             pruneNodeFromParent(node);
         }
@@ -164,7 +198,13 @@ public class IngestTypePruningVisitor extends BaseVisitor {
 
     @Override
     public Object visit(ASTReferenceExpression node, Object data) {
-        Object o = node.jjtGetChild(0).jjtAccept(this, data);
+        JexlNode child = node.jjtGetChild(0);
+        Object o = child.jjtAccept(this, data);
+
+        if (child.jjtGetNumChildren() == 0) {
+            pruneNodeFromParent(child);
+        }
+
         if (node.jjtGetNumChildren() == 0) {
             pruneNodeFromParent(node);
         }
@@ -178,6 +218,7 @@ public class IngestTypePruningVisitor extends BaseVisitor {
         Set<String> types;
         if (data == null) {
             // normal visit
+
             types = new HashSet<>();
             // must traverse the children in reverse order because of pruning
             for (int i = node.jjtGetNumChildren() - 1; i >= 0; i--) {
@@ -187,9 +228,24 @@ public class IngestTypePruningVisitor extends BaseVisitor {
         } else {
             // pruning visit
             Set<String> pruningTypes = (Set<String>) data;
+
             // must traverse the children in reverse order because of pruning
             for (int i = node.jjtGetNumChildren() - 1; i >= 0; i--) {
-                node.jjtGetChild(i).jjtAccept(this, pruningTypes);
+                JexlNode child = node.jjtGetChild(i);
+
+                boolean prunableNegation = isNullEquality(child) || isNegatedLeaf(child);
+                if (prunableNegation && shouldPruneChild(pruningTypes, child)) {
+                    // null equalities for exclusive types evaluate to true
+                    // negated leaf nodes for exclusive types evaluate to true
+                    // in either case the whole union evaluates to true and can be pruned
+                    JexlNodes.setChildren(node);
+                    break;
+                } else if (isNotNullEquality(child) && shouldPruneChild(pruningTypes, child)) {
+                    // not null equality and exclusive type, term evaluates to false, drop from union
+                    pruneNodeFromParent(child);
+                } else {
+                    child.jjtAccept(this, pruningTypes);
+                }
             }
             types = pruningTypes;
         }
@@ -217,8 +273,9 @@ public class IngestTypePruningVisitor extends BaseVisitor {
 
         QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(node);
         if (instance.isAnyType()) {
+            int numChildren = node.jjtGetNumChildren();
             Object o = visitMarker(instance, node, data);
-            if (node.jjtGetNumChildren() == 0) {
+            if (node.jjtGetNumChildren() < numChildren) {
                 pruneNodeFromParent(node);
             }
             return o;
@@ -242,11 +299,29 @@ public class IngestTypePruningVisitor extends BaseVisitor {
             // prune using the aggregated ingest types
             // this handles the case of a nested union
             pruningTypes = ingestTypes;
+
+            if (isTopLevelIntersection(node)) {
+                localExternal = true;
+            }
         }
 
         // must traverse the children in reverse order because this visitor prunes as it visits
         for (int i = node.jjtGetNumChildren() - 1; i >= 0; i--) {
-            node.jjtGetChild(i).jjtAccept(this, pruningTypes);
+            JexlNode child = node.jjtGetChild(i);
+            if (isNullEquality(child) && shouldPruneChild(pruningTypes, child)) {
+                // null term for exclusive type causes the term to be dropped because it evaluates to true
+                pruneNodeFromParent(child);
+            } else if (isNotNullEquality(child) && shouldPruneChild(pruningTypes, child)) {
+                // not null exclusive terms cause the whole intersection to be dropped
+                JexlNodes.setChildren(node);
+                break;
+            } else {
+                child.jjtAccept(this, pruningTypes);
+            }
+        }
+
+        if (isTopLevelIntersection(node)) {
+            localExternal = false;
         }
 
         if (node.jjtGetNumChildren() == 0) {
@@ -297,8 +372,7 @@ public class IngestTypePruningVisitor extends BaseVisitor {
     // pruning methods
 
     private Set<String> visitOrPrune(JexlNode node, Object data) {
-
-        Set<String> ingestTypes = ingestTypeVisitor.getIngestTypes(node);
+        Set<String> ingestTypes = ingestTypeVisitor.getIngestTypes(node, (localExternal || globalExternal));
 
         // check for pruning
         if (data instanceof Set<?>) {
@@ -348,8 +422,31 @@ public class IngestTypePruningVisitor extends BaseVisitor {
             return false;
         }
 
+        if (includes.contains(IGNORED_TYPE)) {
+            throw new IllegalStateException("Should not attempt to prune using an IGNORED_TYPE");
+        }
+
+        if (ingestTypes.contains(IGNORED_TYPE)) {
+            // technically shouldn't get here
+            return false;
+        }
+
         // prune if there was no overlap
         return Sets.intersection(ingestTypes, includes).isEmpty();
+    }
+
+    /**
+     * Should the provided node be pruned based on a set of ingest types
+     *
+     * @param ingestTypes
+     *            the ingest types that drive the prune
+     * @param child
+     *            an arbitrary jexl node
+     * @return true if the jexl node should be pruned
+     */
+    private boolean shouldPruneChild(Set<String> ingestTypes, JexlNode child) {
+        Set<String> nodeTypes = ingestTypeVisitor.getIngestTypes(child, globalExternal);
+        return shouldPrune(ingestTypes, nodeTypes);
     }
 
     private Set<String> pruneJunction(JexlNode node, Object data) {
@@ -389,5 +486,70 @@ public class IngestTypePruningVisitor extends BaseVisitor {
 
     public int getNodesPruned() {
         return nodesPruned;
+    }
+
+    private boolean isTopLevelIntersection(JexlNode node) {
+        if (!(node instanceof ASTAndNode)) {
+            return false;
+        }
+
+        while (node.jjtGetParent() != null) {
+            node = node.jjtGetParent();
+
+            if (node instanceof ASTAndNode) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private boolean isNullEquality(JexlNode node) {
+        node = JexlASTHelper.dereference(node);
+
+        if (node instanceof ASTEQNode) {
+            return JexlASTHelper.getLiteralValueSafely(node) == null;
+        }
+
+        return false;
+    }
+
+    private boolean isNotNullEquality(JexlNode node) {
+        node = JexlASTHelper.dereference(node);
+
+        if (node instanceof ASTNotNode) {
+            node = node.jjtGetChild(0);
+            node = JexlASTHelper.dereference(node);
+        } else {
+            return false;
+        }
+
+        if (node instanceof ASTEQNode) {
+            return JexlASTHelper.getLiteralValueSafely(node) == null;
+        }
+
+        return false;
+    }
+
+    private boolean isNegatedLeaf(JexlNode node) {
+        node = JexlASTHelper.dereference(node);
+
+        if (!(node instanceof ASTNotNode)) {
+            return false;
+        }
+
+        node = node.jjtGetChild(0);
+        node = JexlASTHelper.dereference(node);
+
+        if (JexlASTHelper.getLiteralValueSafely(node) == null) {
+            // if the final node has a null literal ignore it. Another method will handle this case.
+            return false;
+        }
+
+        return !(node instanceof ASTAndNode || node instanceof ASTOrNode);
+    }
+
+    public void setGlobalExternal() {
+        globalExternal = true;
     }
 }

@@ -26,13 +26,13 @@ public class NGramGeneratorTest {
                     "12288:Hkwuliz", "12288:ikQ7lKH", "12288:5pGxlXT", "12288:ulizQ1l", "12288:lXTd8zb", "12288:beZHkwu", "12288:jeZHkwu", "12288:wulizQ1",
                     "12288:pGxlXTd", "12288:55pGxlX", "12288:GjeZHkw", "12288:1lK55pG", "12288:lKH5p5H", "12288:HkwuPik", "12288:kwulizQ", "12288:p5H9x1b",
                     "12288:eZHkwul", "12288:lizQ1lK", "12288:xlXTd8z", "12288:zQ1lK55", "12288:VG4GjeZ", "12288:7lKH5p5", "12288:kwuPikQ", "12288:2r/VG4G",
-                    "12288:GxlXTd8", "12288:KH5p5H9", "12288:9x1beZH"},
+                    "12288:GxlXTd8", "12288:KH5p5H9", "12288:9x1beZH", "12288:XTd8zbW"},
             {"6144:6e8o4to", "6144:6y7ppFj", "6144:2C3nq73", "6144:gC6e8o4", "6144:3NRW6/f", "6144:NRW6/ft", "6144:93NRW6/", "6144:TgC6e8o", "6144:3v1kHGh",
                     "6144:ZxoXb0n", "6144:6ZxoXb0", "6144:/ftZTgC", "6144:mk6ZxoX", "6144:73v1kHG", "6144:ppFj93N", "6144:nq73v1k", "6144:s6y7ppF",
                     "6144:Fj93NRW", "6144:tZTgC6e", "6144:toHZmk6", "6144:C6e8o4t", "6144:4toHZmk", "6144:pFj93NR", "6144:HZmk6Zx", "6144:k6ZxoXb",
                     "6144:HGhs6y7", "6144:ftZTgC6", "6144:j93NRW6", "6144:6/ftZTg", "6144:q73v1kH", "6144:1kHGhs6", "6144:y7ppFj9", "6144:Zmk6Zxo",
                     "6144:hs6y7pp", "6144:7ppFj93", "6144:C3nq73v", "6144:3nq73v1", "6144:v1kHGhs", "6144:ZTgC6e8", "6144:8o4toHZ", "6144:o4toHZm",
-                    "6144:oHZmk6Z", "6144:W6/ftZT", "6144:02C3nq7", "6144:RW6/ftZ", "6144:Ghs6y7p", "6144:kHGhs6y", "6144:e8o4toH"}};
+                    "6144:oHZmk6Z", "6144:W6/ftZT", "6144:02C3nq7", "6144:RW6/ftZ", "6144:Ghs6y7p", "6144:kHGhs6y", "6144:e8o4toH", "6144:xoXb0ns"}};
 
     @Test
     public void testGenerateNGrams() {
