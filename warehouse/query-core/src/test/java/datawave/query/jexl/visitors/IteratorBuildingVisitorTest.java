@@ -21,8 +21,6 @@ import org.apache.commons.jexl3.parser.ASTERNode;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.commons.jexl3.parser.ParseException;
-import org.apache.hadoop.io.Writable;
-import org.apache.hadoop.io.WritableComparable;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -953,7 +951,7 @@ public class IteratorBuildingVisitorTest {
         }
     }
 
-    private static class SourceFactory implements datawave.query.iterator.SourceFactory<WritableComparable<?>,Writable> {
+    private static class SourceFactory implements datawave.query.iterator.SourceFactory<Key,Value> {
         private final Iterator<Map.Entry<Key,Value>> iterator;
 
         public SourceFactory(Iterator<Map.Entry<Key,Value>> iterator) {
@@ -961,7 +959,7 @@ public class IteratorBuildingVisitorTest {
         }
 
         @Override
-        public SortedKeyValueIterator<WritableComparable<?>,Writable> getSourceDeepCopy() {
+        public SortedKeyValueIterator<Key,Value> getSourceDeepCopy() {
             return new SortedListKeyValueIterator(iterator);
         }
     }
