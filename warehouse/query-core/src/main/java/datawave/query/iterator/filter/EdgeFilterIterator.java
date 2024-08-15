@@ -5,6 +5,7 @@ import static datawave.query.jexl.DatawaveInterpreter.isMatched;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.util.Base64;
 import java.util.Map;
 import java.util.Set;
 
@@ -13,7 +14,6 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.Filter;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.jexl3.JexlBuilder;
 import org.apache.commons.jexl3.JexlContext;
 import org.apache.commons.jexl3.JexlExpression;
@@ -179,7 +179,7 @@ public class EdgeFilterIterator extends Filter {
         String inPrefilter = options.get(PREFILTER_ALLOWLIST);
 
         if (null != inPrefilter) {
-            byte[] data = Base64.decodeBase64(inPrefilter);
+            byte[] data = Base64.getDecoder().decode(inPrefilter);
             ObjectInputStream ois = null;
             try {
                 ois = new ObjectInputStream(new ByteArrayInputStream(data));

@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.security.Principal;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
@@ -29,7 +30,6 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.hadoop.mapreduce.AccumuloOutputFormat;
-import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -326,7 +326,7 @@ public class BulkResultsJobConfiguration extends MapReduceJobConfiguration imple
 
             // create a copy because this DatawavePrincipal might be CDI injected and have a reference to Weld
             oos.writeObject(new DatawavePrincipal(principal.getProxiedUsers(), principal.getCreationTime()));
-            return Base64.encodeBase64String(baos.toByteArray());
+            return Base64.getEncoder().encodeToString(baos.toByteArray());
         }
     }
 

@@ -5,6 +5,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -17,7 +18,6 @@ import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SkippingIterator;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iteratorsImpl.system.InterruptibleIterator;
-import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.io.Text;
 
 /**
@@ -101,23 +101,16 @@ public abstract class ColumnRangeIterator extends SkippingIterator implements In
     }
 
     public static String encodeRange(Range range) throws IOException {
-        ByteArrayOutputStream b = new ByteArrayOutputStream();
-        DataOutputStream d = new DataOutputStream(b);
-
-        try {
+        try (ByteArrayOutputStream b = new ByteArrayOutputStream(); DataOutputStream d = new DataOutputStream(b)) {
             range.write(d);
+            return Base64.getEncoder().encodeToString(b.toByteArray());
         } catch (Exception e) {
             throw new IOException(e);
-        } finally {
-            d.close();
-            b.close();
         }
-
-        return new String(Base64.encodeBase64(b.toByteArray()));
     }
 
     public static Range decodeRange(String e) throws IOException {
-        ByteArrayInputStream b = new ByteArrayInputStream(Base64.decodeBase64(e.getBytes()));
+        ByteArrayInputStream b = new ByteArrayInputStream(Base64.getDecoder().decode(e));
         DataInputStream in = new DataInputStream(b);
         Range range = new Range();
         try {

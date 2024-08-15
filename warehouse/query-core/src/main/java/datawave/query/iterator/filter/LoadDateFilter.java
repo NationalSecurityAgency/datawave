@@ -1,7 +1,5 @@
 package datawave.query.iterator.filter;
 
-import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
 import java.io.IOException;
 import java.util.Map;
 
@@ -10,7 +8,6 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.commons.codec.binary.Base64;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 
@@ -23,22 +20,6 @@ import datawave.util.time.DateHelper;
  */
 public class LoadDateFilter extends DateTypeFilter {
     protected Range columnRange = null;
-
-    private static Range decodeRange(String e) throws IOException {
-        ByteArrayInputStream b = new ByteArrayInputStream(Base64.decodeBase64(e.getBytes()));
-        DataInputStream in = new DataInputStream(b);
-        Range range = new Range();
-        try {
-            range.readFields(in);
-        } catch (Exception e2) {
-            throw new IOException(e2);
-        } finally {
-            in.close();
-            b.close();
-        }
-
-        return range;
-    }
 
     @Override
     public SortedKeyValueIterator<Key,Value> deepCopy(IteratorEnvironment env) {
@@ -62,7 +43,7 @@ public class LoadDateFilter extends DateTypeFilter {
         if (e == null) {
             throw new IllegalArgumentException("LOAD_DATE_RANGE_NAME must be set");
         }
-        columnRange = decodeRange(e);
+        columnRange = ColumnRangeIterator.decodeRange(e);
     }
 
     @Override

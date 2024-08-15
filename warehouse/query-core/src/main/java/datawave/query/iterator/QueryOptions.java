@@ -12,6 +12,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -32,7 +33,6 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.OptionDescriber;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.jexl3.JexlArithmetic;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.io.Text;
@@ -1810,7 +1810,7 @@ public class QueryOptions implements OptionDescriber {
     }
 
     protected static String decompressOption(final String buffer, Charset characterSet) throws IOException {
-        final byte[] inBase64 = Base64.decodeBase64(buffer.getBytes());
+        final byte[] inBase64 = Base64.getDecoder().decode(buffer);
 
         ByteArrayInputStream byteInputStream = new ByteArrayInputStream(inBase64);
 
@@ -1966,7 +1966,7 @@ public class QueryOptions implements OptionDescriber {
         dataOut.close();
         byteStream.close();
 
-        return new String(Base64.encodeBase64(byteStream.toByteArray()));
+        return Base64.getEncoder().encodeToString(byteStream.toByteArray());
     }
 
     public static String buildFieldStringFromSet(Collection<String> fields) {

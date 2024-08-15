@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -18,7 +19,6 @@ import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.file.FileSKVWriter;
-import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
@@ -328,7 +328,7 @@ public class MultiRFileOutputFormatterTest {
             Assert.assertEquals("MultiRFileOutputFormatter#setAccumuloConfiguration failed to retain the expected username value.", username,
                             conf.get(usernameKey));
             Assert.assertEquals("MultiRFileOutputFormatter#setAccumuloConfiguration failed to retain the expected password value.",
-                            new String(Base64.encodeBase64(password)), conf.get(passwordKey));
+                            Base64.getEncoder().encodeToString(password), conf.get(passwordKey));
             Assert.assertEquals("MultiRFileOutputFormatter#setAccumuloConfiguration failed to retain the expected zookeepers value.", zookeepers,
                             conf.get(zooKeeperKey));
 
