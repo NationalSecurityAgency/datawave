@@ -1,3 +1,10 @@
+### Table of Contents
+- [Getting Started](#getting-started)
+    - [Prerequisites](#prerequisites)
+    - [Build/Run the Site](#build-and-run-the-site)
+    - [Dev vs Prod Modes](#development-mode-vs-production-mode)
+- [Site Maintenance](#site-maintenance-for-new-datawave-releases)
+
 # Getting Started
 
 ## Prerequisites

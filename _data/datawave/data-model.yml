@@ -148,12 +148,12 @@ terms:
   - id: UID
     name: Unique Identifier
     info: |
-          An internal identifier generated for a data object, typically a hash of the raw source data that is
-          guaranteed to be deterministic and unique within a given partition and Data Type
+          An internal identifier generated for the Data Object that is typically a hash of the raw source data.
+          Guaranteed to be deterministic and unique within a given partition and Data Type
 
   - id: ULPB
     name: Uid.List Protocol Buffer
-    info: A protocol buffer object that contains the number of occurrences of a Field Name / Field Value pair, along with a bounded list of UIDs
+    info: A protocol buffer object that contains the number of occurrences of the field name/value pair, along with a bounded list of UIDs
 
   - id: VERT
     name: Vertex
@@ -173,7 +173,7 @@ tables:
       cf: DT + NB + UID
       cq: NFN + NB + FV
       val: "NULL"
-      purpose: Represents a name/value pair for a given field within the data object
+      purpose: Represents a name/value pair for a given field (NFN) within the Data Object (DO)
       example: "20240101_6&nbsp;&nbsp;cars&#92;x00uid.abc.123:DESCRIPTION&#92;x001990&nbsp;Ford&nbsp;Mustang&nbsp;(Red)
                 20240101_6&nbsp;&nbsp;cars&#92;x00uid.abc.123:MAKE&#92;x00Ford
                 20240101_6&nbsp;&nbsp;cars&#92;x00uid.abc.123:MODEL&#92;x00Mustang
@@ -183,7 +183,7 @@ tables:
       cf: "'fi' + NB + NFN"
       cq: NFV + NB + DT + NB + UID
       val: "NULL"
-      purpose: The <b>fi</b> (field index) column provides an in-partition index of field names and associated values for data objects that exist within the given shard
+      purpose: The <b>fi</b> (field index) column provides an in-partition index of field names and associated values for Data Objects that exist within the given shard
       example: "20240101_6&nbsp;&nbsp;fi&#92;x00MAKE:ford&#92;x00cars&#92;x00uid.abc.123
                 20240101_6&nbsp;&nbsp;fi&#92;x00MODEL:mustang&#92;x00cars&#92;x00uid.abc.123"
 
@@ -191,7 +191,7 @@ tables:
       cf: "'d'"
       cq: DT + NB + UID + NB + DVN
       val: DC
-      purpose: (Optional) The <b>d</b> (document) column provides a named view of raw content, typically the raw source input that generated the data object
+      purpose: (Optional) The <b>d</b> (document) column provides a named view of raw content, typically the raw source input that generated the Data Object
       example: "20240101_6&nbsp;&nbsp;d:cars&#92;x00uid.abc.123&#92;x00JSON&nbsp;&nbsp;[Base64&nbsp;encoded,&nbsp;gzipped&nbsp;json]"
 
     - row: SHARD
@@ -199,7 +199,7 @@ tables:
       cq: DT + NB + UID + NT + NFN
       val: TFPB
       purpose: |
-               (Optional) The <b>tf</b> (term frequency) column enables phrase queries by mapping a data object's
+               (Optional) The <b>tf</b> (term frequency) column enables phrase queries by mapping a Data Object's
                tokenized terms to the positions (word offsets) of those terms within the source document 
       example: "20240101_6&nbsp;&nbsp;tf:cars&#92;x00uid.abc.123&#92;x001990&#92;x00DESCRIPTION&nbsp;&nbsp;[Protobuf&nbsp;of&nbsp;'1990'&nbsp;offsets]
                 20240101_6&nbsp;&nbsp;tf:cars&#92;x00uid.abc.123&#92;x00ford&#92;x00DESCRIPTION&nbsp;&nbsp;[Protobuf&nbsp;of&nbsp;'ford'&nbsp;offsets]
@@ -208,25 +208,25 @@ tables:
 
   - id: GFIDX
     name: Global Forward Index Table
-    info: Index table used to map map field/value pairs to partitions within the Primary Data Table where representative objects may be found
+    info: Index table used to map map field/value pairs to partitions (shards) within the Primary Data Table (PDT) where representative Data Objects may be found
     entries:
     - row: NFV
       cf: NFN
       cq: SHARD + NB + DT
       val: ULPB
-      purpose: Maps a NFV:NFN pair to a given shard partition within the primary data table, and optionally to a bounded list of object UIDs within that partition
+      purpose: Maps the NFV:NFN pair to a given shard partition within the Primary Data Table (PDT), and optionally to a bounded list of Data Object UIDs within that partition
       example: "ford&nbsp;&nbsp;MAKE:20240101_6&#92;x00cars&nbsp;[Protobuf&nbsp;list&nbsp;of&nbsp;uid's&nbsp;including&nbsp;'uid.abc.123']
                 mustang&nbsp;&nbsp;MODEL:20240101_6&#92;x00cars&nbsp;[Protobuf&nbsp;list&nbsp;of&nbsp;uid's&nbsp;including&nbsp;'uid.abc.123']"
 
   - id: GRIDX
     name: Global Reverse Index Table
-    info: Index table used to map field/value pairs to partitions within the Primary Data Table where representative objects may be found
+    info: Index table used to map field/value pairs to partitions within the Primary Data Table (PDT) where representative Data Objects may be found
     entries:
     - row: RNFV
       cf: NFN
       cq: SHARD + NB + DT
       val: ULPB
-      purpose: Maps a RNFV:NFN to a given shard partition within the primary data table, and optionally to a bounded list of object UIDs within that partition
+      purpose: Maps the RNFV:NFN pair to a given shard partition within the Primary Data Table (PDT), and optionally to a bounded list of Data Object UIDs within that partition
       example: "drof&nbsp;&nbsp;MAKE:20240101_6&#92;x00cars&nbsp;[Protobuf&nbsp;list&nbsp;of&nbsp;uid's&nbsp;including&nbsp;'uid.abc.123']
                 gnatsum&nbsp;&nbsp;MODEL:20240101_6&#92;x00cars&nbsp;[Protobuf&nbsp;list&nbsp;of&nbsp;uid's&nbsp;including&nbsp;'uid.abc.123']"
 
@@ -238,7 +238,9 @@ tables:
       cf: e
       cq: DT
       val: "NULL"
-      purpose: "The <b>e</b> column family denotes that NFN is a field that is contained within the given DT. <b>Note</b>: The absence of an <b>e</b> entry for a given NFN and the presence of <b>i</b> and/or <b>ri</b> entries denotes that the NFN is an <em>index-only</em> field"
+      purpose: "The <b>e</b> column family denotes that NFN is a field that exists within objects of the given Data Type (DT) within the Primary Data Table (PDT). <b>Note</b>:
+                The absence of an <b>e</b> entry for a given NFN and the presence of <b>i</b> and/or <b>ri</b> entries for the NFN denotes that it is an <em>index-only</em> field,
+                meaning that no such field exists within the PDT's Data Objects for the given DT"
       example: "DESCRIPTION&nbsp;&nbsp;e:cars
                 MAKE&nbsp;&nbsp;&nbsp;e:cars
                 MODEL&nbsp;&nbsp;&nbsp;e:cars"
@@ -247,7 +249,10 @@ tables:
       cf: i
       cq: "DT + NB + 'YYYYMMDD'"
       val: Integer Count
-      purpose: "The <b>i</b> column family denotes that NFN exists in both the Global Forward Index (GFIDX) table and in the Primary Data Table's (PDT) <b>fi</b> column. The value denotes that the field was seen on the given date 'Integer Count' times"
+      purpose: "The <b>i</b> column family denotes that NFN exists in both the Global Forward Index (GFIDX) table and in the Primary Data Table's (PDT) <b>fi</b> column.
+                The value denotes that 'Integer Count' instances of the NFN exist for the given date. <b>Note</b>: The absence of an <b>e</b> entry for a given NFN and
+                the presence of <b>i</b> and/or <b>ri</b> entries for the NFN denotes that it is an <em>index-only</em> field, meaning that no such field exists
+                within the PDT's Data Objects for the given DT"
       example: "MAKE&nbsp;&nbsp;i:cars&#92;x0020240101&nbsp;&nbsp;&#92;x01
                 MAKE&nbsp;&nbsp;i:cars&#92;x0020240102&nbsp;&nbsp;&#92;x0E
                 MODEL&nbsp;&nbsp;i:cars&#92;x0020240101&nbsp;&nbsp;&#92;x01
@@ -257,7 +262,7 @@ tables:
       cf: ri
       cq: "DT + NB + 'YYYYMMDD'"
       val: Integer Count
-      purpose: "The <b>ri</b> column family denotes that NFN exists in the Global Reverse Index (GRIDX) table, and the value denotes that the field was seen on the given date 'Integer Count' times"
+      purpose: "The <b>ri</b> column family denotes that NFN exists in the Global Reverse Index (GRIDX) table, and the value denotes that 'Integer Count' instances of the NFN exist for the given date"
       example: "MODEL&nbsp;&nbsp;ri:cars&#92;x0020240101&nbsp;&nbsp;&#92;x01
                 MODEL&nbsp;&nbsp;ri:cars&#92;x0020240102&nbsp;&nbsp;&#92;x0E"
 
@@ -265,7 +270,7 @@ tables:
       cf: f
       cq: "DT + NB + 'YYYYMMDD'"
       val: Integer Count
-      purpose: "Similar to the <b>i</b> column, the <b>f</b> (frequency) column family conveys the 'Integer Count' times that NFN was seen on the given date. These entries are recorded for non-indexed fields as well"
+      purpose: "Similar to the <b>i</b> column, the <b>f</b> (frequency) column family conveys the 'Integer Count' times that instances of NFN were seen on the given date. These entries are recorded for non-indexed fields as well"
       example: "MAKE&nbsp;&nbsp;f:cars&#92;x0020240101&nbsp;&nbsp;&#92;x01
                 MODEL&nbsp;&nbsp;f:cars&#92;x0020240101&nbsp;&nbsp;&#92;x01
                 NON_INDEXED_FIELD&nbsp;&nbsp;f:cars&#92;x0020240101&nbsp;&nbsp;&#92;x01"
@@ -314,7 +319,7 @@ tables:
       cq: "'YYYYMMDD' + ' / ' + EAV"
       val: "EPB<sub>1</sub>"
       purpose: |
-               A unidirectional pair of vertices that expresses some relationship between a pair of Field Values originating from a Data Object (DO), where
+               A unidirectional pair of vertices that expresses some relationship between a pair of Field Values originating from a Data Object, where
                the CQ and value may contain additional metadata about the related activity
       example: "mustang&#92;x00ford&nbsp;&nbsp;CARS/MODEL&#8209;MAKE:20240101/SALES/RegionA/Dealership1&nbsp;&nbsp;[Protobuf&nbsp;histogram&nbsp;object]
                 mustang&#92;x001990&nbsp;&nbsp;CARS/MODEL&#8209;YEAR:20240101/SALES/RegionA/Dealership1&nbsp;&nbsp;[Protobuf&nbsp;histogram&nbsp;object]"
@@ -335,7 +340,7 @@ tables:
 
   - id: DIDX
     name: Date Index Table
-    info: Accumulo table that is used to map arbitrary date fields and their values to partitions within the Primary Data Table where the corresponding Data Objects may be found
+    info: Accumulo table that is used to map arbitrary date fields and their values to partitions within the Primary Data Table (PDT) where the corresponding Data Objects may be found
     entries:
     - row: "YYYYMMDD<sub>1</sub>"
       cf: DTN

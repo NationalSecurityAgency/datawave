@@ -32,7 +32,7 @@ entries:
 
   - title: Tour
     folderitems:
-    - title: Getting Started
+    - title: Preflight
       url: /docs/7.x/tour/getting-started
 
     - title: Ingest Basics
