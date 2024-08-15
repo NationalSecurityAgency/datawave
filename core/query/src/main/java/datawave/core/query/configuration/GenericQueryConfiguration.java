@@ -70,6 +70,8 @@ public class GenericQueryConfiguration implements Serializable {
     // use a value like 'env:PASS' to pull from the environment
     private String accumuloPassword = "";
 
+    private String connPoolName;
+
     // Whether or not this query emits every result or performs some kind of result reduction
     protected boolean reduceResults = false;
 
@@ -100,6 +102,7 @@ public class GenericQueryConfiguration implements Serializable {
         this.setBaseIteratorPriority(genericConfig.getBaseIteratorPriority());
         this.setBypassAccumulo(genericConfig.getBypassAccumulo());
         this.setAccumuloPassword(genericConfig.getAccumuloPassword());
+        this.setConnPoolName(genericConfig.getConnPoolName());
         this.setAuthorizations(genericConfig.getAuthorizations());
         this.setBeginDate(genericConfig.getBeginDate());
         this.setClient(genericConfig.getClient());
@@ -278,6 +281,14 @@ public class GenericQueryConfiguration implements Serializable {
         this.accumuloPassword = EnvProvider.resolve(password);
     }
 
+    public String getConnPoolName() {
+        return connPoolName;
+    }
+
+    public void setConnPoolName(String connPoolName) {
+        this.connPoolName = connPoolName;
+    }
+
     public Map<String,ScannerBase.ConsistencyLevel> getTableConsistencyLevels() {
         return tableConsistencyLevels;
     }
@@ -336,12 +347,13 @@ public class GenericQueryConfiguration implements Serializable {
                         && Objects.equals(getBeginDate(), that.getBeginDate()) && Objects.equals(getEndDate(), that.getEndDate())
                         && Objects.equals(getMaxWork(), that.getMaxWork()) && Objects.equals(getTableName(), that.getTableName())
                         && Objects.equals(getQueries(), that.getQueries()) && Objects.equals(getAccumuloPassword(), that.getAccumuloPassword())
-                        && Objects.equals(isReduceResults(), that.isReduceResults());
+                        && Objects.equals(getConnPoolName(), that.getConnPoolName()) && Objects.equals(isReduceResults(), that.isReduceResults());
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(isCheckpointable(), getAuthorizations(), getQuery(), getQueryString(), getBeginDate(), getEndDate(), getMaxWork(),
-                        getBaseIteratorPriority(), getTableName(), getQueries(), getBypassAccumulo(), getAccumuloPassword(), isReduceResults());
+                        getBaseIteratorPriority(), getTableName(), getQueries(), getBypassAccumulo(), getConnPoolName(), getAccumuloPassword(),
+                        isReduceResults());
     }
 }
