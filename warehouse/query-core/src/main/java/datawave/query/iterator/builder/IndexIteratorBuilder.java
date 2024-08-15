@@ -77,8 +77,15 @@ public class IndexIteratorBuilder extends AbstractIteratorBuilder {
 
     public IndexIterator newIndexIterator(Text field, Text value, SortedKeyValueIterator<Key,Value> source, TimeFilter timeFilter, TypeMetadata typeMetadata,
                     boolean buildDocument, Predicate<Key> datatypeFilter, FieldIndexAggregator aggregator) {
-        return IndexIterator.builder(field, value, source).withTimeFilter(timeFilter).withTypeMetadata(typeMetadata).shouldBuildDocument(buildDocument)
-                        .withDatatypeFilter(datatypeFilter).withAggregation(aggregator).build();
+        //  @formatter:off
+        return IndexIterator.builder(field, value, source)
+                        .withTimeFilter(timeFilter)
+                        .withTypeMetadata(typeMetadata)
+                        .shouldBuildDocument(buildDocument)
+                        .withDatatypeFilter(datatypeFilter)
+                        .withAggregation(aggregator)
+                        .build();
+        //  @formatter:on
     }
 
     @SuppressWarnings("unchecked")

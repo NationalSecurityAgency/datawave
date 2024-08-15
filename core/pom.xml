@@ -4,13 +4,20 @@
     <parent>
         <groupId>gov.nsa.datawave</groupId>
         <artifactId>datawave-parent</artifactId>
-        <version>6.11.0-SNAPSHOT</version>
+        <version>7.4.0-SNAPSHOT</version>
     </parent>
     <groupId>gov.nsa.datawave.core</groupId>
     <artifactId>datawave-core-parent</artifactId>
     <packaging>pom</packaging>
     <name>${project.artifactId}</name>
     <modules>
+        <module>cached-results</module>
+        <module>common</module>
+        <module>common-util</module>
+        <module>connection-pool</module>
+        <module>map-reduce</module>
+        <module>modification</module>
+        <module>query</module>
         <module>utils</module>
     </modules>
     <scm>
@@ -36,6 +43,11 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

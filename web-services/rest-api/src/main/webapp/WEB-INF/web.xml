@@ -54,7 +54,7 @@
         <param-value>
             <!-- From Common -->
             datawave.configuration.ConfigurationBean,
-            datawave.webservice.common.cache.AccumuloTableCache,
+            datawave.webservice.common.cache.AccumuloTableCacheBean,
             datawave.webservice.common.connection.AccumuloConnectionFactoryBean,
             datawave.webservice.common.audit.AuditBean,
             datawave.webservice.common.health.HealthBean,

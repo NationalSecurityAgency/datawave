@@ -37,8 +37,11 @@ import com.google.common.collect.Sets;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.core.common.connection.AccumuloConnectionFactory;
+import datawave.core.query.result.event.DefaultResponseObjectFactory;
 import datawave.ingest.mapreduce.handler.ssdeep.SSDeepIndexHandler;
 import datawave.marking.MarkingFunctions;
+import datawave.microservice.query.QueryImpl;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
 import datawave.query.tables.ssdeep.util.SSDeepTestUtil;
 import datawave.query.testframework.AbstractDataTypeConfig;
@@ -49,9 +52,6 @@ import datawave.util.ssdeep.BucketAccumuloKeyGenerator;
 import datawave.util.ssdeep.NGramByteHashGenerator;
 import datawave.util.ssdeep.NGramGenerator;
 import datawave.util.ssdeep.NGramTuple;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
-import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.result.event.DefaultResponseObjectFactory;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
 import datawave.webservice.query.runner.RunningQuery;
@@ -162,6 +162,28 @@ public class SSDeepIndexQueryTest {
         runSingleQuery(true);
     }
 
+    @Test(expected = SSDeepRuntimeQueryException.class)
+    public void testSingleQueryWithNoValidNgrams() throws Exception {
+        String query = "CHECKSUM_SSDEEP:12288:zzzzzzzzzzzz:zzzzzz";
+
+        final int minScoreThreshold = 0;
+
+        EventQueryResponseBase response = runSSDeepQuery(query, minScoreThreshold);
+        List<EventBase> events = response.getEvents();
+        Assert.assertNull(events);
+    }
+
+    @Test
+    public void testSingleQueryWithNoResults() throws Exception {
+        String query = "CHECKSUM_SSDEEP:12288:aabbccddeeff:abcdef";
+
+        final int minScoreThreshold = 0;
+
+        EventQueryResponseBase response = runSSDeepQuery(query, minScoreThreshold);
+        List<EventBase> events = response.getEvents();
+        Assert.assertNull(events);
+    }
+
     private static void logSSDeepTestData(String tableName) throws TableNotFoundException {
         Scanner scanner = accumuloClient.createScanner(tableName, auths);
         Iterator<Map.Entry<Key,Value>> iterator = scanner.iterator();
@@ -176,7 +198,7 @@ public class SSDeepIndexQueryTest {
     public void runSingleQuery(boolean applyMinScoreThreshold) throws Exception {
         String query = "CHECKSUM_SSDEEP:" + TEST_SSDEEPS[2];
 
-        final int minScoreThreshold = applyMinScoreThreshold ? 65 : 0;
+        final int minScoreThreshold = applyMinScoreThreshold ? 67 : 0;
         final int expectedEventCount = applyMinScoreThreshold ? 2 : 3;
 
         EventQueryResponseBase response = runSSDeepQuery(query, minScoreThreshold);
@@ -187,10 +209,10 @@ public class SSDeepIndexQueryTest {
         Assert.assertEquals(expectedEventCount, eventCount);
 
         // find the fields for the self match example.
-        SSDeepTestUtil.assertSSDeepSimilarityMatch(TEST_SSDEEPS[2], TEST_SSDEEPS[2], "65", EXPECTED_2_2_OVERLAPS, "100", observedEvents);
+        SSDeepTestUtil.assertSSDeepSimilarityMatch(TEST_SSDEEPS[2], TEST_SSDEEPS[2], "67", EXPECTED_2_2_OVERLAPS, "100", observedEvents);
 
         // find and validate the fields for the partial match example.
-        SSDeepTestUtil.assertSSDeepSimilarityMatch(TEST_SSDEEPS[2], TEST_SSDEEPS[3], "51", EXPECTED_2_3_OVERLAPS, "96", observedEvents);
+        SSDeepTestUtil.assertSSDeepSimilarityMatch(TEST_SSDEEPS[2], TEST_SSDEEPS[3], "53", EXPECTED_2_3_OVERLAPS, "96", observedEvents);
 
         if (applyMinScoreThreshold)
             assertNoMatch(TEST_SSDEEPS[2], TEST_SSDEEPS[3], observedEvents);

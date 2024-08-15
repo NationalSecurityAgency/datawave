@@ -6,7 +6,7 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.0.xsd 
                             http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-4.0.xsd">
 
-    <bean id="ResponseObjectFactory" class="datawave.webservice.query.result.event.DefaultResponseObjectFactory"/>
+    <bean id="responseObjectFactory" class="datawave.core.query.result.event.DefaultResponseObjectFactory"/>
 
     <!-- A list of lucene to jexl query functions -->
     <util:list id="allowedQueryFunctions" value-type="datawave.query.language.functions.jexl.JexlQueryFunction">
@@ -28,23 +28,11 @@
         <bean class="datawave.query.language.functions.jexl.AtomValuesMatchFunction"/>
         <bean class="datawave.query.language.functions.jexl.Options"/>
         <bean class="datawave.query.language.functions.jexl.Rename"/>
-        <bean class="datawave.query.language.functions.jexl.GroupBy"/>
         <bean class="datawave.query.language.functions.jexl.Unique"/>
+        <bean class="datawave.query.language.functions.jexl.GroupBy"/>
         <bean class="datawave.query.language.functions.jexl.UniqueByDay"/>
         <bean class="datawave.query.language.functions.jexl.UniqueByHour"/>
         <bean class="datawave.query.language.functions.jexl.UniqueByMinute"/>
-        <bean class="datawave.query.language.functions.jexl.UniqueByMonth"/>
-        <bean class="datawave.query.language.functions.jexl.UniqueBySecond"/>
-        <bean class="datawave.query.language.functions.jexl.UniqueByTenthOfHour"/>
-        <bean class="datawave.query.language.functions.jexl.UniqueByYear"/>
-        <bean class="datawave.query.language.functions.jexl.MostRecentUnique"/>
-        <bean class="datawave.query.language.functions.jexl.MostRecentUniqueByDay"/>
-        <bean class="datawave.query.language.functions.jexl.MostRecentUniqueByHour"/>
-        <bean class="datawave.query.language.functions.jexl.MostRecentUniqueByMinute"/>
-        <bean class="datawave.query.language.functions.jexl.MostRecentUniqueByMonth"/>
-        <bean class="datawave.query.language.functions.jexl.MostRecentUniqueBySecond"/>
-        <bean class="datawave.query.language.functions.jexl.MostRecentUniqueByTenthOfHour"/>
-        <bean class="datawave.query.language.functions.jexl.MostRecentUniqueByYear"/>
         <bean class="datawave.query.language.functions.jexl.NoExpansion"/>
         <bean class="datawave.query.language.functions.jexl.Compare"/>
         <bean class="datawave.query.language.functions.jexl.Geowave.Contains"/>
@@ -99,6 +87,7 @@
         <property name="logicDescription" value="Edge query" />
         <property name="metadataHelperFactory" ref="metadataHelperFactory" />
         <property name="selectorExtractor" ref="DatawaveSelectorExtractor" />
+        <property name="edgeModelFieldsFactory" ref="edgeModelFieldsFactory" />
     </bean>
     
     <!-- 
@@ -106,16 +95,22 @@
         Provides a fall-back model in the event that the named query model 'modelName'
         isn't defined in Accumulo for whatever reason...
     -->
+    <bean id="edgeModelFieldsFactory" class="datawave.edge.model.DefaultEdgeModelFieldsFactory" scope="singleton"/>
     <bean id="edgeQueryModel" class="datawave.query.model.edge.EdgeQueryModel" factory-method="loadModel" scope="singleton">
         <constructor-arg value="/DATAWAVE_EDGE.xml" />
-    </bean> 
-    
+        <constructor-arg ref="edgeModelFieldsFactory" />
+    </bean>
+
     <bean id="EdgeEventQuery" scope="prototype"  parent="BaseEventQuery" class="datawave.query.tables.edge.DefaultEdgeEventQueryLogic">
         <property name="logicDescription" value="Use results of an EdgeQuery to obtain events that created the edge." />
         <property name="edgeQueryModel" ref="edgeQueryModel" />
         <property name="edgeModelName" value="DATAWAVE_EDGE" />
         <property name="modelTableName" value="DatawaveMetadata" />
+        <property name="edgeDictionaryProvider" ref="edgeDictionaryProvider" />
+        <property name="edgeModelFieldsFactory" ref="edgeModelFieldsFactory" />
     </bean>
+
+    <bean id="edgeDictionaryProvider" scope="prototype" class="datawave.webservice.edgedictionary.EdgeDictionaryProviderImpl" />
 
     <bean id="ExtendedEdgeQuery" scope="prototype" parent="RewriteEdgeQuery" class="datawave.query.edge.DefaultExtendedEdgeQueryLogic">
         <property name="edgeQueryModel" ref="edgeQueryModel" />
@@ -158,11 +153,10 @@
             </map>
         </property>
     </bean>
-    
-    <bean id="baseQueryLogic" class="datawave.webservice.query.logic.BaseQueryLogic" abstract="true" >
-        <property name="roleManager" ref="easyRoleManager" />
+
+    <bean id="baseQueryLogic" class="datawave.core.query.logic.BaseQueryLogic" abstract="true" >
 	<property name="markingFunctions" ref="markingFunctions" />
-	<property name="responseObjectFactory" ref="ResponseObjectFactory" />
+	<property name="responseObjectFactory" ref="responseObjectFactory" />
     </bean>
     
     <bean id="BaseEventQuery" parent="baseQueryLogic" scope="prototype" class="datawave.query.tables.ShardQueryLogic" abstract="true">
@@ -203,12 +197,6 @@
 
         <property name="auditType" value="ACTIVE" />
         <property name="logicDescription" value="Event query with rewritten logic" />
-        <!-- Determines how many events in the global index lookup will be
-        aggregated into a day range -->
-        <property name="eventPerDayThreshold" value="40000" />
-        <!-- Determines how many shards in the global index lookup will be
-        aggregated into a day range -->
-        <property name="shardsPerDayThreshold" value="4" />	<!-- ${beq.shardsPerDayThreshold} -->
         <!-- The max number of terms BEFORE all expansions -->
         <property name="initialMaxTermThreshold" value="10" />	<!-- was ${beq.initialMaxTermThreshold} -->
         <property name="intermediateMaxTermThreshold" value="10" />
@@ -367,11 +355,6 @@
         <property name="validateQueryPropertyMarkers" value="true"/>
     </bean>
 
-    <bean id="datawaveRoleManager" class="datawave.webservice.query.logic.DatawaveRoleManager" />
-    
-    <bean id="easyRoleManager" class="datawave.webservice.query.logic.EasyRoleManager" />
-    
     <util:list id="RemoteUserServices" value-type="datawave.security.authorization.UserOperations">
-   </util:list>
-
+    </util:list>
 </beans>

@@ -50,7 +50,7 @@ public class DataDictionaryBean {
     }
 
     private Response sendRedirect(String suffix, UriInfo uriInfo) throws TextParseException, URISyntaxException {
-        URIBuilder builder = remoteDataDictionary.buildURI(suffix);
+        URIBuilder builder = remoteDataDictionary.buildRedirectURI(suffix, uriInfo.getBaseUri());
         uriInfo.getQueryParameters().forEach((pname, valueList) -> valueList.forEach(pvalue -> builder.addParameter(pname, pvalue)));
         return Response.temporaryRedirect(builder.build()).build();
     }

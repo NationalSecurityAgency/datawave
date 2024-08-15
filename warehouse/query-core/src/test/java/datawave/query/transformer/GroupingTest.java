@@ -51,8 +51,11 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 
 import datawave.configuration.spring.SpringBean;
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.iterator.DatawaveTransformIterator;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
+import datawave.microservice.query.QueryImpl;
 import datawave.query.QueryParameters;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.RebuildingScannerTestHelper;
@@ -65,11 +68,9 @@ import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.util.VisibilityWiseGuysIngest;
 import datawave.query.util.VisibilityWiseGuysIngestWithModel;
+import datawave.query.util.VisibilityWiseGuysNoGroupingIngestWithModel;
 import datawave.util.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
-import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
-import datawave.webservice.query.iterator.DatawaveTransformIterator;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
 import datawave.webservice.result.DefaultEventQueryResponse;
@@ -267,7 +268,7 @@ public abstract class GroupingTest {
                         .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "org.jboss.logging",
                                         "datawave.webservice.query.result.event")
                         .deleteClass(DefaultEdgeEventQueryLogic.class).deleteClass(RemoteEdgeDictionary.class)
-                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class).deleteClass(datawave.query.metrics.ShardTableQueryMetricHandler.class)
+                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
                         .addAsManifestResource(new StringAsset(
                                         "<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>" + "</alternatives>"),
                                         "beans.xml");
@@ -336,6 +337,16 @@ public abstract class GroupingTest {
         dataWriter = (client, range) -> {
             try {
                 VisibilityWiseGuysIngestWithModel.writeItAll(client, range);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        };
+    }
+
+    private void givenNonGroupedModelData() {
+        dataWriter = (client, range) -> {
+            try {
+                VisibilityWiseGuysNoGroupingIngestWithModel.writeItAll(client, range);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -1003,5 +1014,47 @@ public abstract class GroupingTest {
 
         Assertions.assertThatIllegalArgumentException().isThrownBy(this::collectQueryResults)
                         .withMessage("Unable to calculate an average with non-numerical value 'MALE'");
+    }
+
+    @Test
+    public void testGroupingWithModelByGenderAndAllAgeMetricsUsingLuceneFunction() throws Exception {
+        givenModelData();
+
+        givenQuery("(UUID:C* or UUID:S* ) and #GROUPBY('GEN') and #SUM('AG') and #MAX('AG') and #MIN('AG') and #AVERAGE('AG') and #COUNT('AG')");
+        givenLuceneParserForLogic();
+
+        expectGroup(Group.of("MALE").withCount(10)
+                        .withAggregate(Aggregate.of("AG").withCount("10").withMax("40").withMin("16").withSum("268").withAverage("26.8")));
+        expectGroup(Group.of("FEMALE").withCount(2)
+                        .withAggregate(Aggregate.of("AG").withCount("2").withMax("18").withMin("18").withSum("36").withAverage("18")));
+
+        // Run the test queries and collect their results.
+        collectQueryResults();
+
+        // Verify the results.
+        assertGroups();
+    }
+
+    /**
+     * Verify that when grouping and aggregating with model mapping, if multiple fields with the same value are mapped to the same root model mapping in a
+     * document, that only one instance of the field-value pairing is counted towards grouping and aggregation.
+     */
+    @Test
+    public void testFilteringOutDuplicateDatumAfterModelMapping() throws Exception {
+        // Contains entries with identical values for fields that will be mapped to the same model mapping.
+        givenNonGroupedModelData();
+
+        givenQuery("(UUID:C* or UUID:S* ) and #GROUPBY('GEN') and #SUM('AG') and #MAX('AG') and #MIN('AG') and #AVERAGE('AG') and #COUNT('AG')");
+        givenLuceneParserForLogic();
+
+        expectGroup(Group.of("MALE").withCount(2).withAggregate(Aggregate.of("AG").withCount("2").withMax("40").withMin("24").withSum("64").withAverage("32")));
+        expectGroup(Group.of("FEMALE").withCount(1)
+                        .withAggregate(Aggregate.of("AG").withCount("1").withMax("18").withMin("18").withSum("18").withAverage("18")));
+
+        // Run the test queries and collect their results.
+        collectQueryResults();
+
+        // Verify the results.
+        assertGroups();
     }
 }

@@ -16,7 +16,7 @@ import org.apache.hadoop.mapreduce.Partitioner;
 import org.apache.log4j.Logger;
 
 import datawave.ingest.mapreduce.job.BulkIngestKey;
-import datawave.ingest.mapreduce.job.ShardedTableMapFile;
+import datawave.ingest.mapreduce.job.SplitsFile;
 
 /**
  * The TabletLocationHashPartitioner will look up the shard tablet servers, sort those tablet servers and then partition based on the index into that sorted
@@ -98,7 +98,7 @@ public class TabletLocationNamePartitioner extends Partitioner<BulkIngestKey,Val
         }
 
         if (null == this.shardLocations.get(tableName)) {
-            Map<Text,String> shards = ShardedTableMapFile.getShardIdToLocations(conf, tableName);
+            Map<Text,String> shards = SplitsFile.getSplitsAndLocations(conf, tableName);
 
             // now sort the locations
             SortedSet<String> locations = new TreeSet<>();
@@ -126,4 +126,14 @@ public class TabletLocationNamePartitioner extends Partitioner<BulkIngestKey,Val
 
     @Override
     public void initializeJob(Job job) {}
+
+    @Override
+    public boolean needSplits() {
+        return true;
+    }
+
+    @Override
+    public boolean needSplitLocations() {
+        return true;
+    }
 }

@@ -21,6 +21,7 @@ import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 import datawave.marking.MarkingFunctions;
+import datawave.microservice.query.Query;
 import datawave.query.config.SSDeepSimilarityQueryConfiguration;
 import datawave.util.ssdeep.NGramGenerator;
 import datawave.util.ssdeep.NGramTuple;
@@ -28,7 +29,6 @@ import datawave.util.ssdeep.SSDeepHash;
 import datawave.util.ssdeep.SSDeepHashEditDistanceScorer;
 import datawave.util.ssdeep.SSDeepHashScorer;
 import datawave.util.ssdeep.SSDeepNGramOverlapScorer;
-import datawave.webservice.query.Query;
 import datawave.webservice.query.result.event.DefaultEvent;
 import datawave.webservice.query.result.event.DefaultField;
 import datawave.webservice.query.result.event.EventBase;
@@ -117,7 +117,7 @@ public class SSDeepSimilarityQueryTransformerTest {
                     assertEquals("96", field.getValueString());
                     break;
                 case "OVERLAP_SCORE":
-                    assertEquals("51", field.getValueString());
+                    assertEquals("53", field.getValueString());
                     break;
                 case "OVERLAP_SSDEEP_NGRAMS":
                     assertEquals(EXPECTED_2_3_OVERLAPS, field.getValueString());
