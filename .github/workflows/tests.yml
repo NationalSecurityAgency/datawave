@@ -222,8 +222,6 @@ jobs:
   compose-build-and-test:
     runs-on: ubuntu-latest
     steps:
-      #      - name: Run a failing command
-      #        run: exit 1
       - name: Free up some space
         run: |
           sudo rm -rf /usr/share/dotnet
