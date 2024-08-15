@@ -142,6 +142,7 @@ datawave:
           reverseIndexTableName: ${warehouse.tables.reverseIndex.name}
           maxResults: -1
           queryThreads: ${warehouse.defaults.queryThreads}
+          maxConcurrentTasks: ${warehouse.defaults.queryThreads}
           indexLookupThreads: ${warehouse.defaults.indexLookupThreads}
           dateIndexThreads: ${warehouse.defaults.dateIndexThreads}
           fullTableScanEnabled: ${warehouse.defaults.fullTableScanEnabled}
@@ -218,7 +219,6 @@ datawave:
           statsdHost: ${warehouse.statsd.host}
           statsdPort: ${warehouse.statsd.port}
           evaluationOnlyFields: ""
-          maxConcurrentTasks: 10
           requiredRoles:
             - "AuthorizedUser"
 
@@ -305,6 +305,7 @@ datawave:
           maxResults: 25000
           maxWork: -1
           queryThreads: 16
+          maxConcurrentTasks: 16
           auditType: "NONE"
           logicDescription: "Retrieve graph edges matching the search term(s)"
           querySyntaxParsers:
@@ -334,6 +335,7 @@ datawave:
           maxResults: -1
           maxWork: -1
           queryThreads: ${warehouse.defaults.queryThreads}
+          maxConcurrentTasks: ${warehouse.defaults.queryThreads}
           modelTableName: ${warehouse.tables.model.name}
           modelName: "DATAWAVE"
           maxUniqueValues: 20000
@@ -349,6 +351,7 @@ datawave:
           maxResults: -1
           maxWork: -1
           queryThreads: ${warehouse.defaults.queryThreads}
+          maxConcurrentTasks: ${warehouse.defaults.queryThreads}
           modelTableName: ${warehouse.errorTables.model.name}
           modelName: "DATAWAVE"
           maxUniqueValues: 20000
@@ -410,6 +413,7 @@ datawave:
           indexTableName: ${warehouse.tables.index.name}
           reverseIndexTableName: ${warehouse.tables.reverseIndex.name}
           queryThreads: ${warehouse.defaults.indexLookupThreads}
+          maxConcurrentTasks: ${warehouse.defaults.indexLookupThreads}
           fullTableScanEnabled: ${warehouse.defaults.fullTableScanEnabled}
           minimumSelectivity: .2
           includeDataTypeAsField: false

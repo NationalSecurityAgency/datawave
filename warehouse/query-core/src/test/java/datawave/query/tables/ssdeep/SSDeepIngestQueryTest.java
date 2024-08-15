@@ -156,7 +156,7 @@ public class SSDeepIngestQueryTest extends AbstractFunctionalQuery {
 
     @Test
     public void testSSDeepDiscovery() throws Exception {
-        log.info("------ testDiscovery ------");
+        log.info("------ testSSDeepDiscovery ------");
         String testSSDeep = "384:nv/fP9FmWVMdRFj2aTgSO+u5QT4ZE1PIVS:nDmWOdRFNTTs504cQS";
         String query = "CHECKSUM_SSDEEP:\"" + testSSDeep + "\"";
         EventQueryResponseBase response = runSSDeepQuery(query, discoveryQueryLogic, 0);
@@ -182,7 +182,7 @@ public class SSDeepIngestQueryTest extends AbstractFunctionalQuery {
 
     @Test
     public void testChainedSSDeepDiscovery() throws Exception {
-        log.info("------ testSSDeepDiscovery ------");
+        log.info("------ testChainedSSDeepDiscovery ------");
         String testSSDeep = "384:nv/fP9FmWVMdRFj2aTgSO+u5QT4ZE1PIVS:nDmWOdRFNTTs504---";
         String targetSSDeep = "384:nv/fP9FmWVMdRFj2aTgSO+u5QT4ZE1PIVS:nDmWOdRFNTTs504cQS";
         String query = "CHECKSUM_SSDEEP:" + testSSDeep;
@@ -211,6 +211,24 @@ public class SSDeepIngestQueryTest extends AbstractFunctionalQuery {
 
         Assert.assertTrue("Results had unexpected fields: " + resultFields, resultFields.isEmpty());
 
+    }
+
+    @Test
+    public void testChainedSSDeepDiscoveryNoResults() throws Exception {
+        log.info("------ testChainedSSDeepDiscoveryNoResults ------");
+        String testSSDeep = "384:aabbccddeeff:abcdef";
+        String query = "CHECKSUM_SSDEEP:" + testSSDeep;
+
+        EventQueryResponseBase response = runSSDeepQuery(query, similarityDiscoveryQueryLogic, 0);
+    }
+
+    @Test(expected = SSDeepRuntimeQueryException.class)
+    public void testChainedSSDeepDiscoveryNoValidQuery() throws Exception {
+        log.info("------ testChainedSSDeepDiscoveryNoValidQuery ------");
+        String testSSDeep = "384:zzzzzzzzzzzz:zzzzzz";
+        String query = "CHECKSUM_SSDEEP:" + testSSDeep;
+
+        EventQueryResponseBase response = runSSDeepQuery(query, similarityDiscoveryQueryLogic, 0);
     }
 
     @SuppressWarnings("rawtypes")
