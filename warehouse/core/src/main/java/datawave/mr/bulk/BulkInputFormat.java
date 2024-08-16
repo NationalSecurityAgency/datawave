@@ -1086,7 +1086,8 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
         Properties props = Accumulo.newClientProperties().to(conf.get(INSTANCE_NAME), conf.get(ZOOKEEPERS))
                         .as(getUsername(conf), new PasswordToken(getPassword(conf))).build();
         ClientInfo info = ClientInfo.from(props);
-        ClientContext context = new ClientContext(SingletonManager.getClientReservation(), info, ClientConfConverter.toAccumuloConf(info.getProperties()), Threads.UEH);
+        ClientContext context = new ClientContext(SingletonManager.getClientReservation(), info, ClientConfConverter.toAccumuloConf(info.getProperties()),
+                        Threads.UEH);
         return TabletLocator.getLocator(context, context.getTableId(tableName));
     }
 
@@ -1127,8 +1128,8 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
                     // its possible that the cache could contain complete, but old information about a tables tablets... so clear it
                     tl.invalidateCache();
                     ClientInfo info = ClientInfo.from(cbHelper.newClientProperties());
-                    ClientContext context = new ClientContext(SingletonManager.getClientReservation(), info, ClientConfConverter.toAccumuloConf(info.getProperties()),
-                                    Threads.UEH);
+                    ClientContext context = new ClientContext(SingletonManager.getClientReservation(), info,
+                                    ClientConfConverter.toAccumuloConf(info.getProperties()), Threads.UEH);
                     while (!tl.binRanges(context, ranges, binnedRanges).isEmpty()) {
                         if (!(client instanceof InMemoryAccumuloClient)) {
                             if (tableId == null)
