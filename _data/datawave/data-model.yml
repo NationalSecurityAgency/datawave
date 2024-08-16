@@ -48,10 +48,10 @@ terms:
     info: Three optional, user-supplied attributes which can be appended to the edge key's CQ. These attributes are typically delimited by ' / '
     
   - id: "EAV[0]"
-    name: "Edge Attribute Vector &#x23;1"
+    name: "EAV Element &#x23;1"
     info: |
-          The first element of the Edge Attribute Vector (EAV). Typically used to denote a subcategory or facet of the given Edge Type (ETYPE) value.
-          This element is required (typically set in configuration), whereas the remaining EAV elements are optional
+      The first element of the Edge Attribute Vector (EAV). Typically used to denote a subcategory or facet of the given Edge Type (ETYPE) value.
+      This element is required (typically set in configuration), whereas the remaining EAV elements are optional
 
   - id: "ENFV<sub>1</sub>"
     name: Source Edge Vertex (NFV)

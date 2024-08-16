@@ -1,14 +1,16 @@
 #!/usr/bin/env bash
 
 #
-# This script will automatically generate _posts/release/*.md entries as "Project News" posts for the
-# tagged DataWave releases that it discovers on the configured repo. The script can optionally commit and push
-# the posts to the remote gh-pages branch, if desired. See DW_GITHUB_REMOTE_URL notes below
+# This script will automatically generate _posts/release/*.md entries as
+# "Project News" posts for new tagged DataWave releases that it discovers
+# on the configured repo (DW_GITHUB_REMOTE_URL). The script can optionally
+# commit and push the posts to the remote gh-pages branch, if desired
+# See Usage below
 #
 # Intended to be non-interactive and suitable for crond or other automation
 #
-# Note that fresh git clones are created in /tmp and then deleted each time the script runs.
-# No persistent local repo is required on the client host. 
+# Note that fresh git clones are created in /tmp and then deleted each time
+# the script runs; no persistent local repo is required on the client host
 #
 
 #############################################################################
@@ -86,7 +88,7 @@ Usage:
 Options:
   --push, -p          | Commit and push changes to DW_GITHUB_REMOTE_URL
   --verbose, -v       | Turn on debug mode
-  --force-cleanup, -f | Remove gh-pages clone from /tmp, even if changes were made
+  --force-cleanup, -f | Remove gh-pages clone from /tmp, even if local changes were made
   --help, -h          | Print this usage information and exit
 EOF
 exit 0
@@ -146,7 +148,7 @@ cleanup() {
       if [[ "${dir}" == /tmp/*"$( basename $0 )"* ]] ; then
         rm -rf "${dir}" && logi "Deleted ${dir}"
       else
-        logw "I can't delete this directory: ${dir}"
+        logw "I won't delete this directory: ${dir}"
       fi
     fi
   done
