@@ -7,32 +7,31 @@
 #
 # Intended to be non-interactive and suitable for crond or other automation
 #
-# Usage:
-#   <script-name> [--push, -p] [--verbose, -v] [--help, -h]
-#
-#   -p option will locally commit the changes and then attempt to push them
+# Note that fresh git clones are created in /tmp and then deleted each time the script runs.
+# No persistent local repo is required on the client host. 
 #
 
-# DW_GITHUB_REMOTE_URL: Github repo to read from and optionally update.
-# By default, DW_GITHUB_REMOTE_URL is defined as "https://github.com/NationalSecurityAgency/datawave.git"
-#
-# However, if --push is used, then it must be overridden as "https://user:token@github.com/NationalSecurityAgency/datawave.git"
+#############################################################################
+# DW_GITHUB_REMOTE_URL
+#############################################################################
+# Github repo to read from and optionally update. By default,
+# DW_GITHUB_REMOTE_URL is defined as
+#   https://github.com/NationalSecurityAgency/datawave.git
+# However, if --push is used, then it must be overridden as
+#   https://user:token@github.com/NationalSecurityAgency/datawave.git
 # where 'user:token' has write permissions on the repo
 DW_GITHUB_REMOTE_URL="${DW_GITHUB_REMOTE_URL:-https://github.com/NationalSecurityAgency/datawave.git}"
- 
-# TRACKED_DW_VERSIONS: Major versions of DW that we want to track for publishing purposes.
-# For example, any pre-5.x releases that are created at this point are unlikely to be of interest to anyone
-# except the development team. Hence, we're not tracking the 3.x line here.
-#
-# To begin auto-publishing news updates for a new major release, just add the major version to the array and
-# then seed the _posts/release/ dir with at least the first entry. For example, assuming hypothetically that
-# DataWave 11.0.0 was tagged and released on February 1st 2024, you'd add '11' to the array here and then
-# create the file _posts/release/2024-02-01-datawave-11.0.0.md before running the script. All subsequent
-# posts for releases on the 11.x line will be created automatically  
-declare -a -r TRACKED_DW_VERSIONS=( 5 6 7 )
 
-# Fresh git clones are created in /tmp and then deleted each time
-# the script runs. No persistent local repo required 
+############################################################################# 
+# TRACKED_DW_VERSIONS
+#############################################################################
+# Major versions of DW that we want to track for publishing purposes. For
+# example, any pre-5.x releases that are created at this point are unlikely
+# to be of interest to anyone except the development team. Hence, we're not
+# tracking the 3.x line here. To start/stop auto-publishing news updates for
+# a release line, just add/remove the major version to/from the array
+declare -a -r TRACKED_DW_VERSIONS=( 5 6 7 )
+ 
 readonly TMP_DW_DIR=$(mktemp -d /tmp/$( basename $0 )_datawave_XXXXXXX)
 readonly TMP_GHPAGES_DIR=$(mktemp -d /tmp/$( basename $0 )_ghpages_XXXXXXX)
 readonly POSTS_DIR=${TMP_GHPAGES_DIR}/_posts/release
@@ -41,6 +40,7 @@ declare -i _new_release_count=0
 
 _debug=false
 _dry_run=true
+_force_clean=false
 
 log() {
   echo "[$(date +%Y-%m-%d\ %H:%M:%S)] "${@}""
@@ -82,11 +82,12 @@ clone_repos() {
 usage() {
 cat <<EOF
 Usage:
-  $( basename "$0" ) [--push, -p] [--verbose, -v] [--help, -h]
+  $( basename "$0" ) [--push, -p] [--force-cleanup, -f] [--verbose, -v] [--help, -h]
 Options:
-  --push, -p    | Commit and push changes to DW_GITHUB_REMOTE_URL
-  --verbose, -v | Turn on debug mode
-  --help, -h    | Print this usage information and exit
+  --push, -p          | Commit and push changes to DW_GITHUB_REMOTE_URL
+  --verbose, -v       | Turn on debug mode
+  --force-cleanup, -f | Remove gh-pages clone from /tmp, even if changes were made
+  --help, -h          | Print this usage information and exit
 EOF
 exit 0
 }
@@ -96,11 +97,12 @@ configure() {
     case "${1}" in
       --verbose | -v)
          _debug=true
-         shift
          ;;
       --push | -p)
          _dry_run=false
-         shift
+         ;;
+      --force-cleanup | -f)
+         _force_clean=true
          ;;
       --help | -h)
          usage
@@ -151,26 +153,31 @@ cleanup() {
 }
 
 generate_posts() {
-  local _accumulo_minor_v=${1} ; shift
   local _start_index=${1} ; shift
   local _arr=("$@")
   for ((i=${_start_index}; i<${#_arr[@]}; i++)) ; do
-    local _yyyymmdd=$(cd ${TMP_DW_DIR} && ${GIT} for-each-ref --format="%(creatordate:short)" refs/tags/${_arr[i]})
-    local _post_file_name="${POSTS_DIR}/${_yyyymmdd}-datawave-${_arr[i]}.md"
-    local _post="---
-title: DataWave ${_arr[i]}
-version: ${_arr[i]}
+    create_post ${_arr[i]}
+  done
+}
+
+create_post() {
+  local _accumulo_version="2.1"
+  [[ ${_major_version} -lt 5 ]] && _accumulo_version="1.10"
+  local _yyyymmdd=$(cd ${TMP_DW_DIR} && ${GIT} for-each-ref --format="%(creatordate:short)" refs/tags/${1})
+  local _post_file_name="${POSTS_DIR}/${_yyyymmdd}-datawave-${1}.md"
+  local _post="---
+title: DataWave ${1}
+version: ${1}
 tags: [news, releases]
 draft: false
 ---
-A new Accumulo ${_accumulo_minor_v}.x-compatible DataWave release has been tagged
+A new Accumulo ${_accumulo_version}.x-compatible DataWave release has been tagged
 
 [View the release on GitHub]({{ site.repository_url }}/releases/tag/{{ page.version }})
 "
-    logi "Generating post for '${_arr[i]}' @ ${_post_file_name}"
-    echo "${_post}" > ${_post_file_name}
-    ((_new_release_count++))
-  done
+  logi "Generating post for '${1}' @ ${_post_file_name}"
+  echo "${_post}" > ${_post_file_name}
+  ((_new_release_count++))
 }
 
 update_git() {
@@ -201,18 +208,28 @@ get_published_tags() {
   #
   # Get semver-sorted list of tagged releases for the current _major_version
   # that've already been published to gh-pages
-  # 
+  #
   _ghpages_posts=()
   _ghpages_posts_count=$(ls -1 ${POSTS_DIR}/*datawave-${_major_version}\.* 2>/dev/null | wc -l)
+
+  if [[ ${_ghpages_posts_count} -eq 0 && ${#_dw_tags[@]} -gt 0 ]] ; then
+    logi "Latest release is ${_dw_tags[-1]}, but we haven't published any ${_major_version}.x entries yet"
+    logi "Seeding gh-pages with the ${_dw_tags[0]} entry"
+    create_post ${_dw_tags[0]}
+    _ghpages_posts_count=1
+  fi
+
   if [[ ${_ghpages_posts_count} -gt 0 ]] ; then
     _ghpages_posts=( $(cd ${POSTS_DIR} && ls -1 *datawave-${_major_version}\.*\.md | cut -d'-' -f5 | sed 's/.\{3\}$//' | sort -t "." -k1,1n -k2,2n -k3,3n) )
     # Get the _DW_TAGS index of the most recent tag published to ghpages
     _latest_post_index=$(search "${_ghpages_posts[-1]}" "${_dw_tags[@]}")
   fi
+
   # Sanity check...
   if [[ ${_ghpages_posts_count} -gt 0 && ${_latest_post_index} -lt 0 ]] ; then
     logf "Git tag for the ${_ghpages_posts[-1]} gh-pages post wasn't found in Github"
   fi
+
   logi "Latest ${_major_version}.x post in gh-pages: ${_ghpages_posts[-1]}"
   logi "Latest DW ${_major_version}.x release: ${_dw_tags[-1]}"
   logd "${_major_version}.x tag list: $(printf '%s\n' "${_dw_tags[@]}" | paste -sd ',' -)"
@@ -228,23 +245,24 @@ for _major_version in "${TRACKED_DW_VERSIONS[@]}" ; do
   get_published_tags
   # If latest published tag != latest DW tag, then we need to publish an update
   if [[ "${_ghpages_posts[-1]}" != "${_dw_tags[-1]}" ]] ; then
-    _accumulo_version="2.1"
-    [[ ${_major_version} -lt 5 ]] && _accumulo_version="1.10" 
-    generate_posts "${_accumulo_version}" "$((${_latest_post_index}+1))" "${_dw_tags[@]}"
+    generate_posts "$((${_latest_post_index}+1))" "${_dw_tags[@]}"
   else
     logi "There's nothing new to publish for DW ${_major_version}.x"
   fi
 done
 
 # Update local gh-pages git repo and do cleanup as needed
-
-if [[ ${_new_release_count} -eq 0 ]] ; then
-  cleanup "${TMP_GHPAGES_DIR}" "${TMP_DW_DIR}"
-else
+cleanup "${TMP_DW_DIR}"
+if [[ ${_new_release_count} -gt 0 ]] ; then
   logi "New releases since the last gh-pages update: ${_new_release_count}"
   update_git
-  cleanup "${TMP_DW_DIR}"
-  logw "Leaving ${TMP_GHPAGES_DIR} intact, because there were changes made"
+  if [[ "${_force_clean}" == true ]] ; then
+    cleanup "${TMP_GHPAGES_DIR}"
+  else
+    logw "Leaving ${TMP_GHPAGES_DIR} intact, because there were changes made"
+  fi
+else
+  cleanup "${TMP_GHPAGES_DIR}"
 fi
 
 exit 0
