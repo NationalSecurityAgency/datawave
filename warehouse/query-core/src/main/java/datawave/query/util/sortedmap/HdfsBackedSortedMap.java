@@ -7,7 +7,6 @@ import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.List;
 
-import datawave.query.util.sortedset.FileSortedSet;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FsStatus;
@@ -16,6 +15,7 @@ import org.apache.log4j.Logger;
 
 import datawave.query.iterator.ivarator.IvaratorCacheDir;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
+import datawave.query.util.sortedset.FileSortedSet;
 
 public class HdfsBackedSortedMap<K,V> extends BufferedFileBackedSortedMap<K,V> {
     private static final Logger log = Logger.getLogger(HdfsBackedSortedMap.class);
@@ -83,7 +83,8 @@ public class HdfsBackedSortedMap<K,V> extends BufferedFileBackedSortedMap<K,V> {
                         for (FileStatus file : files) {
                             if (!file.isDir() && file.getPath().getName().startsWith(FILENAME_PREFIX)) {
                                 count++;
-                                addMap(mapFactory.newInstance(comparator, new SortedMapHdfsFileHandler(fs, file.getPath(), builder.persistOptions), true));
+                                addMap(mapFactory.newInstance(comparator, getRewriteStrategy(),
+                                                new SortedMapHdfsFileHandler(fs, file.getPath(), builder.persistOptions), true));
                             }
                         }
                     }

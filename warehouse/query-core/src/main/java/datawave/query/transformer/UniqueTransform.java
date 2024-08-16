@@ -17,10 +17,6 @@ import java.util.TreeSet;
 
 import javax.annotation.Nullable;
 
-import datawave.query.util.sortedmap.FileByteDocumentSortedMap;
-import datawave.query.util.sortedmap.FileKeyValueSortedMap;
-import datawave.query.util.sortedmap.FileSortedMap;
-import datawave.query.util.sortedmap.HdfsBackedSortedMap;
 import org.apache.accumulo.core.data.Key;
 import org.apache.commons.collections4.keyvalue.UnmodifiableMapEntry;
 import org.apache.hadoop.fs.FileSystem;
@@ -44,6 +40,10 @@ import datawave.query.iterator.ivarator.IvaratorCacheDir;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.iterator.profile.FinalDocumentTrackingIterator;
 import datawave.query.model.QueryModel;
+import datawave.query.util.sortedmap.FileByteDocumentSortedMap;
+import datawave.query.util.sortedmap.FileKeyValueSortedMap;
+import datawave.query.util.sortedmap.FileSortedMap;
+import datawave.query.util.sortedmap.HdfsBackedSortedMap;
 import datawave.query.util.sortedset.ByteArrayComparator;
 import datawave.query.util.sortedset.FileSortedSet;
 import datawave.query.util.sortedset.HdfsBackedSortedSet;

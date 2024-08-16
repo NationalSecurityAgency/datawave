@@ -1,12 +1,5 @@
 package datawave.query.util.sortedmap;
 
-import com.google.common.collect.Iterators;
-import datawave.webservice.query.exception.DatawaveErrorCode;
-import datawave.webservice.query.exception.QueryException;
-import org.apache.commons.collections4.keyvalue.UnmodifiableMapEntry;
-import org.apache.commons.lang3.builder.EqualsBuilder;
-
-import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.AbstractSet;
 import java.util.ArrayList;
@@ -20,6 +13,14 @@ import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
+import org.apache.commons.collections4.keyvalue.UnmodifiableMapEntry;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+
+import com.google.common.collect.Iterators;
+
+import datawave.webservice.query.exception.DatawaveErrorCode;
+import datawave.webservice.query.exception.QueryException;
+
 /*
  * This is a sorted map that is backed by multiple underlying sorted maps.  It is assumed that the underlying
  * sorted maps contain the same type of underlying value, and they use the same comparator.  The rewrite
@@ -30,8 +31,7 @@ public class MultiMapBackedSortedMap<K,V> extends AbstractMap<K,V> implements Re
     protected Comparator<K> comparator = null;
     protected FileSortedMap.RewriteStrategy<K,V> rewriteStrategy = null;
 
-    public MultiMapBackedSortedMap() {
-    }
+    public MultiMapBackedSortedMap() {}
 
     public MultiMapBackedSortedMap(List<SortedMap<K,V>> maps) {
         for (SortedMap<K,V> map : maps) {
@@ -127,7 +127,7 @@ public class MultiMapBackedSortedMap<K,V> extends AbstractMap<K,V> implements Re
             V testValue = map.remove(o);
             if (testValue != null) {
                 if (value != null) {
-                    if (rewriteStrategy == null || rewriteStrategy.rewrite((K)o, value, testValue)) {
+                    if (rewriteStrategy == null || rewriteStrategy.rewrite((K) o, value, testValue)) {
                         value = testValue;
                     }
                 } else {
@@ -153,11 +153,11 @@ public class MultiMapBackedSortedMap<K,V> extends AbstractMap<K,V> implements Re
     }
 
     @Override
-    public Set<Entry<K, V>> entrySet() {
+    public Set<Entry<K,V>> entrySet() {
         return new AbstractSet<>() {
 
             @Override
-            public Iterator<Entry<K, V>> iterator() {
+            public Iterator<Entry<K,V>> iterator() {
                 return MultiMapBackedSortedMap.this.iterator();
             }
 
@@ -240,12 +240,12 @@ public class MultiMapBackedSortedMap<K,V> extends AbstractMap<K,V> implements Re
     }
 
     @Override
-    public FileSortedMap.RewriteStrategy<K, V> getRewriteStrategy() {
+    public FileSortedMap.RewriteStrategy<K,V> getRewriteStrategy() {
         return rewriteStrategy;
     }
 
     @Override
-    public void setRewriteStrategy(FileSortedMap.RewriteStrategy<K, V> rewriteStrategy) {
+    public void setRewriteStrategy(FileSortedMap.RewriteStrategy<K,V> rewriteStrategy) {
         this.rewriteStrategy = rewriteStrategy;
     }
 
@@ -256,7 +256,7 @@ public class MultiMapBackedSortedMap<K,V> extends AbstractMap<K,V> implements Re
             V testValue = map.get(o);
             if (testValue != null) {
                 if (value != null) {
-                    if (rewriteStrategy == null || rewriteStrategy.rewrite((K)o, value, testValue)) {
+                    if (rewriteStrategy == null || rewriteStrategy.rewrite((K) o, value, testValue)) {
                         value = testValue;
                     }
                 } else {
@@ -362,9 +362,8 @@ public class MultiMapBackedSortedMap<K,V> extends AbstractMap<K,V> implements Re
                     if (it.hasNext()) {
                         Entry<K,V> val = it.next();
                         lastList.set(i, val.getKey());
-                        if ((rewriteStrategy == null) ||
-                                (!map.containsKey(val.getKey())) ||
-                                (rewriteStrategy.rewrite(val.getKey(), map.get(val.getKey()), val.getValue()))) {
+                        if ((rewriteStrategy == null) || (!map.containsKey(val.getKey()))
+                                        || (rewriteStrategy.rewrite(val.getKey(), map.get(val.getKey()), val.getValue()))) {
                             map.put(val.getKey(), val.getValue());
                         }
                     } else {

@@ -20,11 +20,11 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
-import datawave.query.util.sortedset.FileSortedSet;
 import org.apache.commons.collections.IteratorUtils;
 import org.apache.commons.collections.keyvalue.UnmodifiableMapEntry;
 import org.apache.log4j.Logger;
 
+import datawave.query.util.sortedset.FileSortedSet;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 
@@ -149,6 +149,9 @@ public abstract class FileSortedMap<K,V> implements SortedMap<K,V>, Cloneable, R
         this.factory = factory;
         this.map = new TreeMap<>(map);
         this.persisted = false;
+        if (map instanceof RewritableSortedMap) {
+            setRewriteStrategy(((RewritableSortedMap) map).getRewriteStrategy());
+        }
     }
 
     /**
@@ -176,6 +179,9 @@ public abstract class FileSortedMap<K,V> implements SortedMap<K,V>, Cloneable, R
             this.map = new TreeMap<>(map.comparator());
             persist(map, handler);
             persisted = true;
+        }
+        if (map instanceof RewritableSortedMap) {
+            setRewriteStrategy(((RewritableSortedMap) map).getRewriteStrategy());
         }
     }
 
@@ -355,8 +361,8 @@ public abstract class FileSortedMap<K,V> implements SortedMap<K,V>, Cloneable, R
 
     protected Map.Entry<K,V> readObject(ObjectInputStream stream) {
         try {
-            K key = (K)stream.readObject();
-            V value = (V)stream.readObject();
+            K key = (K) stream.readObject();
+            V value = (V) stream.readObject();
             return new UnmodifiableMapEntry(key, value);
         } catch (Exception E) {
             return null;
@@ -412,18 +418,20 @@ public abstract class FileSortedMap<K,V> implements SortedMap<K,V>, Cloneable, R
     public boolean containsKey(Object o) {
         if (persisted) {
             K t = (K) o;
-            try (SortedMapInputStream<K,V> stream = getBoundedFileHandler().getInputStream(getStart(), getEnd())) {
+            K start = getStart();
+            K end = getEnd();
+            if ((start != null) && (compare(t, start) < 0)) {
+                return false;
+            }
+            if ((end != null) && (compare(t, end) >= 0)) {
+                return false;
+            }
+            try (SortedMapInputStream<K,V> stream = getBoundedFileHandler().getInputStream(t, end)) {
                 Map.Entry<K,V> next = stream.readObject();
-                while (next != null) {
-                    if (equals(next.getKey(), t)) {
-                        return true;
-                    }
-                    next = stream.readObject();
-                }
+                return (next != null && equals(next.getKey(), t));
             } catch (Exception e) {
                 return false;
             }
-            return false;
         } else {
             return map.containsKey(o);
         }
@@ -494,8 +502,8 @@ public abstract class FileSortedMap<K,V> implements SortedMap<K,V>, Cloneable, R
     }
 
     @Override
-    public void putAll(Map<? extends K, ? extends V> m) {
-        for (Entry<? extends K, ? extends V> entry : m.entrySet()) {
+    public void putAll(Map<? extends K,? extends V> m) {
+        for (Entry<? extends K,? extends V> entry : m.entrySet()) {
             put(entry.getKey(), entry.getValue());
         }
     }
@@ -579,8 +587,7 @@ public abstract class FileSortedMap<K,V> implements SortedMap<K,V>, Cloneable, R
 
             @Override
             public Iterator<K> iterator() {
-                return IteratorUtils.transformedIterator(FileSortedMap.this.iterator(),
-                        o -> ((Map.Entry)o).getKey());
+                return IteratorUtils.transformedIterator(FileSortedMap.this.iterator(), o -> ((Map.Entry) o).getKey());
             }
 
             @Override
@@ -596,8 +603,7 @@ public abstract class FileSortedMap<K,V> implements SortedMap<K,V>, Cloneable, R
 
             @Override
             public Iterator<V> iterator() {
-                return IteratorUtils.transformedIterator(FileSortedMap.this.iterator(),
-                        o -> ((Map.Entry)o).getValue());
+                return IteratorUtils.transformedIterator(FileSortedMap.this.iterator(), o -> ((Map.Entry) o).getValue());
             }
 
             @Override
@@ -608,7 +614,7 @@ public abstract class FileSortedMap<K,V> implements SortedMap<K,V>, Cloneable, R
     }
 
     @Override
-    public Set<Entry<K, V>> entrySet() {
+    public Set<Entry<K,V>> entrySet() {
         return new AbstractSet<Entry<K,V>>() {
 
             @Override
@@ -805,30 +811,6 @@ public abstract class FileSortedMap<K,V> implements SortedMap<K,V>, Cloneable, R
         FileSortedMap<K,V> newInstance(FileSortedMap<K,V> other, K from, K to);
 
         /**
-         * factory method
-         *
-         * @param handler
-         *            the sorted map file handler
-         * @param persisted
-         *            a persisted boolean flag
-         * @return a new instance
-         */
-        FileSortedMap<K,V> newInstance(SortedMapFileHandler handler, boolean persisted);
-
-        /**
-         * Factory method
-         *
-         * @param comparator
-         *            the key comparator
-         * @param handler
-         *            the sorted map file handler
-         * @param persisted
-         *            a persisted boolean flag
-         * @return a new instance
-         */
-        FileSortedMap<K,V> newInstance(Comparator<K> comparator, SortedMapFileHandler handler, boolean persisted);
-
-        /**
          * Factory method
          *
          * @param comparator
@@ -841,9 +823,7 @@ public abstract class FileSortedMap<K,V> implements SortedMap<K,V>, Cloneable, R
          *            a persisted boolean flag
          * @return a new instance
          */
-        FileSortedMap<K,V> newInstance(Comparator<K> comparator,
-                                       RewriteStrategy<K,V> rewriteStrategy,
-                                       SortedMapFileHandler handler, boolean persisted);
+        FileSortedMap<K,V> newInstance(Comparator<K> comparator, RewriteStrategy<K,V> rewriteStrategy, SortedMapFileHandler handler, boolean persisted);
 
         /**
          * Create an unpersisted sorted map (still in memory)
@@ -1071,9 +1051,12 @@ public abstract class FileSortedMap<K,V> implements SortedMap<K,V>, Cloneable, R
         /**
          * Determine if the object should be rewritten
          *
-         * @param key The key
-         * @param original The original value
-         * @param update The updated value
+         * @param key
+         *            The key
+         * @param original
+         *            The original value
+         * @param update
+         *            The updated value
          * @return true of the original should be replaced with the update
          */
         boolean rewrite(K key, V original, V update);

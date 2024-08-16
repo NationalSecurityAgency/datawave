@@ -1,14 +1,15 @@
 package datawave.query.util.sortedmap;
 
-import datawave.query.util.sortedset.FileSortedSet;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+
+import datawave.query.util.sortedset.FileSortedSet;
 
 /**
  * A sorted set file handler factory that uses temporary local based files.

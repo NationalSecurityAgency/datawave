@@ -1,16 +1,17 @@
 package datawave.query.util.sortedmap.rfile;
 
-import datawave.query.attributes.Document;
-import datawave.query.util.sortedmap.FileSortedMap;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
+import static datawave.query.util.sortedmap.rfile.KeyValueByteDocumentTransforms.byteToKey;
+import static datawave.query.util.sortedmap.rfile.KeyValueByteDocumentTransforms.keyValueToByteDocument;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
 
-import static datawave.query.util.sortedmap.rfile.KeyValueByteDocumentTransforms.byteToKey;
-import static datawave.query.util.sortedmap.rfile.KeyValueByteDocumentTransforms.keyValueToByteDocument;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Value;
+
+import datawave.query.attributes.Document;
+import datawave.query.util.sortedmap.FileSortedMap;
 
 public class RFileByteDocumentInputStream extends RFileKeyValueInputStreamBase implements FileSortedMap.SortedMapInputStream<byte[],Document> {
 

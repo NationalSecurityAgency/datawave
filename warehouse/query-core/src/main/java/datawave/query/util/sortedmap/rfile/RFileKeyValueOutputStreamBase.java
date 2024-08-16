@@ -1,13 +1,13 @@
 package datawave.query.util.sortedmap.rfile;
 
+import java.io.IOException;
+import java.io.OutputStream;
+
 import org.apache.accumulo.core.client.rfile.RFile;
 import org.apache.accumulo.core.client.rfile.RFileWriter;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.io.Text;
-
-import java.io.IOException;
-import java.io.OutputStream;
 
 public abstract class RFileKeyValueOutputStreamBase {
     private final OutputStream outputStream;

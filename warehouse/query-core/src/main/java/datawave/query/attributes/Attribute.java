@@ -12,6 +12,7 @@ import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableComparable;
+import org.apache.hadoop.io.WritableComparator;
 import org.apache.hadoop.io.WritableUtils;
 import org.apache.log4j.Logger;
 
@@ -214,7 +215,25 @@ public abstract class Attribute<T extends Comparable<T>> implements WritableComp
                 return -1;
             }
         } else if (this.isMetadataSet()) {
-            return this.metadata.compareTo(other.metadata);
+            // we only need to compare those parts of the metadata that persist through serialization
+            // return this.metadata.compareTo(other.metadata);
+            byte[] cvBytes = this.getColumnVisibility().getExpression();
+            if (null == cvBytes) {
+                cvBytes = Constants.EMPTY_BYTES;
+            }
+
+            byte[] otherCVBytes = other.getColumnVisibility().getExpression();
+            if (null == otherCVBytes) {
+                otherCVBytes = Constants.EMPTY_BYTES;
+            }
+
+            int result = WritableComparator.compareBytes(cvBytes, 0, cvBytes.length, otherCVBytes, 0, otherCVBytes.length);
+
+            if (result == 0) {
+                result = new Long(this.getTimestamp()).compareTo(other.getTimestamp());
+            }
+
+            return result;
         } else {
             return 0;
         }
@@ -232,7 +251,7 @@ public abstract class Attribute<T extends Comparable<T>> implements WritableComp
         HashCodeBuilder hcb = new HashCodeBuilder(145, 11);
         hcb.append(this.isMetadataSet());
         if (isMetadataSet()) {
-            hcb.append(this.getMetadata());
+            hcb.append(this.getMetadata().getColumnVisibility()).append(this.getMetadata().getTimestamp());
         }
         return hcb.toHashCode();
     }

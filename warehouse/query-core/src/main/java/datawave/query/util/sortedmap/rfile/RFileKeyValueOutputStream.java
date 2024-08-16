@@ -1,11 +1,12 @@
 package datawave.query.util.sortedmap.rfile;
 
-import datawave.query.util.sortedmap.FileSortedMap;
+import java.io.IOException;
+import java.io.OutputStream;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 
-import java.io.IOException;
-import java.io.OutputStream;
+import datawave.query.util.sortedmap.FileSortedMap;
 
 public class RFileKeyValueOutputStream extends RFileKeyValueOutputStreamBase implements FileSortedMap.SortedMapOutputStream<Key,Value> {
     public RFileKeyValueOutputStream(OutputStream stream) throws IOException {

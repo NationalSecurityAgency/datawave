@@ -1,8 +1,11 @@
 package datawave.query.util.sortedmap;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.Comparator;
 import java.util.Iterator;
@@ -11,12 +14,9 @@ import java.util.Random;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 public class FileSortedMapTest {
     SortedMap<Integer,Integer> data = null;
@@ -42,11 +42,11 @@ public class FileSortedMapTest {
         Random r = new Random(123948710248L);
         // data.add(null);
         for (int i = 0; i < 20; i++) {
-            data.put(r.nextInt(), r.nextInt()+1);
+            data.put(r.nextInt(), r.nextInt() + 1);
         }
         extraData = new TreeMap<>(c);
         for (int i = 0; i < 20; i++) {
-            extraData.put(r.nextInt(), r.nextInt()+1);
+            extraData.put(r.nextInt(), r.nextInt() + 1);
         }
         // make sure we have no overlap
         data.keySet().removeAll(extraData.keySet());
@@ -245,7 +245,6 @@ public class FileSortedMapTest {
         assertEquals(data.size(), map.size());
         assertTrue(map.keySet().containsAll(data.keySet()));
     }
-
 
     @Test
     public void testRemoveAll() throws Exception {

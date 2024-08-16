@@ -1,17 +1,15 @@
 package datawave.query.util.sortedmap;
 
-import datawave.query.util.sortedset.BufferedFileBackedSortedSet;
-import datawave.query.util.sortedset.SortedSetTempFileHandler;
-import org.apache.commons.collections.keyvalue.UnmodifiableMapEntry;
-import org.junit.Test;
-
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
 
-public abstract class BufferedFileBackedRewritableSortedMapTest<K,V> extends BufferedFileBackedSortedMapTest<Map.Entry<K,V>> {
+import org.apache.commons.collections.keyvalue.UnmodifiableMapEntry;
+import org.junit.Test;
+
+public abstract class BufferedFileBackedRewritableSortedMapTest<K,V> extends BufferedFileBackedSortedMapTest<K,V> {
 
     /**
      * Create a key given the specified value. This key should sort in the same way the underlying byte array will sort against other byte array.
@@ -45,7 +43,7 @@ public abstract class BufferedFileBackedRewritableSortedMapTest<K,V> extends Buf
      * @return the rewrite strategy appropriate for key and value types
      */
     @Override
-    public abstract RewritableSortedSet.RewriteStrategy<Map.Entry<K,V>> getRewriteStrategy();
+    public abstract FileSortedMap.RewriteStrategy<K,V> getRewriteStrategy();
 
     @Override
     public Map.Entry<K,V> createData(byte[] values) {
@@ -75,12 +73,12 @@ public abstract class BufferedFileBackedRewritableSortedMapTest<K,V> extends Buf
         }
 
         // create a set with the supplied rewrite strategy
-        set = new datawave.query.util.sortedset.BufferedFileBackedSortedSet.Builder().withComparator(getComparator()).withRewriteStrategy(getRewriteStrategy()).withBufferPersistThreshold(5)
+        map = new BufferedFileBackedSortedMap.Builder().withComparator(getComparator()).withRewriteStrategy(getRewriteStrategy()).withBufferPersistThreshold(5)
                         .withMaxOpenFiles(7).withNumRetries(2)
-                        .withHandlerFactories(Collections.singletonList(new BufferedFileBackedSortedSet.SortedSetFileHandlerFactory() {
+                        .withHandlerFactories(Collections.singletonList(new BufferedFileBackedSortedMap.SortedMapFileHandlerFactory() {
                             @Override
-                            public FileSortedMap.SortedSetFileHandler createHandler() throws IOException {
-                                datawave.query.util.sortedset.SortedSetTempFileHandler fileHandler = new SortedSetTempFileHandler();
+                            public FileSortedMap.SortedMapFileHandler createHandler() throws IOException {
+                                SortedMapTempFileHandler fileHandler = new SortedMapTempFileHandler();
                                 tempFileHandlers.add(fileHandler);
                                 return fileHandler;
                             }
@@ -89,18 +87,18 @@ public abstract class BufferedFileBackedRewritableSortedMapTest<K,V> extends Buf
                             public boolean isValid() {
                                 return true;
                             }
-                        })).withSetFactory(getFactory()).build();
+                        })).withMapFactory(getFactory()).build();
 
         // adding in the data set multiple times to create underlying files with duplicate values making the
         // MergeSortIterator's job a little tougher...
         for (int d = 0; d < 11; d++) {
-            addDataRandomly(set, data);
-            addDataRandomly(set, data2);
+            addDataRandomly(map, data);
+            addDataRandomly(map, data2);
         }
 
         // now test the contents making sure we still have a sorted set with the expected values
         int index = 0;
-        for (Iterator<Map.Entry<K,V>> it = set.iterator(); it.hasNext();) {
+        for (Iterator<Map.Entry<K,V>> it = map.entrySet().iterator(); it.hasNext();) {
             Map.Entry<K,V> value = it.next();
             int dataIndex = sortedOrder[index++];
             Map.Entry<K,V> expected = (dataIndex < template.length ? data2[dataIndex] : data[dataIndex]);

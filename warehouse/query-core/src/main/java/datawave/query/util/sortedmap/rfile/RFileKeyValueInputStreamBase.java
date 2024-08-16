@@ -1,16 +1,16 @@
 package datawave.query.util.sortedmap.rfile;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Iterator;
+import java.util.Map;
+
 import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.rfile.RFile;
 import org.apache.accumulo.core.client.rfile.RFileSource;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Iterator;
-import java.util.Map;
 
 public abstract class RFileKeyValueInputStreamBase {
     private final InputStream inputStream;
@@ -62,7 +62,8 @@ public abstract class RFileKeyValueInputStreamBase {
             if (iterator != null) {
                 throw new IllegalStateException("Cannot read size from undetermined location in stream");
             }
-            reader = RFile.newScanner().from(new RFileSource(inputStream, length)).withBounds(new Range(RFileKeyValueOutputStreamBase.SizeKeyUtil.SIZE_ROW)).build();
+            reader = RFile.newScanner().from(new RFileSource(inputStream, length)).withBounds(new Range(RFileKeyValueOutputStreamBase.SizeKeyUtil.SIZE_ROW))
+                            .build();
             iterator = reader.iterator();
             size = RFileKeyValueOutputStreamBase.SizeKeyUtil.getSize(iterator.next().getKey());
         }

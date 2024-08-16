@@ -1,14 +1,15 @@
 package datawave.query.util.sortedmap.rfile;
 
-import datawave.query.util.sortedmap.FileSortedMap;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
 
-public class RFileKeyValueInputStream extends RFileKeyValueInputStreamBase implements FileSortedMap.SortedMapInputStream<Key,Value>  {
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Value;
+
+import datawave.query.util.sortedmap.FileSortedMap;
+
+public class RFileKeyValueInputStream extends RFileKeyValueInputStreamBase implements FileSortedMap.SortedMapInputStream<Key,Value> {
 
     public RFileKeyValueInputStream(InputStream inputStream, long length) throws IOException {
         super(inputStream, length);

@@ -1,15 +1,16 @@
 package datawave.query.util.sortedmap;
 
+import java.io.IOException;
+import java.util.Comparator;
+import java.util.SortedMap;
+
+import org.apache.log4j.Logger;
+
 import datawave.query.attributes.Document;
 import datawave.query.util.sortedmap.rfile.RFileByteDocumentInputStream;
 import datawave.query.util.sortedmap.rfile.RFileByteDocumentOutputStream;
 import datawave.query.util.sortedset.ByteArrayComparator;
 import datawave.query.util.sortedset.FileSortedSet;
-import org.apache.log4j.Logger;
-
-import java.io.IOException;
-import java.util.Comparator;
-import java.util.SortedMap;
 
 /**
  * A sorted map that can be persisted into a file and still be read in its persisted state. The map can always be re-loaded and then all operations will work as
@@ -24,7 +25,7 @@ public class FileByteDocumentSortedMap extends FileSortedMap<byte[],Document> {
     public final static class DefaultByteComparator implements Comparator<byte[]> {
 
         @Override
-        public int compare(byte[]  o1, byte[] o2) {
+        public int compare(byte[] o1, byte[] o2) {
             return new ByteArrayComparator().compare(o1, o2);
         }
     }
@@ -76,8 +77,7 @@ public class FileByteDocumentSortedMap extends FileSortedMap<byte[],Document> {
      *            a persisted boolean flag
      */
     public FileByteDocumentSortedMap(Comparator<byte[]> comparator, SortedMapFileHandler handler, boolean persisted) {
-        super((comparator == null ? new DefaultByteComparator() : comparator), new ByteDocumentFileHandler(handler),
-                        new Factory(), persisted);
+        super((comparator == null ? new DefaultByteComparator() : comparator), new ByteDocumentFileHandler(handler), new Factory(), persisted);
     }
 
     /**
@@ -88,7 +88,7 @@ public class FileByteDocumentSortedMap extends FileSortedMap<byte[],Document> {
      * @param handler
      *            the sorted map file handler
      */
-    public FileByteDocumentSortedMap(FileSortedMap<byte[],Document> map, SortedMapFileHandler handler) {
+    public FileByteDocumentSortedMap(SortedMap<byte[],Document> map, SortedMapFileHandler handler) {
         super(map, new ByteDocumentFileHandler(handler), new Factory());
     }
 
@@ -105,7 +105,7 @@ public class FileByteDocumentSortedMap extends FileSortedMap<byte[],Document> {
      * @throws IOException
      *             for issues with read/write
      */
-    public FileByteDocumentSortedMap(FileSortedMap<byte[],Document> map, SortedMapFileHandler handler, boolean persist) throws IOException {
+    public FileByteDocumentSortedMap(SortedMap<byte[],Document> map, SortedMapFileHandler handler, boolean persist) throws IOException {
         super(map, new ByteDocumentFileHandler(handler), new Factory(), persist);
     }
 
@@ -146,8 +146,7 @@ public class FileByteDocumentSortedMap extends FileSortedMap<byte[],Document> {
         }
 
         @Override
-        public SortedMapInputStream<byte[],Document> getInputStream(byte[] start, byte[] end)
-                        throws IOException {
+        public SortedMapInputStream<byte[],Document> getInputStream(byte[] start, byte[] end) throws IOException {
             return new RFileByteDocumentInputStream(delegate.getInputStream(), delegate.getSize(), start, end);
         }
 
@@ -183,24 +182,13 @@ public class FileByteDocumentSortedMap extends FileSortedMap<byte[],Document> {
         }
 
         @Override
-        public FileByteDocumentSortedMap newInstance(FileSortedMap<byte[],Document> other, byte[] from,
-                                                     byte[] to) {
+        public FileByteDocumentSortedMap newInstance(FileSortedMap<byte[],Document> other, byte[] from, byte[] to) {
             return new FileByteDocumentSortedMap((FileByteDocumentSortedMap) other, from, to);
         }
 
         @Override
-        public FileByteDocumentSortedMap newInstance(SortedMapFileHandler handler, boolean persisted) {
-            return new FileByteDocumentSortedMap(handler, persisted);
-        }
-
-        @Override
-        public FileByteDocumentSortedMap newInstance(Comparator<byte[]> comparator, SortedMapFileHandler handler, boolean persisted) {
-            return new FileByteDocumentSortedMap(comparator, handler, persisted);
-        }
-
-        @Override
-        public FileSortedMap<byte[],Document> newInstance(Comparator<byte[]> comparator,
-                                                          RewriteStrategy<byte[],Document> rewriteStrategy, SortedMapFileHandler handler, boolean persisted) {
+        public FileSortedMap<byte[],Document> newInstance(Comparator<byte[]> comparator, RewriteStrategy<byte[],Document> rewriteStrategy,
+                        SortedMapFileHandler handler, boolean persisted) {
             FileByteDocumentSortedMap map = new FileByteDocumentSortedMap(comparator, handler, persisted);
             map.setRewriteStrategy(rewriteStrategy);
             return map;
@@ -208,13 +196,12 @@ public class FileByteDocumentSortedMap extends FileSortedMap<byte[],Document> {
 
         @Override
         public FileByteDocumentSortedMap newInstance(SortedMap<byte[],Document> map, SortedMapFileHandler handler) {
-            return new FileByteDocumentSortedMap((FileSortedMap)map, handler);
+            return new FileByteDocumentSortedMap(map, handler);
         }
 
         @Override
-        public FileByteDocumentSortedMap newInstance(SortedMap<byte[],Document> map, SortedMapFileHandler handler, boolean persist)
-                        throws IOException {
-            return new FileByteDocumentSortedMap((FileSortedMap)map, handler, persist);
+        public FileByteDocumentSortedMap newInstance(SortedMap<byte[],Document> map, SortedMapFileHandler handler, boolean persist) throws IOException {
+            return new FileByteDocumentSortedMap(map, handler, persist);
         }
     }
 }

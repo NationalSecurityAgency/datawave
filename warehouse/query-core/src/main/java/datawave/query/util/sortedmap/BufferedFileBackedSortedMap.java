@@ -1,18 +1,18 @@
 package datawave.query.util.sortedmap;
 
-import datawave.query.util.sortedmap.FileSortedMap.SortedMapFileHandler;
-import org.apache.log4j.Logger;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.stream.Collectors;
+
+import org.apache.log4j.Logger;
+
+import datawave.query.util.sortedmap.FileSortedMap.SortedMapFileHandler;
 
 /**
  * This is a sorted map that will hold up to a specified number of entries before flushing the data to disk. Files will be created as needed. An additional
@@ -263,19 +263,6 @@ public class BufferedFileBackedSortedMap<K,V> implements SortedMap<K,V>, Rewrita
         return false;
     }
 
-    protected Iterator<Entry<K,V>> iterator() {
-        // first lets compact down the maps if needed
-        try {
-            // if we have any persisted maps, then ensure we are persisted
-            if (map.getMaps().size() > 1) {
-                persist();
-            }
-        } catch (IOException ioe) {
-            throw new RuntimeException("Unable to persist or compact file backed sorted map", ioe);
-        }
-        return map.iterator();
-    }
-
     private String printHandlerFactories() {
         return String.join(", ", handlerFactories.stream().map(SortedMapFileHandlerFactory::toString).collect(Collectors.toList()));
     }
@@ -394,8 +381,8 @@ public class BufferedFileBackedSortedMap<K,V> implements SortedMap<K,V>, Rewrita
             map.addMap(buffer);
         }
         V previous = buffer.put(key, value);
+        sizeModified = true;
         if (previous != null) {
-            sizeModified = true;
             if (buffer.size() >= bufferPersistThreshold) {
                 try {
                     persist();
@@ -433,7 +420,7 @@ public class BufferedFileBackedSortedMap<K,V> implements SortedMap<K,V>, Rewrita
     public V remove(Object o) {
         V value = null;
         for (SortedMap<K,V> map : map.getMaps()) {
-            FileSortedMap<K,V> filemap = (FileSortedMap<K,V>)map;
+            FileSortedMap<K,V> filemap = (FileSortedMap<K,V>) map;
             boolean persist = false;
             if (filemap.isPersisted()) {
                 try {
@@ -447,7 +434,7 @@ public class BufferedFileBackedSortedMap<K,V> implements SortedMap<K,V>, Rewrita
             V testValue = map.remove(o);
             if (testValue != null) {
                 if (value != null) {
-                    if (rewriteStrategy == null || rewriteStrategy.rewrite((K)o, value, testValue)) {
+                    if (rewriteStrategy == null || rewriteStrategy.rewrite((K) o, value, testValue)) {
                         value = testValue;
                     }
                 } else {
@@ -486,47 +473,62 @@ public class BufferedFileBackedSortedMap<K,V> implements SortedMap<K,V>, Rewrita
     }
 
     @Override
-    public SortedMap<K, V> subMap(K fromKey, K toKey) {
-        return null;
+    public SortedMap<K,V> subMap(K fromKey, K toKey) {
+        return map.subMap(fromKey, toKey);
     }
 
     @Override
-    public SortedMap<K, V> headMap(K toKey) {
-        return null;
+    public SortedMap<K,V> headMap(K toKey) {
+        return map.headMap(toKey);
     }
 
     @Override
-    public SortedMap<K, V> tailMap(K fromKey) {
-        return null;
+    public SortedMap<K,V> tailMap(K fromKey) {
+        return map.tailMap(fromKey);
     }
 
     @Override
     public K firstKey() {
-        return null;
+        return map.firstKey();
     }
 
     @Override
     public K lastKey() {
-        return null;
+        return map.lastKey();
     }
 
     @Override
     public Set<K> keySet() {
-        return null;
+        persistIfMultipleMaps();
+        return map.keySet();
     }
 
     @Override
     public Collection<V> values() {
-        return null;
+        persistIfMultipleMaps();
+        return map.values();
+    }
+
+    protected void persistIfMultipleMaps() {
+        // compact down the sets if needed
+        try {
+            // if we have any persisted sets, then ensure we are persisted
+            if (map.getMaps().size() > 1) {
+                persist();
+            }
+        } catch (IOException ioe) {
+            throw new RuntimeException("Unable to persist or compact file backed sorted set", ioe);
+        }
     }
 
     @Override
-    public Set<Entry<K, V>> entrySet() {
-        return null;
+    public Set<Entry<K,V>> entrySet() {
+        persistIfMultipleMaps();
+        return map.entrySet();
     }
 
     @Override
-    public void setRewriteStrategy(FileSortedMap.RewriteStrategy<K, V> rewriteStrategy) {
+    public void setRewriteStrategy(FileSortedMap.RewriteStrategy<K,V> rewriteStrategy) {
         this.rewriteStrategy = rewriteStrategy;
     }
 
@@ -539,7 +541,7 @@ public class BufferedFileBackedSortedMap<K,V> implements SortedMap<K,V>, Rewrita
     public V get(Object o) {
         V value = null;
         for (SortedMap<K,V> map : map.getMaps()) {
-            FileSortedMap<K,V> filemap = (FileSortedMap<K,V>)map;
+            FileSortedMap<K,V> filemap = (FileSortedMap<K,V>) map;
             boolean persist = false;
             if (filemap.isPersisted()) {
                 try {
@@ -553,7 +555,7 @@ public class BufferedFileBackedSortedMap<K,V> implements SortedMap<K,V>, Rewrita
             V testValue = map.get(o);
             if (testValue != null) {
                 if (value != null) {
-                    if (rewriteStrategy == null || rewriteStrategy.rewrite((K)o, value, testValue)) {
+                    if (rewriteStrategy == null || rewriteStrategy.rewrite((K) o, value, testValue)) {
                         value = testValue;
                     }
                 } else {

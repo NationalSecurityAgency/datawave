@@ -1,15 +1,16 @@
 package datawave.query.util.sortedmap;
 
-import datawave.query.util.sortedmap.rfile.RFileKeyValueInputStream;
-import datawave.query.util.sortedmap.rfile.RFileKeyValueOutputStream;
-import datawave.query.util.sortedset.FileSortedSet;
+import java.io.IOException;
+import java.util.Comparator;
+import java.util.SortedMap;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.log4j.Logger;
 
-import java.io.IOException;
-import java.util.Comparator;
-import java.util.SortedMap;
+import datawave.query.util.sortedmap.rfile.RFileKeyValueInputStream;
+import datawave.query.util.sortedmap.rfile.RFileKeyValueOutputStream;
+import datawave.query.util.sortedset.FileSortedSet;
 
 /**
  * A sorted map that can be persisted into a file and still be read in its persisted state. The map can always be re-loaded and then all operations will work as
@@ -75,8 +76,7 @@ public class FileKeyValueSortedMap extends FileSortedMap<Key,Value> {
      *            a persisted boolean flag
      */
     public FileKeyValueSortedMap(Comparator<Key> comparator, SortedMapFileHandler handler, boolean persisted) {
-        super(((comparator == null) ? new DefaultKeyComparator() : comparator), new KeyValueFileHandler(handler), new Factory(),
-                        persisted);
+        super(((comparator == null) ? new DefaultKeyComparator() : comparator), new KeyValueFileHandler(handler), new Factory(), persisted);
     }
 
     /**
@@ -186,18 +186,8 @@ public class FileKeyValueSortedMap extends FileSortedMap<Key,Value> {
         }
 
         @Override
-        public FileKeyValueSortedMap newInstance(SortedMapFileHandler handler, boolean persisted) {
-            return new FileKeyValueSortedMap(handler, persisted);
-        }
-
-        @Override
-        public FileKeyValueSortedMap newInstance(Comparator<Key> comparator, SortedMapFileHandler handler, boolean persisted) {
-            return new FileKeyValueSortedMap(comparator, handler, persisted);
-        }
-
-        @Override
-        public FileKeyValueSortedMap newInstance(Comparator<Key> comparator, RewriteStrategy<Key,Value> rewriteStategy,
-                                                 SortedMapFileHandler handler, boolean persisted) {
+        public FileKeyValueSortedMap newInstance(Comparator<Key> comparator, RewriteStrategy<Key,Value> rewriteStategy, SortedMapFileHandler handler,
+                        boolean persisted) {
             FileKeyValueSortedMap map = new FileKeyValueSortedMap(comparator, handler, persisted);
             map.setRewriteStrategy(rewriteStategy);
             return map;
@@ -209,8 +199,7 @@ public class FileKeyValueSortedMap extends FileSortedMap<Key,Value> {
         }
 
         @Override
-        public FileKeyValueSortedMap newInstance(SortedMap<Key,Value> map, SortedMapFileHandler handler, boolean persist)
-                        throws IOException {
+        public FileKeyValueSortedMap newInstance(SortedMap<Key,Value> map, SortedMapFileHandler handler, boolean persist) throws IOException {
             return new FileKeyValueSortedMap(map, handler, persist);
         }
     }

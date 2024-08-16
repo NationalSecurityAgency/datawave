@@ -1,35 +1,31 @@
 package datawave.query.util.sortedmap;
 
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
+import static org.junit.Assert.assertEquals;
 
 import java.util.Comparator;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Value;
 
 public class BufferedFileBackedKeyValueSortedMapTest extends BufferedFileBackedRewritableSortedMapTest<Key,Value> {
 
-    private Comparator<Map.Entry<Key,Value>> keyComparator = new Comparator<>() {
+    private Comparator<Key> keyComparator = new Comparator<>() {
         @Override
-        public int compare(Map.Entry<Key,Value> o1, Map.Entry<Key,Value> o2) {
-            return o1.getKey().compareTo(o2.getKey());
+        public int compare(Key o1, Key o2) {
+            return o1.compareTo(o2);
         }
     };
 
-    private RewritableSortedSetImpl.RewriteStrategy<Map.Entry<Key,Value>> keyValueComparator = new RewritableSortedSetImpl.RewriteStrategy<>() {
+    private FileSortedMap.RewriteStrategy<Key,Value> keyValueComparator = new FileSortedMap.RewriteStrategy<>() {
         @Override
-        public boolean rewrite(Map.Entry<Key,Value> original, Map.Entry<Key,Value> update) {
-            int comparison = original.getKey().compareTo(update.getKey());
-            if (comparison == 0) {
-                comparison = original.getValue().compareTo(update.getValue());
-            }
-            return comparison < 0;
+        public boolean rewrite(Key key, Value original, Value update) {
+            return original.compareTo(update) < 0;
         }
     };
 
     @Override
-    public RewritableSortedSet.RewriteStrategy<Map.Entry<Key,Value>> getRewriteStrategy() {
+    public FileSortedMap.RewriteStrategy<Key,Value> getRewriteStrategy() {
         return keyValueComparator;
     }
 
@@ -50,12 +46,12 @@ public class BufferedFileBackedKeyValueSortedMapTest extends BufferedFileBackedR
     }
 
     @Override
-    public Comparator<Map.Entry<Key,Value>> getComparator() {
+    public Comparator<Key> getComparator() {
         return keyComparator;
     }
 
     @Override
-    public FileSortedMap.FileSortedMapFactory<Map.Entry<Key,Value>> getFactory() {
+    public FileSortedMap.FileSortedMapFactory<Key,Value> getFactory() {
         return new FileKeyValueSortedMap.Factory();
     }
 

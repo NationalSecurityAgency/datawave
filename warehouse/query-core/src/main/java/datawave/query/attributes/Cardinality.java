@@ -112,40 +112,9 @@ public class Cardinality extends Attribute<Cardinality> {
     }
 
     @Override
-    protected int compareMetadata(Attribute<Cardinality> other) {
-        if (this.isMetadataSet() != other.isMetadataSet()) {
-            if (this.isMetadataSet()) {
-                return 1;
-            } else {
-                return -1;
-            }
-        } else if (this.isMetadataSet()) {
-            byte[] cvBytes = this.getColumnVisibility().getExpression();
-            if (null == cvBytes) {
-                cvBytes = Constants.EMPTY_BYTES;
-            }
-
-            byte[] otherCVBytes = other.getColumnVisibility().getExpression();
-            if (null == otherCVBytes) {
-                otherCVBytes = Constants.EMPTY_BYTES;
-            }
-
-            int result = WritableComparator.compareBytes(cvBytes, 0, cvBytes.length, otherCVBytes, 0, otherCVBytes.length);
-
-            if (result == 0) {
-                result = new Long(this.getTimestamp()).compareTo(other.getTimestamp());
-            }
-
-            return result;
-        } else {
-            return 0;
-        }
-    }
-
-    @Override
     public int hashCode() {
         HashCodeBuilder hcb = new HashCodeBuilder(2099, 2129);
-        hcb.appendSuper(content.hashCode()).append(this.getMetadata().getColumnVisibility()).append(this.getMetadata().getTimestamp());
+        hcb.append(super.hashCode()).append(content);
         return hcb.toHashCode();
     }
 

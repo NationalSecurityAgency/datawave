@@ -1,6 +1,9 @@
 package datawave.query.util.sortedmap;
 
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -10,10 +13,7 @@ import java.util.NoSuchElementException;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import org.junit.Test;
 
 public class MergeSortIteratorTest {
 
@@ -23,22 +23,22 @@ public class MergeSortIteratorTest {
         SortedMap<Integer,Integer> set2 = new TreeMap<>();
         SortedMap<Integer,Integer> set3 = new TreeMap<>();
 
-        set1.put(1,1);
-        set1.put(3,1);
-        set1.put(4,1);
-        set1.put(5,1);
-        set1.put(6,1);
-        set1.put(10,1);
+        set1.put(1, 1);
+        set1.put(3, 1);
+        set1.put(4, 1);
+        set1.put(5, 1);
+        set1.put(6, 1);
+        set1.put(10, 1);
 
-        set2.put(1,1);
-        set2.put(2,1);
-        set2.put(5,1);
-        set2.put(20,1);
+        set2.put(1, 1);
+        set2.put(2, 1);
+        set2.put(5, 1);
+        set2.put(20, 1);
 
-        set3.put(2,1);
-        set3.put(5,1);
-        set3.put(6,1);
-        set3.put(30,1);
+        set3.put(2, 1);
+        set3.put(5, 1);
+        set3.put(6, 1);
+        set3.put(30, 1);
 
         List<Integer> expected = new ArrayList<>();
         expected.add(1);
@@ -93,22 +93,22 @@ public class MergeSortIteratorTest {
         SortedMap<Integer,Integer> set2 = new TreeMap<>();
         SortedMap<Integer,Integer> set3 = new TreeMap<>();
 
-        set1.put(1,1);
-        set1.put(3,1);
-        set1.put(4,1);
-        set1.put(5,1);
-        set1.put(6,1);
-        set1.put(10,1);
+        set1.put(1, 1);
+        set1.put(3, 1);
+        set1.put(4, 1);
+        set1.put(5, 1);
+        set1.put(6, 1);
+        set1.put(10, 1);
 
-        set2.put(1,1);
-        set2.put(2,1);
-        set2.put(5,1);
-        set2.put(20,1);
+        set2.put(1, 1);
+        set2.put(2, 1);
+        set2.put(5, 1);
+        set2.put(20, 1);
 
-        set3.put(2,1);
-        set3.put(5,1);
-        set3.put(6,1);
-        set3.put(30,1);
+        set3.put(2, 1);
+        set3.put(5, 1);
+        set3.put(6, 1);
+        set3.put(30, 1);
 
         List<Integer> expected = new ArrayList<>();
         expected.add(1);
@@ -173,24 +173,24 @@ public class MergeSortIteratorTest {
         SortedMap<Integer,Integer> set2 = new TreeMap<>(c);
         SortedMap<Integer,Integer> set3 = new TreeMap<>(c);
 
-        set1.put(1,1);
-        set1.put(3,1);
-        set1.put(4,1);
-        set1.put(5,1);
-        set1.put(6,1);
-        set1.put(10,1);
+        set1.put(1, 1);
+        set1.put(3, 1);
+        set1.put(4, 1);
+        set1.put(5, 1);
+        set1.put(6, 1);
+        set1.put(10, 1);
 
-        set2.put(null,1);
-        set2.put(1,1);
-        set2.put(2,1);
-        set2.put(5,1);
-        set2.put(20,1);
+        set2.put(null, 1);
+        set2.put(1, 1);
+        set2.put(2, 1);
+        set2.put(5, 1);
+        set2.put(20, 1);
 
-        set3.put(null,1);
-        set3.put(2,1);
-        set3.put(5,1);
-        set3.put(6,1);
-        set3.put(30,1);
+        set3.put(null, 1);
+        set3.put(2, 1);
+        set3.put(5, 1);
+        set3.put(6, 1);
+        set3.put(30, 1);
 
         List<Integer> expected = new ArrayList<>();
         expected.add(null);
