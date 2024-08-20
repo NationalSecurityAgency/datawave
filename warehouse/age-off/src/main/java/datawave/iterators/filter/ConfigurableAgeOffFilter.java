@@ -1,21 +1,15 @@
 package datawave.iterators.filter;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
-
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Preconditions;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.LoadingCache;
+import com.google.common.collect.Lists;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import datawave.ingest.util.cache.watch.FileRuleCacheLoader;
+import datawave.ingest.util.cache.watch.FileRuleCacheValue;
+import datawave.iterators.filter.ageoff.AgeOffPeriod;
+import datawave.iterators.filter.ageoff.AppliedRule;
 import org.apache.accumulo.core.client.PluginEnvironment;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -24,22 +18,21 @@ import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.IteratorUtil;
 import org.apache.accumulo.core.iterators.OptionDescriber;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
 
-import com.google.common.base.Preconditions;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.LoadingCache;
-import com.google.common.collect.Lists;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
-
-import datawave.ingest.util.cache.ReloadableCacheBuilder;
-import datawave.ingest.util.cache.watch.FileRuleWatcher;
-import datawave.iterators.filter.ageoff.AgeOffPeriod;
-import datawave.iterators.filter.ageoff.AppliedRule;
-import datawave.iterators.filter.ageoff.FilterRule;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 
 /**
  * This class provides a subclass of the {@code org.apache.accumulo.core.iterators.Filter} class and implements the {@code Option Describer} interface. It
@@ -121,11 +114,7 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
     protected static final long DEFAULT_EXPIRATION_INTERVAL_MS = 60 * 60 * 1000L; // default 1 hour
     protected static long EXPIRATION_INTERVAL_MS = DEFAULT_EXPIRATION_INTERVAL_MS;
 
-    /**
-     * Changed filter list to use FilterRule
-     */
-
-    protected static LoadingCache<FileRuleWatcher,Collection<FilterRule>> ruleCache = null;
+    protected static volatile LoadingCache<String,FileRuleCacheValue> ruleCache = null;
 
     protected Collection<AppliedRule> filterList;
 
@@ -137,11 +126,11 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
 
     protected String filename;
 
-    protected static FileSystem fs = null;
-
     protected IteratorEnvironment myEnv;
 
-    private PluginEnvironment pluginEnv;
+    protected PluginEnvironment pluginEnv;
+
+    protected FileRuleCacheValue cacheValue;
 
     // Adding the ability to disable the filter checks in the case of a system-initialized major compaction for example.
     // The thought is that we force compactions where we want the data to aged off.
@@ -435,14 +424,15 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
      *             if there is an error reading the configuration file
      */
     private void initFilterRules() throws IllegalArgumentException, IOException {
-        // filename
         if (null == ruleCache) {
             synchronized (ConfigurableAgeOffFilter.class) {
                 if (null == ruleCache) {
                     UPDATE_INTERVAL_MS = getLongProperty(UPDATE_INTERVAL_MS_PROP, DEFAULT_UPDATE_INTERVAL_MS); // 5 ms
                     EXPIRATION_INTERVAL_MS = getLongProperty(EXPIRATION_INTERVAL_MS_PROP, DEFAULT_EXPIRATION_INTERVAL_MS); // 1 hour
+                    log.debug("Configured refresh interval: " + UPDATE_INTERVAL_MS);
+                    log.debug("Configured expiration interval: " + EXPIRATION_INTERVAL_MS);
                     ruleCache = CacheBuilder.newBuilder().refreshAfterWrite(UPDATE_INTERVAL_MS, TimeUnit.MILLISECONDS)
-                                    .expireAfterAccess(EXPIRATION_INTERVAL_MS, TimeUnit.MILLISECONDS).build(new ReloadableCacheBuilder());
+                                    .expireAfterAccess(EXPIRATION_INTERVAL_MS, TimeUnit.MILLISECONDS).build(new FileRuleCacheLoader());
                     // this will schedule a check to see if the update or expiration intervals have changed
                     // if so the ruleCache will be rebuilt with these new intervals
                     SIMPLE_TIMER.scheduleWithFixedDelay(() -> {
@@ -455,7 +445,7 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
                                 log.info("Changing " + EXPIRATION_INTERVAL_MS_PROP + " to " + expiration);
                                 EXPIRATION_INTERVAL_MS = expiration;
                                 ruleCache = CacheBuilder.newBuilder().refreshAfterWrite(UPDATE_INTERVAL_MS, TimeUnit.MILLISECONDS)
-                                                .expireAfterAccess(EXPIRATION_INTERVAL_MS, TimeUnit.MILLISECONDS).build(new ReloadableCacheBuilder());
+                                                .expireAfterAccess(EXPIRATION_INTERVAL_MS, TimeUnit.MILLISECONDS).build(new FileRuleCacheLoader());
                             }
                         } catch (Throwable t) {
                             log.error(t, t);
@@ -465,25 +455,17 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
             }
         }
 
-        Path filePath = new Path(filename);
-        if (null == fs) {
-            synchronized (ConfigurableAgeOffFilter.class) {
-                if (null == fs) {
-                    if (log.isTraceEnabled()) {
-                        log.trace("Setting FileSystem reference");
-                    }
-                    fs = filePath.getFileSystem(new Configuration());
-                }
-            }
-        } else {
-            if (log.isTraceEnabled()) {
-                log.trace("Reusing file system reference.");
-            }
+        try {
+            cacheValue = ruleCache.get(filename);
+        } catch (ExecutionException e) {
+            throw new IOException(e);
         }
-        FileRuleWatcher watcherKey = new FileRuleWatcher(fs, filePath, 1, myEnv);
 
-        copyRules(watcherKey);
-
+        // the rule cache value will be static
+        // initial load of the baseline rules will occur here, that call may take time
+        // after initial load, each subsequent initialize performs a deep copy (init) against the AppliedRule
+        // the internal deep copy operation (i.e. calls after initial load) are anticipated to be quick
+        filterList = cacheValue.newRulesetView(scanStart, myEnv);
     }
 
     private long getLongProperty(final String prop, final long defaultValue) {
@@ -494,27 +476,6 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
             }
         }
         return defaultValue;
-    }
-
-    protected void copyRules(FileRuleWatcher watcherKey) throws IOException {
-        filterList = new ArrayList<>();
-        try {
-            // rule cache is lazily loaded, so the act of getting the key will populate it with the key
-            // and trigger a bunch of loading logic which will ultimately call
-            // FileRuleWatcher.loadContents() which will return the rules
-            Collection<FilterRule> rules = ruleCache.get(watcherKey);
-
-            if (rules != null) {
-                for (FilterRule rule : rules) {
-                    // NOTE: this propagates the anchor time (scanStart) to all of the applied rules
-                    // This is used to calculate the AgeOffPeriod for all of the rules
-                    filterList.add((AppliedRule) rule.deepCopy(this.scanStart, myEnv));
-                }
-            }
-
-        } catch (ExecutionException e) {
-            throw new IOException(e);
-        }
     }
 
     /**
@@ -589,6 +550,11 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
         return true;
     }
 
+    @VisibleForTesting
+    FileRuleCacheValue getFileRuleCacheValue() {
+        return cacheValue;
+    }
+
     /**
      * Clear the file watcher cache.
      */
@@ -599,7 +565,7 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
         }
     }
 
-    public static LoadingCache<FileRuleWatcher,Collection<FilterRule>> getCache() {
+    public static LoadingCache<String,FileRuleCacheValue> getCache() {
         return ruleCache;
     }
 
