@@ -277,6 +277,11 @@ jobs:
           done
           cd scripts
           ./testAll.sh
+      - name: Dump Logs
+        if: failure()
+        run: |
+          cd docker
+          docker compose logs
 
     # Here's an example of how you'd deploy the image to the github package registry.
     # We don't want to do this by default since packages on github cannot be deleted
