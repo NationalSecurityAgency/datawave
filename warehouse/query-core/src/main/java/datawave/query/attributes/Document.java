@@ -19,7 +19,8 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.hadoop.io.WritableUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
@@ -42,7 +43,7 @@ import datawave.util.time.DateHelper;
 public class Document extends AttributeBag<Document> implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    private static final Logger log = Logger.getLogger(Document.class);
+    private static final Logger log = LogManager.getLogger(Document.class);
 
     public static final String DOCKEY_FIELD_NAME = "RECORD_ID";
 

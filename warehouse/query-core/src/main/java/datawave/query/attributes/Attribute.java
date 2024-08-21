@@ -13,7 +13,8 @@ import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.io.WritableUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.KryoSerializable;
@@ -25,7 +26,7 @@ import datawave.query.jexl.DatawaveJexlContext;
 
 public abstract class Attribute<T extends Comparable<T>> implements WritableComparable<T>, KryoSerializable {
 
-    private static final Logger log = Logger.getLogger(Attribute.class);
+    private static final Logger log = LogManager.getLogger(Attribute.class);
     private static final Text EMPTY_TEXT = new Text();
 
     /**
