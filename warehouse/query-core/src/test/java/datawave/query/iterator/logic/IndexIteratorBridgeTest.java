@@ -16,8 +16,8 @@ import org.apache.accumulo.core.iteratorsImpl.system.IterationInterruptedExcepti
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.junit.jupiter.api.Test;
 
+import datawave.core.query.jexl.JexlNodeFactory;
 import datawave.query.attributes.Document;
-import datawave.query.jexl.JexlNodeFactory;
 
 class IndexIteratorBridgeTest {
 
