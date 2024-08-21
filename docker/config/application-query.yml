@@ -569,4 +569,9 @@ datawave:
             modelFieldName: "ATTR3"
             direction: "FORWARD"
             indexOnly: false
-          
+
+# Enable additional Hazelcast cluster for use by the query and executor services
+hazelcast:
+  client:
+    clusterName: ${QUERY_CACHE:cache}
+  clusterName: ${QUERY_CACHE:cache}
