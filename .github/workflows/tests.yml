@@ -31,6 +31,10 @@ jobs:
         java-version: ${{env.JAVA_VERSION}}
         maven-version: 3.9.5
         cache: 'maven'
+    - name: Extract branch name
+      shell: bash
+      run: echo "branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}" >> $GITHUB_OUTPUT
+      id: extract_branch
     - name: Format code
       env:
         USER_NAME: ${{ secrets.USER_NAME }}
@@ -42,6 +46,7 @@ jobs:
     - name: Commit Changes
       run: |
         if [ "$diffs_found" = true ]; then
+          git checkout -b ${{ steps.extract_branch.outputs.branch }}
           git config --global user.name "GitHub Actions"
           git config --global user.email "datawave@github.com"
           git commit -am "Formatting job fix"

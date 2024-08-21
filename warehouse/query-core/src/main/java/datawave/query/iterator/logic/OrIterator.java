@@ -22,7 +22,6 @@ import datawave.query.iterator.Util;
 /**
  * Performs a deduping merge of iterators.
  *
- *
  * @param <T>
  *            type cast
  */
@@ -353,5 +352,28 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
     @Override
     public void setContext(T context) {
         this.evaluationContext = context;
+    }
+
+    @Override
+    public boolean isNonEventField() {
+        for (NestedIterator<T> include : includes) {
+            if (include.isNonEventField()) {
+                return true;
+            }
+        }
+
+        for (NestedIterator<T> itr : contextIncludes) {
+            if (itr.isNonEventField()) {
+                return true;
+            }
+        }
+
+        for (NestedIterator<T> itr : contextExcludes) {
+            if (itr.isNonEventField()) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

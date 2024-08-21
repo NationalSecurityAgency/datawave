@@ -33,4 +33,8 @@ public interface DelegatePartitioner extends Configurable {
      *            job to be configured
      */
     void initializeJob(Job job);
+
+    boolean needSplits();
+
+    boolean needSplitLocations();
 }
