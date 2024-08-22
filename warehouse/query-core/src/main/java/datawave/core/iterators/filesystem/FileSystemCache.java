@@ -24,10 +24,8 @@ public class FileSystemCache {
 
     public FileSystemCache(String hdfsSiteConfigs) throws MalformedURLException {
         conf = new Configuration();
-        if (hdfsSiteConfigs != null) {
-            for (String url : org.apache.commons.lang.StringUtils.split(hdfsSiteConfigs, ',')) {
-                conf.addResource(new URL(url));
-            }
+        for (String url : org.apache.commons.lang.StringUtils.split(hdfsSiteConfigs, ',')) {
+            conf.addResource(new URL(url));
         }
     }
 
