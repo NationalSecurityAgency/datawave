@@ -100,8 +100,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
     protected static final Logger log = Logger.getLogger(BulkInputFormat.class);
 
     private static final ThreadLocal<Date> tmpDate = ThreadLocal.withInitial(Date::new);
-    private static final ThreadLocal<DateFormat> formatter =
-            DateFormatSupplier.createDefaultFormatSupplier();
+    private static final ThreadLocal<DateFormat> formatter = DateFormatSupplier.createDefaultFormatSupplier();
 
     protected static final String PREFIX = BulkInputFormat.class.getSimpleName();
     protected static final String INPUT_INFO_HAS_BEEN_SET = PREFIX + ".configured";
@@ -1332,7 +1331,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
 
         return new RecordReaderBase<Key,Value>() {
 
-            //helper function for formatting.  Rewritten from DefaultFormatter.appendBytes()
+            // helper function for formatting. Rewritten from DefaultFormatter.appendBytes()
             private StringBuilder appendBytes(StringBuilder sb, byte[] ba, int offset, int len) {
                 for (int i = 0; i < len; i++) {
                     int c = 0xff & ba[offset + i];
@@ -1354,9 +1353,9 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
                     Entry<Key,Value> entry = scannerIterator.next();
                     currentK = currentKey = entry.getKey();
                     currentV = currentValue = entry.getValue();
-                    if (log.isTraceEnabled()){
+                    if (log.isTraceEnabled()) {
 
-                        //rewritten from DefaultFormatter.formatEntry()
+                        // rewritten from DefaultFormatter.formatEntry()
                         StringBuilder sb = new StringBuilder();
                         Key key = entry.getKey();
                         Text buffer = new Text();
@@ -1397,5 +1396,3 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
         };
     }
 }
-
-
