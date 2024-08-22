@@ -17,7 +17,12 @@ public class IdentityDataType implements Type<String> {
 
     @Override
     public String normalize(String in) {
-        return in;
+        return normalize(null, in);
+    }
+
+    @Override
+    public String normalize(String fieldName, String fieldValue) {
+        return fieldValue;
     }
 
     @Override

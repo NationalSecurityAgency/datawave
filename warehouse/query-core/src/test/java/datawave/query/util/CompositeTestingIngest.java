@@ -395,6 +395,10 @@ public class CompositeTestingIngest {
         final String vowels = "aeiou";
 
         public String normalize(String fieldValue) {
+            return normalize(null, fieldValue);
+        }
+
+        public String normalize(String fieldName, String fieldValue) {
             fieldValue = fieldValue.toLowerCase();
             if (!fieldValue.isEmpty()) {
                 char first = fieldValue.charAt(0);
@@ -448,6 +452,10 @@ public class CompositeTestingIngest {
     public static class UcNormalizer extends AbstractNormalizer<String> {
 
         public String normalize(String fieldValue) {
+            return normalize(null, fieldValue);
+        }
+
+        public String normalize(String fieldName, String fieldValue) {
             return fieldValue.toUpperCase(Locale.ENGLISH);
         }
 

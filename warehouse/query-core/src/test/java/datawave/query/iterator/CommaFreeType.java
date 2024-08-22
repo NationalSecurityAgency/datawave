@@ -14,8 +14,13 @@ public class CommaFreeType extends BaseType<String> {
     public static class CommaNormalizer extends AbstractNormalizer<String> {
 
         @Override
-        public String normalize(String s) {
+        public String normalize(String field, String s) {
             return s.replaceAll(",", "");
+        }
+
+        @Override
+        public String normalize(String s) {
+            return normalize(null, s);
         }
 
         @Override
