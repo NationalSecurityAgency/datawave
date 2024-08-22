@@ -362,7 +362,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                 Map<String,Long> counts = plan.getTermCounts().getCounts();
                 OrderByCostVisitor.orderByTermCount(plan.getQueryTree(), counts);
             } else if (useFieldCounts) {
-                Map<String,Long> counts = plan.getTermCounts().getCounts();
+                Map<String,Long> counts = plan.getFieldCounts().getCounts();
                 OrderByCostVisitor.orderByFieldCount(plan.getQueryTree(), counts);
             }
             return plan;
