@@ -9,10 +9,11 @@ import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.util.Map;
 
-import datawave.util.ByteBufferUtil;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.commons.lang.builder.HashCodeBuilder;
+
+import datawave.util.ByteBufferUtil;
 
 /**
  * A KeyValue that is serializable. Well, this is not actually a KeyValue as that class does not have a default constructor and hence cannot be serializable.

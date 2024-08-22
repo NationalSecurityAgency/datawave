@@ -10,8 +10,7 @@ public class ByteBufferUtil {
         }
         if (buffer.hasArray()) {
             // did not use buffer.get() because it changes the position
-            return Arrays.copyOfRange(buffer.array(), buffer.position() + buffer.arrayOffset(),
-                    buffer.limit() + buffer.arrayOffset());
+            return Arrays.copyOfRange(buffer.array(), buffer.position() + buffer.arrayOffset(), buffer.limit() + buffer.arrayOffset());
         } else {
             byte[] data = new byte[buffer.remaining()];
             // duplicate inorder to avoid changing position
@@ -20,4 +19,3 @@ public class ByteBufferUtil {
         }
     }
 }
-
