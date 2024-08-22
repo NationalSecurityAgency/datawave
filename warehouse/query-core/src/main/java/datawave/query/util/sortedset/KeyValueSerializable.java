@@ -9,6 +9,7 @@ import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.util.Map;
 
+import datawave.util.ByteBufferUtil;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.commons.lang.builder.HashCodeBuilder;
@@ -29,7 +30,7 @@ public class KeyValueSerializable implements Map.Entry<Key,Value>, Serializable,
 
     public KeyValueSerializable(Key key, ByteBuffer value) {
         this.key = key;
-        this.value = toBytes(value);
+        this.value = ByteBufferUtil.toBytes(value);
     }
 
     public Key key;
