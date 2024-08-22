@@ -6,8 +6,10 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.InetAddress;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -53,9 +55,11 @@ import org.apache.accumulo.core.manager.state.tables.TableState;
 import org.apache.accumulo.core.metadata.MetadataTable;
 import org.apache.accumulo.core.metadata.schema.MetadataSchema;
 import org.apache.accumulo.core.security.Authorizations;
+import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.accumulo.core.security.TablePermission;
 import org.apache.accumulo.core.singletons.SingletonReservation;
 import org.apache.accumulo.core.util.Pair;
+import org.apache.accumulo.core.util.format.DateFormatSupplier;
 import org.apache.accumulo.core.util.format.DefaultFormatter;
 import org.apache.accumulo.core.util.threads.Threads;
 import org.apache.commons.codec.binary.Base64;
@@ -94,6 +98,10 @@ import datawave.util.TextUtil;
 public class BulkInputFormat extends InputFormat<Key,Value> {
 
     protected static final Logger log = Logger.getLogger(BulkInputFormat.class);
+
+    private static final ThreadLocal<Date> tmpDate = ThreadLocal.withInitial(Date::new);
+    private static final ThreadLocal<DateFormat> formatter =
+            DateFormatSupplier.createDefaultFormatSupplier();
 
     protected static final String PREFIX = BulkInputFormat.class.getSimpleName();
     protected static final String INPUT_INFO_HAS_BEEN_SET = PREFIX + ".configured";
@@ -1323,6 +1331,22 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
     public RecordReader<Key,Value> createRecordReader(InputSplit split, TaskAttemptContext context) {
 
         return new RecordReaderBase<Key,Value>() {
+
+            //helper function for formatting.  Rewritten from DefaultFormatter.appendBytes()
+            private StringBuilder appendBytes(StringBuilder sb, byte[] ba, int offset, int len) {
+                for (int i = 0; i < len; i++) {
+                    int c = 0xff & ba[offset + i];
+                    if (c == '\\') {
+                        sb.append("\\\\");
+                    } else if (c >= 32 && c <= 126) {
+                        sb.append((char) c);
+                    } else {
+                        sb.append("\\x").append(String.format("%02X", c));
+                    }
+                }
+                return sb;
+            }
+
             @Override
             public boolean nextKeyValue() throws IOException, InterruptedException {
                 if (scannerIterator.hasNext()) {
@@ -1330,8 +1354,40 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
                     Entry<Key,Value> entry = scannerIterator.next();
                     currentK = currentKey = entry.getKey();
                     currentV = currentValue = entry.getValue();
-                    if (log.isTraceEnabled())
-                        log.trace("Processing key/value pair: " + DefaultFormatter.formatEntry(entry, true));
+                    if (log.isTraceEnabled()){
+
+                        //rewritten from DefaultFormatter.formatEntry()
+                        StringBuilder sb = new StringBuilder();
+                        Key key = entry.getKey();
+                        Text buffer = new Text();
+
+                        // append row0
+                        appendBytes(sb, key.getRow(buffer).getBytes(), 0, key.getRow(buffer).getLength()).append(" ");
+
+                        // append column family
+                        appendBytes(sb, key.getColumnFamily(buffer).getBytes(), 0, key.getColumnFamily(buffer).getLength()).append(":");
+
+                        // append column qualifier
+                        appendBytes(sb, key.getColumnQualifier(buffer).getBytes(), 0, key.getColumnQualifier(buffer).getLength()).append(" ");
+
+                        // append visibility expression
+                        sb.append(new ColumnVisibility(key.getColumnVisibility(buffer)));
+
+                        // append timestamp
+                        tmpDate.get().setTime(entry.getKey().getTimestamp());
+                        sb.append(" ").append(formatter.get().format(tmpDate.get()));
+
+                        Value value = entry.getValue();
+
+                        // append value
+                        if (value != null && value.getSize() > 0) {
+                            sb.append("\t");
+                            appendBytes(sb, value.get(), 0, value.getSize());
+                        }
+
+                        log.trace("Processing key/value pair: " + sb);
+                    }
+
                     return true;
                 } else if (numKeysRead < 0) {
                     numKeysRead = 0;
@@ -1340,5 +1396,6 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
             }
         };
     }
-
 }
+
+
