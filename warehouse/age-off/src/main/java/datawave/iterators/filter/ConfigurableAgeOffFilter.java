@@ -429,8 +429,8 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
                 if (null == ruleCache) {
                     UPDATE_INTERVAL_MS = getLongProperty(UPDATE_INTERVAL_MS_PROP, DEFAULT_UPDATE_INTERVAL_MS); // 5 ms
                     EXPIRATION_INTERVAL_MS = getLongProperty(EXPIRATION_INTERVAL_MS_PROP, DEFAULT_EXPIRATION_INTERVAL_MS); // 1 hour
-                    log.debug("Configured refresh interval: " + UPDATE_INTERVAL_MS);
-                    log.debug("Configured expiration interval: " + EXPIRATION_INTERVAL_MS);
+                    log.debug("Configured refresh interval (ms): " + UPDATE_INTERVAL_MS);
+                    log.debug("Configured expiration interval (ms): " + EXPIRATION_INTERVAL_MS);
                     ruleCache = CacheBuilder.newBuilder().refreshAfterWrite(UPDATE_INTERVAL_MS, TimeUnit.MILLISECONDS)
                                     .expireAfterAccess(EXPIRATION_INTERVAL_MS, TimeUnit.MILLISECONDS).build(new FileRuleCacheLoader());
                     // this will schedule a check to see if the update or expiration intervals have changed
