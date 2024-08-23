@@ -6,7 +6,7 @@ ARG DATAWAVE_JAVA_HOME
 ARG DATAWAVE_BUILD_PROFILE
 ARG DATAWAVE_SKIP_INGEST=false
 ARG DATAWAVE_SKIP_TESTS=false
-ARG DATAWVE_MAVEN_REPO="https://maven.pkg.github.com/NationalSecurityAgency/datawave"
+ARG DATAWAVE_MAVEN_REPO="https://maven.pkg.github.com/NationalSecurityAgency/datawave"
 
 USER root
 

@@ -1,8 +1,9 @@
 # Sourced by env.sh
 
 DW_MAVEN_SERVICE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+DW_MAVEN_VERSION="3.8.8"
 # You may override DW_MAVEN_DIST_URI in your env ahead of time, and set as file:///path/to/file.tar.gz for local tarball, if needed
-DW_MAVEN_DIST_URI="${DW_MAVEN_DIST_URI:-https://dlcdn.apache.org/maven/maven-3/3.8.8/binaries/apache-maven-3.8.8-bin.tar.gz}"
+DW_MAVEN_DIST_URI="${DW_MAVEN_DIST_URI:-https://dlcdn.apache.org/maven/maven-3/${DW_MAVEN_VERSION}/binaries/apache-maven-${DW_MAVEN_VERSION}-bin.tar.gz}"
 DW_MAVEN_DIST="$( basename "${DW_MAVEN_DIST_URI}" )"
 DW_MAVEN_BASEDIR="maven-install"
 DW_MAVEN_SYMLINK="maven"
@@ -10,7 +11,7 @@ DW_MAVEN_SYMLINK="maven"
 function bootstrapEmbeddedMaven() {
     if [ ! -f "${DW_MAVEN_SERVICE_DIR}/${DW_MAVEN_DIST}" ]; then
         info "Maven 3.x not detected. Attempting to bootstrap a dedicated install..."
-        DW_MAVEN_DIST="$( { downloadTarball "${DW_MAVEN_DIST_URI}" "${DW_MAVEN_SERVICE_DIR}" || downloadMavenTarball "datawave-parent" "gov.nsa.datawave.quickstart" "maven" "3.8.8" "${DW_MAVEN_SERVICE_DIR}"; } && echo "${tarball}" )"
+        DW_MAVEN_DIST="$( { downloadTarball "${DW_MAVEN_DIST_URI}" "${DW_MAVEN_SERVICE_DIR}" || downloadMavenTarball "datawave-parent" "gov.nsa.datawave.quickstart" "maven" "${DW_MAVEN_VERSION}" "${DW_MAVEN_SERVICE_DIR}"; } && echo "${tarball}" )"
     fi
 
     export MAVEN_HOME="${DW_CLOUD_HOME}/${DW_MAVEN_SYMLINK}"
