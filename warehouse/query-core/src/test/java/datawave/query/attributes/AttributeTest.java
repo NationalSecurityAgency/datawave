@@ -19,7 +19,7 @@ public class AttributeTest {
         testKryoSerialization(attr, expected);
     }
 
-    private void testKryoSerialization(Attribute<?> attr, boolean expected) {
+    protected Attribute<?> serializeKryo(Attribute<?> attr) {
         KryoDocumentSerializer ser = new KryoDocumentSerializer();
         KryoDocumentDeserializer de = new KryoDocumentDeserializer();
 
@@ -29,11 +29,15 @@ public class AttributeTest {
         byte[] data = ser.serialize(d);
         Document next = de.deserialize(new ByteArrayInputStream(data));
 
-        Attribute<?> nextAttr = next.get("KEY");
+        return next.get("KEY");
+    }
+
+    private void testKryoSerialization(Attribute<?> attr, boolean expected) {
+        Attribute<?> nextAttr = serializeKryo(attr);
         assertEquals(expected, nextAttr.isToKeep());
     }
 
-    private void testDefaultSerialization(Attribute<?> attr, boolean expected) {
+    protected Attribute<?> serialize(Attribute<?> attr) {
         try {
             Document d = new Document();
             d.put("KEY", attr);
@@ -47,11 +51,16 @@ public class AttributeTest {
             Document next = new Document();
             next.readFields(new DataInputStream(new ByteArrayInputStream(data)));
 
-            Attribute<?> nextAttr = next.get("KEY");
-            assertEquals(expected, nextAttr.isToKeep());
-
+            return next.get("KEY");
         } catch (Exception e) {
             fail("Test failed with exception: " + e.getMessage());
         }
+
+        return null;
+    }
+
+    private void testDefaultSerialization(Attribute<?> attr, boolean expected) {
+        Attribute<?> nextAttr = serialize(attr);
+        assertEquals(expected, nextAttr.isToKeep());
     }
 }
