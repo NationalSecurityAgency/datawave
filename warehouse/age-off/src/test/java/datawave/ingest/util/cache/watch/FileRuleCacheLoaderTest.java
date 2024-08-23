@@ -1,13 +1,14 @@
 package datawave.ingest.util.cache.watch;
 
-import com.google.common.util.concurrent.ListenableFuture;
-import org.junit.Test;
-
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
+import org.junit.Test;
+
+import com.google.common.util.concurrent.ListenableFuture;
 
 public class FileRuleCacheLoaderTest {
     @Test

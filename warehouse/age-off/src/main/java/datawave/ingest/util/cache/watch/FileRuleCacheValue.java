@@ -1,17 +1,19 @@
 package datawave.ingest.util.cache.watch;
 
-import com.google.common.annotations.VisibleForTesting;
-import datawave.iterators.filter.ageoff.AppliedRule;
-import datawave.iterators.filter.ageoff.FilterRule;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Collection;
+
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Collection;
+import com.google.common.annotations.VisibleForTesting;
+
+import datawave.iterators.filter.ageoff.AppliedRule;
+import datawave.iterators.filter.ageoff.FilterRule;
 
 /**
  * Rule cache value implementation for use with age-off rule loading. The implementation is thread-safe and supports concurrent access for all methods.

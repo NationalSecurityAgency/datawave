@@ -1,25 +1,5 @@
 package datawave.iterators.filter;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Preconditions;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.LoadingCache;
-import com.google.common.collect.Lists;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import datawave.ingest.util.cache.watch.FileRuleCacheLoader;
-import datawave.ingest.util.cache.watch.FileRuleCacheValue;
-import datawave.iterators.filter.ageoff.AgeOffPeriod;
-import datawave.iterators.filter.ageoff.AppliedRule;
-import org.apache.accumulo.core.client.PluginEnvironment;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.Filter;
-import org.apache.accumulo.core.iterators.IteratorEnvironment;
-import org.apache.accumulo.core.iterators.IteratorUtil;
-import org.apache.accumulo.core.iterators.OptionDescriber;
-import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.log4j.Logger;
-
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
@@ -33,6 +13,28 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+
+import org.apache.accumulo.core.client.PluginEnvironment;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.Filter;
+import org.apache.accumulo.core.iterators.IteratorEnvironment;
+import org.apache.accumulo.core.iterators.IteratorUtil;
+import org.apache.accumulo.core.iterators.OptionDescriber;
+import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.log4j.Logger;
+
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Preconditions;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.LoadingCache;
+import com.google.common.collect.Lists;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+
+import datawave.ingest.util.cache.watch.FileRuleCacheLoader;
+import datawave.ingest.util.cache.watch.FileRuleCacheValue;
+import datawave.iterators.filter.ageoff.AgeOffPeriod;
+import datawave.iterators.filter.ageoff.AppliedRule;
 
 /**
  * This class provides a subclass of the {@code org.apache.accumulo.core.iterators.Filter} class and implements the {@code Option Describer} interface. It

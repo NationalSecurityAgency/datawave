@@ -1,11 +1,12 @@
 package datawave.ingest.util.cache.watch;
 
+import java.io.IOException;
+
+import org.apache.hadoop.fs.Path;
+
 import com.google.common.cache.CacheLoader;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import org.apache.hadoop.fs.Path;
-
-import java.io.IOException;
 
 /**
  * Cache loader implementation for loading {@link FileRuleCacheValue} referencing {@link Path} keys.

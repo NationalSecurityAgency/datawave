@@ -1,6 +1,9 @@
 package datawave.ingest.util.cache.watch;
 
-import datawave.iterators.filter.ageoff.FilterRule;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Collection;
+
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -8,9 +11,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IOUtils;
 import org.apache.log4j.Logger;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Collection;
+import datawave.iterators.filter.ageoff.FilterRule;
 
 /**
  * File Rule Watch

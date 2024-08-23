@@ -1,12 +1,12 @@
 package datawave.ingest.util.cache.watch;
 
+import java.io.IOException;
+import java.io.InputStream;
+
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.w3c.dom.Node;
-
-import java.io.IOException;
-import java.io.InputStream;
 
 class FileLoaderDependencyProvider implements AgeOffRuleLoader.AgeOffFileLoaderDependencyProvider {
     private final FileSystem fs;
