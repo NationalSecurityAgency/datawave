@@ -284,11 +284,15 @@ public class FederatedQueryPlanner extends QueryPlanner implements Cloneable {
         // Reset the planned script.
         this.plannedScript = null;
         this.plans.clear();
-
-        log.debug("Federated query: " + query);
+        
+        if (log.isDebugEnabled()) {
+            log.debug("Federated query: " + query);
+        }
 
         ShardQueryConfiguration originalConfig = (ShardQueryConfiguration) genericConfig;
-        log.debug("Query's original date range " + dateFormat.format(originalConfig.getBeginDate()) + "-" + dateFormat.format(originalConfig.getEndDate()));
+        if (log.isDebugEnabled()) {
+            log.debug("Query's original date range " + dateFormat.format(originalConfig.getBeginDate()) + "-" + dateFormat.format(originalConfig.getEndDate()));
+        }
 
         // Get the relevant date ranges.
         SortedSet<Pair<Date,Date>> dateRanges = getSubQueryDateRanges(originalConfig, query, scannerFactory);
@@ -350,7 +354,9 @@ public class FederatedQueryPlanner extends QueryPlanner implements Cloneable {
             } finally {
                 // Append the timers from the config copy to the original config for logging later.
                 originalConfig.appendTimers(configCopy.getTimers());
-                log.debug("Query string for config of sub-plan " + totalProcessed + ": " + configCopy.getQueryString());
+                if (log.isDebugEnabled()) {
+                    log.debug("Query string for config of sub-plan " + totalProcessed + ": " + configCopy.getQueryString());
+                }
             }
 
             // Ensure we're tracking the planned script from the sub-plan.
@@ -359,7 +365,9 @@ public class FederatedQueryPlanner extends QueryPlanner implements Cloneable {
             // Track the first sub-config.
             if (firstConfigCopy == null) {
                 firstConfigCopy = configCopy;
-                log.debug("Federated first config query string: " + firstConfigCopy.getQueryString());
+                if (log.isDebugEnabled()) {
+                    log.debug("Federated first config query string: " + firstConfigCopy.getQueryString());
+                }
             }
 
             stopwatch.stop();
@@ -426,7 +434,9 @@ public class FederatedQueryPlanner extends QueryPlanner implements Cloneable {
         Map<String,Map<String,FieldIndexHole>> fieldIndexHoles;
         try {
             Set<String> fields = getFieldsForQuery(config, query, scannerFactory);
-            log.debug("Fetching field index holes for fields " + fields + " and datatypes " + config.getDatatypeFilter());
+            if (log.isDebugEnabled()) {
+                log.debug("Fetching field index holes for fields " + fields + " and datatypes " + config.getDatatypeFilter());
+            }
             // if we found no fields in the query, then we have no index holes
             if (fields.isEmpty()) {
                 fieldIndexHoles = Collections.emptyMap();
@@ -444,7 +454,9 @@ public class FederatedQueryPlanner extends QueryPlanner implements Cloneable {
             ranges.add(Pair.of(config.getBeginDate(), config.getEndDate()));
             return ranges;
         } else {
-            log.debug("Field index holes found for fields " + fieldIndexHoles.keySet());
+            if (log.isDebugEnabled()) {
+                log.debug("Field index holes found for fields " + fieldIndexHoles.keySet());
+            }
         }
 
         // Collect all field index holes that fall within the original query's target date range.
@@ -558,7 +570,6 @@ public class FederatedQueryPlanner extends QueryPlanner implements Cloneable {
                 queryTree = UnfieldedIndexExpansionVisitor.expandUnfielded(configCopy, scannerFactory, metadataHelper, queryTree);
             } catch (TableNotFoundException e) {
                 QueryException qe = new QueryException(DatawaveErrorCode.METADATA_ACCESS_ERROR, e);
-                log.info(qe);
                 throw new DatawaveFatalQueryException(qe);
             } catch (IllegalAccessException | InstantiationException e) {
                 throw new DatawaveFatalQueryException(e);
