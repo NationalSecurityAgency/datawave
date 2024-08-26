@@ -154,7 +154,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
     protected QueryLogicTestHarness testHarness;
     protected DatawavePrincipal principal;
 
-    private final Set<Authorizations> authSet = new HashSet<>();
+    protected final Set<Authorizations> authSet = new HashSet<>();
 
     protected AbstractFunctionalQuery(final RawDataManager mgr) {
         this.dataManager = mgr;

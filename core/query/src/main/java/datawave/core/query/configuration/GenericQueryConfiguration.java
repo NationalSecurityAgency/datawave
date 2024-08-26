@@ -5,13 +5,16 @@ import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchScanner;
+import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.security.Authorizations;
 
 import com.google.common.collect.Iterators;
@@ -67,8 +70,14 @@ public class GenericQueryConfiguration implements Serializable {
     // use a value like 'env:PASS' to pull from the environment
     private String accumuloPassword = "";
 
+    private String connPoolName;
+
     // Whether or not this query emits every result or performs some kind of result reduction
     protected boolean reduceResults = false;
+
+    // either IMMEDIATE or EVENTUAL
+    private Map<String,ScannerBase.ConsistencyLevel> tableConsistencyLevels = new HashMap<>();
+    private Map<String,Map<String,String>> tableHints = new HashMap<>();
 
     /**
      * Empty default constructor
@@ -93,6 +102,7 @@ public class GenericQueryConfiguration implements Serializable {
         this.setBaseIteratorPriority(genericConfig.getBaseIteratorPriority());
         this.setBypassAccumulo(genericConfig.getBypassAccumulo());
         this.setAccumuloPassword(genericConfig.getAccumuloPassword());
+        this.setConnPoolName(genericConfig.getConnPoolName());
         this.setAuthorizations(genericConfig.getAuthorizations());
         this.setBeginDate(genericConfig.getBeginDate());
         this.setClient(genericConfig.getClient());
@@ -103,6 +113,8 @@ public class GenericQueryConfiguration implements Serializable {
         this.setQueryString(genericConfig.getQueryString());
         this.setTableName(genericConfig.getTableName());
         this.setReduceResults(genericConfig.isReduceResults());
+        this.setTableConsistencyLevels(genericConfig.getTableConsistencyLevels());
+        this.setTableHints(genericConfig.getTableHints());
     }
 
     public Collection<QueryData> getQueries() {
@@ -269,6 +281,30 @@ public class GenericQueryConfiguration implements Serializable {
         this.accumuloPassword = EnvProvider.resolve(password);
     }
 
+    public String getConnPoolName() {
+        return connPoolName;
+    }
+
+    public void setConnPoolName(String connPoolName) {
+        this.connPoolName = connPoolName;
+    }
+
+    public Map<String,ScannerBase.ConsistencyLevel> getTableConsistencyLevels() {
+        return tableConsistencyLevels;
+    }
+
+    public void setTableConsistencyLevels(Map<String,ScannerBase.ConsistencyLevel> tableConsistencyLevels) {
+        this.tableConsistencyLevels = tableConsistencyLevels;
+    }
+
+    public Map<String,Map<String,String>> getTableHints() {
+        return tableHints;
+    }
+
+    public void setTableHints(Map<String,Map<String,String>> tableHints) {
+        this.tableHints = tableHints;
+    }
+
     /**
      * Checks for non-null, sane values for the configured values
      *
@@ -311,12 +347,13 @@ public class GenericQueryConfiguration implements Serializable {
                         && Objects.equals(getBeginDate(), that.getBeginDate()) && Objects.equals(getEndDate(), that.getEndDate())
                         && Objects.equals(getMaxWork(), that.getMaxWork()) && Objects.equals(getTableName(), that.getTableName())
                         && Objects.equals(getQueries(), that.getQueries()) && Objects.equals(getAccumuloPassword(), that.getAccumuloPassword())
-                        && Objects.equals(isReduceResults(), that.isReduceResults());
+                        && Objects.equals(getConnPoolName(), that.getConnPoolName()) && Objects.equals(isReduceResults(), that.isReduceResults());
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(isCheckpointable(), getAuthorizations(), getQuery(), getQueryString(), getBeginDate(), getEndDate(), getMaxWork(),
-                        getBaseIteratorPriority(), getTableName(), getQueries(), getBypassAccumulo(), getAccumuloPassword(), isReduceResults());
+                        getBaseIteratorPriority(), getTableName(), getQueries(), getBypassAccumulo(), getConnPoolName(), getAccumuloPassword(),
+                        isReduceResults());
     }
 }
