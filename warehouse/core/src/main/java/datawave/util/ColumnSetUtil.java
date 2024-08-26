@@ -1,6 +1,7 @@
 package datawave.util;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+
 import org.apache.accumulo.core.util.Pair;
 import org.apache.hadoop.io.Text;
 
@@ -34,11 +35,9 @@ public class ColumnSetUtil {
         }
     }
 
-
     public static boolean isValidEncoding(String enc) {
         for (char c : enc.toCharArray()) {
-            boolean validChar = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9')
-                    || c == '_' || c == '-' || c == ':' || c == '%';
+            boolean validChar = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_' || c == '-' || c == ':' || c == '%';
             if (!validChar) {
                 return false;
             }
@@ -52,8 +51,7 @@ public class ColumnSetUtil {
             int b = (0xff & t.getBytes()[i]);
 
             // very inefficient code
-            if ((b >= 'a' && b <= 'z') || (b >= 'A' && b <= 'Z') || (b >= '0' && b <= '9') || b == '_'
-                    || b == '-') {
+            if ((b >= 'a' && b <= 'z') || (b >= 'A' && b <= 'Z') || (b >= '0' && b <= '9') || b == '_' || b == '-') {
                 sb.append((char) b);
             } else {
                 sb.append('%');
@@ -78,8 +76,7 @@ public class ColumnSetUtil {
                     int b = Integer.parseInt(hs, 16);
                     t.append(new byte[] {(byte) b}, 0, 1);
                 } else {
-                    throw new IllegalArgumentException("Invalid characters in encoded string (" + s + ")."
-                            + " Expected two characters after '%'");
+                    throw new IllegalArgumentException("Invalid characters in encoded string (" + s + ")." + " Expected two characters after '%'");
                 }
             } else {
                 t.append(new byte[] {sb[i]}, 0, 1);

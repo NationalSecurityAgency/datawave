@@ -13,7 +13,6 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.regex.Pattern;
 
-import datawave.util.ColumnSetUtil;
 import org.apache.accumulo.core.client.SampleNotPresentException;
 import org.apache.accumulo.core.client.sample.SamplerConfiguration;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
@@ -39,6 +38,7 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
 import datawave.ingest.mapreduce.job.TableConfigurationUtil;
+import datawave.util.ColumnSetUtil;
 
 @SuppressWarnings("deprecation")
 public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,OV> {
