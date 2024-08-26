@@ -111,7 +111,7 @@ public class QueryPlanTest extends AbstractFunctionalQuery {
             assertEquals(expectedPlan, metric.getPlan());
         }
     }
-    
+
     @Test
     public void planInMetricsAfterMissingIndexExceptionFederatedQueryPlannerNotEq() throws Exception {
         String query = "CITY == 'london' && !(CITY == 'london')";
@@ -124,7 +124,7 @@ public class QueryPlanTest extends AbstractFunctionalQuery {
             assertEquals(expectedPlan, metric.getPlan());
         }
     }
-    
+
     @Test
     public void planInMetricsAfterMissingIndexExceptionDefaultQueryPlannerNE() throws Exception {
         String query = "CITY == 'london' && CITY != 'london'";
@@ -138,7 +138,7 @@ public class QueryPlanTest extends AbstractFunctionalQuery {
             assertEquals(expectedPlan, metric.getPlan());
         }
     }
-    
+
     @Test
     public void planInMetricsAfterMissingIndexExceptionDefaultQueryPlannerNotEq() throws Exception {
         String query = "CITY == 'london' && !(CITY == 'london')";
@@ -152,7 +152,7 @@ public class QueryPlanTest extends AbstractFunctionalQuery {
             assertEquals(expectedPlan, metric.getPlan());
         }
     }
-    
+
     @Test
     public void planInMetricsAfterTableNotFoundExceptionFederatedQueryPlannerNE() throws Exception {
         String query = Constants.ANY_FIELD + " != " + "'" + TestCities.london + "'";
@@ -167,12 +167,12 @@ public class QueryPlanTest extends AbstractFunctionalQuery {
             assertEquals(expectedPlan, metric.getPlan());
         }
     }
-    
+
     @Test
     public void planInMetricsAfterTableNotFoundExceptionFederatedQueryPlannerNotEq() throws Exception {
         String query = "!(" + Constants.ANY_FIELD + " == " + "'" + TestCities.london + "')";
         String expectedPlan = "!(_ANYFIELD_ == 'london')";
-        
+
         this.logic.setMetadataTableName("missing");
         try {
             runTestQuery(Collections.emptyList(), query, this.dataManager.getShardStartEndDate()[0], this.dataManager.getShardStartEndDate()[1],
@@ -182,12 +182,12 @@ public class QueryPlanTest extends AbstractFunctionalQuery {
             assertEquals(expectedPlan, metric.getPlan());
         }
     }
-    
+
     @Test
     public void planInMetricsAfterTableNotFoundExceptionDefaultQueryPlannerNE() throws Exception {
         String query = Constants.ANY_FIELD + " != " + "'" + TestCities.london + "'";
         String expectedPlan = "!(_ANYFIELD_ == 'london')";
-        
+
         this.logic.setQueryPlanner(new DefaultQueryPlanner());
         this.logic.setMetadataTableName("missing");
         try {
@@ -198,12 +198,12 @@ public class QueryPlanTest extends AbstractFunctionalQuery {
             assertEquals(expectedPlan, metric.getPlan());
         }
     }
-    
+
     @Test
     public void planInMetricsAfterTableNotFoundExceptionDefaultQueryPlannerNotEq() throws Exception {
         String query = "!(" + Constants.ANY_FIELD + " == " + "'" + TestCities.london + "')";
         String expectedPlan = "!(_ANYFIELD_ == 'london')";
-        
+
         this.logic.setQueryPlanner(new DefaultQueryPlanner());
         this.logic.setMetadataTableName("missing");
         try {
@@ -214,8 +214,7 @@ public class QueryPlanTest extends AbstractFunctionalQuery {
             assertEquals(expectedPlan, metric.getPlan());
         }
     }
-    
-    
+
     @Test
     public void planInMetricsAfterFTSDException() throws Exception {
         String query = Constants.ANY_FIELD + " != " + "'" + TestCities.london + "'";

@@ -717,44 +717,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
      * @param hdfs
      *            the HDFS URI
      * @param pathPattern
-     *            the path patternActivities:
-     *
-     *     Tickets closed: 0
-     *     Tickets in progress: 2
-     *     Projects completed:
-     *         Replaced usage of deprecated Connector class with AccumuloClient in Datawave.
-     *         Replaced usage of deprecated Job(Configuration config) constructor with Job.getInstance(Configuration config) in Datawave.
-     *         Removed usage of deprecated ZooKeeperInstance class references in Datawave.
-     *         Replaced usage of deprecated SequenceFile.createWriter() with updated SequenceFile.createWriter() variation in Datawave.
-     *         Replaced usage of deprecated GnuParser class with DefaultParser in Datawave.
-     *         Replaced usage of deprecated FileSystem.isFile(Path path) with FileSystem.getFileStatus(Path path) in Datawave.
-     *         Replaced usage of deprecated AccumuloInputFormat with updated AccumuloInputFormat designed to work with Accumulo 2.0 in Datawave.
-     *     New responsibilities/tasks:
-     *         Continuing work on updating deprecated code in Datawave.
-     *     Catch all:
-     *         NSTR
-     *
-     * Training:
-     *
-     *     Completed Annual Cybersecurity Awareness training.
-     *     Completed Annual Controlled Unclassified Information (CUI) training.
-     *     Completed Annual Integrity & Ethical Behavior Acknowledgement.
-     *     Completed Annual EHS Compliance Acknowledgement.
-     *     Completed Annual Timekeeping Training Presentation.
-     *     Completed Annual Insider Threat Awareness training.
-     *     Completed Standards of Ethics and Code of Conduct training.
-     *
-     * Travel:
-     *
-     *     I will be taking PTO from 08/12-08/19 to travel to Seattle.
-     *
-     * Kudos/Accolades:
-     *
-     *     NSTR
-     *
-     * Issues/Concerns:
-     *
-     *     NSTR
+     *            the path pattern
      * @throws IOException
      *             for issues reading/writing with the file system.
      * @return a path array

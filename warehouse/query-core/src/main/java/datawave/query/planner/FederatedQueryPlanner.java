@@ -284,7 +284,7 @@ public class FederatedQueryPlanner extends QueryPlanner implements Cloneable {
         // Reset the planned script.
         this.plannedScript = null;
         this.plans.clear();
-        
+
         if (log.isDebugEnabled()) {
             log.debug("Federated query: " + query);
         }
