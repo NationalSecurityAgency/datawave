@@ -250,8 +250,6 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
         StringBuilder logicQueryStringBuilder = new StringBuilder();
         if (!getInitializedLogics().isEmpty()) {
             logicQueryStringBuilder.append(getConfig().getQueryString());
-        } else {
-            logicQueryStringBuilder.append("CompositeQueryLogic: ");
         }
 
         Map<String,Exception> exceptions = new HashMap<>();
