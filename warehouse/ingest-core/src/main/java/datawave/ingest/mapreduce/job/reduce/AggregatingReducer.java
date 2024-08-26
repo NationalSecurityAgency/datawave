@@ -13,6 +13,7 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.regex.Pattern;
 
+import datawave.util.ColumnSetUtil;
 import org.apache.accumulo.core.client.SampleNotPresentException;
 import org.apache.accumulo.core.client.sample.SamplerConfiguration;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
@@ -22,7 +23,6 @@ import org.apache.accumulo.core.iterators.Combiner;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.IteratorUtil;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.accumulo.core.iteratorsImpl.conf.ColumnSet;
 import org.apache.accumulo.core.iteratorsImpl.conf.ColumnToClassMapping;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.util.Pair;
@@ -176,7 +176,7 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
                             Map<String,Entry<Map<String,String>,String>> columnMap = Maps.newHashMap();
 
                             for (String column : columns) {
-                                columnMap.put(ColumnSet.encodeColumns(new Text(column), null), Maps.immutableEntry(options, clazz));
+                                columnMap.put(ColumnSetUtil.encodeColumns(new Text(column), null), Maps.immutableEntry(options, clazz));
                             }
 
                             mapping = new CustomColumnToClassMapping(columnMap, priority);
@@ -386,7 +386,7 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
                 if (ALL_CF_STR.equals(column)) {
                     pcic = new Pair<>(ALL_CF_KEY.getColumnFamily(), null);
                 } else {
-                    pcic = ColumnSet.decodeColumns(column);
+                    pcic = ColumnSetUtil.decodeColumns(column);
                 }
 
                 Combiner agg = null;
@@ -426,7 +426,7 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
                 if (ALL_CF_STR.equals(column)) {
                     pcic = new Pair<>(ALL_CF_KEY.getColumnFamily(), null);
                 } else {
-                    pcic = ColumnSet.decodeColumns(column);
+                    pcic = ColumnSetUtil.decodeColumns(column);
                 }
 
                 Combiner agg = null;
