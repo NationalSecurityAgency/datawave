@@ -340,7 +340,7 @@ public class FederatedQueryPlanner extends QueryPlanner implements Cloneable {
             try {
                 CloseableIterable<QueryData> queryData = subPlan.process(configCopy, query, settings, scannerFactory);
                 results.addIterable(queryData);
-            } catch (DatawaveQueryException | DatawaveFatalQueryException e) {
+            } catch (Exception e) {
                 log.warn("Exception occured when processing sub-plan [" + totalProcessed + " of " + dateRanges.size() + "] against date range (" + subStartDate
                                 + "-" + subEndDate + ")", e);
                 // If an exception occurs, ensure that the planned script and the original config are updated before allowing the exception to bubble up.

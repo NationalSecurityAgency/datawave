@@ -102,7 +102,7 @@ public class QueryPlanTest extends AbstractFunctionalQuery {
     @Test
     public void planInMetricsAfterMissingIndexExceptionFederatedQueryPlannerNE() throws Exception {
         String query = "CITY == 'london' && CITY != 'london'";
-        String expectedPlan = "CITY == 'london' && CITY != 'london'";
+        String expectedPlan = "CITY == 'london' && !(CITY == 'london')";
         this.logic.setIndexTableName("missing");
         try {
             runTest(query, query);
@@ -156,6 +156,8 @@ public class QueryPlanTest extends AbstractFunctionalQuery {
     @Test
     public void planInMetricsAfterTableNotFoundExceptionFederatedQueryPlannerNE() throws Exception {
         String query = Constants.ANY_FIELD + " != " + "'" + TestCities.london + "'";
+        // Do not expect the query plan to be updated with the resulting plan from DefaultQueryPlanner.process(), an error will occur earlier when attempting
+        // to fetch field index holes from the missing metadata table.
         String expectedPlan = "_ANYFIELD_ != 'london'";
 
         this.logic.setMetadataTableName("missing");
