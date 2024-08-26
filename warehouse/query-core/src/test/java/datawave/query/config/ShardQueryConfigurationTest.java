@@ -478,6 +478,8 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("tfFieldSeek", 14);
         defaultValues.put("tfNextSeek", -1);
         updatedValues.put("tfNextSeek", 15);
+        defaultValues.put("seekingEventAggregation", false);
+        updatedValues.put("seekingEventAggregation", true);
         defaultValues.put("visitorFunctionMaxWeight", 5000000L);
         updatedValues.put("visitorFunctionMaxWeight", 1000000L);
         defaultValues.put("lazySetMechanismEnabled", false);

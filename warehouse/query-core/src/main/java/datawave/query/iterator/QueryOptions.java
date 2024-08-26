@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
@@ -268,6 +267,8 @@ public class QueryOptions implements OptionDescriber {
     public static final String TF_FIELD_SEEK = "tf.field.seek";
     public static final String TF_NEXT_SEEK = "tf.next.seek";
 
+    public static final String SEEKING_EVENT_AGGREGATION = "seeking.event.aggregation";
+
     public static final String DOC_AGGREGATION_THRESHOLD_MS = "doc.agg.threshold";
 
     public static final String TERM_FREQUENCY_AGGREGATION_THRESHOLD_MS = "tf.agg.threshold";
@@ -436,6 +437,8 @@ public class QueryOptions implements OptionDescriber {
     private int tfFieldSeek = -1;
     private int tfNextSeek = -1;
 
+    private boolean seekingEventAggregation = false;
+
     // aggregation thresholds
     private int docAggregationThresholdMs = -1;
     private int tfAggregationThresholdMs = -1;
@@ -549,6 +552,8 @@ public class QueryOptions implements OptionDescriber {
         this.eventNextSeek = other.eventNextSeek;
         this.tfFieldSeek = other.tfFieldSeek;
         this.tfNextSeek = other.tfNextSeek;
+
+        this.seekingEventAggregation = other.seekingEventAggregation;
 
         this.docAggregationThresholdMs = other.docAggregationThresholdMs;
         this.tfAggregationThresholdMs = other.tfAggregationThresholdMs;
@@ -790,7 +795,7 @@ public class QueryOptions implements OptionDescriber {
      */
     public EventDataQueryFilter getEventFilter() {
 
-        if (!useAllowListedFields || allowListedFields instanceof UniversalSet) {
+        if (!useAllowListedFields || allowListedFields instanceof UniversalSet || !isSeekingEventAggregation()) {
             return null;
         }
 
@@ -1534,6 +1539,10 @@ public class QueryOptions implements OptionDescriber {
 
         if (options.containsKey(TF_NEXT_SEEK)) {
             this.tfNextSeek = Integer.parseInt(options.get(TF_NEXT_SEEK));
+        }
+
+        if (options.containsKey(SEEKING_EVENT_AGGREGATION)) {
+            this.seekingEventAggregation = Boolean.parseBoolean(options.get(SEEKING_EVENT_AGGREGATION));
         }
 
         if (options.containsKey(DOC_AGGREGATION_THRESHOLD_MS)) {
@@ -2326,5 +2335,9 @@ public class QueryOptions implements OptionDescriber {
             equality = new PrefixEquality(PartialKey.ROW_COLFAM);
         }
         return equality;
+    }
+
+    public boolean isSeekingEventAggregation() {
+        return seekingEventAggregation;
     }
 }
