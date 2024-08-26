@@ -30,7 +30,8 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.data.normalizer.DateNormalizer;
 import datawave.data.type.util.NumericalEncoder;
@@ -52,7 +53,7 @@ import datawave.util.StringUtils;
 
 public class EdgeKeyVersioningCache {
 
-    private static final Logger log = Logger.getLogger(EdgeKeyVersioningCache.class);
+    private static final Logger log = LogManager.getLogger(EdgeKeyVersioningCache.class);
 
     public static final String METADATA_TABLE_NAME = "metadata.table.name";
     public static final String KEY_VERSION_CACHE_DIR = "datawave.ingest.key.version.cache.dir";

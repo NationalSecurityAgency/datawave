@@ -30,7 +30,8 @@ import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.google.common.base.Objects;
 import com.google.common.base.Predicate;
@@ -236,7 +237,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
     }
 
     public static final Collection<ByteSequence> EMPTY_COL_FAMS = new ArrayList<>();
-    public static final Logger log = Logger.getLogger(DatawaveFieldIndexCachingIteratorJexl.class);
+    public static final Logger log = LogManager.getLogger(DatawaveFieldIndexCachingIteratorJexl.class);
     public static final String NULL_BYTE = Constants.NULL_BYTE_STRING;
     public static final String ONE_BYTE = "\u0001";
     public static final PartialKey DEFAULT_RETURN_KEY_TYPE = PartialKey.ROW_COLFAM;

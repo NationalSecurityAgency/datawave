@@ -40,7 +40,8 @@ import org.apache.commons.jexl3.parser.ASTUnaryMinusNode;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.commons.jexl3.parser.ParseException;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.google.common.collect.Sets;
 
@@ -54,7 +55,7 @@ import datawave.webservice.query.exception.QueryException;
  *
  */
 public class JexlStringBuildingVisitor extends BaseVisitor {
-    protected static final Logger log = Logger.getLogger(JexlStringBuildingVisitor.class);
+    protected static final Logger log = LogManager.getLogger(JexlStringBuildingVisitor.class);
     protected static final char BACKSLASH = '\\';
     protected static final char STRING_QUOTE = '\'';
 

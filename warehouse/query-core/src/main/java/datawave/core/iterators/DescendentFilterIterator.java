@@ -18,7 +18,8 @@ import org.apache.accumulo.core.iterators.OptionDescriber;
 import org.apache.accumulo.core.iterators.SkippingIterator;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import datawave.data.hash.UIDConstants;
 import datawave.util.StringUtils;
@@ -49,7 +50,7 @@ public class DescendentFilterIterator extends SkippingIterator implements Option
     public static final String INCLUDE_PARENT = "descendentfilter.include.parent";
     private static final String NULL = "\0";
     private static final byte[] UID_SEPARATOR_BYTES = Character.toString(UIDConstants.DEFAULT_SEPARATOR).getBytes();
-    private final Logger log = Logger.getLogger(DescendentFilterIterator.class);
+    private final Logger log = LogManager.getLogger(DescendentFilterIterator.class);
 
     private Range prevRange = new Range();
     @SuppressWarnings("unchecked")

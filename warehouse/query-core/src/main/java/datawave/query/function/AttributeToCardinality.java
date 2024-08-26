@@ -6,7 +6,8 @@ import java.util.TreeMap;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Maps;
@@ -23,7 +24,7 @@ import datawave.query.data.parsers.DatawaveKey;
  */
 public class AttributeToCardinality implements Function<Entry<Key,Document>,Entry<Key,Document>> {
 
-    private static final Logger log = Logger.getLogger(AttributeToCardinality.class);
+    private static final Logger log = LogManager.getLogger(AttributeToCardinality.class);
     private static final Text EMPTY_TEXT = new Text();
 
     /*

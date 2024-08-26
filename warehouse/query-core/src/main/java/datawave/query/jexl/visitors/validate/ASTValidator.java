@@ -4,7 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.jexl3.parser.JexlNode;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.google.common.base.Joiner;
 
@@ -27,7 +28,7 @@ import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
  */
 public class ASTValidator {
 
-    private static final Logger log = Logger.getLogger(ASTValidator.class);
+    private static final Logger log = LogManager.getLogger(ASTValidator.class);
 
     private boolean isValid;
     private final List<String> reasons = new ArrayList<>();

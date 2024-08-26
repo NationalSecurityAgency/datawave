@@ -39,7 +39,7 @@ public class DatawaveCertVerifierTest {
 
         replayAll();
 
-        verifier.setLogger(Logger.getLogger(DatawaveCertVerifier.class));
+        verifier.setLogger(LogManager.getLogger(DatawaveCertVerifier.class));
 
         verifyAll();
         resetAll();

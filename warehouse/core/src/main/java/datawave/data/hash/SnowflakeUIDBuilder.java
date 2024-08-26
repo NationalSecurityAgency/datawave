@@ -9,7 +9,8 @@ import java.util.Date;
 import java.util.Map;
 
 import org.apache.commons.cli.Option;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Builds a sequence of SnowflakeUIDs for a particular "machine" instance, which is based on a unique combination of host, process, and process thread.
@@ -18,7 +19,7 @@ public class SnowflakeUIDBuilder extends AbstractUIDBuilder<SnowflakeUID> {
 
     private static final BigInteger UNDEFINED_MACHINE_ID = BigInteger.valueOf(-1);
     private static final BigInteger UNDEFINED_SNOWFLAKE = BigInteger.valueOf(-1);
-    private static final Logger LOGGER = Logger.getLogger(SnowflakeUIDBuilder.class);
+    private static final Logger LOGGER = LogManager.getLogger(SnowflakeUIDBuilder.class);
 
     private final BigInteger mid;
 

@@ -14,7 +14,8 @@ import org.apache.accumulo.core.client.PluginEnvironment;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.conf.DefaultConfiguration;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
@@ -22,7 +23,7 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
  *
  */
 public class IteratorThreadPoolManager {
-    private static final Logger log = Logger.getLogger(IteratorThreadPoolManager.class);
+    private static final Logger log = LogManager.getLogger(IteratorThreadPoolManager.class);
     private static final String IVARATOR_THREAD_PROP = "tserver.datawave.ivarator.threads";
     private static final String IVARATOR_THREAD_NAME = "DATAWAVE Ivarator";
     private static final String EVALUATOR_THREAD_PROP = "tserver.datawave.evaluation.threads";

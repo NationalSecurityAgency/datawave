@@ -16,7 +16,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.util.ToolRunner;
-import org.apache.log4j.Level;
+import org.apache.logging.log4j.Level;
 
 import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.ingest.mapreduce.handler.shard.NumShards;

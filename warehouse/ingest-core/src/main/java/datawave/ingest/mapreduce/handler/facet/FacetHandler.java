@@ -21,7 +21,8 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.StatusReporter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.geotools.feature.type.DateUtil;
 
 import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;
@@ -51,7 +52,7 @@ import datawave.util.time.DateHelper;
 
 public class FacetHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT>, FacetedEstimator<RawRecordContainer> {
 
-    private static final Logger log = Logger.getLogger(FacetHandler.class);
+    private static final Logger log = LogManager.getLogger(FacetHandler.class);
 
     /* Global configuration properties */
 

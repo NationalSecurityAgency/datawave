@@ -8,7 +8,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import datawave.data.normalizer.Normalizer;
 import datawave.ingest.csv.config.helper.ExtendedCSVHelper;
@@ -24,7 +25,7 @@ import datawave.ingest.json.util.JsonObjectFlattener.FlattenMode;
  */
 public class FlattenDataType extends AbstractDataTypeConfig {
 
-    private static final Logger log = Logger.getLogger(FlattenDataType.class);
+    private static final Logger log = LogManager.getLogger(FlattenDataType.class);
 
     public enum FlattenEntry {
         // predefined grouping data

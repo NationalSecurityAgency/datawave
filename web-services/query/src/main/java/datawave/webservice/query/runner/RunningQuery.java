@@ -19,7 +19,8 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jboss.logging.NDC;
 
 import datawave.core.common.connection.AccumuloConnectionFactory;
@@ -57,7 +58,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
 
     private static final long serialVersionUID = 1L;
 
-    private static Logger log = Logger.getLogger(RunningQuery.class);
+    private static Logger log = LogManager.getLogger(RunningQuery.class);
 
     private transient AccumuloClient client = null;
     private AccumuloConnectionFactory.Priority connectionPriority = null;

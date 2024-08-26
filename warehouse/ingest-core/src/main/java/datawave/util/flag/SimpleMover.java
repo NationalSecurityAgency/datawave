@@ -5,7 +5,8 @@ import java.util.concurrent.Callable;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.cache.Cache;
 
@@ -16,7 +17,7 @@ import datawave.util.flag.InputFile.TrackedDir;
  */
 public class SimpleMover implements Callable<InputFile> {
 
-    private static final Logger log = Logger.getLogger(SimpleMover.class);
+    private static final Logger log = LogManager.getLogger(SimpleMover.class);
 
     final InputFile entry;
     final TrackedDir target;

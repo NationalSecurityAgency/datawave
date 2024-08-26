@@ -9,7 +9,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.junit.Assert;
 
 import au.com.bytecode.opencsv.CSVReader;
@@ -20,7 +21,7 @@ import datawave.query.testframework.IpAddressDataType.IpAddrField;
  */
 public class IpAddressDataManager extends AbstractDataManager {
 
-    private static final Logger log = Logger.getLogger(IpAddressDataManager.class);
+    private static final Logger log = LogManager.getLogger(IpAddressDataManager.class);
 
     public IpAddressDataManager() {
         super(IpAddrField.EVENT_ID.name(), IpAddrField.START_DATE.name(), IpAddrField.getFieldsMetadata());

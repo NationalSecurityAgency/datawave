@@ -20,8 +20,9 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.Mapper;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;
 
@@ -34,7 +35,7 @@ import datawave.query.data.parsers.DatawaveKey;
 import datawave.util.StringUtils;
 
 class StatsHyperLogMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
-    private static final Logger log = Logger.getLogger(StatsHyperLogMapper.class);
+    private static final Logger log = LogManager.getLogger(StatsHyperLogMapper.class);
 
     // mapper parameter keys
     static final String STATS_MAPPER_INPUT_INTERVAL = "stats.mapper.input.interval";

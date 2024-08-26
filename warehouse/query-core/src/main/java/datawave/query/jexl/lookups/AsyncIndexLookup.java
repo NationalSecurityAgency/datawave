@@ -7,7 +7,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.query.config.ShardQueryConfiguration;
@@ -19,7 +20,7 @@ import datawave.query.tables.ScannerFactory;
  * only block for up to the specified timeout {@link ShardQueryConfiguration#getMaxIndexScanTimeMillis()}
  */
 public abstract class AsyncIndexLookup extends IndexLookup {
-    private static final Logger log = ThreadConfigurableLogger.getLogger(AsyncIndexLookup.class);
+    private static final ThreadConfigurableLogger log = ThreadConfigurableLogger.getLogger(AsyncIndexLookup.class);
 
     protected boolean unfieldedLookup;
 

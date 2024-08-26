@@ -19,7 +19,8 @@ import javax.inject.Inject;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
@@ -58,7 +59,7 @@ import datawave.webservice.result.DefaultEventQueryResponse;
  */
 public abstract class UniqueTest {
 
-    private static final Logger log = Logger.getLogger(UniqueTest.class);
+    private static final Logger log = LogManager.getLogger(UniqueTest.class);
 
     @RunWith(Arquillian.class)
     public static class ShardRange extends UniqueTest {

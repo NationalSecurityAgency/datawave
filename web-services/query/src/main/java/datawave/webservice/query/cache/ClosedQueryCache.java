@@ -4,7 +4,8 @@ import java.util.concurrent.TimeUnit;
 
 import javax.inject.Singleton;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
@@ -16,7 +17,7 @@ import com.google.common.cache.CacheBuilder;
 // CDI singleton
 public class ClosedQueryCache {
     private final Cache<String,Boolean> queryIdCache = CacheBuilder.newBuilder().maximumSize(100000).expireAfterWrite(10, TimeUnit.MINUTES).build();
-    private final Logger log = Logger.getLogger(ClosedQueryCache.class);
+    private final Logger log = LogManager.getLogger(ClosedQueryCache.class);
 
     public void add(String queryId) {
         queryIdCache.put(queryId, Boolean.TRUE);

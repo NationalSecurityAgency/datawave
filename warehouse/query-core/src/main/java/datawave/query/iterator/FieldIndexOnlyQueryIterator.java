@@ -18,7 +18,8 @@ import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
 
 import com.google.common.collect.Iterables;
@@ -52,7 +53,7 @@ import datawave.util.StringUtils;
  *
  */
 public class FieldIndexOnlyQueryIterator extends QueryIterator {
-    private static final Logger log = Logger.getLogger(FieldIndexOnlyQueryIterator.class);
+    private static final Logger log = LogManager.getLogger(FieldIndexOnlyQueryIterator.class);
 
     protected AccumuloFieldIndexIterable fieldIndexResults;
 

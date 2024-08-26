@@ -36,7 +36,8 @@ import javax.ws.rs.core.MultivaluedMap;
 
 import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.apache.deltaspike.core.api.exclude.Exclude;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.codahale.metrics.annotation.Timed;
 
@@ -84,7 +85,7 @@ public class BasicQueryBean {
 
     static final List<String> NO_PLAN_REQUIRED = Arrays.asList("datawave.query.tables.content.ContentQueryTable");
 
-    private final Logger log = Logger.getLogger(BasicQueryBean.class);
+    private final Logger log = LogManager.getLogger(BasicQueryBean.class);
 
     @Inject
     private QueryLogicFactory queryLogicFactory;

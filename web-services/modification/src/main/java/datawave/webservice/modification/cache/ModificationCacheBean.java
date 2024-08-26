@@ -24,7 +24,8 @@ import javax.ws.rs.Produces;
 import org.apache.deltaspike.core.api.jmx.JmxManaged;
 import org.apache.deltaspike.core.api.jmx.MBean;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jboss.resteasy.annotations.GZIP;
 
 import datawave.configuration.spring.SpringBean;
@@ -52,7 +53,7 @@ public class ModificationCacheBean {
 
     private static final Text MODIFICATION_COLUMN = new Text("m");
 
-    private Logger log = Logger.getLogger(this.getClass());
+    private Logger log = LogManager.getLogger(this.getClass());
 
     private ModificationCache cache;
 

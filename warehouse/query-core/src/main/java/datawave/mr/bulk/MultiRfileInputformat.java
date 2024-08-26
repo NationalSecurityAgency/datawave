@@ -26,7 +26,8 @@ import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.LoadingCache;
@@ -60,7 +61,7 @@ public class MultiRfileInputformat extends RFileInputFormat {
     private static final String ACCUMULO_BASE_PATH = "/accumulo";
 
     private static final String FS_DEFAULT_NAME = "fs.defaultFS";
-    private static final Logger log = Logger.getLogger(MultiRfileInputformat.class);
+    private static final Logger log = LogManager.getLogger(MultiRfileInputformat.class);
     public static final String tableStr = Path.SEPARATOR + "tables" + Path.SEPARATOR;
 
     private static LoadingCache<Range,Set<Tuple2<String,Set<String>>>> locationMap = null;

@@ -6,7 +6,8 @@ import java.util.Map.Entry;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Maps;
@@ -23,7 +24,7 @@ import datawave.query.util.TypeMetadata;
  *
  */
 public class ValueToAttribute implements Function<Entry<Key,String>,Entry<Key,Entry<String,Attribute<? extends Comparable<?>>>>> {
-    private static final Logger log = Logger.getLogger(ValueToAttribute.class);
+    private static final Logger log = LogManager.getLogger(ValueToAttribute.class);
 
     private AttributeFactory attrFactory;
 

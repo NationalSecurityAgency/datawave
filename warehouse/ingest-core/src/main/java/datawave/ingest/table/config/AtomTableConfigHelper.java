@@ -9,13 +9,14 @@ import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.core.iterators.IteratorUtil.IteratorScope;
 import org.apache.accumulo.core.iterators.user.AgeOffFilter;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.ingest.data.config.ConfigurationHelper;
 
 public class AtomTableConfigHelper extends AbstractTableConfigHelper {
 
-    private static final Logger log = Logger.getLogger(AtomTableConfigHelper.class);
+    private static final Logger log = LogManager.getLogger(AtomTableConfigHelper.class);
     public static final String ATOM_TTL = "atom.table.ageoff.ms";
     private String tableName;
     private String ageoff;

@@ -9,7 +9,8 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.YieldCallback;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.google.common.collect.Maps;
 
@@ -21,7 +22,7 @@ import datawave.query.iterator.profile.QuerySpanCollector;
 
 public class SerialIterator extends PipelineIterator {
 
-    private static final Logger log = Logger.getLogger(SerialIterator.class);
+    private static final Logger log = LogManager.getLogger(SerialIterator.class);
 
     protected Pipeline currentPipeline;
 

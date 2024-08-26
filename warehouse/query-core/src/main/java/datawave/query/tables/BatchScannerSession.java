@@ -27,7 +27,8 @@ import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.lang.builder.EqualsBuilder;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
@@ -108,7 +109,7 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Resu
 
     protected long scanLimitTimeout = -1;
 
-    private static final Logger log = Logger.getLogger(BatchScannerSession.class);
+    private static final Logger log = LogManager.getLogger(BatchScannerSession.class);
 
     protected Map<String,AtomicInteger> serverFailureMap;
 

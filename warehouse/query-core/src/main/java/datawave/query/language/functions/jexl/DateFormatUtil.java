@@ -7,7 +7,8 @@ import java.util.Date;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 public class DateFormatUtil {
 
@@ -16,7 +17,7 @@ public class DateFormatUtil {
     private static String formatPattern = "yyyyMMdd HHmmss.SSS";
     private static SimpleDateFormat dateFormat = null;
 
-    private static Logger log = Logger.getLogger(DateFormatUtil.class);
+    private static Logger log = LogManager.getLogger(DateFormatUtil.class);
 
     static {
         dateFormat = new SimpleDateFormat(formatPattern);

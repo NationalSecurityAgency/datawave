@@ -15,11 +15,9 @@ import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
-import org.apache.log4j.Appender;
-import org.apache.log4j.ConsoleAppender;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-import org.apache.log4j.PatternLayout;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
@@ -42,7 +40,7 @@ public class ContentCSVIndexingColumnBasedHandlerTest {
 
     private Configuration conf;
     private static Path edgeKeyVersionCachePath = Paths.get(System.getProperty("user.dir"), "edge-key-version.txt");
-    private static Logger log = Logger.getLogger(ContentCSVIndexingColumnBasedHandlerTest.class);
+    private static Logger log = LogManager.getLogger(ContentCSVIndexingColumnBasedHandlerTest.class);
     private static Enumeration rootAppenders = Logger.getRootLogger().getAllAppenders();
 
     @BeforeClass
@@ -88,16 +86,16 @@ public class ContentCSVIndexingColumnBasedHandlerTest {
         ca.setLayout(new PatternLayout("%p [%c{1}] %m%n"));
         Logger.getRootLogger().addAppender(ca);
         log.setLevel(Level.TRACE);
-        Logger.getLogger(ColumnBasedHandlerTestUtil.class).setLevel(Level.TRACE);
-        Logger.getLogger(ContentIndexingColumnBasedHandler.class).setLevel(Level.TRACE);
-        Logger.getLogger(ContentBaseIngestHelper.class).setLevel(Level.TRACE);
+        LogManager.getLogger(ColumnBasedHandlerTestUtil.class).setLevel(Level.TRACE);
+        LogManager.getLogger(ContentIndexingColumnBasedHandler.class).setLevel(Level.TRACE);
+        LogManager.getLogger(ContentBaseIngestHelper.class).setLevel(Level.TRACE);
     }
 
     private static void disableLogging() {
         log.setLevel(Level.OFF);
-        Logger.getLogger(ColumnBasedHandlerTestUtil.class).setLevel(Level.OFF);
-        Logger.getLogger(ContentIndexingColumnBasedHandler.class).setLevel(Level.OFF);
-        Logger.getLogger(ContentBaseIngestHelper.class).setLevel(Level.OFF);
+        LogManager.getLogger(ColumnBasedHandlerTestUtil.class).setLevel(Level.OFF);
+        LogManager.getLogger(ContentIndexingColumnBasedHandler.class).setLevel(Level.OFF);
+        LogManager.getLogger(ContentBaseIngestHelper.class).setLevel(Level.OFF);
     }
 
     @Before

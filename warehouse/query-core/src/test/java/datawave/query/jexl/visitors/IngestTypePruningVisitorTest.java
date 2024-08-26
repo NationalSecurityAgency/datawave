@@ -10,7 +10,8 @@ import java.util.Set;
 
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ParseException;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -24,7 +25,7 @@ import datawave.query.util.TypeMetadata;
 
 public class IngestTypePruningVisitorTest {
 
-    private static final Logger log = Logger.getLogger(IngestTypePruningVisitorTest.class);
+    private static final Logger log = LogManager.getLogger(IngestTypePruningVisitorTest.class);
 
     private static final TypeMetadata typeMetadata = new TypeMetadata();
     private final ASTValidator validator = new ASTValidator();

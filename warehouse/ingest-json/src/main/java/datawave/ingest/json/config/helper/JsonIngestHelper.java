@@ -3,7 +3,8 @@ package datawave.ingest.json.config.helper;
 import java.util.Map;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -22,7 +23,7 @@ import datawave.ingest.json.util.JsonObjectFlattener;
  */
 public class JsonIngestHelper extends ContentBaseIngestHelper {
 
-    private static final Logger log = Logger.getLogger(JsonIngestHelper.class);
+    private static final Logger log = LogManager.getLogger(JsonIngestHelper.class);
 
     protected JsonDataTypeHelper helper = null;
     protected JsonObjectFlattener flattener = null;

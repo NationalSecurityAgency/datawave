@@ -16,7 +16,8 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.YieldCallback;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import datawave.core.iterators.IteratorThreadPoolManager;
 import datawave.query.attributes.Document;
@@ -35,7 +36,7 @@ import datawave.query.util.Tuple2;
  */
 public class PipelineIterator implements Iterator<Entry<Key,Document>> {
 
-    private static final Logger log = Logger.getLogger(PipelineIterator.class);
+    private static final Logger log = LogManager.getLogger(PipelineIterator.class);
     protected final YieldCallback<Key> yield;
     protected final long yieldThresholdMs;
     protected final NestedIterator<Key> docSource;

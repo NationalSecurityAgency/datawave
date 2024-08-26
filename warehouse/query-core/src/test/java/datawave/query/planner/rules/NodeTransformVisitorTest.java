@@ -14,7 +14,8 @@ import org.apache.commons.jexl3.parser.ASTAndNode;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.ParseException;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -28,7 +29,7 @@ import datawave.query.util.MockMetadataHelper;
 
 public class NodeTransformVisitorTest {
 
-    private static final Logger log = Logger.getLogger(NodeTransformVisitorTest.class);
+    private static final Logger log = LogManager.getLogger(NodeTransformVisitorTest.class);
     private static final RegexPushdownTransformRule regexPushdownRule = new RegexPushdownTransformRule();
     private static final RegexSimplifierTransformRule regexSimplifier = new RegexSimplifierTransformRule();
     private static final RegexDotallTransformRule regexDotall = new RegexDotallTransformRule();

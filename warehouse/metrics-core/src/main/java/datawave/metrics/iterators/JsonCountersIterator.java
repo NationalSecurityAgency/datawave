@@ -14,7 +14,8 @@ import org.apache.accumulo.core.iterators.WrappingIterator;
 import org.apache.hadoop.mapreduce.Counter;
 import org.apache.hadoop.mapreduce.CounterGroup;
 import org.apache.hadoop.mapreduce.Counters;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.google.common.io.ByteStreams;
 import com.google.gson.Gson;
@@ -29,7 +30,7 @@ import com.google.gson.JsonSerializer;
  */
 public class JsonCountersIterator extends WrappingIterator implements OptionDescriber {
     private static String PRETTY_PRINT_OPT = "prettyPrint";
-    private static Logger log = Logger.getLogger(JsonCountersIterator.class);
+    private static Logger log = LogManager.getLogger(JsonCountersIterator.class);
     private boolean prettyPrint = false;
     private Gson gson;
 

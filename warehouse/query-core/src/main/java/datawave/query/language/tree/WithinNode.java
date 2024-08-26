@@ -1,10 +1,11 @@
 package datawave.query.language.tree;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 public class WithinNode extends HardAndNode {
 
-    static Logger log = Logger.getLogger(WithinNode.class.getName());
+    static Logger log = LogManager.getLogger(WithinNode.class.getName());
 
     protected int searchDistance;
 

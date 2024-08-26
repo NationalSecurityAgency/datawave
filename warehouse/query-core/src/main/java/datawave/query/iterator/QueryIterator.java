@@ -42,7 +42,8 @@ import org.apache.commons.pool.impl.GenericObjectPool;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
 
 import com.google.common.base.Function;
@@ -163,7 +164,7 @@ import datawave.util.StringUtils;
 public class QueryIterator extends QueryOptions implements YieldingKeyValueIterator<Key,Value>, JexlContextCreator.JexlContextValueComparator,
                 SourceFactory<Key,Value>, SortedKeyValueIterator<Key,Value> {
 
-    private static final Logger log = Logger.getLogger(QueryIterator.class);
+    private static final Logger log = LogManager.getLogger(QueryIterator.class);
 
     protected SortedKeyValueIterator<Key,Value> source;
     protected SortedKeyValueIterator<Key,Value> sourceForDeepCopies;

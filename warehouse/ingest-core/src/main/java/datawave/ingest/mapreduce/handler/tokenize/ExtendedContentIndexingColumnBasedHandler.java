@@ -30,7 +30,8 @@ import org.apache.hadoop.mapreduce.StatusReporter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 import org.apache.hadoop.util.bloom.BloomFilter;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.lucene.analysis.CharArraySet;
 import org.infinispan.commons.util.Base64;
 
@@ -123,7 +124,7 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
      */
     public static final String OPT_BASE64 = "content.ingest.base64.dcolumn";
 
-    private static final Logger log = Logger.getLogger(ExtendedContentIndexingColumnBasedHandler.class);
+    private static final Logger log = LogManager.getLogger(ExtendedContentIndexingColumnBasedHandler.class);
 
     protected static final String SPACE = " ";
 

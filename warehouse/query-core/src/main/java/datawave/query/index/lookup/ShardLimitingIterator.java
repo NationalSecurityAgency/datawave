@@ -11,7 +11,8 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.util.PeekingIterator;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.google.common.collect.Maps;
 import com.google.common.collect.Queues;
@@ -33,7 +34,7 @@ public class ShardLimitingIterator implements Iterator<Entry<Key,Value>> {
 
     protected boolean seenUnexpectedKey = false;
 
-    private static final Logger log = Logger.getLogger(ShardLimitingIterator.class);
+    private static final Logger log = LogManager.getLogger(ShardLimitingIterator.class);
 
     public ShardLimitingIterator(Iterator<Entry<Key,Value>> kvIter, int maxShardsPerDay) {
         this.kvIter = new PeekingIterator<>(kvIter);

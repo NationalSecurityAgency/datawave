@@ -14,7 +14,8 @@ import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ArrayListMultimap;
@@ -39,7 +40,7 @@ import datawave.util.StringUtils;
  */
 public class MetricsSummaryDataTypeHandler<KEYIN> extends SummaryDataTypeHandler<KEYIN> {
 
-    private static final Logger log = ThreadConfigurableLogger.getLogger(MetricsSummaryDataTypeHandler.class);
+    private static final ThreadConfigurableLogger log = ThreadConfigurableLogger.getLogger(MetricsSummaryDataTypeHandler.class);
 
     // configuration keys
     public static final String METRICS_SUMMARY_PROP_PREFIX = "metrics-";

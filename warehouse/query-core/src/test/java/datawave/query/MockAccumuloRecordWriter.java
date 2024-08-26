@@ -11,13 +11,14 @@ import org.apache.accumulo.core.data.Mutation;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 /**
  * Extracted from several tests
  */
 public class MockAccumuloRecordWriter extends RecordWriter<Text,Mutation> {
-    private static final Logger log = Logger.getLogger(MockAccumuloRecordWriter.class);
+    private static final Logger log = LogManager.getLogger(MockAccumuloRecordWriter.class);
 
     private final HashMap<Text,BatchWriter> writerMap = new HashMap<>();
 

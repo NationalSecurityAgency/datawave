@@ -16,7 +16,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -42,7 +43,7 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
     @ClassRule
     public static AccumuloSetup accumuloSetup = new AccumuloSetup();
 
-    private static final Logger log = Logger.getLogger(MaxExpansionRegexQueryTest.class);
+    private static final Logger log = LogManager.getLogger(MaxExpansionRegexQueryTest.class);
 
     @BeforeClass
     public static void filterSetup() throws Exception {

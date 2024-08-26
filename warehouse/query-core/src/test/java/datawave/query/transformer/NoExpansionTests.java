@@ -16,7 +16,8 @@ import javax.inject.Inject;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
@@ -73,7 +74,7 @@ public abstract class NoExpansionTests {
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
-    private static final Logger log = Logger.getLogger(NoExpansionTests.class);
+    private static final Logger log = LogManager.getLogger(NoExpansionTests.class);
     private static final Authorizations auths = new Authorizations("ALL", "E", "I");
 
     @Inject

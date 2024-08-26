@@ -20,7 +20,8 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.google.common.collect.Lists;
 
@@ -67,7 +68,7 @@ import datawave.query.util.count.CountMap;
  */
 public class CreateUidsIterator implements SortedKeyValueIterator<Key,Value>, OptionDescriber {
 
-    private static final Logger log = Logger.getLogger(CreateUidsIterator.class);
+    private static final Logger log = LogManager.getLogger(CreateUidsIterator.class);
 
     public static final String COLLAPSE_UIDS = "index.lookup.collapse";
     public static final String PARSE_TLD_UIDS = "index.lookup.parse.tld.uids";

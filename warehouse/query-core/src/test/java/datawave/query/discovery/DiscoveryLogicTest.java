@@ -21,7 +21,8 @@ import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.javatuples.Pair;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -42,7 +43,7 @@ import datawave.query.util.MetadataHelperFactory;
 import datawave.util.TableName;
 
 public class DiscoveryLogicTest {
-    private static Logger log = Logger.getLogger(DiscoveryLogicTest.class);
+    private static Logger log = LogManager.getLogger(DiscoveryLogicTest.class);
 
     protected static Set<Pair<String,String>> terms;
     protected static Set<Pair<String,String>> terms2;

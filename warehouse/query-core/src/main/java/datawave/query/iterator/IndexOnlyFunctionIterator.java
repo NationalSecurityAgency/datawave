@@ -16,7 +16,8 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.jexl3.MapContext;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.google.common.base.Function;
 import com.google.common.base.Objects;
@@ -46,7 +47,7 @@ public class IndexOnlyFunctionIterator<T> extends WrappingIterator<T> {
      */
     public static final String TF_COLUMN_FAMILY = "tf";
 
-    private static Logger LOG = Logger.getLogger(IndexOnlyFunctionIterator.class);
+    private static Logger LOG = LogManager.getLogger(IndexOnlyFunctionIterator.class);
 
     private final IndexOnlyContextCreator contextCreator;
 

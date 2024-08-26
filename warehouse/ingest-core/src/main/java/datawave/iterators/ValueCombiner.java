@@ -8,7 +8,8 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  *
@@ -19,7 +20,7 @@ public class ValueCombiner implements Iterator<Value> {
     SortedKeyValueIterator<Key,Value> source;
     boolean hasNext;
 
-    private static final Logger log = Logger.getLogger(ValueCombiner.class);
+    private static final Logger log = LogManager.getLogger(ValueCombiner.class);
 
     /**
      * Constructs an iterator over Values whose Keys are versions of the current topKey of the source SortedKeyValueIterator.

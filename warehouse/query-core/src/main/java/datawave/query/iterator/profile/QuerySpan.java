@@ -4,7 +4,8 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.google.common.collect.Lists;
 
@@ -18,7 +19,7 @@ import datawave.query.statsd.QueryStatsDClient;
  */
 public class QuerySpan {
 
-    private Logger log = Logger.getLogger(this.getClass());
+    private Logger log = LogManager.getLogger(this.getClass());
 
     protected Collection<QuerySpan> sources;
 

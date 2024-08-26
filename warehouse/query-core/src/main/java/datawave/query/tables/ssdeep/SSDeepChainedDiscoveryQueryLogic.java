@@ -6,7 +6,8 @@ import java.util.Set;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.logic.QueryLogicTransformer;
@@ -19,7 +20,7 @@ import datawave.query.tables.chained.ChainedQueryTable;
  */
 public class SSDeepChainedDiscoveryQueryLogic extends ChainedQueryTable<ScoredSSDeepPair,DiscoveredSSDeep> {
 
-    private static final Logger log = Logger.getLogger(SSDeepChainedDiscoveryQueryLogic.class);
+    private static final Logger log = LogManager.getLogger(SSDeepChainedDiscoveryQueryLogic.class);
 
     private Query discoveryQuery = null;
 

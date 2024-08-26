@@ -12,7 +12,8 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class TableConfigCache extends BaseHdfsFileCacheUtil {
 
@@ -27,7 +28,7 @@ public class TableConfigCache extends BaseHdfsFileCacheUtil {
 
     private static final Object lock = new Object();
 
-    protected static final Logger log = Logger.getLogger("datawave.ingest");
+    protected static final Logger log = LogManager.getLogger("datawave.ingest");
 
     private TableConfigCache(Configuration conf) {
         super(conf);

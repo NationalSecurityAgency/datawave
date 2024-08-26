@@ -20,7 +20,8 @@ import org.apache.commons.jexl3.JexlExpression;
 import org.apache.commons.jexl3.MapContext;
 import org.apache.commons.jexl3.internal.Engine;
 import org.apache.commons.jexl3.introspection.JexlPermissions;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.google.common.collect.HashMultimap;
 
@@ -39,7 +40,7 @@ import datawave.query.jexl.DefaultArithmetic;
  * Prefiltering is an optional component that can determine quickly if a key will fail using an allowlist of accepted values parsed from the jexl
  */
 public class EdgeFilterIterator extends Filter {
-    public static final Logger log = Logger.getLogger(EdgeFilterIterator.class);
+    public static final Logger log = LogManager.getLogger(EdgeFilterIterator.class);
 
     public static final String JEXL_OPTION = "jexlQuery";
     public static final String PROTOBUF_OPTION = "protobuffFormat";

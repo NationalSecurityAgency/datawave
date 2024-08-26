@@ -32,7 +32,8 @@ import org.apache.commons.jexl3.parser.ASTReference;
 import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.ParserTreeConstants;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.easymock.EasyMock;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
@@ -128,7 +129,7 @@ public abstract class ExecutableExpansionVisitorTest {
         }
     }
 
-    private static final Logger log = Logger.getLogger(ExecutableExpansionVisitorTest.class);
+    private static final Logger log = LogManager.getLogger(ExecutableExpansionVisitorTest.class);
 
     protected Authorizations auths = new Authorizations("ALL");
 

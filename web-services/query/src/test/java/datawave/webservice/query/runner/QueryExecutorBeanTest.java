@@ -38,7 +38,8 @@ import org.apache.accumulo.core.util.Pair;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.time.DateUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.easymock.EasyMock;
 import org.easymock.IAnswer;
 import org.jboss.resteasy.core.Dispatcher;
@@ -135,7 +136,7 @@ public class QueryExecutorBeanTest {
     private final String userDN = "CN=Guy Some Other soguy, OU=MY_SUBDIVISION, OU=MY_DIVISION, O=ORG, C=US";
     private final String[] auths = new String[] {"PRIVATE", "PUBLIC"};
 
-    private static final Logger log = Logger.getLogger(QueryExecutorBeanTest.class);
+    private static final Logger log = LogManager.getLogger(QueryExecutorBeanTest.class);
 
     // QueryExecutorBean dependencies
     private QueryCache cache;

@@ -15,7 +15,7 @@ import datawave.util.cli.PasswordConverter;
  * This class encapsulates the common options needed to connect to accumulo
  */
 public class AccumuloCliOptions {
-    private static final org.apache.log4j.Logger log = org.apache.log4j.Logger.getLogger(AccumuloCliOptions.class);
+    private static final org.apache.log4j.Logger log = org.apache.log4j.LogManager.getLogger(AccumuloCliOptions.class);
     private final Options options = new Options();
     private CommandLine cl = null;
 

@@ -9,7 +9,8 @@ import org.apache.commons.lang.Validate;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.ingest.data.config.ingest.AccumuloHelper;
 
@@ -23,7 +24,7 @@ public abstract class BaseHdfsFileCacheUtil {
     private static final int MAX_RETRIES = 3;
     protected short cacheReplicas = 3;
 
-    private static final Logger log = Logger.getLogger(BaseHdfsFileCacheUtil.class);
+    private static final Logger log = LogManager.getLogger(BaseHdfsFileCacheUtil.class);
 
     public BaseHdfsFileCacheUtil(Configuration conf) {
         Validate.notNull(conf, "Configuration object passed in null");

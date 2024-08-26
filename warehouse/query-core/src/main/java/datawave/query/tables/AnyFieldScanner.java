@@ -7,7 +7,8 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import datawave.microservice.query.Query;
 import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
@@ -22,7 +23,7 @@ import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
  */
 public class AnyFieldScanner extends ScannerSession {
 
-    private static final Logger log = Logger.getLogger(AnyFieldScanner.class);
+    private static final Logger log = LogManager.getLogger(AnyFieldScanner.class);
 
     public AnyFieldScanner(String tableName, Set<Authorizations> auths, ResourceQueue delegator, int maxResults, Query settings, SessionOptions options,
                     Collection<Range> ranges) {

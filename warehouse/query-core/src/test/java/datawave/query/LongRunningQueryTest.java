@@ -18,7 +18,8 @@ import java.util.UUID;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -63,7 +64,7 @@ public class LongRunningQueryTest {
     private final DateFormat format = new SimpleDateFormat("yyyyMMdd");
     private static MockAccumuloRecordWriter recordWriter;
     private DatawavePrincipal datawavePrincipal;
-    private static final Logger log = Logger.getLogger(LongRunningQueryTest.class);
+    private static final Logger log = LogManager.getLogger(LongRunningQueryTest.class);
     private static AccumuloClient client = null;
     private ShardQueryLogic logic;
 

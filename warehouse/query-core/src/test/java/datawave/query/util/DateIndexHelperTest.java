@@ -20,8 +20,9 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -47,7 +48,7 @@ import datawave.util.TableName;
 @ContextConfiguration(locations = {"classpath:/MetadataHelperContext.xml", "classpath:/CacheContext.xml"})
 public class DateIndexHelperTest implements ApplicationContextAware {
     private static AccumuloClient client = null;
-    private static final Logger log = Logger.getLogger(DateIndexHelperTest.class);
+    private static final Logger log = LogManager.getLogger(DateIndexHelperTest.class);
     private static MockAccumuloRecordWriter recordWriter;
     private static Authorizations auths = new Authorizations("A", "BB", "CCCC", "DDD", "E");
     // added to look at the cache

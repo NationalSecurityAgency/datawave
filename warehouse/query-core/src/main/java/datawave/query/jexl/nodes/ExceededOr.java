@@ -15,7 +15,8 @@ import java.util.UUID;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.commons.jexl3.parser.JexlNode;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -27,7 +28,7 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
 
 public class ExceededOr {
-    private static final Logger log = ThreadConfigurableLogger.getLogger(ExceededOr.class);
+    private static final ThreadConfigurableLogger log = ThreadConfigurableLogger.getLogger(ExceededOr.class);
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
 

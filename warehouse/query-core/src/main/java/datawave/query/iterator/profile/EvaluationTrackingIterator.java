@@ -2,13 +2,14 @@ package datawave.query.iterator.profile;
 
 import java.util.Iterator;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 public class EvaluationTrackingIterator<T> implements Iterator<T> {
 
     protected QuerySpan mySpan;
     protected QuerySpan.Stage stageName;
-    private Logger log = Logger.getLogger(EvaluationTrackingIterator.class);
+    private Logger log = LogManager.getLogger(EvaluationTrackingIterator.class);
     private Iterator<T> itr;
 
     public EvaluationTrackingIterator(QuerySpan.Stage stageName, QuerySpan mySpan, Iterator<T> itr) {

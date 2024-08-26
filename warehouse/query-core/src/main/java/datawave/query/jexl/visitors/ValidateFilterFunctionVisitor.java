@@ -35,7 +35,8 @@ import org.apache.commons.jexl3.parser.ASTUnaryMinusNode;
 import org.apache.commons.jexl3.parser.ASTVar;
 import org.apache.commons.jexl3.parser.ASTWhileStatement;
 import org.apache.commons.jexl3.parser.JexlNode;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.google.common.collect.Sets;
 
@@ -55,7 +56,7 @@ import datawave.webservice.query.exception.DatawaveErrorCode;
  */
 public class ValidateFilterFunctionVisitor extends BaseVisitor {
 
-    private static final Logger log = ThreadConfigurableLogger.getLogger(ValidateFilterFunctionVisitor.class);
+    private static final ThreadConfigurableLogger log = ThreadConfigurableLogger.getLogger(ValidateFilterFunctionVisitor.class);
 
     private final Set<String> indexOnlyFields;
 

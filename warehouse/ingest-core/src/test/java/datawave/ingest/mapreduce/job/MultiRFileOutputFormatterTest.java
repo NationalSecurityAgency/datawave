@@ -30,8 +30,10 @@ import org.apache.hadoop.mapreduce.TaskID;
 import org.apache.hadoop.mapreduce.TaskType;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
 import org.apache.hadoop.util.StringUtils;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.easymock.EasyMock;
 import org.junit.After;
 import org.junit.Assert;
@@ -46,7 +48,7 @@ public class MultiRFileOutputFormatterTest {
 
     private static final String JOB_ID = "job_201109071404_1";
     private List<String> filenames = new ArrayList<>();
-    protected static final Logger logger = Logger.getLogger(MultiRFileOutputFormatterTest.class);
+    protected static final Logger logger = LogManager.getLogger(MultiRFileOutputFormatterTest.class);
     protected static Map<String,String> mockedConfiguration = new HashMap<>();
 
     protected Level testDriverLevel;
@@ -130,8 +132,8 @@ public class MultiRFileOutputFormatterTest {
     @Before
     public void setup() throws Exception {
 
-        testDriverLevel = MultiRFileOutputFormatterTest.logger.getLevel();
-        MultiRFileOutputFormatterTest.logger.setLevel(Level.ALL);
+        testDriverLevel = logger.getLevel();
+        Configurator.setLevel(logger.getName(), Level.ALL);
 
         MultiRFileOutputFormatterTest.mockedConfiguration.clear();
     }
@@ -139,8 +141,12 @@ public class MultiRFileOutputFormatterTest {
     @After
     public void teardown() {
 
-        MultiRFileOutputFormatterTest.logger.setLevel(testDriverLevel);
-        Logger.getLogger(MultiRFileOutputFormatter.class).setLevel(uutLevel);
+        Configurator.setLevel(logger.getName(), testDriverLevel);
+
+        if (MultiRFileOutputFormatter.class != null) {
+            Logger formatterLogger = LogManager.getLogger(MultiRFileOutputFormatter.class);
+            Configurator.setLevel(formatterLogger.getName(), uutLevel);
+        }
 
     }
 

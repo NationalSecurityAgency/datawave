@@ -35,7 +35,8 @@ import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.google.common.io.ByteStreams;
 
@@ -56,7 +57,7 @@ import datawave.util.time.DateHelper;
  */
 public class IngestMetricsSummaryLoader extends Configured implements Tool {
 
-    private static final Logger log = Logger.getLogger(IngestMetricsSummaryLoader.class);
+    private static final Logger log = LogManager.getLogger(IngestMetricsSummaryLoader.class);
 
     /**
      * Convert file latencies into daily metric values.

@@ -9,7 +9,8 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.microservice.query.Query;
@@ -18,7 +19,7 @@ import datawave.query.QueryParameters;
 import datawave.query.tables.chunk.Chunker;
 
 public class PartitionedQueryLogic extends ShardQueryLogic {
-    protected static final Logger log = Logger.getLogger(PartitionedQueryLogic.class);
+    protected static final Logger log = LogManager.getLogger(PartitionedQueryLogic.class);
 
     private AccumuloClient client;
     private Query settings;

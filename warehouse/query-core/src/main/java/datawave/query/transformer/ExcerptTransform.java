@@ -22,7 +22,8 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.javatuples.Triplet;
 
 import com.google.common.collect.Iterators;
@@ -44,7 +45,7 @@ import datawave.query.postprocessing.tf.PhraseIndexes;
 
 public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform {
 
-    private static final Logger log = Logger.getLogger(ExcerptTransform.class);
+    private static final Logger log = LogManager.getLogger(ExcerptTransform.class);
 
     public static final String PHRASE_INDEXES_ATTRIBUTE = "PHRASE_INDEXES_ATTRIBUTE";
     public static final String HIT_EXCERPT = "HIT_EXCERPT";

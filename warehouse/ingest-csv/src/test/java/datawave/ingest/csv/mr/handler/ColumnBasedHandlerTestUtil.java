@@ -16,7 +16,8 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.Assert;
 
 import com.google.common.collect.HashMultimap;
@@ -47,7 +48,7 @@ public class ColumnBasedHandlerTestUtil {
     public static final Text edgeTableName = new Text(TableName.EDGE);
     public static final String NB = "\u0000";
 
-    private static Logger log = Logger.getLogger(ColumnBasedHandlerTestUtil.class);
+    private static Logger log = LogManager.getLogger(ColumnBasedHandlerTestUtil.class);
 
     public static boolean isDocumentKey(Key k) {
         return isShardKey(k) && k.getColumnFamily().toString().equals(ExtendedDataTypeHandler.FULL_CONTENT_COLUMN_FAMILY);

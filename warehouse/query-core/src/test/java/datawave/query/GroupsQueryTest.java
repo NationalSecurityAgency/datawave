@@ -9,7 +9,8 @@ import static datawave.query.testframework.RawDataManager.OR_OP;
 import java.util.ArrayList;
 import java.util.Collection;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -29,7 +30,7 @@ public class GroupsQueryTest extends AbstractFunctionalQuery {
     @ClassRule
     public static AccumuloSetup accumuloSetup = new AccumuloSetup();
 
-    private static final Logger log = Logger.getLogger(GroupsQueryTest.class);
+    private static final Logger log = LogManager.getLogger(GroupsQueryTest.class);
 
     @BeforeClass
     public static void filterSetup() throws Exception {

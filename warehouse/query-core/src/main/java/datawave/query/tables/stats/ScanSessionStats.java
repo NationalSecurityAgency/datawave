@@ -10,7 +10,9 @@ import java.util.concurrent.TimeUnit;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.mutable.MutableLong;
 import org.apache.commons.lang.time.StopWatch;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import datawave.query.util.QueryStopwatch;
 
@@ -22,7 +24,7 @@ public class ScanSessionStats {
         HASNEXT, SCANNER_ITERATE, SCANNER_START, RUNTIME
     }
 
-    private static final Logger log = Logger.getLogger(ScanSessionStats.class);
+    private static final Logger log = LogManager.getLogger(ScanSessionStats.class);
 
     protected Map<TIMERS,StopWatch> timers;
 

@@ -11,7 +11,8 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.google.common.base.Predicate;
 
@@ -21,7 +22,7 @@ import datawave.query.attributes.Document;
  *
  */
 public class EventDataScanNestedIterator implements NestedIterator<Key>, SeekableIterator {
-    private static final Logger log = Logger.getLogger(EventDataScanNestedIterator.class);
+    private static final Logger log = LogManager.getLogger(EventDataScanNestedIterator.class);
     protected SortedKeyValueIterator<Key,Value> source;
     protected Key topKey = null;
     protected Range totalRange = null;

@@ -26,14 +26,15 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.ingest.data.config.ConfigurationHelper;
 import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.util.time.DateHelper;
 
 public class NumShards {
-    private static final Logger log = Logger.getLogger(NumShards.class);
+    private static final Logger log = LogManager.getLogger(NumShards.class);
 
     private static final String DEFAULT_NUM_SHARDS_CACHE_DIR = "/data/numShardsCache/";
     private static final String DEFAULT_NUM_SHARDS_CACHE_FILENAME = "numshards.txt";

@@ -5,7 +5,8 @@ import java.util.Map.Entry;
 import java.util.NavigableSet;
 
 import org.apache.accumulo.core.data.Key;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Maps;
@@ -21,7 +22,7 @@ import datawave.query.attributes.Document;
  */
 public class MinimumEstimation implements Function<Entry<Key,Document>,Entry<Key,Document>> {
 
-    private static final Logger log = Logger.getLogger(MinimumEstimation.class);
+    private static final Logger log = LogManager.getLogger(MinimumEstimation.class);
 
     protected int minimumCount;
 

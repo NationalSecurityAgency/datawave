@@ -54,7 +54,8 @@ import org.apache.commons.jexl3.parser.ASTVar;
 import org.apache.commons.jexl3.parser.ASTWhileStatement;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
@@ -111,7 +112,7 @@ public class PushdownUnexecutableNodesVisitor extends BaseVisitor {
         }
     }
 
-    private static final Logger log = Logger.getLogger(PushdownUnexecutableNodesVisitor.class);
+    private static final Logger log = LogManager.getLogger(PushdownUnexecutableNodesVisitor.class);
 
     public static JexlNode pushdownPredicates(JexlNode queryTree, boolean forFieldIndex, ShardQueryConfiguration config, Set<String> indexedFields,
                     Set<String> indexOnlyFields, Set<String> nonEventFields, MetadataHelper helper) {

@@ -30,7 +30,8 @@ import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.commons.jexl3.parser.SimpleNode;
 import org.apache.commons.jexl3.parser.TokenMgrException;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -64,7 +65,7 @@ import datawave.query.jexl.JexlASTHelper;
  */
 public class QueryJexl {
 
-    private static final Logger log = Logger.getLogger(QueryJexl.class);
+    private static final Logger log = LogManager.getLogger(QueryJexl.class);
 
     private static final Engine jEngine = new Engine(new JexlBuilder().strict(false));
     private final RawDataManager manager;

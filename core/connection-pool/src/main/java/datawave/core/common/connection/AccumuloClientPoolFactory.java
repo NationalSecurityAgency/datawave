@@ -5,11 +5,12 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.commons.pool2.PooledObject;
 import org.apache.commons.pool2.PooledObjectFactory;
 import org.apache.commons.pool2.impl.DefaultPooledObject;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class AccumuloClientPoolFactory implements PooledObjectFactory<AccumuloClient> {
 
-    private static final Logger log = Logger.getLogger(AccumuloClientPoolFactory.class);
+    private static final Logger log = LogManager.getLogger(AccumuloClientPoolFactory.class);
 
     private String username;
     private String password;

@@ -20,7 +20,8 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.jexl3.JexlException;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -49,7 +50,7 @@ public class MiscQueryTest extends AbstractFunctionalQuery {
     @ClassRule
     public static AccumuloSetup accumuloSetup = new AccumuloSetup();
 
-    private static final Logger log = Logger.getLogger(MiscQueryTest.class);
+    private static final Logger log = LogManager.getLogger(MiscQueryTest.class);
 
     @BeforeClass
     public static void filterSetup() throws Exception {

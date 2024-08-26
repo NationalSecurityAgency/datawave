@@ -26,7 +26,8 @@ import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.mutable.MutableInt;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
@@ -48,7 +49,7 @@ import datawave.webservice.query.exception.QueryException;
  */
 public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<DocumentData,Document>> {
 
-    private static final Logger log = Logger.getLogger(KeyToDocumentData.class);
+    private static final Logger log = LogManager.getLogger(KeyToDocumentData.class);
 
     protected SortedKeyValueIterator<Key,Value> source;
 

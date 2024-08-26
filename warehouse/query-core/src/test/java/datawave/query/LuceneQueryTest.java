@@ -6,7 +6,8 @@ import static datawave.query.testframework.RawDataManager.JEXL_AND_OP;
 import static datawave.query.testframework.RawDataManager.RE_OP;
 import static org.junit.Assert.assertEquals;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -31,7 +32,7 @@ public class LuceneQueryTest extends AbstractFunctionalQuery {
     @ClassRule
     public static AccumuloSetup accumuloSetup = new AccumuloSetup();
 
-    private static final Logger log = Logger.getLogger(LuceneQueryTest.class);
+    private static final Logger log = LogManager.getLogger(LuceneQueryTest.class);
 
     @BeforeClass
     public static void filterSetup() throws Exception {

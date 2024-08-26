@@ -12,7 +12,8 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -36,7 +37,7 @@ public class CountQueryTest extends AbstractFunctionalQuery {
     @ClassRule
     public static AccumuloSetup accumuloSetup = new AccumuloSetup();
 
-    private static final Logger log = Logger.getLogger(CountQueryTest.class);
+    private static final Logger log = LogManager.getLogger(CountQueryTest.class);
 
     @BeforeClass
     public static void filterSetup() throws Exception {

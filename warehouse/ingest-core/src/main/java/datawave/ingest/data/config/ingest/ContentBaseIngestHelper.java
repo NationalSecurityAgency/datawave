@@ -5,7 +5,8 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.annotations.VisibleForTesting;
 
@@ -16,7 +17,7 @@ import datawave.ingest.data.config.FieldConfigHelper;
  */
 public abstract class ContentBaseIngestHelper extends AbstractContentIngestHelper {
 
-    private static final Logger log = Logger.getLogger(ContentBaseIngestHelper.class);
+    private static final Logger log = LogManager.getLogger(ContentBaseIngestHelper.class);
 
     private final Set<String> contentIndexAllowlist = new HashSet<>();
     private final Set<String> contentReverseIndexAllowlist = new HashSet<>();

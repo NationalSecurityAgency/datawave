@@ -19,7 +19,8 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang.mutable.MutableLong;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -39,7 +40,7 @@ import datawave.query.Constants;
  * </p>
  */
 public class GlobalIndexDateSummaryIterator implements SortedKeyValueIterator<Key,Value>, OptionDescriber {
-    protected static final Logger log = Logger.getLogger(GlobalIndexDateSummaryIterator.class);
+    protected static final Logger log = LogManager.getLogger(GlobalIndexDateSummaryIterator.class);
     protected SortedKeyValueIterator<Key,Value> iterator;
     protected Key returnKey = null;
     protected Value returnValue = null;

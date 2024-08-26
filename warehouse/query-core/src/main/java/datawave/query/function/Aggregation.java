@@ -3,7 +3,8 @@ package datawave.query.function;
 import java.util.Map.Entry;
 
 import org.apache.accumulo.core.data.Key;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
@@ -18,7 +19,7 @@ import datawave.query.predicate.TimeFilter;
 import datawave.query.util.TypeMetadata;
 
 public class Aggregation implements Function<Entry<DocumentData,Document>,Entry<Key,Document>> {
-    private static final Logger log = Logger.getLogger(Aggregation.class);
+    private static final Logger log = LogManager.getLogger(Aggregation.class);
 
     private TypeMetadata typeMetadata;
     private CompositeMetadata compositeMetadata;

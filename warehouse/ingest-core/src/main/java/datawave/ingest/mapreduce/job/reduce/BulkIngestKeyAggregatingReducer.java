@@ -13,7 +13,8 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.WritableUtils;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 import org.apache.hadoop.mapreduce.TaskType;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.collect.Iterators;
 
@@ -28,7 +29,7 @@ import datawave.ingest.table.aggregator.PropogatingCombiner;
 
 @SuppressWarnings("deprecation")
 public class BulkIngestKeyAggregatingReducer<K2,V2> extends AggregatingReducer<BulkIngestKey,Value,K2,V2> {
-    private static final Logger log = Logger.getLogger(BulkIngestKeyAggregatingReducer.class);
+    private static final Logger log = LogManager.getLogger(BulkIngestKeyAggregatingReducer.class);
 
     public static final String VERBOSE_COUNTERS = "verboseCounters";
     public static final String MAPRED_OUTPUT_VALUE_CLASS = "mapreduce.job.output.value.class";

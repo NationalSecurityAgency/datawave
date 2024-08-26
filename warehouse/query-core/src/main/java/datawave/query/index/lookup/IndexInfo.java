@@ -22,7 +22,8 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.VIntWritable;
 import org.apache.hadoop.io.VLongWritable;
 import org.apache.hadoop.io.Writable;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.google.common.base.Objects;
 import com.google.common.collect.HashMultimap;
@@ -47,7 +48,7 @@ import datawave.query.util.count.CountMap;
  */
 public class IndexInfo implements Writable, UidIntersector {
 
-    private static final Logger log = Logger.getLogger(IndexInfo.class);
+    private static final Logger log = LogManager.getLogger(IndexInfo.class);
 
     protected JexlNode myNode = null;
     // a count of -1 indicates a shard range that datawave created

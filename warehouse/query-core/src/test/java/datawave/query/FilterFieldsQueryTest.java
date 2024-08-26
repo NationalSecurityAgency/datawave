@@ -14,7 +14,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -42,7 +43,7 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
     @ClassRule
     public static AccumuloSetup accumuloSetup = new AccumuloSetup();
 
-    private static final Logger log = Logger.getLogger(FilterFieldsQueryTest.class);
+    private static final Logger log = LogManager.getLogger(FilterFieldsQueryTest.class);
 
     @BeforeClass
     public static void filterSetup() throws Exception {

@@ -9,7 +9,8 @@ import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
 import org.powermock.reflect.Whitebox;
@@ -20,7 +21,7 @@ import datawave.test.helpers.MockTableTest;
 
 public class LoadDateTableConfigHelperTest extends MockTableTest {
 
-    private Logger log = Logger.getLogger(LoadDateTableConfigHelperTest.class);
+    private Logger log = LogManager.getLogger(LoadDateTableConfigHelperTest.class);
 
     private static final HashSet<Text> EXPECTED_LAC_COL_FAMILIES = Sets.newHashSet(new Text("LAC\u0000errorShard"), new Text("LAC\u0000protobufedge"),
                     new Text("LAC\u0000knowledgeShard"), new Text("LAC\u0000shard"));

@@ -14,7 +14,8 @@ import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.commons.jexl3.parser.ParseException;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import datawave.query.jexl.JexlASTHelper;
 
@@ -41,7 +42,7 @@ import datawave.query.jexl.JexlASTHelper;
  */
 public class ConjunctionEliminationVisitor extends RebuildingVisitor {
 
-    private static final Logger log = Logger.getLogger(ConjunctionEliminationVisitor.class);
+    private static final Logger log = LogManager.getLogger(ConjunctionEliminationVisitor.class);
 
     /**
      * Given a JexlNode, determine if any redundant conjunctions in the node can be removed. The query will be flattened before applying this visitor.

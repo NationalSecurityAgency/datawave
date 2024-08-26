@@ -10,7 +10,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -37,7 +38,7 @@ public class IndexHoleQueryTest extends AbstractFunctionalQuery {
     @ClassRule
     public static AccumuloSetup accumuloSetup = new AccumuloSetup();
 
-    private static final Logger log = Logger.getLogger(IndexHoleQueryTest.class);
+    private static final Logger log = LogManager.getLogger(IndexHoleQueryTest.class);
 
     private static final List<IndexHole> INDEX_HOLE = new ArrayList<>();
     static {

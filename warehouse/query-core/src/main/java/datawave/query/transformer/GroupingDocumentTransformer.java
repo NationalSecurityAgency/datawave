@@ -11,7 +11,8 @@ import java.util.Set;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Lists;
@@ -34,7 +35,7 @@ import datawave.webservice.result.EventQueryResponseBase;
 
 public class GroupingDocumentTransformer extends DocumentTransformer {
 
-    private static final Logger log = Logger.getLogger(GroupingDocumentTransformer.class);
+    private static final Logger log = LogManager.getLogger(GroupingDocumentTransformer.class);
 
     private List<String> groupFieldsList;
     private Map<String,FieldBase<?>> fieldMap = Maps.newHashMap();

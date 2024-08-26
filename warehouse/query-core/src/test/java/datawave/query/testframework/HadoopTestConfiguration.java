@@ -5,7 +5,8 @@ import java.util.Map;
 
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.mapreduce.DataTypeDiscardIntervalPredicate;
@@ -25,7 +26,7 @@ import datawave.util.TableName;
  */
 public class HadoopTestConfiguration extends Configuration {
 
-    private static final Logger log = Logger.getLogger(HadoopTestConfiguration.class);
+    private static final Logger log = LogManager.getLogger(HadoopTestConfiguration.class);
 
     private static final Map<String,String> DefaultTables = new HashMap<>();
 

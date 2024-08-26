@@ -13,7 +13,8 @@ import java.util.stream.Collectors;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.modification.cache.ModificationCache;
@@ -32,7 +33,7 @@ import datawave.webservice.results.modification.ModificationConfigurationRespons
 
 public class ModificationService {
 
-    private static final Logger log = Logger.getLogger(ModificationService.class);
+    private static final Logger log = LogManager.getLogger(ModificationService.class);
 
     private final AccumuloConnectionFactory connectionFactory;
 

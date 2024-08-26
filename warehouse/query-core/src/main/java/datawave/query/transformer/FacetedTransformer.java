@@ -12,7 +12,8 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.google.common.base.Preconditions;
 
@@ -34,7 +35,7 @@ import datawave.webservice.result.FacetQueryResponseBase;
 
 public class FacetedTransformer extends DocumentTransformerSupport<Entry<Key,Value>,FacetsBase> {
 
-    private static final Logger log = Logger.getLogger(FacetedTransformer.class);
+    private static final Logger log = LogManager.getLogger(FacetedTransformer.class);
 
     /*
      * By default, assume each cell still has the visibility attached to it

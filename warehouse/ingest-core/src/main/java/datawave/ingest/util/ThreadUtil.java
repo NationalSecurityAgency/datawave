@@ -3,14 +3,15 @@ package datawave.ingest.util;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Utilities for working with ThreadPools.
  */
 public class ThreadUtil {
 
-    private static final Logger logger = Logger.getLogger(ThreadUtil.class);
+    private static final Logger logger = LogManager.getLogger(ThreadUtil.class);
 
     /**
      * Shuts down the executor and gives tasks that are still in progress the given amount of time before continuing.

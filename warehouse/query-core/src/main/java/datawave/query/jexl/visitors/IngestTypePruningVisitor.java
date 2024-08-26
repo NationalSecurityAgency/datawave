@@ -23,7 +23,8 @@ import org.apache.commons.jexl3.parser.ASTReference;
 import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.google.common.collect.Sets;
 
@@ -63,7 +64,7 @@ import datawave.query.util.TypeMetadata;
  * </p>
  */
 public class IngestTypePruningVisitor extends BaseVisitor {
-    private static final Logger log = Logger.getLogger(IngestTypePruningVisitor.class);
+    private static final Logger log = LogManager.getLogger(IngestTypePruningVisitor.class);
 
     private int termsPruned = 0;
     private int nodesPruned = 0;

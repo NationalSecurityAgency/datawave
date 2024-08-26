@@ -6,7 +6,8 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import datawave.core.iterators.ResultCountingIterator;
 import datawave.core.query.configuration.GenericQueryConfiguration;
@@ -27,7 +28,7 @@ import datawave.query.transformer.ShardQueryCountTableTransformer;
  *
  */
 public class CountingShardQueryLogic extends ShardQueryLogic {
-    private static final Logger log = Logger.getLogger(CountingShardQueryLogic.class);
+    private static final Logger log = LogManager.getLogger(CountingShardQueryLogic.class);
 
     public CountingShardQueryLogic() {
         super();

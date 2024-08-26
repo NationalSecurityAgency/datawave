@@ -15,7 +15,8 @@ import org.apache.curator.framework.recipes.atomic.DistributedAtomicLong;
 import org.apache.curator.framework.recipes.atomic.PromotedToLock;
 import org.apache.curator.retry.RetryNTimes;
 import org.apache.hadoop.fs.Path;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.zookeeper.server.quorum.QuorumPeer.QuorumServer;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
@@ -26,7 +27,7 @@ import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
  * zookeeper client after the specified interval of non-use.
  */
 public class ZookeeperQueryLock implements QueryLock {
-    private static Logger log = Logger.getLogger(ZookeeperQueryLock.class);
+    private static Logger log = LogManager.getLogger(ZookeeperQueryLock.class);
     private String queryId;
     private String zookeeperConfig;
     private Timer timer = null;

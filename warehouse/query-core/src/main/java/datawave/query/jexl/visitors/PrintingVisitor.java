@@ -101,7 +101,8 @@ import org.apache.commons.jexl3.parser.ParserVisitor;
 import org.apache.commons.jexl3.parser.SimpleNode;
 import org.apache.commons.jexl3.parser.StringProvider;
 import org.apache.commons.jexl3.parser.TokenMgrException;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.google.common.collect.Lists;
 
@@ -111,7 +112,7 @@ import com.google.common.collect.Lists;
  */
 public class PrintingVisitor extends ParserVisitor {
 
-    private static final Logger LOGGER = Logger.getLogger(PrintingVisitor.class);
+    private static final Logger LOGGER = LogManager.getLogger(PrintingVisitor.class);
 
     private interface Output {
         void writeLine(String line);

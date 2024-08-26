@@ -7,7 +7,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -16,7 +17,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
 public class IvaratorCacheDirConfig implements Serializable {
-    private static final Logger log = Logger.getLogger(IvaratorCacheDir.class);
+    private static final Logger log = LogManager.getLogger(IvaratorCacheDir.class);
 
     public static final int DEFAULT_PRIORITY = Integer.MAX_VALUE;
     public static final long DEFAULT_MIN_AVAILABLE_STORAGE_MiB = 0L;

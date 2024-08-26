@@ -5,7 +5,8 @@ import java.net.UnknownHostException;
 import java.util.Map.Entry;
 
 import org.apache.accumulo.core.data.Key;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.google.common.base.Function;
 
@@ -22,7 +23,7 @@ public class LogTiming implements Function<Entry<Key,Document>,Entry<Key,Documen
     public static final String TIMING_METADATA = "TIMING_METADATA";
     protected QuerySpan spanRunner;
     private static String host = null;
-    private static Logger log = Logger.getLogger(QuerySpan.class);
+    private static Logger log = LogManager.getLogger(QuerySpan.class);
 
     static {
         try {

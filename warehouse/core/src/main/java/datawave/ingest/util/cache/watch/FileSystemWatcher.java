@@ -8,7 +8,8 @@ import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileChecksum;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * File System Watch
@@ -23,7 +24,7 @@ public abstract class FileSystemWatcher<V> extends Reloadable<V> {
 
     protected FileSystem fs;
 
-    private static final Logger log = Logger.getLogger(FileSystemWatcher.class);
+    private static final Logger log = LogManager.getLogger(FileSystemWatcher.class);
 
     public FileSystemWatcher(FileSystem fs, Path filePath, long configuredDiff) throws IOException {
         this.fs = fs;

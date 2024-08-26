@@ -16,7 +16,8 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.base.Objects;
 import com.google.common.collect.HashMultimap;
@@ -78,7 +79,7 @@ public interface CompositeIngest {
     class CompositeFieldNormalizer {
 
         private static final long serialVersionUID = -3892470989028896718L;
-        private static final Logger log = Logger.getLogger(CompositeFieldNormalizer.class);
+        private static final Logger log = LogManager.getLogger(CompositeFieldNormalizer.class);
 
         private static final String DEFAULT_SEPARATOR = new String(Character.toChars(Character.MAX_CODE_POINT));
 

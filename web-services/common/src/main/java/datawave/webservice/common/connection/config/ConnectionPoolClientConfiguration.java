@@ -5,7 +5,8 @@ import java.util.Map;
 import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.deltaspike.core.api.config.ConfigResolver;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.core.common.result.ConnectionPoolClientProperties;
 import datawave.webservice.common.connection.AccumuloClientConfiguration;
@@ -18,7 +19,7 @@ import datawave.webservice.common.connection.AccumuloClientConfiguration;
  */
 public class ConnectionPoolClientConfiguration extends ConnectionPoolClientProperties {
 
-    private static final Logger log = Logger.getLogger(ConnectionPoolConfiguration.class);
+    private static final Logger log = LogManager.getLogger(ConnectionPoolConfiguration.class);
 
     public ConnectionPoolClientConfiguration(String poolName) {
         String prefix = "dw." + poolName + ".client";

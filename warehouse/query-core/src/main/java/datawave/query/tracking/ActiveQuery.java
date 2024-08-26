@@ -8,7 +8,8 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.accumulo.core.data.Range;
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.codahale.metrics.SlidingWindowReservoir;
 import com.codahale.metrics.Timer;
@@ -18,7 +19,7 @@ import datawave.query.iterator.profile.QuerySpan;
 
 public class ActiveQuery {
 
-    private static Logger log = Logger.getLogger(ActiveQuery.class);
+    private static Logger log = LogManager.getLogger(ActiveQuery.class);
 
     private final String queryId;
     private final String activeQueryLogName;

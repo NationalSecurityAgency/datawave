@@ -58,7 +58,8 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.mapreduce.InputSplit;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
@@ -161,7 +162,7 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
     // given we double MAX_COUNT each time
     private static final float PROGRESS_PRECISION = 0.0005f;
 
-    private static final Logger log = Logger.getLogger(RecordIterator.class);
+    private static final Logger log = LogManager.getLogger(RecordIterator.class);
 
     public static class RFileEnvironment implements IteratorEnvironment {
 

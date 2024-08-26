@@ -28,7 +28,8 @@ import org.apache.accumulo.core.iterators.user.SummingCombiner;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -86,7 +87,7 @@ public class IfThisTestFailsThenHitTermsAreBroken {
         SHARD, DOCUMENT
     }
 
-    private static final Logger log = Logger.getLogger(IfThisTestFailsThenHitTermsAreBroken.class);
+    private static final Logger log = LogManager.getLogger(IfThisTestFailsThenHitTermsAreBroken.class);
 
     protected static AccumuloClient client = null;
 

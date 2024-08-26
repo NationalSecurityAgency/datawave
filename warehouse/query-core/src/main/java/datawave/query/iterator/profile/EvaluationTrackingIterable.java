@@ -8,7 +8,8 @@ import java.util.Map.Entry;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import datawave.query.attributes.Document;
 import datawave.query.iterator.AccumuloTreeIterable;
@@ -17,7 +18,7 @@ import datawave.query.iterator.aggregation.DocumentData;
 public class EvaluationTrackingIterable extends AccumuloTreeIterable<Key,DocumentData> {
 
     protected QuerySpan mySpan;
-    private Logger log = Logger.getLogger(EvaluationTrackingIterable.class);
+    private Logger log = LogManager.getLogger(EvaluationTrackingIterable.class);
     private Iterator<Entry<DocumentData,Document>> itr = null;
     private AccumuloTreeIterable<Key,DocumentData> iterable;
     private QuerySpan.Stage stageName = null;

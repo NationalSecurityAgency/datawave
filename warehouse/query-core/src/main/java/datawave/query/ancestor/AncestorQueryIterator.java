@@ -22,7 +22,8 @@ import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.lang.builder.CompareToBuilder;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
 
 import com.google.common.base.Predicate;
@@ -56,7 +57,7 @@ import datawave.util.StringUtils;
  * This is an ancestor QueryIterator implementation (all ancestor's metadata up to the TLD is included with each child)
  */
 public class AncestorQueryIterator extends QueryIterator {
-    private static final Logger log = Logger.getLogger(AncestorQueryIterator.class);
+    private static final Logger log = LogManager.getLogger(AncestorQueryIterator.class);
 
     public AncestorQueryIterator() {}
 

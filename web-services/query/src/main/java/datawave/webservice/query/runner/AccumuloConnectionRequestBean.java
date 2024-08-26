@@ -4,7 +4,8 @@ import javax.annotation.Resource;
 import javax.ejb.EJBContext;
 import javax.inject.Singleton;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import datawave.core.query.runner.AccumuloConnectionRequestMap;
 
@@ -15,7 +16,7 @@ import datawave.core.query.runner.AccumuloConnectionRequestMap;
 // CDI singleton
 public class AccumuloConnectionRequestBean extends AccumuloConnectionRequestMap {
 
-    private static Logger log = Logger.getLogger(AccumuloConnectionRequestBean.class);
+    private static Logger log = LogManager.getLogger(AccumuloConnectionRequestBean.class);
 
     @Resource
     private EJBContext ctx;

@@ -34,6 +34,7 @@ import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.google.common.base.Function;
 import com.google.common.cache.Cache;
@@ -175,7 +176,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
     public static final String NULL_BYTE = "\0";
     public static final Class<? extends ShardQueryConfiguration> tableConfigurationType = ShardQueryConfiguration.class;
-    protected static final Logger log = ThreadConfigurableLogger.getLogger(ShardQueryLogic.class);
+    protected static final ThreadConfigurableLogger log = ThreadConfigurableLogger.getLogger(ShardQueryLogic.class);
     static final ListeningExecutorService reloader = MoreExecutors.listeningDecorator(Executors.newFixedThreadPool(1));
     private static Cache<String,QueryModel> queryModelMap = CacheBuilder.newBuilder().maximumSize(100).concurrencyLevel(100)
                     .expireAfterAccess(24, TimeUnit.HOURS).build();

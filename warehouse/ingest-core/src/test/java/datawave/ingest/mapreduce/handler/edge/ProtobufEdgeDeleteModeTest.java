@@ -24,8 +24,10 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
-import org.apache.log4j.Appender;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.Appender;
+import org.apache.logging.log4j.core.LoggerContext;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -59,11 +61,11 @@ public class ProtobufEdgeDeleteModeTest {
 
     private Configuration conf;
     private static Path edgeKeyVersionCachePath = Paths.get(System.getProperty("user.dir"), "edge-key-version.txt");
-    private static Logger log = Logger.getLogger(ProtobufEdgeDeleteModeTest.class);
-    private static Enumeration rootAppenders = Logger.getRootLogger().getAllAppenders();
+    private static Logger log = LogManager.getLogger(ProtobufEdgeDeleteModeTest.class);
     private static Multimap<String,NormalizedContentInterface> fields = HashMultimap.create();
     private static Type type = new Type("mycsv", FakeIngestHelper.class, null, new String[] {SimpleDataTypeHandler.class.getName()}, 10, null);
     private static final Now now = Now.getInstance();
+    private static Map<String,Appender> rootAppenders;
 
     @BeforeClass
     public static void setupSystemSettings() throws Exception {
@@ -105,11 +107,14 @@ public class ProtobufEdgeDeleteModeTest {
 
     @AfterClass
     public static void tearDown() {
-        Logger.getRootLogger().removeAllAppenders();
-        while (rootAppenders.hasMoreElements()) {
-            Appender appender = (Appender) rootAppenders.nextElement();
-            Logger.getRootLogger().addAppender(appender);
-        }
+        LoggerContext context = (LoggerContext) LogManager.getContext(false);
+        org.apache.logging.log4j.core.config.Configuration config = context.getConfiguration();
+        config.getRootLogger().getAppenders().forEach((name, appender) -> config.getRootLogger().removeAppender(name));
+
+        rootAppenders.forEach((name, appender) -> {
+            config.getRootLogger().addAppender(appender, null, null); // Add with default level and filter
+        });
+
         try {
             Files.deleteIfExists(edgeKeyVersionCachePath);
         } catch (IOException io) {

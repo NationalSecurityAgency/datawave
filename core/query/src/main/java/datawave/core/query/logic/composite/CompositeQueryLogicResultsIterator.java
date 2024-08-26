@@ -4,7 +4,8 @@ import java.util.Iterator;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.base.Throwables;
 
@@ -13,7 +14,7 @@ import datawave.core.query.exception.EmptyObjectException;
 
 public class CompositeQueryLogicResultsIterator implements Iterator<Object>, Thread.UncaughtExceptionHandler {
 
-    protected static final Logger log = Logger.getLogger(CompositeQueryLogicResultsIterator.class);
+    protected static final Logger log = LogManager.getLogger(CompositeQueryLogicResultsIterator.class);
 
     private final CompositeQueryLogic logic;
 

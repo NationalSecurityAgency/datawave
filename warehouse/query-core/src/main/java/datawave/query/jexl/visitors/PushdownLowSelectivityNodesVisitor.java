@@ -10,7 +10,8 @@ import org.apache.commons.jexl3.parser.ASTEQNode;
 import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import datawave.data.MetadataCardinalityCounts;
 import datawave.query.config.ShardQueryConfiguration;
@@ -31,7 +32,7 @@ public class PushdownLowSelectivityNodesVisitor extends ShortCircuitBaseVisitor 
         this.config = config;
     }
 
-    private static final Logger log = Logger.getLogger(PushdownLowSelectivityNodesVisitor.class);
+    private static final Logger log = LogManager.getLogger(PushdownLowSelectivityNodesVisitor.class);
 
     public static <T extends JexlNode> T pushdownLowSelectiveTerms(T queryTree, ShardQueryConfiguration config, MetadataHelper helper) {
         PushdownLowSelectivityNodesVisitor visitor = new PushdownLowSelectivityNodesVisitor(config, helper);

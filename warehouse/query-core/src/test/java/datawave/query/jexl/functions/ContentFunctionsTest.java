@@ -23,7 +23,8 @@ import org.apache.commons.jexl3.parser.ASTFunctionNode;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.ParseException;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.javatuples.Triplet;
 import org.junit.Assert;
 import org.junit.Before;
@@ -48,7 +49,7 @@ import datawave.query.util.MockDateIndexHelper;
 import datawave.query.util.MockMetadataHelper;
 
 public class ContentFunctionsTest {
-    static final Logger log = Logger.getLogger(ContentFunctionsTest.class);
+    static final Logger log = LogManager.getLogger(ContentFunctionsTest.class);
     private static DatawaveJexlEngine engine;
 
     private JexlContext context;

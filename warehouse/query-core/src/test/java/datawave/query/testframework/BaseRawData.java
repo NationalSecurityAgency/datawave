@@ -9,7 +9,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.junit.Assert;
 
 import datawave.data.normalizer.Normalizer;
@@ -20,7 +21,7 @@ import datawave.ingest.data.config.NormalizedContentInterface;
  * Represents a single event of raw data read from an ingest file. This is a generic POJO that can be used for any data event. This class is immutable.
  */
 public abstract class BaseRawData implements RawData {
-    private static final Logger log = Logger.getLogger(BaseRawData.class);
+    private static final Logger log = LogManager.getLogger(BaseRawData.class);
 
     /**
      * Field name for the datatype for each event. This field is added to every event.

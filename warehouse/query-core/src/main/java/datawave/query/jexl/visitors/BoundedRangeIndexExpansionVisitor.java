@@ -11,7 +11,8 @@ import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.INDEX_HOL
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl3.parser.ASTAndNode;
 import org.apache.commons.jexl3.parser.JexlNode;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.query.config.ShardQueryConfiguration;
@@ -30,7 +31,7 @@ import datawave.query.util.MetadataHelper;
  * Visits a Jexl tree, looks for bounded ranges, and replaces them with concrete values from the index
  */
 public class BoundedRangeIndexExpansionVisitor extends BaseIndexExpansionVisitor {
-    private static final Logger log = ThreadConfigurableLogger.getLogger(BoundedRangeIndexExpansionVisitor.class);
+    private static final ThreadConfigurableLogger log = ThreadConfigurableLogger.getLogger(BoundedRangeIndexExpansionVisitor.class);
 
     private final JexlASTHelper.RangeFinder rangeFinder;
 

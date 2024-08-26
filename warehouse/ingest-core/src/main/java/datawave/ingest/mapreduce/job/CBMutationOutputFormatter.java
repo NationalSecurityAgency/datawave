@@ -14,13 +14,14 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 
 public class CBMutationOutputFormatter extends AccumuloOutputFormat {
-    private static final Logger log = Logger.getLogger(CBMutationOutputFormatter.class);
+    private static final Logger log = LogManager.getLogger(CBMutationOutputFormatter.class);
 
     @Override
     public RecordWriter<Text,Mutation> getRecordWriter(TaskAttemptContext attempt) throws IOException {

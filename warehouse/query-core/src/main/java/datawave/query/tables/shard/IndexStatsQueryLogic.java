@@ -25,7 +25,8 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.iterators.filter.CsvKeyFilter;
@@ -48,7 +49,7 @@ import datawave.webservice.query.result.istat.IndexStatsResponse;
 import datawave.webservice.result.BaseQueryResponse;
 
 public class IndexStatsQueryLogic extends BaseQueryLogic<FieldStat> {
-    private static final Logger log = Logger.getLogger(IndexStatsQueryLogic.class);
+    private static final Logger log = LogManager.getLogger(IndexStatsQueryLogic.class);
 
     private AccumuloClient client;
 

@@ -10,7 +10,8 @@ import org.apache.accumulo.core.iterators.Combiner;
 import org.apache.accumulo.core.iterators.LongCombiner.VarLenEncoder;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 
@@ -31,7 +32,7 @@ import datawave.edge.util.EdgeValueHelper;
  */
 public class EdgeCombiner extends Combiner {
 
-    static final Logger log = Logger.getLogger(EdgeCombiner.class);
+    static final Logger log = LogManager.getLogger(EdgeCombiner.class);
     private final Text colFam = new Text();
     private final Text colQual = new Text();
 

@@ -3,7 +3,8 @@ package datawave.ingest.util.cache;
 import java.util.Collection;
 import java.util.concurrent.Executors;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
@@ -20,7 +21,7 @@ import datawave.ingest.util.cache.watch.Reloadable;
  */
 public class ReloadableCacheBuilder<K extends Reloadable,V> extends Loader<K,V> {
 
-    private static final Logger log = Logger.getLogger(ReloadableCacheBuilder.class);
+    private static final Logger log = LogManager.getLogger(ReloadableCacheBuilder.class);
 
     public ReloadableCacheBuilder() {
 

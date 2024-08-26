@@ -11,7 +11,8 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ArrayListMultimap;
@@ -26,7 +27,7 @@ public class DatatypeLoader extends AccumuloLoader<String,Multimap<String,Type<?
 
     protected Collection<String> dataTypeFilters;
 
-    private static final Logger log = Logger.getLogger(DatatypeLoader.class);
+    private static final Logger log = LogManager.getLogger(DatatypeLoader.class);
 
     public DatatypeLoader(AccumuloClient client, String tableName, Set<Authorizations> auths, Collection<Text> columnFamilyList,
                     Collection<String> dataTypeFilters) {

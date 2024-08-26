@@ -16,7 +16,8 @@ import org.apache.commons.jexl3.parser.ASTOrNode;
 import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.google.common.collect.Lists;
 
@@ -28,7 +29,7 @@ import datawave.query.jexl.JexlASTHelper;
  * you remove reference expressions, this may adversely affect the jexl evaluation of the query.
  */
 public class TreeFlatteningRebuilder {
-    private static final Logger log = Logger.getLogger(TreeFlatteningRebuilder.class);
+    private static final Logger log = LogManager.getLogger(TreeFlatteningRebuilder.class);
     private final boolean simplifyReferenceExpressions;
 
     public TreeFlatteningRebuilder(boolean simplifyReferenceExpressions) {

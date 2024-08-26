@@ -16,7 +16,8 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.StatusReporter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
@@ -62,7 +63,7 @@ import datawave.util.TextUtil;
  */
 public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractColumnBasedHandler<KEYIN> implements TermFrequencyIngestHelperInterface {
 
-    private static final Logger log = Logger.getLogger(ContentIndexingColumnBasedHandler.class);
+    private static final Logger log = LogManager.getLogger(ContentIndexingColumnBasedHandler.class);
 
     public abstract AbstractContentIngestHelper getContentIndexingDataTypeHelper();
 
@@ -673,7 +674,7 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
 
             final String message = "Unable to create factory for N-grams. ContentIngestHelperInterface is null.";
             ;
-            Logger.getLogger(BloomFilterUtil.class).warn(message, new IllegalStateException());
+            LogManager.getLogger(BloomFilterUtil.class).warn(message, new IllegalStateException());
         }
 
         return util;

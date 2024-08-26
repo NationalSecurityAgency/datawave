@@ -36,7 +36,8 @@ import javax.ws.rs.core.MultivaluedMap;
 
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.deltaspike.core.api.exclude.Exclude;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 
@@ -77,7 +78,7 @@ public class IdTranslatorBean {
     @Resource
     private EJBContext ctx;
 
-    private Logger log = Logger.getLogger(this.getClass());
+    private Logger log = LogManager.getLogger(this.getClass());
 
     private String columnVisibility = null;
     private Date beginDate = null;

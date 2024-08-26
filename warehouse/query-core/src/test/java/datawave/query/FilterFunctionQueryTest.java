@@ -10,7 +10,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -32,7 +33,7 @@ public class FilterFunctionQueryTest extends AbstractFunctionalQuery {
     @ClassRule
     public static AccumuloSetup accumuloSetup = new AccumuloSetup();
 
-    private static final Logger log = Logger.getLogger(FilterFunctionQueryTest.class);
+    private static final Logger log = LogManager.getLogger(FilterFunctionQueryTest.class);
 
     private static final String IncludeRegex = "filter:includeRegex(";
     private static final String ExcludeRegex = FILTER_EXCLUDE_REGEX + "(";

@@ -8,7 +8,8 @@ import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.commons.jexl3.parser.ParserTreeConstants;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import datawave.query.util.Tuple2;
 
@@ -17,7 +18,7 @@ import datawave.query.util.Tuple2;
  *
  */
 public class BooleanOptimizationRebuildingVisitor extends RebuildingVisitor {
-    private static final Logger log = Logger.getLogger(BooleanOptimizationRebuildingVisitor.class);
+    private static final Logger log = LogManager.getLogger(BooleanOptimizationRebuildingVisitor.class);
 
     public static ASTJexlScript optimize(JexlNode node) {
         if (node == null) {

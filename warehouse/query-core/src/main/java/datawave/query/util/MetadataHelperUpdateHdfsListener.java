@@ -9,7 +9,8 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.locks.InterProcessMutex;
 import org.apache.curator.framework.state.ConnectionState;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import datawave.core.common.cache.SharedCacheCoordinator;
 import datawave.core.common.cache.SharedTriState;
@@ -26,7 +27,7 @@ import datawave.core.common.util.EnvProvider;
  */
 public class MetadataHelperUpdateHdfsListener {
 
-    private static final Logger log = Logger.getLogger(MetadataHelperUpdateHdfsListener.class);
+    private static final Logger log = LogManager.getLogger(MetadataHelperUpdateHdfsListener.class);
 
     private final String zookeepers;
     private final TypeMetadataHelper.Factory typeMetadataHelperFactory;

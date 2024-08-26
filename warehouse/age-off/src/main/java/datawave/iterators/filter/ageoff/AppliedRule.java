@@ -6,7 +6,8 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.base.Objects;
 
@@ -34,7 +35,7 @@ public abstract class AppliedRule implements FilterRule {
 
     protected IteratorEnvironment iterEnv;
 
-    private static final Logger log = Logger.getLogger(AppliedRule.class);
+    private static final Logger log = LogManager.getLogger(AppliedRule.class);
 
     /*
      * (non-Javadoc)

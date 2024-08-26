@@ -10,7 +10,8 @@ import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl3.parser.ASTERNode;
 import org.apache.commons.jexl3.parser.ASTNRNode;
 import org.apache.commons.jexl3.parser.JexlNode;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import datawave.query.Constants;
 import datawave.query.config.ShardQueryConfiguration;
@@ -20,7 +21,7 @@ import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.util.MetadataHelper;
 
 public class RegexPushdownTransformRule implements NodeTransformRule {
-    private static final Logger log = Logger.getLogger(RegexPushdownTransformRule.class);
+    private static final Logger log = LogManager.getLogger(RegexPushdownTransformRule.class);
     private List<Pattern> patterns = null;
 
     @Override

@@ -86,7 +86,7 @@ public class DatawavePrincipalLoginModule extends AbstractServerLoginModule {
     private boolean trace;
 
     public DatawavePrincipalLoginModule() {
-        log = Logger.getLogger(getClass());
+        log = LogManager.getLogger(getClass());
     }
 
     @Override

@@ -16,7 +16,8 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Partitioner;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.collect.Maps;
 
@@ -36,7 +37,7 @@ import datawave.util.time.DateHelper;
  * and for identifying the tables it might see (ShardedTableMapFile.CONFIGURED_SHARDED_TABLE_NAMES), also assumes that the num of shard ids property is set.
  */
 public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> implements Configurable, DelegatePartitioner {
-    private static final Logger log = Logger.getLogger(BalancedShardPartitioner.class);
+    private static final Logger log = LogManager.getLogger(BalancedShardPartitioner.class);
     private static final long now = System.currentTimeMillis();
     private static final String today = formatDay(0);
     private Configuration conf;

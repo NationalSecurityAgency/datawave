@@ -8,7 +8,8 @@ import org.apache.commons.jexl3.parser.ASTArguments;
 import org.apache.commons.jexl3.parser.ASTFunctionNode;
 import org.apache.commons.jexl3.parser.ASTNamespaceIdentifier;
 import org.apache.commons.jexl3.parser.JexlNode;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Lists;
@@ -22,7 +23,7 @@ import datawave.query.jexl.visitors.BaseVisitor;
  * <code>FunctionReferenceVisitor.functions(script)</code>
  */
 public class FunctionReferenceVisitor extends BaseVisitor {
-    private static final Logger log = Logger.getLogger(FunctionReferenceVisitor.class);
+    private static final Logger log = LogManager.getLogger(FunctionReferenceVisitor.class);
 
     private final Set<String> namespaceFilter;
     private final Multimap<String,Function> functions;

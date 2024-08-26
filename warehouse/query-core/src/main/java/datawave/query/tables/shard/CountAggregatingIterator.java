@@ -10,7 +10,8 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.collections4.Transformer;
 import org.apache.commons.collections4.iterators.TransformIterator;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
@@ -24,7 +25,7 @@ import datawave.marking.MarkingFunctions;
  *
  */
 public class CountAggregatingIterator extends TransformIterator {
-    private static final Logger log = Logger.getLogger(CountAggregatingIterator.class);
+    private static final Logger log = LogManager.getLogger(CountAggregatingIterator.class);
 
     private Long count = 0l;
     private boolean firstTime = true;

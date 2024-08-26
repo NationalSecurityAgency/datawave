@@ -10,13 +10,14 @@ import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.core.conf.Property;
 import org.apache.accumulo.core.iterators.IteratorUtil;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import datawave.ingest.table.config.AbstractTableConfigHelper;
 import datawave.metrics.config.MetricsConfig;
 
 public class Connections {
-    private static final Logger log = Logger.getLogger(Connections.class);
+    private static final Logger log = LogManager.getLogger(Connections.class);
     private static final String AGE_OFF = "ageoff";
 
     /**

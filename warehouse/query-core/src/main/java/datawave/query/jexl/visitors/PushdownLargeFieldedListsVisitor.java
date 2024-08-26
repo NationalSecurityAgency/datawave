@@ -34,7 +34,8 @@ import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.compress.CompressionCodec;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.lucene.store.OutputStreamDataOutput;
 import org.apache.lucene.util.fst.FST;
 
@@ -60,7 +61,7 @@ import datawave.webservice.query.exception.QueryException;
  *
  */
 public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
-    private static final Logger log = ThreadConfigurableLogger.getLogger(PushdownLargeFieldedListsVisitor.class);
+    private static final ThreadConfigurableLogger log = ThreadConfigurableLogger.getLogger(PushdownLargeFieldedListsVisitor.class);
 
     private ShardQueryConfiguration config;
     private String fstHdfsUri;

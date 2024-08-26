@@ -29,7 +29,8 @@ import org.apache.commons.lang.math.LongRange;
 import org.apache.commons.lang.mutable.MutableInt;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.google.common.collect.Sets;
 
@@ -49,7 +50,7 @@ import datawave.util.TextUtil;
  */
 public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator implements SortedKeyValueIterator<Key,Value>, OptionDescriber {
 
-    protected static final Logger log = Logger.getLogger(FieldIndexCountingIteratorPerVisibility.class);
+    protected static final Logger log = LogManager.getLogger(FieldIndexCountingIteratorPerVisibility.class);
     // Config constants
     public static final String START_TIME = "FieldIndexCountingIterator.START_TIME";
     public static final String STOP_TIME = "FieldIndexCountingIterator.STOP_TIME";

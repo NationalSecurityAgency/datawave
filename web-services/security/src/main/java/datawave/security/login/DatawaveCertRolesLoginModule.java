@@ -35,7 +35,7 @@ public class DatawaveCertRolesLoginModule extends CertRolesLoginModule {
     private boolean trustedHeaderLogin;
 
     public DatawaveCertRolesLoginModule() {
-        log = Logger.getLogger(getClass());
+        log = LogManager.getLogger(getClass());
     }
 
     @Override

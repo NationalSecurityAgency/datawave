@@ -16,7 +16,8 @@ import org.apache.commons.jexl3.parser.ASTNRNode;
 import org.apache.commons.jexl3.parser.ASTNotNode;
 import org.apache.commons.jexl3.parser.ASTReference;
 import org.apache.commons.jexl3.parser.JexlNode;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
@@ -27,7 +28,7 @@ import datawave.query.jexl.nodes.QueryPropertyMarker;
  *
  */
 public class SortedUIDsRequiredVisitor extends BaseVisitor {
-    private static final Logger log = Logger.getLogger(SortedUIDsRequiredVisitor.class);
+    private static final Logger log = LogManager.getLogger(SortedUIDsRequiredVisitor.class);
 
     private final Set<String> indexedFields;
     private int indexedFieldCount = 0;

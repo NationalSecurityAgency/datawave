@@ -27,8 +27,9 @@ import org.apache.hadoop.mapreduce.CounterGroup;
 import org.apache.hadoop.mapreduce.Counters;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
-import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.HashMultimap;
@@ -100,7 +101,7 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
 
     private static final String SRC_FILE_DEL = "|";
 
-    private static final Logger log = Logger.getLogger(EventMapper.class);
+    private static final Logger log = LogManager.getLogger(EventMapper.class);
 
     // for backward compatibility, these DISCARD constants are maintained here as well
     public static final String DISCARD_INTERVAL = DataTypeDiscardIntervalPredicate.DISCARD_INTERVAL;

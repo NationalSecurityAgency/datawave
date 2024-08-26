@@ -7,7 +7,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.lucene.analysis.ngram.NGramTokenizer;
 
 import com.google.common.collect.Multimap;
@@ -31,7 +32,7 @@ public class BloomFilterUtil {
     private static final float FILTER_SIZE_TO_NGRAM_COUNT_FACTOR = 1.1f;
 
     private final AbstractContentIngestHelper helper;
-    private final Logger log = Logger.getLogger(BloomFilterUtil.class);
+    private final Logger log = LogManager.getLogger(BloomFilterUtil.class);
     private final int maxAllowedExecutionTime;
     private int maxNGramLength = AbstractNGramTokenizationStrategy.DEFAULT_MAX_NGRAM_LENGTH;
     private final String minDiskSpacePath;

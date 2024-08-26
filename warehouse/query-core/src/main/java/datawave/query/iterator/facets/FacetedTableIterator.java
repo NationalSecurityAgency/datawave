@@ -12,7 +12,8 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.google.common.collect.Iterators;
 
@@ -22,7 +23,7 @@ import datawave.query.util.SortedKeyValueIteratorToIterator;
 
 public class FacetedTableIterator extends DynamicFacetIterator {
 
-    private static final Logger log = Logger.getLogger(FacetedTableIterator.class);
+    private static final Logger log = LogManager.getLogger(FacetedTableIterator.class);
 
     protected SortedKeyValueIterator<Key,Value> pivotSource;
 

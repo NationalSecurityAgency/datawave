@@ -16,7 +16,8 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.lang.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 import org.apache.hadoop.io.WritableUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 
@@ -29,7 +30,7 @@ import datawave.ingest.protobuf.Uid;
  */
 public class PrintUtility {
 
-    private static final Logger logger = Logger.getLogger(PrintUtility.class);
+    private static final Logger logger = LogManager.getLogger(PrintUtility.class);
 
     /**
      * Hide default constructor

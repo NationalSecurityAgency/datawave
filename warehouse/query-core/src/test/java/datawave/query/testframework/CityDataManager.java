@@ -10,7 +10,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.junit.Assert;
 
 import au.com.bytecode.opencsv.CSVReader;
@@ -25,7 +26,7 @@ import datawave.query.testframework.CitiesDataType.CityField;
  */
 public class CityDataManager extends AbstractDataManager {
 
-    private static final Logger log = Logger.getLogger(CityDataManager.class);
+    private static final Logger log = LogManager.getLogger(CityDataManager.class);
 
     public CityDataManager() {
         super(CityField.EVENT_ID.name(), CityField.START_DATE.name(), CityField.getFieldsMetadata());

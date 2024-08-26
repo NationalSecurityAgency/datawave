@@ -10,7 +10,8 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.jexl3.parser.ParseException;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 /**
  * <p>
@@ -34,7 +35,7 @@ import org.apache.log4j.Logger;
  *
  */
 public class EnrichingMaster {
-    private static final Logger log = Logger.getLogger(EnrichingMaster.class);
+    private static final Logger log = LogManager.getLogger(EnrichingMaster.class);
 
     public static final String ENRICHMENT_ENABLED = "enrichment.enabled";
     public static final String ENRICHMENT_CLASSES = "enrichment.classes";

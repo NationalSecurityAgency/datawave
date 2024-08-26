@@ -12,7 +12,8 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MultivaluedMap;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jboss.resteasy.annotations.GZIP;
 import org.springframework.util.MultiValueMap;
 
@@ -28,7 +29,7 @@ import datawave.webservice.result.VoidResponse;
 @RolesAllowed({"AuthorizedUser", "AuthorizedServer", "InternalUser", "Administrator"})
 @DeclareRoles({"AuthorizedUser", "AuthorizedServer", "InternalUser", "Administrator"})
 public class AuditBean {
-    private static final Logger log = Logger.getLogger(AuditBean.class);
+    private static final Logger log = LogManager.getLogger(AuditBean.class);
 
     @Inject
     private AuditService auditService;

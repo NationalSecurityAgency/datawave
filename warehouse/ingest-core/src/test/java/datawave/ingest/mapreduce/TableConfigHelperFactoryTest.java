@@ -11,7 +11,8 @@ import org.apache.accumulo.minicluster.MiniAccumuloCluster;
 import org.apache.accumulo.minicluster.MiniAccumuloConfig;
 import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -26,7 +27,7 @@ import datawave.util.TableName;
  * Test uses mini accumulo cluster. Files are stored in warehouse/ingest-core/target/mac/datawave.ingest.mapreduce.TableConfigHelperFactoryTest
  */
 public class TableConfigHelperFactoryTest {
-    private static final Logger logger = Logger.getLogger(TableConfigHelperFactoryTest.class);
+    private static final Logger logger = LogManager.getLogger(TableConfigHelperFactoryTest.class);
     private static MiniAccumuloCluster mac;
 
     private Configuration conf;

@@ -11,7 +11,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -51,7 +52,7 @@ public class IndexQueryLogicTest extends AbstractFunctionalQuery {
     @ClassRule
     public static AccumuloSetup accumuloSetup = new AccumuloSetup();
 
-    private static final Logger log = Logger.getLogger(IndexQueryLogicTest.class);
+    private static final Logger log = LogManager.getLogger(IndexQueryLogicTest.class);
 
     public IndexQueryLogicTest() {
         super(CarsDataType.getManager());

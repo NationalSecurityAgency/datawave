@@ -11,7 +11,8 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.commons.lang.time.StopWatch;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
@@ -21,7 +22,7 @@ import datawave.security.util.ScannerHelper;
 
 public class BatchResource extends RunningResource {
 
-    private static final Logger log = Logger.getLogger(BatchResource.class);
+    private static final Logger log = LogManager.getLogger(BatchResource.class);
 
     protected BatchResource(AccumuloClient client) {
         super(client);

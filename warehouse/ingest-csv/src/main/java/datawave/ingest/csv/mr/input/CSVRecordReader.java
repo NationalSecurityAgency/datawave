@@ -10,7 +10,8 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.HashMultimap;
@@ -32,7 +33,7 @@ import datawave.marking.MarkingFunctionsFactory;
 
 public class CSVRecordReader extends CSVReaderBase implements EventFixer {
 
-    private static final Logger log = Logger.getLogger(CSVRecordReader.class);
+    private static final Logger log = LogManager.getLogger(CSVRecordReader.class);
 
     private static final IngestConfiguration ingestConfig = IngestConfigurationFactory.getIngestConfiguration();
     private static final MarkingFunctions markingFunctions = MarkingFunctionsFactory.createMarkingFunctions();

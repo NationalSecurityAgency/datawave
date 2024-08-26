@@ -15,7 +15,8 @@ import org.apache.accumulo.core.iterators.IteratorUtil.IteratorScope;
 import org.apache.accumulo.core.iterators.OptionDescriber;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.WrappingIterator;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 /**
  * This iterator groups several entries from a single row into a single entry.<br>
@@ -25,7 +26,7 @@ import org.apache.log4j.Logger;
  */
 public abstract class RowIterator extends WrappingIterator implements OptionDescriber {
 
-    private static final Logger log = Logger.getLogger(RowIterator.class);
+    private static final Logger log = LogManager.getLogger(RowIterator.class);
 
     private boolean bypass = false;
     private Key topKey = null;

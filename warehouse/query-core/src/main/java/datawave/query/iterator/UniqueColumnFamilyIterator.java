@@ -10,7 +10,8 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 /**
  * For a given scan range, this iterator will return the first key in a {@code <row, column family>}. The sequence of keys output from this iterator will
@@ -21,7 +22,7 @@ public class UniqueColumnFamilyIterator extends org.apache.accumulo.core.iterato
     private Range scanRange;
     private Collection<ByteSequence> cfs;
     private boolean inclusive;
-    private static final Logger log = Logger.getLogger(UniqueColumnFamilyIterator.class);
+    private static final Logger log = LogManager.getLogger(UniqueColumnFamilyIterator.class);
 
     @Override
     public UniqueColumnFamilyIterator deepCopy(IteratorEnvironment env) {

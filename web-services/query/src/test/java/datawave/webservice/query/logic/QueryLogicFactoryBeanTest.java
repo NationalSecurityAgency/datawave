@@ -16,8 +16,9 @@ import java.util.TreeMap;
 
 import javax.ejb.EJBContext;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
@@ -62,9 +63,9 @@ public class QueryLogicFactoryBeanTest extends EasyMockSupport {
     public void setup() throws IllegalArgumentException, IllegalAccessException {
         System.setProperty(DnUtils.NPE_OU_PROPERTY, "iamnotaperson");
         System.setProperty("dw.metadatahelper.all.auths", "A,B,C,D");
-        Logger.getLogger(ClassPathXmlApplicationContext.class).setLevel(Level.OFF);
-        Logger.getLogger(XmlBeanDefinitionReader.class).setLevel(Level.OFF);
-        Logger.getLogger(DefaultListableBeanFactory.class).setLevel(Level.OFF);
+        LogManager.getLogger(ClassPathXmlApplicationContext.class).setLevel(Level.OFF);
+        LogManager.getLogger(XmlBeanDefinitionReader.class).setLevel(Level.OFF);
+        LogManager.getLogger(DefaultListableBeanFactory.class).setLevel(Level.OFF);
         ClassPathXmlApplicationContext queryFactory = new ClassPathXmlApplicationContext();
         queryFactory.setConfigLocation("TestQueryLogicFactory.xml");
         queryFactory.refresh();

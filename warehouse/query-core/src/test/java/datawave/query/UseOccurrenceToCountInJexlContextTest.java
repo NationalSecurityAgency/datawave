@@ -25,7 +25,8 @@ import org.apache.accumulo.core.iterators.user.SummingCombiner;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
@@ -70,7 +71,7 @@ import datawave.util.TableName;
  */
 public abstract class UseOccurrenceToCountInJexlContextTest {
 
-    private static final Logger log = Logger.getLogger(UseOccurrenceToCountInJexlContextTest.class);
+    private static final Logger log = LogManager.getLogger(UseOccurrenceToCountInJexlContextTest.class);
 
     public static class ShardRange extends UseOccurrenceToCountInJexlContextTest {
         protected static AccumuloClient client = null;

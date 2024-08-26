@@ -32,7 +32,8 @@ import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.apache.deltaspike.core.api.jmx.JmxManaged;
 import org.apache.deltaspike.core.api.jmx.MBean;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jboss.resteasy.annotations.GZIP;
 
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
@@ -65,7 +66,7 @@ import datawave.webservice.common.connection.config.ConnectionPoolsConfiguration
 @Exclude(ifProjectStage = DatawaveEmbeddedProjectStageHolder.DatawaveEmbedded.class)
 public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory {
 
-    private Logger log = Logger.getLogger(this.getClass());
+    private Logger log = LogManager.getLogger(this.getClass());
 
     @Resource
     private EJBContext context;

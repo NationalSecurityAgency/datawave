@@ -6,7 +6,8 @@ import java.util.List;
 import java.util.Map.Entry;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -17,7 +18,7 @@ import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.NormalizedFieldAndValue;
 
 public abstract class AbstractNormalizer implements TextNormalizer {
-    private static final Logger log = Logger.getLogger(AbstractNormalizer.class);
+    private static final Logger log = LogManager.getLogger(AbstractNormalizer.class);
 
     @Override
     public void setup(Type type, String instance, Configuration config) {}

@@ -27,8 +27,9 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
@@ -41,7 +42,7 @@ public class AccumuloRecordWriter extends RecordWriter<Text,Mutation> {
     private MultiTableBatchWriter mtbw = null;
     private HashMap<Text,BatchWriter> bws = null;
     private Text defaultTableName = null;
-    private Logger log = Logger.getLogger(AccumuloRecordWriter.class);
+    private Logger log = LogManager.getLogger(AccumuloRecordWriter.class);
 
     private boolean simulate = false;
     private boolean createTables = false;

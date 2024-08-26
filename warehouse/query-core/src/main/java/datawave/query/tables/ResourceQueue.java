@@ -7,7 +7,8 @@ import java.util.NoSuchElementException;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.commons.pool.PoolableObjectFactory;
 import org.apache.commons.pool.impl.GenericObjectPool;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.google.common.base.Preconditions;
 
@@ -16,7 +17,7 @@ import com.google.common.base.Preconditions;
  */
 public final class ResourceQueue implements Closeable {
 
-    private static final Logger log = Logger.getLogger(ResourceQueue.class);
+    private static final Logger log = LogManager.getLogger(ResourceQueue.class);
 
     private final GenericObjectPool<AccumuloResource> scannerPool;
 

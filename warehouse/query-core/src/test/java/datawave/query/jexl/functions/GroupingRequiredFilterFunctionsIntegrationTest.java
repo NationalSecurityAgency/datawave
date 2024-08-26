@@ -16,7 +16,8 @@ import javax.inject.Inject;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.assertj.core.api.Assertions;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
@@ -71,7 +72,7 @@ public abstract class GroupingRequiredFilterFunctionsIntegrationTest {
         }
     }
 
-    private static final Logger log = Logger.getLogger(GroupingRequiredFilterFunctionsIntegrationTest.class);
+    private static final Logger log = LogManager.getLogger(GroupingRequiredFilterFunctionsIntegrationTest.class);
     private static final Authorizations auths = new Authorizations("ALL", "E", "I");
     private static final Set<Authorizations> authSet = Collections.singleton(auths);
 

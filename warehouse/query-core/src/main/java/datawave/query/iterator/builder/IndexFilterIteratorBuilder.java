@@ -5,7 +5,8 @@ import java.io.IOException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import datawave.core.iterators.DatawaveFieldIndexFilterIteratorJexl;
 import datawave.query.iterator.DocumentIterator;
@@ -21,7 +22,7 @@ import datawave.query.predicate.Filter;
  *
  */
 public class IndexFilterIteratorBuilder extends IvaratorBuilder implements IteratorBuilder {
-    private static Logger log = Logger.getLogger(IndexFilterIteratorBuilder.class);
+    private static Logger log = LogManager.getLogger(IndexFilterIteratorBuilder.class);
 
     protected LiteralRange range;
     protected Filter filter;

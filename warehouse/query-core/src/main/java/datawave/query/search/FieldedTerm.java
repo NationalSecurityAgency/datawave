@@ -1,6 +1,8 @@
 package datawave.query.search;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 /**
  * Keeps track of the query term, location to be searched, and also deals with wildcards.
@@ -12,7 +14,7 @@ public class FieldedTerm extends Term implements Comparable<FieldedTerm> {
     protected String unescapedSelector;
     protected String query;
 
-    static Logger log = Logger.getLogger(FieldedTerm.class.getName());
+    static Logger log = LogManager.getLogger(FieldedTerm.class.getName());
 
     public FieldedTerm() {
         this.query = "";

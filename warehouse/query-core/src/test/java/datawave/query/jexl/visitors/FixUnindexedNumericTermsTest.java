@@ -7,7 +7,8 @@ import static org.junit.Assert.assertTrue;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.ParseException;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.easymock.EasyMock;
 import org.junit.Before;
 import org.junit.Test;
@@ -22,7 +23,7 @@ import datawave.query.jexl.JexlASTHelper;
 
 public class FixUnindexedNumericTermsTest {
 
-    private static final Logger log = Logger.getLogger(FixUnindexedNumericTermsTest.class);
+    private static final Logger log = LogManager.getLogger(FixUnindexedNumericTermsTest.class);
 
     private Multimap<String,Type<?>> datatypes;
 

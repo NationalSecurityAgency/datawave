@@ -28,7 +28,8 @@ import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.geotools.data.Join;
 
 import com.google.common.base.Function;
@@ -91,7 +92,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
 
     private TypeMetadata cachedTypeMetadata = null;
 
-    private static final Logger log = Logger.getLogger(VisitorFunction.class);
+    private static final Logger log = LogManager.getLogger(VisitorFunction.class);
 
     public VisitorFunction(ShardQueryConfiguration config, MetadataHelper metadataHelper) throws MalformedURLException {
         this.config = config;

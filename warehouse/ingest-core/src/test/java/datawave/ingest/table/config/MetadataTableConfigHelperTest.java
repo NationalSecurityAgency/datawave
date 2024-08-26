@@ -12,8 +12,10 @@ import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.easymock.EasyMock;
 import org.junit.After;
 import org.junit.Assert;
@@ -33,7 +35,7 @@ public class MetadataTableConfigHelperTest {
         }
     }
 
-    private static final Logger logger = Logger.getLogger(MetadataTableConfigHelperTest.class);
+    private static final Logger logger = LogManager.getLogger(MetadataTableConfigHelperTest.class);
     private static Level testDriverLevel;
 
     public static final String DEFAULT_EXCEPTION_MESSAGE = "This is a test exception.  NOTHING IS ACTUALLY WRONG....";
@@ -219,15 +221,15 @@ public class MetadataTableConfigHelperTest {
     public void setup() {
         Level desiredLevel = Level.ALL;
 
-        Logger log = Logger.getLogger(MetadataTableConfigHelperTest.class);
-        MetadataTableConfigHelperTest.testDriverLevel = log.getLevel();
-        log.setLevel(desiredLevel);
+        Logger log = LogManager.getLogger(MetadataTableConfigHelperTest.class);
+        testDriverLevel = log.getLevel();
+        Configurator.setLevel(log.getName(), desiredLevel);
     }
 
     @After
     public void teardown() {
 
-        MetadataTableConfigHelperTest.logger.setLevel(MetadataTableConfigHelperTest.testDriverLevel);
+        Configurator.setLevel(logger.getName(), testDriverLevel);
     }
 
     @Test

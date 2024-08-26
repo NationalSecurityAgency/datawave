@@ -12,7 +12,8 @@ import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * This is an abstraction of the keys found in the protobuf edge table.
@@ -42,7 +43,7 @@ public class EdgeKey {
     private final long timestamp;
     private final boolean deleted;
 
-    private static final Logger log = Logger.getLogger(EdgeKey.class);
+    private static final Logger log = LogManager.getLogger(EdgeKey.class);
 
     // use the builder, not this nightmare constructor
     private EdgeKey(EDGE_FORMAT format, STATS_TYPE statsType, String sourceData, String sinkData, String family, String sourceRelationship,

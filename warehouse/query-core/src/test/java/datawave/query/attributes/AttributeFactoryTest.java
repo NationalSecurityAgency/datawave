@@ -2,8 +2,9 @@ package datawave.query.attributes;
 
 import java.util.Collection;
 
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.accumulo.core.data.Key;
-import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -19,7 +20,7 @@ import datawave.query.util.TypeMetadata;
  */
 public class AttributeFactoryTest {
 
-    private static final Logger log = Logger.getLogger(AttributeFactoryTest.class);
+    private static final Logger log = LogManager.getLogger(AttributeFactoryTest.class);
 
     Collection<Class<?>> one = Sets.<Class<?>> newHashSet(LcNoDiacriticsType.class);
     Collection<Class<?>> two = Sets.<Class<?>> newHashSet(NoOpType.class, LcNoDiacriticsType.class);

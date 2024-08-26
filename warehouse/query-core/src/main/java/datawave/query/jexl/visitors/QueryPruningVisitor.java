@@ -56,7 +56,8 @@ import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.commons.jexl3.parser.ParserTreeConstants;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import datawave.query.Constants;
 import datawave.query.jexl.JexlASTHelper;
@@ -67,7 +68,7 @@ import datawave.query.jexl.JexlASTHelper;
  * tree look like if we reduce it based on everything we know to be TRUE/FALSE about the tree?
  */
 public class QueryPruningVisitor extends BaseVisitor {
-    private static final Logger log = Logger.getLogger(QueryPruningVisitor.class);
+    private static final Logger log = LogManager.getLogger(QueryPruningVisitor.class);
 
     public enum TruthState {
         UNKNOWN, TRUE, FALSE

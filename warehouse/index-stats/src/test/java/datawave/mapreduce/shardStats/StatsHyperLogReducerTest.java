@@ -19,8 +19,9 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.Reducer;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -33,13 +34,13 @@ import datawave.ingest.mapreduce.job.TableConfigurationUtil;
 
 public class StatsHyperLogReducerTest {
 
-    private static final Logger log = Logger.getLogger(StatsHyperLogReducerTest.class);
+    private static final Logger log = LogManager.getLogger(StatsHyperLogReducerTest.class);
 
     static {
-        Logger.getLogger(StatsHyperLogReducer.class).setLevel(Level.DEBUG);
-        Logger.getLogger(StatsHyperLogSummary.class).setLevel(Level.DEBUG);
-        Logger.getLogger(StatsHyperLogReducerTest.class).setLevel(Level.DEBUG);
-        Logger.getLogger(StatsTestData.class).setLevel(Level.DEBUG);
+        LogManager.getLogger(StatsHyperLogReducer.class).setLevel(Level.DEBUG);
+        LogManager.getLogger(StatsHyperLogSummary.class).setLevel(Level.DEBUG);
+        LogManager.getLogger(StatsHyperLogReducerTest.class).setLevel(Level.DEBUG);
+        LogManager.getLogger(StatsTestData.class).setLevel(Level.DEBUG);
     }
 
     @Test

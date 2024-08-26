@@ -12,7 +12,8 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.Filter;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 
@@ -24,7 +25,7 @@ import datawave.ingest.protobuf.Uid;
  */
 public class GlobalIndexTermMatchingFilter extends Filter {
 
-    protected static final Logger log = Logger.getLogger(GlobalIndexTermMatchingFilter.class);
+    protected static final Logger log = LogManager.getLogger(GlobalIndexTermMatchingFilter.class);
     public static final String LITERAL = "term.literal.";
     public static final String PATTERN = "term.pattern.";
     public static final String REVERSE_INDEX = "reverse.index";

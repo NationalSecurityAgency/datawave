@@ -4,13 +4,14 @@ import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ASTOrNode;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.ParserTreeConstants;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import datawave.query.jexl.JexlNodeFactory;
 
 public class TreeWrappingRebuildingVisitor extends RebuildingVisitor {
 
-    private static final Logger log = Logger.getLogger(TreeWrappingRebuildingVisitor.class);
+    private static final Logger log = LogManager.getLogger(TreeWrappingRebuildingVisitor.class);
 
     public static ASTJexlScript wrap(JexlNode node) {
         TreeWrappingRebuildingVisitor visitor = new TreeWrappingRebuildingVisitor();

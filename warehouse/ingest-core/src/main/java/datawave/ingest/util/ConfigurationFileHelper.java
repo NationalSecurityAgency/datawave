@@ -15,7 +15,7 @@ import org.apache.hadoop.fs.Path;
  * config default values or add them to the Configuration object that is passed in
  */
 public class ConfigurationFileHelper {
-    private static final org.apache.log4j.Logger log = org.apache.log4j.Logger.getLogger(ConfigurationFileHelper.class);
+    private static final org.apache.log4j.Logger log = org.apache.log4j.LogManager.getLogger(ConfigurationFileHelper.class);
 
     /**
      *

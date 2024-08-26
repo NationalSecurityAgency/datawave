@@ -15,7 +15,8 @@ import org.apache.commons.jexl3.parser.ASTERNode;
 import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import datawave.query.config.IndexHole;
 import datawave.query.config.ShardQueryConfiguration;
@@ -31,7 +32,7 @@ import datawave.query.util.MetadataHelper;
  */
 public class PushdownMissingIndexRangeNodesVisitor extends RebuildingVisitor {
 
-    private static final Logger log = Logger.getLogger(PushdownMissingIndexRangeNodesVisitor.class);
+    private static final Logger log = LogManager.getLogger(PushdownMissingIndexRangeNodesVisitor.class);
 
     // a metadata helper
     protected MetadataHelper helper;

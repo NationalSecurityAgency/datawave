@@ -2,7 +2,8 @@ package datawave.edge.model;
 
 import java.util.Map;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.AbstractApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
@@ -20,7 +21,7 @@ public class DefaultEdgeModelFieldsFactory implements EdgeModelFieldsFactory {
     /** required bean name */
     static final String TRANSFORM_MODEL_BEAN = "transformFieldMap";
 
-    private static Logger log = Logger.getLogger(DefaultEdgeModelFieldsFactory.class);
+    private static Logger log = LogManager.getLogger(DefaultEdgeModelFieldsFactory.class);
 
     @Override
     public EdgeModelFields createFields() {

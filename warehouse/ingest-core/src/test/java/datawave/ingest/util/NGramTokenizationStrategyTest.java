@@ -10,7 +10,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Vector;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -131,7 +132,7 @@ public class NGramTokenizationStrategyTest {
 
         // Set expectations
         PowerMock.mockStaticPartial(Logger.class, "getLogger");
-        expect(Logger.getLogger(isA(Class.class))).andReturn(this.logger).anyTimes();
+        expect(LogManager.getLogger(isA(Class.class))).andReturn(this.logger).anyTimes();
         PowerMock.mockStaticPartial(ResourceAvailabilityUtil.class, "isMemoryAvailable");
         expect(ResourceAvailabilityUtil.isMemoryAvailable(.05f)).andReturn(true);
         PowerMock.mockStaticPartial(ResourceAvailabilityUtil.class, "isMemoryAvailable");
@@ -161,7 +162,7 @@ public class NGramTokenizationStrategyTest {
 
         // Set expectations
         PowerMock.mockStaticPartial(Logger.class, "getLogger");
-        expect(Logger.getLogger(isA(Class.class))).andReturn(this.logger).anyTimes();
+        expect(LogManager.getLogger(isA(Class.class))).andReturn(this.logger).anyTimes();
         PowerMock.mockStaticPartial(ResourceAvailabilityUtil.class, "isDiskAvailable");
         expect(ResourceAvailabilityUtil.isDiskAvailable("/", .05f)).andReturn(true);
         PowerMock.mockStaticPartial(ResourceAvailabilityUtil.class, "isDiskAvailable");
@@ -510,7 +511,7 @@ public class NGramTokenizationStrategyTest {
 
         // Set expectations
         PowerMock.mockStaticPartial(Logger.class, "getLogger");
-        expect(Logger.getLogger(isA(Class.class))).andReturn(this.logger).anyTimes();
+        expect(LogManager.getLogger(isA(Class.class))).andReturn(this.logger).anyTimes();
         PowerMock.mockStaticPartial(ResourceAvailabilityUtil.class, "isDiskAvailable");
         expect(ResourceAvailabilityUtil.isDiskAvailable("/", .05f)).andReturn(true).times(1);
         expect(ResourceAvailabilityUtil.isDiskAvailable("/", .05f)).andReturn(false).times(1);

@@ -7,7 +7,8 @@ import java.util.Set;
 
 import org.apache.accumulo.core.data.Range;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.google.common.collect.HashMultimap;
 
@@ -27,7 +28,7 @@ import datawave.query.parser.JavaRegexAnalyzer;
  * about capitalization or other formatting details.
  */
 public class VisitationContext implements EdgeContext {
-    private static final Logger log = Logger.getLogger(VisitationContext.class);
+    private static final Logger log = LogManager.getLogger(VisitationContext.class);
 
     StringBuilder normalizedQuery;
     StringBuilder normalizedStatsQuery;

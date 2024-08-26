@@ -13,7 +13,8 @@ import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.google.common.collect.Multimap;
 
@@ -33,7 +34,7 @@ import datawave.webservice.query.exception.QueryException;
 
 public class SSDeepSimilarityQueryLogic extends BaseQueryLogic<ScoredSSDeepPair> {
 
-    private static final Logger log = Logger.getLogger(SSDeepSimilarityQueryLogic.class);
+    private static final Logger log = LogManager.getLogger(SSDeepSimilarityQueryLogic.class);
 
     private SSDeepSimilarityQueryConfiguration config;
 

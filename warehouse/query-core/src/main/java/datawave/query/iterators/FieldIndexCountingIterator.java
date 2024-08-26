@@ -27,7 +27,8 @@ import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang.math.LongRange;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import datawave.iterators.IteratorSettingHelper;
 import datawave.marking.MarkingFunctions;
@@ -45,7 +46,7 @@ import datawave.util.TextUtil;
  */
 public class FieldIndexCountingIterator extends WrappingIterator implements SortedKeyValueIterator<Key,Value>, OptionDescriber {
 
-    protected static final Logger log = Logger.getLogger(FieldIndexCountingIterator.class);
+    protected static final Logger log = LogManager.getLogger(FieldIndexCountingIterator.class);
     // Config constants
     public static final String START_TIME = "FieldIndexCountingIterator.START_TIME";
     public static final String STOP_TIME = "FieldIndexCountingIterator.STOP_TIME";

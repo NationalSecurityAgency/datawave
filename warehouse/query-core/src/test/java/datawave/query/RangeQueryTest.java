@@ -11,8 +11,9 @@ import static datawave.query.testframework.RawDataManager.OR_OP;
 import java.util.ArrayList;
 import java.util.Collection;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -40,7 +41,7 @@ public class RangeQueryTest extends AbstractFunctionalQuery {
     @ClassRule
     public static AccumuloSetup accumuloSetup = new AccumuloSetup();
 
-    private static final Logger log = Logger.getLogger(RangeQueryTest.class);
+    private static final Logger log = LogManager.getLogger(RangeQueryTest.class);
 
     @BeforeClass
     public static void filterSetup() throws Exception {
@@ -50,7 +51,7 @@ public class RangeQueryTest extends AbstractFunctionalQuery {
         dataTypes.add(new CitiesDataType(CityEntry.generic, generic));
 
         accumuloSetup.setData(FileType.CSV, dataTypes);
-        Logger.getLogger(PrintUtility.class).setLevel(Level.DEBUG);
+        LogManager.getLogger(PrintUtility.class).setLevel(Level.DEBUG);
         client = accumuloSetup.loadTables(log);
     }
 
@@ -209,7 +210,7 @@ public class RangeQueryTest extends AbstractFunctionalQuery {
 
     @Test
     public void testMultiFieldsNoResults() throws Exception {
-        Logger.getLogger(DefaultQueryPlanner.class).setLevel(Level.DEBUG);
+        LogManager.getLogger(DefaultQueryPlanner.class).setLevel(Level.DEBUG);
         log.info("------  testMultiFieldsNoResults  ------");
         String state = "'ohio'";
         String qState = "((_Bounded_ = true) && (" + CityField.STATE.name() + LTE_OP + state + AND_OP + CityField.STATE.name() + GTE_OP + state + "))";
@@ -316,7 +317,7 @@ public class RangeQueryTest extends AbstractFunctionalQuery {
 
     @Test
     public void testRangeOrExp() throws Exception {
-        Logger.getLogger(DefaultQueryPlanner.class).setLevel(Level.DEBUG);
+        LogManager.getLogger(DefaultQueryPlanner.class).setLevel(Level.DEBUG);
         log.info("------  testRangeOrExp  ------");
         String start = "'e'";
         String end = "'r'";

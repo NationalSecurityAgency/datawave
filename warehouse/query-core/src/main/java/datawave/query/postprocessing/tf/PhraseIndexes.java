@@ -10,7 +10,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.javatuples.Triplet;
 
 import com.google.common.collect.Lists;
@@ -27,7 +28,7 @@ import datawave.query.Constants;
  * required to retrieve excerpts when requested.
  */
 public class PhraseIndexes {
-    private static final Logger log = Logger.getLogger(PhraseIndexes.class);
+    private static final Logger log = LogManager.getLogger(PhraseIndexes.class);
 
     /**
      * A Map of fieldname to eventId,start,end phrase offsets. The eventId has the form as defined by TermFrequencyList.getEventid(key)

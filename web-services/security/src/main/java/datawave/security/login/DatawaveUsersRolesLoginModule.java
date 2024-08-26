@@ -21,7 +21,7 @@ public class DatawaveUsersRolesLoginModule extends UsersRolesLoginModule {
     private ThreadLocal<Boolean> createSimplePrincipal = new ThreadLocal<>();
 
     public DatawaveUsersRolesLoginModule() {
-        log = Logger.getLogger(getClass());
+        log = LogManager.getLogger(getClass());
     }
 
     @Override

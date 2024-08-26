@@ -48,7 +48,8 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import datawave.metrics.config.MetricsConfig;
 import datawave.metrics.config.MetricsOptions;
@@ -80,7 +81,7 @@ import datawave.util.time.DateHelper;
 public class MetricsIngester extends Configured implements Tool {
     private static final boolean createTables = true;
 
-    private static final Logger log = Logger.getLogger(MetricsIngester.class);
+    private static final Logger log = LogManager.getLogger(MetricsIngester.class);
 
     protected static final byte[] emptyBytes = {};
     protected static final Value emptyValue = new Value(emptyBytes);

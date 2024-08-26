@@ -11,7 +11,8 @@ import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.commons.jexl3.parser.ParserTreeConstants;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
@@ -23,7 +24,7 @@ import datawave.query.util.MetadataHelper;
  * &amp;&amp; (B || C) to (A &amp;&amp; B) || (A &amp;&amp; C).
  */
 public class ExecutableExpansionVisitor extends BaseVisitor {
-    private static final Logger log = Logger.getLogger(ExecutableExpansionVisitor.class);
+    private static final Logger log = LogManager.getLogger(ExecutableExpansionVisitor.class);
 
     private final ShardQueryConfiguration config;
     private final MetadataHelper helper;

@@ -7,7 +7,8 @@ import java.util.Set;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.iterator.DatawaveTransformIterator;
@@ -21,7 +22,7 @@ import datawave.security.authorization.UserOperations;
  */
 public class FilteredQueryLogic extends DelegatingQueryLogic implements QueryLogic<Object> {
 
-    public static final Logger log = Logger.getLogger(FilteredQueryLogic.class);
+    public static final Logger log = LogManager.getLogger(FilteredQueryLogic.class);
 
     private QueryLogicFilter filter;
 

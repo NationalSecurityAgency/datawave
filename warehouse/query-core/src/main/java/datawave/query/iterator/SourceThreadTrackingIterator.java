@@ -11,10 +11,11 @@ import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 public class SourceThreadTrackingIterator<K extends WritableComparable<?>,V extends Writable> implements SortedKeyValueIterator<K,V> {
-    private static final Logger log = Logger.getLogger(SourceThreadTrackingIterator.class);
+    private static final Logger log = LogManager.getLogger(SourceThreadTrackingIterator.class);
     private SortedKeyValueIterator<K,V> source;
     private long threadId = -1;
     private AtomicBoolean inMethod = new AtomicBoolean(false);

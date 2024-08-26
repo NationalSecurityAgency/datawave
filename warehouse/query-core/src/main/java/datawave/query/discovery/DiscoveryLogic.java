@@ -35,7 +35,8 @@ import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.DataInputBuffer;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.javatuples.Pair;
 
 import com.google.common.base.Function;
@@ -70,7 +71,7 @@ import datawave.webservice.query.exception.QueryException;
 
 public class DiscoveryLogic extends ShardIndexQueryTable {
 
-    private static final Logger log = Logger.getLogger(DiscoveryLogic.class);
+    private static final Logger log = LogManager.getLogger(DiscoveryLogic.class);
 
     public static final String SEPARATE_COUNTS_BY_COLVIS = "separate.counts.by.colvis";
     public static final String SHOW_REFERENCE_COUNT = "show.reference.count";

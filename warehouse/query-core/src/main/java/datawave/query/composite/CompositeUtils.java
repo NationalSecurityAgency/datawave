@@ -8,7 +8,8 @@ import org.apache.commons.jexl3.parser.ASTGENode;
 import org.apache.commons.jexl3.parser.ASTGTNode;
 import org.apache.commons.jexl3.parser.ASTLENode;
 import org.apache.commons.jexl3.parser.ASTLTNode;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
@@ -21,7 +22,7 @@ import datawave.data.type.Type;
  *
  */
 public class CompositeUtils {
-    private static final Logger log = Logger.getLogger(CompositeUtils.class);
+    private static final Logger log = LogManager.getLogger(CompositeUtils.class);
 
     public static final Set<Class<?>> ALL_VALID_LEAF_NODE_CLASSES = Sets.union(CompositeTerm.VALID_LEAF_NODE_CLASSES, CompositeRange.VALID_LEAF_NODE_CLASSES);
     public static final Set<Class<?>> UNBOUNDED_RANGE_NODE_CLASSES = Sets.newHashSet(ASTGTNode.class, ASTGENode.class, ASTLTNode.class, ASTLENode.class);

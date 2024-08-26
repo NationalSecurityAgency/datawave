@@ -9,7 +9,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import datawave.query.attributes.ValueTuple;
 
@@ -20,7 +21,7 @@ import datawave.query.attributes.ValueTuple;
 @JexlFunctions(descriptorFactory = "datawave.query.jexl.functions.GroupingRequiredFilterFunctionsDescriptor")
 public class GroupingRequiredFilterFunctions {
     public static final String GROUPING_REQUIRED_FUNCTION_NAMESPACE = "grouping";
-    private static final Logger log = Logger.getLogger(GroupingRequiredFilterFunctions.class);
+    private static final Logger log = LogManager.getLogger(GroupingRequiredFilterFunctions.class);
 
     /**
      * <pre>

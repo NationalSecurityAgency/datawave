@@ -29,7 +29,8 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.LongRange;
 import org.apache.commons.lang.time.FastDateFormat;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -63,7 +64,7 @@ import datawave.webservice.query.exception.QueryException;
  */
 public class ShardIndexQueryTableStaticMethods {
 
-    private static final Logger log = Logger.getLogger(ShardIndexQueryTableStaticMethods.class);
+    private static final Logger log = LogManager.getLogger(ShardIndexQueryTableStaticMethods.class);
 
     private static FastDateFormat formatter = FastDateFormat.getInstance("yyyyMMdd");
 

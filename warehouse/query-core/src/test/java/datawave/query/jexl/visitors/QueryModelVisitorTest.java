@@ -17,7 +17,8 @@ import org.apache.commons.jexl3.parser.ASTIdentifier;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ASTStringLiteral;
 import org.apache.commons.jexl3.parser.ParseException;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -38,7 +39,7 @@ import datawave.util.StringUtils;
 
 public class QueryModelVisitorTest {
 
-    private final Logger log = org.apache.log4j.Logger.getLogger(QueryModelVisitorTest.class);
+    private final Logger log = org.apache.log4j.LogManager.getLogger(QueryModelVisitorTest.class);
 
     private QueryModel model;
     private Set<String> allFields;

@@ -2,10 +2,11 @@ package datawave.query.language.tree;
 
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 public class RequireNode extends QueryNode {
-    private static final Logger log = Logger.getLogger(RequireNode.class.getName());
+    private static final Logger log = LogManager.getLogger(RequireNode.class.getName());
 
     Set<String> requiredFields = null;
 

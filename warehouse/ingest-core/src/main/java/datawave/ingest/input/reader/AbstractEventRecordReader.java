@@ -18,7 +18,8 @@ import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.collect.Sets;
 
@@ -40,7 +41,7 @@ public abstract class AbstractEventRecordReader<K> extends RecordReader<LongWrit
 
     protected static final IngestConfiguration INGEST_CONFIG = IngestConfigurationFactory.getIngestConfiguration();
 
-    private static final Logger logger = Logger.getLogger(AbstractEventRecordReader.class);
+    private static final Logger logger = LogManager.getLogger(AbstractEventRecordReader.class);
 
     protected final TreeMap<String,String> uidOverrideFields = new TreeMap<>();
 

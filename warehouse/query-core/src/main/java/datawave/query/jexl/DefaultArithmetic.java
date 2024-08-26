@@ -5,7 +5,8 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import datawave.data.type.Type;
 import datawave.query.attributes.ValueTuple;
@@ -14,7 +15,7 @@ public class DefaultArithmetic extends DatawaveArithmetic {
 
     private static final String LESS_THAN = "<", GREATER_THAN = ">", LESS_THAN_OR_EQUAL = "<=", GREATER_THAN_OR_EQUAL = ">=";
 
-    private static final Logger log = Logger.getLogger(DefaultArithmetic.class);
+    private static final Logger log = LogManager.getLogger(DefaultArithmetic.class);
 
     /**
      * Default to being lenient so we don't have to add "null" for every field in the query that doesn't exist in the document

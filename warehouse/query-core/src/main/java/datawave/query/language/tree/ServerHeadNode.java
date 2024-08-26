@@ -1,10 +1,11 @@
 package datawave.query.language.tree;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 public class ServerHeadNode extends QueryNode {
 
-    private static final Logger log = Logger.getLogger(ServerHeadNode.class.getName());
+    private static final Logger log = LogManager.getLogger(ServerHeadNode.class.getName());
 
     public ServerHeadNode(QueryNode... children) {
         super(children);

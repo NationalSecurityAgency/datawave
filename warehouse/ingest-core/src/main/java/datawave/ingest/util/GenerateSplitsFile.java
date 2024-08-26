@@ -16,7 +16,7 @@ import datawave.ingest.mapreduce.job.TableSplitsCache;
  */
 public class GenerateSplitsFile {
 
-    private static final org.apache.log4j.Logger log = org.apache.log4j.Logger.getLogger(GenerateSplitsFile.class);
+    private static final org.apache.log4j.Logger log = org.apache.log4j.LogManager.getLogger(GenerateSplitsFile.class);
 
     @SuppressWarnings("static-access")
     public static void main(String[] args) {

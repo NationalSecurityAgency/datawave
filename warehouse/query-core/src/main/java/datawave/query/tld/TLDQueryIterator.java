@@ -16,7 +16,8 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
 
 import com.google.common.base.Function;
@@ -51,7 +52,7 @@ import datawave.util.StringUtils;
  * This is a TLD (Top Level Document) QueryIterator implementation.
  */
 public class TLDQueryIterator extends QueryIterator {
-    private static final Logger log = Logger.getLogger(TLDQueryIterator.class);
+    private static final Logger log = LogManager.getLogger(TLDQueryIterator.class);
 
     protected int maxFieldHitsBeforeSeek = -1;
     protected int maxKeysBeforeSeek = -1;

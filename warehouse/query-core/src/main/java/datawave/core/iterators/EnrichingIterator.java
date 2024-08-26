@@ -16,7 +16,8 @@ import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.OptionDescriber;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.jexl3.parser.ParseException;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import datawave.query.Constants;
 import datawave.query.enrich.DataEnricher;
@@ -39,7 +40,7 @@ import datawave.util.StringUtils;
  */
 public class EnrichingIterator implements SortedKeyValueIterator<Key,Value>, OptionDescriber {
 
-    private static final Logger log = Logger.getLogger(EnrichingIterator.class);
+    private static final Logger log = LogManager.getLogger(EnrichingIterator.class);
     public static final String ENRICHMENT_CLASSES = "enrichment.classes";
     public static final String QUERY = "query";
     public static final String SUB_ITERATOR_CLASS = "sub.iterator.class";

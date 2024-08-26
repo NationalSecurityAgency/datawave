@@ -15,7 +15,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.base.Splitter;
 import com.google.common.collect.HashMultimap;
@@ -138,7 +139,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
 
     public static final String FIELD_CONFIG_FILE = ".data.category.field.config.file";
 
-    private static final Logger log = ThreadConfigurableLogger.getLogger(BaseIngestHelper.class);
+    private static final ThreadConfigurableLogger log = ThreadConfigurableLogger.getLogger(BaseIngestHelper.class);
 
     private Multimap<String,datawave.data.type.Type<?>> typeFieldMap = null;
     private Multimap<String,datawave.data.type.Type<?>> typePatternMap = null;

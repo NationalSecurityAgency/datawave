@@ -19,7 +19,8 @@ import org.apache.accumulo.core.iterators.WrappingIterator;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.VLongWritable;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.KryoSerializable;
@@ -50,7 +51,7 @@ import datawave.marking.MarkingFunctions;
  * client to sum the counts for each range together.
  */
 public class ResultCountingIterator extends WrappingIterator {
-    private static final Logger log = Logger.getLogger(ResultCountingIterator.class);
+    private static final Logger log = LogManager.getLogger(ResultCountingIterator.class);
     private final Cache<Text,ColumnVisibility> CV_CACHE = CacheBuilder.newBuilder().concurrencyLevel(1).maximumSize(100).build();
 
     private static final Ticker zeroTicker = new Ticker() {

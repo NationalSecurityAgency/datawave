@@ -7,7 +7,8 @@ import java.util.Map.Entry;
 
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import datawave.core.query.cachedresults.CacheableLogic;
 import datawave.core.query.logic.BaseQueryLogicTransformer;
@@ -29,7 +30,7 @@ public class ShardQueryCountTableTransformer extends BaseQueryLogicTransformer<E
 
     private Authorizations auths = null;
 
-    private static final Logger log = Logger.getLogger(ShardQueryCountTableTransformer.class);
+    private static final Logger log = LogManager.getLogger(ShardQueryCountTableTransformer.class);
 
     private List<String> variableFieldList = null;
     private ResponseObjectFactory responseObjectFactory;

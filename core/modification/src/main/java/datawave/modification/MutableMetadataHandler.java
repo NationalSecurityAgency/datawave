@@ -36,7 +36,8 @@ import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.accumulo.core.util.Pair;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.google.common.base.Function;
 import com.google.common.collect.HashMultimap;
@@ -187,7 +188,7 @@ import datawave.webservice.result.GenericResponse;
  */
 public class MutableMetadataHandler extends ModificationServiceConfiguration {
 
-    private Logger log = Logger.getLogger(this.getClass());
+    private Logger log = LogManager.getLogger(this.getClass());
 
     protected static final long MS_PER_DAY = TimeUnit.DAYS.toMillis(1);
     protected static final String DESCRIPTION = "Modification service that processes insert, update, and delete requests of event fields for event(s) identified by the shard id, datatype, and event uid.";

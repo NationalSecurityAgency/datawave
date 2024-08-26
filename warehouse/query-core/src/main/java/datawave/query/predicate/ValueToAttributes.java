@@ -11,7 +11,8 @@ import java.util.Map.Entry;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.google.common.base.Function;
 import com.google.common.collect.ArrayListMultimap;
@@ -41,7 +42,7 @@ import datawave.query.util.TypeMetadata;
  *
  */
 public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<Entry<String,Attribute<? extends Comparable<?>>>>> {
-    private static final Logger log = Logger.getLogger(ValueToAttributes.class);
+    private static final Logger log = LogManager.getLogger(ValueToAttributes.class);
 
     private final Text holder = new Text();
 

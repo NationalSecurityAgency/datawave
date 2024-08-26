@@ -25,7 +25,8 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections.iterators.IteratorChain;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ParseException;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
@@ -71,7 +72,7 @@ import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
  */
 public abstract class ShapesTest {
 
-    private static final Logger log = Logger.getLogger(ShapesTest.class);
+    private static final Logger log = LogManager.getLogger(ShapesTest.class);
     protected Authorizations auths = new Authorizations("ALL");
     protected Set<Authorizations> authSet = Collections.singleton(auths);
 

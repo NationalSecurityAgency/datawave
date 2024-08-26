@@ -15,7 +15,8 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableComparator;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Extracted from datawave.edge.util.EdgeKey
@@ -24,7 +25,7 @@ import org.apache.log4j.Logger;
  * collection.
  */
 public class EdgeKeyDecoder {
-    private static final Logger log = Logger.getLogger(EdgeKeyDecoder.class);
+    private static final Logger log = LogManager.getLogger(EdgeKeyDecoder.class);
     private static final int DATE_LEN = 8;
 
     private final Text textCf;

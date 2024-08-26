@@ -15,7 +15,8 @@ import org.apache.accumulo.core.spi.balancer.data.TabletServerId;
 import org.apache.accumulo.core.spi.common.ServiceEnvironment.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableComparator;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * A custom tablet balancer designed to work with a date-partitioned (sharded) table. This balancer is based on the {@link GroupBalancer}, which spreads tablets
@@ -33,7 +34,7 @@ public class ShardedTableTabletBalancer extends GroupBalancer {
     public static final String SHARDED_MAX_MIGRATIONS = SHARDED_PROPERTY_PREFIX + "max.migrations";
     public static final int MAX_MIGRATIONS_DEFAULT = 10000;
 
-    private static final Logger log = Logger.getLogger(ShardedTableTabletBalancer.class);
+    private static final Logger log = LogManager.getLogger(ShardedTableTabletBalancer.class);
     private Map<TabletId,TabletServerId> tabletLocationCache;
     private Function<TabletId,String> partitioner;
     private TableId tableId;

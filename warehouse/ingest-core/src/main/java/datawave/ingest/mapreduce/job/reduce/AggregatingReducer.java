@@ -30,7 +30,8 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
@@ -66,7 +67,7 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
     protected HashSet<Text> TSDedupTables = new HashSet<>();
     TableConfigurationUtil tcu;
 
-    private static final Logger log = Logger.getLogger(AggregatingReducer.class);
+    private static final Logger log = LogManager.getLogger(AggregatingReducer.class);
 
     /**
      * Setup the reducer. Delegates to setup(Configuration)

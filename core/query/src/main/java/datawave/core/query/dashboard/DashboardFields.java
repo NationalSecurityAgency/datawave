@@ -4,14 +4,15 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
 
 public final class DashboardFields {
 
-    private static final Logger log = Logger.getLogger(DashboardFields.class);
+    private static final Logger log = LogManager.getLogger(DashboardFields.class);
     private static final String NUM_RESULTS = "NUM_RESULTS";
     private static final String ERROR_MESSAGE = "ERROR_MESSAGE";
     private static final String CREATE_CALL_TIME = "CREATE_CALL_TIME";

@@ -1,6 +1,7 @@
 package datawave.ingest.util;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.hash.BloomFilter;
 
@@ -14,7 +15,7 @@ public class MemoryStarvationStrategy extends AbstractNGramTokenizationStrategy 
 
     public static final String DEFAULT_PATH_FOR_DISK_SPACE_VALIDATION = ResourceAvailabilityUtil.ROOT_PATH;
 
-    private final Logger log = Logger.getLogger(MemoryStarvationStrategy.class);
+    private final Logger log = LogManager.getLogger(MemoryStarvationStrategy.class);
     private TokenizationException lowMemoryException;
     private final float minMemoryThreshold;
     private int ngramCount;

@@ -24,7 +24,8 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.mapreduce.InputSplit;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
@@ -39,7 +40,7 @@ import datawave.security.iterator.ConfigurableVisibilityFilter;
 
 public class RfileScanner extends SessionOptions implements BatchScanner, Closeable {
 
-    private static final Logger log = Logger.getLogger(RfileScanner.class);
+    private static final Logger log = LogManager.getLogger(RfileScanner.class);
 
     private List<Range> ranges;
     private String table;

@@ -22,7 +22,8 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.beans.BeansException;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.Cacheable;
@@ -69,7 +70,7 @@ import datawave.util.StringUtils;
 @EnableCaching
 @Component("dateIndexHelper")
 public class DateIndexHelper implements ApplicationContextAware {
-    private static final Logger log = Logger.getLogger(DateIndexHelper.class);
+    private static final Logger log = LogManager.getLogger(DateIndexHelper.class);
 
     public static final String NULL_BYTE = "\0";
 

@@ -3,7 +3,8 @@ package datawave.query.iterator;
 import java.util.Map.Entry;
 
 import org.apache.accumulo.core.data.Key;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Maps;
@@ -19,7 +20,7 @@ public class GetParentDocument implements Function<Entry<Key,Document>,Tuple2<Ke
     private final KeyToDocumentData fetchDocData;
     private final Aggregation makeDocument;
     private final EntryToTuple<Key,Document> convert = new EntryToTuple<>();
-    private static final Logger log = Logger.getLogger(GetParentDocument.class);
+    private static final Logger log = LogManager.getLogger(GetParentDocument.class);
 
     public GetParentDocument(KeyToDocumentData fetchDocData, Aggregation makeDocument) {
         this.fetchDocData = fetchDocData;

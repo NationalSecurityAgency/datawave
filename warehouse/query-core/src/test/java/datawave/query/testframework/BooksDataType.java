@@ -10,7 +10,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import datawave.data.normalizer.Normalizer;
 import datawave.ingest.csv.config.helper.ExtendedCSVHelper;
@@ -24,7 +25,7 @@ import datawave.ingest.json.mr.handler.ContentJsonColumnBasedHandler;
  */
 public class BooksDataType extends AbstractDataTypeConfig {
 
-    private static final Logger log = Logger.getLogger(BooksDataType.class);
+    private static final Logger log = LogManager.getLogger(BooksDataType.class);
 
     /**
      * Predefined instances for the books datatype.

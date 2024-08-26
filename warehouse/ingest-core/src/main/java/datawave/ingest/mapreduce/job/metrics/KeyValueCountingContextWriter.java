@@ -9,7 +9,8 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.collect.Multimap;
 
@@ -24,7 +25,7 @@ import datawave.ingest.mapreduce.job.writer.ContextWriter;
  */
 public class KeyValueCountingContextWriter<OK,OV> implements ContextWriter<OK,OV> {
 
-    private static final Logger logger = Logger.getLogger(KeyValueCountingContextWriter.class);
+    private static final Logger logger = LogManager.getLogger(KeyValueCountingContextWriter.class);
     private static final int COUNTS_SIZE = 64; // the number of tables
 
     public static final String GROUP = "tableCounts";

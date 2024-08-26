@@ -13,7 +13,8 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.OptionDescriber;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 
@@ -26,7 +27,7 @@ import datawave.ingest.protobuf.Uid;
  */
 public class GlobalIndexRangeSamplingIterator implements SortedKeyValueIterator<Key,Value>, OptionDescriber {
 
-    private static Logger log = Logger.getLogger(GlobalIndexRangeSamplingIterator.class);
+    private static Logger log = LogManager.getLogger(GlobalIndexRangeSamplingIterator.class);
 
     private SortedKeyValueIterator<Key,Value> iterator = null;
     private Key key = null;

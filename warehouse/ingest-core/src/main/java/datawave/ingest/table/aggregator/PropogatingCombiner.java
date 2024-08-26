@@ -5,7 +5,8 @@ import java.util.Iterator;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.Combiner;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  *
@@ -16,7 +17,7 @@ public abstract class PropogatingCombiner extends Combiner {
 
     private static final Value EMPTY_VALUE = new Value(new byte[0]);
 
-    private static final Logger log = Logger.getLogger(PropogatingCombiner.class);
+    private static final Logger log = LogManager.getLogger(PropogatingCombiner.class);
 
     /**
      * Flag to determine if we propogate the removals

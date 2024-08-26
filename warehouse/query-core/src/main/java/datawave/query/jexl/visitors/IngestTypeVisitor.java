@@ -25,7 +25,8 @@ import org.apache.commons.jexl3.parser.ASTOrNode;
 import org.apache.commons.jexl3.parser.ASTReference;
 import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.JexlNode;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.ContentFunctionsDescriptor;
@@ -51,7 +52,7 @@ import datawave.query.util.TypeMetadata;
  */
 public class IngestTypeVisitor extends BaseVisitor {
 
-    private static final Logger log = Logger.getLogger(IngestTypeVisitor.class);
+    private static final Logger log = LogManager.getLogger(IngestTypeVisitor.class);
 
     // in the case of arithmetic or a miss in the TypeMetadata
     public static final String UNKNOWN_TYPE = "UNKNOWN_TYPE";

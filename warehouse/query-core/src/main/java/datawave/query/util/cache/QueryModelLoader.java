@@ -12,7 +12,8 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.google.common.collect.Maps;
 
@@ -26,7 +27,7 @@ import datawave.util.StringUtils;
  */
 public class QueryModelLoader extends AccumuloLoader<Entry<String,String>,QueryModel> {
 
-    private static final Logger log = Logger.getLogger(NormalizerLoader.class);
+    private static final Logger log = LogManager.getLogger(NormalizerLoader.class);
 
     protected Set<String> allFields = null;
 

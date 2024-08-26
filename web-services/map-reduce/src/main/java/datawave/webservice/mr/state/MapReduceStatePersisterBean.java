@@ -45,7 +45,8 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.core.common.connection.AccumuloConnectionFactory;
@@ -143,7 +144,7 @@ public class MapReduceStatePersisterBean {
         STARTED, RUNNING, SUCCEEDED, FAILED, KILLED
     }
 
-    private Logger log = Logger.getLogger(this.getClass());
+    private Logger log = LogManager.getLogger(this.getClass());
 
     @Inject
     private AccumuloConnectionFactory connectionFactory;

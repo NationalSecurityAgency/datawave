@@ -21,8 +21,9 @@ import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.easymock.EasyMock;
 import org.junit.After;
 import org.junit.Assert;
@@ -112,7 +113,7 @@ public class ModelBeanTest {
         MODEL_ONE = (datawave.webservice.model.Model) u.unmarshal(m1Url);
         MODEL_TWO = (datawave.webservice.model.Model) u.unmarshal(m2Url);
 
-        Logger.getLogger(ModelBean.class).setLevel(Level.OFF);
+        LogManager.getLogger(ModelBean.class).setLevel(Level.OFF);
         PowerMock.mockStatic(System.class, System.class.getMethod("currentTimeMillis"));
     }
 

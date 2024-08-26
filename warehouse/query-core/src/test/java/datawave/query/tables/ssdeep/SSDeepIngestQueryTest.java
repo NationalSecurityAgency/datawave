@@ -13,8 +13,9 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.apache.commons.collections4.iterators.TransformIterator;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -61,7 +62,7 @@ public class SSDeepIngestQueryTest extends AbstractFunctionalQuery {
     @ClassRule
     public static AccumuloSetup accumuloSetup = new AccumuloSetup();
 
-    private static final Logger log = Logger.getLogger(SSDeepIngestQueryTest.class);
+    private static final Logger log = LogManager.getLogger(SSDeepIngestQueryTest.class);
 
     SSDeepSimilarityQueryLogic similarityQueryLogic;
 
@@ -72,7 +73,7 @@ public class SSDeepIngestQueryTest extends AbstractFunctionalQuery {
     @BeforeClass
     public static void filterSetup() throws Exception {
         log.setLevel(Level.DEBUG);
-        Logger printLog = Logger.getLogger(PrintUtility.class);
+        Logger printLog = LogManager.getLogger(PrintUtility.class);
         printLog.setLevel(Level.DEBUG);
 
         Collection<DataTypeHadoopConfig> dataTypes = new ArrayList<>();

@@ -7,7 +7,8 @@ import org.apache.commons.jexl3.parser.ASTFunctionNode;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.JexlNode;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.geotools.geojson.geom.GeometryJSON;
 import org.locationtech.jts.io.WKTReader;
 
@@ -22,7 +23,7 @@ import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
  * This visitor will traverse the query tree, and extract both the geo function and associated query geometry (as GeoJSON).
  */
 public class GeoFeatureVisitor extends ShortCircuitBaseVisitor {
-    private static final Logger log = ThreadConfigurableLogger.getLogger(GeoFeatureVisitor.class);
+    private static final ThreadConfigurableLogger log = ThreadConfigurableLogger.getLogger(GeoFeatureVisitor.class);
 
     private Set<QueryGeometry> geoFeatures;
     private GeometryJSON geoJson = new GeometryJSON();

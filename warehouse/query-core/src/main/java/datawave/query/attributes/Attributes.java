@@ -14,7 +14,8 @@ import java.util.Set;
 
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.hadoop.io.WritableUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
@@ -27,7 +28,7 @@ import datawave.query.jexl.DatawaveJexlContext;
 public class Attributes extends AttributeBag<Attributes> implements Serializable {
 
     private static final long serialVersionUID = 1L;
-    private static final Logger log = Logger.getLogger(Attributes.class);
+    private static final Logger log = LogManager.getLogger(Attributes.class);
     private Set<Attribute<? extends Comparable<?>>> attributes;
     private int _count = 0;
     // cache the size in bytes as it can be expensive to compute on the fly if we have many attributes

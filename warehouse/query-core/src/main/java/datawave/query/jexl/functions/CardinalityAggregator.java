@@ -8,7 +8,8 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;
 
@@ -22,7 +23,7 @@ import datawave.query.tld.TLD;
 
 public class CardinalityAggregator extends IdentityAggregator {
 
-    private static final Logger log = Logger.getLogger(CardinalityAggregator.class);
+    private static final Logger log = LogManager.getLogger(CardinalityAggregator.class);
     private static final Text EMPTY_TEXT = new Text();
     private final boolean setDocIds;
 

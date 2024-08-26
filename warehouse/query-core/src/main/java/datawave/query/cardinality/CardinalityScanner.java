@@ -27,8 +27,9 @@ import org.apache.commons.cli.ParseException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.builder.CompareToBuilder;
 import org.apache.commons.lang.builder.EqualsBuilder;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.javatuples.Pair;
 
 import com.clearspring.analytics.stream.cardinality.CardinalityMergeException;
@@ -56,7 +57,7 @@ public class CardinalityScanner {
 
     private static final String HELP_OPT = "help";
 
-    private static final Logger log = Logger.getLogger(CardinalityScanner.class);
+    private static final Logger log = LogManager.getLogger(CardinalityScanner.class);
     private CardinalityScannerConfiguration config = null;
 
     public enum DateAggregationType {

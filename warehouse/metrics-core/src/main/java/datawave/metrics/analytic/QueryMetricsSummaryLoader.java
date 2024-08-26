@@ -29,7 +29,8 @@ import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import datawave.metrics.config.MetricsConfig;
 import datawave.metrics.mapreduce.util.JobSetupUtil;
@@ -40,7 +41,7 @@ import datawave.util.time.DateHelper;
  * This MapReduce job computes a by-day summary of query metrics.
  */
 public class QueryMetricsSummaryLoader extends Configured implements Tool {
-    private static final Logger log = Logger.getLogger(QueryMetricsSummaryLoader.class);
+    private static final Logger log = LogManager.getLogger(QueryMetricsSummaryLoader.class);
     private static final String USER = "USER";
     private static final String QUERY_LOGIC = "QUERY_LOGIC";
     private static final String NUM_RESULTS = "NUM_RESULTS";

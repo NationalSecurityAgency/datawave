@@ -3,7 +3,8 @@ package datawave.ingest.table.aggregator;
 import java.util.TreeSet;
 
 import org.apache.accumulo.core.data.Value;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 
@@ -18,7 +19,7 @@ import datawave.ingest.protobuf.TermWeightPosition;
  *
  */
 public class TextIndexAggregator extends PropogatingCombiner {
-    private static final Logger log = Logger.getLogger(TextIndexAggregator.class);
+    private static final Logger log = LogManager.getLogger(TextIndexAggregator.class);
 
     private TreeSet<TermWeightPosition> offsets = new TreeSet<>();
     private TermWeight.Info.Builder builder = TermWeight.Info.newBuilder();

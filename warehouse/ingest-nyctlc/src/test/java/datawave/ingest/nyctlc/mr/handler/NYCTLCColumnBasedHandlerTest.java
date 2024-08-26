@@ -10,7 +10,8 @@ import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -29,7 +30,7 @@ import datawave.util.TableName;
 public class NYCTLCColumnBasedHandlerTest {
 
     private Configuration conf;
-    private static Logger log = Logger.getLogger(NYCTLCColumnBasedHandlerTest.class);
+    private static Logger log = LogManager.getLogger(NYCTLCColumnBasedHandlerTest.class);
 
     @BeforeClass
     public static void setupSystemSettings() throws Exception {

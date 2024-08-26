@@ -8,7 +8,8 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -25,7 +26,7 @@ import datawave.microservice.querymetric.BaseQueryMetric.Prediction;
 
 public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements TermFrequencyIngestHelperInterface {
 
-    private static final Logger log = Logger.getLogger(ContentQueryMetricsIngestHelper.class);
+    private static final Logger log = LogManager.getLogger(ContentQueryMetricsIngestHelper.class);
     private static final Integer MAX_FIELD_VALUE_LENGTH = 500000;
 
     private Set<String> contentIndexFields = new HashSet<>();

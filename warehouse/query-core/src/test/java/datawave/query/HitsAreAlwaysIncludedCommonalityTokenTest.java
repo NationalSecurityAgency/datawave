@@ -19,7 +19,8 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
@@ -106,7 +107,7 @@ public abstract class HitsAreAlwaysIncludedCommonalityTokenTest {
         }
     }
 
-    private static final Logger log = Logger.getLogger(HitsAreAlwaysIncludedCommonalityTokenTest.class);
+    private static final Logger log = LogManager.getLogger(HitsAreAlwaysIncludedCommonalityTokenTest.class);
 
     protected Authorizations auths = new Authorizations("ALL");
 

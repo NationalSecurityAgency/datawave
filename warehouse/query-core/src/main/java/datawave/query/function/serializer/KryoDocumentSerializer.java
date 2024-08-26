@@ -2,7 +2,8 @@ package datawave.query.function.serializer;
 
 import java.io.ByteArrayOutputStream;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Output;
@@ -18,7 +19,7 @@ import datawave.query.function.KryoCVAwareSerializableSerializer;
  *
  */
 public class KryoDocumentSerializer extends DocumentSerializer {
-    private static final Logger log = Logger.getLogger(KryoDocumentSerializer.class);
+    private static final Logger log = LogManager.getLogger(KryoDocumentSerializer.class);
     final Kryo kryo = new Kryo();
     final ByteArrayOutputStream baos = new ByteArrayOutputStream(4096);
 

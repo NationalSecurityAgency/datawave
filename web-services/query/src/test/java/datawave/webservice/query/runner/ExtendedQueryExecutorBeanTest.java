@@ -47,7 +47,8 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.util.Pair;
 import org.apache.commons.collections4.iterators.TransformIterator;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.easymock.EasyMock;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.junit.Before;
@@ -3863,7 +3864,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         setInternalState(subject, LookupUUIDUtil.class, lookupUUIDUtil);
         setInternalState(subject, ManagedExecutorService.class, executor);
-        setInternalState(subject, Logger.class, Logger.getLogger(QueryExecutorBean.class));
+        setInternalState(subject, Logger.class, LogManager.getLogger(QueryExecutorBean.class));
 
         subject.lookupUUID("uuidType", "1234567890", uriInfo, httpHeaders);
 

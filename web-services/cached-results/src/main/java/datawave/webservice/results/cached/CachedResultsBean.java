@@ -70,7 +70,8 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.springframework.util.LinkedMultiValueMap;
@@ -171,7 +172,7 @@ import datawave.webservice.result.VoidResponse;
 @TransactionManagement(TransactionManagementType.BEAN)
 public class CachedResultsBean {
 
-    private static Logger log = Logger.getLogger(CachedResultsBean.class);
+    private static Logger log = LogManager.getLogger(CachedResultsBean.class);
 
     @Resource
     private EJBContext ctx;

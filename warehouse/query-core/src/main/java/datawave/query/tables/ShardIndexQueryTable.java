@@ -38,7 +38,8 @@ import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.DataInputBuffer;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.google.common.base.Function;
 import com.google.common.collect.HashMultimap;
@@ -87,7 +88,7 @@ import datawave.webservice.query.exception.QueryException;
  */
 public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implements CheckpointableQueryLogic {
 
-    private static final Logger log = Logger.getLogger(ShardIndexQueryTable.class);
+    private static final Logger log = LogManager.getLogger(ShardIndexQueryTable.class);
     protected ScannerFactory scannerFactory;
     private ShardIndexQueryConfiguration config;
     private MetadataHelperFactory metadataHelperFactory;

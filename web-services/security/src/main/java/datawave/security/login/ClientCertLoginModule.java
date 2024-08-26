@@ -30,7 +30,7 @@ import datawave.security.auth.DatawaveCredential;
  */
 public class ClientCertLoginModule implements LoginModule {
 
-    private static Logger log = Logger.getLogger(ClientCertLoginModule.class);
+    private static Logger log = LogManager.getLogger(ClientCertLoginModule.class);
     private Map<String,Object> sharedState;
     private boolean trace;
 

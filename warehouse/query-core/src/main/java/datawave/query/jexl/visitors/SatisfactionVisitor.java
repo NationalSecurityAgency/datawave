@@ -26,7 +26,8 @@ import org.apache.commons.jexl3.parser.ASTNotNode;
 import org.apache.commons.jexl3.parser.ASTNullLiteral;
 import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.JexlNode;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.google.common.collect.Lists;
 
@@ -42,7 +43,7 @@ import datawave.util.UniversalSet;
  *
  */
 public class SatisfactionVisitor extends BaseVisitor {
-    private static final Logger log = Logger.getLogger(SatisfactionVisitor.class);
+    private static final Logger log = LogManager.getLogger(SatisfactionVisitor.class);
 
     protected Set<String> nonEventFields;
     private Collection<String> unindexedFields = Lists.newArrayList();

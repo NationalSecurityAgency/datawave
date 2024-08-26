@@ -1,7 +1,8 @@
 package datawave.ingest.mapreduce;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.metric.IngestInput;
@@ -9,7 +10,7 @@ import datawave.ingest.time.Now;
 
 public class DataTypeDiscardIntervalPredicate implements RawRecordPredicate {
 
-    private static final Logger log = Logger.getLogger(DataTypeDiscardIntervalPredicate.class);
+    private static final Logger log = LogManager.getLogger(DataTypeDiscardIntervalPredicate.class);
 
     /**
      * number which will be used to evaluate whether or not an Event should be processed. If the Event.getEventDate() is greater than (now - interval) then it

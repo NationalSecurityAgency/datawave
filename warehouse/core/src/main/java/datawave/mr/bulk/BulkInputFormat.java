@@ -72,8 +72,10 @@ import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.config.Configurator;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
@@ -92,7 +94,7 @@ import datawave.util.TextUtil;
 
 public class BulkInputFormat extends InputFormat<Key,Value> {
 
-    protected static final Logger log = Logger.getLogger(BulkInputFormat.class);
+    protected static final Logger log = LogManager.getLogger(BulkInputFormat.class);
 
     protected static final String PREFIX = BulkInputFormat.class.getSimpleName();
     protected static final String INPUT_INFO_HAS_BEEN_SET = PREFIX + ".configured";
@@ -419,8 +421,8 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
      */
     public static void setLogLevel(Configuration conf, Level level) {
         ArgumentChecker.notNull(level);
-        log.setLevel(level);
-        conf.setInt(LOGLEVEL, level.toInt());
+        Configurator.setLevel(log.getName(), level);
+        conf.setInt(LOGLEVEL, level.intLevel());
     }
 
     /**
@@ -608,7 +610,9 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
      * @see #setLogLevel(Configuration, Level)
      */
     protected static Level getLogLevel(Configuration conf) {
-        return Level.toLevel(conf.getInt(LOGLEVEL, Level.INFO.toInt()));
+        int logLevelInt = conf.getInt(LOGLEVEL, Level.INFO.intLevel());
+        String logLevelStr = Integer.toString(logLevelInt);
+        return Level.toLevel(logLevelStr, Level.INFO);
     }
 
     // InputFormat doesn't have the equivalent of OutputFormat's
@@ -1092,7 +1096,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
      * Read the metadata table to get tablets and match up ranges to them.
      */
     public List<InputSplit> getSplits(JobContext job) throws IOException {
-        log.setLevel(getLogLevel(job.getConfiguration()));
+        Configurator.setLevel(log.getName(), getLogLevel(job.getConfiguration()));
         validateOptions(job.getConfiguration());
 
         AccumuloHelper cbHelper = new AccumuloHelper();

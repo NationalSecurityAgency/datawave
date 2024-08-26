@@ -21,7 +21,8 @@ import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.OptionDescriber;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.google.common.base.Joiner;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -34,7 +35,7 @@ import datawave.query.Constants;
  * for each document scanned.
  */
 public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,Value>, OptionDescriber {
-    private static final Logger log = Logger.getLogger(TermFrequencyExcerptIterator.class);
+    private static final Logger log = LogManager.getLogger(TermFrequencyExcerptIterator.class);
     private static final Joiner joiner = Joiner.on(" ").skipNulls();
 
     // The field name option

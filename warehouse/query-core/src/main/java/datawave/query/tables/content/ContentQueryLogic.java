@@ -18,7 +18,8 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.user.RegExFilter;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.google.common.collect.Lists;
 
@@ -55,7 +56,7 @@ import datawave.webservice.query.exception.QueryException;
  */
 public class ContentQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements CheckpointableQueryLogic {
 
-    private static final Logger log = Logger.getLogger(ContentQueryLogic.class);
+    private static final Logger log = LogManager.getLogger(ContentQueryLogic.class);
 
     private static final String PARENT_ONLY = "\1";
     private static final String ALL = "\u10FFFF";

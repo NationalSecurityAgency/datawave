@@ -5,7 +5,8 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.google.common.collect.Multimap;
 
@@ -15,7 +16,7 @@ import datawave.webservice.query.result.event.ResponseObjectFactory;
 public class EventQueryDataDecorator {
     private String fieldName = null;
     private Map<String,String> patternMap = new LinkedHashMap<>();
-    private Logger log = Logger.getLogger(EventQueryDataDecorator.class);
+    private Logger log = LogManager.getLogger(EventQueryDataDecorator.class);
     private ResponseObjectFactory responseObjectFactory;
 
     public EventQueryDataDecorator() {}

@@ -16,7 +16,8 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.google.common.collect.Lists;
 
@@ -31,7 +32,7 @@ import datawave.query.tld.TLDQueryIterator;
 import datawave.query.util.count.CountMapSerDe;
 
 public class ThreadedRangeBundlerIterator implements Iterator<QueryData>, Closeable {
-    private static final Logger log = ThreadConfigurableLogger.getLogger(ThreadedRangeBundlerIterator.class);
+    private static final ThreadConfigurableLogger log = ThreadConfigurableLogger.getLogger(ThreadedRangeBundlerIterator.class);
 
     private final long maxWaitValue;
     private final TimeUnit maxWaitUnit;

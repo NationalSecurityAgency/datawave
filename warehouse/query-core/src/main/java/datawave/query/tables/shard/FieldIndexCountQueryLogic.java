@@ -27,7 +27,8 @@ import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.collections4.Transformer;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.logic.QueryLogicTransformer;
@@ -51,7 +52,7 @@ import datawave.webservice.query.exception.QueryException;
  */
 public class FieldIndexCountQueryLogic extends ShardQueryLogic {
 
-    private static final Logger logger = Logger.getLogger(FieldIndexCountQueryLogic.class);
+    private static final Logger logger = LogManager.getLogger(FieldIndexCountQueryLogic.class);
     private static final String DATA_FORMAT = "yyyyMMdd";
     private Collection<String> fieldNames;
     private Collection<String> fieldValues;

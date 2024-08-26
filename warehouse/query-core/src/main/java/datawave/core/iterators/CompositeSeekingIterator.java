@@ -17,7 +17,8 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.WrappingIterator;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import datawave.data.type.DiscreteIndexType;
 import datawave.query.composite.CompositeSeeker.ShardIndexCompositeSeeker;
@@ -28,7 +29,7 @@ import datawave.query.composite.CompositeSeeker.ShardIndexCompositeSeeker;
  */
 public class CompositeSeekingIterator extends WrappingIterator {
 
-    private static final Logger log = Logger.getLogger(CompositeSeekingIterator.class);
+    private static final Logger log = LogManager.getLogger(CompositeSeekingIterator.class);
 
     public static final String COMPONENT_FIELDS = "component.fields";
     public static final String DISCRETE_INDEX_TYPE = ".discrete.index.type";

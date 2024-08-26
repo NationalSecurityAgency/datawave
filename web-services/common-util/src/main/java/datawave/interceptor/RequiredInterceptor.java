@@ -7,7 +7,8 @@ import javax.interceptor.InvocationContext;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.annotation.Required;
 
@@ -16,7 +17,7 @@ import datawave.annotation.Required;
  */
 public class RequiredInterceptor {
 
-    private Logger log = Logger.getLogger(this.getClass());
+    private Logger log = LogManager.getLogger(this.getClass());
 
     @AroundInvoke
     public Object checkRequiredParameters(InvocationContext ctx) throws Exception {

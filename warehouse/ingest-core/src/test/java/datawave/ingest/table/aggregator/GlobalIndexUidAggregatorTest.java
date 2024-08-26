@@ -12,6 +12,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import java.lang.module.Configuration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -22,8 +23,10 @@ import java.util.UUID;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.junit.Test;
 
 import com.google.common.collect.Iterators;
@@ -158,7 +161,7 @@ public class GlobalIndexUidAggregatorTest {
 
     @Test
     public void testSeenIgnore() throws Exception {
-        Logger.getRootLogger().setLevel(Level.ALL);
+        Configurator.setLevel(LogManager.getRootLogger().getName(), Level.ALL);
         agg.reset();
         Builder b = createNewUidList();
         b.setIGNORE(true);
@@ -178,9 +181,9 @@ public class GlobalIndexUidAggregatorTest {
 
     @Test
     public void testInvalidValueType() throws Exception {
-        Logger log = Logger.getLogger(GlobalIndexUidAggregator.class);
+        Logger log = LogManager.getLogger(GlobalIndexUidAggregator.class);
         Level origLevel = log.getLevel();
-        log.setLevel(Level.FATAL);
+        Configurator.setLevel(log.getName(), Level.FATAL);
         Collection<Value> values = Lists.newArrayList();
         agg.reset();
         Value val = new Value(UUID.randomUUID().toString().getBytes());
@@ -191,7 +194,7 @@ public class GlobalIndexUidAggregatorTest {
         assertEquals(0, resultList.getUIDCount());
         assertEquals(0, resultList.getCOUNT());
 
-        log.setLevel(origLevel);
+        Configurator.setLevel(log.getName(), origLevel);
     }
 
     @Test

@@ -75,10 +75,17 @@ import org.apache.hadoop.tools.DistCp;
 import org.apache.hadoop.tools.DistCpOptions;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
-import org.apache.log4j.ConsoleAppender;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-import org.apache.log4j.PatternLayout;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.appender.ConsoleAppender;
+import org.apache.logging.log4j.core.config.Configurator;
+import org.apache.logging.log4j.core.config.builder.api.AppenderComponentBuilder;
+import org.apache.logging.log4j.core.config.builder.api.ConfigurationBuilder;
+import org.apache.logging.log4j.core.config.builder.api.ConfigurationBuilderFactory;
+import org.apache.logging.log4j.core.config.builder.impl.BuiltConfiguration;
+import org.apache.logging.log4j.core.filter.ThresholdFilter;
+import org.apache.logging.log4j.core.layout.PatternLayout;
 
 import datawave.ingest.config.TableConfigCache;
 import datawave.ingest.data.Type;
@@ -131,8 +138,7 @@ public class IngestJob implements Tool {
     public static final String REDUCE_TASKS_ARG_PREFIX = "-mapreduce.job.reduces=";
 
     protected boolean eventProcessingError = false;
-    protected Logger log = Logger.getLogger("datawave.ingest");
-    private ConsoleAppender ca = new ConsoleAppender();
+    protected Logger log = LogManager.getLogger("datawave.ingest");
 
     protected ArrayList<String[]> confOverrides = new ArrayList<>();
     protected int reduceTasks = 0;
@@ -251,12 +257,25 @@ public class IngestJob implements Tool {
     public int run(String[] args) throws Exception {
         long setupStart = System.currentTimeMillis();
 
-        Logger.getLogger(TypeRegistry.class).setLevel(Level.ALL);
+        Configurator.setLevel(LogManager.getLogger(TypeRegistry.class), Level.ALL);
+        // ConfigurationBuilder<BuiltConfiguration> builder = ConfigurationBuilderFactory.newConfigurationBuilder();
 
-        ca.setLayout(new PatternLayout("%p [%c{1}] %m%n"));
-        ca.setThreshold(Level.INFO);
-        log.addAppender(ca);
-        log.setLevel(Level.INFO);
+        PatternLayout layout = PatternLayout.newBuilder().withPattern("%p [%c{1}] %m%n").build();
+
+        ThresholdFilter filter = ThresholdFilter.createFilter(Level.INFO, null, null);
+
+        ConsoleAppender.Builder<?> builder = ConsoleAppender.newBuilder();
+        //@formatter:off
+        ConsoleAppender ca = ConsoleAppender.newBuilder()
+                .setName("ConsoleAppender")
+                .setTarget(ConsoleAppender.Target.SYSTEM_OUT)
+                .setLayout(layout)
+                .setFilter(filter).build();
+        //@formatter:on
+
+        Logger log = LogManager.getRootLogger();
+        log.atInfo().log("Logger initialized");
+        Configurator.setLevel(log.getName(), Level.INFO);
 
         // Initialize the markings file helper so we get the right markings file
         MarkingFunctions.Factory.createMarkingFunctions();
@@ -382,13 +401,13 @@ public class IngestJob implements Tool {
                 File flagDir = new File(flagFileDir);
                 if (flagDir.isDirectory()) {
                     // Find flag files that start with this datatype
-                    RegexFileFilter filter;
+                    RegexFileFilter regexFilter;
                     if (flagFilePattern != null) {
-                        filter = new RegexFileFilter(flagFilePattern);
+                        regexFilter = new RegexFileFilter(flagFilePattern);
                     } else {
-                        filter = new RegexFileFilter(outputMutations ? ".*_(live|fivemin)_.*\\.flag" : ".*_(bulk|onehr)_.*\\.flag");
+                        regexFilter = new RegexFileFilter(outputMutations ? ".*_(live|fivemin)_.*\\.flag" : ".*_(bulk|onehr)_.*\\.flag");
                     }
-                    File[] flagFiles = flagDir.listFiles((FilenameFilter) filter);
+                    File[] flagFiles = flagDir.listFiles((FilenameFilter) regexFilter);
                     if (flagFiles.length > 0) {
                         // Reverse sort by time to get the earliest file
                         Comparator<File> comparator = LastModifiedFileComparator.LASTMODIFIED_COMPARATOR;

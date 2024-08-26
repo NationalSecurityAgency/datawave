@@ -7,7 +7,8 @@ import java.util.Set;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.common.logging.ThreadConfigurableLogger;
@@ -30,7 +31,7 @@ import datawave.webservice.result.GenericResponse;
  */
 public abstract class BaseRemoteQueryLogic<T> extends BaseQueryLogic<T> implements RemoteQueryLogic<T> {
 
-    protected static final Logger log = ThreadConfigurableLogger.getLogger(BaseRemoteQueryLogic.class);
+    protected static final ThreadConfigurableLogger log = ThreadConfigurableLogger.getLogger(BaseRemoteQueryLogic.class);
 
     public static final String QUERY_ID = "queryId";
 

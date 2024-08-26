@@ -34,7 +34,8 @@ import javax.inject.Inject;
 import org.apache.commons.collections4.map.LRUMap;
 import org.apache.commons.lang.StringUtils;
 import org.apache.deltaspike.core.api.exclude.Exclude;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.configuration.RefreshEvent;
@@ -63,7 +64,7 @@ import datawave.webservice.result.VoidResponse;
 @Exclude(ifProjectStage = DatawaveEmbeddedProjectStageHolder.DatawaveEmbedded.class)
 public class QueryMetricsWriter {
 
-    private Logger log = Logger.getLogger(QueryMetricsWriter.class);
+    private Logger log = LogManager.getLogger(QueryMetricsWriter.class);
 
     @Resource(mappedName = "java:jboss/ee/concurrency/factory/default")
     private ManagedThreadFactory managedThreadFactory;

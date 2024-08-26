@@ -16,7 +16,8 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.google.common.collect.Multimap;
 
@@ -31,7 +32,7 @@ import datawave.ingest.json.mr.input.JsonRecordReader;
  */
 public class JsonTestFileLoader implements TestFileLoader, DataLoader {
 
-    private static final Logger log = Logger.getLogger(JsonTestFileLoader.class);
+    private static final Logger log = LogManager.getLogger(JsonTestFileLoader.class);
 
     private final URI uri;
     private final Configuration conf;

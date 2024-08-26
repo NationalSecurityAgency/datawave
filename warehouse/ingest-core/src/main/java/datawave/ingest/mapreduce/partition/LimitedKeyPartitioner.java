@@ -5,7 +5,8 @@ import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Partitioner;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 
@@ -14,7 +15,7 @@ import datawave.ingest.mapreduce.job.BulkIngestKey;
  * approach that we use elsewhere but don't have enough data to justify creating many small rfiles per job
  */
 public class LimitedKeyPartitioner extends Partitioner<BulkIngestKey,Value> implements Configurable, DelegatePartitioner {
-    private static Logger log = Logger.getLogger(LimitedKeyPartitioner.class);
+    private static Logger log = LogManager.getLogger(LimitedKeyPartitioner.class);
     private Configuration conf;
     private PartitionLimiter partitionLimiter;
 

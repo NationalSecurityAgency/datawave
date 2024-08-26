@@ -28,7 +28,8 @@ import javax.sql.rowset.RowSetProvider;
 
 import org.apache.commons.dbutils.DbUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -54,7 +55,7 @@ import datawave.webservice.query.util.MapUtils;
 @SuppressWarnings("restriction")
 public class CachedRunningQuery extends AbstractRunningQuery {
 
-    private static Logger log = Logger.getLogger(CachedRunningQuery.class);
+    private static Logger log = LogManager.getLogger(CachedRunningQuery.class);
 
     private static DataSource datasource = null;
 

@@ -13,7 +13,8 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.file.FileSKVIterator;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
@@ -36,7 +37,7 @@ public class RangeRecordReader extends RFileRecordReader {
 
     protected RecordIterator splitReference = null;
 
-    private static final Logger log = Logger.getLogger(RangeRecordReader.class);
+    private static final Logger log = LogManager.getLogger(RangeRecordReader.class);
 
     protected static final String PREFIX = BulkInputFormat.class.getSimpleName();
     protected static final String ITERATORS = PREFIX + ".iterators";

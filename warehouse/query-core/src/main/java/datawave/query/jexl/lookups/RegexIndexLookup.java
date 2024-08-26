@@ -18,7 +18,8 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Iterators;
@@ -46,7 +47,7 @@ import datawave.webservice.query.exception.PreConditionFailedQueryException;
  * An asynchronous index lookup which looks up concrete values for the specified regex term.
  */
 public class RegexIndexLookup extends AsyncIndexLookup {
-    private static final Logger log = ThreadConfigurableLogger.getLogger(RegexIndexLookup.class);
+    private static final ThreadConfigurableLogger log = ThreadConfigurableLogger.getLogger(RegexIndexLookup.class);
 
     protected MetadataHelper helper;
     protected Set<String> reverseFields;

@@ -36,7 +36,8 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.jexl3.JexlArithmetic;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
 
 import com.esotericsoftware.kryo.Kryo;
@@ -110,7 +111,7 @@ import datawave.util.UniversalSet;
  * Some options are passed through from the QueryParameters.
  */
 public class QueryOptions implements OptionDescriber {
-    private static final Logger log = Logger.getLogger(QueryOptions.class);
+    private static final Logger log = LogManager.getLogger(QueryOptions.class);
 
     protected static Cache<String,FileSystem> fileSystemCache = CacheBuilder.newBuilder().concurrencyLevel(10).maximumSize(100).build();
 
