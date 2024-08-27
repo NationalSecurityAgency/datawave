@@ -91,7 +91,7 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
             AgeOffRuleLoader ruleLoader = new AgeOffRuleLoader(new FileLoaderDependencyProvider(fs, filePath, iterEnv));
             return ruleLoader.load(in);
         } catch (Exception ex) {
-            log.error("uh oh: " + ex);
+            log.error("An error occurred while loading age-off rules, the exception will be rethrown", ex);
             throw new IOException(ex);
         } finally {
             IOUtils.closeStream(in);

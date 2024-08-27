@@ -117,7 +117,7 @@ public class FileRuleCacheValue {
             rulesBase = ruleLoader.load(in);
         } catch (Exception e) {
             // all exceptions are wrapped in an IOException
-            log.error("Error loading file: " + filePath, e);
+            log.error("An error occurred while loading age-off rules, the exception will be rethrown: " + filePath, e);
             throw new IOException(e);
         }
         return rulesBase;

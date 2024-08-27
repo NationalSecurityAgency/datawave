@@ -134,7 +134,7 @@ public class AgeOffRuleLoader {
 
             // @formatter:on
         } catch (Exception ex) {
-            log.error("uh oh: " + ex);
+            log.trace("An error occurred while loading age-off rules, the exception will be rethrown", ex);
             throw new IOException(ex);
         } finally {
             IOUtils.closeStream(in);
