@@ -1013,7 +1013,7 @@ public abstract class GroupingTest {
         givenQueryParameter(QueryParameters.GROUP_FIELDS, "RECORD");
 
         Assertions.assertThatIllegalArgumentException().isThrownBy(this::collectQueryResults)
-                        .withMessage("Unable to calculate an average with non-numerical value 'MALE'");
+                        .withMessage("Character M is neither a decimal digit number, decimal point, nor \"e\" notation exponential mark.");
     }
 
     @Test

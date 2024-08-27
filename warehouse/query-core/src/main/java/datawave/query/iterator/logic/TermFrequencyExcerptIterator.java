@@ -90,7 +90,7 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
         if (map.containsKey(START_OFFSET)) {
             try {
                 startOffset = Integer.parseInt(map.get(START_OFFSET));
-            } catch (Exception e) {
+            } catch (NumberFormatException e) {
                 throw new IllegalArgumentException("Failed to parse start offset as integer", e);
             }
         } else {
@@ -101,7 +101,7 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
         if (map.containsKey(END_OFFSET)) {
             try {
                 endOffset = Integer.parseInt(map.get(END_OFFSET));
-            } catch (Exception e) {
+            } catch (NumberFormatException e) {
                 throw new IllegalArgumentException("Failed to parse end offset as integer", e);
             }
             if (endOffset <= startOffset) {

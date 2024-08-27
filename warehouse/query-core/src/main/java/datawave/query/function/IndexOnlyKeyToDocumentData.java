@@ -214,7 +214,7 @@ public class IndexOnlyKeyToDocumentData extends KeyToDocumentData implements Ite
             return Maps.immutableEntry(documentData, this.iteratorDocument);
         } catch (DatawaveFatalQueryException e) {
             throw e;
-        } catch (Exception e) {
+        } catch (IOException e) {
             QueryException qe = new QueryException(DatawaveErrorCode.APPLY_FUNCTION_ERROR, e);
             throw new DatawaveFatalQueryException(qe);
         }
