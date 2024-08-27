@@ -6,6 +6,7 @@ import static org.apache.commons.pool.impl.GenericObjectPool.WHEN_EXHAUSTED_BLOC
 
 import java.io.IOException;
 import java.io.InterruptedIOException;
+import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -34,6 +35,7 @@ import org.apache.commons.collections4.iterators.EmptyIterator;
 import org.apache.commons.jexl3.JexlArithmetic;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.commons.lang.builder.CompareToBuilder;
 import org.apache.commons.pool.BasePoolableObjectFactory;
 import org.apache.commons.pool.impl.GenericObjectPool;
@@ -53,6 +55,7 @@ import com.google.common.collect.Sets;
 import com.google.common.collect.UnmodifiableIterator;
 
 import datawave.core.iterators.DatawaveFieldIndexListIteratorJexl;
+import datawave.core.iterators.filesystem.FileSystemCache;
 import datawave.data.type.Type;
 import datawave.data.type.util.NumericalEncoder;
 import datawave.ingest.data.config.ingest.CompositeIngest;
@@ -63,6 +66,7 @@ import datawave.query.attributes.Document;
 import datawave.query.attributes.ExcerptFields;
 import datawave.query.attributes.ValueTuple;
 import datawave.query.composite.CompositeMetadata;
+import datawave.query.exceptions.QueryIteratorYieldingException;
 import datawave.query.function.Aggregation;
 import datawave.query.function.DataTypeAsField;
 import datawave.query.function.DocumentMetadata;
@@ -250,7 +254,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             this.script = JexlASTHelper.parseAndFlattenJexlQuery(this.getQuery());
             this.myEvaluationFunction = getJexlEvaluation(this.getQuery(), arithmetic);
 
-        } catch (Exception e) {
+        } catch (ParseException e) {
             throw new IOException("Could not parse the JEXL query: '" + this.getQuery() + "'", e);
         }
 
@@ -296,16 +300,19 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         if (config.isValid()) {
             try {
                 Path basePath = new Path(config.getBasePathURI());
-                FileSystem fileSystem = this.getFileSystemCache().getFileSystem(basePath.toUri());
+                FileSystemCache cache = this.getFileSystemCache();
+                if (cache != null) {
+                    FileSystem fileSystem = cache.getFileSystem(basePath.toUri());
 
-                // Note: The ivarator config base paths are used by ALL queries which run on the system, so there
-                // should be no harm in creating these directories if they do not already exist by this point.
-                // Also, since we are selecting these directories intentionally for use by the ivarators, it
-                // should be a given that we have write permissions.
-                return fileSystem.exists(basePath) || fileSystem.mkdirs(basePath);
+                    // Note: The ivarator config base paths are used by ALL queries which run on the system, so there
+                    // should be no harm in creating these directories if they do not already exist by this point.
+                    // Also, since we are selecting these directories intentionally for use by the ivarators, it
+                    // should be a given that we have write permissions.
+                    return fileSystem.exists(basePath) || fileSystem.mkdirs(basePath);
+                }
             } catch (InterruptedIOException ioe) {
                 throw ioe;
-            } catch (Exception e) {
+            } catch (IOException e) {
                 log.error("Failure to validate path " + config, e);
             }
         }
@@ -546,12 +553,16 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         // handled specially to ensure that the client will retry the scan elsewhere
         IOException ioe = null;
         IterationInterruptedException iie = null;
+        QueryIteratorYieldingException qiy = null;
         TabletClosedException tce = null;
         if (reason instanceof IOException) {
             ioe = (IOException) reason;
         }
         if (reason instanceof IterationInterruptedException) {
             iie = (IterationInterruptedException) reason;
+        }
+        if (reason instanceof QueryIteratorYieldingException) {
+            qiy = (QueryIteratorYieldingException) reason;
         }
         if (reason instanceof TabletClosedException) {
             tce = (TabletClosedException) reason;
@@ -566,20 +577,27 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             if (reason instanceof IterationInterruptedException) {
                 iie = (IterationInterruptedException) reason;
             }
+            if (reason instanceof QueryIteratorYieldingException) {
+                qiy = (QueryIteratorYieldingException) reason;
+            }
             if (reason instanceof TabletClosedException) {
                 tce = (TabletClosedException) reason;
             }
             depth++;
         }
 
-        // NOTE: Only logging debug here because the Tablet/LookupTask will log the exception as a WARN if we actually have an problem here
+        // NOTE: Only logging debug (for the most part) here because the Tablet/LookupTask will log the exception
+        // as a WARN if we actually have a problem here
         if (iie != null) {
-            // exit gracefully if we are yielding as an iie is expected in this case
+            log.debug("Query interrupted " + queryId, e);
+            throw iie;
+        } else if (qiy != null) {
+            // exit gracefully if we are yielding as a qiy is expected in this case
             if ((this.yield != null) && this.yield.hasYielded()) {
                 log.debug("Query yielded " + queryId);
             } else {
-                log.debug("Query interrupted " + queryId, e);
-                throw iie;
+                log.error("QueryIteratorYieldingException throws but yield callback not set for " + queryId, qiy);
+                throw qiy;
             }
         } else if (tce != null) {
             log.debug("Query tablet closed " + queryId, e);
@@ -1590,7 +1608,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                     try {
                         excerptTransform = new ExcerptTransform(excerptFields, myEnvironment, sourceForDeepCopies.deepCopy(myEnvironment),
                                         excerptIterator.getDeclaredConstructor().newInstance());
-                    } catch (Exception e) {
+                    } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
                         throw new RuntimeException("Could not create excerpt transform", e);
                     }
                 }
