@@ -347,7 +347,6 @@ public interface VirtualIngest {
          *            a different map of markings
          * @return the merged markings
          */
-        @SuppressWarnings("unchecked")
         protected Map<String,String> mergeMarkings(Map<String,String> markings1, Map<String,String> markings2) {
             if (markings2 != null) {
                 if (markings1 == null) {
