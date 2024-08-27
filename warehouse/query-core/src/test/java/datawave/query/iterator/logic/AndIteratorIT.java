@@ -16,11 +16,11 @@ import java.util.TreeSet;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
-import datawave.iterators.IterationInterruptedException;
 import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Sets;
 
+import datawave.iterators.IterationInterruptedException;
 import datawave.query.attributes.Document;
 import datawave.query.iterator.NestedIterator;
 

@@ -19,7 +19,6 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import datawave.iterators.IterationInterruptedException;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
@@ -28,6 +27,7 @@ import org.apache.log4j.Logger;
 
 import datawave.data.hash.UID;
 import datawave.data.hash.UIDConstants;
+import datawave.iterators.IterationInterruptedException;
 import datawave.query.Constants;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.util.Tuple3;

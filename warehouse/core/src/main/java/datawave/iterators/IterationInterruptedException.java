@@ -1,6 +1,5 @@
 package datawave.iterators;
 
-
 /**
  * Exception thrown if an interrupt flag is detected.
  */

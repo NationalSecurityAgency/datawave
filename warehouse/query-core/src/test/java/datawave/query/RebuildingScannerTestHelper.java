@@ -27,7 +27,6 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import datawave.iterators.IterationInterruptedException;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.hadoop.io.Text;
 
@@ -37,6 +36,7 @@ import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.accumulo.inmemory.InMemoryScanner;
 import datawave.accumulo.inmemory.InMemoryScannerBase;
 import datawave.accumulo.inmemory.ScannerRebuilder;
+import datawave.iterators.IterationInterruptedException;
 import datawave.query.attributes.Document;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.iterator.profile.FinalDocumentTrackingIterator;

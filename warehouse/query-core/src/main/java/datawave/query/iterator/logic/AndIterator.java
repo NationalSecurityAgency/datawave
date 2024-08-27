@@ -15,11 +15,11 @@ import java.util.TreeSet;
 
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Range;
-import datawave.iterators.IterationInterruptedException;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.TreeMultimap;
 
+import datawave.iterators.IterationInterruptedException;
 import datawave.query.attributes.Document;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.QueryIteratorYieldingException;
