@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -20,8 +21,9 @@ import org.apache.log4j.Logger;
 import com.google.common.collect.Maps;
 
 import datawave.ingest.mapreduce.handler.shard.ShardIdFactory;
+import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
-import datawave.ingest.mapreduce.job.ShardedTableMapFile;
+import datawave.ingest.mapreduce.job.SplitsFile;
 import datawave.util.time.DateHelper;
 
 /**
@@ -39,7 +41,6 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
     private static final String today = formatDay(0);
     private Configuration conf;
     private Map<String,Map<Text,Integer>> shardPartitionsByTable;
-    private Map<String,TreeMap<Text,String>> shardIdToLocations = Maps.newHashMap();
     private Map<Text,Integer> offsetsFactorByTable;
     int missingShardIdCount = 0;
 
@@ -54,6 +55,9 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
             int partition = getAssignedPartition(key.getTableName().toString(), key.getKey().getRow());
 
             // the offsets should help send today's shard data to a different set of reducers than today's error shard data
+            if (null == offsetsFactorByTable.get(key.getTableName())) {
+                log.error("We have received a key for a table we are not configured for.  Please verify your sharded table configurations.");
+            }
             int offsetForTable = shardIdFactory.getNumShards(key.getKey().getTimestamp()) * offsetsFactorByTable.get(key.getTableName());
 
             return (partition + offsetForTable) % numReduceTasks;
@@ -130,14 +134,12 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
         if (log.isDebugEnabled())
             log.debug("Loading splits data for " + tableName);
 
-        TreeMap<Text,String> shardIdToLocation = shardIdToLocations.get(tableName);
-        if (null == shardIdToLocation) {
-            shardIdToLocation = ShardedTableMapFile.getShardIdToLocations(conf, tableName);
-            shardIdToLocations.put(tableName, shardIdToLocation);
-        }
+        List<Text> sortedSplits = SplitsFile.getSplits(conf, tableName);
+        Map<Text,String> shardIdToLocation = SplitsFile.getSplitsAndLocations(conf, tableName);
+
         if (log.isDebugEnabled())
             log.debug("Assigning partitioners for each shard in " + tableName);
-        return assignPartitionsForEachShard(shardIdToLocation);
+        return assignPartitionsForEachShard(sortedSplits, shardIdToLocation);
     }
 
     /**
@@ -156,12 +158,11 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
      *            the map of shard ids and their location
      * @return shardId to
      */
-    private HashMap<Text,Integer> assignPartitionsForEachShard(TreeMap<Text,String> shardIdToLocations) {
+    private HashMap<Text,Integer> assignPartitionsForEachShard(List<Text> sortedShardIds, Map<Text,String> shardIdToLocations) {
         int totalNumUniqueTServers = calculateNumberOfUniqueTservers(shardIdToLocations);
 
-        TreeMap<Text,String> sortedShardIdsToTservers = reverseSortByShardIds(shardIdToLocations);
-        HashMap<String,Integer> partitionsByTServer = getTServerAssignments(totalNumUniqueTServers, sortedShardIdsToTservers);
-        HashMap<Text,Integer> partitionsByShardId = getShardIdAssignments(sortedShardIdsToTservers, partitionsByTServer);
+        HashMap<String,Integer> partitionsByTServer = getTServerAssignments(totalNumUniqueTServers, sortedShardIds, shardIdToLocations);
+        HashMap<Text,Integer> partitionsByShardId = getShardIdAssignments(shardIdToLocations, partitionsByTServer);
 
         if (log.isDebugEnabled())
             log.debug("Number of shardIds assigned: " + partitionsByShardId.size());
@@ -169,31 +170,26 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
         return partitionsByShardId;
     }
 
-    private int calculateNumberOfUniqueTservers(TreeMap<Text,String> shardIdToLocations) {
+    private int calculateNumberOfUniqueTservers(Map<Text,String> shardIdToLocations) {
+
         int totalNumUniqueTServers = new HashSet(shardIdToLocations.values()).size();
         if (log.isDebugEnabled())
             log.debug("Total TServers involved: " + totalNumUniqueTServers);
         return totalNumUniqueTServers;
     }
 
-    private TreeMap<Text,String> reverseSortByShardIds(TreeMap<Text,String> shardIdToLocations) {
-        // drop the dates after today's date
-        TreeMap<Text,String> shardIdsToTservers = Maps.newTreeMap((o1, o2) -> o2.compareTo(o1));
-        shardIdsToTservers.putAll(shardIdToLocations);
-        return shardIdsToTservers;
-    }
-
-    private HashMap<String,Integer> getTServerAssignments(int totalNumTServers, TreeMap<Text,String> shardIdsToTservers) {
+    private HashMap<String,Integer> getTServerAssignments(int totalNumTServers, List<Text> sortedShardIds, Map<Text,String> shardIdsToTservers) {
         HashMap<String,Integer> partitionsByTServer = new HashMap<>(totalNumTServers);
         int nextAvailableSlot = 0;
         boolean alreadySkippedFutureShards = false;
-        for (Map.Entry<Text,String> entry : shardIdsToTservers.entrySet()) {
-            if (alreadySkippedFutureShards || !isFutureShard(entry.getKey())) { // short circuiting for performance
+        for (Text shard : sortedShardIds) {
+            if (alreadySkippedFutureShards || !isFutureShard(shard)) { // short circuiting for performance
                 alreadySkippedFutureShards = true;
-                Integer assignedPartition = partitionsByTServer.get(entry.getValue());
+                String location = shardIdsToTservers.get(shard);
+                Integer assignedPartition = partitionsByTServer.get(location);
                 if (null == assignedPartition) {
                     assignedPartition = nextAvailableSlot;
-                    partitionsByTServer.put(entry.getValue(), assignedPartition);
+                    partitionsByTServer.put(location, assignedPartition);
                     nextAvailableSlot++;
                 }
                 if (partitionsByTServer.size() == totalNumTServers) {
@@ -217,7 +213,7 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
         return DateHelper.format(now - (DateUtils.MILLIS_PER_DAY * numDaysBack));
     }
 
-    private HashMap<Text,Integer> getShardIdAssignments(TreeMap<Text,String> shardIdsToTservers, HashMap<String,Integer> partitionsByTServer) {
+    private HashMap<Text,Integer> getShardIdAssignments(Map<Text,String> shardIdsToTservers, HashMap<String,Integer> partitionsByTServer) {
         HashMap<Text,Integer> partitionsByShardId = new HashMap<>();
         for (Map.Entry<Text,String> entry : shardIdsToTservers.entrySet()) {
             partitionsByShardId.put(entry.getKey(), partitionsByTServer.get(entry.getValue()));
@@ -237,6 +233,16 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
     public void initializeJob(Job job) {}
 
     @Override
+    public boolean needSplits() {
+        return true;
+    }
+
+    @Override
+    public boolean needSplitLocations() {
+        return true;
+    }
+
+    @Override
     public Configuration getConf() {
         return conf;
     }
@@ -251,7 +257,7 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
     private void defineOffsetsForTables(Configuration conf) {
         offsetsFactorByTable = new HashMap<>();
         int offsetFactor = 0;
-        for (String tableName : conf.getStrings(ShardedTableMapFile.CONFIGURED_SHARDED_TABLE_NAMES)) {
+        for (String tableName : conf.getStrings(ShardedDataTypeHandler.SHARDED_TNAMES)) {
             offsetsFactorByTable.put(new Text(tableName), offsetFactor++);
         }
     }

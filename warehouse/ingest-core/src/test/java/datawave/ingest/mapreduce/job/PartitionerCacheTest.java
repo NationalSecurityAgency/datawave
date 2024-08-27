@@ -133,5 +133,15 @@ public class PartitionerCacheTest {
         public Configuration getConf() {
             return null;
         }
+
+        @Override
+        public boolean needSplits() {
+            return true;
+        }
+
+        @Override
+        public boolean needSplitLocations() {
+            return false;
+        }
     }
 }
