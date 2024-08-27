@@ -64,8 +64,8 @@ import com.google.common.collect.Lists;
 
 import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.mapreduce.StandaloneStatusReporter;
-import datawave.util.cli.PasswordConverter;
 import datawave.util.ThriftUtil;
+import datawave.util.cli.PasswordConverter;
 
 /**
  * A processor whose job is to watch for completed Bulk Ingest jobs and bring the map files produced by them online in accumulo. This class attempts to bring
