@@ -29,7 +29,7 @@ import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.YieldCallback;
 import org.apache.accumulo.core.iterators.YieldingKeyValueIterator;
-import org.apache.accumulo.core.iteratorsImpl.system.IterationInterruptedException;
+import datawave.iterators.IterationInterruptedException;
 import org.apache.accumulo.tserver.tablet.TabletClosedException;
 import org.apache.commons.collections4.iterators.EmptyIterator;
 import org.apache.commons.jexl3.JexlArithmetic;

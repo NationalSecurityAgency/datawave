@@ -20,7 +20,7 @@ import java.util.TreeSet;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
-import org.apache.accumulo.core.iteratorsImpl.system.IterationInterruptedException;
+import datawave.iterators.IterationInterruptedException;
 import org.junit.jupiter.api.Test;
 
 import datawave.query.attributes.Document;

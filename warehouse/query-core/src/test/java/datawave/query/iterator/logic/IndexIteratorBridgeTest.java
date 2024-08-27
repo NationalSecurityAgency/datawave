@@ -12,7 +12,7 @@ import java.util.TreeSet;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
-import org.apache.accumulo.core.iteratorsImpl.system.IterationInterruptedException;
+import datawave.iterators.IterationInterruptedException;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.junit.jupiter.api.Test;
 
