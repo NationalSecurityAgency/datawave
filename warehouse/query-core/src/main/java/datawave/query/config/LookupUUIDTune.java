@@ -241,10 +241,12 @@ public class LookupUUIDTune implements Profile {
         return queryIteratorClass;
     }
 
+    @Deprecated(since = "7.1.0", forRemoval = true)
     public int getMaxShardsPerDayThreshold() {
         return maxShardsPerDayThreshold;
     }
 
+    @Deprecated(since = "7.1.0", forRemoval = true)
     public void setMaxShardsPerDayThreshold(int maxShardsPerDayThreshold) {
         this.maxShardsPerDayThreshold = maxShardsPerDayThreshold;
     }

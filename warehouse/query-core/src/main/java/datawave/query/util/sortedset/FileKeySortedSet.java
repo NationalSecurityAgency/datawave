@@ -2,12 +2,10 @@ package datawave.query.util.sortedset;
 
 import java.io.IOException;
 import java.util.Comparator;
+import java.util.SortedSet;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.log4j.Logger;
-
-import datawave.query.util.sortedset.rfile.RFileKeyInputStream;
-import datawave.query.util.sortedset.rfile.RFileKeyOutputStream;
 
 /**
  * A sorted set that can be persisted into a file and still be read in its persisted state. The set can always be re-loaded and then all operations will work as
@@ -65,24 +63,11 @@ public class FileKeySortedSet extends FileSortedSet<Key> {
      * @param persisted
      *            a persisted boolean flag
      */
-    public FileKeySortedSet(Comparator<Key> comparator, SortedSetFileHandler handler, boolean persisted) {
-        super(comparator, new KeyFileHandler(handler), new FileKeySortedSet.Factory(), persisted);
-    }
-
-    /**
-     * Create a persisted sorted set
-     *
-     * @param comparator
-     *            the key comparator
-     * @param rewriteStrategy
-     *            rewrite strategy
-     * @param handler
-     *            the sorted set file handler
-     * @param persisted
-     *            a persisted boolean flag
-     */
-    public FileKeySortedSet(Comparator<Key> comparator, RewriteStrategy<Key> rewriteStrategy, SortedSetFileHandler handler, boolean persisted) {
-        super(comparator, rewriteStrategy, new KeyFileHandler(handler), new FileKeySortedSet.Factory(), persisted);
+    public FileKeySortedSet(Comparator<? super Key> comparator, SortedSetFileHandler handler, boolean persisted) {
+        this(handler, persisted);
+        if (comparator != null) {
+            throw new UnsupportedOperationException("Cannot supply a comparator for a FileKeySortedSet.  Only a Key comparator will work");
+        }
     }
 
     /**
@@ -93,7 +78,7 @@ public class FileKeySortedSet extends FileSortedSet<Key> {
      * @param handler
      *            the sorted set file handler
      */
-    public FileKeySortedSet(RewritableSortedSet<Key> set, SortedSetFileHandler handler) {
+    public FileKeySortedSet(SortedSet<Key> set, SortedSetFileHandler handler) {
         super(set, new KeyFileHandler(handler), new FileKeySortedSet.Factory());
     }
 
@@ -110,7 +95,7 @@ public class FileKeySortedSet extends FileSortedSet<Key> {
      * @throws IOException
      *             for issues with read/write
      */
-    public FileKeySortedSet(RewritableSortedSet<Key> set, SortedSetFileHandler handler, boolean persist) throws IOException {
+    public FileKeySortedSet(SortedSet<Key> set, SortedSetFileHandler handler, boolean persist) throws IOException {
         super(set, new KeyFileHandler(handler), new FileKeySortedSet.Factory(), persist);
     }
 
@@ -197,22 +182,17 @@ public class FileKeySortedSet extends FileSortedSet<Key> {
         }
 
         @Override
-        public FileKeySortedSet newInstance(Comparator<Key> comparator, SortedSetFileHandler handler, boolean persisted) {
+        public FileKeySortedSet newInstance(Comparator<? super Key> comparator, SortedSetFileHandler handler, boolean persisted) {
             return new FileKeySortedSet(comparator, handler, persisted);
         }
 
         @Override
-        public FileKeySortedSet newInstance(Comparator<Key> comparator, RewriteStrategy<Key> rewriteStrategy, SortedSetFileHandler handler, boolean persisted) {
-            return new FileKeySortedSet(comparator, rewriteStrategy, handler, persisted);
-        }
-
-        @Override
-        public FileKeySortedSet newInstance(RewritableSortedSet<Key> set, SortedSetFileHandler handler) {
+        public FileKeySortedSet newInstance(SortedSet<Key> set, SortedSetFileHandler handler) {
             return new FileKeySortedSet(set, handler);
         }
 
         @Override
-        public FileKeySortedSet newInstance(RewritableSortedSet<Key> set, SortedSetFileHandler handler, boolean persist) throws IOException {
+        public FileKeySortedSet newInstance(SortedSet<Key> set, SortedSetFileHandler handler, boolean persist) throws IOException {
             return new FileKeySortedSet(set, handler, persist);
         }
     }

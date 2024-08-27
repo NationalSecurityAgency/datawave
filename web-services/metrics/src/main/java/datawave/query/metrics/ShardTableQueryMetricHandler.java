@@ -89,7 +89,6 @@ import datawave.microservice.querymetric.BaseQueryMetricListResponse;
 import datawave.microservice.querymetric.QueryMetric;
 import datawave.microservice.querymetric.QueryMetricFactory;
 import datawave.microservice.querymetric.QueryMetricListResponse;
-import datawave.microservice.querymetric.QueryMetricsDetailListResponse;
 import datawave.microservice.querymetric.QueryMetricsSummaryResponse;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.jexl.visitors.JexlFormattedStringBuildingVisitor;
@@ -521,8 +520,8 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
     }
 
     @Override
-    public QueryMetricsDetailListResponse query(String user, String queryId, DatawavePrincipal datawavePrincipal) {
-        QueryMetricsDetailListResponse response = new QueryMetricsDetailListResponse();
+    public QueryMetricListResponse query(String user, String queryId, DatawavePrincipal datawavePrincipal) {
+        QueryMetricListResponse response = new QueryMetricListResponse();
 
         try {
             enableLogs(false);

@@ -77,7 +77,7 @@ public class AbstractColumnBasedHandler<KEYIN> extends ShardedDataTypeHandler<KE
 
             // Put the normalized field name and normalized value into the reverse
             if (createGlobalReverseIndexTerms) {
-                if (helper.isReverseIndexedField(e.getValue().getIndexedFieldName())) {
+                if (e.getValue().getIndexedFieldValue() != null && helper.isReverseIndexedField(e.getValue().getIndexedFieldName())) {
                     NormalizedContentInterface rField = (NormalizedContentInterface) (e.getValue().clone());
                     rField.setEventFieldValue(new StringBuilder(rField.getEventFieldValue()).reverse().toString());
                     rField.setIndexedFieldValue(new StringBuilder(rField.getIndexedFieldValue()).reverse().toString());

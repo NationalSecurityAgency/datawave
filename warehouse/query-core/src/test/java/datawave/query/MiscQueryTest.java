@@ -127,8 +127,6 @@ public class MiscQueryTest extends AbstractFunctionalQuery {
     @Test
     public void testEventThreshold() throws Exception {
         log.info("------  testEventThreshold  ------");
-        // setting event per day does not alter results
-        this.logic.setEventPerDayThreshold(1);
         String phrase = RE_OP + "'.*a'";
         String query = Constants.ANY_FIELD + phrase;
         String expect = this.dataManager.convertAnyField(phrase);
@@ -138,8 +136,6 @@ public class MiscQueryTest extends AbstractFunctionalQuery {
     @Test(expected = InvalidQueryException.class)
     public void testFieldIgnoreParam1() throws Exception {
         log.info("------  testFieldIgnoreParam1  ------");
-        // setting event per day does not alter results
-        this.logic.setEventPerDayThreshold(1);
         String phrase = RE_OP + "'.*a'" + "&& FOO == bar2";
         String query = Constants.ANY_FIELD + phrase + "&& FOO == bar2";
         String expect = this.dataManager.convertAnyField(phrase);
@@ -155,8 +151,6 @@ public class MiscQueryTest extends AbstractFunctionalQuery {
     @Test
     public void testFieldIgnoreParam2() throws Exception {
         log.info("------  testFieldIgnoreParam2  ------");
-        // setting event per day does not alter results
-        this.logic.setEventPerDayThreshold(1);
         String phrase = RE_OP + "'.*a'" + "&& FOO == bar2";
         String query = Constants.ANY_FIELD + phrase + "&& FOO == bar2";
         String expect = this.dataManager.convertAnyField(phrase);
@@ -172,8 +166,6 @@ public class MiscQueryTest extends AbstractFunctionalQuery {
     @Test
     public void testFieldIgnoreParam3() throws Exception {
         log.info("------  testFieldIgnoreParam3  ------");
-        // setting event per day does not alter results
-        this.logic.setEventPerDayThreshold(1);
         String phrase = RE_OP + "'.*a' && STATE == 'sta'";
         String query = Constants.ANY_FIELD + phrase + "&& STATE == 'sta'";
         String expect = this.dataManager.convertAnyField(phrase);
@@ -188,8 +180,6 @@ public class MiscQueryTest extends AbstractFunctionalQuery {
     @Test
     public void testShardThreshold() throws Exception {
         log.info("------  testShardThreshold  ------");
-        // setting shards per day does not alter results -
-        this.logic.setShardsPerDayThreshold(1);
         String phrase = RE_OP + "'.*a'";
         String query = Constants.ANY_FIELD + phrase;
         String expect = this.dataManager.convertAnyField(phrase);

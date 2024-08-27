@@ -285,7 +285,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
                         logicQueryStringBuilder.append(config.getQueryString());
                         QueryLogicHolder holder = new QueryLogicHolder(logicName, logic);
                         holder.setSettings(settingsCopy);
-                        holder.setMaxResults(logic.getMaxResults());
+                        holder.setMaxResults(logic.getResultLimit(settingsCopy));
                         configs.put(logicName, config);
                         logicState.put(logicName, holder);
 

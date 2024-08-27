@@ -183,9 +183,12 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
 
     @Override
     public GenericQueryConfiguration initialize(AccumuloClient client, Query settings, Set<Authorizations> auths) throws Exception {
-        this.config = new ShardIndexQueryConfiguration(this, settings);
-        this.scannerFactory = new ScannerFactory(client);
-        MetadataHelper metadataHelper = initializeMetadataHelper(client, getConfig().getMetadataTableName(), auths);
+        // NOTE: This needs to set the class-level config object. Do not use a local instance!
+        config = new ShardIndexQueryConfiguration(this, settings);
+        getConfig().setClient(client);
+        this.scannerFactory = new ScannerFactory(getConfig());
+
+        MetadataHelper metadataHelper = initializeMetadataHelper(client, config.getMetadataTableName(), auths);
 
         if (StringUtils.isEmpty(settings.getQuery())) {
             throw new IllegalArgumentException("Query cannot be null");
@@ -424,7 +427,8 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
         baseConfig.setQueries(checkpoint.getQueries());
         config.setClient(client);
 
-        scannerFactory = new ScannerFactory(client);
+        // NOTE: Scanner factory needs to be set here in order for query microservices to work
+        scannerFactory = new ScannerFactory(baseConfig);
         MetadataHelper metadataHelper = initializeMetadataHelper(client, config.getMetadataTableName(), config.getAuthorizations());
         config.setQueryModel(metadataHelper.getQueryModel(config.getModelTableName(), config.getModelName(), null));
 

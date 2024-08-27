@@ -306,7 +306,7 @@ public class CachedRunningQuery extends AbstractRunningQuery {
 
     public CachedRunningQuery(Connection connection, Query query, QueryLogic<?> queryLogic, String queryId, String alias, String user, String view,
                     String fields, String conditions, String grouping, String order, int pagesize, Set<String> variableFields, Set<String> fixedFieldsInEvent,
-                    QueryMetricFactory metricFactory) throws SQLException, QueryException {
+                    QueryMetricFactory metricFactory) throws SQLException {
         super(metricFactory);
 
         this.variableFields.clear();
@@ -574,7 +574,7 @@ public class CachedRunningQuery extends AbstractRunningQuery {
         return columns;
     }
 
-    public void activate(Connection connection, QueryLogic<?> queryLogic) throws SQLException, QueryException {
+    public void activate(Connection connection, QueryLogic<?> queryLogic) throws SQLException {
 
         this.connection = connection;
         this.transformer = queryLogic.getEnrichedTransformer(this.query);

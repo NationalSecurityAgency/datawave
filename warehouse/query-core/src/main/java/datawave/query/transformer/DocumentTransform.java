@@ -31,7 +31,7 @@ public interface DocumentTransform extends Function<Map.Entry<Key,Document>,Map.
     class DefaultDocumentTransform implements DocumentTransform {
         protected Query settings;
         protected MarkingFunctions markingFunctions;
-        protected long queryExecutionForPageStartTime = System.currentTimeMillis();
+        protected long queryExecutionForPageStartTime;
 
         @Override
         public void initialize(Query settings, MarkingFunctions markingFunctions) {
