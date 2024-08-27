@@ -49,18 +49,12 @@ public class LoadAverageWatchIterator extends WrappingIterator {
         if (null != options.get(SYSTEM_LOAD_THRESHOLD)) {
             try {
                 loadThresholdAboveProcs = Double.valueOf(options.get(SYSTEM_LOAD_THRESHOLD));
-            } catch (Exception e) {
-
+            } catch (NumberFormatException e) {
+                // no worries, keep default
             }
         }
 
-        try {
-
-            super.init(source, options, env);
-
-        } catch (RuntimeException | IOException e) {
-            throw e;
-        }
+        super.init(source, options, env);
     }
 
     protected boolean loadExceedThreshold() {
@@ -77,13 +71,7 @@ public class LoadAverageWatchIterator extends WrappingIterator {
         if (loadExceedThreshold()) {
             throw new LoadAverageWatchException();
         }
-        try {
-
-            super.next();
-
-        } catch (RuntimeException | IOException e) {
-            throw e;
-        }
+        super.next();
     }
 
     @Override
@@ -91,12 +79,7 @@ public class LoadAverageWatchIterator extends WrappingIterator {
         if (loadExceedThreshold()) {
             throw new LoadAverageWatchException();
         }
-        try {
-            super.seek(range, columnFamilies, inclusive);
-        } catch (RuntimeException | IOException e) {
-            throw e;
-        }
-
+        super.seek(range, columnFamilies, inclusive);
     }
 
     @Override
