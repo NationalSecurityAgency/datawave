@@ -36,7 +36,6 @@ import org.apache.accumulo.core.clientImpl.ClientContext;
 import org.apache.accumulo.core.manager.thrift.ManagerClientService;
 import org.apache.accumulo.core.manager.thrift.ManagerMonitorInfo;
 import org.apache.accumulo.core.master.thrift.TableInfo;
-import org.apache.accumulo.core.rpc.ThriftUtil;
 import org.apache.accumulo.core.rpc.clients.ThriftClientTypes;
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
@@ -66,6 +65,7 @@ import com.google.common.collect.Lists;
 import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.mapreduce.StandaloneStatusReporter;
 import datawave.util.cli.PasswordConverter;
+import datawave.util.ThriftUtil;
 
 /**
  * A processor whose job is to watch for completed Bulk Ingest jobs and bring the map files produced by them online in accumulo. This class attempts to bring
