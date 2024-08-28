@@ -106,8 +106,6 @@ public abstract class ColumnRangeIterator extends SkippingIterator implements In
 
         try {
             range.write(d);
-        } catch (Exception e) {
-            throw new IOException(e);
         } finally {
             d.close();
             b.close();
@@ -122,8 +120,6 @@ public abstract class ColumnRangeIterator extends SkippingIterator implements In
         Range range = new Range();
         try {
             range.readFields(in);
-        } catch (Exception e2) {
-            throw new IOException(e2);
         } finally {
             in.close();
             b.close();
