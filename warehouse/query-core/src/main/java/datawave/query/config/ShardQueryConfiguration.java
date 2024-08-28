@@ -492,6 +492,10 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      */
     private boolean sortQueryByCounts = false;
 
+    // insert rules for processing the QueryTree to automatically apply hints to queries
+    private boolean useScanHintRules = false;
+    private List<ScanHintRule> scanHintRules = new ArrayList<>();
+
     /**
      * Default constructor
      */
@@ -716,6 +720,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setUseTermCounts(other.getUseTermCounts());
         this.setSortQueryBeforeGlobalIndex(other.isSortQueryBeforeGlobalIndex());
         this.setSortQueryByCounts(other.isSortQueryByCounts());
+        this.setUseScanHintRules(other.isUseScanHintRules());
+        this.setScanHintRules(other.getScanHintRules());
     }
 
     /**
@@ -3155,5 +3161,21 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.timers = new QueryStopwatch();
         this.fstCount = new AtomicInteger(0);
         return this;
+    }
+
+    public boolean isUseScanHintRules() {
+        return useScanHintRules;
+    }
+
+    public void setUseScanHintRules(boolean useScanHintRules) {
+        this.useScanHintRules = useScanHintRules;
+    }
+
+    public List<ScanHintRule> getScanHintRules() {
+        return scanHintRules;
+    }
+
+    public void setScanHintRules(List<ScanHintRule> scanHintRules) {
+        this.scanHintRules = scanHintRules;
     }
 }

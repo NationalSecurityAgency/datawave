@@ -77,6 +77,7 @@ import datawave.query.attributes.UniqueFields;
 import datawave.query.common.grouping.GroupFields;
 import datawave.query.composite.CompositeMetadata;
 import datawave.query.composite.CompositeUtils;
+import datawave.query.config.ScanHintRule;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.CannotExpandUnfieldedTermFatalException;
 import datawave.query.exceptions.DatawaveFatalQueryException;
@@ -683,10 +684,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
         // now check whether we are over the ivarator limit
         if (maxIvaratorThreshold >= 0) {
-            NodeTypeCount nodeCount = NodeTypeCountVisitor.countNodes(queryTree, QueryPropertyMarker.MarkerType.EXCEEDED_VALUE,
-                            QueryPropertyMarker.MarkerType.EXCEEDED_OR);
-            int totalIvarators = nodeCount.getTotal(QueryPropertyMarker.MarkerType.EXCEEDED_VALUE)
-                            + nodeCount.getTotal(QueryPropertyMarker.MarkerType.EXCEEDED_OR);
+            NodeTypeCount nodeCount = JexlASTHelper.getIvarators(queryTree);
+            int totalIvarators = JexlASTHelper.getIvaratorCount(nodeCount);
             if (totalIvarators > maxIvaratorThreshold) {
                 QueryException qe = new QueryException(DatawaveErrorCode.EXPAND_QUERY_TERM_SYSTEM_LIMITS, Integer.toString(totalIvarators)
                                 + " terms require server side expansion which is greater than the max of " + maxIvaratorThreshold);
@@ -840,6 +839,18 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
         if (reduceQuery) {
             config.setQueryTree(timedReduce(timers, "Reduce Query Final", config.getQueryTree()));
+        }
+
+        // apply runtime scan hints
+        if (config.isUseScanHintRules()) {
+            for (ScanHintRule<JexlNode> hintRule : config.getScanHintRules()) {
+                if (hintRule.apply(config.getQueryTree())) {
+                    config.getTableHints().get(hintRule.getTable()).put(hintRule.getHintName(), hintRule.getHintValue());
+                    if (!hintRule.isChainable()) {
+                        break;
+                    }
+                }
+            }
         }
 
         return config.getQueryTree();

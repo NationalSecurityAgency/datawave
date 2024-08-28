@@ -77,6 +77,7 @@ import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.jexl.visitors.BaseVisitor;
 import datawave.query.jexl.visitors.InvertNodeVisitor;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.query.jexl.visitors.NodeTypeCountVisitor;
 import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import datawave.query.jexl.visitors.validate.JunctionValidatingVisitor;
 import datawave.query.postprocessing.tf.Function;
@@ -1865,6 +1866,14 @@ public class JexlASTHelper {
             throw new RuntimeException("Instance of AND/OR node found with less than 2 children");
         }
         return valid;
+    }
+
+    public static NodeTypeCount getIvarators(JexlNode node) {
+        return NodeTypeCountVisitor.countNodes(node, QueryPropertyMarker.MarkerType.EXCEEDED_VALUE, QueryPropertyMarker.MarkerType.EXCEEDED_OR);
+    }
+
+    public static int getIvaratorCount(NodeTypeCount nodeCount) {
+        return nodeCount.getTotal(QueryPropertyMarker.MarkerType.EXCEEDED_VALUE) + nodeCount.getTotal(QueryPropertyMarker.MarkerType.EXCEEDED_OR);
     }
 
     private JexlASTHelper() {}
