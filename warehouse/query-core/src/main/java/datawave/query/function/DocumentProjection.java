@@ -35,7 +35,7 @@ public class DocumentProjection implements DocumentPermutation {
     /**
      * should track document sizes
      */
-    private boolean trackSizes = true;
+    private boolean trackSizes;
 
     public DocumentProjection(boolean includeGroupingContext, boolean reducedResponse, boolean trackSizes, Set<String> projections,
                     Projection.ProjectionType projectionType) {
@@ -46,7 +46,7 @@ public class DocumentProjection implements DocumentPermutation {
     }
 
     /*
-     * This contstructor will not include the grouping context and will not reduce the document
+     * This constructor will not include the grouping context and will not reduce the document
      */
     @Deprecated
     public DocumentProjection(Set<String> projections, Projection.ProjectionType projectionType) {
