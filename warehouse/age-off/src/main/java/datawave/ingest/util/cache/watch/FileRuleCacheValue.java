@@ -115,10 +115,6 @@ public class FileRuleCacheValue {
         Collection<FilterRule> rulesBase;
         try (InputStream in = fs.open(filePath)) {
             rulesBase = ruleLoader.load(in);
-        } catch (Exception e) {
-            // all exceptions are wrapped in an IOException
-            log.error("An error occurred while loading age-off rules, the exception will be rethrown: " + filePath, e);
-            throw new IOException(e);
         }
         return rulesBase;
     }
