@@ -90,8 +90,6 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
 
     private Set<Text> visibilitySet = new HashSet<>();
 
-    protected static final MarkingFunctions markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
-
     // -------------------------------------------------------------------------
     // ------------- Constructors
     public FieldIndexCountingIterator() {
@@ -586,7 +584,7 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
         }
         ColumnVisibility cv;
         try {
-            cv = markingFunctions.combine(columnVisibilities);
+            cv = MarkingFunctions.Factory.createMarkingFunctions().combine(columnVisibilities);
         } catch (MarkingFunctions.Exception e) {
             log.error("Could not combine visibilities: " + visibilitySet + "  " + e);
             return null;
