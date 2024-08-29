@@ -10,6 +10,7 @@ import java.util.Spliterator;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
+import datawave.iterators.IterationInterruptException;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
@@ -36,7 +37,6 @@ import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.accumulo.inmemory.InMemoryScanner;
 import datawave.accumulo.inmemory.InMemoryScannerBase;
 import datawave.accumulo.inmemory.ScannerRebuilder;
-import datawave.iterators.IterationInterruptedException;
 import datawave.query.attributes.Document;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.iterator.profile.FinalDocumentTrackingIterator;
@@ -122,7 +122,7 @@ public class RebuildingScannerTestHelper {
         @Override
         public void next() throws IOException {
             if (initialized && interruptListener != null && interruptListener.interrupt(source.getTopKey())) {
-                throw new IterationInterruptedException("testing next interrupt");
+                throw new IterationInterruptException("testing next interrupt");
             }
 
             source.next();
@@ -131,7 +131,7 @@ public class RebuildingScannerTestHelper {
         @Override
         public void seek(Range range, Collection<ByteSequence> collection, boolean inclusive) throws IOException {
             if (interruptListener != null && interruptListener.interrupt(null)) {
-                throw new IterationInterruptedException("testing seek interrupt");
+                throw new IterationInterruptException("testing seek interrupt");
             }
 
             source.seek(range, collection, inclusive);
@@ -403,7 +403,7 @@ public class RebuildingScannerTestHelper {
                     }
                     // reset interrupted flag
                     interrupted = false;
-                } catch (IterationInterruptedException e) {
+                } catch (IterationInterruptException e) {
                     interrupted = true;
                     interruptListener.processedInterrupt(true);
                     interruptCount++;

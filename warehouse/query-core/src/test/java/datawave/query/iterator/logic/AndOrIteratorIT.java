@@ -18,6 +18,7 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import datawave.iterators.IterationInterruptException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.log4j.Logger;
@@ -26,7 +27,6 @@ import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Sets;
 
-import datawave.iterators.IterationInterruptedException;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Document;
@@ -210,7 +210,7 @@ class AndOrIteratorIT {
         final SortedSet<String> uids = intersect(union(uidsEven, uidsOdd), uidsAll);
 
         AndIterator itr = new AndIterator(includes);
-        assertThrows(IterationInterruptedException.class, () -> driveIterator(itr, uids));
+        assertThrows(IterationInterruptException.class, () -> driveIterator(itr, uids));
     }
 
     @Test
@@ -227,7 +227,7 @@ class AndOrIteratorIT {
         final SortedSet<String> uids = intersect(union(uidsEven, uidsOdd), uidsAll);
 
         AndIterator itr = new AndIterator(includes);
-        assertThrows(IterationInterruptedException.class, () -> driveIterator(itr, uids));
+        assertThrows(IterationInterruptException.class, () -> driveIterator(itr, uids));
     }
 
     @Test
@@ -244,7 +244,7 @@ class AndOrIteratorIT {
         final SortedSet<String> uids = intersect(union(uidsEven, uidsOdd), uidsAll);
 
         AndIterator itr = new AndIterator(includes);
-        assertThrows(IterationInterruptedException.class, () -> driveIterator(itr, uids));
+        assertThrows(IterationInterruptException.class, () -> driveIterator(itr, uids));
     }
 
     // === test index only exceptions ===
@@ -306,7 +306,7 @@ class AndOrIteratorIT {
         final SortedSet<String> uids = intersect(union(uidsEven, uidsOdd), uidsAll);
 
         AndIterator itr = new AndIterator(includes);
-        assertThrows(IterationInterruptedException.class, () -> driveIterator(itr, uids));
+        assertThrows(IterationInterruptException.class, () -> driveIterator(itr, uids));
     }
 
     @Test
@@ -327,7 +327,7 @@ class AndOrIteratorIT {
         indexOnlyCounts.put("FIELD_C", 1); // compare to #testIndexOnlyNestedUnionTermAssertions
 
         AndIterator itr = new AndIterator(includes);
-        assertThrows(IterationInterruptedException.class, () -> driveIterator(itr, uids, indexOnlyCounts));
+        assertThrows(IterationInterruptException.class, () -> driveIterator(itr, uids, indexOnlyCounts));
     }
 
     @Test
@@ -349,7 +349,7 @@ class AndOrIteratorIT {
         indexOnlyCounts.put("FIELD_C", 1);
 
         AndIterator itr = new AndIterator(includes);
-        assertThrows(IterationInterruptedException.class, () -> driveIterator(itr, uids, indexOnlyCounts));
+        assertThrows(IterationInterruptException.class, () -> driveIterator(itr, uids, indexOnlyCounts));
     }
 
     // nested union with negated term that is interrupted
@@ -377,7 +377,7 @@ class AndOrIteratorIT {
         // indexOnlyCounts.put("FIELD_B", 2);
 
         AndIterator itr = new AndIterator(includes);
-        assertThrows(IterationInterruptedException.class, () -> driveIterator(itr, uidsAll, indexOnlyCounts));
+        assertThrows(IterationInterruptException.class, () -> driveIterator(itr, uidsAll, indexOnlyCounts));
     }
 
     // nested union of negated terms which is interrupted
@@ -398,7 +398,7 @@ class AndOrIteratorIT {
         indexOnlyCounts.put("FIELD_A", 5);
 
         AndIterator itr = new AndIterator(includes, Collections.singleton(union));
-        assertThrows(IterationInterruptedException.class, () -> driveIterator(itr, uidsEven, indexOnlyCounts));
+        assertThrows(IterationInterruptException.class, () -> driveIterator(itr, uidsEven, indexOnlyCounts));
     }
 
     // === test by volume ===

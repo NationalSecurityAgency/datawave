@@ -21,6 +21,7 @@ import java.util.Set;
 
 import javax.annotation.Nullable;
 
+import datawave.iterators.IterationInterruptException;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -58,7 +59,6 @@ import datawave.core.iterators.filesystem.FileSystemCache;
 import datawave.data.type.Type;
 import datawave.data.type.util.NumericalEncoder;
 import datawave.ingest.data.config.ingest.CompositeIngest;
-import datawave.iterators.IterationInterruptedException;
 import datawave.marking.MarkingFunctionsFactory;
 import datawave.query.Constants;
 import datawave.query.attributes.AttributeKeepFilter;
@@ -538,7 +538,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     }
 
     /**
-     * Handle an exception returned from seek or next. This will silently ignore IterationInterruptedException as that happens when the underlying iterator was
+     * Handle an exception returned from seek or next. This will silently ignore IterationInterruptException as that happens when the underlying iterator was
      * interrupted because the client is no longer listening.
      *
      * @param e
@@ -552,14 +552,14 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         // We need to pass IOException, IteratorInterruptedException, and TabletClosedExceptions up to the Tablet as they are
         // handled specially to ensure that the client will retry the scan elsewhere
         IOException ioe = null;
-        IterationInterruptedException iie = null;
+        IterationInterruptException iie = null;
         QueryIteratorYieldingException qiy = null;
         TabletClosedException tce = null;
         if (reason instanceof IOException) {
             ioe = (IOException) reason;
         }
-        if (reason instanceof IterationInterruptedException) {
-            iie = (IterationInterruptedException) reason;
+        if (reason instanceof IterationInterruptException) {
+            iie = (IterationInterruptException) reason;
         }
         if (reason instanceof QueryIteratorYieldingException) {
             qiy = (QueryIteratorYieldingException) reason;
@@ -574,8 +574,8 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             if (reason instanceof IOException) {
                 ioe = (IOException) reason;
             }
-            if (reason instanceof IterationInterruptedException) {
-                iie = (IterationInterruptedException) reason;
+            if (reason instanceof IterationInterruptException) {
+                iie = (IterationInterruptException) reason;
             }
             if (reason instanceof QueryIteratorYieldingException) {
                 qiy = (QueryIteratorYieldingException) reason;

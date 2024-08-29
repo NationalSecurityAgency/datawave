@@ -13,6 +13,7 @@ import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
+import datawave.iterators.IterationInterruptException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
@@ -21,7 +22,6 @@ import org.apache.accumulo.core.iteratorsImpl.system.SortedMapIterator;
 import org.apache.hadoop.io.Text;
 import org.junit.jupiter.api.Test;
 
-import datawave.iterators.IterationInterruptedException;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Document;
 
@@ -46,7 +46,7 @@ class IndexIteratorTest {
     @Test
     void testIterationInterrupted() {
         IndexIterator itr = createInterruptibleIndexIterator("FIELD_A", uids);
-        assertThrows(IterationInterruptedException.class, () -> driveIterator(itr, uids, "FIELD_A"));
+        assertThrows(IterationInterruptException.class, () -> driveIterator(itr, uids, "FIELD_A"));
     }
 
     @Test
@@ -58,7 +58,7 @@ class IndexIteratorTest {
         itr.next();
 
         assertTrue(itr.hasTop());
-        assertThrows(IterationInterruptedException.class, itr::next);
+        assertThrows(IterationInterruptException.class, itr::next);
     }
 
     @Test
@@ -209,7 +209,7 @@ class IndexIteratorTest {
     }
 
     /**
-     * Helper class that will throw an {@link IterationInterruptedException} after reaching the preconfigured number of max iterations.
+     * Helper class that will throw an {@link IterationInterruptException} after reaching the preconfigured number of max iterations.
      * <p>
      * When using this class be sure that the backing data contains at least three elements.
      */
@@ -247,7 +247,7 @@ class IndexIteratorTest {
             super.next();
 
             if (++count > maxIterations) {
-                throw new IterationInterruptedException("throwing exception for tests");
+                throw new IterationInterruptException("throwing exception for tests");
             }
         }
     }

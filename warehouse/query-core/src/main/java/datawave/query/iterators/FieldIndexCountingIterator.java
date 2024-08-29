@@ -280,12 +280,12 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
 
         } else { // We have a valid start key and row
 
-            // Check if we are recovering from IterationInterruptedException (verify that we have the right key parts
+            // Check if we are recovering from IterationInterruptException (verify that we have the right key parts
             // and that the start key is NOT inclusive).
             if (null != pStartKey.getColumnFamily() && !pStartKey.getColumnFamily().toString().trim().isEmpty() && null != pStartKey.getColumnQualifier()
                             && !pStartKey.getColumnQualifier().toString().trim().isEmpty() && !parentRange.isStartKeyInclusive()) {
 
-                // Iteration interrupted case, need to seek to the end of this FN:FV range. IterationInterruptedException
+                // Iteration interrupted case, need to seek to the end of this FN:FV range. IterationInterruptException
                 // should always seek with the previously returned top key but with the inclusivity bit set to false.
                 // i.e. Key-> Row:000 CFAM:fi\x00COLOR CQ:red, inclusive:False
                 // we want to seek to the end of 'red' to the next unknown value, so CQ: red\u0001 should get us there.

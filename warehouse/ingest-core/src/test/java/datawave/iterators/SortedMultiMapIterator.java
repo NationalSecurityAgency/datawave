@@ -17,8 +17,6 @@ import org.apache.accumulo.core.iteratorsImpl.system.InterruptibleIterator;
 
 import com.google.common.collect.TreeMultimap;
 
-import datawave.iterators.IterationInterruptedException;
-
 /**
  *
  */
@@ -71,7 +69,7 @@ public class SortedMultiMapIterator implements InterruptibleIterator {
             throw new IllegalStateException();
 
         if (interruptFlag != null && interruptCheckCount++ % 100 == 0 && interruptFlag.get())
-            throw new IterationInterruptedException();
+            throw new IterationInterruptException();
 
         if (iter.hasNext()) {
             entry = iter.next();
@@ -87,7 +85,7 @@ public class SortedMultiMapIterator implements InterruptibleIterator {
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
 
         if (interruptFlag != null && interruptFlag.get())
-            throw new IterationInterruptedException();
+            throw new IterationInterruptException();
 
         this.range = range;
 

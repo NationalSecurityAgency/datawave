@@ -287,7 +287,7 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
 
         Key pStartKey = parentRange.getStartKey();
 
-        // Check if we are recovering from IterationInterruptedException
+        // Check if we are recovering from IterationInterruptException
         if (null != pStartKey && null != pStartKey.getRow() && null != pStartKey.getColumnFamily() && !pStartKey.getColumnFamily().toString().isEmpty()
                         && null != pStartKey.getColumnQualifier() && !pStartKey.getColumnQualifier().toString().isEmpty()
                         && !parentRange.isStartKeyInclusive()) {

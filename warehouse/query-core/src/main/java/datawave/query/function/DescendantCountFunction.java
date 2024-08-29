@@ -12,6 +12,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import datawave.iterators.IterationInterruptException;
 import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
@@ -27,7 +28,6 @@ import org.apache.log4j.Logger;
 
 import datawave.data.hash.UID;
 import datawave.data.hash.UIDConstants;
-import datawave.iterators.IterationInterruptedException;
 import datawave.query.Constants;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.util.Tuple3;
@@ -325,7 +325,7 @@ public class DescendantCountFunction implements SourcedFunction<Tuple3<Range,Key
 
             // and return the count
             return uids.size();
-        } catch (IterationInterruptedException e) {
+        } catch (IterationInterruptException e) {
             // Re-throw iteration interrupted as-is since this is an expected event from
             // a client going away. Re-throwing as an IOException will cause the tserver
             // to catch the exception and log a warning. Re-throwing as-is will let the
@@ -423,7 +423,7 @@ public class DescendantCountFunction implements SourcedFunction<Tuple3<Range,Key
             final CountResult result = new CountResult(numberOfImmediateChildren, numberOfDescendants);
             result.setSkippedDescendants(skippedSomeDescendants);
             return result;
-        } catch (IterationInterruptedException e) {
+        } catch (IterationInterruptException e) {
             // Re-throw iteration interrupted as-is since this is an expected event from
             // a client going away. Re-throwing as an IOException will cause the tserver
             // to catch the exception and log a warning. Re-throwing as-is will let the

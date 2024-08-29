@@ -10,12 +10,12 @@ import java.util.Collections;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import datawave.iterators.IterationInterruptException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.junit.jupiter.api.Test;
 
-import datawave.iterators.IterationInterruptedException;
 import datawave.query.attributes.Document;
 import datawave.query.jexl.JexlNodeFactory;
 
@@ -32,7 +32,7 @@ class IndexIteratorBridgeTest {
     @Test
     void testIterationInterrupted() {
         IndexIteratorBridge itr = createInterruptibleIndexIteratorBridge("FIELD_A", uids, true, 2);
-        assertThrows(IterationInterruptedException.class, () -> driveIterator(itr, "FIELD_A", uids));
+        assertThrows(IterationInterruptException.class, () -> driveIterator(itr, "FIELD_A", uids));
     }
 
     @Test
@@ -44,7 +44,7 @@ class IndexIteratorBridgeTest {
         itr.next();
 
         assertTrue(itr.hasNext());
-        assertThrows(IterationInterruptedException.class, itr::next);
+        assertThrows(IterationInterruptException.class, itr::next);
     }
 
     // === assert methods ===

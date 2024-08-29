@@ -13,13 +13,13 @@ import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import datawave.iterators.IterationInterruptException;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Range;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.TreeMultimap;
 
-import datawave.iterators.IterationInterruptedException;
 import datawave.query.attributes.Document;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.QueryIteratorYieldingException;
@@ -262,7 +262,7 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T>, 
                     if (itr instanceof SeekableIterator) {
                         try {
                             ((SeekableIterator) itr).seek(range, columnFamilies, inclusive);
-                        } catch (IterationInterruptedException e2) {
+                        } catch (IterationInterruptException e2) {
                             // throw IterationInterrupted exceptions as-is with no modifications so the QueryIterator can handle it
                             throw e2;
                         } catch (Exception e2) {
@@ -282,11 +282,11 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T>, 
                 }
             } catch (QueryIteratorYieldingException qye) {
                 throw qye;
-            } catch (IterationInterruptedException iie) {
+            } catch (IterationInterruptException iie) {
                 throw iie;
             } catch (Exception e) {
                 include.remove();
-                if (includes.isEmpty() || e instanceof DatawaveFatalQueryException || e instanceof IterationInterruptedException) {
+                if (includes.isEmpty() || e instanceof DatawaveFatalQueryException || e instanceof IterationInterruptException) {
                     throw e;
                 } else {
                     log.warn("Lookup of event field failed, precision of query reduced.");
@@ -406,7 +406,7 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T>, 
                 }
             } catch (QueryIteratorYieldingException qe) {
                 throw qe;
-            } catch (IterationInterruptedException ie) {
+            } catch (IterationInterruptException ie) {
                 throw ie;
             } catch (Exception e) {
                 seenException = true;
