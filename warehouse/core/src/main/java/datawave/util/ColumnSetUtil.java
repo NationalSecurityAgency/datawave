@@ -1,3 +1,8 @@
+/**
+ * Taken from org.apache.accumulo.core.iteratorsImpl.conf.ColumnSet.
+ * ColumnSet was not part of Accumulo's public API, so the parts that were needed were copied here.
+ */
+
 package datawave.util;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
