@@ -134,6 +134,7 @@ import datawave.query.jexl.visitors.PushFunctionsIntoExceededValueRanges;
 import datawave.query.jexl.visitors.PushdownLowSelectivityNodesVisitor;
 import datawave.query.jexl.visitors.PushdownMissingIndexRangeNodesVisitor;
 import datawave.query.jexl.visitors.PushdownUnexecutableNodesVisitor;
+import datawave.query.jexl.visitors.QueryFieldsVisitor;
 import datawave.query.jexl.visitors.QueryModelVisitor;
 import datawave.query.jexl.visitors.QueryOptionsFromQueryVisitor;
 import datawave.query.jexl.visitors.QueryPropertyMarkerSourceConsolidator;
@@ -532,11 +533,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         addOption(cfg, QueryOptions.GROUP_FIELDS, config.getGroupFields().toString(), true);
         addOption(cfg, QueryOptions.GROUP_FIELDS_BATCH_SIZE, config.getGroupFieldsBatchSizeAsString(), true);
         addOption(cfg, QueryOptions.UNIQUE_FIELDS, config.getUniqueFields().toString(), true);
-        if (config.getUniqueFields().isMostRecent()) {
-            // this may be redundant with the uniqueFields.toString(), but other code relies on this explicitly being set
-            addOption(cfg, QueryOptions.MOST_RECENT_UNIQUE, Boolean.toString(true), false);
-            addOption(cfg, QueryOptions.UNIQUE_CACHE_BUFFER_SIZE, Integer.toString(config.getUniqueCacheBufferSize()), false);
-        }
         addOption(cfg, QueryOptions.HIT_LIST, Boolean.toString(config.isHitList()), false);
         addOption(cfg, QueryOptions.TERM_FREQUENCY_FIELDS, Joiner.on(',').join(config.getQueryTermFrequencyFields()), false);
         addOption(cfg, QueryOptions.TERM_FREQUENCIES_REQUIRED, Boolean.toString(config.isTermFrequenciesRequired()), false);
@@ -2647,7 +2643,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         if (config.isRebuildDatatypeFilter()) {
             Set<String> ingestTypes = IngestTypeVisitor.getIngestTypes(config.getQueryTree(), getTypeMetadata());
 
-            if (ingestTypes.contains(IngestTypeVisitor.UNKNOWN_TYPE)) {
+            if (ingestTypes.contains(IngestTypeVisitor.UNKNOWN_TYPE) || ingestTypes.contains(IngestTypeVisitor.IGNORED_TYPE)) {
                 // could not reduce ingest types based on the query structure, do nothing
             } else if (config.getDatatypeFilter().isEmpty()) {
                 // if no filter specified, build and set filter from query fields
@@ -2709,7 +2705,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         }
 
         if (config.isSortQueryBeforeGlobalIndex()) {
-            queryTree = OrderByCostVisitor.order((ASTJexlScript) queryTree);
+            config.setQueryTree(timedSortQueryBeforeGlobalIndex(config, getMetadataHelper()));
         }
 
         // if a simple examination of the query has not forced a full table
@@ -2794,6 +2790,20 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         }
 
         return new Tuple2<>(ranges, needsFullTable);
+    }
+
+    protected ASTJexlScript timedSortQueryBeforeGlobalIndex(ShardQueryConfiguration config, MetadataHelper metadataHelper) throws DatawaveQueryException {
+        return visitorManager.timedVisit(config.getTimers(), "SortQueryBeforeGlobalIndex", () -> {
+            Set<String> fields = QueryFieldsVisitor.parseQueryFields(config.getQueryTree(), getMetadataHelper());
+            if (!fields.isEmpty()) {
+                Set<String> datatypes = config.getDatatypeFilter();
+                Map<String,Long> counts = metadataHelper.getCountsForFieldsInDateRange(fields, datatypes, config.getBeginDate(), config.getEndDate());
+                if (!counts.isEmpty()) {
+                    return OrderByCostVisitor.orderByFieldCount(config.getQueryTree(), counts);
+                }
+            }
+            return config.getQueryTree();
+        });
     }
 
     private TypeMetadata getTypeMetadata() {

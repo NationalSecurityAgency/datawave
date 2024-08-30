@@ -155,7 +155,6 @@ public class RangeStreamQueryTest {
         config.setDatatypeFilter(Collections.singleton("datatype"));
         config.setQueryFieldsDatatypes(fieldToDataType);
         config.setIndexedFields(fieldToDataType);
-        config.setShardsPerDayThreshold(2);
     }
 
     @AfterClass

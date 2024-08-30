@@ -363,8 +363,8 @@ public abstract class NumericListQueryTest {
         extraParameters.put("hit.list", "true");
         extraParameters.put("limit.fields", "SIZE=-1,BIRD=-1,CAT=-1,CANINE=-1,FISH=-1");
 
-        String queryString = "SIZE =='90,26.5' AND grouping:matchesInGroup(SIZE, '90', SIZE, '26.5')";
-        String expectedQueryPlan = "SIZE == '+bE9' && SIZE == '+bE2.65' && grouping:matchesInGroup(SIZE, '+bE9', SIZE, '+bE2.65')";
+        String queryString = "SIZE =='90,26.5' AND grouping:matchesInGroup(SIZE, '90', SIZE, '26\\.5')";
+        String expectedQueryPlan = "SIZE == '+bE9' && SIZE == '+bE2.65' && grouping:matchesInGroup(SIZE, '\\+bE9', SIZE, '\\+bE2\\.65')";
 
         Set<String> goodResults = Sets.newHashSet("REPTILE.PET.1:snake", "SIZE.CANINE.WILD.1:90,26.5", "DOG.WILD.1:coyote");
 
@@ -429,7 +429,7 @@ public abstract class NumericListQueryTest {
         extraParameters.put("limit.fields", "SIZE=-1,BIRD=-1,CAT=-1,CANINE=-1,FISH=-1");
 
         String queryString = "SIZE =='90' AND grouping:matchesInGroup(SIZE, '90', SIZE, '20')";
-        String expectedQueryPlan = "SIZE == '+bE9' && grouping:matchesInGroup(SIZE, '+bE9', SIZE, '+bE2')";
+        String expectedQueryPlan = "SIZE == '+bE9' && grouping:matchesInGroup(SIZE, '\\+bE9', SIZE, '\\+bE2')";
 
         // should be empty
         Set<String> goodResults = Sets.newHashSet();
