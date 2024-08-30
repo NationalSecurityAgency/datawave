@@ -4,15 +4,16 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 /**
- * This code was repurposed from {@link org.apache.accumulo.core.util.ByteBufferUtil}.
- * It was not part of the public API, so we've created a DataWave equivalent.
- * This should be used in place of {@link org.apache.accumulo.core.util.ByteBufferUtil} moving forward.
+ * This code was repurposed from {@link org.apache.accumulo.core.util.ByteBufferUtil}. It was not part of the public API, so we've created a DataWave
+ * equivalent. This should be used in place of {@link org.apache.accumulo.core.util.ByteBufferUtil} moving forward.
  */
 public class ByteUtil {
 
     /**
      * Converts a ByteBuffer to a byte array. The ByteBuffer is not modified.
-     * @param buffer the ByteBuffer to convert
+     *
+     * @param buffer
+     *            the ByteBuffer to convert
      * @return a byte array containing the same data as the ByteBuffer.
      */
     public static byte[] toBytes(ByteBuffer buffer) {
