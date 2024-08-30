@@ -13,7 +13,7 @@ public class ByteUtil {
     /**
      * Converts a ByteBuffer to a byte array. The ByteBuffer is not modified.
      * @param buffer the ByteBuffer to convert
-     * @return a byte array containing the same data as the ByteBuffer
+     * @return a byte array containing the same data as the ByteBuffer.
      */
     public static byte[] toBytes(ByteBuffer buffer) {
         if (buffer == null) {
