@@ -8,7 +8,8 @@ import static org.powermock.api.easymock.PowerMock.verifyAll;
 import java.security.KeyStore;
 import java.security.cert.X509Certificate;
 
-import org.jboss.logging.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -26,6 +27,8 @@ public class DatawaveCertVerifierTest {
     private KeyStore truststore;
     private KeyStore keystore;
     private X509Certificate testUserCert;
+
+    private static final Logger logger = LogManager.getLogger(DatawaveCertVerifierTest.class);
 
     @Before
     public void setUp() throws Exception {

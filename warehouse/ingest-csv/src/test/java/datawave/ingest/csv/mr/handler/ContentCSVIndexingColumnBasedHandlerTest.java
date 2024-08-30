@@ -18,6 +18,11 @@ import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.Appender;
+import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.core.appender.ConsoleAppender;
+import org.apache.logging.log4j.core.config.LoggerConfig;
+import org.apache.logging.log4j.core.layout.PatternLayout;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
@@ -41,7 +46,10 @@ public class ContentCSVIndexingColumnBasedHandlerTest {
     private Configuration conf;
     private static Path edgeKeyVersionCachePath = Paths.get(System.getProperty("user.dir"), "edge-key-version.txt");
     private static Logger log = LogManager.getLogger(ContentCSVIndexingColumnBasedHandlerTest.class);
-    private static Enumeration rootAppenders = Logger.getRootLogger().getAllAppenders();
+    private static LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
+    private static org.apache.logging.log4j.core.config.Configuration config = ctx.getConfiguration();
+    private static LoggerConfig rootLoggerConfig = config.getLoggerConfig(LogManager.ROOT_LOGGER_NAME);
+    private static Appender[] rootAppenders = rootLoggerConfig.getAppenders().values().toArray(new Appender[0]);
 
     @BeforeClass
     public static void setupSystemSettings() throws Exception {
@@ -57,11 +65,13 @@ public class ContentCSVIndexingColumnBasedHandlerTest {
 
     @AfterClass
     public static void tearDown() {
-        Logger.getRootLogger().removeAllAppenders();
-        while (rootAppenders.hasMoreElements()) {
-            Appender appender = (Appender) rootAppenders.nextElement();
-            Logger.getRootLogger().addAppender(appender);
+        for (Appender appender : rootLoggerConfig.getAppenders().values()) {
+            rootLoggerConfig.removeAppender(appender.getName());
         }
+        for (Appender appender : rootAppenders) {
+            rootLoggerConfig.addAppender(appender, null, null);
+        }
+        ctx.updateLoggers();
         try {
             Files.deleteIfExists(edgeKeyVersionCachePath);
         } catch (IOException io) {
@@ -81,21 +91,37 @@ public class ContentCSVIndexingColumnBasedHandlerTest {
     }
 
     private static void enableLogging() {
-        Logger.getRootLogger().removeAllAppenders();
-        ConsoleAppender ca = new ConsoleAppender();
-        ca.setLayout(new PatternLayout("%p [%c{1}] %m%n"));
-        Logger.getRootLogger().addAppender(ca);
-        log.setLevel(Level.TRACE);
-        LogManager.getLogger(ColumnBasedHandlerTestUtil.class).setLevel(Level.TRACE);
-        LogManager.getLogger(ContentIndexingColumnBasedHandler.class).setLevel(Level.TRACE);
-        LogManager.getLogger(ContentBaseIngestHelper.class).setLevel(Level.TRACE);
+        LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
+        org.apache.logging.log4j.core.config.Configuration config = ctx.getConfiguration();
+
+        ConsoleAppender ca = ConsoleAppender.newBuilder().setLayout(PatternLayout.newBuilder().withPattern("%p [%c{1}] %m%n").build()).setName("Console")
+                        .build();
+        ca.start();
+
+        LoggerConfig rootLoggerConfig = config.getLoggerConfig(LogManager.ROOT_LOGGER_NAME);
+        rootLoggerConfig.addAppender(ca, Level.TRACE, null);
+        rootLoggerConfig.setLevel(Level.TRACE);
+
+        config.getLoggerConfig(LogManager.getLogger(ColumnBasedHandlerTestUtil.class).getName()).setLevel(Level.TRACE);
+        config.getLoggerConfig(LogManager.getLogger(ContentIndexingColumnBasedHandler.class).getName()).setLevel(Level.TRACE);
+        config.getLoggerConfig(LogManager.getLogger(ContentBaseIngestHelper.class).getName()).setLevel(Level.TRACE);
+
+        // Apply the configuration changes
+        ctx.updateLoggers();
     }
 
     private static void disableLogging() {
-        log.setLevel(Level.OFF);
-        LogManager.getLogger(ColumnBasedHandlerTestUtil.class).setLevel(Level.OFF);
-        LogManager.getLogger(ContentIndexingColumnBasedHandler.class).setLevel(Level.OFF);
-        LogManager.getLogger(ContentBaseIngestHelper.class).setLevel(Level.OFF);
+        LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
+        org.apache.logging.log4j.core.config.Configuration config = ctx.getConfiguration();
+
+        LoggerConfig rootLoggerConfig = config.getLoggerConfig(LogManager.ROOT_LOGGER_NAME);
+        rootLoggerConfig.setLevel(Level.OFF);
+
+        config.getLoggerConfig(LogManager.getLogger(ColumnBasedHandlerTestUtil.class).getName()).setLevel(Level.OFF);
+        config.getLoggerConfig(LogManager.getLogger(ContentIndexingColumnBasedHandler.class).getName()).setLevel(Level.OFF);
+        config.getLoggerConfig(LogManager.getLogger(ContentBaseIngestHelper.class).getName()).setLevel(Level.OFF);
+
+        ctx.updateLoggers();
     }
 
     @Before

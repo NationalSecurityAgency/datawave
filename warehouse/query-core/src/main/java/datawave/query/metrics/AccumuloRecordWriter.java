@@ -28,8 +28,9 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.config.Configurator;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
@@ -78,9 +79,9 @@ public class AccumuloRecordWriter extends RecordWriter<Text,Mutation> {
 
     public AccumuloRecordWriter(AccumuloConnectionFactory connectionFactory, Configuration conf)
                     throws AccumuloException, AccumuloSecurityException, IOException {
-        Level l = getLogLevel(conf);
-        if (l != null) {
-            log.setLevel(getLogLevel(conf));
+        Level logLevel = getLogLevel(conf);
+        if (logLevel != null) {
+            Configurator.setLevel(log.getName(), logLevel);
         }
         this.simulate = getSimulationMode(conf);
         this.createTables = canCreateTables(conf);
@@ -294,7 +295,7 @@ public class AccumuloRecordWriter extends RecordWriter<Text,Mutation> {
 
     public static void setLogLevel(Configuration conf, Level level) {
         ArgumentChecker.notNull(level);
-        conf.setInt(LOGLEVEL, level.toInt());
+        conf.setInt(LOGLEVEL, level.intLevel());
     }
 
     public static void setSimulationMode(Configuration conf) {
@@ -352,7 +353,9 @@ public class AccumuloRecordWriter extends RecordWriter<Text,Mutation> {
 
     protected static Level getLogLevel(Configuration conf) {
         if (conf.get(LOGLEVEL) != null) {
-            return Level.toLevel(conf.getInt(LOGLEVEL, Level.INFO.toInt()));
+            int logLevelInt = conf.getInt(LOGLEVEL, Level.INFO.intLevel());
+            String logLevelStr = Integer.toString(logLevelInt);
+            return Level.toLevel(logLevelStr, Level.INFO);
         }
         return null;
     }

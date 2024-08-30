@@ -2,8 +2,8 @@ package datawave.query.iterator.profile;
 
 import java.util.Iterator;
 
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class EvaluationTrackingIterator<T> implements Iterator<T> {
 

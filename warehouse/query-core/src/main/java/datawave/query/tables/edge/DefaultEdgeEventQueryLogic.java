@@ -6,8 +6,8 @@ import java.util.Set;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.core.common.edgedictionary.EdgeDictionaryProvider;
 import datawave.core.query.configuration.GenericQueryConfiguration;

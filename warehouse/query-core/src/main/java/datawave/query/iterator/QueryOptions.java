@@ -36,8 +36,8 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.jexl3.JexlArithmetic;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.io.Text;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
 
 import com.esotericsoftware.kryo.Kryo;

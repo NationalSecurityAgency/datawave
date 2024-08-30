@@ -12,8 +12,8 @@ import org.apache.hadoop.mapreduce.Counters;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.metrics.util.WritableUtil;
 import datawave.metrics.util.flag.FlagFile;

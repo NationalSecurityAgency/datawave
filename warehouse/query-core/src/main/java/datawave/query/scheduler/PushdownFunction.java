@@ -22,8 +22,8 @@ import org.apache.accumulo.core.data.TableId;
 import org.apache.accumulo.core.dataImpl.KeyExtent;
 import org.apache.accumulo.core.manager.state.tables.TableState;
 import org.apache.hadoop.io.Text;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.base.Function;
 import com.google.common.collect.ArrayListMultimap;

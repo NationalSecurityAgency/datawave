@@ -6,8 +6,8 @@ import java.util.Set;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.hadoop.io.Text;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.lucene.util.fst.FST;
 
 import datawave.core.iterators.DatawaveFieldIndexListIteratorJexl;

@@ -10,8 +10,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.data.normalizer.Normalizer;
 import datawave.ingest.csv.config.helper.ExtendedCSVHelper;

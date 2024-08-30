@@ -10,8 +10,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -43,7 +44,7 @@ public class RegexQueryTest extends AbstractFunctionalQuery {
 
     @BeforeClass
     public static void filterSetup() throws Exception {
-        LogManager.getLogger(PrintUtility.class).setLevel(Level.DEBUG);
+        Configurator.setLevel(PrintUtility.class.getName(), Level.DEBUG);
         Collection<DataTypeHadoopConfig> dataTypes = new ArrayList<>();
         FieldConfig generic = new GenericCityFields();
 
@@ -130,7 +131,7 @@ public class RegexQueryTest extends AbstractFunctionalQuery {
     @Test
     public void testMissingReverseIndex() throws Exception {
         log.info("------  testMissingReverseIndex  ------");
-        LogManager.getLogger(DefaultQueryPlanner.class).setLevel(Level.DEBUG);
+        Configurator.setLevel(DefaultQueryPlanner.class.getName(), Level.DEBUG);
         // should at least match usa, fra, and ita
         String regex = "'.*?a'";
         for (final TestCities city : TestCities.values()) {
@@ -142,10 +143,10 @@ public class RegexQueryTest extends AbstractFunctionalQuery {
     @Test
     public void testMissingReverseIndexPlus() throws Exception {
         log.info("------  testMissingReverseIndex  ------");
-        LogManager.getLogger(DefaultQueryPlanner.class).setLevel(Level.DEBUG);
-        LogManager.getLogger(RegexIndexExpansionVisitor.class).setLevel(Level.DEBUG);
-        LogManager.getLogger(ShardIndexQueryTableStaticMethods.class).setLevel(Level.DEBUG);
-        LogManager.getLogger(AllFieldMetadataHelper.class).setLevel(Level.DEBUG);
+        Configurator.setLevel(DefaultQueryPlanner.class.getName(), Level.DEBUG);
+        Configurator.setLevel(RegexIndexExpansionVisitor.class.getName(), Level.DEBUG);
+        Configurator.setLevel(ShardIndexQueryTableStaticMethods.class.getName(), Level.DEBUG);
+        Configurator.setLevel(AllFieldMetadataHelper.class.getName(), Level.DEBUG);
         // should at least match usa, fra, and ita
         String regex = "'.*?a'";
         for (final TestCities city : TestCities.values()) {
@@ -473,7 +474,7 @@ public class RegexQueryTest extends AbstractFunctionalQuery {
     @Test(expected = FullTableScansDisallowedException.class)
     public void testErrorMissingReverseIndex() throws Exception {
         log.info("------  testMissingReverseIndex  ------");
-        LogManager.getLogger(DefaultQueryPlanner.class).setLevel(Level.DEBUG);
+        Configurator.setLevel(DefaultQueryPlanner.class.getName(), Level.DEBUG);
         // should at least match usa, fra, and ita
         String regex = "'.*?a'";
         for (final TestCities city : TestCities.values()) {

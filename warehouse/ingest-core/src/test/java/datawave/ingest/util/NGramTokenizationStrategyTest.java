@@ -29,7 +29,7 @@ import datawave.ingest.util.MemoryStarvationStrategy.LowMemoryException;
 import datawave.ingest.util.TimeoutStrategy.TimeoutException;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({ResourceAvailabilityUtil.class, Logger.class, MemberShipTest.class, BloomFilter.class})
+@PrepareForTest({ResourceAvailabilityUtil.class, LogManager.class, Logger.class, MemberShipTest.class, BloomFilter.class})
 public class NGramTokenizationStrategyTest {
 
     BloomFilter<String> filter;
@@ -131,7 +131,7 @@ public class NGramTokenizationStrategyTest {
         int expectedNGramCount = BloomFilterUtil.predictNGramCount(fieldValue, MemoryStarvationStrategy.DEFAULT_MAX_NGRAM_LENGTH);
 
         // Set expectations
-        PowerMock.mockStaticPartial(Logger.class, "getLogger");
+        PowerMock.mockStaticPartial(LogManager.class, "getLogger");
         expect(LogManager.getLogger(isA(Class.class))).andReturn(this.logger).anyTimes();
         PowerMock.mockStaticPartial(ResourceAvailabilityUtil.class, "isMemoryAvailable");
         expect(ResourceAvailabilityUtil.isMemoryAvailable(.05f)).andReturn(true);
@@ -161,7 +161,7 @@ public class NGramTokenizationStrategyTest {
         int expectedNGramCount = BloomFilterUtil.predictNGramCount(fieldValue, DiskSpaceStarvationStrategy.DEFAULT_MAX_NGRAM_LENGTH);
 
         // Set expectations
-        PowerMock.mockStaticPartial(Logger.class, "getLogger");
+        PowerMock.mockStaticPartial(LogManager.class, "getLogger");
         expect(LogManager.getLogger(isA(Class.class))).andReturn(this.logger).anyTimes();
         PowerMock.mockStaticPartial(ResourceAvailabilityUtil.class, "isDiskAvailable");
         expect(ResourceAvailabilityUtil.isDiskAvailable("/", .05f)).andReturn(true);
@@ -510,7 +510,7 @@ public class NGramTokenizationStrategyTest {
         int timeoutAfterNGramCount = BloomFilterUtil.predictNGramCount(ncis.iterator().next().getIndexedFieldValue());
 
         // Set expectations
-        PowerMock.mockStaticPartial(Logger.class, "getLogger");
+        PowerMock.mockStaticPartial(LogManager.class, "getLogger");
         expect(LogManager.getLogger(isA(Class.class))).andReturn(this.logger).anyTimes();
         PowerMock.mockStaticPartial(ResourceAvailabilityUtil.class, "isDiskAvailable");
         expect(ResourceAvailabilityUtil.isDiskAvailable("/", .05f)).andReturn(true).times(1);

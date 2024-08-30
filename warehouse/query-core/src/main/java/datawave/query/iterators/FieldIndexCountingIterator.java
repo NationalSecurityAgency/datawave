@@ -27,8 +27,8 @@ import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang.math.LongRange;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.iterators.IteratorSettingHelper;
 import datawave.marking.MarkingFunctions;

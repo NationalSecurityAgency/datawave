@@ -17,8 +17,9 @@ import java.util.TreeSet;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -64,7 +65,7 @@ public class FacetedQueryLogicTest extends AbstractFunctionalQuery {
 
     @BeforeClass
     public static void setupClass() throws Exception {
-        LogManager.getLogger(PrintUtility.class).setLevel(Level.DEBUG);
+        Configurator.setLevel(PrintUtility.class.getName(), Level.DEBUG);
         Collection<DataTypeHadoopConfig> dataTypes = new ArrayList<>();
         FieldConfig generic = new GenericCityFields();
         generic.addIndexField(CityField.COUNTRY.name());

@@ -28,8 +28,8 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.hadoop.io.Text;
 import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.easymock.EasyMock;
 import org.junit.Before;
 import org.junit.Test;
@@ -88,7 +88,7 @@ public class MapReduceStatePersisterTest {
         bean = new MapReduceStatePersisterBean();
         field(MapReduceStatePersisterBean.class, "connectionFactory").set(bean, connectionFactory);
         field(MapReduceStatePersisterBean.class, "ctx").set(bean, ctx);
-        LogManager.getLogger(MapReduceStatePersisterBean.class).setLevel(Level.OFF);
+        Configurator.setLevel(MapReduceStatePersisterTest.class.getName(), Level.OFF);
     }
 
     @Test

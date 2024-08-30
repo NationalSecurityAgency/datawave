@@ -7,8 +7,8 @@ import java.nio.file.Paths;
 import java.text.ParseException;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
+import java.util.Collection;
 import java.util.Date;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -25,9 +25,8 @@ import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
 import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.Appender;
-import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.core.Logger;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -61,11 +60,13 @@ public class ProtobufEdgeDeleteModeTest {
 
     private Configuration conf;
     private static Path edgeKeyVersionCachePath = Paths.get(System.getProperty("user.dir"), "edge-key-version.txt");
-    private static Logger log = LogManager.getLogger(ProtobufEdgeDeleteModeTest.class);
+    private static Logger log = (Logger) LogManager.getLogger(ProtobufEdgeDeleteModeTest.class);
+    private static Logger rootLogger = (Logger) LogManager.getRootLogger();
+    private static org.apache.logging.log4j.core.config.Configuration logConfig = rootLogger.getContext().getConfiguration();
+    private static Collection<Appender> rootAppenders = rootLogger.getAppenders().values();
     private static Multimap<String,NormalizedContentInterface> fields = HashMultimap.create();
     private static Type type = new Type("mycsv", FakeIngestHelper.class, null, new String[] {SimpleDataTypeHandler.class.getName()}, 10, null);
     private static final Now now = Now.getInstance();
-    private static Map<String,Appender> rootAppenders;
 
     @BeforeClass
     public static void setupSystemSettings() throws Exception {
@@ -107,14 +108,13 @@ public class ProtobufEdgeDeleteModeTest {
 
     @AfterClass
     public static void tearDown() {
-        LoggerContext context = (LoggerContext) LogManager.getContext(false);
-        org.apache.logging.log4j.core.config.Configuration config = context.getConfiguration();
-        config.getRootLogger().getAppenders().forEach((name, appender) -> config.getRootLogger().removeAppender(name));
+        for (Appender appender : rootAppenders) {
+            rootLogger.removeAppender(appender);
+        }
 
-        rootAppenders.forEach((name, appender) -> {
-            config.getRootLogger().addAppender(appender, null, null); // Add with default level and filter
-        });
-
+        for (Appender appender : rootAppenders) {
+            rootLogger.addAppender(appender);
+        }
         try {
             Files.deleteIfExists(edgeKeyVersionCachePath);
         } catch (IOException io) {

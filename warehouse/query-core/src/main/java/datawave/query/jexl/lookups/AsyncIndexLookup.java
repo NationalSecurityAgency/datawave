@@ -7,8 +7,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.query.config.ShardQueryConfiguration;

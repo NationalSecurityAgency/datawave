@@ -21,8 +21,9 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
 import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -69,7 +70,7 @@ public class DateIndexHelperTest implements ApplicationContextAware {
     @BeforeClass
     public static void setUp() throws Exception {
         // Set logging levels
-        Logger.getRootLogger().setLevel(Level.OFF);
+        Configurator.setLevel(LogManager.getRootLogger().getName(), Level.OFF);
 
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         System.setProperty("file.encoding", "UTF8");

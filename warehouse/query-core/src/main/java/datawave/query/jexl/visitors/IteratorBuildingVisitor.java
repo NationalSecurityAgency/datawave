@@ -52,8 +52,8 @@ import org.apache.commons.jexl3.parser.ParserTreeConstants;
 import org.apache.commons.pool.impl.GenericObjectPool;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.lucene.util.fst.FST;
 
 import com.google.common.base.Predicate;

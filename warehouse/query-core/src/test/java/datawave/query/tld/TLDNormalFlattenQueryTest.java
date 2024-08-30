@@ -1,7 +1,7 @@
 package datawave.query.tld;
 
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.ingest.json.util.JsonObjectFlattener.FlattenMode;
 import datawave.query.NormalFlattenQueryTest;

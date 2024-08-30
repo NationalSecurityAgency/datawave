@@ -4,8 +4,8 @@ import javax.annotation.Resource;
 import javax.ejb.EJBContext;
 import javax.inject.Singleton;
 
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.core.query.runner.AccumuloConnectionRequestMap;
 

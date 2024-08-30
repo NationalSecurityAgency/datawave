@@ -5,8 +5,8 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.data.type.Type;
 import datawave.query.attributes.ValueTuple;

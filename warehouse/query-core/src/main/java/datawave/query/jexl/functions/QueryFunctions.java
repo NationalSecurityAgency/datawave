@@ -9,8 +9,8 @@ import java.util.regex.Pattern;
 import java.util.stream.StreamSupport;
 
 import org.apache.commons.lang.math.NumberUtils;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.data.type.util.NumericalEncoder;
 import datawave.query.attributes.ValueTuple;

@@ -29,8 +29,8 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.deltaspike.core.api.exclude.Exclude;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jboss.resteasy.annotations.GZIP;
 
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;

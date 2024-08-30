@@ -6,7 +6,6 @@ import java.io.Serializable;
 import org.apache.commons.lang.builder.CompareToBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
 
 import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;
 

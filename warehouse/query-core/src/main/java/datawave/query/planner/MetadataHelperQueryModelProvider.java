@@ -1,8 +1,8 @@
 package datawave.query.planner;
 
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.query.config.ShardQueryConfiguration;

@@ -14,8 +14,9 @@ import java.util.UUID;
 
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -72,9 +73,9 @@ public class SSDeepIngestQueryTest extends AbstractFunctionalQuery {
 
     @BeforeClass
     public static void filterSetup() throws Exception {
-        log.setLevel(Level.DEBUG);
+        Configurator.setLevel(log.getName(), Level.DEBUG);
         Logger printLog = LogManager.getLogger(PrintUtility.class);
-        printLog.setLevel(Level.DEBUG);
+        Configurator.setLevel(printLog.getName(), Level.DEBUG);
 
         Collection<DataTypeHadoopConfig> dataTypes = new ArrayList<>();
         FieldConfig generic = new SSDeepFields();

@@ -26,8 +26,8 @@ import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.mutable.MutableInt;
 import org.apache.hadoop.io.Text;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;

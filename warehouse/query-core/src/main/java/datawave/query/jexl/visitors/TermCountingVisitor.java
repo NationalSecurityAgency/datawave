@@ -14,8 +14,8 @@ import org.apache.commons.jexl3.parser.ASTNENode;
 import org.apache.commons.jexl3.parser.ASTNRNode;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.lang.mutable.MutableInt;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.query.jexl.nodes.QueryPropertyMarker;

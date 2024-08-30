@@ -7,8 +7,8 @@ import java.util.Set;
 
 import org.apache.accumulo.core.data.Range;
 import org.apache.hadoop.io.Text;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.collect.HashMultimap;
 

@@ -59,8 +59,8 @@ import org.apache.commons.jexl3.parser.ASTTrueNode;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.hadoop.io.Text;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;

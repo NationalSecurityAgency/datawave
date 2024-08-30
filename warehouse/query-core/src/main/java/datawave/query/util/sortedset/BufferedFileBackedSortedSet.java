@@ -10,8 +10,8 @@ import java.util.SortedSet;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.query.util.sortedset.FileSortedSet.SortedSetFileHandler;
 

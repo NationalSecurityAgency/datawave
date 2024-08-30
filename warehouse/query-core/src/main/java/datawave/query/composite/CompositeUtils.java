@@ -8,8 +8,8 @@ import org.apache.commons.jexl3.parser.ASTGENode;
 import org.apache.commons.jexl3.parser.ASTGTNode;
 import org.apache.commons.jexl3.parser.ASTLENode;
 import org.apache.commons.jexl3.parser.ASTLTNode;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;

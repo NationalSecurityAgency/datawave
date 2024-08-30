@@ -20,8 +20,9 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -37,10 +38,10 @@ public class StatsHyperLogReducerTest {
     private static final Logger log = LogManager.getLogger(StatsHyperLogReducerTest.class);
 
     static {
-        LogManager.getLogger(StatsHyperLogReducer.class).setLevel(Level.DEBUG);
-        LogManager.getLogger(StatsHyperLogSummary.class).setLevel(Level.DEBUG);
-        LogManager.getLogger(StatsHyperLogReducerTest.class).setLevel(Level.DEBUG);
-        LogManager.getLogger(StatsTestData.class).setLevel(Level.DEBUG);
+        Configurator.setLevel(StatsHyperLogReducer.class.getName(), Level.DEBUG);
+        Configurator.setLevel(StatsHyperLogSummary.class.getName(), Level.DEBUG);
+        Configurator.setLevel(StatsHyperLogReducerTest.class.getName(), Level.DEBUG);
+        Configurator.setLevel(StatsTestData.class.getName(), Level.DEBUG);
     }
 
     @Test

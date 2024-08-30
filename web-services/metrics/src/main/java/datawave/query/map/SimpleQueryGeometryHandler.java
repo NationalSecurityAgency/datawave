@@ -13,8 +13,8 @@ import javax.inject.Inject;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.apache.deltaspike.core.api.exclude.Exclude;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.core.common.logging.ThreadConfigurableLogger;

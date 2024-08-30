@@ -20,8 +20,8 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.jexl3.JexlException;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;

@@ -8,8 +8,9 @@ import java.util.Map;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Before;
@@ -21,9 +22,8 @@ public class StatsJobTest {
     private static final Logger log = LogManager.getLogger(StatsJobTest.class);
 
     static {
-        LogManager.getLogger(IngestJob.class).setLevel(Level.DEBUG);
-        LogManager.getLogger(StatsJob.class).setLevel(Level.DEBUG);
-        LogManager.getLogger(StatsJobTest.class).setLevel(Level.DEBUG);
+        Configurator.setLevel(IngestJob.class.getName(), Level.DEBUG);
+        Configurator.setLevel(StatsJob.class.getName(), Level.DEBUG);
     }
 
     private StatsJobWrapper wrapper;

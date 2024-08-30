@@ -29,8 +29,8 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.LongRange;
 import org.apache.commons.lang.time.FastDateFormat;
 import org.apache.hadoop.io.Text;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;

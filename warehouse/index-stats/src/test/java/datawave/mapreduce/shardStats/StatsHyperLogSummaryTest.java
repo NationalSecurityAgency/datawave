@@ -10,8 +10,9 @@ import java.util.Set;
 import org.apache.accumulo.core.data.Value;
 import org.apache.commons.lang.RandomStringUtils;
 import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -28,8 +29,8 @@ public class StatsHyperLogSummaryTest {
     private static final Random rVal = new Random(System.currentTimeMillis());
 
     static {
-        LogManager.getLogger(StatsHyperLogSummary.class).setLevel(Level.DEBUG);
-        LogManager.getLogger(StatsHyperLogSummaryTest.class).setLevel(Level.DEBUG);
+        Configurator.setLevel(StatsHyperLogSummary.class.getName(), Level.DEBUG);
+        Configurator.setLevel(StatsHyperLogSummaryTest.class.getName(), Level.DEBUG);
     }
 
     private int uniqueCount;

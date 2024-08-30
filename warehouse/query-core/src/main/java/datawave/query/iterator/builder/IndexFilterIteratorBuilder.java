@@ -5,8 +5,8 @@ import java.io.IOException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.hadoop.io.Text;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.core.iterators.DatawaveFieldIndexFilterIteratorJexl;
 import datawave.query.iterator.DocumentIterator;

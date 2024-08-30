@@ -25,8 +25,8 @@ import org.apache.commons.jexl3.parser.ASTOrNode;
 import org.apache.commons.jexl3.parser.ASTReference;
 import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.JexlNode;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.ContentFunctionsDescriptor;

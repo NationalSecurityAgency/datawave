@@ -7,8 +7,8 @@ import java.net.URISyntaxException;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.core.iterators.filesystem.FileSystemCache;
 import datawave.util.StringUtils;

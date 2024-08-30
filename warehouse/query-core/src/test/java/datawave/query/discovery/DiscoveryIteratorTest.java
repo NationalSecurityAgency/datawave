@@ -31,8 +31,8 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.DataInputBuffer;
 import org.apache.hadoop.io.Writable;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.Test;
 
 import com.google.common.collect.Maps;

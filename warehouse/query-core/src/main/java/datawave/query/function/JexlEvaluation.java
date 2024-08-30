@@ -8,8 +8,8 @@ import org.apache.commons.jexl3.JexlArithmetic;
 import org.apache.commons.jexl3.internal.DatawaveJexlScript;
 import org.apache.commons.jexl3.internal.Script;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.base.Predicate;
 

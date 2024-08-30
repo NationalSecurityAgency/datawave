@@ -16,8 +16,8 @@ import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.Assert;
 
 import datawave.ingest.mapreduce.handler.ssdeep.SSDeepIndexHandler;

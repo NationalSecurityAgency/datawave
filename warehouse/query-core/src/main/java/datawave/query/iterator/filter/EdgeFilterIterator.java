@@ -20,8 +20,8 @@ import org.apache.commons.jexl3.JexlExpression;
 import org.apache.commons.jexl3.MapContext;
 import org.apache.commons.jexl3.internal.Engine;
 import org.apache.commons.jexl3.introspection.JexlPermissions;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.collect.HashMultimap;
 

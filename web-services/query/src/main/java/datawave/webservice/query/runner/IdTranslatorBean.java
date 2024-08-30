@@ -36,8 +36,8 @@ import javax.ws.rs.core.MultivaluedMap;
 
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.deltaspike.core.api.exclude.Exclude;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 

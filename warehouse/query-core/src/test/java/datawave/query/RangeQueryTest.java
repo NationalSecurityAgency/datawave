@@ -12,8 +12,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.config.Configurator;
+import org.jboss.arquillian.container.test.api.Config;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -51,7 +53,7 @@ public class RangeQueryTest extends AbstractFunctionalQuery {
         dataTypes.add(new CitiesDataType(CityEntry.generic, generic));
 
         accumuloSetup.setData(FileType.CSV, dataTypes);
-        LogManager.getLogger(PrintUtility.class).setLevel(Level.DEBUG);
+        Configurator.setLevel(PrintUtility.class.getName(), Level.DEBUG);
         client = accumuloSetup.loadTables(log);
     }
 
@@ -210,7 +212,7 @@ public class RangeQueryTest extends AbstractFunctionalQuery {
 
     @Test
     public void testMultiFieldsNoResults() throws Exception {
-        LogManager.getLogger(DefaultQueryPlanner.class).setLevel(Level.DEBUG);
+        Configurator.setLevel(DataTypeQueryTest.class.getName(), Level.DEBUG);
         log.info("------  testMultiFieldsNoResults  ------");
         String state = "'ohio'";
         String qState = "((_Bounded_ = true) && (" + CityField.STATE.name() + LTE_OP + state + AND_OP + CityField.STATE.name() + GTE_OP + state + "))";
@@ -317,7 +319,7 @@ public class RangeQueryTest extends AbstractFunctionalQuery {
 
     @Test
     public void testRangeOrExp() throws Exception {
-        LogManager.getLogger(DefaultQueryPlanner.class).setLevel(Level.DEBUG);
+        Configurator.setLevel(DefaultQueryPlanner.class, Level.DEBUG);
         log.info("------  testRangeOrExp  ------");
         String start = "'e'";
         String end = "'r'";

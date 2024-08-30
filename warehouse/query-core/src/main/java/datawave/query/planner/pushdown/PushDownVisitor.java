@@ -8,7 +8,6 @@ import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
 
 import com.google.common.base.Preconditions;
 

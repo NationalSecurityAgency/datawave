@@ -14,8 +14,8 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Reducer;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Creates mutations for each data and ingest type, based on timestamp, for the duration of each ingest segment.

@@ -23,8 +23,8 @@ import org.apache.accumulo.core.iteratorsImpl.system.IterationInterruptedExcepti
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableComparator;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.gson.Gson;
 

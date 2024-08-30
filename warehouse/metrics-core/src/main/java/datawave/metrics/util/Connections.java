@@ -10,8 +10,8 @@ import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.core.conf.Property;
 import org.apache.accumulo.core.iterators.IteratorUtil;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.ingest.table.config.AbstractTableConfigHelper;
 import datawave.metrics.config.MetricsConfig;

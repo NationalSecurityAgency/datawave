@@ -1,8 +1,8 @@
 package datawave.query.attributes;
 
 import org.apache.commons.lang.builder.HashCodeBuilder;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.clearspring.analytics.stream.cardinality.CardinalityMergeException;
 import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;

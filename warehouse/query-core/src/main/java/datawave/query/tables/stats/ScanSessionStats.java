@@ -12,7 +12,6 @@ import org.apache.commons.lang.mutable.MutableLong;
 import org.apache.commons.lang.time.StopWatch;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
 
 import datawave.query.util.QueryStopwatch;
 

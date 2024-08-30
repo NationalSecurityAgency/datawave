@@ -6,8 +6,8 @@ import java.util.Collection;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.query.iterator.NestedIterator;
 import datawave.query.iterator.SeekableNestedIterator;

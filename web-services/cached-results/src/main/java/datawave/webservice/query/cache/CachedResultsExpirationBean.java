@@ -17,8 +17,8 @@ import javax.ejb.TransactionManagement;
 import javax.ejb.TransactionManagementType;
 import javax.inject.Inject;
 
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.configuration.spring.SpringBean;
 import datawave.webservice.results.cached.CachedResultsBean;

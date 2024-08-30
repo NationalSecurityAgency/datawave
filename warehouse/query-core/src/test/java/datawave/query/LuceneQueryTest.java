@@ -6,8 +6,8 @@ import static datawave.query.testframework.RawDataManager.JEXL_AND_OP;
 import static datawave.query.testframework.RawDataManager.RE_OP;
 import static org.junit.Assert.assertEquals;
 
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;

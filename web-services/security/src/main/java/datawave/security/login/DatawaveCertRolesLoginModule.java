@@ -14,6 +14,7 @@ import javax.security.auth.callback.NameCallback;
 import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.auth.login.LoginException;
 
+import org.apache.logging.log4j.LogManager;
 import org.jboss.logging.Logger;
 import org.jboss.security.PicketBoxLogger;
 import org.jboss.security.PicketBoxMessages;
@@ -34,9 +35,9 @@ public class DatawaveCertRolesLoginModule extends CertRolesLoginModule {
     private ThreadLocal<Boolean> createSimplePrincipal = new ThreadLocal<>();
     private boolean trustedHeaderLogin;
 
-    public DatawaveCertRolesLoginModule() {
-        log = LogManager.getLogger(getClass());
-    }
+    private static final Logger log = Logger.getLogger(DatawaveCertRolesLoginModule.class);
+
+    public DatawaveCertRolesLoginModule() {}
 
     @Override
     public void initialize(Subject subject, CallbackHandler callbackHandler, Map<String,?> sharedState, Map<String,?> options) {

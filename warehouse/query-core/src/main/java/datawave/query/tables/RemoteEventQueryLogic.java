@@ -1,5 +1,16 @@
 package datawave.query.tables;
 
+import static io.protostuff.CollectionSchema.MessageFactories.LinkedList;
+
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
+
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Value;
+
 import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.exception.EmptyObjectException;
@@ -11,10 +22,6 @@ import datawave.query.transformer.EventQueryTransformerSupport;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.result.EventQueryResponseBase;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
-
-import java.util.*;
 
 /**
  * <h1>Overview</h1> This is a query logic implementation that can handle delegating to a remote event query logic (i.e. one that returns an extension of

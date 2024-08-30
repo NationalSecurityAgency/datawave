@@ -2,8 +2,8 @@ package datawave.query.language.tree;
 
 import java.util.List;
 
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.query.language.functions.lucene.LuceneQueryFunction;
 import datawave.query.search.FieldedTerm;

@@ -19,8 +19,8 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jboss.logging.NDC;
 
 import datawave.core.common.connection.AccumuloConnectionFactory;

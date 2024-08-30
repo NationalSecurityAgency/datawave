@@ -13,8 +13,8 @@ import javax.ws.rs.ext.Provider;
 import javax.ws.rs.ext.WriterInterceptorContext;
 
 import org.apache.deltaspike.core.api.exclude.Exclude;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jboss.resteasy.core.interception.ContainerResponseContextImpl;
 import org.jboss.resteasy.core.interception.PreMatchContainerRequestContext;
 import org.jboss.resteasy.util.FindAnnotation;

@@ -11,8 +11,8 @@ import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class SourceThreadTrackingIterator<K extends WritableComparable<?>,V extends Writable> implements SortedKeyValueIterator<K,V> {
     private static final Logger log = LogManager.getLogger(SourceThreadTrackingIterator.class);

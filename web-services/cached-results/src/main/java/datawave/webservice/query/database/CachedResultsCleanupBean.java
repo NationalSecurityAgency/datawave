@@ -25,8 +25,8 @@ import javax.sql.rowset.CachedRowSet;
 import javax.sql.rowset.RowSetFactory;
 import javax.sql.rowset.RowSetProvider;
 
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.configuration.spring.SpringBean;
 import datawave.core.query.cachedresults.CachedResultsQueryParameters;

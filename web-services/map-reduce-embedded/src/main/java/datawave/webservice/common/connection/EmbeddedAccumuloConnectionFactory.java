@@ -10,8 +10,8 @@ import javax.annotation.PostConstruct;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.deltaspike.core.api.config.ConfigProperty;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.core.common.connection.AccumuloClientPool;
 import datawave.core.common.connection.AccumuloClientPoolFactory;

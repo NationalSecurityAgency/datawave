@@ -6,8 +6,8 @@ import java.util.NavigableSet;
 import java.util.Set;
 import java.util.TreeSet;
 
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.ingest.protobuf.TermWeightPosition;
 import datawave.query.postprocessing.tf.TermOffsetMap;

@@ -11,8 +11,8 @@ import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.INDEX_HOL
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl3.parser.ASTAndNode;
 import org.apache.commons.jexl3.parser.JexlNode;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.query.config.ShardQueryConfiguration;

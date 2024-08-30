@@ -14,8 +14,8 @@ import org.apache.accumulo.core.client.PluginEnvironment;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.conf.DefaultConfiguration;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 

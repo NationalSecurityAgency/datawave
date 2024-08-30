@@ -18,8 +18,9 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -31,10 +32,10 @@ public class StatsHyperLogMapperTest {
     private static final Logger log = LogManager.getLogger(StatsHyperLogMapperTest.class);
 
     static {
-        LogManager.getLogger(StatsHyperLogMapper.class).setLevel(Level.DEBUG);
-        LogManager.getLogger(StatsHyperLogSummary.class).setLevel(Level.DEBUG);
-        LogManager.getLogger(StatsHyperLogMapperTest.class).setLevel(Level.DEBUG);
-        LogManager.getLogger(StatsTestData.class).setLevel(Level.DEBUG);
+        Configurator.setLevel(StatsHyperLogMapper.class.getName(), Level.DEBUG);
+        Configurator.setLevel(StatsHyperLogSummary.class.getName(), Level.DEBUG);
+        Configurator.setLevel(StatsHyperLogMapperTest.class.getName(), Level.DEBUG);
+        Configurator.setLevel(StatsTestData.class.getName(), Level.DEBUG);
     }
 
     @Test

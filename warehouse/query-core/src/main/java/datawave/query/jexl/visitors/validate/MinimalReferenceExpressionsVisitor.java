@@ -46,8 +46,8 @@ import org.apache.commons.jexl3.parser.ASTUnaryMinusNode;
 import org.apache.commons.jexl3.parser.ASTVar;
 import org.apache.commons.jexl3.parser.ASTWhileStatement;
 import org.apache.commons.jexl3.parser.JexlNode;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.nodes.QueryPropertyMarker;

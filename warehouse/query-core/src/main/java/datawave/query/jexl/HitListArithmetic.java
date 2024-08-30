@@ -7,8 +7,8 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.collect.Sets;
 

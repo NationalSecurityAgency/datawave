@@ -5,8 +5,8 @@ import java.util.Map;
 
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.mapreduce.DataTypeDiscardIntervalPredicate;

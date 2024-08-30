@@ -30,7 +30,8 @@ import javax.security.auth.login.FailedLoginException;
 import javax.security.auth.login.LoginException;
 
 import org.apache.deltaspike.core.api.exclude.Exclude;
-import org.jboss.logging.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jboss.security.JSSESecurityDomain;
 import org.jboss.security.SimpleGroup;
 import org.jboss.security.SimplePrincipal;
@@ -85,8 +86,10 @@ public class DatawavePrincipalLoginModule extends AbstractServerLoginModule {
 
     private boolean trace;
 
+    private static final Logger log = LogManager.getLogger(DatawavePrincipalLoginModule.class);
+
     public DatawavePrincipalLoginModule() {
-        log = LogManager.getLogger(getClass());
+
     }
 
     @Override

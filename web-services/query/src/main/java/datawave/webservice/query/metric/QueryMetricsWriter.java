@@ -34,8 +34,8 @@ import javax.inject.Inject;
 import org.apache.commons.collections4.map.LRUMap;
 import org.apache.commons.lang.StringUtils;
 import org.apache.deltaspike.core.api.exclude.Exclude;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.configuration.RefreshEvent;

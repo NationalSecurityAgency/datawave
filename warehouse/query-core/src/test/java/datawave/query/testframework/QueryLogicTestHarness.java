@@ -14,8 +14,8 @@ import java.util.Set;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.Assert;
 
 import datawave.core.query.configuration.CheckpointableQueryConfiguration;

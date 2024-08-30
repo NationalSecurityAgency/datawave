@@ -18,8 +18,9 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -60,7 +61,7 @@ public class ScanConsistencyQueryTest extends AbstractFunctionalQuery {
         dataTypes.add(new CitiesDataType(CityEntry.generic, generic));
 
         accumuloSetup.setData(FileType.CSV, dataTypes);
-        LogManager.getLogger(PrintUtility.class).setLevel(Level.DEBUG);
+        Configurator.setLevel(PrintUtility.class.getName(), Level.DEBUG);
         client = accumuloSetup.loadTables(log);
     }
 

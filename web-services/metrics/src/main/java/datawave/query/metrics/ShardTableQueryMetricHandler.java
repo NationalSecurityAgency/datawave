@@ -50,8 +50,8 @@ import org.apache.hadoop.mapreduce.TaskID;
 import org.apache.hadoop.mapreduce.TaskType;
 import org.apache.hadoop.mapreduce.task.MapContextImpl;
 import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
@@ -731,7 +731,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             try {
                 if (!tops.exists(table)) {
                     tops.create(table);
-                    Map<String,TableConfigHelper> tableConfigs = getTableConfigs(log, conf, tableNames);
+                    Map<String,TableConfigHelper> tableConfigs = getTableConfigs((Logger) log, conf, tableNames);
 
                     TableConfigHelper tableHelper = tableConfigs.get(table);
 

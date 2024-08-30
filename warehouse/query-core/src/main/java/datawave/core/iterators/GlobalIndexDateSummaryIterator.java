@@ -19,8 +19,8 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang.mutable.MutableLong;
 import org.apache.hadoop.io.Text;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;

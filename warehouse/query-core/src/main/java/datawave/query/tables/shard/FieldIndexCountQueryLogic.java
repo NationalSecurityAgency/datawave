@@ -27,8 +27,8 @@ import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.collections4.Transformer;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.hadoop.io.Text;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.logic.QueryLogicTransformer;

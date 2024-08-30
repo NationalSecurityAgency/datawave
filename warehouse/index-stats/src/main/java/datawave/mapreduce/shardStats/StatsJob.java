@@ -17,6 +17,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.util.ToolRunner;
 import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.core.config.Configurator;
 
 import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.ingest.mapreduce.handler.shard.NumShards;
@@ -164,7 +165,7 @@ public class StatsJob extends IngestJob {
                     // job args
                     case JOB_LOG_LEVEL:
                         Level level = Level.toLevel(args[1], DEFAULT_LOG_LEVEL);
-                        log.setLevel(level);
+                        Configurator.setLevel(log.getName(), level);
                         log.info("log level set to " + level.toString());
                         break;
                     default:

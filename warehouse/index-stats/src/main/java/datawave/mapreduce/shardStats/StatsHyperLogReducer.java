@@ -7,8 +7,8 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;
 

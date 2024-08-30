@@ -28,8 +28,8 @@ import javax.sql.rowset.RowSetProvider;
 
 import org.apache.commons.dbutils.DbUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;

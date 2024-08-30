@@ -24,8 +24,8 @@ import javax.ws.rs.Produces;
 import org.apache.deltaspike.core.api.jmx.JmxManaged;
 import org.apache.deltaspike.core.api.jmx.MBean;
 import org.apache.hadoop.io.Text;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jboss.resteasy.annotations.GZIP;
 
 import datawave.configuration.spring.SpringBean;

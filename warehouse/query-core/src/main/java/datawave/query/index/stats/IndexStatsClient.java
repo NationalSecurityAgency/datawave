@@ -25,8 +25,8 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.Text;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.collect.ImmutableMap;
 

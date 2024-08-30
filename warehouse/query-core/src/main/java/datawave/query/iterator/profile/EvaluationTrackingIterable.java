@@ -8,8 +8,8 @@ import java.util.Map.Entry;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.query.attributes.Document;
 import datawave.query.iterator.AccumuloTreeIterable;

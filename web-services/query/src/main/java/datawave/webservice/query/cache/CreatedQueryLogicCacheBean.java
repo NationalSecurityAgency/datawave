@@ -20,8 +20,8 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.util.Pair;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.deltaspike.core.api.exclude.Exclude;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Iterables;

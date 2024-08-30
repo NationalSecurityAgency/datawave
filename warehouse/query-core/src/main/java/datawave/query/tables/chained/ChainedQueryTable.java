@@ -5,8 +5,8 @@ import java.util.TreeSet;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.query.configuration.GenericQueryConfiguration;

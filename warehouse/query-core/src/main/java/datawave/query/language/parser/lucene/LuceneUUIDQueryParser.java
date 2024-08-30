@@ -3,8 +3,8 @@ package datawave.query.language.parser.lucene;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.query.data.UUIDType;
 import datawave.query.language.parser.ParseException;

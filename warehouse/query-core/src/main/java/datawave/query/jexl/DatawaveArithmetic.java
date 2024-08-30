@@ -10,8 +10,8 @@ import java.util.Set;
 
 import org.apache.commons.jexl3.JexlArithmetic;
 import org.apache.commons.lang.math.NumberUtils;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.lucene.util.IntsRef;
 import org.apache.lucene.util.IntsRefBuilder;
 import org.apache.lucene.util.fst.FST;

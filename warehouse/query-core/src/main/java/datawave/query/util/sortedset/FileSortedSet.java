@@ -18,8 +18,8 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.function.Predicate;
 
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;

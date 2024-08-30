@@ -8,8 +8,8 @@ import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.deltaspike.core.api.jmx.Table;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.helpers.PrintUtility;
 import datawave.ingest.mapreduce.handler.ssdeep.SSDeepIndexHandler;

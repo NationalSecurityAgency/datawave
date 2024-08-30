@@ -22,8 +22,9 @@ import java.util.Random;
 import java.util.Set;
 
 import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -40,7 +41,7 @@ public class QueryOptionsTest {
 
     @BeforeClass
     public static void setupClass() {
-        LogManager.getLogger(QueryOptions.class).setLevel(Level.TRACE);
+        Configurator.setLevel(QueryOptions.class.getName(), Level.TRACE);
     }
 
     @Test

@@ -8,8 +8,8 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.accumulo.core.data.Range;
 import org.apache.commons.lang.StringUtils;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.codahale.metrics.SlidingWindowReservoir;
 import com.codahale.metrics.Timer;

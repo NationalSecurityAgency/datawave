@@ -16,8 +16,8 @@ import java.util.Set;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.MutationsRejectedException;
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.Assert;
 
 import com.google.common.collect.HashMultimap;

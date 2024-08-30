@@ -16,8 +16,8 @@ import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.VIntWritable;
 import org.apache.hadoop.io.VLongWritable;
 import org.apache.hadoop.io.WritableComparable;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;
 

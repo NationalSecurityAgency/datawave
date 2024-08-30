@@ -6,8 +6,8 @@ import java.util.List;
 import org.apache.commons.jexl3.JexlException;
 import org.apache.commons.jexl3.parser.ASTEQNode;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.microservice.query.Query;
 import datawave.query.jexl.JexlASTHelper;

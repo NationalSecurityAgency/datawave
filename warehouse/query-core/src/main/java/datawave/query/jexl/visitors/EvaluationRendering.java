@@ -11,8 +11,8 @@ import org.apache.commons.jexl3.parser.ASTERNode;
 import org.apache.commons.jexl3.parser.ASTNENode;
 import org.apache.commons.jexl3.parser.ASTNRNode;
 import org.apache.commons.jexl3.parser.JexlNode;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.base.Preconditions;
 
