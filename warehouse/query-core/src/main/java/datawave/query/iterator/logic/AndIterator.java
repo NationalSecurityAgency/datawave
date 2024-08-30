@@ -13,13 +13,13 @@ import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-import datawave.iterators.IterationInterruptException;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Range;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.TreeMultimap;
 
+import datawave.iterators.IterationInterruptException;
 import datawave.query.attributes.Document;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.QueryIteratorYieldingException;

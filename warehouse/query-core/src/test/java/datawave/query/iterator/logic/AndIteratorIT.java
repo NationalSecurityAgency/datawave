@@ -14,13 +14,13 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-import datawave.iterators.IterationInterruptException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Sets;
 
+import datawave.iterators.IterationInterruptException;
 import datawave.query.attributes.Document;
 import datawave.query.iterator.NestedIterator;
 

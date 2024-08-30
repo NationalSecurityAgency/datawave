@@ -12,7 +12,6 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import datawave.iterators.IterationInterruptException;
 import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
@@ -28,6 +27,7 @@ import org.apache.log4j.Logger;
 
 import datawave.data.hash.UID;
 import datawave.data.hash.UIDConstants;
+import datawave.iterators.IterationInterruptException;
 import datawave.query.Constants;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.util.Tuple3;

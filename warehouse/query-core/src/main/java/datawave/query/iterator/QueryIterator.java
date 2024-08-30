@@ -21,7 +21,6 @@ import java.util.Set;
 
 import javax.annotation.Nullable;
 
-import datawave.iterators.IterationInterruptException;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -59,6 +58,7 @@ import datawave.core.iterators.filesystem.FileSystemCache;
 import datawave.data.type.Type;
 import datawave.data.type.util.NumericalEncoder;
 import datawave.ingest.data.config.ingest.CompositeIngest;
+import datawave.iterators.IterationInterruptException;
 import datawave.marking.MarkingFunctionsFactory;
 import datawave.query.Constants;
 import datawave.query.attributes.AttributeKeepFilter;

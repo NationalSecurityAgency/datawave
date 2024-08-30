@@ -13,7 +13,6 @@ import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-import datawave.iterators.IterationInterruptException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
@@ -22,6 +21,7 @@ import org.apache.accumulo.core.iteratorsImpl.system.SortedMapIterator;
 import org.apache.hadoop.io.Text;
 import org.junit.jupiter.api.Test;
 
+import datawave.iterators.IterationInterruptException;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Document;
 

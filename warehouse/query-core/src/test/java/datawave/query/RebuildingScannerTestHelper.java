@@ -10,7 +10,6 @@ import java.util.Spliterator;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
-import datawave.iterators.IterationInterruptException;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
@@ -37,6 +36,7 @@ import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.accumulo.inmemory.InMemoryScanner;
 import datawave.accumulo.inmemory.InMemoryScannerBase;
 import datawave.accumulo.inmemory.ScannerRebuilder;
+import datawave.iterators.IterationInterruptException;
 import datawave.query.attributes.Document;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.iterator.profile.FinalDocumentTrackingIterator;
