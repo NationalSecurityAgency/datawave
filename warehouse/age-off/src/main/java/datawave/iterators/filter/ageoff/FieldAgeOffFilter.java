@@ -1,22 +1,24 @@
 package datawave.iterators.filter.ageoff;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
+import com.google.common.collect.Sets;
+import datawave.iterators.filter.AgeOffConfigParams;
+import datawave.iterators.filter.TokenTtlTrie;
 import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
+import org.apache.accumulo.core.util.MutableByteSequence;
+import org.apache.commons.collections4.map.LRUMap;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
-import com.google.common.collect.Sets;
-
-import datawave.iterators.filter.AgeOffConfigParams;
-import datawave.iterators.filter.ColumnVisibilityOrFilter;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Field age off filter. Traverses through indexed tables and non-indexed tables. Example follows. Note that any field TTL will follow the same units specified
@@ -43,7 +45,14 @@ public class FieldAgeOffFilter extends AppliedRule {
     }
 
     public static final String OPTION_PREFIX = "field.";
-    private final ColumnVisibilityOrFilter cvOrFilter = new ColumnVisibilityOrFilter();
+    public static final String OPTION_MATCH_PATTERN = "matchPattern";
+    public static final String OPTION_CACHE_ENABLED = "cacheEnabled";
+    public static final String OPTION_CACHE_SIZE = "cacheSize";
+
+    private static final String DEFAULT_PATTERN_CACHE_MAX = "50";
+
+    public static final byte[] CV_DELIMITERS = "&|()".getBytes();
+
     /**
      * Null byte
      */
@@ -92,15 +101,24 @@ public class FieldAgeOffFilter extends AppliedRule {
      */
     protected boolean isIndextable;
 
+    protected TokenTtlTrie patternTrie = null;
+    protected LRUMap<ByteSequence,Boolean> patternCache = null;
+    protected boolean patternCacheEnabled = false;
+    protected boolean checkPatterns = false;
+
     /**
      * Data type cut off times
      */
     protected Map<ByteSequence,Long> fieldTimes = null;
 
+    protected long minimumCutOffMillis;
+
     /**
      * Exclude data from age-off
      */
     protected Set<FieldExclusionType> fieldExcludeOptions = null;
+
+    protected MutableByteSequence transientKey = new MutableByteSequence(new byte[] {}, 0, 0);
 
     /**
      * Required by the {@code FilterRule} interface. This method returns a {@code boolean} value indicating whether or not to allow the {@code (Key, Value)}
@@ -121,23 +139,35 @@ public class FieldAgeOffFilter extends AppliedRule {
     public boolean accept(AgeOffPeriod period, Key k, Value v) {
 
         ruleApplied = false;
-        // if accepted by ColumnVisibilityOrFilter logic, pass the K/V up the iterator stack
+        Boolean patternResult = patternCacheEnabled ? patternCache.get(k.getColumnVisibilityData()) : null;
+
+        // if accepted by pattern match logic or cache, pass the K/V up the iterator stack
         // otherwise evaluate based on field
-        if (cvOrFilter.hasToken(k, v, this.cvOrFilter.getPatternBytes()) == false) {
-            return true;
+        if (checkPatterns && (!patternCacheEnabled || patternResult == null)) {
+            patternResult = patternTrie.scan(k.getColumnVisibilityData().getBackingArray()) != null;
+            if (patternCacheEnabled) {
+                patternCache.put(k.getColumnVisibilityData(), patternResult);
+            }
+            if (!patternResult) {
+                if (log.isTraceEnabled()) {
+                    log.trace("Accepted (reject age-off) pattern does not match: " + k.getColumnVisibility().toString());
+                }
+                return true;
+            }
         }
 
         // get the column qualifier, so that we can use it throughout
         final byte[] cq = k.getColumnQualifierData().getBackingArray();
 
-        ByteSequence field = null;
         FieldExclusionType candidateExclusionType = null;
 
         /**
          * Supports the shard and index table. There should not be a failure, however if either one is used on the incorrect table
          */
         if (isIndextable) {
-            field = k.getColumnFamilyData();
+            ByteSequence seq = k.getColumnFamilyData();
+            byte[] seqBytes = seq.getBackingArray();
+            transientKey.setArray(seqBytes, seq.offset(), seq.length());
 
         } else {
             // shard table
@@ -152,6 +182,9 @@ public class FieldAgeOffFilter extends AppliedRule {
                 column = TF_COLUMN_BYTES;
             } else if (cf.length == 1 && cf[0] == DOCUMENT_COLUMN_BYTES[0]) {
                 // if the document column family is encountered, do not attempt to filter its field
+                if (log.isTraceEnabled()) {
+                    log.trace("Accepted (reject age-off) document field encountered");
+                }
                 return true;
             }
 
@@ -168,7 +201,8 @@ public class FieldAgeOffFilter extends AppliedRule {
                 if (nullIndex > 0) {
                     int start = nullIndex + 1;
                     int length = cq.length - start;
-                    field = new ArrayByteSequence(cq, start, length);
+                    // field = new ArrayByteSequence(cq, start, length);
+                    transientKey.setArray(cq, start, length);
                 }
 
             } else if (column == FI_COLUMN_BYTES) {
@@ -177,8 +211,7 @@ public class FieldAgeOffFilter extends AppliedRule {
                 // For the fi, grab the rest of the string after fi\0
                 int start = FI_COLUMN_BYTES.length + 1;
                 int length = cf.length - start;
-                field = new ArrayByteSequence(cf, start, length);
-
+                transientKey.setArray(cf, start, length);
             } else {
                 // CASE 3
                 // For the data, find the first null byte or '.' in the colQual, then grab the start of the string to this point
@@ -194,21 +227,28 @@ public class FieldAgeOffFilter extends AppliedRule {
                 // event fields may have instance notations using periods
                 // the field needs to be truncated to either the null or the first dot.
                 if (length > 0) {
-                    field = new ArrayByteSequence(cq, 0, length);
+                    transientKey.setArray(cq, 0, length);
                 }
             }
         }
 
         // check to see if the field is excluded based on type
         // if so, pass through the filter
-        if ((candidateExclusionType != null && fieldExcludeOptions.contains(candidateExclusionType))) {
+        if ((fieldExcludeOptions != null && candidateExclusionType != null && fieldExcludeOptions.contains(candidateExclusionType))) {
+            if (log.isTraceEnabled()) {
+                log.trace("Accepted (reject age-off) field excluded: " + candidateExclusionType);
+            }
             return true;
         }
 
-        Long dataTypeCutoff = (fieldTimes.containsKey(field)) ? fieldTimes.get(field) : null;
+        Long dataTypeCutoff = fieldTimes.get(transientKey);
         if (dataTypeCutoff != null) {
             ruleApplied = true;
-            return k.getTimestamp() > dataTypeCutoff;
+            boolean accepted = k.getTimestamp() > dataTypeCutoff;
+            if (log.isTraceEnabled()) {
+                log.trace("Rule applied - result: " + accepted);
+            }
+            return accepted;
         }
 
         return true;
@@ -249,7 +289,6 @@ public class FieldAgeOffFilter extends AppliedRule {
             throw new IllegalArgumentException("ttl must be set for a FilterRule implementation");
         }
         super.init(options, iterEnv);
-        this.cvOrFilter.init(options, iterEnv);
         String ttlUnits = options.getTTLUnits();
 
         Set<ByteSequence> fields = Sets.newHashSet();
@@ -314,6 +353,28 @@ public class FieldAgeOffFilter extends AppliedRule {
                     fieldTimes.put(fieldName, options.getAgeOffPeriod(startScan).getCutOffMilliseconds());
                 }
             }
+        }
+
+        String matchPatternOption = options.getOption(OPTION_MATCH_PATTERN);
+        String cacheSizeOption = options.getOption(OPTION_CACHE_SIZE, DEFAULT_PATTERN_CACHE_MAX);
+        String cacheEnabledOption = options.getOption(OPTION_CACHE_ENABLED, "false");
+
+        patternCacheEnabled = Boolean.parseBoolean(cacheEnabledOption);
+        patternCache = new LRUMap<>(Integer.parseInt(cacheSizeOption));
+
+        TokenTtlTrie.Builder patternTrieBuilder = new TokenTtlTrie.Builder();
+        if (matchPatternOption != null) {
+            Arrays.stream(matchPatternOption.split(",")).forEach(pattern -> {
+                patternTrieBuilder.addToken(pattern.getBytes(StandardCharsets.UTF_8), 0L);
+            });
+            patternTrieBuilder.setDelimiters(CV_DELIMITERS);
+            patternTrie = patternTrieBuilder.build();
+            checkPatterns = true;
+        }
+
+        if (log.isTraceEnabled()) {
+            log.trace("Option cache-enabled: " + matchPatternOption);
+            log.trace("Option cache-size: " + cacheSizeOption);
         }
     }
 

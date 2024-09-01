@@ -45,10 +45,23 @@ public final class TokenTtlTrie {
      * @return the ttl for the best priority token found
      */
     public Long scan(byte[] rawString) {
+        return scan(rawString, 0, rawString.length);
+    }
+
+    /**
+     * Scan the specified string for tokens, returning the ttl of the best priority token found, or null if no tokens were found.
+     *
+     * @param rawString
+     *            the raw string
+     *
+     * @return the ttl for the best priority token found
+     */
+    public Long scan(byte[] rawString, int offset, int length) {
         int bestPriority = Integer.MAX_VALUE;
         double ttl = 0;
         int curState = 0;
-        for (byte b : rawString) {
+        for (int i = offset; i < offset + length; i++) {
+            byte b = rawString[i];
             short charClass = charClasses[0xff & (int) b];
             if (curState == REJECT_TOKEN) {
                 if (charClass == DELIMITER_CHAR_CLASS) {
@@ -99,11 +112,11 @@ public final class TokenTtlTrie {
             ON, OFF
         }
 
-        Builder() {
+        public Builder() {
             this(MERGE_MODE.OFF);
         }
 
-        Builder(MERGE_MODE mergeMode) {
+        public Builder(MERGE_MODE mergeMode) {
             transitionMaps.add(new HashMap<>());
             stateTtlList.add(null);
             statePriorityList.add(null);
