@@ -171,7 +171,7 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Resu
     }
 
     public BatchScannerSession(ScannerSession other) {
-        this(other.tableName, other.auths, other.sessionDelegator, other.maxResults, other.settings, other.options, other.ranges);
+        this(other.tableName, other.auths, other.sessionDelegator, other.maxResults, other.settings, other.ranges);
 
     }
 
@@ -193,8 +193,7 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Resu
      * @param ranges
      *            list of ranges
      */
-    public BatchScannerSession(String tableName, Set<Authorizations> auths, ResourceQueue delegator, int maxResults, Query settings, ScannerOptions options,
-                    Collection<Range> ranges) {
+    public BatchScannerSession(String tableName, Set<Authorizations> auths, ResourceQueue delegator, int maxResults, Query settings, Collection<Range> ranges) {
 
         super(tableName, auths, delegator, maxResults, settings);
         Preconditions.checkNotNull(delegator);
