@@ -38,58 +38,6 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
     private static final Collection<ByteSequence> TERM_FREQUENCY_COLUMN_FAMILY_BYTE_SEQUENCE = Collections
                     .singleton(new ArrayByteSequence(Constants.TERM_FREQUENCY_COLUMN_FAMILY.getBytes()));
 
-    /** The field name option */
-    public static final String FIELD_NAME = "field.name";
-    /** The start offset option */
-    public static final String START_OFFSET = "start.offset";
-    /** The end offset option */
-    public static final String END_OFFSET = "end.offset";
-
-    /** the underlying source */
-    protected SortedKeyValueIterator<Key,Value> source;
-    /** the field name */
-    protected String fieldName;
-    /** the start offset (inclusive) */
-    protected int startOffset;
-    /** the end offset (exclusive) */
-    protected int endOffset;
-
-    /** The specified dt/uid column families */
-    protected SortedSet<String> columnFamilies;
-    /** inclusive or exclusive dt/uid column families */
-    protected boolean inclusive;
-
-    /** the underlying TF scan range */
-    protected Range scanRange;
-
-    /** the top key */
-    protected Key tk;
-    /** the top value */
-    protected Value tv;
-
-    /** the list of hit terms: terms from the query that resulted in the current document being returned as a result */
-    protected ArrayList<String> hitTermsList;
-    /** the direction for the excerpt - controls which directions we build the excerpt from an originating hit term */
-    private Direction direction;
-
-    private enum Direction {
-        /** specifies that an excerpt only returns terms prior to the last hit term found in the excerpt */
-        BEFORE,
-        /** specifies that an excerpt only returns terms after the first hit term found in the excerpt */
-        AFTER,
-        /** specifies that an excerpt returns terms from both before and after the median offset */
-        BOTH
-    }
-
-    /**
-     * Whether we might need to trim down the excerpt to the requested size. <br>
-     * Is false if this is the first time running the iterator and true otherwise because the second pass always asks for more data than is needed to generate
-     * the excerpt to account for stop words.
-     */
-    private boolean trimExcerpt;
-    /** The size of half of the original desired excerpt length. Used during trimming. */
-    private float origHalfSize;
-
     /**
      * A special term that is used to indicate we removed a candidate term because <br>
      * it was a member of the list of terms that should not be included in an excerpt. <br>
@@ -98,50 +46,157 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
      * words in the excerpt.
      */
     public static final String WORD_SKIPPED_MARKER = "XXXWESKIPPEDAWORDXXX";
+
     /**
      * A special term that is used to indicate when we are using documents that are not scored. <br>
      * <br>
      * When returned to the ExcerptTransform, indicates that we should not populate the "HIT_EXCERPT_WITH_SCORES" or "HIT_EXCERPT_ONE_BEST" fields.
      */
-    private static final String NOT_SCORED_MARKER = "XXXNOTSCOREDXXX";
+    public static final String NOT_SCORED_MARKER = "XXXNOTSCOREDXXX";
 
-    private static final String BLANKEXCERPT = "YOUR EXCERPT WAS BLANK! Maybe bad field or size?";
+    private static final String BLANK_EXCERPT_MESSAGE = "YOUR EXCERPT WAS BLANK! Maybe bad field or size?";
+
+    /**
+     * Encapsulates the configuration of the HitExcerptIterator. The Iterator constructor guarantees one is set per instance of the iterator, method are
+     * provided to initialize this from an external options map or perform a deep copy from another instance.
+     */
+    public static final class Configuration {
+        /** The field name option */
+        public static final String FIELD_NAME = "field.name";
+        /** The start offset option */
+        public static final String START_OFFSET = "start.offset";
+        /** The end offset option */
+        public static final String END_OFFSET = "end.offset";
+
+        /** represents the directions used to build the excerpt in the iterator */
+        public enum Direction {
+            /** specifies that an excerpt only returns terms prior to the last hit term found in the excerpt */
+            BEFORE,
+            /** specifies that an excerpt only returns terms after the first hit term found in the excerpt */
+            AFTER,
+            /** specifies that an excerpt returns terms from both before and after the median offset */
+            BOTH
+        }
+
+        public Configuration() {}
+
+        /**
+         * initialize the fields in this instance by reading from an option map
+         *
+         * @param options
+         *            the map to read options from.
+         */
+        public void init(Map<String,String> options) {
+            fieldName = options.get(FIELD_NAME);
+            startOffset = Integer.parseInt(options.get(START_OFFSET));
+            endOffset = Integer.parseInt(options.get(END_OFFSET));
+            hitTermsList = new ArrayList<>();
+            direction = Direction.BOTH;
+            origHalfSize = 0;
+            trimExcerpt = false;
+        }
+
+        /** deep copy the configuration of another excerpt configuration into this one */
+        public void deepCopy(Configuration other) {
+            fieldName = other.fieldName;
+            startOffset = other.startOffset;
+            endOffset = other.endOffset;
+            hitTermsList = new ArrayList<>(other.hitTermsList);
+            direction = other.direction;
+            origHalfSize = other.origHalfSize;
+            trimExcerpt = other.trimExcerpt;
+        }
+
+        /** the field name */
+        private String fieldName;
+
+        /** the list of hit terms: terms from the query that resulted in the current document being returned as a result */
+        private ArrayList<String> hitTermsList;
+
+        /** the direction for the excerpt - controls which directions we build the excerpt from an originating hit term */
+        private Direction direction;
+
+        /**
+         * Whether we might need to trim down the excerpt to the requested size. <br>
+         * Is false if this is the first time running the iterator and true otherwise because the second pass always asks for more data than is needed to
+         * generate the excerpt to account for stop words.
+         */
+        private boolean trimExcerpt;
+
+        /** the start offset (inclusive) */
+        private int startOffset;
+
+        /** the end offset (exclusive) */
+        private int endOffset;
+
+        /** The size of half of the original desired excerpt length. Used during trimming. */
+        private float origHalfSize;
+
+        public String toString() {
+            return fieldName + ", " + startOffset + ", " + endOffset;
+        }
+    }
+
+    /** the underlying source */
+    protected SortedKeyValueIterator<Key,Value> source;
+
+    /** The specified dt/uid column families */
+    protected SortedSet<String> columnFamilies;
+
+    /** inclusive or exclusive dt/uid column families */
+    protected boolean inclusive;
+
+    /** the underlying TF scan range */
+    protected Range scanRange;
+
+    /** the top key */
+    protected Key tk;
+
+    /** the top value */
+    protected Value tv;
+
+    /** encapsulates the configuration for the TermFrequencyExcerptIterator */
+    protected final Configuration config;
+
+    public TermFrequencyExcerptIterator() {
+        this.config = new Configuration(); // excerpt config will never be null;
+    }
 
     @Override
     public IteratorOptions describeOptions() {
         IteratorOptions options = new IteratorOptions(TermFrequencyExcerptIterator.class.getSimpleName(),
                         "An iterator that returns excepts from the scanned documents", null, null);
-        options.addNamedOption(FIELD_NAME, "The token field name for which to get excerpts (required)");
-        options.addNamedOption(START_OFFSET, "The start offset for the excerpt (inclusive) (required)");
-        options.addNamedOption(END_OFFSET, "The end offset for the excerpt (exclusive) (required)");
+        options.addNamedOption(Configuration.FIELD_NAME, "The token field name for which to get excerpts (required)");
+        options.addNamedOption(Configuration.START_OFFSET, "The start offset for the excerpt (inclusive) (required)");
+        options.addNamedOption(Configuration.END_OFFSET, "The end offset for the excerpt (exclusive) (required)");
         return options;
     }
 
     @Override
     public boolean validateOptions(Map<String,String> map) {
-        if (map.containsKey(FIELD_NAME)) {
-            if (map.get(FIELD_NAME).isEmpty()) {
-                throw new IllegalArgumentException("Empty field name property: " + FIELD_NAME);
+        if (map.containsKey(Configuration.FIELD_NAME)) {
+            if (map.get(Configuration.FIELD_NAME).isEmpty()) {
+                throw new IllegalArgumentException("Empty field name property: " + Configuration.FIELD_NAME);
             }
         } else {
-            throw new IllegalArgumentException("Missing field name property: " + FIELD_NAME);
+            throw new IllegalArgumentException("Missing field name property: " + Configuration.FIELD_NAME);
         }
 
         int startOffset;
-        if (map.containsKey(START_OFFSET)) {
+        if (map.containsKey(Configuration.START_OFFSET)) {
             try {
-                startOffset = Integer.parseInt(map.get(START_OFFSET));
+                startOffset = Integer.parseInt(map.get(Configuration.START_OFFSET));
             } catch (Exception e) {
                 throw new IllegalArgumentException("Failed to parse start offset as integer", e);
             }
         } else {
-            throw new IllegalArgumentException("Missing start offset property: " + START_OFFSET);
+            throw new IllegalArgumentException("Missing start offset property: " + Configuration.START_OFFSET);
         }
 
-        if (map.containsKey(END_OFFSET)) {
+        if (map.containsKey(Configuration.END_OFFSET)) {
             int endOffset;
             try {
-                endOffset = Integer.parseInt(map.get(END_OFFSET));
+                endOffset = Integer.parseInt(map.get(Configuration.END_OFFSET));
             } catch (Exception e) {
                 throw new IllegalArgumentException("Failed to parse end offset as integer", e);
             }
@@ -149,7 +204,7 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
                 throw new IllegalArgumentException("End offset must be greater than start offset");
             }
         } else {
-            throw new IllegalArgumentException("Missing end offset property: " + END_OFFSET);
+            throw new IllegalArgumentException("Missing end offset property: " + Configuration.END_OFFSET);
         }
 
         return true;
@@ -164,26 +219,15 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
     public SortedKeyValueIterator<Key,Value> deepCopy(IteratorEnvironment env) {
         TermFrequencyExcerptIterator it = new TermFrequencyExcerptIterator();
         it.source = source.deepCopy(env);
-        it.startOffset = startOffset;
-        it.endOffset = endOffset;
-        it.fieldName = fieldName;
-        it.hitTermsList = hitTermsList;
-        it.direction = direction;
-        it.origHalfSize = origHalfSize;
-        it.trimExcerpt = trimExcerpt;
+        it.config.deepCopy(config);
+
         return it;
     }
 
     @Override
     public void init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env) throws IOException {
         this.source = source;
-        this.startOffset = Integer.parseInt(options.get(START_OFFSET));
-        this.endOffset = Integer.parseInt(options.get(END_OFFSET));
-        this.fieldName = options.get(FIELD_NAME);
-        hitTermsList = new ArrayList<>();
-        direction = Direction.BOTH;
-        origHalfSize = 0;
-        trimExcerpt = false;
+        config.init(options);
     }
 
     @Override
@@ -302,11 +346,13 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
             return;
         }
 
+        final int startOffset = config.startOffset;
+        final int endOffset = config.endOffset;
+        final List<String> hitTermsList = config.hitTermsList;
+        final String fieldName = config.fieldName;
+
         // get the pieces from the top key that will be returned
         Key top = source.getTopKey();
-        Text cv = top.getColumnVisibility();
-        long ts = top.getTimestamp();
-        Text row = top.getRow();
 
         // set the size of the array to the number of offsets that we will try to fill for the potential excerpt
         WordsAndScores[] wordsAndScoresArr = new WordsAndScores[endOffset - startOffset];
@@ -354,9 +400,9 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
                             // if we encounter a stop word, and we're not in trim mode, fail-fast and create an entry
                             // to return the special marker token. When seeing this, the transform will run this again
                             // in trim mode with an expanded offset range.
-                            if (stopFound && !trimExcerpt) {
-                                tk = new Key(row, new Text(dtUid), new Text(fieldName + Constants.NULL + WORD_SKIPPED_MARKER + Constants.NULL
-                                                + WORD_SKIPPED_MARKER + Constants.NULL + WORD_SKIPPED_MARKER), cv, ts);
+                            if (stopFound && !config.trimExcerpt) {
+                                tk = new Key(top.getRow(), new Text(dtUid), new Text(fieldName + Constants.NULL + WORD_SKIPPED_MARKER + Constants.NULL
+                                                + WORD_SKIPPED_MARKER + Constants.NULL + WORD_SKIPPED_MARKER), top.getColumnVisibility(), top.getTimestamp());
                                 tv = new Value();
                                 return;
                             }
@@ -371,8 +417,8 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
         }
         // Now that the words and scores array is populated with all the tf data, it's time to generate an excerpt and
         // create a key that contains all of our excerpts to be read by the ExcerptTransform
-        final List<Object> carePackage = List.of(hitTermsList, direction, trimExcerpt, startOffset, endOffset, origHalfSize);
-        tk = new Key(row, new Text(dtUid), new Text(fieldName + Constants.NULL + generateExcerpt(wordsAndScoresArr, carePackage)), cv, ts);
+        tk = new Key(top.getRow(), new Text(dtUid), new Text(fieldName + Constants.NULL + generateExcerpt(wordsAndScoresArr, config)),
+                        top.getColumnVisibility(), top.getTimestamp());
         tv = new Value();
     }
 
@@ -402,10 +448,10 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
      * @param wordsAndScoresArr
      *            a collection of document terms and their scores, organized by offset. Each offset may have multiple terms to choose from. Some offsets may be
      *            null if there were no tf's from that position.
-     * @param carePackage
+     * @param config
      *            <code>List.of(hitTermsList, direction, trimExcerpt, startOffset, endOffset, origHalfSize)</code>
      */
-    private static String generateExcerpt(WordsAndScores[] wordsAndScoresArr, final List<Object> carePackage) {
+    private static String generateExcerpt(WordsAndScores[] wordsAndScoresArr, final Configuration config) {
         boolean usedScores = false;
         String phraseWithScoresExcerpt = null;
         String oneBestExcerpt = null;
@@ -413,7 +459,7 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
         // loop through the WordsAndScores and if we find at least one that has scores, generate a phrase with scores based excerpt
         for (WordsAndScores wordsAndScores : wordsAndScoresArr) {
             if (wordsAndScores != null && wordsAndScores.getUseScores()) {
-                phraseWithScoresExcerpt = generatePhrase(wordsAndScoresArr, carePackage);
+                phraseWithScoresExcerpt = generatePhrase(wordsAndScoresArr, config);
                 usedScores = true;
                 break;
             }
@@ -432,14 +478,14 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
         }
 
         // Generate the "phrase without scores" excerpt now that the scores flags are false.
-        String phraseWithoutScoresExcerpt = generatePhrase(wordsAndScoresArr, carePackage);
+        String phraseWithoutScoresExcerpt = generatePhrase(wordsAndScoresArr, config);
 
         // if the regular excerpt is blank, we will return a message saying that the excerpt was blank
         if (phraseWithoutScoresExcerpt.isBlank()) {
-            phraseWithoutScoresExcerpt = BLANKEXCERPT;
+            phraseWithoutScoresExcerpt = BLANK_EXCERPT_MESSAGE;
             if (usedScores) {
-                phraseWithScoresExcerpt = BLANKEXCERPT;
-                oneBestExcerpt = BLANKEXCERPT;
+                phraseWithScoresExcerpt = BLANK_EXCERPT_MESSAGE;
+                oneBestExcerpt = BLANK_EXCERPT_MESSAGE;
             }
         } else {
             if (usedScores) {
@@ -450,7 +496,7 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
                     }
                 }
                 // generate the "one best" excerpt
-                oneBestExcerpt = generatePhrase(wordsAndScoresArr, carePackage);
+                oneBestExcerpt = generatePhrase(wordsAndScoresArr, config);
             }
         }
         // return all the excerpt sections concatenated with nulls between them
@@ -462,14 +508,14 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
      *
      * @param wordsAndScoresArr
      *            the array of WordsAndScores that contain the terms to create a phrase from
-     * @param carePackage
+     * @param config
      *            <code>List.of(hitTermsList, direction, trimExcerpt, startOffset, endOffset, origHalfSize)</code>
      * @return the phrase
      */
-    @SuppressWarnings("unchecked")
-    protected static String generatePhrase(WordsAndScores[] wordsAndScoresArr, final List<Object> carePackage) {
+
+    protected static String generatePhrase(WordsAndScores[] wordsAndScoresArr, final Configuration config) {
         // put brackets around whole hit phrases instead of individual terms
-        checkForHitPhrase(wordsAndScoresArr, (List<String>) carePackage.get(0));
+        checkForHitPhrase(wordsAndScoresArr, config.hitTermsList);
 
         // there are cases where we'll have no scores, and we will want to choose a longer term for a particular position
         // instead of the hit term we matched (e.g., when we're dealing with synonyms that are a fragment of a larger
@@ -481,14 +527,14 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
         String[] termsToOutput = new String[wordsAndScoresArr.length];
 
         // pull our items out of the care package
-        Direction direction = (Direction) carePackage.get(1);
-        boolean trimExcerpt = (boolean) carePackage.get(2);
-        int startOffset = (int) carePackage.get(3);
-        int endOffset = (int) carePackage.get(4);
-        float origHalfSize = (float) carePackage.get(5);
+        Configuration.Direction direction = config.direction;
+        boolean trimExcerpt = config.trimExcerpt;
+        int startOffset = config.startOffset;
+        int endOffset = config.endOffset;
+        float origHalfSize = config.origHalfSize;
 
-        boolean bef = direction.equals(Direction.BEFORE);
-        boolean aft = direction.equals(Direction.AFTER);
+        boolean bef = direction.equals(Configuration.Direction.BEFORE);
+        boolean aft = direction.equals(Configuration.Direction.AFTER);
 
         // tracks whether we've found the first hit term
         boolean firstHitTermFound = false;
@@ -902,24 +948,24 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
     }
 
     public void setHitTermsList(List<String> hitTermsList) {
-        this.hitTermsList = (ArrayList<String>) hitTermsList;
+        this.config.hitTermsList = (ArrayList<String>) hitTermsList;
     }
 
     public void setDirection(String direction) {
-        this.direction = Direction.valueOf(direction.toUpperCase());
+        this.config.direction = Configuration.Direction.valueOf(direction.toUpperCase());
     }
 
     public void setOrigHalfSize(float origHalfSize) {
-        this.origHalfSize = origHalfSize;
+        this.config.origHalfSize = origHalfSize;
     }
 
     public void setTrimExcerpt(boolean trimExcerpt) {
-        this.trimExcerpt = trimExcerpt;
+        this.config.trimExcerpt = trimExcerpt;
     }
 
     @Override
     public String toString() {
-        return "TermFrequencyExcerptIterator: " + this.fieldName + ", " + this.startOffset + ", " + this.endOffset;
+        return "TermFrequencyExcerptIterator: " + config.toString();
     }
 
 }

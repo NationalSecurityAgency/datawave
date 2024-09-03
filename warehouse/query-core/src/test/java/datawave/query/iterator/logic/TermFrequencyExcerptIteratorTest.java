@@ -4,6 +4,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import static datawave.query.iterator.logic.TermFrequencyExcerptIterator.Configuration.END_OFFSET;
+import static datawave.query.iterator.logic.TermFrequencyExcerptIterator.Configuration.FIELD_NAME;
+import static datawave.query.iterator.logic.TermFrequencyExcerptIterator.Configuration.START_OFFSET;
+
 import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -134,9 +138,9 @@ public class TermFrequencyExcerptIteratorTest extends EasyMockSupport {
     }
 
     private void givenOptions(String field, int start, int end) {
-        options.put(TermFrequencyExcerptIterator.FIELD_NAME, field);
-        options.put(TermFrequencyExcerptIterator.START_OFFSET, String.valueOf(start));
-        options.put(TermFrequencyExcerptIterator.END_OFFSET, String.valueOf(end));
+        options.put(FIELD_NAME, field);
+        options.put(START_OFFSET, String.valueOf(start));
+        options.put(END_OFFSET, String.valueOf(end));
     }
 
     private void initIterator() throws IOException {

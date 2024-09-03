@@ -1,5 +1,8 @@
 package datawave.query.transformer;
 
+import static datawave.query.iterator.logic.TermFrequencyExcerptIterator.Configuration.END_OFFSET;
+import static datawave.query.iterator.logic.TermFrequencyExcerptIterator.Configuration.FIELD_NAME;
+import static datawave.query.iterator.logic.TermFrequencyExcerptIterator.Configuration.START_OFFSET;
 import static org.easymock.EasyMock.and;
 import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.capture;
@@ -390,10 +393,10 @@ public class ExcerptTransformTest extends EasyMockSupport {
 
     private Map<String,String> getOptions(String field, int start, int end) {
         Map<String,String> options = new HashMap<>();
-        options.put(TermFrequencyExcerptIterator.FIELD_NAME, field);
-        options.put(TermFrequencyExcerptIterator.START_OFFSET, String.valueOf(start));
+        options.put(FIELD_NAME, field);
+        options.put(START_OFFSET, String.valueOf(start));
         // for the options, the end offset is exclusive so add 1
-        options.put(TermFrequencyExcerptIterator.END_OFFSET, String.valueOf(end + 1));
+        options.put(END_OFFSET, String.valueOf(end + 1));
         return options;
     }
 }
