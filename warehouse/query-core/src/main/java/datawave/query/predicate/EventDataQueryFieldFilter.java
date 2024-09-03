@@ -27,6 +27,8 @@ public class EventDataQueryFieldFilter implements EventDataQueryFilter {
     private int maxNextCount = -1;
     // track the number of times next is called on the same field
     private int nextCount;
+    // track the current field
+    private String currentField = null;
 
     // the set of fields to retain
     private TreeSet<String> fields;
@@ -52,8 +54,9 @@ public class EventDataQueryFieldFilter implements EventDataQueryFilter {
         this.maxNextCount = other.maxNextCount;
         this.fields = other.fields;
         this.parser = other.parser;
-        // do not copy nextCount because that is internal state
+        // do not copy nextCount or currentField because that is internal state
         this.nextCount = 0;
+        this.currentField = null;
     }
 
     /**
@@ -125,7 +128,14 @@ public class EventDataQueryFieldFilter implements EventDataQueryFilter {
             nextCount = 0; // reset count
             return true;
         } else {
-            nextCount++;
+            if (currentField != null && currentField.equals(field)) {
+                // only increment the count for consecutive misses within the same field
+                nextCount++;
+            } else {
+                // new field means new count
+                currentField = field;
+                nextCount = 0;
+            }
             return false;
         }
     }
