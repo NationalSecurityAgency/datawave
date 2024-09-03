@@ -2,24 +2,21 @@ package datawave.query.planner.scanhints;
 
 import org.apache.commons.jexl3.parser.JexlNode;
 
-import datawave.query.config.ScanHintRule;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.NodeTypeCount;
 
-public class IvaratorScanHint implements ScanHintRule<JexlNode> {
+/**
+ * Detect ivarators and set the executor scan hint to ivarator
+ */
+public class IvaratorScanHint extends ExecutorScanHintRule {
     @Override
     public boolean isChainable() {
-        return false;
+        return true;
     }
 
     @Override
     public String getTable() {
         return "shard";
-    }
-
-    @Override
-    public String getHintName() {
-        return "scan_type";
     }
 
     @Override

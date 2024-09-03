@@ -17,10 +17,12 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -492,9 +494,12 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      */
     private boolean sortQueryByCounts = false;
 
-    // insert rules for processing the QueryTree to automatically apply hints to queries
-    private boolean useScanHintRules = false;
-    private List<ScanHintRule> scanHintRules = new ArrayList<>();
+    /**
+     * Insert rules for processing the QueryTree to automatically apply hints to queries. Hints will be passed to the ScannerFactory
+     * {@link datawave.query.tables.ScannerFactory} using {@link datawave.query.tables.ScannerFactory#applyConfigs(ScannerBase, String)}
+     */
+    private boolean useQueryTreeScanHintRules = false;
+    private List<ScanHintRule<JexlNode>> queryTreeScanHintRules = new ArrayList<>();
 
     /**
      * Default constructor
@@ -720,8 +725,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setUseTermCounts(other.getUseTermCounts());
         this.setSortQueryBeforeGlobalIndex(other.isSortQueryBeforeGlobalIndex());
         this.setSortQueryByCounts(other.isSortQueryByCounts());
-        this.setUseScanHintRules(other.isUseScanHintRules());
-        this.setScanHintRules(other.getScanHintRules());
+        this.setUseQueryTreeScanHintRules(other.isUseQueryTreeScanHintRules());
+        this.setQueryTreeScanHintRules(other.getQueryTreeScanHintRules());
     }
 
     /**
@@ -3163,19 +3168,19 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         return this;
     }
 
-    public boolean isUseScanHintRules() {
-        return useScanHintRules;
+    public boolean isUseQueryTreeScanHintRules() {
+        return useQueryTreeScanHintRules;
     }
 
-    public void setUseScanHintRules(boolean useScanHintRules) {
-        this.useScanHintRules = useScanHintRules;
+    public void setUseQueryTreeScanHintRules(boolean useQueryTreeScanHintRules) {
+        this.useQueryTreeScanHintRules = useQueryTreeScanHintRules;
     }
 
-    public List<ScanHintRule> getScanHintRules() {
-        return scanHintRules;
+    public List<ScanHintRule<JexlNode>> getQueryTreeScanHintRules() {
+        return queryTreeScanHintRules;
     }
 
-    public void setScanHintRules(List<ScanHintRule> scanHintRules) {
-        this.scanHintRules = scanHintRules;
+    public void setQueryTreeScanHintRules(List<ScanHintRule<JexlNode>> queryTreeScanHintRules) {
+        this.queryTreeScanHintRules = queryTreeScanHintRules;
     }
 }

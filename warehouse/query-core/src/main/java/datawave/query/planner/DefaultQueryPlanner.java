@@ -100,7 +100,6 @@ import datawave.query.jexl.NodeTypeCount;
 import datawave.query.jexl.functions.EvaluationPhaseFilterFunctions;
 import datawave.query.jexl.functions.QueryFunctions;
 import datawave.query.jexl.lookups.IndexLookup;
-import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.jexl.visitors.AddShardsAndDaysVisitor;
 import datawave.query.jexl.visitors.BoundedRangeDetectionVisitor;
 import datawave.query.jexl.visitors.BoundedRangeIndexExpansionVisitor;
@@ -841,17 +840,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             config.setQueryTree(timedReduce(timers, "Reduce Query Final", config.getQueryTree()));
         }
 
-        // apply runtime scan hints
-        if (config.isUseScanHintRules()) {
-            for (ScanHintRule<JexlNode> hintRule : config.getScanHintRules()) {
-                if (hintRule.apply(config.getQueryTree())) {
-                    config.getTableHints().get(hintRule.getTable()).put(hintRule.getHintName(), hintRule.getHintValue());
-                    if (!hintRule.isChainable()) {
-                        break;
-                    }
-                }
-            }
-        }
+        timeScanHintRules(timers, "Apply scan hint rules", config);
 
         return config.getQueryTree();
     }
@@ -1120,6 +1109,37 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         stopwatch.stop();
 
         return sortedUIDs;
+    }
+
+    protected void timeScanHintRules(QueryStopwatch timers, String stage, ShardQueryConfiguration config) {
+        TraceStopwatch stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - " + stage);
+
+        // apply runtime scan hints
+        if (config.isUseQueryTreeScanHintRules()) {
+            for (ScanHintRule<JexlNode> hintRule : config.getQueryTreeScanHintRules()) {
+                if (hintRule.apply(config.getQueryTree())) {
+                    Map<String,String> tableHints = config.getTableHints().get(hintRule.getTable());
+                    if (tableHints == null) {
+                        tableHints = new HashMap<>();
+                        config.getTableHints().put(hintRule.getTable(), tableHints);
+                    }
+                    if (tableHints.get(hintRule.getHintName()) != null) {
+                        // overwriting, log it
+                        log.info("Overwriting scan hint for table " + hintRule.getTable() + " " + hintRule.getHintName() + "="
+                                        + tableHints.get(hintRule.getHintName()) + " to " + hintRule.getHintValue());
+                    }
+
+                    tableHints.put(hintRule.getHintName(), hintRule.getHintValue());
+                    if (!hintRule.isChainable()) {
+                        log.info("Unchainable ScanHintRule applied, " + hintRule);
+                        break;
+                    }
+                }
+            }
+        }
+        log.info("applying query tree scan hints: " + config.getTableHints());
+
+        stopwatch.stop();
     }
 
     protected void timedCheckForTokenizedFields(QueryStopwatch timers, String stage, ShardQueryConfiguration config, MetadataHelper metadataHelper) {

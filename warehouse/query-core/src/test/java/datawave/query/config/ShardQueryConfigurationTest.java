@@ -587,10 +587,10 @@ public class ShardQueryConfigurationTest {
         defaultValues.put("tableHints", Collections.emptyMap());
         updatedValues.put("tableHints", Collections.emptyMap());
 
-        defaultValues.put("useScanHintRules", false);
-        updatedValues.put("useScanHintRules", true);
-        defaultValues.put("scanHintRules", Collections.emptyList());
-        updatedValues.put("scanHintRules", Collections.singletonList(new IvaratorScanHint()));
+        defaultValues.put("useQueryTreeScanHintRules", false);
+        updatedValues.put("useQueryTreeScanHintRules", true);
+        defaultValues.put("queryTreeScanHintRules", Collections.emptyList());
+        updatedValues.put("queryTreeScanHintRules", Collections.singletonList(new IvaratorScanHint()));
     }
 
     private Query createQuery(String query) {
