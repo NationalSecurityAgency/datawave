@@ -103,13 +103,16 @@ public class EventDataQueryFieldFilter implements EventDataQueryFilter {
         if (entry == null) {
             return false;
         }
-        return apply(entry.getKey());
+        return apply(entry.getKey(), true);
     }
 
     @Override
     public boolean peek(@Nullable Map.Entry<Key,String> entry) {
+        if (entry == null) {
+            return false;
+        }
         // equivalent to apply in the event column case, simple redirect
-        return apply(entry);
+        return apply(entry.getKey(), false);
     }
 
     /**
@@ -117,9 +120,11 @@ public class EventDataQueryFieldFilter implements EventDataQueryFilter {
      *
      * @param key
      *            the key
+     * @param update
+     *            flag that indicates if the {@link #nextCount} should be incremented
      * @return true if the key should be retained
      */
-    private boolean apply(Key key) {
+    private boolean apply(Key key, boolean update) {
         parser.parse(key);
         String field = parser.getField();
         field = JexlASTHelper.deconstructIdentifier(field);
@@ -127,7 +132,7 @@ public class EventDataQueryFieldFilter implements EventDataQueryFilter {
         if (fields.contains(field)) {
             nextCount = 0; // reset count
             return true;
-        } else {
+        } else if (update) {
             if (currentField != null && currentField.equals(field)) {
                 // only increment the count for consecutive misses within the same field
                 nextCount++;
@@ -136,8 +141,9 @@ public class EventDataQueryFieldFilter implements EventDataQueryFilter {
                 currentField = field;
                 nextCount = 0;
             }
-            return false;
         }
+
+        return false;
     }
 
     /**
@@ -179,7 +185,7 @@ public class EventDataQueryFieldFilter implements EventDataQueryFilter {
         // while technically implemented, do not return the max next count here. This method is only used
         // by the ChainableEventDataQueryFilter which does NOT guarantee that the filter will exclusively
         // be applied to event keys.
-        return -1;
+        throw new UnsupportedOperationException("EventDataQueryFieldFilter should not be chained with other filters");
     }
 
     @Override
