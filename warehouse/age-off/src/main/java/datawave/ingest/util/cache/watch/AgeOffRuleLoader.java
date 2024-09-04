@@ -2,6 +2,7 @@ package datawave.ingest.util.cache.watch;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -12,6 +13,7 @@ import java.util.stream.IntStream;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.hadoop.io.IOUtils;
@@ -21,6 +23,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
 import datawave.iterators.filter.AgeOffConfigParams;
 import datawave.iterators.filter.ageoff.FilterOptions;
@@ -34,7 +37,7 @@ public class AgeOffRuleLoader {
         this.loaderConfig = loaderConfig;
     }
 
-    public List<FilterRule> load(InputStream in) throws IOException, java.lang.reflect.InvocationTargetException, NoSuchMethodException {
+    public List<FilterRule> load(InputStream in) throws IOException {
         List<RuleConfig> mergedRuleConfigs = loadRuleConfigs(in);
         List<FilterRule> filterRules = new ArrayList<>();
         /**
@@ -42,6 +45,10 @@ public class AgeOffRuleLoader {
          */
         for (RuleConfig ruleConfig : mergedRuleConfigs) {
             try {
+                if (ruleConfig.filterClassName == null) {
+                    throw new IllegalArgumentException("The filter class must not be null");
+                }
+
                 FilterRule filter = (FilterRule) Class.forName(ruleConfig.filterClassName).getDeclaredConstructor().newInstance();
 
                 FilterOptions option = new FilterOptions();
@@ -69,8 +76,9 @@ public class AgeOffRuleLoader {
 
                 filterRules.add(filter);
 
-            } catch (InstantiationException | ClassNotFoundException | IllegalAccessException e) {
-                log.error(e);
+            } catch (IllegalArgumentException | InstantiationException | ClassNotFoundException | IllegalAccessException | InvocationTargetException
+                            | NoSuchMethodException e) {
+                log.trace("An error occurred while loading age-off rules, the exception will be rethrown", e);
                 throw new IOException(e);
             }
         }
@@ -133,8 +141,8 @@ public class AgeOffRuleLoader {
             ruleConfigs.addAll(childRules);
 
             // @formatter:on
-        } catch (Exception ex) {
-            log.error("uh oh: " + ex);
+        } catch (ParserConfigurationException | SAXException ex) {
+            log.trace("An error occurred while loading age-off rules, the exception will be rethrown", ex);
             throw new IOException(ex);
         } finally {
             IOUtils.closeStream(in);
