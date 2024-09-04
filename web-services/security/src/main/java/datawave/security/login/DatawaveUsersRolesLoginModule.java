@@ -6,7 +6,8 @@ import java.util.Enumeration;
 
 import javax.security.auth.login.LoginException;
 
-import org.jboss.logging.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jboss.security.SimplePrincipal;
 import org.jboss.security.auth.spi.UsersRolesLoginModule;
 
@@ -20,7 +21,7 @@ import datawave.security.util.DnUtils;
 public class DatawaveUsersRolesLoginModule extends UsersRolesLoginModule {
     private ThreadLocal<Boolean> createSimplePrincipal = new ThreadLocal<>();
 
-    private static final Logger log = Logger.getLogger(DatawaveUsersRolesLoginModule.class);
+    private static final Logger log = LogManager.getLogger(DatawaveUsersRolesLoginModule.class);
 
     public DatawaveUsersRolesLoginModule() {
 

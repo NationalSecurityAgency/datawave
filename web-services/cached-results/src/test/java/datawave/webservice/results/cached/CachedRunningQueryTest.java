@@ -23,7 +23,7 @@ import datawave.core.query.cachedresults.CacheableQueryRowImpl;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(CachedRunningQuery.class)
-@PowerMockIgnore("org.apache.log4j.*")
+@PowerMockIgnore("org.apache.logging.log4j.*")
 public class CachedRunningQueryTest {
 
     private CachedRunningQuery crq = null;
