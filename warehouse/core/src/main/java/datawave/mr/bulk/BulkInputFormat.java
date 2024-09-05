@@ -1357,31 +1357,28 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
 
                         // rewritten from DefaultFormatter.formatEntry()
                         StringBuilder sb = new StringBuilder();
-                        Key key = entry.getKey();
                         Text buffer = new Text();
 
                         // append row0
-                        appendBytes(sb, key.getRow(buffer).getBytes(), 0, key.getRow(buffer).getLength()).append(" ");
+                        appendBytes(sb, currentK.getRow(buffer).getBytes(), 0, currentK.getRow(buffer).getLength()).append(" ");
 
                         // append column family
-                        appendBytes(sb, key.getColumnFamily(buffer).getBytes(), 0, key.getColumnFamily(buffer).getLength()).append(":");
+                        appendBytes(sb, currentK.getColumnFamily(buffer).getBytes(), 0, currentK.getColumnFamily(buffer).getLength()).append(":");
 
                         // append column qualifier
-                        appendBytes(sb, key.getColumnQualifier(buffer).getBytes(), 0, key.getColumnQualifier(buffer).getLength()).append(" ");
+                        appendBytes(sb, currentK.getColumnQualifier(buffer).getBytes(), 0, currentK.getColumnQualifier(buffer).getLength()).append(" ");
 
                         // append visibility expression
-                        sb.append(new ColumnVisibility(key.getColumnVisibility(buffer)));
+                        sb.append(new ColumnVisibility(currentK.getColumnVisibility(buffer)));
 
                         // append timestamp
                         tmpDate.get().setTime(entry.getKey().getTimestamp());
                         sb.append(" ").append(formatter.get().format(tmpDate.get()));
 
-                        Value value = entry.getValue();
-
                         // append value
-                        if (value != null && value.getSize() > 0) {
+                        if (currentV != null && currentV.getSize() > 0) {
                             sb.append("\t");
-                            appendBytes(sb, value.get(), 0, value.getSize());
+                            appendBytes(sb, currentV.get(), 0, currentV.getSize());
                         }
 
                         log.trace("Processing key/value pair: " + sb);
