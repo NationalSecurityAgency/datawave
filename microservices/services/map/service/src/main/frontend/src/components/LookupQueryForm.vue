@@ -3,7 +3,7 @@
     <q-card-section class="q-py-none" :style="'opacity: ' + cardOpacity">
       <q-form>
         <div class="q-py-sm">
-          <q-input v-model="queryId" label="Query Id" />
+          <q-input v-model="queryId" label="Query Id" spellcheck="false" />
         </div>
       </q-form>
       <q-card-actions align="right" class="text-primary">
@@ -18,7 +18,7 @@
       </q-card-actions>
     </q-card-section>
 
-    <CardLoading ref="cardLoading" @doneClick="cardOpacity=1.0;" />
+    <CardLoading ref="cardLoading" @doneClick="cardOpacity=1.0; queryId = (success) ? '' : queryId;" />
   </q-card>
 </template>
 
@@ -33,16 +33,19 @@ const cardLoading = ref<CardLoadingMethods>();
 const cardOpacity = ref<number>(1.0);
 
 const queryId = ref('');
+const success = ref(false);
 
 function submitQuery() {
   cardOpacity.value = 0.05;
   cardLoading.value?.loading('Loading geometry.  Please wait...');
+  success.value = false;
 
   geoQueryFeatures.loadGeoFeaturesForQueryId(queryId.value)
-    .then((id) => {
+    .then(() => {
+      success.value = true;
       cardLoading.value?.success('Geometry loaded successfully!');
     })
-    .catch((reason) => {
+    .catch(() => {
       cardLoading.value?.failure('Failed to load geometry.');
     });
 }

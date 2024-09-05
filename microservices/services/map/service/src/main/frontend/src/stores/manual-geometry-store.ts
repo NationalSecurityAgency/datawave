@@ -5,23 +5,6 @@ import {
   ManualGeometryForm,
 } from 'components/models';
 
-export const WKT = 'wkt';
-export const GEOJSON = 'geojson';
-
-export const WKT_LABEL = 'Well-Known Text';
-export const GEOJSON_LABEL = 'GeoJSON';
-
-export const GEOMETRY_TYPE_OPTIONS = [
-  {
-    label: WKT_LABEL,
-    value: WKT,
-  },
-  {
-    label: GEOJSON_LABEL,
-    value: GEOJSON,
-  },
-];
-
 export const GEO_POINT = 'GeoType';
 export const GEOWAVE_POINT = 'PointType';
 export const GEOWAVE_GEOMETRY = 'GeometryType';
@@ -50,7 +33,6 @@ export const manualGeometryFormStore = (id: string) =>
     state: () =>
       ({
         geometry: '',
-        geometryType: WKT,
         createRanges: false,
         rangeType: GEO_POINT,
         rangeSettings: {

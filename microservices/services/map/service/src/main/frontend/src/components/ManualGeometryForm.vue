@@ -9,7 +9,7 @@
             @update:model-value="loadFile"
             style="display: none"
           />
-          <q-input v-model="manualGeometryForm.geometry" label="Geometry">
+          <q-input v-model="manualGeometryForm.geometry" label="Geometry (WKT/GeoJSON)" spellcheck="false" >
             <template v-slot:append>
               <q-btn
                 dense
@@ -23,15 +23,6 @@
               <q-btn dense flat icon="upload" @click="selectFile" />
             </template>
           </q-input>
-        </div>
-        <div class="q-py-sm">
-          Geometry Type:
-          <q-option-group
-            name="geometryType"
-            v-model="manualGeometryForm.geometryType"
-            :options="GEOMETRY_TYPE_OPTIONS"
-            inline
-          />
         </div>
         <div class="q-py-sm">
           <q-toggle
@@ -136,7 +127,7 @@
       </q-card-actions>
     </q-card-section>
 
-    <CardLoading ref="cardLoading" @doneClick="cardOpacity=1.0;" />
+    <CardLoading ref="cardLoading" @doneClick="cardOpacity=1.0; if (success) { manualGeometryForm.$reset(); };" />
   </q-card>
   <q-dialog v-model="editDialog">
     <q-card style="min-width: 66%">
@@ -171,8 +162,6 @@
   </q-dialog>
 </template>
 
-<!-- TODO: ADD FORM VALIDATION -->
-
 <script setup lang="ts">
 import { getActivePinia } from 'pinia';
 import axios from 'axios';
@@ -181,7 +170,6 @@ import { onUnmounted, ref } from 'vue';
 import {
   manualGeometryFormStore,
   GEO_POINT,
-  GEOMETRY_TYPE_OPTIONS,
   RANGE_TYPE_OPTIONS,
 } from 'stores/manual-geometry-store';
 import CardLoading, { CardLoadingMethods } from 'components/CardLoading.vue';
@@ -234,15 +222,19 @@ function loadFile(selectedFile: File) {
   }
 }
 
+const success = ref(false);
+
 function submitGeometry() {
   cardOpacity.value = 0.05;
   cardLoading.value?.loading('Loading geometry.  Please wait...');
+  success.value = false;
 
   geoQueryFeatures.loadGeoFeaturesForGeometry(manualGeometryForm.$state)
-    .then((id) => {
+    .then(() => {
       cardLoading.value?.success('Geometry loaded successfully!');
+      success.value = true;
     })
-    .catch((reason) => {
+    .catch(() => {
       cardLoading.value?.failure('Failed to load geometry.');
     });
 }

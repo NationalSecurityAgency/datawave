@@ -41,6 +41,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import datawave.core.geo.utils.GeoQueryConfig;
 import datawave.core.query.jexl.JexlASTHelper;
+import datawave.core.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.data.type.GeoType;
 import datawave.data.type.GeometryType;
 import datawave.data.type.PointType;
@@ -78,18 +79,20 @@ public class MapOperationsService {
     
     private final AccumuloClient accumuloClient;
     private final QueryMetricListResponseSupplier queryMetricListResponseSupplier;
+    private final LuceneToJexlQueryParser luceneToJexlQueryParser;
     private final Set<String> geoFields = new HashSet<>();
     private final Set<String> geoWaveFields = new HashSet<>();
     
     public MapOperationsService(MapServiceProperties mapServiceProperties, WebClient.Builder webClientBuilder, JWTTokenHandler jwtTokenHandler,
                     MetadataHelperFactory metadataHelperFactory, @Qualifier("warehouse") AccumuloClient accumuloClient,
-                    QueryMetricListResponseSupplier queryMetricListResponseSupplier) {
+                    QueryMetricListResponseSupplier queryMetricListResponseSupplier, LuceneToJexlQueryParser luceneToJexlQueryParser) {
         this.mapServiceProperties = mapServiceProperties;
         this.webClient = webClientBuilder.build();
         this.jwtTokenHandler = jwtTokenHandler;
         this.metadataHelperFactory = metadataHelperFactory;
         this.accumuloClient = accumuloClient;
         this.queryMetricListResponseSupplier = queryMetricListResponseSupplier;
+        this.luceneToJexlQueryParser = luceneToJexlQueryParser;
         loadGeoFields();
     }
     
@@ -161,12 +164,19 @@ public class MapOperationsService {
         return "Bearer " + jwtTokenHandler.createTokenFromUsers(userDetails.getPrimaryUser().getName(), userDetails.getProxiedUsers());
     }
     
-    public GeoQueryFeatures getGeoFeaturesForQuery(String plan, List<String> fieldTypes, boolean expand, DatawaveUserDetails currentUser) {
+    public GeoQueryFeatures getGeoFeaturesForQuery(String query, List<String> fieldTypes, boolean expand, DatawaveUserDetails currentUser)
+                    throws QueryException {
         ASTJexlScript script;
         try {
-            script = JexlASTHelper.parseAndFlattenJexlQuery(plan);
+            script = JexlASTHelper.parseAndFlattenJexlQuery(query);
         } catch (ParseException e) {
-            throw new RuntimeException(e);
+            // maybe the query is lucene?
+            try {
+                script = JexlASTHelper.parseAndFlattenJexlQuery(luceneToJexlQueryParser.parse(query).getOriginalQuery());
+            } catch (datawave.core.query.language.parser.ParseException | ParseException pe) {
+                log.error("Unable to parse query: {}", query);
+                throw new QueryException("Unable to parse query: " + query);
+            }
         }
         
         Set<Authorizations> userAuths = new HashSet<>();
@@ -246,16 +256,19 @@ public class MapOperationsService {
                 
                 // if lucene, convert to jexl
                 if (querySyntax.equalsIgnoreCase("LUCENE")) {
-                    // do nothing
+                    try {
+                        jexlQuery = luceneToJexlQueryParser.parse(origQuery).getOriginalQuery();
+                    } catch (datawave.core.query.language.parser.ParseException e) {
+                        log.error("Unable to parse lucene query: {}", origQuery);
+                        throw new QueryException("Unable to parse lucene query: " + origQuery, e);
+                    }
                 } else {
                     jexlQuery = origQuery;
                 }
             }
             
-            String query = queryMetric.getPlan();
-            
             if (jexlQuery != null) {
-                geoQueryFeatures = getGeoFeaturesForQuery(query, null, false, currentUser);
+                geoQueryFeatures = getGeoFeaturesForQuery(jexlQuery, null, false, currentUser);
             }
         }
         
@@ -310,7 +323,7 @@ public class MapOperationsService {
         try {
             wkt = new GeometryJSON().read(geoFeatureJSON).toText();
         } catch (Exception e) {
-            log.warn("Unable to parse geometry as GeoJSON", e);
+            log.info("Unable to parse geometry as GeoJSON");
         }
         
         // if that fails, parse as feature json
@@ -340,25 +353,20 @@ public class MapOperationsService {
                 }
                 wkt = (geometries.size() > 1) ? geomFact.createGeometryCollection(geometries.toArray(new Geometry[0])).toText() : geometries.get(0).toText();
             } catch (Exception e) {
-                log.warn("Unable to parse geometry as FeatureJSON", e);
+                log.info("Unable to parse geometry as FeatureJSON");
             }
         }
         
         return wkt;
     }
     
-    public GeoFeatures geoFeaturesForGeometry(String geometry, String geometryType, Boolean createRanges, String rangeType, Integer maxEnvelopes,
-                    Integer maxExpansion, Boolean optimizeRanges, Integer rangeSplitThreshold, Double maxRangeOverlap, DatawaveUserDetails currentUser) {
+    public GeoFeatures geoFeaturesForGeometry(String geometry, Boolean createRanges, String rangeType, Integer maxEnvelopes, Integer maxExpansion,
+                    Boolean optimizeRanges, Integer rangeSplitThreshold, Double maxRangeOverlap, DatawaveUserDetails currentUser) {
         
-        String wkt = null;
-        if (geometryType.equals("geojson")) {
-            wkt = parseGeoFeatureJSONtoWKT(geometry);
-        } else if (geometryType.equals("wkt")) {
-            wkt = geometry;
-        }
-        
+        // if it's not geojson, this will return null and we will assume it is wkt
+        String wkt = parseGeoFeatureJSONtoWKT(geometry);
         if (wkt == null) {
-            throw new IllegalArgumentException("Unable to parse input geometry");
+            wkt = geometry;
         }
         
         String field = "DEFAULT";

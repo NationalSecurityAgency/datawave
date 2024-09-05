@@ -37,6 +37,11 @@
                 <version>${version.datawave}</version>
             </dependency>
             <dependency>
+                <groupId>gov.nsa.datawave.core</groupId>
+                <artifactId>datawave-core-language</artifactId>
+                <version>${version.datawave}</version>
+            </dependency>
+            <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>metadata-utils</artifactId>
                 <version>${version.microservice.metadata-utils}</version>
@@ -91,6 +96,10 @@
         <dependency>
             <groupId>gov.nsa.datawave.core</groupId>
             <artifactId>datawave-core-jexl</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.core</groupId>
+            <artifactId>datawave-core-language</artifactId>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>

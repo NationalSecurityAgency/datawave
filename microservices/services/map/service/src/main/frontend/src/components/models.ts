@@ -7,21 +7,36 @@ export interface Meta {
   totalCount: number;
 }
 
-export interface GeoFeatures {
-  geometry?: Geo;
+export interface TypedFeature {
+  typeName?: string;
+  label?: string;
+  id?: string;
+}
+
+export interface DelegateTypedFeature extends TypedFeature{
+  delegate: boolean;
+  feature: TypedFeature;
+}
+
+export interface GeoFeatures extends TypedFeature {
+  geometry: Geo;
   queryRanges?: GeoTerms;
 }
 
-export interface GeoQueryFeatures {
+export interface GeoQueryFeatures extends TypedFeature {
   geoByField: GeoByField;
   functions: GeoFunction[];
+
+  // fields added by us
+  queryId?: string;
+  query?: string;
 }
 
 export interface GeoByField {
   [key: string]: GeoTerms;
 }
 
-export interface GeoTerms {
+export interface GeoTerms extends TypedFeature {
   type: string;
   geo?: Geo;
   geoByTier?: GeoByTier;
@@ -31,12 +46,12 @@ export interface GeoByTier {
   [key: string]: Geo;
 }
 
-export interface Geo {
+export interface Geo extends TypedFeature {
   wkt: string;
   geoJson: object;
 }
 
-export interface GeoFunction {
+export interface GeoFunction extends TypedFeature {
   function: string;
   fields: string[];
   geoJson: object;
@@ -60,7 +75,6 @@ export interface Content {
 
 export interface ManualGeometryForm {
   geometry: string;
-  geometryType: string;
   createRanges: boolean;
   rangeType: string;
   rangeSettings: QueryRangeSettingsMap;

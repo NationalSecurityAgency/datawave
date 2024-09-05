@@ -12,13 +12,13 @@
 </template>
 
 <script setup lang="ts">
-export interface EssentialLinkProps {
+export interface MenuItemProps {
   title: string;
   caption?: string;
   icon?: string;
   myFunction?: () => void;
 }
-withDefaults(defineProps<EssentialLinkProps>(), {
+withDefaults(defineProps<MenuItemProps>(), {
   caption: '',
   icon: '',
 });

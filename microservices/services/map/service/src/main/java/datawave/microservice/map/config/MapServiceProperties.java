@@ -1,8 +1,13 @@
 package datawave.microservice.map.config;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 @ConfigurationProperties(prefix = "datawave.map")
 public class MapServiceProperties {
@@ -14,6 +19,7 @@ public class MapServiceProperties {
     private Set<String> geoWaveFields;
     private Set<String> geoTypes;
     private Set<String> geoWaveTypes;
+    private List<Basemap> basemaps = new ArrayList<>();
     
     public String getAuthorizationUri() {
         return authorizationUri;
@@ -75,7 +81,75 @@ public class MapServiceProperties {
         return geoWaveTypes;
     }
     
+    public List<Basemap> getBasemaps() {
+        return basemaps;
+    }
+    
+    public void setBasemaps(List<Basemap> basemaps) {
+        this.basemaps = basemaps;
+    }
+    
     public void setGeoWaveTypes(Set<String> geoWaveTypes) {
         this.geoWaveTypes = geoWaveTypes;
+    }
+    
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public static class Basemap {
+        private String title;
+        private String urlTemplate;
+        @JsonProperty()
+        private Integer maxZoom;
+        private Integer maxNativeZoom;
+        private String attribution;
+        @JsonProperty("default")
+        private Boolean defaultEnabled;
+        
+        public String getTitle() {
+            return title;
+        }
+        
+        public void setTitle(String title) {
+            this.title = title;
+        }
+        
+        public String getUrlTemplate() {
+            return urlTemplate;
+        }
+        
+        public void setUrlTemplate(String urlTemplate) {
+            this.urlTemplate = urlTemplate;
+        }
+        
+        public Integer getMaxZoom() {
+            return maxZoom;
+        }
+        
+        public void setMaxZoom(Integer maxZoom) {
+            this.maxZoom = maxZoom;
+        }
+        
+        public Integer getMaxNativeZoom() {
+            return maxNativeZoom;
+        }
+        
+        public void setMaxNativeZoom(Integer maxNativeZoom) {
+            this.maxNativeZoom = maxNativeZoom;
+        }
+        
+        public String getAttribution() {
+            return attribution;
+        }
+        
+        public void setAttribution(String attribution) {
+            this.attribution = attribution;
+        }
+        
+        public Boolean isDefaultEnabled() {
+            return defaultEnabled;
+        }
+        
+        public void setDefaultEnabled(Boolean defaultEnabled) {
+            this.defaultEnabled = defaultEnabled;
+        }
     }
 }

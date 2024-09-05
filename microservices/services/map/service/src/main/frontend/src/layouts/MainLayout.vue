@@ -19,16 +19,17 @@
 
     <q-drawer
       v-model="drawer"
+      :width='225'
       show-if-above
       :mini="!drawer || mini"
       bordered
       style="display: flex; flex-direction: column"
     >
       <q-list style="flex-grow: 1">
-        <EssentialLink
-          v-for="link in essentialLinks"
-          :key="link.title"
-          v-bind="link"
+        <MenuItem
+          v-for="menuItem in menuItems"
+          :key="menuItem.title"
+          v-bind="menuItem"
         />
       </q-list>
 
@@ -54,15 +55,15 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import EssentialLink, {
-  EssentialLinkProps,
-} from 'components/EssentialLink.vue';
+import MenuItem, {
+  MenuItemProps,
+} from 'components/MenuItem.vue';
 import { appStateStore } from 'stores/state-store';
 import app from '../../package.json';
 
 const appState = appStateStore();
 
-const essentialLinks: EssentialLinkProps[] = [
+const menuItems: MenuItemProps[] = [
   {
     title: 'Add Content',
     icon: 'add',
@@ -77,20 +78,33 @@ const essentialLinks: EssentialLinkProps[] = [
     },
   },
   {
-    title: 'Layers',
+    title: 'Content',
     icon: 'layers',
     myFunction: () => {
-      if (appState.getConfigPanelSelection === 'Layers') {
+      if (appState.getConfigPanelSelection === 'Content') {
         appState.disableConfigPanel();
         appState.setConfigPanelSelection('');
       } else {
         appState.enableConfigPanel();
-        appState.setConfigPanelSelection('Layers');
+        appState.setConfigPanelSelection('Content');
       }
     },
   },
   {
-    title: 'Tools',
+    title: 'Basemaps',
+    icon: 'map',
+    myFunction: () => {
+      if (appState.getConfigPanelSelection === 'Basemaps') {
+        appState.disableConfigPanel();
+        appState.setConfigPanelSelection('');
+      } else {
+        appState.enableConfigPanel();
+        appState.setConfigPanelSelection('Basemaps');
+      }
+    },
+  },
+  {
+    title: 'Geo Toolbox',
     icon: 'handyman',
   },
 ];
