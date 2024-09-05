@@ -65,8 +65,8 @@ public class QueryLogIterator implements SortedKeyValueIterator<Key,Value>, Opti
      * Logs the query id and {@link SortedKeyValueIterator} method name before the method is run.
      */
     private void logStartOf(String methodName) {
-        if (log.isInfoEnabled()) {
-            log.info(CLASS_NAME + " " + methodName + " Started QueryID: " + this.queryID);
+        if (log.isDebugEnabled()) {
+            log.debug(CLASS_NAME + " " + methodName + " Started QueryID: " + this.queryID);
         }
     }
 
@@ -74,8 +74,8 @@ public class QueryLogIterator implements SortedKeyValueIterator<Key,Value>, Opti
      * Logs the query id and {@link SortedKeyValueIterator} method name after the method is run.
      */
     private void logEndOf(String methodName) {
-        if (log.isInfoEnabled()) {
-            log.info(CLASS_NAME + " " + methodName + " Ended QueryID: " + this.queryID);
+        if (log.isDebugEnabled()) {
+            log.debug(CLASS_NAME + " " + methodName + " Ended QueryID: " + this.queryID);
         }
     }
 
