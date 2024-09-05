@@ -9,19 +9,18 @@ import datawave.query.jexl.NodeTypeCount;
  * Detect ivarators and set the executor scan hint to ivarator
  */
 public class IvaratorScanHint extends ExecutorScanHintRule {
+    private static final String DEFAULT_TABLE = "shard";
+    private static final String DEFAULT_HINT = "ivarator";
+
+    public IvaratorScanHint() {
+        super();
+        setTable(DEFAULT_TABLE);
+        setHintValue(DEFAULT_HINT);
+    }
+
     @Override
     public boolean isChainable() {
         return true;
-    }
-
-    @Override
-    public String getTable() {
-        return "shard";
-    }
-
-    @Override
-    public String getHintValue() {
-        return "ivarator";
     }
 
     @Override

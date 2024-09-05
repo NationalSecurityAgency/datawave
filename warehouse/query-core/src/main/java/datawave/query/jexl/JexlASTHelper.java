@@ -1869,11 +1869,16 @@ public class JexlASTHelper {
     }
 
     public static NodeTypeCount getIvarators(JexlNode node) {
-        return NodeTypeCountVisitor.countNodes(node, QueryPropertyMarker.MarkerType.EXCEEDED_VALUE, QueryPropertyMarker.MarkerType.EXCEEDED_OR);
+        return NodeTypeCountVisitor.countNodes(node, QueryPropertyMarker.getIvaratorTypes());
     }
 
     public static int getIvaratorCount(NodeTypeCount nodeCount) {
-        return nodeCount.getTotal(QueryPropertyMarker.MarkerType.EXCEEDED_VALUE) + nodeCount.getTotal(QueryPropertyMarker.MarkerType.EXCEEDED_OR);
+        int count = 0;
+        for (QueryPropertyMarker.MarkerType marker : QueryPropertyMarker.getIvaratorTypes()) {
+            count += nodeCount.getTotal(marker);
+        }
+
+        return count;
     }
 
     private JexlASTHelper() {}

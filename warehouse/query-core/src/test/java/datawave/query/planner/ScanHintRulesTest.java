@@ -260,19 +260,14 @@ public class ScanHintRulesTest extends EasyMockSupport {
     }
 
     private class ChinableScanHintRule extends PriorityScanHintRule {
+        public ChinableScanHintRule() {
+            super();
+            setHintValue("1");
+        }
+
         @Override
         public boolean isChainable() {
             return true;
-        }
-
-        @Override
-        public String getTable() {
-            return "shard";
-        }
-
-        @Override
-        public String getHintValue() {
-            return "1";
         }
 
         @Override
@@ -282,20 +277,14 @@ public class ScanHintRulesTest extends EasyMockSupport {
     }
 
     private class UnChainableScanHintRule extends ExecutorScanHintRule {
+        public UnChainableScanHintRule() {
+            super();
+            setHintValue("untouchable");
+        }
 
         @Override
         public boolean isChainable() {
             return false;
-        }
-
-        @Override
-        public String getTable() {
-            return "shard";
-        }
-
-        @Override
-        public String getHintValue() {
-            return "untouchable";
         }
 
         @Override

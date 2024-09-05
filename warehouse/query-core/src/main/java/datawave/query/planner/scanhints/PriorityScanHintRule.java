@@ -9,11 +9,11 @@ import datawave.query.config.ScanHintRule;
  *
  * @see <a href="https://accumulo.apache.org/docs/2.x/administration/scan-executors">https://accumulo.apache.org/docs/2.x/administration/scan-executors</a>
  */
-public abstract class PriorityScanHintRule implements ScanHintRule<JexlNode> {
+public abstract class PriorityScanHintRule extends BaseScanHintRule<JexlNode> {
     private static final String SCAN_HINT = "priority";
 
-    @Override
-    public String getHintName() {
-        return SCAN_HINT;
+    public PriorityScanHintRule() {
+        super();
+        setHintName(SCAN_HINT);
     }
 }

@@ -1117,11 +1117,15 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         // apply runtime scan hints
         if (config.isUseQueryTreeScanHintRules()) {
             for (ScanHintRule<JexlNode> hintRule : config.getQueryTreeScanHintRules()) {
-                if (hintRule.apply(config.getQueryTree())) {
+                if (hintRule.getTable() != null && hintRule.apply(config.getQueryTree())) {
                     Map<String,String> tableHints = config.getTableHints().get(hintRule.getTable());
                     if (tableHints == null) {
                         tableHints = new HashMap<>();
                         config.getTableHints().put(hintRule.getTable(), tableHints);
+                    }
+                    if (hintRule.getHintName() == null || hintRule.getHintValue() == null) {
+                        log.warn("Skipping invalid ScanHintRule. No hint name or value set. " + hintRule);
+                        continue;
                     }
                     if (tableHints.get(hintRule.getHintName()) != null) {
                         // overwriting, log it
