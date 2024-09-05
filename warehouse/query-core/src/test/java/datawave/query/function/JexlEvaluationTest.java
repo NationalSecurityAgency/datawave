@@ -92,7 +92,8 @@ public class JexlEvaluationTest {
         String query = "FOO == 'bar'";
         Document d = new Document();
         Key expectedMetadata;
-        d.put("FOO", new Content("bar", expectedMetadata = new Key("shard", "datatype\0uid1"), true));
+        Content hitTermSource = new Content("bar", expectedMetadata = new Key("shard", "datatype\0uid1"), true);
+        d.put("FOO", hitTermSource);
         d.put("FOO", new Content("bazaar", new Key("shard", "datatype\0uid2"), true));
 
         DatawaveJexlContext context = new DatawaveJexlContext();
@@ -102,7 +103,10 @@ public class JexlEvaluationTest {
 
         Attributes hitTerm = (Attributes) d.getDictionary().get("HIT_TERM");
         assertEquals(1, hitTerm.getAttributes().size());
-        assertEquals(expectedMetadata, hitTerm.getAttributes().iterator().next().getMetadata());
+        Attribute<?> attribute = hitTerm.getAttributes().iterator().next();
+        assertEquals(expectedMetadata, attribute.getMetadata());
+        assertEquals(Content.class, attribute.getClass());
+        assertEquals(hitTermSource, ((Content) attribute).getSource());
     }
 
     @Test

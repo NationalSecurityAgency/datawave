@@ -570,8 +570,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
 
             if (limitScanners) {
                 // Setup the CreateUidsIterator
-                scannerSession = scanners.newRangeScanner(config.getIndexTableName(), config.getAuthorizations(), config.getQuery(),
-                                config.getShardsPerDayThreshold());
+                scannerSession = scanners.newRangeScanner(config.getIndexTableName(), config.getAuthorizations(), config.getQuery());
 
                 uidSetting = new IteratorSetting(stackStart++, createUidsIteratorClass);
                 uidSetting.addOption(CreateUidsIterator.COLLAPSE_UIDS, Boolean.toString(collapseUids));
@@ -581,8 +580,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
 
             } else {
                 // Setup so this is a pass-through
-                scannerSession = scanners.newRangeScanner(config.getIndexTableName(), config.getAuthorizations(), config.getQuery(),
-                                config.getShardsPerDayThreshold());
+                scannerSession = scanners.newRangeScanner(config.getIndexTableName(), config.getAuthorizations(), config.getQuery());
 
                 uidSetting = new IteratorSetting(stackStart++, createUidsIteratorClass);
                 uidSetting.addOption(CreateUidsIterator.COLLAPSE_UIDS, Boolean.toString(false));

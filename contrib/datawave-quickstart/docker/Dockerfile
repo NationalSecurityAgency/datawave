@@ -1,4 +1,4 @@
-FROM centos:centos7
+FROM rockylinux/rockylinux:8
 
 ARG DATAWAVE_COMMIT_ID
 ARG DATAWAVE_BRANCH_NAME
@@ -28,8 +28,8 @@ COPY . /opt/datawave
 
 # Install dependencies, configure password-less/zero-prompt SSH...
 
-RUN yum -y install gcc-c++ openssl openssh openssh-server openssh-clients openssl-libs which bc wget git java-11-openjdk-devel iproute  && \
-    yum clean all && \
+RUN dnf -y install gcc-c++ openssl openssh openssh-server openssh-clients openssl-libs which bc wget git java-11-openjdk-devel iproute  && \
+    dnf clean all && \
     ssh-keygen -q -N "" -t rsa -f ~/.ssh/id_rsa && \
     cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys && \
     chmod 0600 ~/.ssh/authorized_keys && \

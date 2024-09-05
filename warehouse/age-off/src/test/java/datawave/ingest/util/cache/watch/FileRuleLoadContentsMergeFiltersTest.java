@@ -35,7 +35,6 @@ public class FileRuleLoadContentsMergeFiltersTest {
     private static final long MILLIS_IN_DAY = 24 * 60 * 60 * 1000;
     private static final int MILLIS_IN_ONE_SEC = 60 * 1000;
 
-    private FileRuleWatcher watcher;
     private TestTrieFilter parentFilter;
     // this one inherits defaults from parentFilter
     private TestTrieFilter childFilter;
@@ -50,9 +49,8 @@ public class FileRuleLoadContentsMergeFiltersTest {
         Path childPath = new Path(this.getClass().getResource(CHILD_FILTER_CONFIGURATION_FILE).toString());
         Path rootPath = new Path(this.getClass().getResource(ROOT_FILTER_CONFIGURATION_FILE).toString());
         FileSystem fs = childPath.getFileSystem(new Configuration());
-        watcher = new FileRuleWatcher(fs, childPath, 1);
-        parentFilter = (TestTrieFilter) loadRulesFromFile(watcher, fs, rootPath, 3);
-        childFilter = (TestTrieFilter) loadRulesFromFile(watcher, fs, childPath, 4);
+        parentFilter = (TestTrieFilter) loadRulesFromFile(fs, rootPath, 3);
+        childFilter = (TestTrieFilter) loadRulesFromFile(fs, childPath, 4);
         anchorTime = System.currentTimeMillis();
         // use this to configure the age off evaluation, all units expected to be in days
         filterOptions = new FilterOptions();
@@ -99,9 +97,11 @@ public class FileRuleLoadContentsMergeFiltersTest {
         Path rootPath = new Path(this.getClass().getResource(ROOT_FILTER_CONFIGURATION_FILE).toString());
         Path childPath = new Path(this.getClass().getResource(CHILD_FILTER_CONFIGURATION_FILE).toString());
         FileSystem fs = childPath.getFileSystem(new Configuration());
+        FileRuleCacheValue parentValue = new FileRuleCacheValue(fs, rootPath, 1);
+        FileRuleCacheValue childValue = new FileRuleCacheValue(fs, childPath, 1);
 
-        List<FilterRule> parentRules = (List<FilterRule>) watcher.loadContents(fs.open(rootPath));
-        List<FilterRule> childRules = (List<FilterRule>) watcher.loadContents(fs.open(childPath));
+        List<FilterRule> parentRules = (List<FilterRule>) parentValue.loadFilterRules(null);
+        List<FilterRule> childRules = (List<FilterRule>) childValue.loadFilterRules(null);
 
         // should have one extra rule in child
         assertThat(childRules.size(), is(equalTo(parentRules.size() + 1)));
@@ -186,8 +186,9 @@ public class FileRuleLoadContentsMergeFiltersTest {
         assertTrue(filter.isFilterRuleApplied());
     }
 
-    private static FilterRule loadRulesFromFile(FileRuleWatcher watcher, FileSystem fs, Path filePath, int expectedNumRules) throws IOException {
-        Collection<FilterRule> rules = watcher.loadContents(fs.open(filePath));
+    private static FilterRule loadRulesFromFile(FileSystem fs, Path filePath, int expectedNumRules) throws IOException {
+        FileRuleCacheValue cacheValue = new FileRuleCacheValue(fs, filePath, 1);
+        Collection<FilterRule> rules = cacheValue.loadFilterRules(null);
         assertThat(rules.size(), is(expectedNumRules));
         // only return the TestTrieFilter for this test
         Optional<FilterRule> first = rules.stream().filter(r -> r instanceof TestTrieFilter).findFirst();

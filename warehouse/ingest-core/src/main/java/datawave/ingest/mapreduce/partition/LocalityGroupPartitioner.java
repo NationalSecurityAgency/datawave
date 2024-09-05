@@ -77,4 +77,14 @@ public class LocalityGroupPartitioner extends Partitioner<BulkIngestKey,Value> i
     public void initializeJob(Job job) {
         // no op
     }
+
+    @Override
+    public boolean needSplits() {
+        return false;
+    }
+
+    @Override
+    public boolean needSplitLocations() {
+        return false;
+    }
 }

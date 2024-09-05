@@ -41,7 +41,6 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     private int maxPageSize = 0;
     private long pageByteTrigger = 0;
     private boolean collectQueryMetrics = true;
-    private String _connPoolName;
     private Set<String> authorizedDNs;
 
     protected ProxiedUserDetails currentUser;
@@ -79,7 +78,6 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
         setPageByteTrigger(other.getPageByteTrigger());
         setCollectQueryMetrics(other.getCollectQueryMetrics());
         this.authorizedDNs = other.authorizedDNs;
-        setConnPoolName(other.getConnPoolName());
         setRequiredRoles(other.getRequiredRoles());
         setSelectorExtractor(other.getSelectorExtractor());
         setCurrentUser(other.getCurrentUser());
@@ -330,13 +328,13 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     /** {@inheritDoc} */
     @Override
     public String getConnPoolName() {
-        return _connPoolName;
+        return getConfig().getConnPoolName();
     }
 
     /** {@inheritDoc} */
     @Override
     public void setConnPoolName(final String connPoolName) {
-        _connPoolName = connPoolName;
+        getConfig().setConnPoolName(connPoolName);
     }
 
     /** {@inheritDoc} */

@@ -13,13 +13,12 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.MutationsRejectedException;
 import org.apache.accumulo.core.client.Scanner;
-import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Range;
@@ -45,7 +44,9 @@ public class DiscoveryIteratorTest {
 
     @Test
     public void testHappyPath() throws Throwable {
-        InMemoryAccumuloClient client = new InMemoryAccumuloClient("root", new InMemoryInstance("DiscoveryIteratorTest"));
+        InMemoryInstance instance = new InMemoryInstance("DiscoveryIteratorTest");
+        AccumuloClient client = new InMemoryAccumuloClient("root", instance);
+
         client.tableOperations().create("index");
         writeSample(client.createBatchWriter("index", new BatchWriterConfig().setMaxLatency(0, TimeUnit.SECONDS).setMaxMemory(0).setMaxWriteThreads(1)));
         Scanner s = client.createScanner("index", new Authorizations("FOO"));
@@ -203,7 +204,9 @@ public class DiscoveryIteratorTest {
 
     @Test
     public void testReverseIndex() throws Throwable {
-        InMemoryAccumuloClient client = new InMemoryAccumuloClient("root", new InMemoryInstance("DiscoveryIteratorTest"));
+        InMemoryInstance instance = new InMemoryInstance("DiscoveryIteratorTest");
+        AccumuloClient client = new InMemoryAccumuloClient("root", instance);
+
         client.tableOperations().create("reverseIndex");
         writeSample(client.createBatchWriter("reverseIndex", new BatchWriterConfig().setMaxLatency(0, TimeUnit.SECONDS).setMaxMemory(0).setMaxWriteThreads(1)),
                         true);

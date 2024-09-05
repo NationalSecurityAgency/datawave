@@ -91,12 +91,6 @@
         <property name="reduceIngestTypes" value="true"/>
         <property name="rebuildDatatypeFilter" value="true" />
         <property name="rebuildDatatypeFilterPerShard" value="false" />
-        <!-- Determines how many events in the global index lookup will be
-        aggregated into a day range -->
-        <property name="eventPerDayThreshold" value="40000" />
-        <!-- Determines how many shards in the global index lookup will be
-        aggregated into a day range -->
-        <property name="shardsPerDayThreshold" value="4" />	<!-- ${beq.shardsPerDayThreshold} -->
         <!-- The max number of terms BEFORE all expansions -->
         <property name="initialMaxTermThreshold" value="10" />	<!-- was ${beq.initialMaxTermThreshold} -->
         <property name="intermediateMaxTermThreshold" value="10" />

@@ -805,7 +805,7 @@ public class CompositeQueryLogicTest {
 
             c.getTransformer(settings);
         } catch (CompositeLogicException e) {
-            Assert.assertEquals("query initialize failed", e.getCause().getCause().getMessage());
+            Assert.assertEquals("datawave.webservice.query.exception.QueryException: query initialize failed", e.getCause().getCause().getMessage());
         }
     }
 
