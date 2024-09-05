@@ -10,7 +10,6 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IOUtils;
 import org.apache.log4j.Logger;
-import org.w3c.dom.Node;
 
 import datawave.iterators.filter.ageoff.FilterRule;
 
@@ -89,37 +88,10 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
     @Override
     protected Collection<FilterRule> loadContents(InputStream in) throws IOException {
         try {
-            AgeOffRuleLoader ruleLoader = new AgeOffRuleLoader(new FileWatcherDependencyProvider());
+            AgeOffRuleLoader ruleLoader = new AgeOffRuleLoader(new FileLoaderDependencyProvider(fs, filePath, iterEnv));
             return ruleLoader.load(in);
-        } catch (Exception ex) {
-            log.error("uh oh: " + ex);
-            throw new IOException(ex);
         } finally {
             IOUtils.closeStream(in);
         }
     }
-
-    private class FileWatcherDependencyProvider implements AgeOffRuleLoader.AgeOffFileLoaderDependencyProvider {
-        @Override
-        public IteratorEnvironment getIterEnv() {
-            return iterEnv;
-        }
-
-        @Override
-        public InputStream getParentStream(Node parent) throws IOException {
-
-            String parentPathStr = parent.getTextContent();
-
-            if (null == parentPathStr || parentPathStr.isEmpty()) {
-                throw new IllegalArgumentException("Invalid parent config path, none specified!");
-            }
-            // loading parent relative to dir that child is in.
-            Path parentPath = new Path(filePath.getParent(), parentPathStr);
-            if (!fs.exists(parentPath)) {
-                throw new IllegalArgumentException("Invalid parent config path specified, " + parentPathStr + " does not exist!");
-            }
-            return fs.open(parentPath);
-        }
-    }
-
 }

@@ -2,6 +2,7 @@ package datawave.query.attributes;
 
 import java.util.Collection;
 
+import org.apache.accumulo.core.data.Key;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
@@ -11,6 +12,7 @@ import com.google.common.collect.Sets;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NoOpType;
 import datawave.data.type.NumberType;
+import datawave.query.util.TypeMetadata;
 
 /**
  *
@@ -44,7 +46,24 @@ public class AttributeFactoryTest {
         Assert.assertEquals(AttributeFactory.getKeepers(three), expectedThree);
         Assert.assertEquals(AttributeFactory.getKeepers(four), expectedFour);
         Assert.assertEquals(AttributeFactory.getKeepers(five), expectedFive);
+    }
 
+    @Test
+    public void testTypeFactoryCache() {
+        TypeMetadata metadata = new TypeMetadata();
+        metadata.put("FIELD", "ingest-type", LcNoDiacriticsType.class.getTypeName());
+
+        AttributeFactory factory = new AttributeFactory(metadata);
+
+        Key key = new Key("row", "ingest-type\0uid");
+        Attribute<?> red = factory.create("FIELD", "red", key, true);
+        Attribute<?> blue = factory.create("FIELD", "blue", key, true);
+
+        TypeAttribute<?> redType = (TypeAttribute<?>) red;
+        TypeAttribute<?> blueType = (TypeAttribute<?>) blue;
+
+        Assert.assertEquals("red", redType.getType().getNormalizedValue());
+        Assert.assertEquals("blue", blueType.getType().getNormalizedValue());
     }
 
 }

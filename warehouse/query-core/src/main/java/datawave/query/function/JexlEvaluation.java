@@ -139,7 +139,7 @@ public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJex
                     if (cv != null) {
                         // unused
                         long timestamp = document.getTimestamp(); // will force an update to make the metadata valid
-                        Content content = new Content(term, metadata, document.isToKeep());
+                        Content content = new Content(term, metadata, document.isToKeep(), hitTuple.getSource());
                         content.setColumnVisibility(cv);
                         attributes.add(content);
                     }
