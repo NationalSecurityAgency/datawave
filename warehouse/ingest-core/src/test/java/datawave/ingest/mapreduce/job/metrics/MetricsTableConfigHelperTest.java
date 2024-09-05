@@ -18,6 +18,7 @@ import org.easymock.EasyMock;
 import org.junit.Before;
 import org.junit.Test;
 
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
 
 public class MetricsTableConfigHelperTest {
@@ -31,7 +32,7 @@ public class MetricsTableConfigHelperTest {
 
     @Before
     public void setUp() throws Exception {
-        tops = new InMemoryInstance().getConnector("user", new PasswordToken("pass")).tableOperations();
+        tops = new InMemoryAccumuloClient("root", new InMemoryInstance()).tableOperations();
 
         String tableName = MetricsConfiguration.getTable(conf);
 
