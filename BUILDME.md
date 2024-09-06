@@ -52,6 +52,16 @@ mvn clean package -Pdev,assemble,deploy-ws -Pdocker -DskipTests
 
 Note that this will build javadocs and source jars.
 
+### Building a Docker image for use in Kubernetes via DataWave Helm Charts
+
+DataWave has an examplar helm chart deployment for use in development and testing [here](https://github.com/NationalSecurityAgency/datawave-helm-charts)  
+See README there for more information on running with helm chartx. What follows will build the ingest and web image using the profiles expected for the kubernetes cluster.
+
+```bash
+mvn clean install -Prpm,kubernetes,assemble,deploy-ws,exec -Pdocker -Ddocker-release -DskipTests -Dmaven.build.cache.enabled=false -Ddist -DskipMicroservices
+```
+
+
 ### Building an RPM
 
 To build the RPM specify both the assemble and rpm profiles should be specified, as follows:
