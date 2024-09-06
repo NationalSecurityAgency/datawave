@@ -22,6 +22,7 @@ import com.google.common.collect.TreeMultimap;
 
 import datawave.query.attributes.Document;
 import datawave.query.exceptions.DatawaveFatalQueryException;
+import datawave.query.exceptions.QueryIteratorYieldingException;
 import datawave.query.iterator.NestedIterator;
 import datawave.query.iterator.SeekableIterator;
 import datawave.query.iterator.Util;
@@ -279,6 +280,10 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T>, 
                         }
                     }
                 }
+            } catch (QueryIteratorYieldingException qye) {
+                throw qye;
+            } catch (IterationInterruptedException iie) {
+                throw iie;
             } catch (Exception e) {
                 include.remove();
                 if (includes.isEmpty() || e instanceof DatawaveFatalQueryException || e instanceof IterationInterruptedException) {
@@ -399,10 +404,10 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T>, 
                 if ((highest == null && transform.compareTo(key) > 0) || (highest != null && transform.compareTo(highest) > 0)) {
                     highest = transform;
                 }
-
-            } catch (IterationInterruptedException e) {
-                // allow the QueryIterator to handle these exception
-                throw e;
+            } catch (QueryIteratorYieldingException qe) {
+                throw qe;
+            } catch (IterationInterruptedException ie) {
+                throw ie;
             } catch (Exception e) {
                 seenException = true;
                 if (itr.isNonEventField()) {

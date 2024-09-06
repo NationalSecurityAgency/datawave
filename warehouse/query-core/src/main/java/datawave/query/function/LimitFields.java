@@ -1,6 +1,7 @@
 package datawave.query.function;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -12,8 +13,6 @@ import com.google.common.base.Function;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
-import datawave.data.type.Type;
-import datawave.data.type.TypeFactory;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Content;
@@ -65,10 +64,6 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
     // should not be dropped
     private final Set<Set<String>> matchingFieldSets;
 
-    private int typeCacheSize = -1;
-    private int typeCacheTimeoutMinutes = -1;
-    private TypeFactory typeFactory;
-
     public LimitFields(Map<String,Integer> limitFieldsMap, Set<Set<String>> matchingFieldSets) {
         this.limitFieldsMap = limitFieldsMap;
         this.matchingFieldSets = matchingFieldSets;
@@ -80,6 +75,7 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
     public Entry<Key,Document> apply(Entry<Key,Document> entry) {
         Document document = entry.getValue();
         Multimap<String,String> hitTermMap = this.getHitTermMap(document);
+        Set<Attribute<?>> hitTermAttributes = getHitTermAttributes(document);
 
         CountMap countForFieldMap = new CountMap();
         CountMap countMissesRemainingForFieldMap = new CountMap();
@@ -113,7 +109,7 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
                     Attributes attrs = (Attributes) attr;
                     Set<Attribute<? extends Comparable<?>>> attrSet = attrs.getAttributes();
                     for (Attribute<? extends Comparable<?>> value : attrSet) {
-                        if (isHit(keyWithGrouping, value, hitTermMap)) {
+                        if (isHit(keyWithGrouping, value, hitTermMap, hitTermAttributes)) {
                             keepers++;
                             matchingFieldGroups.addHit(keyNoGrouping, value);
                         } else {
@@ -125,7 +121,7 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
                         total++;
                     }
                 } else {
-                    if (isHit(keyWithGrouping, attr, hitTermMap)) {
+                    if (isHit(keyWithGrouping, attr, hitTermMap, hitTermAttributes)) {
                         keepers++;
                         matchingFieldGroups.addHit(keyNoGrouping, attr);
                     } else {
@@ -291,26 +287,13 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
      *            the attribute
      * @param hitTermMap
      *            the hit term map
+     * @param hitTermAttributes
+     *            hit term attributes from the document
      * @return true if a hit
      */
-    private boolean isHit(String keyWithGrouping, Attribute<?> attr, Multimap<String,String> hitTermMap) {
-        if (hitTermMap.containsKey(keyWithGrouping)) {
-            Object s = attr.getData();
-            Class<?> clazz = attr.getData().getClass();
-            for (Object hitValue : hitTermMap.get(keyWithGrouping)) {
-                try {
-                    if (Type.class.isAssignableFrom(clazz)) {
-                        Type<?> thing = getTypeFactory().createType(clazz.getName());
-                        thing.setDelegateFromString(String.valueOf(hitValue));
-                        hitValue = thing;
-                    } else { // otherwise, s is not a Type, just compare as string values
-                        s = String.valueOf(s);
-                    }
-                    if (s.equals(hitValue)) {
-                        return true;
-                    }
-                } catch (Exception e) {}
-            }
+    private boolean isHit(String keyWithGrouping, Attribute<?> attr, Multimap<String,String> hitTermMap, Set<Attribute<?>> hitTermAttributes) {
+        if (hitTermMap.containsKey(keyWithGrouping) && hitTermAttributes.contains(attr)) {
+            return true;
         }
 
         // if not already returned as a value match, then lets include those that are
@@ -351,6 +334,29 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
         Multimap<String,String> attrMap = HashMultimap.create();
         fillHitTermMap(document.get(JexlEvaluation.HIT_TERM_FIELD), attrMap);
         return attrMap;
+    }
+
+    private Set<Attribute<?>> getHitTermAttributes(Document document) {
+        Set<Attribute<?>> attributesSet = new HashSet<>();
+        Attribute<?> attributes = document.get(JexlEvaluation.HIT_TERM_FIELD);
+        fillHitTermSet(attributes, attributesSet);
+        return attributesSet;
+    }
+
+    private void fillHitTermSet(Attribute<?> attr, Set<Attribute<?>> attributesSet) {
+        if (attr != null) {
+            if (attr instanceof Attributes) {
+                Attributes attrs = (Attributes) attr;
+                for (Attribute<?> at : attrs.getAttributes()) {
+                    fillHitTermSet(at, attributesSet);
+                }
+            } else if (attr instanceof Content) {
+                Content content = (Content) attr;
+                if (content.getSource() != null) {
+                    attributesSet.add(content.getSource());
+                }
+            }
+        }
     }
 
     private void fillHitTermMap(Attribute<?> attr, Multimap<String,String> attrMap) {
@@ -399,41 +405,5 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
                 return value;
             }
         }
-    }
-
-    /**
-     * Get the TypeFactory. If no TypeFactory exists one will be created. Configs for cache size and timeout may be configured.
-     *
-     * @return the TypeFactory
-     */
-    private TypeFactory getTypeFactory() {
-        if (typeFactory == null) {
-            if (typeCacheSize != -1 && typeCacheTimeoutMinutes != -1) {
-                typeFactory = new TypeFactory(typeCacheSize, typeCacheTimeoutMinutes);
-            } else {
-                typeFactory = new TypeFactory();
-            }
-        }
-        return typeFactory;
-    }
-
-    /**
-     * Set the cache size for the TypeFactory
-     *
-     * @param typeCacheSize
-     *            the cache size
-     */
-    public void setTypeCacheSize(int typeCacheSize) {
-        this.typeCacheSize = typeCacheSize;
-    }
-
-    /**
-     * Set the timeout for the TypeFactory
-     *
-     * @param typeCacheTimeoutMinutes
-     *            the timeout
-     */
-    public void setTypeCacheTimeoutMinutes(int typeCacheTimeoutMinutes) {
-        this.typeCacheTimeoutMinutes = typeCacheTimeoutMinutes;
     }
 }
