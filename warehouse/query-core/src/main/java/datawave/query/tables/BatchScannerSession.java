@@ -188,8 +188,6 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Resu
      *            the max results
      * @param settings
      *            the query settings
-     * @param options
-     *            the scanner options
      * @param ranges
      *            list of ranges
      */
