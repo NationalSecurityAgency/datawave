@@ -14,8 +14,6 @@
       <LeafletMap />
     </div>
 
-    <!-- the configuration panel goes here -->
-    <!-- TODO: Update this to use a component which responds to menu clicks -->
     <div
       v-if="appState.isConfigPanelEnabled"
       style="position: absolute; height: 100%; top: 0; left: 0; z-index: 1"

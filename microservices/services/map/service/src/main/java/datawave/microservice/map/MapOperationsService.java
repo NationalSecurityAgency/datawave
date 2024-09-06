@@ -1,10 +1,8 @@
 package datawave.microservice.map;
 
-import java.net.URI;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -56,10 +54,7 @@ import datawave.microservice.map.visitor.GeoFeatureVisitor;
 import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.BaseQueryMetricListResponse;
 import datawave.query.util.MetadataHelperFactory;
-import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.JWTTokenHandler;
-import datawave.webservice.dictionary.data.DataDictionaryBase;
-import datawave.webservice.metadata.MetadataFieldBase;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.exception.QueryExceptionType;
 
@@ -80,8 +75,6 @@ public class MapOperationsService {
     private final AccumuloClient accumuloClient;
     private final QueryMetricListResponseSupplier queryMetricListResponseSupplier;
     private final LuceneToJexlQueryParser luceneToJexlQueryParser;
-    private final Set<String> geoFields = new HashSet<>();
-    private final Set<String> geoWaveFields = new HashSet<>();
     
     public MapOperationsService(MapServiceProperties mapServiceProperties, WebClient.Builder webClientBuilder, JWTTokenHandler jwtTokenHandler,
                     MetadataHelperFactory metadataHelperFactory, @Qualifier("warehouse") AccumuloClient accumuloClient,
@@ -93,75 +86,6 @@ public class MapOperationsService {
         this.accumuloClient = accumuloClient;
         this.queryMetricListResponseSupplier = queryMetricListResponseSupplier;
         this.luceneToJexlQueryParser = luceneToJexlQueryParser;
-        loadGeoFields();
-    }
-    
-    public void loadGeoFields() {
-        geoFields.clear();
-        geoWaveFields.clear();
-        geoFields.addAll(mapServiceProperties.getGeoFields());
-        geoWaveFields.addAll(mapServiceProperties.getGeoWaveFields());
-        loadGeoFieldsFromDictionary();
-    }
-    
-    private void loadGeoFieldsFromDictionary() {
-        // @formatter:off
-        webClient
-                .get()
-                .uri(UriComponentsBuilder
-                        .fromHttpUrl(mapServiceProperties.getDictionaryUri())
-                        .toUriString())
-                .header(HttpHeaders.AUTHORIZATION, createBearerHeader())
-                .retrieve()
-                .toEntity(DataDictionaryBase.class)
-                .doOnError(e -> log.warn("Encountered error while attempting to load geo fields from dictionary", e))
-                .doOnSuccess(response -> loadGeoFieldsFromDictionary(response.getBody()));
-        // @formatter:on
-    }
-    
-    private void loadGeoFieldsFromDictionary(DataDictionaryBase<?,?> dictionary) {
-        if (dictionary != null && dictionary.getFields() != null) {
-            for (MetadataFieldBase<?,?> field : dictionary.getFields()) {
-                boolean geoField = false;
-                boolean geowaveField = false;
-                for (String type : field.getTypes()) {
-                    if (mapServiceProperties.getGeoTypes().contains(type)) {
-                        geoFields.add(field.getFieldName());
-                        geoField = true;
-                    }
-                    if (mapServiceProperties.getGeoWaveTypes().contains(type)) {
-                        geoWaveFields.add(field.getFieldName());
-                        geowaveField = true;
-                    }
-                    if (geoField && geowaveField) {
-                        break;
-                    }
-                }
-            }
-        }
-    }
-    
-    // We could save the jwt token for reuse, but it will eventually expire. Since this should be used infrequently (i.e. when loading the dictionary) let's
-    // generate it each time.
-    protected String createBearerHeader() {
-        final String jwt;
-        try {
-            // @formatter:off
-            jwt = webClient.get()
-                    .uri(URI.create(mapServiceProperties.getAuthorizationUri()))
-                    .retrieve()
-                    .bodyToMono(String.class)
-                    .block(Duration.ofSeconds(30));
-            // @formatter:on
-        } catch (IllegalStateException e) {
-            throw new IllegalStateException("Timed out waiting for remote authorization response", e);
-        }
-        
-        Collection<DatawaveUser> principals = jwtTokenHandler.createUsersFromToken(jwt);
-        long createTime = principals.stream().map(DatawaveUser::getCreationTime).min(Long::compareTo).orElse(System.currentTimeMillis());
-        DatawaveUserDetails userDetails = new DatawaveUserDetails(principals, createTime);
-        
-        return "Bearer " + jwtTokenHandler.createTokenFromUsers(userDetails.getPrimaryUser().getName(), userDetails.getProxiedUsers());
     }
     
     public GeoQueryFeatures getGeoFeaturesForQuery(String query, List<String> fieldTypes, boolean expand, DatawaveUserDetails currentUser)
@@ -433,13 +357,5 @@ public class MapOperationsService {
         geoFeatures.setQueryRanges(geoQueryFeatures.getGeoByField().get(field));
         
         return geoFeatures;
-    }
-    
-    public Set<String> getGeoFields() {
-        return geoFields;
-    }
-    
-    public Set<String> getGeoWaveFields() {
-        return geoWaveFields;
     }
 }

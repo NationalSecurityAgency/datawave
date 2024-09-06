@@ -1,10 +1,6 @@
 package datawave.microservice.map;
 
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -28,21 +24,6 @@ public class MapController {
     public MapController(MapOperationsService mapOperationsService, MapServiceProperties mapServiceProperties) {
         this.mapOperationsService = mapOperationsService;
         this.mapServiceProperties = mapServiceProperties;
-    }
-    
-    // returns the fields mapped by type (geo vs geowave)
-    @RequestMapping(path = "/fieldsByType", method = {RequestMethod.GET})
-    public Map<String,Set<String>> fieldsByType() {
-        Map<String,Set<String>> fieldsByType = new HashMap<>();
-        fieldsByType.put("geo", mapOperationsService.getGeoFields());
-        fieldsByType.put("geowave", mapOperationsService.getGeoWaveFields());
-        return fieldsByType;
-    }
-    
-    // reload fields from configuration and the data dictionary
-    @RequestMapping(path = "/reloadFieldsByType", method = {RequestMethod.POST})
-    public void reloadFieldsByType() {
-        mapOperationsService.loadGeoFields();
     }
     
     @RequestMapping(path = "/getGeoFeaturesForQuery", method = {RequestMethod.POST})
@@ -75,5 +56,15 @@ public class MapController {
     @RequestMapping(path = "/basemaps", method = {RequestMethod.GET})
     public List<MapServiceProperties.Basemap> basemaps() {
         return mapServiceProperties.getBasemaps();
+    }
+    
+    @RequestMapping(path = "/header", method = {RequestMethod.GET})
+    public MapServiceProperties.Banner header() {
+        return mapServiceProperties.getHeader();
+    }
+    
+    @RequestMapping(path = "/footer", method = {RequestMethod.GET})
+    public MapServiceProperties.Banner footer() {
+        return mapServiceProperties.getFooter();
     }
 }

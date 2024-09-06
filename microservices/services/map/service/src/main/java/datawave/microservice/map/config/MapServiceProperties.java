@@ -11,31 +11,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 @ConfigurationProperties(prefix = "datawave.map")
 public class MapServiceProperties {
-    private String authorizationUri = "https://authorization:8443/authorization/v1/authorize";
-    private String dictionaryUri = "https://dictionary:8443/dictionary/data/v1/";
     private String metricsUri = "https://metrics:8443/querymetric/v1/id/";
     private String metadataTableName;
-    private Set<String> geoFields;
-    private Set<String> geoWaveFields;
-    private Set<String> geoTypes;
-    private Set<String> geoWaveTypes;
     private List<Basemap> basemaps = new ArrayList<>();
-    
-    public String getAuthorizationUri() {
-        return authorizationUri;
-    }
-    
-    public void setAuthorizationUri(String authorizationUri) {
-        this.authorizationUri = authorizationUri;
-    }
-    
-    public String getDictionaryUri() {
-        return dictionaryUri;
-    }
-    
-    public void setDictionaryUri(String dictionaryUri) {
-        this.dictionaryUri = dictionaryUri;
-    }
+    private Banner header = new Banner();
+    private Banner footer = new Banner();
     
     public String getMetricsUri() {
         return metricsUri;
@@ -53,34 +33,6 @@ public class MapServiceProperties {
         this.metadataTableName = metadataTableName;
     }
     
-    public Set<String> getGeoFields() {
-        return geoFields;
-    }
-    
-    public void setGeoFields(Set<String> geoFields) {
-        this.geoFields = geoFields;
-    }
-    
-    public Set<String> getGeoWaveFields() {
-        return geoWaveFields;
-    }
-    
-    public void setGeoWaveFields(Set<String> geoWaveFields) {
-        this.geoWaveFields = geoWaveFields;
-    }
-    
-    public Set<String> getGeoTypes() {
-        return geoTypes;
-    }
-    
-    public void setGeoTypes(Set<String> geoTypes) {
-        this.geoTypes = geoTypes;
-    }
-    
-    public Set<String> getGeoWaveTypes() {
-        return geoWaveTypes;
-    }
-    
     public List<Basemap> getBasemaps() {
         return basemaps;
     }
@@ -89,8 +41,20 @@ public class MapServiceProperties {
         this.basemaps = basemaps;
     }
     
-    public void setGeoWaveTypes(Set<String> geoWaveTypes) {
-        this.geoWaveTypes = geoWaveTypes;
+    public Banner getHeader() {
+        return header;
+    }
+    
+    public void setHeader(Banner header) {
+        this.header = header;
+    }
+    
+    public Banner getFooter() {
+        return footer;
+    }
+    
+    public void setFooter(Banner footer) {
+        this.footer = footer;
     }
     
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -150,6 +114,37 @@ public class MapServiceProperties {
         
         public void setDefaultEnabled(Boolean defaultEnabled) {
             this.defaultEnabled = defaultEnabled;
+        }
+    }
+    
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public static class Banner {
+        private boolean enabled = false;
+        private String message;
+        private String style;
+        
+        public boolean isEnabled() {
+            return enabled;
+        }
+        
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+        
+        public String getMessage() {
+            return message;
+        }
+        
+        public void setMessage(String message) {
+            this.message = message;
+        }
+        
+        public String getStyle() {
+            return style;
+        }
+        
+        public void setStyle(String style) {
+            this.style = style;
         }
     }
 }

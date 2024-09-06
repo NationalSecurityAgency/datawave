@@ -1,6 +1,7 @@
 <template>
-  <q-layout view="hHh Lpr lFf" style="height: 100vh">
+  <q-layout view="hHh Lpr fFf" style="height: 100vh">
     <q-header elevated>
+      <div v-if="header?.enabled" :style="header?.style">{{ header?.message }}</div>
       <q-toolbar class="bg-grey-9 text-white">
         <q-btn
           flat
@@ -49,6 +50,9 @@
     <q-page-container style="height: 100%">
       <router-view />
     </q-page-container>
+    <q-footer>
+      <div v-if="footer?.enabled" :style="footer?.style">{{ footer?.message }}</div>
+    </q-footer>
   </q-layout>
   <q-ajax-bar position="bottom" color="accent" size="10px" />
 </template>
@@ -60,6 +64,9 @@ import MenuItem, {
 } from 'components/MenuItem.vue';
 import { appStateStore } from 'stores/state-store';
 import app from '../../package.json';
+import { onMounted } from 'vue';
+import { api } from 'boot/axios';
+import { Banner } from 'components/models'
 
 const appState = appStateStore();
 
@@ -120,4 +127,29 @@ function toggleMini() {
   mini.value = !mini.value;
   expandIcon.value = mini.value ? 'chevron_right' : 'chevron_left';
 }
+
+const header = ref<Banner>();
+const footer = ref<Banner>();
+
+onMounted(() => {
+  api
+    .get('/map/v1/header', undefined)
+    .then((response) => {
+      const headerResp = response.data as Banner;
+      header.value = headerResp;
+    })
+    .catch((reason) => {
+      console.log('Something went wrong? ' + reason);
+    });
+
+  api
+    .get('/map/v1/footer', undefined)
+    .then((response) => {
+      const footerResp = response.data as Banner;
+      footer.value = footerResp;
+    })
+    .catch((reason) => {
+      console.log('Something went wrong? ' + reason);
+    });
+})
 </script>

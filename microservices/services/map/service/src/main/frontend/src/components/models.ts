@@ -106,3 +106,9 @@ export interface FieldType {
     value: string
   };
 }
+
+export interface Banner {
+  enabled: boolean;
+  message?: string;
+  style?: string;
+}

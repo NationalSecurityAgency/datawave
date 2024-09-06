@@ -1,21 +1,14 @@
 logging:
   level:
-    root: TRACE
+    root: INFO
+    datawave.microservice: DEBUG
   
 datawave:
+  swagger:
+    title: "Map Service"
+    description: "REST API provided by the Map Service"
   map:
-    dictionaryUri: 'https://dictionary:8443/dictionary/data/v1/'
     metadataTableName: 'datawave.metadata'
-    geoFields:
-        - GEO_FIELD
-    geowaveFields:
-        - GEOWAVE_FIELD
-        - POINT_FIELD
-    geoTypes:
-        - "Combined latitude, longitude"
-    geowaveTypes:
-        - "Geometry"
-        - "Point Geometry"
     accumulo:
       zookeepers: "${accumulo.zookeepers}"
       instance-name: '${accumulo.instanceName}'
