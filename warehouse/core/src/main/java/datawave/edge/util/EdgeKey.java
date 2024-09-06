@@ -48,7 +48,6 @@ public class EdgeKey {
     private EdgeKey(EDGE_FORMAT format, STATS_TYPE statsType, String sourceData, String sinkData, String family, String sourceRelationship,
                     String sinkRelationship, String sourceAttribute1, String sinkAttribute1, String yyyymmdd, String attribute3, String attribute2, Text colvis,
                     long timestamp, boolean deleted, DATE_TYPE dateType) {
-
         this.format = format;
         this.statsType = statsType;
         this.sourceData = sourceData;

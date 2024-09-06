@@ -3,7 +3,6 @@ package datawave.query.tables.async;
 import java.io.InterruptedIOException;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
@@ -16,13 +15,13 @@ import org.apache.accumulo.core.clientImpl.ThriftScanner.ScanTimedOutException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
-import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
 
 import com.google.common.base.Function;
 import com.google.common.eventbus.Subscribe;
 
+import datawave.core.query.configuration.Result;
 import datawave.mr.bulk.RfileResource;
 import datawave.query.tables.AccumuloResource;
 import datawave.query.tables.AccumuloResource.ResourceFactory;
@@ -52,7 +51,7 @@ public class Scan implements Callable<Scan> {
 
     private ResourceQueue delegatorReference;
 
-    protected BlockingQueue<Entry<Key,Value>> results;
+    protected BlockingQueue<Result> results;
 
     private String localTableName;
 
@@ -75,7 +74,7 @@ public class Scan implements Callable<Scan> {
     private AccumuloResource delegatedResource = null;
 
     public Scan(String localTableName, Set<Authorizations> localAuths, ScannerChunk chunk, ResourceQueue delegatorReference,
-                    Class<? extends AccumuloResource> delegatedResourceInitializer, BlockingQueue<Entry<Key,Value>> results, ExecutorService callingService) {
+                    Class<? extends AccumuloResource> delegatedResourceInitializer, BlockingQueue<Result> results, ExecutorService callingService) {
         myScan = chunk;
         if (log.isTraceEnabled())
             log.trace("Size of ranges:  " + myScan.getRanges().size());
@@ -242,7 +241,7 @@ public class Scan implements Callable<Scan> {
                 delegatedResource = ResourceFactory.initializeResource(initializer, delegatedResource, localTableName, localAuths, currentRange)
                                 .setOptions(myScan.getOptions());
 
-                Iterator<Entry<Key,Value>> iter = delegatedResource.iterator();
+                Iterator<Result> iter = Result.resultIterator(myScan.getContext(), delegatedResource.iterator());
 
                 if (null != myStats)
                     myStats.getTimer(TIMERS.SCANNER_START).suspend();
@@ -255,7 +254,7 @@ public class Scan implements Callable<Scan> {
                     lastSeenKey = null;
                 }
 
-                Entry<Key,Value> myEntry = null;
+                Result myEntry = null;
                 if (null != myStats)
                     myStats.getTimer(TIMERS.SCANNER_ITERATE).resume();
                 while (iter.hasNext()) {
@@ -343,6 +342,10 @@ public class Scan implements Callable<Scan> {
 
     public void setSessionArbiter(SessionArbiter arbiter) {
         this.arbiter = arbiter;
+    }
+
+    public ScannerChunk getScannerChunk() {
+        return myScan;
     }
 
     public String getScanLocation() {

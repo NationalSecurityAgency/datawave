@@ -3,7 +3,7 @@ package datawave.query.postprocessing.tf;
 import java.util.Collections;
 import java.util.List;
 
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 
 import com.google.common.collect.Lists;

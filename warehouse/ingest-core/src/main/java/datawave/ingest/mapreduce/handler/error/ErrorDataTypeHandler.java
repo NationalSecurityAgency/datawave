@@ -47,7 +47,7 @@ import datawave.util.time.DateHelper;
  * This class creates the following Mutations or Key/Values: <br>
  * <br>
  * <table border="1">
- * <caption></caption>
+ * <caption>ErrorDataType</caption>
  * <tr>
  * <th>Schema Type</th>
  * <th>Use</th>

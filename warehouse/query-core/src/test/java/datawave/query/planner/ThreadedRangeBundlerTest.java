@@ -11,14 +11,14 @@ import java.lang.reflect.Field;
 import java.util.Collection;
 import java.util.Comparator;
 
-import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
+import datawave.core.query.configuration.QueryData;
+import datawave.microservice.query.Query;
 import datawave.query.CloseableIterable;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.configuration.QueryData;
 
 public class ThreadedRangeBundlerTest {
 

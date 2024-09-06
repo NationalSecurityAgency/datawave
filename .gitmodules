@@ -61,3 +61,24 @@
 [submodule "microservices/microservice-service-parent"]
 	path = microservices/microservice-service-parent
 	url = git@github.com:NationalSecurityAgency/datawave-service-parent.git
+[submodule "contrib/datawave-utils"]
+	path = contrib/datawave-utils
+	url = git@github.com:NationalSecurityAgency/datawave-utils.git
+[submodule "microservices/starters/query"]
+	path = microservices/starters/query
+	url = git@github.com:NationalSecurityAgency/datawave-spring-boot-starter-query.git
+[submodule "microservices/services/query"]
+	path = microservices/services/query
+	url = git@github.com:NationalSecurityAgency/datawave-query-service.git
+[submodule "microservices/services/query-executor"]
+	path = microservices/services/query-executor
+	url = git@github.com:NationalSecurityAgency/datawave-query-executor-service.git
+[submodule "microservices/services/modification"]
+	path = microservices/services/modification
+	url = git@github.com:NationalSecurityAgency/datawave-modification-service.git
+[submodule "microservices/services/mapreduce-query"]
+	path = microservices/services/mapreduce-query
+	url = git@github.com:NationalSecurityAgency/datawave-mapreduce-query-service.git
+[submodule "microservices/starters/cached-results"]
+	path = microservices/starters/cached-results
+	url = git@github.com:NationalSecurityAgency/datawave-spring-boot-starter-cached-results.git

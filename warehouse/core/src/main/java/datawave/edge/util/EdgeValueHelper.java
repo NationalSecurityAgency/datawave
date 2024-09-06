@@ -120,8 +120,9 @@ public class EdgeValueHelper {
     }
 
     /**
-     * Creates a Variable length encoded byte array of longs where the elements have the following meaning:
      * <p>
+     * Creates a Variable length encoded byte array of longs where the elements have the following meaning:
+     * </p>
      *
      * <pre>
      * 		0   &lt; 10 sec
@@ -136,6 +137,7 @@ public class EdgeValueHelper {
      * <p>
      * The element at index N will be set if the duration matches the values above, otherwise it will be zero. The element will be set to 1 if deleteRecord is
      * false, else -1.
+     * </p>
      *
      * @param elapsed
      *            - variable length of time elapsed

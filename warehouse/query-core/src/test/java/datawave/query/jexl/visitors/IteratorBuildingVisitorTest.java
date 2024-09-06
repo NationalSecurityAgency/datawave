@@ -16,10 +16,11 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.commons.jexl2.parser.ASTEQNode;
-import org.apache.commons.jexl2.parser.ASTERNode;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.commons.jexl3.parser.ASTEQNode;
+import org.apache.commons.jexl3.parser.ASTERNode;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.JexlNodes;
+import org.apache.commons.jexl3.parser.ParseException;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -52,7 +53,8 @@ public class IteratorBuildingVisitorTest {
      */
     @Test
     public void visitEqNode_nullValueTest() {
-        ASTEQNode node = (ASTEQNode) JexlNodeFactory.buildEQNode("FIELD", null);
+        ASTEQNode node = (ASTEQNode) JexlNodeFactory.buildEQNode("FIELD", "blah");
+        node.jjtAddChild(JexlNodes.makeStringLiteral(), 1);
 
         IteratorBuildingVisitor visitor = getDefault();
 
@@ -64,7 +66,8 @@ public class IteratorBuildingVisitorTest {
      */
     @Test(expected = DatawaveFatalQueryException.class)
     public void visitEqNode_nullValueIndexOnlyTest() {
-        ASTEQNode node = (ASTEQNode) JexlNodeFactory.buildEQNode("FIELD", null);
+        ASTEQNode node = (ASTEQNode) JexlNodeFactory.buildEQNode("FIELD", "blah");
+        node.jjtAddChild(JexlNodes.makeStringLiteral(), 1);
 
         IteratorBuildingVisitor visitor = getDefault();
         visitor.setIndexOnlyFields(Collections.singleton("FIELD"));

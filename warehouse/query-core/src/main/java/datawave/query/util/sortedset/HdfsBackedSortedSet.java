@@ -22,7 +22,53 @@ public class HdfsBackedSortedSet<E> extends BufferedFileBackedSortedSet<E> imple
     private static final Logger log = Logger.getLogger(HdfsBackedSortedSet.class);
     private static final String FILENAME_PREFIX = "SortedSetFile.";
 
-    public HdfsBackedSortedSet(HdfsBackedSortedSet<E> other) throws IOException {
+    public static class Builder<B extends Builder<B,E>,E> extends BufferedFileBackedSortedSet.Builder<B,E> {
+        private List<IvaratorCacheDir> ivaratorCacheDirs;
+        private String uniqueSubPath;
+        private FileSortedSet.PersistOptions persistOptions;
+
+        public Builder() {
+            // change the default buffer persist threshold
+            withBufferPersistThreshold(10000);
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        protected B self() {
+            return (B) this;
+        }
+
+        public B withIvaratorCacheDirs(List<IvaratorCacheDir> ivaratorCacheDirs) {
+            this.ivaratorCacheDirs = ivaratorCacheDirs;
+            return self();
+        }
+
+        public B withUniqueSubPath(String uniqueSubPath) {
+            this.uniqueSubPath = uniqueSubPath;
+            return self();
+        }
+
+        public B withPersistOptions(FileSortedSet.PersistOptions persistOptions) {
+            this.persistOptions = persistOptions;
+            return self();
+        }
+
+        public HdfsBackedSortedSet<?> build() throws IOException {
+            return new HdfsBackedSortedSet<>(this);
+        }
+    }
+
+    public static HdfsBackedSortedSet.Builder<?,?> builder() {
+        return new HdfsBackedSortedSet.Builder<>();
+    }
+
+    protected HdfsBackedSortedSet(Builder builder) throws IOException {
+        super(builder);
+        this.handlerFactories = createFileHandlerFactories(builder.ivaratorCacheDirs, builder.uniqueSubPath, builder.persistOptions);
+        setup(builder.persistOptions);
+    }
+
+    protected HdfsBackedSortedSet(HdfsBackedSortedSet<E> other) {
         super(other);
     }
 
@@ -66,7 +112,11 @@ public class HdfsBackedSortedSet<E> extends BufferedFileBackedSortedSet<E> imple
                     throws IOException {
         super(comparator, bufferPersistThreshold, maxOpenFiles, numRetries, createFileHandlerFactories(ivaratorCacheDirs, uniqueSubPath, persistOptions),
                         setFactory);
+        this.handlerFactories = createFileHandlerFactories(ivaratorCacheDirs, uniqueSubPath, persistOptions);
+        setup(persistOptions);
+    }
 
+    private void setup(FileSortedSet.PersistOptions persistOptions) throws IOException {
         // for each of the handler factories, check to see if there are any existing files we should load
         for (SortedSetFileHandlerFactory handlerFactory : handlerFactories) {
             // Note: All of the file handler factories created by 'createFileHandlerFactories' are SortedSetHdfsFileHandlerFactories

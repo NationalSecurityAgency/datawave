@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.ConnectException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.security.Key;
@@ -258,6 +259,17 @@ public abstract class RemoteHttpService {
         return buildURI().setPath(serviceURI() + suffix);
     }
 
+    public URIBuilder buildRedirectURI(String suffix, URI baseURI, boolean useConfiguredBaseURI) throws TextParseException {
+        URIBuilder builder;
+        if (useConfiguredBaseURI) {
+            builder = buildURI();
+        } else {
+            builder = new URIBuilder(baseURI);
+        }
+        builder.setPath(serviceURI() + suffix);
+        return builder;
+    }
+
     protected <T> T executeGetMethod(Consumer<URIBuilder> uriCustomizer, Consumer<HttpGet> requestCustomizer, IOFunction<T> resultConverter,
                     Supplier<String> errorSupplier) throws URISyntaxException, IOException {
         return executeGetMethod("", uriCustomizer, requestCustomizer, resultConverter, errorSupplier);
@@ -347,7 +359,7 @@ public abstract class RemoteHttpService {
                     log.error("Failed to read entity content.  Trying as a VoidResponse.", ioe);
                     log.error(content);
                     VoidResponse response = voidResponseReader.readValue(content);
-                    throw new RuntimeException(response.getMessages().toString());
+                    throw new RuntimeException(String.valueOf(response.getMessages()), ioe1);
                 }
             }
         }
@@ -370,11 +382,7 @@ public abstract class RemoteHttpService {
             return null;
         } else {
             VoidResponse response = voidResponseReader.readValue(entity.getContent());
-            if (response.getHasResults()) {
-                return response;
-            } else {
-                throw new RuntimeException(response.getMessages().toString());
-            }
+            return response;
         }
     }
 

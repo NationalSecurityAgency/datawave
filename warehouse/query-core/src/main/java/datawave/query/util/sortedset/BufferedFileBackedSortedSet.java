@@ -52,8 +52,69 @@ public class BufferedFileBackedSortedSet<E> implements SortedSet<E> {
         boolean isValid();
     }
 
-    public BufferedFileBackedSortedSet(BufferedFileBackedSortedSet<E> other) {
-        this(other.comparator, other.bufferPersistThreshold, other.maxOpenFiles, other.numRetries, new ArrayList<>(other.handlerFactories), other.setFactory);
+    public static class Builder<B extends Builder<B,E>,E> {
+        private int maxOpenFiles = DEFAULT_MAX_OPEN_FILES;
+        private FileSortedSet.FileSortedSetFactory<E> setFactory = new FileSerializableSortedSet.Factory();
+        private Comparator<E> comparator;
+        private int numRetries = DEFAULT_NUM_RETRIES;
+        private List<SortedSetFileHandlerFactory> handlerFactories = new ArrayList<>();
+        private int bufferPersistThreshold = DEFAULT_BUFFER_PERSIST_THRESHOLD;
+
+        public Builder() {}
+
+        @SuppressWarnings("unchecked")
+        protected B self() {
+            return (B) this;
+        }
+
+        public B withMaxOpenFiles(int maxOpenFiles) {
+            this.maxOpenFiles = maxOpenFiles;
+            return self();
+        }
+
+        @SuppressWarnings("unchecked")
+        public B withSetFactory(FileSortedSet.FileSortedSetFactory<?> setFactory) {
+            this.setFactory = (FileSortedSet.FileSortedSetFactory<E>) setFactory;
+            return self();
+        }
+
+        @SuppressWarnings("unchecked")
+        public B withComparator(Comparator<?> comparator) {
+            this.comparator = (Comparator<E>) comparator;
+            return self();
+        }
+
+        public B withNumRetries(int numRetries) {
+            this.numRetries = numRetries;
+            return self();
+        }
+
+        public B withHandlerFactories(List<SortedSetFileHandlerFactory> handlerFactories) {
+            this.handlerFactories = handlerFactories;
+            return self();
+        }
+
+        public B withBufferPersistThreshold(int bufferPersistThreshold) {
+            this.bufferPersistThreshold = bufferPersistThreshold;
+            return self();
+        }
+
+        public BufferedFileBackedSortedSet<?> build() throws Exception {
+            return new BufferedFileBackedSortedSet<>(this);
+        }
+    }
+
+    public static BufferedFileBackedSortedSet.Builder<?,?> builder() {
+        return new BufferedFileBackedSortedSet.Builder<>();
+    }
+
+    protected BufferedFileBackedSortedSet(BufferedFileBackedSortedSet<E> other) {
+        this.comparator = other.comparator;
+        this.handlerFactories = new ArrayList<>(other.handlerFactories);
+        this.setFactory = other.setFactory;
+        this.bufferPersistThreshold = other.bufferPersistThreshold;
+        this.numRetries = other.numRetries;
+        this.maxOpenFiles = other.maxOpenFiles;
         for (SortedSet<E> subSet : other.set.getSets()) {
             FileSortedSet<E> clone = ((FileSortedSet<E>) subSet).clone();
             this.set.addSet(clone);
@@ -95,6 +156,15 @@ public class BufferedFileBackedSortedSet<E> implements SortedSet<E> {
         this.bufferPersistThreshold = bufferPersistThreshold;
         this.numRetries = numRetries;
         this.maxOpenFiles = maxOpenFiles;
+    }
+
+    protected BufferedFileBackedSortedSet(Builder builder) {
+        this.comparator = builder.comparator;
+        this.handlerFactories = new ArrayList<>(builder.handlerFactories);
+        this.setFactory = builder.setFactory;
+        this.bufferPersistThreshold = builder.bufferPersistThreshold;
+        this.numRetries = builder.numRetries;
+        this.maxOpenFiles = builder.maxOpenFiles;
     }
 
     private SortedSetFileHandler createFileHandler(SortedSetFileHandlerFactory handlerFactory) throws IOException {

@@ -38,12 +38,12 @@ public class MetadataCounterGroupTest {
 
         Assert.assertEquals(2, counters.getEntries().size());
 
-        Iterator<MetadataCounterGroup.CountAndKeyComponents> iterator = counters.getEntries().iterator();
-        MetadataCounterGroup.CountAndKeyComponents first = iterator.next();
+        Iterator<MetadataCounterGroup.Components> iterator = counters.getEntries().iterator();
+        MetadataCounterGroup.Components first = iterator.next();
         Assert.assertEquals(dataType + "2", first.getDataType());
         Assert.assertEquals(2, first.getCount());
 
-        MetadataCounterGroup.CountAndKeyComponents second = iterator.next();
+        MetadataCounterGroup.Components second = iterator.next();
         Assert.assertEquals(dataType, second.getDataType());
         Assert.assertEquals(1, second.getCount());
     }
@@ -53,7 +53,7 @@ public class MetadataCounterGroupTest {
         Assert.assertEquals(expectedCount, getOnlyEntry(counters).getCount());
     }
 
-    private MetadataCounterGroup.CountAndKeyComponents getOnlyEntry(MetadataCounterGroup counters) {
+    private MetadataCounterGroup.Components getOnlyEntry(MetadataCounterGroup counters) {
         return counters.getEntries().iterator().next();
     }
 
@@ -78,7 +78,7 @@ public class MetadataCounterGroupTest {
     public void testAssignments() {
         MetadataCounterGroup counters = new MetadataCounterGroup(COLUMN_FAMILY);
         counters.addToCount(1, dataType, fieldName, date);
-        MetadataCounterGroup.CountAndKeyComponents entry = getOnlyEntry(counters);
+        MetadataCounterGroup.Components entry = getOnlyEntry(counters);
         Assert.assertEquals(dataType, entry.getDataType());
         Assert.assertEquals(fieldName, entry.getRowId());
         Assert.assertEquals(date, entry.getDate());

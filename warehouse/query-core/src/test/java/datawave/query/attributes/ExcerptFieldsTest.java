@@ -43,14 +43,25 @@ public class ExcerptFieldsTest {
     }
 
     /**
-     * Verify formatting a non-empty {@link ExcerptFields} to a string.
+     * Verify formatting a non-empty {@link ExcerptFields} to a string without direction.
      */
     @Test
     public void testNonEmptyExcerptFieldsToString() {
         ExcerptFields excerptFields = new ExcerptFields();
         excerptFields.put("BODY", 10);
         excerptFields.put("CONTENT", 5);
-        assertEquals("BODY/10,CONTENT/5", excerptFields.toString());
+        assertEquals("BODY/10/both,CONTENT/5/both", excerptFields.toString());
+    }
+
+    /**
+     * Verify formatting a non-empty {@link ExcerptFields} to a string with direction.
+     */
+    @Test
+    public void testNonEmptyExcerptFieldsToString2() {
+        ExcerptFields excerptFields = new ExcerptFields();
+        excerptFields.put("BODY", 10, "before");
+        excerptFields.put("CONTENT", 5, "after");
+        assertEquals("BODY/10/before,CONTENT/5/after", excerptFields.toString());
     }
 
     /**
@@ -92,7 +103,7 @@ public class ExcerptFieldsTest {
         excerptFields.put("CONTENT", 5);
 
         String json = objectMapper.writeValueAsString(excerptFields);
-        assertEquals("\"BODY/10,CONTENT/5\"", json);
+        assertEquals("\"BODY/10/both,CONTENT/5/both\"", json);
     }
 
     /**

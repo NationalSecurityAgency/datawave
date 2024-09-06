@@ -56,8 +56,11 @@ public class HashReverse {
      * character in the array of acceptable base64 characters.
      *
      * @param hash
+     *            the hash string
      * @param length
-     * @return
+     *            length of the prefix
+     *
+     * @return prefix index
      */
     public static int getPrefixIndex(final byte[] hash, final int length) {
         int result = 0;
@@ -83,13 +86,23 @@ public class HashReverse {
      * Return the max possible value for the provided prefix length
      *
      * @param length
-     * @return
+     *            length of the prefix
+     *
+     * @return the prefix
      */
     public static int getPrefixMax(final int length) {
         return getPrefixIndex(MAX_HASH, length);
     }
 
-    /** Utility to generate splits for the ssdeep table based on a prefix of 2 - 64^64 (4096) splits in size */
+    /**
+     * Utility to generate splits for the ssdeep table based on a prefix of 2 - 64^64 (4096) splits in size
+     *
+     * @param args
+     *            main arguments passed in
+     *
+     * @throws IOException
+     *             if there is a problem splitting the files
+     */
     public static void main(String[] args) throws IOException {
         int len = LEXICAL_B64_TABLE.length;
         byte[] output = new byte[2];

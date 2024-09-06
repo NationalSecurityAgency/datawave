@@ -36,11 +36,12 @@ import org.junit.runner.RunWith;
 import com.google.common.collect.Sets;
 
 import datawave.configuration.spring.SpringBean;
+import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
+import datawave.microservice.query.QueryImpl;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
-import datawave.query.attributes.Content;
 import datawave.query.attributes.Document;
 import datawave.query.function.JexlEvaluation;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
@@ -51,8 +52,6 @@ import datawave.query.util.CommonalityTokenTestDataIngest;
 import datawave.test.JexlNodeAssert;
 import datawave.util.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
-import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
 
 /**
  * Tests the limit.fields feature to ensure that hit terms are always included and that associated fields at the same grouping context are included along with
@@ -131,7 +130,7 @@ public abstract class NumericListQueryTest {
                         .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "org.jboss.logging",
                                         "datawave.webservice.query.result.event")
                         .deleteClass(DefaultEdgeEventQueryLogic.class).deleteClass(RemoteEdgeDictionary.class)
-                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class).deleteClass(datawave.query.metrics.ShardTableQueryMetricHandler.class)
+                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
                         .addAsManifestResource(new StringAsset(
                                         "<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>" + "</alternatives>"),
                                         "beans.xml");
@@ -364,10 +363,60 @@ public abstract class NumericListQueryTest {
         extraParameters.put("hit.list", "true");
         extraParameters.put("limit.fields", "SIZE=-1,BIRD=-1,CAT=-1,CANINE=-1,FISH=-1");
 
-        String queryString = "SIZE =='90,26.5' AND grouping:matchesInGroup(SIZE, '90', SIZE, '26.5')";
-        String expectedQueryPlan = "SIZE == '+bE9' && SIZE == '+bE2.65' && grouping:matchesInGroup(SIZE, '+bE9', SIZE, '+bE2.65')";
+        String queryString = "SIZE =='90,26.5' AND grouping:matchesInGroup(SIZE, '90', SIZE, '26\\.5')";
+        String expectedQueryPlan = "SIZE == '+bE9' && SIZE == '+bE2.65' && grouping:matchesInGroup(SIZE, '\\+bE9', SIZE, '\\+bE2\\.65')";
 
         Set<String> goodResults = Sets.newHashSet("REPTILE.PET.1:snake", "SIZE.CANINE.WILD.1:90,26.5", "DOG.WILD.1:coyote");
+
+        runTestQuery(queryString, expectedQueryPlan, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
+    }
+
+    @Test
+    public void testPushDown() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+        extraParameters.put("hit.list", "true");
+        extraParameters.put("limit.fields", "SIZE=-1,CANINE=-1");
+        extraParameters.put("return.fields", "SIZE,CANINE");
+
+        String queryString = "((_Eval_ = true) && (SIZE == 90)) && CANINE == 'coyote'";
+        String expectedQueryPlan = "((_Eval_ = true) && (SIZE == '+bE9')) && CANINE == 'coyote'";
+
+        Set<String> goodResults = Sets.newHashSet("SIZE.CANINE.WILD.1:90,26.5", "CANINE.WILD.1:coyote");
+
+        runTestQuery(queryString, expectedQueryPlan, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
+    }
+
+    @Test
+    public void testWildcards() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+        extraParameters.put("hit.list", "true");
+        extraParameters.put("limit.fields", "SIZE=-1,BIRD=-1,CAT=-1,CANINE=-1,FISH=-1");
+
+        // this only works because the entire string '90,26.5' is included in the jexl context and we match against that
+        String queryString = "SIZE =~'.*0.*' AND CANINE == 'coyote'";
+        String expectedQueryPlan = "((_Eval_ = true) && (SIZE =~ '.*0.*')) && CANINE == 'coyote'";
+
+        Set<String> goodResults = Sets.newHashSet("REPTILE.PET.1:snake", "DOG.WILD.1:coyote", "CAT.WILD.1:tiger", "SIZE.CANINE.3:20,12.5",
+                        "CANINE.WILD.1:coyote", "FISH.WILD.1:tuna", "BIRD.WILD.1:hawk");
+
+        runTestQuery(queryString, expectedQueryPlan, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
+    }
+
+    @Test
+    public void testLeadingWildcardNonReverseIndexed() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+        extraParameters.put("limit.fields", "SIZE=-1,BIRD=-1,CAT=-1,CANINE=-1,FISH=-1");
+
+        // this only works because the entire string '90,26.5' ends in a 5. A query of .*0 will not return anything because the full string does not match and
+        // 90 only exists by itself in the jexl context in its normalized form. Numeric regex handling should some day rectify this or perhaps we should
+        // consider adding the non-normalized tokens to the context for certain OneToMany types.
+        String queryString = "SIZE =~'.*5' AND CANINE == 'coyote'";
+        String expectedQueryPlan = "((_Eval_ = true) && (SIZE =~ '.*5')) && CANINE == 'coyote'";
+
+        Set<String> goodResults = Sets.newHashSet("REPTILE.PET.1:snake", "DOG.WILD.1:coyote");
 
         runTestQuery(queryString, expectedQueryPlan, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
     }
@@ -380,7 +429,7 @@ public abstract class NumericListQueryTest {
         extraParameters.put("limit.fields", "SIZE=-1,BIRD=-1,CAT=-1,CANINE=-1,FISH=-1");
 
         String queryString = "SIZE =='90' AND grouping:matchesInGroup(SIZE, '90', SIZE, '20')";
-        String expectedQueryPlan = "SIZE == '+bE9' && grouping:matchesInGroup(SIZE, '+bE9', SIZE, '+bE2')";
+        String expectedQueryPlan = "SIZE == '+bE9' && grouping:matchesInGroup(SIZE, '\\+bE9', SIZE, '\\+bE2')";
 
         // should be empty
         Set<String> goodResults = Sets.newHashSet();

@@ -18,6 +18,8 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.accumulo.core.client.Accumulo;
 import org.apache.accumulo.core.client.AccumuloClient;
@@ -32,7 +34,6 @@ import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.TableDeletedException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.TableOfflineException;
-import org.apache.accumulo.core.client.ZooKeeperInstance;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.clientImpl.ClientConfConverter;
 import org.apache.accumulo.core.clientImpl.ClientContext;
@@ -54,8 +55,6 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.TablePermission;
 import org.apache.accumulo.core.singletons.SingletonReservation;
 import org.apache.accumulo.core.util.Pair;
-import org.apache.accumulo.core.util.TextUtil;
-import org.apache.accumulo.core.util.UtilWaitThread;
 import org.apache.accumulo.core.util.format.DefaultFormatter;
 import org.apache.accumulo.core.util.threads.Threads;
 import org.apache.commons.codec.binary.Base64;
@@ -89,6 +88,7 @@ import datawave.mr.bulk.split.DefaultSplitStrategy;
 import datawave.mr.bulk.split.LocationStrategy;
 import datawave.mr.bulk.split.RangeSplit;
 import datawave.mr.bulk.split.SplitStrategy;
+import datawave.util.TextUtil;
 
 public class BulkInputFormat extends InputFormat<Key,Value> {
 
@@ -242,7 +242,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
     }
 
     /**
-     * Configure a {@link ZooKeeperInstance} for this configuration object.
+     * Configure the zookeeper servers for this configuration object.
      *
      * @param conf
      *            the Hadoop configuration object
@@ -318,7 +318,9 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
      * Specify the working directory, fs.getWorkingDirectory() doesn't work with ViewFS.
      *
      * @param conf
+     *            the Hadoop configuration object
      * @param path
+     *            path to the Hadoop working directory
      */
     public static void setWorkingDirectory(Configuration conf, String path) {
         conf.set(WORKING_DIRECTORY, path);
@@ -667,6 +669,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
      *            the Hadoop configuration object
      * @return the BASE64-encoded password
      * @throws IOException
+     *             if there is an error reading the file
      * @see #setInputInfo(Job, String, byte[], String, Authorizations)
      */
     protected static byte[] getPassword(Configuration conf) throws IOException {
@@ -804,6 +807,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
          * @param scanner
          *            the scanner to configure
          * @throws AccumuloException
+         *             if there is an error with Accumulo
          */
         protected void setupIterators(Configuration conf, BatchScanner scanner) throws AccumuloException {
             List<AccumuloIterator> iterators = getIterators(conf);
@@ -952,7 +956,6 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
 
     Map<String,Map<KeyExtent,List<Range>>> binOfflineTable(JobContext job, String tableName, List<Range> ranges)
                     throws TableNotFoundException, AccumuloException, AccumuloSecurityException, IOException {
-
         Map<String,Map<KeyExtent,List<Range>>> binnedRanges = new HashMap<>();
 
         try (AccumuloClient client = getClient(job.getConfiguration())) {
@@ -1112,7 +1115,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
                 binnedRanges = binOfflineTable(job, tableName, ranges);
                 while (binnedRanges == null) {
                     // Some tablets were still online, try again
-                    UtilWaitThread.sleep(100L + (int) (Math.random() * 100)); // sleep randomly between 100 and 200 ms
+                    TimeUnit.MILLISECONDS.sleep(ThreadLocalRandom.current().nextInt(100, 200));
                     binnedRanges = binOfflineTable(job, tableName, ranges);
                 }
             } else {
@@ -1135,7 +1138,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
                         }
                         binnedRanges.clear();
                         log.warn("Unable to locate bins for specified ranges. Retrying.");
-                        UtilWaitThread.sleep(100 + (int) (Math.random() * 100)); // sleep randomly between 100 and 200 ms
+                        TimeUnit.MILLISECONDS.sleep(ThreadLocalRandom.current().nextInt(100, 200));
                         tl.invalidateCache();
                     }
 

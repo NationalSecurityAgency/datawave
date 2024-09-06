@@ -12,7 +12,6 @@ import static datawave.query.iterator.QueryOptions.TF_NEXT_SEEK;
 import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
-import java.lang.reflect.InaccessibleObjectException;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Collections;

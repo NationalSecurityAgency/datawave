@@ -8,7 +8,7 @@ import org.apache.curator.framework.recipes.shared.SharedCountReader;
 import org.apache.curator.framework.state.ConnectionState;
 import org.apache.log4j.Logger;
 
-import datawave.webservice.common.cache.SharedCacheCoordinator;
+import datawave.core.common.cache.SharedCacheCoordinator;
 
 /**
  * Uses the SharedCacheCoordinator to register listeners so that when an event is fired (for example, when a new model is loaded) the spring injected cache of

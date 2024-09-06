@@ -70,7 +70,8 @@ public class BucketAccumuloKeyGenerator {
      * column family is the integer chunk size and the column qualifier is the original ssdeep hash bytes. The generated value is always empty.
      *
      * @param t
-     * @return
+     *            tuple
+     * @return Accumulo key/value pair when unable to produce an accumulo key/value pair
      */
     public ImmutablePair<Key,Value> call(ImmutablePair<NGramTuple,byte[]> t) {
         int rowSize = t.getKey().getChunk().length() + bucketEncoding.getLength() + chunkEncoding.getLength();

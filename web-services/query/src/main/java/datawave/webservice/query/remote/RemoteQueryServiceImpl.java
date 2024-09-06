@@ -22,10 +22,11 @@ import org.xbill.DNS.TextParseException;
 
 import com.fasterxml.jackson.databind.ObjectReader;
 
+import datawave.core.query.remote.RemoteQueryService;
 import datawave.security.auth.DatawaveAuthenticationMechanism;
 import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.authorization.ProxiedUserDetails;
 import datawave.webservice.common.remote.RemoteHttpService;
-import datawave.webservice.common.remote.RemoteQueryService;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.GenericResponse;
 import datawave.webservice.result.VoidResponse;
@@ -50,9 +51,11 @@ public class RemoteQueryServiceImpl extends RemoteHttpService implements RemoteQ
 
     private ObjectReader baseQueryResponseReader;
 
-    private ObjectReader eventQueryResponseReader;
+    private ObjectReader nextQueryResponseReader;
 
     private boolean initialized = false;
+
+    private Class<? extends BaseQueryResponse> nextQueryResponseClass;
 
     @Override
     @PostConstruct
@@ -61,22 +64,26 @@ public class RemoteQueryServiceImpl extends RemoteHttpService implements RemoteQ
             super.init();
             genericResponseReader = objectMapper.readerFor(GenericResponse.class);
             baseQueryResponseReader = objectMapper.readerFor(BaseQueryResponse.class);
-            eventQueryResponseReader = objectMapper.readerFor(responseObjectFactory.getEventQueryResponse().getClass());
+            if (nextQueryResponseClass == null) {
+                nextQueryResponseReader = objectMapper.readerFor(responseObjectFactory.getEventQueryResponse().getClass());
+            } else {
+                nextQueryResponseReader = objectMapper.readerFor(nextQueryResponseClass);
+            }
             initialized = true;
         }
     }
 
     @Override
-    public GenericResponse<String> createQuery(String queryLogicName, Map<String,List<String>> queryParameters, Object callerObject) {
+    public GenericResponse<String> createQuery(String queryLogicName, Map<String,List<String>> queryParameters, ProxiedUserDetails callerObject) {
         return query(CREATE, queryLogicName, queryParameters, callerObject);
     }
 
     @Override
-    public GenericResponse<String> planQuery(String queryLogicName, Map<String,List<String>> queryParameters, Object callerObject) {
+    public GenericResponse<String> planQuery(String queryLogicName, Map<String,List<String>> queryParameters, ProxiedUserDetails callerObject) {
         return query(PLAN, queryLogicName, queryParameters, callerObject);
     }
 
-    private GenericResponse<String> query(String endPoint, String queryLogicName, Map<String,List<String>> queryParameters, Object callerObject) {
+    private GenericResponse<String> query(String endPoint, String queryLogicName, Map<String,List<String>> queryParameters, ProxiedUserDetails callerObject) {
         init();
         final DatawavePrincipal principal = getDatawavePrincipal(callerObject);
 
@@ -112,7 +119,7 @@ public class RemoteQueryServiceImpl extends RemoteHttpService implements RemoteQ
     }
 
     @Override
-    public BaseQueryResponse next(String id, Object callerObject) {
+    public BaseQueryResponse next(String id, ProxiedUserDetails callerObject) {
         init();
         final DatawavePrincipal principal = getDatawavePrincipal(callerObject);
 
@@ -122,12 +129,12 @@ public class RemoteQueryServiceImpl extends RemoteHttpService implements RemoteQ
             httpGet.setHeader(PROXIED_ENTITIES_HEADER, getProxiedEntities(principal));
             httpGet.setHeader(PROXIED_ISSUERS_HEADER, getProxiedIssuers(principal));
         }, entity -> {
-            return readResponse(entity, eventQueryResponseReader, baseQueryResponseReader);
+            return readResponse(entity, nextQueryResponseReader, baseQueryResponseReader);
         }, () -> suffix);
     }
 
     @Override
-    public VoidResponse close(String id, Object callerObject) {
+    public VoidResponse close(String id, ProxiedUserDetails callerObject) {
         init();
         final DatawavePrincipal principal = getDatawavePrincipal(callerObject);
 
@@ -142,7 +149,7 @@ public class RemoteQueryServiceImpl extends RemoteHttpService implements RemoteQ
     }
 
     @Override
-    public GenericResponse<String> planQuery(String id, Object callerObject) {
+    public GenericResponse<String> planQuery(String id, ProxiedUserDetails callerObject) {
         init();
         final DatawavePrincipal principal = getDatawavePrincipal(callerObject);
 
@@ -168,11 +175,18 @@ public class RemoteQueryServiceImpl extends RemoteHttpService implements RemoteQ
 
     }
 
-    private DatawavePrincipal getDatawavePrincipal(Object callerObject) {
+    private DatawavePrincipal getDatawavePrincipal(ProxiedUserDetails callerObject) {
         if (callerObject instanceof DatawavePrincipal) {
             return (DatawavePrincipal) callerObject;
         }
         throw new RuntimeException("Cannot handle a " + callerObject.getClass() + ". Only DatawavePrincipal is accepted");
     }
 
+    public Class<? extends BaseQueryResponse> getNextQueryResponseClass() {
+        return nextQueryResponseClass;
+    }
+
+    public void setNextQueryResponseClass(Class<? extends BaseQueryResponse> nextQueryResponseClass) {
+        this.nextQueryResponseClass = nextQueryResponseClass;
+    }
 }

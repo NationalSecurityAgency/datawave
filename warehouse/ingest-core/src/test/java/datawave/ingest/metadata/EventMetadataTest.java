@@ -1,331 +1,556 @@
 package datawave.ingest.metadata;
 
-import java.io.IOException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Date;
-import java.util.Iterator;
+import static datawave.ingest.mapreduce.handler.DataTypeHandler.NULL_VALUE;
+import static datawave.ingest.metadata.RawRecordMetadata.DELIMITER;
+import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.niceMock;
+import static org.easymock.EasyMock.replay;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+import java.time.LocalDate;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.user.SummingCombiner;
 import org.apache.hadoop.io.Text;
-import org.easymock.EasyMock;
+import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 
+import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
 import datawave.IdentityDataType;
 import datawave.TestAbstractContentIngestHelper;
 import datawave.TestBaseIngestHelper;
+import datawave.data.type.LcNoDiacriticsType;
+import datawave.data.type.NumberType;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
 import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.NormalizedFieldAndValue;
-import datawave.ingest.data.config.ingest.BaseIngestHelper;
+import datawave.ingest.data.config.ingest.IngestHelperInterface;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 
-// currently this only tests LoadDate counts
 public class EventMetadataTest {
-    private static final String FIELD_NAME = "FIELD_NAME";
-    private static final String FIELD_TO_COUNT = "FIELD_1";
-    private static final String FIELD_WITH_TOKEN_TO_COUNT = "FIELD_1_TOKEN";
-    private static final String DATA_TYPE = "xyzabc";
-    private static final String FIELD_NAME_FOR_LOAD_DATE = "LOAD_DATE";
-    private static final String TF = "tf";
-    private static final String T = "t";
-    private static final String E = "e";
-    private static final String I = "i";
-    private static final String VALUE_FOR_LOAD_DATE = "20140404";
-    private static final String NUMBER_TYPE = "datawave.data.type.NumberType";
-    private static final Text METADATA_TABLE_NAME = new Text("table123456");
-    private static final Text LOADDATES_TABLE_NAME = new Text("loaddates");
-    private static final Text INDEX_TABLE_NAME = new Text("index");
-    private static final Text RINDEX_TABLE_NAME = new Text("reverseIndex");
-    private BaseIngestHelper helper;
-    private RawRecordContainer event = EasyMock.createMock(RawRecordContainer.class);
-    private SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyyMMdd");
 
-    @Before
-    public void setupIngestHelper() {
-        helper = new TestBaseIngestHelper(createEventFields()) {
-            @Override
-            public List<datawave.data.type.Type<?>> getDataTypes(String fieldName) {
-                return Arrays.asList(new IdentityDataType());
+    private static final Text SHARD_TABLE_NAME = new Text("shard");
+    private static final Text SHARD_INDEX_TABLE_NAME = new Text("shardIndex");
+    private static final Text SHARD_REVERSE_INDEX_TABLE_NAME = new Text("shardReverseIndex");
+    private static final Text METADATA_TABLE_NAME = new Text("metadata");
+    private static final Text LOAD_DATE_TABLE_NAME = new Text("loadDate");
+    private static final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMdd", Locale.US);
+
+    private final Multimap<String,NormalizedContentInterface> fieldValues = HashMultimap.create();
+    private EventMetadata eventMetadata;
+    private Multimap<BulkIngestKey,Value> bulkMetadata;
+
+    @After
+    public void tearDown() throws Exception {
+        this.fieldValues.clear();
+        this.eventMetadata = null;
+        this.bulkMetadata = null;
+    }
+
+    /**
+     * Test ingesting a single event.
+     */
+    @Test
+    public void testSingleEvent() {
+        // Configure the field values.
+        givenFieldValue("FIELD_1", "HEY HO HEY HO");
+        long loadDate = getMillis("20140404");
+        givenFieldValue("LOAD_DATE", String.valueOf(loadDate));
+
+        // Configure the helper interface.
+        IngestHelper helper = createIngestHelper();
+        helper.addDataType("FIELD_1", new IdentityDataType());
+
+        // Init the event metadata and add the event.
+        initEventMetadata();
+        long eventDate = getMillis("20140402");
+        eventMetadata.addEvent(helper, createMockEvent("xyzabc", eventDate, helper), fieldValues, loadDate);
+
+        // Validate the resulting bulk entries.
+        collectBulkEntries();
+        assertTotalBulkEntries(4);
+        assertContainsMetadataTableEntry("FIELD_1", "e", "xyzabc", eventDate, NULL_VALUE);
+        assertContainsMetadataTableEntry("FIELD_1", "f", "xyzabc" + DELIMITER + "20140402", eventDate, encodeCount(1L));
+        assertContainsMetadataTableEntry("LOAD_DATE", "e", "xyzabc", eventDate, NULL_VALUE);
+        assertContainsMetadataTableEntry("LOAD_DATE", "f", "xyzabc" + DELIMITER + "20140402", eventDate, encodeCount(1L));
+    }
+
+    /**
+     * Test ingesting an event for an excluded field.
+     */
+    @Test
+    public void testExcludedField() {
+        // Configure the field values.
+        givenFieldValue("FIELD_1", "HEY HO HEY HO");
+        long loadDate = getMillis("20140404");
+        givenFieldValue("LOAD_DATE", String.valueOf(loadDate));
+
+        // Configure the helper interface.
+        IngestHelper helper = createIngestHelper();
+        helper.addDataType("FIELD_1", new IdentityDataType());
+
+        // Mark the field as excluded.
+        helper.addShardExclusionField("FIELD_1");
+
+        // Init the event metadata and add the event.
+        initEventMetadata();
+        long eventDate = getMillis("20140402");
+        eventMetadata.addEvent(helper, createMockEvent("xyzabc", eventDate, helper), fieldValues, loadDate);
+
+        // Validate the resulting bulk entries.
+        collectBulkEntries();
+        assertTotalBulkEntries(2);
+        assertContainsMetadataTableEntry("LOAD_DATE", "e", "xyzabc", eventDate, NULL_VALUE);
+        assertContainsMetadataTableEntry("LOAD_DATE", "f", "xyzabc" + DELIMITER + "20140402", eventDate, encodeCount(1L));
+    }
+
+    /**
+     * Test ingesting an event for an indexed field.
+     */
+    @Test
+    public void testIndexedField() {
+        // Configure the field values.
+        givenFieldValue("FIELD_1", "HEY HO HEY HO");
+        long loadDate = getMillis("20140404");
+        givenFieldValue("LOAD_DATE", String.valueOf(loadDate));
+
+        // Configure the helper interface.
+        IngestHelper helper = createIngestHelper();
+        helper.addDataType("FIELD_1", new IdentityDataType());
+
+        // Mark the field as indexed.
+        helper.addIndexedField("FIELD_1");
+
+        // Init the event metadata and add the event.
+        initEventMetadata();
+        long eventDate = getMillis("20140402");
+        eventMetadata.addEvent(helper, createMockEvent("xyzabc", eventDate, helper), fieldValues, loadDate);
+        eventMetadata.addEvent(helper, createMockEvent("xyzabc", eventDate, helper), fieldValues, loadDate);
+
+        // Validate the resulting bulk entries.
+        collectBulkEntries();
+        assertTotalBulkEntries(7);
+        assertContainsMetadataTableEntry("FIELD_1", "e", "xyzabc", eventDate, NULL_VALUE);
+        assertContainsMetadataTableEntry("FIELD_1", "i", "xyzabc" + DELIMITER + "20140402", eventDate, encodeCount(2L));
+        assertContainsMetadataTableEntry("FIELD_1", "f", "xyzabc" + DELIMITER + "20140402", eventDate, encodeCount(2L));
+        assertContainsMetadataTableEntry("FIELD_1", "t", "xyzabc" + DELIMITER + "datawave.IdentityDataType", eventDate, NULL_VALUE);
+        assertContainsMetadataTableEntry("LOAD_DATE", "e", "xyzabc", eventDate, NULL_VALUE);
+        assertContainsMetadataTableEntry("LOAD_DATE", "f", "xyzabc" + DELIMITER + "20140402", eventDate, encodeCount(2L));
+        assertContainsLoadDateTableEntry("FIELD_1", "FIELD_NAME" + DELIMITER + "shardIndex", "20140404" + DELIMITER + "xyzabc", encodeCount(2L));
+    }
+
+    /**
+     * Test ingesting an event for a reverse indexed field.
+     */
+    @Test
+    public void testReverseIndexedField() {
+        // Configure the field values.
+        givenFieldValue("FIELD_1", "HEY HO HEY HO");
+        long loadDate = getMillis("20140404");
+        givenFieldValue("LOAD_DATE", String.valueOf(loadDate));
+
+        // Configure the helper interface.
+        IngestHelper helper = createIngestHelper();
+        helper.addDataType("FIELD_1", new IdentityDataType());
+
+        // Mark the field as reverse indexed.
+        helper.addReverseIndexedField("FIELD_1");
+
+        // Init the event metadata and add the event.
+        initEventMetadata();
+        long eventDate = getMillis("20140402");
+        eventMetadata.addEvent(helper, createMockEvent("xyzabc", eventDate, helper), fieldValues, loadDate);
+        eventMetadata.addEvent(helper, createMockEvent("xyzabc", eventDate, helper), fieldValues, loadDate);
+
+        // Validate the resulting bulk entries.
+        collectBulkEntries();
+        assertTotalBulkEntries(7);
+        assertContainsMetadataTableEntry("FIELD_1", "e", "xyzabc", eventDate, NULL_VALUE);
+        assertContainsMetadataTableEntry("FIELD_1", "ri", "xyzabc" + DELIMITER + "20140402", eventDate, encodeCount(2L));
+        assertContainsMetadataTableEntry("FIELD_1", "f", "xyzabc" + DELIMITER + "20140402", eventDate, encodeCount(2L));
+        assertContainsMetadataTableEntry("FIELD_1", "t", "xyzabc" + DELIMITER + "datawave.IdentityDataType", eventDate, NULL_VALUE);
+        assertContainsMetadataTableEntry("LOAD_DATE", "e", "xyzabc", eventDate, NULL_VALUE);
+        assertContainsMetadataTableEntry("LOAD_DATE", "f", "xyzabc" + DELIMITER + "20140402", eventDate, encodeCount(2L));
+        assertContainsLoadDateTableEntry("FIELD_1", "FIELD_NAME" + DELIMITER + "shardReverseIndex", "20140404" + DELIMITER + "xyzabc", encodeCount(2L));
+    }
+
+    /**
+     * Test ingesting an event for a field that is both indexed and reverse indexed.
+     */
+    @Test
+    public void testIndexedAndReverseIndexedField() {
+        // Configure the field values.
+        givenFieldValue("FIELD_1", "HEY HO HEY HO");
+        long loadDate = getMillis("20140404");
+        givenFieldValue("LOAD_DATE", String.valueOf(loadDate));
+
+        // Configure the helper interface.
+        IngestHelper helper = createIngestHelper();
+        helper.addDataType("FIELD_1", new IdentityDataType());
+
+        // Mark the field as indexed and reverse indexed.
+        helper.addIndexedField("FIELD_1");
+        helper.addReverseIndexedField("FIELD_1");
+
+        // Init the event metadata and add the event.
+        initEventMetadata();
+        long eventDate = getMillis("20140402");
+        eventMetadata.addEvent(helper, createMockEvent("xyzabc", eventDate, helper), fieldValues, loadDate);
+        eventMetadata.addEvent(helper, createMockEvent("xyzabc", eventDate, helper), fieldValues, loadDate);
+
+        // Validate the resulting bulk entries.
+        collectBulkEntries();
+        assertTotalBulkEntries(9);
+        assertContainsMetadataTableEntry("FIELD_1", "e", "xyzabc", eventDate, NULL_VALUE);
+        assertContainsMetadataTableEntry("FIELD_1", "ri", "xyzabc" + DELIMITER + "20140402", eventDate, encodeCount(2L));
+        assertContainsMetadataTableEntry("FIELD_1", "i", "xyzabc" + DELIMITER + "20140402", eventDate, encodeCount(2L));
+        assertContainsMetadataTableEntry("FIELD_1", "f", "xyzabc" + DELIMITER + "20140402", eventDate, encodeCount(2L));
+        assertContainsMetadataTableEntry("FIELD_1", "t", "xyzabc" + DELIMITER + "datawave.IdentityDataType", eventDate, NULL_VALUE);
+        assertContainsMetadataTableEntry("LOAD_DATE", "e", "xyzabc", eventDate, NULL_VALUE);
+        assertContainsMetadataTableEntry("LOAD_DATE", "f", "xyzabc" + DELIMITER + "20140402", eventDate, encodeCount(2L));
+        assertContainsLoadDateTableEntry("FIELD_1", "FIELD_NAME" + DELIMITER + "shardIndex", "20140404" + DELIMITER + "xyzabc", encodeCount(2L));
+        assertContainsLoadDateTableEntry("FIELD_1", "FIELD_NAME" + DELIMITER + "shardReverseIndex", "20140404" + DELIMITER + "xyzabc", encodeCount(2L));
+    }
+
+    /**
+     * Test ingesting multiple events that have the same load date and event date.
+     */
+    @Test
+    public void testMultipleEventsForSameLoadDateAndEventDate() {
+        // Configure the field values.
+        givenFieldValue("FIELD_1", "HEY HO HEY HO");
+        long loadDate = getMillis("20140404");
+        givenFieldValue("LOAD_DATE", String.valueOf(loadDate));
+
+        // Configure the helper interface.
+        IngestHelper helper = createIngestHelper();
+        helper.addDataType("FIELD_1", new IdentityDataType());
+
+        // Init the event metadata and add the event.
+        initEventMetadata();
+        long eventDate = getMillis("20140402");
+        eventMetadata.addEvent(helper, createMockEvent("xyzabc", eventDate, helper), fieldValues, loadDate);
+        eventMetadata.addEvent(helper, createMockEvent("xyzabc", eventDate, helper), fieldValues, loadDate);
+
+        // Validate the resulting bulk entries.
+        collectBulkEntries();
+        assertTotalBulkEntries(4);
+        assertContainsMetadataTableEntry("FIELD_1", "e", "xyzabc", eventDate, NULL_VALUE);
+        assertContainsMetadataTableEntry("FIELD_1", "f", "xyzabc" + DELIMITER + "20140402", eventDate, encodeCount(2L));
+        assertContainsMetadataTableEntry("LOAD_DATE", "e", "xyzabc", eventDate, NULL_VALUE);
+        assertContainsMetadataTableEntry("LOAD_DATE", "f", "xyzabc" + DELIMITER + "20140402", eventDate, encodeCount(2L));
+    }
+
+    /**
+     * Test ingesting multiple events that have the same load date, but different event dates.
+     */
+    @Test
+    public void testMultipleEventsForSameLoadDateAndDifferentEventDate() {
+        // Configure the field values.
+        givenFieldValue("FIELD_1", "HEY HO HEY HO");
+        long loadDate = getMillis("20140404");
+        givenFieldValue("LOAD_DATE", String.valueOf(loadDate));
+
+        // Configure the helper interface.
+        IngestHelper helper = createIngestHelper();
+        helper.addDataType("FIELD_1", new IdentityDataType());
+
+        // Init the event metadata and add the event.
+        initEventMetadata();
+        long eventDate1 = getMillis("20140402");
+        eventMetadata.addEvent(helper, createMockEvent("xyzabc", eventDate1, helper), fieldValues, loadDate);
+        long eventDate2 = getMillis("20140319");
+        eventMetadata.addEvent(helper, createMockEvent("xyzabc", eventDate2, helper), fieldValues, loadDate);
+
+        // Validate the resulting bulk entries.
+        collectBulkEntries();
+        assertTotalBulkEntries(6);
+        assertContainsMetadataTableEntry("FIELD_1", "e", "xyzabc", eventDate1, NULL_VALUE);
+        assertContainsMetadataTableEntry("FIELD_1", "f", "xyzabc" + DELIMITER + "20140319", eventDate2, encodeCount(1L));
+        assertContainsMetadataTableEntry("FIELD_1", "f", "xyzabc" + DELIMITER + "20140402", eventDate1, encodeCount(1L));
+        assertContainsMetadataTableEntry("LOAD_DATE", "e", "xyzabc", eventDate1, NULL_VALUE);
+        assertContainsMetadataTableEntry("LOAD_DATE", "f", "xyzabc" + DELIMITER + "20140319", eventDate2, encodeCount(1L));
+        assertContainsMetadataTableEntry("LOAD_DATE", "f", "xyzabc" + DELIMITER + "20140402", eventDate1, encodeCount(1L));
+    }
+
+    /**
+     * Test ingesting an event for a field that should be targeted for tokenization.
+     */
+    @Test
+    public void testTermFrequencyForTokenization() {
+        // Configure the field values.
+        givenFieldValue("FIELD_1", "HEY HO HEY HO");
+        long loadDate = getMillis("20140404");
+        givenFieldValue("LOAD_DATE", String.valueOf(loadDate));
+
+        // Configure the helper interface.
+        ContentIngestHelper helper = createContentIngestHelper();
+        helper.addDataType("FIELD_1", new IdentityDataType());
+
+        // Mark the field as a content index field.
+        helper.addContentIndexField("FIELD_1");
+
+        // Init the event metadata and add the event.
+        initEventMetadata();
+        long eventDate = getMillis("20140402");
+        eventMetadata.addEvent(helper, createMockEvent("xyzabc", eventDate, helper), fieldValues, loadDate);
+
+        // Validate the resulting bulk entries.
+        collectBulkEntries();
+        assertTotalBulkEntries(8);
+        assertContainsMetadataTableEntry("FIELD_1", "e", "xyzabc", eventDate, NULL_VALUE);
+        assertContainsMetadataTableEntry("FIELD_1", "f", "xyzabc" + DELIMITER + "20140402", eventDate, encodeCount(1L));
+        assertContainsMetadataTableEntry("FIELD_1_TOKEN", "t", "xyzabc" + DELIMITER + "datawave.IdentityDataType", eventDate, NULL_VALUE);
+        assertContainsMetadataTableEntry("FIELD_1_TOKEN", "tf", "xyzabc", eventDate, NULL_VALUE);
+        assertContainsMetadataTableEntry("FIELD_1_TOKEN", "i", "xyzabc" + DELIMITER + "20140402", eventDate, encodeCount(1L));
+        assertContainsMetadataTableEntry("LOAD_DATE", "e", "xyzabc", eventDate, NULL_VALUE);
+        assertContainsMetadataTableEntry("LOAD_DATE", "f", "xyzabc" + DELIMITER + "20140402", eventDate, encodeCount(1L));
+        assertContainsLoadDateTableEntry("FIELD_1_TOKEN", "FIELD_NAME" + DELIMITER + "shardIndex", "20140404" + DELIMITER + "xyzabc", encodeCount(1L));
+    }
+
+    /**
+     * Test ingesting an event for a field that should be targeted for term frequencies.
+     */
+    @Test
+    public void testTermFrequencyForLists() {
+        // Configure the field values.
+        givenFieldValue("FIELD_1", "HEY HO HEY HO");
+        long loadDate = getMillis("20140404");
+        givenFieldValue("LOAD_DATE", String.valueOf(loadDate));
+
+        // Configure the helper interface.
+        ContentIngestHelper helper = createContentIngestHelper();
+        helper.addDataType("FIELD_1", new IdentityDataType());
+
+        // Mark the field as an index list field.
+        helper.addIndexListField("FIELD_1");
+
+        // Init the event metadata and add the event.
+        initEventMetadata();
+        long eventDate = getMillis("20140402");
+        eventMetadata.addEvent(helper, createMockEvent("xyzabc", eventDate, helper), fieldValues, loadDate);
+
+        // Validate the resulting bulk entries.
+        collectBulkEntries();
+        assertTotalBulkEntries(8);
+        assertContainsMetadataTableEntry("FIELD_1", "e", "xyzabc", eventDate, NULL_VALUE);
+        assertContainsMetadataTableEntry("FIELD_1", "f", "xyzabc" + DELIMITER + "20140402", eventDate, encodeCount(1L));
+        assertContainsMetadataTableEntry("FIELD_1", "t", "xyzabc" + DELIMITER + "datawave.IdentityDataType", eventDate, NULL_VALUE);
+        assertContainsMetadataTableEntry("FIELD_1", "tf", "xyzabc", eventDate, NULL_VALUE);
+        assertContainsMetadataTableEntry("FIELD_1", "i", "xyzabc" + DELIMITER + "20140402", eventDate, encodeCount(1L));
+        assertContainsMetadataTableEntry("LOAD_DATE", "e", "xyzabc", eventDate, NULL_VALUE);
+        assertContainsMetadataTableEntry("LOAD_DATE", "f", "xyzabc" + DELIMITER + "20140402", eventDate, encodeCount(1L));
+        assertContainsLoadDateTableEntry("FIELD_1", "FIELD_NAME" + DELIMITER + "shardIndex", "20140404" + DELIMITER + "xyzabc", encodeCount(1L));
+    }
+
+    /**
+     * Test ingesting an event for a field that should be targeted for term frequencies.
+     */
+    @Test
+    public void testMultipleFieldEvents() {
+        // Configure the field values.
+        givenFieldValue("FIELD_1", "HEY HO HEY HO");
+        givenFieldValue("FIELD_2", "Follow the yellow brick road");
+        givenFieldValue("FIELD_3", "542643");
+
+        long loadDate = getMillis("20140404");
+        givenFieldValue("LOAD_DATE", String.valueOf(loadDate));
+
+        // Configure the helper interface.
+        IngestHelper helper = createIngestHelper();
+        helper.addDataType("FIELD_1", new IdentityDataType());
+        helper.addDataType("FIELD_2", new LcNoDiacriticsType());
+        helper.addDataType("FIELD_3", new NumberType());
+
+        // Init the event metadata and add the event.
+        initEventMetadata();
+        long eventDate1 = getMillis("20140402");
+        eventMetadata.addEvent(helper, createMockEvent("xyzabc", eventDate1, helper), fieldValues, loadDate);
+        eventMetadata.addEvent(helper, createMockEvent("xyzabc", eventDate1, helper), fieldValues, loadDate);
+        eventMetadata.addEvent(helper, createMockEvent("ababa", eventDate1, helper), fieldValues, loadDate);
+
+        long eventDate2 = getMillis("20140403");
+        eventMetadata.addEvent(helper, createMockEvent("ididi", eventDate2, helper), fieldValues, loadDate);
+
+        // Validate the resulting bulk entries.
+        collectBulkEntries();
+        assertTotalBulkEntries(24);
+        assertContainsMetadataTableEntry("FIELD_1", "e", "xyzabc", eventDate1, NULL_VALUE);
+        assertContainsMetadataTableEntry("FIELD_1", "f", "xyzabc" + DELIMITER + "20140402", eventDate1, encodeCount(2L));
+        assertContainsMetadataTableEntry("FIELD_1", "f", "ababa" + DELIMITER + "20140402", eventDate1, encodeCount(1L));
+        assertContainsMetadataTableEntry("FIELD_1", "e", "ababa", eventDate1, NULL_VALUE);
+        assertContainsMetadataTableEntry("FIELD_1", "f", "ididi" + DELIMITER + "20140403", eventDate2, encodeCount(1L));
+        assertContainsMetadataTableEntry("FIELD_1", "e", "ididi", eventDate2, NULL_VALUE);
+        assertContainsMetadataTableEntry("FIELD_2", "e", "xyzabc", eventDate1, NULL_VALUE);
+        assertContainsMetadataTableEntry("FIELD_2", "f", "xyzabc" + DELIMITER + "20140402", eventDate1, encodeCount(2L));
+        assertContainsMetadataTableEntry("FIELD_2", "f", "ababa" + DELIMITER + "20140402", eventDate1, encodeCount(1L));
+        assertContainsMetadataTableEntry("FIELD_2", "e", "ababa", eventDate1, NULL_VALUE);
+        assertContainsMetadataTableEntry("FIELD_2", "f", "ididi" + DELIMITER + "20140403", eventDate2, encodeCount(1L));
+        assertContainsMetadataTableEntry("FIELD_2", "e", "ididi", eventDate2, NULL_VALUE);
+        assertContainsMetadataTableEntry("FIELD_3", "e", "xyzabc", eventDate1, NULL_VALUE);
+        assertContainsMetadataTableEntry("FIELD_3", "f", "xyzabc" + DELIMITER + "20140402", eventDate1, encodeCount(2L));
+        assertContainsMetadataTableEntry("FIELD_3", "f", "ababa" + DELIMITER + "20140402", eventDate1, encodeCount(1L));
+        assertContainsMetadataTableEntry("FIELD_3", "e", "ababa", eventDate1, NULL_VALUE);
+        assertContainsMetadataTableEntry("FIELD_3", "f", "ididi" + DELIMITER + "20140403", eventDate2, encodeCount(1L));
+        assertContainsMetadataTableEntry("FIELD_3", "e", "ididi", eventDate2, NULL_VALUE);
+        assertContainsMetadataTableEntry("LOAD_DATE", "f", "xyzabc" + DELIMITER + "20140402", eventDate1, encodeCount(2L));
+        assertContainsMetadataTableEntry("LOAD_DATE", "e", "xyzabc", eventDate1, NULL_VALUE);
+        assertContainsMetadataTableEntry("LOAD_DATE", "f", "ababa" + DELIMITER + "20140402", eventDate1, encodeCount(1L));
+        assertContainsMetadataTableEntry("LOAD_DATE", "e", "ababa", eventDate1, NULL_VALUE);
+        assertContainsMetadataTableEntry("LOAD_DATE", "f", "ididi" + DELIMITER + "20140403", eventDate2, encodeCount(1L));
+        assertContainsMetadataTableEntry("LOAD_DATE", "e", "ididi", eventDate2, NULL_VALUE);
+    }
+
+    // Return the given date as millis.
+    private long getMillis(String date) {
+        return LocalDate.parse(date, dateTimeFormatter).atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli();
+    }
+
+    // Return a new mock event.
+    private RawRecordContainer createMockEvent(String type, long date, IngestHelperInterface helper) {
+        RawRecordContainer event = niceMock(RawRecordContainer.class);
+        expect(event.getDataType()).andReturn(new Type(type, helper.getClass(), null, null, 4, null)).anyTimes();
+        expect(event.getDate()).andReturn(date).anyTimes();
+        replay(event);
+        return event;
+    }
+
+    // Add the given field and value to the field values.
+    private void givenFieldValue(String field, String value) {
+        this.fieldValues.put(field, new NormalizedFieldAndValue(field, value.getBytes()));
+    }
+
+    /**
+     * Initialize the EventMetadata instance.
+     */
+    private void initEventMetadata() {
+        this.eventMetadata = new EventMetadata(SHARD_TABLE_NAME, METADATA_TABLE_NAME, LOAD_DATE_TABLE_NAME, SHARD_INDEX_TABLE_NAME,
+                        SHARD_REVERSE_INDEX_TABLE_NAME, true);
+    }
+
+    // Return a new IngestHelper.
+    private IngestHelper createIngestHelper() {
+        return new IngestHelper(fieldValues);
+    }
+
+    // Return a new ContentIngestHelper.
+    private ContentIngestHelper createContentIngestHelper() {
+        return new ContentIngestHelper(fieldValues);
+    }
+
+    // Collect the bulk metadata entries from the event metadata instance.
+    private void collectBulkEntries() {
+        this.bulkMetadata = eventMetadata.getBulkMetadata();
+    }
+
+    // Assert the total number of bulk metadata entries.
+    private void assertTotalBulkEntries(int total) {
+        assertEquals(total, bulkMetadata.size());
+    }
+
+    // Assert that the collected bulk metadata entries contain a matching bulk ingest key and value.
+    private void assertContainsMetadataTableEntry(String field, String columnFamily, String columnQualifier, long date, Value value) {
+        assertTrue(bulkMetadata.containsEntry(createBulkIngestKey(METADATA_TABLE_NAME, field, columnFamily, columnQualifier, date), value));
+    }
+
+    // Assert that the collected bulk metadata entries contain a matching bulk ingest key and value, ignoring the timestamp.
+    private void assertContainsLoadDateTableEntry(String field, String columnFamily, String columnQualifier, Value value) {
+        Key partialKey = new Key(new Text(field), new Text(columnFamily), new Text(columnQualifier));
+        for (Map.Entry<BulkIngestKey,Value> entry : bulkMetadata.entries()) {
+            BulkIngestKey ingestKey = entry.getKey();
+            if (ingestKey.getTableName().equals(LOAD_DATE_TABLE_NAME) && ingestKey.getKey().equals(partialKey, PartialKey.ROW_COLFAM_COLQUAL)
+                            && entry.getValue().equals(value)) {
+                return;
             }
-        };
+        }
+        Assert.fail("No match found");
     }
 
-    public void setupAbstractContentIngestHelper(boolean tokenIndex, boolean listIndex) {
-        helper = new TestAbstractContentIngestHelper(createEventFields()) {
-
-            private boolean isTokenIndex = tokenIndex;
-            private boolean isListIndex = listIndex;
-
-            @Override
-            public boolean isDataTypeField(String fieldname) {
-                return true;
-            }
-
-            @Override
-            public List<datawave.data.type.Type<?>> getDataTypes(String fieldName) {
-                datawave.data.type.Type<?> type[] = {datawave.data.type.Type.Factory.createType(NUMBER_TYPE)};
-                return Arrays.asList(type);
-            }
-
-            @Override
-            public boolean isContentIndexField(String field) {
-                return isTokenIndex;
-            }
-
-            @Override
-            public boolean isIndexListField(String field) {
-                return isListIndex;
-            };
-
-        };
+    // Return a new bulk ingest key with the given attributes.
+    private BulkIngestKey createBulkIngestKey(Text tableName, String fieldName, String columnFamily, String columnQualifier, long timestamp) {
+        Key key = new Key(new Text(fieldName), new Text(columnFamily), new Text(columnQualifier), timestamp);
+        return new BulkIngestKey(tableName, key);
     }
 
-    @Test
-    public void testCreatesIndexedField() throws IOException {
-        setupMocks();
-
-        helper.addIndexedField(FIELD_TO_COUNT);
-        RawRecordMetadata eventMetadata = new EventMetadata(null, METADATA_TABLE_NAME, LOADDATES_TABLE_NAME, INDEX_TABLE_NAME, RINDEX_TABLE_NAME, true);
-        eventMetadata.addEvent(helper, event, createEventFields(), getLoadDateAsMillis());
-
-        assertFieldNameCountEquals(1L, INDEX_TABLE_NAME, FIELD_TO_COUNT, eventMetadata);
-        Assert.assertFalse(assertContainsKey(eventMetadata, RINDEX_TABLE_NAME, FIELD_TO_COUNT));
-        assertNonIndexedFieldNameIsMissing(eventMetadata);
-
-        Assert.assertTrue(assertEExists(FIELD_TO_COUNT, eventMetadata));
-        Assert.assertTrue(assertIExists(FIELD_TO_COUNT, eventMetadata));
-
-        EasyMock.verify(event);
+    // Return the given count as an encoded value.
+    private Value encodeCount(long count) {
+        return new Value(SummingCombiner.VAR_LEN_ENCODER.encode(count));
     }
 
-    @Test
-    public void testCreatesTermFrequencyForTokenization() throws IOException {
-        setupAbstractContentIngestHelper(true, false);
-        setupMocks();
+    /**
+     * Ingest helper implementation for basic testing.
+     */
+    private static class IngestHelper extends TestBaseIngestHelper {
 
-        helper.addIndexedField(FIELD_TO_COUNT);
-        RawRecordMetadata eventMetadata = new EventMetadata(null, METADATA_TABLE_NAME, LOADDATES_TABLE_NAME, INDEX_TABLE_NAME, RINDEX_TABLE_NAME, true);
-        eventMetadata.addEvent(helper, event, createEventFields(), getLoadDateAsMillis());
+        private final ArrayListMultimap<String,datawave.data.type.Type<?>> dataTypes = ArrayListMultimap.create();
 
-        assertFieldNameCountEquals(1L, INDEX_TABLE_NAME, FIELD_TO_COUNT, eventMetadata);
-        assertFieldNameCountEquals(1L, INDEX_TABLE_NAME, FIELD_WITH_TOKEN_TO_COUNT, eventMetadata);
-        assertTfCountEquals(0L, FIELD_WITH_TOKEN_TO_COUNT, eventMetadata);
-        Assert.assertTrue(assertTExists(FIELD_WITH_TOKEN_TO_COUNT, eventMetadata));
-        Assert.assertFalse(assertContainsKey(eventMetadata, RINDEX_TABLE_NAME, FIELD_TO_COUNT));
-        assertNonIndexedFieldNameIsMissing(eventMetadata);
-
-        EasyMock.verify(event);
-    }
-
-    @Test
-    public void testCreatesTermFrequencyForLists() throws IOException {
-        setupAbstractContentIngestHelper(false, true);
-        setupMocks();
-
-        RawRecordMetadata eventMetadata = new EventMetadata(null, METADATA_TABLE_NAME, LOADDATES_TABLE_NAME, INDEX_TABLE_NAME, RINDEX_TABLE_NAME, true);
-        eventMetadata.addEvent(helper, event, createEventFields(), getLoadDateAsMillis());
-
-        assertFieldNameCountEquals(1L, INDEX_TABLE_NAME, FIELD_TO_COUNT, eventMetadata);
-        Assert.assertFalse(assertContainsKey(eventMetadata, INDEX_TABLE_NAME, FIELD_WITH_TOKEN_TO_COUNT));
-        assertTfCountEquals(0L, FIELD_TO_COUNT, eventMetadata);
-        assertTCountEquals(0L, FIELD_TO_COUNT, eventMetadata);
-        Assert.assertFalse(assertContainsKey(eventMetadata, RINDEX_TABLE_NAME, FIELD_TO_COUNT));
-        assertNonIndexedFieldNameIsMissing(eventMetadata);
-
-        EasyMock.verify(event);
-    }
-
-    @Test
-    public void testCreatesReverseIndexedField() throws IOException {
-        setupMocks();
-
-        helper.addReverseIndexedField(FIELD_TO_COUNT);
-        RawRecordMetadata eventMetadata = new EventMetadata(null, METADATA_TABLE_NAME, LOADDATES_TABLE_NAME, INDEX_TABLE_NAME, RINDEX_TABLE_NAME, true);
-        eventMetadata.addEvent(helper, event, createEventFields(), getLoadDateAsMillis());
-
-        assertFieldNameCountEquals(1L, RINDEX_TABLE_NAME, FIELD_TO_COUNT, eventMetadata);
-        Assert.assertFalse(assertContainsKey(eventMetadata, INDEX_TABLE_NAME, FIELD_TO_COUNT));
-        assertNonIndexedFieldNameIsMissing(eventMetadata);
-
-        EasyMock.verify(event);
-    }
-
-    @Test
-    public void testCreatesBoth() throws IOException {
-        setupMocks();
-
-        helper.addReverseIndexedField(FIELD_TO_COUNT);
-        helper.addIndexedField(FIELD_TO_COUNT);
-
-        RawRecordMetadata eventMetadata = new EventMetadata(null, METADATA_TABLE_NAME, LOADDATES_TABLE_NAME, INDEX_TABLE_NAME, RINDEX_TABLE_NAME, true);
-        eventMetadata.addEvent(helper, event, createEventFields(), getLoadDateAsMillis());
-
-        assertFieldNameCountEquals(1L, INDEX_TABLE_NAME, FIELD_TO_COUNT, eventMetadata);
-        assertFieldNameCountEquals(1L, RINDEX_TABLE_NAME, FIELD_TO_COUNT, eventMetadata);
-
-        assertNonIndexedFieldNameIsMissing(eventMetadata);
-
-        EasyMock.verify(event);
-    }
-
-    @Test
-    public void testCountsTwo() throws IOException {
-        setupMocks();
-
-        helper.addIndexedField(FIELD_TO_COUNT);
-        RawRecordMetadata eventMetadata = new EventMetadata(null, METADATA_TABLE_NAME, LOADDATES_TABLE_NAME, INDEX_TABLE_NAME, RINDEX_TABLE_NAME, true);
-        eventMetadata.addEvent(helper, event, createEventFields(), getLoadDateAsMillis());
-        eventMetadata.addEvent(helper, event, createEventFields(), getLoadDateAsMillis());
-
-        assertFieldNameCountEquals(2L, INDEX_TABLE_NAME, FIELD_TO_COUNT, eventMetadata);
-
-        EasyMock.verify(event);
-    }
-
-    @Test
-    public void testWithExclusions() throws IOException {
-        setupMocks();
-        helper.addShardExclusionField(FIELD_TO_COUNT);
-        RawRecordMetadata eventMetadata = new EventMetadata(null, METADATA_TABLE_NAME, LOADDATES_TABLE_NAME, INDEX_TABLE_NAME, RINDEX_TABLE_NAME, true);
-        eventMetadata.addEvent(helper, event, createEventFields(), getLoadDateAsMillis());
-
-        Assert.assertFalse(assertEExists(FIELD_TO_COUNT, eventMetadata));
-
-        EasyMock.verify(event);
-    }
-
-    private void assertFieldNameCountEquals(long expectedCount, Text tableName, String fieldName, RawRecordMetadata eventMetadata) {
-        Text expectedColumnFamily = new Text(FIELD_NAME + RawRecordMetadata.DELIMITER + tableName);
-        Text expectedColumnQualifier = new Text(VALUE_FOR_LOAD_DATE + RawRecordMetadata.DELIMITER + DATA_TYPE);
-        assertCountEquals(expectedCount, fieldName, eventMetadata, LOADDATES_TABLE_NAME, expectedColumnFamily, expectedColumnQualifier);
-    }
-
-    private boolean assertEExists(String fieldName, RawRecordMetadata eventMetadata) {
-        Text expectedColumnFamily = new Text(E);
-        Text expectedColumnQualifier = new Text(DATA_TYPE);
-        return assertExists(fieldName, eventMetadata, METADATA_TABLE_NAME, expectedColumnFamily, expectedColumnQualifier);
-    }
-
-    private boolean assertIExists(String fieldName, RawRecordMetadata eventMetadata) {
-        Text expectedColumnFamily = new Text(I);
-        Text expectedColumnQualifier = new Text(DATA_TYPE);
-        return assertExists(fieldName, eventMetadata, METADATA_TABLE_NAME, expectedColumnFamily, expectedColumnQualifier);
-    }
-
-    private void assertTfCountEquals(long expectedCount, String fieldName, RawRecordMetadata eventMetadata) {
-        Text expectedColumnFamily = new Text(TF);
-        Text expectedColumnQualifier = new Text(DATA_TYPE);
-        assertCountEquals(expectedCount, fieldName, eventMetadata, METADATA_TABLE_NAME, expectedColumnFamily, expectedColumnQualifier);
-    }
-
-    private boolean assertTExists(String fieldName, RawRecordMetadata eventMetadata) {
-        Text expectedColumnFamily = new Text(T);
-        Text expectedColumnQualifier = new Text(DATA_TYPE + RawRecordMetadata.DELIMITER + NUMBER_TYPE);
-        return assertExists(fieldName, eventMetadata, METADATA_TABLE_NAME, expectedColumnFamily, expectedColumnQualifier);
-    }
-
-    private void assertTCountEquals(long expectedCount, String fieldName, RawRecordMetadata eventMetadata) {
-        Text expectedColumnFamily = new Text(T);
-        Text expectedColumnQualifier = new Text(DATA_TYPE + RawRecordMetadata.DELIMITER + NUMBER_TYPE);
-        assertCountEquals(expectedCount, fieldName, eventMetadata, METADATA_TABLE_NAME, expectedColumnFamily, expectedColumnQualifier);
-    }
-
-    private void assertCountEquals(long expectedCount, String rowId, RawRecordMetadata eventMetadata, Text tableName, Text expectedColumnFamily,
-                    Text expectedColumnQualifier) {
-        BulkIngestKey expectedBulkIngestKey = createExpectedBulkIngestKey(expectedColumnFamily, tableName, rowId, expectedColumnQualifier);
-        Assert.assertTrue("Didn't have entry for " + expectedColumnFamily + ", " + rowId, assertContainsKey(eventMetadata, expectedBulkIngestKey));
-        Iterator<Value> values = getCorrespondingValue(eventMetadata, expectedBulkIngestKey).iterator();
-        Assert.assertTrue(values.hasNext());
-
-        byte[] value = values.next().get();
-        if (expectedCount > 0) {
-            Assert.assertEquals(expectedCount, (long) SummingCombiner.VAR_LEN_ENCODER.decode(value));
+        public IngestHelper(Multimap<String,NormalizedContentInterface> fieldValues) {
+            super(fieldValues);
         }
 
-        Assert.assertFalse(values.hasNext());
-    }
-
-    private boolean assertExists(String rowId, RawRecordMetadata eventMetadata, Text tableName, Text expectedColumnFamily, Text expectedColumnQualifier) {
-        BulkIngestKey expectedBulkIngestKey = createExpectedBulkIngestKey(expectedColumnFamily, tableName, rowId, expectedColumnQualifier);
-        return assertContainsKey(eventMetadata, expectedBulkIngestKey);
-    }
-
-    private void assertNonIndexedFieldNameIsMissing(RawRecordMetadata eventMetadata) {
-        Assert.assertFalse(assertContainsKey(eventMetadata, RINDEX_TABLE_NAME, FIELD_NAME_FOR_LOAD_DATE));
-        Assert.assertFalse(assertContainsKey(eventMetadata, INDEX_TABLE_NAME, FIELD_NAME_FOR_LOAD_DATE));
-    }
-
-    private boolean assertContainsKey(RawRecordMetadata eventMetadata, Text columnFamily, String fieldName) {
-        BulkIngestKey expectedBulkIngestKey = createExpectedBulkIngestKey(columnFamily, fieldName);
-        return null != getCorrespondingValue(eventMetadata, expectedBulkIngestKey);
-    }
-
-    private boolean assertContainsKey(RawRecordMetadata eventMetadata, BulkIngestKey expectedBulkIngestKey) {
-        return null != getCorrespondingValue(eventMetadata, expectedBulkIngestKey);
-    }
-
-    private Collection<Value> getCorrespondingValue(RawRecordMetadata eventMetadata, BulkIngestKey expectedBulkIngestKey) {
-        Multimap<BulkIngestKey,Value> bulkMetadata = eventMetadata.getBulkMetadata();
-        for (BulkIngestKey actualBulkIngestKey : bulkMetadata.keySet()) {
-            if (actualBulkIngestKey.getTableName().equals(expectedBulkIngestKey.getTableName())
-                            && actualBulkIngestKey.getKey().equals(expectedBulkIngestKey.getKey(), PartialKey.ROW_COLFAM_COLQUAL_COLVIS)) {
-                return bulkMetadata.get(actualBulkIngestKey);
-            }
+        @Override
+        public List<datawave.data.type.Type<?>> getDataTypes(String fieldName) {
+            return dataTypes.get(fieldName);
         }
-        return null;
-    }
 
-    private void setupMocks() {
-        try {
-            EasyMock.expect(event.getDataType()).andReturn(new Type(DATA_TYPE, helper.getClass(), null, null, 4, null)).anyTimes();
-            EasyMock.expect(event.getDate()).andReturn(new Date().getTime()).anyTimes();
-            EasyMock.expect(event.getRawData()).andReturn(new byte[] {}).anyTimes();
-            EasyMock.replay(event);
-        } catch (Exception e) {
-            throw new RuntimeException(e); // make the test fail if the mock wasn't created properly
+        private void addDataType(String field, datawave.data.type.Type<?> dataType) {
+            dataTypes.put(field, dataType);
         }
     }
 
-    private BulkIngestKey createExpectedBulkIngestKey(Text columnFamily, String fieldName) {
-        return createExpectedBulkIngestKey(columnFamily, LOADDATES_TABLE_NAME, fieldName,
-                        new Text(VALUE_FOR_LOAD_DATE + RawRecordMetadata.DELIMITER + DATA_TYPE));
-    }
+    /**
+     * Ingest helper implementation for testing term frequency row generation.
+     */
+    private static class ContentIngestHelper extends TestAbstractContentIngestHelper {
 
-    private BulkIngestKey createExpectedBulkIngestKey(Text columnFamily, Text tableName, String fieldName, Text columnQualifier) {
-        Key k = new Key(new Text(fieldName), columnFamily, columnQualifier);
-        return new BulkIngestKey(new Text(tableName), k);
-    }
+        private final ArrayListMultimap<String,datawave.data.type.Type<?>> dataTypes = ArrayListMultimap.create();
+        private final Set<String> contentIndexFields = new HashSet<>();
+        private final Set<String> indexListFields = new HashSet<>();
 
-    private Multimap<String,NormalizedContentInterface> createEventFields() {
-        Multimap<String,NormalizedContentInterface> eventFields = HashMultimap.create();
-        addToEventFields(eventFields, FIELD_NAME_FOR_LOAD_DATE, "" + getLoadDateAsMillis());
-        addToEventFields(eventFields, FIELD_TO_COUNT, "HEY HO HEY HO");
-        return eventFields;
-    }
-
-    private long getLoadDateAsMillis() {
-        try {
-            return simpleDateFormat.parse(VALUE_FOR_LOAD_DATE).getTime();
-        } catch (ParseException e) {
-            throw new RuntimeException(e);
+        public ContentIngestHelper(Multimap<String,NormalizedContentInterface> fieldValues) {
+            super(fieldValues);
         }
-    }
 
-    private void addToEventFields(Multimap<String,NormalizedContentInterface> eventFields, String fieldName, String value) {
-        NormalizedContentInterface loadDateContent = new NormalizedFieldAndValue(fieldName, value.getBytes());
-        eventFields.put(fieldName, loadDateContent);
+        @Override
+        public boolean isContentIndexField(String field) {
+            return contentIndexFields.contains(field);
+        }
+
+        private void addContentIndexField(String field) {
+            this.contentIndexFields.add(field);
+        }
+
+        @Override
+        public boolean isIndexListField(String field) {
+            return indexListFields.contains(field);
+        }
+
+        private void addIndexListField(String field) {
+            this.indexListFields.add(field);
+        }
+
+        @Override
+        public List<datawave.data.type.Type<?>> getDataTypes(String fieldName) {
+            return dataTypes.get(fieldName);
+        }
+
+        private void addDataType(String field, datawave.data.type.Type<?> dataType) {
+            dataTypes.put(field, dataType);
+        }
     }
 }

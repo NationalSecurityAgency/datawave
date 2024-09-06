@@ -13,16 +13,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.commons.jexl2.Expression;
-import org.apache.commons.jexl2.JexlContext;
-import org.apache.commons.jexl2.JexlEngine;
-import org.apache.commons.jexl2.JexlException;
-import org.apache.commons.jexl2.MapContext;
-import org.apache.commons.jexl2.parser.ASTFunctionNode;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ASTReference;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.commons.jexl3.JexlBuilder;
+import org.apache.commons.jexl3.JexlContext;
+import org.apache.commons.jexl3.JexlException;
+import org.apache.commons.jexl3.JexlExpression;
+import org.apache.commons.jexl3.MapContext;
+import org.apache.commons.jexl3.introspection.JexlPermissions;
+import org.apache.commons.jexl3.parser.ASTFunctionNode;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.log4j.Logger;
 import org.javatuples.Triplet;
 import org.junit.Assert;
@@ -38,6 +38,7 @@ import datawave.ingest.protobuf.TermWeightPosition;
 import datawave.query.Constants;
 import datawave.query.jexl.ArithmeticJexlEngines;
 import datawave.query.jexl.DatawaveJexlEngine;
+import datawave.query.jexl.DefaultArithmetic;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.TermFrequencyList.Zone;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
@@ -48,7 +49,7 @@ import datawave.query.util.MockMetadataHelper;
 
 public class ContentFunctionsTest {
     static final Logger log = Logger.getLogger(ContentFunctionsTest.class);
-    private static JexlEngine engine = new DatawaveJexlEngine();
+    private static DatawaveJexlEngine engine;
 
     private JexlContext context;
     private TermOffsetMap termOffSetMap;
@@ -60,11 +61,12 @@ public class ContentFunctionsTest {
 
     @BeforeClass
     public static void setUp() throws URISyntaxException {
-        Map<String,Object> functions = new HashMap<>();
+        Map<String,Object> functions = new HashMap<>(ArithmeticJexlEngines.functions());
         functions.put("f", QueryFunctions.class);
         functions.put("geo", GeoFunctions.class);
         functions.put("content", ContentFunctions.class);
-        engine.setFunctions(functions);
+        engine = new DatawaveJexlEngine(
+                        new JexlBuilder().debug(false).namespaces(functions).arithmetic(new DefaultArithmetic()).permissions(JexlPermissions.UNRESTRICTED));
     }
 
     @Before
@@ -182,7 +184,7 @@ public class ContentFunctionsTest {
     @Test
     public void testEvaluation1() {
         String query = buildFunction(ContentFunctions.CONTENT_WITHIN_FUNCTION_NAME, "1", Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'dog'", "'cat'");
-        Expression expr = engine.createExpression(query);
+        JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1, list2;
         list1 = asList(Arrays.asList(1, 2, 3), Arrays.asList(0, 0, 0));
@@ -203,7 +205,7 @@ public class ContentFunctionsTest {
     @Test
     public void reverseSharedTokenIndex() {
         String query = buildFunction(ContentFunctions.CONTENT_PHRASE_FUNCTION_NAME, Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'a'", "'b'", "'c'");
-        Expression expr = engine.createExpression(query);
+        JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> t1, t2, t3;
         t1 = asList(Arrays.asList(234, 239, 252, 257, 265, 281, 286, 340, 363, 367), Arrays.asList(0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
@@ -226,7 +228,7 @@ public class ContentFunctionsTest {
     @Test
     public void forwardSharedTokenIndex() {
         String query = buildFunction(ContentFunctions.CONTENT_PHRASE_FUNCTION_NAME, Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'c'", "'b'", "'a'");
-        Expression expr = engine.createExpression(query);
+        JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> t1, t2, t3;
         t1 = asList(Arrays.asList(234, 239, 252, 257, 265, 281, 286, 340, 363, 367), Arrays.asList(0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
@@ -249,7 +251,7 @@ public class ContentFunctionsTest {
     @Test
     public void reverseAllSharedTokenIndex() {
         String query = buildFunction(ContentFunctions.CONTENT_PHRASE_FUNCTION_NAME, Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'a'", "'b'", "'c'");
-        Expression expr = engine.createExpression(query);
+        JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> t1, t2, t3;
         t1 = asList(Arrays.asList(234, 239, 252, 257, 265, 281, 286, 340, 363, 367), Arrays.asList(0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
@@ -272,7 +274,7 @@ public class ContentFunctionsTest {
     @Test
     public void forwardAllSharedTokenIndex() {
         String query = buildFunction(ContentFunctions.CONTENT_PHRASE_FUNCTION_NAME, Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'c'", "'b'", "'a'");
-        Expression expr = engine.createExpression(query);
+        JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> t1, t2, t3;
         t1 = asList(Arrays.asList(234, 239, 252, 257, 265, 281, 286, 340, 363, 367), Arrays.asList(0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
@@ -298,7 +300,7 @@ public class ContentFunctionsTest {
     @Test
     public void testEvaluationNoContentFields() {
         String query = buildFunction(ContentFunctions.CONTENT_WITHIN_FUNCTION_NAME, "1", Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'dog'", "'cat'");
-        Expression expr = engine.createExpression(query);
+        JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1, list2;
         list1 = asList(Arrays.asList(1, 2, 3), Arrays.asList(0, 0, 0));
@@ -319,7 +321,7 @@ public class ContentFunctionsTest {
     @Test
     public void testQuotedEvaluation() {
         String query = buildFunction(ContentFunctions.CONTENT_WITHIN_FUNCTION_NAME, "1", Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'dog\\'s'", "'cat'");
-        Expression expr = engine.createExpression(query);
+        JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1, list2;
         list1 = asList(1, 2, 3);
@@ -343,7 +345,7 @@ public class ContentFunctionsTest {
     @Test(expected = JexlException.class)
     public void testQuotedEvaluation_1_fail() {
         String query = buildFunction(ContentFunctions.CONTENT_WITHIN_FUNCTION_NAME, "1", Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'dog's'", "'cat'");
-        Expression expr = engine.createExpression(query);
+        JexlExpression expr = engine.createExpression(query);
 
         fail("Query should have failed to parse");
     }
@@ -351,7 +353,7 @@ public class ContentFunctionsTest {
     @Test
     public void testEvaluation1_1() {
         String query = buildFunction(ContentFunctions.CONTENT_WITHIN_FUNCTION_NAME, "1", Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'dog'", "'cat'");
-        Expression expr = engine.createExpression(query);
+        JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1, list2;
         list1 = asList(1);
@@ -372,7 +374,7 @@ public class ContentFunctionsTest {
     @Test
     public void testEvaluation2() {
         String query = buildFunction(ContentFunctions.CONTENT_WITHIN_FUNCTION_NAME, "1", Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'dog'", "'cat'");
-        Expression expr = engine.createExpression(query);
+        JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1, list2;
         list1 = asList(1, 2, 3);
@@ -391,7 +393,7 @@ public class ContentFunctionsTest {
     @Test
     public void testEvaluation3() {
         String query = buildFunction(ContentFunctions.CONTENT_WITHIN_FUNCTION_NAME, "1", Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'dog'", "'cat'");
-        Expression expr = engine.createExpression(query);
+        JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1, list2;
         list1 = asList(1, 2, 3);
@@ -410,7 +412,7 @@ public class ContentFunctionsTest {
     @Test
     public void testEvaluationWithSkips() {
         String query = buildFunction(ContentFunctions.CONTENT_WITHIN_FUNCTION_NAME, "1", Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'dog'", "'cat'");
-        Expression expr = engine.createExpression(query);
+        JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1, list2;
         list1 = asList(Arrays.asList(4), Arrays.asList(1));
@@ -431,7 +433,7 @@ public class ContentFunctionsTest {
     @Test
     public void testEvaluationEmptyOffsetList() {
         String query = buildFunction(ContentFunctions.CONTENT_WITHIN_FUNCTION_NAME, "1", Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'dog'", "'cat'");
-        Expression expr = engine.createExpression(query);
+        JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1, list2;
         list1 = asList(1, 2, 3);
@@ -453,7 +455,7 @@ public class ContentFunctionsTest {
     public void testEvaluationThreeTerms() {
         String query = buildFunction(ContentFunctions.CONTENT_WITHIN_FUNCTION_NAME, "3", Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'dog'", "'cat'",
                         "'rat'");
-        Expression expr = engine.createExpression(query);
+        JexlExpression expr = engine.createExpression(query);
 
         // (15-3)-9 <= 3
         List<TermWeightPosition> list1, list2, list3;
@@ -478,7 +480,7 @@ public class ContentFunctionsTest {
     public void testEvaluationThreeTermsTooSmallDistance() {
         String query = buildFunction(ContentFunctions.CONTENT_WITHIN_FUNCTION_NAME, "2", Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'dog'", "'cat'",
                         "'rat'");
-        Expression expr = engine.createExpression(query);
+        JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1, list2, list3;
         list1 = asList(1, 2, 3);
@@ -502,7 +504,7 @@ public class ContentFunctionsTest {
     public void testEvaluationFailedThreeTerms() {
         String query = buildFunction(ContentFunctions.CONTENT_WITHIN_FUNCTION_NAME, "3", Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'dog'", "'cat'",
                         "'rat'");
-        Expression expr = engine.createExpression(query);
+        JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1, list2, list3;
         list1 = asList(1, 2, 3);
@@ -526,7 +528,7 @@ public class ContentFunctionsTest {
     public void testEvaluationMiddleMatch() {
         String query = buildFunction(ContentFunctions.CONTENT_WITHIN_FUNCTION_NAME, "2", Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'dog'", "'cat'",
                         "'rat'");
-        Expression expr = engine.createExpression(query);
+        JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1, list2, list3;
         list1 = asList(1, 5, 10);
@@ -549,7 +551,7 @@ public class ContentFunctionsTest {
     @Test
     public void testEvaluationAdjacent1() {
         String query = buildFunction(ContentFunctions.CONTENT_ADJACENT_FUNCTION_NAME, Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'dog'", "'cat'");
-        Expression expr = engine.createExpression(query);
+        JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1, list2;
         list1 = asList(1);
@@ -570,7 +572,7 @@ public class ContentFunctionsTest {
     @Test
     public void testEvaluationAdjacent2() {
         String query = buildFunction(ContentFunctions.CONTENT_ADJACENT_FUNCTION_NAME, Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'dog'", "'cat'");
-        Expression expr = engine.createExpression(query);
+        JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1, list2;
         list1 = asList(1, 2, 3);
@@ -590,7 +592,7 @@ public class ContentFunctionsTest {
     @Test
     public void testEvaluationAdjacent3() {
         String query = buildFunction(ContentFunctions.CONTENT_ADJACENT_FUNCTION_NAME, Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'dog'", "'cat'");
-        Expression expr = engine.createExpression(query);
+        JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1, list2;
         list1 = asList(1, 2, 3);
@@ -610,7 +612,7 @@ public class ContentFunctionsTest {
     @Test
     public void testEvaluationAdjacentEmptyOffsetList() {
         String query = buildFunction(ContentFunctions.CONTENT_ADJACENT_FUNCTION_NAME, Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'dog'", "'cat'");
-        Expression expr = engine.createExpression(query);
+        JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1, list2;
         list1 = asList(1, 2, 3);
@@ -629,7 +631,7 @@ public class ContentFunctionsTest {
     @Test
     public void testEvaluationAdjacentThreeTerms() {
         String query = buildFunction(ContentFunctions.CONTENT_ADJACENT_FUNCTION_NAME, Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'dog'", "'cat'", "'rat'");
-        Expression expr = engine.createExpression(query);
+        JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1, list2, list3;
         list1 = asList(1, 5, 9);
@@ -652,7 +654,7 @@ public class ContentFunctionsTest {
     @Test
     public void testEvaluationAdjacentFailedThreeTerms() {
         String query = buildFunction(ContentFunctions.CONTENT_ADJACENT_FUNCTION_NAME, Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'dog'", "'cat'", "'rat'");
-        Expression expr = engine.createExpression(query);
+        JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1, list2, list3;
         list1 = asList(1, 2, 3);
@@ -674,7 +676,7 @@ public class ContentFunctionsTest {
     @Test
     public void testEvaluationPhraseBasic() {
         String query = buildFunction(ContentFunctions.CONTENT_PHRASE_FUNCTION_NAME, Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'dog'", "'cat'");
-        Expression expr = engine.createExpression(query);
+        JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1, list2;
         list1 = asList(1, 2, 3);
@@ -695,7 +697,7 @@ public class ContentFunctionsTest {
     @Test
     public void testEvaluationPhraseBasicWithSkips() {
         String query = buildFunction(ContentFunctions.CONTENT_PHRASE_FUNCTION_NAME, Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'dog'", "'cat'");
-        Expression expr = engine.createExpression(query);
+        JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1, list2;
         list1 = asList(Arrays.asList(1, 2, 3), Arrays.asList(0, 1, 0));
@@ -716,7 +718,7 @@ public class ContentFunctionsTest {
     @Test
     public void testEvaluationPhraseBasic2() {
         String query = buildFunction(ContentFunctions.CONTENT_PHRASE_FUNCTION_NAME, Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'dog'", "'cat'");
-        Expression expr = engine.createExpression(query);
+        JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1, list2;
         list1 = asList(1, 2, 3);
@@ -737,7 +739,7 @@ public class ContentFunctionsTest {
     @Test
     public void testEvaluationPhraseBasic2WithSkips() {
         String query = buildFunction(ContentFunctions.CONTENT_PHRASE_FUNCTION_NAME, Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'dog'", "'cat'");
-        Expression expr = engine.createExpression(query);
+        JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1, list2;
         list1 = asList(Arrays.asList(1, 2, 3), Arrays.asList(0, 1, 0));
@@ -758,7 +760,7 @@ public class ContentFunctionsTest {
     @Test
     public void testEvaluationPhraseBasic3() {
         String query = buildFunction(ContentFunctions.CONTENT_PHRASE_FUNCTION_NAME, Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'dog'", "'cat'", "'fish'");
-        Expression expr = engine.createExpression(query);
+        JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1, list2, list3;
         list1 = asList(1);
@@ -781,7 +783,7 @@ public class ContentFunctionsTest {
     @Test
     public void testEvaluationPhraseBasic3WithSkips() {
         String query = buildFunction(ContentFunctions.CONTENT_PHRASE_FUNCTION_NAME, Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'dog'", "'cat'", "'fish'");
-        Expression expr = engine.createExpression(query);
+        JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1, list2, list3;
         list1 = asList(Arrays.asList(1), Arrays.asList(0));
@@ -804,7 +806,7 @@ public class ContentFunctionsTest {
     @Test
     public void testEvaluationPhraseBasic3FavorContentOrderedFunction() {
         String query = buildFunction(ContentFunctions.CONTENT_PHRASE_FUNCTION_NAME, Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'dog'", "'cat'", "'fish'");
-        Expression expr = engine.createExpression(query);
+        JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1, list2, list3;
         list1 = asList(1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 31, 33, 35, 37, 39);
@@ -827,7 +829,7 @@ public class ContentFunctionsTest {
     @Test
     public void testEvaluationPhraseBasicOrderFail() {
         String query = buildFunction(ContentFunctions.CONTENT_PHRASE_FUNCTION_NAME, Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'dog'", "'cat'");
-        Expression expr = engine.createExpression(query);
+        JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1, list2;
         list1 = asList(3, 4, 5);
@@ -848,7 +850,7 @@ public class ContentFunctionsTest {
     @Test
     public void testEvaluationPhraseBasicFailWithSkips() {
         String query = buildFunction(ContentFunctions.CONTENT_PHRASE_FUNCTION_NAME, Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'dog'", "'cat'");
-        Expression expr = engine.createExpression(query);
+        JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1, list2;
         list1 = asList(Arrays.asList(3, 4, 5), Arrays.asList(0, 0, 2));
@@ -869,7 +871,7 @@ public class ContentFunctionsTest {
     @Test
     public void testEvaluationPhraseBasicOrderFail2() {
         String query = buildFunction(ContentFunctions.CONTENT_PHRASE_FUNCTION_NAME, Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'dog'", "'cat'", "'fish'");
-        Expression expr = engine.createExpression(query);
+        JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1, list2, list3;
         list1 = asList(4);
@@ -892,7 +894,7 @@ public class ContentFunctionsTest {
     @Test
     public void testEvaluationPhraseBasicFail2WithSkips() {
         String query = buildFunction(ContentFunctions.CONTENT_PHRASE_FUNCTION_NAME, Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'dog'", "'cat'", "'fish'");
-        Expression expr = engine.createExpression(query);
+        JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1, list2, list3;
         list1 = asList(Arrays.asList(4), Arrays.asList(0));
@@ -915,7 +917,7 @@ public class ContentFunctionsTest {
     @Test
     public void testEvaluationPhraseBasicOrderFail3() {
         String query = buildFunction(ContentFunctions.CONTENT_PHRASE_FUNCTION_NAME, Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'dog'", "'cat'", "'fish'");
-        Expression expr = engine.createExpression(query);
+        JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1, list2, list3;
         list1 = asList(2);
@@ -938,7 +940,7 @@ public class ContentFunctionsTest {
     @Test
     public void testEvaluationPhraseBasicFail3WithSkips() {
         String query = buildFunction(ContentFunctions.CONTENT_PHRASE_FUNCTION_NAME, Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'dog'", "'cat'", "'fish'");
-        Expression expr = engine.createExpression(query);
+        JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1, list2, list3;
         list1 = asList(Arrays.asList(2), Arrays.asList(0));
@@ -961,7 +963,7 @@ public class ContentFunctionsTest {
     @Test
     public void testEvaluationPhraseBasicTermOrderFail() {
         String query = buildFunction(ContentFunctions.CONTENT_PHRASE_FUNCTION_NAME, Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'cat'", "'dog'");
-        Expression expr = engine.createExpression(query);
+        JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1, list2;
         list1 = asList(1, 2, 3);
@@ -982,7 +984,7 @@ public class ContentFunctionsTest {
     @Test
     public void testEvaluationPhraseBasicTermOrderFailWithSkips() {
         String query = buildFunction(ContentFunctions.CONTENT_PHRASE_FUNCTION_NAME, Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'cat'", "'dog'");
-        Expression expr = engine.createExpression(query);
+        JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1, list2;
         list1 = asList(Arrays.asList(1, 2, 3), Arrays.asList(1, 1, 1));
@@ -1003,7 +1005,7 @@ public class ContentFunctionsTest {
     @Test
     public void testEvaluationPhraseSameTermFailure() {
         String query = buildFunction(ContentFunctions.CONTENT_PHRASE_FUNCTION_NAME, Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'cat'", "'cat'");
-        Expression expr = engine.createExpression(query);
+        JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1;
         list1 = asList(1, 3, 5);
@@ -1022,7 +1024,7 @@ public class ContentFunctionsTest {
     @Test
     public void testEvaluationPhraseSameTermSuccessFirst() {
         String query = buildFunction(ContentFunctions.CONTENT_PHRASE_FUNCTION_NAME, Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'cat'", "'cat'");
-        Expression expr = engine.createExpression(query);
+        JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1;
         list1 = asList(1, 2, 5);
@@ -1041,7 +1043,7 @@ public class ContentFunctionsTest {
     @Test
     public void testEvaluationPhraseSameTermSuccessLast() {
         String query = buildFunction(ContentFunctions.CONTENT_PHRASE_FUNCTION_NAME, Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'cat'", "'cat'");
-        Expression expr = engine.createExpression(query);
+        JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1;
         list1 = asList(1, 4, 5);
@@ -1060,7 +1062,7 @@ public class ContentFunctionsTest {
     @Test
     public void testEvaluationAdjacencySameTermFailureTest() {
         String query = buildFunction(ContentFunctions.CONTENT_WITHIN_FUNCTION_NAME, "2", Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'cat'", "'cat'");
-        Expression expr = engine.createExpression(query);
+        JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1;
         list1 = asList(1, 4);
@@ -1079,7 +1081,7 @@ public class ContentFunctionsTest {
     @Test
     public void testEvaluationAdjacencySameTermSuccessTest() {
         String query = buildFunction(ContentFunctions.CONTENT_WITHIN_FUNCTION_NAME, "2", Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'cat'", "'cat'");
-        Expression expr = engine.createExpression(query);
+        JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1;
         list1 = asList(1, 3);
@@ -1098,7 +1100,7 @@ public class ContentFunctionsTest {
     @Test
     public void testEvaluationAdjacencySameTermWithSkipsSuccessTest() {
         String query = buildFunction(ContentFunctions.CONTENT_WITHIN_FUNCTION_NAME, "2", Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'cat'", "'cat'");
-        Expression expr = engine.createExpression(query);
+        JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1;
         list1 = asList(Arrays.asList(1, 4), Arrays.asList(0, 1));
@@ -1117,7 +1119,7 @@ public class ContentFunctionsTest {
     @Test
     public void testEvaluationAdjacencySameTermMixedSuccessTest() {
         String query = buildFunction(ContentFunctions.CONTENT_WITHIN_FUNCTION_NAME, "4", Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'cat'", "'dog'");
-        Expression expr = engine.createExpression(query);
+        JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1, list2;
         list1 = asList(1, 5);
@@ -1142,7 +1144,7 @@ public class ContentFunctionsTest {
     @Test
     public void testEvaluationPhraseBasicTermOrderFalsePositive() {
         String query = buildFunction(phraseFunction, Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'cat'", "'dog'");
-        Expression expr = engine.createExpression(query);
+        JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1, list2;
         list1 = asList(1, 2, 3);
@@ -1163,7 +1165,7 @@ public class ContentFunctionsTest {
     @Test
     public void testEvaluationPhraseThreeTerm() {
         String query = buildFunction(phraseFunction, Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'dog'", "'cat'", "'rat'");
-        Expression expr = engine.createExpression(query);
+        JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1, list2, list3;
         list1 = asList(1, 2, 4);
@@ -1186,8 +1188,8 @@ public class ContentFunctionsTest {
     @Test
     public void testEvaluationPhraseThreeTermFail() {
         String query = buildFunction(phraseFunction, Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'cat'", "'dog'", "'rat'");
-        Expression expr = engine.createExpression(query);
 
+        JexlExpression expr = engine.createExpression(query);
         List<TermWeightPosition> list1, list2, list3;
         list1 = asList(1, 2, 4);
         list2 = asList(5, 7, 9);
@@ -1209,7 +1211,7 @@ public class ContentFunctionsTest {
     @Test
     public void testEvaluationPhraseThreeTermPass() {
         String query = buildFunction(phraseFunction, Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'cat'", "'rat'", "'dog'");
-        Expression expr = engine.createExpression(query);
+        JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1, list2, list3;
         list1 = asList(1, 2, 4); // cat
@@ -1232,7 +1234,7 @@ public class ContentFunctionsTest {
     @Test
     public void testEvaluationPhraseThreeTermFail2() {
         String query = buildFunction(phraseFunction, Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'cat'", "'rat'", "'dog'");
-        Expression expr = engine.createExpression(query);
+        JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1, list2, list3;
         list1 = asList(1, 2, 4); // cat
@@ -1255,7 +1257,7 @@ public class ContentFunctionsTest {
     @Test
     public void testEvaluationPhraseTermOverlap() {
         String query = buildFunction(phraseFunction, Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'cat'", "'rat'", "'dog'");
-        Expression expr = engine.createExpression(query);
+        JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1, list2, list3;
         list1 = asList(1); // cat
@@ -1278,8 +1280,8 @@ public class ContentFunctionsTest {
     @Test
     public void testEvaluationPhraseTermOverlapWithSkips() {
         String query = buildFunction(phraseFunction, Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'cat'", "'rat'", "'dog'");
-        Expression expr = engine.createExpression(query);
 
+        JexlExpression expr = engine.createExpression(query);
         List<TermWeightPosition> list1, list2, list3;
         list1 = asList(false, Arrays.asList(135), Arrays.asList(6)); // cat
         list2 = asList(Arrays.asList(135), Arrays.asList(6)); // rat
@@ -1301,7 +1303,7 @@ public class ContentFunctionsTest {
     @Test
     public void testEvaluationPhraseTermOverlapPass2() {
         String query = buildFunction(phraseFunction, Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'cat'", "'rat'", "'dog'");
-        Expression expr = engine.createExpression(query);
+        JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1, list2, list3;
         list1 = asList(1); // cat
@@ -1324,7 +1326,7 @@ public class ContentFunctionsTest {
     @Test
     public void testEvaluationPhraseTermOverlapPass3() {
         String query = buildFunction(phraseFunction, Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'cat'", "'rat'");
-        Expression expr = engine.createExpression(query);
+        JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1, list2;
         list1 = asList(1); // cat
@@ -1345,7 +1347,7 @@ public class ContentFunctionsTest {
     @Test
     public void testEvaluationPhraseTermOverlapPass4() {
         String query = buildFunction(phraseFunction, Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'cat'", "'rat'");
-        Expression expr = engine.createExpression(query);
+        JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1, list2;
         list1 = asList(5); // cat
@@ -1366,7 +1368,7 @@ public class ContentFunctionsTest {
     @Test
     public void testEvaluationPhraseTermOverlapFail() {
         String query = buildFunction(phraseFunction, Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'cat'", "'rat'", "'dog'");
-        Expression expr = engine.createExpression(query);
+        JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1, list2, list3;
         list1 = asList(2);
@@ -1389,7 +1391,7 @@ public class ContentFunctionsTest {
     @Test
     public void testEvaluationScorePass() {
         String query = buildFunction(scoredPhraseFunction, "'CONTENT'", "-0.200", Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'dog'", "'cat'");
-        Expression expr = engine.createExpression(query);
+        JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1, list2;
         list1 = asList(Arrays.asList(1, 2, 3), Arrays.asList(0, 0, 0), Arrays.asList(-0.223f, -1.4339f, -0.0001f));
@@ -1410,7 +1412,7 @@ public class ContentFunctionsTest {
     @Test
     public void testEvaluationScoreNoZonePass() {
         String query = buildFunction(scoredPhraseFunction, "-0.200", Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'dog'", "'cat'");
-        Expression expr = engine.createExpression(query);
+        JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1, list2;
         list1 = asList(Arrays.asList(1, 2, 3), Arrays.asList(0, 0, 0), Arrays.asList(-0.223f, -1.4339f, -0.0001f));
@@ -1431,7 +1433,7 @@ public class ContentFunctionsTest {
     @Test
     public void testEvaluationScoreFail() {
         String query = buildFunction(scoredPhraseFunction, "'CONTENT'", "-0.200", Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'dog'", "'cat'");
-        Expression expr = engine.createExpression(query);
+        JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1, list2;
         list1 = asList(Arrays.asList(1, 2, 3), Arrays.asList(0, 0, 0), Arrays.asList(-0.223f, -1.4339f, -0.2001f));
@@ -1455,7 +1457,7 @@ public class ContentFunctionsTest {
                         "'cat'");
         String query2 = buildFunction(ContentFunctions.CONTENT_WITHIN_FUNCTION_NAME, "3", Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'dog'", "'cat'");
         String query = query1 + "||" + query2;
-        Expression expr = engine.createExpression(query);
+        JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1, list2, list3;
         list1 = asList(1, 2, 4);
@@ -1471,7 +1473,7 @@ public class ContentFunctionsTest {
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
 
-        Assert.assertTrue(expect(o, true));
+        Assert.assertTrue(expect(ArithmeticJexlEngines.isMatched(o), true));
         assertPhraseOffset("CONTENT", 1, 4);
     }
 
@@ -1482,7 +1484,7 @@ public class ContentFunctionsTest {
     public void testEvaluationPhrasePruningEdgeCondition() {
         String query = buildFunction(phraseFunction, Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'dog'", "'cat'", "'bat'");
 
-        Expression expr = engine.createExpression(query);
+        JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1, list2, list3;
         list1 = asList(9, 10);
@@ -1509,7 +1511,7 @@ public class ContentFunctionsTest {
     public void testEvaluationReverseOffsetAdjustment() {
         String query = buildFunction(phraseFunction, Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'dog'", "'cat'", "'bat'");
 
-        Expression expr = engine.createExpression(query);
+        JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1, list2, list3;
         list1 = asList(5, 9, 10, 25, 27, 29);
@@ -1548,7 +1550,7 @@ public class ContentFunctionsTest {
 
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
 
-        Expression expr = engine.createExpression(query1);
+        JexlExpression expr = engine.createExpression(query1);
         Object o = expr.evaluate(context);
         Assert.assertTrue(expect(o, true));
         assertPhraseOffset("CONTENT", 1, 4);
@@ -1562,7 +1564,7 @@ public class ContentFunctionsTest {
         termOffSetMap.getPhraseIndexes().clear();
         expr = engine.createExpression(query);
         o = expr.evaluate(context);
-        Assert.assertTrue(expect(o, true));
+        Assert.assertTrue(expect(ArithmeticJexlEngines.isMatched(o), true));
         assertPhraseOffset("CONTENT", 1, 4);
     }
 
@@ -1577,7 +1579,7 @@ public class ContentFunctionsTest {
     @Test
     public void testJexlFunctionArgumentDescriptor2() throws ParseException {
         String query = "content:within(5, termOffsetMap, 'hello', 'world')";
-        String expected = "((META == 'hello' and META == 'world') or (BODY == 'hello' and BODY == 'world'))";
+        String expected = "(META == 'hello' and META == 'world') or (BODY == 'hello' and BODY == 'world')";
 
         testJexlFunctionArgumentDescriptors(query, expected);
     }
@@ -1593,7 +1595,7 @@ public class ContentFunctionsTest {
     @Test
     public void testJexlFunctionArgumentDescriptor4() throws ParseException {
         String query = "content:adjacent(termOffsetMap, 'hello', 'world')";
-        String expected = "((META == 'hello' and META == 'world') or (BODY == 'hello' and BODY == 'world'))";
+        String expected = "(META == 'hello' and META == 'world') or (BODY == 'hello' and BODY == 'world')";
 
         testJexlFunctionArgumentDescriptors(query, expected);
     }
@@ -1609,7 +1611,7 @@ public class ContentFunctionsTest {
     @Test
     public void testJexlFunctionArgumentDescriptor6() throws ParseException {
         String query = "content:" + phraseFunction + "(termOffsetMap, 'hello', 'world')";
-        String expected = "((META == 'hello' and META == 'world') or (BODY == 'hello' and BODY == 'world'))";
+        String expected = "(META == 'hello' and META == 'world') or (BODY == 'hello' and BODY == 'world')";
 
         testJexlFunctionArgumentDescriptors(query, expected);
     }
@@ -1636,7 +1638,7 @@ public class ContentFunctionsTest {
     @Test
     public void testJexlFunctionArgumentDescriptor10() throws ParseException {
         String query = "content:" + scoredPhraseFunction + "(-1.1, termOffsetMap, 'hello', 'world')";
-        String expected = "((META == 'hello' and META == 'world') or (BODY == 'hello' and BODY == 'world'))";
+        String expected = "(META == 'hello' and META == 'world') or (BODY == 'hello' and BODY == 'world')";
 
         testJexlFunctionArgumentDescriptors(query, expected);
     }
@@ -1658,10 +1660,7 @@ public class ContentFunctionsTest {
 
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
 
-        JexlNode ref = script.jjtGetChild(0);
-        Assert.assertEquals("First child of ASTJexlScript is not an ASTReference", ASTReference.class, ref.getClass());
-
-        JexlNode child = ref.jjtGetChild(0);
+        JexlNode child = script.jjtGetChild(0);
         Assert.assertEquals("First child of ASTJexlScript is not an AStFunctionNode", ASTFunctionNode.class, child.getClass());
 
         ASTFunctionNode function = (ASTFunctionNode) child;
@@ -1679,7 +1678,7 @@ public class ContentFunctionsTest {
     @Test
     public void testDoubleWordInPhrase() {
         String query = buildFunction(phraseFunction, Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'foo'", "'bar'", "'foo'");
-        Expression expr = engine.createExpression(query);
+        JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1, list2;
         list1 = asList(1, 3);
@@ -1701,7 +1700,7 @@ public class ContentFunctionsTest {
     @Test
     public void testSomeEmptyOffsetsPhrase() {
         String query = buildFunction(phraseFunction, "BODY", Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'foo'", "'bar'", "'car'");
-        Expression expr = engine.createExpression(query);
+        JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1, list2, list3, list4;
         list1 = asList(296);
@@ -1728,7 +1727,7 @@ public class ContentFunctionsTest {
     public void testSomeEmptyOffsetsAdjacency() {
         String query = buildFunction(ContentFunctions.CONTENT_ADJACENT_FUNCTION_NAME, "BODY", Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'foo'", "'bar'",
                         "'car'");
-        Expression expr = engine.createExpression(query);
+        JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1, list2, list3, list4;
         list1 = asList(296);
@@ -1755,7 +1754,7 @@ public class ContentFunctionsTest {
     public void testSomeEmptyOffsetsWithin() {
         String query = buildFunction(ContentFunctions.CONTENT_WITHIN_FUNCTION_NAME, "BODY", "5", Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'foo'", "'bar'",
                         "'car'");
-        Expression expr = engine.createExpression(query);
+        JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1, list2, list3, list4;
         list1 = asList(296);
@@ -1948,7 +1947,7 @@ public class ContentFunctionsTest {
     @Test
     public void testGatherPhraseOffsetsIsFalse() {
         String query = buildFunction(ContentFunctions.CONTENT_WITHIN_FUNCTION_NAME, "1", Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'dog'", "'cat'");
-        Expression expr = engine.createExpression(query);
+        JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1, list2;
         list1 = asList(1);
@@ -1972,7 +1971,7 @@ public class ContentFunctionsTest {
     @Test
     public void testNonMatchingExcerptFields() {
         String query = buildFunction(ContentFunctions.CONTENT_WITHIN_FUNCTION_NAME, "1", Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'dog'", "'cat'");
-        Expression expr = engine.createExpression(query);
+        JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1, list2;
         list1 = asList(1);
@@ -1996,7 +1995,7 @@ public class ContentFunctionsTest {
     @Test
     public void testNonMatchingExcerptFieldsWithMultipleFieldsPresent() {
         String query = buildFunction(ContentFunctions.CONTENT_WITHIN_FUNCTION_NAME, "1", Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'dog'", "'cat'");
-        Expression expr = engine.createExpression(query);
+        JexlExpression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1, list2, list3, list4;
         list1 = asList(1);

@@ -10,29 +10,16 @@ import java.util.Spliterator;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
-import org.apache.accumulo.core.client.BatchDeleter;
 import org.apache.accumulo.core.client.BatchScanner;
-import org.apache.accumulo.core.client.BatchWriter;
-import org.apache.accumulo.core.client.BatchWriterConfig;
-import org.apache.accumulo.core.client.ConditionalWriter;
-import org.apache.accumulo.core.client.ConditionalWriterConfig;
-import org.apache.accumulo.core.client.Connector;
-import org.apache.accumulo.core.client.Instance;
 import org.apache.accumulo.core.client.IteratorSetting;
-import org.apache.accumulo.core.client.MultiTableBatchWriter;
 import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.accumulo.core.client.admin.InstanceOperations;
-import org.apache.accumulo.core.client.admin.NamespaceOperations;
-import org.apache.accumulo.core.client.admin.ReplicationOperations;
-import org.apache.accumulo.core.client.admin.SecurityOperations;
-import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.core.client.sample.SamplerConfiguration;
 import org.apache.accumulo.core.client.security.tokens.AuthenticationToken;
-import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
@@ -42,12 +29,10 @@ import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iteratorsImpl.system.IterationInterruptedException;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.accumulo.core.util.ByteBufferUtil;
-import org.apache.accumulo.core.util.TextUtil;
 import org.apache.hadoop.io.Text;
 
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryBatchScanner;
-import datawave.accumulo.inmemory.InMemoryConnector;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.accumulo.inmemory.InMemoryScanner;
 import datawave.accumulo.inmemory.InMemoryScannerBase;
@@ -71,7 +56,7 @@ public class RebuildingScannerTestHelper {
         RANDOM_SANS_CONSISTENCY(RandomTeardownWithoutConsistency.class),
         EVERY_OTHER_SANS_CONSISTENCY(EveryOtherTeardownWithoutConsistency.class);
 
-        private Class<? extends TeardownListener> tclass;
+        private final Class<? extends TeardownListener> tclass;
 
         TEARDOWN(Class<? extends TeardownListener> tclass) {
             this.tclass = tclass;
@@ -93,7 +78,7 @@ public class RebuildingScannerTestHelper {
         FI_EVERY_OTHER(FiEveryOtherInterrupt.class),
         RANDOM_HIGH(HighRandomInterrupt.class);
 
-        private Class<? extends InterruptListener> iclass;
+        private final Class<? extends InterruptListener> iclass;
 
         INTERRUPT(Class<? extends InterruptListener> iclass) {
             this.iclass = iclass;
@@ -260,24 +245,24 @@ public class RebuildingScannerTestHelper {
         }
     }
 
-    public static Connector getConnector(InMemoryInstance i, String user, byte[] pass, TEARDOWN teardown, INTERRUPT interrupt)
-                    throws AccumuloException, AccumuloSecurityException {
-        return new RebuildingConnector((InMemoryConnector) (i.getConnector(user, new PasswordToken(pass))), teardown, interrupt);
+    public static AccumuloClient getClient(InMemoryInstance i, String user, byte[] pass, TEARDOWN teardown, INTERRUPT interrupt)
+                    throws AccumuloSecurityException {
+        return new RebuildingAccumuloClient(user, i, teardown, interrupt);
     }
 
-    public static Connector getConnector(InMemoryInstance i, String user, ByteBuffer pass, TEARDOWN teardown, INTERRUPT interrupt)
-                    throws AccumuloException, AccumuloSecurityException {
-        return new RebuildingConnector((InMemoryConnector) (i.getConnector(user, ByteBufferUtil.toBytes(pass))), teardown, interrupt);
+    public static AccumuloClient getClient(InMemoryInstance i, String user, ByteBuffer pass, TEARDOWN teardown, INTERRUPT interrupt)
+                    throws AccumuloSecurityException {
+        return new RebuildingAccumuloClient(user, i, teardown, interrupt);
     }
 
-    public static Connector getConnector(InMemoryInstance i, String user, CharSequence pass, TEARDOWN teardown, INTERRUPT interrupt)
-                    throws AccumuloException, AccumuloSecurityException {
-        return new RebuildingConnector((InMemoryConnector) (i.getConnector(user, TextUtil.getBytes(new Text(pass.toString())))), teardown, interrupt);
+    public static AccumuloClient getClient(InMemoryInstance i, String user, CharSequence pass, TEARDOWN teardown, INTERRUPT interrupt)
+                    throws AccumuloSecurityException {
+        return new RebuildingAccumuloClient(user, i, teardown, interrupt);
     }
 
-    public static Connector getConnector(InMemoryInstance i, String principal, AuthenticationToken token, TEARDOWN teardown, INTERRUPT interrupt)
-                    throws AccumuloException, AccumuloSecurityException {
-        return new RebuildingConnector((InMemoryConnector) (i.getConnector(principal, token)), teardown, interrupt);
+    public static AccumuloClient getClient(InMemoryInstance i, String principal, AuthenticationToken token, TEARDOWN teardown, INTERRUPT interrupt)
+                    throws AccumuloSecurityException {
+        return new RebuildingAccumuloClient(principal, i, teardown, interrupt);
     }
 
     public interface TeardownListener {
@@ -287,14 +272,14 @@ public class RebuildingScannerTestHelper {
     }
 
     public static class RebuildingIterator implements Iterator<Map.Entry<Key,Value>> {
-        private InMemoryScannerBase baseScanner;
+        private final InMemoryScannerBase baseScanner;
         private Iterator<Map.Entry<Key,Value>> delegate;
         private final ScannerRebuilder scanner;
         private final TeardownListener teardown;
         private final InterruptListener interruptListener;
         private Map.Entry<Key,Value> next = null;
         private Map.Entry<Key,Value> lastKey = null;
-        private KryoDocumentDeserializer deserializer = new KryoDocumentDeserializer();
+        private final KryoDocumentDeserializer deserializer = new KryoDocumentDeserializer();
         private boolean initialized = false;
 
         public RebuildingIterator(InMemoryScannerBase baseScanner, ScannerRebuilder scanner, TeardownListener teardown, InterruptListener interruptListener) {
@@ -389,7 +374,7 @@ public class RebuildingScannerTestHelper {
                             }
                         } else if (hasNext) {
                             if (teardown.checkConsistency()) {
-                                // if we are dealing with a final document, then both prebuild and postbuild must be returning a final document
+                                // if we are dealing with a final document, then both pre-build and post-build must be returning a final document
                                 // otherwise the keys need to be identical save for the timestamp
                                 boolean nextFinal = FinalDocumentTrackingIterator.isFinalDocumentKey(next.getKey());
                                 boolean rebuildNextFinal = FinalDocumentTrackingIterator.isFinalDocumentKey(rebuildNext.getKey());
@@ -617,99 +602,39 @@ public class RebuildingScannerTestHelper {
         }
     }
 
-    public static class RebuildingConnector extends Connector {
-        private final InMemoryConnector delegate;
+    public static class RebuildingAccumuloClient extends InMemoryAccumuloClient {
         private final TEARDOWN teardown;
         private final INTERRUPT interrupt;
 
-        public RebuildingConnector(InMemoryConnector delegate, TEARDOWN teardown, INTERRUPT interrupt) {
-            this.delegate = delegate;
+        public RebuildingAccumuloClient(String user, InMemoryInstance instance, TEARDOWN teardown, INTERRUPT interrupt) throws AccumuloSecurityException {
+            super(user, instance);
             this.teardown = teardown;
             this.interrupt = interrupt;
         }
 
         @Override
         public BatchScanner createBatchScanner(String s, Authorizations authorizations, int i) throws TableNotFoundException {
-            return new RebuildingBatchScanner((InMemoryBatchScanner) (delegate.createBatchScanner(s, authorizations, i)), teardown, interrupt);
+            return new RebuildingBatchScanner((InMemoryBatchScanner) (super.createBatchScanner(s, authorizations, i)), teardown, interrupt);
         }
 
         @Override
-        @Deprecated
-        public BatchDeleter createBatchDeleter(String s, Authorizations authorizations, int i, long l, long l1, int i1) throws TableNotFoundException {
-            return delegate.createBatchDeleter(s, authorizations, i, l, l1, i1);
+        public BatchScanner createBatchScanner(String s, Authorizations authorizations) throws TableNotFoundException {
+            return new RebuildingBatchScanner((InMemoryBatchScanner) (super.createBatchScanner(s, authorizations)), teardown, interrupt);
         }
 
         @Override
-        public BatchDeleter createBatchDeleter(String s, Authorizations authorizations, int i, BatchWriterConfig batchWriterConfig)
-                        throws TableNotFoundException {
-            return delegate.createBatchDeleter(s, authorizations, i, batchWriterConfig);
-        }
-
-        @Override
-        @Deprecated
-        public BatchWriter createBatchWriter(String s, long l, long l1, int i) throws TableNotFoundException {
-            return delegate.createBatchWriter(s, l, l1, i);
-        }
-
-        @Override
-        public BatchWriter createBatchWriter(String s, BatchWriterConfig batchWriterConfig) throws TableNotFoundException {
-            return delegate.createBatchWriter(s, batchWriterConfig);
-        }
-
-        @Override
-        @Deprecated
-        public MultiTableBatchWriter createMultiTableBatchWriter(long l, long l1, int i) {
-            return delegate.createMultiTableBatchWriter(l, l1, i);
-        }
-
-        @Override
-        public MultiTableBatchWriter createMultiTableBatchWriter(BatchWriterConfig batchWriterConfig) {
-            return delegate.createMultiTableBatchWriter(batchWriterConfig);
+        public BatchScanner createBatchScanner(String s) throws TableNotFoundException, AccumuloSecurityException, AccumuloException {
+            return new RebuildingBatchScanner((InMemoryBatchScanner) (super.createBatchScanner(s)), teardown, interrupt);
         }
 
         @Override
         public Scanner createScanner(String s, Authorizations authorizations) throws TableNotFoundException {
-            return new RebuildingScanner((InMemoryScanner) (delegate.createScanner(s, authorizations)), teardown, interrupt);
+            return new RebuildingScanner((InMemoryScanner) (super.createScanner(s, authorizations)), teardown, interrupt);
         }
 
         @Override
-        public ConditionalWriter createConditionalWriter(String s, ConditionalWriterConfig conditionalWriterConfig) throws TableNotFoundException {
-            return delegate.createConditionalWriter(s, conditionalWriterConfig);
-        }
-
-        @Override
-        public Instance getInstance() {
-            return delegate.getInstance();
-        }
-
-        @Override
-        public String whoami() {
-            return delegate.whoami();
-        }
-
-        @Override
-        public TableOperations tableOperations() {
-            return delegate.tableOperations();
-        }
-
-        @Override
-        public NamespaceOperations namespaceOperations() {
-            return delegate.namespaceOperations();
-        }
-
-        @Override
-        public SecurityOperations securityOperations() {
-            return delegate.securityOperations();
-        }
-
-        @Override
-        public InstanceOperations instanceOperations() {
-            return delegate.instanceOperations();
-        }
-
-        @Override
-        public ReplicationOperations replicationOperations() {
-            return delegate.replicationOperations();
+        public Scanner createScanner(String s) throws TableNotFoundException, AccumuloSecurityException, AccumuloException {
+            return new RebuildingScanner((InMemoryScanner) (super.createScanner(s)), teardown, interrupt);
         }
     }
 
@@ -741,8 +666,8 @@ public class RebuildingScannerTestHelper {
         }
 
         @Override
-        public void fetchColumn(Text colFam, Text colQual) {
-            delegate.fetchColumn(colFam, colQual);
+        public void fetchColumn(Text colFam, Text colQualifier) {
+            delegate.fetchColumn(colFam, colQualifier);
         }
 
         @Override

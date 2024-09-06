@@ -4,11 +4,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.apache.commons.jexl2.parser.ASTAssignment;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ASTReference;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.JexlNodes;
+import org.apache.commons.jexl3.parser.ASTAssignment;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTReferenceExpression;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNodes;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
@@ -72,7 +72,7 @@ public class AddShardsAndDaysVisitor extends RebuildingVisitor {
         JexlNode originalParent = node.jjtGetParent();
         JexlNode shardAndHintNode = JexlNodes.wrap(JexlNodeFactory.createAssignment(Constants.SHARD_DAY_HINT, shardsAndDays));
         // If the current node is unwrapped, wrap it before ANDing it with the new SHARDS_AND_DAYS node.
-        JexlNode leftSide = !(node instanceof ASTReference) ? JexlNodes.wrap(node) : node;
+        JexlNode leftSide = !(node instanceof ASTReferenceExpression) ? JexlNodes.wrap(node) : node;
         JexlNode andNode = JexlNodeFactory.createAndNode(Lists.newArrayList(leftSide, shardAndHintNode));
         // Update the grandparent's lineage.
         if (originalParent != null) {

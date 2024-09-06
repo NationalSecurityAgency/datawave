@@ -1,7 +1,7 @@
 package datawave.query.ancestor;
 
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTOrNode;
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTOrNode;
 
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.index.lookup.AncestorIndexStream;

@@ -12,10 +12,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.commons.jexl2.parser.ASTEQNode;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ASTReference;
-import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.commons.jexl3.parser.ASTEQNode;
+import org.apache.commons.jexl3.parser.ASTIdentifier;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTStringLiteral;
+import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Before;
@@ -204,6 +205,13 @@ public class QueryModelVisitorTest {
     public void functionWithMethod() throws ParseException {
         String original = "filter:includeRegex(FOO, '1').size()";
         String expected = "filter:includeRegex(BAR1||BAR2, '1').size()";
+        assertResult(original, expected);
+    }
+
+    @Test
+    public void excludeFunction() throws ParseException {
+        String original = "filter:excludeRegex(FOO, '1')";
+        String expected = "filter:excludeRegex(BAR1||BAR2, '1')";
         assertResult(original, expected);
     }
 
@@ -405,8 +413,8 @@ public class QueryModelVisitorTest {
 
         List<ASTEQNode> actualNodes = JexlASTHelper.getEQNodes(actualScript);
         for (ASTEQNode node : actualNodes) {
-            assertTrue(node.jjtGetChild(0) instanceof ASTReference);
-            assertTrue(node.jjtGetChild(1) instanceof ASTReference);
+            assertTrue(node.jjtGetChild(0) instanceof ASTIdentifier);
+            assertTrue(node.jjtGetChild(1) instanceof ASTStringLiteral);
         }
     }
 

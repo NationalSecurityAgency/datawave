@@ -50,8 +50,9 @@ import org.apache.lucene.queryparser.flexible.standard.nodes.WildcardQueryNode;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 
 /**
- * Applies tokenization to {@link TextableQueryNode} objects using a configured Lucene {@link Analyzer}.
  * <p>
+ * Applies tokenization to {@link TextableQueryNode} objects using a configured Lucene {@link Analyzer}.
+ * </p>
  *
  * Uses the {@link Analyzer} specified in the the {@link ConfigurationKeys#ANALYZER} attribute of the {@link QueryConfigHandler} to process non-wildcard
  * {@link FieldQueryNode}s for fields listed in <code>tokenizedFields</code>.
@@ -62,19 +63,20 @@ import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
  * The text of each {@link TextableQueryNode} is processed using the {@link Analyzer} to generate tokens. If the analyzer returns one or more terms that are not
  * identical to the input, the processor generates an {@link OrQueryNode} containing the original query node and a new {@link QuotedFieldQueryNode} or
  * {@link SlopQueryNode} depending on the nature of the original query node and whether <code>useSlopForTokenizedTerms</code> is <code>false</code>.
- *
+ * <p>
  * There are three primary cases where tokenization will be applied to input query terms - single terms (e.g: wi-fi), phrases (e.g: "portable wi-fi"), and
  * phrases with slop (e.g: "portable wi-fi"~3). In the case of single term input, tokenization will produce a phrase with slop equals to the number of positions
  * in the original query if <code>useSlopForTokenizedTerms</code> is set to <code>true</code>, otherwise a phrase without slop will be produced. In the case of
  * phrase input, a new phrase query will be generated with the new tokens. In t he case of a phrase with slop, a new phrase with slop will be generated and an
  * attempt will be made to adjust the slop based on the number of additional tokens generated. For exa mple, in the case of the slop query above, the new query
  * will be "portable wi fi"~4 because an additional token was generated based on the split of 'wi' and 'fi' into two separate tokens.
- *
+ * </p>
+ * <p>
  * FieldQueryNodes with empty fields are considered 'unfielded' and will be tokenized if <code>unfieldedTokenized</code> is <code>true</code>. The
  * <code>skipTokenizeUnfieldedFields</code> can be used in this case to indicate that a node should be treated as un-fielded but not tokenized. When this
  * processor encounters such a field in a node, it will not tokenize the text of that node and will set that node's field to an empty string so that downstream
  * processors will treat the node as if it is un-fielded.
- * <p>
+ * </p>
  *
  * @see Analyzer
  * @see TokenStream

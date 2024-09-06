@@ -6,11 +6,10 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.Set;
 
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTFalseNode;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ASTOrNode;
-import org.apache.commons.jexl2.parser.Node;
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTFalseNode;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTOrNode;
 import org.junit.Test;
 
 import com.google.common.collect.Sets;
@@ -65,12 +64,12 @@ public class NodeTypeCountTest {
         NodeTypeCount count = new NodeTypeCount();
         count.increment(ASTJexlScript.class);
 
-        Set<Class<? extends Node>> containsPresentType = Sets.newHashSet(ASTJexlScript.class, ASTAndNode.class, ASTOrNode.class);
+        Set<Class<?>> containsPresentType = Sets.newHashSet(ASTJexlScript.class, ASTAndNode.class, ASTOrNode.class);
         assertTrue(count.hasAny(ASTJexlScript.class, ASTAndNode.class, ASTOrNode.class));
         assertTrue(count.hasAny(containsPresentType));
         assertTrue(count.hasAny(containsPresentType.stream()));
 
-        Set<Class<? extends Node>> onlyMissingTypes = Sets.newHashSet(ASTFalseNode.class, ASTAndNode.class, ASTOrNode.class);
+        Set<Class<?>> onlyMissingTypes = Sets.newHashSet(ASTFalseNode.class, ASTAndNode.class, ASTOrNode.class);
         assertFalse(count.hasAny(ASTFalseNode.class, ASTAndNode.class, ASTOrNode.class));
         assertFalse(count.hasAny(onlyMissingTypes));
         assertFalse(count.hasAny(onlyMissingTypes.stream()));
@@ -83,12 +82,12 @@ public class NodeTypeCountTest {
         count.increment(ASTAndNode.class);
         count.increment(ASTOrNode.class);
 
-        Set<Class<? extends Node>> onlyPresentTypes = Sets.newHashSet(ASTJexlScript.class, ASTAndNode.class, ASTOrNode.class);
+        Set<Class<?>> onlyPresentTypes = Sets.newHashSet(ASTJexlScript.class, ASTAndNode.class, ASTOrNode.class);
         assertTrue(count.hasAll(ASTJexlScript.class, ASTAndNode.class, ASTOrNode.class));
         assertTrue(count.hasAll(onlyPresentTypes));
         assertTrue(count.hasAll(onlyPresentTypes.stream()));
 
-        Set<Class<? extends Node>> containsMissingType = Sets.newHashSet(ASTFalseNode.class, ASTAndNode.class, ASTOrNode.class);
+        Set<Class<?>> containsMissingType = Sets.newHashSet(ASTFalseNode.class, ASTAndNode.class, ASTOrNode.class);
         assertFalse(count.hasAll(ASTFalseNode.class, ASTAndNode.class, ASTOrNode.class));
         assertFalse(count.hasAll(containsMissingType));
         assertFalse(count.hasAll(containsMissingType.stream()));
@@ -104,8 +103,8 @@ public class NodeTypeCountTest {
         count.increment(ASTOrNode.class);
         count.increment(ASTOrNode.class);
 
-        String expected = "org.apache.commons.jexl2.parser.ASTAndNode: 2\n" + "org.apache.commons.jexl2.parser.ASTJexlScript: 1\n"
-                        + "org.apache.commons.jexl2.parser.ASTOrNode: 3";
+        String expected = "org.apache.commons.jexl3.parser.ASTAndNode: 2\n" + "org.apache.commons.jexl3.parser.ASTJexlScript: 1\n"
+                        + "org.apache.commons.jexl3.parser.ASTOrNode: 3";
         assertEquals(expected, count.toPrettyString());
     }
 }

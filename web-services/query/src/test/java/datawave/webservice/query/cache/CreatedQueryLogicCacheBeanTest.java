@@ -17,8 +17,8 @@ import org.powermock.modules.junit4.PowerMockRunner;
 
 import com.google.common.collect.Sets;
 
+import datawave.core.query.logic.QueryLogic;
 import datawave.webservice.query.cache.CreatedQueryLogicCacheBean.Triple;
-import datawave.webservice.query.logic.QueryLogic;
 
 /**
  *

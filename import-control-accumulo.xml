@@ -1,0 +1,28 @@
+<!DOCTYPE import-control PUBLIC
+        "-//Checkstyle//DTD ImportControl Configuration 1.4//EN"
+        "https://checkstyle.org/dtds/import_control_1_4.dtd">
+
+<!-- This checkstyle rule is configured to ensure only use of Accumulo API -->
+<import-control 
+        pkg="(|
+        |datawave.*|
+        |datawave\.common\.test.*|
+        |datawave\.test.*|
+        |gov.nsa.datawave.*)" regex="true" strategyOnMismatch="allowed">
+    <!-- API packages -->
+    <allow pkg="org.apache.accumulo.core.client"/>
+    <allow pkg="org.apache.accumulo.core.data"/>
+    <allow pkg="org.apache.accumulo.core.security"/>
+    <allow pkg="org.apache.accumulo.core.iterators"/>
+    <allow pkg="org.apache.accumulo.minicluster"/>
+    <allow pkg="org.apache.accumulo.hadoop.mapreduce"/>
+    <allow pkg="org.apache.accumulo.core.spi"/>
+
+    <!-- Temporarily allow some specific classes until accumulo
+    team seperates parts of that into public api -->
+    <allow class="org.apache.accumulo.core.conf.Property"/>
+    <allow class="org.apache.accumulo.core.clientImpl.TabletLocator"/>
+
+    <!-- disallow everything else coming from accumulo -->
+    <disallow pkg="org.apache.accumulo"/>
+</import-control>

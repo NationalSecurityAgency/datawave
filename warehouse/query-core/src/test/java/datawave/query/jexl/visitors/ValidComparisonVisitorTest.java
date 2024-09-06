@@ -1,7 +1,7 @@
 package datawave.query.jexl.visitors;
 
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ParseException;
 import org.junit.Test;
 
 import datawave.query.exceptions.DatawaveFatalQueryException;
@@ -79,7 +79,7 @@ public class ValidComparisonVisitorTest {
         ValidComparisonVisitor.check(script);
     }
 
-    @Test(expected = DatawaveFatalQueryException.class)
+    @Test(expected = ParseException.class)
     public void testInvalidAssignment() throws ParseException {
         String queryString = "'_Eval_' = true";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(queryString);

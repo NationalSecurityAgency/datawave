@@ -19,6 +19,7 @@ public abstract class AbstractCarFields implements FieldConfig {
     private final Set<String> multivalueFields = new HashSet<>();
     private final Collection<Set<String>> compositeFields = new HashSet<>();
     private final Collection<Set<String>> virtualFields = new HashSet<>();
+    private final Set<String> tokenizedFields = new HashSet<>();
 
     protected AbstractCarFields(Collection<String> index, Collection<String> indexOnly, Collection<String> reverse, Collection<String> multivalue,
                     Collection<Set<String>> composite, Collection<Set<String>> virtual) {
@@ -118,6 +119,21 @@ public abstract class AbstractCarFields implements FieldConfig {
     @Override
     public void removeMultiValueField(String field) {
         this.multivalueFields.add(field);
+    }
+
+    @Override
+    public Set<String> getTokenizedFields() {
+        return this.tokenizedFields;
+    }
+
+    @Override
+    public void addTokenizedField(String field) {
+        this.tokenizedFields.add(field);
+    }
+
+    @Override
+    public void removeTokenizedField(String field) {
+        this.tokenizedFields.remove(field);
     }
 
     @Override

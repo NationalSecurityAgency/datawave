@@ -19,6 +19,7 @@ import org.junit.Test;
 
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.TableConfigurationUtil;
+import datawave.ingest.mapreduce.job.TableSplitsCache;
 import datawave.util.TableName;
 
 public class MultiTableRangePartitionerTest {
@@ -30,18 +31,28 @@ public class MultiTableRangePartitionerTest {
     public void before() throws IOException {
         mockJob = new Job();
         configuration = mockJob.getConfiguration();
+        configuration.setBoolean(TableSplitsCache.REFRESH_SPLITS, false);
+        TableSplitsCache.getCurrentCache(configuration).clear();
         configuration.set(TableConfigurationUtil.JOB_OUTPUT_TABLE_NAMES, TableName.SHARD);
     }
 
     @Test
     public void testGoodSplitsFile() throws IOException, URISyntaxException {
-        mockContextForLocalCacheFile(createUrl("trimmed_splits.txt"));
+        String filename = "trimmed_splits.txt";
+        URL url = createUrl(filename);
+        mockContextForLocalCacheFile(url);
+        configuration.set(TableSplitsCache.SPLITS_CACHE_DIR, url.getPath().substring(0, url.getPath().lastIndexOf('/')));
+        configuration.set(TableSplitsCache.SPLITS_CACHE_FILE, filename);
         Assert.assertEquals(5, getPartition());
     }
 
     @Test(expected = RuntimeException.class)
     public void testEmptySplitsThrowsException() throws IOException, URISyntaxException {
-        mockContextForLocalCacheFile(createUrl("trimmed_empty_splits.txt"));
+        String filename = "trimmed_empty_splits.txt";
+        URL url = createUrl(filename);
+        mockContextForLocalCacheFile(url);
+        configuration.set(TableSplitsCache.SPLITS_CACHE_DIR, url.getPath().substring(0, url.getPath().lastIndexOf('/')));
+        configuration.set(TableSplitsCache.SPLITS_CACHE_FILE, filename);
         getPartition();
     }
 
@@ -74,7 +85,9 @@ public class MultiTableRangePartitionerTest {
 
     private int getPartition() {
         MultiTableRangePartitioner partitioner = new MultiTableRangePartitioner();
-        partitioner.setConf(new Configuration());
+
+        partitioner.setConf(configuration);
+
         return partitioner.getPartition(new BulkIngestKey(new Text(TABLE_NAME), new Key("23432")), new Value("fdsafdsa".getBytes()), 100);
     }
 }

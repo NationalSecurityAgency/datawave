@@ -12,8 +12,8 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.commons.jexl2.JexlContext;
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.JexlContext;
+import org.apache.commons.jexl3.parser.JexlNode;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Multimap;

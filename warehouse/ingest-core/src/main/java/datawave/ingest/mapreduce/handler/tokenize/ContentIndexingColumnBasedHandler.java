@@ -599,7 +599,6 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
         BulkIngestKey bKey = new BulkIngestKey(new Text(this.getShardTableName()),
                         new Key(shardId, ExtendedDataTypeHandler.TERM_FREQUENCY_COLUMN_FAMILY.getBytes(), colq.toString().getBytes(), visibility,
                                         event.getDate(), helper.getDeleteMode()));
-
         values.put(bKey, value);
     }
 

@@ -3,6 +3,7 @@
 source ${SCRIPT_DIR}/common/common.sh
 
 PAUSE='false'
+POOL="${POOL:-pool1}"
 MAX_PAGES=100
 QUERY_TYPE='query'
 
@@ -32,6 +33,7 @@ runQuery() {
 
     curl -s -D headers_0.txt -k -E ${TMP_PEM} \
         -H "Accept: application/xml" \
+        -H "Pool: $POOL" \
         --data-urlencode "begin=${BEGIN}" \
         --data-urlencode "end=${END}" \
         --data-urlencode "columnVisibility=${COLUMN_VISIBILITY}" \
@@ -60,6 +62,7 @@ runQuery() {
         echo "$(date): Requesting page $i for $QUERY_ID" >> querySummary.txt
         curl -s -D headers_$i.txt -q -k -E ${TMP_PEM} \
             -H "Accept: application/xml" \
+            -H "Pool: $POOL" \
             ${DATAWAVE_ENDPOINT}/$QUERY_ID/next -o nextResponse_$i.xml -w '%{http_code}\n' >> querySummary.txt
 
         CONTINUE=`grep 'HTTP/2 200' headers_$i.txt`
@@ -88,6 +91,7 @@ runQuery() {
     # close the query
     curl -s -q -k -X POST -E ${TMP_PEM} \
         -H "Accept: application/xml" \
+        -H "Pool: $POOL" \
         ${DATAWAVE_ENDPOINT}/$QUERY_ID/close -o closeResponse.xml -w '%{http_code}\n' >> querySummary.txt
 
     cd ../
