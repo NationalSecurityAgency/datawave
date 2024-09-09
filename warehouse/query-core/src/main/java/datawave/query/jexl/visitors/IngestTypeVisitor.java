@@ -391,7 +391,7 @@ public class IngestTypeVisitor extends BaseVisitor {
         if (visitor.namespace().equals(CONTENT_FUNCTION_NAMESPACE)) {
             // all content function fields are added
             ContentFunctionsDescriptor.ContentJexlArgumentDescriptor contentDescriptor = new ContentFunctionsDescriptor().getArgumentDescriptor(node);
-            return contentDescriptor.fieldsAndTerms(Collections.emptySet(), Collections.emptySet(), Collections.emptySet(), null)[0];
+            return contentDescriptor.fieldsAndTerms(Collections.emptySet(), Collections.emptySet(), Collections.emptySet(), null).getFields();
         } else {
             JexlArgumentDescriptor descriptor = JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor(node);
             if (descriptor == null) {
