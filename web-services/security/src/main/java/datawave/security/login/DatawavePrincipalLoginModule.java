@@ -478,7 +478,7 @@ public class DatawavePrincipalLoginModule extends AbstractServerLoginModule {
                     identity = new DatawavePrincipal(jwtTokenHandler.createUsersFromToken(credential.getJwtToken()));
                 } catch (Exception e) {
                     log.debug("Failing login due to JWT token exception " + e.getMessage(), e);
-                    // should result in an UNAUTHORIZED (501) response code in DatawaveAuthenticationMechanism.sendChallenge
+                    // should result in an UNAUTHORIZED (401) response code in DatawaveAuthenticationMechanism.sendChallenge
                     throw new CredentialException("Unable to authenticate: " + e.getMessage());
                 }
             }
@@ -487,14 +487,14 @@ public class DatawavePrincipalLoginModule extends AbstractServerLoginModule {
             sharedState.put("javax.security.auth.login.name", alias);
             sharedState.put("javax.security.auth.login.password", credential.getCertificate());
         }
-        if (log.isTraceEnabled()) {
+        if (trace) {
             log.trace("exit: validateCredential");
         }
         return true;
     }
 
     protected boolean validateCertificateCredential(DatawaveCredential credential) {
-        if (log.isTraceEnabled()) {
+        if (trace) {
             log.trace("enter: validateCertificateCredential(DatawaveCredential)[" + verifier + "]");
         }
         boolean isValid = false;
@@ -513,17 +513,17 @@ public class DatawavePrincipalLoginModule extends AbstractServerLoginModule {
                 if (((DatawaveCertVerifier) verifier).isIssuerSupported(issuerSubjectDn, trustStore)) {
                     isValid = verifier.verify(credential.getCertificate(), issuerSubjectDn, keyStore, trustStore);
                 } else {
-                    if (log.isTraceEnabled()) {
+                    if (trace) {
                         log.trace("Unsupported issuer: " + issuerSubjectDn);
                     }
                 }
             } else {
-                if (log.isTraceEnabled()) {
+                if (trace) {
                     log.trace("Validating using non datawave cert verifier.");
                 }
                 isValid = verifier.verify(credential.getCertificate(), issuerSubjectDn, keyStore, trustStore);
             }
-            if (log.isTraceEnabled()) {
+            if (trace) {
                 log.trace("Cert Validation result : " + isValid);
             }
         } else if (credential.getCertificate() != null) {
@@ -531,7 +531,7 @@ public class DatawavePrincipalLoginModule extends AbstractServerLoginModule {
         } else {
             log.warn("Certificate is null - unable to validate");
         }
-        if (log.isTraceEnabled()) {
+        if (trace) {
             log.trace("exit: validateCertificateCredential(DatawaveCredential)");
         }
         return isValid;
