@@ -585,6 +585,9 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("tableConsistencyLevels", Collections.singletonMap(TableName.SHARD, ScannerBase.ConsistencyLevel.EVENTUAL));
         defaultValues.put("tableHints", Collections.emptyMap());
         updatedValues.put("tableHints", Collections.emptyMap());
+
+        defaultValues.put("tserverLoggingActive", true);
+        updatedValues.put("tserverLoggingActive", false);
     }
 
     private Query createQuery(String query) {

@@ -493,6 +493,11 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private boolean sortQueryByCounts = false;
 
     /**
+     * Controls whether query IDs are logged on the tserver level via {@link datawave.query.iterator.QueryLogIterator}.
+     */
+    private boolean tserverLoggingActive = true;
+
+    /**
      * Default constructor
      */
     public ShardQueryConfiguration() {
@@ -716,6 +721,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setUseTermCounts(other.getUseTermCounts());
         this.setSortQueryBeforeGlobalIndex(other.isSortQueryBeforeGlobalIndex());
         this.setSortQueryByCounts(other.isSortQueryByCounts());
+        this.setTserverLoggingActive(other.isTserverLoggingActive());
     }
 
     /**
@@ -2736,14 +2742,25 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.sortQueryByCounts = sortQueryByCounts;
     }
 
+    public boolean isTserverLoggingActive() {
+        return this.tserverLoggingActive;
+    }
+
+    public void setTserverLoggingActive(boolean tserverLoggingActive) {
+        this.tserverLoggingActive = tserverLoggingActive;
+    }
+
     @Override
     public boolean equals(Object o) {
-        if (this == o)
+        if (this == o) {
             return true;
-        if (o == null || getClass() != o.getClass())
+        }
+        if (o == null || getClass() != o.getClass()) {
             return false;
-        if (!super.equals(o))
+        }
+        if (!super.equals(o)) {
             return false;
+        }
         // @formatter:off
         ShardQueryConfiguration that = (ShardQueryConfiguration) o;
         return isTldQuery() == that.isTldQuery() &&
@@ -2942,7 +2959,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getUseFieldCounts() == that.getUseFieldCounts() &&
                 getUseTermCounts() == that.getUseTermCounts() &&
                 isSortQueryBeforeGlobalIndex() == that.isSortQueryBeforeGlobalIndex() &&
-                isSortQueryByCounts() == that.isSortQueryByCounts();
+                isSortQueryByCounts() == that.isSortQueryByCounts() &&
+                isTserverLoggingActive() == that.isTserverLoggingActive();
         // @formatter:on
     }
 
@@ -3146,7 +3164,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getUseFieldCounts(),
                 getUseTermCounts(),
                 isSortQueryBeforeGlobalIndex(),
-                isSortQueryByCounts());
+                isSortQueryByCounts(),
+                isTserverLoggingActive());
         // @formatter:on
     }
 
