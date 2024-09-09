@@ -20,7 +20,7 @@
         label="Geometry"
         header-class="text-secondary"
       >
-        <ManualGeometryForm />
+        <ManualGeometryForm :supportedGeometries="supportedGeometries" />
       </q-expansion-item>
 
       <q-separator />
@@ -50,46 +50,6 @@
       </q-expansion-item>
     </q-list>
   </div>
-  <q-dialog v-model="appState.content.editDialog">
-    <q-card style="min-width: 66%">
-      <q-card-section>
-        <div class="text-h6">Geometry</div>
-      </q-card-section>
-
-      <q-card-section>
-        <q-input
-          filled
-          type="textarea"
-          :rows="30"
-          v-model="appState.content.editDialogText"
-          autofocus
-        />
-      </q-card-section>
-
-      <q-card-actions align="right" class="text-primary">
-        <q-btn
-          flat
-          label="Reset"
-          @click="appState.content.editDialogText = ''"
-        />
-        <q-btn
-          flat
-          label="Cancel"
-          v-close-popup
-          @click="appState.content.editDialogText = ''"
-        />
-        <q-btn
-          flat
-          label="Save"
-          v-close-popup
-          @click="
-            appState.content.geometry = appState.content.editDialogText;
-            appState.content.editDialogText = '';
-          "
-        />
-      </q-card-actions>
-    </q-card>
-  </q-dialog>
 </template>
 
 <script setup lang="ts">
@@ -98,12 +58,11 @@ import ManualGeometryForm from 'components/ManualGeometryForm.vue';
 import ManualQueryForm from 'components/ManualQueryForm.vue';
 import LookupQueryForm from 'components/LookupQueryForm.vue';
 
+export interface AddContentPanelProps {
+  supportedGeometries: string[];
+}
+defineProps<AddContentPanelProps>();
+
 const appState = appStateStore();
 </script>
 
-<style>
-/* override quasar's styling to remove the textarea resize button */
-.q-textarea .q-field__native {
-  resize: none;
-}
-</style>

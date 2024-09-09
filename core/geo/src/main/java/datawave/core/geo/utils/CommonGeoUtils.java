@@ -12,6 +12,8 @@ import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryCollection;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.PrecisionModel;
+import org.locationtech.jts.io.ParseException;
+import org.locationtech.jts.io.WKTReader;
 
 import datawave.data.type.GeoType;
 import datawave.data.type.GeometryType;
@@ -23,6 +25,12 @@ public class CommonGeoUtils {
      * Setting the precision too high is unnecessary, and will result in occasional computational errors within the JTS library.
      */
     static final GeometryFactory gf = new GeometryFactory(new PrecisionModel(1000000));
+
+    private static WKTReader wktReader = new WKTReader(gf);
+
+    public static Geometry wktToGeometry(String wkt) throws ParseException {
+        return wktReader.read(wkt);
+    }
 
     public static Geometry createGeometryCollection(Collection<Geometry> geometries) {
         return gf.createGeometryCollection(geometries.toArray(new Geometry[0]));

@@ -26,6 +26,7 @@ import org.geotools.geojson.feature.FeatureJSON;
 import org.geotools.geojson.geom.GeometryJSON;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.Point;
 import org.opengis.feature.Feature;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.slf4j.Logger;
@@ -37,9 +38,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import datawave.core.geo.utils.CommonGeoUtils;
 import datawave.core.geo.utils.GeoQueryConfig;
+import datawave.core.geo.utils.GeoUtils;
 import datawave.core.query.jexl.JexlASTHelper;
 import datawave.core.query.language.parser.jexl.LuceneToJexlQueryParser;
+import datawave.data.normalizer.GeoNormalizer;
+import datawave.data.normalizer.GeoNormalizer.GeoPoint;
+import datawave.data.normalizer.GeometryNormalizer;
+import datawave.data.normalizer.PointNormalizer;
 import datawave.data.type.GeoType;
 import datawave.data.type.GeometryType;
 import datawave.data.type.PointType;
@@ -49,6 +56,7 @@ import datawave.microservice.map.config.MapServiceProperties;
 import datawave.microservice.map.config.QueryMetricListResponseSupplier;
 import datawave.microservice.map.data.GeoFeature;
 import datawave.microservice.map.data.GeoFeatures;
+import datawave.microservice.map.data.GeoIndices;
 import datawave.microservice.map.data.GeoQueryFeatures;
 import datawave.microservice.map.visitor.GeoFeatureVisitor;
 import datawave.microservice.querymetric.BaseQueryMetric;
@@ -75,6 +83,10 @@ public class MapOperationsService {
     private final AccumuloClient accumuloClient;
     private final QueryMetricListResponseSupplier queryMetricListResponseSupplier;
     private final LuceneToJexlQueryParser luceneToJexlQueryParser;
+    
+    private final GeoNormalizer geoNormalizer = new GeoNormalizer();
+    private final PointNormalizer pointNormalizer = new PointNormalizer();
+    private final GeometryNormalizer geometryNormalizer = new GeometryNormalizer();
     
     public MapOperationsService(MapServiceProperties mapServiceProperties, WebClient.Builder webClientBuilder, JWTTokenHandler jwtTokenHandler,
                     MetadataHelperFactory metadataHelperFactory, @Qualifier("warehouse") AccumuloClient accumuloClient,
@@ -199,7 +211,7 @@ public class MapOperationsService {
         return geoQueryFeatures;
     }
     
-    private BaseQueryMetricListResponse loadQueryFromMetricsService(String queryId, DatawaveUserDetails currentUser) throws QueryException {
+    protected BaseQueryMetricListResponse loadQueryFromMetricsService(String queryId, DatawaveUserDetails currentUser) throws QueryException {
         try {
             // @formatter:off
             // noinspection unchecked
@@ -240,7 +252,16 @@ public class MapOperationsService {
         }
     }
     
-    private String parseGeoFeatureJSONtoWKT(String geoFeatureJSON) {
+    protected String parseGeoToWKT(String geometry) {
+        // if it's not geojson, this will return null and we will assume it is wkt
+        String wkt = parseGeoFeatureJSONToWKT(geometry);
+        if (wkt == null) {
+            wkt = geometry;
+        }
+        return wkt;
+    }
+    
+    protected String parseGeoFeatureJSONToWKT(String geoFeatureJSON) {
         String wkt = null;
         
         // try to parse as geojson first
@@ -287,11 +308,7 @@ public class MapOperationsService {
     public GeoFeatures geoFeaturesForGeometry(String geometry, Boolean createRanges, String rangeType, Integer maxEnvelopes, Integer maxExpansion,
                     Boolean optimizeRanges, Integer rangeSplitThreshold, Double maxRangeOverlap, DatawaveUserDetails currentUser) {
         
-        // if it's not geojson, this will return null and we will assume it is wkt
-        String wkt = parseGeoFeatureJSONtoWKT(geometry);
-        if (wkt == null) {
-            wkt = geometry;
-        }
+        String wkt = parseGeoToWKT(geometry);
         
         String field = "DEFAULT";
         Map<String,Set<Type<?>>> typesByField = new HashMap<>();
@@ -357,5 +374,37 @@ public class MapOperationsService {
         geoFeatures.setQueryRanges(geoQueryFeatures.getGeoByField().get(field));
         
         return geoFeatures;
+    }
+    
+    public GeoIndices geoIndicesForGeometry(String geometryString) {
+        GeoIndices geoIndices = new GeoIndices();
+        
+        String wkt = parseGeoToWKT(geometryString);
+        geoIndices.setWkt(wkt);
+        
+        Geometry geometry = null;
+        Point center = null;
+        GeoPoint geoPoint = null;
+        try {
+            geometry = CommonGeoUtils.wktToGeometry(wkt);
+            center = geometry.getCentroid();
+            geoPoint = new GeoPoint(center.getY(), center.getX());
+        } catch (org.locationtech.jts.io.ParseException | GeoNormalizer.OutOfRangeException e) {
+            log.warn("Unable to parse geometry from WKT: {}", wkt);
+        }
+        
+        if (geoPoint != null) {
+            geoIndices.setGeoPointIndex(GeoPoint.getZRefStr(geoPoint));
+        }
+        
+        if (center != null) {
+            geoIndices.setGeoWavePointIndex(pointNormalizer.normalizeDelegateType(new datawave.data.type.util.Point(center)));
+        }
+        
+        if (geometry != null) {
+            geoIndices.setGeoWaveGeometryIndex(geometryNormalizer.normalizeDelegateTypeToMany(new datawave.data.type.util.Geometry(geometry)));
+        }
+        
+        return geoIndices;
     }
 }

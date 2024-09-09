@@ -1,69 +1,26 @@
 package datawave.query.jexl.functions;
 
-import static datawave.core.geo.utils.GeoWaveUtils.CONTAINS;
-import static datawave.core.geo.utils.GeoWaveUtils.COVERED_BY;
-import static datawave.core.geo.utils.GeoWaveUtils.COVERS;
-import static datawave.core.geo.utils.GeoWaveUtils.CROSSES;
-import static datawave.core.geo.utils.GeoWaveUtils.INTERSECTS;
-import static datawave.core.geo.utils.GeoWaveUtils.OVERLAPS;
-import static datawave.core.geo.utils.GeoWaveUtils.WITHIN;
-import static datawave.core.query.jexl.nodes.QueryPropertyMarker.MarkerType.BOUNDED_RANGE;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.commons.jexl3.parser.ASTEQNode;
-import org.apache.commons.jexl3.parser.ASTFunctionNode;
-import org.apache.commons.jexl3.parser.ASTGENode;
-import org.apache.commons.jexl3.parser.ASTLENode;
-import org.apache.commons.jexl3.parser.JexlNode;
-import org.apache.commons.jexl3.parser.JexlNodes;
-import org.apache.commons.jexl3.parser.ParserTreeConstants;
-import org.apache.log4j.Logger;
-import org.locationtech.geowave.core.geotime.util.GeometryUtils;
-import org.locationtech.geowave.core.index.ByteArrayRange;
-import org.locationtech.geowave.core.index.sfc.data.MultiDimensionalNumericData;
-import org.locationtech.geowave.core.store.api.Index;
-import org.locationtech.jts.geom.Envelope;
-import org.locationtech.jts.geom.Geometry;
-import org.locationtech.jts.geom.GeometryCollection;
-import org.locationtech.jts.geom.GeometryFactory;
-
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-
 import datawave.core.geo.function.AbstractGeoFunctionDetails;
-import datawave.core.query.jexl.JexlNodeFactory;
 import datawave.core.query.jexl.functions.FunctionJexlNodeVisitor;
-import datawave.core.query.jexl.nodes.QueryPropertyMarker;
 import datawave.core.query.jexl.visitors.JexlStringBuildingVisitor;
-import datawave.data.normalizer.AbstractGeometryNormalizer;
-import datawave.data.normalizer.GeometryNormalizer;
-import datawave.data.normalizer.PointNormalizer;
-import datawave.data.type.GeoType;
-import datawave.data.type.GeometryType;
-import datawave.data.type.PointType;
 import datawave.data.type.Type;
 import datawave.query.attributes.AttributeFactory;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.ArithmeticJexlEngines;
-import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.arguments.GeoFunctionJexlArgumentDescriptor;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor;
 import datawave.query.util.DateIndexHelper;
-import datawave.query.util.GeoWaveUtils;
 import datawave.query.util.MetadataHelper;
+import org.apache.commons.jexl3.parser.ASTFunctionNode;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.log4j.Logger;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * This is the descriptor class for performing geowave functions. It supports basic spatial relationships, and decomposes the bounding box of the relationship

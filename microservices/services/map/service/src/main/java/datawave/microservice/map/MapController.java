@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 import datawave.microservice.authorization.user.DatawaveUserDetails;
 import datawave.microservice.map.config.MapServiceProperties;
 import datawave.microservice.map.data.GeoFeatures;
+import datawave.microservice.map.data.GeoIndices;
 import datawave.microservice.map.data.GeoQueryFeatures;
 import datawave.webservice.query.exception.QueryException;
 
@@ -51,6 +52,16 @@ public class MapController {
                     @AuthenticationPrincipal DatawaveUserDetails currentUser) {
         return mapOperationsService.geoFeaturesForGeometry(geometry, createRanges, rangeType, maxEnvelopes, maxExpansion, optimizeRanges, rangeSplitThreshold,
                         maxRangeOverlap, currentUser);
+    }
+    
+    @RequestMapping(path = "/geoIndicesForGeometry", method = {RequestMethod.POST})
+    public GeoIndices geoIndicesForGeometry(@RequestParam("geometry") String geometry) {
+        return mapOperationsService.geoIndicesForGeometry(geometry);
+    }
+    
+    @RequestMapping(path = "/supportedGeometries", method = {RequestMethod.GET})
+    public List<String> supportedGeometries() {
+        return mapServiceProperties.getSupportedGeometries();
     }
     
     @RequestMapping(path = "/basemaps", method = {RequestMethod.GET})

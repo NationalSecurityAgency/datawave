@@ -8,6 +8,9 @@ datawave:
     title: "Map Service"
     description: "REST API provided by the Map Service"
   map:
+    supportedGeometries:
+    - 'WKT'
+    - 'GeoJSON'
     metadataTableName: 'datawave.metadata'
     accumulo:
       zookeepers: "${accumulo.zookeepers}"

@@ -112,3 +112,10 @@ export interface Banner {
   message?: string;
   style?: string;
 }
+
+export interface GeoIndices {
+  wkt: string;
+  geoPointIndex: string;
+  geoWavePointIndex: string;
+  geoWaveGeometryIndex: string[];
+}

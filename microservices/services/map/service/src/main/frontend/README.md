@@ -108,25 +108,25 @@ To simplify debugging, install the Vue.js devtools extension in chrome. This wil
 
 # Functionality
 
-- Plot the geometries from a query on the map
-  - Group query geometries by field
-  - Expand geometry collections into individual geometries
-- Plot geo ranges from a query on the map
-  - Group geo ranges by field, and tier
-- Plot any given WKT, GeoJSON on the map
+- ~~Plot the geometries from a query on the map~~
+  - ~~Group query geometries by field~~
+  - ~~Expand geometry collections into individual geometries~~
+- ~~Plot geo ranges from a query on the map~~
+  - ~~Group geo ranges by field, and tier~~
+- ~~Plot any given WKT, GeoJSON on the map~~
 - Export any geometry to WKT, or GeoJSON
-- Load a query given a query ID
-- List queries for the current user?
-- Use a marker for zoomed-out, hard to see geometries
-  - Add ability to turn markers on or off
+- ~~Load a query given a query ID~~
+- ~~List queries for the current user?~~
+- ~~Use a marker for zoomed-out, hard to see geometries~~
+  - ~~Add ability to turn markers on or off~~
 - Change default polygon colors depending on the basemap
 - Utilities:
   - Convert (single? multiple?) WKT to GeoWave Index
   - Convert (single? multiple?) WKT to Geo Index
   - Find/highlight range/term, and geo function matching geometry
-  - Split a query geometry naturally (in case of geometry collection) or forcefully
-  - Set portions of a query as evaluation only with the click of a mouse (query editor?)
-  - Submit query, and expand into index terms/ranges for analysis. with and without optimization. add ability to turn knobs to see the effect
+  - ~~Split a query geometry naturally (in case of geometry collection) or forcefully~~
+  - ~~Set portions of a query as evaluation only with the click of a mouse (query editor?)~~
+  - ~~Submit query, and expand into index terms/ranges for analysis. with and without optimization. add ability to turn knobs to see the effect~~
   - Add ability to draw custom shapes on map.
   - Use ANDI bookmarklet to gauge accessibility
   - See arcgis.com for example app layout

@@ -18,13 +18,13 @@
       v-if="appState.isConfigPanelEnabled"
       style="position: absolute; height: 100%; top: 0; left: 0; z-index: 1"
     >
-      <ConfigPanel />
+      <ConfigPanel :supportedGeometries="supportedGeometries"/>
     </div>
   </q-page>
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue';
+import { onMounted, ref } from 'vue';
 import LeafletMap from 'components/LeafletMap.vue';
 import ConfigPanel from 'components/ConfigPanel.vue';
 import { appStateStore } from 'stores/state-store';
@@ -32,9 +32,11 @@ import { enableLayers, geoFeaturesStore, getVisibleBounds } from 'stores/geo-fea
 import { GeoQueryFeatures } from 'components/models'
 import { useRoute } from 'vue-router'
 import { simpleMapStore } from 'stores/simple-map-store'
+import { api } from 'boot/axios';
 
 const appState = appStateStore();
 const leafletMap = simpleMapStore;
+const supportedGeometries = ref<string[]>();
 
 onMounted(() => {
   const route = useRoute();
@@ -60,5 +62,14 @@ onMounted(() => {
       console.log('Failed to load query. ', queryId, 'Reason: ', reason);
     });
   }
+
+  api
+    .get('/map/v1/supportedGeometries', undefined)
+    .then((response) => {
+      supportedGeometries.value = response.data as string[];
+    })
+    .catch((reason) => {
+      console.log('Something went wrong? ' + reason);
+    });
 });
 </script>

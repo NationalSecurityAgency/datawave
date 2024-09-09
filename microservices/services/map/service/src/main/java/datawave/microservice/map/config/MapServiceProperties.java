@@ -1,6 +1,7 @@
 package datawave.microservice.map.config;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
@@ -16,6 +17,7 @@ public class MapServiceProperties {
     private List<Basemap> basemaps = new ArrayList<>();
     private Banner header = new Banner();
     private Banner footer = new Banner();
+    private List<String> supportedGeometries = Arrays.asList("WKT", "GeoJSON");
     
     public String getMetricsUri() {
         return metricsUri;
@@ -55,6 +57,14 @@ public class MapServiceProperties {
     
     public void setFooter(Banner footer) {
         this.footer = footer;
+    }
+    
+    public List<String> getSupportedGeometries() {
+        return supportedGeometries;
+    }
+    
+    public void setSupportedGeometries(List<String> supportedGeometries) {
+        this.supportedGeometries = supportedGeometries;
     }
     
     @JsonInclude(JsonInclude.Include.NON_NULL)

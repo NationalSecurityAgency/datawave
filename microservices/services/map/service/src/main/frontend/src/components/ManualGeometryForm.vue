@@ -9,7 +9,7 @@
             @update:model-value="loadFile"
             style="display: none"
           />
-          <q-input v-model="manualGeometryForm.geometry" label="Geometry (WKT/GeoJSON)" spellcheck="false" >
+          <q-input v-model="manualGeometryForm.geometry" :label='"Geometry (" + supportedGeometries.join("/") + ")"' spellcheck="false" >
             <template v-slot:append>
               <q-btn
                 dense
@@ -174,6 +174,11 @@ import {
 } from 'stores/manual-geometry-store';
 import CardLoading, { CardLoadingMethods } from 'components/CardLoading.vue';
 import { geoFeaturesStore } from 'stores/geo-features-store';
+
+export interface ManualGeometryFormProps {
+  supportedGeometries: string[];
+}
+defineProps<ManualGeometryFormProps>();
 
 const manualGeometryForm = manualGeometryFormStore('abc-123');
 const geoQueryFeatures = geoFeaturesStore();

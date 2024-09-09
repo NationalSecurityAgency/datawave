@@ -113,6 +113,15 @@ const menuItems: MenuItemProps[] = [
   {
     title: 'Geo Toolbox',
     icon: 'handyman',
+    myFunction: () => {
+      if (appState.getConfigPanelSelection === 'Geo Toolbox') {
+        appState.disableConfigPanel();
+        appState.setConfigPanelSelection('');
+      } else {
+        appState.enableConfigPanel();
+        appState.setConfigPanelSelection('Geo Toolbox');
+      }
+    },
   },
 ];
 
@@ -135,8 +144,7 @@ onMounted(() => {
   api
     .get('/map/v1/header', undefined)
     .then((response) => {
-      const headerResp = response.data as Banner;
-      header.value = headerResp;
+      header.value = response.data as Banner;
     })
     .catch((reason) => {
       console.log('Something went wrong? ' + reason);
@@ -145,8 +153,7 @@ onMounted(() => {
   api
     .get('/map/v1/footer', undefined)
     .then((response) => {
-      const footerResp = response.data as Banner;
-      footer.value = footerResp;
+      footer.value = response.data as Banner;
     })
     .catch((reason) => {
       console.log('Something went wrong? ' + reason);
