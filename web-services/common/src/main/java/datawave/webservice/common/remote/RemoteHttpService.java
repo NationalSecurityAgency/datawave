@@ -576,7 +576,7 @@ public abstract class RemoteHttpService {
     }
 
     /**
-     * classes that are instances of IOException that will cause DatawaveRetryHandler to retry with delay subclasses of RemoteHttpService should override this
+     * Classes that are instances of IOException that will cause DatawaveRetryHandler to retry with delay. Subclasses of RemoteHttpService should override this
      * method if necessary
      */
     protected List<Class<? extends IOException>> getUnavailableRetryClasses() {
@@ -584,8 +584,8 @@ public abstract class RemoteHttpService {
     }
 
     /**
-     * classes that are instances of IOException that should not cause a retry subclasses of RemoteHttpService should override this method if necessary the
-     * default list of classes in DefaultHttpRequestRetryHandler is: InterruptedIOException .class, UnknownHostException.class, ConnectException.class,
+     * Classes that are instances of IOException that should not cause a retry. Subclasses of RemoteHttpService should override this method if necessary. The
+     * default list of classes in DefaultHttpRequestRetryHandler is: InterruptedIOException.class, UnknownHostException.class, ConnectException.class,
      * SSLException.class));
      */
     protected List<Class<? extends IOException>> getNonRetriableClasses() {
