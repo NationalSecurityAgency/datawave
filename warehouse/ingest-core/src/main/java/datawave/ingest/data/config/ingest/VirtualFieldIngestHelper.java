@@ -11,13 +11,10 @@ import datawave.ingest.data.config.NormalizedContentInterface;
 
 /**
  * This class will add the VirtualFieldNormalizer to the list of normalizers. Note that this can be done directly via the configuration.
- *
- *
- *
  */
 public class VirtualFieldIngestHelper implements VirtualIngest {
 
-    private VirtualFieldNormalizer virtualFieldNormalizer = new VirtualFieldNormalizer();
+    protected VirtualFieldNormalizer virtualFieldNormalizer = new VirtualFieldNormalizer();
 
     private Type type;
 
@@ -31,12 +28,12 @@ public class VirtualFieldIngestHelper implements VirtualIngest {
     }
 
     @Override
-    public Map<String,String[]> getVirtualFieldDefinitions() {
+    public Map<String, String[]> getVirtualFieldDefinitions() {
         return virtualFieldNormalizer.getVirtualFieldDefinitions();
     }
 
     @Override
-    public void setVirtualFieldDefinitions(Map<String,String[]> virtualFieldDefinitions) {
+    public void setVirtualFieldDefinitions(Map<String, String[]> virtualFieldDefinitions) {
         virtualFieldNormalizer.setVirtualFieldDefinitions(virtualFieldDefinitions);
     }
 
@@ -51,18 +48,18 @@ public class VirtualFieldIngestHelper implements VirtualIngest {
     }
 
     @Override
-    public Multimap<String,NormalizedContentInterface> getVirtualFields(Multimap<String,NormalizedContentInterface> fields) {
+    public Multimap<String, NormalizedContentInterface> getVirtualFields(Multimap<String, NormalizedContentInterface> fields) {
         return virtualFieldNormalizer.normalizeMap(fields);
     }
 
     @Override
     public boolean isVirtualIndexedField(String fieldName) {
-        Map<String,String[]> map = this.getVirtualFieldDefinitions();
+        Map<String, String[]> map = this.getVirtualFieldDefinitions();
         return map.containsKey(fieldName);
     }
 
     @Override
-    public Map<String,String[]> getVirtualNameAndIndex(String virtualFieldName) {
+    public Map<String, String[]> getVirtualNameAndIndex(String virtualFieldName) {
         return this.getVirtualFieldDefinitions();
     }
 

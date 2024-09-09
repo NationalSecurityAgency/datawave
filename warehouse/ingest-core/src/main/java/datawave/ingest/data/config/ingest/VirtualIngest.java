@@ -19,7 +19,6 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.hadoop.conf.Configuration;
 
 import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimap;
 
 import datawave.data.type.NoOpType;
@@ -37,11 +36,6 @@ public interface VirtualIngest {
     String VIRTUAL_FIELD_ALLOW_MISSING = VirtualFieldNormalizer.VIRTUAL_FIELD_ALLOW_MISSING;
     String VIRTUAL_FIELD_GROUPING_POLICY = VirtualFieldNormalizer.VIRTUAL_FIELD_GROUPING_POLICY;
 
-    // enum GroupingPolicy {
-    // SAME_GROUP_ONLY, GROUPED_WITH_NON_GROUPED, IGNORE_GROUPS
-    // }
-
-    // AbstractGroupingPolicy groupingPolicy = new GroupingPolicy();
     void setup(Configuration config) throws IllegalArgumentException;
 
     Map<String,String[]> getVirtualFieldDefinitions();
@@ -129,6 +123,12 @@ public interface VirtualIngest {
 
         private MarkingFunctions markingFunctions;
 
+        Class<? extends AbstractGroupingPolicy> groupingPolicyClazz = null;
+
+        public void setGroupingPolicyClass(Class<? extends AbstractGroupingPolicy> clazz) {
+            groupingPolicyClazz = clazz;
+        }
+
         public void setup(Type type, String instance, Configuration config) {
 
             markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
@@ -145,6 +145,11 @@ public interface VirtualIngest {
             String[] ignoreNormalization = getStrings(type, instance, config, VIRTUAL_FIELD_IGNORE_NORMALIZATION_ON_FIELD, null);
             Set<String> emptySet = Collections.emptySet();
             ignoreNormalizationForFields = (null != ignoreNormalization) ? cleanSet(ignoreNormalization) : emptySet;
+
+            if (groupingPolicyClazz == null) {
+                // set default grouping policy class
+                setGroupingPolicyClass(GroupingPolicy.class);
+            }
 
             if (null == fieldNames && null == fieldMembers)
                 return;
@@ -185,11 +190,11 @@ public interface VirtualIngest {
 
                 if (groupingPolicies.length == 0) {
                     // use default policy
-                    grouping.put(name, new GroupingPolicy());
+                    grouping.put(name, AbstractGroupingPolicy.getGroupingPolicy(groupingPolicyClazz));
                 } else if (groupingPolicies.length == 1) {
-                    grouping.put(name, new GroupingPolicy(groupingPolicies[0]));
+                    grouping.put(name, AbstractGroupingPolicy.getGroupingPolicy(groupingPolicyClazz, groupingPolicies[0]));
                 } else {
-                    grouping.put(name, new GroupingPolicy(groupingPolicies[i]));
+                    grouping.put(name, AbstractGroupingPolicy.getGroupingPolicy(groupingPolicyClazz, groupingPolicies[i]));
                 }
 
                 if (missingPolicies.length == 0) {
@@ -689,24 +694,6 @@ public interface VirtualIngest {
                 return eventFields.get(field);
             }
             return groupingPolicy.applyPolicy(this, field, grouping, eventFields, groupings);
-            // switch (groupingPolicy) {
-            // case GroupingPolicy.GROUPED_WITH_NON_GROUPED:
-            // updateGroupedEventFields(eventFields, field, groupings);
-            // if (grouping == null) {
-            // // if this grouping is null, then we can match with anything
-            // return eventFields.get(field);
-            // } else {
-            // // if we have a grouping, then we can match those with the same grouping or no grouping
-            // return Iterables.concat(groupings.get(field).get(null), groupings.get(field).get(grouping));
-            // }
-            // case GroupingPolicy.SAME_GROUP_ONLY:
-            // updateGroupedEventFields(eventFields, field, groupings);
-            // // only return those with the same grouping
-            // return groupings.get(field).get(grouping);
-            // default:
-            // // by default grouping does not matter
-            // return eventFields.get(field);
-            // }
         }
 
         private boolean isConstant(String name) {
