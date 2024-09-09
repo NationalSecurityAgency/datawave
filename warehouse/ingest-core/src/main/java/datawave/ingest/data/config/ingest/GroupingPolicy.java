@@ -13,19 +13,24 @@ public class GroupingPolicy extends AbstractGroupingPolicy {
     private final static int GROUPED_WITH_NON_GROUPED = 2;
     private final static int IGNORE_GROUPS = 3;
 
-    private int policy = 0;
-
-    GroupingPolicy() {
-        policy = GROUPED_WITH_NON_GROUPED;
+    public GroupingPolicy() {
+        setPolicy("GROUPED_WITH_NON_GROUPED");
     }
 
-    GroupingPolicy(String name) {
+    public GroupingPolicy(String name) {
+        setPolicy(name);
+    }
+
+    @Override
+    protected void setPolicy (String name) {
         if (name.equals("SAME_GROUP_ONLY")) {
             policy = SAME_GROUP_ONLY;
         } else if (name.equals("GROUPED_WITH_NON_GROUPED")) {
             policy = GROUPED_WITH_NON_GROUPED;
         } else if (name.equals("IGNORE_GROUPS")) {
             policy = IGNORE_GROUPS;
+        } else {
+            policy = GROUPED_WITH_NON_GROUPED;
         }
     }
 
@@ -34,6 +39,7 @@ public class GroupingPolicy extends AbstractGroupingPolicy {
     // return 1;
     // }
     //
+
     @Override
     public boolean isIgnoreGroupings() {
         return policy == IGNORE_GROUPS;
@@ -54,7 +60,7 @@ public class GroupingPolicy extends AbstractGroupingPolicy {
                     // if we have a grouping, then we can match those with the same grouping or no grouping
                     return Iterables.concat(groupings.get(field).get(null), groupings.get(field).get(grouping));
                 }
-            case GroupingPolicy.SAME_GROUP_ONLY:
+            case SAME_GROUP_ONLY:
                 normalizer.updateGroupedEventFields(eventFields, field, groupings);
                 // only return those with the same grouping
                 return groupings.get(field).get(grouping);
