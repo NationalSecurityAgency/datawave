@@ -17,6 +17,7 @@ import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.user.SummingCombiner;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.collections4.iterators.TransformIterator;
@@ -124,7 +125,7 @@ public class TestCardinalityWithQuery {
 
         Mutation m = new Mutation("ID");
         m.put(new Text("e"), new Text(datatype), timestamp, NULL_VALUE);
-        m.put(new Text("i"), new Text(datatype), timestamp, NULL_VALUE);
+        m.put(new Text("i"), new Text(datatype + "\u000020190101"), timestamp, new Value(SummingCombiner.VAR_LEN_ENCODER.encode(1L)));
         m.put(new Text("t"), new Text(datatype + "\0datawave.data.type.NoOpType"), timestamp, NULL_VALUE);
         bw.addMutation(m);
 
