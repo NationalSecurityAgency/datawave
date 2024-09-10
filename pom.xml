@@ -60,7 +60,7 @@
         <version.commons-math3>3.0</version.commons-math3>
         <version.commons-net>3.6</version.commons-net>
         <version.commons-pool>1.6</version.commons-pool>
-        <version.commons-text>1.11</version.commons-text>
+        <version.commons-text>1.11.0</version.commons-text>
         <version.commons-vfs2>2.3</version.commons-vfs2>
         <version.curator>5.2.0</version.curator>
         <version.curator.test>5.2.0</version.curator.test>
