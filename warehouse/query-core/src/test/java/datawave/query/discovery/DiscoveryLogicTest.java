@@ -124,7 +124,7 @@ public class DiscoveryLogicTest {
         try (BatchWriter writer = client.createBatchWriter(QueryTestTableHelper.METADATA_TABLE_NAME, config)) {
             Mutation m = new Mutation(valueField.getValue1().toUpperCase());
             m.put("t", "datatype\u0000" + LcNoDiacriticsType.class.getName(), viz, blank);
-            if (!valueField.getValue1().equals("non_indexed_fields")) {
+            if (!valueField.getValue1().toUpperCase().equals("NON_INDEXED_FIELD")) {
                 m.put("i", "datatype", viz, blank);
             }
             m.put("ri", "datatype", viz, blank);
