@@ -1,17 +1,5 @@
 package datawave.query.jexl;
 
-import datawave.data.type.DateType;
-import datawave.data.type.Type;
-import datawave.data.type.util.NumericalEncoder;
-import datawave.query.attributes.ValueTuple;
-import org.apache.commons.jexl2.JexlArithmetic;
-import org.apache.commons.lang.math.NumberUtils;
-import org.apache.log4j.Logger;
-import org.apache.lucene.util.IntsRef;
-import org.apache.lucene.util.IntsRefBuilder;
-import org.apache.lucene.util.fst.FST;
-import org.apache.lucene.util.fst.Util;
-
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -20,25 +8,38 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.apache.commons.jexl3.JexlArithmetic;
+import org.apache.commons.lang.math.NumberUtils;
+import org.apache.log4j.Logger;
+import org.apache.lucene.util.IntsRef;
+import org.apache.lucene.util.IntsRefBuilder;
+import org.apache.lucene.util.fst.FST;
+import org.apache.lucene.util.fst.Util;
+
+import datawave.data.type.DateType;
+import datawave.data.type.Type;
+import datawave.data.type.util.NumericalEncoder;
+import datawave.query.attributes.ValueTuple;
+
 public abstract class DatawaveArithmetic extends JexlArithmetic {
     private static final String LESS_THAN = "<", GREATER_THAN = ">", LESS_THAN_OR_EQUAL = "<=", GREATER_THAN_OR_EQUAL = ">=";
-    
+
     private static final Logger log = Logger.getLogger(DatawaveArithmetic.class);
-    
+
     /**
      * Default to being lenient so we don't have to add "null" for every field in the query that doesn't exist in the document
      */
     public DatawaveArithmetic() {
         super(false);
     }
-    
+
     public DatawaveArithmetic(boolean lenient) {
         super(lenient);
     }
-    
+
     /**
      * Get the number class of an object. If a set of objects, then get the most inclusive number class. null is returned if no numeric class can be determined
-     * 
+     *
      * @param o
      *            The object to test
      * @param convert
@@ -50,7 +51,7 @@ public abstract class DatawaveArithmetic extends JexlArithmetic {
             Class<? extends Number> lastC = null;
             for (Object setObject : (Set<?>) o) {
                 Class<? extends Number> c = getNumberClass(setObject, convert);
-                
+
                 if (c == null) {
                     return null;
                 } else if (lastC == null) {
@@ -90,10 +91,10 @@ public abstract class DatawaveArithmetic extends JexlArithmetic {
             return null;
         }
     }
-    
+
     /**
      * Convert an object to the desired number class.
-     * 
+     *
      * @param o
      *            The object to convert
      * @param c
@@ -134,10 +135,10 @@ public abstract class DatawaveArithmetic extends JexlArithmetic {
             }
         }
     }
-    
+
     /**
      * Performs a comparison.
-     * 
+     *
      * @param left
      *            the left operand
      * @param right
@@ -162,33 +163,35 @@ public abstract class DatawaveArithmetic extends JexlArithmetic {
         }
         throw new ArithmeticException("Object comparison:(" + left + " " + operator + " " + right + ")");
     }
-    
+
     /**
      * if either one are Dates, try to
-     * 
+     *
      * @param left
+     *            the left date
      * @param right
-     * @return
+     *            the right date
+     * @return if we can subtract the dates
      */
     public Object subtract(Object left, Object right) {
         if (left == null && right == null) {
             return controlNullNullOperands();
         }
-        
+
         if (left instanceof ValueTuple && right instanceof ValueTuple) {
             Long dateDifference = subtract((ValueTuple) left, (ValueTuple) right);
             if (dateDifference != null) {
                 return dateDifference;
             }
         }
-        
+
         // if either are floating point (double or float) use double
         if (isFloatingPointNumber(left) || isFloatingPointNumber(right)) {
             double l = toDouble(left);
             double r = toDouble(right);
             return new Double(l - r);
         }
-        
+
         // if either are bigdecimal use that type
         if (left instanceof BigDecimal || right instanceof BigDecimal) {
             BigDecimal l = toBigDecimal(left);
@@ -196,22 +199,22 @@ public abstract class DatawaveArithmetic extends JexlArithmetic {
             BigDecimal result = l.subtract(r, getMathContext());
             return narrowBigDecimal(left, right, result);
         }
-        
+
         // otherwise treat as integers
         BigInteger l = toBigInteger(left);
         BigInteger r = toBigInteger(right);
         BigInteger result = l.subtract(r);
         return narrowBigInteger(left, right, result);
     }
-    
+
     protected Long subtract(Date left, Date right) {
         return left.getTime() - right.getTime();
     }
-    
+
     protected Long subtract(DateType left, DateType right) {
         return subtract(left.getDelegate(), right.getDelegate());
     }
-    
+
     protected Long subtract(ValueTuple left, ValueTuple right) {
         Object leftValue = ((ValueTuple) left).getValue();
         Object rightValue = ((ValueTuple) right).getValue();
@@ -220,7 +223,7 @@ public abstract class DatawaveArithmetic extends JexlArithmetic {
         }
         return null;
     }
-    
+
     protected Long subtract(Collection<?> left, Collection<?> right) {
         if (left.size() == 1 && right.size() == 1) { // both singletons
             Object leftObject = left.iterator().next();
@@ -235,7 +238,7 @@ public abstract class DatawaveArithmetic extends JexlArithmetic {
         }
         return null;
     }
-    
+
     protected void addAll(Collection<Object> set, Object o) {
         if (o instanceof Collection) {
             set.addAll((Collection<?>) o);
@@ -243,12 +246,13 @@ public abstract class DatawaveArithmetic extends JexlArithmetic {
             set.add(o);
         }
     }
-    
+
     /**
      * This method deals with the ValueTuple objects and turns them into the normalized value parts
      *
      * @param o
-     * @return
+     *            an object
+     * @return the normalized values
      */
     protected Object normalizedValues(Object o) {
         if (o instanceof Set) {
@@ -265,7 +269,7 @@ public abstract class DatawaveArithmetic extends JexlArithmetic {
             return ValueTuple.getNormalizedValue(o);
         }
     }
-    
+
     /**
      * Tests whether the right value matches our FST.
      *
@@ -277,10 +281,10 @@ public abstract class DatawaveArithmetic extends JexlArithmetic {
      */
     public boolean fstMatch(FST fst, Object right) {
         right = normalizedValues(right);
-        
+
         if (right instanceof Set) {
             Set<Object> set = (Set<Object>) right;
-            
+
             for (Object o : set) {
                 if (o != null) {
                     try {
@@ -305,10 +309,10 @@ public abstract class DatawaveArithmetic extends JexlArithmetic {
                 }
             }
         }
-        
+
         return false;
     }
-    
+
     public static boolean matchesFst(Object object, FST fst) throws IOException {
         final IntsRefBuilder irBuilder = new IntsRefBuilder();
         Util.toUTF16(object.toString(), irBuilder);
@@ -317,9 +321,13 @@ public abstract class DatawaveArithmetic extends JexlArithmetic {
             return Util.get(fst, ints) != null;
         }
     }
-    
+
     /**
      * some of our nodes evaluate to a collection of matches. Coerce this collection to true or false based on the size of matches
+     *
+     * @param val
+     *            a value
+     * @return a boolean
      */
     @Override
     public boolean toBoolean(Object val) {
@@ -328,7 +336,7 @@ public abstract class DatawaveArithmetic extends JexlArithmetic {
         }
         return super.toBoolean(val);
     }
-    
+
     private Object possibleValueTupleToDelegate(Object val) {
         // if the incoming val is a ValueTuple, swap in the delegate value
         if (val instanceof ValueTuple) {
@@ -339,21 +347,21 @@ public abstract class DatawaveArithmetic extends JexlArithmetic {
         }
         return val;
     }
-    
+
     public int toInteger(Object val) {
         return super.toInteger(possibleValueTupleToDelegate(val));
     }
-    
+
     public BigInteger toBigInteger(Object val) {
         return super.toBigInteger(possibleValueTupleToDelegate(val));
     }
-    
+
     public BigDecimal toBigDecimal(Object val) {
         return super.toBigDecimal(possibleValueTupleToDelegate(val));
     }
-    
+
     public double toDouble(Object val) {
         return super.toDouble(possibleValueTupleToDelegate(val));
     }
-    
+
 }

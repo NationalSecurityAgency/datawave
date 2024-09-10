@@ -11,17 +11,17 @@ import java.util.concurrent.locks.ReentrantLock;
 
 public class BoundedBlockingQueue<E> extends AbstractQueue<E> implements BlockingQueue<E> {
     private final Queue<E> queue;
-    
+
     private final int maxCapacity;
-    
+
     final ReentrantLock lock;
     private final Condition notEmpty;
     private final Condition notFull;
-    
+
     public BoundedBlockingQueue(int maxCapacity, Queue<E> queue) {
         this(maxCapacity, queue, false);
     }
-    
+
     public BoundedBlockingQueue(int maxCapacity, Queue<E> queue, boolean fair) {
         this.maxCapacity = maxCapacity;
         this.queue = queue;
@@ -29,12 +29,12 @@ public class BoundedBlockingQueue<E> extends AbstractQueue<E> implements Blockin
         this.notEmpty = this.lock.newCondition();
         this.notFull = this.lock.newCondition();
     }
-    
+
     @Override
     public boolean add(E e) {
         return super.add(e);
     }
-    
+
     @Override
     public boolean offer(E e) {
         final ReentrantLock lock = this.lock;
@@ -51,7 +51,7 @@ public class BoundedBlockingQueue<E> extends AbstractQueue<E> implements Blockin
             lock.unlock();
         }
     }
-    
+
     @Override
     public void put(E e) throws InterruptedException {
         final ReentrantLock lock = this.lock;
@@ -65,7 +65,7 @@ public class BoundedBlockingQueue<E> extends AbstractQueue<E> implements Blockin
             lock.unlock();
         }
     }
-    
+
     @Override
     public boolean offer(E e, long timeout, TimeUnit unit) throws InterruptedException {
         long nanos = unit.toNanos(timeout);
@@ -84,7 +84,7 @@ public class BoundedBlockingQueue<E> extends AbstractQueue<E> implements Blockin
             lock.unlock();
         }
     }
-    
+
     @Override
     public E poll() {
         final ReentrantLock lock = this.lock;
@@ -101,7 +101,7 @@ public class BoundedBlockingQueue<E> extends AbstractQueue<E> implements Blockin
             lock.unlock();
         }
     }
-    
+
     @Override
     public E peek() {
         final ReentrantLock lock = this.lock;
@@ -112,7 +112,7 @@ public class BoundedBlockingQueue<E> extends AbstractQueue<E> implements Blockin
             lock.unlock();
         }
     }
-    
+
     @Override
     public E take() throws InterruptedException {
         final ReentrantLock lock = this.lock;
@@ -127,7 +127,7 @@ public class BoundedBlockingQueue<E> extends AbstractQueue<E> implements Blockin
             lock.unlock();
         }
     }
-    
+
     @Override
     public E poll(long timeout, TimeUnit unit) throws InterruptedException {
         long nanos = unit.toNanos(timeout);
@@ -146,12 +146,12 @@ public class BoundedBlockingQueue<E> extends AbstractQueue<E> implements Blockin
             lock.unlock();
         }
     }
-    
+
     @Override
     public Iterator<E> iterator() {
         return queue.iterator();
     }
-    
+
     @Override
     public int size() {
         final ReentrantLock lock = this.lock;
@@ -162,7 +162,7 @@ public class BoundedBlockingQueue<E> extends AbstractQueue<E> implements Blockin
             lock.unlock();
         }
     }
-    
+
     @Override
     public int remainingCapacity() {
         final ReentrantLock lock = this.lock;
@@ -173,7 +173,7 @@ public class BoundedBlockingQueue<E> extends AbstractQueue<E> implements Blockin
             lock.unlock();
         }
     }
-    
+
     @Override
     public boolean remove(Object o) {
         if (o == null)
@@ -191,7 +191,7 @@ public class BoundedBlockingQueue<E> extends AbstractQueue<E> implements Blockin
             lock.unlock();
         }
     }
-    
+
     @Override
     public boolean contains(Object o) {
         if (o == null)
@@ -207,12 +207,12 @@ public class BoundedBlockingQueue<E> extends AbstractQueue<E> implements Blockin
             lock.unlock();
         }
     }
-    
+
     @Override
     public int drainTo(Collection<? super E> c) {
         return drainTo(c, Integer.MAX_VALUE);
     }
-    
+
     @Override
     public int drainTo(Collection<? super E> c, int maxElements) {
         if (c == this)

@@ -20,47 +20,47 @@ import io.protostuff.Schema;
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class JobExecution implements Serializable, Message<JobExecution>, Comparable<JobExecution> {
-    
+
     private static final long serialVersionUID = 1L;
-    
+
     @XmlAttribute(name = "mapReduceJobId")
     private String mapReduceJobId;
-    
+
     @XmlAttribute(name = "timestamp")
     private long timestamp;
-    
+
     @XmlAttribute(name = "state")
     private String state;
-    
+
     public String getMapReduceJobId() {
         return mapReduceJobId;
     }
-    
+
     public long getTimestamp() {
         return timestamp;
     }
-    
+
     public String getState() {
         return state;
     }
-    
+
     public void setMapReduceJobId(String mapReduceJobId) {
         this.mapReduceJobId = mapReduceJobId;
     }
-    
+
     public void setTimestamp(long timestamp) {
         this.timestamp = timestamp;
     }
-    
+
     public void setState(String state) {
         this.state = state;
     }
-    
+
     @Override
     public int hashCode() {
         return new HashCodeBuilder(17, 37).append(this.getTimestamp()).append(this.getMapReduceJobId()).append(this.getState()).toHashCode();
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (null == o)
@@ -74,7 +74,7 @@ public class JobExecution implements Serializable, Message<JobExecution>, Compar
             return true;
         return false;
     }
-    
+
     @Override
     public int compareTo(JobExecution o) {
         // sort by the map reduce job id, timestamp, and then state
@@ -91,53 +91,53 @@ public class JobExecution implements Serializable, Message<JobExecution>, Compar
             }
         }
     }
-    
+
     @Override
     public Schema<JobExecution> cachedSchema() {
         return SCHEMA;
     }
-    
+
     public static Schema<JobExecution> getSchema() {
         return SCHEMA;
     }
-    
+
     @XmlTransient
     private static final Schema<JobExecution> SCHEMA = new Schema<JobExecution>() {
         // schema methods
-        
+
         public JobExecution newMessage() {
             return new JobExecution();
         }
-        
+
         public Class<JobExecution> typeClass() {
             return JobExecution.class;
         }
-        
+
         public String messageName() {
             return JobExecution.class.getSimpleName();
         }
-        
+
         public String messageFullName() {
             return JobExecution.class.getName();
         }
-        
+
         public boolean isInitialized(JobExecution message) {
             return true;
         }
-        
+
         public void writeTo(Output output, JobExecution message) throws IOException {
-            
+
             if (message.getMapReduceJobId() != null) {
                 output.writeString(1, message.getMapReduceJobId(), false);
             }
-            
+
             output.writeUInt64(2, message.getTimestamp(), false);
-            
+
             if (message.getState() != null) {
                 output.writeString(3, message.getState(), false);
             }
         }
-        
+
         public void mergeFrom(Input input, JobExecution message) throws IOException {
             int number;
             while ((number = input.readFieldNumber(this)) != 0) {
@@ -157,7 +157,7 @@ public class JobExecution implements Serializable, Message<JobExecution>, Compar
                 }
             }
         }
-        
+
         public String getFieldName(int number) {
             switch (number) {
                 case 1:
@@ -170,12 +170,12 @@ public class JobExecution implements Serializable, Message<JobExecution>, Compar
                     return null;
             }
         }
-        
+
         public int getFieldNumber(String name) {
             final Integer number = fieldMap.get(name);
             return number == null ? 0 : number.intValue();
         }
-        
+
         final java.util.HashMap<String,Integer> fieldMap = new java.util.HashMap<String,Integer>();
         {
             fieldMap.put("mapReduceJobId", 1);
@@ -183,5 +183,5 @@ public class JobExecution implements Serializable, Message<JobExecution>, Compar
             fieldMap.put("state", 3);
         }
     };
-    
+
 }

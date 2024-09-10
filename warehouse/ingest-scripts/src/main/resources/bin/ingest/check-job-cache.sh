@@ -30,6 +30,9 @@ for c in ${CLASSPATH//:/ }; do
 	bname=${dir/*\//}
 	fname=${f/*\//}
 
+	# Skip dot files (e.g., config/.edge-key-version.txt.crc)
+	[[ "$fname" == "."* ]] && continue
+
 	if [[ "$bname" == "$fname" ]]; then
 	    name=$fname
 	else

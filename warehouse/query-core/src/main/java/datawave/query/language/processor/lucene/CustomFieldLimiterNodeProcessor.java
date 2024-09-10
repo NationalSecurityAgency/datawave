@@ -5,8 +5,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
-
 import org.apache.lucene.queryparser.flexible.core.QueryNodeException;
 import org.apache.lucene.queryparser.flexible.core.nodes.FieldQueryNode;
 import org.apache.lucene.queryparser.flexible.core.nodes.FunctionQueryNode;
@@ -20,19 +18,21 @@ import org.apache.lucene.queryparser.flexible.standard.nodes.MultiPhraseQueryNod
 import org.apache.lucene.queryparser.flexible.standard.nodes.PointQueryNode;
 import org.apache.lucene.queryparser.flexible.standard.nodes.RegexpQueryNode;
 
+import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
+
 /**
  *
  */
 public class CustomFieldLimiterNodeProcessor extends QueryNodeProcessorImpl {
-    
+
     private Set<String> allowedFields = null;
     private Boolean allowAnyFieldQueries = true;
-    
+
     @Override
     protected QueryNode preProcessNode(QueryNode node) throws QueryNodeException {
-        
+
         if (getQueryConfigHandler().has(ConfigurationKeys.ENABLE_POSITION_INCREMENTS)) {
-            
+
             if (getQueryConfigHandler().has(LuceneToJexlQueryParser.ALLOWED_FIELDS)) {
                 allowedFields = new HashSet<>();
                 allowedFields.addAll(getQueryConfigHandler().get(LuceneToJexlQueryParser.ALLOWED_FIELDS));
@@ -43,12 +43,12 @@ public class CustomFieldLimiterNodeProcessor extends QueryNodeProcessorImpl {
         }
         return node;
     }
-    
+
     @Override
     protected QueryNode postProcessNode(QueryNode node) throws QueryNodeException {
-        
+
         List<String> fields = new ArrayList<>();
-        
+
         if (node instanceof FieldQueryNode) {
             fields.add(((FieldQueryNode) node).getFieldAsString());
         } else if (node instanceof FunctionQueryNode) {
@@ -62,8 +62,11 @@ public class CustomFieldLimiterNodeProcessor extends QueryNodeProcessorImpl {
                 } else {
                     fields.add(parameterList.get(0));
                 }
-            } else if (function.equalsIgnoreCase("isnull") || function.equalsIgnoreCase("isnotnull")) {
+            } else if (function.equalsIgnoreCase("isnull") || function.equalsIgnoreCase("isnotnull") || function.equalsIgnoreCase("noexpansion")) {
                 fields.add(parameterList.get(0));
+            } else if (function.equalsIgnoreCase("compare")) {
+                fields.add(parameterList.get(0));
+                fields.add(parameterList.get(3));
             }
         } else if (node instanceof MultiPhraseQueryNode) {
             fields.add(((MultiPhraseQueryNode) node).getField().toString());
@@ -78,7 +81,7 @@ public class CustomFieldLimiterNodeProcessor extends QueryNodeProcessorImpl {
         } else if (node instanceof TokenizedPhraseQueryNode) {
             fields.add(((TokenizedPhraseQueryNode) node).getField().toString());
         }
-        
+
         for (String f : fields) {
             if (f.isEmpty()) {
                 if (!allowAnyFieldQueries) {
@@ -88,10 +91,10 @@ public class CustomFieldLimiterNodeProcessor extends QueryNodeProcessorImpl {
                 throw new IllegalArgumentException("Field '" + f + "' is not permitted in this type of query");
             }
         }
-        
+
         return node;
     }
-    
+
     @Override
     protected List<QueryNode> setChildrenOrder(List<QueryNode> children) throws QueryNodeException {
         return children;

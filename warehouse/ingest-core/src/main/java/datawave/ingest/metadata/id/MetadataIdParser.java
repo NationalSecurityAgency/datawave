@@ -7,43 +7,49 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import datawave.ingest.data.RawRecordContainer;
-
 import org.apache.hadoop.util.StringUtils;
 
 import com.google.common.collect.Multimap;
 
+import datawave.ingest.data.RawRecordContainer;
+
 /**
  * A metadata key parser implementation will parse metadata out of a key.
- * 
+ *
  */
 public abstract class MetadataIdParser {
-    
+
     public MetadataIdParser() {
-        
+
     }
-    
+
     private Pattern pattern = null;
-    
+
     public MetadataIdParser(String pattern) {
         this.pattern = Pattern.compile(pattern);
     }
-    
+
     public Matcher getMatcher(String key) {
         return pattern.matcher(key);
     }
-    
+
     /**
      * This is the method that is called to parse metadata from an event
-     * 
+     *
      * @param event
+     *            the event
      * @param key
+     *            the key
+     * @param metadata
+     *            a map of metadata
+     * @throws Exception
+     *             if there is an issue
      */
     public abstract void addMetadata(RawRecordContainer event, Multimap<String,String> metadata, String key) throws Exception;
-    
+
     /**
      * Create a metadata parser using all string arguments
-     * 
+     *
      * @param description
      *            This is a description of the form &lt;classname&gt;(args) which will be used to construct the parser. args should be of the form "..." {,
      *            "..."}.
@@ -81,13 +87,15 @@ public abstract class MetadataIdParser {
             throw new IllegalArgumentException("Error constructiong " + description, e);
         }
     }
-    
+
     /**
      * Parse "..." {, "..."} into an array of string arguments (as Object[])
-     * 
+     *
      * @param args
+     *            the arguments
      * @return Object[] An array of string objects
      * @throws IllegalArgumentException
+     *             if there is an issue with the arguments
      */
     public static Object[] parseArgs(String args) throws IllegalArgumentException {
         List<String> argList = new ArrayList<>();

@@ -1,17 +1,18 @@
 package datawave.configuration;
 
-import org.apache.commons.lang.StringUtils;
-import org.apache.deltaspike.core.api.config.ConfigProperty;
-import org.apache.deltaspike.core.spi.config.BaseConfigPropertyProducer;
+import static datawave.webservice.common.audit.Auditor.AuditType;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.Dependent;
 import javax.enterprise.inject.Produces;
 import javax.enterprise.inject.spi.InjectionPoint;
-import java.util.LinkedHashMap;
-import java.util.Map;
 
-import static datawave.webservice.common.audit.Auditor.AuditType;
+import org.apache.commons.lang.StringUtils;
+import org.apache.deltaspike.core.api.config.ConfigProperty;
+import org.apache.deltaspike.core.spi.config.BaseConfigPropertyProducer;
 
 /**
  * Extensions to DeltaSpike's {@link ConfigProperty} to handle comma-separated generation for some types that are defined here in the common library.
@@ -20,7 +21,7 @@ import static datawave.webservice.common.audit.Auditor.AuditType;
  */
 @ApplicationScoped
 public class DatawaveCommonConfigPropertyProducer extends BaseConfigPropertyProducer {
-    
+
     @Produces
     @Dependent
     @ConfigProperty(name = "ignored")
@@ -28,7 +29,7 @@ public class DatawaveCommonConfigPropertyProducer extends BaseConfigPropertyProd
     public Map<String,AuditType> produceStringAuditTypeMapConfiguration(InjectionPoint injectionPoint) {
         String propertyValue = getStringPropertyValue(injectionPoint);
         String[] pairs = StringUtils.split(propertyValue, "|");
-        
+
         Map<String,AuditType> map = new LinkedHashMap<>();
         if (pairs != null) {
             for (String pair : pairs) {

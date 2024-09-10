@@ -7,18 +7,22 @@
      http://www.springframework.org/schema/beans/spring-beans.xsd">
      
     <bean id="cacheManager" class="org.springframework.cache.caffeine.CaffeineCacheManager" primary="true" >
-    	<property name="cacheSpecification" value="maximumSize=1000, expireAfterAccess=24h, expireAfterWrite=24h" />
+    	<property name="cacheSpecification" value="maximumSize=1000, expireAfterWrite=24h, expireAfterAccess=24h" />
     </bean>
 
     <bean id="collectionSafeKeyGenerator" class="datawave.cache.CollectionSafeKeyGenerator">
     </bean>
     
     <bean id="metadataHelperCacheManager" class="org.springframework.cache.caffeine.CaffeineCacheManager" >
-    	<property name="cacheSpecification" value="maximumSize=100, expireAfterAccess=24h, expireAfterWrite=24h" />
+    	<property name="cacheSpecification" value="maximumSize=100, expireAfterWrite=1h, recordStats" />
     </bean>
 
     <bean id="dateIndexHelperCacheManager" class="org.springframework.cache.caffeine.CaffeineCacheManager" >
         <property name="cacheSpecification" value="maximumSize=1000, expireAfterAccess=24h, expireAfterWrite=24h" />
+    </bean>
+
+    <bean id="remoteOperationsCacheManager" class="org.springframework.cache.caffeine.CaffeineCacheManager" >
+        <property name="cacheSpecification" value="maximumSize=1000, expireAfterAccess=5m, expireAfterWrite=5m" />
     </bean>
 
 </beans>

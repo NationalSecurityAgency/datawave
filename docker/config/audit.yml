@@ -1,0 +1,64 @@
+spring:
+  cloud:
+    stream:
+      rabbit:
+        bindings:
+          logAuditSink-in-0:
+            consumer:
+              autoBindDlq: true
+          accumuloAuditSink-in-0:
+            consumer:
+              autoBindDlq: true
+          dumpAuditSink-in-0:
+            consumer:
+              autoBindDlq: true
+              bindQueue: false
+      bindings:
+        auditSource-out-0:
+          destination: 'audit'
+          producer:
+            errorChannelEnabled: true
+        logAuditSink-in-0:
+          destination: 'audit'
+          group: 'log'
+        accumuloAuditSink-in-0:
+          destination: 'audit'
+          group: 'accumulo'
+        dumpAuditSink-in-0:
+          destination: 'audit'
+          group: 'dump'
+          consumer:
+            concurrency: 5
+    # NOTE: When defining your functions, be sure to include busConsumer, or else spring cloud bus will not work
+    function:
+      definition: auditSource;logAuditSink;accumuloAuditSink;dumpAuditSink;busConsumer
+
+audit:
+  confirmAckEnabled: true
+  auditors:
+    log:
+      enabled: true
+    accumulo:
+      enabled: true
+      accumuloConfig:
+        zookeepers: "${accumulo.zookeepers}"
+        instanceName: '${accumulo.instanceName}'
+        username: '${accumulo.username}'
+        password: '${accumulo.password}'
+    file:
+      enabled: false
+      pathUri: 'file:///audit'
+    dump:
+      enabled: false
+      pathUri: 'file:///audit'
+  replay:
+    enabled: true
+
+datawave:
+  swagger:
+    title: "Audit Service"
+    description: "REST API provided by the Audit Service"
+
+logging:
+  level:
+    datawave.microservice.audit: DEBUG

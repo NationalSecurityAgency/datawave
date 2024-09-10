@@ -1,7 +1,7 @@
 package datawave.query.discovery;
 
-import datawave.data.type.Type;
 import datawave.data.normalizer.NormalizationException;
+import datawave.data.type.Type;
 
 /**
  * The use case here was that a method worked the same for both patterns and literals, except for the method call on the normalizer. This abstracts that away

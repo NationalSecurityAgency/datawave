@@ -18,71 +18,71 @@ import io.protostuff.Schema;
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class ResultFile implements Serializable, Message<ResultFile> {
-    
+
     private static final long serialVersionUID = 1L;
     @XmlAttribute(name = "fileName")
     private String fileName;
     @XmlAttribute(name = "length")
     private long length;
-    
+
     public String getFileName() {
         return fileName;
     }
-    
+
     public long getLength() {
         return length;
     }
-    
+
     public void setFileName(String fileName) {
         this.fileName = fileName;
     }
-    
+
     public void setLength(long length) {
         this.length = length;
     }
-    
+
     @Override
     public Schema<ResultFile> cachedSchema() {
         return SCHEMA;
     }
-    
+
     public static Schema<ResultFile> getSchema() {
         return SCHEMA;
     }
-    
+
     @XmlTransient
     private static final Schema<ResultFile> SCHEMA = new Schema<ResultFile>() {
         // schema methods
-        
+
         public ResultFile newMessage() {
             return new ResultFile();
         }
-        
+
         public Class<ResultFile> typeClass() {
             return ResultFile.class;
         }
-        
+
         public String messageName() {
             return ResultFile.class.getSimpleName();
         }
-        
+
         public String messageFullName() {
             return ResultFile.class.getName();
         }
-        
+
         public boolean isInitialized(ResultFile message) {
             return true;
         }
-        
+
         public void writeTo(Output output, ResultFile message) throws IOException {
-            
+
             if (message.getFileName() != null) {
                 output.writeString(1, message.getFileName(), false);
             }
-            
+
             output.writeUInt64(2, message.getLength(), false);
         }
-        
+
         public void mergeFrom(Input input, ResultFile message) throws IOException {
             int number;
             while ((number = input.readFieldNumber(this)) != 0) {
@@ -99,7 +99,7 @@ public class ResultFile implements Serializable, Message<ResultFile> {
                 }
             }
         }
-        
+
         public String getFieldName(int number) {
             switch (number) {
                 case 1:
@@ -110,17 +110,17 @@ public class ResultFile implements Serializable, Message<ResultFile> {
                     return null;
             }
         }
-        
+
         public int getFieldNumber(String name) {
             final Integer number = fieldMap.get(name);
             return number == null ? 0 : number.intValue();
         }
-        
+
         final java.util.HashMap<String,Integer> fieldMap = new java.util.HashMap<String,Integer>();
         {
             fieldMap.put("fileName", 1);
             fieldMap.put("length", 2);
         }
     };
-    
+
 }

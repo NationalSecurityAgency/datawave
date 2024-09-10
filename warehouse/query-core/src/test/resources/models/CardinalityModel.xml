@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Model xmlns="http://webservice.datawave/v1" name="CARDINALITY_MODEL">
+<Model xmlns="http://webservice.datawave.nsa/v1" name="CARDINALITY_MODEL">
     <Mappings>
         <Mapping fieldName="FIELD_1" modelFieldName="UUID" direction="FORWARD" columnVisibility="PUBLIC"/>
         <Mapping fieldName="FIELD_1" modelFieldName="UUID" direction="REVERSE"  columnVisibility="PUBLIC"/>

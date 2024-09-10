@@ -35,6 +35,14 @@
 </property>
 
 <property>
+        <description>Properties to include in the accumulo table config cache</description>
+	<name>cache.table.properties</name>
+        <value>table.file.compress.*,table.file.blocksize,table.file.replication,table.iterator.minc.*,crypto.*</value>
+</property>
+
+
+
+<property>
     <name>all.filter.classes</name>
     <value>${ALL_FILTER_CLASSES}</value>
     <description>This is the chain of context writers that will receive the output of all handlers and

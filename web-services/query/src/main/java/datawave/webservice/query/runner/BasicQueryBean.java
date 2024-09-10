@@ -1,37 +1,20 @@
 package datawave.webservice.query.runner;
 
-import com.codahale.metrics.annotation.Timed;
-import datawave.annotation.GenerateQuerySessionId;
-import datawave.annotation.Required;
-import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
-import datawave.interceptor.RequiredInterceptor;
-import datawave.interceptor.ResponseInterceptor;
-import datawave.resteasy.interceptor.CreateQuerySessionIDFilter;
-import datawave.security.authorization.DatawavePrincipal;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.exception.QueryException;
-import datawave.webservice.query.logic.BaseQueryLogic;
-import datawave.webservice.query.logic.QueryLogic;
-import datawave.webservice.query.logic.QueryLogicFactory;
-import datawave.webservice.query.result.logic.QueryLogicDescription;
-import datawave.webservice.result.BaseQueryResponse;
-import datawave.webservice.result.GenericResponse;
-import datawave.webservice.result.QueryWizardResultResponse;
-import datawave.webservice.result.QueryWizardStep1Response;
-import datawave.webservice.result.QueryWizardStep2Response;
-import datawave.webservice.result.QueryWizardStep3Response;
-import org.apache.accumulo.core.security.Authorizations;
-import org.apache.deltaspike.core.api.config.ConfigProperty;
-import org.apache.deltaspike.core.api.exclude.Exclude;
-import org.apache.log4j.Logger;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.annotation.Resource;
 import javax.annotation.security.DeclareRoles;
 import javax.annotation.security.RolesAllowed;
-
 import javax.ejb.EJBContext;
 import javax.ejb.LocalBean;
 import javax.ejb.SessionContext;
@@ -42,7 +25,6 @@ import javax.ejb.TransactionManagement;
 import javax.ejb.TransactionManagementType;
 import javax.inject.Inject;
 import javax.interceptor.Interceptors;
-
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -51,65 +33,92 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedMap;
-import java.lang.reflect.Method;
-import java.security.Principal;
-import java.text.MessageFormat;
-import java.util.*;
 
-import datawave.security.util.AuthorizationsUtil;
+import org.apache.deltaspike.core.api.config.ConfigProperty;
+import org.apache.deltaspike.core.api.exclude.Exclude;
+import org.apache.log4j.Logger;
+
+import com.codahale.metrics.annotation.Timed;
+
+import datawave.annotation.GenerateQuerySessionId;
+import datawave.annotation.Required;
+import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
+import datawave.core.query.logic.BaseQueryLogic;
+import datawave.core.query.logic.QueryLogic;
+import datawave.core.query.logic.QueryLogicFactory;
+import datawave.interceptor.RequiredInterceptor;
+import datawave.interceptor.ResponseInterceptor;
+import datawave.microservice.query.Query;
+import datawave.resteasy.interceptor.CreateQuerySessionIDFilter;
+import datawave.security.authorization.AuthorizationException;
+import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.authorization.UserOperations;
+import datawave.security.util.WSAuthorizationsUtil;
+import datawave.webservice.query.exception.QueryException;
+import datawave.webservice.query.result.event.ResponseObjectFactory;
+import datawave.webservice.query.result.logic.QueryLogicDescription;
+import datawave.webservice.result.BaseQueryResponse;
+import datawave.webservice.result.GenericResponse;
+import datawave.webservice.result.QueryWizardResultResponse;
+import datawave.webservice.result.QueryWizardStep1Response;
+import datawave.webservice.result.QueryWizardStep2Response;
+import datawave.webservice.result.QueryWizardStep3Response;
 
 @Path("/BasicQuery")
-@RolesAllowed({"AuthorizedUser", "AuthorizedQueryServer", "PrivilegedUser", "InternalUser", "Administrator", "JBossAdministrator"})
-@DeclareRoles({"AuthorizedUser", "AuthorizedQueryServer", "PrivilegedUser", "InternalUser", "Administrator", "JBossAdministrator"})
+@RolesAllowed({"AuthorizedUser", "AuthorizedQueryServer", "InternalUser"})
+@DeclareRoles({"AuthorizedUser", "AuthorizedQueryServer", "InternalUser"})
 @Stateless
 @LocalBean
 @TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED)
 @TransactionManagement(TransactionManagementType.BEAN)
 @Exclude(ifProjectStage = DatawaveEmbeddedProjectStageHolder.DatawaveEmbedded.class)
 public class BasicQueryBean {
-    
+
     private static final String PRIVILEGED_USER = "PrivilegedUser";
-    
+
     /**
      * Used when getting a plan prior to creating a query
      */
     public static final String EXPAND_VALUES = "expand.values";
     public static final String EXPAND_FIELDS = "expand.fields";
-    
+
     static final List<String> NO_PLAN_REQUIRED = Arrays.asList("datawave.query.tables.content.ContentQueryTable");
-    
+
     private final Logger log = Logger.getLogger(BasicQueryBean.class);
-    
+
     @Inject
     private QueryLogicFactory queryLogicFactory;
-    
+
     @Inject
     private QueryExecutorBean queryExecutor;
-    
+
     @Inject
     @ConfigProperty(name = "dw.cdn.jquery.uri", defaultValue = "/jquery.min.js")
     private String jqueryUri;
-    
+
     @Inject
     @ConfigProperty(name = "dw.cdn.dataTables.uri", defaultValue = "/jquery.dataTables.min.js")
     private String dataTablesUri;
-    
+
     @Resource
     private EJBContext ctx;
-    
+
     @Resource
     private SessionContext sessionContext;
-    
+
+    @Inject
+    private ResponseObjectFactory responseObjectFactory;
+
     @PostConstruct
     public void init() {
-        
+
     }
-    
+
     @PreDestroy
     public void close() {
-        
+
     }
-    
+
     /**
      * Display the first step for a simple query web UI in the quickstart
      *
@@ -128,20 +137,20 @@ public class BasicQueryBean {
         QueryWizardStep1Response response = new QueryWizardStep1Response();
         List<QueryLogic<?>> logicList = queryLogicFactory.getQueryLogicList();
         List<QueryLogicDescription> logicConfigurationList = new ArrayList<>();
-        
+
         // reference query necessary to avoid NPEs in getting the Transformer and BaseResponse
-        Query q = new QueryImpl();
+        Query q = responseObjectFactory.getQueryImpl();
         Date now = new Date();
         q.setExpirationDate(now);
         q.setQuery("test");
         q.setQueryAuthorizations("ALL");
-        
+
         for (QueryLogic<?> l : logicList) {
             try {
                 QueryLogicDescription d = new QueryLogicDescription(l.getLogicName());
                 d.setAuditType(l.getAuditType(null).toString());
                 d.setLogicDescription(l.getLogicDescription());
-                
+
                 Set<String> optionalQueryParameters = l.getOptionalQueryParameters();
                 if (optionalQueryParameters != null) {
                     d.setSupportedParams(new ArrayList<>(optionalQueryParameters));
@@ -154,13 +163,13 @@ public class BasicQueryBean {
                 if (exampleQueries != null) {
                     d.setExampleQueries(new ArrayList<>(exampleQueries));
                 }
-                Set<String> requiredRoles = l.getRoleManager().getRequiredRoles();
+                Set<String> requiredRoles = l.getRequiredRoles();
                 if (requiredRoles != null) {
                     List<String> requiredRolesList = new ArrayList<>();
-                    requiredRolesList.addAll(l.getRoleManager().getRequiredRoles());
+                    requiredRolesList.addAll(l.getRequiredRoles());
                     d.setRequiredRoles(requiredRolesList);
                 }
-                
+
                 try {
                     d.setResponseClass(l.getResponseClass(q));
                 } catch (QueryException e) {
@@ -168,7 +177,7 @@ public class BasicQueryBean {
                     response.addException(e);
                     d.setResponseClass("unknown");
                 }
-                
+
                 List<String> querySyntax = new ArrayList<>();
                 try {
                     Method m = l.getClass().getMethod("getQuerySyntaxParsers");
@@ -185,7 +194,7 @@ public class BasicQueryBean {
                     querySyntax.add("CUSTOM");
                 }
                 d.setQuerySyntax(querySyntax);
-                
+
                 logicConfigurationList.add(d);
             } catch (Exception e) {
                 log.error("Error setting query logic description", e);
@@ -193,13 +202,17 @@ public class BasicQueryBean {
         }
         Collections.sort(logicConfigurationList, Comparator.comparing(QueryLogicDescription::getName));
         response.setQueryLogicList(logicConfigurationList);
-        
+
         return response;
     }
-    
+
     /**
      * Display the second step for a simple query web UI in the quickstart
      *
+     * @param queryParameters
+     *            parameters
+     * @param httpHeaders
+     *            headers
      * @HTTP 200 Success
      * @return datawave.webservice.result.QueryWizardStep2Response
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user, by specifying a chain of DNs of the identities to proxy
@@ -216,24 +229,27 @@ public class BasicQueryBean {
         String queryType = queryParameters.getFirst("queryType");
         QueryLogicDescription theQld = null;
         List<QueryLogic<?>> logicList = queryLogicFactory.getQueryLogicList();
-        
+
         // reference query necessary to avoid NPEs in getting the Transformer and BaseResponse
-        Query q = new QueryImpl();
+        Query q = responseObjectFactory.getQueryImpl();
         Date now = new Date();
         q.setExpirationDate(now);
         q.setQuery("test");
         q.setQueryAuthorizations("ALL");
-        
+
+        UserOperations userService = null;
+
         for (QueryLogic<?> l : logicList) {
             try {
-                
+
                 if (l.getLogicName().equals(queryType)) {
-                    
+
                     QueryLogicDescription d = new QueryLogicDescription(l.getLogicName());
                     d.setAuditType(l.getAuditType(null).toString());
                     d.setLogicDescription(l.getLogicDescription());
+                    userService = l.getUserOperations();
                     theQld = d;
-                    
+
                     Set<String> optionalQueryParameters = l.getOptionalQueryParameters();
                     if (optionalQueryParameters != null) {
                         d.setSupportedParams(new ArrayList<>(optionalQueryParameters));
@@ -246,13 +262,13 @@ public class BasicQueryBean {
                     if (exampleQueries != null) {
                         d.setExampleQueries(new ArrayList<>(exampleQueries));
                     }
-                    Set<String> requiredRoles = l.getRoleManager().getRequiredRoles();
+                    Set<String> requiredRoles = l.getRequiredRoles();
                     if (requiredRoles != null) {
                         List<String> requiredRolesList = new ArrayList<>();
-                        requiredRolesList.addAll(l.getRoleManager().getRequiredRoles());
+                        requiredRolesList.addAll(l.getRequiredRoles());
                         d.setRequiredRoles(requiredRolesList);
                     }
-                    
+
                     try {
                         d.setResponseClass(l.getResponseClass(q));
                     } catch (QueryException e) {
@@ -260,7 +276,7 @@ public class BasicQueryBean {
                         response.addException(e);
                         d.setResponseClass("unknown");
                     }
-                    
+
                     List<String> querySyntax = new ArrayList<>();
                     try {
                         Method m = l.getClass().getMethod("getQuerySyntaxParsers");
@@ -277,26 +293,37 @@ public class BasicQueryBean {
                         querySyntax.add("CUSTOM");
                     }
                     d.setQuerySyntax(querySyntax);
-                    
+
                     break;
-                    
+
                 }
             } catch (Exception e) {
                 log.error("Error setting query logic description", e);
+                throw new RuntimeException(e);
             }
         }
-        
-        Principal p = ctx.getCallerPrincipal();
-        String authSting = AuthorizationsUtil.buildUserAuthorizationString(p);
-        response.setAuthString(authSting);
+
+        try {
+            DatawavePrincipal queryPrincipal = (DatawavePrincipal) ((userService == null) ? ctx.getCallerPrincipal()
+                            : userService.getRemoteUser((DatawavePrincipal) ctx.getCallerPrincipal()));
+            response.setAuthString(WSAuthorizationsUtil.buildUserAuthorizationString(queryPrincipal));
+        } catch (AuthorizationException e) {
+            throw new RuntimeException(e);
+        }
         response.setTheQueryLogicDescription(theQld);
-        
+
         return response;
     }
-    
+
     /**
      * Display the query plan and link to basic query results for a simple query web UI in the quickstart
      *
+     * @param queryParameters
+     *            parameters
+     * @param httpHeaders
+     *            headers
+     * @param logicName
+     *            logic name
      * @HTTP 200 Success
      * @return datawave.webservice.result.QueryWizardStep3Response
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user, by specifying a chain of DNs of the identities to proxy
@@ -323,7 +350,7 @@ public class BasicQueryBean {
         String queryId = createResponse.getResult();
         CreateQuerySessionIDFilter.QUERY_ID.set(queryId);
         queryWizardStep3Response.setQueryId(queryId);
-        
+
         BaseQueryLogic logic = getQueryLogic(logicName);
         if (logic != null && !(NO_PLAN_REQUIRED.contains(logic.getClass().getName()))) {
             GenericResponse<String> planResponse;
@@ -333,14 +360,14 @@ public class BasicQueryBean {
                 queryWizardStep3Response.setErrorMessage(e.getMessage());
                 return queryWizardStep3Response;
             }
-            
+
             queryWizardStep3Response.setQueryPlan(planResponse.getResult());
         } else
             queryWizardStep3Response.setQueryPlan("No plan required for this query");
-        
+
         return queryWizardStep3Response;
     }
-    
+
     /**
      * Gets the next page of results from the query object. If the object is no longer alive, meaning that the current session has expired, then this fail. The
      * response object type is dynamic, see the listQueryLogic operation to determine what the response type object will be.
@@ -371,7 +398,7 @@ public class BasicQueryBean {
     @Interceptors({ResponseInterceptor.class, RequiredInterceptor.class})
     @Timed(name = "dw.query.showQueryWizardResults", absolute = true)
     public QueryWizardResultResponse showQueryWizardResults(@Required("id") @PathParam("id") String id) {
-        
+
         QueryWizardResultResponse theResponse = new QueryWizardResultResponse(jqueryUri, dataTablesUri);
         theResponse.setQueryId(id);
         BaseQueryResponse theNextResults;
@@ -383,12 +410,12 @@ public class BasicQueryBean {
         theResponse.setResponse(theNextResults);
         return theResponse;
     }
-    
+
     private BaseQueryLogic getQueryLogic(String logicName) {
         BaseQueryLogic theLogic = null;
-        
+
         List<QueryLogic<?>> logicList = queryLogicFactory.getQueryLogicList();
-        
+
         for (QueryLogic<?> l : logicList) {
             try {
                 if (l.getLogicName().equals(logicName)) {
@@ -398,8 +425,8 @@ public class BasicQueryBean {
                 log.error("Error getting query logic name", e);
             }
         }
-        
+
         return theLogic;
     }
-    
+
 }

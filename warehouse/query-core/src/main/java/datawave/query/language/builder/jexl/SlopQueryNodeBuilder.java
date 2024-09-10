@@ -1,5 +1,12 @@
 package datawave.query.language.builder.jexl;
 
+import org.apache.lucene.queryparser.flexible.core.QueryNodeException;
+import org.apache.lucene.queryparser.flexible.core.builders.QueryBuilder;
+import org.apache.lucene.queryparser.flexible.core.builders.QueryTreeBuilder;
+import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
+import org.apache.lucene.queryparser.flexible.core.nodes.SlopQueryNode;
+import org.apache.lucene.search.Query;
+
 /**
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,32 +23,24 @@ package datawave.query.language.builder.jexl;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 import datawave.query.language.parser.jexl.JexlNode;
 import datawave.query.language.parser.jexl.JexlPhraseNode;
 import datawave.query.language.parser.jexl.JexlSelectorNode;
 import datawave.query.language.parser.jexl.JexlWithinNode;
-
-import org.apache.lucene.queryparser.flexible.core.QueryNodeException;
-import org.apache.lucene.queryparser.flexible.core.builders.QueryBuilder;
-import org.apache.lucene.queryparser.flexible.core.builders.QueryTreeBuilder;
-import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
-import org.apache.lucene.queryparser.flexible.core.nodes.SlopQueryNode;
-import org.apache.lucene.search.Query;
 
 /**
  * This builder basically reads the {@link Query} object set on the {@link SlopQueryNode} child using {@link QueryTreeBuilder#QUERY_TREE_BUILDER_TAGID} and
  * applies the slop value defined in the {@link SlopQueryNode}.
  */
 public class SlopQueryNodeBuilder implements QueryBuilder {
-    
+
     public JexlNode build(QueryNode queryNode) throws QueryNodeException {
         JexlNode returnNode = null;
-        
+
         SlopQueryNode phraseSlopNode = (SlopQueryNode) queryNode;
-        
+
         JexlNode node = (JexlNode) phraseSlopNode.getChild().getTag(QueryTreeBuilder.QUERY_TREE_BUILDER_TAGID);
-        
+
         if (node instanceof JexlPhraseNode) {
             JexlPhraseNode phraseNode = (JexlPhraseNode) node;
             returnNode = new JexlWithinNode(phraseNode.getField(), phraseNode.getWordList(), phraseSlopNode.getValue());
@@ -52,8 +51,8 @@ public class SlopQueryNodeBuilder implements QueryBuilder {
         } else {
             throw new UnsupportedOperationException(node.getClass().getName() + " found as a child of a SlopQueryNode -- not implemented");
         }
-        
+
         return returnNode;
     }
-    
+
 }

@@ -189,7 +189,7 @@ function calculateReducers() {
     local -r _reducers=$1
 
     # divisor for number of reducers based upon the number of shards
-    local -ir _divisor=6
+    local -ir _divisor=2
     local -i _num
     if [[ -n "${_NumShards}" ]]; then
         ((_num = _NumShards / _divisor))
@@ -216,14 +216,14 @@ setupLockFile
 
 
 #
-# set the job cache
-#
-. ../ingest/job-cache-env.sh
-
-#
 # set the classpath
 #
 . ../ingest/ingest-libs.sh
+
+#
+# set the job cache
+#
+. ../ingest/job-cache-env.sh
 
 if [[ -z "$DATAWAVE_INGEST_HOME" ]]; then
     export DATAWAVE_INGEST_HOME=$THIS_DIR/../..
@@ -234,7 +234,7 @@ fi
 #
 declare -a _IngestConfig
 i=0
-for f in ../../config/shard-stats-config.xml; do
+for f in ../../config/shard-stats-config.xml ../../config/shard-ingest-config.xml; do
     _IngestConfig[i++]=$(basename $f)
 done
 
@@ -291,7 +291,7 @@ export HADOOP_OPTS="${_DefaultJVMArgs}"
 # for remote debug of job
 # export HADOOP_CLIENT_OPTS="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=8989"
 
-declare -i TIMEOUT=600000
+declare -i TIMEOUT=1800000
 
 # map/reduce settings see Hadoop Map/Reduce properties
 _MapReduceOpts="-mapreduce.task.io.sort.mb=${_MapInMemSortBufferMBSize} \
@@ -343,6 +343,7 @@ declare -r _IngestOpts="\
 -contextWriterCounters \
 -disableRefreshSplits \
 -distCpConfDir ${WAREHOUSE_HADOOP_CONF} \
+-partitioner.default.delegate=datawave.ingest.mapreduce.partition.MultiTableRRRangePartitioner \
 -datawave-ingest.splits.cache.dir=${WAREHOUSE_NAME_BASE_DIR}/data/splitsCache \
 -BulkInputFormat.working.dir=${WAREHOUSE_NAME_BASE_DIR}/tmp/shardStats \
 -ingestMetricsDisabled \

@@ -7,11 +7,11 @@ import com.google.gson.reflect.TypeToken;
 
 public class MultimapType {
     private static final TypeToken<Multimap<String,String>> tt = new TypeToken<Multimap<String,String>>() {};
-    
+
     public static Type get() {
         return tt.getType();
     }
-    
+
     public static TypeToken<Multimap<String,String>> token() {
         return tt;
     }

@@ -6,17 +6,17 @@ import java.util.List;
 public class JexlPhraseNode extends JexlNode {
     private String field = null;
     private List<String> wordList = new ArrayList<>();
-    
+
     public JexlPhraseNode(String field, List<String> wordList) {
         super(new ArrayList<>());
         this.field = field;
         this.wordList = wordList;
     }
-    
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        
+
         if (this.field == null || this.field.isEmpty()) {
             sb.append("content:phrase(termOffsetMap");
         } else {
@@ -24,7 +24,7 @@ public class JexlPhraseNode extends JexlNode {
             sb.append(this.field);
             sb.append(", termOffsetMap");
         }
-        
+
         for (String s : this.wordList) {
             sb.append(", ");
             sb.append("'");
@@ -33,14 +33,14 @@ public class JexlPhraseNode extends JexlNode {
         }
         // Matches function argument list
         sb.append(")");
-        
+
         return sb.toString();
     }
-    
+
     public String getField() {
         return this.field;
     }
-    
+
     public List<String> getWordList() {
         return this.wordList;
     }

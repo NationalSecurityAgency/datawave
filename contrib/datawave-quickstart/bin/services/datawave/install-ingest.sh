@@ -71,12 +71,13 @@ if [ "${DW_ACCUMULO_VFS_DATAWAVE_ENABLED}" == true ]; then
       ${HADOOP_HOME}/bin/hdfs dfs -put -f ${DW_DATAWAVE_INGEST_HOME}/accumulo-warehouse/lib/ext/*.jar ${DW_ACCUMULO_VFS_DATAWAVE_DIR}
    fi
 else
+   mkdir "${ACCUMULO_HOME}/lib/ext"
    [ ! -d ${ACCUMULO_HOME}/lib/ext ] && fatal "Unable to update Accumulo classpath. ${ACCUMULO_HOME}/lib/ext does not exist!"
    info "Removing any existing jars from ${ACCUMULO_HOME}/lib/ext"
    rm -f ${ACCUMULO_HOME}/lib/ext/*.jar
-   info "Copying DataWave jars into ${ACCUMULO_HOME}/lib/ext"
+   info "Copying DataWave jars into ${ACCUMULO_HOME}/lib and ${ACCUMULO_HOME}/lib/ext"
    if [ -d ${DW_DATAWAVE_INGEST_HOME}/accumulo-warehouse/lib ]; then
-      cp ${DW_DATAWAVE_INGEST_HOME}/accumulo-warehouse/lib/*.jar ${ACCUMULO_HOME}/lib/ext > /dev/null 2>&1
+      cp ${DW_DATAWAVE_INGEST_HOME}/accumulo-warehouse/lib/*.jar ${ACCUMULO_HOME}/lib > /dev/null 2>&1
    fi
    if [ -d ${DW_DATAWAVE_INGEST_HOME}/accumulo-warehouse/lib/ext ]; then
       cp ${DW_DATAWAVE_INGEST_HOME}/accumulo-warehouse/lib/ext/*.jar ${ACCUMULO_HOME}/lib/ext > /dev/null 2>&1
@@ -141,7 +142,7 @@ fi
 function initializeDatawaveTables() {
     # create tables
     if [[ ${DW_DATAWAVE_SKIP_CREATE_TABLES} != true ]]; then
-        info "creating datawave tables and splits ..."
+        info "creating datawave tables, splits, and caches ..."
         ${DW_DATAWAVE_INGEST_HOME}/bin/ingest/create-all-tables.sh || fatal "error creating tables"
         # create splits for shard table for today
         local _today=$(date "+%Y%m%d")
@@ -151,6 +152,10 @@ function initializeDatawaveTables() {
 
         # set splits cache
         ${DW_DATAWAVE_INGEST_HOME}/bin/ingest/generate-splits-file.sh
+
+	#set config cache
+	 ${DW_DATAWAVE_INGEST_HOME}/bin/ingest/generate-accumulo-config-cache.sh
+
     fi
 }
 

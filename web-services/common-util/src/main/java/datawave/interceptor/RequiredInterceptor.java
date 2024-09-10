@@ -15,9 +15,9 @@ import datawave.annotation.Required;
  * Used to make sure that method parameters that are annotated with the Required.class annotation are not null
  */
 public class RequiredInterceptor {
-    
+
     private Logger log = Logger.getLogger(this.getClass());
-    
+
     @AroundInvoke
     public Object checkRequiredParameters(InvocationContext ctx) throws Exception {
         // Check to see if any of the parameters are required
@@ -68,7 +68,7 @@ public class RequiredInterceptor {
         }
         return ctx.proceed();
     }
-    
+
     private boolean isValidValuesEmpty(String[] validValues) {
         if (null == validValues)
             return true;

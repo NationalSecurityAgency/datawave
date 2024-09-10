@@ -5,11 +5,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import datawave.ingest.data.config.NormalizedContentInterface;
-
 import org.apache.lucene.analysis.ngram.NGramTokenizer;
 
 import com.google.common.hash.BloomFilter;
+
+import datawave.ingest.data.config.NormalizedContentInterface;
 
 /**
  * Prevents excessive n-gram tokenization without sacrificing small field values in relation to a handful of very large field values. Tokenization is limited
@@ -18,7 +18,7 @@ import com.google.common.hash.BloomFilter;
  * number of n-grams.
  */
 public class WeightedValuePruningStrategy extends NGramTokenizationStrategy {
-    
+
     private int incrementCount;
     private int maxIncrementCount;
     private final int maxNGramLength;
@@ -27,10 +27,10 @@ public class WeightedValuePruningStrategy extends NGramTokenizationStrategy {
     private final BloomFilterUtil util = BloomFilterUtil.newInstance();
     private final Map<Integer,Integer> weightedNGramCounts;
     private boolean weightingsCalculated = false;
-    
+
     /**
      * Constructor
-     * 
+     *
      * @param maxAllowedNgrams
      *            The maximum allowed number of n-grams to be tokenized for all field values applied to this strategy instance. A negative value effectively
      *            turns off pruning logic and allows for an unlimited number of n-grams.
@@ -38,10 +38,10 @@ public class WeightedValuePruningStrategy extends NGramTokenizationStrategy {
     public WeightedValuePruningStrategy(int maxAllowedNgrams) {
         this(maxAllowedNgrams, -1);
     }
-    
+
     /**
      * Constructor
-     * 
+     *
      * @param maxAllowedNgrams
      *            The maximum allowed number of n-grams to be tokenized for all field values applied to this strategy instance. A negative value effectively
      *            turns off pruning logic and allows for an unlimited number of n-grams.
@@ -54,20 +54,20 @@ public class WeightedValuePruningStrategy extends NGramTokenizationStrategy {
         this.originalStringLengths = new LinkedList<>();
         this.weightedNGramCounts = new Hashtable<>();
     }
-    
+
     /**
      * Adds a new weighting to the strategy based on the specified field value's string length and the predicted number of generated n-grams
-     * 
+     *
      * @param value
      *            a field value
      */
     public void applyFieldValue(final String value) {
         this.applyFieldValue(value, false);
     }
-    
+
     /**
      * Adds a new weighting to the strategy based on the specified field value's string length and the predicted number of generated n-grams
-     * 
+     *
      * @param value
      *            a field value
      * @param calculateWeightings
@@ -85,11 +85,11 @@ public class WeightedValuePruningStrategy extends NGramTokenizationStrategy {
             }
         }
     }
-    
+
     private int calculateWeightings(final Integer[] originalStringLengths) {
         // Clear out the map
         this.weightedNGramCounts.clear();
-        
+
         // Fill up the n-gram counts map with the original string value lengths and corresponding n-gram
         // counts. Also fill an array with the original string value lengths, which will be used to scale
         // down n-gram counts if the latter's total exceeds the allowed maximum.
@@ -102,7 +102,7 @@ public class WeightedValuePruningStrategy extends NGramTokenizationStrategy {
             totalNgramCounts += ngramCount;
             this.weightedNGramCounts.put(length, ngramCount);
         }
-        
+
         // Conditionally scale down n-gram counts based on the inverse log ratios of original string lengths to
         // total n-gram counts. The n-gram counts of smaller original string values will decrease in scale
         // at a smaller rate than the n-gram counts of larger original string values. Scaling will stop once
@@ -125,7 +125,7 @@ public class WeightedValuePruningStrategy extends NGramTokenizationStrategy {
                 totalNgramCounts += reducedScaleNgramCount;
             }
         }
-        
+
         // Conditionally scale up the individual n-gram counts to proportionally fill the maximum allowed counts
         if (scaledDown && (this.totalAllowedNgramsCount > 0)) {
             float ratioOfTotalNgramCountsToMaxAllowed = (float) totalNgramCounts / this.totalAllowedNgramsCount;
@@ -135,25 +135,26 @@ public class WeightedValuePruningStrategy extends NGramTokenizationStrategy {
                 if (ratioOfTotalNgramCountsToMaxAllowed > 1.0f) {
                     reducedScaleNgramCount = Math.round(((float) reducedScaleNgramCount) * ratioOfTotalNgramCountsToMaxAllowed);
                 } else {
-                    reducedScaleNgramCount = Math.round(((float) reducedScaleNgramCount) / ratioOfTotalNgramCountsToMaxAllowed);
+                    reducedScaleNgramCount = (ratioOfTotalNgramCountsToMaxAllowed == 0.0) ? 0
+                                    : Math.round(((float) reducedScaleNgramCount) / ratioOfTotalNgramCountsToMaxAllowed);
                 }
-                
+
                 totalNgramCounts += reducedScaleNgramCount;
                 this.weightedNGramCounts.put(originalStringLengths[i], reducedScaleNgramCount);
             }
         }
-        
+
         // Set the flag
         this.weightingsCalculated = true;
-        
+
         // Return the weighted total count
         return (int) Math.round(totalNgramCounts);
     }
-    
+
     /**
      * Creates a new BloomFilter based on a size determined by the pruning strategy applied by this instance. Whatever bloom filter may have already been
      * assigned to this instance remains unchanged.
-     * 
+     *
      * @param numberOfFields
      *            An untokenized count of fields to use as a mimumum size of the constructed filter. The number of currently applied field values will be used
      *            if this parameter is not specified with a positive integer.
@@ -166,14 +167,14 @@ public class WeightedValuePruningStrategy extends NGramTokenizationStrategy {
             prunedNGramCount = this.getExpectedNGramCount();
             totalTokenCount = prunedNGramCount + ((numberOfFields > 0) ? numberOfFields : this.originalStringLengths.size());
         }
-        
+
         return this.util.newDefaultFilter(totalTokenCount).getFilter();
     }
-    
+
     /**
      * Calculates and returns the total number of n-grams expected to be tokenized by this strategy. This number may be much less than the total number of
      * predicted n-grams if limited by the maximum allowed.
-     * 
+     *
      * @return the total number of n-grams predicted to be tokenized by this strategy
      */
     public int getExpectedNGramCount() {
@@ -182,7 +183,7 @@ public class WeightedValuePruningStrategy extends NGramTokenizationStrategy {
             return this.calculateWeightings(this.originalStringLengths.toArray(lengths));
         }
     }
-    
+
     @Override
     protected String increment(final NGramTokenizer tokenizer) throws TokenizationException {
         this.incrementCount++;
@@ -192,10 +193,10 @@ public class WeightedValuePruningStrategy extends NGramTokenizationStrategy {
         } else {
             ngram = null;
         }
-        
+
         return ngram;
     }
-    
+
     @Override
     public int tokenize(final NormalizedContentInterface content, int maxNGramLength) throws TokenizationException {
         // Get the field's value
@@ -205,11 +206,11 @@ public class WeightedValuePruningStrategy extends NGramTokenizationStrategy {
         } else {
             fieldValue = null;
         }
-        
+
         // Reset the increment count variables
         this.maxIncrementCount = 0;
         this.incrementCount = 0;
-        
+
         // If defined, determine the maximum number of times to call the increment(..) method
         // (i.e., the max number of times to generate an n-gram)
         int tokenized = 0;
@@ -221,21 +222,21 @@ public class WeightedValuePruningStrategy extends NGramTokenizationStrategy {
                     this.calculateWeightings(this.originalStringLengths.toArray(lengths));
                 }
             }
-            
+
             // Tokenize the n-grams count based on the logarithmic weightings, as applicable
             Integer maxNGramsCount = this.weightedNGramCounts.get(fieldValue.trim().length());
             if (null == maxNGramsCount) {
                 maxNGramsCount = 0;
             }
-            
+
             this.maxIncrementCount = maxNGramsCount;
-            
+
             // Proceed with tokenization
             if (this.maxIncrementCount > 0) {
                 tokenized = super.tokenize(content, maxNGramLength);
             }
         }
-        
+
         return tokenized;
     }
 }

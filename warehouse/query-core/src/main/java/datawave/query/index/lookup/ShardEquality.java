@@ -10,7 +10,7 @@ package datawave.query.index.lookup;
  * Shards are sorted lexicographically. Shard _19 sorts before shard _2.
  */
 public class ShardEquality {
-    
+
     // Does A match B?
     public static boolean matches(String a, String b) {
         if (a.length() == b.length()) {
@@ -19,11 +19,11 @@ public class ShardEquality {
             return matchesWithin(a, b) || matchesWithin(b, a);
         }
     }
-    
+
     public static boolean matchesExactly(String a, String b) {
         return a.equals(b);
     }
-    
+
     // Does A match within B?
     public static boolean matchesWithin(String a, String b) {
         if (isDay(a) && daysMatch(a, b)) {
@@ -32,36 +32,36 @@ public class ShardEquality {
             return false;
         }
     }
-    
+
     // Is A before B?
     public static boolean lessThan(String a, String b) {
         return a.compareTo(b) < 0;
     }
-    
+
     // Is A before or equal to B?
     public static boolean lessThanOrEqual(String a, String b) {
         return a.compareTo(b) <= 0;
     }
-    
+
     // Is A after B?
     public static boolean greaterThan(String a, String b) {
         return a.compareTo(b) > 0;
     }
-    
+
     // Is A after or equal to B?
     public static boolean greaterThanOrEqual(String a, String b) {
         return a.compareTo(b) >= 0;
     }
-    
+
     // Days are the yyyymmdd, shards are yyyymmdd_shardnum.
     public static boolean isDay(String shard) {
         return shard.indexOf('_') == -1;
     }
-    
+
     public static boolean isShard(String shard) {
         return shard.indexOf('_') != -1;
     }
-    
+
     /**
      * A faster method of determining "a.startsWith(b)" given the YYYYMMDD structure of a shard.
      *

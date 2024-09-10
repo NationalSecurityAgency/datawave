@@ -47,6 +47,9 @@ START_INGEST_SERVERS_CMD=$THIS_DIR/start-ingest-servers.sh
 CLEAN_CMD=$THIS_DIR/start-cleaner.sh
 MAPFILE_LOADER_CMD=$THIS_DIR/start-loader.sh
 FLAG_MAKER_CMD=$THIS_DIR/start-flag-maker.sh
+GENERATE_CONFIG_CACHE=$THIS_DIR/generate-accumulo-config-cache.sh
+
+$GENERATE_CONFIG_CACHE
 
 $START_INGEST_SERVERS_CMD -type all
 

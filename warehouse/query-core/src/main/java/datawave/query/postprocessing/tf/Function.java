@@ -3,7 +3,7 @@ package datawave.query.postprocessing.tf;
 import java.util.Collections;
 import java.util.List;
 
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 
 import com.google.common.collect.Lists;
@@ -17,21 +17,21 @@ import datawave.query.jexl.visitors.PrintingVisitor;
 public class Function {
     private String name;
     private List<JexlNode> args;
-    
+
     public Function(String name, Iterable<JexlNode> args) {
         this.name = name;
         this.args = Lists.newArrayList(args);
         this.args = Collections.unmodifiableList(this.args);
     }
-    
+
     public String name() {
         return name;
     }
-    
+
     public List<JexlNode> args() {
         return args;
     }
-    
+
     @Override
     public int hashCode() {
         HashCodeBuilder builder = new HashCodeBuilder();
@@ -41,7 +41,7 @@ public class Function {
         }
         return builder.toHashCode();
     }
-    
+
     public String toString() {
         return name + args;
     }

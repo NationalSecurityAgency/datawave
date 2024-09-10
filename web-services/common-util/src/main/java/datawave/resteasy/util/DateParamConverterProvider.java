@@ -1,14 +1,16 @@
 package datawave.resteasy.util;
 
-import datawave.annotation.DateFormat;
-import org.jboss.resteasy.util.FindAnnotation;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Type;
+import java.util.Date;
 
 import javax.ws.rs.ext.ParamConverter;
 import javax.ws.rs.ext.ParamConverterProvider;
 import javax.ws.rs.ext.Provider;
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Type;
-import java.util.Date;
+
+import org.jboss.resteasy.util.FindAnnotation;
+
+import datawave.annotation.DateFormat;
 
 @Provider
 public class DateParamConverterProvider implements ParamConverterProvider {

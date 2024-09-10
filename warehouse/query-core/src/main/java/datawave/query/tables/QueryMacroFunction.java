@@ -10,17 +10,17 @@ import com.google.common.base.Splitter;
 import com.google.common.collect.Maps;
 
 public class QueryMacroFunction implements Function<String,String> {
-    
+
     private Map<String,String> queryMacros;
-    
+
     public Map<String,String> getQueryMacros() {
         return queryMacros;
     }
-    
+
     public void setQueryMacros(Map<String,String> queryMacros) {
         this.queryMacros = queryMacros;
     }
-    
+
     @Override
     public String apply(String query) {
         for (String key : queryMacros.keySet()) {
@@ -46,7 +46,7 @@ public class QueryMacroFunction implements Function<String,String> {
         }
         return query;
     }
-    
+
     private Map<String,String> getSelectorMap(String macroArguments) {
         Map<String,String> selectorMap = Maps.newHashMap();
         int i = 0;
@@ -56,10 +56,10 @@ public class QueryMacroFunction implements Function<String,String> {
         }
         return selectorMap;
     }
-    
+
     @Override
     public String toString() {
         return "QueryMacroFunction [queryMacros=" + queryMacros + "]";
     }
-    
+
 }

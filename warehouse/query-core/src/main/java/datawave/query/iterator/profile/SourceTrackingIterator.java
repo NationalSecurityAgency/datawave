@@ -15,30 +15,30 @@ import org.apache.log4j.Logger;
 public class SourceTrackingIterator extends WrappingIterator {
     protected QuerySpan querySpan;
     private Logger log = Logger.getLogger(QuerySpan.class);
-    
+
     public SourceTrackingIterator(QuerySpan span, SortedKeyValueIterator<Key,Value> kv) {
         setSource(kv);
         querySpan = span;
     }
-    
+
     @Override
     public void next() throws IOException {
         querySpan.next();
         super.next();
     }
-    
+
     @Override
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
         querySpan.seek();
         super.seek(range, columnFamilies, inclusive);
     }
-    
+
     @Override
     public SortedKeyValueIterator<Key,Value> deepCopy(IteratorEnvironment env) {
         // deep copy the source
         return new SourceTrackingIterator(querySpan.createSource(), getSource().deepCopy(env));
     }
-    
+
     public QuerySpan getQuerySpan() {
         return querySpan;
     }

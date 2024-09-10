@@ -3,26 +3,26 @@ package datawave.util.flag;
 import java.io.IOException;
 import java.util.concurrent.Callable;
 
-import datawave.util.flag.InputFile.TrackedDir;
-
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
 
 import com.google.common.cache.Cache;
 
+import datawave.util.flag.InputFile.TrackedDir;
+
 /**
  * Moves an entry to it's next targeted location. Updates current location and move status upon completion.
  */
 public class SimpleMover implements Callable<InputFile> {
-    
+
     private static final Logger log = Logger.getLogger(SimpleMover.class);
-    
+
     final InputFile entry;
     final TrackedDir target;
     final FileSystem fs;
     final Cache<Path,Path> directoryCache;
-    
+
     public SimpleMover(Cache<Path,Path> directoryCache, InputFile entry, TrackedDir destination, FileSystem fs) {
         this.directoryCache = directoryCache;
         this.entry = entry;
@@ -30,7 +30,7 @@ public class SimpleMover implements Callable<InputFile> {
         this.fs = fs;
         this.entry.setMoved(false);
     }
-    
+
     @Override
     public InputFile call() throws IOException {
         final Path dst = this.entry.getTrackedDir(this.target);
@@ -40,10 +40,10 @@ public class SimpleMover implements Callable<InputFile> {
         } else {
             log.error("Unable to move file " + entry.getCurrentDir().toUri() + " to " + dst.toUri() + ", skipping");
         }
-        
+
         return entry;
     }
-    
+
     Path checkParent(Path path) throws IOException {
         Path parent = path.getParent();
         if (directoryCache.getIfPresent(parent) == null && !fs.exists(parent)) {

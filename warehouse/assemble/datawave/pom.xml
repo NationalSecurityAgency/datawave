@@ -4,10 +4,10 @@
     <parent>
         <groupId>gov.nsa.datawave</groupId>
         <artifactId>assemble-parent</artifactId>
-        <version>3.8.0-SNAPSHOT</version>
+        <version>7.6.0-SNAPSHOT</version>
     </parent>
     <artifactId>assemble-datawave</artifactId>
-    <packaging>pom</packaging>
+    <packaging>jar</packaging>
     <name>${project.artifactId}</name>
     <dependencies>
         <!-- To ensure a consistent version is loaded -->
@@ -29,7 +29,7 @@
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave</groupId>
-            <artifactId>datawave-balancers</artifactId>
+            <artifactId>datawave-accumulo-extensions</artifactId>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave</groupId>
@@ -84,6 +84,11 @@
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave</groupId>
+            <artifactId>datawave-ingest-ssdeep</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-ingest-wikipedia</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -130,6 +135,22 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-1.2-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j-impl</artifactId>
         </dependency>
         <dependency>
             <groupId>org.infinispan</groupId>
@@ -248,6 +269,19 @@
                                     </descriptors>
                                     <tarLongFileMode>posix</tarLongFileMode>
                                 </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <artifactId>maven-clean-plugin</artifactId>
+                        <version>2.4.1</version>
+                        <executions>
+                            <execution>
+                                <id>auto-clean</id>
+                                <goals>
+                                    <goal>clean</goal>
+                                </goals>
+                                <phase>initialize</phase>
                             </execution>
                         </executions>
                     </plugin>
@@ -388,6 +422,38 @@
                                 </configuration>
                             </execution>
                             <execution>
+                                <id>copy-rpm</id>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <phase>verify</phase>
+                                <configuration>
+                                    <outputDirectory>${project.build.directory}/docker</outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>${project.build.directory}/rpm/datawave-dw-${build.env}/RPMS/noarch/</directory>
+                                            <filtering>false</filtering>
+                                        </resource>
+                                    </resources>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>copy-dockerfile</id>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <phase>verify</phase>
+                                <configuration>
+                                    <outputDirectory>${project.build.directory}/docker</outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>${project.basedir}/src/main/docker</directory>
+                                            <filtering>true</filtering>
+                                        </resource>
+                                    </resources>
+                                </configuration>
+                            </execution>
+                            <execution>
                                 <id>copy-additional-env</id>
                                 <goals>
                                     <goal>copy-resources</goal>
@@ -401,6 +467,48 @@
                                         </resource>
                                     </resources>
                                 </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>docker</id>
+            <activation>
+                <property>
+                    <name>docker-release</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.spotify</groupId>
+                        <artifactId>docker-maven-plugin</artifactId>
+                        <version>1.1.1</version>
+                        <configuration>
+                            <imageName>${docker.image.prefix}datawave/ingest-${build.env}</imageName>
+                            <forceTags>true</forceTags>
+                            <imageTags>
+                                <imageTag>latest</imageTag>
+                                <imageTag>${project.version}</imageTag>
+                            </imageTags>
+                            <dockerDirectory>${project.build.directory}/docker</dockerDirectory>
+                            <resources>
+                                <resource>
+                                    <targetPath>/</targetPath>
+                                    <directory>${project.build.directory}</directory>
+                                    <include>rpm/RPMS/noarch/${project.build.finalName}-${build.env}.rpm</include>
+                                </resource>
+                            </resources>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>tag-image</id>
+                                <goals>
+                                    <goal>build</goal>
+                                </goals>
+                                <phase>install</phase>
                             </execution>
                         </executions>
                     </plugin>
@@ -532,6 +640,7 @@
                                     <dependency>
                                         <includes>
                                             <include>commons-pool:commons-pool</include>
+                                            <include>commons-lang:commons-lang</include>
                                             <include>org.apache.commons:commons-lang3</include>
                                             <include>com.google.protobuf:protobuf-java</include>
                                             <include>com.esotericsoftware.kryo:kryo</include>
@@ -552,10 +661,12 @@
                                     <directoryIncluded>false</directoryIncluded>
                                     <dependency>
                                         <includes>
+                                            <include>com.github.ben-manes.caffeine:caffeine</include>
                                             <include>org.apache.commons:commons-collections4</include>
-                                            <include>org.apache.commons:commons-jexl</include>
+                                            <include>org.apache.commons:commons-jexl3</include>
+                                            <include>org.apache.curator:curator-client</include>
                                             <include>${project.groupId}:datawave-core</include>
-                                            <include>${project.groupId}:datawave-balancers</include>
+                                            <include>${project.groupId}:datawave-accumulo-extensions</include>
                                             <include>${project.groupId}:datawave-ingest-csv</include>
                                             <include>${project.groupId}:datawave-ingest-core</include>
                                             <include>${project.groupId}:datawave-ingest-configuration</include>
@@ -567,6 +678,11 @@
                                             <include>${project.groupId}:datawave-edge-model-configuration-core</include>
                                             <include>${project.groupId}:datawave-ingest-wikipedia</include>
                                             <include>${project.groupId}:datawave-ingest-nyctlc</include>
+                                            <include>${project.groupId}:datawave-ingest-ssdeep</include>
+                                            <include>gov.nsa.datawave.core:datawave-core-connection-pool</include>
+                                            <include>gov.nsa.datawave.core:datawave-core-common</include>
+                                            <include>gov.nsa.datawave.core:datawave-core-common-util</include>
+                                            <include>gov.nsa.datawave.core:datawave-core-query</include>
                                             <include>gov.nsa.datawave.microservice:accumulo-utils</include>
                                             <include>gov.nsa.datawave.microservice:metadata-utils</include>
                                             <include>gov.nsa.datawave.microservice:type-utils</include>
@@ -608,10 +724,14 @@
                                     <directoryIncluded>false</directoryIncluded>
                                     <dependency>
                                         <includes>
+                                            <include>com.github.ben-manes.caffeine:caffeine</include>
                                             <include>org.apache.commons:commons-lang3</include>
                                             <include>${project.groupId}:datawave-core</include>
                                             <include>${project.groupId}:datawave-query-core</include>
                                             <include>${project.groupId}:datawave-metrics-core</include>
+                                            <include>gov.nsa.datawave.core:datawave-core-connection-pool</include>
+                                            <include>gov.nsa.datawave.core:datawave-core-common</include>
+                                            <include>gov.nsa.datawave.core:datawave-core-common-util</include>
                                             <include>gov.nsa.datawave.microservice:accumulo-utils</include>
                                             <include>gov.nsa.datawave.microservice:metadata-utils</include>
                                             <include>gov.nsa.datawave.microservice:type-utils</include>

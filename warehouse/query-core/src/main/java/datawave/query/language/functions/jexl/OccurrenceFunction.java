@@ -11,17 +11,17 @@ import datawave.webservice.query.exception.DatawaveErrorCode;
 /**
  * <pre>
  * Function arguments are a field name, an operator, and a number
- * 
+ *
  * occurrence(FOO, '&gt;=', 4) will return true (non-empty set of matches) if there
  * are at least 4 values for the field FOO in a record.
  * </pre>
  */
 public class OccurrenceFunction extends JexlQueryFunction {
-    
+
     public OccurrenceFunction() {
         super("occurrence", new ArrayList<>());
     }
-    
+
     @Override
     public void validate() throws IllegalArgumentException {
         if (this.parameterList.size() != 3) {
@@ -29,7 +29,7 @@ public class OccurrenceFunction extends JexlQueryFunction {
             throw new IllegalArgumentException(qe);
         }
     }
-    
+
     @Override
     public String toString() {
         Iterator<String> param = getParameterList().iterator();
@@ -44,10 +44,10 @@ public class OccurrenceFunction extends JexlQueryFunction {
         f.append(')');
         return f.toString();
     }
-    
+
     @Override
     public QueryFunction duplicate() {
         return new OccurrenceFunction();
     }
-    
+
 }

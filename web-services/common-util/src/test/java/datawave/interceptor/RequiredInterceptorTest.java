@@ -4,8 +4,6 @@ import java.lang.reflect.Method;
 
 import javax.interceptor.InvocationContext;
 
-import datawave.annotation.Required;
-
 import org.easymock.EasyMock;
 import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
@@ -14,26 +12,28 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import datawave.annotation.Required;
+
 @RunWith(EasyMockRunner.class)
 public class RequiredInterceptorTest extends EasyMockSupport {
-    
+
     public static class TestClass {
         public void testMethod(@Required("param") String param) {}
-        
+
         public void testValidValudesMethod(@Required(value = "param", validValues = {"foo", "bar"}) String param) {}
-        
+
     }
-    
+
     private RequiredInterceptor interceptor = null;
     @Mock
     private InvocationContext ctx = null;
     private Method method = null;
-    
+
     @Before
     public void setup() throws Exception {
         interceptor = new RequiredInterceptor();
     }
-    
+
     @Test(expected = IllegalArgumentException.class)
     public void testRequiredWithEmptyStringParameter() throws Exception {
         method = TestClass.class.getMethod("testMethod", String.class);
@@ -45,7 +45,7 @@ public class RequiredInterceptorTest extends EasyMockSupport {
         interceptor.checkRequiredParameters(ctx);
         verifyAll();
     }
-    
+
     @Test(expected = IllegalArgumentException.class)
     public void testRequiredWithNullStringParameter() throws Exception {
         method = TestClass.class.getMethod("testMethod", String.class);
@@ -57,7 +57,7 @@ public class RequiredInterceptorTest extends EasyMockSupport {
         interceptor.checkRequiredParameters(ctx);
         verifyAll();
     }
-    
+
     @Test
     public void testRequiredWithStringParameter() throws Exception {
         method = TestClass.class.getMethod("testMethod", String.class);
@@ -69,7 +69,7 @@ public class RequiredInterceptorTest extends EasyMockSupport {
         interceptor.checkRequiredParameters(ctx);
         verifyAll();
     }
-    
+
     @Test(expected = IllegalArgumentException.class)
     public void testRequiredValidValuesWithInvalidValue() throws Exception {
         method = TestClass.class.getMethod("testValidValudesMethod", String.class);
@@ -81,7 +81,7 @@ public class RequiredInterceptorTest extends EasyMockSupport {
         interceptor.checkRequiredParameters(ctx);
         verifyAll();
     }
-    
+
     @Test
     public void testRequiredValidValuesWithFirstValidValue() throws Exception {
         method = TestClass.class.getMethod("testValidValudesMethod", String.class);
@@ -93,7 +93,7 @@ public class RequiredInterceptorTest extends EasyMockSupport {
         interceptor.checkRequiredParameters(ctx);
         verifyAll();
     }
-    
+
     @Test
     public void testRequiredValidValuesWithSecondValidValue() throws Exception {
         method = TestClass.class.getMethod("testValidValudesMethod", String.class);
@@ -105,5 +105,5 @@ public class RequiredInterceptorTest extends EasyMockSupport {
         interceptor.checkRequiredParameters(ctx);
         verifyAll();
     }
-    
+
 }

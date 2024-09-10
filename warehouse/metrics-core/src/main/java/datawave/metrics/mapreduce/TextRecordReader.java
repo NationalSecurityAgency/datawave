@@ -9,12 +9,12 @@ import org.apache.hadoop.mapreduce.lib.input.CombineFileSplit;
 
 /**
  * A Text/Counters implementation of CombinedSequenceFileRecordReader
- * 
+ *
  */
 public class TextRecordReader extends CombinedSequenceFileRecordReader<Text,Counters> {
-    
+
     public TextRecordReader(CombineFileSplit split, TaskAttemptContext context, Integer index) throws IOException, InterruptedException {
         super(split, context, index);
     }
-    
+
 }

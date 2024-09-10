@@ -10,30 +10,33 @@ import java.util.PriorityQueue;
 
 public class BoundedOffsetQueue<T> implements OffsetQueue<T> {
     private static final long serialVersionUID = 452499360525244451L;
-    
+
     public static class OffsetList<T> {
         public TermAndZone termAndZone;
         public List<T> offsets;
-        
+
         public int size() {
             return offsets.size();
         }
     }
-    
+
     // The offsets
     HashMap<String,List<T>> offsetsMap;
-    
+
     // The priority queue
     PriorityQueue<String> queue;
-    
+
     // The max size
     private int maxNumOffsets;
-    
+
     // The current size of the offset map in terms of offsets (i.e. not in terms of keys)
     private int numOffsets = 0;
-    
+
     /**
      * Create a bounded offset queue
+     *
+     * @param maxNumOffsets
+     *            the max size of offsets
      */
     public BoundedOffsetQueue(int maxNumOffsets) {
         OffsetListComparator comparator = new OffsetListComparator();
@@ -41,34 +44,34 @@ public class BoundedOffsetQueue<T> implements OffsetQueue<T> {
         this.queue = new PriorityQueue<>(maxNumOffsets / 10, comparator);
         this.offsetsMap = new HashMap<>(maxNumOffsets / 10);
     }
-    
+
     public int size() {
         return this.numOffsets;
     }
-    
+
     public int getCapacity() {
         return this.maxNumOffsets;
     }
-    
+
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see datawave.ingest.mapreduce.handler.shard.OffsetQueue#addOffset(datawave.ingest.mapreduce.handler.shard.TermAndZone, T)
      */
     @Override
     public OffsetList addOffset(TermAndZone termAndZone, T offset) {
         String key = termAndZone.getToken();
         queue.remove(key);
-        
+
         List<T> offsets = offsetsMap.remove(key);
         if (null == offsets) {
             offsets = new ArrayList<>();
         }
         offsets.add(offset);
-        
+
         offsetsMap.put(key, offsets);
         queue.add(key);
-        
+
         numOffsets++;
         if (numOffsets > maxNumOffsets) {
             OffsetList<T> list = new OffsetList<>();
@@ -81,24 +84,24 @@ public class BoundedOffsetQueue<T> implements OffsetQueue<T> {
             return null;
         }
     }
-    
+
     @Override
     public void clear() {
         queue.clear();
         offsetsMap.clear();
         numOffsets = 0;
     }
-    
+
     @Override
     public List<T> getOffsets(TermAndZone termAndZone) {
         return offsetsMap.get(termAndZone.getToken());
     }
-    
+
     @Override
     public boolean containsKey(TermAndZone termAndZone) {
         return offsetsMap.containsKey(termAndZone.getToken());
     }
-    
+
     @Override
     public Iterable<OffsetList<T>> offsets() {
         return () -> {
@@ -109,7 +112,7 @@ public class BoundedOffsetQueue<T> implements OffsetQueue<T> {
                 public boolean hasNext() {
                     return entries.hasNext();
                 }
-                
+
                 @Override
                 public OffsetList next() {
                     Map.Entry<String,List<T>> entry = entries.next();
@@ -117,7 +120,7 @@ public class BoundedOffsetQueue<T> implements OffsetQueue<T> {
                     offsets.termAndZone = new TermAndZone(entry.getKey());
                     return offsets;
                 }
-                
+
                 @Override
                 public void remove() {
                     entries.remove();
@@ -125,13 +128,13 @@ public class BoundedOffsetQueue<T> implements OffsetQueue<T> {
             };
         };
     }
-    
+
     public class OffsetListComparator implements Comparator<String> {
         @Override
         public int compare(String o1, String o2) {
             return getSize(o1) - getSize(o2);
         }
-        
+
         private int getSize(String o) {
             List<T> offsetList = offsetsMap.get(o);
             if (offsetList == null) {
@@ -139,6 +142,6 @@ public class BoundedOffsetQueue<T> implements OffsetQueue<T> {
             }
             return offsetList.size();
         }
-        
+
     }
 }

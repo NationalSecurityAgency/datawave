@@ -11,7 +11,6 @@
                 <value>classpath*:CDIProcessor.xml</value>
                 <value>classpath*:/datawave/query/EventQueryLogicFactory.xml</value>
                 <value>classpath*:/MarkingFunctionsContext.xml</value>
-                <value>classpath*:/ResponseObjectFactoryContext.xml</value>
                 <value>classpath*:/MetadataHelperContext.xml</value>
                 <value>classpath*:/JexlFunctionNamespaceRegistryContext.xml</value>
                 <value>classpath*:/CacheContext.xml</value>

@@ -14,25 +14,25 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 
 /**
  * This is a SortedKeyValueIterator implementation that simply wraps an underlying {@code Iterator<Map.Entry<Key, Value>>}
- * 
- * 
- * 
+ *
+ *
+ *
  */
 public class IteratorToSortedKeyValueIterator implements SortedKeyValueIterator<Key,Value> {
     private Iterator<Map.Entry<Key,Value>> iterator = null;
     private Map.Entry<Key,Value> next = null;
     private boolean initialized = false;
-    
+
     public IteratorToSortedKeyValueIterator(Iterator<Map.Entry<Key,Value>> iterator) {
         this.iterator = iterator;
     }
-    
+
     @Override
     public boolean hasTop() {
         init();
         return next != null;
     }
-    
+
     @Override
     public Key getTopKey() {
         if (next != null) {
@@ -40,7 +40,7 @@ public class IteratorToSortedKeyValueIterator implements SortedKeyValueIterator<
         }
         return null;
     }
-    
+
     @Override
     public Value getTopValue() {
         if (next != null) {
@@ -48,7 +48,7 @@ public class IteratorToSortedKeyValueIterator implements SortedKeyValueIterator<
         }
         return null;
     }
-    
+
     @Override
     public void next() {
         init();
@@ -60,7 +60,7 @@ public class IteratorToSortedKeyValueIterator implements SortedKeyValueIterator<
             }
         }
     }
-    
+
     private void init() {
         if (!initialized) {
             if (iterator.hasNext()) {
@@ -69,18 +69,18 @@ public class IteratorToSortedKeyValueIterator implements SortedKeyValueIterator<
             initialized = true;
         }
     }
-    
+
     @Override
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {}
-    
+
     @Override
     public SortedKeyValueIterator<Key,Value> deepCopy(IteratorEnvironment env) {
         return new IteratorToSortedKeyValueIterator(this.iterator);
     }
-    
+
     @Override
     public void init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env) throws IOException {
         this.iterator = new SortedKeyValueIteratorToIterator(source);
     }
-    
+
 }

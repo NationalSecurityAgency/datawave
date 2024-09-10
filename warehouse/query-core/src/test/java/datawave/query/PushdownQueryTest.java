@@ -1,6 +1,21 @@
 package datawave.query;
 
+import static datawave.query.testframework.RawDataManager.AND_OP;
+import static datawave.query.testframework.RawDataManager.EQ_OP;
+import static datawave.query.testframework.RawDataManager.LT_OP;
+import static datawave.query.testframework.RawDataManager.OR_OP;
+import static datawave.query.testframework.RawDataManager.RE_OP;
+
+import java.util.ArrayList;
+import java.util.Collection;
+
+import org.apache.log4j.Logger;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Test;
+
 import datawave.query.planner.DefaultQueryPlanner;
+import datawave.query.planner.FederatedQueryPlanner;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.CitiesDataType;
@@ -10,27 +25,14 @@ import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.FileType;
 import datawave.query.testframework.GenericCityFields;
-import org.apache.log4j.Logger;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
-
-import java.util.ArrayList;
-import java.util.Collection;
-
-import static datawave.query.testframework.RawDataManager.AND_OP;
-import static datawave.query.testframework.RawDataManager.EQ_OP;
-import static datawave.query.testframework.RawDataManager.LT_OP;
-import static datawave.query.testframework.RawDataManager.OR_OP;
-import static datawave.query.testframework.RawDataManager.RE_OP;
 
 public class PushdownQueryTest extends AbstractFunctionalQuery {
-    
+
     @ClassRule
     public static AccumuloSetup accumuloSetup = new AccumuloSetup();
-    
+
     private static final Logger log = Logger.getLogger(PushdownQueryTest.class);
-    
+
     @BeforeClass
     public static void filterSetup() throws Exception {
         Collection<DataTypeHadoopConfig> dataTypes = new ArrayList<>();
@@ -40,15 +42,15 @@ public class PushdownQueryTest extends AbstractFunctionalQuery {
         generic.addIndexOnlyField(CityField.CODE.name());
         generic.addReverseIndexField(CityField.CODE.name());
         dataTypes.add(new CitiesDataType(CityEntry.generic, generic));
-        
+
         accumuloSetup.setData(FileType.CSV, dataTypes);
-        connector = accumuloSetup.loadTables(log);
+        client = accumuloSetup.loadTables(log);
     }
-    
+
     public PushdownQueryTest() {
         super(CitiesDataType.getManager());
     }
-    
+
     @Test
     public void testAnd() throws Exception {
         log.info("------  testAnd  ------");
@@ -60,7 +62,7 @@ public class PushdownQueryTest extends AbstractFunctionalQuery {
             runTest(query, query);
         }
     }
-    
+
     @Test
     public void testCompoundAnd() throws Exception {
         log.info("------  testCompoundAnd  ------");
@@ -73,7 +75,7 @@ public class PushdownQueryTest extends AbstractFunctionalQuery {
             runTest(query, query);
         }
     }
-    
+
     @Test
     public void testAndFilterIncludeRegex() throws Exception {
         log.info("------  testAndFilterIncludeRegex  ------");
@@ -87,7 +89,7 @@ public class PushdownQueryTest extends AbstractFunctionalQuery {
             runTest(query, expectQuery);
         }
     }
-    
+
     @Test
     public void testCompoundAndFilterIncludeRegex() throws Exception {
         log.info("------  testCompoundAndFilterIncludeRegex  ------");
@@ -102,7 +104,7 @@ public class PushdownQueryTest extends AbstractFunctionalQuery {
             runTest(query, expectQuery);
         }
     }
-    
+
     @Test
     public void testNumericLt() throws Exception {
         log.info("------  testNumericLt  ------");
@@ -113,19 +115,19 @@ public class PushdownQueryTest extends AbstractFunctionalQuery {
             runTest(query, query);
         }
     }
-    
+
     @Test
     public void testDelayedIndexOnly() throws Exception {
         log.info("------  testErrorIndexOnly  ------");
-        String query = CityField.CITY.name() + EQ_OP + "'PARIS'" + AND_OP + "(" + CityField.CODE.name() + EQ_OP + "'usa'" + OR_OP + CityField.NUM.name()
-                        + LT_OP + "104)";
-        ((DefaultQueryPlanner) logic.getQueryPlanner()).setExecutableExpansion(false);
+        String query = CityField.CITY.name() + EQ_OP + "'PARIS'" + AND_OP + "(" + CityField.CODE.name() + EQ_OP + "'usa'" + OR_OP + CityField.NUM.name() + LT_OP
+                        + "104)";
+        ((FederatedQueryPlanner) logic.getQueryPlanner()).getQueryPlanner().setExecutableExpansion(false);
         runTest(query, query);
     }
-    
+
     @Test
     public void testDelayedFilterIncludeRegex() throws Exception {
-        log.info("------  testErrorFilterIncludeRegex  ------");
+        log.info("------  testDelayedFilterIncludeRegex  ------");
         String state = "'ohio'";
         String code = "'itA'";
         for (final TestCities city : TestCities.values()) {
@@ -133,21 +135,36 @@ public class PushdownQueryTest extends AbstractFunctionalQuery {
                             + "filter:includeRegex(" + CityField.STATE.name() + "," + state + "))";
             String expectQuery = CityField.CITY.name() + EQ_OP + "'" + city.name() + "'" + AND_OP + "(" + CityField.CODE.name() + EQ_OP + code + OR_OP
                             + CityField.STATE.name() + RE_OP + state + ")";
-            ((DefaultQueryPlanner) logic.getQueryPlanner()).setExecutableExpansion(false);
+            ((FederatedQueryPlanner) logic.getQueryPlanner()).getQueryPlanner().setExecutableExpansion(false);
             runTest(query, expectQuery);
         }
     }
-    
+
+    @Test
+    public void testDelayedFilterIncludeRegexExpansion() throws Exception {
+        log.info("------  testDelayedFilterIncludeRegexExpansion  ------");
+        String state = "'ohio'";
+        String code = "'itA'";
+        for (final TestCities city : TestCities.values()) {
+            String query = CityField.CITY.name() + EQ_OP + "'" + city.name() + "'" + AND_OP + "(" + CityField.CODE.name() + EQ_OP + code + OR_OP
+                            + "filter:includeRegex(" + CityField.STATE.name() + "," + state + "))";
+            String expectQuery = CityField.CITY.name() + EQ_OP + "'" + city.name() + "'" + AND_OP + "(" + CityField.CODE.name() + EQ_OP + code + OR_OP
+                            + CityField.STATE.name() + RE_OP + state + ")";
+            ((FederatedQueryPlanner) logic.getQueryPlanner()).getQueryPlanner().setExecutableExpansion(true);
+            runTest(query, expectQuery);
+        }
+    }
+
     // ============================================
     // error conditions
     @Test
     public void testErrorIndexOnlyExpansion() throws Exception {
         log.info("------  testErrorIndexOnly  ------");
-        String query = CityField.CITY.name() + EQ_OP + "'PARIS'" + AND_OP + "(" + CityField.CODE.name() + EQ_OP + "'usa'" + OR_OP + CityField.NUM.name()
-                        + LT_OP + "104)";
+        String query = CityField.CITY.name() + EQ_OP + "'PARIS'" + AND_OP + "(" + CityField.CODE.name() + EQ_OP + "'usa'" + OR_OP + CityField.NUM.name() + LT_OP
+                        + "104)";
         runTest(query, query);
     }
-    
+
     @Test
     public void testExecutableExpansionRegex() throws Exception {
         log.info("------  testExecutableExpansionRegex  ------");
@@ -161,7 +178,7 @@ public class PushdownQueryTest extends AbstractFunctionalQuery {
             runTest(query, expectQuery);
         }
     }
-    
+
     // ============================================
     // implemented abstract methods
     protected void testInit() {

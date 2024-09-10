@@ -17,16 +17,16 @@ import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
  * A copy of {@link TextInputFormat} which uses a {@link LongLineEventRecordReader} instead of a {@link LineRecordReader}.
  */
 public class LongLineTextInputFormat extends FileInputFormat<LongWritable,Text> {
-    
+
     @Override
     public RecordReader<LongWritable,Text> createRecordReader(InputSplit split, TaskAttemptContext context) {
         return new LongLineEventRecordReader();
     }
-    
+
     @Override
     protected boolean isSplitable(JobContext context, Path file) {
         CompressionCodec codec = new CompressionCodecFactory(context.getConfiguration()).getCodec(file);
         return codec == null;
     }
-    
+
 }

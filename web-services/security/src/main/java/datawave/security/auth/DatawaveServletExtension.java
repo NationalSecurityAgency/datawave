@@ -1,10 +1,10 @@
 package datawave.security.auth;
 
+import javax.servlet.ServletContext;
+
 import io.undertow.security.api.AuthenticationMechanismFactory;
 import io.undertow.servlet.ServletExtension;
 import io.undertow.servlet.api.DeploymentInfo;
-
-import javax.servlet.ServletContext;
 
 /**
  * Datawave Servlet Extension that is here simply to register {@link DatawaveAuthenticationMechanism} as an acceptable authentication mechanism for use in

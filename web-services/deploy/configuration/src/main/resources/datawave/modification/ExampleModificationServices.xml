@@ -19,7 +19,7 @@
     </bean>
     -->
 
-	<bean id="ModificationConfiguration" class="datawave.webservice.modification.configuration.ModificationConfiguration">
+	<bean id="ModificationConfiguration" class="datawave.modification.configuration.ModificationConfiguration">
 		<property name="tableName" value="${metadata.table.name}" />
         <property name="poolName" value="WAREHOUSE" />
 		<property name="configurations">

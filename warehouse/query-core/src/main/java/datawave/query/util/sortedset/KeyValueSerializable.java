@@ -15,50 +15,50 @@ import org.apache.commons.lang.builder.HashCodeBuilder;
 
 /**
  * A KeyValue that is serializable. Well, this is not actually a KeyValue as that class does not have a default constructor and hence cannot be serializable.
- * 
- * 
- * 
+ *
+ *
+ *
  */
 public class KeyValueSerializable implements Map.Entry<Key,Value>, Serializable, Comparable<KeyValueSerializable> {
     private static final long serialVersionUID = 7247815774125171270L;
-    
+
     public KeyValueSerializable(Key key, byte[] value) {
         this.key = key;
         this.value = value;
     }
-    
+
     public KeyValueSerializable(Key key, ByteBuffer value) {
         this.key = key;
         this.value = toBytes(value);
     }
-    
+
     public Key key;
     public byte[] value;
-    
+
     @Override
     public Key getKey() {
         return key;
     }
-    
+
     @Override
     public Value getValue() {
         return new Value(value);
     }
-    
+
     @Override
     public Value setValue(Value value) {
         throw new UnsupportedOperationException();
     }
-    
+
     public String toString() {
         return key + " " + new String(value);
     }
-    
+
     private void writeObject(ObjectOutputStream out) throws IOException {
         key.write(out);
         new Value(value, false).write(out);
     }
-    
+
     private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
         this.key = new Key();
         key.readFields(in);
@@ -66,7 +66,7 @@ public class KeyValueSerializable implements Map.Entry<Key,Value>, Serializable,
         val.readFields(in);
         this.value = val.get();
     }
-    
+
     @Override
     public int compareTo(KeyValueSerializable o) {
         int comparison = this.key.compareTo(o.key);
@@ -75,14 +75,14 @@ public class KeyValueSerializable implements Map.Entry<Key,Value>, Serializable,
         }
         return comparison;
     }
-    
+
     @Override
     public int hashCode() {
         HashCodeBuilder builder = new HashCodeBuilder();
         builder.append(key).append(value);
         return builder.hashCode();
     }
-    
+
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof KeyValueSerializable) {
@@ -91,5 +91,5 @@ public class KeyValueSerializable implements Map.Entry<Key,Value>, Serializable,
         }
         return false;
     }
-    
+
 }

@@ -12,12 +12,12 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
 /**
- * 
+ *
  */
 public class WikipediaPageExtractor {
-    
+
     public static final ThreadLocal<SimpleDateFormat> TIMESTAMP_DATE_FORMAT = ThreadLocal.withInitial(() -> new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'Z"));
-    
+
     // Extract expected metadata elements about a page
     public static final String TITLE_ELEMENT = "title";
     public static final String ID_ELEMENT = "id";
@@ -31,41 +31,41 @@ public class WikipediaPageExtractor {
     public static final String SHA1_ELEMENT = "sha1";
     public static final String MODEL_ELEMENT = "model";
     public static final String FORMAT_ELEMENT = "format";
-    
+
     private static XMLInputFactory xmlif = XMLInputFactory.newInstance();
-    
+
     static {
         xmlif.setProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, Boolean.TRUE);
     }
-    
+
     public WikipediaPage extract(Reader reader) {
-        
+
         XMLStreamReader xmlr = null;
-        
+
         try {
             xmlr = xmlif.createXMLStreamReader(reader);
         } catch (XMLStreamException e1) {
             throw new RuntimeException(e1);
         }
-        
+
         QName titleName = QName.valueOf("title");
         QName textName = QName.valueOf("text");
         QName revisionName = QName.valueOf("revision");
         QName timestampName = QName.valueOf("timestamp");
         QName commentName = QName.valueOf("comment");
         QName idName = QName.valueOf("id");
-        
+
         Map<QName,StringBuilder> tags = new HashMap<>();
         for (QName tag : new QName[] {titleName, textName, timestampName, commentName, idName}) {
             tags.put(tag, new StringBuilder());
         }
-        
+
         StringBuilder articleText = tags.get(textName);
         StringBuilder titleText = tags.get(titleName);
         StringBuilder timestampText = tags.get(timestampName);
         StringBuilder commentText = tags.get(commentName);
         StringBuilder idText = tags.get(idName);
-        
+
         StringBuilder current = null;
         boolean inRevision = false;
         while (true) {
@@ -80,18 +80,18 @@ public class WikipediaPageExtractor {
             if (xmlr.hasName()) {
                 currentName = xmlr.getName();
             }
-            if (xmlr.isStartElement() && tags.containsKey(currentName)) {
+            if (null != currentName && xmlr.isStartElement() && tags.containsKey(currentName)) {
                 if (!inRevision || (!currentName.equals(revisionName) && !currentName.equals(idName))) {
                     current = tags.get(currentName);
                     current.setLength(0);
                 }
-            } else if (xmlr.isStartElement() && currentName.equals(revisionName)) {
+            } else if (null != currentName && xmlr.isStartElement() && currentName.equals(revisionName)) {
                 inRevision = true;
-            } else if (xmlr.isEndElement() && currentName.equals(revisionName)) {
+            } else if (null != currentName && xmlr.isEndElement() && currentName.equals(revisionName)) {
                 inRevision = false;
             } else if (xmlr.isEndElement() && current != null) {
                 if (textName.equals(currentName)) {
-                    
+
                     String title = titleText.toString();
                     String text = articleText.toString();
                     String comment = commentText.toString();

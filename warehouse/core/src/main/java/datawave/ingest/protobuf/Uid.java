@@ -5,76 +5,112 @@ package datawave.ingest.protobuf;
 
 public final class Uid {
     private Uid() {}
-    
+
     public static void registerAllExtensions(com.google.protobuf.ExtensionRegistry registry) {}
-    
+
     public interface ListOrBuilder extends com.google.protobuf.MessageOrBuilder {
-        
+
         // required bool IGNORE = 1;
         /**
          * <code>required bool IGNORE = 1;</code>
+         *
+         * @return if it has IGNORE
          */
         boolean hasIGNORE();
-        
+
         /**
          * <code>required bool IGNORE = 1;</code>
+         *
+         * @return IGNORE flag
          */
         boolean getIGNORE();
-        
+
         // required uint64 COUNT = 2;
         /**
          * <code>required uint64 COUNT = 2;</code>
+         *
+         * @return if it has COUNT
          */
         boolean hasCOUNT();
-        
+
         /**
          * <code>required uint64 COUNT = 2;</code>
+         *
+         * @return the COUNT
          */
         long getCOUNT();
-        
+
         // repeated string UID = 3;
         /**
          * <code>repeated string UID = 3;</code>
+         *
+         * @return list of UIDs
          */
         java.util.List<java.lang.String> getUIDList();
-        
+
         /**
          * <code>repeated string UID = 3;</code>
+         *
+         * @return the number of UIDs in the list
          */
         int getUIDCount();
-        
+
         /**
          * <code>repeated string UID = 3;</code>
+         *
+         * @param index
+         *            the index
+         *
+         * @return the UID at the provided index
          */
         java.lang.String getUID(int index);
-        
+
         /**
          * <code>repeated string UID = 3;</code>
+         *
+         * @param index
+         *            the index
+         *
+         * @return uid byte string
          */
         com.google.protobuf.ByteString getUIDBytes(int index);
-        
+
         // repeated string REMOVEDUID = 4;
         /**
          * <code>repeated string REMOVEDUID = 4;</code>
+         *
+         * @return list of removed uids
          */
         java.util.List<java.lang.String> getREMOVEDUIDList();
-        
+
         /**
          * <code>repeated string REMOVEDUID = 4;</code>
+         *
+         * @return number of removed uids in the list
          */
         int getREMOVEDUIDCount();
-        
+
         /**
          * <code>repeated string REMOVEDUID = 4;</code>
+         *
+         * @param index
+         *            the index
+         *
+         * @return the removed uid at the provided index
          */
         java.lang.String getREMOVEDUID(int index);
-        
+
         /**
          * <code>repeated string REMOVEDUID = 4;</code>
+         *
+         * @param index
+         *            the index
+         *
+         * @return removed uid byte string at the provided index
          */
         com.google.protobuf.ByteString getREMOVEDUIDBytes(int index);
     }
-    
+
     /**
      * Protobuf type {@code datawave.ingest.protobuf.List}
      */
@@ -84,28 +120,28 @@ public final class Uid {
             super(builder);
             this.unknownFields = builder.getUnknownFields();
         }
-        
+
         private List(boolean noInit) {
             this.unknownFields = com.google.protobuf.UnknownFieldSet.getDefaultInstance();
         }
-        
+
         private static final List defaultInstance;
-        
+
         public static List getDefaultInstance() {
             return defaultInstance;
         }
-        
+
         public List getDefaultInstanceForType() {
             return defaultInstance;
         }
-        
+
         private final com.google.protobuf.UnknownFieldSet unknownFields;
-        
+
         @java.lang.Override
         public final com.google.protobuf.UnknownFieldSet getUnknownFields() {
             return this.unknownFields;
         }
-        
+
         private List(com.google.protobuf.CodedInputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
                         throws com.google.protobuf.InvalidProtocolBufferException {
             initFields();
@@ -168,143 +204,179 @@ public final class Uid {
                 makeExtensionsImmutable();
             }
         }
-        
+
         public static final com.google.protobuf.Descriptors.Descriptor getDescriptor() {
             return datawave.ingest.protobuf.Uid.internal_static_datawave_ingest_protobuf_List_descriptor;
         }
-        
+
         protected com.google.protobuf.GeneratedMessage.FieldAccessorTable internalGetFieldAccessorTable() {
-            return datawave.ingest.protobuf.Uid.internal_static_datawave_ingest_protobuf_List_fieldAccessorTable.ensureFieldAccessorsInitialized(
-                            datawave.ingest.protobuf.Uid.List.class, datawave.ingest.protobuf.Uid.List.Builder.class);
+            return datawave.ingest.protobuf.Uid.internal_static_datawave_ingest_protobuf_List_fieldAccessorTable
+                            .ensureFieldAccessorsInitialized(datawave.ingest.protobuf.Uid.List.class, datawave.ingest.protobuf.Uid.List.Builder.class);
         }
-        
+
         public static com.google.protobuf.Parser<List> PARSER = new com.google.protobuf.AbstractParser<List>() {
             public List parsePartialFrom(com.google.protobuf.CodedInputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
                             throws com.google.protobuf.InvalidProtocolBufferException {
                 return new List(input, extensionRegistry);
             }
         };
-        
+
         @java.lang.Override
         public com.google.protobuf.Parser<List> getParserForType() {
             return PARSER;
         }
-        
+
         private int bitField0_;
         // required bool IGNORE = 1;
         public static final int IGNORE_FIELD_NUMBER = 1;
         private boolean iGNORE_;
-        
+
         /**
          * <code>required bool IGNORE = 1;</code>
+         *
+         * @return if it has IGNORE
          */
         public boolean hasIGNORE() {
             return ((bitField0_ & 0x00000001) == 0x00000001);
         }
-        
+
         /**
          * <code>required bool IGNORE = 1;</code>
+         *
+         * @return IGNORE flag
          */
         public boolean getIGNORE() {
             return iGNORE_;
         }
-        
+
         // required uint64 COUNT = 2;
         public static final int COUNT_FIELD_NUMBER = 2;
         private long cOUNT_;
-        
+
         /**
          * <code>required uint64 COUNT = 2;</code>
+         *
+         * @return if it has COUNT
          */
         public boolean hasCOUNT() {
             return ((bitField0_ & 0x00000002) == 0x00000002);
         }
-        
+
         /**
          * <code>required uint64 COUNT = 2;</code>
+         *
+         * @return the COUNT
          */
         public long getCOUNT() {
             return cOUNT_;
         }
-        
+
         // repeated string UID = 3;
         public static final int UID_FIELD_NUMBER = 3;
         private com.google.protobuf.LazyStringList uID_;
-        
+
         /**
          * <code>repeated string UID = 3;</code>
+         *
+         * @return the uid list
          */
         public java.util.List<java.lang.String> getUIDList() {
             return uID_;
         }
-        
+
         /**
          * <code>repeated string UID = 3;</code>
+         *
+         * @return the uid count
          */
         public int getUIDCount() {
             return uID_.size();
         }
-        
+
         /**
          * <code>repeated string UID = 3;</code>
+         *
+         * @param index
+         *            the index
+         *
+         * @return the uid at the provided index
          */
         public java.lang.String getUID(int index) {
             return uID_.get(index);
         }
-        
+
         /**
          * <code>repeated string UID = 3;</code>
+         *
+         * @param index
+         *            the index
+         *
+         * @return the uid byte string at the provided index
          */
         public com.google.protobuf.ByteString getUIDBytes(int index) {
             return uID_.getByteString(index);
         }
-        
+
         // repeated string REMOVEDUID = 4;
         public static final int REMOVEDUID_FIELD_NUMBER = 4;
         private com.google.protobuf.LazyStringList rEMOVEDUID_;
-        
+
         /**
          * <code>repeated string REMOVEDUID = 4;</code>
+         *
+         * @return list of removed uids
          */
         public java.util.List<java.lang.String> getREMOVEDUIDList() {
             return rEMOVEDUID_;
         }
-        
+
         /**
          * <code>repeated string REMOVEDUID = 4;</code>
+         *
+         * @return the size of the removed uid list
          */
         public int getREMOVEDUIDCount() {
             return rEMOVEDUID_.size();
         }
-        
+
         /**
          * <code>repeated string REMOVEDUID = 4;</code>
+         *
+         * @param index
+         *            the index
+         *
+         * @return removed uid at the provided index
          */
         public java.lang.String getREMOVEDUID(int index) {
             return rEMOVEDUID_.get(index);
         }
-        
+
         /**
          * <code>repeated string REMOVEDUID = 4;</code>
+         *
+         * @param index
+         *            the index
+         *
+         * @return removed uid byte string at provided index
          */
         public com.google.protobuf.ByteString getREMOVEDUIDBytes(int index) {
             return rEMOVEDUID_.getByteString(index);
         }
-        
+
         private void initFields() {
             iGNORE_ = false;
             cOUNT_ = 0L;
             uID_ = com.google.protobuf.LazyStringArrayList.EMPTY;
             rEMOVEDUID_ = com.google.protobuf.LazyStringArrayList.EMPTY;
         }
-        
+
         private byte memoizedIsInitialized = -1;
-        
+
         public final boolean isInitialized() {
             byte isInitialized = memoizedIsInitialized;
             if (isInitialized != -1)
                 return isInitialized == 1;
-            
+
             if (!hasIGNORE()) {
                 memoizedIsInitialized = 0;
                 return false;
@@ -316,7 +388,7 @@ public final class Uid {
             memoizedIsInitialized = 1;
             return true;
         }
-        
+
         public void writeTo(com.google.protobuf.CodedOutputStream output) throws java.io.IOException {
             getSerializedSize();
             if (((bitField0_ & 0x00000001) == 0x00000001)) {
@@ -333,14 +405,14 @@ public final class Uid {
             }
             getUnknownFields().writeTo(output);
         }
-        
+
         private int memoizedSerializedSize = -1;
-        
+
         public int getSerializedSize() {
             int size = memoizedSerializedSize;
             if (size != -1)
                 return size;
-            
+
             size = 0;
             if (((bitField0_ & 0x00000001) == 0x00000001)) {
                 size += com.google.protobuf.CodedOutputStream.computeBoolSize(1, iGNORE_);
@@ -368,82 +440,82 @@ public final class Uid {
             memoizedSerializedSize = size;
             return size;
         }
-        
+
         private static final long serialVersionUID = 0L;
-        
+
         @java.lang.Override
         protected java.lang.Object writeReplace() throws java.io.ObjectStreamException {
             return super.writeReplace();
         }
-        
+
         public static datawave.ingest.protobuf.Uid.List parseFrom(com.google.protobuf.ByteString data)
                         throws com.google.protobuf.InvalidProtocolBufferException {
             return PARSER.parseFrom(data);
         }
-        
+
         public static datawave.ingest.protobuf.Uid.List parseFrom(com.google.protobuf.ByteString data,
                         com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws com.google.protobuf.InvalidProtocolBufferException {
             return PARSER.parseFrom(data, extensionRegistry);
         }
-        
+
         public static datawave.ingest.protobuf.Uid.List parseFrom(byte[] data) throws com.google.protobuf.InvalidProtocolBufferException {
             return PARSER.parseFrom(data);
         }
-        
+
         public static datawave.ingest.protobuf.Uid.List parseFrom(byte[] data, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
                         throws com.google.protobuf.InvalidProtocolBufferException {
             return PARSER.parseFrom(data, extensionRegistry);
         }
-        
+
         public static datawave.ingest.protobuf.Uid.List parseFrom(java.io.InputStream input) throws java.io.IOException {
             return PARSER.parseFrom(input);
         }
-        
+
         public static datawave.ingest.protobuf.Uid.List parseFrom(java.io.InputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
                         throws java.io.IOException {
             return PARSER.parseFrom(input, extensionRegistry);
         }
-        
+
         public static datawave.ingest.protobuf.Uid.List parseDelimitedFrom(java.io.InputStream input) throws java.io.IOException {
             return PARSER.parseDelimitedFrom(input);
         }
-        
+
         public static datawave.ingest.protobuf.Uid.List parseDelimitedFrom(java.io.InputStream input,
                         com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws java.io.IOException {
             return PARSER.parseDelimitedFrom(input, extensionRegistry);
         }
-        
+
         public static datawave.ingest.protobuf.Uid.List parseFrom(com.google.protobuf.CodedInputStream input) throws java.io.IOException {
             return PARSER.parseFrom(input);
         }
-        
+
         public static datawave.ingest.protobuf.Uid.List parseFrom(com.google.protobuf.CodedInputStream input,
                         com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws java.io.IOException {
             return PARSER.parseFrom(input, extensionRegistry);
         }
-        
+
         public static Builder newBuilder() {
             return Builder.create();
         }
-        
+
         public Builder newBuilderForType() {
             return newBuilder();
         }
-        
+
         public static Builder newBuilder(datawave.ingest.protobuf.Uid.List prototype) {
             return newBuilder().mergeFrom(prototype);
         }
-        
+
         public Builder toBuilder() {
             return newBuilder(this);
         }
-        
+
         @java.lang.Override
         protected Builder newBuilderForType(com.google.protobuf.GeneratedMessage.BuilderParent parent) {
             Builder builder = new Builder(parent);
             return builder;
         }
-        
+
         /**
          * Protobuf type {@code datawave.ingest.protobuf.List}
          */
@@ -451,30 +523,30 @@ public final class Uid {
             public static final com.google.protobuf.Descriptors.Descriptor getDescriptor() {
                 return datawave.ingest.protobuf.Uid.internal_static_datawave_ingest_protobuf_List_descriptor;
             }
-            
+
             protected com.google.protobuf.GeneratedMessage.FieldAccessorTable internalGetFieldAccessorTable() {
-                return datawave.ingest.protobuf.Uid.internal_static_datawave_ingest_protobuf_List_fieldAccessorTable.ensureFieldAccessorsInitialized(
-                                datawave.ingest.protobuf.Uid.List.class, datawave.ingest.protobuf.Uid.List.Builder.class);
+                return datawave.ingest.protobuf.Uid.internal_static_datawave_ingest_protobuf_List_fieldAccessorTable
+                                .ensureFieldAccessorsInitialized(datawave.ingest.protobuf.Uid.List.class, datawave.ingest.protobuf.Uid.List.Builder.class);
             }
-            
+
             // Construct using datawave.ingest.protobuf.Uid.List.newBuilder()
             private Builder() {
                 maybeForceBuilderInitialization();
             }
-            
+
             private Builder(com.google.protobuf.GeneratedMessage.BuilderParent parent) {
                 super(parent);
                 maybeForceBuilderInitialization();
             }
-            
+
             private void maybeForceBuilderInitialization() {
                 if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {}
             }
-            
+
             private static Builder create() {
                 return new Builder();
             }
-            
+
             public Builder clear() {
                 super.clear();
                 iGNORE_ = false;
@@ -487,19 +559,19 @@ public final class Uid {
                 bitField0_ = (bitField0_ & ~0x00000008);
                 return this;
             }
-            
+
             public Builder clone() {
                 return create().mergeFrom(buildPartial());
             }
-            
+
             public com.google.protobuf.Descriptors.Descriptor getDescriptorForType() {
                 return datawave.ingest.protobuf.Uid.internal_static_datawave_ingest_protobuf_List_descriptor;
             }
-            
+
             public datawave.ingest.protobuf.Uid.List getDefaultInstanceForType() {
                 return datawave.ingest.protobuf.Uid.List.getDefaultInstance();
             }
-            
+
             public datawave.ingest.protobuf.Uid.List build() {
                 datawave.ingest.protobuf.Uid.List result = buildPartial();
                 if (!result.isInitialized()) {
@@ -507,7 +579,7 @@ public final class Uid {
                 }
                 return result;
             }
-            
+
             public datawave.ingest.protobuf.Uid.List buildPartial() {
                 datawave.ingest.protobuf.Uid.List result = new datawave.ingest.protobuf.Uid.List(this);
                 int from_bitField0_ = bitField0_;
@@ -534,7 +606,7 @@ public final class Uid {
                 onBuilt();
                 return result;
             }
-            
+
             public Builder mergeFrom(com.google.protobuf.Message other) {
                 if (other instanceof datawave.ingest.protobuf.Uid.List) {
                     return mergeFrom((datawave.ingest.protobuf.Uid.List) other);
@@ -543,7 +615,7 @@ public final class Uid {
                     return this;
                 }
             }
-            
+
             public Builder mergeFrom(datawave.ingest.protobuf.Uid.List other) {
                 if (other == datawave.ingest.protobuf.Uid.List.getDefaultInstance())
                     return this;
@@ -576,19 +648,19 @@ public final class Uid {
                 this.mergeUnknownFields(other.getUnknownFields());
                 return this;
             }
-            
+
             public final boolean isInitialized() {
                 if (!hasIGNORE()) {
-                    
+
                     return false;
                 }
                 if (!hasCOUNT()) {
-                    
+
                     return false;
                 }
                 return true;
             }
-            
+
             public Builder mergeFrom(com.google.protobuf.CodedInputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
                             throws java.io.IOException {
                 datawave.ingest.protobuf.Uid.List parsedMessage = null;
@@ -604,28 +676,37 @@ public final class Uid {
                 }
                 return this;
             }
-            
+
             private int bitField0_;
-            
+
             // required bool IGNORE = 1;
             private boolean iGNORE_;
-            
+
             /**
              * <code>required bool IGNORE = 1;</code>
+             *
+             * @return if it has INGORE flag
              */
             public boolean hasIGNORE() {
                 return ((bitField0_ & 0x00000001) == 0x00000001);
             }
-            
+
             /**
              * <code>required bool IGNORE = 1;</code>
+             *
+             * @return the IGNORE flag
              */
             public boolean getIGNORE() {
                 return iGNORE_;
             }
-            
+
             /**
              * <code>required bool IGNORE = 1;</code>
+             *
+             * @param value
+             *            the IGNORE value
+             *
+             * @return builder to set IGNORE flag to provided value
              */
             public Builder setIGNORE(boolean value) {
                 bitField0_ |= 0x00000001;
@@ -633,9 +714,11 @@ public final class Uid {
                 onChanged();
                 return this;
             }
-            
+
             /**
              * <code>required bool IGNORE = 1;</code>
+             *
+             * @return builder to clear IGNORE flag
              */
             public Builder clearIGNORE() {
                 bitField0_ = (bitField0_ & ~0x00000001);
@@ -643,26 +726,35 @@ public final class Uid {
                 onChanged();
                 return this;
             }
-            
+
             // required uint64 COUNT = 2;
             private long cOUNT_;
-            
+
             /**
              * <code>required uint64 COUNT = 2;</code>
+             *
+             * @return if it has COUNT set
              */
             public boolean hasCOUNT() {
                 return ((bitField0_ & 0x00000002) == 0x00000002);
             }
-            
+
             /**
              * <code>required uint64 COUNT = 2;</code>
+             *
+             * @return the COUNT
              */
             public long getCOUNT() {
                 return cOUNT_;
             }
-            
+
             /**
              * <code>required uint64 COUNT = 2;</code>
+             *
+             * @param value
+             *            the new COUNT value
+             *
+             * @return builder to set COUNT to provided value
              */
             public Builder setCOUNT(long value) {
                 bitField0_ |= 0x00000002;
@@ -670,9 +762,11 @@ public final class Uid {
                 onChanged();
                 return this;
             }
-            
+
             /**
              * <code>required uint64 COUNT = 2;</code>
+             *
+             * @return builder to clear the COUNT
              */
             public Builder clearCOUNT() {
                 bitField0_ = (bitField0_ & ~0x00000002);
@@ -680,47 +774,68 @@ public final class Uid {
                 onChanged();
                 return this;
             }
-            
+
             // repeated string UID = 3;
             private com.google.protobuf.LazyStringList uID_ = com.google.protobuf.LazyStringArrayList.EMPTY;
-            
+
             private void ensureUIDIsMutable() {
                 if (!((bitField0_ & 0x00000004) == 0x00000004)) {
                     uID_ = new com.google.protobuf.LazyStringArrayList(uID_);
                     bitField0_ |= 0x00000004;
                 }
             }
-            
+
             /**
              * <code>repeated string UID = 3;</code>
+             *
+             * @return the uid list
              */
             public java.util.List<java.lang.String> getUIDList() {
                 return java.util.Collections.unmodifiableList(uID_);
             }
-            
+
             /**
              * <code>repeated string UID = 3;</code>
+             *
+             * @return the uid list size
              */
             public int getUIDCount() {
                 return uID_.size();
             }
-            
+
             /**
              * <code>repeated string UID = 3;</code>
+             *
+             * @param index
+             *            the index
+             *
+             * @return the uid at the provided index
              */
             public java.lang.String getUID(int index) {
                 return uID_.get(index);
             }
-            
+
             /**
              * <code>repeated string UID = 3;</code>
+             *
+             * @param index
+             *            the index
+             *
+             * @return uid byte string at the provided index
              */
             public com.google.protobuf.ByteString getUIDBytes(int index) {
                 return uID_.getByteString(index);
             }
-            
+
             /**
              * <code>repeated string UID = 3;</code>
+             *
+             * @param index
+             *            the index
+             * @param value
+             *            the new uid value
+             *
+             * @return builder to set the uid at the proved index
              */
             public Builder setUID(int index, java.lang.String value) {
                 if (value == null) {
@@ -731,9 +846,14 @@ public final class Uid {
                 onChanged();
                 return this;
             }
-            
+
             /**
              * <code>repeated string UID = 3;</code>
+             *
+             * @param value
+             *            the new uid to add to the list
+             *
+             * @return builder to add the provided uid
              */
             public Builder addUID(java.lang.String value) {
                 if (value == null) {
@@ -744,9 +864,14 @@ public final class Uid {
                 onChanged();
                 return this;
             }
-            
+
             /**
              * <code>repeated string UID = 3;</code>
+             *
+             * @param values
+             *            iterable of uids to add to the list
+             *
+             * @return builder to add the new uid values
              */
             public Builder addAllUID(java.lang.Iterable<java.lang.String> values) {
                 ensureUIDIsMutable();
@@ -754,9 +879,11 @@ public final class Uid {
                 onChanged();
                 return this;
             }
-            
+
             /**
              * <code>repeated string UID = 3;</code>
+             *
+             * @return builder to clear uid list
              */
             public Builder clearUID() {
                 uID_ = com.google.protobuf.LazyStringArrayList.EMPTY;
@@ -764,9 +891,14 @@ public final class Uid {
                 onChanged();
                 return this;
             }
-            
+
             /**
              * <code>repeated string UID = 3;</code>
+             *
+             * @param value
+             *            the uid byte string
+             *
+             * @return builder to add uid byte string provided
              */
             public Builder addUIDBytes(com.google.protobuf.ByteString value) {
                 if (value == null) {
@@ -777,47 +909,68 @@ public final class Uid {
                 onChanged();
                 return this;
             }
-            
+
             // repeated string REMOVEDUID = 4;
             private com.google.protobuf.LazyStringList rEMOVEDUID_ = com.google.protobuf.LazyStringArrayList.EMPTY;
-            
+
             private void ensureREMOVEDUIDIsMutable() {
                 if (!((bitField0_ & 0x00000008) == 0x00000008)) {
                     rEMOVEDUID_ = new com.google.protobuf.LazyStringArrayList(rEMOVEDUID_);
                     bitField0_ |= 0x00000008;
                 }
             }
-            
+
             /**
              * <code>repeated string REMOVEDUID = 4;</code>
+             *
+             * @return the removed uid list
              */
             public java.util.List<java.lang.String> getREMOVEDUIDList() {
                 return java.util.Collections.unmodifiableList(rEMOVEDUID_);
             }
-            
+
             /**
              * <code>repeated string REMOVEDUID = 4;</code>
+             *
+             * @return the size of the removed uid list
              */
             public int getREMOVEDUIDCount() {
                 return rEMOVEDUID_.size();
             }
-            
+
             /**
              * <code>repeated string REMOVEDUID = 4;</code>
+             *
+             * @param index
+             *            the index
+             *
+             * @return get the removed uid at the provided index
              */
             public java.lang.String getREMOVEDUID(int index) {
                 return rEMOVEDUID_.get(index);
             }
-            
+
             /**
              * <code>repeated string REMOVEDUID = 4;</code>
+             *
+             * @param index
+             *            the index
+             *
+             * @return byte string ofremoved uid at the provided index
              */
             public com.google.protobuf.ByteString getREMOVEDUIDBytes(int index) {
                 return rEMOVEDUID_.getByteString(index);
             }
-            
+
             /**
              * <code>repeated string REMOVEDUID = 4;</code>
+             *
+             * @param index
+             *            the index
+             * @param value
+             *            the new removed uid value
+             *
+             * @return builder to set the removed uid at the provided index
              */
             public Builder setREMOVEDUID(int index, java.lang.String value) {
                 if (value == null) {
@@ -828,9 +981,14 @@ public final class Uid {
                 onChanged();
                 return this;
             }
-            
+
             /**
              * <code>repeated string REMOVEDUID = 4;</code>
+             *
+             * @param value
+             *            the removed uid value to add to the list
+             *
+             * @return builder to add removed uid provided
              */
             public Builder addREMOVEDUID(java.lang.String value) {
                 if (value == null) {
@@ -841,9 +999,14 @@ public final class Uid {
                 onChanged();
                 return this;
             }
-            
+
             /**
              * <code>repeated string REMOVEDUID = 4;</code>
+             *
+             * @param values
+             *            iterator of uids to add to removed uid list
+             *
+             * @return builder to add all values to removed uid list
              */
             public Builder addAllREMOVEDUID(java.lang.Iterable<java.lang.String> values) {
                 ensureREMOVEDUIDIsMutable();
@@ -851,9 +1014,11 @@ public final class Uid {
                 onChanged();
                 return this;
             }
-            
+
             /**
              * <code>repeated string REMOVEDUID = 4;</code>
+             *
+             * @return builder to clear removed uid list
              */
             public Builder clearREMOVEDUID() {
                 rEMOVEDUID_ = com.google.protobuf.LazyStringArrayList.EMPTY;
@@ -861,9 +1026,14 @@ public final class Uid {
                 onChanged();
                 return this;
             }
-            
+
             /**
              * <code>repeated string REMOVEDUID = 4;</code>
+             *
+             * @param value
+             *            byte string value
+             *
+             * @return builder to add removed uid byte string value
              */
             public Builder addREMOVEDUIDBytes(com.google.protobuf.ByteString value) {
                 if (value == null) {
@@ -874,25 +1044,25 @@ public final class Uid {
                 onChanged();
                 return this;
             }
-            
+
             // @@protoc_insertion_point(builder_scope:datawave.ingest.protobuf.List)
         }
-        
+
         static {
             defaultInstance = new List(true);
             defaultInstance.initFields();
         }
-        
+
         // @@protoc_insertion_point(class_scope:datawave.ingest.protobuf.List)
     }
-    
+
     private static com.google.protobuf.Descriptors.Descriptor internal_static_datawave_ingest_protobuf_List_descriptor;
     private static com.google.protobuf.GeneratedMessage.FieldAccessorTable internal_static_datawave_ingest_protobuf_List_fieldAccessorTable;
-    
+
     public static com.google.protobuf.Descriptors.FileDescriptor getDescriptor() {
         return descriptor;
     }
-    
+
     private static com.google.protobuf.Descriptors.FileDescriptor descriptor;
     static {
         java.lang.String[] descriptorData = {"\n\tUid.proto\022\030datawave.ingest.protobuf\"F\n"
@@ -910,6 +1080,6 @@ public final class Uid {
         com.google.protobuf.Descriptors.FileDescriptor.internalBuildGeneratedFileFrom(descriptorData, new com.google.protobuf.Descriptors.FileDescriptor[] {},
                         assigner);
     }
-    
+
     // @@protoc_insertion_point(outer_class_scope)
 }

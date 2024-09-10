@@ -8,7 +8,7 @@ import datawave.metrics.keys.InvalidKeyException;
 
 public class AnalyticIngestTypeFilter extends IngestTypeFilter {
     private AnalyticEntryKey aek = new AnalyticEntryKey();
-    
+
     @Override
     public boolean accept(Key k, Value v) {
         try {
@@ -21,7 +21,7 @@ public class AnalyticIngestTypeFilter extends IngestTypeFilter {
                 default:
                     return true;
             }
-            
+
         } catch (InvalidKeyException e) {
             return false;
         }

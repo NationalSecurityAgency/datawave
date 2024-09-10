@@ -11,7 +11,7 @@ public class IsNotNull extends JexlQueryFunction {
     public IsNotNull() {
         super("isnotnull", new ArrayList<>());
     }
-    
+
     @Override
     public void validate() throws IllegalArgumentException {
         if (this.parameterList.size() != 1) {
@@ -19,18 +19,18 @@ public class IsNotNull extends JexlQueryFunction {
             throw new IllegalArgumentException(qe);
         }
     }
-    
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        
+
         String field = parameterList.get(0);
-        
-        sb.append("not(filter:isNull(").append(field).append("))");
-        
+
+        sb.append("filter:isNotNull(").append(field).append(")");
+
         return sb.toString();
     }
-    
+
     @Override
     public QueryFunction duplicate() {
         return new IsNotNull();

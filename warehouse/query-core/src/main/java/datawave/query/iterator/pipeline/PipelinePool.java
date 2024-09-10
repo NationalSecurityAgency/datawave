@@ -33,7 +33,7 @@ public class PipelinePool {
     protected QueryIterator sourceIterator;
     protected SortedKeyValueIterator<Key,Value> sourceForDeepCopy;
     protected IteratorEnvironment env;
-    
+
     public PipelinePool(int maxPipelines, QuerySpanCollector querySpanCollector, QueryIterator sourceIterator,
                     SortedKeyValueIterator<Key,Value> sourceForDeepCopy, IteratorEnvironment env) {
         this.maxPipelines = maxPipelines;
@@ -44,13 +44,20 @@ public class PipelinePool {
         this.sourceForDeepCopy = sourceForDeepCopy;
         this.env = env;
     }
-    
+
     /**
      * Checkout a pipeline initialized with the specified document, creating a new pipeline if needed
-     * 
+     *
      * @param key
+     *            a key
      * @param doc
+     *            the document
      * @param nestedQuery
+     *            the nested query
+     * @param inclusive
+     *            inclusive boolean flag
+     * @param columnFamilies
+     *            the column families
      * @return a new pipeline initialized and ready to execute
      */
     public Pipeline checkOut(Key key, Document doc, NestedQuery<Key> nestedQuery, Collection<ByteSequence> columnFamilies, boolean inclusive) {
@@ -64,8 +71,8 @@ public class PipelinePool {
                 NestedQueryIterator<Key> nq = pipeline.getDocumentSpecificSource();
                 if (null != nestedQuery) {
                     nq.setCurrentQuery(nestedQuery);
-                    pipeline.setSourceIterator(sourceIterator.createDocumentPipeline(sourceForDeepCopy.deepCopy(env), nq, columnFamilies, inclusive,
-                                    querySpanCollector));
+                    pipeline.setSourceIterator(
+                                    sourceIterator.createDocumentPipeline(sourceForDeepCopy.deepCopy(env), nq, columnFamilies, inclusive, querySpanCollector));
                 }
             }
         } else if (checkedIn.size() + checkedOut.size() < maxPipelines) {
@@ -74,7 +81,8 @@ public class PipelinePool {
             if (null != nestedQuery) {
                 nq.setCurrentQuery(nestedQuery);
             }
-            pipeline.setSourceIterator(sourceIterator.createDocumentPipeline(sourceForDeepCopy.deepCopy(env), nq, columnFamilies, inclusive, querySpanCollector));
+            pipeline.setSourceIterator(
+                            sourceIterator.createDocumentPipeline(sourceForDeepCopy.deepCopy(env), nq, columnFamilies, inclusive, querySpanCollector));
         }
         if (pipeline != null) {
             checkedOut.add(pipeline);
@@ -82,7 +90,7 @@ public class PipelinePool {
         }
         return pipeline;
     }
-    
+
     /*
      * Checkin a used pipeline.
      */

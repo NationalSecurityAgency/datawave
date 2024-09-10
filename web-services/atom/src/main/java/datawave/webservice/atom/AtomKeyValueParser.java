@@ -17,73 +17,73 @@ import org.apache.accumulo.core.iterators.LongCombiner;
 import org.jboss.resteasy.util.Base64;
 
 public class AtomKeyValueParser {
-    
+
     private static final String DELIMITER = "\0";
     private static final String ENTRY_ID_FORMAT = "https://{0}:{1}/DataWave/Atom/{2}/{3}";
     private static final String LINK_FORMAT = "https://{0}:{1}/DataWave/Query/lookupUUID/UUID?uuid={2}&parameters=model.name:DATAWAVE;model.table.name:DatawaveMetadata";
     private static final String TITLE_FORMAT = "({0}) {1} with {2} @ {3,date,long} {3,time,full}";
-    
+
     private String collectionName = null;
     private String id = null;
     private Date updated = null;
     private String columnVisibility = null;
     private String uuid = null;
     private String value = null;
-    
+
     public String getCollectionName() {
         return collectionName;
     }
-    
+
     public String getId() {
         return id;
     }
-    
+
     public Date getUpdated() {
         return updated;
     }
-    
+
     public String getColumnVisibility() {
         return columnVisibility;
     }
-    
+
     public String getUuid() {
         return uuid;
     }
-    
+
     private void setCollectionName(String collectionName) {
         this.collectionName = collectionName;
     }
-    
+
     private void setId(String id) {
         this.id = id;
     }
-    
+
     private void setUpdated(Date updated) {
         this.updated = updated;
     }
-    
+
     private void setColumnVisibility(String columnVisibility) {
         this.columnVisibility = columnVisibility;
     }
-    
+
     private void setUuid(String uuid) {
         this.uuid = uuid;
     }
-    
+
     public String getValue() {
         return value;
     }
-    
+
     public void setValue(String value) {
         this.value = value;
     }
-    
+
     public Entry toEntry(Abdera abdera, String host, String port) {
-        
+
         String id = MessageFormat.format(ENTRY_ID_FORMAT, host, port, this.getCollectionName(), this.getId());
         String link = MessageFormat.format(LINK_FORMAT, host, port, this.getUuid());
         String title = MessageFormat.format(TITLE_FORMAT, this.getColumnVisibility(), this.getCollectionName(), this.getValue(), this.getUpdated());
-        
+
         Entry entry = abdera.newEntry();
         IRI atomId = new IRI(id);
         entry.setId(atomId.toString());
@@ -92,10 +92,10 @@ public class AtomKeyValueParser {
         entry.setUpdated(this.getUpdated());
         return entry;
     }
-    
+
     public static AtomKeyValueParser parse(Key key, Value value) throws IOException {
         AtomKeyValueParser atom = new AtomKeyValueParser();
-        
+
         String row = key.getRow().toString();
         int splitPoint = row.indexOf(DELIMITER);
         if (splitPoint != -1) {
@@ -118,15 +118,15 @@ public class AtomKeyValueParser {
             throw new IllegalArgumentException("Atom entry is missing column qualifier parts: " + key);
         }
         atom.setColumnVisibility(key.getColumnQualifier().toString());
-        
+
         return atom;
     }
-    
+
     public static String encodeId(String id) throws UnsupportedEncodingException {
         String key64 = Base64.encodeBytes(id.getBytes());
         return URLEncoder.encode(key64, "UTF-8");
     }
-    
+
     public static String decodeId(String encodedId) throws IOException {
         String key64 = URLDecoder.decode(encodedId, "UTF-8");
         byte[] bKey = Base64.decode(key64);

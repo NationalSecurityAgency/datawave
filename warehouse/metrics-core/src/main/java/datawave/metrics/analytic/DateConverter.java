@@ -9,7 +9,7 @@ import java.util.List;
 public class DateConverter {
     public static final String format = "yyyyMMddHHmm";
     public static final String midnight = "0000";
-    
+
     public static Date convert(String date) {
         SimpleDateFormat sdf = new SimpleDateFormat(format);
         try {
@@ -18,7 +18,7 @@ public class DateConverter {
             return null;
         }
     }
-    
+
     public static List<Date> convert(String... dates) {
         SimpleDateFormat sdf = new SimpleDateFormat(format);
         ArrayList<Date> ts = new ArrayList<>(dates.length);

@@ -1,10 +1,12 @@
 package datawave.query.cardinality;
 
-import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;
 import java.io.IOException;
 import java.io.Serializable;
+
 import org.apache.commons.lang.builder.CompareToBuilder;
 import org.apache.log4j.Logger;
+
+import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;
 
 public class DateFieldValueCardinalityRecord implements Comparable, Serializable {
     private static final long serialVersionUID = 1L;
@@ -14,14 +16,14 @@ public class DateFieldValueCardinalityRecord implements Comparable, Serializable
     private String dataType = null;
     private HyperLogLogPlus hll = new HyperLogLogPlus(12, 20);
     private static Logger log = Logger.getLogger(DateFieldValueCardinalityRecord.class);
-    
+
     public DateFieldValueCardinalityRecord(String eventDate, String fieldName, String fieldValue, String dataType) {
         this.eventDate = eventDate;
         this.fieldName = fieldName;
         this.fieldValue = fieldValue;
         this.dataType = dataType;
     }
-    
+
     public DateFieldValueCardinalityRecord(DateFieldValueCardinalityRecord other) {
         this.eventDate = other.eventDate;
         this.fieldName = other.fieldName;
@@ -33,55 +35,55 @@ public class DateFieldValueCardinalityRecord implements Comparable, Serializable
             log.error(e.getMessage(), e);
         }
     }
-    
+
     public String getFieldName() {
         return fieldName;
     }
-    
+
     public void setFieldName(String fieldName) {
         this.fieldName = fieldName;
     }
-    
+
     public String getEventDate() {
         return eventDate;
     }
-    
+
     public void setEventDate(String eventDate) {
         this.eventDate = eventDate;
     }
-    
+
     public String getFieldValue() {
         return fieldValue;
     }
-    
+
     public void setFieldValue(String fieldValue) {
         this.fieldValue = fieldValue;
     }
-    
+
     public String getDataType() {
         return dataType;
     }
-    
+
     public void setDataType(String dataType) {
         this.dataType = dataType;
     }
-    
+
     public long getCardinalityValue() {
         return hll.cardinality();
     }
-    
+
     public HyperLogLogPlus getCardinality() {
         return hll;
     }
-    
+
     public void setCardinality(HyperLogLogPlus cardinality) {
         this.hll = cardinality;
     }
-    
+
     public void setCardinalityBytes(byte[] bytes) throws IOException {
         this.hll = HyperLogLogPlus.Builder.build(bytes);
     }
-    
+
     public long getSize() {
         long size = 0;
         try {
@@ -91,7 +93,7 @@ public class DateFieldValueCardinalityRecord implements Comparable, Serializable
         }
         return size;
     }
-    
+
     public byte[] getCardinalityBytes() {
         byte[] bytes = null;
         try {
@@ -101,20 +103,20 @@ public class DateFieldValueCardinalityRecord implements Comparable, Serializable
         }
         return bytes;
     }
-    
+
     public void addEventId(String eventId) {
         hll.offer(eventId);
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (this == o)
             return true;
         if (o == null || getClass() != o.getClass())
             return false;
-        
+
         DateFieldValueCardinalityRecord that = (DateFieldValueCardinalityRecord) o;
-        
+
         if (!eventDate.equals(that.eventDate)) {
             return false;
         }
@@ -129,12 +131,12 @@ public class DateFieldValueCardinalityRecord implements Comparable, Serializable
         }
         return true;
     }
-    
+
     @Override
     public int hashCode() {
         return hash(this.eventDate, this.fieldName, this.fieldValue, this.dataType);
     }
-    
+
     public static int hash(String eventDate, String fieldName, String fieldValue, String dataType) {
         int result = fieldName.hashCode();
         result = 31 * result + fieldValue.hashCode();
@@ -142,7 +144,7 @@ public class DateFieldValueCardinalityRecord implements Comparable, Serializable
         result = 31 * result + dataType.hashCode();
         return result;
     }
-    
+
     @Override
     public int compareTo(Object o) {
         if (o instanceof DateFieldValueCardinalityRecord) {
@@ -157,15 +159,15 @@ public class DateFieldValueCardinalityRecord implements Comparable, Serializable
             throw new UnsupportedOperationException("Object " + o + " is not instanceof " + DateFieldValueCardinalityRecord.class.getCanonicalName());
         }
     }
-    
+
     @Override
     public String toString() {
         return "FieldValueCardinality{" + "eventDate='" + eventDate + "'" + ", fieldName='" + fieldName + "'" + ", fieldValue='" + fieldValue + "'"
                         + ", dataType='" + dataType + "'" + ", hll=" + hll.cardinality() + '}';
     }
-    
+
     public void merge(DateFieldValueCardinalityRecord other) {
-        
+
         if (this.eventDate.equals(other.eventDate) == false) {
             throw new IllegalArgumentException("DateFieldValueCardinalityRecords have different eventDates: " + this.eventDate + " != " + other.eventDate);
         }

@@ -10,7 +10,7 @@ public class LongArrayWritable extends ArrayWritable {
     public LongArrayWritable() {
         super(LongWritable.class);
     }
-    
+
     public ArrayList<LongWritable> convert() {
         Writable[] backingStore = get();
         ArrayList<LongWritable> array = new ArrayList<>(backingStore.length);

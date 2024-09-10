@@ -5,6 +5,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+
 import org.apache.log4j.Logger;
 
 public class QuerySpanCollector {
@@ -14,9 +15,9 @@ public class QuerySpanCollector {
     private AtomicLong sourceCount = new AtomicLong();
     private Map<String,Long> stageTimers = new LinkedHashMap<>();
     private Logger log = Logger.getLogger(QuerySpan.class);
-    
+
     public void addQuerySpan(QuerySpan querySpan) {
-        
+
         if (querySpan != null) {
             synchronized (this) {
                 seekCount.addAndGet(querySpan.getSeekCount());
@@ -40,9 +41,9 @@ public class QuerySpanCollector {
             querySpan.reset();
         }
     }
-    
+
     private QuerySpan combineQuerySpans() {
-        
+
         QuerySpan combinedQuerySpan = null;
         if (hasEntries()) {
             synchronized (this) {
@@ -57,7 +58,7 @@ public class QuerySpanCollector {
         }
         return combinedQuerySpan;
     }
-    
+
     public boolean hasEntries() {
         if (this.seekCount.intValue() > 0 || this.nextCount.intValue() > 0 || this.yield.get() || this.sourceCount.intValue() > 0
                         || !this.stageTimers.isEmpty()) {
@@ -66,9 +67,9 @@ public class QuerySpanCollector {
             return false;
         }
     }
-    
+
     public QuerySpan getCombinedQuerySpan(QuerySpan querySpan) {
-        
+
         QuerySpan combinedQuerySpan = null;
         synchronized (this) {
             if (querySpan != null) {
@@ -81,14 +82,14 @@ public class QuerySpanCollector {
         }
         return combinedQuerySpan;
     }
-    
+
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append(super.toString()).append(" seek:").append(seekCount).append(" next:").append(nextCount).append(" yield:").append(yield).append(" sources:")
                         .append(sourceCount);
         return sb.toString();
     }
-    
+
     private void logStack() {
         StackTraceElement[] stack = Thread.currentThread().getStackTrace();
         StringBuilder sb = new StringBuilder();
@@ -101,25 +102,25 @@ public class QuerySpanCollector {
             log.trace(sb.toString());
         }
     }
-    
+
     public long getSeekCount() {
         return seekCount.longValue();
     }
-    
+
     public long getNextCount() {
         return nextCount.longValue();
     }
-    
+
     public boolean getYield() {
         return yield.get();
     }
-    
+
     public long getSourceCount() {
         return sourceCount.longValue();
     }
-    
+
     public Map<String,Long> getStageTimers() {
         return Collections.unmodifiableMap(stageTimers);
     }
-    
+
 }

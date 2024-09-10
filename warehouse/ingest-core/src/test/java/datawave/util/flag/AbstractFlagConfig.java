@@ -10,11 +10,6 @@ import java.util.UUID;
 
 import javax.xml.bind.JAXBException;
 
-import datawave.util.StringUtils;
-import datawave.util.flag.config.ConfigUtil;
-import datawave.util.flag.config.FlagDataTypeConfig;
-import datawave.util.flag.config.FlagMakerConfig;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.math.LongRange;
 import org.apache.hadoop.fs.FileSystem;
@@ -22,12 +17,17 @@ import org.apache.hadoop.fs.LocatedFileStatus;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.RemoteIterator;
 
+import datawave.util.StringUtils;
+import datawave.util.flag.config.ConfigUtil;
+import datawave.util.flag.config.FlagDataTypeConfig;
+import datawave.util.flag.config.FlagMakerConfig;
+
 public class AbstractFlagConfig {
-    
+
     protected static final String TEST_CONFIG = "target/test-classes/TestFlagMakerConfig.xml";
-    
+
     protected FlagMakerConfig fmc;
-    
+
     protected void cleanTestDirs() throws IOException {
         File f = new File(this.fmc.getBaseHDFSDir());
         if (f.exists()) {
@@ -38,7 +38,7 @@ public class AbstractFlagConfig {
             throw new IOException("unable to create base HDFS directory (" + f.getAbsolutePath() + ")");
         }
     }
-    
+
     protected void createTrackedDirs(final FileSystem fs, final InputFile file) throws IOException {
         final Path[] dirs = {file.getFlagged(), file.getFlagging(), file.getLoaded()};
         for (final Path dir : dirs) {
@@ -48,27 +48,27 @@ public class AbstractFlagConfig {
             }
         }
     }
-    
+
     protected FlagMakerConfig getDefaultFMC() throws JAXBException, IOException {
         return ConfigUtil.getXmlObject(FlagMakerConfig.class, TEST_CONFIG);
     }
-    
+
     protected LongRange createTestFiles(int days, int filesPerDay) throws IOException {
         return createTestFiles(days, filesPerDay, false);
     }
-    
+
     protected LongRange createTestFiles(int days, int filesPerDay, boolean folderRange) throws IOException {
         return createTestFiles(days, filesPerDay, "2013/01", folderRange, "");
     }
-    
+
     protected LongRange createBogusTestFiles(int days, int filesPerDay) throws IOException {
         return createTestFiles(days, filesPerDay, "20xx/dd", false, "");
     }
-    
+
     protected LongRange createCopyingTestFiles(int days, int filesPerDay) throws IOException {
         return createTestFiles(days, filesPerDay, "2013/01", false, "._COPYING_");
     }
-    
+
     protected LongRange createTestFiles(int days, int filesPerDay, String datepath, boolean folderRange, String postfix) throws IOException {
         Calendar c = Calendar.getInstance();
         c.set(Calendar.HOUR_OF_DAY, 0);
@@ -106,7 +106,7 @@ public class AbstractFlagConfig {
         }
         return range;
     }
-    
+
     private LongRange merge(LongRange range1, LongRange range2) {
         if (range1 == null) {
             return range2;
@@ -118,7 +118,7 @@ public class AbstractFlagConfig {
             return new LongRange(min, max);
         }
     }
-    
+
     private LongRange writeTestFiles(File f, int count, long time, boolean folderRange, String postfix) throws IOException {
         if (!f.exists()) {
             f.mkdirs();
@@ -148,7 +148,7 @@ public class AbstractFlagConfig {
             return new LongRange(time, time + ((count - 1) * 1000));
         }
     }
-    
+
     protected Path getTestFile(FileSystem fs) throws IOException {
         createTestFiles(1, 1);
         Path file = null;

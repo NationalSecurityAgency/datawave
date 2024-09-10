@@ -1,0 +1,18 @@
+{
+  "CA": {
+      "expiry": "876000h",
+      "pathlen": 0
+  },
+  "CN": "EXAMPLE CORP CA",
+  "key": {
+    "algo": "rsa",
+    "size": 2048
+  },
+  "names": [
+    {
+      "C": "US",
+      "O": "Example Corp"
+    }
+  ]
+}
+

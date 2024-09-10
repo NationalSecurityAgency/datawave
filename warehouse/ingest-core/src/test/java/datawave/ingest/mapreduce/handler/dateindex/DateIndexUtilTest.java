@@ -8,10 +8,10 @@ import org.junit.Assert;
 import org.junit.Test;
 
 /**
- * 
+ *
  */
 public class DateIndexUtilTest {
-    
+
     @Test
     public void testGetBits() {
         BitSet bits = DateIndexUtil.getBits(20);
@@ -23,17 +23,17 @@ public class DateIndexUtilTest {
             Assert.assertFalse(bits.get(i));
         }
     }
-    
+
     @Test
     public void testMerge() {
-        
+
         Set<Integer> bits = new HashSet<>();
         for (int i = 0; i < 40; i++) {
             bits.add(i);
             bits.add(i * 2);
             bits.add(i * 3);
         }
-        
+
         BitSet bitSet1 = new BitSet(1);
         BitSet bitSet2 = new BitSet(1);
         int count = 0;
@@ -45,7 +45,7 @@ public class DateIndexUtilTest {
             }
         }
         BitSet bitSet = DateIndexUtil.merge(bitSet1, bitSet2);
-        
+
         for (int i = 0; i < 40 * 4; i++) {
             if (bits.contains(i)) {
                 Assert.assertTrue(bitSet.get(i));
@@ -54,5 +54,5 @@ public class DateIndexUtilTest {
             }
         }
     }
-    
+
 }

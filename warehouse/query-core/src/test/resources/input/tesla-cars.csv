@@ -1,3 +1,3 @@
-20150501,tesla-eventid-001,tesla,models,red,4,4,common description
-20150601,tesla-eventid-002,tesla,modelx,blue,4,4,common description
-20150701,tesla-eventid-003,tesla,model3,yellow,4,4,common description
+20150501,tesla-eventid-001,tesla,models,red,4,4,common description,public
+20150601,tesla-eventid-002,tesla,modelx,blue,4,4,common description,public
+20150701,tesla-eventid-003,tesla,model3,yellow,4,4,common description,private

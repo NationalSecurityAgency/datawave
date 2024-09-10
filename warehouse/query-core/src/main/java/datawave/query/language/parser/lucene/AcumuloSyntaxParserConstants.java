@@ -2,7 +2,7 @@
 package datawave.query.language.parser.lucene;
 
 public interface AcumuloSyntaxParserConstants {
-    
+
     int EOF = 0;
     int _NUM_CHAR = 1;
     int _ESCAPED_CHAR = 2;
@@ -35,14 +35,14 @@ public interface AcumuloSyntaxParserConstants {
     int RANGEEX_END = 30;
     int RANGE_QUOTED = 31;
     int RANGE_GOOP = 32;
-    
+
     int Boost = 0;
     int Range = 1;
     int DEFAULT = 2;
-    
+
     String[] tokenImage = {"<EOF>", "<_NUM_CHAR>", "<_ESCAPED_CHAR>", "<_TERM_START_CHAR>", "<_TERM_CHAR>", "<_FUNCTION_ARG_CHAR>",
             "<_FUNCTION_ARG_BEGINEND_CHAR>", "<_FUNCTION_ARG_ALL_CHAR1>", "<_FUNCTION_ARG_ALL_CHAR2>", "<_FUNCTION_ARG>", "<_WHITESPACE>", "<_QUOTED_CHAR>",
             "<token of kind 12>", "\"AND\"", "\"OR\"", "\"NOT\"", "<FUNCTION>", "\"(\"", "\")\"", "\":\"", "\"^\"", "<QUOTED>", "<TERM>", "<FUZZY_SLOP>",
             "<REGEXPTERM>", "\"[\"", "\"{\"", "<NUMBER>", "\"TO\"", "\"]\"", "\"}\"", "<RANGE_QUOTED>", "<RANGE_GOOP>",};
-    
+
 }

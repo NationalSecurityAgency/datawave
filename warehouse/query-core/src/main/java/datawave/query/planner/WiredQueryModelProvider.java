@@ -1,26 +1,27 @@
 package datawave.query.planner;
 
-import datawave.query.model.QueryModel;
+import java.util.Map;
+
 import org.apache.commons.lang.StringUtils;
 
-import java.util.Map;
+import datawave.query.model.QueryModel;
 
 /**
  * Intended to be dependency-injected
  */
 public class WiredQueryModelProvider implements QueryModelProvider {
-    
+
     protected QueryModel queryModel;
-    
+
     @Override
     public QueryModel getQueryModel() {
         return queryModel;
     }
-    
+
     // public void setQueryModel(QueryModel queryModel) {
     // this.queryModel = queryModel;
     // }
-    
+
     public void setQueryModel(Map<String,String> mappings) {
         QueryModel model = new QueryModel();
         for (Map.Entry<String,String> mapping : mappings.entrySet()) {

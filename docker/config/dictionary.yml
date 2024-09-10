@@ -1,0 +1,42 @@
+# Authorization requires a client certificate
+server:
+  ssl:
+    client-auth: NEED
+
+datawave:
+  swagger:
+    title: "Dictionary Service"
+    description: "REST API provided by the Dictionary Service"
+  metadata:
+    all-metadata-auths:
+      - PRIVATE,PUBLIC
+    type-substitutions:
+      "[datawave.data.type.DateType]": "datawave.data.type.RawDateType"
+  dictionary:
+    accumulo-properties:
+      zookeepers: "${accumulo.zookeepers}"
+      instance-name: '${accumulo.instanceName}'
+      username: '${accumulo.username}'
+      password: '${accumulo.password}'
+    edge:
+      metadata-table-name: ${metadata.table.name:datawave.metadata}
+      num-threads: 8
+    data:
+      model-name: DATAWAVE
+      model-table-name: ${metadata.table.name:datawave.metadata}
+      metadata-table-name: ${metadata.table.name:datawave.metadata}
+      num-threads: 8
+      normalizer-map:
+        "[datawave.data.type.GeoLatType]": "Latitude"
+        "[datawave.data.type.GeoLonType]": "Longitude"
+        "[datawave.data.type.GeometryType]": "Geometry"
+        "[datawave.data.type.GeoType]": "Combined latitude, longitude"
+        "[datawave.data.type.IpAddressType]": "IP address"
+        "[datawave.data.type.MacAddressType]": "MAC address"
+        "[datawave.data.type.LcNoDiacriticsType]": "Text"
+        "[datawave.data.type.LcType]": "Text"
+        "[datawave.data.type.NoOpType]": "Unnormalized Text"
+        "[datawave.data.type.NumberType]": "Number"
+        "[datawave.data.type.PointType]": "Point Geometry"
+        "[datawave.data.type.TrimLeadingZerosType]": "Text"
+

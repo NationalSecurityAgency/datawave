@@ -17,58 +17,59 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlTransient;
 
+import org.apache.commons.lang.builder.HashCodeBuilder;
+import org.apache.commons.lang.builder.ToStringBuilder;
+
 import io.protostuff.Input;
 import io.protostuff.Message;
 import io.protostuff.Output;
 import io.protostuff.Schema;
-import org.apache.commons.lang.builder.HashCodeBuilder;
-import org.apache.commons.lang.builder.ToStringBuilder;
 
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class BulkResultsInfoResponse implements Serializable, Message<BulkResultsInfoResponse> {
-    
+
     private static final long serialVersionUID = 1L;
-    
+
     @XmlAccessorType(XmlAccessType.NONE)
     @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
     public static class Job implements Serializable, Message<Job> {
-        
+
         private static final long serialVersionUID = 1L;
-        
+
         @XmlElement(name = "jobId")
         private String jobId = null;
         @XmlElementWrapper(name = "JobHistories")
         @XmlElement(name = "JobHistory")
         private TreeSet<History> history = null;
-        
+
         public String getJobId() {
             return jobId;
         }
-        
+
         public Set<History> getHistory() {
             return history;
         }
-        
+
         public void setJobId(String jobId) {
             this.jobId = jobId;
         }
-        
+
         public void setHistory(Set<History> history) {
             this.history = new TreeSet<History>(history);
         }
-        
+
         public void addHistory(History history) {
             if (null == this.history)
                 this.history = new TreeSet<History>();
             this.history.add(history);
         }
-        
+
         @Override
         public int hashCode() {
             return new HashCodeBuilder(17, 37).append(jobId).append(history).toHashCode();
         }
-        
+
         @Override
         public boolean equals(Object o) {
             if (null == o)
@@ -78,7 +79,7 @@ public class BulkResultsInfoResponse implements Serializable, Message<BulkResult
             Job j = (Job) o;
             return this.jobId.equals(j.jobId);
         }
-        
+
         @Override
         public String toString() {
             ToStringBuilder tsb = new ToStringBuilder(this);
@@ -86,42 +87,42 @@ public class BulkResultsInfoResponse implements Serializable, Message<BulkResult
             tsb.append("history", this.history);
             return tsb.toString();
         }
-        
+
         public Schema<Job> cachedSchema() {
             return SCHEMA;
         }
-        
+
         public static Schema<Job> getSchema() {
             return SCHEMA;
         }
-        
+
         @XmlTransient
         private static final Schema<Job> SCHEMA = new Schema<Job>() {
             public Job newMessage() {
                 return new Job();
             }
-            
+
             public Class<Job> typeClass() {
                 return Job.class;
             }
-            
+
             public String messageName() {
                 return Job.class.getSimpleName();
             }
-            
+
             public String messageFullName() {
                 return Job.class.getName();
             }
-            
+
             public boolean isInitialized(Job message) {
                 return true;
             }
-            
+
             public void writeTo(Output output, Job message) throws IOException {
                 if (message.getJobId() != null) {
                     output.writeString(1, message.getJobId(), false);
                 }
-                
+
                 if (message.history != null) {
                     for (History h : message.history) {
                         if (h != null)
@@ -129,7 +130,7 @@ public class BulkResultsInfoResponse implements Serializable, Message<BulkResult
                     }
                 }
             }
-            
+
             public void mergeFrom(Input input, Job message) throws IOException {
                 int number;
                 while ((number = input.readFieldNumber(this)) != 0) {
@@ -148,7 +149,7 @@ public class BulkResultsInfoResponse implements Serializable, Message<BulkResult
                     }
                 }
             }
-            
+
             public String getFieldName(int number) {
                 switch (number) {
                     case 1:
@@ -159,48 +160,48 @@ public class BulkResultsInfoResponse implements Serializable, Message<BulkResult
                         return null;
                 }
             }
-            
+
             public int getFieldNumber(String name) {
                 final Integer number = fieldMap.get(name);
                 return number == null ? 0 : number.intValue();
             }
-            
+
             final java.util.HashMap<String,Integer> fieldMap = new java.util.HashMap<String,Integer>();
             {
                 fieldMap.put("jobId", 1);
                 fieldMap.put("history", 2);
             }
         };
-        
+
     }
-    
+
     @XmlAccessorType(XmlAccessType.NONE)
     @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
     public static class History implements Serializable, Comparator<History>, Comparable<History>, Message<History> {
-        
+
         private static final long serialVersionUID = 1L;
-        
+
         @XmlAttribute(name = "timestamp")
         private Long timestamp = 0L;
         @XmlAttribute(name = "state")
         private String state = null;
-        
+
         public Long getTimestamp() {
             return timestamp;
         }
-        
+
         public String getState() {
             return state;
         }
-        
+
         public void setTimestamp(Long timestamp) {
             this.timestamp = timestamp;
         }
-        
+
         public void setState(String state) {
             this.state = state;
         }
-        
+
         @Override
         public int compareTo(History o) {
             int t = (this.timestamp.compareTo(o.timestamp));
@@ -210,17 +211,17 @@ public class BulkResultsInfoResponse implements Serializable, Message<BulkResult
                 return t;
             }
         }
-        
+
         @Override
         public int compare(History o1, History o2) {
             return o1.compareTo(o2);
         }
-        
+
         @Override
         public int hashCode() {
             return new HashCodeBuilder(17, 37).append(timestamp).append(state).toHashCode();
         }
-        
+
         @Override
         public boolean equals(Object o) {
             if (null == o)
@@ -229,7 +230,7 @@ public class BulkResultsInfoResponse implements Serializable, Message<BulkResult
                 return false;
             return this.compareTo((History) o) == 0;
         }
-        
+
         @Override
         public String toString() {
             ToStringBuilder tsb = new ToStringBuilder(this);
@@ -237,47 +238,47 @@ public class BulkResultsInfoResponse implements Serializable, Message<BulkResult
             tsb.append("state", this.state);
             return tsb.toString();
         }
-        
+
         public Schema<History> cachedSchema() {
             return SCHEMA;
         }
-        
+
         public static Schema<History> getSchema() {
             return SCHEMA;
         }
-        
+
         @XmlTransient
         private static final Schema<History> SCHEMA = new Schema<History>() {
             public History newMessage() {
                 return new History();
             }
-            
+
             public Class<History> typeClass() {
                 return History.class;
             }
-            
+
             public String messageName() {
                 return History.class.getSimpleName();
             }
-            
+
             public String messageFullName() {
                 return History.class.getName();
             }
-            
+
             public boolean isInitialized(History message) {
                 return true;
             }
-            
+
             public void writeTo(Output output, History message) throws IOException {
                 if (message.getState() != null) {
                     output.writeString(1, message.getState(), false);
                 }
-                
+
                 if (message.getTimestamp() != null) {
                     output.writeUInt64(2, message.getTimestamp(), false);
                 }
             }
-            
+
             public void mergeFrom(Input input, History message) throws IOException {
                 int number;
                 while ((number = input.readFieldNumber(this)) != 0) {
@@ -294,7 +295,7 @@ public class BulkResultsInfoResponse implements Serializable, Message<BulkResult
                     }
                 }
             }
-            
+
             public String getFieldName(int number) {
                 switch (number) {
                     case 1:
@@ -305,21 +306,21 @@ public class BulkResultsInfoResponse implements Serializable, Message<BulkResult
                         return null;
                 }
             }
-            
+
             public int getFieldNumber(String name) {
                 final Integer number = fieldMap.get(name);
                 return number == null ? 0 : number.intValue();
             }
-            
+
             final java.util.HashMap<String,Integer> fieldMap = new java.util.HashMap<String,Integer>();
             {
                 fieldMap.put("state", 1);
                 fieldMap.put("timestamp", 2);
             }
         };
-        
+
     }
-    
+
     @XmlAttribute(name = "user")
     private String user = null;
     @XmlAttribute(name = "bulkResultsId")
@@ -337,77 +338,77 @@ public class BulkResultsInfoResponse implements Serializable, Message<BulkResult
     @XmlElementWrapper(name = "Jobs")
     @XmlElement(name = "Job")
     private List<Job> jobs = null;
-    
+
     public String getUser() {
         return user;
     }
-    
+
     public String getBulkResultsId() {
         return bulkResultsId;
     }
-    
+
     public String getJobDirectory() {
         return jobDirectory;
     }
-    
+
     public String getOutputDestination() {
         return outputDestination;
     }
-    
+
     public String getConfiguration() {
         return configuration;
     }
-    
+
     public String getQueryId() {
         return queryId;
     }
-    
+
     public List<Job> getJobs() {
         return jobs;
     }
-    
+
     public void setUser(String user) {
         this.user = user;
     }
-    
+
     public void setBulkResultsId(String bulkResultsId) {
         this.bulkResultsId = bulkResultsId;
     }
-    
+
     public void setJobDirectory(String jobDirectory) {
         this.jobDirectory = jobDirectory;
     }
-    
+
     public void setOutputDestination(String outputDestination) {
         this.outputDestination = outputDestination;
     }
-    
+
     public void setConfiguration(String configuration) {
         this.configuration = configuration;
     }
-    
+
     public void setQueryId(String queryId) {
         this.queryId = queryId;
     }
-    
+
     public void setJobs(List<Job> job) {
         this.jobs = job;
     }
-    
+
     public void addJob(Job history) {
         if (null == this.jobs)
             this.jobs = new ArrayList<Job>();
         this.jobs.add(history);
     }
-    
+
     public String getSerializationFormat() {
         return serializationFormat;
     }
-    
+
     public void setSerializationFormat(String serializationFormat) {
         this.serializationFormat = serializationFormat;
     }
-    
+
     @Override
     public String toString() {
         ToStringBuilder tsb = new ToStringBuilder(this);
@@ -421,70 +422,70 @@ public class BulkResultsInfoResponse implements Serializable, Message<BulkResult
         tsb.append("job", this.jobs);
         return tsb.toString();
     }
-    
+
     @Override
     public Schema<BulkResultsInfoResponse> cachedSchema() {
         return SCHEMA;
     }
-    
+
     public static Schema<BulkResultsInfoResponse> getSchema() {
         return SCHEMA;
     }
-    
+
     @XmlTransient
     private static final Schema<BulkResultsInfoResponse> SCHEMA = new Schema<BulkResultsInfoResponse>() {
         // schema methods
-        
+
         public BulkResultsInfoResponse newMessage() {
             return new BulkResultsInfoResponse();
         }
-        
+
         public Class<BulkResultsInfoResponse> typeClass() {
             return BulkResultsInfoResponse.class;
         }
-        
+
         public String messageName() {
             return BulkResultsInfoResponse.class.getSimpleName();
         }
-        
+
         public String messageFullName() {
             return BulkResultsInfoResponse.class.getName();
         }
-        
+
         public boolean isInitialized(BulkResultsInfoResponse message) {
             return true;
         }
-        
+
         public void writeTo(Output output, BulkResultsInfoResponse message) throws IOException {
-            
+
             if (message.user != null) {
                 output.writeString(1, message.user, false);
             }
-            
+
             if (message.bulkResultsId != null) {
                 output.writeString(2, message.bulkResultsId, false);
             }
-            
+
             if (message.jobDirectory != null) {
                 output.writeString(3, message.jobDirectory, false);
             }
-            
+
             if (message.outputDestination != null) {
                 output.writeString(4, message.outputDestination, false);
             }
-            
+
             if (message.configuration != null) {
                 output.writeString(5, message.configuration, false);
             }
-            
+
             if (message.queryId != null) {
                 output.writeString(6, message.queryId, false);
             }
-            
+
             if (message.serializationFormat != null) {
                 output.writeString(7, message.serializationFormat, false);
             }
-            
+
             if (message.jobs != null) {
                 for (Job job : message.jobs) {
                     if (job != null)
@@ -492,7 +493,7 @@ public class BulkResultsInfoResponse implements Serializable, Message<BulkResult
                 }
             }
         }
-        
+
         public void mergeFrom(Input input, BulkResultsInfoResponse message) throws IOException {
             int number;
             while ((number = input.readFieldNumber(this)) != 0) {
@@ -529,7 +530,7 @@ public class BulkResultsInfoResponse implements Serializable, Message<BulkResult
                 }
             }
         }
-        
+
         public String getFieldName(int number) {
             switch (number) {
                 case 1:
@@ -552,12 +553,12 @@ public class BulkResultsInfoResponse implements Serializable, Message<BulkResult
                     return null;
             }
         }
-        
+
         public int getFieldNumber(String name) {
             final Integer number = fieldMap.get(name);
             return number == null ? 0 : number.intValue();
         }
-        
+
         final java.util.HashMap<String,Integer> fieldMap = new java.util.HashMap<String,Integer>();
         {
             fieldMap.put("user", 1);
@@ -570,5 +571,5 @@ public class BulkResultsInfoResponse implements Serializable, Message<BulkResult
             fieldMap.put("jobs", 8);
         }
     };
-    
+
 }

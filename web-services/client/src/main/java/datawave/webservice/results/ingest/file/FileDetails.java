@@ -1,17 +1,18 @@
 package datawave.webservice.results.ingest.file;
 
-import io.protostuff.Input;
-import io.protostuff.Message;
-import io.protostuff.Output;
-import io.protostuff.Schema;
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.Date;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlTransient;
-import java.io.IOException;
-import java.io.Serializable;
-import java.util.Date;
+
+import io.protostuff.Input;
+import io.protostuff.Message;
+import io.protostuff.Output;
+import io.protostuff.Schema;
 
 @XmlAccessorType(XmlAccessType.NONE)
 public class FileDetails implements Serializable, Message<FileDetails> {
@@ -21,66 +22,66 @@ public class FileDetails implements Serializable, Message<FileDetails> {
     private Date date;
     @XmlAttribute(name = "fileSize")
     private long size;
-    
+
     public String getPath() {
         return path;
     }
-    
+
     public void setPath(String path) {
         this.path = path;
     }
-    
+
     public Date getDate() {
         return date;
     }
-    
+
     public void setDate(Date date) {
         this.date = date;
     }
-    
+
     public long getSize() {
         return size;
     }
-    
+
     public void setSize(long size) {
         this.size = size;
     }
-    
+
     @Override
     public Schema<FileDetails> cachedSchema() {
         return SCHEMA;
     }
-    
+
     public static Schema<FileDetails> getSchema() {
         return SCHEMA;
     }
-    
+
     @XmlTransient
     private static final Schema<FileDetails> SCHEMA = new Schema<FileDetails>() {
         // schema methods
-        
+
         public FileDetails newMessage() {
             return new FileDetails();
         }
-        
+
         public Class<FileDetails> typeClass() {
             return FileDetails.class;
         }
-        
+
         public String messageName() {
             return FileDetails.class.getSimpleName();
         }
-        
+
         public String messageFullName() {
             return FileDetails.class.getName();
         }
-        
+
         public boolean isInitialized(FileDetails message) {
             return true;
         }
-        
+
         public void writeTo(Output output, FileDetails message) throws IOException {
-            
+
             if (message.getPath() != null) {
                 output.writeString(1, message.getPath(), false);
             }
@@ -89,7 +90,7 @@ public class FileDetails implements Serializable, Message<FileDetails> {
             }
             output.writeUInt64(3, message.getSize(), false);
         }
-        
+
         public void mergeFrom(Input input, FileDetails message) throws IOException {
             int number;
             while ((number = input.readFieldNumber(this)) != 0) {
@@ -109,7 +110,7 @@ public class FileDetails implements Serializable, Message<FileDetails> {
                 }
             }
         }
-        
+
         public String getFieldName(int number) {
             switch (number) {
                 case 1:
@@ -122,12 +123,12 @@ public class FileDetails implements Serializable, Message<FileDetails> {
                     return null;
             }
         }
-        
+
         public int getFieldNumber(String name) {
             final Integer number = fieldMap.get(name);
             return number == null ? 0 : number.intValue();
         }
-        
+
         final java.util.HashMap<String,Integer> fieldMap = new java.util.HashMap<String,Integer>();
         {
             fieldMap.put("filePath", 1);
@@ -135,5 +136,5 @@ public class FileDetails implements Serializable, Message<FileDetails> {
             fieldMap.put("fileSize", 3);
         }
     };
-    
+
 }

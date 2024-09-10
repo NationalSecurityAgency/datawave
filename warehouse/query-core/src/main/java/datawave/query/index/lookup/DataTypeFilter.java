@@ -18,15 +18,15 @@ import com.google.common.collect.ImmutableMap;
 // column qualifier filter
 public class DataTypeFilter extends Filter {
     public static final String TYPES = "dtf.types";
-    
+
     private TreeSet<ByteSequence> allowed;
     private ImmutableMap<String,String> opts;
-    
+
     @Override
     public boolean accept(Key k, Value v) {
         return allowed.isEmpty() || allowed.contains(parseDataType(k));
     }
-    
+
     @Override
     public void init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env) throws IOException {
         super.init(source, options, env);
@@ -41,7 +41,7 @@ public class DataTypeFilter extends Filter {
             }
         }
     }
-    
+
     @Override
     public SortedKeyValueIterator<Key,Value> deepCopy(IteratorEnvironment env) {
         DataTypeFilter dtf = new DataTypeFilter();
@@ -52,7 +52,7 @@ public class DataTypeFilter extends Filter {
         }
         return dtf;
     }
-    
+
     public static ByteSequence parseDataType(Key k) {
         ByteSequence cq = k.getColumnQualifierData();
         int i = cq.length();

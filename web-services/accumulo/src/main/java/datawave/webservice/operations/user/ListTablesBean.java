@@ -1,8 +1,5 @@
 package datawave.webservice.operations.user;
 
-import datawave.webservice.operations.remote.RemoteAdminService;
-import datawave.webservice.response.ListTablesResponse;
-
 import javax.annotation.security.DeclareRoles;
 import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
@@ -17,6 +14,9 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 
+import datawave.webservice.operations.remote.RemoteAdminService;
+import datawave.webservice.response.ListTablesResponse;
+
 @Path("/Accumulo")
 @RolesAllowed({"InternalUser", "Administrator"})
 @DeclareRoles({"InternalUser", "Administrator"})
@@ -25,20 +25,20 @@ import javax.ws.rs.Produces;
 @TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED)
 @TransactionManagement(TransactionManagementType.BEAN)
 public class ListTablesBean {
-    
+
     @Inject
     private RemoteAdminService remoteAdminService;
-    
+
     @Path("/ListTables")
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml"})
     @GET
     public ListTablesResponse listAccumuloTables() {
         return listTables();
     }
-    
+
     @PermitAll
     public ListTablesResponse listTables() {
         return remoteAdminService.listTables();
     }
-    
+
 }

@@ -6,10 +6,11 @@ import java.util.Enumeration;
 
 import javax.security.auth.login.LoginException;
 
-import datawave.security.util.DnUtils;
 import org.jboss.logging.Logger;
 import org.jboss.security.SimplePrincipal;
 import org.jboss.security.auth.spi.UsersRolesLoginModule;
+
+import datawave.security.util.DnUtils;
 
 /**
  * A specialized version of {@link UsersRolesLoginModule} that fails the login if there are no roles for a given user. The parent module will take the supplied
@@ -18,15 +19,15 @@ import org.jboss.security.auth.spi.UsersRolesLoginModule;
  */
 public class DatawaveUsersRolesLoginModule extends UsersRolesLoginModule {
     private ThreadLocal<Boolean> createSimplePrincipal = new ThreadLocal<>();
-    
+
     public DatawaveUsersRolesLoginModule() {
         log = Logger.getLogger(getClass());
     }
-    
+
     @Override
     public boolean login() throws LoginException {
         boolean success = super.login();
-        
+
         int roleCount = 0;
         Group[] roleSets = getRoleSets();
         if (roleSets != null) {
@@ -36,17 +37,17 @@ public class DatawaveUsersRolesLoginModule extends UsersRolesLoginModule {
                 }
             }
         }
-        
+
         // Fail the login if there are no roles. This way we can try
         // another module potentially.
         if (roleCount == 0) {
             loginOk = false;
             success = false;
         }
-        
+
         return success;
     }
-    
+
     @Override
     protected Group[] getRoleSets() throws LoginException {
         // Set a thread local to indicate that we should create a SimplePrincipal when asked to create an identity. This is needed
@@ -60,7 +61,7 @@ public class DatawaveUsersRolesLoginModule extends UsersRolesLoginModule {
             createSimplePrincipal.remove();
         }
     }
-    
+
     @Override
     protected Principal createIdentity(String username) throws Exception {
         // Create a simple principal if our thread-local indicates we are supposed to,
@@ -78,10 +79,10 @@ public class DatawaveUsersRolesLoginModule extends UsersRolesLoginModule {
             return super.createIdentity(normalizedUsername);
         }
     }
-    
+
     protected static String normalizeUsername(String username) {
         StringBuilder result = new StringBuilder();
-        
+
         String[] splitDns = DnUtils.splitProxiedSubjectIssuerDNs(username);
         for (int i = 0; i < splitDns.length; i++) {
             if (i > 0) {

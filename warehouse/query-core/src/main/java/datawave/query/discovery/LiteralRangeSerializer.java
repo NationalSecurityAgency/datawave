@@ -2,8 +2,6 @@ package datawave.query.discovery;
 
 import java.lang.reflect.Type;
 
-import datawave.query.jexl.LiteralRange;
-
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
@@ -13,8 +11,10 @@ import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 
+import datawave.query.jexl.LiteralRange;
+
 public class LiteralRangeSerializer implements JsonSerializer<LiteralRange<String>>, JsonDeserializer<LiteralRange<String>> {
-    
+
     @Override
     public LiteralRange<String> deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
         JsonObject obj = json.getAsJsonObject();
@@ -24,10 +24,10 @@ public class LiteralRangeSerializer implements JsonSerializer<LiteralRange<Strin
         LiteralRange.NodeOperand operand = (obj.get("O") == null ? null : LiteralRange.NodeOperand.valueOf(obj.get("O").getAsString()));
         Boolean lowerInclusive = (obj.get("LI") == null ? null : obj.get("LI").getAsBoolean());
         Boolean upperInclusive = (obj.get("UI") == null ? null : obj.get("UI").getAsBoolean());
-        
+
         return new LiteralRange<>(lower, lowerInclusive, upper, upperInclusive, fieldName, operand);
     }
-    
+
     @Override
     public JsonElement serialize(LiteralRange<String> src, Type typeOfSrc, JsonSerializationContext context) {
         JsonObject mm = new JsonObject();
@@ -45,5 +45,5 @@ public class LiteralRangeSerializer implements JsonSerializer<LiteralRange<Strin
             mm.add("UI", new JsonPrimitive(src.isUpperInclusive()));
         return mm;
     }
-    
+
 }

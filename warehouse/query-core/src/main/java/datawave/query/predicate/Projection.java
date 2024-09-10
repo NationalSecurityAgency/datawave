@@ -3,80 +3,119 @@ package datawave.query.predicate;
 import java.util.Collections;
 import java.util.Set;
 
-import datawave.query.jexl.JexlASTHelper;
+import javax.annotation.Nonnull;
 
-import org.apache.log4j.Logger;
+import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.Sets;
 
+import datawave.query.jexl.JexlASTHelper;
+
 /**
- * Predicate to retain attributes that are specified in a list of fields and remove attributes specified in a blacklist of fields.
- * 
+ * Predicate that either retains attributes in a specified set of include fields or removes attributes specified in a set of exclude fields.
+ * <p>
  * This class is <b>not thread safe</b>
- * 
- * 
- * 
  */
-public class Projection implements Predicate<String> {
-    private static final Logger log = Logger.getLogger(Projection.class);
-    private Set<String> whitelist = null, blacklist = null;
-    private boolean useWhitelist = false, useBlacklist = false;
-    private boolean initialized = false;
-    
-    public void setWhitelist(Set<String> whiteListFields) {
+public final class Projection implements Predicate<String> {
+
+    private boolean initialized;
+
+    @Deprecated
+    public void setIncludes(Set<String> includes) {
         if (this.initialized) {
             throw new RuntimeException("This Projection instance was already initialized");
         }
-        
-        this.useWhitelist = true;
-        // do not make a copy of the incoming whiteListFields. It could be a UniversalSet
-        this.whitelist = whiteListFields;
+
+        // do not make a copy of the incoming include fields. It could be a UniversalSet
+        this.projections = includes;
         this.initialized = true;
+        type = ProjectionType.INCLUDES;
     }
-    
-    public void setBlacklist(Set<String> blackListFields) {
+
+    @Deprecated
+    public void setExcludes(Set<String> excludes) {
         if (this.initialized) {
             throw new RuntimeException("This Projection instance was already initialized");
         }
-        
-        this.useBlacklist = true;
-        this.blacklist = Sets.newHashSet(blackListFields);
+
+        this.projections = Sets.newHashSet(excludes);
         this.initialized = true;
+        type = ProjectionType.EXCLUDES;
     }
-    
-    public Set<String> getWhitelist() {
-        return Collections.unmodifiableSet(this.whitelist);
+
+    @Deprecated
+    public Set<String> getIncludes() {
+        return Collections.unmodifiableSet(this.projections);
     }
-    
-    public Set<String> getBlacklist() {
-        return Collections.unmodifiableSet(this.blacklist);
+
+    @Deprecated
+    public Set<String> getExcludes() {
+        return Collections.unmodifiableSet(this.projections);
     }
-    
-    public boolean isUseWhitelist() {
-        return useWhitelist;
+
+    /* Explicit constructor needed now that the new constructor was added */
+    @Deprecated
+    public Projection() {
+        this.initialized = false;
     }
-    
-    public boolean isUseBlacklist() {
-        return useBlacklist;
+
+    private Set<String> projections;
+    private ProjectionType type;
+
+    public Projection(@Nonnull Set<String> items, @Nonnull ProjectionType type) {
+        this.initialized = true;
+        this.type = type;
+        if (type == ProjectionType.INCLUDES) {
+            // do not make a copy of the incoming include fields. It could be a UniversalSet
+            this.projections = items;
+        } else {
+            this.projections = Sets.newHashSet(items);
+        }
     }
-    
+
+    public Set<String> getProjections(ProjectionType projectionType) {
+        if (this.type == projectionType) {
+            return Collections.unmodifiableSet(this.projections);
+        } else {
+            return Collections.emptySet();
+        }
+    }
+
+    public boolean isUseIncludes() {
+        return type == ProjectionType.INCLUDES;
+    }
+
+    public boolean isUseExcludes() {
+        return type == ProjectionType.EXCLUDES;
+    }
+
+    /**
+     * Applies this projection to a field name
+     *
+     * @param inputFieldName
+     *            an input field name, possibly with a grouping context or identifier prefix
+     * @return true if this field should be kept
+     */
     @Override
     public boolean apply(String inputFieldName) {
         if (!this.initialized) {
-            throw new RuntimeException("This Projection must be initialized with a whitelist or blacklist");
+            throw new RuntimeException("This Projection must be initialized with a set of includes or excludes fields");
         }
-        
         String fieldName = JexlASTHelper.deconstructIdentifier(inputFieldName, false);
-        
-        if (this.useBlacklist) {
-            return !this.blacklist.contains(fieldName);
+
+        if (type == ProjectionType.EXCLUDES) {
+            return !projections.contains(fieldName);
+        } else {
+            return projections.contains(fieldName);
         }
-        
-        if (this.useWhitelist) {
-            return this.whitelist.contains(fieldName);
-        }
-        
-        throw new RuntimeException("This Projection must be initialized with a whitelist or blacklist.");
+    }
+
+    public String toString() {
+        return new ToStringBuilder(this).append("projections", projections).append("type", type.name()).toString();
+    }
+
+    public enum ProjectionType {
+        INCLUDES, EXCLUDES;
     }
 }

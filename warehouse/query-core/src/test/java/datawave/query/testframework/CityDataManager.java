@@ -1,10 +1,5 @@
 package datawave.query.testframework;
 
-import au.com.bytecode.opencsv.CSVReader;
-import datawave.query.testframework.CitiesDataType.CityField;
-import org.apache.log4j.Logger;
-import org.junit.Assert;
-
 import java.io.IOException;
 import java.io.Reader;
 import java.net.URI;
@@ -15,6 +10,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.log4j.Logger;
+import org.junit.Assert;
+
+import au.com.bytecode.opencsv.CSVReader;
+import datawave.query.testframework.CitiesDataType.CityField;
+
 /**
  * Provides a mapping of the raw ingest data for query analysis. This will allow dynamic calculation of expected results and modification of the test data
  * without impacting the test cases. Each entry in the file will be transformed to a POJO entry.
@@ -23,13 +24,13 @@ import java.util.Set;
  * This class is immutable.
  */
 public class CityDataManager extends AbstractDataManager {
-    
+
     private static final Logger log = Logger.getLogger(CityDataManager.class);
-    
+
     public CityDataManager() {
         super(CityField.EVENT_ID.name(), CityField.START_DATE.name(), CityField.getFieldsMetadata());
     }
-    
+
     @Override
     public void addTestData(final URI file, final String datatype, final Set<String> indexes) throws IOException {
         Assert.assertFalse("datatype has already been configured(" + datatype + ")", this.rawData.containsKey(datatype));
@@ -47,12 +48,12 @@ public class CityDataManager extends AbstractDataManager {
             log.info("city test data(" + file + ") count(" + count + ")");
         }
     }
-    
+
     @Override
     public List<String> getHeaders() {
         return CityField.headers();
     }
-    
+
     private Set<RawData> getRawData(final Set<RawData> rawData, final Date start, final Date end) {
         final Set<RawData> data = new HashSet<>(this.rawData.size());
         final Set<String> shards = this.shardValues.getShardRange(start, end);
@@ -62,10 +63,10 @@ public class CityDataManager extends AbstractDataManager {
                 data.add(raw);
             }
         }
-        
+
         return data;
     }
-    
+
     /**
      * POJO for a single raw data entry.
      */

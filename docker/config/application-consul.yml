@@ -1,0 +1,29 @@
+spring:
+  cloud:
+    # Enable spring cloud discovery
+    discovery:
+      enabled: true
+    # Set defaults for service discovery with Consul..
+    # Note that for Consul-first config, each client will still need a bootstrap.yml that enables
+    # Consul-first discovery and sets up any Consul agent configuration that is non-default.
+    consul:
+      enabled: true
+      host: ${CONSUL_HOST:localhost}
+      # Give the consul agent a lot of time to come up
+      retry:
+        max-attempts: 60
+      discovery:
+        # we can use this
+        scheme: https
+        # or alternatively this
+        # port: ${server.non-secure-port} 
+        
+        health-check-path: ${server.servlet.context-path}${management.endpoints.web.base-path}/health
+        health-check-interval: 15s
+        # Generate a unique instance ID when registering with Consul so that we can scale to more than one copy of a service
+        instance-id: ${spring.application.name}:${vcap.application.instance_id:${spring.application.instance_id:${random.value}}}
+  # Use discovery to find the RabbitMQ server
+  rabbitmq:
+    discovery:
+      enabled: true
+      failFast: true

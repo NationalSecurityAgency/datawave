@@ -39,7 +39,7 @@ TVMAZE_RESPONSE_STATUS=$( echo ${CURL_RESPONSE} | tr -d '\n' | sed -e 's/.*HTTP_
 [ -z "${TVMAZE_RESPONSE_BODY}" ] && error "Response body is empty!" && exit 1
 
 if [ "${PRETTY}" == true ] ; then
-    echo "${TVMAZE_RESPONSE_BODY}" | python -c 'import sys,json;data=json.loads(sys.stdin.read()); print json.dumps(data, indent=2, sort_keys=True)'
+    echo "${TVMAZE_RESPONSE_BODY}" | python -c 'from __future__ import print_function;import sys,json;data=json.loads(sys.stdin.read()); print(json.dumps(data, indent=2, sort_keys=True))'
 else
     echo "${TVMAZE_RESPONSE_BODY}"
 fi

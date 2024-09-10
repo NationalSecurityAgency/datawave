@@ -12,11 +12,11 @@ import com.google.common.collect.Sets;
 
 public class DedupeColumnFamilies implements Predicate<Entry<Key,Value>> {
     private final HashSet<ByteSequence> elements;
-    
+
     public DedupeColumnFamilies() {
         elements = Sets.newHashSetWithExpectedSize(1024);
     }
-    
+
     @Override
     public boolean apply(Entry<Key,Value> input) {
         ByteSequence cf = input.getKey().getColumnFamilyData();

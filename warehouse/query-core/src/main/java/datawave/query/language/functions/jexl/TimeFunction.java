@@ -11,15 +11,15 @@ import datawave.webservice.query.exception.DatawaveErrorCode;
 /**
  * function to test whether two key/value pairs match within datafields of the same (grouping context) group For example FROM_ADDRESS.1 == 1.2.3.4 and
  * DIRECTION.1 == 1
- * 
+ *
  * {@code Collection<?> timeFunction(Object time1, Object time2, String operatorString, String equalityString, long goal)}
  */
 public class TimeFunction extends JexlQueryFunction {
-    
+
     public TimeFunction() {
         super("time_function", new ArrayList<>());
     }
-    
+
     @Override
     public void validate() throws IllegalArgumentException {
         if (this.parameterList.size() != 5) {
@@ -27,7 +27,7 @@ public class TimeFunction extends JexlQueryFunction {
             throw new IllegalArgumentException(qe);
         }
     }
-    
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
@@ -45,10 +45,10 @@ public class TimeFunction extends JexlQueryFunction {
         sb.append(")");
         return sb.toString();
     }
-    
+
     @Override
     public QueryFunction duplicate() {
         return new TimeFunction();
     }
-    
+
 }

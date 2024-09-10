@@ -10,6 +10,9 @@ source "${THIS_DIR}/bootstrap.sh"
 source "${SERVICES_DIR}/hadoop/bootstrap.sh"
 source "${SERVICES_DIR}/accumulo/bootstrap.sh"
 
+# If Wildfly is not installed, verify that the two checksums match before installing.
+datawaveWebIsInstalled || verifyChecksum "${DW_WILDFLY_DIST_URI}" "${DW_DATAWAVE_SERVICE_DIR}" "${DW_WILDFLY_DIST_SHA512_CHECKSUM}"
+
 accumuloIsInstalled || fatal "DataWave Web requires that Accumulo be installed"
 
 datawaveWebIsInstalled && info "DataWave Web is already installed" && exit 1
@@ -35,6 +38,11 @@ info "DataWave Web tarballs extracted and symlinked"
 info "Configuring Wildfly for DataWave..."
 
 ( cd "${DW_CLOUD_HOME}/${DW_DATAWAVE_WEB_SYMLINK}" && ./setup-wildfly.sh )
+
+# Set JVM properties on Wildfly as needed
+cat << EOF >> ${TARBALL_BASE_DIR}/bin/standalone.conf
+JAVA_OPTS="\$JAVA_OPTS -Daccumulo.properties=file://${ACCUMULO_HOME}/conf/accumulo.properties"
+EOF
 
 echo
 info "DataWave Web initialized and ready to start..."
