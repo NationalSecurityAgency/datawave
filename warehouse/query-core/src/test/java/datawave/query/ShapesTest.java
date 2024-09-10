@@ -888,4 +888,21 @@ public abstract class ShapesTest {
         }
     }
 
+    @Test
+    public void testFindFirstOption() throws Exception {
+        withParameter(QueryParameters.FIND_FIRST, "true");
+        withQuery("SHAPE == 'triangle'");
+
+        if (getClass().isAssignableFrom(DocumentRange.class)) {
+            // this isn't the first uid, but in memory accumulo won't compact the uids into a sorted set
+            withExpected(new HashSet<>(Set.of(ShapesIngest.isoscelesUid)));
+            logic.setCollapseUids(false); // disable this
+        } else {
+            // when pushed into a shard range, the query iterator will return all possible matches.
+            withExpected(new HashSet<>(triangleUids));
+        }
+
+        planAndExecuteQuery();
+    }
+
 }

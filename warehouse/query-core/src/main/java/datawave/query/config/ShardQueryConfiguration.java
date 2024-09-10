@@ -129,6 +129,12 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private int statsdMaxQueueSize = 500;
     private boolean limitAnyFieldLookups = false;
     private boolean bypassExecutabilityCheck = false;
+
+    /**
+     * Special case when a user only wants to find the first instance of a given set of terms
+     */
+    private boolean findFirst = false;
+
     /**
      * Usually we are planning for the purposes of running the query. This can be set if only generating a plan (i.e. don't start generating ranges)
      */
@@ -744,6 +750,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setUseQueryTreeScanHintRules(other.isUseQueryTreeScanHintRules());
         this.setQueryTreeScanHintRules(other.getQueryTreeScanHintRules());
         this.setFieldIndexHoleMinThreshold(other.getFieldIndexHoleMinThreshold());
+        this.setFindFirst(other.isFindFirst());
     }
 
     /**
@@ -2780,6 +2787,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.sortQueryByCounts = sortQueryByCounts;
     }
 
+    public boolean isFindFirst() {
+        return findFirst;
+    }
+
+    public void setFindFirst(boolean findFirst) {
+        this.findFirst = findFirst;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o)
@@ -2817,6 +2832,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getStatsdMaxQueueSize() == that.getStatsdMaxQueueSize() &&
                 getLimitAnyFieldLookups() == that.getLimitAnyFieldLookups() &&
                 isBypassExecutabilityCheck() == that.isBypassExecutabilityCheck() &&
+                isFindFirst() == that.isFindFirst() &&
                 isGeneratePlanOnly() == that.isGeneratePlanOnly() &&
                 getBackoffEnabled() == that.getBackoffEnabled() &&
                 getUnsortedUIDsEnabled() == that.getUnsortedUIDsEnabled() &&
@@ -3025,6 +3041,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getStatsdMaxQueueSize(),
                 getLimitAnyFieldLookups(),
                 isBypassExecutabilityCheck(),
+                isFindFirst(),
                 isGeneratePlanOnly(),
                 getBackoffEnabled(),
                 getUnsortedUIDsEnabled(),

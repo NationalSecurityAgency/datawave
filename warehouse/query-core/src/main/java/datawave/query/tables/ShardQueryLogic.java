@@ -1097,6 +1097,12 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
             config.setReducedResponse(reducedResponseValue);
         }
 
+        String findFirstParameter = settings.findParameter(QueryParameters.FIND_FIRST).getParameterValue().trim();
+        if (StringUtils.isNotBlank(findFirstParameter)) {
+            boolean flag = Boolean.parseBoolean(findFirstParameter);
+            config.setFindFirst(flag);
+        }
+
         final String postProcessingClasses = settings.findParameter(QueryOptions.POSTPROCESSING_CLASSES).getParameterValue().trim();
 
         final String postProcessingOptions = settings.findParameter(QueryOptions.POSTPROCESSING_OPTIONS).getParameterValue().trim();
@@ -2963,5 +2969,13 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
     public double getFieldIndexHoleMinThreshold(int fieldIndexHoleMinThreshold) {
         return getConfig().getFieldIndexHoleMinThreshold();
+    }
+
+    public boolean isFindFirst() {
+        return getConfig().isFindFirst();
+    }
+
+    public void setFindFirst(boolean findFirst) {
+        getConfig().setFindFirst(findFirst);
     }
 }

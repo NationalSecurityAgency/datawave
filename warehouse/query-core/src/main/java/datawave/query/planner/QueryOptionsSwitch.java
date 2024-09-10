@@ -131,6 +131,10 @@ public class QueryOptionsSwitch {
                         config.setProjectFields(groupFields.getProjectionFields());
                     }
                     break;
+                case QueryParameters.FIND_FIRST:
+                    boolean flag = Boolean.parseBoolean(value);
+                    config.setFindFirst(flag);
+                    break;
             }
         }
     }

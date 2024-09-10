@@ -26,9 +26,9 @@ import datawave.query.util.Tuples;
 
 /**
  * Parses entries returned from an index lookup, see {@link RangeStream#visit(ASTEQNode, Object)}.
- *
+ * <p>
  * An entry is defined as a Tuple of the key's column qualifier and it's {@link IndexInfo}
- *
+ * <p>
  * A delayed predicate node is build if the IndexInfo does not have any document ids or if the column qualifier indicates a day range.
  */
 public class EntryParser implements Function<Result,Tuple2<String,IndexInfo>> {
@@ -58,6 +58,10 @@ public class EntryParser implements Function<Result,Tuple2<String,IndexInfo>> {
     public EntryParser(ASTEQNode node, String fieldName, String literal, Set<String> indexOnlyFields) {
         this(node, fieldName, literal);
         this.indexOnlyFields = indexOnlyFields;
+    }
+
+    public EntryParser() {
+        // this constructor exists to support the FindFirstEntryParser
     }
 
     @Override

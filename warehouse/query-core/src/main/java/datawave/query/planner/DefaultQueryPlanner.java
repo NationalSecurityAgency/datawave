@@ -88,6 +88,8 @@ import datawave.query.exceptions.FullTableScansDisallowedException;
 import datawave.query.exceptions.InvalidQueryException;
 import datawave.query.exceptions.NoResultsException;
 import datawave.query.function.JexlEvaluation;
+import datawave.query.index.lookup.FindFirstRangeStream;
+import datawave.query.index.lookup.FindFirstUidIterator;
 import datawave.query.index.lookup.RangeStream;
 import datawave.query.iterator.CloseableListIterable;
 import datawave.query.iterator.QueryIterator;
@@ -2887,6 +2889,12 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     private RangeStream initializeRangeStream(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper metadataHelper) {
         Class<? extends RangeStream> rstream;
         try {
+
+            if (config.isFindFirst()) {
+                rangeStreamClass = FindFirstRangeStream.class.getCanonicalName();
+                createUidsIteratorClass = FindFirstUidIterator.class;
+            }
+
             rstream = Class.forName(rangeStreamClass).asSubclass(RangeStream.class);
 
             RangeStream stream = rstream.getConstructor(ShardQueryConfiguration.class, ScannerFactory.class, MetadataHelper.class).newInstance(config,

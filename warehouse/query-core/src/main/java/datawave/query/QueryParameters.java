@@ -220,4 +220,9 @@ public class QueryParameters {
      * Used to specify model or DB fields that must be treated as strict (cannot be skipped if normalization fails)
      */
     public static final String STRICT_FIELDS = "strict.fields";
+
+    /**
+     * Used to enable an optimized query path that only finds the first instance of a term in the global index
+     */
+    public static final String FIND_FIRST = "find.first";
 }

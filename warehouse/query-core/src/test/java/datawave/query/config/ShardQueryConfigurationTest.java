@@ -594,6 +594,9 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("useQueryTreeScanHintRules", true);
         defaultValues.put("queryTreeScanHintRules", Collections.emptyList());
         updatedValues.put("queryTreeScanHintRules", Collections.singletonList(new IvaratorScanHint()));
+
+        defaultValues.put("findFirst", false);
+        updatedValues.put("findFirst", true);
     }
 
     private Query createQuery(String query) {
