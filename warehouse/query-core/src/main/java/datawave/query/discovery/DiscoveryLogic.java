@@ -75,6 +75,7 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
     public static final String SEPARATE_COUNTS_BY_COLVIS = "separate.counts.by.colvis";
     public static final String SHOW_REFERENCE_COUNT = "show.reference.count";
     public static final String REVERSE_INDEX = "reverse.index";
+    private static Set<String> indexedFields;
     private DiscoveryQueryConfiguration config;
     private MetadataHelper metadataHelper;
 
@@ -102,6 +103,9 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
         this.scannerFactory = new ScannerFactory(client);
 
         this.metadataHelper = initializeMetadataHelper(client, config.getMetadataTableName(), auths);
+
+        // Get all currently indexed fields
+        indexedFields = this.metadataHelper.getIndexedFields(Collections.emptySet());
 
         if (StringUtils.isEmpty(settings.getQuery())) {
             throw new IllegalArgumentException("Query cannot be null");
@@ -355,7 +359,8 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
     }
 
     /**
-     * Takes in a batch scanner and returns an iterator over the DiscoveredThing objects contained in the value.
+     * Takes in a batch scanner, removes all DiscoveredThings that do not have an indexed field, and returns an iterator over the DiscoveredThing objects
+     * contained in the value.
      *
      * @param scanner
      *            a batch scanner
@@ -379,7 +384,12 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
                 }
                 ArrayList<DiscoveredThing> thangs = Lists.newArrayListWithCapacity(aw.get().length);
                 for (Writable w : aw.get()) {
-                    thangs.add((DiscoveredThing) w);
+                    // Check to see if the field is currently indexed, if it's not, we should NOT be adding it to 'thangs'
+                    if (indexedFields.contains(((DiscoveredThing) w).getField())) {
+                        thangs.add((DiscoveredThing) w);
+                    } else {
+                        log.debug(((DiscoveredThing) w).getField() + " was NOT found in IndexedFields");
+                    }
                 }
                 return thangs.iterator();
             }

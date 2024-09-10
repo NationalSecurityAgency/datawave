@@ -62,7 +62,8 @@ public class DiscoveryLogicTest {
                         Pair.with("motorcycle", "vehicle"), Pair.with("motorboat", "vehicle"), Pair.with("strike", "actionable offense"),
                         Pair.with("car", "vehicle"), Pair.with("trophy", "prize"), Pair.with("police officer", "otherperson"),
                         Pair.with("skydiver", "occupation"), Pair.with("bbc", "network"), Pair.with("onyx", "pokemon"), Pair.with("onyx", "rock"),
-                        Pair.with("onyx", "rooster"), Pair.with("rooster", "cockadoodledoo"));
+                        Pair.with("onyx", "rooster"), Pair.with("rooster", "cockadoodledoo"), Pair.with("coffee", "non_indexed_field"),
+                        Pair.with("espresso", "non_indexed_field"));
 
         terms2 = Sets.newHashSet(Pair.with("skydiver", "job"), Pair.with("skydiver", "job"), Pair.with("skydiver", "job"), Pair.with("skydiver", "job"),
                         Pair.with("skydiver", "occupation"), Pair.with("skydiver", "occupation"), Pair.with("skydiver", "occupation"),
@@ -120,12 +121,21 @@ public class DiscoveryLogicTest {
             dates.add(dateFormatter.parse("2013010" + i));
         }
 
-        try (BatchWriter writer = client.createBatchWriter(QueryTestTableHelper.METADATA_TABLE_NAME, config)) {
-            Mutation m = new Mutation(valueField.getValue1().toUpperCase());
-            m.put("t", "datatype\u0000" + LcNoDiacriticsType.class.getName(), viz, blank);
-            m.put("i", "datatype", viz, blank);
-            m.put("ri", "datatype", viz, blank);
-            writer.addMutation(m);
+        if (!valueField.getValue1().toUpperCase().equals("NON_INDEXED_FIELD")) {
+            try (BatchWriter writer = client.createBatchWriter(QueryTestTableHelper.METADATA_TABLE_NAME, config)) {
+                Mutation m = new Mutation(valueField.getValue1().toUpperCase());
+                m.put("t", "datatype\u0000" + LcNoDiacriticsType.class.getName(), viz, blank);
+                m.put("i", "datatype", viz, blank);
+                m.put("ri", "datatype", viz, blank);
+                writer.addMutation(m);
+            }
+        } else {
+            try (BatchWriter writer = client.createBatchWriter(QueryTestTableHelper.METADATA_TABLE_NAME, config)) {
+                Mutation m = new Mutation("NON_INDEXED_FIELD");
+                m.put("t", "datatype\u0000" + LcNoDiacriticsType.class.getName(), viz, blank);
+                m.put("f", "datatype", viz, blank);
+                writer.addMutation(m);
+            }
         }
 
         try (BatchWriter writer = client.createBatchWriter(TableName.SHARD_INDEX, config)) {
@@ -266,6 +276,16 @@ public class DiscoveryLogicTest {
         }
 
         assertEquals(ImmutableSet.of(Pair.with("onyx", "POKEMON"), Pair.with("ruddy duck", "BIRD")), matches);
+    }
+
+    @Test
+    public void testIgnoreNonIndexedField() throws Throwable {
+        Set<Pair<String,String>> matches = Sets.newHashSet();
+        for (Iterator<DiscoveredThing> it = runTestQuery("coffee OR espresso OR onyx"); it.hasNext();) {
+            DiscoveredThing thing = it.next();
+            matches.add(Pair.with(thing.getTerm(), thing.getField()));
+        }
+        assertEquals(ImmutableSet.of(Pair.with("onyx", "POKEMON"), Pair.with("onyx", "ROCK"), Pair.with("onyx", "ROOSTER")), matches);
     }
 
     @Test
