@@ -2955,6 +2955,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
     public void setQueryTreeScanHintRules(List<ScanHintRule<JexlNode>> queryTreeScanHintRules) {
         getConfig().setQueryTreeScanHintRules(queryTreeScanHintRules);
+    }
 
     public void setFieldIndexHoleMinThreshold(double fieldIndexHoleMinThreshold) {
         getConfig().setFieldIndexHoleMinThreshold(fieldIndexHoleMinThreshold);
