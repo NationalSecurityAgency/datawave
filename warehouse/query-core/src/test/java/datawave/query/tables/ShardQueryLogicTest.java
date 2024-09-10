@@ -360,4 +360,32 @@ public abstract class ShardQueryLogicTest {
 
         runTestQuery(expected, queryString, format.parse("20091231"), format.parse("20150101"), extraParameters);
     }
+
+    @Test
+    public void testExcludeDataTypesBangDataType() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("datatype.filter.set", "!test");
+
+        Date startDate = format.parse("20091231");
+        Date endDate = format.parse("20150101");
+
+        String queryString = "UUID=='CAPONE'";
+        Set<Set<String>> expected = new HashSet<>();
+
+        runTestQuery(expected, queryString, startDate, endDate, extraParameters);
+    }
+
+    @Test
+    public void testExcludeDataTypesNegateDataType() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("datatype.filter.set", "test,!test");
+
+        Date startDate = format.parse("20091231");
+        Date endDate = format.parse("20150101");
+
+        String queryString = "UUID=='CAPONE'";
+        Set<Set<String>> expected = new HashSet<>();
+
+        runTestQuery(expected, queryString, startDate, endDate, extraParameters);
+    }
 }

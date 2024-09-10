@@ -751,21 +751,19 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
             for (String dataType : Arrays.asList(StringUtils.split(typeList, Constants.PARAM_VALUE_SEP))) {
                 if (dataType.charAt(0) == '!') {
                     excludeSet.add(StringUtils.substring(dataType, 1));
-                }
-                else {
+                } else {
                     typeFilter.add(dataType);
                 }
             }
 
             if (!excludeSet.isEmpty()) {
                 if (typeFilter.isEmpty()) {
-                    MetadataHelper metadataHelper = prepareMetadataHelper(config.getClient(), this.getMetadataTableName(), config.getAuthorizations(), config.isRawTypes());
+                    MetadataHelper metadataHelper = prepareMetadataHelper(config.getClient(), this.getMetadataTableName(), config.getAuthorizations(),
+                                    config.isRawTypes());
 
                     try {
-                        for (Type<?> type : metadataHelper.getAllDatatypes()) {
-                            typeFilter.add(type.toString());
-                        }
-                    } catch (TableNotFoundException | InstantiationException | IllegalAccessException e) {
+                        typeFilter.addAll(metadataHelper.getDatatypes(null));
+                    } catch (TableNotFoundException e) {
                         throw new RuntimeException(e);
                     }
                 }
