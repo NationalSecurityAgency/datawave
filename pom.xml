@@ -137,6 +137,7 @@
         <version.woodstox-stax2>3.1.4</version.woodstox-stax2>
         <version.xerces>2.12.2</version.xerces>
         <version.zookeeper>3.8.3</version.zookeeper>
+        <version.dnsjava>3.6.0</version.dnsjava>
         <!-- Unless a version is duplicated multiple times, just place the version on the dependency in dependencyManagement. -->
     </properties>
     <dependencyManagement>
@@ -160,6 +161,11 @@
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-annotations</artifactId>
                 <version>${version.jackson}</version>
+            </dependency>
+            <dependency>
+                <groupId>dnsjava</groupId>
+                <artifactId>dnsjava</artifactId>
+                <version>${version.dnsjava}</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
