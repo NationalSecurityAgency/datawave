@@ -14,7 +14,7 @@ import org.junit.ClassRule;
 import org.junit.Test;
 
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
-import datawave.query.planner.DefaultQueryPlanner;
+import datawave.query.planner.FederatedQueryPlanner;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetup;
@@ -69,7 +69,7 @@ public class TextFunctionQueryTest extends AbstractFunctionalQuery {
     public void testAnyFieldTextNoHits() throws Exception {
         log.info("------  testAnyFieldTextNoHits  ------");
 
-        ((DefaultQueryPlanner) this.logic.getQueryPlanner()).setReduceQuery(true);
+        ((FederatedQueryPlanner) this.logic.getQueryPlanner()).getQueryPlanner().setReduceQuery(true);
 
         String code = "europe";
         // must be same case as original value in event

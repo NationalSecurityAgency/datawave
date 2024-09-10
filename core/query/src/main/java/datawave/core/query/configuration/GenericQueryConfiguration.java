@@ -96,25 +96,36 @@ public class GenericQueryConfiguration implements Serializable {
         this(configuredLogic.getConfig());
     }
 
-    public GenericQueryConfiguration(GenericQueryConfiguration genericConfig) {
-        this.setQuery(genericConfig.getQuery());
-        this.setCheckpointable(genericConfig.isCheckpointable());
-        this.setBaseIteratorPriority(genericConfig.getBaseIteratorPriority());
-        this.setBypassAccumulo(genericConfig.getBypassAccumulo());
-        this.setAccumuloPassword(genericConfig.getAccumuloPassword());
-        this.setConnPoolName(genericConfig.getConnPoolName());
-        this.setAuthorizations(genericConfig.getAuthorizations());
-        this.setBeginDate(genericConfig.getBeginDate());
-        this.setClient(genericConfig.getClient());
-        this.setEndDate(genericConfig.getEndDate());
-        this.setMaxWork(genericConfig.getMaxWork());
-        this.setQueries(genericConfig.getQueries());
-        this.setQueriesIter(genericConfig.getQueriesIter());
-        this.setQueryString(genericConfig.getQueryString());
-        this.setTableName(genericConfig.getTableName());
-        this.setReduceResults(genericConfig.isReduceResults());
-        this.setTableConsistencyLevels(genericConfig.getTableConsistencyLevels());
-        this.setTableHints(genericConfig.getTableHints());
+    @SuppressWarnings("CopyConstructorMissesField")
+    public GenericQueryConfiguration(GenericQueryConfiguration other) {
+        copyFrom(other);
+    }
+
+    /**
+     * Deeply copies over all fields from the given {@link GenericQueryConfiguration} to this {@link GenericQueryConfiguration}.
+     *
+     * @param other
+     *            the {@link GenericQueryConfiguration} to copy values from
+     */
+    public void copyFrom(GenericQueryConfiguration other) {
+        this.setQuery(other.getQuery());
+        this.setCheckpointable(other.isCheckpointable());
+        this.setBaseIteratorPriority(other.getBaseIteratorPriority());
+        this.setBypassAccumulo(other.getBypassAccumulo());
+        this.setAccumuloPassword(other.getAccumuloPassword());
+        this.setConnPoolName(other.getConnPoolName());
+        this.setAuthorizations(other.getAuthorizations());
+        this.setBeginDate(other.getBeginDate());
+        this.setClient(other.getClient());
+        this.setEndDate(other.getEndDate());
+        this.setMaxWork(other.getMaxWork());
+        this.setQueries(other.getQueries());
+        this.setQueriesIter(other.getQueriesIter());
+        this.setQueryString(other.getQueryString());
+        this.setTableName(other.getTableName());
+        this.setReduceResults(other.isReduceResults());
+        this.setTableConsistencyLevels(other.getTableConsistencyLevels());
+        this.setTableHints(other.getTableHints());
     }
 
     public Collection<QueryData> getQueries() {

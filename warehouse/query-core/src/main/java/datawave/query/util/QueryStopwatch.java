@@ -108,6 +108,10 @@ public class QueryStopwatch {
         return lines;
     }
 
+    public void appendTimers(QueryStopwatch queryStopwatch) {
+        this.watches.addAll(queryStopwatch.watches);
+    }
+
     protected String formatMillis(long elapsedMillis) {
         TimeUnit unit = chooseUnit(elapsedMillis);
         double value = (double) elapsedMillis / MILLISECONDS.convert(1, unit);
