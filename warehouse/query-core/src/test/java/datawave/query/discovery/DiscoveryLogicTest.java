@@ -121,21 +121,14 @@ public class DiscoveryLogicTest {
             dates.add(dateFormatter.parse("2013010" + i));
         }
 
-        if (!valueField.getValue1().toUpperCase().equals("NON_INDEXED_FIELD")) {
-            try (BatchWriter writer = client.createBatchWriter(QueryTestTableHelper.METADATA_TABLE_NAME, config)) {
-                Mutation m = new Mutation(valueField.getValue1().toUpperCase());
-                m.put("t", "datatype\u0000" + LcNoDiacriticsType.class.getName(), viz, blank);
+        try (BatchWriter writer = client.createBatchWriter(QueryTestTableHelper.METADATA_TABLE_NAME, config)) {
+            Mutation m = new Mutation(valueField.getValue1().toUpperCase());
+            m.put("t", "datatype\u0000" + LcNoDiacriticsType.class.getName(), viz, blank);
+            if (!valueField.getValue1().equals("non_indexed_fields")) {
                 m.put("i", "datatype", viz, blank);
-                m.put("ri", "datatype", viz, blank);
-                writer.addMutation(m);
             }
-        } else {
-            try (BatchWriter writer = client.createBatchWriter(QueryTestTableHelper.METADATA_TABLE_NAME, config)) {
-                Mutation m = new Mutation("NON_INDEXED_FIELD");
-                m.put("t", "datatype\u0000" + LcNoDiacriticsType.class.getName(), viz, blank);
-                m.put("f", "datatype", viz, blank);
-                writer.addMutation(m);
-            }
+            m.put("ri", "datatype", viz, blank);
+            writer.addMutation(m);
         }
 
         try (BatchWriter writer = client.createBatchWriter(TableName.SHARD_INDEX, config)) {
