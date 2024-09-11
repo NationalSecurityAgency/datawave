@@ -269,7 +269,7 @@ public abstract class LenientFieldsTest {
         List<String>[] expectedLists = new List[] {
                 Arrays.asList(),
                 Arrays.asList("CORLEONE", "CAPONE"),
-                Arrays.asList("CORLEONE", "SOPRANO", "CAPONE"),
+                Arrays.asList("CORLEONE", "SOPRANO", "CAPONE", "TATTAGLIA"),
                 Arrays.asList()
         };
         // @formatter:on
