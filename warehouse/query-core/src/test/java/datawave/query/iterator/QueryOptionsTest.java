@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
+import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
@@ -253,4 +254,73 @@ public class QueryOptionsTest {
         }
     }
 
+    @Test
+    public void testDefaultOptions() {
+
+        IteratorSetting iteratorSetting = new IteratorSetting(1, "foo", QueryIterator.class, new HashMap<>());
+        Map<String,String> nonDefaults = new HashMap<>();
+        nonDefaults.put(QueryOptions.INCLUDE_RECORD_ID, "false");
+        nonDefaults.put(QueryOptions.INCLUDE_DATATYPE, "true");
+
+        // Test all default
+        QueryOptions.getDefaultOptions(QueryIterator.class.getName()).getDefaultValues().forEach((k, v) -> {
+            QueryOptions.addOption(iteratorSetting, k, v, false);
+        });
+
+        Assert.assertEquals(0, iteratorSetting.getOptions().size());
+
+        // Test non-defaults added after all defaults added
+        iteratorSetting.clearOptions();
+        QueryOptions.getDefaultOptions(QueryIterator.class.getName()).getDefaultValues().forEach((k, v) -> {
+            QueryOptions.addOption(iteratorSetting, k, v, false);
+        });
+
+        iteratorSetting.addOptions(nonDefaults);
+        assertEquals(2, iteratorSetting.getOptions().size());
+
+        // Test defaults added after non-defaults added
+        iteratorSetting.clearOptions();
+        iteratorSetting.addOptions(nonDefaults);
+        QueryOptions.getDefaultOptions(QueryIterator.class.getName()).getDefaultValues().forEach((k, v) -> {
+            QueryOptions.addOption(iteratorSetting, k, v, false);
+        });
+
+        assertEquals(0, iteratorSetting.getOptions().size());
+
+    }
+
+    @Test
+    public void testCollectionAsValueEquivalence() {
+
+        IteratorSetting iteratorSetting = new IteratorSetting(1, "foo", QueryIterator.class, new HashMap<>());
+
+        HashMap<String,Integer> limitFields = new HashMap<>();
+        limitFields.put("field1", 1);
+        limitFields.put("field2", 2);
+
+        QueryOptions.addOption(iteratorSetting, QueryOptions.LIMIT_FIELDS, limitFields, false);
+
+        Assert.assertTrue(QueryOptions.getDefaultOptions(QueryOptionsWithNonEmptyCollectionsAsDefaultValues.class.getName())
+                        .equalsDefaultValue(QueryOptions.LIMIT_FIELDS, limitFields));
+
+    }
+
+    public static class QueryOptionsWithNonEmptyCollectionsAsDefaultValues extends QueryOptions {
+
+        @Override
+        protected DefaultOptions createDefaultOptions() {
+
+            HashMap<String,Integer> limitFields = new HashMap<>();
+            limitFields.put("field1", 1);
+            limitFields.put("field2", 2);
+
+            // formatter:off
+            DefaultOptions defaultOptions = DefaultOptions.builder()
+                            .putDefaultValues(QueryOptions.getDefaultOptions(QueryOptions.class.getName()).getDefaultValues())
+                            .putDefaultValue(QueryOptions.LIMIT_FIELDS, limitFields).build();
+            // formatter:on
+
+            return defaultOptions;
+        }
+    }
 }

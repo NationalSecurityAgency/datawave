@@ -110,7 +110,7 @@ public class FieldIndexOnlyQueryIterator extends QueryIterator {
         }
 
         if (options.containsKey(QUERY_MAPPING_COMPRESS)) {
-            compressedMappings = Boolean.valueOf(options.get(QUERY_MAPPING_COMPRESS));
+            compressedMappings = Boolean.parseBoolean(options.get(QUERY_MAPPING_COMPRESS));
         }
 
         this.validateTypeMetadata(options);

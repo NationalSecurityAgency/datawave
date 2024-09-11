@@ -524,6 +524,7 @@ public abstract class CompositeFunctionsTest {
             // filter must be reset between each run when pruning ingest types
             eventQueryLogic.getConfig().setDatatypeFilter(Collections.emptySet());
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
+            runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
         }
     }
 

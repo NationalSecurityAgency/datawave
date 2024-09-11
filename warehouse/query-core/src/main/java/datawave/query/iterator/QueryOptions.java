@@ -20,12 +20,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
+import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
@@ -33,24 +34,22 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.OptionDescriber;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.jexl3.JexlArithmetic;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
 
-import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.io.Input;
-import com.esotericsoftware.kryo.io.Output;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Function;
+import com.google.common.base.Joiner;
 import com.google.common.base.Predicate;
 import com.google.common.base.Splitter;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Iterators;
@@ -110,6 +109,7 @@ import datawave.util.UniversalSet;
  * Some options are passed through from the QueryParameters.
  */
 public class QueryOptions implements OptionDescriber {
+
     private static final Logger log = Logger.getLogger(QueryOptions.class);
 
     protected static Cache<String,FileSystem> fileSystemCache = CacheBuilder.newBuilder().concurrencyLevel(10).maximumSize(100).build();
@@ -153,6 +153,7 @@ public class QueryOptions implements OptionDescriber {
     public static final String GROUP_FIELDS = "group.fields";
     public static final String GROUP_FIELDS_BATCH_SIZE = "group.fields.batch.size";
     public static final String UNIQUE_FIELDS = "unique.fields";
+
     public static final String HITS_ONLY = "hits.only";
     public static final String HIT_LIST = "hit.list";
     public static final String START_TIME = "start.time";
@@ -254,8 +255,8 @@ public class QueryOptions implements OptionDescriber {
     public static final String RANGES = "ranges";
 
     /**
-     * If a value is set, a separate {@link datawave.query.tracking.ActiveQueryLog} instance will be used instead of the shared default instance. The value is
-     * typically a table name or query logic name.
+     * If a value is set, a separate {@link ActiveQueryLog} instance will be used instead of the shared default instance. The value is typically a table name or
+     * query logic name.
      */
     public static final String ACTIVE_QUERY_LOG_NAME = "active.query.log.name";
 
@@ -335,7 +336,7 @@ public class QueryOptions implements OptionDescriber {
     protected List<String> documentPermutationClasses = new ArrayList<>();
     protected List<DocumentPermutation> documentPermutations = null;
 
-    protected long startTime = 0l;
+    protected long startTime = 0L;
     protected long endTime = System.currentTimeMillis();
     protected TimeFilter timeFilter = null;
 
@@ -420,7 +421,7 @@ public class QueryOptions implements OptionDescriber {
     protected boolean trackSizes = true;
 
     /**
-     * The name of the {@link datawave.query.tracking.ActiveQueryLog} instance to use.
+     * The name of the {@link ActiveQueryLog} instance to use.
      */
     protected String activeQueryLogName;
 
@@ -2006,7 +2007,7 @@ public class QueryOptions implements OptionDescriber {
     }
 
     /**
-     * Get a serialization and deserialization utility for {@link datawave.query.util.count.CountMap}
+     * Get a serialization and deserialization utility for {@link CountMap}
      *
      * @return count map utility
      */
@@ -2258,5 +2259,304 @@ public class QueryOptions implements OptionDescriber {
             equality = new PrefixEquality(PartialKey.ROW_COLFAM);
         }
         return equality;
+    }
+
+    private static final Joiner COMMA_JOINER = Joiner.on(",").skipNulls();
+
+    // Map of class strings to DefaultOptions implementations.
+    protected static final Map<String,DefaultOptions> defaultOptionsMap = new HashMap<>();
+
+    static {
+        // Add an initial default options instance for QueryOptions.
+        defaultOptionsMap.put(QueryOptions.class.getName(), new QueryOptions().createDefaultOptions());
+    }
+
+    /**
+     * Used to populate the defaultOptionsMap with the default options for each class. When overriding this method, call super.createDefaultOptions() to ensure
+     * the default options are populated. Changes to these defaults will be reflected in the DefaultOptions object returned by this method. Add them with
+     * defaultOptions.putDefaultValue(key, value).
+     *
+     * @return the default options
+     */
+    protected DefaultOptions createDefaultOptions() {
+
+        QueryOptions queryOptions = new QueryOptions();
+        // formatter:off
+        DefaultOptions defaultOptions = DefaultOptions.builder()
+                        .putDefaultValue(QueryOptions.DISABLE_EVALUATION, queryOptions.query == null ? true : queryOptions.disableEvaluation)
+                        .putDefaultValue(QueryOptions.DISABLE_FIELD_INDEX_EVAL, queryOptions.disableFiEval)
+                        .putDefaultValue(QueryOptions.LIMIT_SOURCES, queryOptions.sourceLimit)
+                        .putDefaultValue(QueryOptions.DISABLE_DOCUMENTS_WITHOUT_EVENTS, queryOptions.disableIndexOnlyDocuments)
+                        .putDefaultValue(QueryOptions.QUERY, queryOptions.query == null ? "" : queryOptions.query)
+                        .putDefaultValue(QueryOptions.QUERY_ID, queryOptions.queryId == null ? "" : queryOptions.queryId)
+                        .putDefaultValue(QueryOptions.SCAN_ID, queryOptions.scanId == null ? "" : queryOptions.scanId)
+                        .putDefaultValue(QueryOptions.QUERY_MAPPING_COMPRESS, queryOptions.compressedMappings)
+                        .putDefaultValue(QueryOptions.COMPOSITE_METADATA,
+                                        queryOptions.compositeMetadata == null ? new CompositeMetadata() : queryOptions.compositeMetadata)
+                        .putDefaultValue(QueryOptions.COMPOSITE_SEEK_THRESHOLD, queryOptions.compositeSeekThreshold)
+                        .putDefaultValue(Constants.RETURN_TYPE, queryOptions.returnType)
+                        .putDefaultValue(QueryOptions.REDUCED_RESPONSE, queryOptions.reducedResponse)
+                        .putDefaultValue(QueryOptions.FULL_TABLE_SCAN_ONLY, queryOptions.fullTableScanOnly)
+                        .putDefaultValue(QueryOptions.TRACK_SIZES, queryOptions.trackSizes)
+                        .putDefaultValue(QueryOptions.PROJECTION_FIELDS, queryOptions.allowListedFields)
+                        .putDefaultValue(QueryOptions.DISALLOWLISTED_FIELDS, queryOptions.disallowListedFields)
+                        .putDefaultValue(QueryOptions.FIELD_COUNTS, queryOptions.fieldCounts == null ? new CountMap() : queryOptions.fieldCounts)
+                        .putDefaultValue(QueryOptions.TERM_COUNTS, queryOptions.termCounts == null ? new CountMap() : queryOptions.termCounts)
+                        .putDefaultValue(QueryOptions.FILTER_MASKED_VALUES, queryOptions.filterMaskedValues)
+                        .putDefaultValue(QueryOptions.INCLUDE_DATATYPE, queryOptions.includeDatatype)
+                        .putDefaultValue(QueryOptions.INCLUDE_RECORD_ID, queryOptions.includeRecordId)
+                        .putDefaultValue(QueryOptions.COLLECT_TIMING_DETAILS, queryOptions.collectTimingDetails)
+                        .putDefaultValue(QueryOptions.STATSD_HOST_COLON_PORT, queryOptions.statsdHostAndPort == null ? "" : queryOptions.statsdHostAndPort)
+                        .putDefaultValue(QueryOptions.STATSD_MAX_QUEUE_SIZE, queryOptions.statsdMaxQueueSize)
+                        .putDefaultValue(QueryOptions.INCLUDE_HIERARCHY_FIELDS, queryOptions.includeHierarchyFields)
+                        .putDefaultValue(QueryOptions.FI_FIELD_SEEK, queryOptions.fiFieldSeek)
+                        .putDefaultValue(QueryOptions.FI_NEXT_SEEK, queryOptions.fiNextSeek)
+                        .putDefaultValue(QueryOptions.EVENT_FIELD_SEEK, queryOptions.eventFieldSeek)
+                        .putDefaultValue(QueryOptions.EVENT_NEXT_SEEK, queryOptions.eventNextSeek)
+                        .putDefaultValue(QueryOptions.TF_FIELD_SEEK, queryOptions.tfFieldSeek)
+                        .putDefaultValue(QueryOptions.TF_NEXT_SEEK, queryOptions.tfNextSeek)
+                        .putDefaultValue(QueryOptions.DOC_AGGREGATION_THRESHOLD_MS, queryOptions.docAggregationThresholdMs)
+                        .putDefaultValue(QueryOptions.TERM_FREQUENCY_AGGREGATION_THRESHOLD_MS, queryOptions.tfAggregationThresholdMs)
+                        .putDefaultValue(QueryOptions.DATATYPE_FILTER, queryOptions.fieldIndexKeyDataTypeFilter)
+                        .putDefaultValue(QueryOptions.INDEX_ONLY_FIELDS, queryOptions.indexOnlyFields)
+                        .putDefaultValue(QueryOptions.INDEXED_FIELDS, queryOptions.indexedFields)
+                        .putDefaultValue(QueryOptions.IGNORE_COLUMN_FAMILIES, queryOptions.ignoreColumnFamilies)
+                        .putDefaultValue(QueryOptions.START_TIME, queryOptions.startTime).putDefaultValue(QueryOptions.END_TIME, queryOptions.endTime)
+                        .putDefaultValue(QueryOptions.INCLUDE_GROUPING_CONTEXT,
+                                        queryOptions.includeGroupingContext
+                                                        || (queryOptions.groupFields != null && queryOptions.groupFields.hasGroupByFields()))
+                        .putDefaultValue(QueryOptions.DOCUMENT_PERMUTATION_CLASSES, queryOptions.documentPermutationClasses)
+                        .putDefaultValue(QueryOptions.LIMIT_FIELDS, queryOptions.limitFieldsMap)
+                        .putDefaultValue(QueryOptions.MATCHING_FIELD_SETS, queryOptions.matchingFieldSets)
+                        .putDefaultValue(QueryOptions.LIMIT_FIELDS_PRE_QUERY_EVALUATION, queryOptions.limitFieldsPreQueryEvaluation)
+                        .putDefaultValue(QueryOptions.LIMIT_FIELDS_FIELD, queryOptions.limitFieldsField == null ? "" : queryOptions.limitFieldsField)
+                        .putDefaultValue(QueryOptions.GROUP_FIELDS, queryOptions.groupFields)
+                        .putDefaultValue(QueryOptions.GROUP_FIELDS_BATCH_SIZE, queryOptions.groupFieldsBatchSize)
+                        .putDefaultValue(QueryOptions.UNIQUE_FIELDS, queryOptions.uniqueFields).putDefaultValue(QueryOptions.HIT_LIST, queryOptions.arithmetic)
+                        .putDefaultValue(QueryOptions.DATE_INDEX_TIME_TRAVEL, queryOptions.dateIndexTimeTravel)
+                        .putDefaultValue(QueryOptions.POSTPROCESSING_CLASSES, queryOptions.postProcessingFunctions)
+                        .putDefaultValue(QueryOptions.NON_INDEXED_DATATYPES, queryOptions.nonIndexedDataTypeMap)
+                        .putDefaultValue(QueryOptions.CONTAINS_INDEX_ONLY_TERMS, queryOptions.containsIndexOnlyTerms)
+                        .putDefaultValue(QueryOptions.ALLOW_FIELD_INDEX_EVALUATION, queryOptions.allowFieldIndexEvaluation)
+                        .putDefaultValue(QueryOptions.ALLOW_TERM_FREQUENCY_LOOKUP, queryOptions.allowTermFrequencyLookup)
+                        .putDefaultValue(QueryOptions.HDFS_SITE_CONFIG_URLS, queryOptions.hdfsSiteConfigURLs == null ? "" : queryOptions.hdfsSiteConfigURLs)
+                        .putDefaultValue(QueryOptions.HDFS_FILE_COMPRESSION_CODEC,
+                                        queryOptions.hdfsFileCompressionCodec == null ? "" : queryOptions.hdfsFileCompressionCodec)
+                        .putDefaultValue(QueryOptions.ZOOKEEPER_CONFIG, queryOptions.zookeeperConfig == null ? "" : queryOptions.zookeeperConfig)
+                        .putDefaultValue(QueryOptions.IVARATOR_CACHE_DIR_CONFIG, queryOptions.ivaratorCacheDirConfigs)
+                        .putDefaultValue(QueryOptions.IVARATOR_CACHE_BUFFER_SIZE, queryOptions.ivaratorCacheBufferSize)
+                        .putDefaultValue(QueryOptions.IVARATOR_SCAN_PERSIST_THRESHOLD, queryOptions.ivaratorCacheScanPersistThreshold)
+                        .putDefaultValue(QueryOptions.IVARATOR_SCAN_TIMEOUT, queryOptions.ivaratorCacheScanTimeout)
+                        .putDefaultValue(QueryOptions.RESULT_TIMEOUT, queryOptions.resultTimeout)
+                        .putDefaultValue(QueryOptions.MAX_INDEX_RANGE_SPLIT, queryOptions.maxIndexRangeSplit)
+                        .putDefaultValue(QueryOptions.MAX_IVARATOR_OPEN_FILES, queryOptions.ivaratorMaxOpenFiles)
+                        .putDefaultValue(QueryOptions.IVARATOR_NUM_RETRIES, queryOptions.ivaratorNumRetries)
+                        .putDefaultValue(QueryOptions.IVARATOR_PERSIST_VERIFY, queryOptions.ivaratorPersistOptions.isVerifyElements())
+                        .putDefaultValue(QueryOptions.IVARATOR_PERSIST_VERIFY_COUNT, queryOptions.ivaratorPersistOptions.getNumElementsToVerify())
+                        .putDefaultValue(QueryOptions.MAX_IVARATOR_SOURCES, queryOptions.maxIvaratorSources)
+                        .putDefaultValue(QueryOptions.MAX_IVARATOR_SOURCE_WAIT, queryOptions.maxIvaratorSourceWait)
+                        .putDefaultValue(QueryOptions.MAX_IVARATOR_RESULTS, queryOptions.maxIvaratorResults)
+                        .putDefaultValue(QueryOptions.YIELD_THRESHOLD_MS, queryOptions.yieldThresholdMs)
+                        .putDefaultValue(QueryOptions.COMPRESS_SERVER_SIDE_RESULTS, queryOptions.compressResults)
+                        .putDefaultValue(QueryOptions.MAX_EVALUATION_PIPELINES, queryOptions.maxEvaluationPipelines)
+                        .putDefaultValue(QueryOptions.SERIAL_EVALUATION_PIPELINE, queryOptions.serialEvaluationPipeline)
+                        .putDefaultValue(QueryOptions.MAX_PIPELINE_CACHED_RESULTS, queryOptions.maxPipelineCachedResults)
+                        .putDefaultValue(QueryOptions.TERM_FREQUENCIES_REQUIRED, queryOptions.termFrequenciesRequired)
+                        .putDefaultValue(QueryOptions.DATE_INDEX_TIME_TRAVEL, queryOptions.dateIndexTimeTravel)
+                        .putDefaultValue(QueryOptions.SORTED_UIDS, queryOptions.sortedUIDs)
+                        .putDefaultValue(QueryOptions.DEBUG_MULTITHREADED_SOURCES, queryOptions.debugMultithreadedSources)
+                        .putDefaultValue(QueryOptions.ACTIVE_QUERY_LOG_NAME, queryOptions.activeQueryLogName == null ? "" : queryOptions.activeQueryLogName)
+                        .putDefaultValue(QueryOptions.EXCERPT_FIELDS, queryOptions.excerptFields == null ? new ExcerptFields() : queryOptions.excerptFields)
+                        .putDefaultValue(QueryOptions.EXCERPT_FIELDS_NO_HIT_CALLOUT, queryOptions.excerptFieldsNoHitCallout)
+                        .putDefaultValue(QueryOptions.EXCERPT_ITERATOR, queryOptions.excerptIterator).build();
+        // formatter:on
+
+        return defaultOptions;
+    }
+
+    /**
+     * Fetch the default options for the given class. If the class has not been seen before, it will be instantiated and the default options will be fetched
+     * from. Used to populate the defaultOptionsMap with the default options for each class.
+     *
+     * @param className
+     *            The name of the class to fetch the default options for. Use YourQueryOptionsImplementation.class.getName().
+     * @return The default options for the given class.
+     */
+    protected static DefaultOptions getDefaultOptions(String className) {
+        if (defaultOptionsMap.containsKey(className)) {
+            return defaultOptionsMap.get(className);
+        } else {
+            try {
+                Class<?> clazz = Class.forName(className);
+                // Check if the given class inherits QueryOptions.
+                if (!QueryOptions.class.isAssignableFrom(clazz)) {
+                    DefaultOptions options = DefaultOptions.builder().build();
+                    defaultOptionsMap.put(className, options);
+                    return options;
+                }
+                // Attempt to fetch the default options from createDefaultOptions on an instance of the class.
+                try {
+                    QueryOptions instance = (QueryOptions) clazz.getConstructor().newInstance();
+                    DefaultOptions defaultOptions = instance.createDefaultOptions();
+                    // Update the map so that we only need to do this once for the class.
+                    defaultOptionsMap.put(className, defaultOptions);
+                    return defaultOptions;
+                } catch (NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException e) {
+                    throw new RuntimeException("Failed to instantiate new instance of " + clazz + ", class does not have a default constructor", e);
+                }
+
+            } catch (ClassNotFoundException e) {
+                throw new RuntimeException(e);
+            }
+
+        }
+    }
+
+    /**
+     * Add an option to the given iterator setting. The value will be converted to a string using the appropriate method based on the type of the value.
+     *
+     * @param setting
+     *            The iterator setting to add the option to.
+     * @param option
+     *            The name of the option to add.
+     * @param value
+     *            The value of the option to add.
+     * @param allowBlankValues
+     *            If true, blank values will be converted to a single space, as blank values will fail in InputFormatBase when run through the MapReduce api.
+     */
+    public static void addOption(IteratorSetting setting, String option, Object value, boolean allowBlankValues) {
+        // Determine the correct method for converting the value to a string.
+        if (value instanceof String) {
+            addOption(setting, option, value, (v) -> (String) v, allowBlankValues);
+        } else if (value instanceof Boolean) {
+            addOption(setting, option, value, (v) -> Boolean.toString((Boolean) v), allowBlankValues);
+        } else if (value instanceof Long) {
+            addOption(setting, option, value, (v) -> Long.toString((Long) v), allowBlankValues);
+        } else if (value instanceof Integer) {
+            addOption(setting, option, value, (v) -> Integer.toString((Integer) v), allowBlankValues);
+        } else if (value instanceof Double) {
+            addOption(setting, option, value, (v) -> Double.toString((Double) v), allowBlankValues);
+        } else if (value instanceof Float) {
+            addOption(setting, option, value, (v) -> Float.toString((Float) v), allowBlankValues);
+        } else if (value instanceof Short) {
+            addOption(setting, option, value, (v) -> Short.toString((Short) v), allowBlankValues);
+        } else if (value instanceof Byte) {
+            addOption(setting, option, value, (v) -> Byte.toString((Byte) v), allowBlankValues);
+        } else if (value instanceof Character) {
+            addOption(setting, option, value, (v) -> Character.toString((Character) v), allowBlankValues);
+        } else if (value instanceof Collection<?>) {
+            addOption(setting, option, value, (v) -> COMMA_JOINER.join((Iterable<?>) v), allowBlankValues);
+        } else if (value instanceof Enum<?>) {
+            addOption(setting, option, value, (v) -> ((Enum<?>) v).name(), allowBlankValues);
+        } else {
+            addOption(setting, option, value, (v) -> v.toString(), allowBlankValues);
+        }
+    }
+
+    /**
+     * Add an option to the given iterator setting. The value will be converted to a string using the provided value transformer.
+     *
+     * @param setting
+     *            The iterator setting to add the option to.
+     * @param option
+     *            The name of the option to add.
+     * @param value
+     *            The value of the option to add.
+     * @param valueTransformer
+     *            A function that converts the value to a string.
+     * @param allowBlankValues
+     *            If true, blank values will be converted to a single space, as blank values will fail in InputFormatBase when run through the MapReduce api.
+     */
+    public static <T> void addOption(IteratorSetting setting, String option, T value, Function<T,String> valueTransformer, boolean allowBlankValues) {
+        // If we have a default options implementation for the specified iterator setting's class, fetch it.
+        DefaultOptions defaultOptions = getDefaultOptions(setting.getIteratorClass());
+        // If the value matches the default value, do not add it to the setting and instead remove it from the IteratorSetting if it exists.
+        if (defaultOptions.hasDefaultValue(option) && defaultOptions.equalsDefaultValue(option, value)) {
+            setting.removeOption(option);
+            return;
+        }
+        // Otherwise convert it, and if blank and blank values allowed, change it to something else, or it will fail in InputFormatBase when run through the
+        // MapReduce api.
+        String valueString = valueTransformer.apply(value);
+        if (allowBlankValues && org.apache.commons.lang.StringUtils.isBlank(valueString)) {
+            valueString = " ";
+        }
+        setting.addOption(option, valueString);
+    }
+
+    protected static final class DefaultOptions {
+
+        private final Map<String,Object> defaultValues;
+
+        private DefaultOptions() {
+            this.defaultValues = MapUtils.unmodifiableMap(new HashMap<>());
+        }
+
+        public DefaultOptions(Map<String,Object> defaultValues) {
+            this.defaultValues = MapUtils.unmodifiableMap(defaultValues);
+        }
+
+        public boolean hasDefaultValue(String option) {
+            return defaultValues.containsKey(option);
+        }
+
+        public boolean equalsDefaultValue(String option, Object value) {
+            if (hasDefaultValue(option)) {
+                Object defaultValue = defaultValues.get(option);
+                if (defaultValue.getClass().isAssignableFrom(Collection.class)) {
+                    value = Collections.unmodifiableCollection((Collection<?>) value);
+                }
+                return defaultValues.get(option).equals(value);
+            }
+            return false;
+        }
+
+        public ImmutableMap<String,Object> getDefaultValues() {
+            return ImmutableMap.copyOf(defaultValues);
+        }
+
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        protected static class Builder {
+            private final Map<String,Object> values;
+
+            public Builder() {
+                values = new HashMap<>();
+            }
+
+            public Builder putDefaultValue(String option, Object value) {
+                if (value.getClass().isAssignableFrom(Collection.class)) {
+                    value = Collections.unmodifiableCollection((Collection<?>) value);
+                }
+                values.put(option, value);
+                return this;
+            }
+
+            public Builder putDefaultValues(Map<String,Object> values) {
+                values.forEach(this::putDefaultValue);
+                return this;
+            }
+
+            public boolean hasDefaultValue(String option) {
+                return values.containsKey(option);
+            }
+
+            public boolean equalsDefaultValue(String option, Object value) {
+                if (hasDefaultValue(option)) {
+                    Object defaultValue = values.get(option);
+                    if (defaultValue.getClass().isAssignableFrom(Collection.class)) {
+                        value = Collections.unmodifiableCollection((Collection<?>) value);
+                    }
+                    return values.get(option).equals(value);
+                }
+                return false;
+            }
+
+            public DefaultOptions build() {
+                return new DefaultOptions(values);
+            }
+        }
     }
 }
