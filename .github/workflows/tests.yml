@@ -256,6 +256,12 @@ jobs:
           USER_NAME: ${{ secrets.USER_NAME }}
           ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
         run: |
+          DW_ZOOKEEPER_DIST_URI='http://some/bogus/path/zookeeper.tar.gz'
+          DW_ACCUMULO_DIST_URI='http://some/bogus/path/accumulo.tar.gz'
+          DW_WILDFLY_DIST_URI='http://some/bogus/path/wildfly.tar.gz'
+          DW_HADOOP_DIST_URI='http://some/bogus/path/hadoop.tar.gz'
+          DW_MAVEN_DIST_URI='http://some/bogus/path/maven.tar.gz'
+          
           mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -B -V -e -Pcompose -Dmicroservice-docker -Dquickstart-docker -Dquickstart-maven -Ddeploy -Dtar -DskipTests -Dmaven.build.cache.enabled=false clean install
           # free up some space so that we don't run out
           docker system prune -f
