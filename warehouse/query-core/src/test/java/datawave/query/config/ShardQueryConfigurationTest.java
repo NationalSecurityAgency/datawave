@@ -46,6 +46,7 @@ import datawave.query.iterator.logic.TermFrequencyExcerptIterator;
 import datawave.query.iterator.logic.TermFrequencyIndexIterator;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.model.QueryModel;
+import datawave.query.planner.scanhints.IvaratorScanHint;
 import datawave.util.TableName;
 
 public class ShardQueryConfigurationTest {
@@ -588,6 +589,11 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("tableConsistencyLevels", Collections.singletonMap(TableName.SHARD, ScannerBase.ConsistencyLevel.EVENTUAL));
         defaultValues.put("tableHints", Collections.emptyMap());
         updatedValues.put("tableHints", Collections.emptyMap());
+
+        defaultValues.put("useQueryTreeScanHintRules", false);
+        updatedValues.put("useQueryTreeScanHintRules", true);
+        defaultValues.put("queryTreeScanHintRules", Collections.emptyList());
+        updatedValues.put("queryTreeScanHintRules", Collections.singletonList(new IvaratorScanHint()));
     }
 
     private Query createQuery(String query) {
