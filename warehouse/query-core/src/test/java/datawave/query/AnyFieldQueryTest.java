@@ -12,7 +12,8 @@ import static org.junit.Assert.fail;
 import java.util.Arrays;
 import java.util.Collections;
 
-import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.KeyValue;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -26,6 +27,7 @@ import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.FullTableScansDisallowedException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.planner.DefaultQueryPlanner;
+import datawave.query.planner.FederatedQueryPlanner;
 import datawave.query.planner.rules.RegexPushdownTransformRule;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetup;
@@ -106,7 +108,7 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
             runTest(query, anyCity);
 
             // remove the metadata entries
-            Multimap<String,Key> metadata = removeMetadataEntries(JexlASTHelper.getIdentifierNames(JexlASTHelper.parseJexlQuery(anyCity)),
+            Multimap<String,KeyValue> metadata = removeMetadataEntries(JexlASTHelper.getIdentifierNames(JexlASTHelper.parseJexlQuery(anyCity)),
                             ColumnFamilyConstants.COLF_I);
 
             // expect no results
@@ -342,8 +344,10 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
     }
 
     @Test
-    public void testAndAnd() throws Exception {
-        log.info("------  testAndAnd  ------");
+    public void testAndAnd_defaultQueryPlanner() throws Exception {
+        log.info("------  testAndAnd : DefaultQueryPlanner  ------");
+        this.logic.setQueryPlanner(new DefaultQueryPlanner());
+
         String state = "misSIssippi";
         String cont = "noRth amErIca";
         for (final TestCities city : TestCities.values()) {
@@ -385,8 +389,79 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
     }
 
     @Test
-    public void testReverseIndex() throws Exception {
-        log.info("------  testReverseIndex  ------");
+    public void testAndAnd_federatedQueryPlanner() throws Exception {
+        log.info("------  testAndAnd : FederatedQueryPlanner  ------");
+        String state = "misSIssippi";
+        String cont = "noRth amErIca";
+        for (final TestCities city : TestCities.values()) {
+            String cityPhrase = EQ_OP + "'" + city.name() + "'";
+            String statePhrase = EQ_OP + "'" + state + "'";
+            String contPhrase = EQ_OP + "'" + cont + "'";
+            String query = Constants.ANY_FIELD + cityPhrase + AND_OP + Constants.ANY_FIELD + statePhrase + AND_OP + Constants.ANY_FIELD + contPhrase;
+
+            // Test the plan with all expansions
+            String anyQuery = CityField.CONTINENT.name() + contPhrase.toLowerCase() + JEXL_AND_OP;
+            if (city.name().equals("london")) {
+                anyQuery += "((" + CityField.STATE.name() + statePhrase.toLowerCase() + JEXL_AND_OP + CityField.STATE.name() + cityPhrase + ")" + JEXL_OR_OP;
+            }
+            anyQuery += CityField.CITY.name() + '_' + CityField.STATE.name() + EQ_OP + "'" + city.name() + CompositeIngest.DEFAULT_SEPARATOR
+                            + state.toLowerCase() + "'";
+            if (city.name().equals("london")) {
+                anyQuery += ")";
+            }
+            String plan = getPlan(query, true, true);
+            assertPlanEquals(anyQuery, plan);
+
+            // Test the plan sans value expansion
+            plan = getPlan(query, true, false);
+            assertPlanEquals(anyQuery, plan);
+
+            // Test the plan sans field expansion
+            anyQuery = Constants.ANY_FIELD + cityPhrase + JEXL_AND_OP + Constants.ANY_FIELD + statePhrase.toLowerCase() + JEXL_AND_OP + Constants.ANY_FIELD
+                            + contPhrase.toLowerCase();
+            plan = getPlan(query, false, true);
+            assertPlanEquals(anyQuery, plan);
+
+            // test running the query
+            String anyCity = this.dataManager.convertAnyField(cityPhrase);
+            String anyState = this.dataManager.convertAnyField(statePhrase);
+            String anyCont = this.dataManager.convertAnyField(contPhrase);
+            anyQuery = anyCity + AND_OP + anyState + AND_OP + anyCont;
+            runTest(query, anyQuery);
+        }
+    }
+
+    @Test
+    public void testReverseIndex_defaultQueryPlanner() throws Exception {
+        log.info("------  testReverseIndex : DefaultQueryPlanner ------");
+        this.logic.setQueryPlanner(new DefaultQueryPlanner());
+
+        String phrase = RE_OP + "'.*ica'";
+        String query = Constants.ANY_FIELD + phrase;
+
+        // Test the plan with all expansions
+        String expect = CityField.CONTINENT.name() + EQ_OP + "'north america'";
+        String plan = getPlan(query, true, true);
+        assertPlanEquals(expect, plan);
+
+        // Test the plan sans value expansion
+        expect = CityField.CONTINENT.name() + phrase;
+        plan = getPlan(query, true, false);
+        assertPlanEquals(expect, plan);
+
+        // Test the plan sans field expansion
+        expect = Constants.ANY_FIELD + EQ_OP + "'north america'";
+        plan = getPlan(query, false, true);
+        assertPlanEquals(expect, plan);
+
+        // test running the query
+        expect = this.dataManager.convertAnyField(phrase);
+        runTest(query, expect);
+    }
+
+    @Test
+    public void testReverseIndex_federatedQueryPlanner() throws Exception {
+        log.info("------  testReverseIndex : FederatedQueryPlanner ------");
         String phrase = RE_OP + "'.*ica'";
         String query = Constants.ANY_FIELD + phrase;
 
@@ -425,7 +500,7 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
         runTest(query, expect);
 
         // remove the metadata entries
-        Multimap<String,Key> metadata = removeMetadataEntries(JexlASTHelper.getIdentifierNames(JexlASTHelper.parseJexlQuery(expect)),
+        Multimap<String,KeyValue> metadata = removeMetadataEntries(JexlASTHelper.getIdentifierNames(JexlASTHelper.parseJexlQuery(expect)),
                         ColumnFamilyConstants.COLF_RI);
 
         // expect no results
@@ -464,8 +539,35 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
     }
 
     @Test
-    public void testAndNoMatch() throws Exception {
-        log.info("------  testAndNoMatch  ------");
+    public void testAndNoMatch_federatedQueryPlanner() throws Exception {
+        log.info("------  testAndNoMatch : FederatedQueryPlanner ------");
+
+        String phrase = EQ_OP + "'nothing'";
+        String first = CityField.ACCESS.name() + EQ_OP + "'NA'";
+        String query = first + AND_OP + Constants.ANY_FIELD + phrase;
+
+        // Test the plan with all expansions
+        String plan = getPlan(query, true, true);
+        assertPlanEquals("false", plan);
+
+        // Test the plan sans value expansion
+        plan = getPlan(query, true, false);
+        assertPlanEquals("false", plan);
+
+        // Test the plan sans field expansion
+        plan = getPlan(query, false, true);
+        assertPlanEquals("false", plan);
+
+        // test running the query
+        String expect = first + AND_OP + this.dataManager.convertAnyField(phrase);
+        runTest(query, expect);
+    }
+
+    @Test
+    public void testAndNoMatch_defaultQueryPlanner() throws Exception {
+        log.info("------  testAndNoMatch : DefaultQueryPlanner ------");
+        this.logic.setQueryPlanner(new DefaultQueryPlanner());
+
         String phrase = EQ_OP + "'nothing'";
         String first = CityField.ACCESS.name() + EQ_OP + "'NA'";
         String query = first + AND_OP + Constants.ANY_FIELD + phrase;
@@ -527,7 +629,7 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
         runTest(query, expect);
 
         // remove the metadata entries
-        Multimap<String,Key> metadata = removeMetadataEntries(JexlASTHelper.getIdentifierNames(JexlASTHelper.parseJexlQuery(expect)),
+        Multimap<String,KeyValue> metadata = removeMetadataEntries(JexlASTHelper.getIdentifierNames(JexlASTHelper.parseJexlQuery(expect)),
                         ColumnFamilyConstants.COLF_I);
 
         // expect no results (or error until #567 is fixed)
@@ -608,7 +710,9 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
     }
 
     @Test
-    public void testRegexOr() throws Exception {
+    public void testRegexOr_defaultQueryPlanner() throws Exception {
+        this.logic.setQueryPlanner(new DefaultQueryPlanner());
+
         String roPhrase = RE_OP + "'ro.*'";
         String anyRo = this.dataManager.convertAnyField(roPhrase);
         String oPhrase = RE_OP + "'.*o'";
@@ -638,7 +742,39 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
     }
 
     @Test
-    public void testRegexAnd() throws Exception {
+    public void testRegexOr_federatedQueryPlanner() throws Exception {
+        String roPhrase = RE_OP + "'ro.*'";
+        String anyRo = this.dataManager.convertAnyField(roPhrase);
+        String oPhrase = RE_OP + "'.*o'";
+        String anyO = this.dataManager.convertAnyField(oPhrase);
+        String query = Constants.ANY_FIELD + roPhrase + OR_OP + Constants.ANY_FIELD + oPhrase;
+
+        // Test the plan with all expansions
+        String expect = CityField.CITY.name() + EQ_OP + "'rome'" + JEXL_OR_OP + CityField.STATE.name() + EQ_OP + "'lazio'" + JEXL_OR_OP + CityField.STATE.name()
+                        + EQ_OP + "'ohio'";
+        String plan = getPlan(query, true, true);
+        assertPlanEquals(expect, plan);
+
+        // Test the plan sans value expansion
+        expect = CityField.CITY.name() + roPhrase + JEXL_OR_OP + CityField.STATE.name() + oPhrase;
+        plan = getPlan(query, true, false);
+        assertPlanEquals(expect, plan);
+
+        // Test the plan sans field expansion
+        expect = Constants.ANY_FIELD + EQ_OP + "'rome'" + JEXL_OR_OP + Constants.ANY_FIELD + EQ_OP + "'lazio'" + JEXL_OR_OP + Constants.ANY_FIELD + EQ_OP
+                        + "'ohio'";
+        plan = getPlan(query, false, true);
+        assertPlanEquals(expect, plan);
+
+        // test running the query
+        expect = anyRo + OR_OP + anyO;
+        runTest(query, expect);
+    }
+
+    @Test
+    public void testRegexAnd_defaultQueryPlanner() throws Exception {
+        this.logic.setQueryPlanner(new DefaultQueryPlanner());
+
         String roPhrase = RE_OP + "'ro.*'";
         String anyRo = this.dataManager.convertAnyField(roPhrase);
         String oPhrase = RE_OP + "'.*o'";
@@ -669,7 +805,70 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
     }
 
     @Test
-    public void testRegexAndField() throws Exception {
+    public void testRegexAnd_federatedQueryPlanner() throws Exception {
+        String roPhrase = RE_OP + "'ro.*'";
+        String anyRo = this.dataManager.convertAnyField(roPhrase);
+        String oPhrase = RE_OP + "'.*o'";
+        String anyO = this.dataManager.convertAnyField(oPhrase);
+        String query = Constants.ANY_FIELD + roPhrase + AND_OP + Constants.ANY_FIELD + oPhrase;
+
+        // Test the plan with all expansions
+        String compositeField = CityField.CITY.name() + '_' + CityField.STATE.name();
+        String expect = "(" + compositeField + EQ_OP + "'rome" + CompositeIngest.DEFAULT_SEPARATOR + "lazio'" + JEXL_OR_OP + compositeField + EQ_OP + "'rome"
+                        + CompositeIngest.DEFAULT_SEPARATOR + "ohio')";
+        String plan = getPlan(query, true, true);
+        assertPlanEquals(expect, plan);
+
+        // Test the plan sans value expansion
+        expect = CityField.CITY.name() + roPhrase + JEXL_AND_OP + CityField.STATE.name() + oPhrase;
+        plan = getPlan(query, true, false);
+        assertPlanEquals(expect, plan);
+
+        // Test the plan sans field expansion
+        expect = Constants.ANY_FIELD + EQ_OP + "'rome'" + JEXL_AND_OP + "(" + Constants.ANY_FIELD + EQ_OP + "'lazio'" + JEXL_OR_OP + Constants.ANY_FIELD + EQ_OP
+                        + "'ohio')";
+        plan = getPlan(query, false, true);
+        assertPlanEquals(expect, plan);
+
+        // test running the query
+        expect = anyRo + AND_OP + anyO;
+        runTest(query, expect);
+    }
+
+    @Test
+    public void testRegexAndField_defaultQueryPlanner() throws Exception {
+        this.logic.setQueryPlanner(new DefaultQueryPlanner());
+
+        String roPhrase = RE_OP + "'ro.*'";
+        String anyRo = this.dataManager.convertAnyField(roPhrase);
+        String oPhrase = RE_OP + "'.*o'";
+        String query = Constants.ANY_FIELD + roPhrase + AND_OP + CityField.STATE.name() + oPhrase;
+
+        // Test the plan with all expansions
+        String expect = "(" + CityField.CITY.name() + '_' + CityField.STATE.name() + EQ_OP + "'rome" + CompositeIngest.DEFAULT_SEPARATOR + "lazio'" + JEXL_OR_OP
+                        + CityField.CITY.name() + '_' + CityField.STATE.name() + EQ_OP + "'rome" + CompositeIngest.DEFAULT_SEPARATOR + "ohio')" + JEXL_AND_OP
+                        + "((_Eval_ = true)" + JEXL_AND_OP + "(" + CityField.CITY.name() + " == 'rome'" + JEXL_AND_OP + CityField.STATE.name() + oPhrase + "))";
+        String plan = getPlan(query, true, true);
+        assertPlanEquals(expect, plan);
+
+        // Test the plan sans value expansion
+        expect = CityField.CITY.name() + roPhrase + JEXL_AND_OP + CityField.STATE.name() + oPhrase;
+        plan = getPlan(query, true, false);
+        assertPlanEquals(expect, plan);
+
+        // Test the plan sans field expansion
+        expect = Constants.ANY_FIELD + EQ_OP + "'rome'" + JEXL_AND_OP + "(" + CityField.STATE.name() + EQ_OP + "'lazio'" + JEXL_OR_OP + CityField.STATE.name()
+                        + EQ_OP + "'ohio')";
+        plan = getPlan(query, false, true);
+        assertPlanEquals(expect, plan);
+
+        // test running the query
+        expect = anyRo + AND_OP + CityField.STATE.name() + oPhrase;
+        runTest(query, expect);
+    }
+
+    @Test
+    public void testRegexAndField_federatedQueryPlanner() throws Exception {
         String roPhrase = RE_OP + "'ro.*'";
         String anyRo = this.dataManager.convertAnyField(roPhrase);
         String oPhrase = RE_OP + "'.*o'";
@@ -726,7 +925,9 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
     }
 
     @Test
-    public void testRegexReverseIndex() throws Exception {
+    public void testRegexReverseIndex_defaultQueryPlanner() throws Exception {
+        this.logic.setQueryPlanner(new DefaultQueryPlanner());
+
         String regPhrase = RE_OP + "'.*ica'";
         String query = Constants.ANY_FIELD + regPhrase;
 
@@ -751,7 +952,98 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
     }
 
     @Test
-    public void testNegRegex() throws Exception {
+    public void testRegexReverseIndex_federatedQueryPlanner() throws Exception {
+        String regPhrase = RE_OP + "'.*ica'";
+        String query = Constants.ANY_FIELD + regPhrase;
+
+        // Test the plan with all expansions
+        String expect = CityField.CONTINENT.name() + EQ_OP + "'north america'";
+        String plan = getPlan(query, true, true);
+        assertPlanEquals(expect, plan);
+
+        // Test the plan sans value expansion
+        expect = CityField.CONTINENT.name() + regPhrase;
+        plan = getPlan(query, true, false);
+        assertPlanEquals(expect, plan);
+
+        // Test the plan sans field expansion
+        expect = Constants.ANY_FIELD + EQ_OP + "'north america'";
+        plan = getPlan(query, false, true);
+        assertPlanEquals(expect, plan);
+
+        // test running the query
+        expect = this.dataManager.convertAnyField(regPhrase);
+        runTest(query, expect);
+    }
+
+    @Test
+    public void testNegRegex_defaultQueryPlanner() throws Exception {
+        this.logic.setQueryPlanner(new DefaultQueryPlanner());
+
+        String regPhrase = RN_OP + "'.*ica'";
+        String query = Constants.ANY_FIELD + regPhrase;
+
+        // Test the plan with all expansions
+        try {
+            String plan = getPlan(query, true, true);
+            fail("Expected FullTableScanDisallowedException but got plan: " + plan);
+        } catch (FullTableScansDisallowedException e) {
+            // expected
+        } catch (Exception e) {
+            fail("Expected FullTableScanDisallowedException but got " + e);
+        }
+
+        // Test the plan sans value expansion
+        String expect = "(((!(((_Delayed_ = true)" + JEXL_AND_OP + "(" + Constants.ANY_FIELD + RE_OP + "'.*ica')))" + JEXL_AND_OP + "!("
+                        + CityField.CONTINENT.name() + RE_OP + "'.*ica'))))";
+        String plan = getPlan(query, true, false);
+        assertPlanEquals(expect, plan);
+
+        // Test the plan sans field expansion
+        expect = "(((!(((_Delayed_ = true)" + JEXL_AND_OP + "(" + Constants.ANY_FIELD + RE_OP + "'.*ica')))" + JEXL_AND_OP + "!(" + Constants.ANY_FIELD + EQ_OP
+                        + "'north america'))))";
+        plan = getPlan(query, false, true);
+        assertPlanEquals(expect, plan);
+
+        // test running the query
+        expect = this.dataManager.convertAnyField(regPhrase, AND_OP);
+        try {
+            runTest(query, expect);
+            fail("full table scan exception expected");
+        } catch (FullTableScansDisallowedException e) {
+            // expected
+        } catch (Exception e) {
+            fail("Expected FullTableScanDisallowedException but got " + e);
+        }
+
+        try {
+            this.logic.setFullTableScanEnabled(true);
+
+            // Test the plan with all expansions
+            expect = "(((!(" + Constants.ANY_FIELD + RE_OP + "'.*ica')" + JEXL_AND_OP + "!(" + CityField.CONTINENT.name() + EQ_OP + "'north america'))))";
+            plan = getPlan(query, true, true);
+            assertPlanEquals(expect, plan);
+
+            // Test the plan sans value expansion
+            expect = "(((!(" + Constants.ANY_FIELD + RE_OP + "'.*ica')" + JEXL_AND_OP + "!(" + CityField.CONTINENT.name() + RE_OP + "'.*ica'))))";
+            plan = getPlan(query, true, false);
+            assertPlanEquals(expect, plan);
+
+            // Test the plan sans field expansion
+            expect = "(((!(" + Constants.ANY_FIELD + RE_OP + "'.*ica')" + JEXL_AND_OP + "!(" + Constants.ANY_FIELD + EQ_OP + "'north america'))))";
+            plan = getPlan(query, false, true);
+            assertPlanEquals(expect, plan);
+
+            // test running the query
+            expect = this.dataManager.convertAnyField(regPhrase, AND_OP);
+            runTest(query, expect);
+        } finally {
+            this.logic.setFullTableScanEnabled(false);
+        }
+    }
+
+    @Test
+    public void testNegRegex_federatedQueryPlanner() throws Exception {
         String regPhrase = RN_OP + "'.*ica'";
         String query = Constants.ANY_FIELD + regPhrase;
 
@@ -905,7 +1197,53 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
     }
 
     @Test
-    public void testNegRegexOrDisallowedExpansion() throws Exception {
+    public void testNegRegexOrDisallowedExpansion_defaultQueryPlanner() throws Exception {
+        this.logic.setQueryPlanner(new DefaultQueryPlanner());
+
+        String regPhrase = RN_OP + "'.*ica'";
+        String negReg = this.dataManager.convertAnyField(regPhrase, AND_OP);
+        try {
+            this.logic.setFullTableScanEnabled(true);
+            this.logic.setExpandUnfieldedNegations(false);
+            for (final TestCities city : TestCities.values()) {
+                String cityPhrase = EQ_OP + "'" + city.name() + "'";
+                String anyCity = this.dataManager.convertAnyField(cityPhrase);
+                String query = Constants.ANY_FIELD + cityPhrase + OR_OP + Constants.ANY_FIELD + regPhrase;
+
+                // Test the plan with all expansions
+                String expect = CityField.CITY.name() + cityPhrase;
+                if (city.name().equals("london")) {
+                    expect += JEXL_OR_OP + CityField.STATE.name() + cityPhrase;
+                }
+                expect += JEXL_OR_OP + "!(" + Constants.ANY_FIELD + RE_OP + "'.*ica')";
+                String plan = getPlan(query, true, true);
+                assertPlanEquals(expect, plan);
+
+                // Test the plan sans value expansion
+                expect = CityField.CITY.name() + cityPhrase;
+                if (city.name().equals("london")) {
+                    expect += JEXL_OR_OP + CityField.STATE.name() + cityPhrase;
+                }
+                expect += JEXL_OR_OP + "!(" + Constants.ANY_FIELD + RE_OP + "'.*ica')";
+                plan = getPlan(query, true, false);
+                assertPlanEquals(expect, plan);
+
+                // Test the plan sans field expansion
+                expect = Constants.ANY_FIELD + cityPhrase + JEXL_OR_OP + "!(" + Constants.ANY_FIELD + RE_OP + "'.*ica')";
+                plan = getPlan(query, false, true);
+                assertPlanEquals(expect, plan);
+
+                // test running the query
+                expect = anyCity + OR_OP + negReg;
+                runTest(query, expect);
+            }
+        } finally {
+            this.logic.setFullTableScanEnabled(false);
+        }
+    }
+
+    @Test
+    public void testNegRegexOrDisallowedExpansion_federatedQueryPlanner() throws Exception {
         String regPhrase = RN_OP + "'.*ica'";
         String negReg = this.dataManager.convertAnyField(regPhrase, AND_OP);
         try {
@@ -958,7 +1296,7 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
 
         RegexPushdownTransformRule rule = new RegexPushdownTransformRule();
         rule.setRegexPatterns(Arrays.asList("\\.\\*[0-9a-zA-Z]", "[0-9a-zA-Z]\\.\\*"));
-        ((DefaultQueryPlanner) (logic.getQueryPlanner())).setTransformRules(Collections.singletonList(rule));
+        ((FederatedQueryPlanner) logic.getQueryPlanner()).getQueryPlanner().setTransformRules(Collections.singletonList(rule));
 
         // Test the plan with all expansions
         try {
@@ -993,7 +1331,9 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
     }
 
     @Test
-    public void testRegexPushdownField() throws Exception {
+    public void testRegexPushdownField_defaultQueryPlanner() throws Exception {
+        this.logic.setQueryPlanner(new DefaultQueryPlanner());
+
         String roPhrase = RE_OP + "'ro.*'";
         String anyRo = this.dataManager.convertAnyField(roPhrase);
         String yPhrase = RE_OP + "'.*y'";
@@ -1002,7 +1342,7 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
 
         RegexPushdownTransformRule rule = new RegexPushdownTransformRule();
         rule.setRegexPatterns(Arrays.asList("\\.\\*[0-9a-zA-Z]", "[0-9a-zA-Z]\\.\\*"));
-        ((DefaultQueryPlanner) (logic.getQueryPlanner())).setTransformRules(Collections.singletonList(rule));
+        ((DefaultQueryPlanner) logic.getQueryPlanner()).setTransformRules(Collections.singletonList(rule));
 
         // Test the plan with all expansions
         String expect = CityField.CITY.name() + EQ_OP + "'rome'" + JEXL_AND_OP + "((_Eval_ = true) && (" + cityY + "))";
@@ -1014,6 +1354,36 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
         assertPlanEquals(expect, plan);
 
         expect = CityField.CITY + roPhrase + JEXL_AND_OP + "((_Eval_ = true) && (" + cityY + "))";
+        plan = getPlan(query, true, false);
+        assertPlanEquals(expect, plan);
+
+        // test running the query
+        expect = anyRo + AND_OP + cityY;
+        runTest(query, expect);
+    }
+
+    @Test
+    public void testRegexPushdownField_federatedQueryPlanner() throws Exception {
+        String roPhrase = RE_OP + "'ro.*'";
+        String anyRo = this.dataManager.convertAnyField(roPhrase);
+        String yPhrase = RE_OP + "'.*y'";
+        String cityY = CityField.COUNTRY + yPhrase;
+        String query = Constants.ANY_FIELD + roPhrase + AND_OP + CityField.COUNTRY + yPhrase;
+
+        RegexPushdownTransformRule rule = new RegexPushdownTransformRule();
+        rule.setRegexPatterns(Arrays.asList("\\.\\*[0-9a-zA-Z]", "[0-9a-zA-Z]\\.\\*"));
+        ((FederatedQueryPlanner) logic.getQueryPlanner()).getQueryPlanner().setTransformRules(Collections.singletonList(rule));
+
+        // Test the plan with all expansions
+        String expect = "CITY == 'rome' && ((_Eval_ = true) && (COUNTRY =~ '.*y'))";
+        String plan = getPlan(query, true, true);
+        assertPlanEquals(expect, plan);
+
+        expect = "_ANYFIELD_ == 'rome' && ((_Eval_ = true) && (COUNTRY =~ '.*y'))";
+        plan = getPlan(query, false, true);
+        assertPlanEquals(expect, plan);
+
+        expect = "CITY =~ 'ro.*' && ((_Eval_ = true) && (COUNTRY =~ '.*y'))";
         plan = getPlan(query, true, false);
         assertPlanEquals(expect, plan);
 
