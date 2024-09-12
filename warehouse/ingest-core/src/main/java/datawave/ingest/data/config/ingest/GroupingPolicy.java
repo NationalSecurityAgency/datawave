@@ -22,7 +22,7 @@ public class GroupingPolicy extends AbstractGroupingPolicy {
     }
 
     @Override
-    protected void setPolicy (String name) {
+    protected void setPolicy(String name) {
         if (name.equals("SAME_GROUP_ONLY")) {
             policy = SAME_GROUP_ONLY;
         } else if (name.equals("GROUPED_WITH_NON_GROUPED")) {
