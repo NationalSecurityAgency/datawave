@@ -595,6 +595,9 @@ services:
 
   map:
     entrypoint: ["java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005","-jar","app.jar"]
+    profiles:
+      - map
+      - full
     image: datawave/map-service
     command:
         - --spring.output.ansi.enabled=ALWAYS
