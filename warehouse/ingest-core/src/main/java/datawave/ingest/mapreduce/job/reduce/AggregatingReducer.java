@@ -40,7 +40,6 @@ import com.google.common.collect.Sets;
 import datawave.ingest.mapreduce.job.TableConfigurationUtil;
 import datawave.util.ColumnSetUtil;
 
-@SuppressWarnings("deprecation")
 public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,OV> {
 
     public static final String INGEST_VALUE_DEDUP_BY_TIMESTAMP_KEY = "ingest.value.dedup.by.timestamp";
@@ -287,7 +286,6 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
      * @throws InterruptedException
      *             if the thread is interrupted
      */
-    @SuppressWarnings("unchecked")
     public void doReduce(IK key, Iterable<IV> values, TaskInputOutputContext<?,?,OK,OV> context) throws IOException, InterruptedException {
         for (IV value : values) {
             context.write((OK) key, (OV) value);
