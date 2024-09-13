@@ -896,10 +896,33 @@ public abstract class ShapesTest {
         if (getClass().isAssignableFrom(DocumentRange.class)) {
             // this isn't the first uid, but in memory accumulo won't compact the uids into a sorted set
             withExpected(new HashSet<>(Set.of(ShapesIngest.isoscelesUid)));
-            logic.setCollapseUids(false); // disable this
+            logic.setCollapseUids(false); // disable option that forces document ranges to shard ranges
         } else {
-            // when pushed into a shard range, the query iterator will return all possible matches.
-            withExpected(new HashSet<>(triangleUids));
+            // the uid order in the field index is different from the shard index
+            withExpected(new HashSet<>(Set.of(ShapesIngest.equilateralUid)));
+        }
+
+        planAndExecuteQuery();
+    }
+
+    @Test
+    public void testFindFirstMultiValue() throws Exception {
+        withParameter(QueryParameters.FIND_FIRST, "true");
+        withQuery("SHAPE == 'triangle' || SHAPE == 'quadrilateral'");
+
+        if (getClass().isAssignableFrom(DocumentRange.class)) {
+            // these uids are not the ones that would sort first, this is because in memory accumulo does not compact global index uids into a single sorted set
+            Set<String> expectedUids = new HashSet<>();
+            expectedUids.add(ShapesIngest.isoscelesUid);
+            expectedUids.add(ShapesIngest.rhombusUid);
+            withExpected(expectedUids);
+            logic.setCollapseUids(false); // disable option that forces document ranges to shard ranges
+        } else {
+            // uid order differs between the shard index and field index, thus different uids are expected. This is an artifact of using in memory accumulo
+            Set<String> expectedUids = new HashSet<>();
+            expectedUids.add(ShapesIngest.equilateralUid);
+            expectedUids.add(ShapesIngest.squareUid);
+            withExpected(expectedUids);
         }
 
         planAndExecuteQuery();

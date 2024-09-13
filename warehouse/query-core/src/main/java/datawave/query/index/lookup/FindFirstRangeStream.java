@@ -88,8 +88,8 @@ public class FindFirstRangeStream extends RangeStream {
             JexlNode child = JexlASTHelper.dereference(node.jjtGetChild(i));
 
             if (child instanceof ASTEQNode) {
-                String field = JexlASTHelper.getIdentifier(node);
-                String value = (String) JexlASTHelper.getLiteralValueSafely(node);
+                String field = JexlASTHelper.getIdentifier(child);
+                String value = (String) JexlASTHelper.getLiteralValueSafely(child);
 
                 if (value == null) {
                     throw new IllegalStateException("FindFirst does not support null literals");

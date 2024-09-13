@@ -2290,6 +2290,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 addOption(cfg, QueryOptions.LIMIT_FIELDS_FIELD, config.getLimitFieldsField(), false);
             }
 
+            if (config.isFindFirst()) {
+                addOption(cfg, QueryOptions.FIND_FIRST, Boolean.toString(config.isFindFirst()), false);
+            }
+
             return cfg;
         });
     }

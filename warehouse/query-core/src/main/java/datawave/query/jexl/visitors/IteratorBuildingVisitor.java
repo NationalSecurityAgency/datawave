@@ -6,6 +6,7 @@ import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EVALUATIO
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_OR;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
 import static org.apache.commons.jexl3.parser.JexlNodes.setChildren;
+import static org.apache.commons.jexl3.parser.JexlNodes.wrap;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -89,6 +90,7 @@ import datawave.query.iterator.builder.OrIteratorBuilder;
 import datawave.query.iterator.builder.TermFrequencyIndexBuilder;
 import datawave.query.iterator.ivarator.IvaratorCacheDir;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
+import datawave.query.iterator.logic.FindFirstIndexIterator;
 import datawave.query.iterator.logic.OrIterator;
 import datawave.query.iterator.profile.QuerySpanCollector;
 import datawave.query.jexl.ArithmeticJexlEngines;
@@ -212,6 +214,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     protected Set<JexlNode> delayedEqNodes = Sets.newHashSet();
 
     protected Map<String,Object> exceededOrEvaluationCache;
+
+    protected boolean findFirst = false;
 
     public boolean isQueryFullySatisfied() {
         if (limitLookup) {
@@ -698,7 +702,11 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             if (!includeReferences.contains(builder.getField()) && excludeReferences.contains(builder.getField())) {
                 throw new IllegalStateException(builder.getField() + " is a disallowlisted reference.");
             } else if (builder.getField() != null) {
-                root = builder.build();
+                NestedIterator<Key> leaf = builder.build();
+                if (findFirst) {
+                    leaf = new FindFirstIndexIterator(leaf);
+                }
+                root = leaf;
 
                 if (log.isTraceEnabled()) {
                     log.trace("Build IndexIterator: " + root);
@@ -712,7 +720,11 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             final boolean notExcluded = !excludeReferences.contains(builder.getField());
 
             if (isNew && inclusionReference && notExcluded) {
-                iterators.addInclude(builder.build());
+                NestedIterator<Key> leaf = builder.build();
+                if (findFirst) {
+                    leaf = new FindFirstIndexIterator(leaf);
+                }
+                iterators.addInclude(leaf);
             } else {
                 if (isQueryFullySatisfied) {
                     log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
@@ -1745,5 +1757,10 @@ public class IteratorBuildingVisitor extends BaseVisitor {
 
     public void resetRoot() {
         this.root = null;
+    }
+
+    public IteratorBuildingVisitor setFindFirst(boolean findFirst) {
+        this.findFirst = findFirst;
+        return this;
     }
 }

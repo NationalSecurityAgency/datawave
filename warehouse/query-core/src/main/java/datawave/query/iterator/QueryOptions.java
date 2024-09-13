@@ -280,6 +280,8 @@ public class QueryOptions implements OptionDescriber {
     public static final String FIELD_COUNTS = "field.counts";
     public static final String TERM_COUNTS = "term.counts";
 
+    public static final String FIND_FIRST = "find.first";
+
     protected Map<String,String> options;
 
     protected String scanId;
@@ -446,6 +448,8 @@ public class QueryOptions implements OptionDescriber {
     private CountMap termCounts;
     private CountMapSerDe mapSerDe;
 
+    private boolean findFirst = false;
+
     public void deepCopy(QueryOptions other) {
         this.options = other.options;
         this.query = other.query;
@@ -557,6 +561,7 @@ public class QueryOptions implements OptionDescriber {
 
         this.fieldCounts = other.fieldCounts;
         this.termCounts = other.termCounts;
+        this.findFirst = other.findFirst;
     }
 
     public String getQuery() {
@@ -1273,6 +1278,7 @@ public class QueryOptions implements OptionDescriber {
         options.put(TERM_FREQUENCY_AGGREGATION_THRESHOLD_MS, "TermFrequency aggregations that exceed this threshold are logged as a warning");
         options.put(FIELD_COUNTS, "Map of field counts from the global index");
         options.put(TERM_COUNTS, "Map of term counts from the global index");
+        options.put(FIND_FIRST, "Flag that enabled 'find first' logic for equality nodes");
         return new IteratorOptions(getClass().getSimpleName(), "Runs a query against the DATAWAVE tables", options, null);
     }
 
@@ -1763,6 +1769,10 @@ public class QueryOptions implements OptionDescriber {
             }
         }
 
+        if (options.containsKey(FIND_FIRST)) {
+            this.findFirst = Boolean.parseBoolean(options.get(FIND_FIRST));
+        }
+
         return true;
     }
 
@@ -1806,7 +1816,6 @@ public class QueryOptions implements OptionDescriber {
         if (options.containsKey(METADATA_TABLE_NAME)) {
             this.metadataTableName = options.get(METADATA_TABLE_NAME);
         }
-
     }
 
     protected static String decompressOption(final String buffer, Charset characterSet) throws IOException {
@@ -2258,5 +2267,9 @@ public class QueryOptions implements OptionDescriber {
             equality = new PrefixEquality(PartialKey.ROW_COLFAM);
         }
         return equality;
+    }
+
+    public boolean isFindFirst() {
+        return findFirst;
     }
 }
