@@ -73,7 +73,8 @@ public class GeoUtilsTest {
         assertEquals(18, decodedRanges.size());
 
         Geometry decodedGeometry = new GeometryCollection(
-                        decodedRanges.stream().map(r -> GeoUtils.positionRangeToGeometry(r[0], r[1])).toArray(Geometry[]::new), GeoUtils.gf).union();
+                        decodedRanges.stream().map(r -> GeoUtils.positionRangeToGeometry(r[0], r[1])).toArray(Geometry[]::new), CommonGeoUtils.geometryFactory)
+                                        .union();
 
         assertTrue(geometry.equalsTopo(decodedGeometry));
     }

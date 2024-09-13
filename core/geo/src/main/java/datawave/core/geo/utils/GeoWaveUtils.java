@@ -20,7 +20,6 @@ import org.locationtech.jts.geom.GeometryCollection;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Polygon;
 import org.locationtech.jts.io.ParseException;
-import org.locationtech.jts.io.WKTReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,12 +41,6 @@ import datawave.data.type.Type;
 public class GeoWaveUtils {
 
     private static final Logger log = LoggerFactory.getLogger(GeoWaveUtils.class);
-
-    /**
-     * Setting the precision too high is unnecessary, and will result in occasional computational errors within the JTS library.
-     */
-    static final GeometryFactory gf = CommonGeoUtils.gf;
-    private static final WKTReader wktReader = new WKTReader(gf);
 
     public static final String GEOWAVE_NAMESPACE = "geowave";
     public static final String CONTAINS = "contains";
@@ -279,7 +272,7 @@ public class GeoWaveUtils {
      */
     private static Geometry boundsToGeometry(MultiDimensionalNumericData bounds) {
         // @formatter:off
-        return gf.toGeometry(
+        return CommonGeoUtils.geometryFactory.toGeometry(
                 new Envelope(
                         bounds.getMinValuesPerDimension()[0],
                         bounds.getMaxValuesPerDimension()[0],
@@ -780,10 +773,9 @@ public class GeoWaveUtils {
 
         // union can introduce holes in the final geometry due to the level of precision used to
         // represent the geometries, so we need to ensure that we are only keeping the exterior ring
-        Geometry unionedGeometry = new GeometryCollection(geometries.toArray(new Geometry[0]), gf).union();
+        Geometry unionedGeometry = new GeometryCollection(geometries.toArray(new Geometry[0]), CommonGeoUtils.geometryFactory).union();
         if (unionedGeometry instanceof Polygon && ((Polygon) unionedGeometry).getNumInteriorRing() > 0) {
-            throw new RuntimeException("TAKE ANOTHER LOOK AT THIS!");
-            // return gf.createPolygon(((Polygon) unionedGeometry).getExteriorRing().getCoordinates());
+            return CommonGeoUtils.geometryFactory.createPolygon(((Polygon) unionedGeometry).getExteriorRing().getCoordinates());
         } else {
             return unionedGeometry;
         }
@@ -910,7 +902,7 @@ public class GeoWaveUtils {
 
     public static Geometry parseWkt(String wkt) {
         try {
-            return wktReader.read(wkt);
+            return CommonGeoUtils.wktReader.read(wkt);
         } catch (ParseException e) {
             throw new IllegalArgumentException("Unable to parse geometry from WKT: " + wkt, e);
         }

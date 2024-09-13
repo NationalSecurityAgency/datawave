@@ -20,18 +20,16 @@ import com.google.common.collect.Multimap;
 
 import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.core.geo.utils.CommonGeoUtils;
+import datawave.core.geo.utils.GeoUtils;
 import datawave.core.geo.utils.GeoWaveUtils;
 import datawave.core.query.jexl.visitors.RebuildingVisitor;
-import datawave.data.normalizer.GeometryNormalizer;
 import datawave.data.type.AbstractGeometryType;
 import datawave.data.type.GeoType;
 import datawave.data.type.Type;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.functions.GeoWaveFunctionsDescriptor;
 import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
 import datawave.query.jexl.functions.arguments.GeoFunctionJexlArgumentDescriptor;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
-import datawave.query.util.GeoUtils;
 import datawave.query.util.MetadataHelper;
 
 /**

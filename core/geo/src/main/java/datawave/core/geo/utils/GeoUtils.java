@@ -48,11 +48,6 @@ public class GeoUtils {
     private static final GeoNormalizer geoNormalizer = new GeoNormalizer();
 
     /**
-     * Setting the precision too high is unnecessary, and will result in occasional computational errors within the JTS library.
-     */
-    static final GeometryFactory gf = CommonGeoUtils.gf;
-
-    /**
      * This is a convenience class used when optimizing ranges..
      */
     private static class RangeData {
@@ -385,7 +380,7 @@ public class GeoUtils {
         coords[3] = new Coordinate(minLon, maxLat);
         coords[4] = coords[0];
 
-        return gf.createPolygon(coords);
+        return CommonGeoUtils.geometryFactory.createPolygon(coords);
     }
 
     /**
@@ -453,16 +448,16 @@ public class GeoUtils {
             coords[2] = new Coordinate(maxLon, maxLat);
             coords[3] = new Coordinate(minLon, maxLat);
             coords[4] = coords[0];
-            geometries.add(gf.createPolygon(coords));
+            geometries.add(CommonGeoUtils.geometryFactory.createPolygon(coords));
         }
 
-        Geometry geom = new GeometryCollection(geometries.toArray(new Geometry[0]), gf).union();
+        Geometry geom = new GeometryCollection(geometries.toArray(new Geometry[0]), CommonGeoUtils.geometryFactory).union();
         if (geom instanceof MultiPolygon) {
             // try inflating and deflating to get a single, simple polygon
             double scale = 100000000.0;
             GeometryFactory newGf = new GeometryFactory(new PrecisionModel(scale));
             double buffer = 1.0 / scale;
-            geom = gf.createGeometry(
+            geom = CommonGeoUtils.geometryFactory.createGeometry(
                             new GeometryCollection(geometries.stream().map(x -> newGf.createGeometry(x).buffer(buffer)).toArray(Geometry[]::new), newGf).union()
                                             .buffer(-buffer));
         }
@@ -534,7 +529,7 @@ public class GeoUtils {
     }
 
     public static Polygon createCircle(double lon, double lat, double radius) {
-        GeometricShapeFactory shapeFactory = new GeometricShapeFactory(gf);
+        GeometricShapeFactory shapeFactory = new GeometricShapeFactory(CommonGeoUtils.geometryFactory);
         shapeFactory.setNumPoints(NUM_CIRCLE_POINTS);
         shapeFactory.setCentre(new Coordinate(lon, lat));
         shapeFactory.setSize(radius * 2);
@@ -548,7 +543,7 @@ public class GeoUtils {
         coordinates.add(new CoordinateXY(maxLon, maxLat));
         coordinates.add(new CoordinateXY(minLon, maxLat));
         coordinates.add(new CoordinateXY(minLon, minLat));
-        return gf.createPolygon(coordinates.toArray(new Coordinate[0]));
+        return CommonGeoUtils.geometryFactory.createPolygon(coordinates.toArray(new Coordinate[0]));
     }
 
     public static AbstractGeoFunctionDetails parseGeoFunction(String name, List<JexlNode> args) {

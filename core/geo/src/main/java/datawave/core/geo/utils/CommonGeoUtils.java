@@ -24,16 +24,16 @@ public class CommonGeoUtils {
     /**
      * Setting the precision too high is unnecessary, and will result in occasional computational errors within the JTS library.
      */
-    static final GeometryFactory gf = new GeometryFactory(new PrecisionModel(1000000));
+    public static final GeometryFactory geometryFactory = new GeometryFactory(new PrecisionModel(1000000));
 
-    private static WKTReader wktReader = new WKTReader(gf);
+    public static WKTReader wktReader = new WKTReader(geometryFactory);
 
     public static Geometry wktToGeometry(String wkt) throws ParseException {
         return wktReader.read(wkt);
     }
 
     public static Geometry createGeometryCollection(Collection<Geometry> geometries) {
-        return gf.createGeometryCollection(geometries.toArray(new Geometry[0]));
+        return geometryFactory.createGeometryCollection(geometries.toArray(new Geometry[0]));
     }
 
     public static Geometry geometriesToGeometry(List<Geometry> geometries) {
