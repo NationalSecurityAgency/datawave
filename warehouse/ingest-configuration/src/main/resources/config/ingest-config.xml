@@ -114,7 +114,7 @@
 
 <property>
     <name>ingest.bulk.import.mode</name>
-    <value>V2_LOAD_PLANNING</value>
+    <value>V2_LOCAL_MAPPING</value>
     <description>
         Must be one of [V1, V2_LOCAL_MAPPING, V2_LOAD_PLANNING]
         (See BulkIngestMapFileLoader.ImportMode)
