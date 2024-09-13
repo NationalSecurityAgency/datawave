@@ -149,41 +149,6 @@
                 </executions>
             </plugin>
             <?SORTPOM RESUME?>
-            <!-- <plugin>
-                <artifactId>maven-resources-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>copy-datawave-tarballs</id>
-                        <goals>
-                            <goal>copy-resources</goal>
-                        </goals>
-                        <phase>process-resources</phase>
-                        <configuration>
-                            <outputDirectory>${project.basedir}/../bin/services/datawave</outputDirectory>
-                            <resources>
-                                <resource>
-                                    <directory>${project.basedir}/../../../warehouse/assemble/datawave/target/</directory>
-                                    <includes>
-                                        <include>datawave-${build.env}-${project.version}-dist.tar.gz</include>
-                                    </includes>
-                                </resource>
-                                <resource>
-                                    <directory>${project.basedir}/../../../web-services/deploy/application/target/</directory>
-                                    <includes>
-                                        <include>datawave-ws-deploy-application-${project.version}-${build.env}.tar.gz</include>
-                                    </includes>
-                                </resource>
-                                <resource>
-                                    <directory>${project.build.outputDirectory}</directory>
-                                    <includes>
-                                        <include>${dist.wildfly}</include>
-                                    </includes>
-                                </resource>
-                            </resources>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin> -->
         </plugins>
     </build>
     <profiles>
@@ -222,6 +187,11 @@
                                             <DATAWAVE_BUILD_PROFILE>${build.env}</DATAWAVE_BUILD_PROFILE>
                                             <DATAWAVE_SKIP_INGEST>${skipIngest}</DATAWAVE_SKIP_INGEST>
                                             <DATAWAVE_SKIP_TESTS>true</DATAWAVE_SKIP_TESTS>
+                                            <ACCUMULO_URL>${url.accumulo}</ACCUMULO_URL>
+                                            <HADOOP_URL>${url.hadoop}</HADOOP_URL>
+                                            <MAVEN_URL>${url.maven}</MAVEN_URL>
+                                            <WILDFLY_URL>${url.wildfly}</WILDFLY_URL>
+                                            <ZOOKEEPER_URL>${url.zookeeper}</ZOOKEEPER_URL>
                                         </args>
                                     </build>
                                 </image>

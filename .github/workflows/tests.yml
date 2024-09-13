@@ -262,10 +262,12 @@ jobs:
           DW_HADOOP_DIST_URI='http://some/bogus/path/hadoop.tar.gz'
           DW_MAVEN_DIST_URI='http://some/bogus/path/maven.tar.gz'
           
-          mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -B -V -e -Pcompose -Dmicroservice-docker -Dquickstart-docker -Dquickstart-maven -Ddeploy -Dtar -DskipTests -Dmaven.build.cache.enabled=false clean install
+          DIST_URLS="-Durl.zookeeper='http://some/bogus/path/zookeeper.tar.gz' -Durl.accumulo='http://some/bogus/path/accumulo.tar.gz' -Durl.wildfly='http://some/bogus/path/wildfly.tar.gz' -Durl.hadoop='http://some/bogus/path/hadoop.tar.gz' -Durl.maven='http://some/bogus/path/maven.tar.gz'"
+          
+          mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -B -V -e -Pcompose -Dmicroservice-docker -Dquickstart-docker -Dquickstart-maven ${DIST_URLS} -Ddeploy -Dtar -DskipTests -Dmaven.build.cache.enabled=false clean install
           # free up some space so that we don't run out
           docker system prune -f
-          mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -B -V -e -Pcompose -Dmicroservice-docker -Dquickstart-docker -Dquickstart-maven -Ddeploy -Dtar -DskipTests -Dmaven.build.cache.enabled=false clean
+          mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -B -V -e -Pcompose -Dmicroservice-docker -Dquickstart-docker -Dquickstart-maven ${DIST_URLS} -Ddeploy -Dtar -DskipTests -Dmaven.build.cache.enabled=false clean
           cd docker
           ./bootstrap.sh
           attempt=0
