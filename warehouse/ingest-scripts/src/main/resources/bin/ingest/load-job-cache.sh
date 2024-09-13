@@ -14,6 +14,9 @@ cd $THIS_DIR
 . ../ingest/ingest-env.sh
 . ../ingest/job-cache-env.sh
 
+# Check that there are no other instances of this script running
+acquire_lock_file $(basename "$0") || exit 1
+
 #read from the datawave metadata table to create the edge key version file and save it locally with the rest of the config files
 ./create-edgekey-version-cache.sh --update ../../config
 
