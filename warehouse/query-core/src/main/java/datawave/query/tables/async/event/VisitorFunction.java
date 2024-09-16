@@ -3,9 +3,11 @@ package datawave.query.tables.async.event;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.security.SecureRandom;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -22,17 +24,22 @@ import javax.annotation.Nullable;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Range;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
+import org.geotools.data.Join;
 
 import com.google.common.base.Function;
+import com.google.common.base.Joiner;
+import com.google.common.base.Splitter;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.google.common.collect.Sets;
 
 import datawave.core.iterators.filesystem.FileSystemCache;
+import datawave.microservice.query.Query;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.InvalidQueryException;
@@ -41,6 +48,7 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.DateIndexCleanupVisitor;
 import datawave.query.jexl.visitors.ExecutableDeterminationVisitor;
 import datawave.query.jexl.visitors.ExecutableDeterminationVisitor.STATE;
+import datawave.query.jexl.visitors.IngestTypeVisitor;
 import datawave.query.jexl.visitors.IvaratorRequiredVisitor;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.PrintingVisitor;
@@ -51,14 +59,12 @@ import datawave.query.jexl.visitors.TermCountingVisitor;
 import datawave.query.jexl.visitors.TreeEqualityVisitor;
 import datawave.query.jexl.visitors.whindex.WhindexVisitor;
 import datawave.query.planner.DefaultQueryPlanner;
-import datawave.query.postprocessing.tf.TermOffsetPopulator;
 import datawave.query.tables.SessionOptions;
 import datawave.query.tables.async.ScannerChunk;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.TypeMetadata;
 import datawave.util.StringUtils;
 import datawave.util.time.DateHelper;
-import datawave.webservice.query.Query;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.PreConditionFailedQueryException;
@@ -78,10 +84,12 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
     protected Set<String> indexedFields;
     protected Set<String> indexOnlyFields;
     protected Set<String> nonEventFields;
-    protected Random random = new Random();
+    protected Random random = new SecureRandom();
 
     // thread-safe cache where the key is the original query, and the value is the expanded query
     private Cache<String,String> queryCache;
+
+    private TypeMetadata cachedTypeMetadata = null;
 
     private static final Logger log = Logger.getLogger(VisitorFunction.class);
 
@@ -151,7 +159,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
 
         SessionOptions options = input.getOptions();
 
-        ScannerChunk newSettings = new ScannerChunk(null, input.getRanges(), input.getLastKnownLocation());
+        ScannerChunk newSettings = new ScannerChunk(null, input.getRanges(), input.getContext(), input.getLastKnownLocation());
 
         SessionOptions newOptions = new SessionOptions(options);
 
@@ -304,8 +312,12 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
 
                     pruneEmptyOptions(newIteratorSetting);
 
-                    if (config.getReduceQueryFields()) {
+                    if (config.getReduceQueryFieldsPerShard()) {
                         reduceQueryFields(script, newIteratorSetting);
+                    }
+
+                    if (config.isRebuildDatatypeFilterPerShard() || config.getReduceIngestTypesPerShard()) {
+                        reduceIngestTypes(script, newIteratorSetting);
                     }
 
                     if (config.getReduceTypeMetadataPerShard()) {
@@ -324,7 +336,8 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                     }
 
                     // test the final script for thresholds
-                    DefaultQueryPlanner.validateQuerySize("VisitorFunction", script, config.getMaxDepthThreshold(), config.getFinalMaxTermThreshold());
+                    DefaultQueryPlanner.validateQuerySize("VisitorFunction", script, config.getMaxDepthThreshold(), config.getFinalMaxTermThreshold(),
+                                    config.getMaxIvaratorTerms());
 
                     newIteratorSetting.addOption(QueryOptions.QUERY, newQuery);
                     newOptions.removeScanIterator(setting.getName());
@@ -335,10 +348,11 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                     }
 
                     if (log.isTraceEnabled()) {
-                        DefaultQueryPlanner.logTrace(PrintingVisitor.formattedQueryStringList(script), "VistorFunction::apply method");
+                        DefaultQueryPlanner.logTrace(PrintingVisitor.formattedQueryStringList(script, DefaultQueryPlanner.getMaxChildNodesToPrint(),
+                                        DefaultQueryPlanner.getMaxTermsToPrint()), "VistorFunction::apply method");
                     } else if (log.isDebugEnabled()) {
-                        DefaultQueryPlanner.logDebug(PrintingVisitor.formattedQueryStringList(script, DefaultQueryPlanner.maxChildNodesToPrint),
-                                        "VistorFunction::apply method");
+                        DefaultQueryPlanner.logDebug(PrintingVisitor.formattedQueryStringList(script, DefaultQueryPlanner.getMaxChildNodesToPrint(),
+                                        DefaultQueryPlanner.getMaxTermsToPrint()), "VistorFunction::apply method");
                     }
 
                 } catch (ParseException e) {
@@ -468,6 +482,50 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
     }
 
     /**
+     * Optionally update the datatype filter using a pruned query tree
+     *
+     * @param script
+     *            a query tree
+     * @param newIteratorSetting
+     *            the iterator settings
+     */
+    private void reduceIngestTypes(ASTJexlScript script, IteratorSetting newIteratorSetting) {
+        if (cachedTypeMetadata == null) {
+            String serializedTypeMetadata = newIteratorSetting.getOptions().get(QueryOptions.TYPE_METADATA);
+            cachedTypeMetadata = new TypeMetadata(serializedTypeMetadata);
+        }
+
+        // get requested types
+        Set<String> requestedDatatypes;
+        String opt = newIteratorSetting.getOptions().get(QueryOptions.DATATYPE_FILTER);
+        if (opt == null) {
+            requestedDatatypes = Collections.emptySet();
+        } else {
+            requestedDatatypes = new HashSet<>(Splitter.on(',').splitToList(opt));
+        }
+
+        // get existing types from the query
+        Set<String> datatypes = IngestTypeVisitor.getIngestTypes(script, cachedTypeMetadata);
+        if (datatypes.contains(IngestTypeVisitor.UNKNOWN_TYPE) || datatypes.contains(IngestTypeVisitor.IGNORED_TYPE)) {
+            return;
+        }
+
+        if (config.isRebuildDatatypeFilterPerShard()) {
+            newIteratorSetting.addOption(QueryOptions.DATATYPE_FILTER, Joiner.on(',').join(datatypes));
+        } else if (config.getReduceIngestTypesPerShard() && !requestedDatatypes.isEmpty() && !datatypes.isEmpty()) {
+            Set<String> intersectedTypes = Sets.intersection(requestedDatatypes, datatypes);
+            if (intersectedTypes.isEmpty()) {
+                // the EmptyPlanPruner in the RangeStream should have handled this situation, this exception indicates a bug exists
+                throw new DatawaveFatalQueryException("Ingest types reduced to zero, cannot execute query sub-plan");
+            }
+
+            if (intersectedTypes.size() <= requestedDatatypes.size()) {
+                newIteratorSetting.addOption(QueryOptions.DATATYPE_FILTER, Joiner.on(',').join(intersectedTypes));
+            }
+        }
+    }
+
+    /**
      * Certain query options may be pruned on a per-tablet basis
      *
      * @param script
@@ -566,7 +624,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
     }
 
     protected URI getFstHdfsQueryCacheUri(ShardQueryConfiguration config, Query settings) {
-        if (config.getIvaratorFstHdfsBaseURIs() != null) {
+        if (config.getIvaratorFstHdfsBaseURIs() != null && !config.getIvaratorFstHdfsBaseURIs().isEmpty()) {
             String[] choices = StringUtils.split(config.getIvaratorFstHdfsBaseURIs(), ',');
             int index = random.nextInt(choices.length);
             Path path = new Path(choices[index], settings.getId().toString());

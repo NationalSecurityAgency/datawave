@@ -25,6 +25,7 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import com.google.common.collect.TreeMultimap;
 
+import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.data.normalizer.NormalizationException;
 import datawave.data.type.NoOpType;
 import datawave.data.type.OneToManyNormalizerType;
@@ -40,7 +41,6 @@ import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.NormalizedFieldAndValue;
 import datawave.ingest.data.config.XMLFieldConfigHelper;
 import datawave.util.StringUtils;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
 
 /**
  * Specialization of the Helper type that validates the configuration for Ingest purposes. These helper classes also have the logic to parse the field names and
@@ -985,8 +985,12 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
                             results.put(failedNormalizationField, new NormalizedFieldAndValue(failedNormalizationField, n.getIndexedFieldName()));
                             break;
                         case DROP:
-                            // for the leave policy, only add a failed normalization
-                            // field
+                            // for the drop policy, clear out the exception,
+                            // clear out the indexed field value and add
+                            // a failed normalization field
+                            n.setError(null);
+                            n.setIndexedFieldValue(null);
+                            results.put(n.getIndexedFieldName(), n);
                             results.put(failedNormalizationField, new NormalizedFieldAndValue(failedNormalizationField, n.getIndexedFieldName()));
                             break;
                         case FAIL:

@@ -11,6 +11,10 @@ import org.junit.Test;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
+import datawave.microservice.query.DefaultQueryParameters;
+import datawave.microservice.query.QueryParameters;
+import datawave.microservice.query.QueryPersistence;
+
 public class QueryParametersTest {
 
     private QueryParameters qp;
@@ -58,7 +62,7 @@ public class QueryParametersTest {
     }
 
     private QueryParameters buildQueryParameters() {
-        QueryParametersImpl qpBuilder = new QueryParametersImpl();
+        DefaultQueryParameters qpBuilder = new DefaultQueryParameters();
         qpBuilder.setAuths(auths);
         qpBuilder.setBeginDate(beginDate);
         qpBuilder.setEndDate(endDate);
@@ -99,8 +103,8 @@ public class QueryParametersTest {
 
         // Test and validate date formatting, parsing
         try {
-            Assert.assertEquals(formatDateCheck, QueryParametersImpl.formatDate(beginDate));
-            Assert.assertEquals(parseDateCheck, QueryParametersImpl.parseStartDate(QueryParametersImpl.formatDate(beginDate)));
+            Assert.assertEquals(formatDateCheck, DefaultQueryParameters.formatDate(beginDate));
+            Assert.assertEquals(parseDateCheck, DefaultQueryParameters.parseStartDate(DefaultQueryParameters.formatDate(beginDate)));
         } catch (ParseException e) {
             log.error(e);
         }
@@ -115,10 +119,10 @@ public class QueryParametersTest {
             params.add(QueryParameters.QUERY_PERSISTENCE, "PERSISTENT");
             params.add(QueryParameters.QUERY_PAGESIZE, "10");
             params.add(QueryParameters.QUERY_AUTHORIZATIONS, "auths");
-            params.add(QueryParameters.QUERY_EXPIRATION, QueryParametersImpl.formatDate(expDate).toString());
+            params.add(QueryParameters.QUERY_EXPIRATION, DefaultQueryParameters.formatDate(expDate).toString());
             params.add(QueryParameters.QUERY_TRACE, "trace");
-            params.add(QueryParameters.QUERY_BEGIN, QueryParametersImpl.formatDate(beginDate).toString());
-            params.add(QueryParameters.QUERY_END, QueryParametersImpl.formatDate(endDate).toString());
+            params.add(QueryParameters.QUERY_BEGIN, DefaultQueryParameters.formatDate(beginDate).toString());
+            params.add(QueryParameters.QUERY_END, DefaultQueryParameters.formatDate(endDate).toString());
             params.add(QueryParameters.QUERY_PARAMS, "params");
             params.add(QueryParameters.QUERY_LOGIC_NAME, "logicName");
         } catch (ParseException e) {

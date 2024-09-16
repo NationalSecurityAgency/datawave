@@ -27,8 +27,8 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
-import datawave.webservice.query.logic.QueryLogic;
+import datawave.core.common.connection.AccumuloConnectionFactory;
+import datawave.core.query.logic.QueryLogic;
 
 @Startup
 @Singleton
@@ -99,6 +99,7 @@ public class CreatedQueryLogicCacheBean {
      * @param logic
      *            the query logic
      * @param client
+     *            accumulo client
      * @return true if there was no previous mapping for the given queryId in the cache.
      */
     public boolean add(String queryId, String userId, QueryLogic<?> logic, AccumuloClient client) {

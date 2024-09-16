@@ -1,6 +1,6 @@
 package datawave.query.jexl.functions;
 
-import org.apache.commons.jexl2.parser.ASTFunctionNode;
+import org.apache.commons.jexl3.parser.ASTFunctionNode;
 
 import datawave.query.jexl.ArithmeticJexlEngines;
 

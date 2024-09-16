@@ -19,7 +19,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNode;
 import org.junit.Test;
 
 import com.google.common.collect.Sets;
@@ -143,7 +143,7 @@ public class IndexMatchTest {
         // Create expected objects
         Set<String> expectedStrings = Sets.newHashSet("FIELD == 'value'", "FIELD == 'value2'", "FIELD == 'value3'");
         Collection<JexlNode> expectedNodes = Sets.newHashSet(eqNode, eqNode2, eqNode3);
-        JexlNode orNode = JexlNodeFactory.createUnwrappedOrNode(expectedNodes);
+        JexlNode orNode = JexlNodeFactory.createOrNode(expectedNodes);
 
         assertEquals(expectedStrings, indexMatch.nodeSet.getNodeKeys());
         assertEquals(expectedNodes, Sets.newHashSet(indexMatch.nodeSet.getNodes()));

@@ -18,6 +18,8 @@ public final class EdgeData {
          * <pre>
          * edge table count
          * </pre>
+         *
+         * @return if there is a count
          */
         boolean hasCount();
 
@@ -27,6 +29,8 @@ public final class EdgeData {
          * <pre>
          * edge table count
          * </pre>
+         *
+         * @return the count
          */
         long getCount();
 
@@ -36,6 +40,8 @@ public final class EdgeData {
          * <pre>
          * hour activity array (length 24)
          * </pre>
+         *
+         * @return the list of hours
          */
         java.util.List<java.lang.Long> getHoursList();
 
@@ -45,6 +51,8 @@ public final class EdgeData {
          * <pre>
          * hour activity array (length 24)
          * </pre>
+         *
+         * @return the count of hours
          */
         int getHoursCount();
 
@@ -54,6 +62,11 @@ public final class EdgeData {
          * <pre>
          * hour activity array (length 24)
          * </pre>
+         *
+         * @param index
+         *            the index
+         *
+         * @return the hours at the specific index
          */
         long getHours(int index);
 
@@ -65,6 +78,8 @@ public final class EdgeData {
          * packed means it won't appear in serialized data
          * that doesn't contain any hours fields.
          * </pre>
+         *
+         * @return list of durations
          */
         java.util.List<java.lang.Long> getDurationList();
 
@@ -76,6 +91,8 @@ public final class EdgeData {
          * packed means it won't appear in serialized data
          * that doesn't contain any hours fields.
          * </pre>
+         *
+         * @return duration count
          */
         int getDurationCount();
 
@@ -87,6 +104,11 @@ public final class EdgeData {
          * packed means it won't appear in serialized data
          * that doesn't contain any hours fields.
          * </pre>
+         *
+         * @param index
+         *            the index
+         *
+         * @return the duration at an index
          */
         long getDuration(int index);
 
@@ -96,6 +118,8 @@ public final class EdgeData {
          * <pre>
          * Bitmask for tracking edge creation by the hour.
          * </pre>
+         *
+         * @return if there is an hour bitmask
          */
         boolean hasHourBitmask();
 
@@ -105,61 +129,85 @@ public final class EdgeData {
          * <pre>
          * Bitmask for tracking edge creation by the hour.
          * </pre>
+         *
+         * @return the hour bitmask
          */
         int getHourBitmask();
 
         /**
          * <code>optional string sourceValue = 5;</code>
+         *
+         * @return if the optional sourcevalue is set
          */
         boolean hasSourceValue();
 
         /**
          * <code>optional string sourceValue = 5;</code>
+         *
+         * @return the sourcevalue
          */
         java.lang.String getSourceValue();
 
         /**
          * <code>optional string sourceValue = 5;</code>
+         *
+         * @return the sourcevalue byte string
          */
         com.google.protobuf.ByteString getSourceValueBytes();
 
         /**
          * <code>optional string sinkValue = 6;</code>
+         *
+         * @return if there is a sinkvalue
          */
         boolean hasSinkValue();
 
         /**
          * <code>optional string sinkValue = 6;</code>
+         *
+         * @return the sinkvalue
          */
         java.lang.String getSinkValue();
 
         /**
          * <code>optional string sinkValue = 6;</code>
+         *
+         * @return the sinkvalue byte string
          */
         com.google.protobuf.ByteString getSinkValueBytes();
 
         /**
          * <code>optional string loadDate = 7;</code>
+         *
+         * @return if there is a loaddate
          */
         boolean hasLoadDate();
 
         /**
          * <code>optional string loadDate = 7;</code>
+         *
+         * @return the loaddate
          */
         java.lang.String getLoadDate();
 
         /**
          * <code>optional string loadDate = 7;</code>
+         *
+         * @return the loaddate bytestring
          */
         com.google.protobuf.ByteString getLoadDateBytes();
 
         /**
          * <code>optional bool badActivity = 8;</code>
+         *
+         * @return if there is bad activity
          */
         boolean hasBadActivity();
 
         /**
          * <code>optional bool badActivity = 8;</code>
+         *
+         * @return back activity value
          */
         boolean getBadActivity();
 
@@ -169,6 +217,8 @@ public final class EdgeData {
          * <pre>
          * a single uuid of an event that contributed to the edge
          * </pre>
+         *
+         * @return if there is a uuid for the edge value
          */
         boolean hasUuid();
 
@@ -178,6 +228,8 @@ public final class EdgeData {
          * <pre>
          * a single uuid of an event that contributed to the edge
          * </pre>
+         *
+         * @return the uuid
          */
         datawave.edge.protobuf.EdgeData.EdgeValue.UUID getUuid();
 
@@ -187,6 +239,8 @@ public final class EdgeData {
          * <pre>
          * a single uuid of an event that contributed to the edge
          * </pre>
+         *
+         * @return the uuidOrBuilder
          */
         datawave.edge.protobuf.EdgeData.EdgeValue.UUIDOrBuilder getUuidOrBuilder();
 
@@ -196,6 +250,8 @@ public final class EdgeData {
          * <pre>
          * a single uuid of an event that contributed to the edge in string format
          * </pre>
+         *
+         * @return if there is a uuidString
          */
         boolean hasUuidString();
 
@@ -205,6 +261,8 @@ public final class EdgeData {
          * <pre>
          * a single uuid of an event that contributed to the edge in string format
          * </pre>
+         *
+         * @return the uuid string
          */
         java.lang.String getUuidString();
 
@@ -214,6 +272,8 @@ public final class EdgeData {
          * <pre>
          * a single uuid of an event that contributed to the edge in string format
          * </pre>
+         *
+         * @return the uuid bytestring
          */
         com.google.protobuf.ByteString getUuidStringBytes();
     }
@@ -413,21 +473,29 @@ public final class EdgeData {
 
             /**
              * <code>required sint64 least_significant_bits = 1;</code>
+             *
+             * @return if it has least significant bits
              */
             boolean hasLeastSignificantBits();
 
             /**
              * <code>required sint64 least_significant_bits = 1;</code>
+             *
+             * @return the least significant bits
              */
             long getLeastSignificantBits();
 
             /**
              * <code>required sint64 most_significant_bits = 2;</code>
+             *
+             * @return if it has most significant bits
              */
             boolean hasMostSignificantBits();
 
             /**
              * <code>required sint64 most_significant_bits = 2;</code>
+             *
+             * @return most significant bits
              */
             long getMostSignificantBits();
         }
@@ -533,6 +601,8 @@ public final class EdgeData {
 
             /**
              * <code>required sint64 least_significant_bits = 1;</code>
+             *
+             * @return if there are least significant bits
              */
             public boolean hasLeastSignificantBits() {
                 return ((bitField0_ & 0x00000001) == 0x00000001);
@@ -540,6 +610,8 @@ public final class EdgeData {
 
             /**
              * <code>required sint64 least_significant_bits = 1;</code>
+             *
+             * @return the least significant bits
              */
             public long getLeastSignificantBits() {
                 return leastSignificantBits_;
@@ -550,6 +622,8 @@ public final class EdgeData {
 
             /**
              * <code>required sint64 most_significant_bits = 2;</code>
+             *
+             * @return if there are most significant bits
              */
             public boolean hasMostSignificantBits() {
                 return ((bitField0_ & 0x00000002) == 0x00000002);
@@ -557,6 +631,8 @@ public final class EdgeData {
 
             /**
              * <code>required sint64 most_significant_bits = 2;</code>
+             *
+             * @return the most significant bits
              */
             public long getMostSignificantBits() {
                 return mostSignificantBits_;
@@ -829,6 +905,8 @@ public final class EdgeData {
 
                 /**
                  * <code>required sint64 least_significant_bits = 1;</code>
+                 *
+                 * @return if it has least significant bits
                  */
                 public boolean hasLeastSignificantBits() {
                     return ((bitField0_ & 0x00000001) == 0x00000001);
@@ -836,6 +914,8 @@ public final class EdgeData {
 
                 /**
                  * <code>required sint64 least_significant_bits = 1;</code>
+                 *
+                 * @return the least significant bits
                  */
                 public long getLeastSignificantBits() {
                     return leastSignificantBits_;
@@ -843,6 +923,11 @@ public final class EdgeData {
 
                 /**
                  * <code>required sint64 least_significant_bits = 1;</code>
+                 *
+                 * @param value
+                 *            the value
+                 *
+                 * @return builder to set least significant bits
                  */
                 public Builder setLeastSignificantBits(long value) {
                     bitField0_ |= 0x00000001;
@@ -853,6 +938,8 @@ public final class EdgeData {
 
                 /**
                  * <code>required sint64 least_significant_bits = 1;</code>
+                 *
+                 * @return builder to clear least significant bits
                  */
                 public Builder clearLeastSignificantBits() {
                     bitField0_ = (bitField0_ & ~0x00000001);
@@ -865,6 +952,8 @@ public final class EdgeData {
 
                 /**
                  * <code>required sint64 most_significant_bits = 2;</code>
+                 *
+                 * @return if it has most significant bits
                  */
                 public boolean hasMostSignificantBits() {
                     return ((bitField0_ & 0x00000002) == 0x00000002);
@@ -872,6 +961,8 @@ public final class EdgeData {
 
                 /**
                  * <code>required sint64 most_significant_bits = 2;</code>
+                 *
+                 * @return the most significant bits
                  */
                 public long getMostSignificantBits() {
                     return mostSignificantBits_;
@@ -879,6 +970,11 @@ public final class EdgeData {
 
                 /**
                  * <code>required sint64 most_significant_bits = 2;</code>
+                 *
+                 * @param value
+                 *            the value
+                 *
+                 * @return builder to set most significant bits
                  */
                 public Builder setMostSignificantBits(long value) {
                     bitField0_ |= 0x00000002;
@@ -889,6 +985,8 @@ public final class EdgeData {
 
                 /**
                  * <code>required sint64 most_significant_bits = 2;</code>
+                 *
+                 * @return builder to clear the most significant bits
                  */
                 public Builder clearMostSignificantBits() {
                     bitField0_ = (bitField0_ & ~0x00000002);
@@ -918,6 +1016,8 @@ public final class EdgeData {
          * <pre>
          * edge table count
          * </pre>
+         *
+         * @return if it has a count
          */
         public boolean hasCount() {
             return ((bitField0_ & 0x00000001) == 0x00000001);
@@ -929,6 +1029,8 @@ public final class EdgeData {
          * <pre>
          * edge table count
          * </pre>
+         *
+         * @return the count
          */
         public long getCount() {
             return count_;
@@ -943,6 +1045,8 @@ public final class EdgeData {
          * <pre>
          * hour activity array (length 24)
          * </pre>
+         *
+         * @return the hours list
          */
         public java.util.List<java.lang.Long> getHoursList() {
             return hours_;
@@ -954,6 +1058,8 @@ public final class EdgeData {
          * <pre>
          * hour activity array (length 24)
          * </pre>
+         *
+         * @return the size of the hours list
          */
         public int getHoursCount() {
             return hours_.size();
@@ -965,6 +1071,11 @@ public final class EdgeData {
          * <pre>
          * hour activity array (length 24)
          * </pre>
+         *
+         * @param index
+         *            the index
+         *
+         * @return the hours at the index
          */
         public long getHours(int index) {
             return hours_.get(index);
@@ -983,6 +1094,8 @@ public final class EdgeData {
          * packed means it won't appear in serialized data
          * that doesn't contain any hours fields.
          * </pre>
+         *
+         * @return the duration list
          */
         public java.util.List<java.lang.Long> getDurationList() {
             return duration_;
@@ -996,6 +1109,8 @@ public final class EdgeData {
          * packed means it won't appear in serialized data
          * that doesn't contain any hours fields.
          * </pre>
+         *
+         * @return the duration count
          */
         public int getDurationCount() {
             return duration_.size();
@@ -1009,6 +1124,11 @@ public final class EdgeData {
          * packed means it won't appear in serialized data
          * that doesn't contain any hours fields.
          * </pre>
+         *
+         * @param index
+         *            the index
+         *
+         * @return the duration at the index
          */
         public long getDuration(int index) {
             return duration_.get(index);
@@ -1025,6 +1145,8 @@ public final class EdgeData {
          * <pre>
          * Bitmask for tracking edge creation by the hour.
          * </pre>
+         *
+         * @return if there is an hour bitmask
          */
         public boolean hasHourBitmask() {
             return ((bitField0_ & 0x00000002) == 0x00000002);
@@ -1036,6 +1158,8 @@ public final class EdgeData {
          * <pre>
          * Bitmask for tracking edge creation by the hour.
          * </pre>
+         *
+         * @return the hour bitmask
          */
         public int getHourBitmask() {
             return hourBitmask_;
@@ -1046,6 +1170,8 @@ public final class EdgeData {
 
         /**
          * <code>optional string sourceValue = 5;</code>
+         *
+         * @return if there is a source value
          */
         public boolean hasSourceValue() {
             return ((bitField0_ & 0x00000004) == 0x00000004);
@@ -1053,6 +1179,8 @@ public final class EdgeData {
 
         /**
          * <code>optional string sourceValue = 5;</code>
+         *
+         * @return the source value
          */
         public java.lang.String getSourceValue() {
             java.lang.Object ref = sourceValue_;
@@ -1070,6 +1198,8 @@ public final class EdgeData {
 
         /**
          * <code>optional string sourceValue = 5;</code>
+         *
+         * @return the source value byte string
          */
         public com.google.protobuf.ByteString getSourceValueBytes() {
             java.lang.Object ref = sourceValue_;
@@ -1087,6 +1217,8 @@ public final class EdgeData {
 
         /**
          * <code>optional string sinkValue = 6;</code>
+         *
+         * @return if it has sink value
          */
         public boolean hasSinkValue() {
             return ((bitField0_ & 0x00000008) == 0x00000008);
@@ -1094,6 +1226,8 @@ public final class EdgeData {
 
         /**
          * <code>optional string sinkValue = 6;</code>
+         *
+         * @return the sink value
          */
         public java.lang.String getSinkValue() {
             java.lang.Object ref = sinkValue_;
@@ -1111,6 +1245,8 @@ public final class EdgeData {
 
         /**
          * <code>optional string sinkValue = 6;</code>
+         *
+         * @return the sink value byte string
          */
         public com.google.protobuf.ByteString getSinkValueBytes() {
             java.lang.Object ref = sinkValue_;
@@ -1128,6 +1264,8 @@ public final class EdgeData {
 
         /**
          * <code>optional string loadDate = 7;</code>
+         *
+         * @return if there is a load date
          */
         public boolean hasLoadDate() {
             return ((bitField0_ & 0x00000010) == 0x00000010);
@@ -1135,6 +1273,8 @@ public final class EdgeData {
 
         /**
          * <code>optional string loadDate = 7;</code>
+         *
+         * @return the load date
          */
         public java.lang.String getLoadDate() {
             java.lang.Object ref = loadDate_;
@@ -1152,6 +1292,8 @@ public final class EdgeData {
 
         /**
          * <code>optional string loadDate = 7;</code>
+         *
+         * @return the load date byte string
          */
         public com.google.protobuf.ByteString getLoadDateBytes() {
             java.lang.Object ref = loadDate_;
@@ -1169,6 +1311,8 @@ public final class EdgeData {
 
         /**
          * <code>optional bool badActivity = 8;</code>
+         *
+         * @return if there is bad activity
          */
         public boolean hasBadActivity() {
             return ((bitField0_ & 0x00000020) == 0x00000020);
@@ -1176,6 +1320,8 @@ public final class EdgeData {
 
         /**
          * <code>optional bool badActivity = 8;</code>
+         *
+         * @return bad activity
          */
         public boolean getBadActivity() {
             return badActivity_;
@@ -1190,6 +1336,8 @@ public final class EdgeData {
          * <pre>
          * a single uuid of an event that contributed to the edge
          * </pre>
+         *
+         * @return if it has uuid
          */
         public boolean hasUuid() {
             return ((bitField0_ & 0x00000040) == 0x00000040);
@@ -1201,6 +1349,8 @@ public final class EdgeData {
          * <pre>
          * a single uuid of an event that contributed to the edge
          * </pre>
+         *
+         * @return the uuid
          */
         public datawave.edge.protobuf.EdgeData.EdgeValue.UUID getUuid() {
             return uuid_;
@@ -1212,6 +1362,8 @@ public final class EdgeData {
          * <pre>
          * a single uuid of an event that contributed to the edge
          * </pre>
+         *
+         * @return the uuid or builder
          */
         public datawave.edge.protobuf.EdgeData.EdgeValue.UUIDOrBuilder getUuidOrBuilder() {
             return uuid_;
@@ -1226,6 +1378,8 @@ public final class EdgeData {
          * <pre>
          * a single uuid of an event that contributed to the edge in string format
          * </pre>
+         *
+         * @return if there is uuid
          */
         public boolean hasUuidString() {
             return ((bitField0_ & 0x00000080) == 0x00000080);
@@ -1237,6 +1391,8 @@ public final class EdgeData {
          * <pre>
          * a single uuid of an event that contributed to the edge in string format
          * </pre>
+         *
+         * @return the uuid string
          */
         public java.lang.String getUuidString() {
             java.lang.Object ref = uuidString_;
@@ -1258,6 +1414,8 @@ public final class EdgeData {
          * <pre>
          * a single uuid of an event that contributed to the edge in string format
          * </pre>
+         *
+         * @return uuid byte string
          */
         public com.google.protobuf.ByteString getUuidStringBytes() {
             java.lang.Object ref = uuidString_;
@@ -1728,6 +1886,8 @@ public final class EdgeData {
              * <pre>
              * edge table count
              * </pre>
+             *
+             * @return if it has a count
              */
             public boolean hasCount() {
                 return ((bitField0_ & 0x00000001) == 0x00000001);
@@ -1739,6 +1899,8 @@ public final class EdgeData {
              * <pre>
              * edge table count
              * </pre>
+             *
+             * @return the count
              */
             public long getCount() {
                 return count_;
@@ -1750,6 +1912,11 @@ public final class EdgeData {
              * <pre>
              * edge table count
              * </pre>
+             *
+             * @param value
+             *            the count
+             *
+             * @return a builder to set the count
              */
             public Builder setCount(long value) {
                 bitField0_ |= 0x00000001;
@@ -1764,6 +1931,8 @@ public final class EdgeData {
              * <pre>
              * edge table count
              * </pre>
+             *
+             * @return a builder to clear the count
              */
             public Builder clearCount() {
                 bitField0_ = (bitField0_ & ~0x00000001);
@@ -1787,6 +1956,8 @@ public final class EdgeData {
              * <pre>
              * hour activity array (length 24)
              * </pre>
+             *
+             * @return the hours list
              */
             public java.util.List<java.lang.Long> getHoursList() {
                 return java.util.Collections.unmodifiableList(hours_);
@@ -1798,6 +1969,8 @@ public final class EdgeData {
              * <pre>
              * hour activity array (length 24)
              * </pre>
+             *
+             * @return the size of the hours list
              */
             public int getHoursCount() {
                 return hours_.size();
@@ -1809,6 +1982,11 @@ public final class EdgeData {
              * <pre>
              * hour activity array (length 24)
              * </pre>
+             *
+             * @param index
+             *            the index
+             *
+             * @return the hours at the index
              */
             public long getHours(int index) {
                 return hours_.get(index);
@@ -1820,6 +1998,13 @@ public final class EdgeData {
              * <pre>
              * hour activity array (length 24)
              * </pre>
+             *
+             * @param index
+             *            the index
+             * @param value
+             *            the value
+             *
+             * @return builder to set the hours a the provided index to the value provided
              */
             public Builder setHours(int index, long value) {
                 ensureHoursIsMutable();
@@ -1834,6 +2019,11 @@ public final class EdgeData {
              * <pre>
              * hour activity array (length 24)
              * </pre>
+             *
+             * @param value
+             *            the hours to add to the list
+             *
+             * @return builder to add the hours to the list
              */
             public Builder addHours(long value) {
                 ensureHoursIsMutable();
@@ -1848,6 +2038,11 @@ public final class EdgeData {
              * <pre>
              * hour activity array (length 24)
              * </pre>
+             *
+             * @param values
+             *            the values to add
+             *
+             * @return builder to add all the hours from the values parameter
              */
             public Builder addAllHours(java.lang.Iterable<? extends java.lang.Long> values) {
                 ensureHoursIsMutable();
@@ -1862,6 +2057,8 @@ public final class EdgeData {
              * <pre>
              * hour activity array (length 24)
              * </pre>
+             *
+             * @return builder to clear hours
              */
             public Builder clearHours() {
                 hours_ = java.util.Collections.emptyList();
@@ -1887,6 +2084,8 @@ public final class EdgeData {
              * packed means it won't appear in serialized data
              * that doesn't contain any hours fields.
              * </pre>
+             *
+             * @return the duration list
              */
             public java.util.List<java.lang.Long> getDurationList() {
                 return java.util.Collections.unmodifiableList(duration_);
@@ -1900,6 +2099,8 @@ public final class EdgeData {
              * packed means it won't appear in serialized data
              * that doesn't contain any hours fields.
              * </pre>
+             *
+             * @return the duration list size
              */
             public int getDurationCount() {
                 return duration_.size();
@@ -1913,6 +2114,11 @@ public final class EdgeData {
              * packed means it won't appear in serialized data
              * that doesn't contain any hours fields.
              * </pre>
+             *
+             * @param index
+             *            the index
+             *
+             * @return the duration at the index provided
              */
             public long getDuration(int index) {
                 return duration_.get(index);
@@ -1926,6 +2132,13 @@ public final class EdgeData {
              * packed means it won't appear in serialized data
              * that doesn't contain any hours fields.
              * </pre>
+             *
+             * @param index
+             *            the index
+             * @param value
+             *            the value
+             *
+             * @return builder to set the duration to a value for provided index
              */
             public Builder setDuration(int index, long value) {
                 ensureDurationIsMutable();
@@ -1942,6 +2155,11 @@ public final class EdgeData {
              * packed means it won't appear in serialized data
              * that doesn't contain any hours fields.
              * </pre>
+             *
+             * @param value
+             *            the value
+             *
+             * @return builder to add a duration to the list
              */
             public Builder addDuration(long value) {
                 ensureDurationIsMutable();
@@ -1958,6 +2176,11 @@ public final class EdgeData {
              * packed means it won't appear in serialized data
              * that doesn't contain any hours fields.
              * </pre>
+             *
+             * @param values
+             *            iterator of duration values to add
+             *
+             * @return builder to add durations from values passed in
              */
             public Builder addAllDuration(java.lang.Iterable<? extends java.lang.Long> values) {
                 ensureDurationIsMutable();
@@ -1974,6 +2197,8 @@ public final class EdgeData {
              * packed means it won't appear in serialized data
              * that doesn't contain any hours fields.
              * </pre>
+             *
+             * @return builder to clear durations
              */
             public Builder clearDuration() {
                 duration_ = java.util.Collections.emptyList();
@@ -1990,6 +2215,8 @@ public final class EdgeData {
              * <pre>
              * Bitmask for tracking edge creation by the hour.
              * </pre>
+             *
+             * @return if it has hour bitmask
              */
             public boolean hasHourBitmask() {
                 return ((bitField0_ & 0x00000008) == 0x00000008);
@@ -2001,6 +2228,8 @@ public final class EdgeData {
              * <pre>
              * Bitmask for tracking edge creation by the hour.
              * </pre>
+             *
+             * @return the hour bitmask
              */
             public int getHourBitmask() {
                 return hourBitmask_;
@@ -2012,6 +2241,11 @@ public final class EdgeData {
              * <pre>
              * Bitmask for tracking edge creation by the hour.
              * </pre>
+             *
+             * @param value
+             *            the value
+             *
+             * @return builder to set hour bitmask
              */
             public Builder setHourBitmask(int value) {
                 bitField0_ |= 0x00000008;
@@ -2026,6 +2260,8 @@ public final class EdgeData {
              * <pre>
              * Bitmask for tracking edge creation by the hour.
              * </pre>
+             *
+             * @return builder to clear hour bitmask
              */
             public Builder clearHourBitmask() {
                 bitField0_ = (bitField0_ & ~0x00000008);
@@ -2038,6 +2274,8 @@ public final class EdgeData {
 
             /**
              * <code>optional string sourceValue = 5;</code>
+             *
+             * @return if it has source value
              */
             public boolean hasSourceValue() {
                 return ((bitField0_ & 0x00000010) == 0x00000010);
@@ -2045,6 +2283,8 @@ public final class EdgeData {
 
             /**
              * <code>optional string sourceValue = 5;</code>
+             *
+             * @return the source value
              */
             public java.lang.String getSourceValue() {
                 java.lang.Object ref = sourceValue_;
@@ -2062,6 +2302,8 @@ public final class EdgeData {
 
             /**
              * <code>optional string sourceValue = 5;</code>
+             *
+             * @return source value byte string
              */
             public com.google.protobuf.ByteString getSourceValueBytes() {
                 java.lang.Object ref = sourceValue_;
@@ -2076,6 +2318,11 @@ public final class EdgeData {
 
             /**
              * <code>optional string sourceValue = 5;</code>
+             *
+             * @param value
+             *            the new source value
+             *
+             * @return builder to set the source value
              */
             public Builder setSourceValue(java.lang.String value) {
                 if (value == null) {
@@ -2089,6 +2336,8 @@ public final class EdgeData {
 
             /**
              * <code>optional string sourceValue = 5;</code>
+             *
+             * @return builder to clear source value
              */
             public Builder clearSourceValue() {
                 bitField0_ = (bitField0_ & ~0x00000010);
@@ -2099,6 +2348,11 @@ public final class EdgeData {
 
             /**
              * <code>optional string sourceValue = 5;</code>
+             *
+             * @param value
+             *            to set source value to
+             *
+             * @return builder to set source value to parameter passed in
              */
             public Builder setSourceValueBytes(com.google.protobuf.ByteString value) {
                 if (value == null) {
@@ -2114,6 +2368,8 @@ public final class EdgeData {
 
             /**
              * <code>optional string sinkValue = 6;</code>
+             *
+             * @return if there is a sink value
              */
             public boolean hasSinkValue() {
                 return ((bitField0_ & 0x00000020) == 0x00000020);
@@ -2121,6 +2377,8 @@ public final class EdgeData {
 
             /**
              * <code>optional string sinkValue = 6;</code>
+             *
+             * @return the sink value
              */
             public java.lang.String getSinkValue() {
                 java.lang.Object ref = sinkValue_;
@@ -2138,6 +2396,8 @@ public final class EdgeData {
 
             /**
              * <code>optional string sinkValue = 6;</code>
+             *
+             * @return the sink value byte string
              */
             public com.google.protobuf.ByteString getSinkValueBytes() {
                 java.lang.Object ref = sinkValue_;
@@ -2152,6 +2412,11 @@ public final class EdgeData {
 
             /**
              * <code>optional string sinkValue = 6;</code>
+             *
+             * @param value
+             *            the new sink value
+             *
+             * @return builder to set sink value
              */
             public Builder setSinkValue(java.lang.String value) {
                 if (value == null) {
@@ -2165,6 +2430,8 @@ public final class EdgeData {
 
             /**
              * <code>optional string sinkValue = 6;</code>
+             *
+             * @return builder to clear sink value
              */
             public Builder clearSinkValue() {
                 bitField0_ = (bitField0_ & ~0x00000020);
@@ -2175,6 +2442,11 @@ public final class EdgeData {
 
             /**
              * <code>optional string sinkValue = 6;</code>
+             *
+             * @param value
+             *            new sink value
+             *
+             * @return builder to set sink value to passed in parameter
              */
             public Builder setSinkValueBytes(com.google.protobuf.ByteString value) {
                 if (value == null) {
@@ -2190,6 +2462,8 @@ public final class EdgeData {
 
             /**
              * <code>optional string loadDate = 7;</code>
+             *
+             * @return if it has load date
              */
             public boolean hasLoadDate() {
                 return ((bitField0_ & 0x00000040) == 0x00000040);
@@ -2197,6 +2471,8 @@ public final class EdgeData {
 
             /**
              * <code>optional string loadDate = 7;</code>
+             *
+             * @return load date
              */
             public java.lang.String getLoadDate() {
                 java.lang.Object ref = loadDate_;
@@ -2214,6 +2490,8 @@ public final class EdgeData {
 
             /**
              * <code>optional string loadDate = 7;</code>
+             *
+             * @return load date byte string
              */
             public com.google.protobuf.ByteString getLoadDateBytes() {
                 java.lang.Object ref = loadDate_;
@@ -2228,6 +2506,11 @@ public final class EdgeData {
 
             /**
              * <code>optional string loadDate = 7;</code>
+             *
+             * @param value
+             *            the new load date
+             *
+             * @return builder to set load date to passed in parameter
              */
             public Builder setLoadDate(java.lang.String value) {
                 if (value == null) {
@@ -2241,6 +2524,8 @@ public final class EdgeData {
 
             /**
              * <code>optional string loadDate = 7;</code>
+             *
+             * @return builder to clear the load date
              */
             public Builder clearLoadDate() {
                 bitField0_ = (bitField0_ & ~0x00000040);
@@ -2251,6 +2536,11 @@ public final class EdgeData {
 
             /**
              * <code>optional string loadDate = 7;</code>
+             *
+             * @param value
+             *            the new load date value
+             *
+             * @return builder to set the load date to the passed in parameter
              */
             public Builder setLoadDateBytes(com.google.protobuf.ByteString value) {
                 if (value == null) {
@@ -2266,6 +2556,8 @@ public final class EdgeData {
 
             /**
              * <code>optional bool badActivity = 8;</code>
+             *
+             * @return if it has bad activity
              */
             public boolean hasBadActivity() {
                 return ((bitField0_ & 0x00000080) == 0x00000080);
@@ -2273,6 +2565,8 @@ public final class EdgeData {
 
             /**
              * <code>optional bool badActivity = 8;</code>
+             *
+             * @return bad activity indicator
              */
             public boolean getBadActivity() {
                 return badActivity_;
@@ -2280,6 +2574,11 @@ public final class EdgeData {
 
             /**
              * <code>optional bool badActivity = 8;</code>
+             *
+             * @param value
+             *            bad activity flag
+             *
+             * @return builder to set bad activity to passed in paramter
              */
             public Builder setBadActivity(boolean value) {
                 bitField0_ |= 0x00000080;
@@ -2290,6 +2589,8 @@ public final class EdgeData {
 
             /**
              * <code>optional bool badActivity = 8;</code>
+             *
+             * @return builder to clear bad activity indicator
              */
             public Builder clearBadActivity() {
                 bitField0_ = (bitField0_ & ~0x00000080);
@@ -2307,6 +2608,8 @@ public final class EdgeData {
              * <pre>
              * a single uuid of an event that contributed to the edge
              * </pre>
+             *
+             * @return if it has uuid
              */
             public boolean hasUuid() {
                 return ((bitField0_ & 0x00000100) == 0x00000100);
@@ -2318,6 +2621,8 @@ public final class EdgeData {
              * <pre>
              * a single uuid of an event that contributed to the edge
              * </pre>
+             *
+             * @return the uuid
              */
             public datawave.edge.protobuf.EdgeData.EdgeValue.UUID getUuid() {
                 if (uuidBuilder_ == null) {
@@ -2333,6 +2638,11 @@ public final class EdgeData {
              * <pre>
              * a single uuid of an event that contributed to the edge
              * </pre>
+             *
+             * @param value
+             *            the new uuid
+             *
+             * @return builder to set the new uuid
              */
             public Builder setUuid(datawave.edge.protobuf.EdgeData.EdgeValue.UUID value) {
                 if (uuidBuilder_ == null) {
@@ -2354,6 +2664,11 @@ public final class EdgeData {
              * <pre>
              * a single uuid of an event that contributed to the edge
              * </pre>
+             *
+             * @param builderForValue
+             *            the new uuid
+             *
+             * @return builder to set uuid to new value
              */
             public Builder setUuid(datawave.edge.protobuf.EdgeData.EdgeValue.UUID.Builder builderForValue) {
                 if (uuidBuilder_ == null) {
@@ -2372,6 +2687,11 @@ public final class EdgeData {
              * <pre>
              * a single uuid of an event that contributed to the edge
              * </pre>
+             *
+             * @param value
+             *            uuid to merge in
+             *
+             * @return builder to merge in new uuid
              */
             public Builder mergeUuid(datawave.edge.protobuf.EdgeData.EdgeValue.UUID value) {
                 if (uuidBuilder_ == null) {
@@ -2394,6 +2714,8 @@ public final class EdgeData {
              * <pre>
              * a single uuid of an event that contributed to the edge
              * </pre>
+             *
+             * @return builder to clear uuid
              */
             public Builder clearUuid() {
                 if (uuidBuilder_ == null) {
@@ -2412,6 +2734,8 @@ public final class EdgeData {
              * <pre>
              * a single uuid of an event that contributed to the edge
              * </pre>
+             *
+             * @return builder to build uuid
              */
             public datawave.edge.protobuf.EdgeData.EdgeValue.UUID.Builder getUuidBuilder() {
                 bitField0_ |= 0x00000100;
@@ -2425,6 +2749,8 @@ public final class EdgeData {
              * <pre>
              * a single uuid of an event that contributed to the edge
              * </pre>
+             *
+             * @return uuidorbuilder
              */
             public datawave.edge.protobuf.EdgeData.EdgeValue.UUIDOrBuilder getUuidOrBuilder() {
                 if (uuidBuilder_ != null) {
@@ -2440,6 +2766,8 @@ public final class EdgeData {
              * <pre>
              * a single uuid of an event that contributed to the edge
              * </pre>
+             *
+             * @return uuidfieldbuilder
              */
             private com.google.protobuf.SingleFieldBuilder<datawave.edge.protobuf.EdgeData.EdgeValue.UUID,datawave.edge.protobuf.EdgeData.EdgeValue.UUID.Builder,datawave.edge.protobuf.EdgeData.EdgeValue.UUIDOrBuilder> getUuidFieldBuilder() {
                 if (uuidBuilder_ == null) {
@@ -2458,6 +2786,8 @@ public final class EdgeData {
              * <pre>
              * a single uuid of an event that contributed to the edge in string format
              * </pre>
+             *
+             * @return if it has uuid
              */
             public boolean hasUuidString() {
                 return ((bitField0_ & 0x00000200) == 0x00000200);
@@ -2469,6 +2799,8 @@ public final class EdgeData {
              * <pre>
              * a single uuid of an event that contributed to the edge in string format
              * </pre>
+             *
+             * @return uuid
              */
             public java.lang.String getUuidString() {
                 java.lang.Object ref = uuidString_;
@@ -2490,6 +2822,8 @@ public final class EdgeData {
              * <pre>
              * a single uuid of an event that contributed to the edge in string format
              * </pre>
+             *
+             * @return uuid byte string
              */
             public com.google.protobuf.ByteString getUuidStringBytes() {
                 java.lang.Object ref = uuidString_;
@@ -2508,6 +2842,11 @@ public final class EdgeData {
              * <pre>
              * a single uuid of an event that contributed to the edge in string format
              * </pre>
+             *
+             * @param value
+             *            new uuid
+             *
+             * @return builder to set uuid to passed in value
              */
             public Builder setUuidString(java.lang.String value) {
                 if (value == null) {
@@ -2525,6 +2864,8 @@ public final class EdgeData {
              * <pre>
              * a single uuid of an event that contributed to the edge in string format
              * </pre>
+             *
+             * @return builder to clear uuid
              */
             public Builder clearUuidString() {
                 bitField0_ = (bitField0_ & ~0x00000200);
@@ -2539,6 +2880,11 @@ public final class EdgeData {
              * <pre>
              * a single uuid of an event that contributed to the edge in string format
              * </pre>
+             *
+             * @param value
+             *            new uuid
+             *
+             * @return builder to set the uuid
              */
             public Builder setUuidStringBytes(com.google.protobuf.ByteString value) {
                 if (value == null) {

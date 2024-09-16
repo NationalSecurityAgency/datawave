@@ -1,11 +1,11 @@
 package datawave.core.iterators;
 
 import static datawave.query.Constants.NULL;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.util.AbstractMap.SimpleEntry;
@@ -23,7 +23,7 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.io.Text;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Lists;
@@ -32,13 +32,13 @@ import com.google.common.collect.Sets;
 
 import datawave.query.iterator.SortedListKeyValueIterator;
 
-public class TermFrequencyIteratorTest {
+class TermFrequencyIteratorTest {
 
     private final String lowers = "abcdefghijklmnopqrstuvwxyz";
     private final String uppers = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
     @Test
-    public void testDocRange_singleKey_parent() throws IOException {
+    void testDocRange_singleKey_parent() throws IOException {
         Key start = new Key("20200314_0", "tf", "datatype\0uid3");
         Key end = new Key("20200314_0", "tf", "datatype\0uid3\uffff");
         Range r = new Range(start, false, end, true);
@@ -62,7 +62,7 @@ public class TermFrequencyIteratorTest {
     }
 
     @Test
-    public void testDocRange_singleKey_parent_multiField() throws IOException {
+    void testDocRange_singleKey_parent_multiField() throws IOException {
         Key start = new Key("20200314_0", "tf", "datatype\0uid3");
         Key end = new Key("20200314_0", "tf", "datatype\0uid3\uffff");
         Range r = new Range(start, false, end, true);
@@ -89,7 +89,7 @@ public class TermFrequencyIteratorTest {
     }
 
     @Test
-    public void testDocRange_singleKey_child() throws IOException {
+    void testDocRange_singleKey_child() throws IOException {
         Key start = new Key("20200314_0", "tf", "datatype\0uid3");
         Key end = new Key("20200314_0", "tf", "datatype\0uid3\uffff");
         Range r = new Range(start, false, end, true);
@@ -113,7 +113,7 @@ public class TermFrequencyIteratorTest {
     }
 
     @Test
-    public void testDocRange_singleKey_child_multiField() throws IOException {
+    void testDocRange_singleKey_child_multiField() throws IOException {
         Key start = new Key("20200314_0", "tf", "datatype\0uid3");
         Key end = new Key("20200314_0", "tf", "datatype\0uid3\uffff");
         Range r = new Range(start, false, end, true);
@@ -140,7 +140,7 @@ public class TermFrequencyIteratorTest {
     }
 
     @Test
-    public void testDocRange_minMaxKeys() throws IOException {
+    void testDocRange_minMaxKeys() throws IOException {
         Key start = new Key("20200314_0", "tf", "datatype\0uid0");
         Key end = new Key("20200314_0", "tf", "datatype\0uid0.1\uffff");
         Range r = new Range(start, false, end, true);
@@ -165,7 +165,7 @@ public class TermFrequencyIteratorTest {
     }
 
     @Test
-    public void testDocRange_rotatingChildKeys() throws IOException {
+    void testDocRange_rotatingChildKeys() throws IOException {
         Key start = new Key("20200314_0", "tf", "datatype\0uid0");
         Key end = new Key("20200314_0", "tf", "datatype\0uid0\uffff");
         Range r = new Range(start, false, end, true);
@@ -198,7 +198,7 @@ public class TermFrequencyIteratorTest {
     }
 
     @Test
-    public void testParentFirstChildAggregation() throws IOException {
+    void testParentFirstChildAggregation() throws IOException {
         Key start = new Key("20200314_0", "tf", "datatype\0uid0");
         Key end = new Key("20200314_0", "tf", "datatype\0uid0.1\uffff");
         Range r = new Range(start, false, end, true);
@@ -223,7 +223,7 @@ public class TermFrequencyIteratorTest {
     }
 
     @Test
-    public void testFullScanRange_singleKey_first() throws IOException {
+    void testFullScanRange_singleKey_first() throws IOException {
         Key start = new Key("20200314_0", "tf", "datatype\0uid0");
         Key end = new Key("20200314_0", "tf", "datatype\0uid9.9\uffff");
         Range r = new Range(start, false, end, true);
@@ -247,7 +247,7 @@ public class TermFrequencyIteratorTest {
     }
 
     @Test
-    public void testFullScanRange_singleKey_middle() throws IOException {
+    void testFullScanRange_singleKey_middle() throws IOException {
         Key start = new Key("20200314_0", "tf", "datatype\0uid0");
         Key end = new Key("20200314_0", "tf", "datatype\0uid9.9\uffff");
         Range r = new Range(start, false, end, true);
@@ -271,7 +271,7 @@ public class TermFrequencyIteratorTest {
     }
 
     @Test
-    public void testFullScanRange_minMaxKeys() throws IOException {
+    void testFullScanRange_minMaxKeys() throws IOException {
         Key start = new Key("20200314_0", "tf", "datatype\0uid0");
         Key end = new Key("20200314_0", "tf", "datatype\0uid9.9\uffff");
         Range r = new Range(start, false, end, true);
@@ -296,7 +296,7 @@ public class TermFrequencyIteratorTest {
     }
 
     @Test
-    public void testFullScanRange_rotatingSingleKeyPerParent() throws IOException {
+    void testFullScanRange_rotatingSingleKeyPerParent() throws IOException {
         Key start = new Key("20200314_0", "tf", "datatype\0uid0");
         Key end = new Key("20200314_0", "tf", "datatype\0uid9.9\uffff");
         Range r = new Range(start, false, end, true);
@@ -330,7 +330,7 @@ public class TermFrequencyIteratorTest {
 
     // Roll through every field in the search space and assert proper hit count
     @Test
-    public void testSearchEveryField() throws IOException {
+    void testSearchEveryField() throws IOException {
         // Full scan range
         Key start = new Key("20200314_0", "tf", "datatype\0uid0");
         Key end = new Key("20200314_0", "tf", "datatype\0uid9.9\uffff");
@@ -365,12 +365,12 @@ public class TermFrequencyIteratorTest {
                 hits.add(tfIter.getTopKey());
                 tfIter.next();
             }
-            assertEquals("Expected to get 20 hits for field " + field + "but was " + hits.size(), 20, hits.size());
+            assertEquals(20, hits.size(), "Expected to get 20 hits for field " + field + "but was " + hits.size());
         }
     }
 
     @Test
-    public void testGetNextSeekRange() throws IOException {
+    void testGetNextSeekRange() throws IOException {
         SortedKeyValueIterator<Key,Value> tfIter = buildIterAcrossValuesWithNulls();
         Multimap<String,String> fieldValues = buildFieldValues("FIELD_A", "value_c", "value_d");
 
@@ -399,7 +399,7 @@ public class TermFrequencyIteratorTest {
     }
 
     @Test
-    public void testTreeSetHigher() {
+    void testTreeSetHigher() {
         TreeSet<String> values = Sets.newTreeSet(Lists.newArrayList("value_a", "value_b", "value_c"));
         //  @formatter:off
         assertAll(
@@ -413,7 +413,7 @@ public class TermFrequencyIteratorTest {
     }
 
     @Test
-    public void testGetDistance() {
+    void testGetDistance() {
         TermFrequencyIterator iter = new TermFrequencyIterator();
         //  @formatter:off
         assertAll(
@@ -501,7 +501,7 @@ public class TermFrequencyIteratorTest {
     }
 
     @Test
-    public void testGetValueFromParts() {
+    void testGetValueFromParts() {
         // CQ = datatype\0uid\0fieldValue\0fieldName
         TermFrequencyIterator iter = new TermFrequencyIterator();
 

@@ -3,6 +3,7 @@ package datawave.webservice.query.model;
 import java.security.Principal;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -50,14 +51,14 @@ import org.jboss.resteasy.annotations.GZIP;
 import com.google.common.collect.Sets;
 
 import datawave.annotation.Required;
+import datawave.core.common.cache.AccumuloTableCache;
+import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.interceptor.RequiredInterceptor;
 import datawave.interceptor.ResponseInterceptor;
 import datawave.query.model.FieldMapping;
 import datawave.query.model.ModelKeyParser;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.util.ScannerHelper;
-import datawave.webservice.common.cache.AccumuloTableCache;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.webservice.common.exception.NotFoundException;
 import datawave.webservice.common.exception.PreConditionFailedException;
@@ -151,7 +152,7 @@ public class ModelBean {
         HashSet<String> modelNames = new HashSet<>();
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            client = connectionFactory.getClient(AccumuloConnectionFactory.Priority.LOW, trackingMap);
+            client = connectionFactory.getClient(getCurrentUserDN(), getCurrentProxyServers(), AccumuloConnectionFactory.Priority.LOW, trackingMap);
             try (Scanner scanner = ScannerHelper.createScanner(client, this.checkModelTableName(modelTableName), cbAuths)) {
                 for (Entry<Key,Value> entry : scanner) {
                     String colf = entry.getKey().getColumnFamily().toString();
@@ -354,7 +355,7 @@ public class ModelBean {
         AccumuloClient client = null;
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            client = connectionFactory.getClient(AccumuloConnectionFactory.Priority.LOW, trackingMap);
+            client = connectionFactory.getClient(getCurrentUserDN(), getCurrentProxyServers(), AccumuloConnectionFactory.Priority.LOW, trackingMap);
             try (Scanner scanner = ScannerHelper.createScanner(client, this.checkModelTableName(modelTableName), cbAuths)) {
                 IteratorSetting cfg = new IteratorSetting(21, "colfRegex", RegExFilter.class.getName());
                 cfg.addOption(RegExFilter.COLF_REGEX, "^" + name + "(\\x00.*)?");
@@ -422,7 +423,7 @@ public class ModelBean {
         String tableName = this.checkModelTableName(modelTableName);
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            client = connectionFactory.getClient(AccumuloConnectionFactory.Priority.LOW, trackingMap);
+            client = connectionFactory.getClient(getCurrentUserDN(), getCurrentProxyServers(), AccumuloConnectionFactory.Priority.LOW, trackingMap);
             writer = client.createBatchWriter(tableName, new BatchWriterConfig().setMaxLatency(BATCH_WRITER_MAX_LATENCY, TimeUnit.MILLISECONDS)
                             .setMaxMemory(BATCH_WRITER_MAX_MEMORY).setMaxWriteThreads(BATCH_WRITER_MAX_THREADS));
             for (FieldMapping mapping : model.getFields()) {
@@ -453,7 +454,7 @@ public class ModelBean {
                 }
             }
         }
-        cache.reloadCache(tableName);
+        cache.reloadTableCache(tableName);
         return response;
     }
 
@@ -495,7 +496,7 @@ public class ModelBean {
         String tableName = this.checkModelTableName(modelTableName);
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            client = connectionFactory.getClient(AccumuloConnectionFactory.Priority.LOW, trackingMap);
+            client = connectionFactory.getClient(getCurrentUserDN(), getCurrentProxyServers(), AccumuloConnectionFactory.Priority.LOW, trackingMap);
             writer = client.createBatchWriter(tableName, new BatchWriterConfig().setMaxLatency(BATCH_WRITER_MAX_LATENCY, TimeUnit.MILLISECONDS)
                             .setMaxMemory(BATCH_WRITER_MAX_MEMORY).setMaxWriteThreads(BATCH_WRITER_MAX_THREADS));
             for (FieldMapping mapping : model.getFields()) {
@@ -527,7 +528,7 @@ public class ModelBean {
             }
         }
         if (reloadCache)
-            cache.reloadCache(tableName);
+            cache.reloadTableCache(tableName);
         return response;
     }
 
@@ -543,4 +544,28 @@ public class ModelBean {
         else
             return tableName;
     }
+
+    public String getCurrentUserDN() {
+
+        String currentUserDN = null;
+        Principal p = ctx.getCallerPrincipal();
+
+        if (p != null && p instanceof DatawavePrincipal) {
+            currentUserDN = ((DatawavePrincipal) p).getUserDN().subjectDN();
+        }
+
+        return currentUserDN;
+    }
+
+    public Collection<String> getCurrentProxyServers() {
+        List<String> currentProxyServers = null;
+        Principal p = ctx.getCallerPrincipal();
+
+        if (p != null && p instanceof DatawavePrincipal) {
+            currentProxyServers = ((DatawavePrincipal) p).getProxyServers();
+        }
+
+        return currentProxyServers;
+    }
+
 }

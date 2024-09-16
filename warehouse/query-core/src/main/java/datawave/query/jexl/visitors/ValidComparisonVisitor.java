@@ -1,26 +1,27 @@
 package datawave.query.jexl.visitors;
 
-import org.apache.commons.jexl2.parser.ASTAdditiveNode;
-import org.apache.commons.jexl2.parser.ASTAssignment;
-import org.apache.commons.jexl2.parser.ASTDivNode;
-import org.apache.commons.jexl2.parser.ASTEQNode;
-import org.apache.commons.jexl2.parser.ASTERNode;
-import org.apache.commons.jexl2.parser.ASTFalseNode;
-import org.apache.commons.jexl2.parser.ASTFunctionNode;
-import org.apache.commons.jexl2.parser.ASTGENode;
-import org.apache.commons.jexl2.parser.ASTGTNode;
-import org.apache.commons.jexl2.parser.ASTLENode;
-import org.apache.commons.jexl2.parser.ASTLTNode;
-import org.apache.commons.jexl2.parser.ASTMethodNode;
-import org.apache.commons.jexl2.parser.ASTModNode;
-import org.apache.commons.jexl2.parser.ASTMulNode;
-import org.apache.commons.jexl2.parser.ASTNENode;
-import org.apache.commons.jexl2.parser.ASTNRNode;
-import org.apache.commons.jexl2.parser.ASTNullLiteral;
-import org.apache.commons.jexl2.parser.ASTNumberLiteral;
-import org.apache.commons.jexl2.parser.ASTStringLiteral;
-import org.apache.commons.jexl2.parser.ASTTrueNode;
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ASTAddNode;
+import org.apache.commons.jexl3.parser.ASTAssignment;
+import org.apache.commons.jexl3.parser.ASTDivNode;
+import org.apache.commons.jexl3.parser.ASTEQNode;
+import org.apache.commons.jexl3.parser.ASTERNode;
+import org.apache.commons.jexl3.parser.ASTFalseNode;
+import org.apache.commons.jexl3.parser.ASTFunctionNode;
+import org.apache.commons.jexl3.parser.ASTGENode;
+import org.apache.commons.jexl3.parser.ASTGTNode;
+import org.apache.commons.jexl3.parser.ASTLENode;
+import org.apache.commons.jexl3.parser.ASTLTNode;
+import org.apache.commons.jexl3.parser.ASTMethodNode;
+import org.apache.commons.jexl3.parser.ASTModNode;
+import org.apache.commons.jexl3.parser.ASTMulNode;
+import org.apache.commons.jexl3.parser.ASTNENode;
+import org.apache.commons.jexl3.parser.ASTNRNode;
+import org.apache.commons.jexl3.parser.ASTNullLiteral;
+import org.apache.commons.jexl3.parser.ASTNumberLiteral;
+import org.apache.commons.jexl3.parser.ASTStringLiteral;
+import org.apache.commons.jexl3.parser.ASTSubNode;
+import org.apache.commons.jexl3.parser.ASTTrueNode;
+import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.lang3.mutable.MutableInt;
 
 import datawave.query.exceptions.DatawaveFatalQueryException;
@@ -48,7 +49,13 @@ public class ValidComparisonVisitor extends BaseVisitor {
     }
 
     @Override
-    public Object visit(ASTAdditiveNode node, Object data) {
+    public Object visit(ASTAddNode node, Object data) {
+        // not concerned with literals for additive nodes
+        return data;
+    }
+
+    @Override
+    public Object visit(ASTSubNode node, Object data) {
         // not concerned with literals for additive nodes
         return data;
     }

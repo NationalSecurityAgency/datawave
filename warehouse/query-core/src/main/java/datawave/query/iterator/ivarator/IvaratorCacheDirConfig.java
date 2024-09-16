@@ -1,5 +1,6 @@
 package datawave.query.iterator.ivarator;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -14,7 +15,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
-public class IvaratorCacheDirConfig {
+public class IvaratorCacheDirConfig implements Serializable {
     private static final Logger log = Logger.getLogger(IvaratorCacheDir.class);
 
     public static final int DEFAULT_PRIORITY = Integer.MAX_VALUE;
@@ -24,23 +25,23 @@ public class IvaratorCacheDirConfig {
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
     // the base path for caching ivarator output for this filesystem
-    final protected String basePathURI;
+    protected String basePathURI;
 
     // a number >= 0 used to determine the order in which ivarator cache dirs are used (ascending order)
-    final protected int priority;
+    protected int priority;
 
     // the minimum amount of available storage required to use this filesystem
-    final protected long minAvailableStorageMiB;
+    protected long minAvailableStorageMiB;
 
     // the minimum percent of available storage required to use this filesystem
-    final protected double minAvailableStoragePercent;
+    protected double minAvailableStoragePercent;
 
     static {
         objectMapper.configure(SerializationFeature.WRITE_SINGLE_ELEM_ARRAYS_UNWRAPPED, true);
         objectMapper.configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true);
     }
 
-    protected IvaratorCacheDirConfig() {
+    private IvaratorCacheDirConfig() {
         this(null);
     }
 
@@ -93,16 +94,32 @@ public class IvaratorCacheDirConfig {
         return basePathURI;
     }
 
+    public void setBasePathURI(String basePathURI) {
+        this.basePathURI = basePathURI;
+    }
+
     public int getPriority() {
         return priority;
+    }
+
+    public void setPriority(int priority) {
+        this.priority = priority;
     }
 
     public long getMinAvailableStorageMiB() {
         return minAvailableStorageMiB;
     }
 
+    public void setMinAvailableStorageMiB(long minAvailableStorageMiB) {
+        this.minAvailableStorageMiB = minAvailableStorageMiB;
+    }
+
     public double getMinAvailableStoragePercent() {
         return minAvailableStoragePercent;
+    }
+
+    public void setMinAvailableStoragePercent(double minAvailableStoragePercent) {
+        this.minAvailableStoragePercent = minAvailableStoragePercent;
     }
 
     public static String toJson(IvaratorCacheDirConfig ivaratorCacheDirConfig) throws JsonProcessingException {

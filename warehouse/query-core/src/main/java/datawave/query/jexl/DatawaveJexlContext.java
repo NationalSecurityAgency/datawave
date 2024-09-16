@@ -2,23 +2,32 @@ package datawave.query.jexl;
 
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.TreeSet;
 
-import org.apache.commons.jexl2.MapContext;
+import org.apache.commons.jexl3.MapContext;
 
 import datawave.query.collections.FunctionalSet;
 
 public class DatawaveJexlContext extends MapContext {
 
     private final Comparator<?> valueComparator;
+    private final Map<String,Object> map;
 
     public DatawaveJexlContext() {
-        this.valueComparator = null;
+        this(new HashMap<>(), null);
     }
 
     public DatawaveJexlContext(Comparator<?> comparator) {
-        this.valueComparator = comparator;
+        this(new HashMap<>(), comparator);
+    }
+
+    private DatawaveJexlContext(Map<String,Object> map, Comparator<?> valueComparator) {
+        super(map);
+        this.map = map;
+        this.valueComparator = valueComparator;
     }
 
     /**

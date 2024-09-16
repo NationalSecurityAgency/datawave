@@ -68,7 +68,7 @@ import datawave.util.TextUtil;
  * This class creates the following Mutations or Key/Values in addition to those created by the {@link ShardedDataTypeHandler}: <br>
  * <br>
  * <table border="1">
- * <caption></caption>
+ * <caption>ExtendedContentIndexingColumnBased</caption>
  * <tr>
  * <th>Schema Type</th>
  * <th>Use</th>

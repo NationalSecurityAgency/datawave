@@ -24,6 +24,11 @@ import datawave.data.type.NumberType;
 import datawave.data.type.OneToManyNormalizerType;
 import datawave.data.type.Type;
 import datawave.data.type.util.Geometry;
+import datawave.ingest.data.config.NormalizedFieldAndValue;
+import datawave.ingest.mapreduce.handler.shard.content.BoundedOffsetQueue;
+import datawave.ingest.mapreduce.handler.shard.content.OffsetQueue;
+import datawave.ingest.mapreduce.handler.shard.content.TermAndZone;
+import datawave.ingest.protobuf.TermWeight;
 import datawave.ingest.protobuf.Uid;
 import datawave.query.QueryTestTableHelper;
 import datawave.util.TableName;
@@ -31,7 +36,7 @@ import datawave.util.TableName;
 public class WiseGuysIngest {
 
     public enum WhatKindaRange {
-        SHARD, DOCUMENT;
+        SHARD, DOCUMENT
     }
 
     private static final Type<?> lcNoDiacriticsType = new LcNoDiacriticsType();
@@ -45,30 +50,36 @@ public class WiseGuysIngest {
     protected static final String shard = date + "_0";
     protected static final ColumnVisibility columnVisibility = new ColumnVisibility("ALL");
     protected static final Value emptyValue = new Value(new byte[0]);
-    protected static final long timeStamp = 1356998400000l;
+    protected static final long timeStamp = 1356998400000L;
 
     public static final String corleoneUID = UID.builder().newId("Corleone".getBytes(), (Date) null).toString();
     public static final String corleoneChildUID = UID.builder().newId("Corleone".getBytes(), (Date) null, "1").toString();
     public static final String sopranoUID = UID.builder().newId("Soprano".toString().getBytes(), (Date) null).toString();
     public static final String caponeUID = UID.builder().newId("Capone".toString().getBytes(), (Date) null).toString();
 
-    protected static String normalizeColVal(Map.Entry<String,String> colVal) throws Exception {
-        if ("FROM_ADDRESS".equals(colVal.getKey()) || "TO_ADDRESS".equals(colVal.getKey())) {
-            return ipAddressType.normalize(colVal.getValue());
-        } else {
-            return lcNoDiacriticsType.normalize(colVal.getValue());
+    protected static String normalizeColVal(Map.Entry<String,String> colVal) {
+        switch (colVal.getKey()) {
+            case "FROM_ADDRESS":
+            case "TO_ADDRESS":
+                return ipAddressType.normalize(colVal.getValue());
+            default:
+                return lcNoDiacriticsType.normalize(colVal.getValue());
         }
     }
 
     protected static String normalizerForColumn(String column) {
-        if ("AGE".equals(column) || "MAGIC".equals(column) || "ETA".equals(column)) {
-            return numberType.getClass().getName();
-        } else if ("FROM_ADDRESS".equals(column) || "TO_ADDRESS".equals(column)) {
-            return ipAddressType.getClass().getName();
-        } else if ("GEO".equals(column)) {
-            return geoType.getClass().getName();
-        } else {
-            return lcNoDiacriticsType.getClass().getName();
+        switch (column) {
+            case "AGE":
+            case "MAGIC":
+            case "ETA":
+                return numberType.getClass().getName();
+            case "FROM_ADDRESS":
+            case "TO_ADDRESS":
+                return ipAddressType.getClass().getName();
+            case "GEO":
+                return geoType.getClass().getName();
+            default:
+                return lcNoDiacriticsType.getClass().getName();
         }
     }
 
@@ -993,13 +1004,25 @@ public class WiseGuysIngest {
         Mutation fi = new Mutation(shard);
         fi.put("fi\u0000" + field.toUpperCase(), lcNoDiacriticsType.normalize(phrase) + "\u0000" + datatype + "\u0000" + uid, columnVisibility, timeStamp,
                         emptyValue);
-
+        OffsetQueue<Integer> tokenOffsetCache = new BoundedOffsetQueue<>(500);
+        int i = 0;
         String[] tokens = phrase.split(" ");
         for (String token : tokens) {
             fi.put("fi\u0000" + field.toUpperCase(), lcNoDiacriticsType.normalize(token) + "\u0000" + datatype + "\u0000" + uid, columnVisibility, timeStamp,
                             emptyValue);
-            fi.put("tf", datatype + "\u0000" + uid + "\u0000" + lcNoDiacriticsType.normalize(token) + "\u0000" + field, columnVisibility, timeStamp,
-                            emptyValue);
+            tokenOffsetCache.addOffset(new TermAndZone(token, field.toUpperCase()), i);
+
+            i++;
+        }
+        for (BoundedOffsetQueue.OffsetList<Integer> offsets : tokenOffsetCache.offsets()) {
+            NormalizedFieldAndValue nfv = new NormalizedFieldAndValue(offsets.termAndZone.zone, offsets.termAndZone.term);
+            TermWeight.Info.Builder builder = TermWeight.Info.newBuilder();
+            for (Integer offset : offsets.offsets) {
+                builder.addTermOffset(offset);
+            }
+            Value value = new Value(builder.build().toByteArray());
+            fi.put("tf", datatype + "\u0000" + uid + "\u0000" + lcNoDiacriticsType.normalize(nfv.getIndexedFieldValue()) + "\u0000" + nfv.getIndexedFieldName(),
+                            columnVisibility, timeStamp, value);
         }
         bw.addMutation(fi);
     }

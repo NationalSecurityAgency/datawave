@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.accumulo.core.client.IteratorSetting;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.Sets;

@@ -4,6 +4,8 @@ import java.util.Map;
 
 import javax.ws.rs.core.MultivaluedMap;
 
+import org.springframework.util.MultiValueMap;
+
 /**
  * A utility to extract parameters from a REST call and convert them, as necessary, into parameters that are required by the auditor.
  */
@@ -16,7 +18,7 @@ public interface AuditParameterBuilder {
      *            the query parameters
      * @return validated parameters
      */
-    Map<String,String> convertAndValidate(MultivaluedMap<String,String> queryParameters);
+    Map<String,String> convertAndValidate(MultiValueMap<String,String> queryParameters);
 
     /**
      * Builds validated audit parameters for a direct call to the audit service. That is, the parameters passed in are expected to be those used by the audit

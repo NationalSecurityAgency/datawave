@@ -40,6 +40,8 @@ public abstract class EventBase<T,F extends FieldBase<F>> implements HasMarkings
     /**
      * Get the approximate size of this event in bytes. Used by the ObjectSizeOf mechanism in the webservice. Throws an exception if the local size was not set
      * to allow the ObjectSizeOf mechanism to do its thang.
+     *
+     * @return the size in bytes
      */
     public abstract long sizeInBytes();
 

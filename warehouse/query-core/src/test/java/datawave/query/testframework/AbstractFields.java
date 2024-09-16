@@ -20,6 +20,7 @@ public abstract class AbstractFields implements FieldConfig {
     private final Set<String> multivalueFields = new HashSet<>();
     private final Collection<Set<String>> compositeFields = new HashSet<>();
     private final Collection<Set<String>> virtualFields = new HashSet<>();
+    private final Set<String> tokenizedFields = new HashSet<>();
 
     /**
      * Creates an object that will use the field settings for the Hadoop configuration.
@@ -135,6 +136,21 @@ public abstract class AbstractFields implements FieldConfig {
     @Override
     public void removeMultiValueField(String field) {
         this.multivalueFields.add(field);
+    }
+
+    @Override
+    public Set<String> getTokenizedFields() {
+        return this.tokenizedFields;
+    }
+
+    @Override
+    public void addTokenizedField(String field) {
+        this.tokenizedFields.add(field);
+    }
+
+    @Override
+    public void removeTokenizedField(String field) {
+        this.tokenizedFields.remove(field);
     }
 
     @Override

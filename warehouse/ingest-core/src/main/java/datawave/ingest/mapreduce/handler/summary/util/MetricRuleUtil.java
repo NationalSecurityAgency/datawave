@@ -14,8 +14,8 @@ public final class MetricRuleUtil {
 
     private MetricRuleUtil() {}
 
-    private static final Matcher validRule = Pattern.compile("[a-z_0-9]{3,30}").matcher("");;
-    private static final Matcher longNumericSequence = Pattern.compile(".*[\\d]{5,}.*").matcher("");;
+    private static final Matcher validRule = Pattern.compile("[a-z_0-9]{3,30}").matcher("");
+    private static final Matcher longNumericSequence = Pattern.compile(".*[\\d]{5,}.*").matcher("");
     public static final String MISSING = "MISSING";
 
     public static boolean isValidRule(String eventFieldValue) {

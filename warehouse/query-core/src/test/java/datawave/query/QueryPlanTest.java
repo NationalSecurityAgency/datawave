@@ -4,7 +4,10 @@ import static datawave.query.testframework.RawDataManager.RE_OP;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
-import org.apache.commons.jexl2.parser.ParseException;
+import java.io.IOException;
+import java.util.Collections;
+
+import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.log4j.Logger;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -18,6 +21,7 @@ import datawave.query.exceptions.DoNotPerformOptimizedQueryException;
 import datawave.query.exceptions.FullTableScansDisallowedException;
 import datawave.query.exceptions.InvalidQueryException;
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.CitiesDataType;
@@ -61,7 +65,8 @@ public class QueryPlanTest extends AbstractFunctionalQuery {
     }
 
     @Before
-    public void before() {
+    public void before() throws IOException {
+        super.querySetUp();
         // Use RunningQuery to test that query metrics being updated with plan
         this.useRunningQuery();
 
@@ -86,7 +91,8 @@ public class QueryPlanTest extends AbstractFunctionalQuery {
         String query = "species != " + "'dog'";
         String expectedPlan = "!(SPECIES == 'dog')";
         try {
-            runTest(query, query);
+            runTestQuery(Collections.emptyList(), query, this.dataManager.getShardStartEndDate()[0], this.dataManager.getShardStartEndDate()[1],
+                            Collections.emptyMap());
             fail("Expected InvalidQueryException.");
         } catch (InvalidQueryException e) {
             assertEquals(expectedPlan, metric.getPlan());
@@ -94,7 +100,7 @@ public class QueryPlanTest extends AbstractFunctionalQuery {
     }
 
     @Test
-    public void planInMetricsAfterMissingIndexException() throws Exception {
+    public void planInMetricsAfterMissingIndexExceptionFederatedQueryPlannerNE() throws Exception {
         String query = "CITY == 'london' && CITY != 'london'";
         String expectedPlan = "CITY == 'london' && !(CITY == 'london')";
         this.logic.setIndexTableName("missing");
@@ -107,13 +113,104 @@ public class QueryPlanTest extends AbstractFunctionalQuery {
     }
 
     @Test
-    public void planInMetricsAfterTableNotFoundException() throws Exception {
+    public void planInMetricsAfterMissingIndexExceptionFederatedQueryPlannerNotEq() throws Exception {
+        String query = "CITY == 'london' && !(CITY == 'london')";
+        String expectedPlan = "CITY == 'london' && !(CITY == 'london')";
+        this.logic.setIndexTableName("missing");
+        try {
+            runTest(query, query);
+            fail("Expected RuntimeException.");
+        } catch (RuntimeException e) {
+            assertEquals(expectedPlan, metric.getPlan());
+        }
+    }
+
+    @Test
+    public void planInMetricsAfterMissingIndexExceptionDefaultQueryPlannerNE() throws Exception {
+        String query = "CITY == 'london' && CITY != 'london'";
+        String expectedPlan = "CITY == 'london' && !(CITY == 'london')";
+        this.logic.setIndexTableName("missing");
+        this.logic.setQueryPlanner(new DefaultQueryPlanner());
+        try {
+            runTest(query, query);
+            fail("Expected RuntimeException.");
+        } catch (RuntimeException e) {
+            assertEquals(expectedPlan, metric.getPlan());
+        }
+    }
+
+    @Test
+    public void planInMetricsAfterMissingIndexExceptionDefaultQueryPlannerNotEq() throws Exception {
+        String query = "CITY == 'london' && !(CITY == 'london')";
+        String expectedPlan = "CITY == 'london' && !(CITY == 'london')";
+        this.logic.setIndexTableName("missing");
+        this.logic.setQueryPlanner(new DefaultQueryPlanner());
+        try {
+            runTest(query, query);
+            fail("Expected RuntimeException.");
+        } catch (RuntimeException e) {
+            assertEquals(expectedPlan, metric.getPlan());
+        }
+    }
+
+    @Test
+    public void planInMetricsAfterTableNotFoundExceptionFederatedQueryPlannerNE() throws Exception {
         String query = Constants.ANY_FIELD + " != " + "'" + TestCities.london + "'";
+        // Do not expect the query plan to be updated with the resulting plan from DefaultQueryPlanner.process(), an error will occur earlier when attempting
+        // to fetch field index holes from the missing metadata table.
+        String expectedPlan = "_ANYFIELD_ != 'london'";
+
+        this.logic.setMetadataTableName("missing");
+        try {
+            runTestQuery(Collections.emptyList(), query, this.dataManager.getShardStartEndDate()[0], this.dataManager.getShardStartEndDate()[1],
+                            Collections.emptyMap());
+            fail("Expected DatawaveFatalQueryException.");
+        } catch (DatawaveFatalQueryException e) {
+            assertEquals(expectedPlan, metric.getPlan());
+        }
+    }
+
+    @Test
+    public void planInMetricsAfterTableNotFoundExceptionFederatedQueryPlannerNotEq() throws Exception {
+        String query = "!(" + Constants.ANY_FIELD + " == " + "'" + TestCities.london + "')";
         String expectedPlan = "!(_ANYFIELD_ == 'london')";
 
         this.logic.setMetadataTableName("missing");
         try {
-            runTest(query, query);
+            runTestQuery(Collections.emptyList(), query, this.dataManager.getShardStartEndDate()[0], this.dataManager.getShardStartEndDate()[1],
+                            Collections.emptyMap());
+            fail("Expected DatawaveFatalQueryException.");
+        } catch (DatawaveFatalQueryException e) {
+            assertEquals(expectedPlan, metric.getPlan());
+        }
+    }
+
+    @Test
+    public void planInMetricsAfterTableNotFoundExceptionDefaultQueryPlannerNE() throws Exception {
+        String query = Constants.ANY_FIELD + " != " + "'" + TestCities.london + "'";
+        String expectedPlan = "!(_ANYFIELD_ == 'london')";
+
+        this.logic.setQueryPlanner(new DefaultQueryPlanner());
+        this.logic.setMetadataTableName("missing");
+        try {
+            runTestQuery(Collections.emptyList(), query, this.dataManager.getShardStartEndDate()[0], this.dataManager.getShardStartEndDate()[1],
+                            Collections.emptyMap());
+            fail("Expected DatawaveFatalQueryException.");
+        } catch (DatawaveFatalQueryException e) {
+            assertEquals(expectedPlan, metric.getPlan());
+        }
+    }
+
+    @Test
+    public void planInMetricsAfterTableNotFoundExceptionDefaultQueryPlannerNotEq() throws Exception {
+        String query = "!(" + Constants.ANY_FIELD + " == " + "'" + TestCities.london + "')";
+        String expectedPlan = "!(_ANYFIELD_ == 'london')";
+
+        this.logic.setQueryPlanner(new DefaultQueryPlanner());
+        this.logic.setMetadataTableName("missing");
+        try {
+            runTestQuery(Collections.emptyList(), query, this.dataManager.getShardStartEndDate()[0], this.dataManager.getShardStartEndDate()[1],
+                            Collections.emptyMap());
             fail("Expected DatawaveFatalQueryException.");
         } catch (DatawaveFatalQueryException e) {
             assertEquals(expectedPlan, metric.getPlan());
@@ -123,9 +220,10 @@ public class QueryPlanTest extends AbstractFunctionalQuery {
     @Test
     public void planInMetricsAfterFTSDException() throws Exception {
         String query = Constants.ANY_FIELD + " != " + "'" + TestCities.london + "'";
-        String expectedPlan = "(!(_ANYFIELD_ == 'london') && !(CITY == 'london') && !(STATE == 'london'))";
+        String expectedPlan = "!(_ANYFIELD_ == 'london') && !(CITY == 'london') && !(STATE == 'london')";
         try {
-            runTest(query, query);
+            runTestQuery(Collections.emptyList(), query, this.dataManager.getShardStartEndDate()[0], this.dataManager.getShardStartEndDate()[1],
+                            Collections.emptyMap());
             fail("Expected FullTableScanDisallowedException.");
         } catch (FullTableScansDisallowedException e) {
             assertEquals(expectedPlan, metric.getPlan());
@@ -138,7 +236,8 @@ public class QueryPlanTest extends AbstractFunctionalQuery {
         String expectedPlan = query;
 
         try {
-            runTest(query, query);
+            runTestQuery(Collections.emptyList(), query, this.dataManager.getShardStartEndDate()[0], this.dataManager.getShardStartEndDate()[1],
+                            Collections.emptyMap());
             fail("Expected DoNotPerformOptimizedQueryException.");
         } catch (DoNotPerformOptimizedQueryException e) {
             assertEquals(expectedPlan, metric.getPlan());

@@ -1,0 +1,67 @@
+# This is where you set properties which are common to all executors
+server:
+  # since the application names include the pools, lets override the context path to simply be executor
+  servlet.context-path: /executor
+  cdn-uri: /executor/
+
+logging:
+  level:
+    root: INFO
+    datawave.query: DEBUG
+    datawave.microservice.query: DEBUG
+    datawave.microservice.query.executor: DEBUG
+    org.apache.kafka: ERROR
+    datawave.microservice.query.storage: WARN
+
+warehouse:
+  accumulo:
+    zookeepers: '${accumulo.zookeepers}'
+    instanceName: '${accumulo.instanceName}'
+    username: '${accumulo.username}'
+    password: '${accumulo.password}'
+
+datawave:
+  table:
+    cache:
+      zookeepers: '${accumulo.zookeepers}'
+      tableNames:
+        - '${warehouse.tables.metadata.name}'
+      poolName: 'default'
+      reloadInterval: 360000
+      evictionReaperIntervalInSeconds: 360
+      numLocks: 3
+      maxRetries: 3
+      reload-crontab: '* * * * * ?'
+  connection:
+    factory:
+      defaultPool: "default"
+      pools:
+        "default":
+          zookeepers: '${accumulo.zookeepers}'
+          instance: '${accumulo.instanceName}'
+          username: '${accumulo.username}'
+          password: '${accumulo.password}'
+          lowPriorityPoolSize: 40
+          normalPriorityPoolSize: 40
+          highPriorityPoolSize: 40
+          adminPriorityPoolSize: 40
+  query:
+    executor:
+      pool: "${executor.poolName}"
+      availableResultsPageMultiplier: 2.5
+      maxQueueSize: 400
+      coreThreads: 10
+      maxThreads: 40
+      keepAliveMs: 600000
+      queryStatusExpirationMs: 60000
+      checkpointFlushMs: 1000
+      checkpointFlushResults: 2
+      orphanThresholdMs: 60000
+      monitorTaskLease: 30
+      monitorTaskLeaseUnit: SECONDS
+      monitor:
+        enabled: true
+        scheduler-crontab: '* * * * * ?'
+      logStatusPeriodMs: 600000
+      logStatusWhenChangedMs: 300000
+      queryMetricsUrlPrefix: https://localhost:8543/querymetric/v1/id/

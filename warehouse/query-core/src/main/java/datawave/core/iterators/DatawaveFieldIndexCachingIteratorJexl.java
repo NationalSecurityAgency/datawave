@@ -3,6 +3,7 @@ package datawave.core.iterators;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -23,7 +24,6 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.WrappingIterator;
-import org.apache.accumulo.core.iteratorsImpl.system.IterationInterruptedException;
 import org.apache.commons.pool.impl.GenericObjectPool;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
@@ -69,7 +69,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
     public static final Text ANY_FINAME = new Text("fi\0" + Constants.ANY_FIELD);
     public static final Text FI_START = new Text("fi\0");
     public static final Text FI_END = new Text("fi\0~");
-    public static final Random RANDOM = new Random();
+    public static final Random RANDOM = new SecureRandom();
 
     public abstract static class Builder<B extends Builder<B>> {
         private String queryId;
@@ -811,7 +811,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
 
                 if (this.setControl.isCancelledQuery()) {
                     log.debug("Ivarator query was cancelled");
-                    throw new IterationInterruptedException("Ivarator query was cancelled");
+                    throw new RuntimeException("Ivarator query was cancelled");
                 }
 
                 // if we have any persisted data or we have scanned a significant number of keys, then persist it completely
@@ -830,7 +830,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                     throw new IvaratorException("Ivarator query timed out");
                 } else {
                     log.debug("Ivarator query was cancelled");
-                    throw new IterationInterruptedException("Ivarator query was cancelled");
+                    throw new RuntimeException("Ivarator query was cancelled");
                 }
             }
 
@@ -1027,7 +1027,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         try {
             source = ivaratorSourcePool.borrowObject();
         } catch (Exception e) {
-            throw new IterationInterruptedException("Unable to borrow object from ivarator source pool.  " + e.getMessage());
+            throw new RuntimeException("Unable to borrow object from ivarator source pool.  " + e.getMessage());
         }
         return source;
     }
@@ -1042,7 +1042,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         try {
             ivaratorSourcePool.returnObject(source);
         } catch (Exception e) {
-            throw new IterationInterruptedException("Unable to return object to ivarator source pool.  " + e.getMessage());
+            throw new RuntimeException("Unable to return object to ivarator source pool.  " + e.getMessage());
         }
     }
 
@@ -1224,8 +1224,14 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
             }
         };
 
-        return IteratorThreadPoolManager.executeIvarator(runnable, DatawaveFieldIndexCachingIteratorJexl.this + " in " + boundingFiRange, this.initEnv);
-
+        try {
+            return IteratorThreadPoolManager.executeIvarator(runnable, DatawaveFieldIndexCachingIteratorJexl.this + " in " + boundingFiRange, this.initEnv);
+        } catch (Exception e) {
+            log.error("Failed to execute a fill Set", e);
+            // if the execute somehow failed, we need to return the pool source.
+            returnPoolSource(source);
+            throw new RuntimeException(e);
+        }
     }
 
     /**

@@ -17,6 +17,7 @@ import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.user.SummingCombiner;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.collections4.iterators.TransformIterator;
@@ -33,8 +34,12 @@ import com.google.common.collect.Sets;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.core.common.connection.AccumuloConnectionFactory;
+import datawave.core.query.logic.AbstractQueryLogicTransformer;
+import datawave.core.query.result.event.DefaultResponseObjectFactory;
 import datawave.ingest.protobuf.Uid;
 import datawave.marking.MarkingFunctions;
+import datawave.microservice.query.QueryImpl;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.tables.ShardQueryLogic;
@@ -46,10 +51,6 @@ import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUser.UserType;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.util.DnUtils;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
-import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.logic.AbstractQueryLogicTransformer;
-import datawave.webservice.query.result.event.DefaultResponseObjectFactory;
 import datawave.webservice.query.runner.RunningQuery;
 import datawave.webservice.result.EventQueryResponseBase;
 
@@ -124,7 +125,7 @@ public class TestCardinalityWithQuery {
 
         Mutation m = new Mutation("ID");
         m.put(new Text("e"), new Text(datatype), timestamp, NULL_VALUE);
-        m.put(new Text("i"), new Text(datatype), timestamp, NULL_VALUE);
+        m.put(new Text("i"), new Text(datatype + "\u000020190101"), timestamp, new Value(SummingCombiner.VAR_LEN_ENCODER.encode(1L)));
         m.put(new Text("t"), new Text(datatype + "\0datawave.data.type.NoOpType"), timestamp, NULL_VALUE);
         bw.addMutation(m);
 

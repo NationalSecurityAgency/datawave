@@ -49,19 +49,19 @@ import com.google.common.collect.Lists;
 import com.google.protobuf.InvalidProtocolBufferException;
 
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
-import datawave.configuration.spring.SpringBean;
+import datawave.core.common.connection.AccumuloConnectionFactory;
+import datawave.core.common.connection.AccumuloConnectionFactory.Priority;
+import datawave.core.query.util.QueryUtil;
 import datawave.marking.SecurityMarking;
+import datawave.microservice.query.Query;
+import datawave.microservice.query.QueryParameters;
+import datawave.microservice.query.QueryPersistence;
 import datawave.query.iterator.QueriesTableAgeOffIterator;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.util.ScannerHelper;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
-import datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.QueryParameters;
-import datawave.webservice.query.QueryPersistence;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
+import datawave.webservice.query.util.MapUtils;
 import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
-import datawave.webservice.query.util.QueryUtil;
 
 /**
  * Object that creates and updates QueryImpl objects using a table structure:
@@ -104,13 +104,12 @@ public class Persister {
     protected EJBContext ctx;
 
     @Inject
-    @SpringBean(name = "ResponseObjectFactory")
     private ResponseObjectFactory responseObjectFactory;
 
     public Query create(String userDN, List<String> dnList, SecurityMarking marking, String queryLogicName, QueryParameters qp,
                     MultivaluedMap<String,String> optionalQueryParameters) {
         Query q = responseObjectFactory.getQueryImpl();
-        q.initialize(userDN, dnList, queryLogicName, qp, optionalQueryParameters);
+        q.initialize(userDN, dnList, queryLogicName, qp, MapUtils.toMultiValueMap(optionalQueryParameters));
         q.setColumnVisibility(marking.toColumnVisibilityString());
         q.setUncaughtExceptionHandler(new QueryUncaughtExceptionHandler());
         Thread.currentThread().setUncaughtExceptionHandler(q.getUncaughtExceptionHandler());
@@ -145,7 +144,7 @@ public class Persister {
         AccumuloClient c = null;
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            c = connectionFactory.getClient(Priority.ADMIN, trackingMap);
+            c = connectionFactory.getClient(null, null, Priority.ADMIN, trackingMap);
             tableCheck(c);
             try (BatchWriter writer = c.createBatchWriter(TABLE_NAME,
                             new BatchWriterConfig().setMaxLatency(10, TimeUnit.SECONDS).setMaxMemory(10240L).setMaxWriteThreads(1))) {
@@ -208,7 +207,7 @@ public class Persister {
         BatchDeleter deleter = null;
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            c = connectionFactory.getClient(Priority.ADMIN, trackingMap);
+            c = connectionFactory.getClient(null, null, Priority.ADMIN, trackingMap);
             if (!c.tableOperations().exists(TABLE_NAME)) {
                 return;
             }
@@ -265,7 +264,7 @@ public class Persister {
 
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            client = connectionFactory.getClient(Priority.ADMIN, trackingMap);
+            client = connectionFactory.getClient(null, null, Priority.ADMIN, trackingMap);
             tableCheck(client);
 
             IteratorSetting regex = new IteratorSetting(21, RegExFilter.class);
@@ -313,7 +312,7 @@ public class Persister {
         AccumuloClient c = null;
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            c = connectionFactory.getClient(Priority.ADMIN, trackingMap);
+            c = connectionFactory.getClient(null, null, Priority.ADMIN, trackingMap);
             tableCheck(c);
             try (Scanner scanner = ScannerHelper.createScanner(c, TABLE_NAME, auths)) {
                 Range range = new Range(shortName, shortName);
@@ -359,7 +358,7 @@ public class Persister {
         AccumuloClient c = null;
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            c = connectionFactory.getClient(Priority.ADMIN, trackingMap);
+            c = connectionFactory.getClient(null, null, Priority.ADMIN, trackingMap);
             tableCheck(c);
             try (Scanner scanner = ScannerHelper.createScanner(c, TABLE_NAME, auths)) {
                 Range range = new Range(sid, sid);
@@ -411,7 +410,7 @@ public class Persister {
         AccumuloClient c = null;
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            c = connectionFactory.getClient(Priority.ADMIN, trackingMap);
+            c = connectionFactory.getClient(null, null, Priority.ADMIN, trackingMap);
             tableCheck(c);
             try (Scanner scanner = ScannerHelper.createScanner(c, TABLE_NAME, auths)) {
                 Range range = new Range(user, user);
@@ -445,7 +444,7 @@ public class Persister {
 
         try {
             final Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            client = connectionFactory.getClient(Priority.ADMIN, trackingMap);
+            client = connectionFactory.getClient(null, null, Priority.ADMIN, trackingMap);
             tableCheck(client);
 
             final IteratorSetting regex = new IteratorSetting(21, RegExFilter.class);

@@ -7,7 +7,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.accumulo.core.Constants;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.ClientConfiguration;
@@ -77,7 +76,7 @@ public class FileByteSummaryLoader extends Configured implements Tool {
 
         JobSetupUtil.printConfig(getConf(), log);
 
-        Job job = new Job(conf);
+        Job job = Job.getInstance(conf);
         Configuration jconf = job.getConfiguration();
         job.setJarByClass(this.getClass());
         job.setJobName("FileByteMetricsSummaries");

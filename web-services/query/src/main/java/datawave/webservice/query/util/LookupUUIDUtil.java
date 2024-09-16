@@ -20,27 +20,30 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.StreamingOutput;
 
 import org.apache.commons.lang.time.DateUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 
+import datawave.core.query.logic.QueryLogic;
+import datawave.core.query.logic.QueryLogicFactory;
+import datawave.core.query.util.QueryUtil;
+import datawave.microservice.query.DefaultQueryParameters;
+import datawave.microservice.query.Query;
+import datawave.microservice.query.QueryImpl;
+import datawave.microservice.query.QueryParameters;
+import datawave.microservice.query.QueryPersistence;
 import datawave.query.data.UUIDType;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.UserOperations;
+import datawave.security.authorization.remote.RemoteUserOperationsImpl;
 import datawave.security.util.WSAuthorizationsUtil;
 import datawave.util.time.DateHelper;
 import datawave.webservice.common.audit.AuditParameters;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.webservice.common.exception.NoResultsException;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.QueryParameters;
-import datawave.webservice.query.QueryParametersImpl;
-import datawave.webservice.query.QueryPersistence;
 import datawave.webservice.query.configuration.LookupUUIDConfiguration;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
-import datawave.webservice.query.logic.QueryLogic;
-import datawave.webservice.query.logic.QueryLogicFactory;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
 import datawave.webservice.query.result.event.Metadata;
@@ -89,6 +92,7 @@ public class LookupUUIDUtil {
     public static final String LOOKUP_UID_QUERY = "LookupUIDQuery";
 
     protected static final String UUID_TERM_DELIMITER = ":";
+    public static final String DEFAULT_CONTENT_LOOKUP_TYPE = "default";
     private Date beginAsDate = null;
 
     private EJBContext ctx;
@@ -109,6 +113,7 @@ public class LookupUUIDUtil {
     private final UserOperations userOperations;
 
     private Map<String,UUIDType> uuidTypes = Collections.synchronizedMap(new HashMap<>());
+    private Map<String,String> contentLookupTypes = Collections.synchronizedMap(new HashMap<>());
 
     MultivaluedMap<String,String> defaultOptionalParams;
 
@@ -153,16 +158,20 @@ public class LookupUUIDUtil {
         // set the query logic factory
         this.queryLogicFactory = queryLogicFactory;
 
-        // Populate the UUIDType map
-        final List<UUIDType> types = this.lookupUUIDConfiguration.getUuidTypes();
         this.uuidTypes.clear();
+
+        // load uuidTypes from the flat list
+        final List<UUIDType> types = this.lookupUUIDConfiguration.getUuidTypes();
+
         if (null != types) {
             for (final UUIDType type : types) {
-                if (null != type) {
-                    this.uuidTypes.put(type.getFieldName().toUpperCase(), type);
-                }
+                addUUIDType(type.getFieldName(), type);
             }
         }
+
+        // Populate the content lookup types map
+        this.contentLookupTypes.clear();
+        this.contentLookupTypes = this.lookupUUIDConfiguration.getContentLookupTypes();
 
         // Assign the begin date
         try {
@@ -373,7 +382,7 @@ public class LookupUUIDUtil {
             queryParameters.putSingle(QueryParameters.QUERY_NAME, queryName);
 
             try {
-                queryParameters.putSingle(QueryParameters.QUERY_BEGIN, QueryParametersImpl.formatDate(this.beginAsDate));
+                queryParameters.putSingle(QueryParameters.QUERY_BEGIN, DefaultQueryParameters.formatDate(this.beginAsDate));
             } catch (ParseException e) {
                 throw new RuntimeException("Unable to format new query begin date: " + this.beginAsDate);
             }
@@ -383,7 +392,7 @@ public class LookupUUIDUtil {
                 queryParameters.remove(QueryParameters.QUERY_END);
             }
             try {
-                queryParameters.putSingle(QueryParameters.QUERY_END, QueryParametersImpl.formatDate(endDate));
+                queryParameters.putSingle(QueryParameters.QUERY_END, DefaultQueryParameters.formatDate(endDate));
             } catch (ParseException e) {
                 throw new RuntimeException("Unable to format new query end date: " + endDate);
             }
@@ -393,7 +402,7 @@ public class LookupUUIDUtil {
                 queryParameters.remove(QueryParameters.QUERY_EXPIRATION);
             }
             try {
-                queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, QueryParametersImpl.formatDate(expireDate));
+                queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, DefaultQueryParameters.formatDate(expireDate));
             } catch (ParseException e) {
                 throw new RuntimeException("Unable to format new query expr date: " + expireDate);
             }
@@ -431,7 +440,7 @@ public class LookupUUIDUtil {
         return response;
     }
 
-    public Query createSettings(MultivaluedMap<String,String> queryParameters) {
+    public Query createSettings(Map<String,List<String>> queryParameters) {
         log.debug("Initial query parameters: " + queryParameters);
         Query query = responseObjectFactory.getQueryImpl();
         if (queryParameters != null) {
@@ -439,7 +448,11 @@ public class LookupUUIDUtil {
             if (defaultOptionalParams != null) {
                 expandedQueryParameters.putAll(defaultOptionalParams);
             }
-            String delimitedParams = queryParameters.getFirst(QueryParameters.QUERY_PARAMS);
+            List<String> params = queryParameters.get(QueryParameters.QUERY_PARAMS);
+            String delimitedParams = null;
+            if (params != null && !params.isEmpty()) {
+                delimitedParams = params.get(0);
+            }
             if (delimitedParams != null) {
                 for (QueryImpl.Parameter pm : QueryUtil.parseParameters(delimitedParams)) {
                     expandedQueryParameters.putSingle(pm.getParameterName(), pm.getParameterValue());
@@ -457,21 +470,28 @@ public class LookupUUIDUtil {
         return query;
     }
 
-    public String getAuths(String logicName, MultivaluedMap<String,String> queryParameters, String queryAuths, Principal principal) {
+    public String getAuths(String logicName, Map<String,List<String>> queryParameters, String queryAuths, Principal principal) {
         String userAuths;
         try {
-            QueryLogic<?> logic = queryLogicFactory.getQueryLogic(logicName, principal);
+            QueryLogic<?> logic = queryLogicFactory.getQueryLogic(logicName, (DatawavePrincipal) principal);
             Query settings = createSettings(queryParameters);
             if (queryAuths == null) {
                 logic.preInitialize(settings, WSAuthorizationsUtil.buildAuthorizations(((DatawavePrincipal) principal).getAuthorizations()));
             } else {
                 logic.preInitialize(settings, WSAuthorizationsUtil.buildAuthorizations(Collections.singleton(WSAuthorizationsUtil.splitAuths(queryAuths))));
             }
+
             // the query principal is our local principal unless the query logic has a different user operations
             DatawavePrincipal queryPrincipal = (logic.getUserOperations() == null) ? (DatawavePrincipal) principal
                             : logic.getUserOperations().getRemoteUser((DatawavePrincipal) principal);
             // the overall principal (the one with combined auths across remote user operations) is our own user operations (probably the UserOperationsBean)
-            DatawavePrincipal overallPrincipal = (userOperations == null) ? (DatawavePrincipal) principal
+            // don't call remote user operations if it's asked not to
+            String includeRemoteServices = "true";
+            if (queryParameters.get(RemoteUserOperationsImpl.INCLUDE_REMOTE_SERVICES) != null
+                            && !queryParameters.get(RemoteUserOperationsImpl.INCLUDE_REMOTE_SERVICES).isEmpty()) {
+                includeRemoteServices = queryParameters.get(RemoteUserOperationsImpl.INCLUDE_REMOTE_SERVICES).get(0);
+            }
+            DatawavePrincipal overallPrincipal = (userOperations == null || "false".equalsIgnoreCase(includeRemoteServices)) ? (DatawavePrincipal) principal
                             : userOperations.getRemoteUser((DatawavePrincipal) principal);
             if (queryAuths != null) {
                 userAuths = WSAuthorizationsUtil.downgradeUserAuths(queryAuths, overallPrincipal, queryPrincipal);
@@ -486,21 +506,92 @@ public class LookupUUIDUtil {
     }
 
     /**
-     * Returns a UUIDType implementation, if any, matching the specified field name
+     * Add the specified uuid type to the internal uuidtypes map if the type is not null.
+     *
+     * @param uuidType
+     *            the uuid type name / field
+     * @param type
+     *            the uuid type.
+     */
+    private void addUUIDType(final String uuidType, final UUIDType type) {
+        if (type != null) {
+            final String key = buildUUIDTypeKey(uuidType);
+            this.uuidTypes.put(key.toUpperCase(), type);
+        }
+    }
+
+    /**
+     * Build the string key used to store uuid types in the internal uuidtype map. There can be multiple lists of uuid types, referred to as contexts - this
+     * allows multiple logicNames to be associated with the same field.
+     *
+     * @param uuidType
+     *            the name/field of the specified UUIDType.
+     * @return the key used to store/retrieve the UUID type from the uuidType map.
+     */
+    private String buildUUIDTypeKey(String uuidType) {
+        if (uuidType == null)
+            return null;
+        return uuidType.toUpperCase();
+    }
+
+    /**
+     * Returns a UUIDType implementation, if any, matching the specified field name.
      *
      * @param uuidType
      *            the field name of the desired UUIDType
-     * @return a UUIDType implementation, if any, matching the specified field name
+     * @return a UUIDType implementation, if any, matching the specified field name, null if one does not exist.
      */
     public UUIDType getUUIDType(final String uuidType) {
-        final UUIDType type;
-        if (null != uuidType) {
-            type = this.uuidTypes.get(uuidType.toUpperCase());
+        String uuidTypeKey = buildUUIDTypeKey(uuidType);
+        return (uuidTypeKey == null) ? null : uuidTypes.get(uuidTypeKey);
+    }
+
+    /**
+     * check if the query logic name is one of the configured content lookup type logics.
+     *
+     * @param queryLogicName
+     * @return
+     */
+    public boolean isContentLookup(String queryLogicName) {
+        if (queryLogicName == null)
+            return false;
+
+        for (Map.Entry<String,String> typeEntry : contentLookupTypes.entrySet()) {
+            if (queryLogicName.equals(typeEntry.getValue())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * find the appropriate content lookup type logic from the specified lookup context.
+     *
+     * @param lookupContext
+     *            the lookupContext for the current request.
+     * @return the name of the content lookup type logic configured for the specified context, or the default content lookup type logic name, if none is
+     *         configured for the context specified.
+     */
+    public String getLookupType(String lookupContext) {
+        String lookupType = contentLookupTypes.get(lookupContext);
+        if (StringUtils.isEmpty(lookupType)) {
+            log.info("Request contained lookupContext '" + lookupContext + "', which was not configured, retrieving default lookup type.");
         } else {
-            type = null;
+
+            if (log.isDebugEnabled()) {
+                log.debug("Using lookupContext " + lookupContext);
+            }
+            return lookupType;
         }
 
-        return type;
+        lookupType = contentLookupTypes.get(DEFAULT_CONTENT_LOOKUP_TYPE);
+        if (StringUtils.isEmpty(lookupType)) {
+            log.warn("Request contained lookupContext '" + lookupContext
+                            + "', which was not configured, yet no default is configured either, returning hard-coded default: " + CONTENT_QUERY);
+            lookupType = CONTENT_QUERY;
+        }
+
+        return lookupType;
     }
 
     /**
@@ -538,7 +629,7 @@ public class LookupUUIDUtil {
             // be evaluated since the getLogicName() expression would always evaluate as false for an instance
             // of AllEventMockResponse.
             //
-            if (CONTENT_QUERY.equals(nextQueryResponse.getLogicName()) && !(nextQueryResponse instanceof AllEventMockResponse)) {
+            if (isContentLookup(nextQueryResponse.getLogicName()) && !(nextQueryResponse instanceof AllEventMockResponse)) {
                 contentQueryResponse = (T) nextQueryResponse;
             }
             // Handle the case where /next has returned results of a UUID lookup, and a secondary content
@@ -671,18 +762,18 @@ public class LookupUUIDUtil {
             queryParameters.putSingle(QueryParameters.QUERY_NAME, queryName);
             queryParameters.putSingle(QueryParameters.QUERY_STRING, contentQuery.toString());
             try {
-                queryParameters.putSingle(QueryParameters.QUERY_BEGIN, QueryParametersImpl.formatDate(this.beginAsDate));
+                queryParameters.putSingle(QueryParameters.QUERY_BEGIN, DefaultQueryParameters.formatDate(this.beginAsDate));
             } catch (ParseException e1) {
                 throw new RuntimeException("Error formatting begin date: " + this.beginAsDate);
             }
             try {
-                queryParameters.putSingle(QueryParameters.QUERY_END, QueryParametersImpl.formatDate(endDate));
+                queryParameters.putSingle(QueryParameters.QUERY_END, DefaultQueryParameters.formatDate(endDate));
             } catch (ParseException e1) {
                 throw new RuntimeException("Error formatting end date: " + endDate);
             }
             queryParameters.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, userAuths);
             try {
-                queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, QueryParametersImpl.formatDate(expireDate));
+                queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, DefaultQueryParameters.formatDate(expireDate));
             } catch (ParseException e1) {
                 throw new RuntimeException("Error formatting expr date: " + expireDate);
             }
@@ -695,7 +786,8 @@ public class LookupUUIDUtil {
                 }
             }
 
-            final GenericResponse<String> createResponse = this.queryExecutor.createQuery(CONTENT_QUERY, queryParameters);
+            final String contentLookupType = getLookupType(validatedCriteria.getUUIDTypeContext());
+            final GenericResponse<String> createResponse = this.queryExecutor.createQuery(contentLookupType, queryParameters);
             final String contentQueryId = createResponse.getResult();
             boolean preventCloseOfMergedQueryId = ((null == mergedContentQueryResponse) && allEventMockResponse);
             try {
@@ -785,18 +877,18 @@ public class LookupUUIDUtil {
         queryParameters.putSingle(QueryParameters.QUERY_NAME, queryName);
         queryParameters.putSingle(QueryParameters.QUERY_STRING, contentQuery.toString());
         try {
-            queryParameters.putSingle(QueryParameters.QUERY_BEGIN, QueryParametersImpl.formatDate(this.beginAsDate));
+            queryParameters.putSingle(QueryParameters.QUERY_BEGIN, DefaultQueryParameters.formatDate(this.beginAsDate));
         } catch (ParseException e1) {
             throw new RuntimeException("Error formatting begin date: " + this.beginAsDate);
         }
         try {
-            queryParameters.putSingle(QueryParameters.QUERY_END, QueryParametersImpl.formatDate(endDate));
+            queryParameters.putSingle(QueryParameters.QUERY_END, DefaultQueryParameters.formatDate(endDate));
         } catch (ParseException e1) {
             throw new RuntimeException("Error formatting end date: " + endDate);
         }
         queryParameters.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, userAuths);
         try {
-            queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, QueryParametersImpl.formatDate(expireDate));
+            queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, DefaultQueryParameters.formatDate(expireDate));
         } catch (ParseException e1) {
             throw new RuntimeException("Error formatting expr date: " + expireDate);
         }
@@ -811,7 +903,8 @@ public class LookupUUIDUtil {
 
         // Call the ContentQuery for one or more events
         final HttpHeaders headers = validatedCriteria.getStreamingOutputHeaders();
-        return this.queryExecutor.execute(CONTENT_QUERY, queryParameters, headers);
+        final String contentLookupType = getLookupType(validatedCriteria.getUUIDTypeContext());
+        return this.queryExecutor.execute(contentLookupType, queryParameters, headers);
     }
 
     private void mergeNextUUIDLookups(final EventQueryResponseBase mergedResponse) {
@@ -899,11 +992,11 @@ public class LookupUUIDUtil {
                 // Validate the "potential" UUID term. It's potential because it could be an OR operator
                 // or some other query syntax that would be validated with more scrutiny once the query
                 // executor is invoked.
-                final UUIDType uuidType = this.validateUUIDTerm(potentialUUIDTerm.trim(), logicName);
+                final UUIDType uuidType = this.validateUUIDTerm(criteria.getUUIDTypeContext(), potentialUUIDTerm.trim(), logicName);
                 if (null != uuidType) {
                     // Assign the query logic name if undefined
                     if (null == logicName) {
-                        logicName = uuidType.getDefinedView();
+                        logicName = uuidType.getQueryLogic(criteria.getUUIDTypeContext());
                     }
 
                     // Increment the UUID type/value count
@@ -963,7 +1056,7 @@ public class LookupUUIDUtil {
             params = params + ';' + PARAM_HIT_LIST + ':' + true;
         }
 
-        criteria.getQueryParameters().putSingle(QueryParameters.QUERY_PARAMS, params);
+        criteria.getQueryParameters().set(QueryParameters.QUERY_PARAMS, params);
 
         // All is well, so return the validated criteria
         return criteria;
@@ -987,13 +1080,15 @@ public class LookupUUIDUtil {
      * Validate the specified token as a UUID lookup term, either as a LUCENE-formatted field/value or a UIDQuery field/value. Tokens missing the appropriate
      * delimiter are ignored and return with a null UUIDType.
      *
-     * @param uuidTypeValueTerm A token to evaluate as a possible UUID field/value term
+     * @param lookupContext additional information about the lookup purpose or type.
+     *
+     * @param possibleUUIDTerm A token to evaluate as a possible UUID field/value term
      *
      * @param logicName The existing assigned query logic name, if any
      *
      * @return A valid UUIDType, or null if the specified token is obviously not a UUID field/value term
      */
-    private UUIDType validateUUIDTerm(final String possibleUUIDTerm, final String logicName) {
+    private UUIDType validateUUIDTerm(final String lookupContext, final String possibleUUIDTerm, final String logicName) {
         // Declare the return value
         final UUIDType matchingUuidType;
 
@@ -1026,8 +1121,8 @@ public class LookupUUIDUtil {
                 throw new DatawaveWebApplicationException(new IllegalArgumentException(message), errorReponse);
             }
             // Reject conflicting logic name
-            else if ((null != logicName) && !logicName.equals(matchingUuidType.getDefinedView())) {
-                final String message = "Multiple UUID types '" + logicName + "' and '" + matchingUuidType.getDefinedView() + "' not "
+            else if ((null != logicName) && !logicName.equals(matchingUuidType.getQueryLogic(lookupContext))) {
+                final String message = "Multiple UUID types '" + logicName + "' and '" + matchingUuidType.getQueryLogic(lookupContext) + "' not "
                                 + " supported within the same lookup request";
                 final GenericResponse<String> errorReponse = new GenericResponse<>();
                 errorReponse.addMessage(message);

@@ -14,7 +14,7 @@ public class TLDNormalFlattenQueryTest extends NormalFlattenQueryTest {
 
     private static final Logger log = Logger.getLogger(TLDNormalFlattenQueryTest.class);
 
-    protected ShardQueryLogic createQueryLogic() {
+    protected ShardQueryLogic createShardQueryLogic() {
         return new TLDQueryLogic();
     }
 

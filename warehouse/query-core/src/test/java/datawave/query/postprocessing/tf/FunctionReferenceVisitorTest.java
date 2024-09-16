@@ -12,11 +12,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ASTOrNode;
-import org.apache.commons.jexl2.parser.ASTUnaryMinusNode;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTOrNode;
+import org.apache.commons.jexl3.parser.ASTUnaryMinusNode;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNodes;
+import org.apache.commons.jexl3.parser.ParseException;
 import org.junit.Test;
 
 import com.google.common.collect.Multimap;
@@ -36,7 +37,7 @@ public class FunctionReferenceVisitorTest {
 
     @Test
     public void testArbitraryFunction() throws ParseException {
-        String query = "f:function(x1,x2,x3,x4,x5)";
+        String query = "f:func(x1,x2,x3,x4,x5)";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
 
         Multimap<String,Function> functions = FunctionReferenceVisitor.functions(script);
@@ -48,15 +49,15 @@ public class FunctionReferenceVisitorTest {
         assertEquals(1, functionsInNamespace.size());
 
         Function f = functionsInNamespace.iterator().next();
-        assertEquals("function", f.name());
+        assertEquals("func", f.name());
         assertEquals(5, f.args().size());
 
         Iterator<JexlNode> iter = f.args().iterator();
-        assertEquals("x1", iter.next().jjtGetChild(0).image);
-        assertEquals("x2", iter.next().jjtGetChild(0).image);
-        assertEquals("x3", iter.next().jjtGetChild(0).image);
-        assertEquals("x4", iter.next().jjtGetChild(0).image);
-        assertEquals("x5", iter.next().jjtGetChild(0).image);
+        assertEquals("x1", JexlNodes.getIdentifierOrLiteral(iter.next()));
+        assertEquals("x2", JexlNodes.getIdentifierOrLiteral(iter.next()));
+        assertEquals("x3", JexlNodes.getIdentifierOrLiteral(iter.next()));
+        assertEquals("x4", JexlNodes.getIdentifierOrLiteral(iter.next()));
+        assertEquals("x5", JexlNodes.getIdentifierOrLiteral(iter.next()));
         assertFalse(iter.hasNext());
     }
 
@@ -210,7 +211,7 @@ public class FunctionReferenceVisitorTest {
         parseFunctions(query);
         assertNamespace("filter");
         assertFunctionName("timeFunction");
-        assertFunctionArgs(Arrays.asList("DEATH_DATE", "BIRTH_DATE", "-", ">", "2522880000000L"));
+        assertFunctionArgs(Arrays.asList("DEATH_DATE", "BIRTH_DATE", "-", ">", "2522880000000"));
     }
 
     @Test
@@ -383,13 +384,13 @@ public class FunctionReferenceVisitorTest {
             JexlNode node = iter.next();
             if (node instanceof ASTUnaryMinusNode) {
                 node = node.jjtGetChild(0);
-                assertEquals(arg, node.image);
+                assertEquals(arg, JexlNodes.getIdentifierOrLiteralAsString(node));
             } else if (node instanceof ASTOrNode) {
                 // don't both with recursively extracting all identifiers, just compare strings
                 assertEquals(arg, JexlStringBuildingVisitor.buildQueryWithoutParse(node));
             } else {
                 node = JexlASTHelper.dereference(node);
-                assertEquals(arg, node.image);
+                assertEquals(arg, JexlNodes.getIdentifierOrLiteralAsString(node));
             }
         }
     }

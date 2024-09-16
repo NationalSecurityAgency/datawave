@@ -25,7 +25,7 @@ import java.util.regex.Pattern;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.commons.jexl2.Script;
+import org.apache.commons.jexl3.JexlScript;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.StatusReporter;
@@ -222,8 +222,13 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
          */
 
         for (EdgeDefinition edgeDef : edgeDefs) {
+
             edgeConfig.clearArithmeticMatchingGroups();
+            edgeConfig.clearArithmeticExcludedGroups();
+
             Map<String,Set<String>> matchingGroups = new HashMap<>();
+            Map<String,Set<String>> excludedGroups = new HashMap<>();
+
             String jexlPreconditions = null;
             Multimap<String,NormalizedContentInterface> mSource = edgeEventFieldUtil.getDepthFirstList().get(edgeDef.getSourceFieldName());
             Multimap<String,NormalizedContentInterface> mSink = edgeEventFieldUtil.getDepthFirstList().get(edgeDef.getSinkFieldName());
@@ -250,9 +255,20 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
                         continue;
 
                     } else {
+
                         matchingGroups = edgeConfig.getArithmeticMatchingGroups();
+                        excludedGroups = edgeConfig.getArithmeticExcludedGroups();
+
+                        for (Entry excluded : excludedGroups.entrySet()) {
+                            matchingGroups.remove(excluded.getKey(), excluded.getValue());
+                        }
+
                         if (log.isTraceEnabled()) {
                             log.trace("Time to evaluate event(+): " + (System.currentTimeMillis() - start) + "ms.");
+                        }
+
+                        if (edgeDef.isGroupAware() && matchingGroups.size() == 0) {
+                            continue;
                         }
 
                     }
@@ -556,7 +572,6 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         // add to the eventMetadataRegistry map
         Key baseKey = createMetadataEdgeKey(edgeValue, edgeValue.getSource(), edgeValue.getSource().getIndexedFieldValue(), edgeValue.getSink(),
                         edgeValue.getSink().getIndexedFieldValue(), this.getVisibility(edgeValue));
-
         Key fwdMetaKey = EdgeKey.getMetadataKey(baseKey);
         Key revMetaKey = EdgeKey.getMetadataKey(EdgeKey.swapSourceSink(EdgeKey.decode(baseKey)).encode());
 

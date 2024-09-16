@@ -80,7 +80,9 @@ public class RangeSplit extends InputSplit implements Writable {
      * will set the startByte, endByte, and range class members.
      *
      * @param start
+     *            start of the range
      * @param end
+     *            end of the range
      */
     private void updateSignificantBytes(ByteSequence start, ByteSequence end) {
         // we want to compare enough bytes that we get a resolution of .1 percent or less
@@ -118,7 +120,9 @@ public class RangeSplit extends InputSplit implements Writable {
      * distance. Then the distance is compared to the range to return the overall percentage.
      *
      * @param start
+     *            start of the range
      * @param end
+     *            end of the range
      * @return the progress [0.0, 1.0]
      */
     public float getProgress(ByteSequence start, ByteSequence end) {
@@ -140,6 +144,7 @@ public class RangeSplit extends InputSplit implements Writable {
      * use, and then use the method above to get the actuall progress value.
      *
      * @param currentKey
+     *            the current key
      * @return the progress [0.0, 1.0]
      */
     public float getProgress(Key currentKey) {

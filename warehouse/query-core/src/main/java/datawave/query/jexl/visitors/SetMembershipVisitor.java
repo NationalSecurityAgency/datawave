@@ -3,23 +3,25 @@ package datawave.query.jexl.visitors;
 import java.util.Set;
 import java.util.TreeSet;
 
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTEQNode;
-import org.apache.commons.jexl2.parser.ASTERNode;
-import org.apache.commons.jexl2.parser.ASTFunctionNode;
-import org.apache.commons.jexl2.parser.ASTGENode;
-import org.apache.commons.jexl2.parser.ASTGTNode;
-import org.apache.commons.jexl2.parser.ASTIdentifier;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ASTLENode;
-import org.apache.commons.jexl2.parser.ASTLTNode;
-import org.apache.commons.jexl2.parser.ASTNENode;
-import org.apache.commons.jexl2.parser.ASTNRNode;
-import org.apache.commons.jexl2.parser.ASTNotNode;
-import org.apache.commons.jexl2.parser.ASTOrNode;
-import org.apache.commons.jexl2.parser.ASTReference;
-import org.apache.commons.jexl2.parser.ASTReferenceExpression;
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTArguments;
+import org.apache.commons.jexl3.parser.ASTEQNode;
+import org.apache.commons.jexl3.parser.ASTERNode;
+import org.apache.commons.jexl3.parser.ASTFunctionNode;
+import org.apache.commons.jexl3.parser.ASTGENode;
+import org.apache.commons.jexl3.parser.ASTGTNode;
+import org.apache.commons.jexl3.parser.ASTIdentifier;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTLENode;
+import org.apache.commons.jexl3.parser.ASTLTNode;
+import org.apache.commons.jexl3.parser.ASTNENode;
+import org.apache.commons.jexl3.parser.ASTNRNode;
+import org.apache.commons.jexl3.parser.ASTNamespaceIdentifier;
+import org.apache.commons.jexl3.parser.ASTNotNode;
+import org.apache.commons.jexl3.parser.ASTOrNode;
+import org.apache.commons.jexl3.parser.ASTReferenceExpression;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNodes;
 
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
@@ -153,7 +155,7 @@ public class SetMembershipVisitor extends BaseVisitor {
         if (config.isLazySetMechanismEnabled()) {
             // Only tag index-only fields within filter functions.
             if (!isTagged(node) && parentFilterFunction(node)) {
-                node.image = node.image + INDEX_ONLY_FUNCTION_SUFFIX;
+                JexlNodes.setIdentifierOrLiteral(node, JexlNodes.getIdentifierOrLiteral(node) + INDEX_ONLY_FUNCTION_SUFFIX);
             }
         } else {
             // Otherwise, throw a fatal exception.
@@ -171,7 +173,7 @@ public class SetMembershipVisitor extends BaseVisitor {
      * @return true if the node has a tagged field, or false otherwise
      */
     private boolean isTagged(ASTIdentifier node) {
-        return isTagged(node.image);
+        return isTagged(JexlNodes.getIdentifierOrLiteralAsString(node));
     }
 
     /**
@@ -216,8 +218,12 @@ public class SetMembershipVisitor extends BaseVisitor {
      * @return true if the node is a filter function or false otherwise
      */
     private boolean filterFunction(JexlNode node) {
-        return node instanceof ASTFunctionNode && node.jjtGetNumChildren() > 0
-                        && node.jjtGetChild(0).image.equals(EvaluationPhaseFilterFunctions.EVAL_PHASE_FUNCTION_NAMESPACE);
+        boolean isFilterFunction = false;
+        if (node instanceof ASTFunctionNode) {
+            ASTNamespaceIdentifier namespaceNode = (ASTNamespaceIdentifier) node.jjtGetChild(0);
+            isFilterFunction = namespaceNode.getNamespace().equals(EvaluationPhaseFilterFunctions.EVAL_PHASE_FUNCTION_NAMESPACE);
+        }
+        return isFilterFunction;
     }
 
     @Override
@@ -286,7 +292,7 @@ public class SetMembershipVisitor extends BaseVisitor {
     }
 
     @Override
-    public Object visit(ASTReference node, Object data) {
+    public Object visit(ASTArguments node, Object data) {
         return traverseChildren(node, data);
     }
 

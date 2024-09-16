@@ -1,19 +1,14 @@
 package datawave.query.jexl.visitors;
 
-import static org.apache.commons.jexl2.parser.JexlNodes.children;
-
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTOrNode;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.JexlNodes;
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTOrNode;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.log4j.Logger;
 
 /**
@@ -76,12 +71,13 @@ public class UniqueExpressionTermsVisitor extends RebuildingVisitor {
 
     private JexlNode removeDuplicateNodes(JexlNode node, Object data) {
         // Traverse each child to de-dupe their children.
-        // @formatter:off
-        List<JexlNode> visitedChildren = Arrays.stream(children(node))
-                        .map(child -> (JexlNode) child.jjtAccept(this, data))
-                        .filter(Objects::nonNull)
-                        .collect(Collectors.toList());
-        // @formatter:on
+        List<JexlNode> visitedChildren = new ArrayList<>();
+        for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+            JexlNode childCopy = (JexlNode) node.jjtGetChild(i).jjtAccept(this, data);
+            if (childCopy != null) {
+                visitedChildren.add(childCopy);
+            }
+        }
 
         // Dedupe the visited children.
         List<JexlNode> uniqueChildren = getUniqueChildren(visitedChildren);
@@ -92,9 +88,9 @@ public class UniqueExpressionTermsVisitor extends RebuildingVisitor {
         } else {
             // If two or more children remain, return a copy with the unique children.
             JexlNode copy = JexlNodes.newInstanceOfType(node);
-            copy.image = node.image;
+            JexlNodes.copyIdentifierOrLiteral(node, copy);
             copy.jjtSetParent(node.jjtGetParent());
-            JexlNodes.children(copy, uniqueChildren.toArray(new JexlNode[0]));
+            JexlNodes.setChildren(copy, uniqueChildren.toArray(new JexlNode[0]));
             return copy;
         }
     }

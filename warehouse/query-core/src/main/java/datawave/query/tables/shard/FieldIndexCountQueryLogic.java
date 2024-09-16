@@ -29,8 +29,11 @@ import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.logic.QueryLogicTransformer;
 import datawave.data.type.Type;
 import datawave.marking.MarkingFunctions;
+import datawave.microservice.query.Query;
 import datawave.query.Constants;
 import datawave.query.QueryParameters;
 import datawave.query.config.ShardQueryConfiguration;
@@ -40,10 +43,7 @@ import datawave.query.tables.ShardQueryLogic;
 import datawave.query.transformer.FieldIndexCountQueryTransformer;
 import datawave.query.util.MetadataHelper;
 import datawave.util.StringUtils;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.exception.QueryException;
-import datawave.webservice.query.logic.QueryLogicTransformer;
 
 /**
  * Given a date range, FieldName(s), FieldValue(s), DataType(s) pull keys directly using FieldIndexIterator and count them as specified.
@@ -69,7 +69,6 @@ public class FieldIndexCountQueryLogic extends ShardQueryLogic {
             logger.trace("initialize");
         }
 
-        this.scannerFactory = new ScannerFactory(client);
         MetadataHelper metadataHelper = prepareMetadataHelper(client, this.getMetadataTableName(), auths);
         String modelName = this.getModelName();
         String modelTableName = this.getModelTableName();
@@ -96,6 +95,8 @@ public class FieldIndexCountQueryLogic extends ShardQueryLogic {
         ShardQueryConfiguration config = ShardQueryConfiguration.create(this, settings);
         config.setClient(client);
         config.setAuthorizations(auths);
+
+        this.scannerFactory = new ScannerFactory(config);
 
         // the following throw IllegalArgumentExceptions if validation fails.
         parseQuery(config, settings);

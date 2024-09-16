@@ -4,8 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNodes;
+import org.apache.commons.jexl3.parser.ParseException;
 
 import datawave.query.Constants;
 import datawave.query.jexl.JexlASTHelper;
@@ -40,18 +41,17 @@ class ContentFunctionArguments {
             // if the first argument is an int, then we have no zone provided
             try {
                 // integer argument is stored at the root level
-                distance = Integer.parseInt(JexlASTHelper.dereference(args.get(currentArg)).image);
-
+                distance = ((Number) JexlNodes.getIdentifierOrLiteral(JexlASTHelper.dereference(args.get(currentArg)))).intValue();
                 // Don't want to do the inline ++ in case currentArg still gets
                 // incremented on exception
                 currentArg++;
-            } catch (NumberFormatException e) {
+            } catch (NumberFormatException | ClassCastException e) {
                 // If the first arg isn't an int, then it's the zone
                 zone = constructZone(args.get(currentArg++));
 
                 try {
                     // integer argument is stored at the root level
-                    distance = Integer.parseInt(JexlASTHelper.dereference(args.get(currentArg++)).image);
+                    distance = ((Number) JexlNodes.getIdentifierOrLiteral(JexlASTHelper.dereference(args.get(currentArg++)))).intValue();
                 } catch (NumberFormatException e1) {
                     throw new ParseException("Could not parse an integer distance value");
                 }
@@ -67,7 +67,7 @@ class ContentFunctionArguments {
 
             // Get the actual terms
             for (int i = currentArg; i < args.size(); i++) {
-                String term = JexlASTHelper.dereference(args.get(i)).image.trim();
+                String term = JexlNodes.getIdentifierOrLiteralAsString(JexlASTHelper.dereference(args.get(i))).trim();
 
                 if (term.length() > 1 && term.charAt(0) == '\'' && term.charAt(term.length() - 1) == '\'') {
                     term = term.substring(1, term.length() - 1);
@@ -105,7 +105,7 @@ class ContentFunctionArguments {
 
             // Get the actual terms
             for (int i = currentArg; i < args.size(); i++) {
-                String term = JexlASTHelper.dereference(args.get(i)).image.trim();
+                String term = JexlNodes.getIdentifierOrLiteralAsString(JexlASTHelper.dereference(args.get(i))).trim();
 
                 if (term.length() > 1 && term.charAt(0) == '\'' && term.charAt(term.length() - 1) == '\'') {
                     term = term.substring(1, term.length() - 1);
@@ -115,12 +115,14 @@ class ContentFunctionArguments {
             }
         } else if (functionName.startsWith(Constants.CONTENT_ADJACENT_FUNCTION_NAME)) {
             // Pull off the zone if it's the zone adjacent function
-            if (!Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME.equalsIgnoreCase(JexlASTHelper.dereference(args.get(currentArg)).image)) {
+            if (!Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME
+                            .equalsIgnoreCase(JexlNodes.getIdentifierOrLiteralAsString(JexlASTHelper.dereference(args.get(currentArg))))) {
                 zone = constructZone(args.get(currentArg++));
             }
 
             // Ensure the next term is the termOffsetMap variable
-            if (!Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME.equalsIgnoreCase(JexlASTHelper.dereference(args.get(currentArg++)).image.trim())) {
+            if (!Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME
+                            .equalsIgnoreCase(JexlNodes.getIdentifierOrLiteralAsString(JexlASTHelper.dereference(args.get(currentArg++))).trim())) {
                 throw new ParseException("Did not find the term offset map name where expected in the function arguments");
             }
 
@@ -129,7 +131,7 @@ class ContentFunctionArguments {
 
             // Get the actual terms
             for (int i = currentArg; i < args.size(); i++) {
-                String term = JexlASTHelper.dereference(args.get(i)).image.trim();
+                String term = JexlNodes.getIdentifierOrLiteralAsString(JexlASTHelper.dereference(args.get(i))).trim();
 
                 if (term.length() > 1 && term.charAt(0) == '\'' && term.charAt(term.length() - 1) == '\'') {
                     term = term.substring(1, term.length() - 1);
@@ -139,7 +141,8 @@ class ContentFunctionArguments {
             }
         } else if (functionName.startsWith(Constants.CONTENT_PHRASE_FUNCTION_NAME)) {
             // Pull off the zone if it's the zone phrase function
-            if (!Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME.equalsIgnoreCase(JexlASTHelper.dereference(args.get(currentArg)).image)) {
+            if (!Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME
+                            .equalsIgnoreCase(JexlNodes.getIdentifierOrLiteralAsString(JexlASTHelper.dereference(args.get(currentArg))))) {
                 zone = constructZone(args.get(currentArg++));
                 if (zone.isEmpty()) {
                     currentArg--;
@@ -183,7 +186,7 @@ class ContentFunctionArguments {
 
         // Get the actual terms
         for (int i = currentArg; i < args.size(); i++) {
-            String term = JexlASTHelper.dereference(args.get(i)).image.trim();
+            String term = JexlNodes.getIdentifierOrLiteralAsString(JexlASTHelper.dereference(args.get(i))).trim();
 
             if (term.length() > 1 && term.charAt(0) == '\'' && term.charAt(term.length() - 1) == '\'') {
                 term = term.substring(1, term.length() - 1);

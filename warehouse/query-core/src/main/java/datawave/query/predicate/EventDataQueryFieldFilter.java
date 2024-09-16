@@ -7,8 +7,8 @@ import javax.annotation.Nullable;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
-import org.apache.commons.jexl2.parser.ASTIdentifier;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTIdentifier;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
 
 import com.google.common.collect.Sets;
 
@@ -35,6 +35,11 @@ public class EventDataQueryFieldFilter implements EventDataQueryFilter {
 
     /**
      * Initialize filter with an empty projection
+     *
+     * @param projections
+     *            the projection
+     * @param projectionType
+     *            the projection type
      */
     public EventDataQueryFieldFilter(Set<String> projections, Projection.ProjectionType projectionType) {
         this.keyProjection = new KeyProjection(projections, projectionType);
@@ -44,6 +49,7 @@ public class EventDataQueryFieldFilter implements EventDataQueryFilter {
      * Initiate from a KeyProjection
      *
      * @param projection
+     *            the projection
      */
     public EventDataQueryFieldFilter(KeyProjection projection) {
         this.keyProjection = projection;

@@ -7,9 +7,9 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
 
-import datawave.webservice.query.Query;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
-import datawave.webservice.query.logic.QueryLogic;
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.logic.QueryLogic;
+import datawave.microservice.query.Query;
 
 /**
  * Defines the logic to collect all of the results from the former query logic and issue one query against the latter query logic
@@ -17,9 +17,9 @@ import datawave.webservice.query.logic.QueryLogic;
  *
  *
  * @param <T1>
- *            Type of former {@link datawave.webservice.query.logic.QueryLogic}
+ *            Type of former {@link QueryLogic}
  * @param <T2>
- *            Type of latter {@link datawave.webservice.query.logic.QueryLogic}
+ *            Type of latter {@link QueryLogic}
  */
 public abstract class FullChainStrategy<T1,T2> implements ChainStrategy<T1,T2> {
     protected final Logger log = Logger.getLogger(FullChainStrategy.class);

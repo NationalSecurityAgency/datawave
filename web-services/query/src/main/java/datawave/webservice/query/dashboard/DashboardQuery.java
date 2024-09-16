@@ -3,15 +3,15 @@ package datawave.webservice.query.dashboard;
 import java.text.ParseException;
 import java.util.Date;
 
-import javax.ws.rs.core.MultivaluedMap;
-
 import org.apache.commons.lang.time.DateUtils;
-import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 
-import datawave.webservice.common.extjs.ExtJsResponse;
-import datawave.webservice.query.QueryParametersImpl;
-import datawave.webservice.query.QueryPersistence;
+import datawave.core.common.extjs.ExtJsResponse;
+import datawave.core.query.dashboard.DashboardFields;
+import datawave.core.query.dashboard.DashboardSummary;
+import datawave.microservice.query.DefaultQueryParameters;
+import datawave.microservice.query.QueryPersistence;
 import datawave.webservice.query.runner.QueryExecutor;
+import datawave.webservice.query.util.MapUtils;
 
 public class DashboardQuery {
 
@@ -33,9 +33,9 @@ public class DashboardQuery {
     public static ExtJsResponse<DashboardSummary> createQuery(QueryExecutor queryExecutor, String auths, Date beginDate, Date endDate, Date now)
                     throws ParseException {
 
-        MultivaluedMap<String,String> paramsMap = new MultivaluedMapImpl<>();
-        paramsMap.putAll(QueryParametersImpl.paramsToMap(logicName, queryString, queryName, columnVisibility, beginDate, endDate, auths,
-                        DateUtils.addDays(now, 1), pageSize, pageTimeout, maxResultsOverride, persistence, systemFrom, parameters, trace));
-        return (ExtJsResponse) queryExecutor.createQueryAndNext(logicName, paramsMap);
+        return (ExtJsResponse) queryExecutor.createQueryAndNext(logicName,
+                        MapUtils.toMultivaluedMap(DefaultQueryParameters.paramsToMap(logicName, queryString, queryName, columnVisibility, beginDate, endDate,
+                                        auths, DateUtils.addDays(now, 1), pageSize, pageTimeout, maxResultsOverride, persistence, systemFrom, parameters,
+                                        trace)));
     }
 }

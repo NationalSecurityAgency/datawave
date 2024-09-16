@@ -8,7 +8,8 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
-import org.apache.commons.jexl2.Script;
+import org.apache.commons.jexl3.JexlScript;
+import org.apache.commons.jexl3.internal.Script;
 import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,7 +55,7 @@ public class EdgeIngestConfiguration {
     private Map<String,Map<String,String>> edgeEnrichmentTypeLookup = new HashMap<>();
     private Map<String,Set<String>> disallowlistFieldLookup = new HashMap<>();
     private Map<String,Set<String>> disallowlistValueLookup = new HashMap<>();
-    private Map<String,Script> scriptCache;
+    private Map<String,JexlScript> scriptCache;
 
     private EdgePreconditionJexlContext edgePreconditionContext;
     private EdgePreconditionJexlEvaluation edgePreconditionEvaluation;
@@ -340,7 +341,7 @@ public class EdgeIngestConfiguration {
         return edgePreconditionEvaluation;
     }
 
-    public Map<String,Script> getScriptCache() {
+    public Map<String,JexlScript> getScriptCache() {
         return scriptCache;
     }
 
@@ -356,8 +357,16 @@ public class EdgeIngestConfiguration {
         arithmetic.clearMatchingGroups();
     }
 
+    public void clearArithmeticExcludedGroups() {
+        arithmetic.clearExcludedGroups();
+    }
+
     public Map<String,Set<String>> getArithmeticMatchingGroups() {
         return arithmetic.getMatchingGroups();
+    }
+
+    public Map<String,Set<String>> getArithmeticExcludedGroups() {
+        return arithmetic.getExcludedGroups();
     }
 
     public long getPastDelta() {
