@@ -7,6 +7,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -28,6 +29,9 @@ public class ExcerptFields implements Serializable {
     public static final String COMMA = ",";
 
     public static final String FORWARD_SLASH = "/";
+
+    public static final String WHITESPACE = "\\s";
+    public static final Pattern whitespacePattern = Pattern.compile(WHITESPACE);
 
     private static final String BOTH = "both";
 
@@ -53,7 +57,7 @@ public class ExcerptFields implements Serializable {
             return null;
         }
         // Strip whitespaces.
-        string = StringUtils.deleteWhitespace(string);
+        string = whitespacePattern.matcher(string).replaceAll("");
 
         if (string.isEmpty()) {
             return new ExcerptFields();
@@ -204,9 +208,9 @@ public class ExcerptFields implements Serializable {
      */
     public void expandFields(Multimap<String,String> model) {
         SortedMap<String,SortedMap<Integer,String>> expandedMap = new TreeMap<>();
-        for (String field : fieldMap.keySet()) {
-            SortedMap<Integer,String> offset = fieldMap.get(field);
-            field = field.toUpperCase();
+        for (Map.Entry<String,SortedMap<Integer,String>> entry : fieldMap.entrySet()) {
+            String field = entry.getKey().toUpperCase();
+            SortedMap<Integer,String> offset = entry.getValue();
             // Add the expanded fields.
             if (model.containsKey(field)) {
                 for (String expandedField : model.get(field)) {

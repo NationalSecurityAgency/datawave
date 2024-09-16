@@ -13,12 +13,14 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
+import datawave.core.query.jexl.nodes.QueryPropertyMarker;
 import datawave.data.type.Type;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.index.lookup.RangeStream;
 import datawave.query.index.stats.IndexStatsClient;
 import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
+import datawave.query.jexl.visitors.NodeTypeCountVisitor;
 import datawave.query.util.MetadataHelper;
 
 public class JexlASTHelper extends datawave.core.query.jexl.JexlASTHelper {
@@ -127,5 +129,18 @@ public class JexlASTHelper extends datawave.core.query.jexl.JexlASTHelper {
         }
 
         return maxSelectivity;
+    }
+
+    public static NodeTypeCount getIvarators(JexlNode node) {
+        return NodeTypeCountVisitor.countNodes(node, QueryPropertyMarker.getIvaratorTypes());
+    }
+
+    public static int getIvaratorCount(NodeTypeCount nodeCount) {
+        int count = 0;
+        for (QueryPropertyMarker.MarkerType marker : QueryPropertyMarker.getIvaratorTypes()) {
+            count += nodeCount.getTotal(marker);
+        }
+
+        return count;
     }
 }
