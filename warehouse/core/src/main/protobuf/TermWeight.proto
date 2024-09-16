@@ -8,8 +8,13 @@ option java_package = "datawave.ingest.protobuf";
 option optimize_for = SPEED;
 
 message Info {
+  reserved 1 to 2;
+
   repeated uint32 termOffset = 3;
   repeated uint32 prevSkips = 4;
   repeated uint32 score = 5;
   optional bool zeroOffsetMatch = 6 [default = true];
+  repeated uint32 ingestHash = 7;
+  repeated uint32 secondaryValue = 8;
+  repeated uint32 dataType = 9;
 }

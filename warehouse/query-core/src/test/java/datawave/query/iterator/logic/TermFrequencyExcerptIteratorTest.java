@@ -73,9 +73,7 @@ public class TermFrequencyExcerptIteratorTest extends EasyMockSupport {
             // @formatter:off
             TermWeight.Info info = TermWeight.Info.newBuilder()
                             .addAllTermOffset(termIndexes.get(term))
-                            .addScore(-1)
                             .addPrevSkips(0)
-                            .setZeroOffsetMatch(true)
                             .build();
             // @formatter:on
             Key key = new Key(row, colf, colq, new ColumnVisibility("ALL"), new Date().getTime());
