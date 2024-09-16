@@ -13,7 +13,6 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.accumulo.core.iteratorsImpl.system.InterruptibleIterator;
 import org.apache.accumulo.core.iteratorsImpl.system.IterationInterruptedException;
 
 import com.google.common.collect.TreeMultimap;
@@ -21,7 +20,7 @@ import com.google.common.collect.TreeMultimap;
 /**
  *
  */
-public class SortedMultiMapIterator implements InterruptibleIterator {
+public class SortedMultiMapIterator implements SortedKeyValueIterator<Key,Value>{
     private Iterator<Entry<Key,Value>> iter;
     private Entry<Key,Value> entry;
 
@@ -114,10 +113,5 @@ public class SortedMultiMapIterator implements InterruptibleIterator {
 
     public void init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env) throws IOException {
         throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void setInterruptFlag(AtomicBoolean flag) {
-        this.interruptFlag = flag;
     }
 }
