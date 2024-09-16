@@ -82,3 +82,6 @@
 [submodule "microservices/starters/cached-results"]
 	path = microservices/starters/cached-results
 	url = git@github.com:NationalSecurityAgency/datawave-spring-boot-starter-cached-results.git
+[submodule "contrib/datawave-helm-charts"]
+	path = contrib/datawave-helm-charts
+	url = git@github.com:NationalSecurityAgency/datawave-helm-charts.git

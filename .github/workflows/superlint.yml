@@ -1,6 +1,6 @@
 ---
 name: Lint
-
+#todo -- probably only on PR
 on: push
 
 permissions: {}

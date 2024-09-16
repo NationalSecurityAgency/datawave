@@ -1,6 +1,6 @@
-FROM ${docker.image.prefix}datawave-stack-accumulo:2.1.3
+FROM ${docker.image.prefix}datawave-stack-accumulo:2.1.3-hdp-3.4.0
 USER root
-COPY --from=${docker.image.prefix}datawave-stack-hadoop:3.3.6  /usr/local/hadoop/  /usr/local/hadoop/
+COPY --from=${docker.image.prefix}datawave-stack-hadoop:3.4.0 /usr/local/hadoop/  /usr/local/hadoop/
 
 RUN adduser datawave --home /opt/datawave-ingest && echo -n "cd" >> /opt/datawave-ingest/.bashrc
 COPY --from=bitnami/zookeeper:3.6.3  /opt/bitnami/zookeeper/  /usr/lib/zookeeper/
