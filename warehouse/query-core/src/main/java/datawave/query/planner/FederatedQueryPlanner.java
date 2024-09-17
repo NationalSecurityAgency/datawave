@@ -334,10 +334,14 @@ public class FederatedQueryPlanner extends QueryPlanner implements Cloneable {
             configCopy.setBeginDate(dateRange.getLeft());
             configCopy.setEndDate(dateRange.getRight());
 
+            // we want to make sure the same query and same query id are used for tracking purposes and execution
+            configCopy.setQuery(originalConfig.getQuery());
+
             // Create a copy of the original default query planner, and process the query with the new date range.
             DefaultQueryPlanner subPlan = this.queryPlanner.clone();
 
             try {
+
                 CloseableIterable<QueryData> queryData = subPlan.process(configCopy, query, settings, scannerFactory);
                 results.addIterable(queryData);
             } catch (Exception e) {
