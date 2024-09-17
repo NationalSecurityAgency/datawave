@@ -769,8 +769,8 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                     // no need to check containership if not returning sorted uids
                     if (!sortedUIDs || this.lastRangeSeeked.contains(key)) {
                         this.topKey = key;
-                        if (log.isDebugEnabled()) {
-                            log.debug("setting as topKey " + topKey);
+                        if (log.isTraceEnabled()) {
+                            log.trace("setting as topKey " + topKey);
                         }
                         break;
                     }
@@ -879,6 +879,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         if (log.isDebugEnabled()) {
             log.debug("Processing " + boundingFiRanges + " for " + this);
         }
+        long startFillSets = System.currentTimeMillis();
 
         TotalResults totalResults = new TotalResults(maxResults);
 
@@ -916,8 +917,11 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
             }
         }
 
+        long fillSetTiming = System.currentTimeMillis() - startFillSets;
+        log.info("Filled ivarator sets for " + boundingFiRanges.size() + " ranges took " + fillSetTiming + "ms for " + this);
+
         if (failed) {
-            log.error("Failed to complete ivarator cache: " + result, exception);
+            log.error("Failed to complete ivarator cache: " + result + " for " + this, exception);
             throw new IvaratorException("Failed to complete ivarator cache: " + result, exception);
         }
 
@@ -1102,6 +1106,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
 
         // create runnable
         Runnable runnable = () -> {
+            long startFillSet = System.currentTimeMillis();
             if (log.isDebugEnabled()) {
                 log.debug("Starting fillSet(" + boundingFiRange + ')');
             }
@@ -1210,6 +1215,8 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                 log.error("Failed to complete fillSet(" + boundingFiRange + ")", e);
                 throw new RuntimeException(e);
             } finally {
+                long timing = System.currentTimeMillis() - startFillSet;
+                log.info("Completed " + boundingFiRange + " ivarator in " + timing + "ms");
                 // return the ivarator source back to the pool.
                 returnPoolSource(source);
                 if (log.isDebugEnabled()) {
@@ -1644,4 +1651,13 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
     public void setQuerySpanCollector(QuerySpanCollector querySpanCollector) {
         this.querySpanCollector = querySpanCollector;
     }
+
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        builder.append("DatawaveFieldIndexCachingIteratorJexl (").append(queryId).append(") fName=").append(getFieldName()).append(", fValue=")
+                        .append(getFieldValue()).append(", negated=").append(isNegated()).append("}");
+        return builder.toString();
+    }
+
 }
