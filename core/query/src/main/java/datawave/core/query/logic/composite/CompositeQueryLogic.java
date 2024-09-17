@@ -251,8 +251,6 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
         StringBuilder logicQueryStringBuilder = new StringBuilder();
         if (!getInitializedLogics().isEmpty()) {
             logicQueryStringBuilder.append(getConfig().getQueryString());
-        } else {
-            logicQueryStringBuilder.append("CompositeQueryLogic: ");
         }
 
         Map<String,Exception> exceptions = new HashMap<>();
@@ -267,7 +265,9 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
                 if (logicQueryStringBuilder.length() > 0) {
                     logicQueryStringBuilder.append(" || ");
                 }
-                logicQueryStringBuilder.append("( ( logic = '").append(logicName).append("' )").append(" && ");
+
+                logicQueryStringBuilder.append("( ");
+                logicQueryStringBuilder.append("( logic = '").append(logicName).append("' )");
 
                 try {
                     // duplicate the settings for this query
@@ -278,12 +278,14 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
 
                     config = logic.initialize(client, settingsCopy, runtimeQueryAuthorizations);
 
+                    logicQueryStringBuilder.append(" && ").append("( queryId = '").append(settingsCopy.getId()).append("' )");
+
                     // only add this query logic to the initialized logic states if it was not simply filtered out
                     if (logic instanceof FilteredQueryLogic && ((FilteredQueryLogic) logic).isFiltered()) {
                         log.info("Dropping " + logic.getLogicName() + " as it was filtered out");
-                        logicQueryStringBuilder.append("( filtered = true )");
+                        logicQueryStringBuilder.append(" && ").append("( filtered = true )");
                     } else {
-                        logicQueryStringBuilder.append(config.getQueryString());
+                        logicQueryStringBuilder.append(" && ").append(config.getQueryString());
                         QueryLogicHolder holder = new QueryLogicHolder(logicName, logic);
                         holder.setSettings(settingsCopy);
                         holder.setMaxResults(logic.getResultLimit(settingsCopy));
@@ -299,7 +301,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
                 } catch (Exception e) {
                     exceptions.put(logicName, e);
                     log.error("Failed to initialize " + logic.getClass().getName(), e);
-                    logicQueryStringBuilder.append("( failure = '").append(e.getMessage()).append("' )");
+                    logicQueryStringBuilder.append(" && ").append("( failure = '").append(e.getMessage()).append("' )");
                     failedQueryLogics.put(logicName, logic);
                 } finally {
                     queryLogics.remove(next.getKey());
