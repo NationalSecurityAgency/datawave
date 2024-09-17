@@ -177,13 +177,13 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         long edgesCreated = 0;
         String typeName = getTypeName(event.getDataType());
 
-        // get edge definitions for this event type
-        edgeDefConfigs = edgeConfig.getEdges().get(typeName);
-        List<EdgeDefinition> edgeDefs = edgeDefConfigs.getEdges();
-
         if (shortCircuit(event, typeName, edgeConfig.getEdges())) {
             return edgesCreated;
         }
+
+        // get edge definitions for this event type
+        edgeDefConfigs = edgeConfig.getEdges().get(typeName);
+        List<EdgeDefinition> edgeDefs = edgeDefConfigs.getEdges();
 
         // Track metadata for this event
         eventMetadataRegistry = new HashMap<>();
