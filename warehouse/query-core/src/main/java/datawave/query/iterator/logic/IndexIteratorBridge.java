@@ -12,8 +12,8 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.lang3.builder.CompareToBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.query.attributes.Document;
 import datawave.query.iterator.DocumentIterator;

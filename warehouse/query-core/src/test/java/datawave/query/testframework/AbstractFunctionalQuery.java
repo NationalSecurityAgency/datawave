@@ -292,11 +292,12 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
     protected abstract void testInit();
 
     public void debugQuery() {
-        Logger.getRootLogger().setLevel(Level.DEBUG);
-        LogManager.getLogger("datawave.query").setLevel(Level.DEBUG);
-        LogManager.getLogger("datawave.query.planner").setLevel(Level.DEBUG);
-        LogManager.getLogger("datawave.query.planner.DefaultQueryPlanner").setLevel(Level.DEBUG);
-        LogManager.getLogger("datawave.query.planner.FederatedQueryPlanner").setLevel(Level.DEBUG);
+        Configurator.setRootLevel(Level.DEBUG);
+        Configurator.setLevel("datawave.query", Level.DEBUG);
+        Configurator.setLevel("datawave.query.planner", Level.DEBUG);
+        Configurator.setLevel("datawave.query.planner.DefaultQueryPlanner", Level.DEBUG);
+        Configurator.setLevel("datawave.query.planner.FederatedQueryPlanner", Level.DEBUG);
+
     }
 
     // ============================================

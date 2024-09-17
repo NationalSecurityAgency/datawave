@@ -16,8 +16,8 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.lang.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 import org.apache.hadoop.io.WritableUtils;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 

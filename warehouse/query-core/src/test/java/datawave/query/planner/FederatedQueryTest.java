@@ -20,8 +20,10 @@ import javax.inject.Inject;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.slf4j.Log4jMarker;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
@@ -61,7 +63,7 @@ import datawave.webservice.result.DefaultEventQueryResponse;
  */
 public abstract class FederatedQueryTest {
 
-    private static final Logger log = Logger.getLogger(FederatedQueryTest.class);
+    private static final Logger log = LogManager.getLogger(FederatedQueryTest.class);
 
     @RunWith(Arquillian.class)
     public static class ShardRange extends FederatedQueryTest {
