@@ -20,7 +20,7 @@ import com.google.common.collect.TreeMultimap;
 /**
  *
  */
-public class SortedMultiMapIterator implements SortedKeyValueIterator<Key,Value>{
+public class SortedMultiMapIterator implements SortedKeyValueIterator<Key,Value> {
     private Iterator<Entry<Key,Value>> iter;
     private Entry<Key,Value> entry;
 
