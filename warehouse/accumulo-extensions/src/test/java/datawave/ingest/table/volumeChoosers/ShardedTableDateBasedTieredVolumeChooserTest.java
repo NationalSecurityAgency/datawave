@@ -76,6 +76,24 @@ public class ShardedTableDateBasedTieredVolumeChooserTest extends EasyMockSuppor
     }
 
     @Test
+    public void testAllValidInputNoSuffix() {
+
+        String newVolumes = "newData1,newData2,newData3";
+        String oldVolumes = "oldData1,oldData2";
+        long daysBack = 125L;
+
+        Map<Long,String> tiers = new HashMap<>();
+        tiers.put(0L, newVolumes);
+        tiers.put(daysBack, oldVolumes);
+
+        String shardId = "20000202";
+        setupMock(tiers, shardId);
+        ShardedTableDateBasedTieredVolumeChooser chooser = new ShardedTableDateBasedTieredVolumeChooser();
+        String choice = chooser.choose(env, options);
+        assertTrue(oldVolumes.contains(choice));
+    }
+
+    @Test
     public void testAllValidInputNewData() {
 
         String newVolumes = "newData1,newData2,newData3";
