@@ -29,3 +29,5 @@ jobs:
         env:
           # To report GitHub Actions status checks
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Only validate new or edited files
+          VALIDATE_ALL_CODEBASE: false
