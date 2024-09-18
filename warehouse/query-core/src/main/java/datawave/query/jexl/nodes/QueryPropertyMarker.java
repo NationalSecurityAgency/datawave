@@ -97,6 +97,10 @@ public class QueryPropertyMarker {
         IVARATOR_TYPES = Collections.unmodifiableSet(ivaratorTypes);
     }
 
+    public static Set<MarkerType> getIvaratorTypes() {
+        return Collections.unmodifiableSet(IVARATOR_TYPES);
+    }
+
     public static JexlNode create(JexlNode source, MarkerType type) {
         if (isSourceMarked(source, type) || isAncestorMarked(source, type)) {
             return source;

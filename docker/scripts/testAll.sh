@@ -4,6 +4,7 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 WEBSERVICE="${WEBSERVICE:-false}"
 MAX_ATTEMPTS=30
+QUERY_TIMEOUT=2m
 TIMEOUT=10
 
 # First argument is the script to run
@@ -16,7 +17,8 @@ runTest () {
     while [ $ATTEMPT -le $ATTEMPTS ]; do
         echo -n "Running test (Attempt ${ATTEMPT}/${ATTEMPTS}): $1 - "
 
-        QUERY_RESPONSE="$(${SCRIPT_DIR}/$1)"
+        QUERY_RESPONSE="$(timeout ${QUERY_TIMEOUT} ${SCRIPT_DIR}/$1)"
+        EXIT_CODE=$?
 
         if [[ "$QUERY_RESPONSE" == *"Returned $2 events"* ]] ; then
             if [ ! -z "$3" ] ; then
@@ -43,10 +45,14 @@ runTest () {
                 return 0
             fi
         else
-            echo "FAILURE: Unexpected number of events returned"
-            echo
-            echo "TEST RESPONSE"
-            echo "$QUERY_RESPONSE"
+            if [ $EXIT_CODE == 124 ] ; then
+                echo "FAILURE: Query timed out after ${QUERY_TIMEOUT}"
+            else
+                echo "FAILURE: Unexpected number of events returned"
+                echo
+                echo "TEST RESPONSE"
+                echo "$QUERY_RESPONSE"
+            fi
 
             sleep ${TIMEOUT}
 

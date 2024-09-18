@@ -46,6 +46,7 @@ import datawave.query.iterator.logic.TermFrequencyExcerptIterator;
 import datawave.query.iterator.logic.TermFrequencyIndexIterator;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.model.QueryModel;
+import datawave.query.planner.scanhints.IvaratorScanHint;
 import datawave.util.TableName;
 
 public class ShardQueryConfigurationTest {
@@ -135,6 +136,8 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("bypassAccumulo", true);
         defaultValues.put("accumuloPassword", "");
         updatedValues.put("accumuloPassword", "secret");
+        defaultValues.put("connPoolName", null);
+        updatedValues.put("connPoolName", "default");
         defaultValues.put("reduceResults", false);
         updatedValues.put("reduceResults", true);
         defaultValues.put("tldQuery", false);
@@ -440,8 +443,6 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("compositeFilterFunctionsEnabled", true);
         defaultValues.put("uniqueFields", new UniqueFields());
         updatedValues.put("uniqueFields", UniqueFields.from("FIELD_U,FIELD_V"));
-        defaultValues.put("uniqueCacheBufferSize", 100);
-        updatedValues.put("uniqueCacheBufferSize", 1000);
         defaultValues.put("cacheModel", false);
         updatedValues.put("cacheModel", true);
         defaultValues.put("trackSizes", true);
@@ -532,6 +533,9 @@ public class ShardQueryConfigurationTest {
         defaultValues.put("renameFields", Sets.newHashSet());
         updatedValues.put("renameFields", Collections.singleton("UUID=ID"));
 
+        defaultValues.put("fieldIndexHoleMinThreshold", 1.0d);
+        updatedValues.put("fieldIndexHoleMinThreshold", 0.5d);
+
         defaultValues.put("disallowlistedFields", Sets.newHashSet());
         updatedValues.put("disallowlistedFields", Sets.newHashSet("FIELD_B", "FIELD_C"));
         defaultValues.put("disallowlistedFieldsAsString", "");
@@ -585,6 +589,11 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("tableConsistencyLevels", Collections.singletonMap(TableName.SHARD, ScannerBase.ConsistencyLevel.EVENTUAL));
         defaultValues.put("tableHints", Collections.emptyMap());
         updatedValues.put("tableHints", Collections.emptyMap());
+
+        defaultValues.put("useQueryTreeScanHintRules", false);
+        updatedValues.put("useQueryTreeScanHintRules", true);
+        defaultValues.put("queryTreeScanHintRules", Collections.emptyList());
+        updatedValues.put("queryTreeScanHintRules", Collections.singletonList(new IvaratorScanHint()));
     }
 
     private Query createQuery(String query) {

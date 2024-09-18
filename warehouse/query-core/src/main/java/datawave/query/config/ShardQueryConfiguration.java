@@ -17,10 +17,12 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -354,8 +356,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs = Collections.emptyList();
     private String ivaratorFstHdfsBaseURIs = null;
     private int ivaratorCacheBufferSize = 10000;
-
-    private int uniqueCacheBufferSize = 100;
     private long ivaratorCacheScanPersistThreshold = 100000L;
     private long ivaratorCacheScanTimeout = 1000L * 60 * 60;
     private int maxFieldIndexRangeSplit = 11;
@@ -495,6 +495,19 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private boolean sortQueryByCounts = false;
 
     /**
+     * Insert rules for processing the QueryTree to automatically apply hints to queries. Hints will be passed to the ScannerFactory
+     * {@link datawave.query.tables.ScannerFactory} using {@link datawave.query.tables.ScannerFactory#applyConfigs(ScannerBase, String)}
+     */
+    private boolean useQueryTreeScanHintRules = false;
+    private List<ScanHintRule<JexlNode>> queryTreeScanHintRules = new ArrayList<>();
+
+    /**
+     * The minimum percentage threshold that the count for an index row must meet compared to the count for the corresponding frequency row in the metadata
+     * table in order to NOT be considered a field index hole. The value must be between 0.0-1.0, where 1.0 is equivalent to 100%.
+     */
+    private double fieldIndexHoleMinThreshold = 1.0d;
+
+    /**
      * Default constructor
      */
     public ShardQueryConfiguration() {
@@ -508,10 +521,20 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      * @param other
      *            - another ShardQueryConfiguration instance
      */
+    @SuppressWarnings("CopyConstructorMissesField")
     public ShardQueryConfiguration(ShardQueryConfiguration other) {
+        copyFrom(other);
+    }
 
+    /**
+     * Deeply copies over all fields from the given {@link ShardQueryConfiguration} to this {@link ShardQueryConfiguration}.
+     *
+     * @param other
+     *            the {@link ShardQueryConfiguration} to copy values from
+     */
+    public void copyFrom(ShardQueryConfiguration other) {
         // GenericQueryConfiguration copy first
-        super(other);
+        super.copyFrom(other);
 
         // ShardQueryConfiguration copy
         this.setCheckpointable(other.isCheckpointable());
@@ -683,9 +706,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setCompositeFilterFunctionsEnabled(other.isCompositeFilterFunctionsEnabled());
         this.setGroupFieldsBatchSize(other.getGroupFieldsBatchSize());
         this.setAccrueStats(other.getAccrueStats());
-        this.setUniqueFields(other.getUniqueFields());
-        log.info("Checkpointing with " + getUniqueFields());
-        this.setUniqueCacheBufferSize(other.getUniqueCacheBufferSize());
+        this.setUniqueFields(UniqueFields.copyOf(other.getUniqueFields()));
         this.setCacheModel(other.getCacheModel());
         this.setTrackSizes(other.isTrackSizes());
         this.setContentFieldNames(null == other.getContentFieldNames() ? null : Lists.newArrayList(other.getContentFieldNames()));
@@ -720,6 +741,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setUseTermCounts(other.getUseTermCounts());
         this.setSortQueryBeforeGlobalIndex(other.isSortQueryBeforeGlobalIndex());
         this.setSortQueryByCounts(other.isSortQueryByCounts());
+        this.setUseQueryTreeScanHintRules(other.isUseQueryTreeScanHintRules());
+        this.setQueryTreeScanHintRules(other.getQueryTreeScanHintRules());
+        this.setFieldIndexHoleMinThreshold(other.getFieldIndexHoleMinThreshold());
     }
 
     /**
@@ -1498,14 +1522,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.ivaratorFstHdfsBaseURIs = ivaratorFstHdfsBaseURIs;
     }
 
-    public int getUniqueCacheBufferSize() {
-        return uniqueCacheBufferSize;
-    }
-
-    public void setUniqueCacheBufferSize(int uniqueCacheBufferSize) {
-        this.uniqueCacheBufferSize = uniqueCacheBufferSize;
-    }
-
     public int getIvaratorCacheBufferSize() {
         return ivaratorCacheBufferSize;
     }
@@ -1861,7 +1877,11 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     }
 
     public void setUniqueFields(UniqueFields uniqueFields) {
-        this.uniqueFields = uniqueFields.clone();
+        this.uniqueFields = uniqueFields;
+        // If unique fields are present, make sure they are deconstructed by this point.
+        if (uniqueFields != null) {
+            uniqueFields.deconstructIdentifierFields();
+        }
     }
 
     public boolean isHitList() {
@@ -2089,6 +2109,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public QueryStopwatch getTimers() {
         return timers;
+    }
+
+    public void setTimers(QueryStopwatch timers) {
+        this.timers = timers;
+    }
+
+    public void appendTimers(QueryStopwatch timers) {
+        this.timers.appendTimers(timers);
     }
 
     public ASTJexlScript getQueryTree() {
@@ -2724,6 +2752,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.rebuildDatatypeFilterPerShard = rebuildDatatypeFilterPerShard;
     }
 
+    public double getFieldIndexHoleMinThreshold() {
+        return fieldIndexHoleMinThreshold;
+    }
+
+    public void setFieldIndexHoleMinThreshold(double fieldIndexHoleMinThreshold) {
+        this.fieldIndexHoleMinThreshold = fieldIndexHoleMinThreshold;
+    }
+
     public boolean getReduceIngestTypes() {
         return reduceIngestTypes;
     }
@@ -2890,7 +2926,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getGroupFieldsBatchSize() == that.getGroupFieldsBatchSize() &&
                 getAccrueStats() == that.getAccrueStats() &&
                 Objects.equals(getUniqueFields(), that.getUniqueFields()) &&
-                getUniqueCacheBufferSize() == that.getUniqueCacheBufferSize() &&
                 getCacheModel() == that.getCacheModel() &&
                 isTrackSizes() == that.isTrackSizes() &&
                 getEnforceUniqueConjunctionsWithinExpression() == that.getEnforceUniqueConjunctionsWithinExpression() &&
@@ -3157,7 +3192,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getAccrueStats(),
                 getGroupFields(),
                 getUniqueFields(),
-                getUniqueCacheBufferSize(),
                 getCacheModel(),
                 isTrackSizes(),
                 getContentFieldNames(),
@@ -3193,5 +3227,21 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.timers = new QueryStopwatch();
         this.fstCount = new AtomicInteger(0);
         return this;
+    }
+
+    public boolean isUseQueryTreeScanHintRules() {
+        return useQueryTreeScanHintRules;
+    }
+
+    public void setUseQueryTreeScanHintRules(boolean useQueryTreeScanHintRules) {
+        this.useQueryTreeScanHintRules = useQueryTreeScanHintRules;
+    }
+
+    public List<ScanHintRule<JexlNode>> getQueryTreeScanHintRules() {
+        return queryTreeScanHintRules;
+    }
+
+    public void setQueryTreeScanHintRules(List<ScanHintRule<JexlNode>> queryTreeScanHintRules) {
+        this.queryTreeScanHintRules = queryTreeScanHintRules;
     }
 }

@@ -1,5 +1,8 @@
 package datawave.query.transformer;
 
+import static datawave.query.iterator.logic.TermFrequencyExcerptIterator.Configuration.END_OFFSET;
+import static datawave.query.iterator.logic.TermFrequencyExcerptIterator.Configuration.FIELD_NAME;
+import static datawave.query.iterator.logic.TermFrequencyExcerptIterator.Configuration.START_OFFSET;
 import static org.easymock.EasyMock.and;
 import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.capture;
@@ -15,6 +18,7 @@ import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -65,13 +69,13 @@ public class ExcerptTransformTest extends EasyMockSupport {
     private static final String EVENT_ID = "shard\u0000dt\u0000uid";
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         phraseIndexes = new PhraseIndexes();
         excerptFields = new ExcerptFields();
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         document = null;
         excerptTransform = null;
     }
@@ -135,11 +139,11 @@ public class ExcerptTransformTest extends EasyMockSupport {
         givenMockDocumentWithHitTerm("BODY", "word");
         givenMatchingTermFrequencies("BODY", new int[][] {{24, 24}}, "word");
         // end offset is inclusive
-        givenMatchingPhrase("BODY", 22, 26, "and the word from bird");
+        givenMatchingPhrase("BODY", 22, 26, "and the [word] from bird", List.of("word"));
 
         // also setup a phrase to match on either side of the matching phrase
         // end offset is inclusive
-        givenMatchingPhrase("BODY", 8, 16, "the quick brown fox jumped over the lazy dog");
+        givenMatchingPhrase("BODY", 8, 16, "the quick brown fox jumped over the lazy dog", List.of("word"));
 
         Capture<Attributes> capturedArg = Capture.newInstance();
         document.put(eq(ExcerptTransform.HIT_EXCERPT), and(capture(capturedArg), isA(Attributes.class)));
@@ -175,7 +179,7 @@ public class ExcerptTransformTest extends EasyMockSupport {
         givenMatchingTermFrequencies("BODY", new int[][] {{1, 2}, {2, 3}, {9, 10}, {20, 21}}, "quick brown");
         // note that the start is relative to index 9 (i.e. 9-2=7) because the overlapping term starts at 9
         // end offset is inclusive
-        givenMatchingPhrase("BODY", 7, 16, "and the quick brown fox jumped over the lazy dog");
+        givenMatchingPhrase("BODY", 7, 16, "and the [quick] [brown] fox jumped over the lazy dog", List.of("quick", "brown"));
 
         Capture<Attributes> capturedArg = Capture.newInstance();
         document.put(eq(ExcerptTransform.HIT_EXCERPT), and(capture(capturedArg), isA(Attributes.class)));
@@ -211,10 +215,10 @@ public class ExcerptTransformTest extends EasyMockSupport {
         givenMockDocumentWithHitTerm("BODY", "quick brown");
         givenMatchingTermFrequencies("BODY", new int[][] {{1, 2}, {2, 3}, {9, 10}, {20, 21}}, "quick brown");
         // end offset is inclusive
-        givenMatchingPhrase("BODY", 23, 28, "Jack and Jill jumped over the");
+        givenMatchingPhrase("BODY", 23, 28, "Jack and Jill jumped over the", List.of("quick", "brown"));
         // note that the start is relative to overlapping term index 9 (i.e. 9-2=7) because the overlapping term starts at 9
         // AND then we combined the phrase from 2 to 7 with the one from 7 to 16
-        givenMatchingPhrase("BODY", 2, 16, "the brown chicken layed an egg and the quick brown fox jumped over the lazy dog");
+        givenMatchingPhrase("BODY", 2, 16, "the [brown] chicken layed an egg and the [quick] [brown] fox jumped over the lazy dog", List.of("quick", "brown"));
 
         Capture<Attributes> capturedArg = Capture.newInstance();
         document.put(eq(ExcerptTransform.HIT_EXCERPT), and(capture(capturedArg), isA(Attributes.class)));
@@ -244,7 +248,7 @@ public class ExcerptTransformTest extends EasyMockSupport {
 
         givenMockDocument();
         // end offset is inclusive
-        givenMatchingPhrase("CONTENT", 0, 7, "the quick brown fox jumped over the lazy dog");
+        givenMatchingPhrase("CONTENT", 0, 7, "the quick brown fox jumped over the lazy dog", Collections.emptyList());
 
         Capture<Attributes> capturedArg = Capture.newInstance();
         document.put(eq(ExcerptTransform.HIT_EXCERPT), and(capture(capturedArg), isA(Attributes.class)));
@@ -273,7 +277,7 @@ public class ExcerptTransformTest extends EasyMockSupport {
         givenMockDocumentWithHitTerm("BODY", "word");
         givenMatchingTermFrequencies("BODY", new int[][] {{24, 24}}, "word");
         // end offset is inclusive
-        givenMatchingPhrase("BODY", 22, 26, "and the word from bird");
+        givenMatchingPhrase("BODY", 22, 26, "and the [word] from bird", List.of("word"));
 
         Capture<Attributes> capturedArg = Capture.newInstance();
         document.put(eq(ExcerptTransform.HIT_EXCERPT), and(capture(capturedArg), isA(Attributes.class)));
@@ -304,8 +308,8 @@ public class ExcerptTransformTest extends EasyMockSupport {
 
         expect(document.isToKeep()).andReturn(true);
         expect(document.containsKey(ExcerptTransform.PHRASE_INDEXES_ATTRIBUTE)).andReturn(true);
-        @SuppressWarnings("rawtypes")
         Key metadata = new Key("Row", "cf", "cq");
+        @SuppressWarnings("rawtypes")
         Attribute phraseIndexAttribute = new Content(phraseIndexes.toString(), metadata, false);
         // noinspection unchecked
         expect(document.get(ExcerptTransform.PHRASE_INDEXES_ATTRIBUTE)).andReturn(phraseIndexAttribute);
@@ -315,12 +319,12 @@ public class ExcerptTransformTest extends EasyMockSupport {
         givenDocument(document);
     }
 
+    @SuppressWarnings("rawtypes")
     private void givenMockDocumentWithHitTerm(String field, String value) {
         Document document = mock(Document.class);
 
         expect(document.isToKeep()).andReturn(true);
         expect(document.containsKey(ExcerptTransform.PHRASE_INDEXES_ATTRIBUTE)).andReturn(true);
-        @SuppressWarnings("rawtypes")
         Key metadata = new Key("shard", "dt\u0000uid");
         Attribute phraseIndexAttribute = new Content(phraseIndexes.toString(), metadata, false);
         // noinspection unchecked
@@ -351,17 +355,17 @@ public class ExcerptTransformTest extends EasyMockSupport {
         phraseIndexes.addIndexTriplet(field, EVENT_ID, start, end);
     }
 
-    private void givenHitTerm(String field, String value) {
-
-    }
-
-    private void givenMatchingPhrase(String field, int start, int end, String phrase) throws IOException {
+    private void givenMatchingPhrase(String field, int start, int end, String phrase, List<String> hitTerms) throws IOException {
         Map<String,String> options = getOptions(field, start, end);
         iterator.init(source, options, env);
+        iterator.setHitTermsList(hitTerms);
+        iterator.setDirection("BOTH");
+        iterator.setOrigHalfSize((float) ((end + 1) - start) / 2);
         iterator.seek(anyObject(), anyObject(), eq(false));
         if (phrase != null) {
             expect(iterator.hasTop()).andReturn(true);
-            Key key = new Key(new Text("row"), new Text("cf"), new Text(field + Constants.NULL + phrase));
+            Key key = new Key(new Text("row"), new Text("cf"),
+                            new Text(field + Constants.NULL + "XXXNOTSCOREDXXX" + Constants.NULL + phrase + Constants.NULL + "XXXNOTSCOREDXXX"));
             expect(iterator.getTopKey()).andReturn(key);
         } else {
             expect(iterator.hasTop()).andReturn(false);
@@ -385,10 +389,10 @@ public class ExcerptTransformTest extends EasyMockSupport {
 
     private Map<String,String> getOptions(String field, int start, int end) {
         Map<String,String> options = new HashMap<>();
-        options.put(TermFrequencyExcerptIterator.FIELD_NAME, field);
-        options.put(TermFrequencyExcerptIterator.START_OFFSET, String.valueOf(start));
+        options.put(FIELD_NAME, field);
+        options.put(START_OFFSET, String.valueOf(start));
         // for the options, the end offset is exclusive so add 1
-        options.put(TermFrequencyExcerptIterator.END_OFFSET, String.valueOf(end + 1));
+        options.put(END_OFFSET, String.valueOf(end + 1));
         return options;
     }
 }

@@ -26,6 +26,7 @@ import datawave.query.common.grouping.GroupFields;
 import datawave.query.common.grouping.GroupingUtils;
 import datawave.query.common.grouping.Groups;
 import datawave.query.iterator.profile.FinalDocumentTrackingIterator;
+import datawave.query.model.QueryModel;
 
 /**
  * GroupingTransform mimics GROUP BY with a COUNT in SQL. For the given fields, this transform will group into unique combinations of values and assign a count
@@ -90,10 +91,6 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
 
             // If this is a final document, bail without adding to the keys, countingMap or fieldVisibilities.
             if (FinalDocumentTrackingIterator.isFinalDocumentKey(keyDocumentEntry.getKey())) {
-                return keyDocumentEntry;
-            }
-
-            if (keyDocumentEntry.getValue().isIntermediateResult()) {
                 return keyDocumentEntry;
             }
 

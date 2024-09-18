@@ -1,5 +1,8 @@
 package datawave.query.tables;
 
+import static datawave.query.jexl.functions.QueryFunctions.GROUPBY_FUNCTION;
+import static datawave.query.jexl.functions.QueryFunctions.UNIQUE_FUNCTION;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -27,6 +30,7 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.security.Authorizations;
+import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -65,6 +69,7 @@ import datawave.query.cardinality.CardinalityConfiguration;
 import datawave.query.common.grouping.GroupFields;
 import datawave.query.config.IndexHole;
 import datawave.query.config.Profile;
+import datawave.query.config.ScanHintRule;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.enrich.DataEnricher;
 import datawave.query.enrich.EnrichingMaster;
@@ -79,6 +84,7 @@ import datawave.query.language.parser.QueryParser;
 import datawave.query.language.tree.QueryNode;
 import datawave.query.model.QueryModel;
 import datawave.query.planner.DefaultQueryPlanner;
+import datawave.query.planner.FederatedQueryPlanner;
 import datawave.query.planner.MetadataHelperQueryModelProvider;
 import datawave.query.planner.QueryModelProvider;
 import datawave.query.planner.QueryPlanner;
@@ -98,7 +104,6 @@ import datawave.query.util.DateIndexHelperFactory;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.MetadataHelperFactory;
 import datawave.query.util.QueryStopwatch;
-import datawave.query.util.sortedset.FileSortedSet;
 import datawave.util.time.TraceStopwatch;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
@@ -275,9 +280,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
     @Override
     public GenericQueryConfiguration initialize(AccumuloClient client, Query settings, Set<Authorizations> auths) throws Exception {
-        // whenever we reinitialize, ensure we have a fresh transformer
         this.transformerInstance = null;
-
         this.config = ShardQueryConfiguration.create(this, settings);
         if (log.isTraceEnabled())
             log.trace("Initializing ShardQueryLogic: " + System.identityHashCode(this) + '('
@@ -303,7 +306,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
             this.config.setGeneratePlanOnly(true);
         }
         initialize(config, client, settings, auths);
-        return config.getQueryString();
+        return this.config.getQueryString();
     }
 
     protected String expandQueryMacros(String query) throws ParseException {
@@ -412,7 +415,43 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
             config.setEndDate(endDate);
         }
 
-        setupQueryPlanner(config);
+        MetadataHelper metadataHelper = prepareMetadataHelper(client, this.getMetadataTableName(), auths, config.isRawTypes());
+
+        DateIndexHelper dateIndexHelper = prepareDateIndexHelper(client, this.getDateIndexTableName(), auths);
+        if (config.isDateIndexTimeTravel()) {
+            dateIndexHelper.setTimeTravel(config.isDateIndexTimeTravel());
+        }
+
+        // If the current query planner is a DefaultQueryPlanner or a FederatedQueryPlanner, get the query model if possible.
+        QueryPlanner queryPlanner = getQueryPlanner();
+        DefaultQueryPlanner defaultQueryPlanner = null;
+        if (queryPlanner instanceof DefaultQueryPlanner) {
+            defaultQueryPlanner = (DefaultQueryPlanner) queryPlanner;
+        } else if (queryPlanner instanceof FederatedQueryPlanner) {
+            defaultQueryPlanner = ((FederatedQueryPlanner) queryPlanner).getQueryPlanner();
+        }
+
+        if (defaultQueryPlanner != null) {
+            defaultQueryPlanner.setMetadataHelper(metadataHelper);
+            defaultQueryPlanner.setDateIndexHelper(dateIndexHelper);
+
+            QueryModelProvider queryModelProvider = defaultQueryPlanner.getQueryModelProviderFactory().createQueryModelProvider();
+            if (queryModelProvider instanceof MetadataHelperQueryModelProvider) {
+                ((MetadataHelperQueryModelProvider) queryModelProvider).setMetadataHelper(metadataHelper);
+                ((MetadataHelperQueryModelProvider) queryModelProvider).setConfig(config);
+            }
+
+            if (null != queryModelProvider.getQueryModel()) {
+                queryModel = queryModelProvider.getQueryModel();
+            }
+        }
+
+        if (this.queryModel == null) {
+            loadQueryModel(metadataHelper, config);
+        }
+
+        getQueryPlanner().setCreateUidsIteratorClass(createUidsIteratorClass);
+        getQueryPlanner().setUidIntersector(uidIntersector);
 
         validateConfiguration(config);
 
@@ -614,11 +653,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
     @Override
     public QueryLogicTransformer getTransformer(Query settings) {
         if (this.transformerInstance != null) {
-            try {
-                addConfigBasedTransformers();
-            } catch (QueryException e) {
-                throw new DatawaveFatalQueryException("Unable to configure transformers", e);
-            }
+            addConfigBasedTransformers();
             return this.transformerInstance;
         }
 
@@ -641,11 +676,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         transformer.setPrimaryToSecondaryFieldMap(primaryToSecondaryFieldMap);
         transformer.setQm(queryModel);
         this.transformerInstance = transformer;
-        try {
-            addConfigBasedTransformers();
-        } catch (QueryException e) {
-            throw new DatawaveFatalQueryException("Unable to configure transformers", e);
-        }
+        addConfigBasedTransformers();
 
         return this.transformerInstance;
     }
@@ -705,7 +736,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
     /**
      * If the configuration didn't exist, OR IT CHANGED, we need to create or update the transformers that have been added.
      */
-    private void addConfigBasedTransformers() throws QueryException {
+    private void addConfigBasedTransformers() {
         if (getConfig() != null) {
             ((DocumentTransformer) this.transformerInstance).setProjectFields(getConfig().getProjectFields());
             ((DocumentTransformer) this.transformerInstance).setDisallowlistedFields(getConfig().getDisallowlistedFields());
@@ -713,12 +744,12 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
             if (getConfig().getUniqueFields() != null && !getConfig().getUniqueFields().isEmpty()) {
                 DocumentTransform alreadyExists = ((DocumentTransformer) this.transformerInstance).containsTransform(UniqueTransform.class);
                 if (alreadyExists != null) {
-                    ((UniqueTransform) alreadyExists).updateConfig(getConfig().getUniqueFields());
+                    ((UniqueTransform) alreadyExists).updateConfig(getConfig().getUniqueFields(), getQueryModel());
                 } else {
                     try {
                         // @formatter:off
                         ((DocumentTransformer) this.transformerInstance).addTransform(new UniqueTransform.Builder()
-                                .withUniqueFields(getConfig().getUniqueFields())
+                                .withUniqueFields(new UniqueTransform(this, getConfig().getUniqueFields()))
                                 .withQueryExecutionForPageTimeout(this.getQueryExecutionForPageTimeout())
                                 .withBufferPersistThreshold(getUniqueCacheBufferSize())
                                 .withIvaratorCacheDirConfigs(getIvaratorCacheDirConfigs())
@@ -981,16 +1012,9 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
             UniqueFields uniqueFields = UniqueFields.from(uniqueFieldsParam);
             // Only set the unique fields if we were actually given some
             if (!uniqueFields.isEmpty()) {
-                // preserve the most recent flag
-                uniqueFields.setMostRecent(config.getUniqueFields().isMostRecent());
+                this.setUniqueFields(uniqueFields);
                 config.setUniqueFields(uniqueFields);
             }
-        }
-
-        // Get the most recent flag
-        String mostRecentUnique = settings.findParameter(QueryParameters.MOST_RECENT_UNIQUE).getParameterValue().trim();
-        if (StringUtils.isNotBlank(mostRecentUnique)) {
-            config.getUniqueFields().setMostRecent(Boolean.valueOf(mostRecentUnique));
         }
 
         // Get the EXCERPT_FIELDS parameter if given
@@ -1990,14 +2014,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         getConfig().setIvaratorFstHdfsBaseURIs(ivaratorFstHdfsBaseURIs);
     }
 
-    public int getUniqueCacheBufferSize() {
-        return getConfig().getUniqueCacheBufferSize();
-    }
-
-    public void setUniqueCacheBufferSize(int uniqueCacheBufferSize) {
-        getConfig().setUniqueCacheBufferSize(uniqueCacheBufferSize);
-    }
-
     public int getIvaratorCacheBufferSize() {
         return getConfig().getIvaratorCacheBufferSize();
     }
@@ -2172,9 +2188,8 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
     public QueryPlanner getQueryPlanner() {
         if (null == planner) {
-            planner = new DefaultQueryPlanner();
+            planner = new FederatedQueryPlanner();
         }
-
         return planner;
     }
 
@@ -2814,7 +2829,18 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
     @Override
     public boolean isCheckpointable() {
-        return getConfig().isCheckpointable();
+        boolean checkpointable = getConfig().isCheckpointable();
+
+        // NOTE: For now, don't allow unique or groupby queries to be checkpointable
+        if (checkpointable && getSettings() != null && getSettings().getQuery() != null) {
+            String query = getSettings().getQuery().toLowerCase();
+            if (query.contains(GROUPBY_FUNCTION) || query.contains(UNIQUE_FUNCTION)) {
+                checkpointable = false;
+                log.warn("Disabling checkpointing for groupby/unique query: " + getSettings().getId().toString());
+            }
+        }
+
+        return checkpointable;
     }
 
     @Override
@@ -2976,5 +3002,29 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
     public void setRebuildDatatypeFilterPerShard(boolean rebuildDatatypeFilterPerShard) {
         getConfig().setRebuildDatatypeFilterPerShard(rebuildDatatypeFilterPerShard);
+    }
+
+    public boolean isUseQueryTreeScanHintRules() {
+        return getConfig().isUseQueryTreeScanHintRules();
+    }
+
+    public void setUseQueryTreeScanHintRules(boolean useQueryTreeScanHintRules) {
+        getConfig().setUseQueryTreeScanHintRules(useQueryTreeScanHintRules);
+    }
+
+    public List<ScanHintRule<JexlNode>> getQueryTreeScanHintRules() {
+        return getConfig().getQueryTreeScanHintRules();
+    }
+
+    public void setQueryTreeScanHintRules(List<ScanHintRule<JexlNode>> queryTreeScanHintRules) {
+        getConfig().setQueryTreeScanHintRules(queryTreeScanHintRules);
+    }
+
+    public void setFieldIndexHoleMinThreshold(double fieldIndexHoleMinThreshold) {
+        getConfig().setFieldIndexHoleMinThreshold(fieldIndexHoleMinThreshold);
+    }
+
+    public double getFieldIndexHoleMinThreshold(int fieldIndexHoleMinThreshold) {
+        return getConfig().getFieldIndexHoleMinThreshold();
     }
 }
