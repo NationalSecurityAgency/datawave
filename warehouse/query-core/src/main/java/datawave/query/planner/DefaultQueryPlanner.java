@@ -77,6 +77,7 @@ import datawave.query.attributes.UniqueFields;
 import datawave.query.common.grouping.GroupFields;
 import datawave.query.composite.CompositeMetadata;
 import datawave.query.composite.CompositeUtils;
+import datawave.query.config.ScanHintRule;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.CannotExpandUnfieldedTermFatalException;
 import datawave.query.exceptions.DatawaveFatalQueryException;
@@ -99,7 +100,6 @@ import datawave.query.jexl.NodeTypeCount;
 import datawave.query.jexl.functions.EvaluationPhaseFilterFunctions;
 import datawave.query.jexl.functions.QueryFunctions;
 import datawave.query.jexl.lookups.IndexLookup;
-import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.jexl.visitors.AddShardsAndDaysVisitor;
 import datawave.query.jexl.visitors.BoundedRangeDetectionVisitor;
 import datawave.query.jexl.visitors.BoundedRangeIndexExpansionVisitor;
@@ -340,6 +340,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         setSourceLimit(other.sourceLimit);
         setPushdownThreshold(other.getPushdownThreshold());
         setVisitorManager(other.getVisitorManager());
+        setTransformRules(other.getTransformRules() == null ? null : new ArrayList<>(other.transformRules));
     }
 
     public void setMetadataHelper(final MetadataHelper metadataHelper) {
@@ -683,10 +684,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
         // now check whether we are over the ivarator limit
         if (maxIvaratorThreshold >= 0) {
-            NodeTypeCount nodeCount = NodeTypeCountVisitor.countNodes(queryTree, QueryPropertyMarker.MarkerType.EXCEEDED_VALUE,
-                            QueryPropertyMarker.MarkerType.EXCEEDED_OR);
-            int totalIvarators = nodeCount.getTotal(QueryPropertyMarker.MarkerType.EXCEEDED_VALUE)
-                            + nodeCount.getTotal(QueryPropertyMarker.MarkerType.EXCEEDED_OR);
+            NodeTypeCount nodeCount = JexlASTHelper.getIvarators(queryTree);
+            int totalIvarators = JexlASTHelper.getIvaratorCount(nodeCount);
             if (totalIvarators > maxIvaratorThreshold) {
                 QueryException qe = new QueryException(DatawaveErrorCode.EXPAND_QUERY_TERM_SYSTEM_LIMITS, Integer.toString(totalIvarators)
                                 + " terms require server side expansion which is greater than the max of " + maxIvaratorThreshold);
@@ -841,6 +840,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         if (reduceQuery) {
             config.setQueryTree(timedReduce(timers, "Reduce Query Final", config.getQueryTree()));
         }
+
+        timeScanHintRules(timers, "Apply scan hint rules", config);
 
         return config.getQueryTree();
     }
@@ -1109,6 +1110,58 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         stopwatch.stop();
 
         return sortedUIDs;
+    }
+
+    protected void timeScanHintRules(QueryStopwatch timers, String stage, ShardQueryConfiguration config) {
+        TraceStopwatch stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - " + stage);
+
+        // apply runtime scan hints
+        if (config.isUseQueryTreeScanHintRules()) {
+            // get the current table hints
+            final Map<String,Map<String,String>> allHints = config.getTableHints();
+
+            // loop over all rules
+            for (ScanHintRule<JexlNode> hintRule : config.getQueryTreeScanHintRules()) {
+                final String hintTable = hintRule.getTable();
+                // does the hint have a table specified and apply given the query tree?
+                if (hintTable != null && hintRule.apply(config.getQueryTree())) {
+                    // get the table hints
+                    Map<String,String> tableHints = allHints.get(hintTable);
+                    if (tableHints == null) {
+                        tableHints = new HashMap<>();
+                        config.getTableHints().put(hintTable, tableHints);
+                    }
+
+                    // is the hint well defined?
+                    if (hintRule.getHintName() == null || hintRule.getHintValue() == null) {
+                        log.warn("Skipping invalid ScanHintRule. No hint name or value set. " + hintRule);
+                        continue;
+                    }
+
+                    // check for overwrite for logging
+                    if (tableHints.get(hintRule.getHintName()) != null) {
+                        // overwriting, log it
+                        log.info("Overwriting scan hint for table " + hintRule.getTable() + " " + hintRule.getHintName() + "="
+                                        + tableHints.get(hintRule.getHintName()) + " to " + hintRule.getHintValue());
+                    }
+
+                    // apply the new hint
+                    tableHints.put(hintRule.getHintName(), hintRule.getHintValue());
+
+                    // check if any other rules should be evaluated
+                    if (!hintRule.isChainable()) {
+                        log.info("Unchainable ScanHintRule applied, " + hintRule);
+                        break;
+                    }
+                }
+            }
+
+            // push any changes back to config
+            config.setTableHints(allHints);
+        }
+        log.info("applying query tree scan hints: " + config.getTableHints());
+
+        stopwatch.stop();
     }
 
     protected void timedCheckForTokenizedFields(QueryStopwatch timers, String stage, ShardQueryConfiguration config, MetadataHelper metadataHelper) {
@@ -1923,17 +1976,23 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             if (log.isTraceEnabled()) {
                 log.trace("Stack trace for overflow " + soe);
             }
-            stopwatch.stop();
+            if (stopwatch != null) {
+                stopwatch.stop();
+            }
             PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.QUERY_DEPTH_OR_TERM_THRESHOLD_EXCEEDED, soe);
             log.warn(qe);
             throw new DatawaveFatalQueryException(qe);
         } catch (ParseException e) {
-            stopwatch.stop();
+            if (stopwatch != null) {
+                stopwatch.stop();
+            }
             BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.UNPARSEABLE_JEXL_QUERY, e, MessageFormat.format("Query: {0}", query));
             log.warn(qe);
             throw new DatawaveFatalQueryException(qe);
         } catch (PatternSyntaxException e) {
-            stopwatch.stop();
+            if (stopwatch != null) {
+                stopwatch.stop();
+            }
             BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_REGEX, e, MessageFormat.format("Query: {0}", query));
             log.warn(qe);
             throw new DatawaveFatalQueryException(qe);
@@ -2981,6 +3040,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     @Override
     public String getPlannedScript() {
         return plannedScript;
+    }
+
+    public void setPlannedScript(String plannedScript) {
+        this.plannedScript = plannedScript;
     }
 
     protected Multimap<String,Type<?>> configureIndexedAndNormalizedFields(MetadataHelper metadataHelper, ShardQueryConfiguration config,
