@@ -218,6 +218,10 @@ public class FindFirstUidIteratorTest {
     }
 
     private FindFirstUidIterator iteratorFromOptions(Map<String,String> options, SortedMap<Key,Value> data) throws IOException {
+        // add start/end date to options
+        options.put(FindFirstUidIterator.START_DATE, "20240203");
+        options.put(FindFirstUidIterator.END_DATE, "20240204");
+
         FindFirstUidIterator iterator = new FindFirstUidIterator();
         iterator.init(new SortedMapIterator(data), options, null);
         // this step might be unnecessary, or require updated args

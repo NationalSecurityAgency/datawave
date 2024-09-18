@@ -138,6 +138,8 @@ public class FindFirstRangeStream extends RangeStream {
 
             IteratorSetting settings = new IteratorSetting(++priority, FindFirstUidIterator.class);
             settings.addOption(FindFirstUidIterator.FIELDS_OPT, Joiner.on(',').join(fields));
+            settings.addOption(FindFirstUidIterator.START_DATE, DateHelper.format(config.getBeginDate()));
+            settings.addOption(FindFirstUidIterator.END_DATE, DateHelper.format(config.getEndDate()));
             if (config.getCollapseUids()) {
                 settings.addOption(FindFirstUidIterator.COLLAPSE_OPT, Boolean.toString(true));
             }

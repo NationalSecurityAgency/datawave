@@ -40,6 +40,8 @@ public class FindFirstUidIterator implements SortedKeyValueIterator<Key,Value>, 
     public static final String COLLAPSE_OPT = "collapse";
     public static final String IS_TLD_OPT = "is.tld";
     public static final String FIELDS_OPT = "fields";
+    public static final String START_DATE = "start.date";
+    public static final String END_DATE = "end.date";
 
     protected boolean collapseUids = false;
     protected boolean parseTldUids = false;
@@ -79,7 +81,21 @@ public class FindFirstUidIterator implements SortedKeyValueIterator<Key,Value>, 
         if (StringUtils.isNotBlank(fieldsOpt)) {
             fields = new TreeSet<>(Splitter.on(',').splitToList(fieldsOpt));
         } else {
-            throw new IllegalArgumentException("FindFirstIterator MUST be given a set of fields");
+            throw new IllegalArgumentException("FindFirstUidIterator must be given a set of fields");
+        }
+
+        final String startDateOpt = options.get(START_DATE);
+        if (StringUtils.isNotBlank(startDateOpt)) {
+            startDate = startDateOpt;
+        } else {
+            throw new IllegalArgumentException("FindFirstUidIterator must be given a start date");
+        }
+
+        final String endDateOpt = options.get(END_DATE);
+        if (StringUtils.isNotBlank(endDateOpt)) {
+            endDate = endDateOpt;
+        } else {
+            throw new IllegalArgumentException("FindFirstUidIterator must be given an end date");
         }
     }
 
@@ -97,6 +113,11 @@ public class FindFirstUidIterator implements SortedKeyValueIterator<Key,Value>, 
             // actually high cardinality across a large date range. The keys may fall outside the query's date range, so we need to check for this and advance
             // the source iterator to the next possible match.
             checkForMiss();
+
+            if (!src.hasTop() || src.getTopKey() == null) {
+                foundFirst = true; // mark that we tried and found nothing
+                return;
+            }
 
             Key reference = makeRootKey(src.getTopKey());
             SortedSet<String> uids = new TreeSet<>();
@@ -243,19 +264,8 @@ public class FindFirstUidIterator implements SortedKeyValueIterator<Key,Value>, 
             this.range = skipKey(range);
         }
 
-        parseDatesFromRange();
-
         src.seek(this.range, this.columnFamilies, inclusive);
         next();
-    }
-
-    /**
-     * Parse the start and stop date from the range
-     */
-    private void parseDatesFromRange() {
-        startDate = this.range.getStartKey().getColumnQualifier().toString();
-        String stopCQ = this.range.getEndKey().getColumnQualifier().toString();
-        endDate = stopCQ.substring(0, stopCQ.indexOf('_'));
     }
 
     /**
@@ -283,8 +293,11 @@ public class FindFirstUidIterator implements SortedKeyValueIterator<Key,Value>, 
 
     @Override
     public SortedKeyValueIterator<Key,Value> deepCopy(IteratorEnvironment env) {
-        CreateUidsIterator itr = new CreateUidsIterator();
+        FindFirstUidIterator itr = new FindFirstUidIterator();
         itr.src = src.deepCopy(env);
+        itr.fields = this.fields;
+        itr.startDate = this.startDate;
+        itr.endDate = this.endDate;
         return itr;
     }
 
