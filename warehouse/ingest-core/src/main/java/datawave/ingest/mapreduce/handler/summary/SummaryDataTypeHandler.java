@@ -9,6 +9,7 @@ import org.apache.log4j.Logger;
 
 import com.google.common.collect.Multimap;
 
+import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
 import datawave.ingest.data.TypeRegistry;
@@ -17,7 +18,6 @@ import datawave.ingest.data.config.ingest.IngestHelperInterface;
 import datawave.ingest.mapreduce.handler.DataTypeHandler;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.metadata.RawRecordMetadata;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
 
 public abstract class SummaryDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN> {
     private static final Logger log = ThreadConfigurableLogger.getLogger(SummaryDataTypeHandler.class);

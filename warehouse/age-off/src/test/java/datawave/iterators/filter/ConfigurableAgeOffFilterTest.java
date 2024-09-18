@@ -3,6 +3,7 @@ package datawave.iterators.filter;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
 
 import java.io.IOException;
 import java.net.URL;
@@ -22,6 +23,7 @@ import org.apache.accumulo.core.iterators.IteratorUtil;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.junit.Test;
 
+import datawave.ingest.util.cache.watch.FileRuleCacheValue;
 import datawave.iterators.filter.ageoff.AppliedRule;
 import datawave.iterators.filter.ageoff.ConfigurableIteratorEnvironment;
 import datawave.iterators.filter.ageoff.FilterOptions;
@@ -102,6 +104,27 @@ public class ConfigurableAgeOffFilterTest {
     }
 
     @Test
+    public void testInit_WillCachePreviousValue() throws Exception {
+        Map<String,String> options = getOptionsMap(30, AgeOffTtlUnits.DAYS);
+        ConfigurableAgeOffFilter filter1 = new ConfigurableAgeOffFilter();
+        options.put(AgeOffConfigParams.FILTER_CONFIG, pathFromClassloader("/filter/test-root-rules.xml"));
+        filter1.init(source, options, env);
+
+        ConfigurableAgeOffFilter filter2 = new ConfigurableAgeOffFilter();
+        filter2.init(source, options, env);
+
+        FileRuleCacheValue cacheValue1 = filter1.getFileRuleCacheValue();
+        FileRuleCacheValue cacheValue2 = filter2.getFileRuleCacheValue();
+
+        assertNotNull(cacheValue1);
+        assertNotNull(cacheValue2);
+
+        // tests that both cache values are identical showing that the cache retrieval
+        // used by the init sees the same value
+        assertSame(cacheValue1, cacheValue2);
+    }
+
+    @Test
     public void testAcceptKeyValue_TtlSet() throws Exception {
         ConfigurableAgeOffFilter filter = new ConfigurableAgeOffFilter();
         Map<String,String> options = getOptionsMap(30, AgeOffTtlUnits.DAYS);
@@ -144,7 +167,7 @@ public class ConfigurableAgeOffFilterTest {
         rules.addAll(singleColumnFamilyMatcher("bar", options));
         // for holding the filters
         FilterWrapper wrapper = getWrappedFilterWithRules(rules, source, options, env);
-        // copy cofigs to actual filter we are testing
+        // copy configs to actual filter we are testing
         filter.initialize(wrapper);
 
         // created two rules

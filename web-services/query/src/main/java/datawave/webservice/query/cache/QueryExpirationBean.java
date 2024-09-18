@@ -18,8 +18,9 @@ import org.apache.log4j.Logger;
 
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.configuration.spring.SpringBean;
+import datawave.core.common.connection.AccumuloConnectionFactory;
+import datawave.microservice.query.config.QueryExpirationProperties;
 import datawave.microservice.querymetric.QueryMetric;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.metric.QueryMetricsBean;
@@ -44,7 +45,7 @@ public class QueryExpirationBean {
 
     @Inject
     @SpringBean(refreshable = true)
-    private QueryExpirationConfiguration conf;
+    private QueryExpirationProperties conf;
 
     @Inject
     private AccumuloConnectionFactory connectionFactory;
@@ -64,7 +65,7 @@ public class QueryExpirationBean {
         }
 
         if (conf == null) {
-            throw new IllegalArgumentException("QueryExpirationConfiguration is null");
+            throw new IllegalArgumentException("QueryExpirationProperties is null");
         }
     }
 
@@ -90,7 +91,7 @@ public class QueryExpirationBean {
         }
         long now = System.currentTimeMillis();
         clearQueries(now);
-        qlCache.clearQueryLogics(now, conf.getCallTimeInMS());
+        qlCache.clearQueryLogics(now, conf.getCallTimeoutMillis());
     }
 
     private void clearQueries(long now) {
@@ -161,11 +162,11 @@ public class QueryExpirationBean {
     private boolean isIdleTooLong(RunningQuery query, long currentTime) {
         long difference = currentTime - query.getLastUsed();
         if (log.isDebugEnabled()) {
-            long countDown = (conf.getIdleTimeInMS() / 1000) - (difference / 1000);
+            long countDown = (conf.getIdleTimeoutMillis() / 1000) - (difference / 1000);
             log.debug("Query: " + query.getSettings().getOwner() + " - " + query.getSettings().getId() + " will be evicted in: " + countDown + " seconds.");
         }
 
-        return difference > conf.getIdleTimeInMS();
+        return difference > conf.getIdleTimeoutMillis();
     }
 
     /**
@@ -186,7 +187,7 @@ public class QueryExpirationBean {
         query.touch(); // Since we know we're still in a call, go ahead and reset the idle time.
         long difference = currentTime - query.getTimeOfCurrentCall();
 
-        if (difference > conf.getCallTimeInMS()) {
+        if (difference > conf.getCallTimeoutMillis()) {
             log.warn("Query " + query.getSettings().getOwner() + " - " + query.getSettings().getId() + " has been in a call for " + (difference / 1000)
                             + "s.  We are evicting this query from the cache.");
             return true;

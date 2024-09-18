@@ -32,6 +32,13 @@ import com.google.common.collect.Sets;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.core.common.connection.AccumuloConnectionFactory;
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.logic.BaseQueryLogic;
+import datawave.core.query.logic.QueryLogic;
+import datawave.core.query.logic.composite.CompositeQueryLogic;
+import datawave.microservice.authorization.util.AuthorizationsUtil;
+import datawave.microservice.query.QueryImpl;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
 import datawave.security.authorization.AuthorizationException;
 import datawave.security.authorization.DatawavePrincipal;
@@ -39,15 +46,7 @@ import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUser.UserType;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.util.DnUtils;
-import datawave.security.util.WSAuthorizationsUtil;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
-import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
-import datawave.webservice.query.logic.BaseQueryLogic;
-import datawave.webservice.query.logic.DatawaveRoleManager;
-import datawave.webservice.query.logic.QueryLogic;
 import datawave.webservice.query.logic.TestQueryLogic;
-import datawave.webservice.query.logic.composite.CompositeQueryLogic;
 import datawave.webservice.query.logic.composite.CompositeQueryLogicTest;
 
 public class RunningQueryTest {
@@ -118,7 +117,7 @@ public class RunningQueryTest {
         expect(logic.isLongRunningQuery()).andReturn(false);
         expect(logic.getResultLimit(settings)).andReturn(-1L);
         expect(logic.getMaxResults()).andReturn(-1L);
-        logic.preInitialize(settings, WSAuthorizationsUtil.buildAuthorizations(null));
+        logic.preInitialize(settings, AuthorizationsUtil.buildAuthorizations(null));
         expect(logic.getUserOperations()).andReturn(null);
         replay(logic);
 
@@ -141,7 +140,7 @@ public class RunningQueryTest {
         expect(logic.isLongRunningQuery()).andReturn(false);
         expect(logic.getResultLimit(settings)).andReturn(-1L);
         expect(logic.getMaxResults()).andReturn(-1L);
-        logic.preInitialize(settings, WSAuthorizationsUtil.buildAuthorizations(null));
+        logic.preInitialize(settings, AuthorizationsUtil.buildAuthorizations(null));
         expect(logic.getUserOperations()).andReturn(null);
         replay(logic);
 
@@ -163,7 +162,7 @@ public class RunningQueryTest {
         Authorizations expected = new Authorizations(auths);
 
         expect(logic.getCollectQueryMetrics()).andReturn(false);
-        logic.preInitialize(settings, WSAuthorizationsUtil.buildAuthorizations(Collections.singleton(Sets.newHashSet("A", "B", "C"))));
+        logic.preInitialize(settings, AuthorizationsUtil.buildAuthorizations(Collections.singleton(Sets.newHashSet("A", "B", "C"))));
         expect(logic.getUserOperations()).andReturn(null);
         replay(logic);
 
@@ -189,21 +188,21 @@ public class RunningQueryTest {
         HashSet<String> roles = new HashSet<>();
         roles.add("NONTESTROLE");
         logic1.setTableName("thisTable");
-        logic1.setRoleManager(new DatawaveRoleManager(roles));
+        logic1.setRequiredRoles(roles);
         CompositeQueryLogicTest.TestQueryLogic2 logic2 = new CompositeQueryLogicTest.TestQueryLogic2();
         HashSet<String> roles2 = new HashSet<>();
         roles2.add("NONTESTROLE");
         logic2.setTableName("thatTable");
-        logic2.setRoleManager(new DatawaveRoleManager(roles2));
-        logics.put("TestQuery1", logic1);
-        logics.put("TestQuery2", logic2);
+        logic2.setRequiredRoles(roles2);
+        logics.put("TestQueryLogic", logic1);
+        logics.put("TestQueryLogic2", logic2);
         CompositeQueryLogic compositeQueryLogic = new CompositeQueryLogic();
         compositeQueryLogic.setQueryLogics(logics);
 
         DatawaveUser user = new DatawaveUser(userDN, UserType.USER, Arrays.asList(auths), null, null, 0L);
         DatawavePrincipal principal = new DatawavePrincipal(Collections.singletonList(user));
 
-        compositeQueryLogic.setPrincipal(principal);
+        compositeQueryLogic.setCurrentUser(principal);
         try {
             RunningQuery query = new RunningQuery(client, connectionPriority, compositeQueryLogic, settings, null, principal, new QueryMetricFactoryImpl());
         } catch (NullPointerException npe) {

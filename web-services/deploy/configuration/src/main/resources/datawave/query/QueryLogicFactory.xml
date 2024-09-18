@@ -11,8 +11,6 @@
     http://www.springframework.org/schema/util
     http://www.springframework.org/schema/util/spring-util-4.0.xsd">
 
-    <bean id="ResponseObjectFactory" class="${response.object.factory.class}"/>
-
     <!--  part of what enforces any Required properties to be set on loading of the context -->
     <bean class="org.springframework.beans.factory.annotation.RequiredAnnotationBeanPostProcessor" />
 
@@ -40,23 +38,15 @@
         <bean class="datawave.query.language.functions.jexl.AtomValuesMatchFunction"/>
         <bean class="datawave.query.language.functions.jexl.Options"/>
         <bean class="datawave.query.language.functions.jexl.Rename"/>
-        <bean class="datawave.query.language.functions.jexl.GroupBy"/>
         <bean class="datawave.query.language.functions.jexl.Unique"/>
+        <bean class="datawave.query.language.functions.jexl.GroupBy"/>
         <bean class="datawave.query.language.functions.jexl.UniqueByDay"/>
         <bean class="datawave.query.language.functions.jexl.UniqueByHour"/>
         <bean class="datawave.query.language.functions.jexl.UniqueByMinute"/>
         <bean class="datawave.query.language.functions.jexl.UniqueByMonth"/>
+        <bean class="datawave.query.language.functions.jexl.UniqueByYear"/>
         <bean class="datawave.query.language.functions.jexl.UniqueBySecond"/>
         <bean class="datawave.query.language.functions.jexl.UniqueByTenthOfHour"/>
-        <bean class="datawave.query.language.functions.jexl.UniqueByYear"/>
-        <bean class="datawave.query.language.functions.jexl.MostRecentUnique"/>
-        <bean class="datawave.query.language.functions.jexl.MostRecentUniqueByDay"/>
-        <bean class="datawave.query.language.functions.jexl.MostRecentUniqueByHour"/>
-        <bean class="datawave.query.language.functions.jexl.MostRecentUniqueByMinute"/>
-        <bean class="datawave.query.language.functions.jexl.MostRecentUniqueByMonth"/>
-        <bean class="datawave.query.language.functions.jexl.MostRecentUniqueBySecond"/>
-        <bean class="datawave.query.language.functions.jexl.MostRecentUniqueByTenthOfHour"/>
-        <bean class="datawave.query.language.functions.jexl.MostRecentUniqueByYear"/>
         <bean class="datawave.query.language.functions.jexl.NoExpansion"/>
         <bean class="datawave.query.language.functions.jexl.Compare"/>
         <bean class="datawave.query.language.functions.jexl.Geowave.Contains"/>
@@ -160,11 +150,11 @@
     </bean>
 
     <!-- End SelectorExtractors -->
+    <bean id="responseObjectFactory" class="datawave.core.query.result.event.DefaultResponseObjectFactory" />
 
-    <bean id="baseQueryLogic" class="datawave.webservice.query.logic.BaseQueryLogic" abstract="true" >
-        <property name="roleManager" ref="easyRoleManager" />
+    <bean id="baseQueryLogic" class="datawave.core.query.logic.BaseQueryLogic" abstract="true" >
         <property name="markingFunctions" ref="markingFunctions" />
-        <property name="responseObjectFactory" ref="ResponseObjectFactory" />
+        <property name="responseObjectFactory" ref="responseObjectFactory" />
     </bean>
 
     <!-- Here is an example of configuring a remote user operations service if needed for a remote event query -->
@@ -173,21 +163,21 @@
         <property name="queryServiceHost" value="localhost" />
         <property name="queryServicePort" value="8443" />
         <property name="queryServiceURI" value="/DataWave/Security/User/" />
-        <property name="responseObjectFactory" ref="ResponseObjectFactory" />
+        <property name="responseObjectFactory" ref="responseObjectFactory" />
     </bean>
 
     <!-- Configure the remote operation here for use by the local UserOperationsBean -->
-    <util:list id="RemoteUserOperationsList" value-type="datawave.security.authorization.RemoteUserOperations">
+    <util:list id="RemoteUserOperationsList" value-type="datawave.security.authorization.UserOperations">
         <!--ref bean="MyRemoteUserOps"/-->
     </util:list>
 
     <!-- Here is an example of configuring a remote query service and a remote event query -->
     <bean id="RemoteQueryService" class="datawave.webservice.query.remote.RemoteQueryServiceImpl">
         <property name="queryServiceScheme" value="https" />
-        <property name="queryServiceHost" value="localhost" />
+        <property name="queryServiceHost" value="query" />
         <property name="queryServicePort" value="8443" />
-        <property name="queryServiceURI" value="/DataWave/Query/" />
-        <property name="responseObjectFactory" ref="ResponseObjectFactory" />
+        <property name="queryServiceURI" value="/query/v1/" />
+        <property name="responseObjectFactory" ref="responseObjectFactory" />
     </bean>
 
     <bean id="RemoteEventQuery" parent="baseQueryLogic" class="datawave.query.tables.RemoteEventQueryLogic">
@@ -251,12 +241,6 @@
         <property name="filterOptions" ref="BaseEventQueryFilterOptions" />
         <property name="auditType" value="NONE" />
         <property name="logicDescription" value="Retrieve sharded events/documents, leveraging the global index tables as needed" />
-        <!-- Determines how many events in the global index lookup will be
-        aggregated into a day range -->
-        <property name="eventPerDayThreshold" value="40000" />
-        <!-- Determines how many shards in the global index lookup will be
-        aggregated into a day range -->
-        <property name="shardsPerDayThreshold" value="${beq.shardsPerDayThreshold}" />
         <!-- The max number of terms BEFORE all expansions -->
         <property name="initialMaxTermThreshold" value="${beq.initialMaxTermThreshold}" />
         <!-- The max number of terms AFTER all expansions -->
@@ -355,7 +339,7 @@
         </property>
     </bean>
 
-    <util:map id="DefaultUUIDViews">
+    <util:map id="DefaultUUIDQueryLogics">
         <entry key="default" value="LuceneUUIDEventQuery"/>
     </util:map>
 
@@ -421,7 +405,7 @@
 
 
     <!-- Query Logic that returns document content -->
-    <bean id="ContentQuery" parent="baseQueryLogic" scope="prototype"  class="datawave.query.tables.content.ContentQueryTable">
+    <bean id="ContentQuery" parent="baseQueryLogic" scope="prototype"  class="datawave.query.tables.content.ContentQueryLogic">
         <property name="tableName" value="${shard.table.name}" />
         <property name="maxResults" value="-1" />
         <property name="maxWork" value="-1" />
@@ -467,7 +451,7 @@
         <property name="includeHierarchyFields" value="false" />
     </bean>
 
-    <bean id="LuceneUUIDEventQuery" parent="baseQueryLogic" scope="prototype" class="datawave.webservice.query.logic.composite.CompositeQueryLogic">
+    <bean id="LuceneUUIDEventQuery" parent="baseQueryLogic" scope="prototype" class="datawave.core.query.logic.composite.CompositeQueryLogic">
       <property name="logicDescription" value="Composite query logic that retrieves records from the event and error tables, based on known UUID fields, ie, those configured via UUIDTypeList in QueryLogicFactory.xml" />
       <property name="auditType" value="NONE" />
       <property name="queryLogics">
@@ -547,6 +531,7 @@
         <property name="maxWork" value="-1" />
         <property name="modelTableName" value="${metadata.table.name}" />
         <property name="modelName" value="DATAWAVE" />
+        <property name="metadataTableName" value="${metadata.table.name}" />
         <property name="metadataHelperFactory" ref="metadataHelperFactory" />
         <property name="fullTableScanEnabled" value="false" />
         <property name="allowLeadingWildcard" value="true" />
@@ -565,6 +550,7 @@
         <property name="maxWork" value="-1" />
         <property name="modelTableName" value="${metadata.table.name}" />
         <property name="modelName" value="DATAWAVE" />
+        <property name="metadataTableName" value="${error.metadata.table.name}" />
         <property name="metadataHelperFactory" ref="metadataHelperFactory" />
         <property name="fullTableScanEnabled" value="false" />
         <property name="allowLeadingWildcard" value="true" />
@@ -621,12 +607,6 @@
         <property name="useEnrichers" value="false" />
         <property name="auditType" value="NONE" />
         <property name="logicDescription" value="Fast boolean query over indexed fields, only returning fields queried on" />
-        <!-- Determines how many events in the global index lookup will be
-        aggregated into a day range -->
-        <property name="eventPerDayThreshold" value="40000" />
-        <!-- Determines how many shards in the global index lookup will be
-        aggregated into a day range -->
-        <property name="shardsPerDayThreshold" value="${beq.shardsPerDayThreshold}" />
         <!-- The max number of terms BEFORE all expansions -->
         <property name="initialMaxTermThreshold" value="${beq.initialMaxTermThreshold}" />
         <!-- The max number of terms AFTER all expansions -->
@@ -687,10 +667,6 @@
         <property name="queryLogicFactoryConfiguration" ref="QueryLogicFactoryConfiguration" />
     </bean>
 
-    <bean id="datawaveRoleManager" class="datawave.webservice.query.logic.DatawaveRoleManager" />
-    
-    <bean id="easyRoleManager" class="datawave.webservice.query.logic.EasyRoleManager" />
-    
     <!-- 
         Factory method config for creating whatever model we want for the default. 
         Provides a fall-back model in the event that the named query model 'modelName'
@@ -705,6 +681,9 @@
         <property name="edgeQueryModel" ref="edgeEventQueryModel" />
         <property name="edgeModelName" value="DATAWAVE_EDGE" />
         <property name="modelTableName" value="${metadata.table.name}" />
+        <property name="edgeDictionaryProvider" ref="edgeDictionaryProvider" />
     </bean>
+
+    <bean id="edgeDictionaryProvider" scope="prototype" class="datawave.webservice.edgedictionary.EdgeDictionaryProviderImpl" />
 
 </beans>

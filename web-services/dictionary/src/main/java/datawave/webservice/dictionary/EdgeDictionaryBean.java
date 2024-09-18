@@ -12,6 +12,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
+import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.apache.http.client.utils.URIBuilder;
 import org.xbill.DNS.TextParseException;
 
@@ -42,7 +43,7 @@ public class EdgeDictionaryBean {
     @GET
     @Path("/")
     public Response getEdgeDictionary(@Context UriInfo uriInfo) throws TextParseException, URISyntaxException {
-        URIBuilder builder = remoteEdgeDictionary.buildURI("");
+        URIBuilder builder = remoteEdgeDictionary.buildRedirectURI("", uriInfo.getBaseUri());
         uriInfo.getQueryParameters().forEach((pname, valueList) -> valueList.forEach(pvalue -> builder.addParameter(pname, pvalue)));
         return Response.temporaryRedirect(builder.build()).build();
     }

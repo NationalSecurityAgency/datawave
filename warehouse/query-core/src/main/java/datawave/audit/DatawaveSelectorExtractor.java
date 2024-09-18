@@ -8,10 +8,10 @@ import org.apache.commons.jexl3.parser.ASTEQNode;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.log4j.Logger;
 
+import datawave.microservice.query.Query;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.language.tree.QueryNode;
-import datawave.webservice.query.Query;
 
 public class DatawaveSelectorExtractor implements SelectorExtractor {
 
@@ -21,6 +21,7 @@ public class DatawaveSelectorExtractor implements SelectorExtractor {
     @Override
     public List<String> extractSelectors(Query query) throws IllegalArgumentException {
         List<String> selectorList = new ArrayList<>();
+
         try {
             ASTJexlScript jexlScript;
             try {

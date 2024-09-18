@@ -11,6 +11,7 @@
         Provides a fall-back model in the event that the named query model 'modelName'
         isn't defined in DatawaveMetadata for whatever reason...
     -->
+    <bean id="edgeModelFieldsFactory" class="datawave.edge.model.DefaultEdgeModelFieldsFactory" scope="singleton" />
     <bean id="edgeQueryModel" class="datawave.query.model.edge.EdgeQueryModel" factory-method="loadModel">
         <constructor-arg value="/DATAWAVE_EDGE.xml" />
     </bean> 
@@ -18,6 +19,7 @@
     <bean id="EdgeQuery" scope="prototype" parent="baseQueryLogic" class="datawave.query.edge.DefaultExtendedEdgeQueryLogic">
         <property name="tableName" value="${edge.table.name}" />
         <property name="edgeQueryModel" ref="edgeQueryModel" />
+        <property name="edgeModelFieldsFactory" ref="edgeModelFieldsFactory" />
         <property name="modelTableName" value="${metadata.table.name}" />
         <property name="modelName" value="DATAWAVE_EDGE" />
         <property name="maxResults" value="25000" />

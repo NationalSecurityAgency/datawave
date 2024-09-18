@@ -18,7 +18,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.accumulo.core.data.Range;
 import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.GnuParser;
+import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.ParseException;
 import org.apache.hadoop.conf.Configuration;
@@ -46,7 +46,7 @@ public class JobSetupUtil {
         }
 
         MetricsOptions mOpts = new MetricsOptions();
-        CommandLine cl = new GnuParser().parse(mOpts, args);
+        CommandLine cl = new DefaultParser().parse(mOpts, args);
         // add the file config options first
         String confFiles = cl.getOptionValue("conf", "");
         if (confFiles != null && !confFiles.isEmpty()) {

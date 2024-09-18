@@ -20,7 +20,9 @@ import javax.inject.Inject;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.user.SeekingFilter;
 import org.apache.accumulo.core.security.Authorizations;
+import org.apache.commons.collections.iterators.IteratorChain;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.log4j.Logger;
@@ -38,9 +40,13 @@ import org.junit.runner.RunWith;
 
 import com.google.common.collect.Sets;
 
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
+import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.configuration.spring.SpringBean;
+import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
+import datawave.microservice.query.QueryImpl;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.TypeAttribute;
@@ -53,13 +59,15 @@ import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.util.ShapesIngest;
 import datawave.util.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
-import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
 
 /**
  * A set of tests that emphasize the influence of datatypes on query planning and execution
  * <p>
- * Data is from {@link ShapesIngest} test set
+ * Data is from {@link ShapesIngest} test set.
+ * <p>
+ * <b>Note:</b> This test class does NOT use of the {@link RebuildingScannerTestHelper}. That helper class makes use of the Apache Common's
+ * {@link IteratorChain} in a way that is incompatible with Accumulo's {@link SeekingFilter}. Namely, during a rebuild on a next call the ScannerHelper's call
+ * to 'ChainIterator.next' will swap in a whole new seeking filter in a way that causes the call to 'range.clip' on SeekingFilter#222 to return null.
  */
 public abstract class ShapesTest {
 
@@ -99,8 +107,8 @@ public abstract class ShapesTest {
 
         @BeforeClass
         public static void setUp() throws Exception {
-            QueryTestTableHelper testHelper = new QueryTestTableHelper(ShardRange.class.toString(), log);
-            client = testHelper.client;
+            InMemoryInstance i = new InMemoryInstance(ShardRange.class.getName());
+            client = new InMemoryAccumuloClient("", i);
 
             ShapesIngest.writeData(client, ShapesIngest.RangeType.SHARD);
 
@@ -122,8 +130,8 @@ public abstract class ShapesTest {
 
         @BeforeClass
         public static void setUp() throws Exception {
-            QueryTestTableHelper testHelper = new QueryTestTableHelper(DocumentRange.class.toString(), log);
-            client = testHelper.client;
+            InMemoryInstance i = new InMemoryInstance(DocumentRange.class.getName());
+            client = new InMemoryAccumuloClient("", i);
 
             ShapesIngest.writeData(client, ShapesIngest.RangeType.DOCUMENT);
 
@@ -148,7 +156,6 @@ public abstract class ShapesTest {
                         .deleteClass(DefaultEdgeEventQueryLogic.class)
                         .deleteClass(RemoteEdgeDictionary.class)
                         .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
-                        .deleteClass(datawave.query.metrics.ShardTableQueryMetricHandler.class)
                         .addAsManifestResource(new StringAsset(
                                         "<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>" + "</alternatives>"),
                                         "beans.xml");
@@ -859,6 +866,25 @@ public abstract class ShapesTest {
                     }
                 }
             }
+        }
+    }
+
+    @Test
+    public void testSortQueryBeforeGlobalIndex() throws Exception {
+        try {
+            // SHAPE cardinality for triangle and pentagon types is 23
+            // TYPE cardinality for triangle and pentagon types is 21
+            withQuery("SHAPE == 'triangle' || TYPE == 'pentagon'");
+            withParameter(QueryParameters.DATATYPE_FILTER_SET, "triangle,pentagon");
+
+            Set<String> expectedUids = new HashSet<>(triangleUids);
+            withExpected(expectedUids);
+
+            logic.setSortQueryBeforeGlobalIndex(true);
+            planAndExecuteQuery();
+            assertPlannedQuery("TYPE == 'pentagon' || SHAPE == 'triangle'");
+        } finally {
+            logic.setSortQueryBeforeGlobalIndex(false);
         }
     }
 

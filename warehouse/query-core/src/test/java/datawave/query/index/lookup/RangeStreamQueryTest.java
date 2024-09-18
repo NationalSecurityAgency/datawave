@@ -155,7 +155,6 @@ public class RangeStreamQueryTest {
         config.setDatatypeFilter(Collections.singleton("datatype"));
         config.setQueryFieldsDatatypes(fieldToDataType);
         config.setIndexedFields(fieldToDataType);
-        config.setShardsPerDayThreshold(2);
     }
 
     @AfterClass
@@ -383,7 +382,8 @@ public class RangeStreamQueryTest {
 
         // Run a standard limited-scanner range stream.
         count++;
-        rangeStream = new RangeStream(config, new ScannerFactory(config.getClient(), 1), helper);
+        ScannerFactory scannerFactory = new ScannerFactory(config);
+        rangeStream = new RangeStream(config, scannerFactory, helper);
         rangeStream.setLimitScanners(true);
 
         script = JexlASTHelper.parseAndFlattenJexlQuery(query);

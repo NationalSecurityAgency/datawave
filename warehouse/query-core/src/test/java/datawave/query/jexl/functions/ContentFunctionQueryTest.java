@@ -1,14 +1,14 @@
 package datawave.query.jexl.functions;
 
+import static datawave.microservice.query.QueryParameters.QUERY_AUTHORIZATIONS;
+import static datawave.microservice.query.QueryParameters.QUERY_BEGIN;
+import static datawave.microservice.query.QueryParameters.QUERY_END;
+import static datawave.microservice.query.QueryParameters.QUERY_EXPIRATION;
+import static datawave.microservice.query.QueryParameters.QUERY_LOGIC_NAME;
+import static datawave.microservice.query.QueryParameters.QUERY_NAME;
+import static datawave.microservice.query.QueryParameters.QUERY_PERSISTENCE;
+import static datawave.microservice.query.QueryParameters.QUERY_STRING;
 import static datawave.query.QueryParameters.DATE_RANGE_TYPE;
-import static datawave.webservice.query.QueryParameters.QUERY_AUTHORIZATIONS;
-import static datawave.webservice.query.QueryParameters.QUERY_BEGIN;
-import static datawave.webservice.query.QueryParameters.QUERY_END;
-import static datawave.webservice.query.QueryParameters.QUERY_EXPIRATION;
-import static datawave.webservice.query.QueryParameters.QUERY_LOGIC_NAME;
-import static datawave.webservice.query.QueryParameters.QUERY_NAME;
-import static datawave.webservice.query.QueryParameters.QUERY_PERSISTENCE;
-import static datawave.webservice.query.QueryParameters.QUERY_STRING;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -81,6 +81,10 @@ import datawave.ingest.protobuf.TermWeightPosition;
 import datawave.ingest.protobuf.Uid;
 import datawave.ingest.table.config.ShardTableConfigHelper;
 import datawave.ingest.table.config.TableConfigHelper;
+import datawave.microservice.query.DefaultQueryParameters;
+import datawave.microservice.query.Query;
+import datawave.microservice.query.QueryImpl;
+import datawave.microservice.query.QueryParameters;
 import datawave.policy.IngestPolicyEnforcer;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
@@ -91,10 +95,6 @@ import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.testframework.MockStatusReporter;
 import datawave.util.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.QueryParameters;
-import datawave.webservice.query.QueryParametersImpl;
 import datawave.webservice.query.result.event.DefaultEvent;
 import datawave.webservice.query.result.event.DefaultField;
 
@@ -133,9 +133,10 @@ public class ContentFunctionQueryTest {
     @Deployment
     public static JavaArchive createDeployment() throws Exception {
         return ShrinkWrap.create(JavaArchive.class)
-                        .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "datawave.webservice.query.result.event")
+                        .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "datawave.webservice.query.result.event",
+                                        "datawave.core.query.result.event")
                         .deleteClass(DefaultEdgeEventQueryLogic.class).deleteClass(RemoteEdgeDictionary.class)
-                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class).deleteClass(datawave.query.metrics.ShardTableQueryMetricHandler.class)
+                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
                         .addAsManifestResource(new StringAsset(
                                         "<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>" + "</alternatives>"),
                                         "beans.xml");
@@ -340,7 +341,7 @@ public class ContentFunctionQueryTest {
         params.set(QUERY_BEGIN, BEGIN_DATE);
         params.set(QUERY_END, END_DATE);
 
-        QueryParameters queryParams = new QueryParametersImpl();
+        QueryParameters queryParams = new DefaultQueryParameters();
         queryParams.validate(params);
 
         Set<Authorizations> auths = new HashSet<>();

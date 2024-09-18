@@ -39,13 +39,13 @@ import org.slf4j.LoggerFactory;
 import datawave.configuration.ConfigurationEvent;
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.configuration.RefreshLifecycle;
+import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.security.DnList;
 import datawave.security.authorization.CachedDatawaveUserService;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUserInfo;
 import datawave.security.system.AuthorizationCache;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.result.GenericResponse;
@@ -311,7 +311,7 @@ public class CredentialsCacheBean {
 
     private void retrieveAccumuloAuthorizations() throws Exception {
         Map<String,String> trackingMap = accumuloConnectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-        AccumuloClient c = accumuloConnectionFactory.getClient(AccumuloConnectionFactory.Priority.ADMIN, trackingMap);
+        AccumuloClient c = accumuloConnectionFactory.getClient(null, null, AccumuloConnectionFactory.Priority.ADMIN, trackingMap);
         try {
             Authorizations auths = c.securityOperations().getUserAuthorizations(c.whoami());
             HashSet<String> authSet = new HashSet<>();

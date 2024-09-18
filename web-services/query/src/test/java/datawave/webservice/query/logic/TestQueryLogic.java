@@ -6,9 +6,11 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.junit.Ignore;
 
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
+import datawave.core.common.connection.AccumuloConnectionFactory;
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.logic.BaseQueryLogic;
+import datawave.core.query.logic.QueryLogicTransformer;
+import datawave.microservice.query.Query;
 
 @Ignore
 public class TestQueryLogic<T> extends BaseQueryLogic<T> {

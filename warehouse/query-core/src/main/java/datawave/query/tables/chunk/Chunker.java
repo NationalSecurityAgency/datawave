@@ -2,8 +2,8 @@ package datawave.query.tables.chunk;
 
 import java.util.Iterator;
 
-import datawave.webservice.query.Query;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.microservice.query.Query;
 
 /**
  * A <code>java.util.Iterator</code> interface for splitting a query into smaller chunks to be executed as separate queries.

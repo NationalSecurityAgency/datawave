@@ -12,6 +12,8 @@ import org.apache.log4j.Logger;
 
 import com.google.common.collect.Multimap;
 
+import datawave.microservice.query.Query;
+import datawave.microservice.query.QueryImpl;
 import datawave.query.config.SSDeepSimilarityQueryConfiguration;
 import datawave.util.ssdeep.ChunkSizeEncoding;
 import datawave.util.ssdeep.IntegerEncoding;
@@ -20,8 +22,6 @@ import datawave.util.ssdeep.SSDeepHash;
 import datawave.util.ssdeep.SSDeepHashEditDistanceScorer;
 import datawave.util.ssdeep.SSDeepHashScorer;
 import datawave.util.ssdeep.SSDeepNGramOverlapScorer;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.QueryImpl;
 
 /** A function that transforms entries retrieved from Accumulo into Scored SSDeep hash matches */
 public class SSDeepScoringFunction implements Function<Map.Entry<Key,Value>,Stream<ScoredSSDeepPair>> {

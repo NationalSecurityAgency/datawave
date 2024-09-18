@@ -38,8 +38,10 @@ import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 
 import datawave.configuration.spring.SpringBean;
+import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
+import datawave.microservice.query.QueryImpl;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.PreNormalizedAttribute;
@@ -52,8 +54,6 @@ import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.util.WiseGuysIngest;
 import datawave.util.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
-import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
 
 /**
  * Tests the composite functions, the #JEXL lucene function, the matchesAtLeastCountOf function. and others
@@ -165,9 +165,9 @@ public abstract class CompositeFunctionsTest {
 
         return ShrinkWrap.create(JavaArchive.class)
                         .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "org.jboss.logging",
-                                        "datawave.webservice.query.result.event")
+                                        "datawave.webservice.query.result.event", "datawave.core.query.result.event")
                         .deleteClass(DefaultEdgeEventQueryLogic.class).deleteClass(RemoteEdgeDictionary.class)
-                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class).deleteClass(datawave.query.metrics.ShardTableQueryMetricHandler.class)
+                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
                         .addAsManifestResource(new StringAsset(
                                         "<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>" + "</alternatives>"),
                                         "beans.xml");
@@ -780,6 +780,22 @@ public abstract class CompositeFunctionsTest {
             }
 
         }
+    }
+
+    @Test
+    public void testMultiFieldInclude() throws Exception {
+        eventQueryLogic.setParser(new LuceneToJexlQueryParser());
+        Map<String,String> extraParameters = new HashMap<>();
+        // @formatter:off
+        String[] queryStrings = {
+                "UUID:SOPRANO AND #INCLUDE(LOCATION || POSIZIONE || NAME, 'newjersey')"
+        };
+        @SuppressWarnings("unchecked")
+        List<String>[] expectedLists = new List[] {Collections.singletonList("SOPRANO")};
+        for (int i = 0; i < queryStrings.length; i++) {
+            runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
+        }
+
     }
 
     @Test

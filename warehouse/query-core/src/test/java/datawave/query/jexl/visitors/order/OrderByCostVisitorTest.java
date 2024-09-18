@@ -231,6 +231,40 @@ public class OrderByCostVisitorTest {
         return sb.toString();
     }
 
+    @Test
+    public void testModelExpansion() throws Exception {
+        // F == '1' || F == '2', where F maps to A, B
+        String query = "A == '1' || B == '1' || A == '2' || B == '2'";
+        String expected = "A == '1' || A == '2' || B == '1' || B == '2'";
+        testDefaultOrdering(query, expected);
+    }
+
+    @Test
+    public void testSortingByNodeTypeWithinSameField() throws ParseException {
+        String query = "A == '1' || B == '1' || A =~ 'ba.*' || B =~ 'ba.*'";
+        String expected = "B == '1' || B =~ 'ba.*' || A == '1' || A =~ 'ba.*'";
+        testFieldOrdering(query, expected);
+
+        // with marker
+        query = "A == '1' || B == '1' || ((_Delayed_ = true) && (A =~ 'ba.*')) || A =~ 'ba.*' || B =~ 'ba.*'";
+        expected = "B == '1' || B =~ 'ba.*' || A == '1' || A =~ 'ba.*' || ((_Delayed_ = true) && (A =~ 'ba.*'))";
+        testFieldOrdering(query, expected);
+    }
+
+    @Test
+    public void testSortSameFieldTermAndMarker() throws ParseException {
+        String query = "((_Delayed_ = true) && (A =~ 'ba.*')) || A == '1'";
+        String expected = "A == '1' || ((_Delayed_ = true) && (A =~ 'ba.*'))";
+        testFieldOrdering(query, expected);
+    }
+
+    @Test
+    public void testSortDuplicateTerms() throws ParseException {
+        String query = "A == '1' && B == '2' && A == '1' && B == '2'";
+        testDefaultOrdering(query, "A == '1' && A == '1' && B == '2' && B == '2'");
+        testFieldOrdering(query, "B == '2' && B == '2' && A == '1' && A == '1'");
+    }
+
     private void testDefaultOrdering(String query, String expected) throws ParseException {
         ASTJexlScript script = JexlASTHelper.parseAndFlattenJexlQuery(query);
         ASTJexlScript ordered = OrderByCostVisitor.order(script);

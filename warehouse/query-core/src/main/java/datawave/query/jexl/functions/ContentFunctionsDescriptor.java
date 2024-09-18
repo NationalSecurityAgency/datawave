@@ -300,36 +300,34 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
                         }
                     }
                 } else if (CONTENT_SCORED_PHRASE_FUNCTION_NAME.equals(funcName)) {
-                    JexlNode firstArg = args.next();
+                    JexlNode arg = args.next();
 
-                    if (firstArg instanceof ASTNumberLiteral || firstArg instanceof ASTUnaryMinusNode) {
-                        // firstArg is max score value, skip
-                        firstArg = args.next();
-                    }
-
-                    // we override the zones if the first argument is a string
-                    if (firstArg instanceof ASTStringLiteral) {
-                        fields = Collections.singleton(((ASTStringLiteral) firstArg).getLiteral());
-
-                        if (args.peek() instanceof ASTNumberLiteral || args.peek() instanceof ASTUnaryMinusNode) {
-                            args.next(); // max score not needed for fields and terms
-                        }
-
+                    if (arg instanceof ASTNumberLiteral || arg instanceof ASTUnaryMinusNode) {
+                        // if the first argument is a number, then no field exists
+                        // for example, content:scoredPhrase(-1.5, termOffsetMap, 'value')
                         termOffsetMap = args.next();
                     } else {
-                        JexlNode nextArg = args.peek();
-
-                        // The zones may (more likely) be specified as an identifier
-                        if (!JexlASTHelper.getIdentifiers(firstArg).isEmpty() && !JexlASTHelper.getIdentifiers(nextArg).isEmpty()) {
-                            if (oredFields != null && firstArg instanceof ASTAndNode) {
-                                oredFields.setValue(false);
-                            }
-
-                            fields = JexlASTHelper.getIdentifierNames(firstArg);
-                            termOffsetMap = args.next();
+                        if (arg instanceof ASTIdentifier) {
+                            // single field case
+                            // for example, content:scoredPhrase(FIELD, -1.5, termOffsetMap, 'value')
+                            fields = Collections.singleton(String.valueOf(JexlASTHelper.getIdentifier(arg)));
                         } else {
-                            termOffsetMap = firstArg;
+                            // multi field case
+                            // for example, content:scoredPhrase((FIELD_A || FIELD_B), -1.5, termOffsetMap, 'value')
+                            Set<String> identifiers = JexlASTHelper.getIdentifierNames(arg);
+                            if (!identifiers.isEmpty()) {
+                                fields = identifiers;
+
+                                if (oredFields != null && arg instanceof ASTAndNode) {
+                                    oredFields.setValue(false);
+                                }
+                            }
                         }
+
+                        // skip score because it is not needed when gathering just the fields and values from a function
+                        args.next();
+
+                        termOffsetMap = args.next();
                     }
                 } else if (CONTENT_WITHIN_FUNCTION_NAME.equals(funcName)) {
                     JexlNode arg = args.next();

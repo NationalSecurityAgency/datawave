@@ -31,6 +31,7 @@ import org.apache.commons.lang.time.FastDateFormat;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
 import datawave.core.iterators.ColumnQualifierRangeIterator;
@@ -578,7 +579,13 @@ public class ShardIndexQueryTableStaticMethods {
     }
 
     public static final void setExpansionFields(ShardQueryConfiguration config, ScannerBase bs, boolean reverseIndex, Collection<String> expansionFields) {
+        for (String field : getColumnFamilies(config, reverseIndex, expansionFields)) {
+            bs.fetchColumnFamily(new Text(field));
+        }
+    }
 
+    public static final List<String> getColumnFamilies(ShardQueryConfiguration config, boolean reverseIndex, Collection<String> expansionFields) {
+        List<String> cfs = Lists.newLinkedList();
         // Now restrict the fields returned to those that are specified and then only those that are indexed or reverse indexed
         if (expansionFields == null || expansionFields.isEmpty()) {
             expansionFields = (reverseIndex ? config.getReverseIndexedFields() : config.getIndexedFields());
@@ -587,16 +594,14 @@ public class ShardIndexQueryTableStaticMethods {
             expansionFields.retainAll(reverseIndex ? config.getReverseIndexedFields() : config.getIndexedFields());
         }
         if (expansionFields.isEmpty()) {
-            bs.fetchColumnFamily(new Text(Constants.NO_FIELD));
+            cfs.add(Constants.NO_FIELD);
         } else {
-            for (String field : expansionFields) {
-                bs.fetchColumnFamily(new Text(field));
-            }
+            cfs.addAll(expansionFields);
         }
-
+        return cfs;
     }
 
-    private static final IteratorSetting configureGlobalIndexTermMatchingIterator(ShardQueryConfiguration config, Collection<String> literals,
+    public static final IteratorSetting configureGlobalIndexTermMatchingIterator(ShardQueryConfiguration config, Collection<String> literals,
                     Collection<String> patterns, boolean reverseIndex, boolean limitToUniqueTerms) {
         if (CollectionUtils.isEmpty(literals) && CollectionUtils.isEmpty(patterns)) {
             return null;
