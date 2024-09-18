@@ -199,7 +199,7 @@ public class Scan implements Callable<Scan> {
                 Class<? extends AccumuloResource> initializer = delegatedResourceInitializer;
 
                 boolean docSpecific = RangeDefinition.isDocSpecific(currentRange);
-                if (!docSpecific && !initializer.isInstance(RfileResource.class)) {
+                if (!docSpecific && !initializer.isAssignableFrom(RfileResource.class)) {
                     // this catches the case where a scanner was created with a RunningResource and a shard range was generated
                     // when bypassing accumulo with a RFileResource, do not override the initializer with a BatchResource
                     initializer = BatchResource.class;
