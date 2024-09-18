@@ -84,6 +84,9 @@ warehouse:
     edgeModelName: 'DATAWAVE_EDGE'
 
 datawave:
+  connection:
+    factory:
+      defaultPool: 'WAREHOUSE'
   metadata:
     all-metadata-auths:
       - PRIVATE,PUBLIC
@@ -91,6 +94,14 @@ datawave:
       "[datawave.data.type.DateType]": "datawave.data.type.RawDateType"
 
   query:
+    poolLimits:
+      'pool1': &defaultPoolLimits
+        maxQueriesPerExecutor:
+          'WAREHOUSE': 40
+          'UUID': 20
+        livenessTimeout: 90
+        livenessTimeoutUnit: SECONDS
+      'pool2': *defaultPoolLimits
     parser:
       skipTokenizeUnfieldedFields:
         - "DOMETA"
