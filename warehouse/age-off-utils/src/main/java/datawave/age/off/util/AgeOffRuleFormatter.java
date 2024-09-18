@@ -35,7 +35,7 @@ public class AgeOffRuleFormatter {
     }
 
     /**
-     * Outputs the configured rule to the writer
+     * Outputs the configured rule to the writer. Will not close the writer.
      *
      * @param writer
      *            output writer
@@ -48,7 +48,6 @@ public class AgeOffRuleFormatter {
         AgeOffRuleLoader.RuleConfig ruleConfig = createRuleConfig(this.configuration);
 
         writer.write(transformToXmlString(ruleConfig));
-        writer.close();
     }
 
     private AgeOffRuleLoader.RuleConfig createRuleConfig(AgeOffRuleConfiguration configuration) throws IOException {

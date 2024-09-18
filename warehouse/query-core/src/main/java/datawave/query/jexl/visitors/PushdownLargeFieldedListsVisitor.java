@@ -42,6 +42,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.Multimap;
 
+import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.core.iterators.DatawaveFieldIndexListIteratorJexl;
 import datawave.query.Constants;
 import datawave.query.config.ShardQueryConfiguration;
@@ -50,7 +51,6 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.LiteralRange;
 import datawave.query.jexl.nodes.ExceededOr;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 

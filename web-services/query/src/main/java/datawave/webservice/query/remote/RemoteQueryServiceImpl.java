@@ -22,10 +22,11 @@ import org.xbill.DNS.TextParseException;
 
 import com.fasterxml.jackson.databind.ObjectReader;
 
+import datawave.core.query.remote.RemoteQueryService;
 import datawave.security.auth.DatawaveAuthenticationMechanism;
 import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.authorization.ProxiedUserDetails;
 import datawave.webservice.common.remote.RemoteHttpService;
-import datawave.webservice.common.remote.RemoteQueryService;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.GenericResponse;
 import datawave.webservice.result.VoidResponse;
@@ -73,16 +74,16 @@ public class RemoteQueryServiceImpl extends RemoteHttpService implements RemoteQ
     }
 
     @Override
-    public GenericResponse<String> createQuery(String queryLogicName, Map<String,List<String>> queryParameters, Object callerObject) {
+    public GenericResponse<String> createQuery(String queryLogicName, Map<String,List<String>> queryParameters, ProxiedUserDetails callerObject) {
         return query(CREATE, queryLogicName, queryParameters, callerObject);
     }
 
     @Override
-    public GenericResponse<String> planQuery(String queryLogicName, Map<String,List<String>> queryParameters, Object callerObject) {
+    public GenericResponse<String> planQuery(String queryLogicName, Map<String,List<String>> queryParameters, ProxiedUserDetails callerObject) {
         return query(PLAN, queryLogicName, queryParameters, callerObject);
     }
 
-    private GenericResponse<String> query(String endPoint, String queryLogicName, Map<String,List<String>> queryParameters, Object callerObject) {
+    private GenericResponse<String> query(String endPoint, String queryLogicName, Map<String,List<String>> queryParameters, ProxiedUserDetails callerObject) {
         init();
         final DatawavePrincipal principal = getDatawavePrincipal(callerObject);
 
@@ -118,7 +119,7 @@ public class RemoteQueryServiceImpl extends RemoteHttpService implements RemoteQ
     }
 
     @Override
-    public BaseQueryResponse next(String id, Object callerObject) {
+    public BaseQueryResponse next(String id, ProxiedUserDetails callerObject) {
         init();
         final DatawavePrincipal principal = getDatawavePrincipal(callerObject);
 
@@ -133,7 +134,7 @@ public class RemoteQueryServiceImpl extends RemoteHttpService implements RemoteQ
     }
 
     @Override
-    public VoidResponse close(String id, Object callerObject) {
+    public VoidResponse close(String id, ProxiedUserDetails callerObject) {
         init();
         final DatawavePrincipal principal = getDatawavePrincipal(callerObject);
 
@@ -148,7 +149,7 @@ public class RemoteQueryServiceImpl extends RemoteHttpService implements RemoteQ
     }
 
     @Override
-    public GenericResponse<String> planQuery(String id, Object callerObject) {
+    public GenericResponse<String> planQuery(String id, ProxiedUserDetails callerObject) {
         init();
         final DatawavePrincipal principal = getDatawavePrincipal(callerObject);
 
@@ -174,7 +175,7 @@ public class RemoteQueryServiceImpl extends RemoteHttpService implements RemoteQ
 
     }
 
-    private DatawavePrincipal getDatawavePrincipal(Object callerObject) {
+    private DatawavePrincipal getDatawavePrincipal(ProxiedUserDetails callerObject) {
         if (callerObject instanceof DatawavePrincipal) {
             return (DatawavePrincipal) callerObject;
         }

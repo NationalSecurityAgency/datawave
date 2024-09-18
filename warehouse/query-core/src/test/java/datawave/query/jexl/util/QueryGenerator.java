@@ -38,7 +38,39 @@ public interface QueryGenerator {
 
     QueryGenerator disableGroupingFunctions();
 
+    QueryGenerator enableNoFieldedFunctions();
+
+    QueryGenerator disableNoFieldedFunctions();
+
+    QueryGenerator enableMultiFieldedFunctions();
+
+    QueryGenerator disableMultiFieldedFunctions();
+
+    QueryGenerator enableNullLiterals();
+
+    QueryGenerator disableNullLiterals();
+
     QueryGenerator enableAllOptions();
 
     QueryGenerator disableAllOptions();
+
+    boolean isIntersectionsEnabled();
+
+    boolean isUnionsEnabled();
+
+    boolean isNegationsEnabled();
+
+    boolean isRegexesEnabled();
+
+    boolean isFilterFunctionsEnabled();
+
+    boolean isContentFunctionsEnabled();
+
+    boolean isGroupingFunctionsEnabled();
+
+    boolean isNoFieldedFunctionsEnabled();
+
+    boolean isMultiFieldedFunctionsEnabled();
+
+    boolean isNullLiteralsEnabled();
 }

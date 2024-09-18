@@ -1,20 +1,14 @@
 package datawave.query.metrics;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Set;
-
-import javax.inject.Inject;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.microservice.query.Query;
 import datawave.query.language.parser.ParseException;
 import datawave.query.tables.ShardQueryLogic;
-import datawave.security.authorization.DatawavePrincipal;
-import datawave.security.system.CallerPrincipal;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
 
 /**
  * Extension to the query logic that enforces the current user is equal to the USER field in the QueryMetrics <br>
@@ -44,15 +38,7 @@ import datawave.webservice.query.configuration.GenericQueryConfiguration;
  */
 public class QueryMetricQueryLogic extends ShardQueryLogic {
 
-    @Inject
-    @CallerPrincipal
-    private DatawavePrincipal callerPrincipal;
-
-    private Collection<String> roles = null;
-
-    public void setRolesSets(Collection<String> roleSets) {
-        this.roles = roleSets;
-    }
+    private static final String METRICS_ADMIN_ROLE = "MetricsAdministrator";
 
     public QueryMetricQueryLogic() {
         super();
@@ -60,11 +46,6 @@ public class QueryMetricQueryLogic extends ShardQueryLogic {
 
     public QueryMetricQueryLogic(QueryMetricQueryLogic other) {
         super(other);
-        callerPrincipal = other.callerPrincipal;
-        if (other.roles != null) {
-            roles = new ArrayList<>();
-            roles.addAll(other.roles);
-        }
     }
 
     @Override
@@ -79,13 +60,8 @@ public class QueryMetricQueryLogic extends ShardQueryLogic {
 
     @Override
     public final String getJexlQueryString(Query settings) throws ParseException {
-
-        if (null == this.roles) {
-            this.roles = callerPrincipal.getPrimaryUser().getRoles();
-        }
-
         String query = super.getJexlQueryString(settings);
-        if (this.roles.contains("MetricsAdministrator")) {
+        if (this.getCurrentUser().getPrimaryUser().getRoles().contains(METRICS_ADMIN_ROLE)) {
             return query;
         }
 

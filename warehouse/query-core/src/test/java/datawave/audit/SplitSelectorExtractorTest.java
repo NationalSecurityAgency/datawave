@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Lists;
 
-import datawave.webservice.query.QueryImpl;
+import datawave.microservice.query.QueryImpl;
 
 class SplitSelectorExtractorTest {
 

@@ -8,7 +8,6 @@ import static datawave.query.testframework.RawDataManager.OR_OP;
 import static datawave.query.testframework.RawDataManager.RE_OP;
 import static datawave.query.testframework.RawDataManager.RN_OP;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.File;
@@ -17,7 +16,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -273,7 +271,11 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
 
         runTest(query, expect);
         // verify that the ivarators ran and completed
-        assertTrue(countComplete(dirs) >= 1);
+        if (this.logic.isCheckpointable()) {
+            assertEquals(8, countComplete(dirs));
+        } else {
+            assertEquals(3, countComplete(dirs));
+        }
 
         // clear list before new set is added
         dirs.clear();
@@ -327,8 +329,13 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
         this.logic.setIvaratorCacheBufferSize(2);
 
         runTest(query, expect);
+
         // verify that the ivarators ran and completed
-        assertTrue(countComplete(dirs) >= 1);
+        if (this.logic.isCheckpointable()) {
+            assertEquals(8, countComplete(dirs));
+        } else {
+            assertEquals(3, countComplete(dirs));
+        }
 
         // clear list before new set is added
         dirs.clear();

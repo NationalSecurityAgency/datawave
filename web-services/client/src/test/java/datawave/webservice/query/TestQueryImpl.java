@@ -7,7 +7,8 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import datawave.webservice.query.QueryImpl.Parameter;
+import datawave.microservice.query.QueryImpl;
+import datawave.microservice.query.QueryImpl.Parameter;
 
 public class TestQueryImpl {
 

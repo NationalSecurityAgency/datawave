@@ -1,5 +1,6 @@
 package datawave.metrics.remote;
 
+import java.net.URI;
 import java.text.SimpleDateFormat;
 import java.util.Collection;
 import java.util.Date;
@@ -15,7 +16,9 @@ import javax.ws.rs.core.MediaType;
 
 import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.apache.http.HttpEntity;
+import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.StringEntity;
+import org.xbill.DNS.TextParseException;
 
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.annotation.Metric;
@@ -27,11 +30,11 @@ import com.fasterxml.jackson.databind.ObjectReader;
 import datawave.configuration.RefreshableScope;
 import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.BaseQueryMetricListResponse;
+import datawave.microservice.querymetric.QueryGeometryResponse;
 import datawave.microservice.querymetric.QueryMetricsSummaryResponse;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.system.CallerPrincipal;
 import datawave.webservice.common.remote.RemoteHttpService;
-import datawave.webservice.query.map.QueryGeometryResponse;
 import datawave.webservice.result.VoidResponse;
 
 /**
@@ -43,13 +46,13 @@ import datawave.webservice.result.VoidResponse;
 @Priority(Interceptor.Priority.APPLICATION)
 public class RemoteQueryMetricService extends RemoteHttpService {
 
-    private static final String UPDATE_METRIC_SUFFIX = "updateMetric";
-    private static final String UPDATE_METRICS_SUFFIX = "updateMetrics";
-    private static final String ID_METRIC_SUFFIX = "id/%s";
-    private static final String MAP_METRIC_SUFFIX = "id/%s/map";
-    private static final String SUMMARY_ALL_SUFFIX = "summary/all";
-    private static final String SUMMARY_USER_SUFFIX = "summary/user";
-    private static final String AUTH_HEADER_NAME = "Authorization";
+    public static final String UPDATE_METRIC_SUFFIX = "updateMetric";
+    public static final String UPDATE_METRICS_SUFFIX = "updateMetrics";
+    public static final String ID_METRIC_SUFFIX = "id/%s";
+    public static final String MAP_METRIC_SUFFIX = "id/%s/map";
+    public static final String SUMMARY_ALL_SUFFIX = "summary/all";
+    public static final String SUMMARY_USER_SUFFIX = "summary/user";
+    public static final String AUTH_HEADER_NAME = "Authorization";
     private ObjectReader baseQueryMetricListResponseReader;
     private ObjectReader queryGeometryResponseReader;
     private ObjectReader queryMetricsSummaryResponseReader;
@@ -77,6 +80,10 @@ public class RemoteQueryMetricService extends RemoteHttpService {
     @Inject
     @ConfigProperty(name = "dw.remoteQueryMetricService.port", defaultValue = "8443")
     private int servicePort;
+
+    @Inject
+    @ConfigProperty(name = "dw.remoteQueryMetricService.useConfiguredURIForRedirect", defaultValue = "false")
+    private boolean useConfiguredURIForRedirect;
 
     @Inject
     @ConfigProperty(name = "dw.remoteQueryMetricService.uri", defaultValue = "/querymetric/v1/")
@@ -222,6 +229,10 @@ public class RemoteQueryMetricService extends RemoteHttpService {
                 entity -> queryMetricsSummaryResponseReader.readValue(entity.getContent()),
                 () -> suffix);
         // @formatter:on
+    }
+
+    public URIBuilder buildRedirectURI(String suffix, URI baseURI) throws TextParseException {
+        return buildRedirectURI(suffix, baseURI, useConfiguredURIForRedirect);
     }
 
     protected String getBearer() {

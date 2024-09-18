@@ -12,15 +12,15 @@ import org.apache.log4j.Logger;
 
 import com.google.common.base.Preconditions;
 
+import datawave.core.query.exception.EmptyObjectException;
+import datawave.core.query.logic.BaseQueryLogic;
+import datawave.core.query.logic.Flushable;
+import datawave.core.query.logic.WritesQueryMetrics;
+import datawave.core.query.logic.WritesResultCardinalities;
 import datawave.marking.MarkingFunctions;
+import datawave.microservice.query.Query;
 import datawave.query.attributes.Document;
 import datawave.util.StringUtils;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.exception.EmptyObjectException;
-import datawave.webservice.query.logic.BaseQueryLogic;
-import datawave.webservice.query.logic.Flushable;
-import datawave.webservice.query.logic.WritesQueryMetrics;
-import datawave.webservice.query.logic.WritesResultCardinalities;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
 import datawave.webservice.query.result.event.Metadata;

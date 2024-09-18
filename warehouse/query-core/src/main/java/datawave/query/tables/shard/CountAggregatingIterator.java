@@ -31,12 +31,13 @@ public class CountAggregatingIterator extends TransformIterator {
 
     protected Set<ColumnVisibility> columnVisibilities = Sets.newHashSet();
 
-    private MarkingFunctions markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
+    private final MarkingFunctions markingFunctions;
 
     private Kryo kryo = new Kryo();
 
-    public CountAggregatingIterator(Iterator<Entry<Key,Value>> iterator, Transformer transformer) {
+    public CountAggregatingIterator(Iterator<Entry<Key,Value>> iterator, Transformer transformer, MarkingFunctions markingFunctions) {
         super(iterator, transformer);
+        this.markingFunctions = markingFunctions;
     }
 
     @Override
@@ -61,12 +62,7 @@ public class CountAggregatingIterator extends TransformIterator {
                 ResultCountingIterator.ResultCountTuple tuple = unpackValue(entry.getValue());
 
                 // Merge the columnVisibilities
-                try {
-                    this.columnVisibilities.add(tuple.getVisibility());
-                } catch (Exception e) {
-                    log.error("Error parsing columnVisibilities of key", e);
-                    continue;
-                }
+                this.columnVisibilities.add(tuple.getVisibility());
 
                 this.count += tuple.getCount();
             } while (getIterator().hasNext());
