@@ -83,6 +83,7 @@ public class TestBaseQueryLogic {
         expect(config.getTableConsistencyLevels()).andReturn(Collections.emptyMap()).anyTimes();
         expect(config.getTableHints()).andReturn(Collections.emptyMap()).anyTimes();
         expect(config.getConnPoolName()).andReturn("connPool1");
+        expect(config.isLongRunningQuery()).andReturn(false);
         expect(this.copy.getConfig()).andReturn(config).anyTimes();
 
         // Run the test

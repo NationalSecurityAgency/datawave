@@ -28,8 +28,8 @@ import com.google.common.hash.PrimitiveSink;
 
 import datawave.core.iterators.filesystem.FileSystemCache;
 import datawave.core.query.configuration.GenericQueryConfiguration;
-import datawave.core.query.logic.ResultPostprocessor;
 import datawave.core.query.logic.BaseQueryLogic;
+import datawave.core.query.logic.ResultPostprocessor;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Document;
@@ -38,6 +38,8 @@ import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.iterator.ivarator.IvaratorCacheDir;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.iterator.profile.FinalDocumentTrackingIterator;
+import datawave.query.model.QueryModel;
+import datawave.query.tables.ShardQueryLogic;
 import datawave.query.util.sortedset.ByteArrayComparator;
 import datawave.query.util.sortedset.FileByteDocumentSortedSet;
 import datawave.query.util.sortedset.FileKeyValueSortedSet;
@@ -46,8 +48,6 @@ import datawave.query.util.sortedset.HdfsBackedSortedSet;
 import datawave.query.util.sortedset.RewritableSortedSetImpl;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
-import datawave.query.model.QueryModel;
-import datawave.query.tables.ShardQueryLogic;
 
 /**
  * This iterator will filter documents based on uniqueness across a set of configured fields. Only the first instance of an event with a unique set of those
