@@ -50,7 +50,6 @@ public class Document extends AttributeBag<Document> implements Serializable {
     long _bytes = 0;
     private static final long ONE_HUNDRED_M = 1024L * 1000 * 100;
     private static final long ONE_M = 1024L * 1000;
-    private static final long FIVE_HUNDRED_K = 1024L * 500;
     TreeMap<String,Attribute<? extends Comparable<?>>> dict;
 
     /**
@@ -59,7 +58,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
     private boolean trackSizes;
 
     /**
-     * Whether or not this document represents an intermediate result. If true, then the document fields should also be empty.
+     * Whether this document represents an intermediate result. If true, then the document fields should also be empty.
      */
     private boolean intermediateResult;
 
@@ -211,21 +210,12 @@ public class Document extends AttributeBag<Document> implements Serializable {
 
     public void debugDocumentSize(Key docKey) {
         long bytes = sizeInBytes();
-        // if more than 100M, then error
+        // if more than 100M, then info
         if (bytes > (ONE_HUNDRED_M)) {
-            log.error("Document " + docKey + "; size = " + size() + "; bytes = " + bytes);
-        }
-        // if more than 10M, then warn
-        // else if (bytes > (1024l * 1000 * 10)) {
-        // log.warn("Document " + docKey + "; size = " + size() + "; bytes = " + bytes);
-        // }
-
-        // if more than 1M, then info
-        else if (bytes > (ONE_M)) {
             log.info("Document " + docKey + "; size = " + size() + "; bytes = " + bytes);
         }
-        // if more than 500K, then debug
-        else if (bytes > (FIVE_HUNDRED_K) && log.isDebugEnabled()) {
+        // if more than 1M, then debug
+        else if (bytes > (ONE_M)) {
             log.debug("Document " + docKey + "; size = " + size() + "; bytes = " + bytes);
         }
         // trace everything
