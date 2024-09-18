@@ -134,6 +134,7 @@ import datawave.query.jexl.visitors.PushFunctionsIntoExceededValueRanges;
 import datawave.query.jexl.visitors.PushdownLowSelectivityNodesVisitor;
 import datawave.query.jexl.visitors.PushdownMissingIndexRangeNodesVisitor;
 import datawave.query.jexl.visitors.PushdownUnexecutableNodesVisitor;
+import datawave.query.jexl.visitors.QueryFieldsVisitor;
 import datawave.query.jexl.visitors.QueryModelVisitor;
 import datawave.query.jexl.visitors.QueryOptionsFromQueryVisitor;
 import datawave.query.jexl.visitors.QueryPropertyMarkerSourceConsolidator;
@@ -339,6 +340,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         setSourceLimit(other.sourceLimit);
         setPushdownThreshold(other.getPushdownThreshold());
         setVisitorManager(other.getVisitorManager());
+        setTransformRules(other.getTransformRules() == null ? null : new ArrayList<>(other.transformRules));
     }
 
     public void setMetadataHelper(final MetadataHelper metadataHelper) {
@@ -1927,17 +1929,23 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             if (log.isTraceEnabled()) {
                 log.trace("Stack trace for overflow " + soe);
             }
-            stopwatch.stop();
+            if (stopwatch != null) {
+                stopwatch.stop();
+            }
             PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.QUERY_DEPTH_OR_TERM_THRESHOLD_EXCEEDED, soe);
             log.warn(qe);
             throw new DatawaveFatalQueryException(qe);
         } catch (ParseException e) {
-            stopwatch.stop();
+            if (stopwatch != null) {
+                stopwatch.stop();
+            }
             BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.UNPARSEABLE_JEXL_QUERY, e, MessageFormat.format("Query: {0}", query));
             log.warn(qe);
             throw new DatawaveFatalQueryException(qe);
         } catch (PatternSyntaxException e) {
-            stopwatch.stop();
+            if (stopwatch != null) {
+                stopwatch.stop();
+            }
             BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_REGEX, e, MessageFormat.format("Query: {0}", query));
             log.warn(qe);
             throw new DatawaveFatalQueryException(qe);
@@ -2647,7 +2655,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         if (config.isRebuildDatatypeFilter()) {
             Set<String> ingestTypes = IngestTypeVisitor.getIngestTypes(config.getQueryTree(), getTypeMetadata());
 
-            if (ingestTypes.contains(IngestTypeVisitor.UNKNOWN_TYPE)) {
+            if (ingestTypes.contains(IngestTypeVisitor.UNKNOWN_TYPE) || ingestTypes.contains(IngestTypeVisitor.IGNORED_TYPE)) {
                 // could not reduce ingest types based on the query structure, do nothing
             } else if (config.getDatatypeFilter().isEmpty()) {
                 // if no filter specified, build and set filter from query fields
@@ -2709,7 +2717,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         }
 
         if (config.isSortQueryBeforeGlobalIndex()) {
-            queryTree = OrderByCostVisitor.order((ASTJexlScript) queryTree);
+            config.setQueryTree(timedSortQueryBeforeGlobalIndex(config, getMetadataHelper()));
         }
 
         // if a simple examination of the query has not forced a full table
@@ -2794,6 +2802,20 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         }
 
         return new Tuple2<>(ranges, needsFullTable);
+    }
+
+    protected ASTJexlScript timedSortQueryBeforeGlobalIndex(ShardQueryConfiguration config, MetadataHelper metadataHelper) throws DatawaveQueryException {
+        return visitorManager.timedVisit(config.getTimers(), "SortQueryBeforeGlobalIndex", () -> {
+            Set<String> fields = QueryFieldsVisitor.parseQueryFields(config.getQueryTree(), getMetadataHelper());
+            if (!fields.isEmpty()) {
+                Set<String> datatypes = config.getDatatypeFilter();
+                Map<String,Long> counts = metadataHelper.getCountsForFieldsInDateRange(fields, datatypes, config.getBeginDate(), config.getEndDate());
+                if (!counts.isEmpty()) {
+                    return OrderByCostVisitor.orderByFieldCount(config.getQueryTree(), counts);
+                }
+            }
+            return config.getQueryTree();
+        });
     }
 
     private TypeMetadata getTypeMetadata() {
@@ -2965,6 +2987,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     @Override
     public String getPlannedScript() {
         return plannedScript;
+    }
+
+    public void setPlannedScript(String plannedScript) {
+        this.plannedScript = plannedScript;
     }
 
     protected Multimap<String,Type<?>> configureIndexedAndNormalizedFields(MetadataHelper metadataHelper, ShardQueryConfiguration config,

@@ -70,6 +70,8 @@ public class GenericQueryConfiguration implements Serializable {
     // use a value like 'env:PASS' to pull from the environment
     private String accumuloPassword = "";
 
+    private String connPoolName;
+
     // Whether or not this query emits every result or performs some kind of result reduction
     protected boolean reduceResults = false;
 
@@ -94,24 +96,36 @@ public class GenericQueryConfiguration implements Serializable {
         this(configuredLogic.getConfig());
     }
 
-    public GenericQueryConfiguration(GenericQueryConfiguration genericConfig) {
-        this.setQuery(genericConfig.getQuery());
-        this.setCheckpointable(genericConfig.isCheckpointable());
-        this.setBaseIteratorPriority(genericConfig.getBaseIteratorPriority());
-        this.setBypassAccumulo(genericConfig.getBypassAccumulo());
-        this.setAccumuloPassword(genericConfig.getAccumuloPassword());
-        this.setAuthorizations(genericConfig.getAuthorizations());
-        this.setBeginDate(genericConfig.getBeginDate());
-        this.setClient(genericConfig.getClient());
-        this.setEndDate(genericConfig.getEndDate());
-        this.setMaxWork(genericConfig.getMaxWork());
-        this.setQueries(genericConfig.getQueries());
-        this.setQueriesIter(genericConfig.getQueriesIter());
-        this.setQueryString(genericConfig.getQueryString());
-        this.setTableName(genericConfig.getTableName());
-        this.setReduceResults(genericConfig.isReduceResults());
-        this.setTableConsistencyLevels(genericConfig.getTableConsistencyLevels());
-        this.setTableHints(genericConfig.getTableHints());
+    @SuppressWarnings("CopyConstructorMissesField")
+    public GenericQueryConfiguration(GenericQueryConfiguration other) {
+        copyFrom(other);
+    }
+
+    /**
+     * Deeply copies over all fields from the given {@link GenericQueryConfiguration} to this {@link GenericQueryConfiguration}.
+     *
+     * @param other
+     *            the {@link GenericQueryConfiguration} to copy values from
+     */
+    public void copyFrom(GenericQueryConfiguration other) {
+        this.setQuery(other.getQuery());
+        this.setCheckpointable(other.isCheckpointable());
+        this.setBaseIteratorPriority(other.getBaseIteratorPriority());
+        this.setBypassAccumulo(other.getBypassAccumulo());
+        this.setAccumuloPassword(other.getAccumuloPassword());
+        this.setConnPoolName(other.getConnPoolName());
+        this.setAuthorizations(other.getAuthorizations());
+        this.setBeginDate(other.getBeginDate());
+        this.setClient(other.getClient());
+        this.setEndDate(other.getEndDate());
+        this.setMaxWork(other.getMaxWork());
+        this.setQueries(other.getQueries());
+        this.setQueriesIter(other.getQueriesIter());
+        this.setQueryString(other.getQueryString());
+        this.setTableName(other.getTableName());
+        this.setReduceResults(other.isReduceResults());
+        this.setTableConsistencyLevels(other.getTableConsistencyLevels());
+        this.setTableHints(other.getTableHints());
     }
 
     public Collection<QueryData> getQueries() {
@@ -278,6 +292,14 @@ public class GenericQueryConfiguration implements Serializable {
         this.accumuloPassword = EnvProvider.resolve(password);
     }
 
+    public String getConnPoolName() {
+        return connPoolName;
+    }
+
+    public void setConnPoolName(String connPoolName) {
+        this.connPoolName = connPoolName;
+    }
+
     public Map<String,ScannerBase.ConsistencyLevel> getTableConsistencyLevels() {
         return tableConsistencyLevels;
     }
@@ -336,12 +358,13 @@ public class GenericQueryConfiguration implements Serializable {
                         && Objects.equals(getBeginDate(), that.getBeginDate()) && Objects.equals(getEndDate(), that.getEndDate())
                         && Objects.equals(getMaxWork(), that.getMaxWork()) && Objects.equals(getTableName(), that.getTableName())
                         && Objects.equals(getQueries(), that.getQueries()) && Objects.equals(getAccumuloPassword(), that.getAccumuloPassword())
-                        && Objects.equals(isReduceResults(), that.isReduceResults());
+                        && Objects.equals(getConnPoolName(), that.getConnPoolName()) && Objects.equals(isReduceResults(), that.isReduceResults());
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(isCheckpointable(), getAuthorizations(), getQuery(), getQueryString(), getBeginDate(), getEndDate(), getMaxWork(),
-                        getBaseIteratorPriority(), getTableName(), getQueries(), getBypassAccumulo(), getAccumuloPassword(), isReduceResults());
+                        getBaseIteratorPriority(), getTableName(), getQueries(), getBypassAccumulo(), getConnPoolName(), getAccumuloPassword(),
+                        isReduceResults());
     }
 }

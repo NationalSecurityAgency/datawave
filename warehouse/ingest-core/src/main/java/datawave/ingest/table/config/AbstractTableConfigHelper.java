@@ -25,7 +25,7 @@ import datawave.iterators.PropogatingIterator;
 
 public abstract class AbstractTableConfigHelper implements TableConfigHelper {
 
-    private static final String DISABLE_VERSIONING_ITERATOR = ".disable.versioning.iterator";
+    public static final String DISABLE_VERSIONING_ITERATOR = ".disable.versioning.iterator";
     protected Configuration config;
 
     protected AbstractTableConfigHelper() {}
@@ -92,9 +92,9 @@ public abstract class AbstractTableConfigHelper implements TableConfigHelper {
      * @throws TableNotFoundException
      *             if the table is not found
      */
-    protected void setAggregatorConfigurationIfNecessary(String tableName, List<CombinerConfiguration> aggregators, TableOperations tops, Logger log)
-                    throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
-        if (areAggregatorsConfigured(tableName, aggregators, tops)) {
+    protected void setAggregatorConfigurationIfNecessary(String tableName, List<CombinerConfiguration> aggregators, TableOperations tops, Configuration config,
+                    Logger log) throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
+        if (areAggregatorsConfigured(tableName, aggregators, tops, config)) {
             log.debug(tableName + " appears to have its aggregators configured already.");
             return;
         }
@@ -148,7 +148,8 @@ public abstract class AbstractTableConfigHelper implements TableConfigHelper {
      * @throws TableNotFoundException
      *             if the table is not found
      */
-    protected boolean areAggregatorsConfigured(String tableName, List<CombinerConfiguration> aggregators, TableOperations tops) throws TableNotFoundException {
+    protected boolean areAggregatorsConfigured(String tableName, List<CombinerConfiguration> aggregators, TableOperations tops, Configuration config)
+                    throws TableNotFoundException {
         boolean aggregatorsConfigured = false;
         Map<String,String> props = generateInitialTableProperties(config, tableName);
         props.putAll(generateAggTableProperties(aggregators));

@@ -135,6 +135,8 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("bypassAccumulo", true);
         defaultValues.put("accumuloPassword", "");
         updatedValues.put("accumuloPassword", "secret");
+        defaultValues.put("connPoolName", null);
+        updatedValues.put("connPoolName", "default");
         defaultValues.put("reduceResults", false);
         updatedValues.put("reduceResults", true);
         defaultValues.put("tldQuery", false);
@@ -531,6 +533,9 @@ public class ShardQueryConfigurationTest {
 
         defaultValues.put("renameFields", Sets.newHashSet());
         updatedValues.put("renameFields", Collections.singleton("UUID=ID"));
+
+        defaultValues.put("fieldIndexHoleMinThreshold", 1.0d);
+        updatedValues.put("fieldIndexHoleMinThreshold", 0.5d);
 
         defaultValues.put("disallowlistedFields", Sets.newHashSet());
         updatedValues.put("disallowlistedFields", Sets.newHashSet("FIELD_B", "FIELD_C"));

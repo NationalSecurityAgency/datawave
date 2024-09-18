@@ -82,6 +82,8 @@ services:
 
   # When auto.create.topics.enable is true, this causes deleted topics to be recreated at random.  So, leave it disabled.
   kafka:
+    profiles:
+      - kafka
     image: docker.io/bitnami/kafka:3.2
     ports:
       - "9094:9094"
@@ -102,8 +104,7 @@ services:
 
   kafdrop:
     profiles:
-      - management
-      - full
+      - kafka
     image: docker.io/obsidiandynamics/kafdrop
     ports:
       - "8999:9000"
@@ -164,6 +165,39 @@ services:
       - demo
     healthcheck:
       test: curl -f http://localhost:8080/cache/mgmt/health
+      interval: 10s
+      timeout: 1s
+      start_period: 45s
+      retries: 3
+    depends_on:
+      configuration:
+        condition: service_started
+
+  query-cache:
+    profiles:
+      - querycache
+      # To enable an additional Hazelcast cluster, enable the "querycache" profile
+      # Set an environment variable: QUERY_CACHE=query-cache. This will force the query and executor service to use a separate "query-cache" Hazelcast cluster.
+    image: datawave/hazelcast-service
+    scale: 1
+    command:
+      - --spring.application.name=query-cache
+      - --hazelcast.client.cluster-members
+      - --spring.profiles.active=consul,compose,remoteauth
+      - --spring.output.ansi.enabled=ALWAYS
+      - --spring.cloud.consul.host=consul
+      - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${random.value}
+    ports:
+      - "5701-5703"
+      - "8080"
+      - "8844:8443"
+    volumes:
+      - ${PKI_DIR:-./pki}:/etc/pki:ro
+      - ./logs:/logs
+    networks:
+      - demo
+    healthcheck:
+      test: curl -f http://localhost:8080/query-cache/mgmt/health
       interval: 10s
       timeout: 1s
       start_period: 45s
@@ -365,8 +399,9 @@ services:
       - AUDIT_SERVER_URL=http://audit:8080/audit
       - HADOOP_HOST=${DW_HADOOP_HOST}
       - HADOOP_CONF_DIR=${HADOOP_CONF_DIR:-/etc/hadoop/conf}
-      - "BACKEND=${BACKEND:-kafka}"
+      - "BACKEND=${BACKEND:-rabbitmq}"
       - CACHED_RESULTS=${CACHED_RESULTS:-false}
+      - QUERY_CACHE=${QUERY_CACHE:-cache}
     ports:
       - "8080:8080"
       - "8443:8443"
@@ -390,8 +425,6 @@ services:
         condition: service_healthy
       metrics:
         condition: service_healthy
-      kafka:
-        condition: service_started
       executor-pool1:
         condition: service_started
 
@@ -430,8 +463,6 @@ services:
         condition: service_healthy
       metrics:
         condition: service_healthy
-      kafka:
-        condition: service_started
       executor-pool1:
         condition: service_started
 
@@ -448,8 +479,9 @@ services:
     environment:
       - ZOOKEEPER_HOST=${DW_ZOOKEEPER_HOST}
       - HADOOP_HOST=${DW_HADOOP_HOST}
-      - BACKEND=${BACKEND:-kafka}
+      - BACKEND=${BACKEND:-rabbitmq}
       - HADOOP_CONF_DIR=${HADOOP_CONF_DIR:-/etc/hadoop/conf}
+      - QUERY_CACHE=${QUERY_CACHE:-cache}
     # This mapping is required to enable the metrics service to communicate
     # with host-deployed services like hadoop, zookeeper, and accumulo.
     # These values are set locally in .env via bootstrap.sh
@@ -479,8 +511,6 @@ services:
         condition: service_healthy
       metrics:
         condition: service_healthy
-      kafka:
-        condition: service_started
 
   executor-pool2:
     profiles:
@@ -497,8 +527,9 @@ services:
     environment:
       - ZOOKEEPER_HOST=${DW_ZOOKEEPER_HOST}
       - HADOOP_HOST=${DW_HADOOP_HOST}
-      - BACKEND=${BACKEND:-kafka}
+      - BACKEND=${BACKEND:-rabbitmq}
       - HADOOP_CONF_DIR=${HADOOP_CONF_DIR:-/etc/hadoop/conf}
+      - QUERY_CACHE=${QUERY_CACHE:-cache}
     # This mapping is required to enable the metrics service to communicate
     # with host-deployed services like hadoop, zookeeper, and accumulo.
     # These values are set locally in .env via bootstrap.sh
