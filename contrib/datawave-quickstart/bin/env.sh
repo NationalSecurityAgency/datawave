@@ -7,6 +7,10 @@
 #
 ###############################################################################
 
+echo "JWO BASHRC BEGIN"
+cat ~/.bashrc
+echo "JWO BASHRC END"
+
 # Resolve parent dir, ie 'bin'
 
 DW_CLOUD_BIN="$( cd -P "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
