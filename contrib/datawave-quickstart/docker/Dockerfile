@@ -14,12 +14,6 @@ ARG MAVEN_URL
 ARG WILDFLY_URL
 ARG ZOOKEEPER_URL
 
-ENV DW_ACCUMULO_DIST_URI=$ACCUMULO_URL
-ENV DW_HADOOP_DIST_URI=$HADOOP_URL
-ENV DW_MAVEN_DIST_URI=$MAVEN_URL
-ENV DW_WILDFLY_DIST_URI=$WILDFLY_URL
-ENV DW_ZOOKEEPER_DIST_URI=$ZOOKEEPER_URL
-
 USER root
 
 ENV USER=root
@@ -64,6 +58,11 @@ RUN rm -f .dockerignore .maven-dockerignore && \
     git config user.email "root@localhost.local" && \
     git config user.name "Root User" && \
     git commit -m "Source Branch :: $DATAWAVE_BRANCH_NAME :: Source Commit :: $DATAWAVE_COMMIT_ID" && \
+    echo "export DW_ACCUMULO_DIST_URI=\"$ACCUMULO_URL\"" >> ~/.bashrc && \
+    echo "export DW_HADOOP_DIST_URI=\"$HADOOP_URL\"" >> ~/.bashrc && \
+    echo "export DW_MAVEN_DIST_URI=\"$MAVEN_URL\"" >> ~/.bashrc && \
+    echo "export DW_WILDFLY_DIST_URI=\"$WILDFLY_URL\"" >> ~/.bashrc && \
+    echo "export DW_ZOOKEEPER_DIST_URI=\"$ZOOKEEPER_URL\"" >> ~/.bashrc && \
     echo "export DW_DATAWAVE_BUILD_PROFILE=\"$DATAWAVE_BUILD_PROFILE\"" >> ~/.bashrc && \
     echo "export DW_DATAWAVE_INGEST_TEST_SKIP=\"$DATAWAVE_SKIP_INGEST\"" >> ~/.bashrc && \
     echo "export DW_MAVEN_REPOSITORY=\"$DATAWAVE_MAVEN_REPO\"" >> ~/.bashrc && \

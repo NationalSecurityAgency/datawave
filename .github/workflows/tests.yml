@@ -256,13 +256,12 @@ jobs:
           USER_NAME: ${{ secrets.USER_NAME }}
           ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
         run: |
-          DW_ZOOKEEPER_DIST_URI='http://some/bogus/path/zookeeper.tar.gz'
-          DW_ACCUMULO_DIST_URI='http://some/bogus/path/accumulo.tar.gz'
-          DW_WILDFLY_DIST_URI='http://some/bogus/path/wildfly.tar.gz'
-          DW_HADOOP_DIST_URI='http://some/bogus/path/hadoop.tar.gz'
-          DW_MAVEN_DIST_URI='http://some/bogus/path/maven.tar.gz'
-          
-          DIST_URLS="-Durl.zookeeper='http://some/bogus/path/zookeeper.tar.gz' -Durl.accumulo='http://some/bogus/path/accumulo.tar.gz' -Durl.wildfly='http://some/bogus/path/wildfly.tar.gz' -Durl.hadoop='http://some/bogus/path/hadoop.tar.gz' -Durl.maven='http://some/bogus/path/maven.tar.gz'"
+          # set some bogus URLs to trigger dependency download via maven
+          DIST_URLS="-Durl.zookeeper='https://bogus.apache.org/zookeeper/zookeeper-3.7.2/apache-zookeeper-3.7.2-bin.tar.gz.tar.gz' \
+                     -Durl.accumulo='https://bogus.apache.org/accumulo/2.1.3/accumulo-2.1.3-bin.tar.gz' \
+                     -Durl.wildfly='https://bogus.jboss.org/wildfly/17.0.1.Final/wildfly-17.0.1.Final.tar.gz' \
+                     -Durl.hadoop='https://bogus.apache.org/hadoop/common/hadoop-3.3.6/hadoop-3.3.6.tar.gz' \
+                     -Durl.maven='https://bogus.apache.org/maven/maven-3/3.8.8/binaries/apache-maven-3.8.8-bin.tar.gz'"
           
           mvn -s $GITHUB_WORKSPACE/.github/workflows/settings.xml -B -V -e -Pcompose -Dmicroservice-docker -Dquickstart-docker -Dquickstart-maven ${DIST_URLS} -Ddeploy -Dtar -DskipTests -Dmaven.build.cache.enabled=false clean install
           # free up some space so that we don't run out
