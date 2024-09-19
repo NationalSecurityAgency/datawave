@@ -16,7 +16,8 @@ import java.util.TreeSet;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.iteratorsImpl.system.IterationInterruptedException;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.collect.TreeMultimap;
 
@@ -46,7 +47,7 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T>, 
     private Document prevDocument, document;
     private T evaluationContext;
 
-    private static final Logger log = Logger.getLogger(AndIterator.class);
+    private static final Logger log = LogManager.getLogger(AndIterator.class);
 
     public AndIterator(Iterable<NestedIterator<T>> sources) {
         this(sources, null);

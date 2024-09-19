@@ -10,7 +10,8 @@ import java.util.Map;
 
 import org.apache.commons.cli.Option;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Abstract implementation of the UIDBuilder
@@ -20,7 +21,7 @@ import org.apache.log4j.Logger;
  */
 public abstract class AbstractUIDBuilder<UID_TYPE extends UID> implements UIDBuilder<UID_TYPE> {
 
-    private static final Logger LOGGER = Logger.getLogger(AbstractUIDBuilder.class);
+    private static final Logger LOGGER = LogManager.getLogger(AbstractUIDBuilder.class);
 
     @Override
     public void configure(final Configuration config, final Option... options) {

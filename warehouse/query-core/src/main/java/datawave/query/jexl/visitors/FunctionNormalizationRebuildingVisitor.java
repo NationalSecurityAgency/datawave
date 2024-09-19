@@ -20,7 +20,8 @@ import org.apache.commons.jexl3.parser.ASTFunctionNode;
 import org.apache.commons.jexl3.parser.ASTStringLiteral;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
@@ -38,7 +39,7 @@ import datawave.query.util.MetadataHelper;
  *
  */
 public class FunctionNormalizationRebuildingVisitor extends RebuildingVisitor {
-    private static final Logger log = Logger.getLogger(FunctionNormalizationRebuildingVisitor.class);
+    private static final Logger log = LogManager.getLogger(FunctionNormalizationRebuildingVisitor.class);
 
     private static final NoOpType NO_OP = new NoOpType();
 

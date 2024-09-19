@@ -17,7 +17,8 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jboss.resteasy.annotations.GZIP;
 
 import datawave.annotation.Required;
@@ -37,7 +38,7 @@ import datawave.webservice.result.VoidResponse;
 @TransactionManagement(TransactionManagementType.BEAN)
 public class MapReduceStatusUpdateBean {
 
-    private Logger log = Logger.getLogger(this.getClass());
+    private Logger log = LogManager.getLogger(this.getClass());
 
     @Inject
     private MapReduceStatePersisterBean mapReduceState;

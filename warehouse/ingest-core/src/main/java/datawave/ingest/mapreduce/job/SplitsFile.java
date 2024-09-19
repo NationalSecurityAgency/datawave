@@ -17,7 +17,8 @@ import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.collect.Table;
 
@@ -26,7 +27,7 @@ import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.util.time.DateHelper;
 
 public class SplitsFile {
-    private static final Logger log = Logger.getLogger(SplitsFile.class);
+    private static final Logger log = LogManager.getLogger(SplitsFile.class);
 
     public static final String SPLIT_WORK_DIR = "split.work.dir";
     public static final String MAX_SHARDS_PER_TSERVER = "shardedMap.max.shards.per.tserver";

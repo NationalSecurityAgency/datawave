@@ -6,7 +6,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.commons.vfs2.impl.VFSClassLoader;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 /**
@@ -14,7 +15,7 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
  */
 public class JexlFunctionNamespaceRegistry {
 
-    private static final Logger log = Logger.getLogger(JexlFunctionNamespaceRegistry.class);
+    private static final Logger log = LogManager.getLogger(JexlFunctionNamespaceRegistry.class);
 
     public static final String JEXL_FUNCTION_NAMESPACE_CONTEXT = "classpath*:/JexlFunctionNamespaceRegistryContext.xml";
     public static final String JEXL_FUNCTION_NAMESPACE_BEAN_REF = "jexlEngineFunctionMap";

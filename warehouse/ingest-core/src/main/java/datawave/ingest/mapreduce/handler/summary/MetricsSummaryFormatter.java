@@ -9,7 +9,8 @@ import java.util.regex.Matcher;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimap;
@@ -19,7 +20,7 @@ import datawave.ingest.data.config.NormalizedContentInterface;
 
 public class MetricsSummaryFormatter {
 
-    private static final Logger log = ThreadConfigurableLogger.getLogger(MetricsSummaryFormatter.class);
+    private static final ThreadConfigurableLogger log = ThreadConfigurableLogger.getLogger(MetricsSummaryFormatter.class);
 
     public static final char SEPARATOR = '\u0000';
     private static final int DEFAULT_CAPACITY = 90;

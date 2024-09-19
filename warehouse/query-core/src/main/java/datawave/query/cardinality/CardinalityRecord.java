@@ -18,7 +18,8 @@ import java.util.concurrent.Executors;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.base.Splitter;
 import com.google.common.collect.HashMultimap;
@@ -28,7 +29,7 @@ public class CardinalityRecord implements Serializable {
     private static final long serialVersionUID = 1L;
     private Set<String> resultCardinalityValueFields = null;
     private HashMultimap<Integer,DateFieldValueCardinalityRecord> cardinalityMap = HashMultimap.create();
-    private static Logger log = Logger.getLogger(CardinalityRecord.class);
+    private static Logger log = LogManager.getLogger(CardinalityRecord.class);
 
     public enum DateType {
         DOCUMENT, CURRENT

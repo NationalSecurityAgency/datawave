@@ -7,7 +7,8 @@ import java.util.Set;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -24,7 +25,7 @@ import datawave.ingest.metadata.id.MetadataIdParser;
 
 public class ExtendedContentIngestHelper extends BaseIngestHelper implements TermFrequencyIngestHelperInterface {
 
-    private static final Logger log = Logger.getLogger(ExtendedContentIngestHelper.class);
+    private static final Logger log = LogManager.getLogger(ExtendedContentIngestHelper.class);
 
     private static final String UUID_PATTERN = "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}.*";
     private static final int UUID_LENGTH = 36;

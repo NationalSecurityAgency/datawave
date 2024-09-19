@@ -23,7 +23,8 @@ import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.metrics.config.MetricsConfig;
 import datawave.metrics.mapreduce.util.JobSetupUtil;
@@ -34,7 +35,7 @@ import datawave.util.time.DateHelper;
  *
  */
 public class FileByteSummaryLoader extends Configured implements Tool {
-    private static final Logger log = Logger.getLogger(FileByteSummaryLoader.class);
+    private static final Logger log = LogManager.getLogger(FileByteSummaryLoader.class);
     private static String defaultVisibility = "PUBLIC";
 
     private static class FileByteMetricsMapper extends Mapper<Key,Value,Key,Value> {

@@ -15,7 +15,8 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.Lists;
@@ -32,7 +33,7 @@ import datawave.query.iterator.filter.KeyIdentity;
 import datawave.query.predicate.EventDataQueryFilter;
 
 public class DocumentDataIterator implements Iterator<DocumentData> {
-    private static final Logger log = Logger.getLogger(DocumentDataIterator.class);
+    private static final Logger log = LogManager.getLogger(DocumentDataIterator.class);
 
     private static final Collection<ByteSequence> columnFamilies = Lists.<ByteSequence> newArrayList(new ArrayByteSequence("tf"), new ArrayByteSequence("d"));
     private static final boolean inclusive = false;

@@ -49,8 +49,9 @@ import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.TaskID;
 import org.apache.hadoop.mapreduce.TaskType;
 import org.apache.hadoop.mapreduce.task.MapContextImpl;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
@@ -109,7 +110,7 @@ import datawave.webservice.result.EventQueryResponseBase;
 @Exclude(ifProjectStage = DatawaveEmbeddedProjectStageHolder.DatawaveEmbedded.class)
 @SuppressWarnings("unused")
 public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMetric> {
-    private static final Logger log = ThreadConfigurableLogger.getLogger(ShardTableQueryMetricHandler.class);
+    private static final ThreadConfigurableLogger log = ThreadConfigurableLogger.getLogger(ShardTableQueryMetricHandler.class);
 
     private static final String QUERY_METRICS_LOGIC_NAME = "QueryMetricsQuery";
     protected static final String DEFAULT_SECURITY_MARKING = "PUBLIC";
@@ -730,7 +731,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             try {
                 if (!tops.exists(table)) {
                     tops.create(table);
-                    Map<String,TableConfigHelper> tableConfigs = getTableConfigs(log, conf, tableNames);
+                    Map<String,TableConfigHelper> tableConfigs = getTableConfigs((Logger) log, conf, tableNames);
 
                     TableConfigHelper tableHelper = tableConfigs.get(table);
 
@@ -781,7 +782,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             // All loggers that are encountered in the call chain during metrics calls should be included here.
             // If you need to add a logger name here, you also need to change the Logger declaration where that Logger is instantiated
             // Change:
-            // Logger log = Logger.getLogger(MyClass.class);
+            // Logger log = LogManager.getLogger(MyClass.class);
             // to
             // Logger log = ThreadConfigurableLogger.getLogger(MyClass.class);
 

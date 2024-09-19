@@ -6,7 +6,8 @@ import java.util.Iterator;
 
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.collect.Lists;
 
@@ -28,7 +29,7 @@ import datawave.query.util.QueryStopwatch;
 import datawave.util.time.TraceStopwatch;
 
 public class BooleanChunkingQueryPlanner extends DefaultQueryPlanner {
-    private static final Logger log = Logger.getLogger(BooleanChunkingQueryPlanner.class);
+    private static final Logger log = LogManager.getLogger(BooleanChunkingQueryPlanner.class);
 
     public BooleanChunkingQueryPlanner(BooleanChunkingQueryPlanner booleanChunkingQueryPlanner) {
         super(booleanChunkingQueryPlanner);

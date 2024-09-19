@@ -14,7 +14,8 @@ import javax.ejb.Startup;
 import javax.inject.Inject;
 
 import org.apache.deltaspike.core.api.exclude.Exclude;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.configuration.spring.SpringBean;
@@ -38,7 +39,7 @@ import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
 @Exclude(ifProjectStage = DatawaveEmbeddedProjectStageHolder.DatawaveEmbedded.class)
 public class QueryExpirationBean {
 
-    private static final Logger log = Logger.getLogger(QueryExpirationBean.class);
+    private static final Logger log = LogManager.getLogger(QueryExpirationBean.class);
 
     @Inject
     private QueryCache cache;

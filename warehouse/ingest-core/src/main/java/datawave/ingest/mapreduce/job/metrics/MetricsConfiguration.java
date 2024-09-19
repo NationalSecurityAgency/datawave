@@ -8,7 +8,8 @@ import java.util.TreeSet;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -35,7 +36,7 @@ public class MetricsConfiguration {
     private static final String ENTRY_SEP = ",";
 
     private static final String KV_SEP = "=";
-    private static final Logger logger = Logger.getLogger(MetricsConfiguration.class);
+    private static final Logger logger = LogManager.getLogger(MetricsConfiguration.class);
 
     /**
      * The buffer used for aggregating metrics counts before flushing to the context writer.

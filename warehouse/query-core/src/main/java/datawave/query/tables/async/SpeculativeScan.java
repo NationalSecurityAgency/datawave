@@ -17,7 +17,8 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.collect.Lists;
 import com.google.common.eventbus.Subscribe;
@@ -36,7 +37,7 @@ import datawave.query.tables.stats.ScanSessionStats;
  *
  */
 public class SpeculativeScan extends Scan implements FutureCallback<Scan>, UncaughtExceptionHandler {
-    private static final Logger log = Logger.getLogger(SpeculativeScan.class);
+    private static final Logger log = LogManager.getLogger(SpeculativeScan.class);
 
     protected AtomicInteger successCount = new AtomicInteger(0);
 

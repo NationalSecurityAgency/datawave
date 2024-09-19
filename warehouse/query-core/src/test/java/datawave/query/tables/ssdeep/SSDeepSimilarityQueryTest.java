@@ -22,7 +22,8 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -50,7 +51,7 @@ import datawave.webservice.result.EventQueryResponseBase;
 /** Additional unit test against the SSDeepIndex / SSDeepSimilarityLogic code */
 public class SSDeepSimilarityQueryTest {
 
-    private static final Logger log = Logger.getLogger(SSDeepSimilarityQueryTest.class);
+    private static final Logger log = LogManager.getLogger(SSDeepSimilarityQueryTest.class);
 
     private static final Authorizations auths = AbstractDataTypeConfig.getTestAuths();
 

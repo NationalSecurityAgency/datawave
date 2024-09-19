@@ -17,7 +17,8 @@ import javax.annotation.Nullable;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.ClassRule;
 import org.junit.Test;
 
@@ -48,7 +49,7 @@ public class BooksQueryTest extends AbstractFunctionalQuery {
     @ClassRule
     public static AccumuloSetup accumuloSetup = new AccumuloSetup();
 
-    private static final Logger log = Logger.getLogger(BooksQueryTest.class);
+    private static final Logger log = LogManager.getLogger(BooksQueryTest.class);
 
     private static final Map<String,String> QUERY_OPTIONS = ImmutableMap.of(QueryParameters.INCLUDE_GROUPING_CONTEXT, Boolean.TRUE.toString());
     private static final RawDataManager BOOKS_MANAGER = createManager();

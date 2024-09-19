@@ -18,7 +18,8 @@ import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.WrappingIterator;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.collect.Multimap;
 
@@ -32,7 +33,7 @@ import datawave.query.data.parsers.TermFrequencyKey;
  * TermFrequency keys: {shardId}:tf:datatype\0uid\0{fieldValue}:{fieldName} {TermWeight protobuf}
  */
 public class TermFrequencyIterator extends WrappingIterator {
-    public static final Logger log = Logger.getLogger(TermFrequencyIterator.class);
+    public static final Logger log = LogManager.getLogger(TermFrequencyIterator.class);
 
     protected Key topKey = null;
     protected Value topValue = null;

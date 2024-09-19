@@ -13,7 +13,8 @@ import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.auth.login.LoginException;
 import javax.security.auth.spi.LoginModule;
 
-import org.jboss.logging.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jboss.security.ClientLoginModule;
 import org.jboss.security.SimplePrincipal;
 import org.jboss.security.auth.callback.ObjectCallback;
@@ -30,7 +31,7 @@ import datawave.security.auth.DatawaveCredential;
  */
 public class ClientCertLoginModule implements LoginModule {
 
-    private static Logger log = Logger.getLogger(ClientCertLoginModule.class);
+    private static Logger log = LogManager.getLogger(ClientCertLoginModule.class);
     private Map<String,Object> sharedState;
     private boolean trace;
 

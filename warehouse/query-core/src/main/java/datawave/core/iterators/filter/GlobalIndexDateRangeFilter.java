@@ -12,7 +12,8 @@ import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.lang.math.LongRange;
 import org.apache.commons.lang.time.DateUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.query.Constants;
 
@@ -23,7 +24,7 @@ import datawave.query.Constants;
 public class GlobalIndexDateRangeFilter extends Filter {
 
     private LongRange range = null;
-    private static final Logger log = Logger.getLogger(GlobalIndexDateRangeFilter.class);
+    private static final Logger log = LogManager.getLogger(GlobalIndexDateRangeFilter.class);
 
     @Override
     public void init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env) throws IOException {

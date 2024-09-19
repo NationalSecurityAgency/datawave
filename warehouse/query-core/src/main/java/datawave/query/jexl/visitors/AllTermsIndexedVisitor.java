@@ -20,7 +20,8 @@ import org.apache.commons.jexl3.parser.ASTNENode;
 import org.apache.commons.jexl3.parser.ASTNRNode;
 import org.apache.commons.jexl3.parser.ASTOrNode;
 import org.apache.commons.jexl3.parser.JexlNode;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.base.Preconditions;
 
@@ -48,7 +49,7 @@ import datawave.webservice.query.exception.QueryException;
  */
 public class AllTermsIndexedVisitor extends RebuildingVisitor {
 
-    private static final Logger log = Logger.getLogger(AllTermsIndexedVisitor.class);
+    private static final Logger log = LogManager.getLogger(AllTermsIndexedVisitor.class);
 
     private final ShardQueryConfiguration config;
     private final MetadataHelper helper;

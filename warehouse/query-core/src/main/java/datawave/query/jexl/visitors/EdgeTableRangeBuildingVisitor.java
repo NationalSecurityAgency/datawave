@@ -21,7 +21,8 @@ import org.apache.commons.jexl3.parser.ASTReference;
 import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.commons.jexl3.parser.SimpleNode;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.collect.Sets;
 
@@ -92,7 +93,7 @@ import datawave.webservice.query.exception.DatawaveErrorCode;
  * <br>
  */
 public class EdgeTableRangeBuildingVisitor extends BaseVisitor {
-    private static final Logger log = Logger.getLogger(EdgeTableRangeBuildingVisitor.class);
+    private static final Logger log = LogManager.getLogger(EdgeTableRangeBuildingVisitor.class);
     protected boolean includeStats;
     protected List<? extends Type<?>> regexDataTypes;
     protected List<? extends Type<?>> dataTypes;

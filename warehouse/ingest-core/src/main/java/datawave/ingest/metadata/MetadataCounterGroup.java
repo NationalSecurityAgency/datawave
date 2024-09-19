@@ -4,12 +4,13 @@ import java.util.Collection;
 import java.util.HashMap;
 
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.base.Objects;
 
 public class MetadataCounterGroup {
-    private static final Logger log = Logger.getLogger(MetadataCounterGroup.class);
+    private static final Logger log = LogManager.getLogger(MetadataCounterGroup.class);
     private final Text columnFamily;
     private HashMap<String,Components> counts = new HashMap<>();
 

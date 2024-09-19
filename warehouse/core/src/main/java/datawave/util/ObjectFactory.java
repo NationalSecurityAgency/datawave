@@ -8,13 +8,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Simply factory using reflection (i.e. Class.forname() and Constructor.newInstance) to create the specified object.
  */
 public class ObjectFactory {
-    private static final Logger logger = Logger.getLogger(ObjectFactory.class);
+    private static final Logger logger = LogManager.getLogger(ObjectFactory.class);
 
     /**
      * Take away the public constructor

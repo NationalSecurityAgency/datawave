@@ -12,7 +12,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.data.normalizer.Normalizer;
 import datawave.data.type.NumberType;
@@ -31,7 +32,7 @@ import datawave.query.testframework.RawMetaData;
  */
 public class CarsDataType extends AbstractDataTypeConfig {
 
-    private static final Logger log = Logger.getLogger(CarsDataType.class);
+    private static final Logger log = LogManager.getLogger(CarsDataType.class);
     private static final Random rVal = new Random(System.currentTimeMillis());
 
     /**

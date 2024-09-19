@@ -4,7 +4,8 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.function.Function;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
@@ -130,7 +131,7 @@ public enum UniqueGranularity {
      */
     private static class DateTimeValueFormatter implements Function<String,String> {
 
-        private static final Logger log = Logger.getLogger(DateTimeValueFormatter.class);
+        private static final Logger log = LogManager.getLogger(DateTimeValueFormatter.class);
         private final SimpleDateFormat formatter;
         private boolean isTenth = false;
 

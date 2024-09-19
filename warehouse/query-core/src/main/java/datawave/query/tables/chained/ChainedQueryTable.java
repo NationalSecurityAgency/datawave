@@ -5,7 +5,8 @@ import java.util.TreeSet;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.query.configuration.GenericQueryConfiguration;
@@ -34,7 +35,7 @@ public abstract class ChainedQueryTable<T1,T2> extends BaseQueryLogic<T2> {
     protected ChainStrategy<T1,T2> chainStrategy = null;
     protected QueryLogic<T1> logic1 = null;
     protected QueryLogic<T2> logic2 = null;
-    private Logger log = Logger.getLogger(ChainedQueryTable.class);
+    private Logger log = LogManager.getLogger(ChainedQueryTable.class);
 
     public ChainedQueryTable() {
         super();

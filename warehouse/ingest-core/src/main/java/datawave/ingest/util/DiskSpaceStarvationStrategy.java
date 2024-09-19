@@ -1,6 +1,7 @@
 package datawave.ingest.util;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.hash.BloomFilter;
 
@@ -14,7 +15,7 @@ public class DiskSpaceStarvationStrategy extends AbstractNGramTokenizationStrate
 
     public static final String DEFAULT_PATH_FOR_DISK_SPACE_VALIDATION = ResourceAvailabilityUtil.ROOT_PATH;
 
-    private final Logger log = Logger.getLogger(DiskSpaceStarvationStrategy.class);
+    private final Logger log = LogManager.getLogger(DiskSpaceStarvationStrategy.class);
     private TokenizationException lowDiskSpaceException;
     private final float minDiskSpaceThreshold;
     private final String minDiskSpacePath;

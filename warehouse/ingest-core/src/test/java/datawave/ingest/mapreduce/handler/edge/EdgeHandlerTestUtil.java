@@ -10,7 +10,8 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.Assert;
 
 import com.google.common.collect.ArrayListMultimap;
@@ -38,7 +39,7 @@ public class EdgeHandlerTestUtil {
     public static ListMultimap<String,String[]> edgeKeyResults = ArrayListMultimap.create();
     public static ListMultimap<String,String> edgeValueResults = ArrayListMultimap.create();
 
-    private static Logger log = Logger.getLogger(EdgeHandlerTestUtil.class);
+    private static Logger log = LogManager.getLogger(EdgeHandlerTestUtil.class);
 
     public static boolean isDocumentKey(Key k) {
         return isShardKey(k) && k.getColumnFamily().toString().equals(ExtendedDataTypeHandler.FULL_CONTENT_COLUMN_FAMILY);

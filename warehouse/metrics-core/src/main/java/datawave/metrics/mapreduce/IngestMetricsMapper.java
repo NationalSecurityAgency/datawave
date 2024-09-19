@@ -19,7 +19,8 @@ import org.apache.hadoop.mapreduce.Counters;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.ingest.metric.IngestInput;
 import datawave.ingest.metric.IngestOutput;
@@ -49,7 +50,7 @@ public class IngestMetricsMapper extends Mapper<Text,Counters,Text,Mutation> {
     private static final char nul = '\000';
     private static final byte[] nulArray = {0x00};
     private static final Text[] emptyTextArray = new Text[0];
-    private static final Logger log = Logger.getLogger(IngestMetricsMapper.class);
+    private static final Logger log = LogManager.getLogger(IngestMetricsMapper.class);
 
     // TODO: Enable factory injection for any desired TypeNameConverter instance or subclass
     private static final TypeNameConverter typeNameConverter = new TypeNameConverter();

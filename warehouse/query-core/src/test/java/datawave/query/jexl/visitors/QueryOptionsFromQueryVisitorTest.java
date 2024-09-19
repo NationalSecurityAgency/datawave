@@ -9,7 +9,8 @@ import java.util.Map;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.ParseException;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.Test;
 
 import datawave.query.QueryParameters;
@@ -17,7 +18,7 @@ import datawave.query.jexl.JexlASTHelper;
 
 public class QueryOptionsFromQueryVisitorTest {
 
-    private static final Logger log = Logger.getLogger(QueryOptionsFromQueryVisitorTest.class);
+    private static final Logger log = LogManager.getLogger(QueryOptionsFromQueryVisitorTest.class);
 
     private final Map<String,String> optionsMap = new HashMap<>();
 

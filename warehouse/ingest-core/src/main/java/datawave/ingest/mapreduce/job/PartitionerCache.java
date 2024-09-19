@@ -11,7 +11,8 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Partitioner;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.ingest.mapreduce.partition.DelegatePartitioner;
 import datawave.ingest.mapreduce.partition.MultiTableRangePartitioner;
@@ -20,7 +21,7 @@ import datawave.ingest.mapreduce.partition.MultiTableRangePartitioner;
  * Handles the creation of partitioner instances to be used by the DelegatingPartitioner.
  */
 public class PartitionerCache {
-    protected static final Logger log = Logger.getLogger(DelegatingPartitioner.class);
+    protected static final Logger log = LogManager.getLogger(DelegatingPartitioner.class);
     static final String PREFIX_DEDICATED_PARTITIONER = "partitioner.dedicated.";
     static final String PREFIX_SHARED_MEMBERSHIP = "partitioner.category.member.";
     static final String PREFIX_CATEGORY_PARTITIONER = "partitioner.category.";

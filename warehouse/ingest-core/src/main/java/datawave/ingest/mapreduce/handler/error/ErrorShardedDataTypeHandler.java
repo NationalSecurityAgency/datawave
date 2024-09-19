@@ -16,7 +16,8 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.StatusReporter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -102,7 +103,7 @@ import datawave.marking.MarkingFunctions;
  */
 public class ErrorShardedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends AbstractColumnBasedHandler<KEYIN>
                 implements ExtendedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> {
-    private static final Logger log = Logger.getLogger(ErrorShardedDataTypeHandler.class);
+    private static final Logger log = LogManager.getLogger(ErrorShardedDataTypeHandler.class);
 
     public static final String ERROR_PROP_PREFIX = "error.";
 

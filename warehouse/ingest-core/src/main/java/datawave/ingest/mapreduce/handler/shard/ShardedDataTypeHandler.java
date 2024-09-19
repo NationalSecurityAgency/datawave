@@ -16,7 +16,8 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Counter;
 import org.apache.hadoop.mapreduce.StatusReporter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.base.Stopwatch;
 import com.google.common.cache.CacheBuilder;
@@ -120,7 +121,7 @@ import datawave.util.TextUtil;
  */
 public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN> {
 
-    private static final Logger log = ThreadConfigurableLogger.getLogger(ShardedDataTypeHandler.class);
+    private static final ThreadConfigurableLogger log = ThreadConfigurableLogger.getLogger(ShardedDataTypeHandler.class);
 
     public static final String NUM_SHARDS = ShardIdFactory.NUM_SHARDS;
     public static final String SHARD_TNAME = "shard.table.name";

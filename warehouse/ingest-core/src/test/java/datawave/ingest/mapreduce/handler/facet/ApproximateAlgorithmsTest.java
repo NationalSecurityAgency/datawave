@@ -2,7 +2,8 @@ package datawave.ingest.mapreduce.handler.facet;
 
 import static org.junit.Assert.assertEquals;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.Test;
 
 import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;
@@ -11,7 +12,7 @@ import com.clearspring.analytics.stream.frequency.CountMinSketch;
 
 public class ApproximateAlgorithmsTest {
 
-    private static final Logger log = Logger.getLogger(ApproximateAlgorithmsTest.class);
+    private static final Logger log = LogManager.getLogger(ApproximateAlgorithmsTest.class);
 
     @Test
     public void simplestHLLMergeTest() throws Exception {

@@ -9,7 +9,8 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.commons.jexl3.parser.ASTFunctionNode;
 import org.apache.commons.jexl3.parser.ASTNotNode;
 import org.apache.commons.jexl3.parser.JexlNode;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.LinkedListMultimap;
@@ -31,7 +32,7 @@ import datawave.query.jexl.functions.ContentFunctionsDescriptor.ContentJexlArgum
  */
 public class DocumentKeysFunction {
 
-    private static final Logger log = Logger.getLogger(DocumentKeysFunction.class);
+    private static final Logger log = LogManager.getLogger(DocumentKeysFunction.class);
 
     private final Set<String> negatedValues = new HashSet<>();
     private final Multimap<String,ContentFunction> contentFunctions = LinkedListMultimap.create();

@@ -12,7 +12,8 @@ import java.util.TreeSet;
 
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -26,7 +27,7 @@ import datawave.webservice.query.util.TypedValue;
 
 public class CacheableQueryRowImpl extends CacheableQueryRow implements ObjectSizeOf {
 
-    private static Logger log = Logger.getLogger(CacheableQueryRowImpl.class);
+    private static Logger log = LogManager.getLogger(CacheableQueryRowImpl.class);
 
     private String user = null;
     private String queryId = null;

@@ -14,7 +14,8 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.jexl3.parser.ASTEQNode;
 import org.apache.commons.jexl3.parser.ASTNENode;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -34,7 +35,7 @@ import datawave.query.predicate.TLDTermFrequencyEventDataQueryFilter;
 import datawave.query.util.IteratorToSortedKeyValueIterator;
 
 public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
-    private static final Logger log = Logger.getLogger(TLDIndexBuildingVisitor.class);
+    private static final Logger log = LogManager.getLogger(TLDIndexBuildingVisitor.class);
 
     @Override
     public Object visit(ASTNENode node, Object data) {

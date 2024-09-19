@@ -11,7 +11,8 @@ import java.util.Optional;
 import java.util.PriorityQueue;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.ingest.protobuf.TermWeightPosition;
 import datawave.query.postprocessing.tf.TermOffsetMap;
@@ -43,7 +44,7 @@ import datawave.query.postprocessing.tf.TermOffsetMap;
  *
  */
 public class ContentUnorderedEvaluator extends ContentFunctionEvaluator {
-    private static final Logger log = Logger.getLogger(ContentUnorderedEvaluator.class);
+    private static final Logger log = LogManager.getLogger(ContentUnorderedEvaluator.class);
 
     public ContentUnorderedEvaluator(Set<String> fields, int distance, float maxScore, TermOffsetMap termOffsetMap, String... terms) {
         super(fields, distance, maxScore, termOffsetMap, terms);

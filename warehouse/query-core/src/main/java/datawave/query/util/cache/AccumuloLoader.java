@@ -13,7 +13,8 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.ingest.util.cache.Loader;
 import datawave.security.util.ScannerHelper;
@@ -27,7 +28,7 @@ import datawave.security.util.ScannerHelper;
  */
 public abstract class AccumuloLoader<K,V> extends Loader<K,V> {
 
-    private static final Logger log = Logger.getLogger(AccumuloLoader.class);
+    private static final Logger log = LogManager.getLogger(AccumuloLoader.class);
 
     /**
      * Our connector.

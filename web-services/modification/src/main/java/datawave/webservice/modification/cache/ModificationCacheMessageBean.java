@@ -13,7 +13,8 @@ import javax.jms.Message;
 import javax.jms.MessageListener;
 import javax.jms.TextMessage;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.configuration.spring.SpringBean;
 import datawave.modification.MutableMetadataHandler;
@@ -33,7 +34,7 @@ import datawave.modification.configuration.ModificationServiceConfiguration;
 @TransactionManagement(value = TransactionManagementType.CONTAINER)
 @TransactionAttribute(value = TransactionAttributeType.NOT_SUPPORTED)
 public class ModificationCacheMessageBean implements MessageListener {
-    private Logger log = Logger.getLogger(this.getClass());
+    private Logger log = LogManager.getLogger(this.getClass());
 
     @Inject
     private ModificationCacheBean modificationCacheBean;

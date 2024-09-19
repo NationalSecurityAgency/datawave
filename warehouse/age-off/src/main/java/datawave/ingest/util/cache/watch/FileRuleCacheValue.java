@@ -8,7 +8,8 @@ import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.annotations.VisibleForTesting;
 
@@ -19,7 +20,7 @@ import datawave.iterators.filter.ageoff.FilterRule;
  * Rule cache value implementation for use with age-off rule loading. The implementation is thread-safe and supports concurrent access for all methods.
  */
 public class FileRuleCacheValue {
-    private final static Logger log = Logger.getLogger(FileRuleCacheValue.class);
+    private final static Logger log = LogManager.getLogger(FileRuleCacheValue.class);
 
     private final Path filePath;
     private final long configuredDiff;

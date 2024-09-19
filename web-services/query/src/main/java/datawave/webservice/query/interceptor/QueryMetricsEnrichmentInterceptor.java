@@ -13,7 +13,8 @@ import javax.ws.rs.ext.Provider;
 import javax.ws.rs.ext.WriterInterceptorContext;
 
 import org.apache.deltaspike.core.api.exclude.Exclude;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jboss.resteasy.core.interception.ContainerResponseContextImpl;
 import org.jboss.resteasy.core.interception.PreMatchContainerRequestContext;
 import org.jboss.resteasy.util.FindAnnotation;
@@ -49,7 +50,7 @@ public class QueryMetricsEnrichmentInterceptor extends BaseMethodStatsIntercepto
         }
     }
 
-    private Logger log = Logger.getLogger(QueryMetricsEnrichmentInterceptor.class);
+    private Logger log = LogManager.getLogger(QueryMetricsEnrichmentInterceptor.class);
 
     @Inject
     private QueryMetricsBean queryMetricsBean;

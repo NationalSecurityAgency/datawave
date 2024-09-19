@@ -8,7 +8,8 @@ import java.util.TreeSet;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.collect.Multimap;
 
@@ -21,7 +22,7 @@ import datawave.query.util.Tuple3;
 import datawave.query.util.Tuples;
 
 public class TermOffsetFunction implements com.google.common.base.Function<Tuple2<Key,Document>,Tuple3<Key,Document,Map<String,Object>>> {
-    private static final Logger log = Logger.getLogger(TermOffsetFunction.class);
+    private static final Logger log = LogManager.getLogger(TermOffsetFunction.class);
     private TermOffsetPopulator tfPopulator;
     private Set<String> tfIndexOnlyFields;
     private int aggregationThreshold;

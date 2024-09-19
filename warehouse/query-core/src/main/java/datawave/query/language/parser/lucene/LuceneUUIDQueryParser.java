@@ -3,7 +3,8 @@ package datawave.query.language.parser.lucene;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.query.data.UUIDType;
 import datawave.query.language.parser.ParseException;
@@ -14,7 +15,7 @@ import datawave.query.search.WildcardFieldedTerm;
 
 @Deprecated
 public class LuceneUUIDQueryParser extends LuceneQueryParser {
-    private static Logger log = Logger.getLogger(LuceneUUIDQueryParser.class.getName());
+    private static Logger log = LogManager.getLogger(LuceneUUIDQueryParser.class.getName());
     private List<UUIDType> uuidTypes = new ArrayList<>();
 
     @Override

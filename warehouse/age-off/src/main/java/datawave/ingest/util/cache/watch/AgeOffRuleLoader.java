@@ -17,7 +17,8 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.hadoop.io.IOUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
@@ -30,7 +31,7 @@ import datawave.iterators.filter.ageoff.FilterOptions;
 import datawave.iterators.filter.ageoff.FilterRule;
 
 public class AgeOffRuleLoader {
-    private static final Logger log = Logger.getLogger(AgeOffRuleLoader.class);
+    private static final Logger log = LogManager.getLogger(AgeOffRuleLoader.class);
     private final AgeOffFileLoaderDependencyProvider loaderConfig;
 
     public AgeOffRuleLoader(AgeOffFileLoaderDependencyProvider loaderConfig) {

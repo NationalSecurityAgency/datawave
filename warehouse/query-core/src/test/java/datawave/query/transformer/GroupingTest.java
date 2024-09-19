@@ -28,7 +28,8 @@ import javax.inject.Inject;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.lang.builder.ToStringBuilder;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.assertj.core.api.Assertions;
 import org.assertj.core.util.Sets;
 import org.jboss.arquillian.container.test.api.Deployment;
@@ -239,7 +240,7 @@ public abstract class GroupingTest {
 
     private static final String COUNT_FIELD = "COUNT";
     private static final Set<String> FIELDS_OF_INTEREST = ImmutableSet.of("GENDER", "GEN", "BIRTHDAY", "AGE", "AG", "RECORD");
-    private static final Logger log = Logger.getLogger(GroupingTest.class);
+    private static final Logger log = LogManager.getLogger(GroupingTest.class);
     private static final String COLVIS_MARKING = "columnVisibility";
     private static final String REDUCED_COLVIS = "ALL&E&I";
     private static final Authorizations auths = new Authorizations("ALL", "E", "I");

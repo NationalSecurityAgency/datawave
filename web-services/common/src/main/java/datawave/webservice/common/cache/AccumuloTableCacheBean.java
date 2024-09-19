@@ -27,7 +27,8 @@ import javax.ws.rs.Produces;
 
 import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.apache.deltaspike.core.api.exclude.Exclude;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jboss.resteasy.annotations.GZIP;
 
 import datawave.accumulo.inmemory.InMemoryInstance;
@@ -61,7 +62,7 @@ import datawave.webservice.result.VoidResponse;
 @Exclude(ifProjectStage = DatawaveEmbeddedProjectStageHolder.DatawaveEmbedded.class)
 public class AccumuloTableCacheBean implements AccumuloTableCache {
 
-    private final Logger log = Logger.getLogger(this.getClass());
+    private final Logger log = LogManager.getLogger(this.getClass());
 
     @Inject
     private JMSContext jmsContext;

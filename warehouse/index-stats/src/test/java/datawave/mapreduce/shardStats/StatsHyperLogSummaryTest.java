@@ -9,15 +9,17 @@ import java.util.Set;
 
 import org.apache.accumulo.core.data.Value;
 import org.apache.commons.lang.RandomStringUtils;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.junit.Assert;
 import org.junit.Test;
 
 import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;
 
 public class StatsHyperLogSummaryTest {
-    private static final Logger log = Logger.getLogger(StatsHyperLogSummaryTest.class);
+    private static final Logger log = LogManager.getLogger(StatsHyperLogSummaryTest.class);
 
     private static final int MAX_UNIQUE_VALUES = 60;
     private static final int MIN_UNIQUE_VALUES = 20;
@@ -27,8 +29,8 @@ public class StatsHyperLogSummaryTest {
     private static final Random rVal = new Random(System.currentTimeMillis());
 
     static {
-        Logger.getLogger(StatsHyperLogSummary.class).setLevel(Level.DEBUG);
-        Logger.getLogger(StatsHyperLogSummaryTest.class).setLevel(Level.DEBUG);
+        Configurator.setLevel(StatsHyperLogSummary.class.getName(), Level.DEBUG);
+        Configurator.setLevel(StatsHyperLogSummaryTest.class.getName(), Level.DEBUG);
     }
 
     private int uniqueCount;

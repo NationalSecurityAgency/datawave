@@ -16,8 +16,10 @@ import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.core.clientImpl.thrift.SecurityErrorCode;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.easymock.EasyMock;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -31,7 +33,7 @@ import datawave.ingest.table.aggregator.CombinerConfiguration;
 public class AbstractTableConfigHelperTest {
 
     private static final String BAD_TABLE_NAME = "VERY_BAD_TABLE_NAME";
-    private static final Logger logger = Logger.getLogger(AbstractTableConfigHelperTest.class);
+    private static final Logger logger = LogManager.getLogger(AbstractTableConfigHelperTest.class);
     private static Level testDriverLevel;
     private Configuration config;
 
@@ -40,16 +42,16 @@ public class AbstractTableConfigHelperTest {
 
         Level desiredLevel = Level.ALL;
 
-        Logger log = Logger.getLogger(AbstractTableConfigHelperTest.class);
+        Logger log = LogManager.getLogger(AbstractTableConfigHelperTest.class);
         AbstractTableConfigHelperTest.testDriverLevel = log.getLevel();
-        log.setLevel(desiredLevel);
+        Configurator.setLevel(log.getName(), desiredLevel);
     }
 
     @AfterClass
     public static void resetLogLevels() {
 
-        Logger log = Logger.getLogger(AbstractTableConfigHelperTest.class);
-        log.setLevel(AbstractTableConfigHelperTest.testDriverLevel);
+        Logger log = LogManager.getLogger(AbstractTableConfigHelperTest.class);
+        logger.atLevel(AbstractTableConfigHelperTest.testDriverLevel).log("Logger level set to: " + AbstractTableConfigHelperTest.testDriverLevel);
     }
 
     public static class TestAbstractTableConfigHelperImpl extends AbstractTableConfigHelper {

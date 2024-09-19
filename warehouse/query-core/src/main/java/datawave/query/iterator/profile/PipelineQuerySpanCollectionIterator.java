@@ -4,7 +4,8 @@ import java.util.Iterator;
 import java.util.Map;
 
 import org.apache.accumulo.core.data.Key;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.query.attributes.Document;
 import datawave.query.function.LogTiming;
@@ -13,7 +14,7 @@ public class PipelineQuerySpanCollectionIterator implements Iterator<Map.Entry<K
 
     protected QuerySpanCollector querySpanCollector;
     protected QuerySpan querySpan;
-    private Logger log = Logger.getLogger(PipelineQuerySpanCollectionIterator.class);
+    private Logger log = LogManager.getLogger(PipelineQuerySpanCollectionIterator.class);
     private Iterator<Map.Entry<Key,Document>> itr;
 
     public PipelineQuerySpanCollectionIterator(QuerySpanCollector querySpanCollector, QuerySpan querySpan, Iterator<Map.Entry<Key,Document>> itr) {

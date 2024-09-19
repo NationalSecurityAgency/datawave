@@ -7,8 +7,10 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Before;
@@ -17,12 +19,11 @@ import org.junit.Test;
 import datawave.ingest.mapreduce.job.IngestJob;
 
 public class StatsJobTest {
-    private static final Logger log = Logger.getLogger(StatsJobTest.class);
+    private static final Logger log = LogManager.getLogger(StatsJobTest.class);
 
     static {
-        Logger.getLogger(IngestJob.class).setLevel(Level.DEBUG);
-        Logger.getLogger(StatsJob.class).setLevel(Level.DEBUG);
-        Logger.getLogger(StatsJobTest.class).setLevel(Level.DEBUG);
+        Configurator.setLevel(IngestJob.class.getName(), Level.DEBUG);
+        Configurator.setLevel(StatsJob.class.getName(), Level.DEBUG);
     }
 
     private StatsJobWrapper wrapper;

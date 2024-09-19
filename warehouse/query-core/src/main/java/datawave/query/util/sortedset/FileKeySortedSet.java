@@ -5,7 +5,8 @@ import java.util.Comparator;
 import java.util.SortedSet;
 
 import org.apache.accumulo.core.data.Key;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * A sorted set that can be persisted into a file and still be read in its persisted state. The set can always be re-loaded and then all operations will work as
@@ -15,7 +16,7 @@ import org.apache.log4j.Logger;
  *
  */
 public class FileKeySortedSet extends FileSortedSet<Key> {
-    private static Logger log = Logger.getLogger(FileKeySortedSet.class);
+    private static Logger log = LogManager.getLogger(FileKeySortedSet.class);
 
     /**
      * Create a file sorted set from another one

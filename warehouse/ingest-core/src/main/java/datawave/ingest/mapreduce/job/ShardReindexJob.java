@@ -37,8 +37,10 @@ import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.config.Configurator;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
@@ -60,7 +62,7 @@ import datawave.util.StringUtils;
  *
  */
 public class ShardReindexJob implements Tool {
-    private static final Logger log = Logger.getLogger(ShardReindexJob.class);
+    private static final Logger log = LogManager.getLogger(ShardReindexJob.class);
     public static final Text FI_START = new Text("fi" + '\u0000');
     public static final Text FI_END = new Text("fi" + '\u0000' + '\uffff');
 
@@ -73,8 +75,8 @@ public class ShardReindexJob implements Tool {
         JCommander cmd = JCommander.newBuilder().addObject(jobConfig).build();
         cmd.parse(args);
 
-        log.setLevel(Level.DEBUG);
-        Logger.getRootLogger().setLevel(Level.DEBUG);
+        Configurator.setLevel(log.getName(), Level.DEBUG);
+        Configurator.setLevel(LogManager.getRootLogger().getName(), Level.DEBUG);
 
         Job j = setupJob();
 
@@ -266,7 +268,7 @@ public class ShardReindexJob implements Tool {
     }
 
     public static class FiToGiMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
-        private static final Logger log = Logger.getLogger(FiToGiMapper.class);
+        private static final Logger log = LogManager.getLogger(FiToGiMapper.class);
         private final byte[] FI_START_BYTES = FI_START.getBytes();
         private final Value UID_VALUE = new Value(buildIndexValue().toByteArray());
         private final Value EMPTY_VALUE = new Value();

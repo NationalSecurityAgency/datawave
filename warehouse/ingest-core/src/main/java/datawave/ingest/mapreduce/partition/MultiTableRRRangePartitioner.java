@@ -3,11 +3,12 @@ package datawave.ingest.mapreduce.partition;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class MultiTableRRRangePartitioner extends MultiTableRangePartitioner {
 
-    private static final Logger LOG = Logger.getLogger(MultiTableRRRangePartitioner.class);
+    private static final Logger LOG = LogManager.getLogger(MultiTableRRRangePartitioner.class);
     private final Map<String,Map<Integer,Integer>> SPLIT_TO_REDUCER_MAP = new HashMap();
 
     @Override

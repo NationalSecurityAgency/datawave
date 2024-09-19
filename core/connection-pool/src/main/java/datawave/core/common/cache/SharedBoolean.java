@@ -17,7 +17,8 @@ import org.apache.curator.framework.recipes.shared.SharedValue;
 import org.apache.curator.framework.recipes.shared.SharedValueListener;
 import org.apache.curator.framework.recipes.shared.SharedValueReader;
 import org.apache.curator.framework.state.ConnectionState;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.MoreExecutors;
@@ -28,7 +29,7 @@ import com.google.common.util.concurrent.MoreExecutors;
  */
 public class SharedBoolean implements Closeable, SharedBooleanReader, Listenable<SharedBooleanListener> {
 
-    private static Logger log = Logger.getLogger(SharedBoolean.class);
+    private static Logger log = LogManager.getLogger(SharedBoolean.class);
 
     private final Map<SharedBooleanListener,SharedValueListener> listeners = Maps.newConcurrentMap();
     private final SharedValue sharedValue;

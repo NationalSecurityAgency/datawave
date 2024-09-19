@@ -10,7 +10,8 @@ import java.util.List;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Envelope;
 import org.locationtech.jts.geom.Geometry;
@@ -28,7 +29,7 @@ import datawave.core.common.logging.ThreadConfigurableLogger;
  */
 public class GeoUtils {
 
-    private static final Logger log = ThreadConfigurableLogger.getLogger(GeoUtils.class);
+    private static final ThreadConfigurableLogger log = ThreadConfigurableLogger.getLogger(GeoUtils.class);
 
     /**
      * Setting the precision too high is unnecessary, and will result in occasional computational errors within the JTS library.

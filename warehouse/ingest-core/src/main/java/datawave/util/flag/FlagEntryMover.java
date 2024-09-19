@@ -7,7 +7,8 @@ import java.security.NoSuchAlgorithmException;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.cache.Cache;
 
@@ -18,7 +19,7 @@ import datawave.util.flag.InputFile.TrackedDir;
  */
 public class FlagEntryMover extends SimpleMover {
 
-    private static final Logger log = Logger.getLogger(FlagEntryMover.class);
+    private static final Logger log = LogManager.getLogger(FlagEntryMover.class);
     private static final int CHKSUM_MAX = 10 * 1024 * 1000; // 10M
 
     public FlagEntryMover(Cache<Path,Path> directoryCache, FileSystem fs, InputFile entry) {

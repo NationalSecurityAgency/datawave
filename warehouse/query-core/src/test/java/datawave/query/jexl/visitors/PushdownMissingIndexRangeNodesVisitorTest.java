@@ -6,7 +6,8 @@ import java.util.HashSet;
 import java.util.List;
 
 import org.apache.commons.jexl3.parser.ASTJexlScript;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -23,7 +24,7 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.util.MockMetadataHelper;
 
 public class PushdownMissingIndexRangeNodesVisitorTest {
-    private static final Logger log = Logger.getLogger(PushdownMissingIndexRangeNodesVisitorTest.class);
+    private static final Logger log = LogManager.getLogger(PushdownMissingIndexRangeNodesVisitorTest.class);
 
     private MockMetadataHelper helper = null;
     private ShardQueryConfiguration config = null;

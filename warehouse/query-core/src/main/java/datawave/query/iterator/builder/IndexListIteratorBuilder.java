@@ -6,7 +6,8 @@ import java.util.Set;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.lucene.util.fst.FST;
 
 import datawave.core.iterators.DatawaveFieldIndexListIteratorJexl;
@@ -21,7 +22,7 @@ import datawave.query.iterator.logic.IndexIteratorBridge;
  *
  */
 public class IndexListIteratorBuilder extends IvaratorBuilder implements IteratorBuilder {
-    private static Logger log = Logger.getLogger(IndexListIteratorBuilder.class);
+    private static Logger log = LogManager.getLogger(IndexListIteratorBuilder.class);
 
     protected Boolean negated;
     protected Set<String> values;

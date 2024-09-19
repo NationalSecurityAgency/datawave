@@ -16,7 +16,8 @@ import org.apache.accumulo.core.iterators.OptionDescriber;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.query.Constants;
 
@@ -26,7 +27,7 @@ import datawave.query.Constants;
  * Output if anything is found: Key will be rowId, columnFamily, lastSeenDate + MAX_UNICODE_STRING Value is of type {@link FirstAndLastSeenDate}
  */
 public class FirstAndLastSeenIterator implements SortedKeyValueIterator<Key,Value>, OptionDescriber {
-    protected static final Logger log = Logger.getLogger(FirstAndLastSeenIterator.class);
+    protected static final Logger log = LogManager.getLogger(FirstAndLastSeenIterator.class);
     public static final String END_OF_DATA_MARKER = Constants.MAX_UNICODE_STRING;
     public static final String SHOW_RESULT_PER_ROW_COL_FAM = "result.per.row.and.col.family.enabled";
     protected SortedKeyValueIterator<Key,Value> iterator;

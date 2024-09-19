@@ -5,7 +5,8 @@ import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.collect.Maps;
 
@@ -46,7 +47,7 @@ public class EventFieldNormalizerHelper {
     private Map<Pattern,Type<?>> typeCompiledPatternMap = null;
     private static final Type<?> NO_OP_TYPE = new NoOpType();
 
-    private static final Logger log = Logger.getLogger(EventFieldNormalizerHelper.class);
+    private static final Logger log = LogManager.getLogger(EventFieldNormalizerHelper.class);
 
     /**
      *

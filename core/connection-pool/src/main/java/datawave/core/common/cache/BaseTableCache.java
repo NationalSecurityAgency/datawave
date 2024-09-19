@@ -27,7 +27,8 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.user.RegExFilter;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.collect.Lists;
 
@@ -40,7 +41,7 @@ public class BaseTableCache implements Serializable, TableCache {
 
     private static final long serialVersionUID = 1L;
 
-    private final transient Logger log = Logger.getLogger(this.getClass());
+    private final transient Logger log = LogManager.getLogger(this.getClass());
 
     /** should be set by configuration **/
     private String tableName = null;

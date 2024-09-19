@@ -14,7 +14,8 @@ import java.util.TreeSet;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;
 
@@ -39,7 +40,7 @@ enum StatsTestData {
     FThree_VDos("20010911", "fn-three", "t-3", "v-dos"),
     FThree_VTres("20010911", "fn-three", "t-3", "v-tres");
 
-    private static final Logger log = Logger.getLogger(StatsTestData.class);
+    private static final Logger log = LogManager.getLogger(StatsTestData.class);
 
     /**
      * Generates a list of keys for input into the mapper.

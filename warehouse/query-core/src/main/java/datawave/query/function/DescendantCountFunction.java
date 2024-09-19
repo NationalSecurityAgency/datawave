@@ -24,7 +24,8 @@ import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.data.hash.UID;
 import datawave.data.hash.UIDConstants;
@@ -69,7 +70,7 @@ import datawave.query.util.Tuple3;
  * @see KeyToDocumentData
  */
 public class DescendantCountFunction implements SourcedFunction<Tuple3<Range,Key,List<Entry<Key,Value>>>,DescendantCount> {
-    private static final Logger LOG = Logger.getLogger(DescendantCountFunction.class);
+    private static final Logger LOG = LogManager.getLogger(DescendantCountFunction.class);
 
     private static final String DEFAULT_DELIMITER_PATTERN = "-att-\\d*";
 

@@ -11,7 +11,8 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
@@ -27,7 +28,7 @@ public class IndexedFieldLoader extends AccumuloLoader<String,Set<String>> {
 
     protected Collection<String> dataTypeFilters;
 
-    private static final Logger log = Logger.getLogger(IndexedFieldLoader.class);
+    private static final Logger log = LogManager.getLogger(IndexedFieldLoader.class);
 
     /**
      * @param client

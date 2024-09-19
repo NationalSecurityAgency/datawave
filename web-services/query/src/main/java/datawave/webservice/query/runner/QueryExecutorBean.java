@@ -74,7 +74,8 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.util.Pair;
 import org.apache.commons.jexl3.parser.TokenMgrException;
 import org.apache.deltaspike.core.api.exclude.Exclude;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.springframework.util.LinkedMultiValueMap;
@@ -193,7 +194,7 @@ public class QueryExecutorBean implements QueryExecutor {
     public static final String EXPAND_FIELDS = "expand.fields";
     public static final String CONTEXT_PARAMETER = "context";
 
-    private final Logger log = Logger.getLogger(QueryExecutorBean.class);
+    private final Logger log = LogManager.getLogger(QueryExecutorBean.class);
 
     @Inject
     private QueryCache queryCache;

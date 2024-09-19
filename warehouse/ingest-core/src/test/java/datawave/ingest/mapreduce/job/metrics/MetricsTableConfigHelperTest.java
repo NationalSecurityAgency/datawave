@@ -13,7 +13,8 @@ import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.iterators.IteratorUtil.IteratorScope;
 import org.apache.accumulo.core.iterators.user.SummingCombiner;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.easymock.EasyMock;
 import org.junit.Before;
 import org.junit.Test;
@@ -25,7 +26,7 @@ public class MetricsTableConfigHelperTest {
 
     private static final String CONFIG_LOC = "/datawave/ingest/mapreduce/job/metrics/test-metrics-config.xml";
 
-    private Logger logger = Logger.getLogger(this.getClass());
+    private Logger logger = LogManager.getLogger(this.getClass());
     private Configuration conf = getClasspathConfig(CONFIG_LOC);
     private MetricsTableConfigHelper configHelper;
     private TableOperations tops;

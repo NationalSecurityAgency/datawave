@@ -12,7 +12,8 @@ import java.util.Set;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.RecordReader;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -28,7 +29,7 @@ import datawave.util.StringUtils;
 
 public class TypeRegistry extends HashMap<String,Type> {
 
-    private static final Logger log = ThreadConfigurableLogger.getLogger(TypeRegistry.class);
+    private static final ThreadConfigurableLogger log = ThreadConfigurableLogger.getLogger(TypeRegistry.class);
 
     public static final String ALL_PREFIX = "all";
 

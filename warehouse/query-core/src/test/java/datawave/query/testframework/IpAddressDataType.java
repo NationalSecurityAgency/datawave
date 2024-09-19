@@ -8,7 +8,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.data.normalizer.Normalizer;
 import datawave.data.type.IpAddressType;
@@ -22,7 +23,7 @@ import datawave.ingest.input.reader.EventRecordReader;
  */
 public class IpAddressDataType extends AbstractDataTypeConfig {
 
-    private static final Logger log = Logger.getLogger(IpAddressDataType.class);
+    private static final Logger log = LogManager.getLogger(IpAddressDataType.class);
 
     /**
      * Contains predefined datatypes for ip address tests.

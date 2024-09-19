@@ -7,8 +7,8 @@ import java.nio.file.Paths;
 import java.text.ParseException;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
+import java.util.Collection;
 import java.util.Date;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -24,8 +24,9 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
-import org.apache.log4j.Appender;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.Appender;
+import org.apache.logging.log4j.core.Logger;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -59,8 +60,10 @@ public class ProtobufEdgeDeleteModeTest {
 
     private Configuration conf;
     private static Path edgeKeyVersionCachePath = Paths.get(System.getProperty("user.dir"), "edge-key-version.txt");
-    private static Logger log = Logger.getLogger(ProtobufEdgeDeleteModeTest.class);
-    private static Enumeration rootAppenders = Logger.getRootLogger().getAllAppenders();
+    private static Logger log = (Logger) LogManager.getLogger(ProtobufEdgeDeleteModeTest.class);
+    private static Logger rootLogger = (Logger) LogManager.getRootLogger();
+    private static org.apache.logging.log4j.core.config.Configuration logConfig = rootLogger.getContext().getConfiguration();
+    private static Collection<Appender> rootAppenders = rootLogger.getAppenders().values();
     private static Multimap<String,NormalizedContentInterface> fields = HashMultimap.create();
     private static Type type = new Type("mycsv", FakeIngestHelper.class, null, new String[] {SimpleDataTypeHandler.class.getName()}, 10, null);
     private static final Now now = Now.getInstance();
@@ -105,10 +108,12 @@ public class ProtobufEdgeDeleteModeTest {
 
     @AfterClass
     public static void tearDown() {
-        Logger.getRootLogger().removeAllAppenders();
-        while (rootAppenders.hasMoreElements()) {
-            Appender appender = (Appender) rootAppenders.nextElement();
-            Logger.getRootLogger().addAppender(appender);
+        for (Appender appender : rootAppenders) {
+            rootLogger.removeAppender(appender);
+        }
+
+        for (Appender appender : rootAppenders) {
+            rootLogger.addAppender(appender);
         }
         try {
             Files.deleteIfExists(edgeKeyVersionCachePath);

@@ -9,7 +9,8 @@ import org.apache.commons.jexl3.parser.ASTERNode;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.ParserTreeConstants;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.collect.Lists;
 
@@ -27,7 +28,7 @@ import datawave.query.planner.pushdown.Cost;
  */
 public class FullTableScan extends PushDownRule {
 
-    private static final Logger log = Logger.getLogger(FullTableScan.class);
+    private static final Logger log = LogManager.getLogger(FullTableScan.class);
 
     @Override
     public Object visit(ASTAndNode node, Object data) {

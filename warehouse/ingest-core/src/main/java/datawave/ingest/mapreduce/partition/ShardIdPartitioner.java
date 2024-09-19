@@ -9,7 +9,8 @@ import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Partitioner;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.ingest.mapreduce.handler.shard.ShardIdFactory;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
@@ -20,7 +21,7 @@ import datawave.util.time.DateHelper;
  * will evenly distribute shard ids across the reducers, but it does not take into account its tserver location
  */
 public class ShardIdPartitioner extends Partitioner<BulkIngestKey,Value> implements Configurable, DelegatePartitioner {
-    private static final Logger log = Logger.getLogger(ShardIdPartitioner.class);
+    private static final Logger log = LogManager.getLogger(ShardIdPartitioner.class);
 
     private static final String PREFIX = ShardIdPartitioner.class.getName();
     private static final String BASE_TIME = PREFIX + ".basetime";

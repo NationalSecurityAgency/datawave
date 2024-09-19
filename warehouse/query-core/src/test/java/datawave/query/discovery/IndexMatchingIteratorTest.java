@@ -12,8 +12,10 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iteratorsImpl.system.SortedMapIterator;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.javatuples.Pair;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -194,7 +196,7 @@ public class IndexMatchingIteratorTest {
 
     @Test
     public void testReverse() throws Throwable {
-        Logger.getLogger(IndexMatchingIterator.class).setLevel(Level.DEBUG);
+        Configurator.setLevel(IndexMatchingIterator.class.getName(), Level.DEBUG);
         IndexMatchingIterator.Configuration conf = new IndexMatchingIterator.Configuration();
         conf.addPattern(".*\\.sky.*er");
 

@@ -20,7 +20,8 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.util.Pair;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.deltaspike.core.api.exclude.Exclude;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Iterables;
@@ -83,7 +84,7 @@ public class CreatedQueryLogicCacheBean {
         }
     };
 
-    private static final Logger log = Logger.getLogger(CreatedQueryLogicCacheBean.class);
+    private static final Logger log = LogManager.getLogger(CreatedQueryLogicCacheBean.class);
 
     @Inject
     private AccumuloConnectionFactory connectionFactory;

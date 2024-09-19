@@ -59,7 +59,8 @@ import org.apache.commons.jexl3.parser.ASTTrueNode;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
@@ -107,7 +108,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
 
     private static final int MAX_MEDIAN = 20;
 
-    private static final Logger log = ThreadConfigurableLogger.getLogger(RangeStream.class);
+    private static final ThreadConfigurableLogger log = ThreadConfigurableLogger.getLogger(RangeStream.class);
 
     /**
      * An assignment to this variable can be used to specify a stream of shards and days anywhere in the query. Used by the date function index query creation.

@@ -6,7 +6,8 @@ import java.util.Properties;
 import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.easymock.EasyMock;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
@@ -51,7 +52,7 @@ import datawave.webservice.results.cached.CachedResultsConfiguration;
 @RunWith(Arquillian.class)
 public class WiredQueryExecutorBeanTest {
 
-    private Logger log = Logger.getLogger(WiredQueryExecutorBeanTest.class);
+    private Logger log = LogManager.getLogger(WiredQueryExecutorBeanTest.class);
 
     @Inject
     ApplicationContext ctx;

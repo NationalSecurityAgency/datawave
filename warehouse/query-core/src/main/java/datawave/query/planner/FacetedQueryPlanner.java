@@ -3,7 +3,8 @@ package datawave.query.planner;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.JexlNode;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.base.Joiner;
 
@@ -33,7 +34,7 @@ public class FacetedQueryPlanner extends IndexQueryPlanner {
 
     protected FacetedConfiguration facetedConfig;
 
-    private static final Logger log = Logger.getLogger(FacetedQueryPlanner.class);
+    private static final Logger log = LogManager.getLogger(FacetedQueryPlanner.class);
 
     boolean usePrecomputedFacets = false;
 

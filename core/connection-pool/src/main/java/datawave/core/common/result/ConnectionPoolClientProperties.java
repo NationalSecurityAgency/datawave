@@ -1,6 +1,7 @@
 package datawave.core.common.result;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.webservice.common.connection.AccumuloClientConfiguration;
 
@@ -12,7 +13,7 @@ import datawave.webservice.common.connection.AccumuloClientConfiguration;
  */
 public class ConnectionPoolClientProperties {
 
-    private static final Logger log = Logger.getLogger(ConnectionPoolClientProperties.class);
+    private static final Logger log = LogManager.getLogger(ConnectionPoolClientProperties.class);
     protected AccumuloClientConfiguration config = new AccumuloClientConfiguration();
 
     public AccumuloClientConfiguration getConfiguration() {

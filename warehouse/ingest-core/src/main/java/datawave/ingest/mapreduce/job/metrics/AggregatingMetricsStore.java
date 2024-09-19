@@ -8,7 +8,8 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.writer.ContextWriter;
@@ -19,7 +20,7 @@ import datawave.util.TextUtil;
  */
 public class AggregatingMetricsStore<OK,OV> implements MetricsStore<OK,OV> {
 
-    private static final Logger logger = Logger.getLogger(AggregatingMetricsStore.class);
+    private static final Logger logger = LogManager.getLogger(AggregatingMetricsStore.class);
 
     private final int maxSize;
     private final ContextWriter<OK,OV> contextWriter;

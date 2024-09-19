@@ -10,7 +10,8 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Partitioner;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.SplitsFile;
@@ -19,7 +20,7 @@ import datawave.ingest.mapreduce.job.SplitsFile;
  * The TabletLocationHashPartitioner will generate partitions for the shard table using the hashCode method on the tserver location string
  */
 public class TabletLocationHashPartitioner extends Partitioner<BulkIngestKey,Value> implements Configurable, DelegatePartitioner {
-    private static final Logger log = Logger.getLogger(TabletLocationHashPartitioner.class);
+    private static final Logger log = LogManager.getLogger(TabletLocationHashPartitioner.class);
 
     private Configuration conf;
     private Map<String,Map<Text,Integer>> shardHashes;

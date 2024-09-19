@@ -31,7 +31,8 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.util.PeekingIterator;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.base.Throwables;
 import com.google.common.collect.Iterators;
@@ -67,7 +68,7 @@ import datawave.query.tables.stats.ScanSessionStats.TIMERS;
  */
 public class RangeStreamScanner extends ScannerSession implements Callable<RangeStreamScanner> {
 
-    private static final Logger log = Logger.getLogger(RangeStreamScanner.class);
+    private static final Logger log = LogManager.getLogger(RangeStreamScanner.class);
     // simply compare the strings. no need for a date formatter
     protected static final int DATE_CF_LENGTH = 8;
     protected boolean seenUnexpectedKey = false;

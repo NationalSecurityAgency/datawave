@@ -5,7 +5,8 @@ import java.util.Map.Entry;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.commons.lang.math.LongRange;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.base.Predicate;
 
@@ -13,7 +14,7 @@ import com.google.common.base.Predicate;
  * Excludes documents which do not fall within the given time range
  */
 public class TimeFilter {
-    private static final Logger log = Logger.getLogger(TimeFilter.class);
+    private static final Logger log = LogManager.getLogger(TimeFilter.class);
 
     protected final LongRange acceptedRange;
     protected final KeyTimeFilter keyTimeFilter;

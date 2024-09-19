@@ -2,7 +2,8 @@ package datawave.core.query.logic.composite;
 
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.base.Throwables;
 
@@ -17,7 +18,7 @@ import datawave.webservice.result.BaseQueryResponse;
 
 public class CompositeQueryLogicTransformer<I,O> extends AbstractQueryLogicTransformer<I,O> implements CacheableLogic, WritesQueryMetrics {
 
-    protected static final Logger log = Logger.getLogger(CompositeQueryLogicTransformer.class);
+    protected static final Logger log = LogManager.getLogger(CompositeQueryLogicTransformer.class);
 
     private List<QueryLogicTransformer<I,O>> delegates = null;
 

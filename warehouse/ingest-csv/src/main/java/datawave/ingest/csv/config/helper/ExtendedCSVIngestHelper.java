@@ -8,7 +8,8 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.text.StrMatcher;
 import org.apache.commons.lang.text.StrTokenizer;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -25,7 +26,7 @@ import datawave.ingest.metadata.id.MetadataIdParser;
 
 public class ExtendedCSVIngestHelper extends CSVIngestHelper {
 
-    private static final Logger log = Logger.getLogger(ExtendedCSVIngestHelper.class);
+    private static final Logger log = LogManager.getLogger(ExtendedCSVIngestHelper.class);
 
     protected ExtendedCSVHelper helper = null;
     private EventFieldNormalizerHelper eventFieldNormalizerHelper = null;

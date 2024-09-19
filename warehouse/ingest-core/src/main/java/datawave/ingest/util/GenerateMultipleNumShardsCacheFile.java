@@ -12,12 +12,13 @@ import org.apache.commons.cli.OptionBuilder;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.ingest.mapreduce.handler.shard.NumShards;
 
 public class GenerateMultipleNumShardsCacheFile {
-    private static final Logger log = Logger.getLogger(GenerateMultipleNumShardsCacheFile.class);
+    private static final Logger log = LogManager.getLogger(GenerateMultipleNumShardsCacheFile.class);
 
     public static final String MULTIPLE_NUMSHARD_CACHE_FILE_LOCATION_OVERRIDE = "ns";
     public static final String CONFIG_DIRECTORY_LOCATION_OVERRIDE = "cd";

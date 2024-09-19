@@ -16,7 +16,8 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
@@ -32,7 +33,7 @@ import datawave.query.tables.ScannerSession;
  * fields
  */
 public class FieldNameIndexLookup extends AsyncIndexLookup {
-    private static final Logger log = Logger.getLogger(FieldNameIndexLookup.class);
+    private static final Logger log = LogManager.getLogger(FieldNameIndexLookup.class);
 
     protected Set<String> terms;
 

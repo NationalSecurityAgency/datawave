@@ -2,14 +2,15 @@ package datawave.query.language.tree;
 
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.query.language.functions.lucene.LuceneQueryFunction;
 import datawave.query.search.FieldedTerm;
 import datawave.query.search.Term;
 
 public class FunctionNode extends QueryNode {
-    private static final Logger log = Logger.getLogger(FunctionNode.class.getName());
+    private static final Logger log = LogManager.getLogger(FunctionNode.class.getName());
 
     private Term query;
     private LuceneQueryFunction function = null;

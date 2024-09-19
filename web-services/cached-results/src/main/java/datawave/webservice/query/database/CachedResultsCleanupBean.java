@@ -25,7 +25,8 @@ import javax.sql.rowset.CachedRowSet;
 import javax.sql.rowset.RowSetFactory;
 import javax.sql.rowset.RowSetProvider;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.configuration.spring.SpringBean;
 import datawave.core.query.cachedresults.CachedResultsQueryParameters;
@@ -45,7 +46,7 @@ import datawave.core.query.cachedresults.CachedResultsQueryParameters;
 // by default all methods are blocking
 public class CachedResultsCleanupBean {
 
-    private static Logger log = Logger.getLogger(CachedResultsCleanupBean.class);
+    private static Logger log = LogManager.getLogger(CachedResultsCleanupBean.class);
 
     private static final String GET_TABLES_TO_REMOVE = "select table_name from information_schema.tables where "
                     + " table_name != 'cachedResultsQuery' and table_name != 'template' and table_schema = '?' and " + " table_name like 't%' and "

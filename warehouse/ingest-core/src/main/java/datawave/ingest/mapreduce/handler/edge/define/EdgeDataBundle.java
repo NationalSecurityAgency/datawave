@@ -7,7 +7,8 @@ import java.util.Map;
 
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.edge.util.EdgeKey;
 import datawave.edge.util.EdgeValue.EdgeValueBuilder;
@@ -28,7 +29,7 @@ import datawave.util.time.DateHelper;
  */
 public class EdgeDataBundle {
 
-    private static final Logger log = Logger.getLogger(EdgeDataBundle.class);
+    private static final Logger log = LogManager.getLogger(EdgeDataBundle.class);
 
     // Input/Setup variables
     // final so you're not tempted to change them

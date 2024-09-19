@@ -3,7 +3,8 @@ package datawave.iterators.filter.ageoff;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.iterators.filter.AgeOffConfigParams;
 
@@ -32,7 +33,7 @@ public class MaximumAgeOffFilter extends AppliedRule {
     /**
      * Logger
      */
-    private static final Logger log = Logger.getLogger(MaximumAgeOffFilter.class);
+    private static final Logger log = LogManager.getLogger(MaximumAgeOffFilter.class);
 
     /**
      * Determine whether or not the rules are applied

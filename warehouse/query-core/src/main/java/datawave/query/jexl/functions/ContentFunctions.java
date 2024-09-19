@@ -6,7 +6,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.query.attributes.ValueTuple;
 import datawave.query.postprocessing.tf.TermOffsetMap;
@@ -68,7 +69,7 @@ import datawave.util.StringUtils;
  */
 @JexlFunctions(descriptorFactory = "datawave.query.jexl.functions.ContentFunctionsDescriptor")
 public class ContentFunctions {
-    private static final Logger log = Logger.getLogger(ContentFunctions.class);
+    private static final Logger log = LogManager.getLogger(ContentFunctions.class);
 
     public static final String TERM_OFFSET_MAP_JEXL_VARIABLE_NAME = "termOffsetMap";
     public static final String CONTENT_FUNCTION_NAMESPACE = "content";

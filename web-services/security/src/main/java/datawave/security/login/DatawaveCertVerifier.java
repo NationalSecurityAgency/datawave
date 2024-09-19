@@ -3,7 +3,8 @@ package datawave.security.login;
 import java.security.KeyStore;
 import java.security.cert.X509Certificate;
 
-import org.jboss.logging.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jboss.security.auth.certs.X509CertificateVerifier;
 
 public class DatawaveCertVerifier implements X509CertificateVerifier {
@@ -12,7 +13,7 @@ public class DatawaveCertVerifier implements X509CertificateVerifier {
         OFF, OPTIONAL, REQUIRED
     }
 
-    protected Logger log;
+    private static final Logger log = LogManager.getLogger(DatawaveCertVerifier.class);
     protected boolean trace;
     protected OcspLevel ocspLevel = OcspLevel.OFF;
 
@@ -46,10 +47,8 @@ public class DatawaveCertVerifier implements X509CertificateVerifier {
         return true;
     }
 
-    public void setLogger(Logger log) {
-        this.log = log;
-        if (log.isTraceEnabled())
-            trace = true;
+    public void setLogger(Logger logger) {
+        trace = logger.isTraceEnabled();
     }
 
     public OcspLevel getOcspLevel() {

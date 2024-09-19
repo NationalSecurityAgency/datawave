@@ -18,7 +18,8 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.functors.NOPTransformer;
 import org.apache.commons.collections4.iterators.TransformIterator;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.Iterables;
@@ -178,7 +179,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
         }
     }
 
-    protected static final Logger log = Logger.getLogger(CompositeQueryLogic.class);
+    protected static final Logger log = LogManager.getLogger(CompositeQueryLogic.class);
 
     private CompositeQueryConfiguration config;
 

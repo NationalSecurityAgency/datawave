@@ -4,7 +4,8 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -29,7 +30,7 @@ import datawave.query.collections.FunctionalSet;
  */
 @JexlFunctions(descriptorFactory = "datawave.query.jexl.functions.GeoFunctionsDescriptor")
 public class GeoFunctions {
-    private static final Logger log = Logger.getLogger(GeoFunctions.class);
+    private static final Logger log = LogManager.getLogger(GeoFunctions.class);
 
     public static final String GEO_FUNCTION_NAMESPACE = "geo";
 

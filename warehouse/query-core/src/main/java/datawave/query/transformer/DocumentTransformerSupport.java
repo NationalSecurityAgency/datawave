@@ -19,7 +19,8 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -66,7 +67,7 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
 
     protected Boolean reducedResponse;
 
-    private static final Logger log = Logger.getLogger(DocumentTransformerSupport.class);
+    private static final Logger log = LogManager.getLogger(DocumentTransformerSupport.class);
     private static final Map<String,String> EMPTY_MARKINGS = new HashMap<>();
 
     private long sourceCount = 0;

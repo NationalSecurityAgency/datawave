@@ -14,7 +14,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -36,7 +37,7 @@ public class DataTypeQueryTest extends AbstractFunctionalQuery {
     @ClassRule
     public static AccumuloSetup accumuloSetup = new AccumuloSetup();
 
-    private static final Logger log = Logger.getLogger(DataTypeQueryTest.class);
+    private static final Logger log = LogManager.getLogger(DataTypeQueryTest.class);
 
     private static final List<String> TEST_STATES = Arrays.asList("'ohio'", "'Missouri'", "'Maine'");
     private static final List<String> TEST_NUMS = Arrays.asList("100", "110", "120");

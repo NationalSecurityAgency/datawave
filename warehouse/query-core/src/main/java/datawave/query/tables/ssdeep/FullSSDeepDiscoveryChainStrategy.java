@@ -11,7 +11,8 @@ import java.util.stream.StreamSupport;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.collect.Multimap;
 import com.google.common.collect.TreeMultimap;
@@ -27,7 +28,7 @@ import datawave.query.tables.chained.strategy.FullChainStrategy;
  * that similarity query. Effectively allows the user to discover information related to hashes that are similar to one or more query hashes
  */
 public class FullSSDeepDiscoveryChainStrategy extends FullChainStrategy<ScoredSSDeepPair,DiscoveredSSDeep> {
-    private static final Logger log = Logger.getLogger(FullSSDeepDiscoveryChainStrategy.class);
+    private static final Logger log = LogManager.getLogger(FullSSDeepDiscoveryChainStrategy.class);
 
     private Multimap<String,ScoredSSDeepPair> scoredMatches;
 

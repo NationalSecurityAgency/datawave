@@ -12,8 +12,9 @@ import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.ext.ExceptionMapper;
 import javax.ws.rs.ext.Provider;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jboss.resteasy.spi.CorsHeaders;
 import org.jboss.resteasy.spi.LoggableFailure;
 
@@ -26,7 +27,7 @@ import datawave.webservice.result.VoidResponse;
 @Provider
 public class RESTExceptionMapper implements ExceptionMapper<Exception> {
 
-    private Logger log = Logger.getLogger(this.getClass());
+    private Logger log = LogManager.getLogger(this.getClass());
 
     private static String RESPONSE_ORIGIN = null;
     private static final Object lock = new Object();

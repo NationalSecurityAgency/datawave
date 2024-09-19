@@ -1,7 +1,8 @@
 package datawave.query.function;
 
 import org.apache.accumulo.core.data.Key;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.clearspring.analytics.stream.cardinality.CardinalityMergeException;
 
@@ -14,7 +15,7 @@ import datawave.query.data.parsers.DatawaveKey;
  */
 public class MergeSummarization extends CardinalitySummation {
 
-    public Logger log = Logger.getLogger(MergeSummarization.class);
+    public Logger log = LogManager.getLogger(MergeSummarization.class);
 
     public MergeSummarization(Key topKey, Document refDoc) {
         super(topKey, refDoc);

@@ -52,7 +52,8 @@ import org.apache.commons.jexl3.parser.ParserTreeConstants;
 import org.apache.commons.pool.impl.GenericObjectPool;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.lucene.util.fst.FST;
 
 import com.google.common.base.Predicate;
@@ -127,7 +128,7 @@ import datawave.webservice.query.exception.QueryException;
  * AST trees and iterator trees. A JEXL tree can have subtrees rooted at an ASTNotNode whereas an iterator tree cannot.
  */
 public class IteratorBuildingVisitor extends BaseVisitor {
-    private static final Logger log = Logger.getLogger(IteratorBuildingVisitor.class);
+    private static final Logger log = LogManager.getLogger(IteratorBuildingVisitor.class);
 
     public static final String NULL_DELIMETER = "\u0000";
 

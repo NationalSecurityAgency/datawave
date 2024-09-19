@@ -14,7 +14,8 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Searches a subsection of the row, and optionally columnfamily, and returns KVs within that subsection.
@@ -24,7 +25,7 @@ public class MinMaxIterator implements SortedKeyValueIterator<Key,Value> {
     public static final String MIN_OPT = "mmi.min";
     public static final String MAX_OPT = "mmi.max";
 
-    private static final Logger log = Logger.getLogger(MinMaxIterator.class);
+    private static final Logger log = LogManager.getLogger(MinMaxIterator.class);
     private static final Set<ByteSequence> EMPTY_COLFAMS = Collections.emptySet();
 
     private SortedKeyValueIterator<Key,Value> src;

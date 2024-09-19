@@ -13,7 +13,8 @@ import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.query.util.MetadataHelper;
 import datawave.security.authorization.ProxiedUserDetails;
@@ -180,7 +181,7 @@ import datawave.webservice.query.result.event.FieldBase;
 public class MutableMetadataUUIDHandler extends MutableMetadataHandler {
 
     private static final String DESCRIPTION = "Service that processes modification requests of event " + "fields for event(s) identified by an ID.";
-    private Logger log = Logger.getLogger(this.getClass());
+    private Logger log = LogManager.getLogger(this.getClass());
 
     private String fieldName = "";
     private String fieldValue = "";

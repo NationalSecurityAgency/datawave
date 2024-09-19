@@ -6,6 +6,8 @@ import org.apache.commons.cli.OptionBuilder;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.util.cli.PasswordConverter;
@@ -15,7 +17,7 @@ import datawave.util.cli.PasswordConverter;
  * This class encapsulates the common options needed to connect to accumulo
  */
 public class AccumuloCliOptions {
-    private static final org.apache.log4j.Logger log = org.apache.log4j.Logger.getLogger(AccumuloCliOptions.class);
+    private static final Logger log = LogManager.getLogger(AccumuloCliOptions.class);
     private final Options options = new Options();
     private CommandLine cl = null;
 

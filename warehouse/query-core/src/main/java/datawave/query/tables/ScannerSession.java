@@ -17,7 +17,8 @@ import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.lang.builder.EqualsBuilder;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Iterables;
@@ -107,7 +108,7 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
 
     protected Query settings;
 
-    private static final Logger log = Logger.getLogger(ScannerSession.class);
+    private static final Logger log = LogManager.getLogger(ScannerSession.class);
 
     protected ScanSessionStats stats = null;
 

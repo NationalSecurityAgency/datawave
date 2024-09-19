@@ -21,7 +21,8 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -35,7 +36,7 @@ import datawave.accumulo.inmemory.InMemoryInstance;
  * data in the proper buckets.
  */
 public class AccumuloIndexAgeDisplayTest {
-    private static final Logger log = Logger.getLogger(AccumuloIndexAgeDisplayTest.class);
+    private static final Logger log = LogManager.getLogger(AccumuloIndexAgeDisplayTest.class);
 
     private static final long MILLIS_IN_DAY = 86400000;
     private static final long ONE_HOUR = 3600000;

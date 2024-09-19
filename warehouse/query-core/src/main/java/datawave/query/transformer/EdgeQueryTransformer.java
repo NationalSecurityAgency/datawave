@@ -8,7 +8,8 @@ import java.util.Map.Entry;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 
@@ -24,7 +25,7 @@ import datawave.webservice.query.result.edge.EdgeBase;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 
 public class EdgeQueryTransformer extends EdgeQueryTransformerSupport<Entry<Key,Value>,EdgeBase> implements CacheableLogic {
-    private Logger log = Logger.getLogger(EdgeQueryTransformer.class);
+    private Logger log = LogManager.getLogger(EdgeQueryTransformer.class);
 
     public EdgeQueryTransformer(Query settings, MarkingFunctions markingFunctions, ResponseObjectFactory responseObjectFactory, EdgeModelFields fields) {
         super(settings, markingFunctions, responseObjectFactory, fields);

@@ -19,8 +19,10 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
@@ -109,7 +111,7 @@ public abstract class NumericListQueryTest {
         }
     }
 
-    private static final Logger log = Logger.getLogger(NumericListQueryTest.class);
+    private static final Logger log = LogManager.getLogger(NumericListQueryTest.class);
 
     protected Authorizations auths = new Authorizations("ALL");
 
@@ -144,7 +146,7 @@ public abstract class NumericListQueryTest {
     @Before
     public void setup() {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
-        log.setLevel(Level.DEBUG);
+        Configurator.setLevel(log.getName(), Level.DEBUG);
         logic.setFullTableScanEnabled(true);
         deserializer = new KryoDocumentDeserializer();
     }

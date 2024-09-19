@@ -14,7 +14,8 @@ import java.util.Set;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.Assert;
 
 import datawave.core.query.configuration.CheckpointableQueryConfiguration;
@@ -37,7 +38,7 @@ import datawave.webservice.query.exception.QueryException;
 
 public class QueryLogicTestHarness {
 
-    private static final Logger log = Logger.getLogger(QueryLogicTestHarness.class);
+    private static final Logger log = LogManager.getLogger(QueryLogicTestHarness.class);
 
     private final TestResultParser parser;
     private final KryoDocumentDeserializer deserializer;

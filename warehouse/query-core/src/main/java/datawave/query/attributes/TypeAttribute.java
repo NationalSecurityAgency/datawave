@@ -11,7 +11,8 @@ import java.util.Set;
 import org.apache.accumulo.core.data.Key;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.hadoop.io.WritableUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
@@ -28,7 +29,7 @@ public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttrib
 
     private static final long serialVersionUID = 1L;
 
-    private static final Logger log = Logger.getLogger(TypeAttribute.class);
+    private static final Logger log = LogManager.getLogger(TypeAttribute.class);
 
     private Type<T> datawaveType;
 

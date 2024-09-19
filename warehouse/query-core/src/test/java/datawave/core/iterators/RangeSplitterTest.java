@@ -8,7 +8,8 @@ import static org.junit.Assert.assertTrue;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -18,7 +19,7 @@ import org.junit.Test;
  */
 public class RangeSplitterTest {
 
-    Logger log = Logger.getLogger(RangeSplitterTest.class);
+    Logger log = LogManager.getLogger(RangeSplitterTest.class);
 
     @Before
     public void setUp() throws Exception {}

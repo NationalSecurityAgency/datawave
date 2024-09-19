@@ -23,7 +23,8 @@ import org.apache.commons.jexl3.parser.ASTNotNode;
 import org.apache.commons.jexl3.parser.ASTReference;
 import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.JexlNode;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
@@ -40,7 +41,7 @@ import datawave.query.util.MetadataHelper;
  */
 public class FieldMissingFromSchemaVisitor extends ShortCircuitBaseVisitor {
 
-    private static final Logger log = Logger.getLogger(FieldMissingFromSchemaVisitor.class);
+    private static final Logger log = LogManager.getLogger(FieldMissingFromSchemaVisitor.class);
 
     private final MetadataHelper helper;
     private final Set<String> allFieldsForDatatypes; // All fields for the specified datatypes pulled from MetadataHelper

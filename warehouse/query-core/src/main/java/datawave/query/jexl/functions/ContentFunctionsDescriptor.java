@@ -31,7 +31,8 @@ import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.commons.jexl3.parser.ParserTreeConstants;
 import org.apache.commons.lang.mutable.MutableBoolean;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
@@ -63,7 +64,7 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
      */
     public static class ContentJexlArgumentDescriptor implements JexlArgumentDescriptor {
 
-        private static final Logger log = Logger.getLogger(ContentJexlArgumentDescriptor.class);
+        private static final Logger log = LogManager.getLogger(ContentJexlArgumentDescriptor.class);
 
         private final ASTFunctionNode node;
         private final String namespace, name;

@@ -9,7 +9,8 @@ import java.util.regex.Pattern;
 import java.util.stream.StreamSupport;
 
 import org.apache.commons.lang.math.NumberUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.data.type.util.NumericalEncoder;
 import datawave.query.attributes.ValueTuple;
@@ -40,7 +41,7 @@ public class QueryFunctions {
     public static final String AVERAGE = "average";
     public static final String RENAME_FUNCTION = "rename";
 
-    protected static Logger log = Logger.getLogger(QueryFunctions.class);
+    protected static Logger log = LogManager.getLogger(QueryFunctions.class);
 
     protected static String getHitTermString(Object valueTuple) {
         Object value = ValueTuple.getStringValue(valueTuple);

@@ -11,7 +11,8 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ArrayListMultimap;
@@ -29,7 +30,7 @@ public class NormalizerLoader extends AccumuloLoader<String,Multimap<String,Type
 
     protected Collection<String> dataTypeFilters;
 
-    private static final Logger log = Logger.getLogger(NormalizerLoader.class);
+    private static final Logger log = LogManager.getLogger(NormalizerLoader.class);
 
     public NormalizerLoader(AccumuloClient client, String tableName, Set<Authorizations> auths, Collection<Text> columnFamilyList,
                     Collection<String> dataTypeFilters) {

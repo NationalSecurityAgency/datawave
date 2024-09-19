@@ -7,7 +7,8 @@ import static datawave.query.testframework.RawDataManager.RE_OP;
 import java.util.ArrayList;
 import java.util.Collection;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -31,7 +32,7 @@ public class TokensQueryTest extends AbstractFunctionalQuery {
     @ClassRule
     public static AccumuloSetup accumuloSetup = new AccumuloSetup();
 
-    private static final Logger log = Logger.getLogger(TokensQueryTest.class);
+    private static final Logger log = LogManager.getLogger(TokensQueryTest.class);
 
     private static final String[] TEST_CITIES = new String[] {"'salem'", "'olympia'", "'yuma'"};
 

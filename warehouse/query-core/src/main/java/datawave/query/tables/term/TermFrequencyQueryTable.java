@@ -14,7 +14,8 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.collect.ImmutableSet;
 
@@ -34,7 +35,7 @@ import datawave.webservice.query.exception.QueryException;
 
 public class TermFrequencyQueryTable extends BaseQueryLogic<Entry<Key,Value>> {
 
-    protected static final Logger log = ThreadConfigurableLogger.getLogger(TermFrequencyQueryTable.class);
+    protected static final ThreadConfigurableLogger log = ThreadConfigurableLogger.getLogger(TermFrequencyQueryTable.class);
 
     private static final String PARENT_ONLY = "\1";
     private static final String ALL = "\u10FFFF";

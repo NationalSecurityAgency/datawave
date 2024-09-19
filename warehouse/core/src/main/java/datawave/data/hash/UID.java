@@ -16,7 +16,8 @@ import java.util.Date;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Writable;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.util.StringUtils;
 
@@ -41,7 +42,7 @@ import datawave.util.StringUtils;
 
 public abstract class UID implements Comparable<UID>, Comparator<UID>, Writable, Serializable {
 
-    private static final Logger LOGGER = Logger.getLogger(UID.class);
+    private static final Logger LOGGER = LogManager.getLogger(UID.class);
 
     protected static final String[] EMPTY_EXTRAS = {};
     protected static final String NULL = "" + null;

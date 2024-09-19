@@ -4,7 +4,8 @@ import java.util.Collection;
 import java.util.TreeSet;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.collect.Sets;
 
@@ -16,7 +17,7 @@ import datawave.query.attributes.ValueTuple;
  *
  */
 public class NormalizationFunctions {
-    private static final Logger log = Logger.getLogger(NormalizationFunctions.class);
+    private static final Logger log = LogManager.getLogger(NormalizationFunctions.class);
     public static final String NORMALIZATION_FUNCTION_NAMESPACE = "normalize";
 
     public static String ipv4(Object ipField) throws NormalizationException {

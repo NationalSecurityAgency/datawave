@@ -10,7 +10,8 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.collect.Maps;
 
@@ -36,7 +37,7 @@ public class JexlRule extends AppliedRule {
 
     private HashMap<String,String> iterOptions;
 
-    private static final Logger log = Logger.getLogger(JexlRule.class);
+    private static final Logger log = LogManager.getLogger(JexlRule.class);
 
     @Override
     public void init(FilterOptions options) {

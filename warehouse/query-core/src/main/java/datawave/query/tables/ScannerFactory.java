@@ -18,7 +18,8 @@ import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.conf.ClientProperty;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.base.Preconditions;
 
@@ -52,7 +53,7 @@ public class ScannerFactory {
     protected Map<String,ScannerBase.ConsistencyLevel> consistencyByTable = new HashMap<>();
     protected Map<String,Map<String,String>> hintsByTable = new HashMap<>();
 
-    private static final Logger log = Logger.getLogger(ScannerFactory.class);
+    private static final Logger log = LogManager.getLogger(ScannerFactory.class);
 
     /**
      * Preferred constructor, builds scanner factory from configs

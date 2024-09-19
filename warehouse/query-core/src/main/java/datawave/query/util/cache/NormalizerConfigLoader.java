@@ -15,7 +15,8 @@ import java.util.zip.GZIPOutputStream;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
@@ -30,7 +31,7 @@ public class NormalizerConfigLoader extends Loader<String,Multimap<String,Type<?
 
     protected Collection<String> dataTypeFilters;
 
-    private static final Logger log = Logger.getLogger(NormalizerConfigLoader.class);
+    private static final Logger log = LogManager.getLogger(NormalizerConfigLoader.class);
 
     public NormalizerConfigLoader(final Configuration conf, String configItem) throws IOException {
         String configValue = conf.get(configItem);

@@ -16,7 +16,8 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.jexl3.parser.ASTEQNode;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.collect.Maps;
 
@@ -31,7 +32,7 @@ import datawave.query.util.IteratorToSortedKeyValueIterator;
  * Custom IndexBuildingVisitor that will expand (simulate) fi indexes into the entire branch of the document
  */
 public class AncestorIndexBuildingVisitor extends IteratorBuildingVisitor {
-    private static final Logger log = Logger.getLogger(AncestorIndexBuildingVisitor.class);
+    private static final Logger log = LogManager.getLogger(AncestorIndexBuildingVisitor.class);
 
     private Map<String,List<String>> familyTreeMap = new HashMap<>();
     private Map<String,Long> timestampMap = new HashMap<>();

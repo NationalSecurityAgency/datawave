@@ -1,12 +1,13 @@
 package datawave.query;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.query.tables.ShardQueryLogic;
 
 public class CheckpointableQueryTest extends AnyFieldQueryTest {
 
-    private static final Logger log = Logger.getLogger(CheckpointableQueryTest.class);
+    private static final Logger log = LogManager.getLogger(CheckpointableQueryTest.class);
 
     @Override
     protected ShardQueryLogic createShardQueryLogic() {

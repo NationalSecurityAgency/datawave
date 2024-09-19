@@ -10,7 +10,8 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 
@@ -34,7 +35,7 @@ import datawave.webservice.result.EventQueryResponseBase;
 public class ShardIndexQueryTransformer extends BaseQueryLogicTransformer<Entry<Key,Value>,EventBase> implements CacheableLogic {
 
     private Authorizations auths = null;
-    private Logger log = Logger.getLogger(ShardIndexQueryTransformer.class);
+    private Logger log = LogManager.getLogger(ShardIndexQueryTransformer.class);
     private List<String> variableFieldList = null;
     private BaseQueryLogic<Entry<Key,Value>> logic = null;
     private QueryModel myQueryModel = null;

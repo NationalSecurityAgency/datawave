@@ -17,8 +17,10 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.mapreduce.Mapper;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -27,13 +29,13 @@ import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 
 public class StatsHyperLogMapperTest {
-    private static final Logger log = Logger.getLogger(StatsHyperLogMapperTest.class);
+    private static final Logger log = LogManager.getLogger(StatsHyperLogMapperTest.class);
 
     static {
-        Logger.getLogger(StatsHyperLogMapper.class).setLevel(Level.DEBUG);
-        Logger.getLogger(StatsHyperLogSummary.class).setLevel(Level.DEBUG);
-        Logger.getLogger(StatsHyperLogMapperTest.class).setLevel(Level.DEBUG);
-        Logger.getLogger(StatsTestData.class).setLevel(Level.DEBUG);
+        Configurator.setLevel(StatsHyperLogMapper.class.getName(), Level.DEBUG);
+        Configurator.setLevel(StatsHyperLogSummary.class.getName(), Level.DEBUG);
+        Configurator.setLevel(StatsHyperLogMapperTest.class.getName(), Level.DEBUG);
+        Configurator.setLevel(StatsTestData.class.getName(), Level.DEBUG);
     }
 
     @Test

@@ -5,7 +5,8 @@ import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.StatusReporter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.collect.Multimap;
 
@@ -20,7 +21,7 @@ import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.metadata.RawRecordMetadata;
 
 public abstract class SummaryDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN> {
-    private static final Logger log = ThreadConfigurableLogger.getLogger(SummaryDataTypeHandler.class);
+    private static final ThreadConfigurableLogger log = ThreadConfigurableLogger.getLogger(SummaryDataTypeHandler.class);
 
     private Configuration mConf = null;
 

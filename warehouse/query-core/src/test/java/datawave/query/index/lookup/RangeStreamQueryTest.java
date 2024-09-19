@@ -26,7 +26,8 @@ import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -60,7 +61,7 @@ import datawave.query.util.MockMetadataHelper;
 @Category(IntegrationTest.class)
 public class RangeStreamQueryTest {
 
-    private static final Logger log = Logger.getLogger(RangeStreamQueryTest.class);
+    private static final Logger log = LogManager.getLogger(RangeStreamQueryTest.class);
 
     private static InMemoryInstance instance = new InMemoryInstance(RangeStreamQueryTest.class.toString());
     private static AccumuloClient connector;

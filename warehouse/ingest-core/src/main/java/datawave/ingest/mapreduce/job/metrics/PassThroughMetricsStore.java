@@ -6,7 +6,8 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.writer.ContextWriter;
@@ -17,7 +18,7 @@ import datawave.ingest.mapreduce.job.writer.ContextWriter;
 public class PassThroughMetricsStore<OK,OV> implements MetricsStore<OK,OV> {
     private static final String ENCODING = "UTF-8";
     private static final Value ONE = createOne();
-    private static final Logger logger = Logger.getLogger(PassThroughMetricsStore.class);
+    private static final Logger logger = LogManager.getLogger(PassThroughMetricsStore.class);
 
     private final Text table;
 

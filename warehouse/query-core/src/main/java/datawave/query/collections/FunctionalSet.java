@@ -10,7 +10,8 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.TreeSet;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.collect.Sets;
 
@@ -32,7 +33,7 @@ public class FunctionalSet<T extends ValueTuple> implements Set<T> {
     @SuppressWarnings("unchecked")
     public static final FunctionalSet EMPTY_SET = new EmptySet<>();
 
-    protected static final Logger log = Logger.getLogger(FunctionalSet.class);
+    protected static final Logger log = LogManager.getLogger(FunctionalSet.class);
 
     protected static final FunctionalSet EMPTY = new FunctionalSet();
 

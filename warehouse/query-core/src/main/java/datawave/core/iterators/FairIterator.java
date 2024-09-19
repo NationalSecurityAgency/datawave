@@ -13,14 +13,15 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.WrappingIterator;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  *
  */
 public class FairIterator extends WrappingIterator {
 
-    private static final Logger log = Logger.getLogger(FairIterator.class);
+    private static final Logger log = LogManager.getLogger(FairIterator.class);
     /**
      * Maximum consecutive keys visited.
      */

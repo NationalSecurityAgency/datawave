@@ -9,7 +9,8 @@ import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
 import org.springframework.core.type.filter.AssignableTypeFilter;
@@ -24,7 +25,7 @@ import datawave.query.jexl.visitors.NodeTypeCountVisitor;
  * Counts the total number of nodes for each node type present in a query tree.
  */
 public class RandomTreeBuilder {
-    private static final Logger log = Logger.getLogger(RandomTreeBuilder.class);
+    private static final Logger log = LogManager.getLogger(RandomTreeBuilder.class);
 
     static final Random random = new Random();
     static final List<Class<? extends JexlNode>> types;

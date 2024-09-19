@@ -22,7 +22,8 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -40,7 +41,7 @@ import datawave.webservice.query.exception.QueryException;
 public class IndexOnlyKeyToDocumentData extends KeyToDocumentData implements Iterator<Entry<DocumentData,Document>> {
     private static final Collection<ByteSequence> COLUMN_FAMILIES = Lists.<ByteSequence> newArrayList(new ArrayByteSequence("d"));
 
-    private static Logger LOG = Logger.getLogger(IndexOnlyKeyToDocumentData.class);
+    private static Logger LOG = LogManager.getLogger(IndexOnlyKeyToDocumentData.class);
 
     private static final Entry<Key,Value> INVALID_COLUMNQUALIFIER_FORMAT_KEY = Maps.immutableEntry(new Key("INVALID_COLUMNQUALIFIER_FORMAT_KEY"), EMPTY_VALUE);
 

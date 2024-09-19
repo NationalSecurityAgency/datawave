@@ -3,7 +3,8 @@ package datawave.ingest.data.tokenize;
 import java.io.IOException;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.CharArraySet;
 
@@ -12,7 +13,7 @@ import datawave.util.ObjectFactory;
 
 public class TokenizationHelper {
 
-    private static final Logger log = Logger.getLogger(TokenizationHelper.class);
+    private static final Logger log = LogManager.getLogger(TokenizationHelper.class);
 
     /**
      * Used to track tokenization execution time. It's too expensive to perform a call to System.currentTimeMillis() each time we produce a new token, so spawn
@@ -21,7 +22,7 @@ public class TokenizationHelper {
      * The main thread will check the counter value each time it produces a new token and thus track the number of ticks that have elapsed.
      */
     public static class HeartBeatThread extends Thread {
-        private static final Logger log = Logger.getLogger(HeartBeatThread.class);
+        private static final Logger log = LogManager.getLogger(HeartBeatThread.class);
 
         public static final long INTERVAL = 500; // half second resolution
         public static volatile int counter = 0;

@@ -21,7 +21,8 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import org.apache.commons.collections4.SetUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.base.CharMatcher;
 import com.google.common.collect.Sets;
@@ -53,7 +54,7 @@ public class EvaluationPhaseFilterFunctions {
      */
     public static final String CASE_INSENSITIVE = ".*\\(\\?[idmsux]*-[dmsux]*i[idmsux]*\\).*";
 
-    private static final Logger log = Logger.getLogger(EvaluationPhaseFilterFunctions.class);
+    private static final Logger log = LogManager.getLogger(EvaluationPhaseFilterFunctions.class);
 
     public static boolean occurrence(Iterable<?> fieldValues, String operator, int count) {
         return compareSizeToCount(fieldValues, operator, count);

@@ -1,6 +1,7 @@
 package datawave.query.tld;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.ingest.json.util.JsonObjectFlattener.FlattenMode;
 import datawave.query.NormalFlattenQueryTest;
@@ -12,7 +13,7 @@ import datawave.query.tables.TLDQueryLogic;
  */
 public class TLDNormalFlattenQueryTest extends NormalFlattenQueryTest {
 
-    private static final Logger log = Logger.getLogger(TLDNormalFlattenQueryTest.class);
+    private static final Logger log = LogManager.getLogger(TLDNormalFlattenQueryTest.class);
 
     protected ShardQueryLogic createShardQueryLogic() {
         return new TLDQueryLogic();

@@ -4,7 +4,8 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.core.LowerCaseFilter;
 import org.apache.lucene.analysis.ngram.NGramTokenizer;
@@ -24,7 +25,7 @@ import datawave.util.StringUtils;
  * @see datawave.ingest.util.BloomFilterUtil
  */
 public class NGramTokenizationStrategy extends AbstractNGramTokenizationStrategy {
-    private final Logger log = Logger.getLogger(NGramTokenizationStrategy.class);
+    private final Logger log = LogManager.getLogger(NGramTokenizationStrategy.class);
     private boolean loggedInvalidMaxNGramLength;
 
     /**

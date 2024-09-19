@@ -29,7 +29,8 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.deltaspike.core.api.exclude.Exclude;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jboss.resteasy.annotations.GZIP;
 
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
@@ -52,7 +53,7 @@ import datawave.webservice.query.runner.QueryExecutorBean;
 @Exclude(ifProjectStage = DatawaveEmbeddedProjectStageHolder.DatawaveEmbedded.class)
 public class DashboardBean {
 
-    private static final Logger log = Logger.getLogger(DashboardBean.class);
+    private static final Logger log = LogManager.getLogger(DashboardBean.class);
     private static final long MS_IN_12_HRS = 43_200_000;// timestamps seem to be about 11 hours behind
     private static final String TABLE_NAME_JMC = "DpsJmcLogs";
     @Inject

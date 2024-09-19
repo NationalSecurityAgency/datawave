@@ -34,7 +34,8 @@ import org.apache.hadoop.mapreduce.lib.map.WrappedMapper;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputCommitter;
 import org.apache.hadoop.mapreduce.task.MapContextImpl;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.Assert;
 import org.junit.rules.ExternalResource;
 
@@ -49,7 +50,7 @@ import datawave.query.RebuildingScannerTestHelper;
 
 public class AccumuloSetup extends ExternalResource {
 
-    private static final Logger log = Logger.getLogger(AccumuloSetup.class);
+    private static final Logger log = LogManager.getLogger(AccumuloSetup.class);
 
     /**
      * Setting this flag assures that no resources are left undeleted. Failure to fulfill the assurance results in failure of tests with an AssertionError.

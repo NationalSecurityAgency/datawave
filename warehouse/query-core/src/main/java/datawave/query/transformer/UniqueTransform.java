@@ -16,7 +16,8 @@ import javax.annotation.Nullable;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.HashMultimap;
@@ -41,7 +42,7 @@ import datawave.query.tables.ShardQueryLogic;
  */
 public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform {
 
-    private static final Logger log = Logger.getLogger(UniqueTransform.class);
+    private static final Logger log = LogManager.getLogger(UniqueTransform.class);
 
     private BloomFilter<byte[]> bloom;
     private UniqueFields uniqueFields;

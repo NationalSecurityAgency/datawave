@@ -24,7 +24,8 @@ import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.commons.jexl3.parser.ParserTreeConstants;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -45,7 +46,7 @@ import datawave.query.util.Tuple3;
 
 public class JexlASTHelperTest {
 
-    private static final Logger log = Logger.getLogger(JexlASTHelperTest.class);
+    private static final Logger log = LogManager.getLogger(JexlASTHelperTest.class);
 
     @Test
     public void test() throws Exception {

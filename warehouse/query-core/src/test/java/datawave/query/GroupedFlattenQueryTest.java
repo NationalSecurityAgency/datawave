@@ -17,7 +17,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -43,7 +44,7 @@ public class GroupedFlattenQueryTest extends AbstractFunctionalQuery {
     @ClassRule
     public static AccumuloSetup accumuloSetup = new AccumuloSetup();
 
-    private static final Logger log = Logger.getLogger(GroupedFlattenQueryTest.class);
+    private static final Logger log = LogManager.getLogger(GroupedFlattenQueryTest.class);
 
     private static final FlattenMode flatMode = FlattenMode.GROUPED;
     private static final FlattenDataType flatten;

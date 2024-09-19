@@ -13,7 +13,8 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.google.common.collect.Lists;
@@ -51,7 +52,7 @@ public abstract class EventQueryTransformerSupport<I,O> extends BaseQueryLogicTr
 
     protected List<String> contentFieldNames = Collections.emptyList();
 
-    protected static final Logger log = Logger.getLogger(EventQueryTransformerSupport.class);
+    protected static final Logger log = LogManager.getLogger(EventQueryTransformerSupport.class);
 
     protected QueryModel qm;
     protected String tableName;

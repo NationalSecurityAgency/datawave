@@ -58,7 +58,8 @@ import org.apache.hadoop.mapred.RunningJob;
 import org.apache.hadoop.mapreduce.InputFormat;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.JobID;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.oozie.client.OozieClient;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
@@ -121,7 +122,7 @@ import datawave.webservice.results.mr.MapReduceJobDescription;
 @Exclude(ifProjectStage = DatawaveEmbeddedProjectStageHolder.DatawaveEmbedded.class)
 public class MapReduceBean {
 
-    private Logger log = Logger.getLogger(this.getClass());
+    private Logger log = LogManager.getLogger(this.getClass());
 
     @Resource
     private EJBContext ctx;
@@ -783,7 +784,7 @@ public class MapReduceBean {
         final FSDataInputStream fiz = fis;
         return new StreamingOutput() {
 
-            private Logger log = Logger.getLogger(this.getClass());
+            private Logger log = LogManager.getLogger(this.getClass());
 
             @Override
             public void write(java.io.OutputStream output) throws IOException, WebApplicationException {

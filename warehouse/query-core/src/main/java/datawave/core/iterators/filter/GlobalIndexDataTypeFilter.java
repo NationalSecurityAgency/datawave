@@ -10,7 +10,8 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.Filter;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * The iterator skips entries in the global index for entries not in the specified set of data types
@@ -18,7 +19,7 @@ import org.apache.log4j.Logger;
  */
 public class GlobalIndexDataTypeFilter extends Filter {
 
-    protected static final Logger log = Logger.getLogger(GlobalIndexDataTypeFilter.class);
+    protected static final Logger log = LogManager.getLogger(GlobalIndexDataTypeFilter.class);
     public static final String DATA_TYPE = "data.type.";
     private Set<String> dataTypes = new HashSet<>();
 

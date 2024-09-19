@@ -6,8 +6,9 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;
 
@@ -18,7 +19,7 @@ import datawave.ingest.mapreduce.job.reduce.BulkIngestKeyAggregatingReducer;
  * Reducer process for creating index statistics from the shard data. The mapper process creates output keys based upon the field name, date, and datatype.
  */
 public class StatsHyperLogReducer extends BulkIngestKeyAggregatingReducer<BulkIngestKey,Value> {
-    private static final Logger log = Logger.getLogger(StatsHyperLogReducer.class);
+    private static final Logger log = LogManager.getLogger(StatsHyperLogReducer.class);
 
     // reducer parameter keys
     static final String STATS_MIN_COUNT = "shardStats.minCount";

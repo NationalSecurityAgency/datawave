@@ -27,14 +27,15 @@ import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Created on 8/10/16. This class will scan an accumulo table for all or a specified number of columns. The number of results for rows old than A,B,C,D... days
  * will be displayed. The user can enter a list of days to check
  */
 public class AccumuloIndexAgeDisplay implements AutoCloseable {
-    private static final Logger log = Logger.getLogger(AccumuloIndexAgeDisplay.class);
+    private static final Logger log = LogManager.getLogger(AccumuloIndexAgeDisplay.class);
     private static final long MILLIS_IN_DAY = 86400000;
 
     private AccumuloClient accumuloClient = null;

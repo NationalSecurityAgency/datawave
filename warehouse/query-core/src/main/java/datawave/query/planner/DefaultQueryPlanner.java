@@ -48,7 +48,8 @@ import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
@@ -181,7 +182,7 @@ import datawave.webservice.query.exception.QueryException;
 
 public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
-    private static final Logger log = ThreadConfigurableLogger.getLogger(DefaultQueryPlanner.class);
+    private static final ThreadConfigurableLogger log = ThreadConfigurableLogger.getLogger(DefaultQueryPlanner.class);
 
     public static final String EXCEED_TERM_EXPANSION_ERROR = "Query failed because it exceeded the query term expansion threshold";
 

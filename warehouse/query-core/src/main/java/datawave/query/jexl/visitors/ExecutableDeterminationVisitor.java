@@ -68,7 +68,8 @@ import org.apache.commons.jexl3.parser.ASTWhileStatement;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -109,7 +110,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         public String reason;
     }
 
-    private static final Logger log = Logger.getLogger(ExecutableDeterminationVisitor.class);
+    private static final Logger log = LogManager.getLogger(ExecutableDeterminationVisitor.class);
 
     /**
      * The output interface which allows us to write lines into the output, and provides for handling a stack of summary contributors that in the end will

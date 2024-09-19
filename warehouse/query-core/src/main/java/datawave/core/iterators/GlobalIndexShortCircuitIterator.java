@@ -24,7 +24,8 @@ import org.apache.commons.lang.time.DateUtils;
 import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 
@@ -79,7 +80,7 @@ public class GlobalIndexShortCircuitIterator implements SortedKeyValueIterator<K
     private Range masterRange = null;
     private Collection<ByteSequence> masterColumnFamilies = null;
     private boolean masterColumnFamiliesInclusive = false;
-    protected static final Logger log = Logger.getLogger(GlobalIndexShortCircuitIterator.class);
+    protected static final Logger log = LogManager.getLogger(GlobalIndexShortCircuitIterator.class);
 
     public GlobalIndexShortCircuitIterator() {}
 

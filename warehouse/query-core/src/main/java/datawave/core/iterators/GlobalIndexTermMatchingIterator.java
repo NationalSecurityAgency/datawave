@@ -12,14 +12,15 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.OptionDescriber;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.core.iterators.filter.GlobalIndexTermMatchingFilter;
 
 public class GlobalIndexTermMatchingIterator extends GlobalIndexTermMatchingFilter implements SortedKeyValueIterator<Key,Value>, OptionDescriber {
 
     public static final String UNIQUE_TERMS_IN_FIELD = "term.unique";
-    private static final Logger log = Logger.getLogger(GlobalIndexTermMatchingIterator.class);
+    private static final Logger log = LogManager.getLogger(GlobalIndexTermMatchingIterator.class);
 
     private SortedKeyValueIterator<Key,Value> source;
 

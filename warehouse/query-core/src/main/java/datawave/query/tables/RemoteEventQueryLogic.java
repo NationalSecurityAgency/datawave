@@ -1,5 +1,7 @@
 package datawave.query.tables;
 
+import static io.protostuff.CollectionSchema.MessageFactories.LinkedList;
+
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
@@ -8,7 +10,6 @@ import java.util.Set;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
-import org.apache.log4j.Logger;
 
 import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.core.query.configuration.GenericQueryConfiguration;
@@ -28,7 +29,7 @@ import datawave.webservice.result.EventQueryResponseBase;
  */
 public class RemoteEventQueryLogic extends BaseRemoteQueryLogic<EventBase> {
 
-    protected static final Logger log = ThreadConfigurableLogger.getLogger(RemoteEventQueryLogic.class);
+    protected static final ThreadConfigurableLogger log = ThreadConfigurableLogger.getLogger(RemoteEventQueryLogic.class);
 
     /**
      * Basic constructor

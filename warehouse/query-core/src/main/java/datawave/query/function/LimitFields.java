@@ -7,7 +7,8 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import org.apache.accumulo.core.data.Key;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.base.Function;
 import com.google.common.collect.HashMultimap;
@@ -53,7 +54,7 @@ import datawave.util.StringUtils;
  */
 public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Document>> {
 
-    private static final Logger log = Logger.getLogger(LimitFields.class);
+    private static final Logger log = LogManager.getLogger(LimitFields.class);
 
     public static final String ORIGINAL_COUNT_SUFFIX = "_ORIGINAL_COUNT";
 

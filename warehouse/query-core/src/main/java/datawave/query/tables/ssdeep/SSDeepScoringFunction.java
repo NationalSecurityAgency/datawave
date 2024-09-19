@@ -8,7 +8,8 @@ import java.util.stream.Stream;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.collect.Multimap;
 
@@ -27,7 +28,7 @@ import datawave.util.ssdeep.SSDeepNGramOverlapScorer;
 public class SSDeepScoringFunction implements Function<Map.Entry<Key,Value>,Stream<ScoredSSDeepPair>> {
 
     public static final String MIN_SSDEEP_SCORE_PARAMETER = "minScore";
-    private static final Logger log = Logger.getLogger(SSDeepScoringFunction.class);
+    private static final Logger log = LogManager.getLogger(SSDeepScoringFunction.class);
 
     /** Used to encode the chunk size as a character which is included in the ranges used to retrieve ngram tuples */
     private final ChunkSizeEncoding chunkSizeEncoding;

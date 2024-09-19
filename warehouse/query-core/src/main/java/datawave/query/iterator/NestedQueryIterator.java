@@ -4,7 +4,8 @@ import java.util.Collection;
 import java.util.Queue;
 
 import org.apache.accumulo.core.data.Range;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.collect.Queues;
 
@@ -15,7 +16,7 @@ import datawave.query.attributes.Document;
  */
 public class NestedQueryIterator<T> implements NestedIterator<T> {
 
-    private static final Logger log = Logger.getLogger(NestedQueryIterator.class);
+    private static final Logger log = LogManager.getLogger(NestedQueryIterator.class);
     protected Queue<NestedQuery<T>> nests;
     protected NestedQuery<T> currentQuery = null;
     protected NestedIterator<T> currentNest = null;

@@ -11,7 +11,8 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.compress.CompressionCodec;
 import org.apache.hadoop.io.compress.GzipCodec;
 import org.apache.hadoop.mapreduce.Counters;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.ingest.mapreduce.StandaloneStatusReporter;
 import datawave.ingest.mapreduce.StandaloneTaskAttemptContext;
@@ -21,7 +22,7 @@ import datawave.ingest.mapreduce.StandaloneTaskAttemptContext;
  */
 public class FlagMetrics {
 
-    private static final Logger log = Logger.getLogger(FlagMetrics.class);
+    private static final Logger log = LogManager.getLogger(FlagMetrics.class);
 
     private static final CompressionCodec cc = new GzipCodec();
     private static final SequenceFile.CompressionType ct = SequenceFile.CompressionType.BLOCK;

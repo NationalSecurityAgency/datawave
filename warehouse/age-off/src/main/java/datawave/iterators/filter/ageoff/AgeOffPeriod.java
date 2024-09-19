@@ -1,6 +1,7 @@
 package datawave.iterators.filter.ageoff;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.iterators.filter.AgeOffConfigParams;
 import datawave.iterators.filter.AgeOffTtlUnits;
@@ -16,7 +17,7 @@ public class AgeOffPeriod {
     private final long ttl;
     private final String ttlUnits;
 
-    private static final Logger log = Logger.getLogger(AgeOffPeriod.class);
+    private static final Logger log = LogManager.getLogger(AgeOffPeriod.class);
 
     public AgeOffPeriod(long cutOffMillis) {
         this.ttlUnits = "ms";

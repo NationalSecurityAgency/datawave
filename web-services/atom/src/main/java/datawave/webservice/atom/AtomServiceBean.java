@@ -49,7 +49,8 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.util.Base64;
 
@@ -78,7 +79,7 @@ public class AtomServiceBean {
     private static final String COLLECTION_LINK_FORMAT = "https://{0}:{1}/DataWave/Atom/{2}";
     // see configuration file for reference: datawave/atom/AtomConfiguration.xml
 
-    private final Logger log = Logger.getLogger(this.getClass());
+    private final Logger log = LogManager.getLogger(this.getClass());
 
     @EJB
     private AccumuloConnectionFactory connectionFactory;

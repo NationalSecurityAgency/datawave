@@ -7,7 +7,8 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.collect.Sets;
 
@@ -20,7 +21,7 @@ import datawave.query.attributes.ValueTuple;
 
 public class HitListArithmetic extends DatawaveArithmetic implements StatefulArithmetic {
 
-    private static final Logger log = Logger.getLogger(HitListArithmetic.class);
+    private static final Logger log = LogManager.getLogger(HitListArithmetic.class);
 
     private static final String LESS_THAN = "<", GREATER_THAN = ">", LESS_THAN_OR_EQUAL = "<=", GREATER_THAN_OR_EQUAL = ">=";
 

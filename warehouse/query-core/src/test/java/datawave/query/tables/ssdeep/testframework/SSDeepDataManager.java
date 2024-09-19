@@ -9,7 +9,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.Assert;
 
 import au.com.bytecode.opencsv.CSVReader;
@@ -27,7 +28,7 @@ import datawave.query.testframework.RawData;
  */
 public class SSDeepDataManager extends AbstractDataManager {
 
-    private static final Logger log = Logger.getLogger(SSDeepDataManager.class);
+    private static final Logger log = LogManager.getLogger(SSDeepDataManager.class);
 
     public SSDeepDataManager() {
         super(SSDeepField.EVENT_ID.name(), SSDeepField.PROCESSING_DATE.name(), SSDeepField.getFieldsMetadata());

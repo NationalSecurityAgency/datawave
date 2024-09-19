@@ -16,7 +16,8 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.base.Function;
 import com.google.common.eventbus.Subscribe;
@@ -32,7 +33,7 @@ import datawave.query.tables.stats.ScanSessionStats.TIMERS;
 
 public class Scan implements Callable<Scan> {
 
-    private static final Logger log = Logger.getLogger(Scan.class);
+    private static final Logger log = LogManager.getLogger(Scan.class);
     public static final String SCAN_ID = "scan.id";
 
     protected ScannerChunk myScan;

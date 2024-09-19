@@ -10,7 +10,8 @@ import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.VLongWritable;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Sets;
@@ -19,7 +20,7 @@ import datawave.marking.MarkingFunctions;
 
 public class TermInfoAggregation implements Function<Collection<TermInfo>,DiscoveredThing> {
 
-    private static final Logger log = Logger.getLogger(TermInfoAggregation.class);
+    private static final Logger log = LogManager.getLogger(TermInfoAggregation.class);
     private Set<ColumnVisibility> columnVisibilities = Sets.newHashSet();
     private static MarkingFunctions markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
     private final boolean separateCountsByColumnVisibility;

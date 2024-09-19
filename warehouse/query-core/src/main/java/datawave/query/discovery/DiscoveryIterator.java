@@ -21,14 +21,15 @@ import org.apache.accumulo.core.util.Pair;
 import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.base.Predicates;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 
 public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
-    private static final Logger log = Logger.getLogger(DiscoveryIterator.class);
+    private static final Logger log = LogManager.getLogger(DiscoveryIterator.class);
 
     private Key tk;
     private Value tv;

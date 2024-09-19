@@ -37,7 +37,8 @@ import org.apache.accumulo.core.iterators.Combiner;
 import org.apache.accumulo.core.iterators.IteratorUtil;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.ingest.config.TableConfigCache;
 import datawave.ingest.data.Type;
@@ -56,7 +57,7 @@ import datawave.iterators.PropogatingIterator;
  **/
 public class TableConfigurationUtil {
 
-    protected static final Logger log = Logger.getLogger(TableConfigurationUtil.class.getName());
+    protected static final Logger log = LogManager.getLogger(TableConfigurationUtil.class.getName());
     public static final String ITERATOR_CLASS_MARKER = "iterClass";
     public static final String TABLES_CONFIGS_TO_CACHE = "tables.configs.to.cache";
     public static final String TABLE_PROPERTIES_TO_CACHE = "cache.table.properties";

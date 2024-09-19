@@ -1,6 +1,7 @@
 package datawave.query.iterator.profile;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.base.Predicate;
 
@@ -9,7 +10,7 @@ public class EvaluationTrackingPredicate<T> implements Predicate<T> {
     protected QuerySpan mySpan;
     protected QuerySpan.Stage stageName;
     protected Predicate<T> predicate;
-    private Logger log = Logger.getLogger(EvaluationTrackingPredicate.class);
+    private Logger log = LogManager.getLogger(EvaluationTrackingPredicate.class);
 
     public EvaluationTrackingPredicate(QuerySpan.Stage stageName, QuerySpan mySpan, Predicate<T> predicate) {
         this.mySpan = mySpan;

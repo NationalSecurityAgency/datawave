@@ -9,7 +9,8 @@ import org.apache.commons.jexl3.parser.ASTAndNode;
 import org.apache.commons.jexl3.parser.ASTOrNode;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Visitor that enforces node uniqueness within AND or OR expressions. Nodes can be single nodes or subtrees.
@@ -28,7 +29,7 @@ public class UniqueExpressionTermsVisitor extends RebuildingVisitor {
 
     private int duplicates = 0;
 
-    private static final Logger log = Logger.getLogger(UniqueExpressionTermsVisitor.class);
+    private static final Logger log = LogManager.getLogger(UniqueExpressionTermsVisitor.class);
 
     /**
      * Apply this visitor to the query tree.

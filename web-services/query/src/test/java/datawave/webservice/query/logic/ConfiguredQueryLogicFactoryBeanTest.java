@@ -15,8 +15,10 @@ import java.util.TreeMap;
 
 import javax.ejb.EJBContext;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
@@ -61,9 +63,13 @@ public class ConfiguredQueryLogicFactoryBeanTest extends EasyMockSupport {
     public void setup() throws IllegalArgumentException, IllegalAccessException {
         System.setProperty(DnUtils.NPE_OU_PROPERTY, "iamnotaperson");
         System.setProperty("dw.metadatahelper.all.auths", "A,B,C,D");
-        Logger.getLogger(ClassPathXmlApplicationContext.class).setLevel(Level.OFF);
-        Logger.getLogger(XmlBeanDefinitionReader.class).setLevel(Level.OFF);
-        Logger.getLogger(DefaultListableBeanFactory.class).setLevel(Level.OFF);
+        Logger classPathXmlApplicationContextLogger = LogManager.getLogger(ClassPathXmlApplicationContext.class);
+        Logger xmlBeanDefinitionReaderLogger = LogManager.getLogger(XmlBeanDefinitionReader.class);
+        Logger defaultListableBeanFactoryLogger = LogManager.getLogger(DefaultListableBeanFactory.class);
+
+        Configurator.setLevel(classPathXmlApplicationContextLogger.getName(), Level.OFF);
+        Configurator.setLevel(xmlBeanDefinitionReaderLogger.getName(), Level.OFF);
+        Configurator.setLevel(defaultListableBeanFactoryLogger.getName(), Level.OFF);
         ClassPathXmlApplicationContext queryFactory = new ClassPathXmlApplicationContext();
         queryFactory.setConfigLocation("TestConfiguredQueryLogicFactory.xml");
         queryFactory.refresh();

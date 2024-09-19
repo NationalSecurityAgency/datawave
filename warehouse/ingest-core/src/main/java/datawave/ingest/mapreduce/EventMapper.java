@@ -27,8 +27,9 @@ import org.apache.hadoop.mapreduce.CounterGroup;
 import org.apache.hadoop.mapreduce.Counters;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
-import org.apache.log4j.Logger;
-import org.apache.log4j.NDC;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.ThreadContext;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.HashMultimap;
@@ -100,7 +101,7 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
 
     private static final String SRC_FILE_DEL = "|";
 
-    private static final Logger log = Logger.getLogger(EventMapper.class);
+    private static final Logger log = LogManager.getLogger(EventMapper.class);
 
     // for backward compatibility, these DISCARD constants are maintained here as well
     public static final String DISCARD_INTERVAL = DataTypeDiscardIntervalPredicate.DISCARD_INTERVAL;
@@ -180,7 +181,7 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
             split = (FileSplit) is;
         // push the current filename on to the NDC
         if (null != split) {
-            NDC.push(split.getPath().toString());
+            ThreadContext.push(split.getPath().toString());
             splitStart = Long.valueOf(split.getStart()).toString();
         } else
             splitStart = null;
@@ -477,7 +478,7 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
                 // Set the original file value from the event in the error table
                 Collection<String> origFiles = errorSummary.getEventFields().get(SEQUENCE_FILE_FIELDNAME);
                 if (!origFiles.isEmpty()) {
-                    NDC.push(origFiles.iterator().next());
+                    ThreadContext.push(origFiles.iterator().next());
                     reprocessedNDCPush = true;
                 }
 
@@ -581,7 +582,7 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
         } finally {
             // Remove ORIG_FILE from NDC that was populated by reprocessing events from the error tables
             if (reprocessedNDCPush) {
-                NDC.pop();
+                ThreadContext.pop();
             }
             // cleanup the context writer
             contextWriter.commit(context);
@@ -695,7 +696,7 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
 
         // we pushed the filename on the NDC if split is non null, so pop it here.
         if (null != split) {
-            NDC.pop();
+            ThreadContext.pop();
         }
     }
 
@@ -818,7 +819,7 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
 
         // place the sequence filename into the event
         if (createSequenceFileName) {
-            seqFileName = NDC.peek();
+            seqFileName = ThreadContext.peek();
 
             if (trimSequenceFileName) {
                 seqFileName = StringUtils.substringAfterLast(seqFileName, "/");

@@ -5,7 +5,8 @@ import java.util.Set;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.logic.QueryLogic;
@@ -22,7 +23,7 @@ import datawave.microservice.query.Query;
  *            Type of latter {@link QueryLogic}
  */
 public abstract class FullChainStrategy<T1,T2> implements ChainStrategy<T1,T2> {
-    protected final Logger log = Logger.getLogger(FullChainStrategy.class);
+    protected final Logger log = LogManager.getLogger(FullChainStrategy.class);
 
     @Override
     public Iterator<T2> runChainedQuery(AccumuloClient client, Query initialQuery, Set<Authorizations> auths, Iterator<T1> initialQueryResults,

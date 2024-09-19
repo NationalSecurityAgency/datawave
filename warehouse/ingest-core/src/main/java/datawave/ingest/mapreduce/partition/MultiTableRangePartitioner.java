@@ -15,7 +15,8 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Partitioner;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.SplitsFile;
@@ -28,7 +29,7 @@ public class MultiTableRangePartitioner extends Partitioner<BulkIngestKey,Value>
     private static final String PREFIX = MultiTableRangePartitioner.class.getName();
     public static final String PARTITION_STATS = PREFIX + ".partitionStats";
 
-    private static final Logger log = Logger.getLogger(MultiTableRangePartitioner.class);
+    private static final Logger log = LogManager.getLogger(MultiTableRangePartitioner.class);
     static TaskInputOutputContext<?,?,?,?> context = null;
     private static boolean collectStats = false;
 

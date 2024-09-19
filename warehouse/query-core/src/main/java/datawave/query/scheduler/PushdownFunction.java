@@ -22,7 +22,8 @@ import org.apache.accumulo.core.data.TableId;
 import org.apache.accumulo.core.dataImpl.KeyExtent;
 import org.apache.accumulo.core.manager.state.tables.TableState;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.base.Function;
 import com.google.common.collect.ArrayListMultimap;
@@ -45,7 +46,7 @@ public class PushdownFunction implements Function<QueryData,List<ScannerChunk>> 
     /**
      * Logger
      */
-    private static final Logger log = Logger.getLogger(PushdownFunction.class);
+    private static final Logger log = LogManager.getLogger(PushdownFunction.class);
 
     /**
      * Configuration object

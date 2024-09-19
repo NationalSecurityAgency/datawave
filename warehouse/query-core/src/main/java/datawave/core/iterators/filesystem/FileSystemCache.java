@@ -9,7 +9,8 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
@@ -18,7 +19,7 @@ import com.google.common.cache.CacheBuilder;
  * Created on 2/8/17.
  */
 public class FileSystemCache {
-    private static Logger log = Logger.getLogger(FileSystemCache.class);
+    private static Logger log = LogManager.getLogger(FileSystemCache.class);
     protected Cache<URI,FileSystem> fileSystemCache = CacheBuilder.newBuilder().expireAfterAccess(5, TimeUnit.MINUTES).concurrencyLevel(5).maximumSize(10)
                     .build();
     private Configuration conf;

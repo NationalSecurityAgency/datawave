@@ -12,14 +12,15 @@ import java.net.SocketTimeoutException;
 import java.util.Observable;
 import java.util.Observer;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  *
  */
 public class FlagSocket extends Observable implements Runnable, Observer {
 
-    private static final Logger log = Logger.getLogger(FlagSocket.class);
+    private static final Logger log = LogManager.getLogger(FlagSocket.class);
     private ServerSocket serverSocket;
     private volatile boolean running = true;
 

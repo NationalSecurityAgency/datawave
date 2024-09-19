@@ -57,8 +57,9 @@ import org.apache.hadoop.mapreduce.Counters;
 import org.apache.hadoop.tools.DistCp;
 import org.apache.hadoop.tools.DistCpOptions;
 import org.apache.hadoop.util.ToolRunner;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.base.Objects;
 import com.google.common.collect.Lists;
@@ -73,7 +74,7 @@ import datawave.util.cli.PasswordConverter;
  * various tablet servers.
  */
 public final class BulkIngestMapFileLoader implements Runnable {
-    private static Logger log = Logger.getLogger(BulkIngestMapFileLoader.class);
+    private static Logger log = LogManager.getLogger(BulkIngestMapFileLoader.class);
     private static int SLEEP_TIME = 30000;
     private static int FAILURE_SLEEP_TIME = 10 * 60 * 1000; // 10 minutes
     private static int MAX_DIRECTORIES = 1;

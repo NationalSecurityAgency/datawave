@@ -28,7 +28,8 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 
@@ -50,7 +51,7 @@ import datawave.webservice.query.exception.QueryException;
  */
 public abstract class BaseEdgeQueryTest {
 
-    public static final Logger log = Logger.getLogger(BaseEdgeQueryTest.class);
+    public static final Logger log = LogManager.getLogger(BaseEdgeQueryTest.class);
 
     protected static final boolean protobufEdgeFormat = true;
 

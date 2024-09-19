@@ -10,7 +10,8 @@ import java.util.SortedSet;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.query.util.sortedset.FileSortedSet.SortedSetFileHandler;
 
@@ -23,7 +24,7 @@ import datawave.query.util.sortedset.FileSortedSet.SortedSetFileHandler;
  *            type of the set
  */
 public class BufferedFileBackedSortedSet<E> implements SortedSet<E> {
-    private static final Logger log = Logger.getLogger(BufferedFileBackedSortedSet.class);
+    private static final Logger log = LogManager.getLogger(BufferedFileBackedSortedSet.class);
     protected static final int DEFAULT_BUFFER_PERSIST_THRESHOLD = 1000;
     protected static final int DEFAULT_MAX_OPEN_FILES = 100;
     protected static final int DEFAULT_NUM_RETRIES = 2;

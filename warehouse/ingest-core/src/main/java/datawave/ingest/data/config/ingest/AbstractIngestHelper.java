@@ -5,7 +5,8 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.TreeSet;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.data.normalizer.NormalizationException;
 import datawave.data.type.Type;
@@ -17,7 +18,7 @@ import datawave.ingest.data.config.MaskedFieldHelper;
  * fields values from the datatypes that they represent.
  */
 public abstract class AbstractIngestHelper extends DataTypeHelperImpl implements IngestHelperInterface {
-    private static final Logger log = Logger.getLogger(AbstractIngestHelper.class);
+    private static final Logger log = LogManager.getLogger(AbstractIngestHelper.class);
 
     protected boolean deleteMode = false;
     protected boolean replaceMalformedUTF8 = false;

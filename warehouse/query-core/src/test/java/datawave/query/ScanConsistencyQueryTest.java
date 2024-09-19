@@ -17,8 +17,10 @@ import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -49,7 +51,7 @@ public class ScanConsistencyQueryTest extends AbstractFunctionalQuery {
     @ClassRule
     public static AccumuloSetup accumuloSetup = new AccumuloSetup();
 
-    private static final Logger log = Logger.getLogger(ScanConsistencyQueryTest.class);
+    private static final Logger log = LogManager.getLogger(ScanConsistencyQueryTest.class);
 
     @BeforeClass
     public static void filterSetup() throws Exception {
@@ -59,7 +61,7 @@ public class ScanConsistencyQueryTest extends AbstractFunctionalQuery {
         dataTypes.add(new CitiesDataType(CityEntry.generic, generic));
 
         accumuloSetup.setData(FileType.CSV, dataTypes);
-        Logger.getLogger(PrintUtility.class).setLevel(Level.DEBUG);
+        Configurator.setLevel(PrintUtility.class.getName(), Level.DEBUG);
         client = accumuloSetup.loadTables(log);
     }
 

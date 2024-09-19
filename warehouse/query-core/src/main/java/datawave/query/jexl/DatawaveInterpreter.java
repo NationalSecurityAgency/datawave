@@ -38,7 +38,8 @@ import org.apache.commons.jexl3.parser.ASTOrNode;
 import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.hadoop.fs.Path;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.lucene.util.fst.FST;
 
 import com.google.common.collect.Maps;
@@ -72,7 +73,7 @@ public class DatawaveInterpreter extends Interpreter {
 
     protected Map<String,Object> resultMap;
 
-    private static final Logger log = Logger.getLogger(DatawaveInterpreter.class);
+    private static final Logger log = LogManager.getLogger(DatawaveInterpreter.class);
 
     public DatawaveInterpreter(Engine jexl, JexlOptions opts, JexlContext aContext, Frame eFrame) {
         super(jexl, opts, aContext, eFrame);

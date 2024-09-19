@@ -9,7 +9,8 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.core.query.cachedresults.CacheableLogic;
 import datawave.core.query.logic.BaseQueryLogic;
@@ -32,7 +33,7 @@ import datawave.webservice.result.EventQueryResponseBase;
 public class FieldIndexCountQueryTransformer extends BaseQueryLogicTransformer<Entry<String,Tuple>,EventBase> implements CacheableLogic {
 
     private Authorizations auths = null;
-    private Logger log = Logger.getLogger(FieldIndexCountQueryTransformer.class);
+    private Logger log = LogManager.getLogger(FieldIndexCountQueryTransformer.class);
     private List<String> variableFieldList = null;
     private BaseQueryLogic<Entry<Key,Value>> logic = null;
     private ResponseObjectFactory responseObjectFactory;

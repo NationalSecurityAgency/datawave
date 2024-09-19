@@ -24,7 +24,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.CachingTokenFilter;
 import org.apache.lucene.analysis.TokenStream;
@@ -83,7 +84,7 @@ import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
  */
 public class CustomAnalyzerQueryNodeProcessor extends QueryNodeProcessorImpl {
 
-    private static final Logger logger = Logger.getLogger(CustomAnalyzerQueryNodeProcessor.class);
+    private static final Logger logger = LogManager.getLogger(CustomAnalyzerQueryNodeProcessor.class);
 
     /**
      * A tag added to query nodes that indicates that they have been processed by the {@link CustomAnalyzerQueryNodeProcessor} and should not be processed if

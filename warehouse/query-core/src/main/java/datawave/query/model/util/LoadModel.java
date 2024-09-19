@@ -9,7 +9,8 @@ import javax.xml.parsers.SAXParserFactory;
 import javax.xml.transform.Source;
 import javax.xml.transform.sax.SAXSource;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.xml.sax.InputSource;
 
 import datawave.query.model.FieldMapping;
@@ -21,7 +22,7 @@ import datawave.webservice.model.Model;
  */
 public class LoadModel {
 
-    private static final Logger log = Logger.getLogger(LoadModel.class);
+    private static final Logger log = LogManager.getLogger(LoadModel.class);
 
     public static QueryModel loadModelFromXml(InputStream stream) throws Exception {
 

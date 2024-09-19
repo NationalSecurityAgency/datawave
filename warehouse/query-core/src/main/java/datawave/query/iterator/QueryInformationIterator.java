@@ -12,7 +12,8 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.WrappingIterator;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.query.Constants;
 import datawave.query.exceptions.LoadAverageWatchException;
@@ -29,7 +30,7 @@ import datawave.query.util.QueryInformation;
  *
  */
 public class QueryInformationIterator extends WrappingIterator {
-    private static final Logger log = Logger.getLogger(QueryInformationIterator.class);
+    private static final Logger log = LogManager.getLogger(QueryInformationIterator.class);
 
     protected static final String REPORT_ERRORS_OPT = "REPORT_ERRORS";
 

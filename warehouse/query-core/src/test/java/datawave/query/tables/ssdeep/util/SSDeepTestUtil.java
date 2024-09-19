@@ -16,7 +16,8 @@ import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.Assert;
 
 import datawave.ingest.mapreduce.handler.ssdeep.SSDeepIndexHandler;
@@ -30,7 +31,7 @@ import datawave.webservice.query.result.event.FieldBase;
 
 public class SSDeepTestUtil {
 
-    private static final Logger log = Logger.getLogger(SSDeepSimilarityQueryTest.class);
+    private static final Logger log = LogManager.getLogger(SSDeepSimilarityQueryTest.class);
 
     @SuppressWarnings("SpellCheckingInspection")
     public static String[] TEST_SSDEEPS = {"12288:002r/VG4GjeZHkwuPikQ7lKH5p5H9x1beZHkwulizQ1lK55pGxlXTd8zbW:002LVG4GjeZEXi37l6Br1beZEdic1lmu",

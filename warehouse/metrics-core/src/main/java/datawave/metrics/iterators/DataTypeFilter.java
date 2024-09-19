@@ -11,7 +11,8 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.Filter;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.metrics.keys.IngestEntryKey;
 import datawave.metrics.keys.InvalidKeyException;
@@ -19,7 +20,7 @@ import datawave.metrics.util.WritableUtil;
 
 // column family filter
 public class DataTypeFilter extends Filter {
-    private static final Logger log = Logger.getLogger(DataTypeFilter.class);
+    private static final Logger log = LogManager.getLogger(DataTypeFilter.class);
 
     private HashSet<String> dataTypes = new HashSet<>();
 

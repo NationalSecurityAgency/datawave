@@ -7,7 +7,8 @@ import java.util.Map;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.Counter;
 import org.apache.hadoop.mapreduce.CounterGroup;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.base.Joiner;
 
@@ -17,7 +18,7 @@ import datawave.util.StringUtils;
  * Created on 4/25/16.
  */
 public class CounterToStatsDConfiguration {
-    private static Logger log = Logger.getLogger(CounterToStatsDConfiguration.class);
+    private static Logger log = LogManager.getLogger(CounterToStatsDConfiguration.class);
 
     private String host = null;
     private int port = 0;

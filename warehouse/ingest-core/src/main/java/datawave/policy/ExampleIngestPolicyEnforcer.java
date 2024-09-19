@@ -1,6 +1,7 @@
 package datawave.policy;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.ingest.data.RawDataErrorNames;
@@ -11,7 +12,7 @@ import datawave.ingest.data.RawRecordContainer;
  */
 public class ExampleIngestPolicyEnforcer extends IngestPolicyEnforcer {
 
-    private static final Logger log = ThreadConfigurableLogger.getLogger(ExampleIngestPolicyEnforcer.class);
+    private static final ThreadConfigurableLogger log = ThreadConfigurableLogger.getLogger(ExampleIngestPolicyEnforcer.class);
 
     /**
      * Here we'll check for a few basic issues, and rather than throw an exception to convey failure we'll rely on DataWave ingest's internal error-tracking

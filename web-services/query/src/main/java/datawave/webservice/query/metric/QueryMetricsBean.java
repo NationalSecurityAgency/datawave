@@ -41,7 +41,8 @@ import org.apache.commons.lang.time.DateUtils;
 import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.apache.http.client.utils.URIBuilder;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jboss.resteasy.annotations.GZIP;
 import org.springframework.http.MediaType;
 import org.xbill.DNS.TextParseException;
@@ -76,7 +77,7 @@ import datawave.webservice.query.exception.QueryException;
 @Exclude(ifProjectStage = DatawaveEmbeddedProjectStageHolder.DatawaveEmbedded.class)
 public class QueryMetricsBean {
 
-    private static final Logger log = Logger.getLogger(QueryMetricsBean.class);
+    private static final Logger log = LogManager.getLogger(QueryMetricsBean.class);
     @Resource
     private EJBContext ctx;
     @Inject

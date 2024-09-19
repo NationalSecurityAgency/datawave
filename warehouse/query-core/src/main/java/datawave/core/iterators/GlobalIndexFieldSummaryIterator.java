@@ -9,7 +9,8 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.OptionDescriber;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * <p>
@@ -19,7 +20,7 @@ import org.apache.log4j.Logger;
  * </p>
  */
 public class GlobalIndexFieldSummaryIterator extends GlobalIndexDateSummaryIterator implements SortedKeyValueIterator<Key,Value>, OptionDescriber {
-    protected static final Logger log = Logger.getLogger(GlobalIndexFieldSummaryIterator.class);
+    protected static final Logger log = LogManager.getLogger(GlobalIndexFieldSummaryIterator.class);
 
     public GlobalIndexFieldSummaryIterator() {
         super();

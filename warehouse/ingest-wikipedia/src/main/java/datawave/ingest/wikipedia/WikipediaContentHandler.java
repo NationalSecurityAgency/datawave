@@ -6,7 +6,8 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.Locator;
@@ -20,7 +21,7 @@ import com.google.common.collect.Sets;
  *
  */
 public class WikipediaContentHandler implements ContentHandler {
-    private final Logger log = Logger.getLogger(WikipediaContentHandler.class);
+    private final Logger log = LogManager.getLogger(WikipediaContentHandler.class);
 
     private final Set<String> DEPTHS = Sets.newHashSet("page", "revision", "contributor");
 

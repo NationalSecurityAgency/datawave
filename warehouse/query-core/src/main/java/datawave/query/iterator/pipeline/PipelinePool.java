@@ -11,7 +11,8 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.collect.Maps;
 
@@ -25,7 +26,7 @@ import datawave.query.iterator.profile.QuerySpanCollector;
  * This is the pool of pipelines used for evaluation of documents.
  */
 public class PipelinePool {
-    private static final Logger log = Logger.getLogger(PipelinePool.class);
+    private static final Logger log = LogManager.getLogger(PipelinePool.class);
     final int maxPipelines;
     final Set<Pipeline> checkedOut;
     final List<Pipeline> checkedIn;

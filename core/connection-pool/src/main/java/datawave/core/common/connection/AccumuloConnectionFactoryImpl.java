@@ -18,7 +18,8 @@ import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.util.Pair;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.mutable.MutableInt;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.core.common.cache.AccumuloTableCache;
@@ -33,7 +34,7 @@ import datawave.webservice.common.connection.WrappedAccumuloClient;
  */
 public class AccumuloConnectionFactoryImpl implements AccumuloConnectionFactory {
 
-    private Logger log = Logger.getLogger(this.getClass());
+    private Logger log = LogManager.getLogger(this.getClass());
 
     private final AccumuloTableCache cache;
     private final ConnectionPoolsProperties connectionPoolsConfiguration;

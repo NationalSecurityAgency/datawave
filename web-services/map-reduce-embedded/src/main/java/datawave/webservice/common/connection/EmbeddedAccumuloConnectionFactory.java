@@ -10,7 +10,8 @@ import javax.annotation.PostConstruct;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.deltaspike.core.api.config.ConfigProperty;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.core.common.connection.AccumuloClientPool;
 import datawave.core.common.connection.AccumuloClientPoolFactory;
@@ -19,7 +20,7 @@ import datawave.core.common.result.ConnectionPool;
 
 public class EmbeddedAccumuloConnectionFactory implements AccumuloConnectionFactory {
 
-    private Logger log = Logger.getLogger(this.getClass());
+    private Logger log = LogManager.getLogger(this.getClass());
 
     @ConfigProperty(name = "dw.warehouse.zookeepers")
     private String zookeepers;

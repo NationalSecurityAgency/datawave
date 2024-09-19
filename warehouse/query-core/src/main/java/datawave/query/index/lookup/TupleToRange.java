@@ -6,7 +6,8 @@ import java.util.List;
 
 import org.apache.accumulo.core.data.Range;
 import org.apache.commons.jexl3.parser.JexlNode;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
@@ -23,7 +24,7 @@ import datawave.query.util.Tuple2;
  */
 public class TupleToRange implements Function<Tuple2<String,IndexInfo>,Iterator<QueryPlan>> {
 
-    private static final Logger log = Logger.getLogger(TupleToRange.class);
+    private static final Logger log = LogManager.getLogger(TupleToRange.class);
     protected String tableName;
     protected JexlNode currentScript;
     protected JexlNode tree = null;

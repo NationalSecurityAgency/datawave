@@ -22,7 +22,9 @@ import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.IteratorUtil;
 import org.apache.accumulo.core.iterators.OptionDescriber;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.log4j.Logger;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
@@ -102,7 +104,7 @@ import datawave.iterators.filter.ageoff.AppliedRule;
  */
 public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber {
 
-    private static final Logger log = Logger.getLogger(ConfigurableAgeOffFilter.class);
+    private static final Logger log = LogManager.getLogger(ConfigurableAgeOffFilter.class);
 
     private static final ThreadFactory TIMER_THREAD_FACTORY = new ThreadFactoryBuilder()
                     .setNameFormat(ConfigurableAgeOffFilter.class.getSimpleName() + "-ruleCache-refresh-%d").build();

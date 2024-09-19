@@ -15,7 +15,8 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.StatusReporter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.collect.Multimap;
 
@@ -99,7 +100,7 @@ import datawave.util.time.DateHelper;
  */
 public class ErrorDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> {
 
-    private static final Logger log = Logger.getLogger(ErrorDataTypeHandler.class);
+    private static final Logger log = LogManager.getLogger(ErrorDataTypeHandler.class);
 
     public static final String ERROR_TABLE = "error.table";
     public static final String ERROR_TABLE_NAME = ERROR_TABLE + ".name";

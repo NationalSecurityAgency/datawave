@@ -13,7 +13,8 @@ import org.apache.curator.framework.recipes.shared.SharedValue;
 import org.apache.curator.framework.recipes.shared.SharedValueListener;
 import org.apache.curator.framework.recipes.shared.SharedValueReader;
 import org.apache.curator.framework.state.ConnectionState;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.MoreExecutors;
@@ -24,7 +25,7 @@ import com.google.common.util.concurrent.MoreExecutors;
  */
 public class SharedTriState implements Closeable, SharedTriStateReader, Listenable<SharedTriStateListener> {
 
-    private static Logger log = Logger.getLogger(SharedTriState.class);
+    private static Logger log = LogManager.getLogger(SharedTriState.class);
 
     public enum STATE {
         NEEDS_UPDATE(0), UPDATING(1), UPDATED(2);

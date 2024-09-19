@@ -31,7 +31,8 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.DataInputBuffer;
 import org.apache.hadoop.io.Writable;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.Test;
 
 import com.google.common.collect.Maps;
@@ -44,7 +45,7 @@ import datawave.ingest.protobuf.Uid;
 import datawave.query.iterator.SourceManagerTest;
 
 public class DiscoveryIteratorTest {
-    static final Logger log = Logger.getLogger(DiscoveryIteratorTest.class);
+    static final Logger log = LogManager.getLogger(DiscoveryIteratorTest.class);
 
     @Test
     public void testHappyPath() throws Throwable {

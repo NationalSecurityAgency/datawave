@@ -7,7 +7,8 @@ import java.net.URISyntaxException;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.core.iterators.filesystem.FileSystemCache;
 import datawave.util.StringUtils;
@@ -17,7 +18,7 @@ import datawave.util.StringUtils;
  * found, the query will be considered not running.
  */
 public class HdfsQueryLock implements QueryLock {
-    private static Logger log = Logger.getLogger(HdfsQueryLock.class);
+    private static Logger log = LogManager.getLogger(HdfsQueryLock.class);
     private String queryId;
     private String[] hdfsBaseURIs;
     private FileSystemCache fsCache;

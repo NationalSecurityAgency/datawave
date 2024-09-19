@@ -1,12 +1,13 @@
 package datawave.query.language.tree;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * performs a logical and on the keys of the subtree's results
  */
 public class HardAndNode extends QueryNode {
-    private static final Logger log = Logger.getLogger(HardAndNode.class.getName());
+    private static final Logger log = LogManager.getLogger(HardAndNode.class.getName());
 
     public HardAndNode(QueryNode... children) {
         super(children);

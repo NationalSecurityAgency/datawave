@@ -6,13 +6,14 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class TableSplitsCacheStatus {
     // default timeout is 6 hours
     private static final long DEFAULT_CACHE_TIMEOUT = 21600000L;
     public static final String SPLITS_CACHE_TIMEOUT_MS = "datawave.ingest.splits.cache.timeout.ms";
-    public static final Logger log = Logger.getLogger(TableSplitsCacheStatus.class);
+    public static final Logger log = LogManager.getLogger(TableSplitsCacheStatus.class);
 
     /**
      *

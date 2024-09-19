@@ -18,7 +18,8 @@ import org.apache.commons.jexl3.parser.ASTNRNode;
 import org.apache.commons.jexl3.parser.ASTOrNode;
 import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.JexlNode;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.data.type.Type;
@@ -38,7 +39,7 @@ import datawave.webservice.query.exception.NotFoundQueryException;
  * Visits a Jexl tree, looks for unfielded terms, and replaces them with fielded terms from the index
  */
 public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
-    private static final Logger log = ThreadConfigurableLogger.getLogger(UnfieldedIndexExpansionVisitor.class);
+    private static final ThreadConfigurableLogger log = ThreadConfigurableLogger.getLogger(UnfieldedIndexExpansionVisitor.class);
 
     protected Set<String> expansionFields;
     protected Set<Type<?>> allTypes;

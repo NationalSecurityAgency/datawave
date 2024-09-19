@@ -25,12 +25,15 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.PositionedReadable;
 import org.apache.hadoop.fs.RawLocalFileSystem;
 import org.apache.hadoop.fs.Seekable;
+import org.apache.hadoop.hdfs.util.ByteArrayManager;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -57,7 +60,7 @@ public class BulkIngestMapFileLoaderTest {
 
     protected static final URI FILE_SYSTEM_URI = URI.create("file:///");
 
-    protected static final Logger logger = Logger.getLogger(BulkIngestMapFileLoaderTest.class);
+    protected static final Logger logger = LogManager.getLogger(BulkIngestMapFileLoaderTest.class);
     protected Level testDriverLevel;
 
     private List<String> systemProperties;
@@ -390,12 +393,12 @@ public class BulkIngestMapFileLoaderTest {
         systemProperties = new ArrayList<>();
 
         testDriverLevel = BulkIngestMapFileLoaderTest.logger.getLevel();
-        BulkIngestMapFileLoaderTest.logger.setLevel(Level.ALL);
+        Configurator.setLevel(logger.getName(), Level.ALL);
     }
 
     @After
     public void teardown() {
-        BulkIngestMapFileLoaderTest.logger.setLevel(testDriverLevel);
+        Configurator.setLevel(logger.getName(), testDriverLevel);
     }
 
     @Test

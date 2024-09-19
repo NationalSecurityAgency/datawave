@@ -19,7 +19,8 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.user.WholeRowIterator;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.util.StringUtils;
 
 import com.google.common.base.Preconditions;
@@ -45,7 +46,7 @@ import datawave.webservice.query.exception.QueryException;
  * An asynchronous index lookup which looks up concrete values for the specified bounded range.
  */
 public class BoundedRangeIndexLookup extends AsyncIndexLookup {
-    private static final Logger log = ThreadConfigurableLogger.getLogger(BoundedRangeIndexLookup.class);
+    private static final ThreadConfigurableLogger log = ThreadConfigurableLogger.getLogger(BoundedRangeIndexLookup.class);
 
     private final LiteralRange<?> literalRange;
 

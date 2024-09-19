@@ -7,7 +7,8 @@ import java.util.Map.Entry;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import datawave.query.attributes.Document;
 import datawave.query.iterator.DocumentSpecificNestedIterator;
@@ -19,7 +20,7 @@ import datawave.query.iterator.profile.QuerySpanCollector;
  */
 public class Pipeline implements Runnable {
 
-    private static final Logger log = Logger.getLogger(Pipeline.class);
+    private static final Logger log = LogManager.getLogger(Pipeline.class);
     /**
      * A source list for which the iterator will automatically reset to the beginning upon comodification. This allows us to have an iterator that will always
      * return results as long as elements are added to the list.

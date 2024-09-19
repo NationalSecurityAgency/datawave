@@ -4,7 +4,8 @@ import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -18,7 +19,7 @@ import datawave.ingest.data.config.NormalizedFieldAndValue;
  */
 public class SimpleGroupFieldNameParser {
     private static final long serialVersionUID = 1035918631638323565L;
-    private static final Logger log = Logger.getLogger(SimpleGroupFieldNameParser.class);
+    private static final Logger log = LogManager.getLogger(SimpleGroupFieldNameParser.class);
     private static final char DOT = '.';
 
     public SimpleGroupFieldNameParser() {}

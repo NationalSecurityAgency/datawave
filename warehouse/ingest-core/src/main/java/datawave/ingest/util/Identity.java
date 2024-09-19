@@ -2,7 +2,8 @@ package datawave.ingest.util;
 
 import java.security.MessageDigest;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class Identity {
 
@@ -10,7 +11,7 @@ public class Identity {
     private MessageDigest md;
     private static final String HEXITS = "0123456789abcdef";
     private StringBuffer sb = new StringBuffer();
-    private static Logger log = Logger.getLogger(Identity.class);
+    private static Logger log = LogManager.getLogger(Identity.class);
 
     public Identity() {
         setHasher(hasher);

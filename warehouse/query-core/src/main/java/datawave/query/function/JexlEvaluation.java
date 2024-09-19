@@ -8,7 +8,8 @@ import org.apache.commons.jexl3.JexlArithmetic;
 import org.apache.commons.jexl3.internal.DatawaveJexlScript;
 import org.apache.commons.jexl3.internal.Script;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.base.Predicate;
 
@@ -29,7 +30,7 @@ import datawave.query.transformer.ExcerptTransform;
 import datawave.query.util.Tuple3;
 
 public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJexlContext>> {
-    private static final Logger log = Logger.getLogger(JexlEvaluation.class);
+    private static final Logger log = LogManager.getLogger(JexlEvaluation.class);
 
     public static final String HIT_TERM_FIELD = "HIT_TERM";
 
