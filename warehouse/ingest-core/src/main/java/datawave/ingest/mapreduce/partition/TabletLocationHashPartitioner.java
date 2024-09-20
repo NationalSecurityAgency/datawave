@@ -13,7 +13,7 @@ import org.apache.hadoop.mapreduce.Partitioner;
 import org.apache.log4j.Logger;
 
 import datawave.ingest.mapreduce.job.BulkIngestKey;
-import datawave.ingest.mapreduce.job.ShardedTableMapFile;
+import datawave.ingest.mapreduce.job.SplitsFile;
 
 /**
  * The TabletLocationHashPartitioner will generate partitions for the shard table using the hashCode method on the tserver location string
@@ -78,7 +78,8 @@ public class TabletLocationHashPartitioner extends Partitioner<BulkIngestKey,Val
         if (null == this.shardHashes.get(tableName)) {
             Map<Text,Integer> hashedForTable = new HashMap<>();
 
-            for (Map.Entry<Text,String> entry : ShardedTableMapFile.getShardIdToLocations(conf, tableName).entrySet()) {
+            for (Map.Entry<Text,String> entry : SplitsFile.getSplitsAndLocations(conf, tableName).entrySet()) {
+
                 hashedForTable.put(entry.getKey(), entry.getValue().toString().hashCode());
             }
 
@@ -98,4 +99,14 @@ public class TabletLocationHashPartitioner extends Partitioner<BulkIngestKey,Val
 
     @Override
     public void initializeJob(Job job) {}
+
+    @Override
+    public boolean needSplits() {
+        return true;
+    }
+
+    @Override
+    public boolean needSplitLocations() {
+        return true;
+    }
 }

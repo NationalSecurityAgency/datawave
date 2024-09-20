@@ -26,6 +26,8 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.log4j.Logger;
 
+import com.google.common.collect.Lists;
+
 import datawave.data.hash.UID;
 import datawave.data.hash.UIDConstants;
 import datawave.query.Constants;
@@ -75,9 +77,9 @@ public class DescendantCountFunction implements SourcedFunction<Tuple3<Range,Key
 
     private static final CountResult ZERO_COUNT = new CountResult(0);
 
-    private Collection<ByteSequence> columnFamilies = KeyToDocumentData.columnFamilies;
+    private Collection<ByteSequence> columnFamilies = Lists.newArrayList(new ArrayByteSequence("tf"), new ArrayByteSequence("d"));
 
-    private boolean inclusive = KeyToDocumentData.inclusive;
+    private boolean inclusive = false;
 
     private Text indexCf;
 
@@ -133,7 +135,7 @@ public class DescendantCountFunction implements SourcedFunction<Tuple3<Range,Key
                         long timestamp = key.getTimestamp();
                         boolean hasChildren = count.hasDescendants();
                         final Key hasChildrenKey = new Key(key.getRow(), key.getColumnFamily(),
-                                        new Text(QueryOptions.DEFAULT_HAS_CHILDREN_FIELDNAME + '\0' + Boolean.toString(hasChildren)), visibility, timestamp);
+                                        new Text(QueryOptions.DEFAULT_HAS_CHILDREN_FIELDNAME + '\0' + hasChildren), visibility, timestamp);
                         countKeys.add(hasChildrenKey);
                     }
 
@@ -142,7 +144,7 @@ public class DescendantCountFunction implements SourcedFunction<Tuple3<Range,Key
                         long timestamp = key.getTimestamp();
                         int numChildren = count.getFirstGenerationCount();
                         final Key childCountKey = new Key(key.getRow(), key.getColumnFamily(),
-                                        new Text(QueryOptions.DEFAULT_CHILD_COUNT_FIELDNAME + '\0' + Integer.toString(numChildren)), visibility, timestamp);
+                                        new Text(QueryOptions.DEFAULT_CHILD_COUNT_FIELDNAME + '\0' + numChildren), visibility, timestamp);
                         countKeys.add(childCountKey);
                     }
 
@@ -152,9 +154,9 @@ public class DescendantCountFunction implements SourcedFunction<Tuple3<Range,Key
                         int numDescendants = count.getAllGenerationsCount();
                         final Text text;
                         if (count.skippedDescendants()) {
-                            text = new Text(QueryOptions.DEFAULT_DESCENDANT_COUNT_FIELDNAME + '\0' + Integer.toString(numDescendants - 1) + '+');
+                            text = new Text(QueryOptions.DEFAULT_DESCENDANT_COUNT_FIELDNAME + '\0' + (numDescendants - 1) + '+');
                         } else {
-                            text = new Text(QueryOptions.DEFAULT_DESCENDANT_COUNT_FIELDNAME + '\0' + Integer.toString(numDescendants));
+                            text = new Text(QueryOptions.DEFAULT_DESCENDANT_COUNT_FIELDNAME + '\0' + numDescendants);
                         }
 
                         final Key descendantCountKey = new Key(key.getRow(), key.getColumnFamily(), text, visibility, timestamp);
@@ -266,7 +268,7 @@ public class DescendantCountFunction implements SourcedFunction<Tuple3<Range,Key
             Key endKey = new Key(row, new Text(dataType + '\0' + baseUid + Constants.MAX_UNICODE_STRING));
             Range range = new Range(startKey, true, endKey, false);
 
-            // seek too the new range
+            // seek to the new range
             Set<ByteSequence> emptyCfs = Collections.emptySet();
             this.source.seek(range, emptyCfs, false);
 
@@ -388,7 +390,7 @@ public class DescendantCountFunction implements SourcedFunction<Tuple3<Range,Key
                         } else {
                             // If configured, past an exceptionally large number of irrelevant grandchildren.
                             // Although this would potentially throw off the descendant count, it may be necessary
-                            // if a given event has thousands (or millions) of grandchildren and we're mainly interested
+                            // if a given event has thousands (or millions) of grandchildren, and we're mainly interested
                             // in the number of 1st generation children.
                             nonMatchingDescendants++;
                             if ((this.skipThreshold > 0) && (nonMatchingDescendants >= this.skipThreshold)) {
