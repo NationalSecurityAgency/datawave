@@ -129,7 +129,8 @@ function downloadTarball() {
           retVal=$?
       fi
    fi
-   info "JWO downloadTarball retVal: $retVal"
+   info "JWO downloadTarball ${tarball} retVal: $retVal"
+   info "list file: $(ls -l ${tarballdir}/${tarball})"
    return 2
 }
 
