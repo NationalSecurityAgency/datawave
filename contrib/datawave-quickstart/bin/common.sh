@@ -106,6 +106,7 @@ function downloadTarball() {
    local uri="$1"
    local tarballdir="$2"
    tarball="$( basename ${uri} )"
+   local retVal=0;
    if [ ! -f "${tarballdir}/${tarball}" ] ; then
       if [[ ${uri} == file://* ]] ; then
           cp "${uri:7}" "${tarballdir}/${tarball}"
@@ -119,11 +120,14 @@ function downloadTarball() {
             kill -INT $$
           else
             wget ${DW_WGET_OPTS} "${uri}" -P ${tarballdir}
+            retVal=$?
           fi
       elif [[ ${uri} == https://* ]] ; then
           wget ${DW_WGET_OPTS} "${uri}" -P ${tarballdir}
+          retVal=$?
       fi
    fi
+   return $retVal
 }
 
 function downloadMavenTarball() {
