@@ -115,7 +115,6 @@ function downloadTarball() {
           if [ $retVal -ne 0 ]; then
             error "File copy failed for ${uri:7}"
           fi
-          return $retVal
       elif [[ ${uri} == http://* ]] ; then
           if ! askYesNo "Are you sure you want to download ${tarball} using HTTP? $( printRed "This can potentially be insecure." )" ; then
             kill -INT $$
@@ -131,7 +130,7 @@ function downloadTarball() {
       fi
    fi
    info "JWO downloadTarball retVal: $retVal"
-   return $retVal
+   return 2
 }
 
 function downloadMavenTarball() {
