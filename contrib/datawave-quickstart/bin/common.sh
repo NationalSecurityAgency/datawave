@@ -108,6 +108,7 @@ function downloadTarball() {
    tarball="$( basename ${uri} )"
    local retVal=0;
    if [ ! -f "${tarballdir}/${tarball}" ] ; then
+      info "JWO FILE NOT FOUND"
       if [[ ${uri} == file://* ]] ; then
           info "JWO: copying from file path"
           cp "${uri:7}" "${tarballdir}/${tarball}"
@@ -127,6 +128,8 @@ function downloadTarball() {
           info "JWO: wget from https path"
           wget ${DW_WGET_OPTS} "${uri}" -P ${tarballdir}
           retVal=$?
+      else
+          info "NO CONDITIONS MATCHED ${uri}"
       fi
    fi
    info "JWO downloadTarball ${tarball} retVal: $retVal"
