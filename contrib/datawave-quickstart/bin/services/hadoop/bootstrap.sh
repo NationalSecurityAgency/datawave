@@ -9,10 +9,10 @@ DW_HADOOP_DIST_URI="${DW_HADOOP_DIST_URI:-https://dlcdn.apache.org/hadoop/common
 # The sha512 checksum for the tarball. Value should be the hash value only and does not include the file name. Cannot be left blank.
 DW_HADOOP_DIST_SHA512_CHECKSUM="${DW_HADOOP_DIST_SHA512_CHECKSUM:-de3eaca2e0517e4b569a88b63c89fae19cb8ac6c01ff990f1ff8f0cc0f3128c8e8a23db01577ca562a0e0bb1b4a3889f8c74384e609cd55e537aada3dcaa9f8a}"
 info "JWO Files before:"
-info "$(ls -l)"
+info "$(ls -l ${DW_HADOOP_SERVICE_DIR})"
 DW_HADOOP_DIST="$( { downloadTarball "${DW_HADOOP_DIST_URI}" "${DW_HADOOP_SERVICE_DIR}" || downloadMavenTarball "datawave-parent" "gov.nsa.datawave.quickstart" "hadoop" "${DW_HADOOP_VERSION}" "${DW_HADOOP_SERVICE_DIR}"; } && echo "${tarball}" )"
 info "JWO Files after:"
-info "$(ls -l)"
+info "$(ls -l ${DW_HADOOP_SERVICE_DIR})"
 DW_HADOOP_BASEDIR="hadoop-install"
 DW_HADOOP_SYMLINK="hadoop"
 

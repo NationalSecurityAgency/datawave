@@ -23,10 +23,10 @@ DW_ZOOKEEPER_DIST_SHA512_CHECKSUM="${DW_ZOOKEEPER_DIST_SHA512_CHECKSUM:-6afbfc1a
 # shellcheck disable=SC2154
 # shellcheck disable=SC2034
 info "JWO Files before:"
-info "$(ls -l)"
+info "$(ls -l ${DW_ACCUMULO_SERVICE_DIR})"
 DW_ZOOKEEPER_DIST="$( { downloadTarball "${DW_ZOOKEEPER_DIST_URI}" "${DW_ACCUMULO_SERVICE_DIR}" || downloadMavenTarball "datawave-parent" "gov.nsa.datawave.quickstart" "zookeeper" "${DW_ZOOKEEPER_VERSION}" "${DW_ACCUMULO_SERVICE_DIR}"; } && echo "${tarball}" )"
 info "JWO Files after:"
-info "$(ls -l)"
+info "$(ls -l ${DW_ACCUMULO_SERVICE_DIR})"
 DW_ZOOKEEPER_BASEDIR="zookeeper-install"
 DW_ZOOKEEPER_SYMLINK="zookeeper"
 
@@ -60,7 +60,11 @@ DW_ACCUMULO_DIST_URI="${DW_ACCUMULO_DIST_URI:-https://dlcdn.apache.org/accumulo/
 # The sha512 checksum for the tarball. Value should be the hash value only and does not include the file name. Cannot be left blank.
 DW_ACCUMULO_DIST_SHA512_CHECKSUM="${DW_ACCUMULO_DIST_SHA512_CHECKSUM:-1a27a144dc31f55ccc8e081b6c1bc6cc0362a8391838c53c166cb45291ff8f35867fd8e4729aa7b2c540f8b721f8c6953281bf589fc7fe320e4dc4d20b87abc4}"
 # shellcheck disable=SC2034
+info "JWO Files before:"
+info "$(ls -l ${DW_ACCUMULO_SERVICE_DIR})"
 DW_ACCUMULO_DIST="$( { downloadTarball "${DW_ACCUMULO_DIST_URI}" "${DW_ACCUMULO_SERVICE_DIR}" || downloadMavenTarball "datawave-parent" "gov.nsa.datawave.quickstart" "accumulo" "${DW_ACCUMULO_VERSION}" "${DW_ACCUMULO_SERVICE_DIR}"; } && echo "${tarball}" )"
+info "JWO Files after:"
+info "$(ls -l ${DW_ACCUMULO_SERVICE_DIR})"
 DW_ACCUMULO_BASEDIR="accumulo-install"
 DW_ACCUMULO_SYMLINK="accumulo"
 DW_ACCUMULO_INSTANCE_NAME="my-instance-01"
