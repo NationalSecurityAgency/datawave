@@ -16,7 +16,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
-import java.util.RandomAccess;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -306,7 +305,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
             // don't bother if this writer has not been used yet
             if (file != null) {
                 if (writer.isLoadPlanning()) {
-                    plan(writer, table, file);
+                    computeLoadPlan(writer, table, file);
                 }
                 writer.close();
                 // pull the index off the filename
@@ -317,7 +316,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
     }
 
     /**
-     * Init table's load plan and compute the plan asynchronously for the rfile
+     * Init table's LoadPlan list and compute the plan for the given rfile asynchronously
      *
      * @param writer
      *            RFile writer
@@ -326,108 +325,22 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
      * @param rfile
      *            rfile path
      */
-    protected void plan(SizeTrackingWriter writer, String tableName, Path rfile) {
+    protected void computeLoadPlan(SizeTrackingWriter writer, String tableName, Path rfile) {
         if (!loadPlans.containsKey(tableName)) {
             loadPlans.put(tableName, new LinkedList<>());
         }
         // @formatter:off
         loadPlanFutures.add(CompletableFuture
-            .supplyAsync(() -> createLoadPlan(rfile, writer.rows, tableName))
-            .thenAccept(plan -> loadPlans.get(tableName).add(plan)));
+            .supplyAsync(() -> compute(rfile, writer.rows, tableName, conf))
+            .thenAccept(plan -> {
+                if (plan != null) {
+                    loadPlans.get(tableName).add(plan);
+                }
+            }));
         // @formatter:on
     }
 
-    /**
-     * Creates a {@link LoadPlan} for the given RFile by mapping its row values to the relevant KeyExtents from the given table.
-     *
-     * @param rfile
-     *            RFile path
-     * @param rfileRows
-     *            Set of rows contained in the RFile
-     * @param tableName
-     *            Table whose splits are to be examined to create the mapping
-     * @return LoadPlan for the RFile.
-     */
-    protected LoadPlan createLoadPlan(Path rfile, SortedSet<Text> rfileRows, String tableName) {
-        var builder = LoadPlan.builder();
-        if (rfileRows != null && !rfileRows.isEmpty()) {
-            List<Text> tableSplits;
-            try {
-                tableSplits = SplitsFile.getSplits(conf, tableName);
-            } catch (Exception e) {
-                throw new RuntimeException("Failed to retrieve splits!", e);
-            }
-            // @formatter:off
-            if (tableSplits == null || tableSplits.isEmpty()) {
-                // RFile examination and mapping are handled later by bulk import client
-                log.debug("Calculating FILE load plan for " + rfile);
-                var ke = new KeyExtent(rfileRows.first(), rfileRows.last());
-                builder.addPlan(LoadPlan.builder().loadFileTo(
-                   rfile.getName(), RangeType.FILE, ke.prevEndRow, ke.endRow).build());
-            } else {
-                // Calculate extent mapping, so that import client can skip examination/mapping at load time
-                log.debug("Calculating TABLE load plan for " + rfile);
-                rfileRows.stream().map(row -> findKeyExtent(row, tableSplits))
-                   .collect(Collectors.toCollection(HashSet::new))
-                   .forEach(ke -> builder.addPlan(LoadPlan.builder().loadFileTo(
-                       rfile.getName(), RangeType.TABLE, ke.prevEndRow, ke.endRow).build())
-                   );
-                log.debug("Table load plan completed for file: " + rfile);
-            }
-            // @formatter:on
-        }
-        return builder.build();
-    }
-
-    /**
-     * Finds the KeyExtent where the specified row should reside
-     *
-     * @param lookupRow
-     *            row value to be mapped
-     * @param tableSplits
-     *            splits for the table in question
-     * @return KeyExtent mapping for the given row
-     */
-    static KeyExtent findKeyExtent(Text lookupRow, List<Text> tableSplits) {
-        var ke = new KeyExtent();
-        var ceilingIdx = findCeiling(lookupRow, tableSplits);
-        if (ceilingIdx == -1) {
-            ke.prevEndRow = tableSplits.get(tableSplits.size() - 1);
-        } else {
-            ke.endRow = tableSplits.get(ceilingIdx);
-            if (ceilingIdx > 0) {
-                ke.prevEndRow = tableSplits.get(ceilingIdx - 1);
-            }
-        }
-        return ke;
-    }
-
-    /**
-     * Performs binary search on tableSplits to find the index of the first (least) split &ge; lookupRow
-     *
-     * @param lookupRow
-     *            row for which we want to find the ceiling
-     * @param tableSplits
-     *            sorted table tableSplits list whose implementation is assumed to provide fast random access (i.e., {@link java.util.RandomAccess})
-     * @return index of the first split &ge; lookupRow, or -1 if (lookupRow &gt; tableSplits.get(tableSplits.size()-1)
-     */
-    static int findCeiling(Text lookupRow, List<Text> tableSplits) {
-        int begin = 0;
-        int end = tableSplits.size() - 1;
-        int ceiling = -1;
-        while (begin <= end) {
-            int middle = (begin + end) / 2;
-            if (tableSplits.get(middle).compareTo(lookupRow) >= 0) {
-                end = middle - 1;
-                ceiling = middle;
-            } else {
-                begin = middle + 1;
-            }
-        }
-        return ceiling;
-    }
-
-    private void commitLoadPlans(TaskAttemptContext context) {
+    protected void commitLoadPlans(TaskAttemptContext context) {
         loadPlanFutures.stream().forEach(f -> {
             try {
                 f.get();
@@ -445,9 +358,9 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
         List<CompletableFuture<Void>> futures = new LinkedList<>();
         for (Map.Entry<String,List<LoadPlan>> entry : loadPlans.entrySet()) {
             var builder = LoadPlan.builder();
+            entry.getValue().stream().forEach(plan -> builder.addPlan(plan));
             var table = entry.getKey();
             var path = new Path(String.format("%s/%s", workDir, table), getUniqueFile(context, "loadplan", ".json"));
-            entry.getValue().stream().forEach(plan -> builder.addPlan(plan));
             var loadPlan = builder.build();
             // TODO: Use Gson streaming api instead (JsonWriter) to minimize impact on heap
             //@formatter:off
@@ -471,6 +384,116 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
             }
         });
         log.debug("Finished writing bulk load plans to disk");
+    }
+
+    /**
+     * Creates a {@link LoadPlan} for the given RFile by mapping its row values to the relevant KeyExtents from the given table.
+     *
+     * @param rfile
+     *            RFile path
+     * @param rfileRows
+     *            Set of rows contained in the RFile
+     * @param tableName
+     *            Table whose splits are to be examined to create the mapping
+     * @param conf
+     *            The configuration required to retrieve table splits
+     * @return LoadPlan for the RFile
+     */
+    static LoadPlan compute(Path rfile, SortedSet<Text> rfileRows, String tableName, Configuration conf) {
+        if (rfileRows != null && !rfileRows.isEmpty()) {
+            try {
+                var splits = SplitsFile.getSplits(conf, tableName);
+                return compute(rfile, rfileRows, splits);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to retrieve splits!", e);
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Creates a {@link LoadPlan} for the given RFile by mapping its row values to the relevant KeyExtents from the given table.
+     *
+     * @param rfile
+     *            RFile path
+     * @param rfileRows
+     *            Set of rows contained in the RFile
+     * @param tableSplits
+     *            Splits for the table being targeted
+     * @return LoadPlan for the RFile.
+     */
+    static LoadPlan compute(Path rfile, SortedSet<Text> rfileRows, List<Text> tableSplits) {
+        // @formatter:off
+        var builder = LoadPlan.builder();
+        if (tableSplits == null || tableSplits.isEmpty()) {
+            // RFile examination and mapping handled later by bulk import client
+            log.debug("Calculating FILE load plan for " + rfile);
+            var ke = new KeyExtent(rfileRows.first(), rfileRows.last());
+            builder.addPlan(LoadPlan.builder().loadFileTo(
+               rfile.getName(), RangeType.FILE, ke.prevEndRow, ke.endRow).build());
+        } else {
+            // Compute extent mapping so that we can skip examination at load time
+            log.debug("Calculating TABLE load plan for " + rfile);
+            rfileRows.stream()
+               .map(row -> findKeyExtent(row, tableSplits))
+               .collect(Collectors.toCollection(HashSet::new))
+               .forEach(ke -> builder.addPlan(LoadPlan.builder().loadFileTo(
+                   rfile.getName(), RangeType.TABLE, ke.prevEndRow, ke.endRow).build())
+               );
+            log.debug("Table load plan completed for file: " + rfile);
+        }
+        // @formatter:on
+        return builder.build();
+    }
+
+    /**
+     * Finds the KeyExtent where the specified row should reside
+     *
+     * @param lookupRow
+     *            Row value to be mapped
+     * @param tableSplits
+     *            Splits for the table in question
+     * @return KeyExtent mapping for the given row
+     */
+    static KeyExtent findKeyExtent(Text lookupRow, List<Text> tableSplits) {
+        var ke = new KeyExtent();
+        var ceilingIdx = findCeiling(lookupRow, tableSplits);
+        if (ceilingIdx == -1) {
+            // Last tablet (endRow remains null)
+            ke.prevEndRow = tableSplits.get(tableSplits.size() - 1);
+        } else {
+            ke.endRow = tableSplits.get(ceilingIdx);
+            // If ceiling == 0, then first tablet (prevEndRow remains null)
+            if (ceilingIdx > 0) {
+                ke.prevEndRow = tableSplits.get(ceilingIdx - 1);
+            }
+        }
+        return ke;
+    }
+
+    /**
+     * Performs binary search on tableSplits to find the index of the first (least) split &ge; lookupRow
+     *
+     * @param lookupRow
+     *            Row for which we want to find the ceiling
+     * @param tableSplits
+     *            Sorted table tableSplits list whose implementation is assumed to provide fast random access (i.e., {@link java.util.RandomAccess})
+     * @return index of the first split &ge; lookupRow, or -1 if (lookupRow &gt; tableSplits.get(tableSplits.size()-1)
+     */
+    static int findCeiling(Text lookupRow, List<Text> tableSplits) {
+        int begin = 0;
+        int end = tableSplits.size() - 1;
+        int ceiling = -1;
+        while (begin <= end) {
+            int middle = (begin + end) / 2;
+            if (tableSplits.get(middle).compareTo(lookupRow) >= 0) {
+                end = middle - 1;
+                ceiling = middle;
+            } else {
+                begin = middle + 1;
+            }
+        }
+        return ceiling;
     }
 
     public static class SizeTrackingWriter implements FileSKVWriter {
@@ -775,7 +798,9 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
                 for (Map.Entry<String,SizeTrackingWriter> entry : writers.entrySet()) {
                     var writer = entry.getValue();
                     if (writer.isLoadPlanning()) {
-                        plan(writer, writerTableNames.get(entry.getKey()), usedWriterPaths.get(entry.getKey()));
+                        var tableName = writerTableNames.get(entry.getKey());
+                        var rfilePath = usedWriterPaths.get(entry.getKey());
+                        computeLoadPlan(writer, tableName, rfilePath);
                     }
                     writer.close();
                 }
