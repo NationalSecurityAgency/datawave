@@ -450,6 +450,11 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private int tfNextSeek = -1;
 
     /**
+     * Flag that enables a field-based seeking aggregation in the standard event query. Must be used in conjunction with {@link #eventFieldSeek}
+     */
+    private boolean seekingEventAggregation = false;
+
+    /**
      * The maximum weight for entries in the visitor function cache. The weight is calculated as the total number of characters for each key and value in the
      * cache. Default is 5m characters, which is roughly 10MB
      */
@@ -730,6 +735,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setEventNextSeek(other.getEventNextSeek());
         this.setTfFieldSeek(other.getTfFieldSeek());
         this.setTfNextSeek(other.getTfNextSeek());
+        this.setSeekingEventAggregation(other.isSeekingEventAggregation());
         this.setVisitorFunctionMaxWeight(other.getVisitorFunctionMaxWeight());
         this.setQueryExecutionForPageTimeout(other.getQueryExecutionForPageTimeout());
         this.setLazySetMechanismEnabled(other.isLazySetMechanismEnabled());
@@ -2648,6 +2654,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.tfNextSeek = tfNextSeek;
     }
 
+    public boolean isSeekingEventAggregation() {
+        return seekingEventAggregation;
+    }
+
+    public void setSeekingEventAggregation(boolean seekingEventAggregation) {
+        this.seekingEventAggregation = seekingEventAggregation;
+    }
+
     public long getVisitorFunctionMaxWeight() {
         return visitorFunctionMaxWeight;
     }
@@ -2977,6 +2991,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getEventNextSeek() == that.getEventNextSeek() &&
                 getTfFieldSeek() == that.getTfFieldSeek() &&
                 getTfNextSeek() == that.getTfNextSeek() &&
+                isSeekingEventAggregation() == that.isSeekingEventAggregation() &&
                 getVisitorFunctionMaxWeight() == that.getVisitorFunctionMaxWeight() &&
                 getQueryExecutionForPageTimeout() == that.getQueryExecutionForPageTimeout() &&
                 isLazySetMechanismEnabled() == that.isLazySetMechanismEnabled() &&
@@ -3181,6 +3196,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getEventNextSeek(),
                 getTfFieldSeek(),
                 getTfNextSeek(),
+                isSeekingEventAggregation(),
                 getVisitorFunctionMaxWeight(),
                 getQueryExecutionForPageTimeout(),
                 isLazySetMechanismEnabled(),

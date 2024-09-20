@@ -17,21 +17,17 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iteratorsImpl.system.SortedMapIterator;
-import org.apache.commons.jexl3.parser.ParseException;
 import org.junit.Before;
 import org.junit.Test;
 
 import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 
 import datawave.query.Constants;
 import datawave.query.attributes.AttributeFactory;
 import datawave.query.attributes.Document;
 import datawave.query.data.parsers.DatawaveKey;
-import datawave.query.jexl.JexlASTHelper;
 import datawave.query.predicate.EventDataQueryFieldFilter;
 import datawave.query.predicate.EventDataQueryFilter;
-import datawave.query.predicate.Projection;
 import datawave.query.util.TypeMetadata;
 
 public class TermFrequencyAggregatorTest {
@@ -57,7 +53,7 @@ public class TermFrequencyAggregatorTest {
         Set<String> keepFields = new HashSet<>();
         keepFields.add("FIELD2");
 
-        EventDataQueryFilter filter = new EventDataQueryFieldFilter(Sets.newHashSet("FIELD1"), Projection.ProjectionType.EXCLUDES);
+        EventDataQueryFilter filter = new EventDataQueryFieldFilter().withFields(Collections.singleton("FIELD1"));
 
         aggregator = new TermFrequencyAggregator(keepFields, filter, -1);
         Key result = aggregator.apply(itr, doc, attributeFactory);
@@ -74,7 +70,7 @@ public class TermFrequencyAggregatorTest {
     }
 
     @Test
-    public void apply_buildDocKeep() throws IOException, ParseException {
+    public void apply_buildDocKeep() throws IOException {
         Document doc = new Document();
         AttributeFactory attributeFactory = new AttributeFactory(new TypeMetadata());
 
@@ -88,7 +84,7 @@ public class TermFrequencyAggregatorTest {
         Set<String> keepFields = new HashSet<>();
         keepFields.add("FIELD1");
 
-        EventDataQueryFilter filter = new EventDataQueryFieldFilter(JexlASTHelper.parseJexlQuery("FIELD1 == 'VALUE1'"), Collections.emptySet());
+        EventDataQueryFilter filter = new EventDataQueryFieldFilter().withFields(Collections.singleton("FIELD1"));
         aggregator = new TermFrequencyAggregator(keepFields, filter, -1);
         Key result = aggregator.apply(itr, doc, attributeFactory);
 
@@ -111,7 +107,7 @@ public class TermFrequencyAggregatorTest {
     }
 
     @Test
-    public void apply_buildDocKeepFilteredOut() throws IOException, ParseException {
+    public void apply_buildDocKeepFilteredOut() throws IOException {
         Document doc = new Document();
         AttributeFactory attributeFactory = new AttributeFactory(new TypeMetadata());
 
@@ -125,7 +121,7 @@ public class TermFrequencyAggregatorTest {
         Set<String> keepFields = new HashSet<>();
         keepFields.add("FIELD2");
 
-        EventDataQueryFilter filter = new EventDataQueryFieldFilter(JexlASTHelper.parseJexlQuery("FIELD2 == 'VALUE1'"), Collections.EMPTY_SET);
+        EventDataQueryFilter filter = new EventDataQueryFieldFilter().withFields(Collections.singleton("FIELD2"));
         aggregator = new TermFrequencyAggregator(keepFields, filter, -1);
         Key result = aggregator.apply(itr, doc, attributeFactory);
 
