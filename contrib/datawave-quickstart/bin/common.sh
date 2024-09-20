@@ -108,15 +108,20 @@ function downloadTarball() {
    tarball="$( basename ${uri} )"
    if [ ! -f "${tarballdir}/${tarball}" ] ; then
       if [[ ${uri} == file://* ]] ; then
-          $( cd "${tarballdir}" && cp  "${uri:7}" ./${tarball} ) || error "File copy failed for ${uri:7}"
+          cp "${uri:7}" "${tarballdir}/${tarball}"
+          retVal=$?
+          if [ $retVal -ne 0 ]; then
+            error "File copy failed for ${uri:7}"
+          fi
+          return $retVal
       elif [[ ${uri} == http://* ]] ; then
           if ! askYesNo "Are you sure you want to download ${tarball} using HTTP? $( printRed "This can potentially be insecure." )" ; then
             kill -INT $$
           else
-            $( cd "${tarballdir}" && wget ${DW_WGET_OPTS} "${uri}" )
+            wget ${DW_WGET_OPTS} "${uri}" -P ${tarballdir}
           fi
       elif [[ ${uri} == https://* ]] ; then
-          $( cd "${tarballdir}" && wget ${DW_WGET_OPTS} "${uri}" )
+          wget ${DW_WGET_OPTS} "${uri}" -P ${tarballdir}
       fi
    fi
 }
@@ -134,19 +139,19 @@ function downloadMavenTarball() {
       output=$( mvn -f "${pomFile}" -pl "${rootProject}" -DremoteRepositories="remote-repo::default::${DW_MAVEN_REPOSITORY}" dependency:get -Dartifact="${group}:${artifact}:${version}" -Dpackaging="tar.gz" )
       retVal=$?
       if [ $retVal -ne 0 ]; then
-         echo "Failed to download ${tarball} via maven"
-         echo "$output"
+         error "Failed to download ${tarball} via maven"
+         error "$output"
          return $retVal
       else
-        echo "Downloaded ${artifact} via maven"
+         info "Downloaded ${artifact} via maven"
       fi
 
       # copy to specified directory
       output=$( mvn -f "${pomFile}" -pl "${rootProject}" dependency:copy -Dartifact="${group}:${artifact}:${version}:tar.gz" -DoutputDirectory="${tarballdir}" )
       retVal=$?
       if [ $retVal -ne 0 ]; then
-         echo "Failed to copy ${tarball} to ${tarballdir} via maven"
-         echo "$output"
+         error "Failed to copy ${tarball} to ${tarballdir} via maven"
+         error "$output"
          return $retVal
       fi
    fi
