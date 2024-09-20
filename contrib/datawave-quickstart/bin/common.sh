@@ -109,6 +109,7 @@ function downloadTarball() {
    local retVal=0;
    if [ ! -f "${tarballdir}/${tarball}" ] ; then
       if [[ ${uri} == file://* ]] ; then
+          info "JWO: copying from file path"
           cp "${uri:7}" "${tarballdir}/${tarball}"
           retVal=$?
           if [ $retVal -ne 0 ]; then
@@ -119,14 +120,17 @@ function downloadTarball() {
           if ! askYesNo "Are you sure you want to download ${tarball} using HTTP? $( printRed "This can potentially be insecure." )" ; then
             kill -INT $$
           else
+            info "JWO: wget from http path"
             wget ${DW_WGET_OPTS} "${uri}" -P ${tarballdir}
             retVal=$?
           fi
       elif [[ ${uri} == https://* ]] ; then
+          info "JWO: wget from https path"
           wget ${DW_WGET_OPTS} "${uri}" -P ${tarballdir}
           retVal=$?
       fi
    fi
+   info "JWO downloadTarball retVal: $retVal"
    return $retVal
 }
 
