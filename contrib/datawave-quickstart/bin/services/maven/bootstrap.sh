@@ -14,6 +14,11 @@ function bootstrapEmbeddedMaven() {
         info "JWO Files before:"
         info "$(ls -l ${DW_MAVEN_SERVICE_DIR})"
         DW_MAVEN_DIST="$( { downloadTarball "${DW_MAVEN_DIST_URI}" "${DW_MAVEN_SERVICE_DIR}" || downloadMavenTarball "datawave-parent" "gov.nsa.datawave.quickstart" "maven" "${DW_MAVEN_VERSION}" "${DW_MAVEN_SERVICE_DIR}"; } && echo "${tarball}" )"
+        DW_MAVEN_DOWNLOAD_TARBALL_DIST="$( downloadTarball "${DW_MAVEN_DIST_URI}" "${DW_MAVEN_SERVICE_DIR}" && echo "${tarball}" )"
+        DW_MAVEN_DOWNLOAD_MAVEN_TARBALL_DIST=$( downloadMavenTarball "datawave-parent" "gov.nsa.datawave.quickstart" "maven" "${DW_MAVEN_VERSION}" "${DW_MAVEN_SERVICE_DIR}" && echo "${tarball}" )
+        info "DW_MAVEN_DIST: ${DW_MAVEN_DIST}"
+        info "DW_MAVEN_DOWNLOAD_TARBALL_DIST: ${DW_MAVEN_DOWNLOAD_TARBALL_DIST}"
+        info "DW_MAVEN_DOWNLOAD_MAVEN_TARBALL_DIST: ${DW_MAVEN_DOWNLOAD_MAVEN_TARBALL_DIST}"
         info "JWO Files after:"
         info "$(ls -l ${DW_MAVEN_SERVICE_DIR})"
     fi
