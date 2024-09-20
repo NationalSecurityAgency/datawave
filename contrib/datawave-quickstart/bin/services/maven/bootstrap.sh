@@ -11,20 +11,7 @@ DW_MAVEN_SYMLINK="maven"
 function bootstrapEmbeddedMaven() {
     if [ ! -f "${DW_MAVEN_SERVICE_DIR}/${DW_MAVEN_DIST}" ]; then
         info "Maven 3.x not detected. Attempting to bootstrap a dedicated install..."
-        info "JWO Files before:"
-        info "$(ls -l ${DW_MAVEN_SERVICE_DIR})"
         DW_MAVEN_DIST="$( { downloadTarball "${DW_MAVEN_DIST_URI}" "${DW_MAVEN_SERVICE_DIR}" || downloadMavenTarball "datawave-parent" "gov.nsa.datawave.quickstart" "maven" "${DW_MAVEN_VERSION}" "${DW_MAVEN_SERVICE_DIR}"; } && echo "${tarball}" )"
-        downloadTarball "${DW_MAVEN_DIST_URI}" "${DW_MAVEN_SERVICE_DIR}"
-        retVal=$?
-        echo "ret: $retVal tarball: ${tarball}"
-        downloadMavenTarball "datawave-parent" "gov.nsa.datawave.quickstart" "maven" "${DW_MAVEN_VERSION}" "${DW_MAVEN_SERVICE_DIR}"
-        retVal=$?
-        echo "ret: $retVal tarball: ${tarball}"
-        wget -q --no-check-certificate ${DW_MAVEN_DIST_URI}
-        echo "wget retVal: $?"
-        info "DW_MAVEN_DIST: ${DW_MAVEN_DIST}"
-        info "JWO Files after:"
-        info "$(ls -l ${DW_MAVEN_SERVICE_DIR})"
     fi
 
     export MAVEN_HOME="${DW_CLOUD_HOME}/${DW_MAVEN_SYMLINK}"

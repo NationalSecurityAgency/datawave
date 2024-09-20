@@ -106,35 +106,21 @@ function downloadTarball() {
    local uri="$1"
    local tarballdir="$2"
    tarball="$( basename ${uri} )"
-   local retVal=0;
    if [ ! -f "${tarballdir}/${tarball}" ] ; then
-      info "JWO FILE NOT FOUND"
       if [[ ${uri} == file://* ]] ; then
-          info "JWO: copying from file path"
-          cp "${uri:7}" "${tarballdir}/${tarball}"
-          retVal=$?
-          if [ $retVal -ne 0 ]; then
-            error "File copy failed for ${uri:7}"
-          fi
+          $( cd "${tarballdir}" && cp  "${uri:7}" ./${tarball} ) || error "File copy failed for ${uri:7}"
       elif [[ ${uri} == http://* ]] ; then
           if ! askYesNo "Are you sure you want to download ${tarball} using HTTP? $( printRed "This can potentially be insecure." )" ; then
             kill -INT $$
           else
-            info "JWO: wget from http path"
-            wget ${DW_WGET_OPTS} "${uri}" -P ${tarballdir}
-            retVal=$?
+            $( cd "${tarballdir}" && wget ${DW_WGET_OPTS} "${uri}" )
           fi
       elif [[ ${uri} == https://* ]] ; then
-          info "JWO: wget from https path"
-          wget ${DW_WGET_OPTS} "${uri}" -P ${tarballdir}
-          retVal=$?
+          $( cd "${tarballdir}" && wget ${DW_WGET_OPTS} "${uri}" )
       else
-          info "NO CONDITIONS MATCHED ${uri}"
+        return 1
       fi
    fi
-   info "JWO downloadTarball ${tarball} retVal: $retVal"
-   info "list file: $(ls -l ${tarballdir}/${tarball})"
-   return 2
 }
 
 function downloadMavenTarball() {
