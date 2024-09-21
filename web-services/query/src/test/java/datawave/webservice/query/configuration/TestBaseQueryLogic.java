@@ -77,13 +77,13 @@ public class TestBaseQueryLogic {
         expect(config.getTableName()).andReturn("tableName").anyTimes();
         expect(config.getBypassAccumulo()).andReturn(false).anyTimes();
         expect(config.getAccumuloPassword()).andReturn("env:PASS").anyTimes();
-        expect(config.isReduceResults()).andReturn(false).anyTimes();
         expect(config.getClient()).andReturn(null).anyTimes();
         expect(config.getQueries()).andReturn(Collections.emptyList()).anyTimes();
         expect(config.getQueriesIter()).andReturn(Collections.emptyIterator()).anyTimes();
         expect(config.getTableConsistencyLevels()).andReturn(Collections.emptyMap()).anyTimes();
         expect(config.getTableHints()).andReturn(Collections.emptyMap()).anyTimes();
         expect(config.getConnPoolName()).andReturn("connPool1");
+        expect(config.isLongRunningQuery()).andReturn(false);
         expect(this.copy.getConfig()).andReturn(config).anyTimes();
 
         // Run the test

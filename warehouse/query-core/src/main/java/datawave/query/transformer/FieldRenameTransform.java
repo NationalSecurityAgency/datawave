@@ -1,29 +1,26 @@
 package datawave.query.transformer;
 
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import javax.annotation.Nullable;
 
 import org.apache.accumulo.core.data.Key;
-import org.apache.commons.lang3.StringUtils;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
-import datawave.query.Constants;
+import datawave.core.query.logic.ResultPostprocessor;
 import datawave.query.attributes.Document;
 import datawave.query.jexl.JexlASTHelper;
 
 /**
  * This transform will copy attributes with secondary field names to primary field names if the primary field name does not already exist in the document.
  */
-public class FieldRenameTransform extends DocumentTransform.DefaultDocumentTransform {
+public class FieldRenameTransform extends DocumentTransform.DefaultDocumentTransform implements ResultPostprocessor {
     private final boolean reducedResponse;
     private final boolean includeGroupingContext;
     private Set<String> renameFieldExpressions;
@@ -76,4 +73,10 @@ public class FieldRenameTransform extends DocumentTransform.DefaultDocumentTrans
     public void updateConfig(Set<String> renameFields) {
         this.renameFieldExpressions = renameFields;
     }
+
+    @Override
+    public void apply(List<Object> results, Object newResult) {
+
+    }
+
 }

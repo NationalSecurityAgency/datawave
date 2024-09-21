@@ -1,6 +1,10 @@
 package datawave.core.query.logic;
 
+import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
+
+import datawave.core.query.configuration.GenericQueryConfiguration;
 
 /**
  * Result Postprocessors are needed by the query microservices for certain query logics which need their results manipulated in some way. An example would be
@@ -13,12 +17,32 @@ public interface ResultPostprocessor {
      *
      * @param results
      *            The results to be returned to the user
+     * @param newResult
+     *            The new result to add to the page
      */
-    void apply(List<Object> results);
+    void apply(List<Object> results, Object newResult);
+
+    /**
+     * Used to get any cached summary results
+     *
+     * @param config
+     *
+     * @return an iterable of results
+     */
+    default Iterator<Object> flushResults(GenericQueryConfiguration config) {
+        return Collections.emptyIterator();
+    }
+
+    /**
+     * Used to update a configuration with state required to be saved across pages of results.
+     *
+     * @param config
+     */
+    default void saveState(GenericQueryConfiguration config) {}
 
     class IdentityResultPostprocessor implements ResultPostprocessor {
-        public void apply(List<Object> results) {
-            // do nothing
+        public void apply(List<Object> results, Object newResult) {
+            results.add(newResult);
         }
     }
 }

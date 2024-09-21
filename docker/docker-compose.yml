@@ -41,6 +41,7 @@ services:
       - hadoop_conf:/opt/datawave/contrib/datawave-quickstart/hadoop/client/conf
       - quickstart_data:/opt/datawave/contrib/datawave-quickstart/data
       - ./logs:/logs
+      - hadoop_conf:${HADOOP_CONF_DIR:-/etc/hadoop/conf}:ro
     networks:
       - demo
     healthcheck:
@@ -409,7 +410,7 @@ services:
     volumes:
       - ${PKI_DIR:-./pki}:/etc/pki:ro
       - ./logs:/logs
-      - ${HADOOP_CONF_DIR:-hadoop_conf}:${HADOOP_CONF_DIR:-/etc/hadoop/conf}:ro
+      - hadoop_conf:${HADOOP_CONF_DIR:-/etc/hadoop/conf}:ro
     networks:
       - demo
     healthcheck:
@@ -447,7 +448,7 @@ services:
     volumes:
       - ${PKI_DIR:-./pki}:/etc/pki:ro
       - ./logs:/logs
-      - ${HADOOP_CONF_DIR:-hadoop_conf}:${HADOOP_CONF_DIR:-/etc/hadoop/conf}:ro
+      - hadoop_conf:${HADOOP_CONF_DIR:-/etc/hadoop/conf}:ro
     networks:
       - demo
     healthcheck:
@@ -495,7 +496,7 @@ services:
     volumes:
       - ${PKI_DIR:-./pki}:/etc/pki:ro
       - ./logs/pool1:/logs
-      - ${HADOOP_CONF_DIR:-hadoop_conf}:${HADOOP_CONF_DIR:-/etc/hadoop/conf}:ro
+      - hadoop_conf:${HADOOP_CONF_DIR:-/etc/hadoop/conf}:ro
     networks:
       - demo
     healthcheck:
@@ -542,7 +543,7 @@ services:
     volumes:
       - ${PKI_DIR:-./pki}:/etc/pki:ro
       - ./logs/pool2:/logs
-      - ${HADOOP_CONF_DIR:-hadoop_conf}:${HADOOP_CONF_DIR:-/etc/hadoop/conf}:ro
+      - hadoop_conf:${HADOOP_CONF_DIR:-/etc/hadoop/conf}:ro
     networks:
       - demo
     healthcheck:

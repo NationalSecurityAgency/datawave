@@ -19,6 +19,7 @@
         <module>core</module>
         <module>web-services</module>
         <module>warehouse</module>
+        <module>microservices</module>
     </modules>
     <scm>
         <connection>scm:git:https://github.com/NationalSecurityAgency/datawave.git</connection>

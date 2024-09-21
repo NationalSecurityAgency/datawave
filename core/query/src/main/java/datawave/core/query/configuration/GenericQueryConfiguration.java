@@ -70,10 +70,9 @@ public class GenericQueryConfiguration implements Serializable {
     // use a value like 'env:PASS' to pull from the environment
     private String accumuloPassword = "";
 
-    private String connPoolName;
+    protected boolean longRunningQuery = false;
 
-    // Whether or not this query emits every result or performs some kind of result reduction
-    protected boolean reduceResults = false;
+    private String connPoolName;
 
     // either IMMEDIATE or EVENTUAL
     private Map<String,ScannerBase.ConsistencyLevel> tableConsistencyLevels = new HashMap<>();
@@ -123,7 +122,7 @@ public class GenericQueryConfiguration implements Serializable {
         this.setQueriesIter(other.getQueriesIter());
         this.setQueryString(other.getQueryString());
         this.setTableName(other.getTableName());
-        this.setReduceResults(other.isReduceResults());
+        this.setLongRunningQuery(other.isLongRunningQuery());
         this.setTableConsistencyLevels(other.getTableConsistencyLevels());
         this.setTableHints(other.getTableHints());
     }
@@ -274,14 +273,6 @@ public class GenericQueryConfiguration implements Serializable {
         return this.accumuloPassword;
     }
 
-    public boolean isReduceResults() {
-        return reduceResults;
-    }
-
-    public void setReduceResults(boolean reduceResults) {
-        this.reduceResults = reduceResults;
-    }
-
     /**
      * Sets configured password for accumulo access
      *
@@ -290,6 +281,14 @@ public class GenericQueryConfiguration implements Serializable {
      */
     public void setAccumuloPassword(String password) {
         this.accumuloPassword = EnvProvider.resolve(password);
+    }
+
+    public boolean isLongRunningQuery() {
+        return longRunningQuery;
+    }
+
+    public void setLongRunningQuery(boolean longRunningQuery) {
+        this.longRunningQuery = longRunningQuery;
     }
 
     public String getConnPoolName() {
@@ -358,13 +357,13 @@ public class GenericQueryConfiguration implements Serializable {
                         && Objects.equals(getBeginDate(), that.getBeginDate()) && Objects.equals(getEndDate(), that.getEndDate())
                         && Objects.equals(getMaxWork(), that.getMaxWork()) && Objects.equals(getTableName(), that.getTableName())
                         && Objects.equals(getQueries(), that.getQueries()) && Objects.equals(getAccumuloPassword(), that.getAccumuloPassword())
-                        && Objects.equals(getConnPoolName(), that.getConnPoolName()) && Objects.equals(isReduceResults(), that.isReduceResults());
+                        && Objects.equals(getConnPoolName(), that.getConnPoolName()) && Objects.equals(isLongRunningQuery(), that.isLongRunningQuery());
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(isCheckpointable(), getAuthorizations(), getQuery(), getQueryString(), getBeginDate(), getEndDate(), getMaxWork(),
                         getBaseIteratorPriority(), getTableName(), getQueries(), getBypassAccumulo(), getConnPoolName(), getAccumuloPassword(),
-                        isReduceResults());
+                        isLongRunningQuery());
     }
 }

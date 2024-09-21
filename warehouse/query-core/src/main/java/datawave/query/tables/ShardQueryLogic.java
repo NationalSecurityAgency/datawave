@@ -53,6 +53,7 @@ import datawave.core.query.logic.CheckpointableQueryLogic;
 import datawave.core.query.logic.QueryCheckpoint;
 import datawave.core.query.logic.QueryKey;
 import datawave.core.query.logic.QueryLogicTransformer;
+import datawave.core.query.logic.ResultPostprocessor;
 import datawave.core.query.logic.WritesQueryMetrics;
 import datawave.data.type.Type;
 import datawave.marking.MarkingFunctions;
@@ -90,6 +91,7 @@ import datawave.query.planner.QueryPlanner;
 import datawave.query.scheduler.PushdownScheduler;
 import datawave.query.scheduler.Scheduler;
 import datawave.query.scheduler.SequentialScheduler;
+import datawave.query.tables.shard.ListResultPostprocessor;
 import datawave.query.tables.stats.ScanSessionStats;
 import datawave.query.transformer.DocumentTransform;
 import datawave.query.transformer.DocumentTransformer;
@@ -679,13 +681,56 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         return this.transformerInstance;
     }
 
+    @Override
+    public ResultPostprocessor getResultPostprocessor(GenericQueryConfiguration genericConfig) {
+        ShardQueryConfiguration config = (ShardQueryConfiguration) genericConfig;
+
+        ListResultPostprocessor processor = new ListResultPostprocessor();
+
+        if (config.getUniqueFields() != null && !config.getUniqueFields().isEmpty()) {
+            log.info("Creating unique result post processor for " + config.getUniqueFields());
+            try {
+                // @formatter:off
+                processor.addProcessor(new UniqueTransform.Builder()
+                        .withUniqueFields(config.getUniqueFields())
+                        .withQueryExecutionForPageTimeout(config.getQueryExecutionForPageTimeout())
+                        .withBufferPersistThreshold(config.getUniqueCacheBufferSize())
+                        .withIvaratorCacheDirConfigs(config.getIvaratorCacheDirConfigs())
+                        .withHdfsSiteConfigURLs(config.getHdfsSiteConfigURLs())
+                        .withSubDirectory(config.getQuery().getId().toString())
+                        .withMaxOpenFiles(config.getIvaratorMaxOpenFiles())
+                        .withNumRetries(config.getIvaratorNumRetries())
+                        .withPersistOptions(new FileSortedSet.PersistOptions(
+                                config.isIvaratorPersistVerify(),
+                                config.isIvaratorPersistVerify(),
+                                config.getIvaratorPersistVerifyCount()))
+                        .withFilter(config.getBloom())
+                        .build());
+                // @formatter:on
+            } catch (IOException ioe) {
+                throw new RuntimeException("Unable to create a unique transform", ioe);
+            }
+        }
+
+        GroupFields groupFields = config.getGroupFields();
+        if (groupFields != null && groupFields.hasGroupByFields()) {
+            log.info("Creating grouping result post processor for " + groupFields);
+            processor.addProcessor(new GroupingTransform(groupFields, getMarkingFunctions(), config.getQueryExecutionForPageTimeout()));
+        }
+
+        if (config.getRenameFields() != null && !config.getRenameFields().isEmpty()) {
+            log.info("Creating rename result post processor for " + config.getRenameFields());
+            processor.addProcessor(new FieldRenameTransform(config.getRenameFields(), config.getIncludeGroupingContext(), config.isReducedResponse()));
+        }
+
+        log.info("Created list results post processor with " + processor.numProcessors() + " processors");
+
+        return processor;
+    }
+
     protected DocumentTransformer createDocumentTransformer(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions markingFunctions,
                     ResponseObjectFactory responseObjectFactory, Boolean reducedResponse) {
         return new DocumentTransformer(logic, settings, markingFunctions, responseObjectFactory, reducedResponse);
-    }
-
-    public boolean isLongRunningQuery() {
-        return getConfig().getGroupFields().hasGroupByFields() || !getUniqueFields().isEmpty();
     }
 
     /**
@@ -701,8 +746,26 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
                 if (alreadyExists != null) {
                     ((UniqueTransform) alreadyExists).updateConfig(getConfig().getUniqueFields(), getQueryModel());
                 } else {
-                    ((DocumentTransformer) this.transformerInstance)
-                                    .addTransform(new UniqueTransform(this, getConfig().getUniqueFields(), this.getQueryExecutionForPageTimeout()));
+                    try {
+                        // @formatter:off
+                        ((DocumentTransformer) this.transformerInstance).addTransform(new UniqueTransform.Builder()
+                                .withUniqueFields(new UniqueTransform(this, getConfig().getUniqueFields()))
+                                .withQueryExecutionForPageTimeout(this.getQueryExecutionForPageTimeout())
+                                .withBufferPersistThreshold(getUniqueCacheBufferSize())
+                                .withIvaratorCacheDirConfigs(getIvaratorCacheDirConfigs())
+                                .withHdfsSiteConfigURLs(getHdfsSiteConfigURLs())
+                                .withSubDirectory(getConfig().getQuery().getId().toString())
+                                .withMaxOpenFiles(getIvaratorMaxOpenFiles())
+                                .withNumRetries(getIvaratorNumRetries())
+                                .withPersistOptions(new FileSortedSet.PersistOptions(
+                                        isIvaratorPersistVerify(),
+                                        isIvaratorPersistVerify(),
+                                        getIvaratorPersistVerifyCount()))
+                                .build());
+                        // @formatter:on
+                    } catch (IOException ioe) {
+                        throw new QueryException("Unable to create a unique transform", ioe);
+                    }
                 }
             }
 
