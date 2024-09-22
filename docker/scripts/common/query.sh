@@ -69,7 +69,7 @@ runQuery() {
             -H "Pool: $POOL" \
             ${DATAWAVE_ENDPOINT}/$QUERY_ID/next -o nextResponse_$i.xml -w '%{http_code}\n' >> querySummary.txt
 
-        CONTINUE=`grep 'HTTP/2 200' headers_$i.txt`
+        CONTINUE=`grep 'HTTP/.* 200' headers_$i.txt`
 
         if [ -z "$CONTINUE" ]; then
             i=-1
