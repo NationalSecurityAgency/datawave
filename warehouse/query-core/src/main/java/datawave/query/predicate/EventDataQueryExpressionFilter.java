@@ -72,13 +72,13 @@ public class EventDataQueryExpressionFilter implements EventDataQueryFilter {
     }
 
     @Override
-    public boolean apply(Map.Entry<Key,String> input) {
-        return apply(input.getKey(), true);
+    public boolean apply(Map.Entry<Key,String> entry) {
+        return apply(entry.getKey(), true);
     }
 
     @Override
-    public boolean peek(Map.Entry<Key,String> input) {
-        return apply(input.getKey(), false);
+    public boolean peek(Map.Entry<Key,String> entry) {
+        return apply(entry.getKey(), false);
     }
 
     public boolean peek(Key key) {
