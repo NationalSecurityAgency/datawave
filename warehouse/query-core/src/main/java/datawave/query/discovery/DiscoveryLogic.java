@@ -75,7 +75,7 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
     public static final String SEPARATE_COUNTS_BY_COLVIS = "separate.counts.by.colvis";
     public static final String SHOW_REFERENCE_COUNT = "show.reference.count";
     public static final String REVERSE_INDEX = "reverse.index";
-    private static Set<String> indexedFields;
+    private Set<String> indexedFields;
     private DiscoveryQueryConfiguration config;
     private MetadataHelper metadataHelper;
 
@@ -105,7 +105,7 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
         this.metadataHelper = initializeMetadataHelper(client, config.getMetadataTableName(), auths);
 
         // Get all currently indexed fields
-        indexedFields = this.metadataHelper.getIndexedFields(Collections.emptySet());
+        this.indexedFields = this.metadataHelper.getIndexedFields(Collections.emptySet());
 
         if (StringUtils.isEmpty(settings.getQuery())) {
             throw new IllegalArgumentException("Query cannot be null");
@@ -272,7 +272,7 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
                 bs.fetchColumnFamily(new Text(cf));
             }
 
-            iterators.add(transformScanner(bs, qd));
+            iterators.add(transformScanner(bs, qd, this.indexedFields));
         }
         this.iterator = concat(iterators.iterator());
     }
@@ -364,9 +364,11 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
      *
      * @param scanner
      *            a batch scanner
+     * @param indexedFields
+     *            set of currently indexed fields
      * @return iterator for discoveredthings
      */
-    public static Iterator<DiscoveredThing> transformScanner(final BatchScanner scanner, final QueryData queryData) {
+    public static Iterator<DiscoveredThing> transformScanner(final BatchScanner scanner, final QueryData queryData, Set<String> indexedFields) {
         return concat(transform(scanner.iterator(), new Function<Entry<Key,Value>,Iterator<DiscoveredThing>>() {
             DataInputBuffer in = new DataInputBuffer();
 
