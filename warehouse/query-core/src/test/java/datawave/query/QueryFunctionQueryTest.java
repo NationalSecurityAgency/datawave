@@ -294,4 +294,66 @@ public abstract class QueryFunctionQueryTest {
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
         }
     }
+
+    @Test
+    public void testStartsWithFunction() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("hit.list", "true");
+        extraParameters.put(QueryParameters.QUERY_SYNTAX, "LUCENE");
+
+        // @formatter:off
+        String[] queryStrings = {
+                        "UUID:corleone AND #STARTS_WITH(GENERE, 'MA')",
+                        "UUID:corleone AND #STARTS_WITH(GENERE, 'ma')",
+                        "UUID:corleone AND #STARTS_WITH(GENERE, 'male')",
+                        "UUID:corleone AND #STARTS_WITH(GENERE, 'female')",
+                        "UUID:corleone AND #STARTS_WITH(NUMBER, '25')",
+                        "UUID:corleone AND #STARTS_WITH(NUMBER, '2')",
+        };
+        @SuppressWarnings("unchecked")
+        List<String>[] expectedLists = new List[] {
+                        List.of("CORLEONE"),
+                        List.of("CORLEONE"),
+                        List.of("CORLEONE"),
+                        List.of("CORLEONE"),
+                        List.of("CORLEONE"),
+                        List.of("CORLEONE"),
+        };
+        // @formatter:on
+
+        for (int i = 0; i < queryStrings.length; i++) {
+            runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
+        }
+    }
+
+    @Test
+    public void testEndsWithFunction() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("hit.list", "true");
+        extraParameters.put(QueryParameters.QUERY_SYNTAX, "LUCENE");
+
+        // @formatter:off
+        String[] queryStrings = {
+                        "UUID:corleone AND #ENDS_WITH(GENERE, 'ALE')",
+                        "UUID:corleone AND #ENDS_WITH(GENERE, 'ale')",
+                        "UUID:corleone AND #ENDS_WITH(GENERE, 'male')",
+                        "UUID:corleone AND #ENDS_WITH(GENERE, 'female')",
+                        "UUID:corleone AND #ENDS_WITH(NUMBER, '25')",
+                        "UUID:corleone AND #ENDS_WITH(NUMBER, '5')",
+        };
+        @SuppressWarnings("unchecked")
+        List<String>[] expectedLists = new List[] {
+                        List.of("CORLEONE"),
+                        List.of("CORLEONE"),
+                        List.of("CORLEONE"),
+                        List.of("CORLEONE"),
+                        List.of("CORLEONE"),
+                        List.of("CORLEONE"),
+        };
+        // @formatter:on
+
+        for (int i = 0; i < queryStrings.length; i++) {
+            runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
+        }
+    }
 }

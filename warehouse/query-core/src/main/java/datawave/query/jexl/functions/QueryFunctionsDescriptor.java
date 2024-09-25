@@ -245,6 +245,12 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
                     throw new IllegalArgumentException("Wrong number of arguments to length function");
                 }
                 break;
+            case QueryFunctions.STARTS_WITH:
+            case QueryFunctions.ENDS_WITH:
+                if (numArgs != 2) {
+                    throw new IllegalArgumentException("Wrong number of arguments to startswith/endswith function");
+                }
+                break;
             case QueryFunctions.OPTIONS_FUNCTION:
                 if (numArgs % 2 != 0) {
                     throw new IllegalArgumentException("Expected even number of arguments to options function");
