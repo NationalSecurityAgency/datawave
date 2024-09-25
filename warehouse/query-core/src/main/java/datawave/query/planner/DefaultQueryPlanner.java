@@ -2524,8 +2524,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      *            the config
      * @param cfg
      *            the iterator configuration
-     * @throws DatawaveQueryException
-     *             for issues with running the query
      */
     protected void setCommonIteratorOptions(ShardQueryConfiguration config, IteratorSetting cfg) {
         // Applying filtering options, including classnames, whether applied to
