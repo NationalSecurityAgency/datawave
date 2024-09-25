@@ -17,10 +17,12 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -448,6 +450,11 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private int tfNextSeek = -1;
 
     /**
+     * Flag that enables a field-based seeking aggregation in the standard event query. Must be used in conjunction with {@link #eventFieldSeek}
+     */
+    private boolean seekingEventAggregation = false;
+
+    /**
      * The maximum weight for entries in the visitor function cache. The weight is calculated as the total number of characters for each key and value in the
      * cache. Default is 5m characters, which is roughly 10MB
      */
@@ -491,6 +498,13 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      * to take effect.
      */
     private boolean sortQueryByCounts = false;
+
+    /**
+     * Insert rules for processing the QueryTree to automatically apply hints to queries. Hints will be passed to the ScannerFactory
+     * {@link datawave.query.tables.ScannerFactory} using {@link datawave.query.tables.ScannerFactory#applyConfigs(ScannerBase, String)}
+     */
+    private boolean useQueryTreeScanHintRules = false;
+    private List<ScanHintRule<JexlNode>> queryTreeScanHintRules = new ArrayList<>();
 
     /**
      * The minimum percentage threshold that the count for an index row must meet compared to the count for the corresponding frequency row in the metadata
@@ -721,6 +735,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setEventNextSeek(other.getEventNextSeek());
         this.setTfFieldSeek(other.getTfFieldSeek());
         this.setTfNextSeek(other.getTfNextSeek());
+        this.setSeekingEventAggregation(other.isSeekingEventAggregation());
         this.setVisitorFunctionMaxWeight(other.getVisitorFunctionMaxWeight());
         this.setQueryExecutionForPageTimeout(other.getQueryExecutionForPageTimeout());
         this.setLazySetMechanismEnabled(other.isLazySetMechanismEnabled());
@@ -732,6 +747,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setUseTermCounts(other.getUseTermCounts());
         this.setSortQueryBeforeGlobalIndex(other.isSortQueryBeforeGlobalIndex());
         this.setSortQueryByCounts(other.isSortQueryByCounts());
+        this.setUseQueryTreeScanHintRules(other.isUseQueryTreeScanHintRules());
+        this.setQueryTreeScanHintRules(other.getQueryTreeScanHintRules());
         this.setFieldIndexHoleMinThreshold(other.getFieldIndexHoleMinThreshold());
     }
 
@@ -2637,6 +2654,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.tfNextSeek = tfNextSeek;
     }
 
+    public boolean isSeekingEventAggregation() {
+        return seekingEventAggregation;
+    }
+
+    public void setSeekingEventAggregation(boolean seekingEventAggregation) {
+        this.seekingEventAggregation = seekingEventAggregation;
+    }
+
     public long getVisitorFunctionMaxWeight() {
         return visitorFunctionMaxWeight;
     }
@@ -2966,6 +2991,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getEventNextSeek() == that.getEventNextSeek() &&
                 getTfFieldSeek() == that.getTfFieldSeek() &&
                 getTfNextSeek() == that.getTfNextSeek() &&
+                isSeekingEventAggregation() == that.isSeekingEventAggregation() &&
                 getVisitorFunctionMaxWeight() == that.getVisitorFunctionMaxWeight() &&
                 getQueryExecutionForPageTimeout() == that.getQueryExecutionForPageTimeout() &&
                 isLazySetMechanismEnabled() == that.isLazySetMechanismEnabled() &&
@@ -3170,6 +3196,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getEventNextSeek(),
                 getTfFieldSeek(),
                 getTfNextSeek(),
+                isSeekingEventAggregation(),
                 getVisitorFunctionMaxWeight(),
                 getQueryExecutionForPageTimeout(),
                 isLazySetMechanismEnabled(),
@@ -3188,5 +3215,21 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.timers = new QueryStopwatch();
         this.fstCount = new AtomicInteger(0);
         return this;
+    }
+
+    public boolean isUseQueryTreeScanHintRules() {
+        return useQueryTreeScanHintRules;
+    }
+
+    public void setUseQueryTreeScanHintRules(boolean useQueryTreeScanHintRules) {
+        this.useQueryTreeScanHintRules = useQueryTreeScanHintRules;
+    }
+
+    public List<ScanHintRule<JexlNode>> getQueryTreeScanHintRules() {
+        return queryTreeScanHintRules;
+    }
+
+    public void setQueryTreeScanHintRules(List<ScanHintRule<JexlNode>> queryTreeScanHintRules) {
+        this.queryTreeScanHintRules = queryTreeScanHintRules;
     }
 }
