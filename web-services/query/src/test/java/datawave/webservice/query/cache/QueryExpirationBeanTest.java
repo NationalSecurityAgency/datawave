@@ -15,9 +15,10 @@ import org.powermock.reflect.Whitebox;
 
 import com.google.common.cache.Cache;
 
+import datawave.core.common.connection.AccumuloConnectionFactory;
+import datawave.microservice.query.QueryImpl;
+import datawave.microservice.query.config.QueryExpirationProperties;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
-import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.runner.RunningQuery;
 
 @RunWith(PowerMockRunner.class)
@@ -70,11 +71,11 @@ public class QueryExpirationBeanTest {
     private QueryExpirationBean createBean(int expireTime) throws IllegalArgumentException, IllegalAccessException {
         QueryExpirationBean bean = new QueryExpirationBean();
 
-        QueryExpirationConfiguration expirationConfiguration = new QueryExpirationConfiguration();
-        setInternalState(expirationConfiguration, "idleTimeMinutes", expireTime);
-        setInternalState(expirationConfiguration, "callTimeMinutes", expireTime);
+        QueryExpirationProperties expirationConfiguration = new QueryExpirationProperties();
+        setInternalState(expirationConfiguration, "idleTimeout", expireTime);
+        setInternalState(expirationConfiguration, "callTimeout", expireTime);
 
-        setInternalState(bean, QueryExpirationConfiguration.class, expirationConfiguration);
+        setInternalState(bean, QueryExpirationProperties.class, expirationConfiguration);
         setInternalState(bean, QueryCache.class, queryCache);
         setInternalState(bean, CreatedQueryLogicCacheBean.class, qlCache);
         setInternalState(bean, AccumuloConnectionFactory.class, connFactory);

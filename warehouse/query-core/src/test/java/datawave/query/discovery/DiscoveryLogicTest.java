@@ -30,16 +30,16 @@ import org.junit.Test;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.result.event.DefaultResponseObjectFactory;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.ingest.protobuf.Uid;
 import datawave.marking.MarkingFunctions;
+import datawave.microservice.query.QueryImpl;
 import datawave.query.MockAccumuloRecordWriter;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.util.MetadataHelperFactory;
 import datawave.util.TableName;
-import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
-import datawave.webservice.query.result.event.DefaultResponseObjectFactory;
 
 public class DiscoveryLogicTest {
     private static Logger log = Logger.getLogger(DiscoveryLogicTest.class);
@@ -93,6 +93,7 @@ public class DiscoveryLogicTest {
         logic.setIndexTableName(TableName.SHARD_INDEX);
         logic.setReverseIndexTableName(TableName.SHARD_RINDEX);
         logic.setModelTableName(QueryTestTableHelper.METADATA_TABLE_NAME);
+        logic.setMetadataTableName(QueryTestTableHelper.METADATA_TABLE_NAME);
         logic.setModelName("DATAWAVE");
         logic.setFullTableScanEnabled(false);
         logic.setMaxResults(-1);

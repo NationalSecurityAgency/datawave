@@ -26,6 +26,8 @@ else
    mkdir "${DW_ACCUMULO_SERVICE_DIR}/${DW_ZOOKEEPER_BASEDIR}" || fatal "Failed to create ZooKeeper base directory"
    # Extract ZooKeeper, set symlink, and verify...
    tar xf "${DW_ACCUMULO_SERVICE_DIR}/${DW_ZOOKEEPER_DIST}" -C "${DW_ACCUMULO_SERVICE_DIR}/${DW_ZOOKEEPER_BASEDIR}" --strip-components=1 || fatal "Failed to extract ZooKeeper tarball"
+   #symlink the zookeeper jars if needed
+   ln -s ${DW_ACCUMULO_SERVICE_DIR}/${DW_ZOOKEEPER_BASEDIR}/lib/* ${DW_ACCUMULO_SERVICE_DIR}/${DW_ZOOKEEPER_BASEDIR}
    ( cd "${DW_CLOUD_HOME}" && ln -s "bin/services/accumulo/${DW_ZOOKEEPER_BASEDIR}" "${DW_ZOOKEEPER_SYMLINK}" ) || fatal "Failed to set ZooKeeper symlink"
 
    zookeeperIsInstalled || fatal "ZooKeeper was not installed"
@@ -73,7 +75,7 @@ sed -i'' -e "s~\(export ACCUMULO_MONITOR_OPTS=\).*$~\1\"\${POLICY} -Xmx2g -Xms51
 
 # Update Accumulo bind host if it's not set to localhost
 if [ "${DW_ACCUMULO_BIND_HOST}" != "localhost" ] ; then
-  sed -i'' -e "s/localhost/${DW_ACCUMULO_BIND_HOST}/g" ${DW_ACCUMULO_CONF_DIR}/cluster.yaml
+   sed -i'' -e "s/localhost/${DW_ACCUMULO_BIND_HOST}/g" ${DW_ACCUMULO_CONF_DIR}/cluster.yaml
 fi
 
 # Write zoo.cfg file using our settings in DW_ZOOKEEPER_CONF

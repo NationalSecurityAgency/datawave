@@ -9,11 +9,13 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.junit.Test;
 
+import datawave.core.common.connection.AccumuloConnectionFactory;
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.logic.BaseQueryLogic;
+import datawave.core.query.logic.QueryLogicTransformer;
+import datawave.microservice.query.Query;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.webservice.common.audit.Auditor;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
 
 public class BaseQueryLogicTest {
 
@@ -30,7 +32,7 @@ public class BaseQueryLogicTest {
         original.setPageByteTrigger(123456L);
         original.setCollectQueryMetrics(false);
         original.setAuthorizedDNs(Collections.singleton("dn=authorized1"));
-        original.setPrincipal(new DatawavePrincipal("user"));
+        original.setCurrentUser(new DatawavePrincipal("user"));
 
         BaseQueryLogicImpl copy = new BaseQueryLogicImpl(original);
         assertEquals(original.getLogicName(), copy.getLogicName());
@@ -43,7 +45,7 @@ public class BaseQueryLogicTest {
         assertEquals(original.getPageByteTrigger(), copy.getPageByteTrigger());
         assertEquals(original.getCollectQueryMetrics(), copy.getCollectQueryMetrics());
         assertEquals(original.getAuthorizedDNs(), copy.getAuthorizedDNs());
-        assertEquals(original.getPrincipal(), copy.getPrincipal());
+        assertEquals(original.getCurrentUser(), copy.getCurrentUser());
     }
 
     class BaseQueryLogicImpl extends BaseQueryLogic<Object> {

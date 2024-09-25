@@ -7,7 +7,6 @@ import java.io.PrintStream;
 import java.util.Collections;
 import java.util.List;
 
-import org.apache.commons.jexl3.JexlFeatures;
 import org.apache.commons.jexl3.parser.ASTAddNode;
 import org.apache.commons.jexl3.parser.ASTAndNode;
 import org.apache.commons.jexl3.parser.ASTAnnotatedStatement;
@@ -93,6 +92,7 @@ import org.apache.commons.jexl3.parser.ASTUnaryMinusNode;
 import org.apache.commons.jexl3.parser.ASTUnaryPlusNode;
 import org.apache.commons.jexl3.parser.ASTVar;
 import org.apache.commons.jexl3.parser.ASTWhileStatement;
+import org.apache.commons.jexl3.parser.JexlLexicalNode;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.commons.jexl3.parser.ParseException;
@@ -101,6 +101,7 @@ import org.apache.commons.jexl3.parser.ParserVisitor;
 import org.apache.commons.jexl3.parser.SimpleNode;
 import org.apache.commons.jexl3.parser.StringProvider;
 import org.apache.commons.jexl3.parser.TokenMgrException;
+import org.apache.log4j.Logger;
 
 import com.google.common.collect.Lists;
 
@@ -109,6 +110,8 @@ import com.google.common.collect.Lists;
  *
  */
 public class PrintingVisitor extends ParserVisitor {
+
+    private static final Logger LOGGER = Logger.getLogger(PrintingVisitor.class);
 
     private interface Output {
         void writeLine(String line);
@@ -166,18 +169,24 @@ public class PrintingVisitor extends ParserVisitor {
     private static final String PREFIX = "  ";
 
     private int maxChildNodes;
+
+    private int maxTermsToPrint;
+
+    private int termsPrinted = 0;
+
     private Output output;
 
     public PrintingVisitor() {
-        this(0);
+        this(0, 100);
     }
 
-    public PrintingVisitor(int maxChildNodes) {
-        this(maxChildNodes, new PrintStreamOutput(System.out));
+    public PrintingVisitor(int maxChildNodes, int maxTermsToPrint) {
+        this(maxChildNodes, maxTermsToPrint, new PrintStreamOutput(System.out));
     }
 
-    public PrintingVisitor(int maxChildNodes, Output output) {
+    public PrintingVisitor(int maxChildNodes, int maxTermsToPrint, Output output) {
         this.maxChildNodes = maxChildNodes;
+        this.maxTermsToPrint = maxTermsToPrint;
         this.output = output;
     }
 
@@ -220,7 +229,7 @@ public class PrintingVisitor extends ParserVisitor {
      *            maximum number of child nodes
      */
     public static void printQuery(JexlNode query, int maxChildNodes) {
-        PrintingVisitor printer = new PrintingVisitor(maxChildNodes);
+        PrintingVisitor printer = new PrintingVisitor(maxChildNodes, 100);
 
         // visit() and get the root which is the root of a tree of Boolean Logic Iterator<Key>'s
         query.jjtAccept(printer, "");
@@ -236,7 +245,7 @@ public class PrintingVisitor extends ParserVisitor {
      *             for parsing issues
      */
     public static String formattedQueryString(String query) throws ParseException {
-        return formattedQueryString(query, 0);
+        return formattedQueryString(query, 0, 100);
     }
 
     /**
@@ -250,13 +259,13 @@ public class PrintingVisitor extends ParserVisitor {
      * @throws ParseException
      *             for parsing issues
      */
-    public static String formattedQueryString(String query, int maxChildNodes) throws ParseException {
+    public static String formattedQueryString(String query, int maxChildNodes, int maxTermsToPrint) throws ParseException {
         // Instantiate a parser and visitor
         Parser parser = new Parser(new StringProvider(";"));
 
         // Parse the query
         try {
-            return formattedQueryString(parser.parse(null, jexlFeatures(), query, null), maxChildNodes);
+            return formattedQueryString(parser.parse(null, jexlFeatures(), query, null), maxChildNodes, maxTermsToPrint);
         } catch (TokenMgrException e) {
             throw new ParseException(e.getMessage());
         }
@@ -270,7 +279,7 @@ public class PrintingVisitor extends ParserVisitor {
      * @return formatted string
      */
     public static String formattedQueryString(JexlNode query) {
-        return formattedQueryString(query, 0);
+        return formattedQueryString(query, 0, 100);
     }
 
     /**
@@ -282,14 +291,14 @@ public class PrintingVisitor extends ParserVisitor {
      *            maximum number of child nodes
      * @return a formatted string
      */
-    public static String formattedQueryString(JexlNode query, int maxChildNodes) {
+    public static String formattedQueryString(JexlNode query, int maxChildNodes, int maxTermsToPrint) {
         if (query == null)
             return null;
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         PrintStream output = new PrintStream(baos);
         output.println("");
 
-        PrintingVisitor printer = new PrintingVisitor(maxChildNodes, newPrintStreamOutput(output));
+        PrintingVisitor printer = new PrintingVisitor(maxChildNodes, maxTermsToPrint, newPrintStreamOutput(output));
 
         query.jjtAccept(printer, "");
 
@@ -304,7 +313,7 @@ public class PrintingVisitor extends ParserVisitor {
      * @return list of the formatted strings
      */
     public static List<String> formattedQueryStringList(JexlNode query) {
-        return formattedQueryStringList(query, 0);
+        return formattedQueryStringList(query, 0, 100);
     }
 
     /**
@@ -316,10 +325,10 @@ public class PrintingVisitor extends ParserVisitor {
      *            maximum number of child nodes
      * @return list of the formatted strings
      */
-    public static List<String> formattedQueryStringList(JexlNode query, int maxChildNodes) {
+    public static List<String> formattedQueryStringList(JexlNode query, int maxChildNodes, int maxTermsToPrint) {
         StringListOutput output = newStringListOutput();
 
-        PrintingVisitor printer = new PrintingVisitor(maxChildNodes, output);
+        PrintingVisitor printer = new PrintingVisitor(maxChildNodes, maxTermsToPrint, output);
 
         query.jjtAccept(printer, "");
 
@@ -336,553 +345,399 @@ public class PrintingVisitor extends ParserVisitor {
         }
     }
 
-    public Object visit(ASTJexlScript node, Object data) {
-        output.writeLine(data + node.toString());
+    public Object validateTermsAndWrite(JexlNode node, Object data, String line) {
+        if (termsPrinted >= maxTermsToPrint) {
+            return null; // return early without printing for each additional node visited after the threshold
+        }
+        termsPrinted++;
+
+        if (termsPrinted >= maxTermsToPrint) {
+            LOGGER.trace("reached max terms for print threshold of " + maxTermsToPrint); // just log the threshold, logging the whole node for a very large
+            // query could be less than constructive
+        }
+
+        output.writeLine(line);
         childrenAccept(node, this, data + PREFIX);
         return null;
+    }
+
+    public Object visit(ASTJexlScript node, Object data) {
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     public Object visit(ASTBlock node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     public Object visit(ASTIfStatement node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     public Object visit(ASTWhileStatement node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     public Object visit(ASTForeachStatement node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     public Object visit(ASTAssignment node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     public Object visit(ASTTernaryNode node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     public Object visit(ASTOrNode node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     public Object visit(ASTAndNode node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     public Object visit(ASTBitwiseOrNode node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     public Object visit(ASTBitwiseXorNode node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     public Object visit(ASTBitwiseAndNode node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     public Object visit(ASTEQNode node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     public Object visit(ASTNENode node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     public Object visit(ASTLTNode node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     public Object visit(ASTGTNode node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     public Object visit(ASTLENode node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     public Object visit(ASTGENode node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     public Object visit(ASTERNode node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     public Object visit(ASTNRNode node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     public Object visit(ASTMulNode node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     public Object visit(ASTDivNode node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     public Object visit(ASTModNode node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     public Object visit(ASTUnaryMinusNode node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     public Object visit(ASTBitwiseComplNode node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     public Object visit(ASTNotNode node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     public Object visit(ASTIdentifier node, Object data) {
-        output.writeLine(data + node.toString() + ":" + JexlNodes.getIdentifierOrLiteral(node));
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString() + ":" + JexlNodes.getIdentifierOrLiteral(node));
     }
 
     public Object visit(ASTNullLiteral node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     public Object visit(ASTTrueNode node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     public Object visit(ASTFalseNode node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     public Object visit(ASTStringLiteral node, Object data) {
-        output.writeLine(data + node.toString() + ":" + JexlNodes.getIdentifierOrLiteral(node));
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString() + ":" + JexlNodes.getIdentifierOrLiteral(node));
     }
 
     public Object visit(ASTArrayLiteral node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     public Object visit(ASTMapLiteral node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     public Object visit(ASTMapEntry node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     public Object visit(ASTEmptyFunction node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     public Object visit(ASTSizeFunction node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     public Object visit(ASTFunctionNode node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     public Object visit(ASTMethodNode node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     public Object visit(ASTConstructorNode node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     public Object visit(ASTArrayAccess node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     public Object visit(ASTReference node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     public Object visit(ASTReturnStatement node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     public Object visit(ASTVar node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     public Object visit(ASTNumberLiteral node, Object data) {
-        output.writeLine(data + node.toString() + ":" + node.getLiteral());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString() + ":" + node.getLiteral());
     }
 
     public Object visit(ASTReferenceExpression node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     @Override
     protected Object visit(ASTDoWhileStatement node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     @Override
     protected Object visit(ASTContinue node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     @Override
     protected Object visit(ASTBreak node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     @Override
     protected Object visit(ASTDefineVars node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     @Override
     protected Object visit(ASTNullpNode node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     @Override
     protected Object visit(ASTShiftLeftNode node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     @Override
     protected Object visit(ASTShiftRightNode node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     @Override
     protected Object visit(ASTShiftRightUnsignedNode node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     @Override
     protected Object visit(ASTSWNode node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     @Override
     protected Object visit(ASTNSWNode node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     @Override
     protected Object visit(ASTEWNode node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     @Override
     protected Object visit(ASTNEWNode node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     @Override
     protected Object visit(ASTAddNode node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     @Override
     protected Object visit(ASTSubNode node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     @Override
     protected Object visit(ASTUnaryPlusNode node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     @Override
     protected Object visit(ASTRegexLiteral node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     @Override
     protected Object visit(ASTSetLiteral node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     @Override
     protected Object visit(ASTExtendedLiteral node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     @Override
     protected Object visit(ASTRangeNode node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     @Override
     protected Object visit(ASTIdentifierAccess node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     @Override
     protected Object visit(ASTArguments node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     @Override
     protected Object visit(ASTSetAddNode node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     @Override
     protected Object visit(ASTSetSubNode node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     @Override
     protected Object visit(ASTSetMultNode node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     @Override
     protected Object visit(ASTSetDivNode node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     @Override
     protected Object visit(ASTSetModNode node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     @Override
     protected Object visit(ASTSetAndNode node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     @Override
     protected Object visit(ASTSetOrNode node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     @Override
     protected Object visit(ASTSetXorNode node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     @Override
     protected Object visit(ASTSetShiftLeftNode node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     @Override
     protected Object visit(ASTSetShiftRightNode node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     @Override
     protected Object visit(ASTSetShiftRightUnsignedNode node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     @Override
     protected Object visit(ASTGetDecrementNode node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     @Override
     protected Object visit(ASTGetIncrementNode node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     @Override
     protected Object visit(ASTDecrementGetNode node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     @Override
     protected Object visit(ASTIncrementGetNode node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     @Override
     protected Object visit(ASTJxltLiteral node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     @Override
     protected Object visit(ASTAnnotation node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     @Override
     protected Object visit(ASTAnnotatedStatement node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 
     @Override
     protected Object visit(ASTQualifiedIdentifier node, Object data) {
-        output.writeLine(data + node.toString());
-        childrenAccept(node, this, data + PREFIX);
-        return null;
+        return validateTermsAndWrite(node, data, data + node.toString());
     }
 }

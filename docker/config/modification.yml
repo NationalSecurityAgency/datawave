@@ -1,0 +1,70 @@
+# This file contains all of the configuration required to use the modification service
+logging:
+  level:
+    root: INFO
+    datawave.modification: DEBUG
+    datawave.microservice.modification: DEBUG
+    datawave.microservice.modification.query: DEBUG
+
+datawave:
+  swagger:
+    title: "Modification (Mutable Metadata) Service"
+    description: "REST API provided by the Modification (Mutable Metadata) Service"
+
+  modification:
+    query:
+      queryURI: https://query:8443/query/v1
+      queryPool: pool1
+      remoteQueryTimeout: 1
+      remoteQueryTimeoutUnit: MINUTES
+    data:
+      tableName: ${warehouse.tables.metadata.name}
+      poolName: "default"
+    handlers:
+      authorizedRoles:
+         - "AuthorizedUser"
+      eventTableName: ${warehouse.tables.shard.name}
+      metadataTableName: ${warehouse.tables.metadata.name}
+      indexTableName: ${warehouse.tables.index.name}
+      reverseIndexTableName: ${warehouse.tables.reverseIndex.name}
+      securityMarkingExemptFields:
+         - "ExampleExemptField"
+      requiresAudit: false
+      indexOnlyMap:
+         "SomeEventField": "SomeIndexField1,SomeIndexField2"
+      indexOnlySuffixes:
+         - "ExampleSuffix" 
+      contentFields:
+         - "ExampleContentField"
+
+  table:
+    cache:
+      zookeepers: '${accumulo.zookeepers}'
+      tableNames:
+        - '${warehouse.tables.metadata.name}'
+      poolName: 'default'
+      reloadInterval: 360000
+      evictionReaperIntervalInSeconds: 360
+      numLocks: 3
+      maxRetries: 3
+      reload-crontab: '* * * * * ?'
+  connection:
+    factory:
+      defaultPool: "default"
+      pools:
+        "default":
+          zookeepers: '${accumulo.zookeepers}'
+          instance: '${accumulo.instanceName}'
+          username: '${accumulo.username}'
+          password: '${accumulo.password}'
+          lowPriorityPoolSize: 40
+          normalPriorityPoolSize: 40
+          highPriorityPoolSize: 40
+          adminPriorityPoolSize: 40
+
+  security:
+    util:
+      subjectDnPattern: "(?:^|,)\\s*OU\\s*=\\s*My Department\\s*(?:,|$)"
+      npeOuList: "EXAMPLE_SERVER_OU1,EXAMPLE_SERVER_OU2"
+ 
+

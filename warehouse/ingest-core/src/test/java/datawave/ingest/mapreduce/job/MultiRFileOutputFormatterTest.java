@@ -132,6 +132,7 @@ public class MultiRFileOutputFormatterTest {
 
         testDriverLevel = MultiRFileOutputFormatterTest.logger.getLevel();
         MultiRFileOutputFormatterTest.logger.setLevel(Level.ALL);
+
         MultiRFileOutputFormatterTest.mockedConfiguration.clear();
     }
 
@@ -432,10 +433,8 @@ public class MultiRFileOutputFormatterTest {
         formatter = createFormatter();
         conf = new Configuration();
         conf.set("mapred.output.dir", "/tmp");
-        conf.set(MultiRFileOutputFormatter.CONFIGURED_TABLE_NAMES, TableName.SHARD + ',' + TableName.SHARD_INDEX);
-        Map<String,Path> shardedTableMapFiles = new HashMap<>();
-        shardedTableMapFiles.put("shard", new Path("/tmp/shard"));
-        ShardedTableMapFile.addToConf(conf, shardedTableMapFiles);
+        conf.set(SplitsFile.CONFIGURED_SHARDED_TABLE_NAMES, TableName.SHARD);
+
     }
 
     @Test

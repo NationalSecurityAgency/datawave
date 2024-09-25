@@ -1,6 +1,6 @@
 package datawave.ingest.mapreduce.job;
 
-import static datawave.ingest.mapreduce.job.ShardedTableMapFile.SPLIT_WORK_DIR;
+import static datawave.ingest.mapreduce.job.SplitsFile.SPLIT_WORK_DIR;
 
 import java.io.File;
 import java.io.IOException;
@@ -27,7 +27,6 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.hadoop.mapreduce.AccumuloInputFormat;
-import org.apache.accumulo.hadoopImpl.mapreduce.lib.InputConfigurator;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -139,7 +138,7 @@ public class ShardReindexJob implements Tool {
             throw new IllegalStateException("split.work.dir and job.output.table.names must be configured");
         }
 
-        ShardedTableMapFile.setupFile(configuration);
+        SplitsFile.setupFile(Job.getInstance(getConf()), configuration);
 
         // setup the output format
         IngestJob.configureMultiRFileOutputFormatter(configuration, null, null, 0, 0, false);

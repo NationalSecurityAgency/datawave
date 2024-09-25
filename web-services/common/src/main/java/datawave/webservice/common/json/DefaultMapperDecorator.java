@@ -11,7 +11,7 @@ import com.fasterxml.jackson.module.jaxb.JaxbAnnotationIntrospector;
 import com.fasterxml.jackson.module.jaxb.JaxbAnnotationModule;
 
 import datawave.microservice.querymetric.BaseQueryMetricListResponse;
-import datawave.microservice.querymetric.QueryMetricsDetailListResponse;
+import datawave.microservice.querymetric.QueryMetricListResponse;
 import datawave.webservice.response.objects.DefaultKey;
 import datawave.webservice.response.objects.KeyBase;
 
@@ -38,7 +38,7 @@ public class DefaultMapperDecorator implements ObjectMapperDecorator {
     protected void registerAbstractTypes(ObjectMapper mapper) {
         SimpleModule module = new SimpleModule(KeyBase.class.getName());
         module.addAbstractTypeMapping(KeyBase.class, DefaultKey.class);
-        module.addAbstractTypeMapping(BaseQueryMetricListResponse.class, QueryMetricsDetailListResponse.class);
+        module.addAbstractTypeMapping(BaseQueryMetricListResponse.class, QueryMetricListResponse.class);
         mapper.registerModule(module);
     }
 }

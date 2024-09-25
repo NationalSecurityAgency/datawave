@@ -9,9 +9,9 @@ import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.security.Authorizations;
 
+import datawave.microservice.query.Query;
 import datawave.query.iterator.QueryInformationIterator;
 import datawave.security.util.ScannerHelper;
-import datawave.webservice.query.Query;
 
 /**
  *

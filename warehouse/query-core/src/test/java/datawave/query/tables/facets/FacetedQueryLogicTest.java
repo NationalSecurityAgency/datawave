@@ -25,6 +25,7 @@ import org.junit.Test;
 
 import com.google.common.collect.Sets;
 
+import datawave.core.query.result.event.DefaultResponseObjectFactory;
 import datawave.helpers.PrintUtility;
 import datawave.marking.MarkingFunctions;
 import datawave.query.QueryTestTableHelper;
@@ -48,7 +49,6 @@ import datawave.query.util.MetadataHelperFactory;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
-import datawave.webservice.query.result.event.DefaultResponseObjectFactory;
 
 public class FacetedQueryLogicTest extends AbstractFunctionalQuery {
 

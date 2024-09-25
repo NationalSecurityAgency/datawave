@@ -1,29 +1,9 @@
 package datawave.query.jexl.functions;
 
-import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.BOUNDED_RANGE;
-
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.commons.jexl3.parser.ASTEQNode;
-import org.apache.commons.jexl3.parser.ASTERNode;
-import org.apache.commons.jexl3.parser.ASTFunctionNode;
-import org.apache.commons.jexl3.parser.ASTGENode;
-import org.apache.commons.jexl3.parser.ASTIdentifier;
-import org.apache.commons.jexl3.parser.ASTLENode;
-import org.apache.commons.jexl3.parser.JexlNode;
-import org.apache.commons.jexl3.parser.JexlNodes;
-import org.apache.commons.jexl3.parser.ParserTreeConstants;
-import org.apache.log4j.Logger;
-
 import com.google.common.collect.Sets;
-
 import datawave.query.Constants;
 import datawave.query.attributes.AttributeFactory;
+import datawave.query.attributes.UniqueFields;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.ArithmeticJexlEngines;
@@ -37,20 +17,41 @@ import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
+import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.commons.jexl3.parser.ASTEQNode;
+import org.apache.commons.jexl3.parser.ASTERNode;
+import org.apache.commons.jexl3.parser.ASTFunctionNode;
+import org.apache.commons.jexl3.parser.ASTGENode;
+import org.apache.commons.jexl3.parser.ASTIdentifier;
+import org.apache.commons.jexl3.parser.ASTLENode;
+import org.apache.commons.jexl3.parser.ASTStringLiteral;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNodes;
+import org.apache.commons.jexl3.parser.ParserTreeConstants;
+import org.apache.log4j.Logger;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.BOUNDED_RANGE;
 
 public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorFactory {
     private static final Logger log = Logger.getLogger(QueryFunctionsDescriptor.class);
 
     public static final String BETWEEN = "between";
     public static final String LENGTH = "length";
-    public static final String INCLUDE_TEXT = "includeText";
 
     /**
      * This is the argument descriptor which can be used to normalize and optimize function node queries
      */
     public static class QueryJexlArgumentDescriptor implements JexlArgumentDescriptor {
         private final ASTFunctionNode node;
-        private final String namespace, name;
+        private final String namespace;
+        private final String name;
         private final List<JexlNode> args;
 
         public QueryJexlArgumentDescriptor(ASTFunctionNode node, String namespace, String name, List<JexlNode> args) {
@@ -67,19 +68,19 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
                 switch (name) {
                     case BETWEEN:
                         JexlNode geNode = JexlNodeFactory.buildNode(new ASTGENode(ParserTreeConstants.JJTGENODE), args.get(0),
-                                    JexlNodes.getIdentifierOrLiteralAsString(args.get(1)));
+                                JexlNodes.getIdentifierOrLiteralAsString(args.get(1)));
                         JexlNode leNode = JexlNodeFactory.buildNode(new ASTLENode(ParserTreeConstants.JJTLENODE), args.get(0),
-                                    JexlNodes.getIdentifierOrLiteralAsString(args.get(2)));
+                                JexlNodes.getIdentifierOrLiteralAsString(args.get(2)));
                         // Return a bounded range.
                         return QueryPropertyMarker.create(JexlNodeFactory.createAndNode(Arrays.asList(geNode, leNode)), BOUNDED_RANGE);
                     case LENGTH:
                         // Return a regex node with the appropriate number of matching characters
                         return JexlNodeFactory.buildNode(new ASTERNode(ParserTreeConstants.JJTERNODE), args.get(0),
-                                    ".{" + JexlNodes.getIdentifierOrLiteral(args.get(1)) + ',' + JexlNodes.getIdentifierOrLiteral(args.get(2)) + '}');
+                                ".{" + JexlNodes.getIdentifierOrLiteral(args.get(1)) + ',' + JexlNodes.getIdentifierOrLiteral(args.get(2)) + '}');
                     case QueryFunctions.MATCH_REGEX:
                         // Return an index query.
                         return getIndexQuery(allFields);
-                    case INCLUDE_TEXT:
+                    case QueryFunctions.INCLUDE_TEXT:
                         // Return the appropriate index query.
                         return getTextIndexQuery(allFields);
                     default:
@@ -145,14 +146,14 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
         }
 
         @Override
-        public void addFilters(AttributeFactory attributeFactory, Map<String,EventDataQueryExpressionVisitor.ExpressionFilter> filterMap) {
+        public void addFilters(AttributeFactory attributeFactory, Map<String, EventDataQueryExpressionVisitor.ExpressionFilter> filterMap) {
             // noop, covered by getIndexQuery (see comments on interface)
         }
 
         @Override
         public Set<String> fieldsForNormalization(MetadataHelper helper, Set<String> datatypeFilter, int arg) {
             // Do not normalize fields for the includeText function.
-            if (!name.equalsIgnoreCase(INCLUDE_TEXT)) {
+            if (!name.equalsIgnoreCase(QueryFunctions.INCLUDE_TEXT)) {
                 // All other functions use the fields in the first argument for normalization.
                 if (arg > 0) {
                     return fields(helper, datatypeFilter);
@@ -165,13 +166,53 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
         public Set<String> fields(MetadataHelper helper, Set<String> datatypeFilter) {
             try {
                 Set<String> allFields = helper.getAllFields(datatypeFilter);
-                Set<String> filteredFields = Sets.newHashSet();
-
-                for (String field : JexlASTHelper.getIdentifierNames(args.get(0))) {
-                    filterField(allFields, field, filteredFields);
+                Set<String> fields = new HashSet<>();
+                switch (name) {
+                    case QueryFunctions.COUNT:
+                    case QueryFunctions.SUM:
+                    case QueryFunctions.MIN:
+                    case QueryFunctions.MAX:
+                    case QueryFunctions.AVERAGE:
+                    case QueryFunctions.GROUPBY_FUNCTION:
+                    case QueryFunctions.NO_EXPANSION:
+                    case QueryFunctions.LENIENT_FIELDS_FUNCTION:
+                    case QueryFunctions.STRICT_FIELDS_FUNCTION:
+                        // In practice each of these functions should be parsed from the query
+                        // almost immediately. This implementation is added for consistency
+                        for (JexlNode arg : args) {
+                            fields.addAll(JexlASTHelper.getIdentifierNames(arg));
+                        }
+                        break;
+                    case QueryFunctions.INCLUDE_TEXT:
+                        if (args.size() == 2) {
+                            fields.addAll(JexlASTHelper.getIdentifierNames(args.get(0)));
+                        } else {
+                            for (int i = 1; i < args.size(); i += 2) {
+                                fields.addAll(JexlASTHelper.getIdentifierNames(args.get(i)));
+                            }
+                        }
+                        break;
+                    case QueryFunctions.UNIQUE_FUNCTION:
+                        for (JexlNode arg : args) {
+                            if (arg instanceof ASTStringLiteral) {
+                                // FIELD[GRANULARITY] is represented by an ASTStringLiteral
+                                String literal = ((ASTStringLiteral) arg).getLiteral();
+                                fields.addAll(UniqueFields.from(literal).getFields());
+                            } else {
+                                // otherwise it's just an ASTIdentifier
+                                for (String identifier : JexlASTHelper.getIdentifierNames(arg)) {
+                                    fields.addAll(UniqueFields.from(identifier).getFields());
+                                }
+                            }
+                        }
+                        break;
+                    case QueryFunctions.MATCH_REGEX:
+                    case BETWEEN:
+                    case LENGTH:
+                    default:
+                        fields.addAll(JexlASTHelper.getIdentifierNames(args.get(0)));
                 }
-
-                return filteredFields;
+                return filterSet(allFields, fields);
             } catch (TableNotFoundException e) {
                 QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
                 log.error(qe);
@@ -246,10 +287,10 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
 
         if (!QueryFunctions.QUERY_FUNCTION_NAMESPACE.equals(visitor.namespace()))
             throw new IllegalArgumentException(
-                            "Calling " + this.getClass().getSimpleName() + ".getJexlNodeDescriptor with an unexpected namespace of " + visitor.namespace());
+                    "Calling " + this.getClass().getSimpleName() + ".getJexlNodeDescriptor with an unexpected namespace of " + visitor.namespace());
         if (!functionClass.equals(QueryFunctions.class))
             throw new IllegalArgumentException(
-                            "Calling " + this.getClass().getSimpleName() + ".getJexlNodeDescriptor with node for a function in " + functionClass);
+                    "Calling " + this.getClass().getSimpleName() + ".getJexlNodeDescriptor with node for a function in " + functionClass);
 
         verify(visitor.name(), visitor.args().size());
 

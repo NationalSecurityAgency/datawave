@@ -4,9 +4,7 @@ import static org.apache.commons.jexl3.parser.ParserTreeConstants.JJTANDNODE;
 import static org.apache.commons.jexl3.parser.ParserTreeConstants.JJTORNODE;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -22,12 +20,10 @@ import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.ASTStringLiteral;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
-import org.apache.commons.lang3.StringUtils;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableSet;
 
-import datawave.query.Constants;
 import datawave.query.QueryParameters;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.attributes.UniqueGranularity;

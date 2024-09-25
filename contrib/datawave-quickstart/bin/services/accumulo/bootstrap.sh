@@ -16,9 +16,9 @@ DW_ACCUMULO_SERVICE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # You may override DW_ZOOKEEPER_DIST_URI in your env ahead of time, and set as file:///path/to/file.tar.gz for local tarball, if needed
 # DW_ZOOKEEPER_DIST_URI should, if possible, be using https. There are potential security risks by using http.
-DW_ZOOKEEPER_DIST_URI="${DW_ZOOKEEPER_DIST_URI:-https://archive.apache.org/dist/zookeeper/zookeeper-3.7.1/apache-zookeeper-3.7.1-bin.tar.gz}"
+DW_ZOOKEEPER_DIST_URI="${DW_ZOOKEEPER_DIST_URI:-https://dlcdn.apache.org/zookeeper/zookeeper-3.7.2/apache-zookeeper-3.7.2-bin.tar.gz}"
 # The sha512 checksum for the tarball. Value should be the hash value only and does not include the file name. Cannot be left blank.
-DW_ZOOKEEPER_DIST_SHA512_CHECKSUM="${DW_ZOOKEEPER_DIST_SHA512_CHECKSUM:-9103628a50745fa1a289bca666fda4a9c08ec17c55cf13e66887e7ba76e93dbae60a1f1ffd6c10798be3a16069344ecbc00cebb29bf03d9cd7096ccd098ed011}"
+DW_ZOOKEEPER_DIST_SHA512_CHECKSUM="${DW_ZOOKEEPER_DIST_SHA512_CHECKSUM:-6afbfc1afc8b9370281bd9862f37dbb1cb95ec54bb2ed4371831aa5c0f08cfee775050bd57ce5fc0836e61af27eed9f0076f54b98997dd0e15159196056e52ea}"
 # shellcheck disable=SC2154
 # shellcheck disable=SC2034
 DW_ZOOKEEPER_DIST="$( downloadTarball "${DW_ZOOKEEPER_DIST_URI}" "${DW_ACCUMULO_SERVICE_DIR}" && echo "${tarball}" )"
@@ -42,6 +42,7 @@ syncLimit=5
 clientPort=2181
 dataDir=${DW_CLOUD_DATA}/zookeeper
 maxClientCnxns=100
+4lw.commands.whitelist=ruok,wchs
 admin.serverPort=8089
 admin.enableServer=false"
 
@@ -49,9 +50,9 @@ admin.enableServer=false"
 
 # You may override DW_ACCUMULO_DIST_URI in your env ahead of time, and set as file:///path/to/file.tar.gz for local tarball, if needed
 # DW_ACCUMULO_DIST_URI should, if possible, be using https. There are potential security risks by using http.
-DW_ACCUMULO_DIST_URI="${DW_ACCUMULO_DIST_URI:-https://archive.apache.org/dist/accumulo/2.1.1/accumulo-2.1.1-bin.tar.gz}"
+DW_ACCUMULO_DIST_URI="${DW_ACCUMULO_DIST_URI:-https://dlcdn.apache.org/accumulo/2.1.3/accumulo-2.1.3-bin.tar.gz}"
 # The sha512 checksum for the tarball. Value should be the hash value only and does not include the file name. Cannot be left blank.
-DW_ACCUMULO_DIST_SHA512_CHECKSUM="${DW_ACCUMULO_DIST_SHA512_CHECKSUM:-adb23e56362c2e3e813d07791389b8ca2d5976df8b00a29b607e6ae05ea465eff80ada6d1ec9a9c596df8b4066c51078cd5a4006dc78568ac38f638a1d3895be}"
+DW_ACCUMULO_DIST_SHA512_CHECKSUM="${DW_ACCUMULO_DIST_SHA512_CHECKSUM:-1a27a144dc31f55ccc8e081b6c1bc6cc0362a8391838c53c166cb45291ff8f35867fd8e4729aa7b2c540f8b721f8c6953281bf589fc7fe320e4dc4d20b87abc4}"
 # shellcheck disable=SC2034
 DW_ACCUMULO_DIST="$( downloadTarball "${DW_ACCUMULO_DIST_URI}" "${DW_ACCUMULO_SERVICE_DIR}" && echo "${tarball}" )"
 DW_ACCUMULO_BASEDIR="accumulo-install"

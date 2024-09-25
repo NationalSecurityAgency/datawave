@@ -12,22 +12,22 @@ import org.apache.log4j.Logger;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 
-import datawave.edge.model.EdgeModelAware;
+import datawave.core.query.cachedresults.CacheableLogic;
+import datawave.edge.model.EdgeModelFields;
 import datawave.edge.util.EdgeKey;
 import datawave.edge.util.EdgeValue;
 import datawave.edge.util.EdgeValueHelper;
 import datawave.marking.MarkingFunctions;
+import datawave.microservice.query.Query;
 import datawave.util.time.DateHelper;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.cachedresults.CacheableLogic;
 import datawave.webservice.query.result.edge.EdgeBase;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 
-public class EdgeQueryTransformer extends EdgeQueryTransformerSupport<Entry<Key,Value>,EdgeBase> implements CacheableLogic, EdgeModelAware {
+public class EdgeQueryTransformer extends EdgeQueryTransformerSupport<Entry<Key,Value>,EdgeBase> implements CacheableLogic {
     private Logger log = Logger.getLogger(EdgeQueryTransformer.class);
 
-    public EdgeQueryTransformer(Query settings, MarkingFunctions markingFunctions, ResponseObjectFactory responseObjectFactory) {
-        super(settings, markingFunctions, responseObjectFactory);
+    public EdgeQueryTransformer(Query settings, MarkingFunctions markingFunctions, ResponseObjectFactory responseObjectFactory, EdgeModelFields fields) {
+        super(settings, markingFunctions, responseObjectFactory, fields);
     }
 
     @Override

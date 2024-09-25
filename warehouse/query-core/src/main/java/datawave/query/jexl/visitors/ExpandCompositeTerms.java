@@ -39,6 +39,7 @@ import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 
+import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.data.type.DiscreteIndexType;
 import datawave.data.type.NoOpType;
 import datawave.ingest.data.config.ingest.CompositeIngest;
@@ -52,7 +53,6 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.LiteralRange;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 

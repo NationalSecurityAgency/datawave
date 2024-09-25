@@ -1,7 +1,6 @@
 package datawave.query.jexl.visitors;
 
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DELAYED;
-import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EVALUATION_ONLY;
 
 import java.util.Set;
 
@@ -18,7 +17,6 @@ import com.google.common.collect.Multimap;
 
 import datawave.query.iterator.NestedIterator;
 import datawave.query.iterator.logic.IndexIteratorBridge;
-import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 
 /**
@@ -28,26 +26,23 @@ import datawave.query.jexl.nodes.QueryPropertyMarker;
 public class DelayedNonEventSubTreeVisitor extends BaseVisitor {
     private IteratorBuildingVisitor iteratorBuildingVisitor;
     private Set<String> nonEventFields;
-    private Set<String> indexOnlyFields;
-
     private Multimap<String,JexlNode> delayedNonEventFieldMapNodes;
 
     public static Multimap<String,JexlNode> getDelayedNonEventFieldMap(IteratorBuildingVisitor iteratorBuildingVisitor, ASTJexlScript script,
-                    Set<String> nonEventFields, Set<String> indexOnlyFields) {
+                    Set<String> nonEventFields) {
         // ensure we are flattened
         ASTJexlScript copy = TreeFlatteningRebuildingVisitor.flatten(script);
 
         // run the visitor on the copy
-        DelayedNonEventSubTreeVisitor visitor = new DelayedNonEventSubTreeVisitor(iteratorBuildingVisitor, nonEventFields, indexOnlyFields);
+        DelayedNonEventSubTreeVisitor visitor = new DelayedNonEventSubTreeVisitor(iteratorBuildingVisitor, nonEventFields);
         copy.jjtAccept(visitor, null);
 
         return visitor.delayedNonEventFieldMapNodes;
     }
 
-    private DelayedNonEventSubTreeVisitor(IteratorBuildingVisitor iteratorBuildingVisitor, Set<String> nonEventFields, Set<String> indexOnlyFields) {
+    private DelayedNonEventSubTreeVisitor(IteratorBuildingVisitor iteratorBuildingVisitor, Set<String> nonEventFields) {
         this.iteratorBuildingVisitor = iteratorBuildingVisitor;
         this.nonEventFields = nonEventFields;
-        this.indexOnlyFields = indexOnlyFields;
         delayedNonEventFieldMapNodes = HashMultimap.create();
     }
 
@@ -74,10 +69,6 @@ public class DelayedNonEventSubTreeVisitor extends BaseVisitor {
 
             // continue processing the tree in case the IteratorBuildingVisitor decided to discard leafs. The IteratorBuildingVisitor will only identify a root
             // if it has includes and for our purposes we need to keep processing.
-            return candidate.childrenAccept(this, true);
-        } else if (instance.isType(EVALUATION_ONLY) && data != null) {
-            JexlNode candidate = instance.getSource();
-            extractEvalOnlyFields(candidate);
             return candidate.childrenAccept(this, true);
         }
 
@@ -123,29 +114,6 @@ public class DelayedNonEventSubTreeVisitor extends BaseVisitor {
                 if (leaf instanceof IndexIteratorBridge) {
                     String fieldName = ((IndexIteratorBridge) leaf).getField();
                     if (nonEventFields.contains(fieldName)) {
-                        JexlNode leafNode = ((IndexIteratorBridge) leaf).getSourceNode();
-                        JexlNode targetNode = leafNode;
-
-                        delayedNonEventFieldMapNodes.put(fieldName, targetNode);
-                    }
-                }
-            }
-        }
-    }
-
-    private void extractEvalOnlyFields(JexlNode node) {
-        // reset the root before processing a a node
-        iteratorBuildingVisitor.resetRoot();
-
-        // use the iterator building visitor to build a field to node map for each delayed node
-        node.jjtAccept(iteratorBuildingVisitor, null);
-        NestedIterator<Key> root = iteratorBuildingVisitor.root();
-        if (root != null) {
-            for (NestedIterator<Key> leaf : root.leaves()) {
-                // only IndexIteratorBridge nodes matter, everything else can be ignored
-                if (leaf instanceof IndexIteratorBridge) {
-                    String fieldName = ((IndexIteratorBridge) leaf).getField();
-                    if (nonEventFields.contains(fieldName) && !indexOnlyFields.contains(fieldName)) {
                         JexlNode leafNode = ((IndexIteratorBridge) leaf).getSourceNode();
                         JexlNode targetNode = leafNode;
 

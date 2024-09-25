@@ -28,7 +28,7 @@ import javax.sql.rowset.RowSetProvider;
 import org.apache.log4j.Logger;
 
 import datawave.configuration.spring.SpringBean;
-import datawave.webservice.results.cached.CachedResultsParameters;
+import datawave.core.query.cachedresults.CachedResultsQueryParameters;
 
 /**
  * Removes tables and views from the MySQL database that have been there for 24 hours so that we don't have to purge data from them.
@@ -88,7 +88,7 @@ public class CachedResultsCleanupBean {
                             ResultSet rs = s.executeQuery(GET_TABLES_TO_REMOVE.replace("?", schema).replace("XYZ",
                                             Integer.toString(cachedResultsCleanupConfiguration.getDaysToLive())))) {
                 while (rs.next()) {
-                    String objectName = CachedResultsParameters.validate(rs.getString(1));
+                    String objectName = CachedResultsQueryParameters.validate(rs.getString(1));
                     // Drop the table
                     String dropTable = String.format("DROP TABLE %s", objectName);
                     try (Statement statement = con.createStatement()) {
@@ -96,7 +96,7 @@ public class CachedResultsCleanupBean {
                     }
                     removeCrqRow(objectName);
 
-                    String viewName = CachedResultsParameters.validate(objectName.replaceFirst("t", "v"));
+                    String viewName = CachedResultsQueryParameters.validate(objectName.replaceFirst("t", "v"));
                     // Drop the associated view
                     String dropView = String.format("DROP VIEW %s", viewName);
                     try (Statement statement = con.createStatement()) {

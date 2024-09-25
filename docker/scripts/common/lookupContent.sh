@@ -3,6 +3,7 @@
 source ${SCRIPT_DIR}/common/common.sh
 
 PAUSE='false'
+POOL="${POOL:-pool1}"
 MAX_PAGES=100
 QUERY_TYPE='lookupContent'
 
@@ -41,6 +42,7 @@ runLookupContent() {
     echo "$(date): Running LookupUUID query" > querySummary.txt
     curl -s -D headers_0.txt -X GET -k -E ${TMP_PEM} \
         -H "Accept: application/xml" \
+        -H "Pool: $POOL" \
         --data-urlencode "begin=${BEGIN}" \
         --data-urlencode "end=${END}" \
         --data-urlencode "columnVisibility=${COLUMN_VISIBILITY}" \

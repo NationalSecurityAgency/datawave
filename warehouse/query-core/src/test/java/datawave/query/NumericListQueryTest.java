@@ -36,11 +36,12 @@ import org.junit.runner.RunWith;
 import com.google.common.collect.Sets;
 
 import datawave.configuration.spring.SpringBean;
+import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
+import datawave.microservice.query.QueryImpl;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
-import datawave.query.attributes.Content;
 import datawave.query.attributes.Document;
 import datawave.query.function.JexlEvaluation;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
@@ -51,8 +52,6 @@ import datawave.query.util.CommonalityTokenTestDataIngest;
 import datawave.test.JexlNodeAssert;
 import datawave.util.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
-import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
 
 /**
  * Tests the limit.fields feature to ensure that hit terms are always included and that associated fields at the same grouping context are included along with
@@ -131,7 +130,7 @@ public abstract class NumericListQueryTest {
                         .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "org.jboss.logging",
                                         "datawave.webservice.query.result.event")
                         .deleteClass(DefaultEdgeEventQueryLogic.class).deleteClass(RemoteEdgeDictionary.class)
-                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class).deleteClass(datawave.query.metrics.ShardTableQueryMetricHandler.class)
+                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
                         .addAsManifestResource(new StringAsset(
                                         "<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>" + "</alternatives>"),
                                         "beans.xml");
@@ -364,8 +363,8 @@ public abstract class NumericListQueryTest {
         extraParameters.put("hit.list", "true");
         extraParameters.put("limit.fields", "SIZE=-1,BIRD=-1,CAT=-1,CANINE=-1,FISH=-1");
 
-        String queryString = "SIZE =='90,26.5' AND grouping:matchesInGroup(SIZE, '90', SIZE, '26.5')";
-        String expectedQueryPlan = "SIZE == '+bE9' && SIZE == '+bE2.65' && grouping:matchesInGroup(SIZE, '+bE9', SIZE, '+bE2.65')";
+        String queryString = "SIZE =='90,26.5' AND grouping:matchesInGroup(SIZE, '90', SIZE, '26\\.5')";
+        String expectedQueryPlan = "SIZE == '+bE9' && SIZE == '+bE2.65' && grouping:matchesInGroup(SIZE, '\\+bE9', SIZE, '\\+bE2\\.65')";
 
         Set<String> goodResults = Sets.newHashSet("REPTILE.PET.1:snake", "SIZE.CANINE.WILD.1:90,26.5", "DOG.WILD.1:coyote");
 
@@ -430,7 +429,7 @@ public abstract class NumericListQueryTest {
         extraParameters.put("limit.fields", "SIZE=-1,BIRD=-1,CAT=-1,CANINE=-1,FISH=-1");
 
         String queryString = "SIZE =='90' AND grouping:matchesInGroup(SIZE, '90', SIZE, '20')";
-        String expectedQueryPlan = "SIZE == '+bE9' && grouping:matchesInGroup(SIZE, '+bE9', SIZE, '+bE2')";
+        String expectedQueryPlan = "SIZE == '+bE9' && grouping:matchesInGroup(SIZE, '\\+bE9', SIZE, '\\+bE2')";
 
         // should be empty
         Set<String> goodResults = Sets.newHashSet();

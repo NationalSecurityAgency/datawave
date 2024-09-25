@@ -48,7 +48,7 @@
 						<property name="requiredRuntimeParameters">
 							<map key-type="java.lang.String" value-type="java.lang.Class">
 								<entry key="queryId" value="java.lang.String" />
-								<entry key="format" value="datawave.webservice.mr.bulkresults.map.SerializationFormat" />
+								<entry key="format" value="datawave.microservice.mapreduce.bulkresults.map.SerializationFormat" />
 							</map>
 						</property>
 						<property name="optionalRuntimeParameters">

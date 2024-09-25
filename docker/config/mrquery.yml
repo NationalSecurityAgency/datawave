@@ -1,0 +1,31 @@
+logging:
+  level:
+    root: INFO
+    org.springframework.cloud.bootstrap.config: DEBUG
+    datawave.microservice.query: DEBUG
+
+datawave:
+  table:
+    cache:
+      zookeepers: '${accumulo.zookeepers}'
+      tableNames:
+        - '${warehouse.tables.metadata.name}'
+      poolName: 'default'
+      reloadInterval: 360000
+      evictionReaperIntervalInSeconds: 360
+      numLocks: 3
+      maxRetries: 3
+      reload-crontab: '* * * * * ?'
+  connection:
+    factory:
+      defaultPool: "default"
+      pools:
+        "default":
+          zookeepers: '${accumulo.zookeepers}'
+          instance: '${accumulo.instanceName}'
+          username: '${accumulo.username}'
+          password: '${accumulo.password}'
+          lowPriorityPoolSize: 40
+          normalPriorityPoolSize: 40
+          highPriorityPoolSize: 40
+          adminPriorityPoolSize: 40
