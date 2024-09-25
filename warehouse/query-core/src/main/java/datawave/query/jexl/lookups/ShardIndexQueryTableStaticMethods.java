@@ -469,6 +469,11 @@ public class ShardIndexQueryTableStaticMethods {
             options.addScanIterator(setting);
         }
 
+        if (config.getTableHintsOverride().containsKey(tableName)) {
+            Map<String,String> hintOverride = config.getTableHintsOverride().get(tableName);
+            options.setExecutionHints(hintOverride);
+        }
+
         bs.setOptions(options);
 
         return bs;
@@ -498,6 +503,11 @@ public class ShardIndexQueryTableStaticMethods {
             options.addScanIterator(setting);
         }
 
+        if (config.getTableHintsOverride().containsKey(tableName)) {
+            Map<String,String> hintOverride = config.getTableHintsOverride().get(tableName);
+            options.setExecutionHints(hintOverride);
+        }
+
         bs.setOptions(options);
 
         return bs;
@@ -511,6 +521,11 @@ public class ShardIndexQueryTableStaticMethods {
         }
         IteratorSetting cfg = configureGlobalIndexDateRangeFilter(config, dateRange);
         bs.addScanIterator(cfg);
+
+        if (config.getTableHintsOverride().containsKey(config.getIndexTableName())) {
+            Map<String,String> hintOverride = config.getTableHintsOverride().get(config.getIndexTableName());
+            bs.setExecutionHints(hintOverride);
+        }
     }
 
     public static final IteratorSetting configureGlobalIndexDateRangeFilter(ShardQueryConfiguration config, LongRange dateRange) {
@@ -579,6 +594,11 @@ public class ShardIndexQueryTableStaticMethods {
         IteratorSetting cfg = configureGlobalIndexTermMatchingIterator(config, literals, patterns, reverseIndex, limitToUniqueTerms);
 
         bs.addScanIterator(cfg);
+
+        if (config.getTableHintsOverride().containsKey(config.getIndexTableName())) {
+            Map<String,String> hintOverride = config.getTableHintsOverride().get(config.getIndexTableName());
+            bs.setExecutionHints(hintOverride);
+        }
 
         setExpansionFields(config, bs, reverseIndex, expansionFields);
     }

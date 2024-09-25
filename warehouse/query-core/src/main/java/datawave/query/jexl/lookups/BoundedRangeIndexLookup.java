@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.SortedMap;
 import java.util.concurrent.Callable;
@@ -171,6 +172,11 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
                 if (null != fairnessIterator) {
                     cfg = new IteratorSetting(config.getBaseIteratorPriority() + 100, TimeoutExceptionIterator.class);
                     bs.addScanIterator(cfg);
+                }
+
+                if (config.getTableHintsOverride().containsKey(config.getIndexTableName())) {
+                    Map<String,String> hintOverride = config.getTableHintsOverride().get(config.getIndexTableName());
+                    bs.setExecutionHints(hintOverride);
                 }
 
                 timedScanFuture = execService.submit(createTimedCallable(bs.iterator()));
