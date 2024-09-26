@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>gov.nsa.datawave</groupId>
     <artifactId>datawave-parent</artifactId>
-    <version>7.6.0-SNAPSHOT</version>
+    <version>7.7.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>DataWave</name>
     <description>DataWave is a Java-based ingest and query framework that leverages Apache Accumulo to provide fast, secure access to your data.</description>
@@ -65,13 +65,13 @@
         <version.datawave.authorization-api>4.0.0</version.datawave.authorization-api>
         <version.datawave.base-rest-responses>4.0.0</version.datawave.base-rest-responses>
         <version.datawave.common-utils>3.0.0</version.datawave.common-utils>
-        <version.datawave.dictionary-api>4.0.0</version.datawave.dictionary-api>
+        <version.datawave.dictionary-api>4.0.1</version.datawave.dictionary-api>
         <version.datawave.mapreduce-query-api>1.0.0</version.datawave.mapreduce-query-api>
-        <version.datawave.metadata-utils>4.0.5</version.datawave.metadata-utils>
+        <version.datawave.metadata-utils>4.0.6</version.datawave.metadata-utils>
         <version.datawave.metrics-reporter>3.0.0</version.datawave.metrics-reporter>
         <version.datawave.query-api>1.0.0</version.datawave.query-api>
-        <version.datawave.query-metric-api>4.0.0</version.datawave.query-metric-api>
-        <version.datawave.type-utils>3.0.1</version.datawave.type-utils>
+        <version.datawave.query-metric-api>4.0.7</version.datawave.query-metric-api>
+        <version.datawave.type-utils>3.0.3</version.datawave.type-utils>
         <version.deltaspike>1.9.0</version.deltaspike>
         <version.easymock>5.2.0</version.easymock>
         <version.eclipse.emf>2.15.0</version.eclipse.emf>
