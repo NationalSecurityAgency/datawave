@@ -3,6 +3,7 @@ echo
 
 # Ensure that permissions are set correctly for the config files
 chmod -R 755 config pki rabbitmq-config
+chmod -R 755 config pki qr-rabbitmq-config
 
 DW_HOSTNAME=$(hostname)
 DW_HOSTNAME=${DW_HOSTNAME%%.*}
