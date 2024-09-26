@@ -1585,6 +1585,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         getConfig().setTfNextSeek(tfNextSeek);
     }
 
+    public boolean isSeekingEventAggregation() {
+        return getConfig().isSeekingEventAggregation();
+    }
+
+    public void setSeekingEventAggregation(boolean seekingEventAggregation) {
+        getConfig().setSeekingEventAggregation(seekingEventAggregation);
+    }
+
     public String getdisallowlistedFieldsString() {
         return getConfig().getDisallowlistedFieldsAsString();
     }

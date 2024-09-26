@@ -10,8 +10,8 @@ import javax.annotation.Nullable;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 
-import datawave.query.attributes.Document;
 import datawave.query.data.parsers.DatawaveKey;
+import datawave.query.jexl.JexlASTHelper;
 
 /**
  * An EventDataQueryFilter for TermFrequencies, for use in a TLDQuery
@@ -19,11 +19,11 @@ import datawave.query.data.parsers.DatawaveKey;
 public class TLDTermFrequencyEventDataQueryFilter implements EventDataQueryFilter {
 
     private final Set<String> indexOnlyFields;
-    private final EventDataQueryFilter attrFilter;
+    private final Set<String> fields;
 
-    public TLDTermFrequencyEventDataQueryFilter(Set<String> indexOnlyFields, EventDataQueryFilter attrFilter) {
+    public TLDTermFrequencyEventDataQueryFilter(Set<String> indexOnlyFields, Set<String> fields) {
         this.indexOnlyFields = indexOnlyFields;
-        this.attrFilter = attrFilter;
+        this.fields = fields;
     }
 
     @Override
@@ -32,13 +32,13 @@ public class TLDTermFrequencyEventDataQueryFilter implements EventDataQueryFilte
     }
 
     @Override
-    public boolean apply(@Nullable Map.Entry<Key,String> var1) {
+    public boolean apply(@Nullable Map.Entry<Key,String> entry) {
         // accept all
         return true;
     }
 
     @Override
-    public boolean peek(@Nullable Map.Entry<Key,String> var1) {
+    public boolean peek(@Nullable Map.Entry<Key,String> entry) {
         // accept all
         return true;
     }
@@ -53,7 +53,13 @@ public class TLDTermFrequencyEventDataQueryFilter implements EventDataQueryFilte
     @Override
     public boolean keep(Key k) {
         DatawaveKey key = new DatawaveKey(k);
-        return (!TLDEventDataFilter.isRootPointer(k) || indexOnlyFields.contains(key.getFieldName())) && attrFilter.peek(new SimpleEntry(k, null));
+        return (!TLDEventDataFilter.isRootPointer(k) || indexOnlyFields.contains(key.getFieldName())) && fieldMatches(k);
+    }
+
+    private boolean fieldMatches(Key key) {
+        DatawaveKey parser = new DatawaveKey(key);
+        String fieldName = JexlASTHelper.deconstructIdentifier(parser.getFieldName());
+        return fields.contains(fieldName);
     }
 
     @Override
