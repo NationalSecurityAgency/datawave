@@ -75,7 +75,6 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
     public static final String SEPARATE_COUNTS_BY_COLVIS = "separate.counts.by.colvis";
     public static final String SHOW_REFERENCE_COUNT = "show.reference.count";
     public static final String REVERSE_INDEX = "reverse.index";
-    private Set<String> indexedFields;
     private DiscoveryQueryConfiguration config;
     private MetadataHelper metadataHelper;
 
@@ -103,9 +102,6 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
         this.scannerFactory = new ScannerFactory(client);
 
         this.metadataHelper = initializeMetadataHelper(client, config.getMetadataTableName(), auths);
-
-        // Get all currently indexed fields
-        this.indexedFields = this.metadataHelper.getIndexedFields(Collections.emptySet());
 
         if (StringUtils.isEmpty(settings.getQuery())) {
             throw new IllegalArgumentException("Query cannot be null");
@@ -149,6 +145,8 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
             }
         }
 
+        // Set the currently indexed fields
+        getConfig().setIndexedFields(metadataHelper.getIndexedFields(Collections.emptySet()));
         // Set the connector
         getConfig().setClient(client);
         // Set the auths
@@ -271,8 +269,7 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
             for (String cf : qd.getColumnFamilies()) {
                 bs.fetchColumnFamily(new Text(cf));
             }
-
-            iterators.add(transformScanner(bs, qd, this.indexedFields));
+            iterators.add(transformScanner(bs, qd, config.getIndexedFields()));
         }
         this.iterator = concat(iterators.iterator());
     }
