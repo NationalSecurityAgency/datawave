@@ -5,9 +5,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
 import org.apache.commons.jexl3.parser.ASTFunctionNode;
 import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.log4j.Logger;
 
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.functions.FunctionJexlNodeVisitor;

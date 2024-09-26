@@ -6,7 +6,6 @@ import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EVALUATIO
 
 import java.util.Arrays;
 
-import org.apache.log4j.Logger;
 import org.apache.commons.jexl3.parser.ASTAndNode;
 import org.apache.commons.jexl3.parser.ASTERNode;
 import org.apache.commons.jexl3.parser.ASTFunctionNode;
@@ -18,6 +17,7 @@ import org.apache.commons.jexl3.parser.ASTNRNode;
 import org.apache.commons.jexl3.parser.ASTReference;
 import org.apache.commons.jexl3.parser.ASTTrueNode;
 import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.log4j.Logger;
 
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlNodeFactory;

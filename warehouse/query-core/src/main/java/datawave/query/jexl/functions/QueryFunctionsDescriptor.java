@@ -68,15 +68,15 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
                 switch (name) {
                     case BETWEEN:
                         JexlNode geNode = JexlNodeFactory.buildNode(new ASTGENode(ParserTreeConstants.JJTGENODE), args.get(0),
-                                JexlNodes.getIdentifierOrLiteralAsString(args.get(1)));
+                                        JexlNodes.getIdentifierOrLiteralAsString(args.get(1)));
                         JexlNode leNode = JexlNodeFactory.buildNode(new ASTLENode(ParserTreeConstants.JJTLENODE), args.get(0),
-                                JexlNodes.getIdentifierOrLiteralAsString(args.get(2)));
+                                        JexlNodes.getIdentifierOrLiteralAsString(args.get(2)));
                         // Return a bounded range.
                         return QueryPropertyMarker.create(JexlNodeFactory.createAndNode(Arrays.asList(geNode, leNode)), BOUNDED_RANGE);
                     case LENGTH:
                         // Return a regex node with the appropriate number of matching characters
                         return JexlNodeFactory.buildNode(new ASTERNode(ParserTreeConstants.JJTERNODE), args.get(0),
-                                ".{" + JexlNodes.getIdentifierOrLiteral(args.get(1)) + ',' + JexlNodes.getIdentifierOrLiteral(args.get(2)) + '}');
+                                        ".{" + JexlNodes.getIdentifierOrLiteral(args.get(1)) + ',' + JexlNodes.getIdentifierOrLiteral(args.get(2)) + '}');
                     case QueryFunctions.MATCH_REGEX:
                         // Return an index query.
                         return getIndexQuery(allFields);
@@ -146,7 +146,7 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
         }
 
         @Override
-        public void addFilters(AttributeFactory attributeFactory, Map<String, EventDataQueryExpressionVisitor.ExpressionFilter> filterMap) {
+        public void addFilters(AttributeFactory attributeFactory, Map<String,EventDataQueryExpressionVisitor.ExpressionFilter> filterMap) {
             // noop, covered by getIndexQuery (see comments on interface)
         }
 
@@ -164,9 +164,17 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
 
         @Override
         public Set<String> fields(MetadataHelper helper, Set<String> datatypeFilter) {
-            try {
-                Set<String> allFields = helper.getAllFields(datatypeFilter);
-                Set<String> fields = new HashSet<>();
+            Set<String> fields = new HashSet<>();
+            Set<String> allFields = null;
+            if (helper != null) {
+                try {
+                    allFields = helper.getAllFields(datatypeFilter);
+                } catch (TableNotFoundException e) {
+                    QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
+                    log.error(qe);
+                    throw new DatawaveFatalQueryException(qe);
+                }
+            }
                 switch (name) {
                     case QueryFunctions.COUNT:
                     case QueryFunctions.SUM:
@@ -212,11 +220,10 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
                     default:
                         fields.addAll(JexlASTHelper.getIdentifierNames(args.get(0)));
                 }
+            if (allFields != null) {
                 return filterSet(allFields, fields);
-            } catch (TableNotFoundException e) {
-                QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
-                log.error(qe);
-                throw new DatawaveFatalQueryException(qe);
+            } else {
+                return fields;
             }
         }
 
@@ -226,7 +233,7 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
                 Set<Set<String>> filteredSets = Sets.newHashSet(Sets.newHashSet());
                 Set<String> allFields = helper.getAllFields(datatypeFilter);
 
-                for (Set<String> aFieldSet : JexlArgumentDescriptor.Fields.product(args.get(0))) {
+                for (Set<String> aFieldSet : Fields.product(args.get(0))) {
                     filteredSets.add(filterSet(allFields, aFieldSet));
                 }
 
@@ -287,10 +294,10 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
 
         if (!QueryFunctions.QUERY_FUNCTION_NAMESPACE.equals(visitor.namespace()))
             throw new IllegalArgumentException(
-                    "Calling " + this.getClass().getSimpleName() + ".getJexlNodeDescriptor with an unexpected namespace of " + visitor.namespace());
+                            "Calling " + this.getClass().getSimpleName() + ".getJexlNodeDescriptor with an unexpected namespace of " + visitor.namespace());
         if (!functionClass.equals(QueryFunctions.class))
             throw new IllegalArgumentException(
-                    "Calling " + this.getClass().getSimpleName() + ".getJexlNodeDescriptor with node for a function in " + functionClass);
+                            "Calling " + this.getClass().getSimpleName() + ".getJexlNodeDescriptor with node for a function in " + functionClass);
 
         verify(visitor.name(), visitor.args().size());
 

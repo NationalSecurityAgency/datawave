@@ -1,22 +1,25 @@
 package datawave.query;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.TimeZone;
-import java.util.UUID;
-
-import javax.inject.Inject;
-
+import com.google.common.collect.Sets;
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
+import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.configuration.spring.SpringBean;
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.helpers.PrintUtility;
+import datawave.ingest.data.TypeRegistry;
+import datawave.microservice.query.QueryImpl;
+import datawave.query.attributes.Attribute;
+import datawave.query.attributes.Document;
+import datawave.query.attributes.TypeAttribute;
+import datawave.query.exceptions.InvalidQueryException;
+import datawave.query.function.deserializer.KryoDocumentDeserializer;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.visitors.TreeEqualityVisitor;
+import datawave.query.tables.ShardQueryLogic;
+import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
+import datawave.query.util.ShapesIngest;
+import datawave.util.TableName;
+import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -38,27 +41,21 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import com.google.common.collect.Sets;
+import javax.inject.Inject;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.TimeZone;
+import java.util.UUID;
 
-import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
-import datawave.configuration.spring.SpringBean;
-import datawave.core.query.configuration.GenericQueryConfiguration;
-import datawave.helpers.PrintUtility;
-import datawave.ingest.data.TypeRegistry;
-import datawave.microservice.query.QueryImpl;
-import datawave.query.attributes.Attribute;
-import datawave.query.attributes.Document;
-import datawave.query.attributes.TypeAttribute;
-import datawave.query.exceptions.InvalidQueryException;
-import datawave.query.function.deserializer.KryoDocumentDeserializer;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.visitors.TreeEqualityVisitor;
-import datawave.query.tables.ShardQueryLogic;
-import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
-import datawave.query.util.ShapesIngest;
-import datawave.util.TableName;
-import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * A set of tests that emphasize the influence of datatypes on query planning and execution
@@ -480,7 +477,7 @@ public abstract class ShapesTest {
         withQuery("SHAPE == 'hexagon'");
         withExpected(Sets.newHashSet(ShapesIngest.hexagonUid));
         planAndExecuteQuery();
-        assertDatatypeFilter(Collections.emptySet());
+        assertDatatypeFilter(null);
     }
 
     @Test
@@ -498,7 +495,7 @@ public abstract class ShapesTest {
         withQuery("SHAPE == 'hexagon'");
         withExpected(Sets.newHashSet(ShapesIngest.hexagonUid));
         planAndExecuteQuery();
-        assertDatatypeFilter(Collections.emptySet());
+        assertDatatypeFilter(null);
     }
 
     @Test
@@ -644,7 +641,7 @@ public abstract class ShapesTest {
         withQuery("SHAPE == 'hexagon' && ONLY_HEX == 'hexa'");
         withExpected(Sets.newHashSet(ShapesIngest.hexagonUid));
         planAndExecuteQuery();
-        assertDatatypeFilter(Collections.emptySet());
+        assertDatatypeFilter(null);
     }
 
     @Test
@@ -653,7 +650,7 @@ public abstract class ShapesTest {
         withExpected(otherUids);
         planAndExecuteQuery();
         assertPlannedQuery("SHAPE == 'pentagon' || SHAPE == 'hexagon' || SHAPE == 'octagon'");
-        assertDatatypeFilter(Collections.emptySet());
+        assertDatatypeFilter(null);
     }
 
     @Test
@@ -685,7 +682,7 @@ public abstract class ShapesTest {
         withExpected(otherUids);
         planAndExecuteQuery();
         assertPlannedQuery("SHAPE == 'pentagon' || SHAPE == 'hexagon' || SHAPE == 'octagon'");
-        assertDatatypeFilter(Collections.emptySet());
+        assertDatatypeFilter(null);
     }
 
     @Test

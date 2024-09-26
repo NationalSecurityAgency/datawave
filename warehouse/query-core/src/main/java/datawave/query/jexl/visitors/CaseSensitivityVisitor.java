@@ -32,8 +32,6 @@ public class CaseSensitivityVisitor extends ShortCircuitBaseVisitor {
     private ShardQueryConfiguration config;
     private MetadataHelper helper;
 
-    private static final Logger LOGGER = Logger.getLogger(CaseSensitivityVisitor.class);
-
     public CaseSensitivityVisitor(ShardQueryConfiguration config, MetadataHelper helper) {
         this.config = config;
         this.helper = helper;

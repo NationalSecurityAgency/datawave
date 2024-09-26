@@ -1,23 +1,5 @@
 package datawave.query.config;
 
-import java.lang.reflect.InvocationTargetException;
-import java.text.SimpleDateFormat;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.Predicate;
-
-import org.apache.accumulo.core.client.ScannerBase;
-import org.apache.accumulo.core.security.Authorizations;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -29,7 +11,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
-
 import datawave.data.type.DateType;
 import datawave.data.type.GeometryType;
 import datawave.data.type.LcNoDiacriticsType;
@@ -48,6 +29,23 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.model.QueryModel;
 import datawave.query.planner.scanhints.IvaratorScanHint;
 import datawave.util.TableName;
+import org.apache.accumulo.core.client.ScannerBase;
+import org.apache.accumulo.core.security.Authorizations;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.lang.reflect.InvocationTargetException;
+import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Predicate;
 
 public class ShardQueryConfigurationTest {
 
@@ -520,7 +518,7 @@ public class ShardQueryConfigurationTest {
         defaultValues.put("unevaluatedFields", Sets.newHashSet());
         updatedValues.put("unevaluatedFields", Sets.newHashSet("FIELD_U", "FIELD_V"));
 
-        defaultValues.put("datatypeFilter", Sets.newHashSet());
+        defaultValues.put("datatypeFilter", null);
         updatedValues.put("datatypeFilter", Sets.newHashSet("TYPE_A", "TYPE_B"));
         defaultValues.put("datatypeFilterAsString", "");
         updatedValues.put("datatypeFilterAsString", "TYPE_A,TYPE_B");
