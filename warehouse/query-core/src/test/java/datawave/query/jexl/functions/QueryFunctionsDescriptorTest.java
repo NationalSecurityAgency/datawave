@@ -1,18 +1,19 @@
 package datawave.query.jexl.functions;
 
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.visitors.QueryOptionsFromQueryVisitor;
+import static datawave.query.jexl.functions.QueryFunctionsDescriptor.QueryJexlArgumentDescriptor;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
+
+import java.util.Set;
+
 import org.apache.commons.jexl3.parser.ASTFunctionNode;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.junit.jupiter.api.Test;
 
-import java.util.Set;
-
-import static datawave.query.jexl.functions.QueryFunctionsDescriptor.QueryJexlArgumentDescriptor;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.visitors.QueryOptionsFromQueryVisitor;
 
 /**
  * Although most query functions are removed from the query by the {@link QueryOptionsFromQueryVisitor}, several functions will persist. These functions may
@@ -122,7 +123,7 @@ class QueryFunctionsDescriptorTest {
 
     @Test
     void testFieldSets() {
-//        assertFieldSets(singleFieldCount, Set.of(Set.of("FIELD")));
+        // assertFieldSets(singleFieldCount, Set.of(Set.of("FIELD")));
         assertFieldSets(multiFieldedCount, Set.of(Set.of("FIELD_A"), Set.of("FIELD_B")));
 
         assertFieldSets(betweenDecimal, Set.of(Set.of("FIELD")));
