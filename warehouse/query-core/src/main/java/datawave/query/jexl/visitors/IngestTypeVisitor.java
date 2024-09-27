@@ -1,14 +1,13 @@
 package datawave.query.jexl.visitors;
 
-import static datawave.query.jexl.functions.ContentFunctions.CONTENT_FUNCTION_NAMESPACE;
-
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.functions.ContentFunctionsDescriptor;
+import datawave.query.jexl.functions.FunctionJexlNodeVisitor;
+import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
+import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
+import datawave.query.jexl.nodes.ExceededOr;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
+import datawave.query.util.TypeMetadata;
 import org.apache.commons.jexl3.parser.ASTAndNode;
 import org.apache.commons.jexl3.parser.ASTEQNode;
 import org.apache.commons.jexl3.parser.ASTERNode;
@@ -27,14 +26,14 @@ import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.log4j.Logger;
 
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.functions.ContentFunctionsDescriptor;
-import datawave.query.jexl.functions.FunctionJexlNodeVisitor;
-import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
-import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
-import datawave.query.jexl.nodes.ExceededOr;
-import datawave.query.jexl.nodes.QueryPropertyMarker;
-import datawave.query.util.TypeMetadata;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import static datawave.query.jexl.functions.ContentFunctions.CONTENT_FUNCTION_NAMESPACE;
 
 /**
  * Visitor that returns the <b>effective set</b> of ingest types associated with an arbitrary JexlNode.
@@ -398,7 +397,7 @@ public class IngestTypeVisitor extends BaseVisitor {
                 log.warn("could not get descriptor for function: " + JexlStringBuildingVisitor.buildQuery(node));
                 return new HashSet<>();
             }
-            return descriptor.fields(null, Collections.emptySet());
+            return descriptor.fields(null, null);
         }
     }
 
