@@ -1,6 +1,7 @@
 package datawave.query.jexl.lookups;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.text.MessageFormat;
 import java.util.Collection;
 import java.util.List;
@@ -443,7 +444,7 @@ public class ShardIndexQueryTableStaticMethods {
      */
     public static ScannerSession configureTermMatchOnly(ShardQueryConfiguration config, ScannerFactory scannerFactory, String tableName,
                     Collection<Range> ranges, Collection<String> literals, Collection<String> patterns, boolean reverseIndex, boolean limitToUniqueTerms)
-                    throws Exception {
+                    throws InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException, IOException {
 
         // if we have no ranges, then nothing to scan
         if (ranges.isEmpty()) {
@@ -471,7 +472,7 @@ public class ShardIndexQueryTableStaticMethods {
 
     public static ScannerSession configureLimitedDiscovery(ShardQueryConfiguration config, ScannerFactory scannerFactory, String tableName,
                     Collection<Range> ranges, Collection<String> literals, Collection<String> patterns, boolean reverseIndex, boolean limitToUniqueTerms)
-                    throws Exception {
+                    throws InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException, IOException {
 
         // if we have no ranges, then nothing to scan
         if (ranges.isEmpty()) {
