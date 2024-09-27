@@ -1,21 +1,20 @@
 package datawave.query;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.TimeZone;
-import java.util.UUID;
-
-import javax.inject.Inject;
-
+import datawave.configuration.spring.SpringBean;
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.helpers.PrintUtility;
+import datawave.ingest.data.TypeRegistry;
+import datawave.microservice.query.QueryImpl;
+import datawave.query.attributes.Attribute;
+import datawave.query.attributes.Document;
+import datawave.query.attributes.PreNormalizedAttribute;
+import datawave.query.attributes.TypeAttribute;
+import datawave.query.function.deserializer.KryoDocumentDeserializer;
+import datawave.query.tables.ShardQueryLogic;
+import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
+import datawave.query.util.WiseGuysIngest;
+import datawave.util.TableName;
+import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -33,21 +32,20 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import datawave.configuration.spring.SpringBean;
-import datawave.core.query.configuration.GenericQueryConfiguration;
-import datawave.helpers.PrintUtility;
-import datawave.ingest.data.TypeRegistry;
-import datawave.microservice.query.QueryImpl;
-import datawave.query.attributes.Attribute;
-import datawave.query.attributes.Document;
-import datawave.query.attributes.PreNormalizedAttribute;
-import datawave.query.attributes.TypeAttribute;
-import datawave.query.function.deserializer.KryoDocumentDeserializer;
-import datawave.query.tables.ShardQueryLogic;
-import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
-import datawave.query.util.WiseGuysIngest;
-import datawave.util.TableName;
-import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
+import javax.inject.Inject;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.TimeZone;
+import java.util.UUID;
 
 /**
  * Loads some data in a mock accumulo table and then issues queries against the table using the shard query table.
@@ -349,7 +347,7 @@ public abstract class FunctionalSetTest {
         // @formatter:on
         for (int i = 0; i < queryStrings.length; i++) {
             // stat must be reset between each run when pruning ingest types
-            logic.getConfig().setDatatypeFilter(Collections.emptySet());
+            logic.getConfig().setDatatypeFilter(null);
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
         }
     }

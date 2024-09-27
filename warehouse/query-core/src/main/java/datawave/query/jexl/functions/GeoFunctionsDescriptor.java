@@ -88,13 +88,6 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
         public JexlNode getIndexQuery(ShardQueryConfiguration config, MetadataHelper helper, DateIndexHelper dateIndexHelper, Set<String> datatypeFilter) {
             // return the true node if unable to parse arguments
             JexlNode returnNode = TRUE_NODE;
-            Set<String> allFields = null;
-            try {
-                allFields = (helper != null) ? helper.getAllFields(datatypeFilter) : null;
-            } catch (TableNotFoundException e) {
-                QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
-                throw new DatawaveFatalQueryException(qe);
-            }
 
             if (name.equals(WITHIN_BOUNDING_BOX)) {
                 GeoNormalizer geoNormalizer = ((GeoNormalizer) Normalizer.GEO_NORMALIZER);

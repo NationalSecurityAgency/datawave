@@ -1,7 +1,19 @@
 package datawave.query.jexl.functions;
 
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
+import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.commons.jexl3.parser.ASTFunctionNode;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNodes;
+import org.apache.log4j.Logger;
+
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
+
 import datawave.query.attributes.AttributeFactory;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
@@ -12,16 +24,6 @@ import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
-import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.commons.jexl3.parser.ASTFunctionNode;
-import org.apache.commons.jexl3.parser.JexlNode;
-import org.apache.commons.jexl3.parser.JexlNodes;
-import org.apache.log4j.Logger;
-
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
 
 public class GroupingRequiredFilterFunctionsDescriptor implements JexlFunctionArgumentDescriptorFactory {
 
@@ -114,7 +116,7 @@ public class GroupingRequiredFilterFunctionsDescriptor implements JexlFunctionAr
         public Set<String> fields(MetadataHelper helper, Set<String> datatypeFilter) {
             Set<String> allFields = null;
             Set<String> fields = Sets.newHashSet();
-            
+
             if (helper != null) {
                 try {
                     allFields = helper.getAllFields(datatypeFilter);
@@ -124,24 +126,24 @@ public class GroupingRequiredFilterFunctionsDescriptor implements JexlFunctionAr
                     throw new DatawaveFatalQueryException(qe);
                 }
             }
-            
-                FunctionJexlNodeVisitor functionMetadata = new FunctionJexlNodeVisitor();
-                node.jjtAccept(functionMetadata, null);
-                if (functionMetadata.name().equals("atomValuesMatch")) {
-                    for (JexlNode node : functionMetadata.args()) {
-                        fields.addAll(JexlASTHelper.getIdentifierNames(node));
-                    }
-                } else {
-                    // don't include the last argument if the size is odd as that is a position arg
-                    for (int i = 0; i < functionMetadata.args().size() - 1; i += 2) {
-                        fields.addAll(JexlASTHelper.getIdentifierNames(functionMetadata.args().get(i)));
-                    }
+
+            FunctionJexlNodeVisitor functionMetadata = new FunctionJexlNodeVisitor();
+            node.jjtAccept(functionMetadata, null);
+            if (functionMetadata.name().equals("atomValuesMatch")) {
+                for (JexlNode node : functionMetadata.args()) {
+                    fields.addAll(JexlASTHelper.getIdentifierNames(node));
                 }
-                if (allFields != null) {
-                    return filterField(allFields, fields);
-                } else {
-                    return fields;
+            } else {
+                // don't include the last argument if the size is odd as that is a position arg
+                for (int i = 0; i < functionMetadata.args().size() - 1; i += 2) {
+                    fields.addAll(JexlASTHelper.getIdentifierNames(functionMetadata.args().get(i)));
                 }
+            }
+            if (allFields != null) {
+                return filterField(allFields, fields);
+            } else {
+                return fields;
+            }
         }
 
         @Override

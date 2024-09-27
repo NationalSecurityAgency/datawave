@@ -175,51 +175,51 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
                     throw new DatawaveFatalQueryException(qe);
                 }
             }
-                switch (name) {
-                    case QueryFunctions.COUNT:
-                    case QueryFunctions.SUM:
-                    case QueryFunctions.MIN:
-                    case QueryFunctions.MAX:
-                    case QueryFunctions.AVERAGE:
-                    case QueryFunctions.GROUPBY_FUNCTION:
-                    case QueryFunctions.NO_EXPANSION:
-                    case QueryFunctions.LENIENT_FIELDS_FUNCTION:
-                    case QueryFunctions.STRICT_FIELDS_FUNCTION:
-                        // In practice each of these functions should be parsed from the query
-                        // almost immediately. This implementation is added for consistency
-                        for (JexlNode arg : args) {
-                            fields.addAll(JexlASTHelper.getIdentifierNames(arg));
-                        }
-                        break;
-                    case QueryFunctions.INCLUDE_TEXT:
-                        if (args.size() == 2) {
-                            fields.addAll(JexlASTHelper.getIdentifierNames(args.get(0)));
-                        } else {
-                            for (int i = 1; i < args.size(); i += 2) {
-                                fields.addAll(JexlASTHelper.getIdentifierNames(args.get(i)));
-                            }
-                        }
-                        break;
-                    case QueryFunctions.UNIQUE_FUNCTION:
-                        for (JexlNode arg : args) {
-                            if (arg instanceof ASTStringLiteral) {
-                                // FIELD[GRANULARITY] is represented by an ASTStringLiteral
-                                String literal = ((ASTStringLiteral) arg).getLiteral();
-                                fields.addAll(UniqueFields.from(literal).getFields());
-                            } else {
-                                // otherwise it's just an ASTIdentifier
-                                for (String identifier : JexlASTHelper.getIdentifierNames(arg)) {
-                                    fields.addAll(UniqueFields.from(identifier).getFields());
-                                }
-                            }
-                        }
-                        break;
-                    case QueryFunctions.MATCH_REGEX:
-                    case BETWEEN:
-                    case LENGTH:
-                    default:
+            switch (name) {
+                case QueryFunctions.COUNT:
+                case QueryFunctions.SUM:
+                case QueryFunctions.MIN:
+                case QueryFunctions.MAX:
+                case QueryFunctions.AVERAGE:
+                case QueryFunctions.GROUPBY_FUNCTION:
+                case QueryFunctions.NO_EXPANSION:
+                case QueryFunctions.LENIENT_FIELDS_FUNCTION:
+                case QueryFunctions.STRICT_FIELDS_FUNCTION:
+                    // In practice each of these functions should be parsed from the query
+                    // almost immediately. This implementation is added for consistency
+                    for (JexlNode arg : args) {
+                        fields.addAll(JexlASTHelper.getIdentifierNames(arg));
+                    }
+                    break;
+                case QueryFunctions.INCLUDE_TEXT:
+                    if (args.size() == 2) {
                         fields.addAll(JexlASTHelper.getIdentifierNames(args.get(0)));
-                }
+                    } else {
+                        for (int i = 1; i < args.size(); i += 2) {
+                            fields.addAll(JexlASTHelper.getIdentifierNames(args.get(i)));
+                        }
+                    }
+                    break;
+                case QueryFunctions.UNIQUE_FUNCTION:
+                    for (JexlNode arg : args) {
+                        if (arg instanceof ASTStringLiteral) {
+                            // FIELD[GRANULARITY] is represented by an ASTStringLiteral
+                            String literal = ((ASTStringLiteral) arg).getLiteral();
+                            fields.addAll(UniqueFields.from(literal).getFields());
+                        } else {
+                            // otherwise it's just an ASTIdentifier
+                            for (String identifier : JexlASTHelper.getIdentifierNames(arg)) {
+                                fields.addAll(UniqueFields.from(identifier).getFields());
+                            }
+                        }
+                    }
+                    break;
+                case QueryFunctions.MATCH_REGEX:
+                case BETWEEN:
+                case LENGTH:
+                default:
+                    fields.addAll(JexlASTHelper.getIdentifierNames(args.get(0)));
+            }
             if (allFields != null) {
                 return filterSet(allFields, fields);
             } else {
@@ -229,20 +229,12 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
 
         @Override
         public Set<Set<String>> fieldSets(MetadataHelper helper, Set<String> datatypeFilter) {
-            try {
-                Set<Set<String>> filteredSets = Sets.newHashSet(Sets.newHashSet());
-                Set<String> allFields = helper.getAllFields(datatypeFilter);
-
-                for (Set<String> aFieldSet : Fields.product(args.get(0))) {
-                    filteredSets.add(filterSet(allFields, aFieldSet));
-                }
-
-                return filteredSets;
-            } catch (TableNotFoundException e) {
-                QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
-                log.error(qe);
-                throw new DatawaveFatalQueryException(qe);
+            Set<Set<String>> fieldSet = Sets.newHashSet();
+            Set<String> fields = fields(helper, datatypeFilter);
+            for (String field: fields) {
+                fieldSet.add(Set.of(field));
             }
+            return fieldSet;
         }
 
         /**
