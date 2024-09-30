@@ -71,7 +71,7 @@ public class SortedList<T> {
         var copy = new ArrayList<>(list);
         @SuppressWarnings("unchecked")
         var compartor = (Comparator<? super T2>) Comparator.naturalOrder();
-        list.sort(compartor);
+        copy.sort(compartor);
         return new SortedList<>(Collections.unmodifiableList(copy));
     }
 }
