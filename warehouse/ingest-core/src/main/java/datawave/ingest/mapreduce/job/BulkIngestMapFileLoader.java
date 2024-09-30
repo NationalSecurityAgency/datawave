@@ -88,7 +88,6 @@ import datawave.util.cli.PasswordConverter;
  */
 public final class BulkIngestMapFileLoader implements Runnable {
     private static final Logger log = Logger.getLogger(BulkIngestMapFileLoader.class);
-    private static final Gson gson = new GsonBuilder().registerTypeHierarchyAdapter(byte[].class, new ByteArrayToBase64TypeAdapter()).create();
     private static int SLEEP_TIME = 30000;
     private static int FAILURE_SLEEP_TIME = 10 * 60 * 1000; // 10 minutes
     private static int MAX_DIRECTORIES = 1;
@@ -1014,13 +1013,13 @@ public final class BulkIngestMapFileLoader implements Runnable {
                     in.readFully(0, buffer);
                     String s = new String(buffer, StandardCharsets.UTF_8);
                     // TODO: Use Gson streaming api instead to minimize impact on heap and cpu
-                    builder.addPlan(gson.fromJson(s, LoadPlan.class));
+                    builder.addPlan(LoadPlan.fromJson(s));
                 }
             }
             LoadPlan lp = builder.build();
             log.debug("Completed deserializing load plan for " + tableDir);
             if (log.isTraceEnabled()) {
-                log.trace("Consolidated LoadPlan for " + tableDir + ": " + gson.toJson(lp));
+                log.trace("Consolidated LoadPlan for " + tableDir + ": " + lp.toJson());
             }
             return lp;
         }
