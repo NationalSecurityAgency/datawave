@@ -247,8 +247,10 @@ public class ScannerFactory {
      * @param wrapper
      *            a wrapper class
      * @return a new scanner session
-     * @throws Exception
-     *             if there are issues
+     * @throws NoSuchMethodException
+     * @throws InvocationTargetException
+     * @throws InstantiationException
+     * @throws IllegalAccessException
      *
      */
     public <T extends ScannerSession> T newLimitedScanner(Class<T> wrapper, final String tableName, final Set<Authorizations> auths, final Query settings)

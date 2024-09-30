@@ -439,8 +439,12 @@ public class ShardIndexQueryTableStaticMethods {
      * @param limitToUniqueTerms
      *            check for limiting unique terms
      * @return the scanner session
-     * @throws Exception
-     *             if there are issues
+     * @throws InvocationTargetException
+     * @throws NoSuchMethodException
+     * @throws InstantiationException
+     * @throws IllegalAccessException
+     * @throws IOException
+     *             dates can't be formatted
      */
     public static ScannerSession configureTermMatchOnly(ShardQueryConfiguration config, ScannerFactory scannerFactory, String tableName,
                     Collection<Range> ranges, Collection<String> literals, Collection<String> patterns, boolean reverseIndex, boolean limitToUniqueTerms)
