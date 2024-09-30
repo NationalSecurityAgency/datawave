@@ -22,6 +22,10 @@
     </dependencyManagement>
     <dependencies>
         <dependency>
+            <groupId>ch.qos.reload4j</groupId>
+            <artifactId>reload4j</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.fasterxml.jackson.module</groupId>
             <artifactId>jackson-module-jaxb-annotations</artifactId>
         </dependency>

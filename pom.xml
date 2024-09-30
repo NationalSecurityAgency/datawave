@@ -38,7 +38,7 @@
         <maven.compiler.target>11</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <surefire.forkCount>1C</surefire.forkCount>
-        <version.accumulo>2.1.2</version.accumulo>
+        <version.accumulo>4.0.0-SNAPSHOT</version.accumulo>
         <version.arquillian>1.4.1.Final</version.arquillian>
         <version.arquillian-weld-ee-embedded>1.0.0.Final</version.arquillian-weld-ee-embedded>
         <version.assertj>3.20.2</version.assertj>
@@ -121,6 +121,7 @@
         <version.powermock>2.0.9</version.powermock>
         <version.protobuf>3.16.3</version.protobuf>
         <version.protostuff>1.6.2</version.protostuff>
+        <version.reload4j>1.2.22</version.reload4j>
         <version.slf4j>1.7.36</version.slf4j>
         <version.spotify-dns>3.1.5</version.spotify-dns>
         <version.spring>5.2.2.RELEASE</version.spring>
@@ -141,6 +142,11 @@
     </properties>
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>ch.qos.reload4j</groupId>
+                <artifactId>reload4j</artifactId>
+                <version>${version.reload4j}</version>
+            </dependency>
             <dependency>
                 <groupId>com.beust</groupId>
                 <artifactId>jcommander</artifactId>
@@ -1416,12 +1422,7 @@
                         <dependency>
                             <groupId>ch.qos.reload4j</groupId>
                             <artifactId>reload4j</artifactId>
-                            <version>1.2.22</version>
-                        </dependency>
-                        <dependency>
-                            <groupId>ch.qos.reload4j</groupId>
-                            <artifactId>reload4j</artifactId>
-                            <version>1.2.22</version>
+                            <version>${version.reload4j}</version>
                         </dependency>
                         <dependency>
                             <groupId>com.puppycrawl.tools</groupId>
@@ -1504,7 +1505,7 @@
                         <dependency>
                             <groupId>ch.qos.reload4j</groupId>
                             <artifactId>reload4j</artifactId>
-                            <version>1.2.22</version>
+                            <version>${version.reload4j}</version>
                         </dependency>
                         <dependency>
                             <groupId>org.apache.maven.doxia</groupId>
@@ -1641,7 +1642,7 @@
                         <dependency>
                             <groupId>ch.qos.reload4j</groupId>
                             <artifactId>reload4j</artifactId>
-                            <version>1.2.22</version>
+                            <version>${version.reload4j}</version>
                         </dependency>
                         <dependency>
                             <groupId>org.apache.maven.doxia</groupId>
@@ -1914,7 +1915,7 @@
                             <dependency>
                                 <groupId>ch.qos.reload4j</groupId>
                                 <artifactId>reload4j</artifactId>
-                                <version>1.2.22</version>
+                                <version>${version.reload4j}</version>
                             </dependency>
                             <dependency>
                                 <groupId>org.apache.maven.doxia</groupId>
