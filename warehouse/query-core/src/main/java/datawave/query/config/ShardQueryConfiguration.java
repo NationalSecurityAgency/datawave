@@ -97,8 +97,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private int maxIndexBatchSize = 1000;
     private boolean allTermsIndexOnly;
     private long maxIndexScanTimeMillis = Long.MAX_VALUE;
-    private long maxAnyFieldScanTimeMillis = Long.MAX_VALUE;
-
     // Allows this query to parse the root uids from TLD uids found in the global shard index. This effectively ignores hits in child documents.
     private boolean parseTldUids = false;
     private boolean collapseUids = false;
@@ -522,7 +520,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setMaxIndexBatchSize(other.getMaxIndexBatchSize());
         this.setAllTermsIndexOnly(other.isAllTermsIndexOnly());
         this.setMaxIndexScanTimeMillis(other.getMaxIndexScanTimeMillis());
-        this.setMaxAnyFieldScanTimeMillis(other.getMaxAnyFieldScanTimeMillis());
         this.setCollapseUids(other.getCollapseUids());
         this.setCollapseUidsThreshold(other.getCollapseUidsThreshold());
         this.setEnforceUniqueTermsWithinExpressions(other.getEnforceUniqueTermsWithinExpressions());
@@ -3158,29 +3155,5 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.timers = new QueryStopwatch();
         this.fstCount = new AtomicInteger(0);
         return this;
-    }
-
-    public boolean isUseQueryTreeScanHintRules() {
-        return useQueryTreeScanHintRules;
-    }
-
-    public void setUseQueryTreeScanHintRules(boolean useQueryTreeScanHintRules) {
-        this.useQueryTreeScanHintRules = useQueryTreeScanHintRules;
-    }
-
-    public List<ScanHintRule<JexlNode>> getQueryTreeScanHintRules() {
-        return queryTreeScanHintRules;
-    }
-
-    public void setQueryTreeScanHintRules(List<ScanHintRule<JexlNode>> queryTreeScanHintRules) {
-        this.queryTreeScanHintRules = queryTreeScanHintRules;
-    }
-
-    public long getMaxAnyFieldScanTimeMillis() {
-        return maxAnyFieldScanTimeMillis;
-    }
-
-    public void setMaxAnyFieldScanTimeMillis(long maxAnyFieldScanTimeMillis) {
-        this.maxAnyFieldScanTimeMillis = maxAnyFieldScanTimeMillis;
     }
 }

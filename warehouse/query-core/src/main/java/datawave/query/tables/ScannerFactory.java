@@ -1,6 +1,5 @@
 package datawave.query.tables;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -247,14 +246,12 @@ public class ScannerFactory {
      * @param wrapper
      *            a wrapper class
      * @return a new scanner session
-     * @throws NoSuchMethodException
-     * @throws InvocationTargetException
-     * @throws InstantiationException
-     * @throws IllegalAccessException
+     * @throws Exception
+     *             if there are issues
      *
      */
     public <T extends ScannerSession> T newLimitedScanner(Class<T> wrapper, final String tableName, final Set<Authorizations> auths, final Query settings)
-                    throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
+                    throws Exception {
         Preconditions.checkNotNull(scanQueue);
         Preconditions.checkNotNull(wrapper);
         Preconditions.checkArgument(open.get(), "Factory has been locked. No New scanners can be created");

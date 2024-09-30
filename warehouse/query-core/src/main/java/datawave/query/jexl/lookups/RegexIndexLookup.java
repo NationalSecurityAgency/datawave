@@ -11,7 +11,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -267,10 +266,6 @@ public class RegexIndexLookup extends AsyncIndexLookup {
                     }
 
                     while (iter.hasNext()) {
-                        // check if interrupted which may be triggered by closing a batch scanner
-                        if (Thread.interrupted()) {
-                            throw new InterruptedException();
-                        }
 
                         Entry<Key,Value> entry = iter.next();
 
@@ -364,7 +359,7 @@ public class RegexIndexLookup extends AsyncIndexLookup {
         private Future<Boolean> timedScanFuture;
         private CountDownLatch lookupStartedLatch;
         private CountDownLatch lookupStoppedLatch;
-        private AtomicLong lookupStartTimeMillis = new AtomicLong(Long.MAX_VALUE);
+        private long lookupStartTimeMillis = Long.MAX_VALUE;
 
         public Collection<ScannerSession> getSessions() {
             return sessions;
@@ -398,12 +393,12 @@ public class RegexIndexLookup extends AsyncIndexLookup {
             this.lookupStoppedLatch = lookupStoppedLatch;
         }
 
-        public AtomicLong getLookupStartTimeMillis() {
+        public long getLookupStartTimeMillis() {
             return lookupStartTimeMillis;
         }
 
         public void setLookupStartTimeMillis(long lookupStartTimeMillis) {
-            this.lookupStartTimeMillis.set(lookupStartTimeMillis);
+            this.lookupStartTimeMillis = lookupStartTimeMillis;
         }
     }
 }

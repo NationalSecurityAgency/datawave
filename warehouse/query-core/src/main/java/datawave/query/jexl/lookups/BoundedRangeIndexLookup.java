@@ -10,7 +10,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.IteratorSetting;
@@ -51,7 +50,7 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
     private final LiteralRange<?> literalRange;
 
     protected Future<Boolean> timedScanFuture;
-    protected AtomicLong lookupStartTimeMillis = new AtomicLong(Long.MAX_VALUE);
+    protected long lookupStartTimeMillis = Long.MAX_VALUE;
     protected CountDownLatch lookupStartedLatch;
     protected CountDownLatch lookupStoppedLatch;
 
@@ -183,9 +182,6 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
             } catch (IOException e) {
                 QueryException qe = new QueryException(DatawaveErrorCode.RANGE_CREATE_ERROR, e, MessageFormat.format("{0}", this.literalRange));
                 log.debug(qe);
-                if (bs != null) {
-                    scannerFactory.close(bs);
-                }
                 throw new IllegalRangeArgumentException(qe);
             }
         }
@@ -215,7 +211,7 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
 
         return () -> {
             try {
-                lookupStartTimeMillis.set(System.currentTimeMillis());
+                lookupStartTimeMillis = System.currentTimeMillis();
                 lookupStartedLatch.countDown();
 
                 Text holder = new Text();
