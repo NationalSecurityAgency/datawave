@@ -1,7 +1,7 @@
 package datawave.ingest.mapreduce.job;
 
 import static datawave.ingest.mapreduce.job.BulkIngestMapFileLoader.BULK_IMPORT_MODE_CONFIG;
-import static datawave.ingest.mapreduce.job.MultiRFileOutputFormatter.findKeyExtent;
+import static datawave.ingest.mapreduce.job.MultiRFileOutputFormatter.findContainingSplits;
 import static org.junit.Assert.assertEquals;
 
 import java.io.DataOutputStream;
@@ -28,7 +28,6 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.file.FileSKVWriter;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.JobID;
 import org.apache.hadoop.mapreduce.RecordWriter;
@@ -49,7 +48,6 @@ import org.powermock.api.easymock.PowerMock;
 
 import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.ingest.mapreduce.job.BulkIngestMapFileLoader.ImportMode;
-import datawave.ingest.mapreduce.job.MultiRFileOutputFormatter.KeyExtent;
 import datawave.util.TableName;
 
 public class MultiRFileOutputFormatterTest {
@@ -235,19 +233,20 @@ public class MultiRFileOutputFormatterTest {
         rfileRows.add(new Text("20170601_9"));
         rfileRows.add(new Text("20200601_9"));
 
-        Set<KeyExtent> expectedExtents = new HashSet<>();
-        expectedExtents.add(new KeyExtent(new Text("20170601_0"), new Text("20170601_1")));
-        expectedExtents.add(new KeyExtent(new Text("20170601_8"), new Text("20170601_9")));
-        expectedExtents.add(new KeyExtent(new Text("20170602_0"), new Text("20170602_1")));
-        expectedExtents.add(new KeyExtent(new Text("20170603_9"), null));
-        expectedExtents.add(new KeyExtent(new Text("20170603_0c"), new Text("20170603_1")));
-        expectedExtents.add(new KeyExtent(null, new Text("20170601_0")));
-        expectedExtents.add(new KeyExtent(new Text("20170602_9c"), new Text("20170603_0")));
-        expectedExtents.add(new KeyExtent(new Text("20170603_0a"), new Text("20170603_0b")));
-        expectedExtents.add(new KeyExtent(new Text("20170603_0b"), new Text("20170603_0c")));
+        Set<LoadPlan.TableSplits> expectedExtents = new HashSet<>();
+        expectedExtents.add(new LoadPlan.TableSplits(new Text("20170601_0"), new Text("20170601_1")));
+        expectedExtents.add(new LoadPlan.TableSplits(new Text("20170601_8"), new Text("20170601_9")));
+        expectedExtents.add(new LoadPlan.TableSplits(new Text("20170602_0"), new Text("20170602_1")));
+        expectedExtents.add(new LoadPlan.TableSplits(new Text("20170603_9"), null));
+        expectedExtents.add(new LoadPlan.TableSplits(new Text("20170603_0c"), new Text("20170603_1")));
+        expectedExtents.add(new LoadPlan.TableSplits(null, new Text("20170601_0")));
+        expectedExtents.add(new LoadPlan.TableSplits(new Text("20170602_9c"), new Text("20170603_0")));
+        expectedExtents.add(new LoadPlan.TableSplits(new Text("20170603_0a"), new Text("20170603_0b")));
+        expectedExtents.add(new LoadPlan.TableSplits(new Text("20170603_0b"), new Text("20170603_0c")));
 
         List<Text> tableSplits = getSplits();
-        Set<KeyExtent> extents = rfileRows.stream().map(row -> findKeyExtent(row, tableSplits)).collect(Collectors.toCollection(HashSet::new));
+        Set<LoadPlan.TableSplits> extents = rfileRows.stream().map(row -> findContainingSplits(row, tableSplits))
+                        .collect(Collectors.toCollection(HashSet::new));
 
         assertEquals(expectedExtents, extents);
     }
@@ -479,37 +478,28 @@ public class MultiRFileOutputFormatterTest {
             }
 
             @Override
-            protected SizeTrackingWriter openWriter(String filename, AccumuloConfiguration tableConf) {
+            protected SizeTrackingWriter openWriter(String filename, AccumuloConfiguration tableConf, String table) {
                 filenames.add(filename);
-                return new SizeTrackingWriter(new FileSKVWriter() {
+                return new SizeTrackingWriter(null) {
+                    public void startNewLocalityGroup(String name, Set<ByteSequence> columnFamilies) throws IOException {
 
-                    @Override
-                    public boolean supportsLocalityGroups() {
-                        return false;
                     }
 
-                    @Override
-                    public void startNewLocalityGroup(String name, Set<ByteSequence> columnFamilies) throws IOException {}
+                    public void startDefaultLocalityGroup() throws IOException {
 
-                    @Override
-                    public void startDefaultLocalityGroup() throws IOException {}
-
-                    @Override
-                    public DataOutputStream createMetaStore(String name) throws IOException {
-                        return null;
                     }
 
-                    @Override
+                    public void append(Key key, Value value) throws IOException {
+                        entries++;
+                        size += key.getLength() + (value == null ? 0 : value.getSize());
+                    }
+
                     public void close() throws IOException {}
 
-                    @Override
-                    public long getLength() throws IOException {
-                        return 0;
+                    public LoadPlan getLoadPlan(String filename) {
+                        return LoadPlan.builder().build();
                     }
-
-                    @Override
-                    public void append(Key key, Value value) throws IOException {}
-                }, false);
+                };
             }
         };
 

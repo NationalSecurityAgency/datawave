@@ -69,7 +69,7 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
 
     private Path splitsPath = null;
     private Map<String,Map<Text,String>> splitLocations = new HashMap<>();
-    private Map<String,List<Text>> splits = new HashMap<>();
+    private Map<String,SortedList<Text>> splits = new HashMap<>();
 
     private PartitionerCache partitionerCache;
 
@@ -116,6 +116,7 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
      *            maximum number of splits to return
      * @return split points grouped into fewer evenly grouped splits so as not to exceed maxSplits
      */
+    // TODO seems like this code is only used in test
     public static List<Text> trimSplits(List<Text> tableSplits, int maxSplits) {
         if (tableSplits.size() <= maxSplits) {
             return tableSplits;
@@ -363,6 +364,7 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
         String line;
         String tableName = null;
         Map tmpSplitLocations = new ShardLocationTrieMap();
+        Map<String,List<Text>> tableSplits = new HashMap<>();
         List<Text> tmpSplits = null;
 
         while ((line = in.readLine()) != null) {
@@ -374,7 +376,7 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
                 tableName = parts[0];
                 tmpSplitLocations = new ShardLocationTrieMap();
                 tmpSplits = new ArrayList<>();
-                this.splits.put(tableName, Collections.unmodifiableList(tmpSplits));
+                tableSplits.put(tableName, tmpSplits);
             }
             if (parts.length >= 2) {
                 Text split = new Text(Base64.decodeBase64(parts[1]));
@@ -387,6 +389,11 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
         if (!tmpSplitLocations.isEmpty()) {
             this.splitLocations.put(tableName, tmpSplitLocations);
         }
+
+        tableSplits.forEach((table, splits) -> {
+            this.splits.put(table, SortedList.fromSorted(splits));
+        });
+
         in.close();
     }
 
@@ -407,12 +414,12 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
      * @throws IOException
      *             for issues with read or write
      */
-    public List<Text> getSplits(String table) throws IOException {
+    public SortedList<Text> getSplits(String table) throws IOException {
         if (this.splits.isEmpty()) {
             read();
         }
-        List<Text> splitList = this.splits.get(table);
-        return (splitList == null ? Collections.emptyList() : splitList);
+        SortedList<Text> splitList = this.splits.get(table);
+        return (splitList == null ? SortedList.empty() : splitList);
     }
 
     /**
@@ -425,8 +432,9 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
      * @throws IOException
      *             for issues with read or write
      */
+    // TODO seems like this code is only used in test, can it be removed? Looked into making it return SortedList
     public List<Text> getSplits(String table, int maxSplits) throws IOException {
-        return trimSplits(getSplits(table), maxSplits);
+        return trimSplits(getSplits(table).get(), maxSplits);
     }
 
     /**
@@ -434,7 +442,7 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
      * @throws IOException
      *             for issues with read or write
      */
-    public Map<String,List<Text>> getSplits() throws IOException {
+    public Map<String,SortedList<Text>> getSplits() throws IOException {
         if (this.splits.isEmpty())
             read();
         return Collections.unmodifiableMap(splits);
