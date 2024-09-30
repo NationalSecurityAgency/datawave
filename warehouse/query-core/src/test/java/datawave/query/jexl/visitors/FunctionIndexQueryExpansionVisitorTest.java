@@ -13,7 +13,7 @@ import org.junit.Test;
 import com.google.common.collect.Sets;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.util.DateIndexHelper;
@@ -321,7 +321,7 @@ public class FunctionIndexQueryExpansionVisitorTest {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
 
         // Create an in-memory accumulo instance and write the data index table.
-        InMemoryAccumuloClient client = new InMemoryAccumuloClient("root", new InMemoryInstance(FunctionIndexQueryExpansionVisitorTest.class.getName()));
+        InMemoryAccumuloClient client = new InMemoryAccumuloClient("root", new InMemoryAccumulo(FunctionIndexQueryExpansionVisitorTest.class.getName()));
         client.tableOperations().create(TableName.DATE_INDEX);
         DateIndexTestIngest.writeItAll(client);
 
