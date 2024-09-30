@@ -268,7 +268,7 @@ public class RegexIndexLookup extends AsyncIndexLookup {
 
                     while (iter.hasNext()) {
                         // check if interrupted which may be triggered by closing a batch scanner
-                        if (Thread.currentThread().isInterrupted()) {
+                        if (Thread.interrupted()) {
                             throw new InterruptedException();
                         }
 

@@ -153,7 +153,7 @@ public class FieldNameIndexLookup extends AsyncIndexLookup {
                 try {
                     while (iter.hasNext()) {
                         // check for interrupt which may be triggered by closing the batch scanner
-                        if (Thread.currentThread().isInterrupted()) {
+                        if (Thread.interrupted()) {
                             throw new InterruptedException();
                         }
 
