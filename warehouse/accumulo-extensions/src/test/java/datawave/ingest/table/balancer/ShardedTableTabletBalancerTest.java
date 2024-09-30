@@ -31,7 +31,7 @@ import org.apache.accumulo.core.manager.balancer.AssignmentParamsImpl;
 import org.apache.accumulo.core.manager.balancer.BalanceParamsImpl;
 import org.apache.accumulo.core.manager.balancer.TServerStatusImpl;
 import org.apache.accumulo.core.manager.balancer.TabletServerIdImpl;
-import org.apache.accumulo.core.master.thrift.TabletServerStatus;
+import org.apache.accumulo.core.manager.thrift.TabletServerStatus;
 import org.apache.accumulo.core.metadata.TServerInstance;
 import org.apache.accumulo.core.spi.balancer.data.TServerStatus;
 import org.apache.accumulo.core.spi.balancer.data.TabletMigration;
@@ -95,7 +95,7 @@ public class ShardedTableTabletBalancerTest {
         Map<TabletId,TabletServerId> assignments = new HashMap<>();
 
         // Apply the assignments and make sure we're balanced.
-        testBalancer.getAssignments(new AssignmentParamsImpl(testTServers.getCurrent(), unassigned, assignments));
+        testBalancer.getAssignments(new AssignmentParamsImpl(testTServers.getCurrent(), testTServers.getGroups(), unassigned, assignments));
         testTServers.applyAssignments(assignments);
         testTServers.checkBalance(testBalancer.getPartitioner());
 
@@ -105,7 +105,7 @@ public class ShardedTableTabletBalancerTest {
         unassigned.put(makeExtent(TNAME, "20100124_4", "20100124_3"), null);
 
         assignments.clear();
-        testBalancer.getAssignments(new AssignmentParamsImpl(testTServers.getCurrent(), unassigned, assignments));
+        testBalancer.getAssignments(new AssignmentParamsImpl(testTServers.getCurrent(), testTServers.getGroups(), unassigned, assignments));
         testTServers.applyAssignments(assignments);
 
         // Run the balancer. It should balance once after the additional assignment, and then everything should be balanced.
@@ -128,7 +128,7 @@ public class ShardedTableTabletBalancerTest {
         Map<TabletId,TabletServerId> assignments = new HashMap<>();
 
         // Apply the assignments and make sure we're balanced.
-        testBalancer.getAssignments(new AssignmentParamsImpl(testTServers.getCurrent(), unassigned, assignments));
+        testBalancer.getAssignments(new AssignmentParamsImpl(testTServers.getCurrent(), testTServers.getGroups(), unassigned, assignments));
         testTServers.applyAssignments(assignments);
         testTServers.checkBalance(testBalancer.getPartitioner());
     }
@@ -161,7 +161,7 @@ public class ShardedTableTabletBalancerTest {
         unassigned.put(makeExtent(TNAME, "20100124_2", "20100124_1"), null);
 
         // Make the initial assignments. There should be one piece of each day on each server
-        testBalancer.getAssignments(new AssignmentParamsImpl(testTServers.getCurrent(), unassigned, assignments));
+        testBalancer.getAssignments(new AssignmentParamsImpl(testTServers.getCurrent(), testTServers.getGroups(), unassigned, assignments));
         testTServers.applyAssignments(assignments);
         testTServers.checkBalance(testBalancer.getPartitioner());
 
@@ -189,7 +189,7 @@ public class ShardedTableTabletBalancerTest {
 
         // Do initial assignments. Everything will get assigned to one tablet server.
         Map<TabletId,TabletServerId> assignments = new HashMap<>();
-        testBalancer.getAssignments(new AssignmentParamsImpl(testTServers.getCurrent(), unassigned, assignments));
+        testBalancer.getAssignments(new AssignmentParamsImpl(testTServers.getCurrent(), testTServers.getGroups(), unassigned, assignments));
         assertEquals(6, assignments.size());
         testTServers.applyAssignments(assignments);
         testTServers.checkBalance(testBalancer.getPartitioner());
@@ -235,7 +235,7 @@ public class ShardedTableTabletBalancerTest {
 
         // Do initial assignments. Everything will get assigned to one tablet server.
         Map<TabletId,TabletServerId> assignments = new HashMap<>();
-        testBalancer.getAssignments(new AssignmentParamsImpl(testTServers.getCurrent(), unassigned, assignments));
+        testBalancer.getAssignments(new AssignmentParamsImpl(testTServers.getCurrent(), testTServers.getGroups(), unassigned, assignments));
         assertEquals(6, assignments.size());
         testTServers.applyAssignments(assignments);
         testTServers.checkBalance(testBalancer.getPartitioner());
@@ -257,7 +257,7 @@ public class ShardedTableTabletBalancerTest {
                 new TabletIdImpl(new KeyExtent(bar, new Text("2"), new Text("1"))),
                 new TabletIdImpl(new KeyExtent(TNAME, new Text("2"), new Text("1"))));
         //@formatter:on
-        long balanceWaitTime = testBalancer.balance(new BalanceParamsImpl(testTServers.getCurrent(), migrations, migrationsOut));
+        long balanceWaitTime = testBalancer.balance(new BalanceParamsImpl(testTServers.getCurrent(), testTServers.getGroups(), migrations, migrationsOut));
         assertEquals("Incorrect balance wait time reported", 5000, balanceWaitTime);
         assertTrue("Generated migrations when we had pending migrations for our table! [" + migrationsOut + "]", migrationsOut.isEmpty());
 
@@ -267,7 +267,7 @@ public class ShardedTableTabletBalancerTest {
                 new TabletIdImpl(new KeyExtent(foo, new Text("2"), new Text("1"))),
                 new TabletIdImpl(new KeyExtent(bar, new Text("2"), new Text("1"))));
         //@formatter:on
-        balanceWaitTime = testBalancer.balance(new BalanceParamsImpl(testTServers.getCurrent(), migrations, migrationsOut));
+        balanceWaitTime = testBalancer.balance(new BalanceParamsImpl(testTServers.getCurrent(), testTServers.getGroups(), migrations, migrationsOut));
         assertEquals("Incorrect balance wait time reported", 5000, balanceWaitTime);
         ensureUniqueMigrations(migrationsOut);
         testTServers.applyMigrations(migrationsOut);
@@ -309,7 +309,7 @@ public class ShardedTableTabletBalancerTest {
         // Assign the initial extents and make sure they're balanced.
         int totalExtents = unassigned.size();
         Map<TabletId,TabletServerId> assignments = new HashMap<>();
-        testBalancer.getAssignments(new AssignmentParamsImpl(testTServers.getCurrent(), unassigned, assignments));
+        testBalancer.getAssignments(new AssignmentParamsImpl(testTServers.getCurrent(), testTServers.getGroups(), unassigned, assignments));
         testTServers.applyAssignments(assignments);
 
         assertEquals(totalExtents, assignments.size());
@@ -363,7 +363,7 @@ public class ShardedTableTabletBalancerTest {
         // Assign the initial extents and make sure they're balanced.
         int totalExtents = unassigned.size();
         Map<TabletId,TabletServerId> assignments = new HashMap<>();
-        testBalancer.getAssignments(new AssignmentParamsImpl(testTServers.getCurrent(), unassigned, assignments));
+        testBalancer.getAssignments(new AssignmentParamsImpl(testTServers.getCurrent(), testTServers.getGroups(), unassigned, assignments));
         testTServers.applyAssignments(assignments);
 
         assertEquals(totalExtents, assignments.size());
@@ -423,7 +423,7 @@ public class ShardedTableTabletBalancerTest {
 
         int totalExtents = unassigned.size();
         Map<TabletId,TabletServerId> assignments = new HashMap<>();
-        testBalancer.getAssignments(new AssignmentParamsImpl(testTServers.getCurrent(), unassigned, assignments));
+        testBalancer.getAssignments(new AssignmentParamsImpl(testTServers.getCurrent(), testTServers.getGroups(), unassigned, assignments));
         testTServers.applyAssignments(assignments);
 
         assertEquals(totalExtents, assignments.size());
@@ -493,7 +493,7 @@ public class ShardedTableTabletBalancerTest {
         // Assign the initial extents and make sure they're balanced.
         int totalExtents = unassigned.size();
         Map<TabletId,TabletServerId> assignments = new HashMap<>();
-        testBalancer.getAssignments(new AssignmentParamsImpl(testTServers.getCurrent(), unassigned, assignments));
+        testBalancer.getAssignments(new AssignmentParamsImpl(testTServers.getCurrent(), testTServers.getGroups(), unassigned, assignments));
         testTServers.applyAssignments(assignments);
 
         assertEquals(totalExtents, assignments.size());
@@ -547,7 +547,7 @@ public class ShardedTableTabletBalancerTest {
         ArrayList<TabletMigration> migrationsOut = new ArrayList<>();
         for (int i = 1; i <= numPasses; i++) {
             migrationsOut.clear();
-            testBalancer.balance(new BalanceParamsImpl(testTServers.getCurrent(), new HashSet<>(), migrationsOut));
+            testBalancer.balance(new BalanceParamsImpl(testTServers.getCurrent(), testTServers.getGroups(), new HashSet<>(), migrationsOut));
             ensureUniqueMigrations(migrationsOut);
             testTServers.applyMigrations(migrationsOut);
 
@@ -556,7 +556,7 @@ public class ShardedTableTabletBalancerTest {
         }
         // Then balance one more time to make sure no migrations are returned.
         migrationsOut.clear();
-        testBalancer.balance(new BalanceParamsImpl(testTServers.getCurrent(), new HashSet<>(), migrationsOut));
+        testBalancer.balance(new BalanceParamsImpl(testTServers.getCurrent(), testTServers.getGroups(), new HashSet<>(), migrationsOut));
         assertEquals("Left with " + migrationsOut.size() + " migrations after " + numPasses + " balance attempts.", 0, migrationsOut.size());
         testTServers.checkBalance(testBalancer.getPartitioner());
     }
@@ -581,6 +581,7 @@ public class ShardedTableTabletBalancerTest {
 
     private static class TestTServers {
         private final Set<TabletServerId> tservers = new HashSet<>();
+        private final Map<String,Set<TabletServerId>> tserverGroups = new HashMap<>();
         private final SortedMap<TabletId,TabletServerId> tabletLocs = new TreeMap<>();
         private int portNumber = 1000;
         private Random random;
@@ -596,12 +597,19 @@ public class ShardedTableTabletBalancerTest {
         }
 
         public TabletServerId addTServer(String location) {
-            return addTServer(location, portNumber++);
+            return addTServer(location, portNumber++, "default");
         }
 
-        public TabletServerId addTServer(String location, int port) {
+        public TabletServerId addTServer(String location, int port, String group) {
             TabletServerId tsi = new TabletServerIdImpl(new TServerInstance(location + ":" + port, 6));
             tservers.add(tsi);
+            if (tserverGroups.get(group) != null) {
+                tserverGroups.get(group).add(tsi);
+            } else {
+                var tserverGroup = new HashSet<TabletServerId>();
+                tserverGroup.add(tsi);
+                tserverGroups.put(group, tserverGroup);
+            }
             return tsi;
         }
 
@@ -839,6 +847,10 @@ public class ShardedTableTabletBalancerTest {
 
         public Map<TabletId,TabletServerId> getLocationProvider() {
             return tabletLocs;
+        }
+
+        public Map<String,Set<TabletServerId>> getGroups() {
+            return tserverGroups;
         }
     }
 
