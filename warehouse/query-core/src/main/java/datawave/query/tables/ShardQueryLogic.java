@@ -2463,6 +2463,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         getConfig().setMaxIndexScanTimeMillis(maxTime);
     }
 
+    public long getMaxAnyFieldScanTimeMillis() {
+        return getConfig().getMaxAnyFieldScanTimeMillis();
+    }
+
+    public void setMaxAnyFieldScanTimeMillis(long maxAnyFieldScanTimeMillis) {
+        getConfig().setMaxAnyFieldScanTimeMillis(maxAnyFieldScanTimeMillis);
+    }
+
     public Function getQueryMacroFunction() {
         return queryMacroFunction;
     }
