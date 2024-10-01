@@ -7,12 +7,13 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import com.google.common.collect.Collections2;
+import com.google.common.collect.Ordering;
+
 /**
  * Wraps a list that is immutable and verified as sorted.
  */
 public class SortedList<T> {
-
-    private static final Logger log = Logger.getLogger(SortedList.class);
 
     private final List<T> list;
 
@@ -32,8 +33,10 @@ public class SortedList<T> {
     }
 
     /**
-     * For a list that is expected to be sorted this will verify it is sorted and if so return an immutable copy of it. If this list is not sorted it will log a
-     * warning, copy it, sort the copy, and return an immutable version of the copy.
+     * For a list that is expected to be sorted this will verify it is sorted and if so return an immutable copy of it.
+     *
+     * @throws IllegalArgumentException
+     *             when the input list is not sorted.
      */
     public static <T2> SortedList<T2> fromSorted(List<T2> list) {
         if (list.isEmpty()) {
@@ -43,37 +46,13 @@ public class SortedList<T> {
         var copy = List.copyOf(list);
 
         // verify after copying because nothing can change at this point
-        boolean isSorted = true;
-        for (int i = 1; i < copy.size(); i++) {
-            @SuppressWarnings("unchecked")
-            var prev = (Comparable<? super T2>) copy.get(i - 1);
-            if (prev.compareTo(copy.get(i)) > 0) {
-                isSorted = false;
-            }
-        }
+        @SuppressWarnings("unchecked")
+        boolean isSorted = Ordering.natural().isOrdered((Iterable<? extends Comparable>) copy);
 
         if (isSorted) {
             return new SortedList<>(copy);
         } else {
-            // TODO throw an exception here instead logging a warning and sorting. If the data is expected to be sorted and it is not then that may be a symptom
-            // of a wider problem like a corrupted splits file.
-            log.warn("Input list of size " + copy.size() + " was expected to be sorted but was not", new IllegalArgumentException());
-            return fromUnsorted(copy);
+            throw new IllegalArgumentException("Input list of size " + copy.size() + " was expected to be sorted but was not");
         }
-    }
-
-    /**
-     * Copies a list and sorts the copy returning an immutable version of the copy.
-     */
-    public static <T2> SortedList<T2> fromUnsorted(List<T2> list) {
-        if (list.isEmpty()) {
-            return empty();
-        }
-
-        var copy = new ArrayList<>(list);
-        @SuppressWarnings("unchecked")
-        var compartor = (Comparator<? super T2>) Comparator.naturalOrder();
-        copy.sort(compartor);
-        return new SortedList<>(Collections.unmodifiableList(copy));
     }
 }
