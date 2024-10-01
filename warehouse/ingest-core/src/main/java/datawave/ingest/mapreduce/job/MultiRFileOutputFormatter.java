@@ -678,9 +678,8 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
                         var rfilePath = usedWriterPaths.get(entry.getKey());
                         if (rfilePath != null) {
                             addLoadPlan(tableName, writer.getLoadPlan(rfilePath.getName()));
-                        } // else this file is unused and should exist in usedWriterPaths according to previous checks
+                        } // else this file is unused and should exist in unusedWriterPaths according to previous checks
                     }
-
                 }
 
                 if (loadPlanningEnabled) {
