@@ -52,9 +52,11 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.log4j.Logger;
 
 import com.google.common.base.Joiner;
+import com.google.common.base.Preconditions;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 
 import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
@@ -663,19 +665,20 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
 
             @Override
             public void close(TaskAttemptContext context) throws IOException, InterruptedException {
+                Preconditions.checkState(Collections.disjoint(usedWriterPaths.keySet(), unusedWriterPaths.keySet()), "Sets unexpectedly overlap %s %s",
+                                usedWriterPaths.keySet(), unusedWriterPaths.keySet());
+                Preconditions.checkState(writers.keySet().equals(Sets.union(usedWriterPaths.keySet(), unusedWriterPaths.keySet())),
+                                "Some keys are missing from writer paths %s %s %s", writers.keySet(), usedWriterPaths.keySet(), unusedWriterPaths.keySet());
+
                 for (Map.Entry<String,SizeTrackingWriter> entry : writers.entrySet()) {
                     var writer = entry.getValue();
                     writer.close();
                     if (loadPlanningEnabled) {
                         var tableName = writerTableNames.get(entry.getKey());
                         var rfilePath = usedWriterPaths.get(entry.getKey());
-                        addLoadPlan(tableName, writer.getLoadPlan(rfilePath.getName()));
-                        try {
+                        if (rfilePath != null) {
                             addLoadPlan(tableName, writer.getLoadPlan(rfilePath.getName()));
-                        } catch (NullPointerException e) {
-                            // TODO determine why this NPE is happening
-                            log.warn("Failed to find load plan: " + rfilePath + " for table: " + tableName);
-                        }
+                        } // else this file is unused and should exist in usedWriterPaths according to previous checks
                     }
 
                 }
