@@ -11,6 +11,7 @@ out the [prereqs](#prereqs) at a minimum):
 git submodule update --init --recursive
 
 # build docker images for datawave and all of the microservices
+# optionally include '-Dquickstart-maven' to download accumulo/zookeeper/hadoop/maven tarballs from the maven repository
 mvn -Pcompose -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -Ddist -DskipTests clean install
 
 # bootstrap the services, and bring them up using docker compose
