@@ -1413,20 +1413,4 @@ public final class BulkIngestMapFileLoader implements Runnable {
             log.warn("Interrupted while sleeping.", e);
         }
     }
-
-    public static class ByteArrayToBase64TypeAdapter implements JsonSerializer<byte[]>, JsonDeserializer<byte[]> {
-        Base64.Decoder decoder = Base64.getUrlDecoder();
-        Base64.Encoder encoder = Base64.getUrlEncoder();
-
-        @Override
-        public byte[] deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
-            return decoder.decode(json.getAsString());
-        }
-
-        @Override
-        public JsonElement serialize(byte[] src, Type typeOfSrc, JsonSerializationContext context) {
-            return new JsonPrimitive(encoder.encodeToString(src));
-        }
-    }
-
 }
