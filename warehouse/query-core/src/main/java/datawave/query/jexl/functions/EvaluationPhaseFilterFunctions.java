@@ -32,6 +32,8 @@ import datawave.query.attributes.ValueTuple;
 import datawave.query.collections.FunctionalSet;
 import datawave.query.jexl.JexlPatternCache;
 import datawave.util.OperationEvaluator;
+import datawave.webservice.query.exception.BadRequestQueryException;
+import datawave.webservice.query.exception.DatawaveErrorCode;
 
 /**
  * NOTE: The {@link JexlFunctionArgumentDescriptorFactory} is implemented by {@link EvaluationPhaseFilterFunctionsDescriptor}. This is kept as a separate class
@@ -1611,7 +1613,9 @@ public class EvaluationPhaseFilterFunctions {
                 // try the next one
             }
         }
-        throw new ParseException("Unable to parse value using known date formats: " + value, 0);
+        BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.UNPARSEABLE_JEXL_QUERY,
+                        "Unable to parse value using known date formats: " + value + " [Error offset: 0]");
+        throw new IllegalArgumentException(qe);
     }
 
     /**

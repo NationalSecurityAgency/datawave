@@ -9,6 +9,9 @@ import org.apache.commons.jexl3.parser.ParserTreeConstants;
 
 import datawave.query.jexl.ArithmeticJexlEngines;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
+import datawave.webservice.query.exception.BadRequestQueryException;
+import datawave.webservice.query.exception.DatawaveErrorCode;
+import datawave.webservice.query.exception.QueryException;
 
 /**
  * This interface can be implemented by a class supplying JEXL functions to provide additional information about the arguments. The initial purpose of this is
@@ -56,7 +59,9 @@ public interface JexlFunctionArgumentDescriptorFactory {
                         // get the descriptor
                         return factory.getArgumentDescriptor(node);
                     } catch (Exception e) {
-                        throw new IllegalArgumentException("Unable to get jexl function argument descriptor", e);
+                        BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_SYNTAX_PARSE_ERROR,
+                                        "Unable to get jexl function argument descriptor");
+                        throw new IllegalArgumentException(qe);
                     }
                 }
             }
@@ -78,7 +83,8 @@ public interface JexlFunctionArgumentDescriptorFactory {
                                     + (possibleMatch != null ? possibleMatch.getClass() : null));
                 }
             } else {
-                throw new IllegalArgumentException("Expected children not found in ASTFunctionNode");
+                QueryException qe = new QueryException(DatawaveErrorCode.NODE_PROCESSING_ERROR, "Expected children not found in ASTFunctionNode");
+                throw new IllegalArgumentException(qe);
             }
         }
     }

@@ -194,7 +194,8 @@ public class JexlStringBuildingVisitor extends BaseVisitor {
         int numChildren = node.jjtGetNumChildren();
 
         if (2 != numChildren) {
-            throw new IllegalArgumentException("An ASTEQNode has more than two children");
+            QueryException qe = new QueryException(DatawaveErrorCode.NODE_PROCESSING_ERROR, "An ASTEQNode has more than two children");
+            throw new IllegalArgumentException(qe);
         }
 
         node.jjtGetChild(0).jjtAccept(this, sb);
@@ -212,7 +213,8 @@ public class JexlStringBuildingVisitor extends BaseVisitor {
         int numChildren = node.jjtGetNumChildren();
 
         if (2 != numChildren) {
-            throw new IllegalArgumentException("An ASTNENode has more than two children");
+            QueryException qe = new QueryException(DatawaveErrorCode.NODE_PROCESSING_ERROR, "An ASTNENode has more than two children");
+            throw new IllegalArgumentException(qe);
         }
 
         node.jjtGetChild(0).jjtAccept(this, sb);
@@ -230,7 +232,8 @@ public class JexlStringBuildingVisitor extends BaseVisitor {
         int numChildren = node.jjtGetNumChildren();
 
         if (2 != numChildren) {
-            throw new IllegalArgumentException("An ASTLTNode has more than two children");
+            QueryException qe = new QueryException(DatawaveErrorCode.NODE_PROCESSING_ERROR, "An ASTLTNode has more than two children");
+            throw new IllegalArgumentException(qe);
         }
 
         node.jjtGetChild(0).jjtAccept(this, sb);
@@ -248,7 +251,8 @@ public class JexlStringBuildingVisitor extends BaseVisitor {
         int numChildren = node.jjtGetNumChildren();
 
         if (2 != numChildren) {
-            throw new IllegalArgumentException("An ASTGTNode has more than two children");
+            QueryException qe = new QueryException(DatawaveErrorCode.NODE_PROCESSING_ERROR, "An ASTGTNode has more than two children");
+            throw new IllegalArgumentException(qe);
         }
 
         node.jjtGetChild(0).jjtAccept(this, sb);
@@ -266,7 +270,8 @@ public class JexlStringBuildingVisitor extends BaseVisitor {
         int numChildren = node.jjtGetNumChildren();
 
         if (2 != numChildren) {
-            throw new IllegalArgumentException("An ASTLENode has more than two children");
+            QueryException qe = new QueryException(DatawaveErrorCode.NODE_PROCESSING_ERROR, "An ASTLENode has more than two children");
+            throw new IllegalArgumentException(qe);
         }
 
         node.jjtGetChild(0).jjtAccept(this, sb);
@@ -284,7 +289,8 @@ public class JexlStringBuildingVisitor extends BaseVisitor {
         int numChildren = node.jjtGetNumChildren();
 
         if (2 != numChildren) {
-            throw new IllegalArgumentException("An ASTGENode has more than two children");
+            QueryException qe = new QueryException(DatawaveErrorCode.NODE_PROCESSING_ERROR, "An ASTGENode has more than two children");
+            throw new IllegalArgumentException(qe);
         }
 
         node.jjtGetChild(0).jjtAccept(this, sb);
@@ -302,7 +308,8 @@ public class JexlStringBuildingVisitor extends BaseVisitor {
         int numChildren = node.jjtGetNumChildren();
 
         if (2 != numChildren) {
-            throw new IllegalArgumentException("An ASTERNode has more than two children");
+            QueryException qe = new QueryException(DatawaveErrorCode.NODE_PROCESSING_ERROR, "An ASTERNode has more than two children");
+            throw new IllegalArgumentException(qe);
         }
 
         node.jjtGetChild(0).jjtAccept(this, sb);
@@ -320,7 +327,8 @@ public class JexlStringBuildingVisitor extends BaseVisitor {
         int numChildren = node.jjtGetNumChildren();
 
         if (2 != numChildren) {
-            throw new IllegalArgumentException("An ASTERNode has more than two children");
+            QueryException qe = new QueryException(DatawaveErrorCode.NODE_PROCESSING_ERROR, "An ASTNRNode has more than two children");
+            throw new IllegalArgumentException(qe);
         }
 
         node.jjtGetChild(0).jjtAccept(this, sb);
