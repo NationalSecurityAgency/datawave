@@ -30,6 +30,7 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.security.Authorizations;
+import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -67,6 +68,7 @@ import datawave.query.cardinality.CardinalityConfiguration;
 import datawave.query.common.grouping.GroupFields;
 import datawave.query.config.IndexHole;
 import datawave.query.config.Profile;
+import datawave.query.config.ScanHintRule;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.enrich.DataEnricher;
 import datawave.query.enrich.EnrichingMaster;
@@ -81,6 +83,7 @@ import datawave.query.language.parser.QueryParser;
 import datawave.query.language.tree.QueryNode;
 import datawave.query.model.QueryModel;
 import datawave.query.planner.DefaultQueryPlanner;
+import datawave.query.planner.FederatedQueryPlanner;
 import datawave.query.planner.MetadataHelperQueryModelProvider;
 import datawave.query.planner.QueryModelProvider;
 import datawave.query.planner.QueryPlanner;
@@ -301,7 +304,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
             this.config.setGeneratePlanOnly(true);
         }
         initialize(config, client, settings, auths);
-        return config.getQueryString();
+        return this.config.getQueryString();
     }
 
     protected String expandQueryMacros(String query) throws ParseException {
@@ -410,7 +413,43 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
             config.setEndDate(endDate);
         }
 
-        setupQueryPlanner(config);
+        MetadataHelper metadataHelper = prepareMetadataHelper(client, this.getMetadataTableName(), auths, config.isRawTypes());
+
+        DateIndexHelper dateIndexHelper = prepareDateIndexHelper(client, this.getDateIndexTableName(), auths);
+        if (config.isDateIndexTimeTravel()) {
+            dateIndexHelper.setTimeTravel(config.isDateIndexTimeTravel());
+        }
+
+        // If the current query planner is a DefaultQueryPlanner or a FederatedQueryPlanner, get the query model if possible.
+        QueryPlanner queryPlanner = getQueryPlanner();
+        DefaultQueryPlanner defaultQueryPlanner = null;
+        if (queryPlanner instanceof DefaultQueryPlanner) {
+            defaultQueryPlanner = (DefaultQueryPlanner) queryPlanner;
+        } else if (queryPlanner instanceof FederatedQueryPlanner) {
+            defaultQueryPlanner = ((FederatedQueryPlanner) queryPlanner).getQueryPlanner();
+        }
+
+        if (defaultQueryPlanner != null) {
+            defaultQueryPlanner.setMetadataHelper(metadataHelper);
+            defaultQueryPlanner.setDateIndexHelper(dateIndexHelper);
+
+            QueryModelProvider queryModelProvider = defaultQueryPlanner.getQueryModelProviderFactory().createQueryModelProvider();
+            if (queryModelProvider instanceof MetadataHelperQueryModelProvider) {
+                ((MetadataHelperQueryModelProvider) queryModelProvider).setMetadataHelper(metadataHelper);
+                ((MetadataHelperQueryModelProvider) queryModelProvider).setConfig(config);
+            }
+
+            if (null != queryModelProvider.getQueryModel()) {
+                queryModel = queryModelProvider.getQueryModel();
+            }
+        }
+
+        if (this.queryModel == null) {
+            loadQueryModel(metadataHelper, config);
+        }
+
+        getQueryPlanner().setCreateUidsIteratorClass(createUidsIteratorClass);
+        getQueryPlanner().setUidIntersector(uidIntersector);
 
         validateConfiguration(config);
 
@@ -1523,6 +1562,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         getConfig().setTfNextSeek(tfNextSeek);
     }
 
+    public boolean isSeekingEventAggregation() {
+        return getConfig().isSeekingEventAggregation();
+    }
+
+    public void setSeekingEventAggregation(boolean seekingEventAggregation) {
+        getConfig().setSeekingEventAggregation(seekingEventAggregation);
+    }
+
     public String getdisallowlistedFieldsString() {
         return getConfig().getDisallowlistedFieldsAsString();
     }
@@ -2086,9 +2133,8 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
     public QueryPlanner getQueryPlanner() {
         if (null == planner) {
-            planner = new DefaultQueryPlanner();
+            planner = new FederatedQueryPlanner();
         }
-
         return planner;
     }
 
@@ -2392,6 +2438,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
     public void setMaxIndexScanTimeMillis(long maxTime) {
         getConfig().setMaxIndexScanTimeMillis(maxTime);
+    }
+
+    public long getMaxAnyFieldScanTimeMillis() {
+        return getConfig().getMaxAnyFieldScanTimeMillis();
+    }
+
+    public void setMaxAnyFieldScanTimeMillis(long maxAnyFieldScanTimeMillis) {
+        getConfig().setMaxAnyFieldScanTimeMillis(maxAnyFieldScanTimeMillis);
     }
 
     public Function getQueryMacroFunction() {
@@ -2901,5 +2955,29 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
     public void setRebuildDatatypeFilterPerShard(boolean rebuildDatatypeFilterPerShard) {
         getConfig().setRebuildDatatypeFilterPerShard(rebuildDatatypeFilterPerShard);
+    }
+
+    public boolean isUseQueryTreeScanHintRules() {
+        return getConfig().isUseQueryTreeScanHintRules();
+    }
+
+    public void setUseQueryTreeScanHintRules(boolean useQueryTreeScanHintRules) {
+        getConfig().setUseQueryTreeScanHintRules(useQueryTreeScanHintRules);
+    }
+
+    public List<ScanHintRule<JexlNode>> getQueryTreeScanHintRules() {
+        return getConfig().getQueryTreeScanHintRules();
+    }
+
+    public void setQueryTreeScanHintRules(List<ScanHintRule<JexlNode>> queryTreeScanHintRules) {
+        getConfig().setQueryTreeScanHintRules(queryTreeScanHintRules);
+    }
+
+    public void setFieldIndexHoleMinThreshold(double fieldIndexHoleMinThreshold) {
+        getConfig().setFieldIndexHoleMinThreshold(fieldIndexHoleMinThreshold);
+    }
+
+    public double getFieldIndexHoleMinThreshold(int fieldIndexHoleMinThreshold) {
+        return getConfig().getFieldIndexHoleMinThreshold();
     }
 }
