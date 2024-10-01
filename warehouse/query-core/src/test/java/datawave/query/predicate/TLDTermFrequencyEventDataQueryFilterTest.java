@@ -7,13 +7,9 @@ import java.util.Collections;
 import java.util.Set;
 
 import org.apache.accumulo.core.data.Key;
-import org.apache.commons.jexl3.parser.ASTJexlScript;
-import org.apache.commons.jexl3.parser.ParseException;
 import org.junit.Test;
 
 import com.google.common.collect.Sets;
-
-import datawave.query.jexl.JexlASTHelper;
 
 public class TLDTermFrequencyEventDataQueryFilterTest {
 
@@ -26,14 +22,9 @@ public class TLDTermFrequencyEventDataQueryFilterTest {
     private final Key childField3 = new Key("row", "fi\0FIELD3", "value\0datatype\0d8zay2.-3pnndm.-anolok.45");
 
     @Test
-    public void testTLDTermFrequencyEventDataQueryFilter() throws ParseException {
-
-        String query = "FIELD1 == 'value'";
-        ASTJexlScript script = JexlASTHelper.parseAndFlattenJexlQuery(query);
-        EventDataQueryFieldFilter fieldFilter = new EventDataQueryFieldFilter(script, Collections.emptySet());
-
+    public void testTLDTermFrequencyEventDataQueryFilter() {
         Set<String> indexOnlyFields = Sets.newHashSet("FIELD1", "FIELD2");
-        TLDTermFrequencyEventDataQueryFilter filter = new TLDTermFrequencyEventDataQueryFilter(indexOnlyFields, fieldFilter);
+        TLDTermFrequencyEventDataQueryFilter filter = new TLDTermFrequencyEventDataQueryFilter(indexOnlyFields, Set.of("FIELD1"));
 
         // retain query index-only fields in the tld
         assertTrue(filter.keep(tldField1));
