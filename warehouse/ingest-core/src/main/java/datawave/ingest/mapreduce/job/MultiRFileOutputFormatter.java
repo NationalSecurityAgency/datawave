@@ -778,7 +778,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
             public void close(TaskAttemptContext context) throws IOException, InterruptedException {
                 for (Map.Entry<String,SizeTrackingWriter> entry : writers.entrySet()) {
                     var writer = entry.getValue();
-                    if (writer.isLoadPlanning()) {
+                    if (loadPlanningEnabled) {
                         var tableName = writerTableNames.get(entry.getKey());
                         var rfilePath = usedWriterPaths.get(entry.getKey());
                         computeLoadPlan(writer, tableName, rfilePath);
