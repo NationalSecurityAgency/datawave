@@ -673,6 +673,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
                         try {
                             addLoadPlan(tableName, writer.getLoadPlan(rfilePath.getName()));
                         } catch (NullPointerException e) {
+                            // TODO determine why this NPE is happening
                             log.warn("Failed to find load plan: " + rfilePath + " for table: " + tableName);
                         }
                     }

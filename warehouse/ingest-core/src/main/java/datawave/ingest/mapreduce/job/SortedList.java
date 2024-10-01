@@ -55,6 +55,8 @@ public class SortedList<T> {
         if (isSorted) {
             return new SortedList<>(copy);
         } else {
+            // TODO throw an exception here instead logging a warning and sorting. If the data is expected to be sorted and it is not then that may be a symptom
+            // of a wider problem like a corrupted splits file.
             log.warn("Input list of size " + copy.size() + " was expected to be sorted but was not", new IllegalArgumentException());
             return fromUnsorted(copy);
         }
