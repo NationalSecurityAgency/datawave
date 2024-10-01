@@ -65,9 +65,9 @@ jobs:
       run: |
         export JAVA_HOME=$ACCUMULO_JAVA
         cd $GITHUB_WORKSPACE/accumulo
-        mvn build-helper:parse-version versions:set -DnewVersion=\${parsedVersion.majorVersion}.\${parsedVersion.minorVersion}.\${parsedVersion.incrementalVersion}-$(git rev-parse --short HEAD)
-        export NEWVERSION=$(mvn -q help:evaluate -DforceStdout -Dexpression=project.version)
-        echo accumuloversion=$NEWVERSION >> $GITHUB_OUTPUT
+        mvn build-helper:parse-version versions:set -DgenerateBackupPoms=false -DnewVersion=\${parsedVersion.majorVersion}.\${parsedVersion.minorVersion}.\${parsedVersion.incrementalVersion}-$(git rev-parse --short HEAD)
+        export newVersion=$(mvn -q help:evaluate -DforceStdout -Dexpression=project.version)
+        echo accumuloVersion=$newVersion >> $GITHUB_OUTPUT
     - name: Deploy Accumulo
       if: ${{ ( github.event.inputs.deployAccumulo || 'false' )  == 'true'}}
       run: | 
@@ -86,11 +86,11 @@ jobs:
 
         export JAVA_HOME=$DATAWAVE_JAVA
         cd $GITHUB_WORKSPACE/datawave
-        mvn -s $GITHUB_WORKSPACE/datawave/.github/workflows/settings.xml versions:set-property -Dproperty=version.accumulo -DnewVersion=${{ steps.get-accumulo-version.outputs.accumuloversion }} -DgenerateBackupPoms=false
+        mvn -s $GITHUB_WORKSPACE/datawave/.github/workflows/settings.xml versions:set-property -Dproperty=version.accumulo -DnewVersion=${{ steps.get-accumulo-version.outputs.accumuloVersion }} -DgenerateBackupPoms=false
     - name: Build Web and Ingest Docker Images (Maven)
       run: |
         export JAVA_HOME=$DATAWAVE_JAVA
         cd $GITHUB_WORKSPACE/datawave
-        mvn -s $GITHUB_WORKSPACE/datawave/.github/workflows/settings.xml clean install -Prpm,kubernetes,assemble,deploy-ws -Ddist -Pdocker -DpushImage -Ddocker-release -DskipTests -Ddocker.image.accumulo.tag=${{ steps.get-accumulo-version.outputs.accumuloversion }}
+        mvn -s $GITHUB_WORKSPACE/datawave/.github/workflows/settings.xml clean install -Prpm,kubernetes,assemble,deploy-ws -Ddist -Pdocker -DpushImage -Ddocker-release -DskipTests -Ddocker.image.accumulo.tag=${{ steps.get-accumulo-version.outputs.accumuloVersion }}
 
  
